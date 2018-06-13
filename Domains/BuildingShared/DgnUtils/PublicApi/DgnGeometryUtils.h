@@ -70,6 +70,21 @@ struct DgnGeometryUtils
         //! @return                         solid slices paired with corresponding bottom planes of the cuts
         BUILDINGSHAREDDGNUTILS_EXPORT static BentleyStatus SliceBodyByZElevations(bvector<bpair<Dgn::IBRepEntityPtr, double>>& slicedGeometry, Dgn::IBRepEntityCR geometryToSlice, bvector<double>& zElevationVector);
 
+        //! Gets extrusion's extrusion detail
+        //! @param[out] extDetail   extrusion detail of this extrusion
+        //! @return                 true if there was no error in getting extrusion detail
+        BUILDINGSHAREDDGNUTILS_EXPORT static bool GetDgnExtrusionDetail(Dgn::SpatialLocationElementCR extrusionThatIsSolid, DgnExtrusionDetail& extDetail);
+
+        //! Gets spatial location element's base shape
+        //! @param extrusionThatIsSolid   element for which we want to get the base shape
+        //! @return                       base shape curve vector
+        BUILDINGSHAREDDGNUTILS_EXPORT static CurveVectorPtr GetBaseShape(Dgn::SpatialLocationElementCR extrusionThatIsSolid);
+
+        //! Extracts spatial location element's bottom face shape
+        //! @param extrusionThatIsSolid   element for which we want to get the bottom face shape
+        //! @return                       bottom face shape curve vector
+        BUILDINGSHAREDDGNUTILS_EXPORT static CurveVectorPtr ExtractBottomFaceShape(Dgn::SpatialLocationElementCR extrusionThatIsSolid);
+
     };
 
 END_BUILDING_SHARED_NAMESPACE

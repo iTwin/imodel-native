@@ -118,7 +118,6 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
         DPlane3d GetTopPlane() const;
         DVec3d GetScaledSweepDirection(DPlane3d const& base, DPlane3d const& top, DVec3d sweepDirection) const;
 
-        bool IsHeightSet() const;
         bool IsSweepDirectionSet() const;
 
         void SetFixedHeight(double const& newHeight);
@@ -177,6 +176,8 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
 
         static ExtrusionManipulationStrategyPtr Create() { return new ExtrusionManipulationStrategy(); }
         static ExtrusionManipulationStrategyPtr Create(CurveVectorManipulationStrategyR baseShapeManipulationStrategy) { return new ExtrusionManipulationStrategy(baseShapeManipulationStrategy); }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool IsHeightSet() const;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ISolidPrimitivePtr FinishExtrusion(bool closedBaseShape = false, bool capped = true) const;
     };

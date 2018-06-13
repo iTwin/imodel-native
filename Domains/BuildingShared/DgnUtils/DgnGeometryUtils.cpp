@@ -568,3 +568,133 @@ bvector<double>& zElevationVector
 
     return BSISUCCESS;
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Nerijus.Jakeliunas              06/2017
+//---------------+---------------+---------------+---------------+---------------+------
+CurveVectorPtr DgnGeometryUtils::ExtractBottomFaceShape(Dgn::SpatialLocationElementCR extrusionThatIsSolid)
+    {
+    auto pGeometrySource = extrusionThatIsSolid.ToGeometrySource();
+    if (nullptr == pGeometrySource)
+        {
+        return nullptr;
+        }
+
+    Dgn::GeometryCollection geomDatas(*pGeometrySource);
+    for (auto geomData : geomDatas)
+        {
+        switch (geomData.GetEntryType())
+            {
+            case (Dgn::GeometryCollection::Iterator::EntryType::BRepEntity):
+            {
+            Dgn::IBRepEntityPtr solidPtr = (*geomData).GetGeometryPtr()->GetAsIBRepEntity();
+            if (solidPtr.IsValid() && (solidPtr->GetEntityType() == Dgn::IBRepEntity::EntityType::Solid))
+                {
+                return DgnGeometryUtils::ExtractXYProfileFromSolid(*solidPtr);
+                }
+            break;
+            }
+            case (Dgn::GeometryCollection::Iterator::EntryType::CurveVector):
+            {
+            CurveVectorPtr cvPtr = (*geomData).GetGeometryPtr()->GetAsCurveVector();
+            if (cvPtr.IsValid())
+                {
+                if (cvPtr->IsClosedPath())
+                    {
+                    return cvPtr; //data from ABD bridge has text artifacts and geometry.
+                    }
+
+                DPoint3d centroid;
+                DVec3d   normal;
+                double   area;
+                if (cvPtr->CentroidNormalArea(centroid, normal, area))
+                    {
+                    if (area > 0.0)
+                        {
+                        return cvPtr; //data from ABD bridge has text artifacts and geometry.
+                        }
+                    }
+                }
+
+            break;
+            }
+            }
+        }
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnGeometryUtils::GetDgnExtrusionDetail
+(
+    Dgn::SpatialLocationElementCR extrusionThatIsSolid,
+DgnExtrusionDetail& extDetail       //<= extrusion detail if success(true)
+)
+    {
+    auto pGeometrySource = extrusionThatIsSolid.ToGeometrySource ();
+    if (nullptr == pGeometrySource)
+        {
+        return false;
+        }
+
+    Dgn::GeometryCollection geomData (*pGeometrySource);
+    if (geomData.begin () == geomData.end ())
+        {
+        return false;
+        }
+
+    Transform elemToWorld = (*geomData.begin ()).GetGeometryToWorld ();
+
+    bool status = false;
+
+    Dgn::GeometricPrimitivePtr geomPtr = (*geomData.begin()).GetGeometryPtr();
+    if (geomPtr.IsValid())
+        {
+        ISolidPrimitivePtr solidPrimitive = geomPtr->GetAsISolidPrimitive();
+        if (solidPrimitive.IsValid())
+            {
+            solidPrimitive->TransformInPlace(elemToWorld);
+            status = solidPrimitive->TryGetDgnExtrusionDetail(extDetail);
+            }
+        }
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Nerijus.Jakeliunas               09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr DgnGeometryUtils::GetBaseShape(Dgn::SpatialLocationElementCR extrusionThatIsSolid)
+    {
+    DgnExtrusionDetail extDetail;
+    if (DgnGeometryUtils::GetDgnExtrusionDetail(extrusionThatIsSolid, extDetail))
+        {
+        return extDetail.FractionToProfile(0.0);
+        }
+
+    CurveVectorPtr planePtr = DgnGeometryUtils::ExtractBottomFaceShape(extrusionThatIsSolid);
+    if (!planePtr.IsValid())
+        {
+        BeAssert(false && "Failed to extract base shape");
+        BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BuildingSpacePlanning")->error("DgnGeometryUtils::Failed to extract base shape.\n");
+
+        DRange3d range = extrusionThatIsSolid.GetPlacement().CalculateRange();
+        bvector<DPoint3d> points =
+            {
+            range.low,
+            { range.high.x, range.low.y, range.low.z },
+            { range.high.x, range.high.y, range.low.z },
+            { range.low.x, range.high.y, range.low.z },
+            range.low,
+            };
+
+        planePtr = CurveVector::CreateLinear(points, CurveVector::BOUNDARY_TYPE_Outer);
+        }
+    else
+        {
+        planePtr->TransformInPlace(extrusionThatIsSolid.GetPlacementTransform());
+        }
+
+    return planePtr;
+    }
