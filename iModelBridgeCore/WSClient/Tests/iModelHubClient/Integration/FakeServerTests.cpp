@@ -86,6 +86,9 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
     return iModelCreation;
     }
 END_UNNAMED_NAMESPACE
+//=======================================================================================
+//  FakeServerFixture Tests
+//=======================================================================================
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    12/2017
@@ -93,23 +96,21 @@ END_UNNAMED_NAMESPACE
 TEST_F(FakeServerFixture, CreateiModel)
     {
 
-    Utf8String iModelName("BriefcaseTest");
-    Utf8String description("This is a test uploadfile2");
-    Json::Value objectCreationJson = iModelCreationJson(iModelName, description);
-
-    Utf8String url("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--1b2b32312-3222-3212-63d3-12312d4rr4/ProjectScope/iModel");
-    
+    Utf8String iModelName = "BriefcaseTest";
+    Utf8String description = "This is a test uploadfile2";
+    Utf8String url = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--1b2b32312-3222-3212-63d3-12312d4rr4/ProjectScope/iModel";
     Utf8String method = "POST";
+
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
     Request request(url, method, handlePtr);
-    request.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)));
+    request.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(iModelCreationJson(iModelName, description))));
     Response response = request.PerformAsync()->GetResult();
-    ASSERT_EQ(HttpStatus::Created ,  response.GetHttpStatus());
+    ASSERT_EQ(HttpStatus::Created, response.GetHttpStatus());
 
     //uploading seed
     HttpBodyPtr respBody = response.GetContent()->GetBody();
-    char readBuff[100000] ;
-    size_t buffSize = 100000;
+    const size_t buffSize = 100000;
+    char readBuff[buffSize];
     respBody->Read(readBuff, buffSize);
     Utf8String reqBodyRead(readBuff);
 
@@ -133,7 +134,6 @@ TEST_F(FakeServerFixture, CreateiModel)
     
     BeFile file;
     file.Open(fileToUpload, BeFileAccess::Read);
-
     uint64_t fileSize;
     ASSERT_EQ(BeFileStatus::Success, file.GetSize(fileSize));
     file.Close();
@@ -157,10 +157,31 @@ TEST_F(FakeServerFixture, CreateiModel)
     Request reqUploadingSeed(urlUploadSeed, method, handlePtr);
     reqUploadingSeed.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
     reqUploadingSeed.SetRequestBody(HttpRangeBody::Create(body, chunkSize * chunkNumber, bytesTo));
-
-    
     response = reqUploadingSeed.PerformAsync()->GetResult();
     ASSERT_EQ(HttpStatus::Created, response.GetHttpStatus());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Kyle.Abramowitz    06/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FakeServerFixture, CreatingDuplicateNamedModelsReturns409Status)
+    {
+    Utf8String iModelName = "Duplicate";
+    Utf8String description = "This will be a duplicate file";
+    Utf8String url = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--1b2b32312-3222-3212-63d3-12312d4rr4/ProjectScope/iModel";
+    Utf8String method = "POST";
+    Json::Value objectCreationJson = iModelCreationJson(iModelName, description);
+    IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
+    // Create first request
+    Request request(url, method, handlePtr);
+    request.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)));
+    Response response = request.PerformAsync()->GetResult();
+    ASSERT_EQ(HttpStatus::Created, response.GetHttpStatus());
+    // Create second request using the same parameters
+    Request duplicateRequest(url, method, handlePtr);
+    duplicateRequest.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)));
+    response = duplicateRequest.PerformAsync()->GetResult();
+    ASSERT_EQ(HttpStatus::Conflict, response.GetHttpStatus());
     }
 
 /*--------------------------------------------------------------------------------------+
