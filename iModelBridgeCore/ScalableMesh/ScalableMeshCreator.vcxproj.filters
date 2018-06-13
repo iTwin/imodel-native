@@ -483,6 +483,9 @@
     <ClInclude Include="STM\Stores\SMPublisher.h">
       <Filter>Includes\Core\Stores</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCreatorWorker.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="STM\ImportPlugins\CivilDTMFileImporter.cpp">

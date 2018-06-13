@@ -488,10 +488,10 @@ StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProvide
     unitTransform.form3d[0][0] = ratioToMeterH;
     unitTransform.form3d[1][1] = ratioToMeterH;
     unitTransform.form3d[2][2] = ratioToMeterV;
-#else
+#else  
     unitTransform.InitFromScaleFactors(ratioToMeterH, ratioToMeterH, ratioToMeterV);
 #endif
-
+   
     unitTransform.Multiply(range.low, range.low);
     unitTransform.Multiply(range.high, range.high);    
 
@@ -814,7 +814,7 @@ SMSQLiteFilePtr IScalableMeshCreator::Impl::GetFile(bool fileExists)
         //m_smSQLitePtr = new SMSQLiteFile();
 
         // Create the storage object and databases
-        if (m_scmPtr == 0)
+        if (m_scmPtr == 0) 
         {
             assert(!m_scmFileName.empty());
             m_smSQLitePtr = new SMSQLiteFile();

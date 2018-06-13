@@ -422,7 +422,7 @@
 
     <Product Name="ScalableMeshWorker" SaveProduct="true" >
         <SubPart PartName="ScalableMeshWorkerExe" />
-        <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <Directories DirectoryListName="DgnPlatformDirList" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <Directories DirectoryListName="ScalableMeshATP" />
     </Product>

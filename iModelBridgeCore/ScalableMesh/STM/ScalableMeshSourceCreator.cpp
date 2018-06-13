@@ -75,8 +75,6 @@ size_t nGraphPins =0;
 size_t nGraphReleases = 0;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-#define SM_ONE_SPLIT_THRESHOLD 10000
-#define SM_BIG_SPLIT_THRESHOLD 5000000
 
 
 bool canCreateFile(const WChar* fileName)
@@ -260,7 +258,15 @@ IScalableMeshSourceCreator::IScalableMeshSourceCreator(Impl* implP)
 
 
 IScalableMeshSourceCreator::~IScalableMeshSourceCreator()
-    {}
+    {
+    //Since ScalableMeshCreator::~Impl is implemented in another DLL and its implementation is hidden the code below is require to ensure that the destructors of the 
+    //Impl classes inheriting from ScalableMeshCreator::Impl are called.
+    if (m_implP.get() != nullptr)
+        {
+        IScalableMeshSourceCreator::Impl* impl = (IScalableMeshSourceCreator::Impl*)m_implP.release();
+        delete impl;
+        }
+    }
 
 bool IScalableMeshSourceCreator::AreAllSourcesReachable() const
     {
@@ -345,7 +351,7 @@ IScalableMeshSourceCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
     m_extent(DRange2d::NullRange())
     {
     InitSources();
-    }
+    }   
 
 IScalableMeshSourceCreator::Impl::~Impl()
     {

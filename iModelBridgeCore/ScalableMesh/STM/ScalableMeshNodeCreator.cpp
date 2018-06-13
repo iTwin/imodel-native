@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 21:55:29 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -57,7 +57,15 @@ IScalableMeshNodeCreator::IScalableMeshNodeCreator(Impl* implP)
 
 
 IScalableMeshNodeCreator::~IScalableMeshNodeCreator()
-    {}
+    {
+    //Since ScalableMeshCreator::~Impl is implemented in another DLL and its implementation is hidden the code below is require to ensure that the destructors of the 
+    //Impl classes inheriting from ScalableMeshCreator::Impl are called.
+    if (m_implP.get() != nullptr)
+        {
+        IScalableMeshNodeCreator::Impl* impl = (IScalableMeshNodeCreator::Impl*)m_implP.release();
+        delete impl;
+        }
+    }
 
 
 IScalableMeshNodeCreator::Impl::Impl(const WChar* scmFileName)
@@ -149,7 +157,7 @@ int IScalableMeshNodeCreator::Impl::CreateScalableMesh(bool isSingleFile, bool r
             // NOTE: Need to be able to recreate : Or the file offers some functions for deleting all its data directory or the file name can be obtained
             }
 
-
+  
         SetupFileForCreation();
 
         m_smSQLitePtr->SetSingleFile(isSingleFile);

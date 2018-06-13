@@ -17,6 +17,7 @@
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshPolicy.h>
 #include <ScalableMesh\IScalableMeshSourceCreator.h>
+#include <ScalableMesh\IScalableMeshSourceCreatorWorker.h>
 
 #include "SMWorkerDefinitions.h"
 
@@ -312,17 +313,17 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pXml
 /*---------------------------------------------------NEEDS_WORK_MST : Duplicate from ATP Code - END-----------------------------------------------------------*/
 
 
-    TaskScheduler::TaskScheduler(BeFileName& taskFolderName)
-        {
-        m_taskFolderName = taskFolderName;
-        }
+TaskScheduler::TaskScheduler(BeFileName& taskFolderName)
+    {
+    m_taskFolderName = taskFolderName;
+    }
 
-    TaskScheduler::~TaskScheduler()
-        {
-        }
+TaskScheduler::~TaskScheduler()
+    {
+    }
 
-    void TaskScheduler::Start()
-        {
+void TaskScheduler::Start()
+    {
 
 /*
         BENTLEYDLL_EXPORT StatusInt GetCurrentEntry(BeFileName& name, bool& isDir, bool fullPath = true);
@@ -330,49 +331,74 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pXml
         //! Move to the next directory entry
         BENTLEYDLL_EXPORT StatusInt ToNext();
 */            
-        bool isThereTaskAvaialble = true;
-    
-        while (isThereTaskAvaialble)
-            { 
-            isThereTaskAvaialble = false;
+    bool isThereTaskAvaialble = true;
 
-            BeDirectoryIterator dirIter(m_taskFolderName);
+    while (isThereTaskAvaialble)
+        { 
+        isThereTaskAvaialble = false;
 
-            BeFileName name;
-            bool isDir;
-                        
-            while (SUCCESS == dirIter.GetCurrentEntry(name, isDir))
-                {                                
-                if (isDir == false && 0 == name.GetExtension().CompareTo(L"xml"))
+        BeDirectoryIterator dirIter(m_taskFolderName);
+
+        BeFileName name;
+        bool isDir;
+                    
+        while (SUCCESS == dirIter.GetCurrentEntry(name, isDir))
+            {                                
+            if (isDir == false && 0 == name.GetExtension().CompareTo(L"xml"))
+                {
+                isThereTaskAvaialble = true;
+
+                struct _stat64i32 buffer;
+
+                if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
+
+                FILE* file = _wfopen(name, L"ab+");                    
+                                    
+                ProcessTask(file);
+
+                file = _wfreopen(name, L"w", file);
+
+                fclose(file);
+
+                while (0 != _wremove(name))
                     {
-                    isThereTaskAvaialble = true;
-
-                    struct _stat64i32 buffer;
-
-                    if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
-
-                    FILE* file = _wfopen(name, L"ab+");                    
-                                        
-                    ProcessTask(file);
-
-                    file = _wfreopen(name, L"w", file);
-
-                    fclose(file);
-
-                    while (0 != _wremove(name))
-                        {
-                        if (_wstat(name.c_str(), &buffer) != 0) break;
-                        }
+                    if (_wstat(name.c_str(), &buffer) != 0) break;
                     }
+                }
 
-                dirIter.ToNext();
-                }                   
-            }
+            dirIter.ToNext();
+            }                   
         }
 
+    m_sourceCreatorWorkerPtr = nullptr;
+    }
+    
+void TaskScheduler::GetScalableMeshFileName(BeFileName& smFileName) const
+    {
+    smFileName.AppendString(m_taskFolderName.c_str());    
+    smFileName.AppendString(L"\\generated3sm.3sm");
+    }
+
+IScalableMeshSourceCreatorWorkerPtr TaskScheduler::GetSourceCreatorWorker()
+    {
+    if (!m_sourceCreatorWorkerPtr.IsValid())
+        {
+        BeFileName smFileName;
+
+        GetScalableMeshFileName(smFileName);
+
+        StatusInt status;
+        
+        m_sourceCreatorWorkerPtr = IScalableMeshSourceCreatorWorker::GetFor(smFileName.c_str(), status);
+
+        assert(m_sourceCreatorWorkerPtr.IsValid());            
+        }
+
+    return m_sourceCreatorWorkerPtr;
+    }
 
 
-    bool TaskScheduler::ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType& t)
+bool TaskScheduler::ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType& t)
     {
         WString testType;
         StatusInt status = pXmlTaskNode->GetAttributeStringValue(testType, "type");
@@ -396,75 +422,75 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pXml
     }
 
 
-    bool TaskScheduler::ProcessTask(FILE* file)
+bool TaskScheduler::ProcessTask(FILE* file)
+    {
+    assert(file != nullptr);
+
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    BeXmlStatus status;
+    WString     errorMsg;
+
+    bvector<char> xmlFileContent(size);
+    size_t readSize = fread(&xmlFileContent[0], 1, size, file);
+    assert(readSize == size);
+
+    //BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(status, testPlanPath.c_str(), &errorMsg); 
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromMemory(status, &xmlFileContent[0], xmlFileContent.size(), &errorMsg);
+
+    if (pXmlDom == 0)
         {
-        assert(file != nullptr);
+        //assert(false && "Invalid test plan filename");
+        return false;
+        }
 
-        fseek(file, 0, SEEK_END);
-        long size = ftell(file);
-        fseek(file, 0, SEEK_SET);
-
-        BeXmlStatus status;
-        WString     errorMsg;
-
-        bvector<char> xmlFileContent(size);
-        size_t readSize = fread(&xmlFileContent[0], 1, size, file);
-        assert(readSize == size);
-
-        //BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(status, testPlanPath.c_str(), &errorMsg); 
-        BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromMemory(status, &xmlFileContent[0], xmlFileContent.size(), &errorMsg);
-
-        if (pXmlDom == 0)
-            {
-            //assert(false && "Invalid test plan filename");
-            return false;
-            }
-
-        BeXmlNodeP pXmlTaskNode(pXmlDom->GetRootElement());
-        if (0 != BeStringUtilities::Stricmp(pXmlTaskNode->GetName(), "workerTask"))
-            {
-            //assert(false && "Invalid test plan format");
-            return false;
-            }
+    BeXmlNodeP pXmlTaskNode(pXmlDom->GetRootElement());
+    if (0 != BeStringUtilities::Stricmp(pXmlTaskNode->GetName(), "workerTask"))
+        {
+        //assert(false && "Invalid test plan format");
+        return false;
+        }
 
 /*
-        FILE*          pResultFile = 0;
-        if (!OpenResultFile(pXmlTaskNode, pResultFile)) return false;
+    FILE*          pResultFile = 0;
+    if (!OpenResultFile(pXmlTaskNode, pResultFile)) return false;
 */
-        WorkerTaskType t;
-        if (!ParseWorkerTaskType(pXmlTaskNode, t))
-            {
-            assert(false && "Invalid worker task type");
-            //fclose(pResultFile);
-            return false;
-            }
-        //fwprintf(pResultFile, GetHeaderForTestType(t).c_str());
-        //BeXmlNodeP pTaskNode = pXmlTaskNode->GetFirstChild();
+    WorkerTaskType t;
+    if (!ParseWorkerTaskType(pXmlTaskNode, t))
+        {
+        assert(false && "Invalid worker task type");
+        //fclose(pResultFile);
+        return false;
+        }
+    //fwprintf(pResultFile, GetHeaderForTestType(t).c_str());
+    //BeXmlNodeP pTaskNode = pXmlTaskNode->GetFirstChild();
 /*
         while (0 != pXmlTaskNode)
             {
 */
-            switch (t)
-                {
-                case WorkerTaskType::CUT:
-                    PerformCutTask(pXmlTaskNode/*, pResultFile*/);
-                    break;
-                case WorkerTaskType::FILTER:
-                    PerformFilterTask(pXmlTaskNode/*, pResultFile*/);
-                    break;
-                case WorkerTaskType::INDEX:
-                    PerformIndexTask(pXmlTaskNode/*, pResultFile*/);
-                    break;
-                case WorkerTaskType::MESH:
-                    PerformMeshTask(pXmlTaskNode/*, pResultFile*/);
-                    break;
-                case WorkerTaskType::STITCH:
-                    PerformStitchTask(pXmlTaskNode/*, pResultFile*/);
-                    break;
-                default: break;
-                }
+        switch (t)
+            {
+            case WorkerTaskType::CUT:
+                PerformCutTask(pXmlTaskNode/*, pResultFile*/);
+                break;
+            case WorkerTaskType::FILTER:
+                PerformFilterTask(pXmlTaskNode/*, pResultFile*/);
+                break;
+            case WorkerTaskType::INDEX:
+                PerformIndexTask(pXmlTaskNode/*, pResultFile*/);
+                break;
+            case WorkerTaskType::MESH:
+                PerformMeshTask(pXmlTaskNode/*, pResultFile*/);
+                break;
+            case WorkerTaskType::STITCH:
+                PerformStitchTask(pXmlTaskNode/*, pResultFile*/);
+                break;
+            default: break;
+            }
 /*
-            pXmlTaskNode = pXmlTaskNode->GetNextSibling();
+        pXmlTaskNode = pXmlTaskNode->GetNextSibling();
             }
 
         if (pResultFile != 0)
@@ -472,83 +498,83 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pXml
             fclose(pResultFile);
             }
 */
-        return true;
+    return true;
 
-        }
+    }
 
 
-    void TaskScheduler::PerformCutTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
+void TaskScheduler::PerformCutTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
+    {
+
+    }
+
+void TaskScheduler::PerformFilterTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
+    {
+
+    }
+
+void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
+    {        
+    BeFileName smFileName;
+
+    GetScalableMeshFileName(smFileName);    
+
+    _wremove(smFileName.c_str());
+    
+    StatusInt createStatus;
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(smFileName.c_str(), createStatus));
+
+    if (creatorPtr == 0)
         {
-
+        //printf("ERROR : cannot create STM file\r\n");
+        return;
         }
+   
 
-    void TaskScheduler::PerformFilterTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
-        {
+    ScalableMeshCreationMethod creationMethod = SCM_CREATION_METHOD_ONE_SPLIT;
 
-        }
-
-    void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
-        {        
-        BeFileName smFileName(m_taskFolderName);
-
-        smFileName.AppendString(L"\\generated3sm.3sm");
-
-        _wremove(smFileName.c_str());
-        
-        StatusInt createStatus;
-        BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(smFileName.c_str(), createStatus));
-
-        if (creatorPtr == 0)
-            {
-            //printf("ERROR : cannot create STM file\r\n");
-            return;
-            }
-       
-
-        ScalableMeshCreationMethod creationMethod = SCM_CREATION_METHOD_ONE_SPLIT;
-
-        creatorPtr->SetCreationMethod(creationMethod);
-        creatorPtr->SetCreationCompleteness(SCM_CREATION_COMPLETENESS_INDEX_ONLY);
-        
+    creatorPtr->SetCreationMethod(creationMethod);
+    creatorPtr->SetCreationCompleteness(SCM_CREATION_COMPLETENESS_INDEX_ONLY);
+    
 
 /*
-        double nTimeToCreateSeeds = 0, nTimeToEstimateParams = 0, nTimeToFilterGround = 0;*/
+    double nTimeToCreateSeeds = 0, nTimeToEstimateParams = 0, nTimeToFilterGround = 0;*/
 
-        WString gcsKeyName;//
+    WString gcsKeyName;//
 
-        auto status = pXmlTaskNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
+    auto status = pXmlTaskNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
 
-        if (status == BEXML_Success)
+    if (status == BEXML_Success)
+        {
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+        StatusInt status = creatorPtr->SetBaseGCS(baseGCSPtr);
+        assert(status == SUCCESS);
+        }//
+
+    bool streamFromMapBox = false;
+    bool streamFromBingMap = false;
+
+    WString streamAttr;
+    auto readStatus = pXmlTaskNode->GetAttributeStringValue(streamAttr, "textureStreaming");
+
+    if (readStatus == BEXML_Success)
+        {
+        if (0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"mapbox"))
             {
-            BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
-            StatusInt status = creatorPtr->SetBaseGCS(baseGCSPtr);
-            assert(status == SUCCESS);
-            }//
-
-        bool streamFromMapBox = false;
-        bool streamFromBingMap = false;
-
-        WString streamAttr;
-        auto readStatus = pXmlTaskNode->GetAttributeStringValue(streamAttr, "textureStreaming");
-
-        if (readStatus == BEXML_Success)
-            {
-            if (0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"mapbox"))
+                streamFromMapBox = true;
+            }
+            else
+                if (0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"bingmap"))
                 {
-                    streamFromMapBox = true;
+                    streamFromBingMap = true;
                 }
                 else
-                    if (0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"bingmap"))
-                    {
-                        streamFromBingMap = true;
-                    }
-                    else
-                    {
-                        //assert(!"Unknown textureStreaming value");
-                    }
+                {
+                    //assert(!"Unknown textureStreaming value");
                 }
+            }
 
-        if (ParseSourceSubNodes(creatorPtr->EditSources(), pXmlTaskNode) == true)
+    if (ParseSourceSubNodes(creatorPtr->EditSources(), pXmlTaskNode) == true)
             {
 #if 0
                 SetGroundDetectionDuration(0.0);
@@ -593,7 +619,14 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pXml
 #endif
 
             creatorPtr->SaveToFile();
-            creatorPtr = nullptr;
+            creatorPtr = nullptr;            
+            
+
+            IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker());
+                        
+            status = creatorWorkerPtr->CreateMeshTasks();
+
+            assert(status == SUCCESS);
 
 /*
 smFileName
@@ -612,14 +645,18 @@ smFileName
     
         }
 
-    void TaskScheduler::PerformMeshTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
-        {
+void TaskScheduler::PerformMeshTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
+    {
+    IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker());               
 
-        }
+    StatusInt status = creatorWorkerPtr->ProcessMeshTask(pXmlTaskNode);
 
-    void TaskScheduler::PerformStitchTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
-        {
+    assert(status == SUCCESS);
+    }
 
-        }
-    
+void TaskScheduler::PerformStitchTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
+    {
+
+    }
+
 END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE

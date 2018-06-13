@@ -367,6 +367,7 @@ bb -ax64 -p ScalableMeshCreator  -f  ScalableMesh -r  ScalableMesh  re  Scalable
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCollection.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCollection.hpp" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCreator.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCreatorWorker.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceDescription.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceImportConfig.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceImporter.h" />

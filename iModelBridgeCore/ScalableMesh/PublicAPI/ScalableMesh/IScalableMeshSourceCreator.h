@@ -31,6 +31,7 @@ struct IScalableMeshSourceCreator : public IScalableMeshCreator
     {
     private:
         /*__PUBLISH_SECTION_END__*/
+        friend struct                       IScalableMeshSourceCreatorWorker;
         friend struct                       IScalableMeshCreator;
         struct                              Impl;
         //std::auto_ptr<Impl>                 m_implP;

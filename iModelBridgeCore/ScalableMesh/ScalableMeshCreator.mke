@@ -215,6 +215,8 @@ $(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends) 
 
 $(o)ScalableMeshSourceCreator$(oext) : $(stmDir)ScalableMeshSourceCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+$(o)ScalableMeshSourceCreatorWorker$(oext) : $(stmDir)ScalableMeshSourceCreatorWorker.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
 $(o)ScalableMeshNodeCreator$(oext) : $(stmDir)ScalableMeshNodeCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshFeature$(oext) : $(stmDir)ScalableMeshFeature.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -471,8 +473,9 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)RealityPlatform.lib \
     $(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)CCApi.lib\
-    $(ContextSubpartsLibs)BeCurl.lib
-
+    $(ContextSubpartsLibs)BeCurl.lib \
+    $(ContextSubpartsLibs)BeXml.lib
+    
 
 LINKER_LIBRARIES            = \
 	$(ContextSubpartsLibs)ScalableMeshCore.lib \

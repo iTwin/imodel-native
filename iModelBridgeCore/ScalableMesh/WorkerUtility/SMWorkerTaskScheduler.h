@@ -7,7 +7,8 @@
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMesh.h>
-#include <ImagePP\h\ImageppAPI.h>
+#include <ScalableMesh/IScalableMeshSourceCreatorWorker.h>
+#include <ImagePP/h/ImageppAPI.h>
 #include <Bentley/BeFileListIterator.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
@@ -23,6 +24,12 @@ struct TaskScheduler
     private:
     
         BeFileName m_taskFolderName;
+
+        IScalableMeshSourceCreatorWorkerPtr m_sourceCreatorWorkerPtr;
+
+        void GetScalableMeshFileName(BeFileName& smFileName) const;
+
+        IScalableMeshSourceCreatorWorkerPtr GetSourceCreatorWorker();
 
         bool ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType& t);
 

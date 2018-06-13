@@ -32,6 +32,7 @@
 #include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/IScalableMeshCreator.h>
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
+#include <ScalableMesh/IScalableMeshSourceCreatorWorker.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include "ScalableMeshProgress.h"
 
@@ -115,6 +116,7 @@ struct IScalableMeshCreator::Impl
     private :
         
         friend struct                       IScalableMeshCreator;
+        friend struct                       IScalableMeshSourceCreatorWorker::Impl;
         friend struct                       IScalableMeshSourceCreator::Impl;
         friend struct                       IScalableMeshNodeCreator::Impl;
 
@@ -201,7 +203,7 @@ struct IScalableMeshCreator::Impl
         BENTLEY_SM_EXPORT explicit                            Impl                           (const WChar*                          scmFileName);
         BENTLEY_SM_EXPORT explicit                            Impl                           (const IScalableMeshPtr&                        iDTMFilePtr);
 
-        BENTLEY_SM_EXPORT                                    ~Impl                          ();
+        BENTLEY_SM_EXPORT                                     ~Impl                          ();
 
         BENTLEY_SM_EXPORT const GeoCoords::GCS&               GetGCS                         () const;
 

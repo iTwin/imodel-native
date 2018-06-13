@@ -89,7 +89,6 @@ struct ScalableMeshWorker : DgnPlatformLib::Host
 
         BeFileName          m_taskFolderName;
         bool                m_optionClean;
-        IScalableMeshPtr    m_sMesh;
         HANDLE m_pipe;
 
         WString GetArgValueW(WCharCP arg);
@@ -98,7 +97,7 @@ struct ScalableMeshWorker : DgnPlatformLib::Host
 
     public:
         BeFileName          m_outputName;
-        ScalableMeshWorker() : m_sMesh(nullptr), m_pipe(NULL) {}
+        ScalableMeshWorker() : m_pipe(NULL) {}
         int PrintUsage(WCharCP programName);
         int ParseCommandLine(int argc, WCharP argv[]);
         BentleyStatus Initialize(int argc, WCharP argv[]);
