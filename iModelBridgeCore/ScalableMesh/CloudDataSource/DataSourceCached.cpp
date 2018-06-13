@@ -3,6 +3,23 @@
 #include "DataSourceAccount.h"
 #include <Bentley/BeFileName.h>
 
+#ifndef NDEBUG
+void SetThreadName(DWORD dwThreadID, char* threadName)
+{
+THREADNAME_INFO info;
+info.dwType = 0x1000;
+info.szName = threadName;
+info.dwThreadID = dwThreadID;
+info.dwFlags = 0;
+
+__try
+    {
+    RaiseException(MS_VC_EXCEPTION, 0, sizeof(info) / sizeof(ULONG_PTR), (ULONG_PTR*)&info);
+    }
+__except (EXCEPTION_EXECUTE_HANDLER)
+    {}
+}
+#endif
 
 DataSourceCached::DataSourceCached(DataSourceAccount * account, const SessionName &session) : Super(account, session)
 {
@@ -74,6 +91,20 @@ DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *d
 
 }
 
+
+CacheWriter::Ptr CacheWriter::s_cacheWriter = nullptr;
+
+CacheWriter::Ptr CacheWriter::GetCacheWriter()
+    { 
+    if (!s_cacheWriter.IsValid()) s_cacheWriter = new CacheWriter(); 
+    return s_cacheWriter; 
+    }
+
+void CacheWriter::ShutdownCacheWriter()
+    {
+    if (s_cacheWriter.IsValid()) s_cacheWriter->Shutdown();
+    }
+
 DataSourceStatus DataSourceCached::writeToCache(DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize size)
 {
     DataSource            *    dataSource;
@@ -82,14 +113,9 @@ DataSourceStatus DataSourceCached::writeToCache(DataSourceBuffer::BufferData *de
     dataSource = getCacheDataSource();
     if (dataSource)
     {
-        if ((dataSource->open(getCacheURL(), DataSourceMode_Write)).isFailed())
-            return statusErrorWrite;
-
-        if ((dataSource->write(dest, size)).isFailed())
-            return statusErrorWrite;
-
-        if ((dataSource->close()).isFailed())
-            return statusErrorWrite;
+        DataSourceURL url;
+        dataSource->getURL(url);
+        CacheWriter::GetCacheWriter()->push(new CacheWriter::CacheData(url, dest, size));
     }
 
     return DataSourceStatus();
