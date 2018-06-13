@@ -177,9 +177,10 @@ if __name__ == '__main__':
     if 0 == len(advicestr):
         print "All tests passed."
         exit (0)
+    '''
     preventautoignore=filters.PreventAutoIgnoreTests(failedtestlist_temp)
     if preventautoignore==1:
         breakonfailure=1
-        
+     '''   
     print advicestr
     exit(breakonfailure)
