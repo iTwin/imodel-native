@@ -2767,8 +2767,7 @@ void Db::_OnDbChangedByOtherConnection()
 ProfileState Db::CheckProfileVersion(ProfileVersion const& expectedProfileVersion, ProfileVersion const& fileProfileVersion, ProfileVersion const& minimumUpgradableProfileVersion, Utf8CP profileName)
     {
     BeAssert(!Utf8String::IsNullOrEmpty(profileName));
-    BeAssert(minimumUpgradableProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_MajorMinor) == 0 &&
-             minimumUpgradableProfileVersion.GetSub1() == 0 && minimumUpgradableProfileVersion.GetSub2() == 0 && "Minimum upgradable version must have same major/minor as expected version and sub1 and sub2 must be 0.");
+    BeAssert(minimumUpgradableProfileVersion.GetSub1() == 0 && minimumUpgradableProfileVersion.GetSub2() == 0 && "Minimum upgradable version's sub1 and sub2 must be 0.");
 
     const int fileVersionComp = fileProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_All);
 
@@ -2804,7 +2803,7 @@ ProfileState Db::CheckProfileVersion(ProfileVersion const& expectedProfileVersio
         return ProfileState::Older(ProfileState::CanOpen::No, false);;
         }
 
-    const bool isUpgradable = fileProfileVersion.CompareTo(minimumUpgradableProfileVersion, ProfileVersion::VERSION_MajorMinor) >= 0;
+    const bool isUpgradable = fileProfileVersion.CompareTo(minimumUpgradableProfileVersion) >= 0;
 
     BeAssert(fileVersionMajorMinorComp == 0);
 
