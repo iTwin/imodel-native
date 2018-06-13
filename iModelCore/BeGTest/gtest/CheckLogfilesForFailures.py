@@ -2,7 +2,7 @@
 #
 #     $Source: gtest/CheckLogfilesForFailures.py $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 import os, sys, re
@@ -13,6 +13,10 @@ import os, sys, re
 failedpat = re.compile (r"FAILED\s*]\s*(\w+\.\w+|\w+/\w+\.\w+/\d+)", re.I)
 summarypat = re.compile (r"\[==========\].*ran", re.I)
 runpat = re.compile (r"RUN\s*]\s*(\w+\.\w+)", re.I)
+
+filedir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(filedir)
+import IgnoreFilters as filters
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Jeff.Marker
@@ -48,7 +52,9 @@ def checkLogFileForFailures(logfilename):
     summaryLineNo = 0
     summarystr = logfilename + '\n'
     lines=''
-
+    global failedtestlist_temp
+    failedtestlist_temp=[]
+    
     with open(logfilename, 'r') as logfile:
         lines=logfile.readlines()
         for line in lines:
@@ -89,6 +95,7 @@ def checkLogFileForFailures(logfilename):
                 if failed != None:
                     failedTestsList = failedTestsList + colon + failed.group(1)
                     colon = ':'
+                    failedtestlist_temp.append(failed.group(1))
                     continue
 
     if not anyFailures and foundSummary:
@@ -170,6 +177,9 @@ if __name__ == '__main__':
     if 0 == len(advicestr):
         print "All tests passed."
         exit (0)
-
+    if breakonfailure == 0 and len(advicestr) != 0 :
+        preventautoignore=filters.PreventAutoIgnoreTests(failedtestlist_temp)
+        if preventautoignore==1:
+            exit(1)
     print advicestr
     exit(breakonfailure)
