@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: FakeServer/RequestHandler.cpp $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <FakeServer/RequestHandler.h>
 #include <Bentley/BeTest.h>
 #include "../iModelHubClient/Utils.h"
@@ -7,6 +14,9 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 RequestHandler::RequestHandler()
     {
     BeFileName outPath;
@@ -17,16 +27,26 @@ RequestHandler::RequestHandler()
     serverPath = outPath.GetNameUtf8();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 RequestHandler::~RequestHandler()
     {
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void CreateTable(Utf8CP tableName, BentleyB0200::BeSQLite::Db& db, Utf8CP ddl)
     {
     if (!db.TableExists(tableName))
         if (DbResult::BE_SQLITE_OK != db.CreateTable(tableName, ddl))
             return;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String GetInstanceid(Utf8String str)
     {
     bvector<Utf8String> tokens;
@@ -43,6 +63,10 @@ Utf8String GetInstanceid(Utf8String str)
     instanceid.append(tokens[5]);
     return instanceid;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 bvector<Utf8String> ParseUrl(Request req, Utf8CP delimiter)
     {
     Utf8String requestUrl = req.GetUrl();
@@ -52,6 +76,9 @@ bvector<Utf8String> ParseUrl(Request req, Utf8CP delimiter)
     return tokens;
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::PluginRequest(Request req)
     {
     const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>();
@@ -65,6 +92,9 @@ Response RequestHandler::PluginRequest(Request req)
     return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::BuddiRequest(Request req)
     {
     const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>();
@@ -81,9 +111,11 @@ Response RequestHandler::BuddiRequest(Request req)
     return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::ImsTokenRequest(Request req)
     {
-
     const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>();
     auto newHeaders = headers;
     newHeaders["Content-Type"] = "application/json";
@@ -94,6 +126,9 @@ Response RequestHandler::ImsTokenRequest(Request req)
     return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void RequestHandler::CreateTables(BentleyB0200::BeSQLite::Db *m_db)
     {
     if (!m_db->TableExists("Instances"))
@@ -110,6 +145,9 @@ void RequestHandler::CreateTables(BentleyB0200::BeSQLite::Db *m_db)
         CreateTable("Briefcases", *m_db, "BriefcaseId INTEGER, iModelId STRING, MergedChangeSetId STRING");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void RequestHandler::CheckDb()
     {
     BentleyB0200::BeSQLite::Db m_db;
@@ -129,6 +167,9 @@ void RequestHandler::CheckDb()
     m_db.CloseDb();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP ParseUrlFilter(Utf8String filter, Utf8CP table = "")
     {
     bvector<Utf8String> tokens, tokens2;
@@ -184,6 +225,10 @@ Utf8CP ParseUrlFilter(Utf8String filter, Utf8CP table = "")
         }
     return filterQuery.c_str();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void RequestHandler::Insert(bvector<Utf8String> insertStr)
     {
     BeFileName dbPath = GetDbPath();
@@ -202,7 +247,9 @@ void RequestHandler::Insert(bvector<Utf8String> insertStr)
     m_db.CloseDb();
     }
 
-
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Http::Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8CP url, Utf8StringCR body, const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>())
     {
     auto newHeaders = headers;
@@ -214,6 +261,9 @@ Http::Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8CP url, Utf8Strin
     return Http::Response(content, url, status, httpStatus);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value ParsedJson(Request req)
     {
     HttpBodyPtr reqBody = req.GetRequestBody();
@@ -228,6 +278,9 @@ Json::Value ParsedJson(Request req)
     return settings;
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::CreateiModelInstance(Request req)
     {
     BeGuid projGuid(true);
@@ -256,6 +309,9 @@ Response RequestHandler::CreateiModelInstance(Request req)
     return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::CreateSeedFileInstance(Request req)
     {
     Json::Value settings = ParsedJson(req);
@@ -319,6 +375,10 @@ Response RequestHandler::CreateSeedFileInstance(Request req)
         }
     return Response();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::UploadSeedFile(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -356,9 +416,11 @@ Response RequestHandler::UploadSeedFile(Request req)
     return Response();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::FileCreationConfirmation(Request req)
     {
-
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = args[7];
     Json::Value settings = ParsedJson(req);
@@ -403,9 +465,12 @@ Response RequestHandler::FileCreationConfirmation(Request req)
         }
     return Response();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::GetInitializationState(Request req)
     {
-
     //https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--0794d7ec-fc1d-4677-9831-dddbf2dbef24/iModelScope/SeedFile?$filter=FileId+eq+'0d45d871-bda7-40fa-b9d3-dfa9904ccaa7'
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = GetInstanceid(args[4]);
@@ -446,6 +511,10 @@ Response RequestHandler::GetInitializationState(Request req)
         }
     return Response();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::UploadNewSeedFile(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -496,12 +565,19 @@ Response RequestHandler::UploadNewSeedFile(Request req)
     return Response();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName RequestHandler::GetDbPath()
     {
     BeFileName dbName("ServerRepo.db");
     BeFileName dbPath(serverPath);
     return dbPath.AppendToPath(dbName);
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::CreateBriefcaseInstance(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -575,6 +651,10 @@ Response RequestHandler::CreateBriefcaseInstance(Request req)
 
     return Response();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::DeleteBriefcaseInstance(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -602,6 +682,10 @@ Response RequestHandler::DeleteBriefcaseInstance(Request req)
     auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
     return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::GetBriefcaseInfo(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -652,6 +736,10 @@ Response RequestHandler::GetBriefcaseInfo(Request req)
         }
     return Response();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::DownloadiModel(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -701,6 +789,9 @@ Response RequestHandler::DownloadiModel(Request req)
     return Response();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::GetiModels(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -743,6 +834,10 @@ Response RequestHandler::GetiModels(Request req)
         }
     return Response();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void RequestHandler::DeleteTables(Utf8String tableName)
     {
     BeFileName dbPath = GetDbPath();
@@ -757,6 +852,10 @@ void RequestHandler::DeleteTables(Utf8String tableName)
         }
     m_db.CloseDb();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::DeleteiModels(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -790,6 +889,9 @@ Response RequestHandler::DeleteiModels(Request req)
     return Response();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::PushChangeSetMetadata(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -874,6 +976,9 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
     return Response();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::GetChangeSetInfo(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -949,6 +1054,10 @@ Response RequestHandler::GetChangeSetInfo(Request req)
         }
     return Response();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 bool CheckConflict(BentleyB0200::BeSQLite::Db* m_db, Json::Value properties, Utf8String iModelid, Utf8String ObjectId)
     {
     Statement st;
@@ -965,6 +1074,10 @@ bool CheckConflict(BentleyB0200::BeSQLite::Db* m_db, Json::Value properties, Utf
     if (res == DbResult::BE_SQLITE_ROW) return true;
     return false;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::PushAcquiredLocks(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -1119,6 +1232,10 @@ Response RequestHandler::PushAcquiredLocks(Request req)
         }
     return Response();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP GetLockType(int t)
     {
     if (t == 0) return "Db";
@@ -1127,12 +1244,20 @@ Utf8CP GetLockType(int t)
     else if (t == 3) return "Schemas";
     else return "CodeSpecs";
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP GetLockLevel(int l)
     {
     if (l == 0) return "None";
     else if (l == 1) return "Shared";
     else return "Exclusive";
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::MultiLocksInfo(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -1198,6 +1323,9 @@ Response RequestHandler::MultiLocksInfo(Request req)
     return Response();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::LocksInfo(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -1245,6 +1373,10 @@ Response RequestHandler::LocksInfo(Request req)
         }
     return Response();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::CodesInfo(Request req)
     {
     Utf8String contentToWrite("{\"instances\":[]}");
@@ -1252,6 +1384,9 @@ Response RequestHandler::CodesInfo(Request req)
     return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::PerformGetRequest(Request req)
     {
     Utf8String urlExpected("https://qa-imodelhubapi.bentley.com/v2.0/Plugins");
@@ -1276,6 +1411,10 @@ Response RequestHandler::PerformGetRequest(Request req)
         return RequestHandler::CodesInfo(req);
     return Response();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::PerformOtherRequest(Request req)
     {
     Utf8String urlExpected("https://buddi.bentley.com/discovery.asmx");

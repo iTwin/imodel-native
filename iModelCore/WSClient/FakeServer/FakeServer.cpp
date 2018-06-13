@@ -1,6 +1,15 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: FakeServer/FakeServer.cpp $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <FakeServer/FakeServer.h>
 
-
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 BeFileNameStatus FakeServer::CreateiModelFromSeed(WCharCP seedFilePath, WCharCP serverPath)
     {
     BeFileName seedPathFile(seedFilePath);
@@ -17,9 +26,12 @@ BeFileNameStatus FakeServer::CreateiModelFromSeed(WCharCP seedFilePath, WCharCP 
         return BeFileNameStatus::UnknownError;
     return BeFileNameStatus::Success;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 BeFileNameStatus FakeServer::CreateiModel(BeFileName serverPath, WCharCP seedFile)
     {
-
     BeFileName servPathFile(serverPath);
     BeFileNameStatus stat = BeFileName::CreateNewDirectory(servPathFile);
     if (stat != BeFileNameStatus::Success)
@@ -34,6 +46,10 @@ BeFileNameStatus FakeServer::CreateiModel(BeFileName serverPath, WCharCP seedFil
         return BeFileNameStatus::UnknownError;
     return BeFileNameStatus::Success;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 BeFileNameStatus FakeServer::DeleteAlliModels(WCharCP serverPath)
     {
     BeFileNameStatus stat = BeFileName::EmptyAndRemoveDirectory(serverPath);
@@ -41,6 +57,10 @@ BeFileNameStatus FakeServer::DeleteAlliModels(WCharCP serverPath)
         return BeFileNameStatus::CantDeleteDir;
     return BeFileNameStatus::Success;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 BeFileNameStatus FakeServer::DeleteiModel(Utf8String serverPath, Utf8String filename)
     {
     BeFileName servPath(serverPath);
@@ -50,6 +70,10 @@ BeFileNameStatus FakeServer::DeleteiModel(Utf8String serverPath, Utf8String file
         return BeFileNameStatus::CantDeleteFile;
     return BeFileNameStatus::Success;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 BeFileNameStatus FakeServer::DownloadiModel(BeFileName downloadPath, CharCP serverPath, CharCP fileToDownload)
     {
     BeFileName basePath = downloadPath.GetDirectoryName();
@@ -67,10 +91,18 @@ BeFileNameStatus FakeServer::DownloadiModel(BeFileName downloadPath, CharCP serv
         return BeFileNameStatus::UnknownError;
     return BeFileNameStatus::Success;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 BeFileNameStatus FakeServer::AcquireiModel()
     {
     return BeFileNameStatus::Success;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr FakeServer::AcquireBriefcase(DbResult &res, WCharCP filePath, WCharP file) 
     {
     BeFileName filename(filePath);

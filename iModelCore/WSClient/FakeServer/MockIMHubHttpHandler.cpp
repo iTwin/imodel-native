@@ -1,15 +1,12 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: FakeServer/MockIMHubHttpHandler.cpp $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <FakeServer/MockIMHubHttpHandler.h>
 #include <BeHttp/ProxyHttpHandler.h>
-
-
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Farhad.Kabir    11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-MockIMSHttpHandler::MockIMSHttpHandler()
-    {
-
-    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    11/2017
