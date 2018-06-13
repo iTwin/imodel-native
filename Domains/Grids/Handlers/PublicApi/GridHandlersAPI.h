@@ -14,3 +14,4 @@
 #include "IntersectionCurveHandlers.h"
 #include "PortionHandlers.h"
 #include "GridHandlers.h"
+#include "GridCurveBundleHandler.h"

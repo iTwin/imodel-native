@@ -23,7 +23,17 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
+        <ECNavigationProperty propertyName="CurvesPortion" relationshipName="GridCurveBundleRefersToGridCurvesPortion" direction="Forward" description="Created GridCurves will be put into this GridCurvesPortion" />
     </ECEntityClass>
+
+    <ECRelationshipClass typeName="GridCurveBundleRefersToGridCurvesPortion" strength="embedding" strengthDirection="Backward" modifier="None" description="Maps GridCurveBundle to a GridCurvesPortion">
+        <Source multiplicity="(1..1)" roleLabel="puts GridCurves into" polymorphic="true">
+            <Class class="GridCurveBundle"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="contains GridCurves created by" polymorphic="true">
+            <Class class="GridCurvesPortion"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECRelationshipClass typeName="GridSurfaceDrivesGridCurveBundle" modifier="None" strength="referencing" description="a driving relationship which tells that gridsurface influences the creation of GridCurve">
       <BaseClass>bis:ElementDrivesElement</BaseClass>
@@ -61,19 +71,6 @@
       </Source>
       <Target multiplicity="(0..*)" roleLabel="is driven by" polymorphic="true">
         <Class class="GridSurface"/>
-      </Target>
-    </ECRelationshipClass>
-  
-    <ECRelationshipClass typeName="GridSurfaceCreatesGridCurve" modifier="None" strength="referencing" description="a driving relationship which tells that gridcurve was created by the mapped gridsurface">
-      <BaseClass>bis:ElementDrivesElement</BaseClass>
-      <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00.00"/>
-      </ECCustomAttributes>
-      <Source multiplicity="(0..*)" roleLabel="creates" polymorphic="true">
-        <Class class="GridSurface"/>
-      </Source>
-      <Target multiplicity="(0..*)" roleLabel="is created by" polymorphic="true">
-        <Class class="GridCurve"/>
       </Target>
     </ECRelationshipClass>
 

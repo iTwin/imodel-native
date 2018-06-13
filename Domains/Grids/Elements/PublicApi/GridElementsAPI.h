@@ -8,7 +8,7 @@
 #pragma once
 
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <BuildingShared/Interfaces.h>
+#include <BuildingShared/BuildingSharedApi.h>
 #include <Grids/Domain/GridsMacros.h>
 
 #include "ForwardDeclarations.h"
@@ -26,5 +26,8 @@
 #include "GridLine.h"
 #include "GridSpline.h"
 #include "GridPlaneSurface.h"
-#include "GridSurfaceCreatesGridCurveHandler.h"
 #include "GridDrivesGridSurfaceHandler.h"
+
+#include "GridCurveBundle.h"
+#include "GridSurfaceDrivesGridCurveBundleHandler.h"
+#include "GridCurveBundleCreatesGridCurveHandler.h"

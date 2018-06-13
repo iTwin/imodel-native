@@ -53,8 +53,10 @@ GridsDomain::GridsDomain () : DgnDomain(GRIDS_SCHEMA_NAME, "Grids Domain", 1)
     RegisterHandler(GridArcHandler::GetHandler ());
     RegisterHandler(GridSplineHandler::GetHandler ());
 
+    RegisterHandler(GridCurveBundleHandler::GetHandler());
+    RegisterHandler(GridSurfaceDrivesGridCurveBundleHandler::GetHandler());
+    RegisterHandler(GridCurveBundleCreatesGridCurveHandler::GetHandler());
 
-    RegisterHandler(GridSurfaceCreatesGridCurveHandler::GetHandler ());
     RegisterHandler(GridDrivesGridSurfaceHandler::GetHandler());
     }
 

@@ -152,9 +152,9 @@ public:
     //---------------------------------------------------------------------------------------
     // Queries
     //---------------------------------------------------------------------------------------
-    //! Returns an iterator over created intersection grid curves
-    //! @return     ElementIterator over this grid surface's grid curves
-    GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeCreatedCurvesIterator() const;
+    //! Returns an iterator over GridCurveBundles that this surface drives.
+    //! @return     ElementIdIterator over GridCurveBundles driven by this surface
+    GRIDELEMENTS_EXPORT BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::ElementIdIterator MakeGridCurveBundleIterator() const;
 };
 
 //=======================================================================================

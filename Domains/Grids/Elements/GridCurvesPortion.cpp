@@ -1,9 +1,16 @@
-
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Grids/Elements/GridCurvesPortion.cpp $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <Grids/gridsApi.h>
 #include <DgnPlatform/ViewController.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BUILDING_SHARED
 
 DEFINE_GRIDS_ELEMENT_BASE_METHODS(GridCurvesPortion)
 
@@ -55,7 +62,32 @@ Dgn::DgnModelCR model
 //---------------------------------------------------------------------------------------
 Dgn::DgnDbStatus GridCurvesPortion::_OnDelete() const
     {
-    GetSubModel()->Delete();
+    Dgn::DgnModelPtr subModel = GetSubModel();
+    
+    IBriefcaseManager::Request request;
+    if (Dgn::RepositoryStatus::Success != subModel->PopulateRequest(request, BeSQLite::DbOpcode::Delete))
+        return Dgn::DgnDbStatus::LockNotHeld;
+
+    request.SetOptions(IBriefcaseManager::ResponseOptions::All);
+    Dgn::IBriefcaseManager::Response response = GetDgnDb().BriefcaseManager().Acquire(request);
+    if (Dgn::RepositoryStatus::Success != response.Result())
+        return Dgn::DgnDbStatus::LockNotHeld;
+
+    Dgn::DgnDbStatus subModelDeleteStatus = subModel->Delete();
+    if (Dgn::DgnDbStatus::Success != subModelDeleteStatus)
+        return subModelDeleteStatus;
+
+    for(Dgn::ElementIteratorEntry bundleEntry : GridCurveBundle::MakeGridCurveBundleIterator(*this))
+        {
+        GridCurveBundleCPtr bundle = GridCurveBundle::Get(GetDgnDb(), bundleEntry.GetElementId());
+        if (bundle.IsNull())
+            continue;
+
+        BuildingLocks_LockElementForOperation(*bundle, BeSQLite::DbOpcode::Delete, "Delete GridCurveBundle");
+        Dgn::DgnDbStatus bundleDeleteStatus = bundle->Delete();
+        if (Dgn::DgnDbStatus::Success != bundleDeleteStatus)
+            return bundleDeleteStatus;
+        }
 
     return T_Super::_OnDelete();
     }
