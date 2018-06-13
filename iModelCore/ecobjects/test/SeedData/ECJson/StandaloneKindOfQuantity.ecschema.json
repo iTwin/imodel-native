@@ -7,7 +7,7 @@
   "precision": 3.0,
   "persistenceUnit": "Units.MM",
   "presentationUnits": [
-      "Formats.DefaultRealU",
+      "Formats.DefaultRealU[Units.MM]",
       "Formats.DefaultRealU(3)[Units.MM]",
       "Formats.DefaultRealU[Units.MM|]",
       "Formats.DefaultReal[Units.M|meters]",

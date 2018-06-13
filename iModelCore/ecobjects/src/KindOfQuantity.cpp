@@ -854,7 +854,7 @@ ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR
     {
     if (parent.IsOverride())
         {
-        LOG.errorv("On KOQ '%s' cannot create an override using another override as a parent", GetFullName().c_str());
+        LOG.errorv("KOQ '%s' cannot create an override using another override as a parent", GetFullName().c_str());
         return ECObjectsStatus::Error;
         }
 
@@ -872,7 +872,7 @@ ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR
         auto& input = *unitsAndLabels;
         if (input.size() > 4)
             {
-            LOG.errorv("On KOQ '%s' cannot have more than 4 override units specified on a presentation format", GetFullName().c_str());
+            LOG.errorv("KOQ '%s' cannot have more than 4 override units specified on a presentation format", GetFullName().c_str());
             return ECObjectsStatus::Error;
             }
 
@@ -903,7 +903,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatInternal(NamedFormat format
     {
     if (format.HasCompositeMajorUnit() && !Units::Unit::AreCompatible(format.GetCompositeMajorUnit(), GetPersistenceUnit()))
         {
-        LOG.errorv("On KoQ '%s' cannot add presentation format '%s' because its major unit is not compatible with this KoQ's persistence unit", GetFullName().c_str(), format.GetName().c_str());
+        LOG.errorv("KoQ '%s' cannot add presentation format '%s' because its major unit is not compatible with this KoQ's persistence unit", GetFullName().c_str(), format.GetName().c_str());
         return ECObjectsStatus::Error;
         }
     m_presentationFormats.emplace_back(format);
@@ -942,7 +942,14 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
     {
     if (parent.IsOverride())
         {
-        LOG.errorv("On KOQ '%s' cannot create an override using another override as a parent", GetFullName().c_str());
+        LOG.errorv("KOQ '%s' cannot create an override using another override as a parent", GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    // Parent has no units and we don't provide any overrides
+    if (!parent.HasCompositeMajorUnit() && (nullptr == unitsAndLabels || unitsAndLabels->empty()))
+        {
+        LOG.errorv("KOQ '%s' cannot have a format with no composite units without adding unit overrides", GetFullName().c_str());
         return ECObjectsStatus::Error;
         }
 
@@ -953,7 +960,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
             {
             if(nullptr == maj || nullptr == u.first || !Units::Unit::AreCompatible(maj, u.first))
                 {
-                LOG.errorv("On KOQ '%s' all unit overrides must be compatible with each other and must exist", GetFullName().c_str());
+                LOG.errorv("KOQ '%s' all unit overrides must be compatible with each other and must exist", GetFullName().c_str());
                 return ECObjectsStatus::Error;
                 }
             }
@@ -961,7 +968,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
 
     if (parent.HasCompositeMajorUnit() && nullptr != m_persistenceUnit && !ECUnit::AreCompatible(parent.GetCompositeMajorUnit(), m_persistenceUnit))
         {
-        LOG.errorv("On KOQ '%s' cannot have a format with a major unit that is incompatible with KOQ's persistence unit", GetFullName().c_str());
+        LOG.errorv("KOQ '%s' cannot have a format with a major unit that is incompatible with KOQ's persistence unit", GetFullName().c_str());
         return ECObjectsStatus::Error;
         }
 
@@ -971,7 +978,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
             {
             if (format.HasCompositeMajorUnit() && !ECUnit::AreCompatible(parent.GetCompositeMajorUnit(), format.GetCompositeMajorUnit()))
                 {
-                LOG.errorv("On KOQ '%s' cannot add a format that has a major unit that is incompatible with other formats in this KOQ namely '%s'", GetFullName().c_str(), format.GetName().c_str());
+                LOG.errorv("KOQ '%s' cannot add a format that has a major unit that is incompatible with other formats in this KOQ namely '%s'", GetFullName().c_str(), format.GetName().c_str());
                 return ECObjectsStatus::Error;
                 }
             }

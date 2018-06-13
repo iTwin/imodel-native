@@ -233,7 +233,7 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferen
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     koq->SetPersistenceUnit(*unit);
-    koq->AddPresentationFormat(*format);
+    koq->AddPresentationFormatSingleUnitOverride(*format, nullptr, unit);
 
     SchemaComparer comparer;
     SchemaDiff changes;
@@ -261,7 +261,7 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferen
     EXPECT_STRCASEEQ("f:AmerFI", pres[0].GetOld().Value().c_str());
 
     EXPECT_FALSE(pres[0].GetNew().IsNull());
-    EXPECT_STRCASEEQ("r:AmerFI", pres[0].GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("r:AmerFI[r:M]", pres[0].GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -277,14 +277,14 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
     EC_ASSERT_SUCCESS(m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
     EC_ASSERT_SUCCESS(m_firstSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
     ASSERT_EQ(ECObjectsStatus::Success,koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
-    EC_ASSERT_SUCCESS(koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU")));
+    EC_ASSERT_SUCCESS(koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
     ASSERT_EQ(1, koq->GetPresentationFormats().size());
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     EC_ASSERT_SUCCESS(m_secondSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
     EC_ASSERT_SUCCESS(m_secondSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
     ASSERT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
-    EC_ASSERT_SUCCESS(koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal")));
+    EC_ASSERT_SUCCESS(koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
     ASSERT_EQ(1, koq->GetPresentationFormats().size());
 
     SchemaComparer comparer;
@@ -308,10 +308,10 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
     ASSERT_EQ(1, pres.Count());
 
     ASSERT_FALSE(pres[0].GetOld().IsNull());
-    EXPECT_STRCASEEQ("f:DefaultRealU", pres[0].GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU[u:M]", pres[0].GetOld().Value().c_str());
 
     ASSERT_FALSE(pres[0].GetNew().IsNull());
-    EXPECT_STRCASEEQ("f:DefaultReal", pres[0].GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("f:DefaultReal[u:CM]", pres[0].GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------

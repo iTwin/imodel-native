@@ -648,7 +648,6 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     schema->CreateKindOfQuantity(koq, "ExampleKoQ");
     koq->SetPersistenceUnit(*unit);
     koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), nullptr, unit, "example");
-    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"));
     koq->SetRelativeError(3);
 
     // Enumeration

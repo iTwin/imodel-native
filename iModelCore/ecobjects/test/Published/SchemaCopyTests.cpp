@@ -153,7 +153,7 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity)
     koq->SetDescription("Test Description");
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
     koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
-    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
+    koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
     koq->SetRelativeError(10e-3);
 
     CopySchema();
@@ -166,7 +166,7 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity)
     EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
     EXPECT_STREQ("AmerFI", targetKoq->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_EQ(2, targetKoq->GetPresentationFormats().size());
-    EXPECT_STREQ("DefaultRealU", targetKoq->GetPresentationFormats().at(1).GetName().c_str());
+    EXPECT_STREQ("DefaultRealU[u:M]", targetKoq->GetPresentationFormats().at(1).GetName().c_str());
     EXPECT_STREQ("M", targetKoq->GetPersistenceUnit()->GetName().c_str());
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
     }

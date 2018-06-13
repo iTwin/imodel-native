@@ -94,20 +94,20 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationFormats)
     EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
     EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetConstantCP("PI"))); // constant
     kindOfQuantity->SetRelativeError(10e-3);
-    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU")));
-    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultReal")));
+    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultReal"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
     EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("AngleDM")));
     }
 
     {
     KindOfQuantityP koq = schema->GetKindOfQuantityP("MyKindOfQuantity");
     ASSERT_NE(nullptr, koq);
-    EXPECT_STREQ("DefaultRealU", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("DefaultRealU[u:M]", koq->GetDefaultPresentationFormat()->GetName().c_str());
     auto const& presUnitList = koq->GetPresentationFormats();
 
     EXPECT_EQ(2, presUnitList.size());
-    EXPECT_STREQ("DefaultRealU", presUnitList.at(0).GetName().c_str());
-    EXPECT_STREQ("DefaultReal", presUnitList.at(1).GetName().c_str());
+    EXPECT_STREQ("DefaultRealU[u:M]", presUnitList.at(0).GetName().c_str());
+    EXPECT_STREQ("DefaultReal[u:M]", presUnitList.at(1).GetName().c_str());
     }
 
     {
@@ -117,7 +117,7 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationFormats)
 
     koq->RemovePresentationFormat(presUnitList.at(1));
     EXPECT_EQ(1, presUnitList.size());
-    EXPECT_STRCASEEQ("DefaultRealU", presUnitList.at(0).GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU[u:M]", presUnitList.at(0).GetName().c_str());
 
     koq->RemovePresentationFormat(presUnitList.at(0));
     EXPECT_EQ(0, presUnitList.size());
@@ -145,13 +145,13 @@ TEST_F(KindOfQuantityTest, RemoveAllPresentationFormats)
     
     EXPECT_EQ(0, kindOfQuantity->GetPresentationFormats().size());
 
-    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU")));
+    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
     EXPECT_EQ(1, kindOfQuantity->GetPresentationFormats().size());
     kindOfQuantity->RemoveAllPresentationFormats();
     EXPECT_EQ(0, kindOfQuantity->GetPresentationFormats().size());
 
-    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU")));
-    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultReal")));
+    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultReal"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
     EXPECT_EQ(2, kindOfQuantity->GetPresentationFormats().size());
 
     kindOfQuantity->RemoveAllPresentationFormats();
@@ -188,8 +188,7 @@ TEST_F(KindOfQuantityTest, GetReferencedFormats)
     EXPECT_EQ(0, kindOfQuantity->GetPresentationFormats().size());
 
     EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("AmerFI")));
-    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU")));
-    EXPECT_EQ(2, kindOfQuantity->GetPresentationFormats().size());
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
     EXPECT_EQ(2, kindOfQuantity->GetReferencedFormats().size());
     EXPECT_STRCASEEQ("f:AmerFI", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
     EXPECT_STRCASEEQ("f:DefaultRealU", kindOfQuantity->GetReferencedFormats().at(1)->GetQualifiedName(*schema).c_str());
@@ -420,26 +419,38 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     CreateTestSchema(true);
     m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
-    EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
-    koq->AddPresentationFormatByString("f:DefaultRealU", formatLookerUpper, unitLookerUpper);
-    EXPECT_STRCASEEQ("DefaultRealU", koq->GetDefaultPresentationFormat()->GetName().c_str());
-    }
-
-    {
-    CreateTestSchema(true);
-    m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
-    m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
-    EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
-    koq->AddPresentationFormatByString("f:DefaultRealU(8)", formatLookerUpper, unitLookerUpper);
-    EXPECT_STRCASEEQ("DefaultRealU(8)", koq->GetDefaultPresentationFormat()->GetName().c_str());
-    }
-
-    {
-    CreateTestSchema(true);
-    m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
-    m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
-    EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
     koq->SetPersistenceUnit(*m_schema->GetUnitsContext().LookupUnit("u:M"));
+    EXPECT_NE(nullptr, koq->GetDefaultPresentationFormat());
+    // Cannot add a format with no units without specifying unit overrides
+    EXPECT_EQ(ECObjectsStatus::Error, koq->AddPresentationFormatByString("f:DefaultRealU", formatLookerUpper, unitLookerUpper));
+    }
+
+    {
+    CreateTestSchema(true);
+    m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
+    m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
+    koq->SetPersistenceUnit(*m_schema->GetUnitsContext().LookupUnit("u:M"));
+    EXPECT_NE(nullptr, koq->GetDefaultPresentationFormat());
+    koq->AddPresentationFormatByString("f:DefaultRealU[u:M]", formatLookerUpper, unitLookerUpper);
+    EXPECT_STRCASEEQ("DefaultRealU[u:M]", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    }
+
+    {
+    CreateTestSchema(true);
+    m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
+    m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
+    koq->SetPersistenceUnit(*m_schema->GetUnitsContext().LookupUnit("u:M"));
+    EXPECT_NE(nullptr, koq->GetDefaultPresentationFormat());
+    koq->AddPresentationFormatByString("f:DefaultRealU(8)[u:M]", formatLookerUpper, unitLookerUpper);
+    EXPECT_STRCASEEQ("DefaultRealU(8)[u:M]", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    }
+
+    {
+    CreateTestSchema(true);
+    m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
+    m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
+    koq->SetPersistenceUnit(*m_schema->GetUnitsContext().LookupUnit("u:M"));
+    EXPECT_NE(nullptr, koq->GetDefaultPresentationFormat());
     koq->AddPresentationFormatByString("f:DefaultRealU(8)[u:IN|inch(es)]", formatLookerUpper, unitLookerUpper);
     EXPECT_STRCASEEQ("DefaultRealU(8)[u:IN|inch(es)]", koq->GetDefaultPresentationFormat()->GetName().c_str());
     }
@@ -458,7 +469,7 @@ TEST_F(KindOfQuantityTest, SerializeStandaloneItemKindOfQuantity)
     KindOfQuantityP koq;
     schema->CreateKindOfQuantity(koq, "ExampleKoQ");
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
-    koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
+    koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
     koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), 3, ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
     const std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> unitMapper = [&](Utf8StringCR alias, Utf8StringCR name)
         {
@@ -844,8 +855,8 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuanti
     kindOfQuantity->SetDisplayLabel("DL");
     kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"));
     kindOfQuantity->SetRelativeError(10e-3);
-    kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
-    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"));
+    kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    kindOfQuantity->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
     kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
 
     ECEntityClassP entityClass;
@@ -874,10 +885,10 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuanti
     EXPECT_STREQ("CM", deserializedKindOfQuantity->GetPersistenceUnit()->GetName().c_str());
     EXPECT_EQ(10e-3, deserializedKindOfQuantity->GetRelativeError());
 
-    EXPECT_STREQ("DefaultRealU", deserializedKindOfQuantity->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("DefaultRealU[u:M]", deserializedKindOfQuantity->GetDefaultPresentationFormat()->GetName().c_str());
     auto& resultAltUnits = deserializedKindOfQuantity->GetPresentationFormats();
     EXPECT_EQ(3, resultAltUnits.size()); // Default presentation unit is included in list of presentation units
-    EXPECT_STREQ("DefaultReal", resultAltUnits[1].GetName().c_str());
+    EXPECT_STREQ("DefaultReal[u:M]", resultAltUnits[1].GetName().c_str());
     EXPECT_STREQ("AmerFI", resultAltUnits[2].GetName().c_str());
 
     ECClassCP deserializedClass = deserializedSchema->GetClassCP("EntityClass");
@@ -975,6 +986,27 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_ConstantAsUnitOverride)
                                             <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:PI]" relativeError="10e-3" />
+                                        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with a constant as an override");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Kyle.Abramowitz    04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityDeserializationTest, Fail_NoUnitsInPresentationUnits)
+    {
+    ExpectSchemaDeserializationSuccess(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+                                        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
+                                            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
+                                                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:M]" relativeError="10e-3" />
+                                        </ECSchema>)xml");
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+                                        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
+                                            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
+                                                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with a constant as an override");
     }
 
@@ -1135,21 +1167,21 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_InvalidDecimalPrecisionValues)
                                             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
                                             <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
-                                                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU" relativeError="10e-3" />
+                                                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:M]" relativeError="10e-3" />
                                         </ECSchema>)xml");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
                                             <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
-                                                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU(-1)" relativeError="10e-3" />
+                                                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU(-1)[u:M]" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with a bad precision value ");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
                                             <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
-                                                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU(13)" relativeError="10e-3" />
+                                                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU(13)[u:M]" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with a bad precision value ");
     }
 
@@ -1355,7 +1387,7 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     KindOfQuantityP koq;
     EC_ASSERT_SUCCESS(origSchema->CreateKindOfQuantity(koq, "ExampleKoQ"));
     EXPECT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
-    EXPECT_EQ(ECObjectsStatus::Success, koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU")));
+    EXPECT_EQ(ECObjectsStatus::Success, koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
 
     Utf8String xmlString;
     ASSERT_EQ(SchemaWriteStatus::Success, origSchema->WriteToXmlString(xmlString, ECVersion::Latest));
@@ -1367,7 +1399,7 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     auto persist = koq2->GetPersistenceUnit();
     auto pres = koq2->GetDefaultPresentationFormat();
     EXPECT_STRCASEEQ("M", persist->GetName().c_str());
-    EXPECT_STRCASEEQ("DefaultRealU", pres->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU[u:M]", pres->GetName().c_str());
     }
     }
 
@@ -1387,7 +1419,7 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec31_roundTrip)
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationUnits="f:DefaultRealU(9)[u:IN|banana];f:DefaultRealU" />
+                        presentationUnits="f:DefaultRealU(9)[u:IN|banana];f:DefaultRealU[u:M]" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1442,7 +1474,7 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec30_roundTrip)
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationUnits="f:DefaultRealU(9)[u:IN|banana];f:DefaultRealU" />
+                        presentationUnits="f:DefaultRealU(9)[u:IN|banana];f:DefaultRealU[u:M]" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1727,7 +1759,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInReferencedSche
             <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
-                        presentationUnits="f:AmerFI;f:DefaultRealU" />
+                        presentationUnits="f:AmerFI;f:DefaultRealU[u:M]" />
         </ECSchema>)xml");
 
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -1759,7 +1791,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInReferencedSche
     EXPECT_STRCASEEQ("CM", koq->GetPersistenceUnit()->GetName().c_str());
     ASSERT_EQ(2, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("AmerFI", koq->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_STRCASEEQ("DefaultRealU", koq->GetPresentationFormats()[1].GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU[u:M]", koq->GetPresentationFormats()[1].GetName().c_str());
     auto entityClass = schema->GetClassCP("Foo");
     auto propWithKoq = entityClass->GetPropertyP("Length");
     auto arrayPropWithKoq = entityClass->GetPropertyP("AlternativeLengths");
@@ -1780,7 +1812,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInSchema)
             <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
-                        presentationUnits="f:AmerFI;f:DefaultRealU" />
+                        presentationUnits="f:AmerFI;f:DefaultRealU[u:M]" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1802,7 +1834,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInSchema)
     EXPECT_STRCASEEQ("CM", koq->GetPersistenceUnit()->GetName().c_str());
     ASSERT_EQ(2, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("AmerFI", koq->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_STRCASEEQ("DefaultRealU", koq->GetPresentationFormats()[1].GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU[u:M]", koq->GetPresentationFormats()[1].GetName().c_str());
     auto entityClass = schema->GetClassCP("Foo");
     auto propWithKoq = entityClass->GetPropertyP("Length");
     auto arrayPropWithKoq = entityClass->GetPropertyP("AlternativeLengths");
