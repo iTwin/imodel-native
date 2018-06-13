@@ -2694,8 +2694,8 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     // Check if grid curves are all created and have valid geometry
     for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
         {
-        ElementIterator floorGridCurvesIterator = floorGridSurface->MakeCreatedCurvesIterator();
-        ASSERT_EQ(3, floorGridCurvesIterator.BuildIdList<DgnElementId>().size());
+        ElementIdIterator floorGridCurveBundlesIterator = floorGridSurface->MakeGridCurveBundleIterator();
+        ASSERT_EQ(3, floorGridCurveBundlesIterator.BuildIdList<DgnElementId>().size());
         
         double elevation = floorGridSurface->GetPlane().origin.z;
         bvector<ICurvePrimitiveCPtr> expectedGeometries =   //forwards or backwards doesn't matter
@@ -2708,15 +2708,18 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
             ICurvePrimitive::CreateLineString({ { 0, 0, elevation },{ 0, 20, elevation } })
             };
 
-        bvector<GridSurfacePtr> intersectingSurfaces;
-        for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
+        bset<Dgn::DgnElementId> intersectingSurfaces;
+        for (DgnElementId bundleId : floorGridCurveBundlesIterator.BuildIdList<DgnElementId>())
             {
-            GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
+            GridCurveBundleCPtr curveBundle = GridCurveBundle::Get(db, bundleId);
+            ASSERT_TRUE(curveBundle.IsValid());
+
+            GridCurveCPtr curve = curveBundle->GetGridCurve();
             ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
 
-            GridSurfacePtr intersecting = curve->GetIntersectingSurface();
-            ASSERT_TRUE(intersecting.IsValid()) << "Failed to get curve's intersecting surface";
-            intersectingSurfaces.push_back(intersecting);
+            bvector<Dgn::DgnElementId> surfaceIds = curve->GetIntersectingSurfaceIds();
+            ASSERT_EQ(surfaceIds.size(), 2);
+            intersectingSurfaces.insert(surfaceIds.begin(), surfaceIds.end());
 
             ASSERT_NE(expectedGeometries.end(), std::find_if(expectedGeometries.begin(),
                                                              expectedGeometries.end(),
@@ -2726,10 +2729,11 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
 
         // Make sure intersecting surfaces are correct
         bvector<DgnElementId> expectedIds = orthogonalGrid->MakeIterator().BuildIdList<DgnElementId>();
+        expectedIds.push_back(floorGridSurface->GetElementId());
         ASSERT_EQ(expectedIds.size(), intersectingSurfaces.size());
-        for (GridSurfacePtr intersecting : intersectingSurfaces)
+        for (Dgn::DgnElementId intersecting : intersectingSurfaces)
             {
-            ASSERT_NE(expectedIds.end(), std::find(expectedIds.begin(), expectedIds.end(), intersecting->GetElementId())) << "Intersecting surface id is incorrect";
+            ASSERT_NE(expectedIds.end(), std::find(expectedIds.begin(), expectedIds.end(), intersecting)) << "Intersecting surface id is incorrect";
             }
         }
     }
@@ -2829,8 +2833,8 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     // Check if grid curves are all created and have valid geometry
     for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
         {
-        ElementIterator floorGridCurvesIterator = floorGridSurface->MakeCreatedCurvesIterator();
-        ASSERT_EQ(4, floorGridCurvesIterator.BuildIdList<DgnElementId>().size()); // TODO correct to 4 after arced grid curves can be created
+        ElementIdIterator floorGridCurveBundlesIterator = floorGridSurface->MakeGridCurveBundleIterator();
+        ASSERT_EQ(4, floorGridCurveBundlesIterator.BuildIdList<DgnElementId>().size()); // TODO correct to 4 after arced grid curves can be created
         
         double elevation = floorGridSurface->GetPlane().origin.z;
         bvector<ICurvePrimitiveCPtr> expectedGeometries =
@@ -2847,28 +2851,32 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
                                                                          {20 * std::cos(msGeomConst_pi / 6 * 2), 20 * std::sin(msGeomConst_pi / 6 * 2), elevation }))
             };
 
-        bvector<GridSurfacePtr> intersectingSurfaces;
-        for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
+        bset<Dgn::DgnElementId> intersectingSurfaces;
+        for (DgnElementId bundleId : floorGridCurveBundlesIterator.BuildIdList<DgnElementId>())
             {
-            GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
+            GridCurveBundleCPtr curveBundle = GridCurveBundle::Get(db, bundleId);
+            ASSERT_TRUE(curveBundle.IsValid());
+
+            GridCurveCPtr curve = curveBundle->GetGridCurve();
             ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
 
-            GridSurfacePtr intersecting = curve->GetIntersectingSurface();
-            ASSERT_TRUE(intersecting.IsValid()) << "Failed to get curve's intersecting surface";
-            intersectingSurfaces.push_back(intersecting);
+            bvector<Dgn::DgnElementId> surfaceIds = curve->GetIntersectingSurfaceIds();
+            ASSERT_EQ(surfaceIds.size(), 2);
+            intersectingSurfaces.insert(surfaceIds.begin(), surfaceIds.end());
 
             ASSERT_NE(expectedGeometries.end(), std::find_if(expectedGeometries.begin(),
                                                              expectedGeometries.end(),
-                                                             [&](ICurvePrimitiveCPtr expectedCurve) {return expectedCurve->IsSameStructureAndGeometry(*curve->GetCurve(), 0.1); }))
+                                                             [&] (ICurvePrimitiveCPtr expectedCurve) { return expectedCurve->IsSameStructureAndGeometry(*curve->GetCurve(), 0.1); }))
                 << "Grid curve geometry is not as expected";
             }     
 
         // Make sure intersecting surfaces are correct
         bvector<DgnElementId> expectedIds = radialGrid->MakeIterator().BuildIdList<DgnElementId>();
+        expectedIds.push_back(floorGridSurface->GetElementId());
         ASSERT_EQ(expectedIds.size(), intersectingSurfaces.size());
-        for (GridSurfacePtr intersecting : intersectingSurfaces)
+        for (Dgn::DgnElementId intersecting : intersectingSurfaces)
             {
-            ASSERT_NE(expectedIds.end(), std::find(expectedIds.begin(), expectedIds.end(), intersecting->GetElementId())) << "Intersecting surface id is incorrect";
+            ASSERT_NE(expectedIds.end(), std::find(expectedIds.begin(), expectedIds.end(), intersecting)) << "Intersecting surface id is incorrect";
             }
         }
     }
@@ -2983,8 +2991,8 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     // Check if grid curves are all created and have valid geometry
     for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
         {
-        ElementIterator floorGridCurvesIterator = floorGridSurface->MakeCreatedCurvesIterator();
-        ASSERT_EQ(3, floorGridCurvesIterator.BuildIdList<DgnElementId>().size()); 
+        ElementIdIterator floorGridCurveBundlesIterator = floorGridSurface->MakeGridCurveBundleIterator();
+        ASSERT_EQ(3, floorGridCurveBundlesIterator.BuildIdList<DgnElementId>().size());
       
         double elevation = floorGridSurface->GetPlane().origin.z;
 
@@ -3001,15 +3009,18 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
             ICurvePrimitive::CreateBsplineCurve(MSBsplineCurve::CreateFromPolesAndOrder({ { 1, 1.5, 0 },{ 2, 3, 0 },{ 5, 4, 0 } }, &splineWeights, &splineKnots, 3, false, false))
             };
 
-        bvector<GridSurfacePtr> intersectingSurfaces;
-        for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
+        bset<Dgn::DgnElementId> intersectingSurfaces;
+        for (DgnElementId bundleId : floorGridCurveBundlesIterator.BuildIdList<DgnElementId>())
             {
-            GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
+            GridCurveBundleCPtr curveBundle = GridCurveBundle::Get(db, bundleId);
+            ASSERT_TRUE(curveBundle.IsValid());
+
+            GridCurveCPtr curve = curveBundle->GetGridCurve();
             ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
 
-            GridSurfacePtr intersecting = curve->GetIntersectingSurface();
-            ASSERT_TRUE(intersecting.IsValid()) << "Failed to get curve's intersecting surface";
-            intersectingSurfaces.push_back(intersecting);
+            bvector<Dgn::DgnElementId> surfaceIds = curve->GetIntersectingSurfaceIds();
+            ASSERT_EQ(surfaceIds.size(), 2);
+            intersectingSurfaces.insert(surfaceIds.begin(), surfaceIds.end());
 
             if (nullptr != curve->GetCurve()->GetBsplineCurveCP() ||
                 nullptr != curve->GetCurve()->GetInterpolationCurveCP()) //if this is a spline, ignore for now..
@@ -3023,10 +3034,11 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
 
         // Make sure intersecting surfaces are correct
         bvector<DgnElementId> expectedIds = sketchGrid->MakeIterator().BuildIdList<DgnElementId>();
+        expectedIds.push_back(floorGridSurface->GetElementId());
         ASSERT_EQ(expectedIds.size(), intersectingSurfaces.size());
-        for (GridSurfacePtr intersecting : intersectingSurfaces)
+        for (Dgn::DgnElementId intersecting : intersectingSurfaces)
             {
-            ASSERT_NE(expectedIds.end(), std::find(expectedIds.begin(), expectedIds.end(), intersecting->GetElementId())) << "Intersecting surface id is incorrect";
+            ASSERT_NE(expectedIds.end(), std::find(expectedIds.begin(), expectedIds.end(), intersecting)) << "Intersecting surface id is incorrect";
             }
         }
     }

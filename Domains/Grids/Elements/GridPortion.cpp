@@ -213,7 +213,7 @@ GridCurvesPortionCR targetPortion
         GridSurfaceCPtr innerSurface = db.Elements ().Get<GridSurface> (elementEntry.GetElementId ());
         if (innerSurface.IsValid())
             {
-            GridSurfaceCreatesGridCurveHandler::Insert (db, innerSurface, surface, targetPortion);
+            GridCurveBundle::CreateAndInsert(db, targetPortion, *innerSurface, *surface);
             }
         }
 

@@ -66,6 +66,12 @@ $(o)GridSurfaceCreatesGridCurveHandler$(oext) : $(_MakeFilePath)GridSurfaceCreat
 
 $(o)GridDrivesGridSurfaceHandler$(oext) : $(_MakeFilePath)GridDrivesGridSurfaceHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridDrivesGridSurfaceHandler.h
 
+$(o)GridCurveBundle$(oext) : $(_MakeFilePath)GridCurveBundle.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurveBundle.h
+
+$(o)GridSurfaceDrivesGridCurveBundleHandler$(oext) : $(_MakeFilePath)GridSurfaceDrivesGridCurveBundleHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSurfaceDrivesGridCurveBundleHandler.h
+
+$(o)GridCurveBundleCreatesGridCurveHandler$(oext) : $(_MakeFilePath)GridCurveBundleCreatesGridCurveHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurveBundleCreatesGridCurveHandler.h
+
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 

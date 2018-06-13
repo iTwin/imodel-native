@@ -53,9 +53,9 @@ public:
     //! @return             GridCurve geometry
     GRIDELEMENTS_EXPORT ICurvePrimitivePtr      GetCurve () const;
 
-    //! gets the intersecting GridSurface which creates this GridCurve (not the baseSurface)
-    //! @return             gridsurface, if exists
-    GRIDELEMENTS_EXPORT GridSurfacePtr GetIntersectingSurface() const;
+    //! gets the ElementIds of intersecting GridSurfaces which creates this GridCurve
+    //! @return a list of ElementIds of intersecting GridSurfaces
+    GRIDELEMENTS_EXPORT bvector<Dgn::DgnElementId> GetIntersectingSurfaceIds() const;
 
     //---------------------------------------------------------------------------------------
     // Geometry modification

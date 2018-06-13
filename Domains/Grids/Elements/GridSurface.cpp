@@ -289,20 +289,21 @@ DgnDbStatus      GridSurface::_OnUpdate
     return status;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  11/17
-//---------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                06/2018
+//---------------+---------------+---------------+---------------+---------------+------
 Dgn::DgnDbStatus GridSurface::_OnDelete() const
     {
-    bvector<DgnElementId> curves = MakeCreatedCurvesIterator().BuildIdList<DgnElementId>();
-
-    DgnDbR db = GetDgnDb();
-
-    // Delete relationship with axis and axis itself
-    for (DgnElementId curveId : curves)
+    for (ElementIdIteratorEntry bundleEntry : GridSurfaceDrivesGridCurveBundleHandler::MakeGridCurveBundleIterator(*this))
         {
-        db.DeleteLinkTableRelationships(GRIDS_SCHEMA(GRIDS_REL_GridSurfaceCreatesGridCurve), BeSQLite::EC::ECInstanceId(GetElementId()), BeSQLite::EC::ECInstanceId(curveId));
-        db.Elements().Delete(curveId);
+        GridCurveBundleCPtr bundle = GridCurveBundle::Get(GetDgnDb(), bundleEntry.GetElementId());
+        if (bundle.IsNull())
+            continue;
+
+        BuildingLocks_LockElementForOperation(*bundle, BeSQLite::DbOpcode::Delete, "Delete GridCurveBundle");
+        Dgn::DgnDbStatus bundleDeleteStatus = bundle->Delete();
+        if (Dgn::DgnDbStatus::Success != bundleDeleteStatus)
+            return bundleDeleteStatus;
         }
 
     return T_Super::_OnDelete();
@@ -395,21 +396,12 @@ BentleyStatus   GridSurface::TryGetLength(double& length) const
     return BentleyStatus::SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Haroldas.Vitunskas              11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::ElementIterator GridSurface::MakeCreatedCurvesIterator() const
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                06/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ElementIdIterator GridSurface::MakeGridCurveBundleIterator() const
     {
-    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_GridCurve), "WHERE ECInstanceId IN"
-                                                                                   "(SELECT TargetECInstanceId"
-                                                                                   " FROM " GRIDS_SCHEMA(GRIDS_REL_GridSurfaceCreatesGridCurve)
-                                                                                   " WHERE SourceECInstanceId = ?)");
-
-    if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
-        {
-        pStmnt->BindId(1, GetElementId());
-        }
-    return iterator;
+    return GridSurfaceDrivesGridCurveBundleHandler::MakeGridCurveBundleIterator(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -81,6 +81,10 @@
 #define GRIDS_REL_GridHasAxes                                   "GridHasAxes"
 #define GRIDS_REL_GridAxisContainsGridSurfaces                  "GridAxisContainsGridSurfaces"
 
+#define GRIDS_REL_GridSurfaceDrivesGridCurveBundle              "GridSurfaceDrivesGridCurveBundle"
+#define GRIDS_REL_GridCurveBundleCreatesGridCurve               "GridCurveBundleCreatesGridCurve"
+#define GRIDS_REL_GridCurveBundleRefersToGridCurvesPortion      "GridCurveBundleRefersToGridCurvesPortion"
+
 #define GRIDS_CLASS_GridCurvesPortion                    "GridCurvesPortion"
 #define GRIDS_CLASS_Grid                                 "Grid"
 #define GRIDS_CLASS_ElevationGrid                        "ElevationGrid"
@@ -115,6 +119,8 @@
 #define GRIDS_CLASS_SketchArcGridSurface                        "SketchArcGridSurface"
 #define GRIDS_CLASS_PlanGridSplineSurface                       "PlanGridSplineSurface"
 #define GRIDS_CLASS_SketchSplineGridSurface                     "SketchSplineGridSurface"
+
+#define GRIDS_CLASS_GridCurveBundle                             "GridCurveBundle"
 
 //Categories
 #define GRIDS_CATEGORY_CODE_GridCurve                           "GridCurve"

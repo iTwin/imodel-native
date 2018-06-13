@@ -116,22 +116,10 @@ void            GridCurve::_CopyFrom(Dgn::DgnElementCR source)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Nerijus.Jakeliunas              03/2017
 //---------------+---------------+---------------+---------------+---------------+------
-GridSurfacePtr GridCurve::GetIntersectingSurface () const
+bvector<Dgn::DgnElementId> GridCurve::GetIntersectingSurfaceIds() const
     {
-    Utf8String statemntString = Utf8PrintfString ("SELECT SourceECInstanceId FROM " GRIDS_SCHEMA (GRIDS_REL_GridSurfaceCreatesGridCurve) " WHERE TargetECInstanceId=?");
-    BeSQLite::EC::ECSqlStatement statement;
-    statement.Prepare (GetDgnDb (), statemntString.c_str ());
-
-    statement.BindId (1, GetElementId ());
-
-    if (BeSQLite::DbResult::BE_SQLITE_ROW != statement.Step ())
-        {
-        return nullptr;
-        }
-
-    return GetDgnDb ().Elements ().GetForEdit <GridSurface> (statement.GetValueId<Dgn::DgnElementId> (0));
+    return GridCurveBundle::MakeDrivingSurfaceIterator(*this).BuildIdList<Dgn::DgnElementId>();
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  05/2017
