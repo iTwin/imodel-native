@@ -2044,24 +2044,12 @@ public:
 };
 
 //=======================================================================================
-//! 
-// @bsienum                                                   
+//! The Db file's profile version compared to what the current software expects.
+// @bsiclass                                                     06/18
 //=======================================================================================
-enum class ProfileState2
-    {
-    Error = -99,
-    Older_CannotOpen = -3,
-    Older_UpgradeRequired = -2,
-    Older_UpgradeOptional = -1,
-    UpToDate = 0,
-    Newer_Readwrite = 1,
-    Newer_Readonly = 2,
-    Newer_CannotOpen = 3
-    };
-
 struct ProfileState final
     {
-    enum class State
+    enum class Age
         {
         Newer,
         UpToDate,
@@ -2070,29 +2058,35 @@ struct ProfileState final
 
     enum class CanOpen
         {
-        Readwrite,
-        Readonly,
-        No
+        Readwrite, //<! File can be opened without restrictions
+        Readonly, //<! File can only be opened read-only
+        No //<! File cannot be opened
         };
 
     private:
-        State m_state = State::UpToDate;
+        Age m_age = Age::UpToDate;
         CanOpen m_canOpen = CanOpen::Readwrite;
         bool m_isUpgradable = false;
 
-        ProfileState(State state, CanOpen canOpen, bool isUpgradable) : m_state(state), m_canOpen(canOpen), m_isUpgradable(isUpgradable) {}
+        ProfileState(Age age, CanOpen canOpen, bool isUpgradable) : m_age(age), m_canOpen(canOpen), m_isUpgradable(isUpgradable) {}
     public:
-        static ProfileState UpToDate() { return ProfileState(State::UpToDate, CanOpen::Readwrite, false); }
-        static ProfileState Newer(CanOpen canOpen) { return ProfileState(State::Newer, canOpen, false); }
-        static ProfileState Older(CanOpen canOpen, bool isUpgradable) { return ProfileState(State::Older, canOpen, isUpgradable); }
-        static ProfileState Error() { return ProfileState(State::UpToDate, CanOpen::No, false); }
+        static ProfileState UpToDate() { return ProfileState(Age::UpToDate, CanOpen::Readwrite, false); }
+        static ProfileState Newer(CanOpen canOpen) { return ProfileState(Age::Newer, canOpen, false); }
+        static ProfileState Older(CanOpen canOpen, bool isUpgradable) { return ProfileState(Age::Older, canOpen, isUpgradable); }
+        static ProfileState Error() { return ProfileState(Age::UpToDate, CanOpen::No, false); }
 
-        bool operator==(ProfileState const& rhs) const { return m_state == rhs.m_state && m_canOpen == rhs.m_canOpen && m_isUpgradable == rhs.m_isUpgradable; }
+        bool operator==(ProfileState const& rhs) const { return m_age == rhs.m_age && m_canOpen == rhs.m_canOpen && m_isUpgradable == rhs.m_isUpgradable; }
         bool operator!=(ProfileState const& rhs) const { return !(*this == rhs); }
 
-        bool IsError() const { return m_state == State::UpToDate && m_canOpen == CanOpen::No; }
-        State GetState() const { return m_state; }
+        bool IsError() const { return m_age == Age::UpToDate && m_canOpen == CanOpen::No; }
+        bool IsUpToDate() const { return m_age == Age::UpToDate; }
+        bool IsOlder() const { return m_age == Age::Older; }
+        bool IsNewer() const { return m_age == Age::Newer; }
+
+        //! Indicates whether the file is up-to-date or older or newer than what the software expects.
+        Age GetAge() const { return m_age; }
         CanOpen GetCanOpen() const { return m_canOpen; }
+        //! Indicates whether the file can be upgraded. If yes, open the file with ProfileUpgradeOptions::Upgrade.
         bool IsUpgradable() const { return m_isUpgradable; }
 
         BE_SQLITE_EXPORT DbResult ToDbResult() const;
@@ -2477,9 +2471,6 @@ protected:
     virtual int _OnAddFunction(DbFunction& func) const {return 0;}
     virtual void _OnRemoveFunction(DbFunction& func) const {}
 
-    BE_SQLITE_EXPORT static DbResult ProfileStateToDbResult(ProfileState);
-    BE_SQLITE_EXPORT static ProfileState MergeProfileStates(ProfileState const& lhs, ProfileState const& rhs);
-
     friend struct Statement;
     friend struct Savepoint;
     friend struct BeSQLiteProfileManager;
@@ -2568,22 +2559,18 @@ public:
     //! @copydoc Db::OpenBeSQLiteDb(Utf8CP, OpenParams const&)
     DbResult OpenBeSQLiteDb(BeFileNameCR dbName, OpenParams const& openParams) {return OpenBeSQLiteDb(dbName.GetNameUtf8().c_str(),openParams);}
 
-    ProfileState CheckProfileVersion() const { return _CheckProfileVersion(); }
+    //! Determines the file's profile state as for its compatibility to be opened with the current version of the profile's API.
+    ProfileState CheckProfileVersion() const { return _CheckProfileVersion(); };
 
     //! Checks a file's profile compatibility to be opened with the current version of the profile's API.
     //!
     //! @see Db::OpenBeSQLiteDb for the compatibility contract for Bentley SQLite profiles.
-    //! @param[in]  expectedProfileVersion Profile version expected by the API that tries to open the file.
-    //! @param[in]  actualProfileVersion Profile version of the file to be opened
-    //! @param[in]  minimumUpgradableProfileVersion Minimum profile version of the file for which the API can auto-upgrade
-    //!             the file to the latest version. The version's Sub1 and Sub2 digits must be 0.
-    //! @param[in]  profileName Name of the profile for logging purposes.
-    //! @return     BE_SQLITE_OK if profile can be opened in the requested mode, i.e. the compatibility contract is matched.
-    //!             BE_SQLITE_Error_ProfileTooOld if file's profile is too old to be opened by this API.
-    //!             This error code is also returned if the file is old but not too old to be auto-upgraded.
-    //!             Check @p fileIsAutoUpgradable to tell whether the file is auto-upgradeable and not.
-    //!             BE_SQLITE_Error_ProfileTooNew if file's profile is too new to be opened by this API.
-    //!             BE_SQLITE_Error_ProfileTooNewForReadWrite if file's profile is too new to be opened read-write, i.e. @p openModeIsReadonly is false
+    //! @param[in] expectedProfileVersion Profile version expected by the API that tries to open the file.
+    //! @param[in] actualProfileVersion Profile version of the file to be opened
+    //! @param[in] minimumUpgradableProfileVersion Minimum profile version of the file for which the API can auto-upgrade
+    //!            the file to the latest version. The version's Sub1 and Sub2 digits must be 0.
+    //! @param[in] profileName Name of the profile for logging purposes.
+    //! @return Profile state
     BE_SQLITE_EXPORT static ProfileState CheckProfileVersion(ProfileVersion const& expectedProfileVersion, ProfileVersion const& actualProfileVersion, ProfileVersion const& minimumUpgradableProfileVersion, Utf8CP profileName);
 
     //! Create a new BeSQLite::Db database file, or upgrade an existing SQLite file to be a BeSQLite::Db.

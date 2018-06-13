@@ -2825,13 +2825,13 @@ ProfileState ProfileState::Merge(ProfileState const& rhs) const
     if (IsError() || rhs.IsError())
         return *this;
 
-    if (m_state == State::UpToDate)
+    if (m_age == Age::UpToDate)
         return rhs;
 
-    if (rhs.m_state == State::UpToDate)
+    if (rhs.m_age == Age::UpToDate)
         return *this;
 
-    if (m_state != rhs.m_state)
+    if (m_age != rhs.m_age)
         {
         BeAssert(false && "One profile cannot be older when the other is newer");
         return Error();
@@ -2841,7 +2841,7 @@ ProfileState ProfileState::Merge(ProfileState const& rhs) const
     const int rhsCanOpenInt = (int) rhs.m_canOpen;
     const CanOpen finalCanOpen = (CanOpen) std::max(thisCanOpenInt, rhsCanOpenInt);
 
-    if (m_state == State::Newer)
+    if (m_age == Age::Newer)
         return ProfileState::Newer(finalCanOpen);
 
     bool finalIsUpgradable = m_isUpgradable || rhs.m_isUpgradable;
@@ -2859,10 +2859,10 @@ DbResult ProfileState::ToDbResult() const
     if (IsError())
         return BE_SQLITE_ERROR_InvalidProfileVersion;
 
-    if (m_state == State::UpToDate)
+    if (m_age == Age::UpToDate)
         return BE_SQLITE_OK;
 
-    if (m_state == State::Newer)
+    if (m_age == Age::Newer)
         {
         switch (m_canOpen)
             {

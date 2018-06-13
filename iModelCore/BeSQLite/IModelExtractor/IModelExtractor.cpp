@@ -297,7 +297,7 @@ static DbResult checkPackageVersion (BeSQLite::Db& db, Db::OpenParams const& ope
 
     if (profileState.GetCanOpen() == ProfileState::CanOpen::No || (profileState.GetCanOpen() == ProfileState::CanOpen::Readonly && !db.IsReadonly()))
         {
-        if (profileState.GetState() == ProfileState::State::Newer)
+        if (profileState.IsNewer())
             {
             EXTRACTOR_E("Package schema is too new");
             return BE_SQLITE_ERROR_ProfileTooNew;
