@@ -12,6 +12,14 @@
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
 
+#define RESULT_AFFINITY_CHECK_NONE      0x0001
+#define RESULT_AFFINITY_CHECK_LOW       0x0002
+#define RESULT_AFFINITY_CHECK_MEDIUM    0x0003
+#define RESULT_AFFINITY_CHECK_HIGH      0x0004
+#define RESULT_ERROR_FAILED_TO_PARSE_COMMANDLINE    0x1001
+#define RESULT_ERROR_FAILED_TO_INITIALIZE_BRIDGE    0x1002
+#define RESULT_ERROR_GENERAL            BentleyStatus::ERROR
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
@@ -23,7 +31,7 @@ static int runBridge(int argc, WCharCP argv[])
 
     iModelBridgeSacAdapter::Params saparams;
     if (BentleyStatus::SUCCESS != iModelBridgeSacAdapter::ParseCommandLine(*iModelBridgeP, saparams, argc, argv))
-        return BentleyStatus::ERROR;
+        return RESULT_ERROR_FAILED_TO_PARSE_COMMANDLINE;
 
     iModelBridgeSacAdapter::InitializeHost(*iModelBridgeP);
 
@@ -35,7 +43,7 @@ static int runBridge(int argc, WCharCP argv[])
 	if (BSISUCCESS != iModelBridgeP->_Initialize(argc, argv))
 		{
 		fprintf(stderr, "_Initialize failed\n");
-		return BentleyStatus::ERROR;
+		return RESULT_ERROR_FAILED_TO_INITIALIZE_BRIDGE;
 		}
 
 	saparams.Initialize();
@@ -43,14 +51,28 @@ static int runBridge(int argc, WCharCP argv[])
     if (affinityLevel != iModelBridgeAffinityLevel::ExactMatch)
         {
         fprintf(stderr, "Affinity-check failed\n");
-        return BentleyStatus::ERROR;
+        if (iModelBridgeAffinityLevel::Low == affinityLevel)
+            return RESULT_AFFINITY_CHECK_LOW;
+        else if (iModelBridgeAffinityLevel::Medium == affinityLevel)
+            return RESULT_AFFINITY_CHECK_MEDIUM;
+        else if (iModelBridgeAffinityLevel::High == affinityLevel)
+            return RESULT_AFFINITY_CHECK_HIGH;
+        else
+            {
+            if (iModelBridgeAffinityLevel::None != affinityLevel)
+                BeAssert("Unrecognized affinity level.");
+            return RESULT_AFFINITY_CHECK_NONE;
+            }
         }
 
     auto retVal = iModelBridgeSacAdapter::Execute(*iModelBridgeP, saparams);
 
     iModelBridge_releaseInstance(iModelBridgeP);
 
-    return retVal;
+    if (BentleyStatus::SUCCESS == retVal)
+        return retVal;
+    else
+        return RESULT_ERROR_GENERAL;
     }
 
 #if defined(__unix__)
