@@ -8,10 +8,10 @@
 #pragma once
 
 #include <DgnPlatform/DgnPlatformApi.h>
-#include "Domain/ClassificationSystemsMacros.h"
-#include "Elements/ClassificationSystemsElements.h"
-#include "Handlers/ClassificationSystemsHandlers.h"
-#include "Domain/ClassificationSystemsDomain.h"
+#include <ClassificationSystems/Domain/ClassificationSystemsMacros.h>
+#include <ClassificationSystems/Elements/ClassificationSystemsElements.h>
+#include <ClassificationSystems/Handlers/ClassificationSystemsHandlers.h>
+#include <ClassificationSystems/Domain/ClassificationSystemsDomain.h>
 //#include "Handlers/ClassificationSystemsPathHandler.h"
 
 
