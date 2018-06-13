@@ -1788,8 +1788,8 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
         ASSERT_STREQ("u:CM", actualKoq.GetPersistenceUnit()->GetQualifiedName(actualKoq.GetSchema()).c_str());
         ASSERT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
         ASSERT_EQ(2, actualKoq.GetPresentationFormats().size());
-        ASSERT_STREQ("f:DefaultRealU", actualKoq.GetPresentationFormats()[0].GetQualifiedName(actualKoq.GetSchema()).c_str());
-        ASSERT_STREQ("f:DefaultReal", actualKoq.GetPresentationFormats()[1].GetQualifiedName(actualKoq.GetSchema()).c_str());
+        ASSERT_STREQ("f:DefaultRealU[u:M]", actualKoq.GetPresentationFormats()[0].GetQualifiedName(actualKoq.GetSchema()).c_str());
+        ASSERT_STREQ("f:DefaultReal[u:M]", actualKoq.GetPresentationFormats()[1].GetQualifiedName(actualKoq.GetSchema()).c_str());
         };
 
     std::vector<SchemaItem> testSchemas;
@@ -1799,7 +1799,7 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
                                      <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
                                      <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                                                      displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
-                                                     presentationUnits="f:DefaultRealU;f:DefaultReal" />
+                                                     presentationUnits="f:DefaultRealU[u:M];f:DefaultReal[u:M]" />
                                      </ECSchema>)xml"));
 
     testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -1875,7 +1875,7 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
                                                      displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5" />
                                      <KindOfQuantity typeName="KoqWithPresentation" description="My KindOfQuantity"
                                                      displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
-                                                     presentationUnits="f:DefaultRealU;f:DefaultReal" />
+                                                     presentationUnits="f:DefaultRealU[u:M];f:DefaultReal[u:M]" />
                                      </ECSchema>)xml")));
     auto assertLoadCount = [] (ECDbCR ecdb, Utf8CP schemaName, int expectedKoqCount, int expectedUnitCount, int expectedUnitSystemCount, int expectedPhenCount, int expectedFormatCount, Utf8CP assertMessage)
         {
