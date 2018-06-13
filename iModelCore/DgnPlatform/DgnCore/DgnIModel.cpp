@@ -30,7 +30,7 @@ static DgnDbStatus performEmbeddedProjectVersionChecks(DbResult& dbResult, Db& d
 
     if (profileState.GetCanOpen() == ProfileState::CanOpen::No || (profileState.GetCanOpen() == ProfileState::CanOpen::Readonly && !db.IsReadonly()))
         {
-        if (profileState.GetState() == ProfileState::State::Newer)
+        if (profileState.IsNewer())
             return DgnDbStatus::VersionTooNew;
 
         return DgnDbStatus::VersionTooOld;
@@ -60,7 +60,7 @@ static DgnDbStatus performPackageVersionChecks(DbResult& dbResult, Db& db)
 
     if (profileState.GetCanOpen() == ProfileState::CanOpen::No || (profileState.GetCanOpen() == ProfileState::CanOpen::Readonly && !db.IsReadonly()))
         {
-        if (profileState.GetState() == ProfileState::State::Newer)
+        if (profileState.IsNewer())
             return DgnDbStatus::VersionTooNew;
 
         return DgnDbStatus::VersionTooOld;
