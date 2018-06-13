@@ -26,7 +26,6 @@
 #include "GridLine.h"
 #include "GridSpline.h"
 #include "GridPlaneSurface.h"
-#include "GridSurfaceCreatesGridCurveHandler.h"
 #include "GridDrivesGridSurfaceHandler.h"
 
 #include "GridCurveBundle.h"

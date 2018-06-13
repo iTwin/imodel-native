@@ -73,19 +73,6 @@
         <Class class="GridSurface"/>
       </Target>
     </ECRelationshipClass>
-  
-    <ECRelationshipClass typeName="GridSurfaceCreatesGridCurve" modifier="None" strength="referencing" description="a driving relationship which tells that gridcurve was created by the mapped gridsurface">
-      <BaseClass>bis:ElementDrivesElement</BaseClass>
-      <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00.00"/>
-      </ECCustomAttributes>
-      <Source multiplicity="(0..*)" roleLabel="creates" polymorphic="true">
-        <Class class="GridSurface"/>
-      </Source>
-      <Target multiplicity="(0..*)" roleLabel="is created by" polymorphic="true">
-        <Class class="GridCurve"/>
-      </Target>
-    </ECRelationshipClass>
 
     <ECRelationshipClass typeName="GridHasAxes" strength="embedding" modifier="None" description="maps grid to its axes">
       <Source multiplicity="(1..1)" roleLabel="Has Axis" polymorphic="true">
