@@ -285,12 +285,43 @@ Response RequestHandler::CreateiModelInstance(Request req)
     {
     BeGuid projGuid(true);
     Json::Value settings = ParsedJson(req);
-
-    bvector<Utf8String> input = { projGuid.ToString(),
+    bvector<Utf8String> input = 
+        {
+        projGuid.ToString(),
         settings["instance"]["properties"]["Name"].asString(),
-        settings["instance"]["properties"]["Description"].asString() };
+        settings["instance"]["properties"]["Description"].asString() 
+        };
+
+    const auto iModelAlreadyExists = [&](Utf8StringCR name)
+        {
+        BeFileName dbPath = GetDbPath();
+        BentleyB0200::BeSQLite::Db m_db;
+        if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+            {
+            Statement st;
+            st.Prepare(m_db, "SELECT Name FROM Instances WHERE Name = ?");
+            st.BindText(1, name, Statement::MakeCopy::No);
+            auto dbResult = st.Step();
+            auto text = st.GetValueText(0);
+            if (DbResult::BE_SQLITE_DONE != dbResult)
+                return true;
+            }
+        return false;
+        };
 
     CheckDb();
+    if (iModelAlreadyExists(input[1]))
+        {
+        static Utf8String alreadyExistsError = R"JSON({
+                                                          "errorId": "iModelHub.iModelAlreadyExists",
+                                                          "errorMessage": "iModel already exists.",
+                                                          "errorDescription": null,
+                                                          "iModelInitialized": false
+                                                      })JSON";
+        auto content = HttpResponseContent::Create(HttpStringBody::Create(alreadyExistsError));
+        return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::Conflict);
+        }
+
     Insert(input);
 
     Json::Value iModelCreation(Json::objectValue);
@@ -303,7 +334,8 @@ Response RequestHandler::CreateiModelInstance(Request req)
     JsonValueR properties = InstanceAfterChange[ServerSchema::Properties] = Json::objectValue;
     properties[ServerSchema::Property::Description] = settings["instance"]["properties"]["Description"].asString();
     properties[ServerSchema::Property::Name] = settings["instance"]["properties"]["Name"].asString();
-    properties[ServerSchema::Property::UserCreated] = "";
+    properties[ServerSchema::Property::UserCreated] = "DummyUserValue";
+    properties[ServerSchema::Property::Initialized] = false;
     Utf8String contentToWrite(Json::FastWriter().write(iModelCreation));
 
     return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
