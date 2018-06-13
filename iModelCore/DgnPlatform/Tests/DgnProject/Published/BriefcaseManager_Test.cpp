@@ -755,6 +755,17 @@ TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjectsBulkMode)
     ExpectLevel(*newElem, LockLevel::Exclusive);
     ExpectLevel(*model, LockLevel::None);
     ExpectLevel(*elem, LockLevel::None);
+
+    // TFS#904880: Even though the QueryLockLevel calls return that we have newElem exclusively locked, this is inferred
+    // by the element's model being exclusively locked. If we iterate over the owned locks locally, then we should find that
+    // newElem is actually not locked, but its lock is inferred by the locked state of its model
+    IBriefcaseManagerR bc = db.BriefcaseManager();
+    IOwnedLocksIteratorPtr pIter = bc.GetOwnedLocks();
+    for (;pIter->IsValid();++(*pIter))
+        {
+        DgnLock lock = **pIter;
+        EXPECT_FALSE(lock.GetId() == newElem->GetElementId());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
