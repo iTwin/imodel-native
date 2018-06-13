@@ -83,3 +83,4 @@
 
 #define CLASSIFICATIONSYSTEMS_REL_ClassificationIsInClassificationGroup                            "ClassificationIsInClassificationGroup"
 #define CLASSIFICATIONSYSTEMS_REL_ClassificationSpecializesClassification                          "ClassificationSpecializesClassification"
+#define CLASSIFICATIONSYSTEMS_REL_IClassifiedIsClassifiedAs                                        "IClassifiedIsClassifiedAs"

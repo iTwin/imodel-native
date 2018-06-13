@@ -26,6 +26,8 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)ClassificationSystemsElements$(oext) : $(_MakeFilePath)ClassificationSystemsElements.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\ClassificationSystemsElements.h
 
+$(o)IClassified$(oext) : $(_MakeFilePath)IClassified.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\IClassified.h
+
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 
