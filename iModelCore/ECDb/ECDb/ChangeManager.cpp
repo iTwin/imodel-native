@@ -220,7 +220,7 @@ BentleyStatus ChangeManager::ValidateChangeCache(ECDbCR changeCacheFile, IIssueR
     ECSqlStatement stmt;
     if (ECSqlStatus::Success != stmt.Prepare(changeCacheFile, "SELECT VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChange "'", false))
         {
-        BeAssert(false && "File is expected to be open and a valid ECDb file");
+        issues.ReportV("Invalid Change Cache file '%s' : File is not an ECDb file.", changeCacheFile.GetDbFileName());
         return ERROR;
         }
 

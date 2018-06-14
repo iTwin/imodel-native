@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                12/2012
 //+---------------+---------------+---------------+---------------+---------------+-
 //static
-DbResult ProfileManager::CreateProfile(ECDbR ecdb)
+DbResult ProfileManager::CreateProfile(ProfileVersion& version, ECDbR ecdb)
     {
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin CreateECProfile");
 
@@ -53,6 +53,7 @@ DbResult ProfileManager::CreateProfile(ECDbR ecdb)
         }
   
     ecdb.SaveChanges();
+    version = GetExpectedVersion();
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End CreateECProfile");
     return BE_SQLITE_OK;
     }
@@ -61,43 +62,38 @@ DbResult ProfileManager::CreateProfile(ECDbR ecdb)
 // @bsimethod                                                   Krischan.Eberle  01/2017
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ProfileManager::CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion& actualProfileVersion, ECDbCR ecdb, bool openModeIsReadOnly)
+ProfileState ProfileManager::CheckProfileVersion(ProfileVersion& fileProfileVersion, ECDbCR ecdb)
     {
     BeAssert(ecdb.GetDefaultTransaction()->IsActive() && "Should have been caught before. Callers must ensure that a transaction is active before calling this.");
 
-    fileIsAutoUpgradable = false;
-    const DbResult stat = ReadProfileVersion(actualProfileVersion, ecdb);
-    if (BE_SQLITE_OK != stat)
-        return stat; //File is no ECDb file, i.e. doesn't have the ECDb profile
+    if (BE_SQLITE_OK != ReadProfileVersion(fileProfileVersion, ecdb))
+        return ProfileState::Error();
 
-    return ECDb::CheckProfileVersion(fileIsAutoUpgradable, GetExpectedVersion(), actualProfileVersion, GetMinimumSupportedVersion(), openModeIsReadOnly, PROFILENAME);
+    return Db::CheckProfileVersion(GetExpectedVersion(), fileProfileVersion, GetMinimumSupportedVersion(), PROFILENAME);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openParams)
+DbResult ProfileManager::UpgradeProfile(ProfileVersion& newVersion, ECDbR ecdb)
     {
+    BeAssert(!ecdb.IsReadonly());
+
     if (!ecdb.GetDefaultTransaction()->IsActive())
         {
         BeAssert(false && "Programmer Error. ECDb expects that BeSqlite::OpenBeSQliteDb keeps the default transaction active when it is called to upgrade its profile.");
         return BE_SQLITE_ERROR_NoTxnActive;
         }
 
-    bool runProfileUpgrade = false;
-    ProfileVersion actualProfileVersion(0, 0, 0, 0);
-    DbResult stat = CheckProfileVersion(runProfileUpgrade, actualProfileVersion, ecdb, openParams.IsReadonly());
-    if (!runProfileUpgrade)
-        return stat;
-
     PERFLOG_START("ECDb", "Profile upgrade");
 
-    //if ECDb file is readonly, reopen it in read-write mode
-    if (!openParams._ReopenForProfileUpgrade(ecdb))
+    ProfileVersion fileProfileVersion(0, 0, 0, 0);
+    DbResult stat = ReadProfileVersion(fileProfileVersion, ecdb);
+    if (stat != BE_SQLITE_OK)
         {
-        LOG.error("Upgrade of file's " PROFILENAME " profile failed because file could not be re-opened in read-write mode.");
-        return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
+        BeAssert(false && "Failed to read ECDb file profile version");
+        return stat;
         }
 
     BeAssert(!ecdb.IsReadonly());
@@ -113,7 +109,7 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
 
     //let upgraders incrementally upgrade the profile
     //to the latest state
-    if (BE_SQLITE_OK != RunUpgraders(ecdb, actualProfileVersion))
+    if (BE_SQLITE_OK != RunUpgraders(ecdb, fileProfileVersion))
         {
         ecdb.AbandonChanges();
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
@@ -129,10 +125,11 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("Upgraded " PROFILENAME " profile from version %s to version %s in file '%s'.",
-                  actualProfileVersion.ToString().c_str(), GetExpectedVersion().ToString().c_str(), ecdb.GetDbFileName());
+                  fileProfileVersion.ToString().c_str(), GetExpectedVersion().ToString().c_str(), ecdb.GetDbFileName());
         }
 
     PERFLOG_FINISH("ECDb", "Profile upgrade");
+    newVersion = GetExpectedVersion();
     return BE_SQLITE_OK;
     }
 

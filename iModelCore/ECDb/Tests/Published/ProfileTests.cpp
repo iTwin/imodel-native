@@ -164,64 +164,131 @@ TEST_F(ECDbTestFixture, ProfileCreation)
 TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
-
-    std::vector<std::tuple<ProfileVersion, Db::OpenMode, DbResult, bool>> testVersions {
-            {ProfileVersion(3,6,99,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,6,99,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,7,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,7,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,7,0,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,7,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,7,3,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,7,3,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,7,3,2), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,7,3,2), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,7,3,3), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,7,3,3), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,7,4,3), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,7,4,3), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,100,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,100,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,100,0,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,100,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(3,100,1,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {ProfileVersion(4,0,0,0), Db::OpenMode::Readonly, BE_SQLITE_OK, true},
-            {ProfileVersion(4,0,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_OK, true},
-            {ProfileVersion(4,0,0,1), Db::OpenMode::Readonly, BE_SQLITE_OK, true},
-            {ProfileVersion(4,0,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_OK, true},
-            {ProfileVersion(4,0,0,2), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {ProfileVersion(4,0,0,2), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
-            {ProfileVersion(4,0,0,3), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {ProfileVersion(4,0,0,3), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
-            {ProfileVersion(4,0,1,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {ProfileVersion(4,0,1,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNewForReadWrite, false},
-            {ProfileVersion(4,1,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
-            {ProfileVersion(4,1,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false},
-            {ProfileVersion(5,0,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
-            {ProfileVersion(5,0,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false}
+    std::vector<std::pair<ProfileVersion, ProfileState>> expectedProfileStates {
+            {ProfileVersion(3,6,99,0), ProfileState::Older(ProfileState::CanOpen::No, false)},
+            {ProfileVersion(3,7,0,0), ProfileState::Older(ProfileState::CanOpen::No, false)},
+            {ProfileVersion(3,7,0,1), ProfileState::Older(ProfileState::CanOpen::No, false)},
+            {ProfileVersion(3,7,3,1), ProfileState::Older(ProfileState::CanOpen::No, false)},
+            {ProfileVersion(3,7,3,2), ProfileState::Older(ProfileState::CanOpen::No, false)},
+            {ProfileVersion(3,7,3,3), ProfileState::Older(ProfileState::CanOpen::No, false)},
+            {ProfileVersion(3,7,4,3), ProfileState::Older(ProfileState::CanOpen::No, false)},
+            {ProfileVersion(3,100,0,0), ProfileState::Older(ProfileState::CanOpen::No, false)},
+            {ProfileVersion(3,100,0,1), ProfileState::Older(ProfileState::CanOpen::No, false)},
+            {ProfileVersion(3,100,1,1), ProfileState::Older(ProfileState::CanOpen::No, false)},
+            {ProfileVersion(4,0,0,0), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
+            {ProfileVersion(4,0,0,1), ProfileState::UpToDate()},
+            {ProfileVersion(4,0,0,2), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
+            {ProfileVersion(4,0,0,3), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
+            {ProfileVersion(4,0,1,0), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
+            {ProfileVersion(4,1,0,0), ProfileState::Newer(ProfileState::CanOpen::No)},
+            {ProfileVersion(5,0,0,0), ProfileState::Newer(ProfileState::CanOpen::No)}
         };
 
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "UPDATE be_Prop SET StrData=? WHERE Namespace='ec_Db' AND Name='SchemaVersion'"));
-    for (std::tuple<ProfileVersion, Db::OpenMode, DbResult, bool> const& testVersion : testVersions)
+    for (std::pair<ProfileVersion, ProfileState> const& testVersion : expectedProfileStates)
         {
-        Utf8String schemaVersionJson = std::get<0>(testVersion).ToJson();
+        Utf8String schemaVersionJson = testVersion.first.ToJson();
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "UPDATE be_Prop SET StrData=? WHERE Namespace='ec_Db' AND Name='SchemaVersion'"));
         ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, schemaVersionJson, Statement::MakeCopy::Yes));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << schemaVersionJson.c_str();
         ASSERT_EQ(1, m_ecdb.GetModifiedRowCount()) << schemaVersionJson.c_str();
         stmt.Reset();
         stmt.ClearBindings();
 
-        Db::OpenMode openMode = std::get<1>(testVersion);
-        DbResult expectedResult = std::get<2>(testVersion);
-        bool expectedNeedsUpgrade = std::get<3>(testVersion);
-        
-        bool actualNeedsUpgrade = false;
-        ASSERT_EQ(expectedResult, m_ecdb.CheckECDbProfileVersion(actualNeedsUpgrade, openMode == Db::OpenMode::Readonly)) << schemaVersionJson.c_str() << " OpenMode readonly:" << (openMode == Db::OpenMode::Readonly ? "yes" : "no");
-        ASSERT_EQ(expectedNeedsUpgrade, actualNeedsUpgrade) << schemaVersionJson.c_str() << " OpenMode readonly:" << (openMode == Db::OpenMode::Readonly ? "yes" : "no");
+        ProfileState const& expectedProfileState = testVersion.second;
+        ProfileState actualProfileState = m_ecdb.CheckProfileVersion();
+        EXPECT_EQ(expectedProfileState, actualProfileState) << schemaVersionJson.c_str();
         }
 
     m_ecdb.AbandonChanges();
+
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    std::vector<ProfileVersion> expectedTooOld = {ProfileVersion(3,6,99,0), ProfileVersion(3,7,0,0),ProfileVersion(3,7,0,1),ProfileVersion(3,7,3,1),ProfileVersion(3,7,3,2),ProfileVersion(3,7,4,3),ProfileVersion(3,100,0,0), ProfileVersion(3,100,0,1), ProfileVersion(3,100,1,1)};
+    std::vector<ProfileVersion> expectedOlderReadwriteAndUpgradable = {ProfileVersion(4,0,0,0)};
+    ProfileVersion expectedUpToDate = ProfileVersion(4,0,0,1);
+    std::vector<ProfileVersion> expectedNewerReadWrite = {ProfileVersion(4,0,0,2), ProfileVersion(4,0,0,3)};
+    std::vector<ProfileVersion> expectedNewerReadonly = {ProfileVersion(4,0,1,0)};
+    std::vector<ProfileVersion> expectedTooNew = {ProfileVersion(4,1,0,0), ProfileVersion(5,0,0,0)};
+
+    auto fakeModifyProfileVersion = [] (BeFileNameCR filePath, ProfileVersion const& version)
+        {
+        Utf8String versionStr = version.ToJson();
+
+        Db db;
+        ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << versionStr;
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "UPDATE be_Prop SET StrData=? WHERE Namespace='ec_Db' AND Name='SchemaVersion'")) << versionStr;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, versionStr, Statement::MakeCopy::Yes)) << versionStr;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << versionStr;
+        ASSERT_EQ(1, db.GetModifiedRowCount()) << versionStr;
+        ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges()) << versionStr;
+        };
+
+    for (ProfileVersion const& testVersion : expectedTooOld)
+        {
+        fakeModifyProfileVersion(filePath, testVersion);
+        ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooOld, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly))) << testVersion.ToString();
+        ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooOld, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << testVersion.ToString();
+        ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooOld, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite, Db::ProfileUpgradeOptions::Upgrade))) << testVersion.ToString();
+        }
+
+    for (ProfileVersion const& testVersion : expectedOlderReadwriteAndUpgradable)
+        {
+        fakeModifyProfileVersion(filePath, testVersion);
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly))) << testVersion.ToString();
+        EXPECT_EQ(testVersion, m_ecdb.GetECDbProfileVersion()) << testVersion.ToString() << " | No upgrade";
+        CloseECDb();
+        {
+        ScopedDisableFailOnAssertion disableAssertion;
+        ASSERT_EQ(BE_SQLITE_READONLY, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly, Db::ProfileUpgradeOptions::Upgrade))) << testVersion.ToString();
+        }
+        //testing actual upgrade does not work as the file per se is not in the right state (the test just fake-modifies the profile version)
+        }
+
+    fakeModifyProfileVersion(filePath, expectedUpToDate);
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly))) << expectedUpToDate.ToString();
+    EXPECT_EQ(expectedUpToDate, m_ecdb.GetECDbProfileVersion()) << expectedUpToDate.ToString() << " | No upgrade";
+    CloseECDb();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << expectedUpToDate.ToString();
+    EXPECT_EQ(expectedUpToDate, m_ecdb.GetECDbProfileVersion()) << expectedUpToDate.ToString() << " | No upgrade";
+    CloseECDb();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite, Db::ProfileUpgradeOptions::Upgrade))) << expectedUpToDate.ToString();
+    EXPECT_EQ(expectedUpToDate, m_ecdb.GetECDbProfileVersion()) << expectedUpToDate.ToString() << " | No upgrade";
+    CloseECDb();
+
+    for (ProfileVersion const& testVersion : expectedNewerReadWrite)
+        {
+        fakeModifyProfileVersion(filePath, testVersion);
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly))) << testVersion.ToString();
+        EXPECT_EQ(testVersion, m_ecdb.GetECDbProfileVersion()) << testVersion.ToString();
+        CloseECDb();
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << testVersion.ToString();
+        EXPECT_EQ(testVersion, m_ecdb.GetECDbProfileVersion()) << testVersion.ToString();
+        CloseECDb();
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite, Db::ProfileUpgradeOptions::Upgrade))) << expectedUpToDate.ToString();
+        EXPECT_EQ(testVersion, m_ecdb.GetECDbProfileVersion()) << testVersion.ToString();
+        CloseECDb();
+        }
+
+    for (ProfileVersion const& testVersion : expectedNewerReadonly)
+        {
+        fakeModifyProfileVersion(filePath, testVersion);
+        ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << testVersion.ToString();
+        ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite, Db::ProfileUpgradeOptions::Upgrade))) << expectedUpToDate.ToString();
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly))) << testVersion.ToString();
+        EXPECT_EQ(testVersion, m_ecdb.GetECDbProfileVersion()) << testVersion.ToString();
+        CloseECDb();
+        }
+
+    for (ProfileVersion const& testVersion : expectedTooNew)
+        {
+        fakeModifyProfileVersion(filePath, testVersion);
+        ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooNew, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << testVersion.ToString();
+        ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooNew, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite, Db::ProfileUpgradeOptions::Upgrade))) << expectedUpToDate.ToString();
+        ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooNew, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly))) << testVersion.ToString();
+        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE

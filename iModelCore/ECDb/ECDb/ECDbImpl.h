@@ -71,6 +71,7 @@ private:
     static bool s_isInitalized;
     mutable BeMutex m_mutex;
     ECDbR m_ecdb;
+    mutable ProfileVersion m_profileVersion = ProfileVersion(0, 0, 0, 0);
     std::unique_ptr<SchemaManager> m_schemaManager;
     ChangeManager m_changeManager;
     SettingsManager m_settingsManager;
@@ -93,7 +94,9 @@ private:
     Impl(Impl const&) = delete;
     Impl& operator=(Impl const&) = delete;
 
-    DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const;
+    ProfileState CheckProfileVersion() const { return ProfileManager::CheckProfileVersion(m_profileVersion, m_ecdb); }
+    DbResult UpgradeProfile() const { return ProfileManager::UpgradeProfile(m_profileVersion, m_ecdb); }
+    ProfileVersion const& GetProfileVersion() const { return m_profileVersion; }
 
     SchemaManager const& Schemas() const { return *m_schemaManager; }
     ECN::IECSchemaLocaterR GetSchemaLocater() const { return *m_schemaManager; }
@@ -120,7 +123,6 @@ private:
 
     DbResult OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId);
     void OnDbChangedByOtherConnection() const { ClearECDbCache(); }
-    DbResult VerifyProfileVersion(Db::OpenParams const& params) const { return ProfileManager::UpgradeProfile(m_ecdb, params); }
     BentleyStatus ResetInstanceIdSequence(BeBriefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList);
 
     BentleyStatus DetermineMaxInstanceIdForBriefcase(ECInstanceId& maxId, BeBriefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) const;

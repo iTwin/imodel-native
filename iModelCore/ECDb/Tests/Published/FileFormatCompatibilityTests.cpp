@@ -1341,7 +1341,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     upgradedFilePath.AppendToPath(L"upgradedimodel2.ecdb");
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, upgradedFilePath));
     ECDb upgradedFile;
-    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade)));
 
     //verify 4.0.1 upgrade
     Statement stmt;
@@ -1478,6 +1478,43 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
 
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, OpenOldFileWithDifferentOptions)
+    {
+    BeFileName benchmarkFilePath = GetBenchmarkFileFolder(InitialBim2ProfileVersion());
+    benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
+
+    BeFileName artefactOutDir;
+    BeTest::GetHost().GetOutputRoot(artefactOutDir);
+    if (!artefactOutDir.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(artefactOutDir));
+
+    BeFileName oldFilePath(artefactOutDir);
+    oldFilePath.AppendToPath(L"oldimodel2.ecdb");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, oldFilePath));
+
+
+    ECDb oldFile;
+    {
+    ScopedDisableFailOnAssertion disableAssertion;
+    ASSERT_EQ((int) BE_SQLITE_READONLY, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ProfileUpgradeOptions::Upgrade))) << "ProfileUpgradeOptions::Upgrade requires OpenMode::ReadWrite";
+    }
+    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly))) << "Opens without upgrade";
+    EXPECT_EQ(ProfileVersion(4, 0, 0, 0), oldFile.GetECDbProfileVersion()) << "Open without upgrade";
+    oldFile.CloseDb();
+    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite))) << "Opens without upgrade";
+    EXPECT_EQ(ProfileVersion(4, 0, 0, 0), oldFile.GetECDbProfileVersion()) << "Open without upgrade";
+    oldFile.CloseDb();
+    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::None))) << "Open without upgrade";
+    EXPECT_EQ(ProfileVersion(4, 0, 0, 0), oldFile.GetECDbProfileVersion()) << "Open without upgrade";
+    oldFile.CloseDb();
+    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade))) << "Open with upgrade";
+    EXPECT_EQ(ProfileVersion(4, 0, 0, 1), oldFile.GetECDbProfileVersion()) << "Open with upgrade";
+    oldFile.CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
@@ -1496,7 +1533,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     upgradedFilePath.AppendToPath(L"upgradedimodel2.ecdb");
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, upgradedFilePath));
     ECDb upgradedFile;
-    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade)));
     
     {
     Statement stmt;

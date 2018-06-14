@@ -33,7 +33,7 @@ DbResult ECDb::Impl::OnDbCreated() const
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return ProfileManager::CreateProfile(m_ecdb);
+    return ProfileManager::CreateProfile(m_profileVersion, m_ecdb);
     }
 
 
@@ -221,19 +221,6 @@ BentleyStatus ECDb::Impl::DetermineMaxIdForBriefcase(BeBriefcaseBasedId& maxId, 
                 maxId.Invalidate();
                 return ERROR;
         }
-    }
-
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                12/2016
-//---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const
-    {
-    if (!m_ecdb.GetDefaultTransaction()->IsActive())
-        return BE_SQLITE_ERROR_NoTxnActive;
-
-    ProfileVersion unused(0, 0, 0, 0);
-    return ProfileManager::CheckProfileVersion(fileIsAutoUpgradable, unused, m_ecdb, openModeIsReadonly);
     }
 
 //--------------------------------------------------------------------------------------

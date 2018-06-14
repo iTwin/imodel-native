@@ -43,14 +43,6 @@ void ECDb::ApplyECDbSettings(bool requireECCrudTokenValidation, bool requireECSc
 ECDb::SettingsManager const& ECDb::GetECDbSettingsManager() const { return m_pimpl->m_settingsManager; }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                01/2017
-//---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::CheckECDbProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const
-    {
-    return m_pimpl->CheckProfileVersion(fileIsAutoUpgradable, openModeIsReadonly);
-    }
-
-//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2012
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_OnDbOpening()
@@ -130,13 +122,22 @@ void ECDb::_OnDbChangedByOtherConnection()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_VerifyProfileVersion(Db::OpenParams const& params)
+ProfileState ECDb::_CheckProfileVersion() const 
+    { 
+    ProfileState besqliteState = Db::_CheckProfileVersion();
+    return besqliteState.Merge(m_pimpl->CheckProfileVersion()); 
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                07/2013
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::_UpgradeProfile()
     {
-    DbResult stat = Db::_VerifyProfileVersion(params);
-    if (stat != BE_SQLITE_OK)
+    DbResult stat = Db::_UpgradeProfile();
+    if (BE_SQLITE_OK != stat)
         return stat;
 
-    return m_pimpl->VerifyProfileVersion(params);
+    return m_pimpl->UpgradeProfile();
     }
 
 //--------------------------------------------------------------------------------------
@@ -259,6 +260,11 @@ BentleyStatus ECDb::OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpace, ECN::ECClassCR
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::ClearECDbCache() const { m_pimpl->ClearECDbCache(); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                06/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ProfileVersion const& ECDb::GetECDbProfileVersion() const { return m_pimpl->GetProfileVersion(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012

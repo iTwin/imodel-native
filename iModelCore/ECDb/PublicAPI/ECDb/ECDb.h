@@ -196,7 +196,8 @@ protected:
     ECDB_EXPORT DbResult _OnAfterSetAsBriefcase(BeBriefcaseId newBriefcaseId) override;
     ECDB_EXPORT void _OnDbClose() override;
     ECDB_EXPORT void _OnDbChangedByOtherConnection() override;
-    ECDB_EXPORT DbResult _VerifyProfileVersion(Db::OpenParams const&) override;
+    ECDB_EXPORT ProfileState _CheckProfileVersion() const override;
+    ECDB_EXPORT DbResult _UpgradeProfile() override;
     ECDB_EXPORT DbResult _OnDbAttached(Utf8CP fileName, Utf8CP dbAlias) const override;
     ECDB_EXPORT DbResult _OnDbDetached(Utf8CP dbAlias) const override;
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
@@ -248,27 +249,6 @@ public:
 
     //! Gets the settings with which the ECDb object was constructed.
     Settings const& GetECDbSettings() const { return GetECDbSettingsManager().GetSettings(); }
-
-    //! Checks the file's ECDb profile compatibility to be opened with the current version of the ECDb API.
-    //!
-    //! @remarks The caller must ensure that a transaction is active as this method needs to execute a SQL statement.
-    //! All SQL statements, even SELECTs, require an active transaction in SQLite.
-    //!
-    //! @see BeSQLite::Db::OpenBeSQLiteDb for the compatibility contract for Bentley SQLite profiles.
-    //! @param[out] fileIsAutoUpgradable Returns true if the file's ECDb profile version indicates that it is old, but auto-upgradeable.
-    //!             false otherwise.
-    //!             This method does @b not perform auto-upgrades. The out parameter just indicates to calling code
-    //!             whether it has to perform the auto-upgrade or not.
-    //! @param[in]  openModeIsReadonly true if the file is going to be opened in read-only mode. false if
-    //!             the file is going to be opened in read-write mode.
-    //! @return     BE_SQLITE_OK if ECDb profile can be opened in the requested mode, i.e. the compatibility contract is matched.
-    //!             BE_SQLITE_ERROR_NoTxnActive if no transaction is active
-    //!             BE_SQLITE_Error_ProfileTooOld if file's ECDb profile is too old to be opened by this API.
-    //!             This error code is also returned if the file is old but not too old to be auto-upgraded.
-    //!             Check @p fileIsAutoUpgradable to tell whether the file is auto-upgradeable and not.
-    //!             BE_SQLITE_Error_ProfileTooNew if file's profile is too new to be opened by this API.
-    //!             BE_SQLITE_Error_ProfileTooNewForReadWrite if file's profile is too new to be opened read-write, i.e. @p openModeIsReadonly is false
-    ECDB_EXPORT DbResult CheckECDbProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const;
 
     //! Gets the schema manager for this @ref ECDbFile "ECDb file". With the schema manager clients can import @ref ECN::ECSchema "ECSchemas"
     //! into or retrieve @ref ECN::ECSchema "ECSchemas" or individual @ref ECN::ECClass "ECClasses" from the %ECDb file.
@@ -441,6 +421,9 @@ public:
     //! @note For subclass implementors: calling this method fires the _OnBeforeClearECDbCache callback. This allows subclasses
     //! to free any items that referred to the objects in the cache.
     ECDB_EXPORT void ClearECDbCache() const;
+
+    //! Gets the version of the ECDb profile of this file.
+    ECDB_EXPORT ProfileVersion const& GetECDbProfileVersion() const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetImpl() const;
