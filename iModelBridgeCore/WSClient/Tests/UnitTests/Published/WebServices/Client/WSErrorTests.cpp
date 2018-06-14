@@ -754,3 +754,15 @@ TEST_F(WSErrorTests, GetData_XmlBody_JsonNull)
     EXPECT_EQ(Json::Value::GetNull(), error.GetData());
     }
     
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_InvalidtHttpError_NoneStatus)
+    {
+    HttpError httpError;
+    WSError error(httpError);
+    EXPECT_EQ(WSError::Status::None, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    EXPECT_EQ("", error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
+    }

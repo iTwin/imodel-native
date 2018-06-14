@@ -200,8 +200,11 @@ WSError::WSError(RapidJsonValueCR jsonError)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSError::WSError(HttpErrorCR httpError)
+WSError::WSError(HttpErrorCR httpError) : WSError()
     {
+    if (!httpError.IsValid())
+        return;
+
     if (ConnectionStatus::Canceled == httpError.GetConnectionStatus())
         {
         m_status = Status::Canceled;
