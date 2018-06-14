@@ -231,6 +231,27 @@ BentleyStatus DgnDbProfile::_Init() const
 TestFile::TestFile(Utf8StringCR name, BeFileName const& path, ProfileVersion const& bedbVersion, ProfileVersion const& ecdbVersion, ProfileVersion const& dgndbVersion) : m_name(name), m_path(path), m_bedbVersion(bedbVersion), m_ecdbVersion(ecdbVersion), m_dgndbVersion(dgndbVersion) {}
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+ProfileState::Age TestFile::GetAge() const
+    {
+    int comp = 0;
+    if (!m_dgndbVersion.IsEmpty())
+        comp = m_dgndbVersion.CompareTo(DgnDbProfile::Get().GetExpectedVersion());
+
+    if (comp == 0 && !m_ecdbVersion.IsEmpty())
+        comp = m_ecdbVersion.CompareTo(ECDbProfile::Get().GetExpectedVersion());
+
+    if (comp == 0)
+        comp = m_bedbVersion.CompareTo(BeDbProfile::Get().GetExpectedVersion());
+
+    if (comp == 0)
+        return ProfileState::Age::UpToDate;
+
+    return comp > 0 ? ProfileState::Age::Newer : ProfileState::Age::Older;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   05/18
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String TestFile::ToString() const

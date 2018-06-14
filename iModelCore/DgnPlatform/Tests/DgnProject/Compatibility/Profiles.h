@@ -47,6 +47,8 @@ struct TestFile final
         BeSQLite::ProfileVersion const& GetECDbVersion() const { return m_ecdbVersion; }
         BeSQLite::ProfileVersion const& GetDgnDbVersion() const { return m_dgndbVersion; }
 
+        //Indicates whether the test file in its un-upgraded state is older/newer/up-to-date compared to the version expected by the software.
+        BeSQLite::ProfileState::Age GetAge() const;
         Utf8String ToString() const;
     };
 
