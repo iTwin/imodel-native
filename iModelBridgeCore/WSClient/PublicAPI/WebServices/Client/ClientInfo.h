@@ -51,13 +51,13 @@ struct ClientInfo : public IHttpHeaderProvider
         //! @param[in] applicationVersion - application build version could be used to identify application in server side.
         //! Usual ways to get build version:
         //! - Pass version numbers to code:
-        //! %include $(SrcRoot)bsicommon/sharedmki/CreateBuildVersionHeader.mki
-        //! #define MY_PRODUCT_VERSION (REL_V "." MAJ_V "." MIN_V "." SUBMIN_V)
+        //! \%include \$(SrcRoot)bsicommon/sharedmki/CreateBuildVersionHeader.mki
+        //! \#define MY_PRODUCT_VERSION (REL_V "." MAJ_V "." MIN_V "." SUBMIN_V)
         //! - Pass whole version to code: 
-        //! %include $(SharedMki)stdversion.mki
-        //! MY_PRODUCT_VERSION = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
-        //! nameToDefine = MY_PRODUCT_VERSION = \"$(MY_PRODUCT_VERSION)\"
-        //! %include cdefapnd.mki
+        //! %include \$(SharedMki)stdversion.mki
+        //! MY_PRODUCT_VERSION = \$(REL_V).\$(MAJ_V).\$(MIN_V).\$(SUBMIN_V)
+        //! nameToDefine = MY_PRODUCT_VERSION = \\"\$(MY_PRODUCT_VERSION)\\"
+        //! \%include cdefapnd.mki
         //! - Or just hardcode if used for testing, etc.
         //! @param[in] applicationGUID - unique application GUID used for registering WSG usage
         //! @param[in] applicationProductId - registered 4-digit application product ID (e.g. "1234") used for IMS sign-in [optional otherwise]
@@ -80,13 +80,13 @@ struct ClientInfo : public IHttpHeaderProvider
         //! @param[in] applicationVersion - application build version could be used to identify application in server side.
         //! Usual ways to get build version:
         //! - Pass version numbers to code:
-        //! %include $(SrcRoot)bsicommon/sharedmki/CreateBuildVersionHeader.mki
-        //! #define MY_PRODUCT_VERSION (REL_V "." MAJ_V "." MIN_V "." SUBMIN_V)
+        //! \%include \$(SrcRoot)bsicommon/sharedmki/CreateBuildVersionHeader.mki
+        //! \#define MY_PRODUCT_VERSION (REL_V "." MAJ_V "." MIN_V "." SUBMIN_V)
         //! - Pass whole version to code: 
-        //! %include $(SharedMki)stdversion.mki
-        //! MY_PRODUCT_VERSION = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
-        //! nameToDefine = MY_PRODUCT_VERSION = \"$(MY_PRODUCT_VERSION)\"
-        //! %include cdefapnd.mki
+        //! %include \$(SharedMki)stdversion.mki
+        //! MY_PRODUCT_VERSION = \$(REL_V).\$(MAJ_V).\$(MIN_V).\$(SUBMIN_V)
+        //! nameToDefine = MY_PRODUCT_VERSION = \\"\$(MY_PRODUCT_VERSION)\\"
+        //! \%include cdefapnd.mki
         //! - Or just hardcode if used for testing, etc.
         //! @param[in] applicationGUID - unique application GUID used for registering WSG usage
         //! @param[in] deviceId - unique device ID used for licensing. Should be different for different devices
