@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientInfo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -225,10 +225,7 @@ Utf8String ClientInfo::GetUserAgent() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClientInfo::GetProductToken() const
     {
-    return Utf8PrintfString("%s/%d.%d",
-        m_applicationName.c_str(),
-        m_applicationVersion.GetMajor(),
-        m_applicationVersion.GetMinor());
+    return Utf8PrintfString("%s/%s", m_applicationName.c_str(), m_applicationVersion.ToString().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+

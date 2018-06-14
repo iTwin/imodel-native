@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/ClientInfoTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInfoTests.h"
@@ -50,7 +50,7 @@ TEST_F(ClientInfoTests, FillHttpRequestHeaders_ValuesPassedToCreate_SetsCorrespo
     HttpRequestHeaders headers;
     info.FillHttpRequestHeaders(headers);
 
-    EXPECT_STREQ("Test-AppName/4.2 (TestSystem)", headers.GetUserAgent());
+    EXPECT_STREQ("Test-AppName/4.2.6.9 (TestSystem)", headers.GetUserAgent());
     EXPECT_STREQ("TestAppGUID", headers.GetValue("Mas-App-Guid"));
     EXPECT_STREQ("TestDeviceId", headers.GetValue("Mas-Uuid"));
     EXPECT_STREQ("en", headers.GetAcceptLanguage());
@@ -59,7 +59,19 @@ TEST_F(ClientInfoTests, FillHttpRequestHeaders_ValuesPassedToCreate_SetsCorrespo
 TEST_F(ClientInfoTests, GetProductToken_PassedMandatoryValues_SetsValues)
     {
     ClientInfo info("TestAppName", BeVersion(4, 2, 6, 9), "TestAppGUID", "TestDeviceId", "TestSystem");
-    EXPECT_STREQ("TestAppName/4.2", info.GetProductToken().c_str());
+    EXPECT_STREQ("TestAppName/4.2.6.9", info.GetProductToken().c_str());
+    }
+
+TEST_F(ClientInfoTests, GetProductToken_SubVersionsZero_SetsValues)
+    {
+    ClientInfo info("TestAppName", BeVersion(4, 0, 0, 0), "TestAppGUID", "TestDeviceId", "TestSystem");
+    EXPECT_STREQ("TestAppName/4.0.0.0", info.GetProductToken().c_str());
+    }
+
+TEST_F(ClientInfoTests, GetProductToken_LongVersion_SetsValues)
+    {
+    ClientInfo info("TestAppName", BeVersion(4, 12, 324, 5678), "TestAppGUID", "TestDeviceId", "TestSystem");
+    EXPECT_STREQ("TestAppName/4.12.324.5678", info.GetProductToken().c_str());
     }
 
 TEST_F(ClientInfoTests, FillHttpRequestHeaders_SameHeadersWithValues_OverridesExistingValues)
@@ -72,7 +84,7 @@ TEST_F(ClientInfoTests, FillHttpRequestHeaders_SameHeadersWithValues_OverridesEx
     headers.SetValue("Mas-Uuid", "OtherDeviceId");
     info.FillHttpRequestHeaders(headers);
 
-    EXPECT_STREQ("Test-AppName/4.2 (TestSystem)", headers.GetUserAgent());
+    EXPECT_STREQ("Test-AppName/4.2.6.9 (TestSystem)", headers.GetUserAgent());
     EXPECT_STREQ("TestAppGUID", headers.GetValue("Mas-App-Guid"));
     EXPECT_STREQ("TestDeviceId", headers.GetValue("Mas-Uuid"));
     }
