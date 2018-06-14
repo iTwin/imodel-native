@@ -1320,7 +1320,7 @@ TEST_F(ConverterTests, StandAloneAdapterTest)
     //BeFileName outputFileName = GetOutputFileName(testName.c_str());
 
 
-    WChar args[] = {L"Dgnv8Bridge"};
+    WCharCP args[] = {L"Dgnv8Bridge"};
     iModelBridge* bridge = iModelBridge_getInstance(L"Dgnv8Bridge");
     iModelBridgeSacAdapter::ParseCommandLineForBeTest(*bridge, {
             {L"--input=", m_v8FileName.c_str()},
