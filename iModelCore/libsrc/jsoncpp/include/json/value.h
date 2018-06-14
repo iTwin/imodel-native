@@ -523,6 +523,8 @@ class JSON_API Value
            case arrayValue:
            case objectValue:
               BeAssert(false);
+           default:
+                break;
            }
         return defaultVal;
         }
