@@ -2162,7 +2162,7 @@ DTMStatusInt BcDTM::CalculatePrismoidalVolumeToElevation (BcDTMVolumeAreaResult&
         TMTransformHelper::VOLRANGETABCopy volRange = _dtmTransformHelper->copyVOLRANGETABToDTM (rangeTableP, numRanges);
         status = (DTMStatusInt)bcdtmTinVolume_surfaceToElevationDtmObject (GetTinHandle (), volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, _dtmTransformHelper->convertElevationToDTM (elevation), bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
 
-        if (status != DTM_SUCCESS)
+        if (status == DTM_SUCCESS)
             {
             result.cutVolume = _dtmTransformHelper->convertVolumeFromDTM (result.cutVolume);
             result.fillVolume = _dtmTransformHelper->convertVolumeFromDTM (result.fillVolume);
@@ -2203,7 +2203,7 @@ DTMStatusInt BcDTM::CalculatePrismoidalVolumeToSurface (BcDTMVolumeAreaResult& r
         TMTransformHelper::VOLRANGETABCopy volRange = _dtmTransformHelper->copyVOLRANGETABToDTM (rangeTableP, numRanges);
         status = (DTMStatusInt)bcdtmTinVolume_surfaceToSurfaceDtmObjects (GetTinHandle (), (BC_DTM_OBJ*)otherDtm->GetTinHandle (), volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea);
 
-        if (status != DTM_SUCCESS)
+        if (status == DTM_SUCCESS)
             {
             result.cutVolume = _dtmTransformHelper->convertVolumeFromDTM (result.cutVolume);
             result.fillVolume = _dtmTransformHelper->convertVolumeFromDTM (result.fillVolume);
@@ -2273,7 +2273,7 @@ DTMStatusInt BcDTM::CalculateGridVolumeToElevation (BcDTMVolumeAreaResult& resul
         {
         TMTransformHelper::VOLRANGETABCopy volRange = _dtmTransformHelper->copyVOLRANGETABToDTM (rangeTableP, numRanges);
         status = (DTMStatusInt)bcdtmLatticeVolume_surfaceToElevationDtmObject (GetTinHandle (), numLatticePoints, volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, _dtmTransformHelper->convertElevationToDTM (elevation), bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea, numCellsUsedP, cellAreaP);
-        if (status != DTM_SUCCESS)
+        if (status == DTM_SUCCESS)
             {
             result.cutVolume = _dtmTransformHelper->convertVolumeFromDTM (result.cutVolume);
             result.fillVolume = _dtmTransformHelper->convertVolumeFromDTM (result.fillVolume);
@@ -2314,7 +2314,7 @@ DTMStatusInt BcDTM::CalculateGridVolumeToSurface (BcDTMVolumeAreaResult& result,
         {
         TMTransformHelper::VOLRANGETABCopy volRange = _dtmTransformHelper->copyVOLRANGETABToDTM (rangeTableP, numRanges);
         status = (DTMStatusInt)bcdtmLatticeVolume_surfaceToSurfaceDtmObjects (GetTinHandle (), otherDtm->GetTinHandle (), numLatticePoints, volRange, numRanges, (DPoint3d*)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, bcDTM_volumeCallBackFunction, volumePolygonsP, result.cutVolume, result.fillVolume, result.balanceVolume, result.cutArea, result.fillArea, numCellsUsedP, cellAreaP);
-        if (status != DTM_SUCCESS)
+        if (status == DTM_SUCCESS)
             {
             result.cutVolume = _dtmTransformHelper->convertVolumeFromDTM (result.cutVolume);
             result.fillVolume = _dtmTransformHelper->convertVolumeFromDTM (result.fillVolume);
