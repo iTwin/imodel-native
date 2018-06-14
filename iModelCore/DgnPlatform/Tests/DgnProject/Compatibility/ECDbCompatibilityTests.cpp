@@ -187,6 +187,7 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
         helper.AssertKindOfQuantity("PreEC32Koqs", "LIQUID_VOLUME", "Liquid Volume", nullptr, "CUB.M(DefaultReal)", JsonValue(R"json(["LITRE(Real4U)", "GALLON(Real4U)"])json"), 0.0001);
         helper.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_NoPresUnit", nullptr, nullptr, "W/(M*K)(DefaultReal)", JsonValue(), 0.4);
         helper.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormat_NoPresUnit", nullptr, nullptr, "W/(M*K)(DefaultReal)", JsonValue(), 0.5);
+        helper.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormatWithUnit_NoPresUnit", nullptr, nullptr, "FT(AmerFI8)", JsonValue(), 0.6);
         }
     }
 
@@ -203,8 +204,9 @@ TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
         TestHelper helper(testFile, ecdb);
         helper.AssertLoadSchemas();
 
-        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatNoComposite", nullptr, "KOQ with presentation formats without composite units", "u:CM", JsonValue(R"json(["f:DefaultRealU", "f:DefaultReal"])json"), 0.5);
-        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithComposite", nullptr, nullptr, "u:KG", JsonValue(R"js(["f:DefaultRealU[u:G]"])js"), 0.6);
-        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_NoPresFormat", nullptr, nullptr, "u:KG", JsonValue(), 0.5);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithMandatoryComposite", "My first test KOQ", nullptr, "u:CM", JsonValue(R"js(["TBD"])js"), 0.1);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithOptionalComposite", nullptr, "My second test KOQ", "u:CM", JsonValue(R"js(["TBD"])js"), 0.2);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithoutComposite", nullptr, nullptr, "u:CM", JsonValue(R"js(["TBD"])js"), 0.3);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_NoPresFormat", nullptr, nullptr, "u:KG", JsonValue(), 0.4);
         }
     }
