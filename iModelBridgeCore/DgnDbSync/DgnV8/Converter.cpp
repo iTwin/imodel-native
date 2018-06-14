@@ -1671,7 +1671,6 @@ void Converter::ReportDgnFileStatus(DbResult fileStatus, BeFileNameCR projectFil
 
         case BE_SQLITE_ERROR_InvalidProfileVersion:
         case BE_SQLITE_ERROR_ProfileUpgradeFailed:
-        case BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite:
         case BE_SQLITE_ERROR_ProfileTooOld:
             category = Converter::IssueCategory::Compatibility();
             issue = Converter::Issue::Error();

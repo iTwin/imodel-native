@@ -217,7 +217,7 @@ void            DwgImporter::ReportDbFileStatus (DbResult fileStatus, BeFileName
 
         case BE_SQLITE_ERROR_InvalidProfileVersion:
         case BE_SQLITE_ERROR_ProfileUpgradeFailed:
-        case BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite:
+        case BE_SQLITE_ERROR_ProfileTooOldForReadWrite:
         case BE_SQLITE_ERROR_ProfileTooOld:
             category = DwgImporter::IssueCategory::Compatibility();
             issue = DwgImporter::Issue::Error();
