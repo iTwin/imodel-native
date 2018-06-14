@@ -78,11 +78,11 @@ class ScalableMeshDb : public BeSQLite::Db
     {
     private:
         SQLDatabaseType m_type;
-        BESQL_VERSION_STRUCT GetCurrentVersion();
+        BESQL_VERSION_STRUCT GetCurrentVersion() const;
 
     protected:
 #ifndef VANCOUVER_API    
-    virtual DbResult _VerifyProfileVersion(OpenParams const& params) override; 
+       ProfileState _CheckProfileVersion() const override;
 #endif
     virtual DbResult _OnDbCreated(CreateParams const& params) override;
 
