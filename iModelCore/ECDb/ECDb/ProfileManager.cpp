@@ -146,8 +146,8 @@ DbResult ProfileManager::RunUpgraders(ECDbCR ecdb, ProfileVersion const& actualF
     if (actualFileProfileVersion < ProfileVersion(4, 0, 0, 1))
         upgraders.push_back(std::make_unique<ProfileUpgrader_4001>());
 
-    if (actualFileProfileVersion < ProfileVersion(4, 0, 0, 2))
-        upgraders.push_back(std::make_unique<ProfileUpgrader_4002>());
+    if (actualFileProfileVersion < ProfileVersion(4, 0, 1, 0))
+        upgraders.push_back(std::make_unique<ProfileUpgrader_4010>());
 
     for (std::unique_ptr<ProfileUpgrader> const& upgrader : upgraders)
         {

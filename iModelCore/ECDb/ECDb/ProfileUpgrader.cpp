@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    01/2018
 //+---------------+---------------+---------------+---------------+---------------+--------
-DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
+DbResult ProfileUpgrader_4010::_Upgrade(ECDbCR ecdb) const
     {
     DbResult stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN ECVersion INTEGER");
     if (BE_SQLITE_OK != stat)
@@ -99,7 +99,7 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
 // @bsimethod                                                    Krischan.Eberle    01/2018
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ProfileUpgrader_4002::UpgradeECEnums(ECDbCR ecdb)
+DbResult ProfileUpgrader_4010::UpgradeECEnums(ECDbCR ecdb)
     {
     IdSet<ECSchemaId> ecdbSchemas;
     {
@@ -202,7 +202,7 @@ DbResult ProfileUpgrader_4002::UpgradeECEnums(ECDbCR ecdb)
 // @bsimethod                                                    Krischan.Eberle    01/2018
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-void ProfileUpgrader_4002::UpgradeECDbEnum(bmap<int64_t, Utf8String>& enumMap, int64_t enumId, Utf8CP enumName)
+void ProfileUpgrader_4010::UpgradeECDbEnum(bmap<int64_t, Utf8String>& enumMap, int64_t enumId, Utf8CP enumName)
     {
     if (BeStringUtilities::StricmpAscii(enumName, "StandardRootFolderType") == 0)
         {
@@ -311,7 +311,7 @@ void ProfileUpgrader_4002::UpgradeECDbEnum(bmap<int64_t, Utf8String>& enumMap, i
 // @bsimethod                                                    Krischan.Eberle    03/2018
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
+DbResult ProfileUpgrader_4010::UpgradeKoqs(ECDbCR ecdb)
     {
     KoqConversionContext ctx(ecdb);
 
@@ -366,7 +366,7 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
 // @bsimethod                                                    Krischan.Eberle    04/2018
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-BentleyStatus ProfileUpgrader_4002::ConvertKoqFuses(KoqConversionContext& ctx)
+BentleyStatus ProfileUpgrader_4010::ConvertKoqFuses(KoqConversionContext& ctx)
     {
     struct UpgradedUnitFormatStrings
         {
@@ -477,7 +477,7 @@ BentleyStatus ProfileUpgrader_4002::ConvertKoqFuses(KoqConversionContext& ctx)
 // @bsimethod                                                    Krischan.Eberle    04/2018
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSchemaId ProfileUpgrader_4002::InsertSchemaStub(ECDbCR ecdb, Utf8StringCR schemaName, Utf8StringCR alias)
+ECSchemaId ProfileUpgrader_4010::InsertSchemaStub(ECDbCR ecdb, Utf8StringCR schemaName, Utf8StringCR alias)
     {
     ECSchemaPtr stub = nullptr;
     if (ECObjectsStatus::Success != ECSchema::CreateSchema(stub, schemaName, alias, 1, 0, 0))
@@ -495,7 +495,7 @@ ECSchemaId ProfileUpgrader_4002::InsertSchemaStub(ECDbCR ecdb, Utf8StringCR sche
 // @bsimethod                                                    Krischan.Eberle    04/2018
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-BentleyStatus ProfileUpgrader_4002::InsertReferencesToUnitsAndFormatsSchema(KoqConversionContext& ctx, ECSchemaId unitsSchemaId, ECSchemaId formatsSchemaId)
+BentleyStatus ProfileUpgrader_4010::InsertReferencesToUnitsAndFormatsSchema(KoqConversionContext& ctx, ECSchemaId unitsSchemaId, ECSchemaId formatsSchemaId)
     {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ctx.m_ecdb, "INSERT INTO main." TABLE_SchemaReference "(SchemaId,ReferencedSchemaId) VALUES(?,?)"))
@@ -539,7 +539,7 @@ BentleyStatus ProfileUpgrader_4002::InsertReferencesToUnitsAndFormatsSchema(KoqC
 // @bsimethod                                                    Krischan.Eberle    04/2018
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-BentleyStatus ProfileUpgrader_4002::ImportFullUnitsAndFormatsSchemas(KoqConversionContext& ctx)
+BentleyStatus ProfileUpgrader_4010::ImportFullUnitsAndFormatsSchemas(KoqConversionContext& ctx)
     {
     bvector<ECSchemaCP> schemas;
     schemas.push_back(ctx.m_unitsSchema.get());
@@ -560,7 +560,7 @@ BentleyStatus ProfileUpgrader_4002::ImportFullUnitsAndFormatsSchemas(KoqConversi
 // @bsimethod                                                    Krischan.Eberle    04/2018
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-BentleyStatus ProfileUpgrader_4002::DeserializeUnitsAndFormatsSchemas(KoqConversionContext& ctx)
+BentleyStatus ProfileUpgrader_4010::DeserializeUnitsAndFormatsSchemas(KoqConversionContext& ctx)
     {
     ECSchemaReadContextPtr readCtx = ECSchemaReadContext::CreateContext();
     readCtx->AddSchemaLocater(ctx.m_ecdb.GetSchemaLocater());
@@ -590,7 +590,7 @@ BentleyStatus ProfileUpgrader_4002::DeserializeUnitsAndFormatsSchemas(KoqConvers
 // @bsimethod                                                    Krischan.Eberle    04/2018
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ProfileUpgrader_4002::FixMetaSchemaClassMapCAXml(ECDbCR ecdb)
+DbResult ProfileUpgrader_4010::FixMetaSchemaClassMapCAXml(ECDbCR ecdb)
     {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT ca.Id, ca.Instance FROM main." TABLE_CustomAttribute " ca "
