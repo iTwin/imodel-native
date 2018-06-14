@@ -335,6 +335,7 @@ Response RequestHandler::CreateiModelInstance(Request req)
     properties[ServerSchema::Property::Description] = settings["instance"]["properties"]["Description"].asString();
     properties[ServerSchema::Property::Name] = settings["instance"]["properties"]["Name"].asString();
     properties[ServerSchema::Property::UserCreated] = "DummyUserValue";
+    properties[ServerSchema::Property::CreatedDate] = DateTime::GetCurrentTimeUtc().ToString();
     properties[ServerSchema::Property::Initialized] = false;
     Utf8String contentToWrite(Json::FastWriter().write(iModelCreation));
 
