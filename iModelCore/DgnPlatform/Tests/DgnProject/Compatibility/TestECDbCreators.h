@@ -202,6 +202,7 @@ struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
 
  <KindOfQuantity typeName="TestKoq_NoPresUnit"  persistenceUnit="W/(M*K)" relativeError="0.4"/>
  <KindOfQuantity typeName="TestKoq_PersUnitWithFormat_NoPresUnit"  persistenceUnit="W/(M*K)(DefaultReal)" relativeError="0.5"/>
+ <KindOfQuantity typeName="TestKoq_PersUnitWithFormatWithUnit_NoPresUnit"  persistenceUnit="FT(AmerFI8)" relativeError="0.6"/>
 
 </ECSchema>)xml"));
             }
