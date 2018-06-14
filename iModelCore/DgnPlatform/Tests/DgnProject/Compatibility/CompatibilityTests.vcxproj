@@ -14,7 +14,6 @@
     <ClCompile Include="BeDbCompatibilityTests.cpp" />
     <ClCompile Include="CompatibilityTestFixture.cpp" />
     <ClCompile Include="IModelCompatibilityTests.cpp" />
-    <ClCompile Include="ProfileManager.cpp" />
     <ClCompile Include="Profiles.cpp" />
     <ClCompile Include="TestHelper.cpp" />
     <ClCompile Include="TestIModelCreators.cpp" />
@@ -24,7 +23,6 @@
   <ItemGroup>
     <ClInclude Include="CompatibilityTestFixture.h" />
     <ClInclude Include="CompatibilityTests.h" />
-    <ClInclude Include="ProfileManager.h" />
     <ClInclude Include="Profiles.h" />
     <ClInclude Include="TestHelper.h" />
     <ClInclude Include="TestIModelCreators.h" />

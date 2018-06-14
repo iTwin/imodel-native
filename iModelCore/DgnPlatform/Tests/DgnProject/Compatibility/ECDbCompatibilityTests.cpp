@@ -72,7 +72,7 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
 
                 case ProfileState::Age::Older:
                 {
-                EXPECT_EQ(Profile().GetExpectedVersion(), Profile().ReadProfileVersion(ecdb)) << "File is expected to be auto-upgraded. " << testFile.ToString();
+                EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << "File is expected to be auto-upgraded. " << testFile.ToString();
 
                 EXPECT_EQ(5, schemaCount) << testFile.ToString();
                 for (ECSchemaCP schema : ecdb.Schemas().GetSchemas(false))
@@ -139,8 +139,9 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32Enums)
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
 
-        if (testFile.GetProfileState().IsOlder())
-            EXPECT_EQ(Profile().GetExpectedVersion(), Profile().ReadProfileVersion(ecdb)) << "File is expected to be auto-upgraded | " << testFile.ToString();
+        ProfileState profileState = ecdb.CheckProfileVersion();
+        if (profileState.IsOlder())
+            EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << "File is expected to be auto-upgraded. " << testFile.ToString();
 
         TestHelper helper(testFile, ecdb);
         helper.AssertLoadSchemas();
@@ -176,8 +177,9 @@ TEST_F(ECDbCompatibilityTestFixture, EC32Enums)
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
 
-        if (testFile.GetProfileState().IsOlder())
-            EXPECT_EQ(Profile().GetExpectedVersion(), Profile().ReadProfileVersion(ecdb)) << "File is expected to be auto-upgraded | " << testFile.ToString();
+        ProfileState profileState = ecdb.CheckProfileVersion();
+        if (profileState.IsOlder())
+            EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << "File is expected to be auto-upgraded. " << testFile.ToString();
 
         TestHelper helper(testFile, ecdb);
         helper.AssertLoadSchemas();
@@ -213,8 +215,9 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
 
-        if (testFile.GetProfileState().IsOlder())
-            EXPECT_EQ(Profile().GetExpectedVersion(), Profile().ReadProfileVersion(ecdb)) << "File is expected to be auto-upgraded | " << testFile.ToString();
+        ProfileState profileState = ecdb.CheckProfileVersion();
+        if (profileState.IsOlder())
+            EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << "File is expected to be auto-upgraded. " << testFile.ToString();
 
         TestHelper helper(testFile, ecdb);
         helper.AssertLoadSchemas();
@@ -237,8 +240,9 @@ TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
 
-        if (testFile.GetProfileState().IsOlder())
-            EXPECT_EQ(Profile().GetExpectedVersion(), Profile().ReadProfileVersion(ecdb)) << "File is expected to be auto-upgraded | " << testFile.ToString();
+        ProfileState profileState = ecdb.CheckProfileVersion();
+        if (profileState.IsOlder())
+            EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << "File is expected to be auto-upgraded. " << testFile.ToString();
 
         TestHelper helper(testFile, ecdb);
         helper.AssertLoadSchemas();

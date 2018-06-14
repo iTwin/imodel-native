@@ -8,7 +8,6 @@
     <ClCompile Include="TestIModelCreators.cpp" />
     <ClCompile Include="IModelCompatibilityTests.cpp" />
     <ClCompile Include="TestHelper.cpp" />
-    <ClCompile Include="ProfileManager.cpp" />
     <ClCompile Include="Profiles.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -21,6 +20,5 @@
     <ClInclude Include="TestHelper.h" />
     <ClInclude Include="CompatibilityTests.h" />
     <ClInclude Include="Profiles.h" />
-    <ClInclude Include="ProfileManager.h" />
   </ItemGroup>
 </Project>
