@@ -38,20 +38,25 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
     {
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
+        ProfileState::Age originalFileAge = testFile.GetAge();
+
         DbResult stat = BE_SQLITE_ERROR;
         DgnDbPtr bim = OpenTestFile(&stat, testFile);
         ASSERT_EQ(BE_SQLITE_OK, stat) << testFile.ToString();
         ASSERT_TRUE(bim != nullptr) << testFile.ToString();
 
-        ProfileState profileState = bim->CheckProfileVersion();
+        ProfileState actualProfileState = bim->CheckProfileVersion();
         TestHelper helper(testFile, *bim);
         helper.AssertLoadSchemas();
         const int schemaCount = helper.GetSchemaCount();
 
-        switch (profileState.GetAge())
+        switch (originalFileAge)
             {
                 case ProfileState::Age::UpToDate:
                 {
+                EXPECT_TRUE(actualProfileState.IsUpToDate()) << testFile.ToString();
+                EXPECT_EQ(DgnDbProfile::Get().GetExpectedVersion(), bim->GetProfileVersion()) << testFile.ToString();
+
                 EXPECT_EQ(8, schemaCount) << testFile.ToString();
 
                 for (ECSchemaCP schema : bim->Schemas().GetSchemas(false))
@@ -93,6 +98,9 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                 }
                 case ProfileState::Age::Older:
                 {
+                EXPECT_TRUE(actualProfileState.IsUpToDate()) << "File is expected to be auto-upgraded" << testFile.ToString();
+                EXPECT_EQ(DgnDbProfile::Get().GetExpectedVersion(), bim->GetProfileVersion()) << "File is expected to be auto-upgraded" << testFile.ToString();
+
                 EXPECT_EQ(8, schemaCount) << testFile.ToString();
 
                 for (ECSchemaCP schema : bim->Schemas().GetSchemas(false))
@@ -135,6 +143,9 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
 
                 case ProfileState::Age::Newer:
                 {
+                EXPECT_TRUE(actualProfileState.IsNewer()) << testFile.ToString();
+                EXPECT_LT(DgnDbProfile::Get().GetExpectedVersion(), bim->GetProfileVersion()) << testFile.ToString();
+
                 EXPECT_EQ(8, schemaCount) << testFile.ToString();
 
                 for (ECSchemaCP schema : bim->Schemas().GetSchemas(false))
