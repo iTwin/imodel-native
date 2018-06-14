@@ -7693,10 +7693,10 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
     ASSERT_TRUE(schema != nullptr);
 
-    assertKoq(*schema, "K1", "KOQ 1", "My KOQ 1", "u:CM", "", 1);
-    assertKoq(*schema, "K2", "KOQ 2", "My KOQ 2", "u:M", "f:DefaultRealU[u:FT];f:DefaultRealU[u:IN]", 2);
-    assertKoq(*schema, "K3", "KOQ 3", "My KOQ 3", "u:KG", "f:DefaultRealU[u:G]", 3);
-    assertKoq(*schema, "K4", "KOQ 4", "My KOQ 4", "u:G", "f:DefaultRealU[u:MG]", 4);
+    assertKoq(*schema, "K1", "KOQ 1", "My KOQ 1", "u:CM", "f:DefaultReal[u:CM]", 1);
+    assertKoq(*schema, "K2", "KOQ 2", "My KOQ 2", "u:M", "f:DefaultReal[u:FT];f:DefaultReal[u:IN]", 2);
+    assertKoq(*schema, "K3", "KOQ 3", "My KOQ 3", "u:KG", "f:DefaultReal[u:G]", 3);
+    assertKoq(*schema, "K4", "KOQ 4", "My KOQ 4", "u:G", "f:DefaultReal[u:MG]", 4);
     }
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -7736,10 +7736,10 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
     ASSERT_TRUE(schema != nullptr);
 
-    assertKoq(*schema, "K1", "KOQ 1", "My KOQ 1", "u:CM", "", 1);
-    assertKoq(*schema, "K2", "KOQ 2", "My KOQ 2", "u:M", "f:DefaultRealU[u:FT];f:DefaultRealU[u:IN]", 2);
-    assertKoq(*schema, "K3", "KOQ 3", "My KOQ 3", "u:KG", "f:DefaultRealU[u:G]", 3);
-    assertKoq(*schema, "K4", "KOQ 4", "My KOQ 4", "u:G", "f:DefaultRealU[u:MG]", 4);
+    assertKoq(*schema, "K1", "KOQ 1", "My KOQ 1", "u:CM", "f:DefaultReal[u:CM]", 1);
+    assertKoq(*schema, "K2", "KOQ 2", "My KOQ 2", "u:M", "f:DefaultReal[u:FT];f:DefaultReal[u:IN]", 2);
+    assertKoq(*schema, "K3", "KOQ 3", "My KOQ 3", "u:KG", "f:DefaultReal[u:G]", 3);
+    assertKoq(*schema, "K4", "KOQ 4", "My KOQ 4", "u:G", "f:DefaultReal[u:MG]", 4);
     assertKoq(*schema, "K5", "KOQ 5", "My KOQ 5", "u:M", "f:DefaultRealUNS(4)[u:M];f:DefaultRealUNS(4)[u:IN];f:AmerFI;f:DefaultRealUNS(4)[u:FT]", 5);
     assertKoq(*schema, "K6", "KOQ 6", "My KOQ 6", "u:M", "f:DefaultRealUNS(4)[u:M];f:DefaultRealUNS(4)[u:IN];f:AmerFI;f:DefaultRealUNS(4)[u:FT]", 6);
     }
@@ -7758,14 +7758,14 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
     ASSERT_TRUE(schema != nullptr);
 
-    assertKoq(*schema, "K1", "KOQ 1", nullptr, "u:CM", "f:DefaultRealU[u:IN];f:DefaultRealU[u:FT]", 1);
+    assertKoq(*schema, "K1", "KOQ 1", nullptr, "u:CM", "f:DefaultReal[u:IN];f:DefaultReal[u:FT]", 1);
     //changing the order of pres units is supported
-    assertKoq(*schema, "K2", nullptr, "My KOQ 2", "u:M", "f:DefaultRealU[u:IN];f:DefaultRealU[u:FT]", 2);
-    assertKoq(*schema, "K3", "KOQ 3", "My Nice KOQ 3", "u:KG", "f:DefaultRealU[u:G]", 3);
+    assertKoq(*schema, "K2", nullptr, "My KOQ 2", "u:M", "f:DefaultReal[u:IN];f:DefaultReal[u:FT]", 2);
+    assertKoq(*schema, "K3", "KOQ 3", "My Nice KOQ 3", "u:KG", "f:DefaultReal[u:G]", 3);
     //changing the order of pres units and adding a pres unit is supported
-    assertKoq(*schema, "K4", "Nice KOQ 4", "My KOQ 4", "u:G", "f:DefaultRealU[u:KG];f:DefaultRealU[u:MG]", 40);
+    assertKoq(*schema, "K4", "Nice KOQ 4", "My KOQ 4", "u:G", "f:DefaultReal[u:KG];f:DefaultReal[u:MG]", 40);
     assertKoq(*schema, "K5", "KOQ 5", "My KOQ 5", "u:M", "f:DefaultRealUNS(4)[u:M];f:AmerFI;f:DefaultRealUNS(4)[u:FT]", 5);
-    assertKoq(*schema, "K6", "KOQ 6", "My KOQ 6", "u:M", "", 6);
+    assertKoq(*schema, "K6", "KOQ 6", "My KOQ 6", "u:M", "f:DefaultReal[u:M]", 6);
     }
 
     }
