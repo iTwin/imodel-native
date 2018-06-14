@@ -2,7 +2,7 @@
  |
  |     $Source: SecureStore.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <BeSecurity/SecureStore.h>
@@ -265,7 +265,6 @@ void SecureStore::SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8CP value)
         }
 
 #if defined(ANDROID) || defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-
     Utf8String encrypted = Encrypt(value);
     m_localState.SaveValue(LOCAL_STATE_NAMESPACE, identifier.c_str(), encrypted);
 #endif
@@ -283,12 +282,11 @@ Utf8String SecureStore::LoadValue (Utf8CP nameSpace, Utf8CP key)
         }
 
 #if defined(ANDROID) || defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-
     Utf8String encrypted = m_localState.GetValue (LOCAL_STATE_NAMESPACE, identifier.c_str ());
     return Decrypt(encrypted.c_str());
 #else
-    return m_localState.GetValue (LOCAL_STATE_NAMESPACE, identifier.c_str ());
-        
+    BeAssert("Platform not supported!");
+    return nullptr;
 #endif
     }
 
@@ -372,7 +370,9 @@ Utf8String SecureStore::Encrypt(Utf8CP value)
     return encrypted;
         
 #else
-        return value;
+
+    BeAssert("Platform not supported!");
+    return nullptr;
 
 #endif
     }
@@ -416,8 +416,9 @@ Utf8String SecureStore::Decrypt(Utf8CP encrypted)
     return decrypted;
         
 #else
-        
-        return encrypted;
+
+    BeAssert("Platform not supported!");
+    return nullptr;
 
 #endif
     }
