@@ -58,12 +58,11 @@ struct TestFile final
 struct Profile : NonCopyableClass
     {
     protected:
+        ProfileType m_type;
         mutable BeSQLite::ProfileVersion m_expectedVersion = BeSQLite::ProfileVersion(0, 0, 0, 0);
         BeSQLite::PropertySpec m_versionPropertySpec;
-        mutable std::vector<BeSQLite::ProfileVersion> m_expectedIncludedProfileVersions;
 
     private:
-        ProfileType m_type;
         Utf8CP m_name = nullptr;
         BeFileName m_profileSeedFolder;
 
@@ -80,7 +79,6 @@ struct Profile : NonCopyableClass
         BentleyStatus Init() const;
 
         BeSQLite::ProfileVersion const& GetExpectedVersion() const { return m_expectedVersion; }
-        std::vector<BeSQLite::ProfileVersion> const& GetExpectedIncludedProfileVersions() const { return m_expectedIncludedProfileVersions; }
 
         std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles = true) const;
         BeFileNameCR GetSeedFolder() const { return m_profileSeedFolder; }
