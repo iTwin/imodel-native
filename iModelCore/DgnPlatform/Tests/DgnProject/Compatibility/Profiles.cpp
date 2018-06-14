@@ -109,9 +109,28 @@ BeFileName Profile::GetPathForNewTestFile(Utf8CP testFileName) const
     {
     BeFileName path(GetSeedFolder());
     path.AppendToPath(BeFileName(GetExpectedVersion().ToString()));
-    for (ProfileVersion const& includedProfileVersion : m_expectedIncludedProfileVersions)
+
+    switch (m_type)
         {
-        path.AppendString(L"_").AppendUtf8(includedProfileVersion.ToString().c_str());
+        case ProfileType::DgnDb:
+        {
+        Utf8String ecdbVersion = ECDbProfile::Get().GetExpectedVersion().ToString();
+        Utf8String bedbVersion = BeDbProfile::Get().GetExpectedVersion().ToString();
+        path.AppendString(L"_").AppendString(WString(ecdbVersion.c_str(), BentleyCharEncoding::Utf8).c_str()).AppendString(L"_").AppendString(WString(bedbVersion.c_str(), BentleyCharEncoding::Utf8).c_str());
+        break;
+        }
+        case ProfileType::ECDb:
+        {
+        Utf8String bedbVersion = BeDbProfile::Get().GetExpectedVersion().ToString();
+        path.AppendString(L"_").AppendString(WString(bedbVersion.c_str(), BentleyCharEncoding::Utf8).c_str());
+        break;
+        }
+        case ProfileType::BeDb:
+            break;
+
+        default:
+            EXPECT_TRUE(false) << "Unhandled ProfileType enum value";
+            return BeFileName();
         }
 
     path.AppendToPath(BeFileName(testFileName));
@@ -158,8 +177,6 @@ BentleyStatus ECDbProfile::_Init() const
         return ERROR;
 
     m_expectedVersion = ReadProfileVersion(db);
-
-    m_expectedIncludedProfileVersions.push_back(BeDbProfile::Get().GetExpectedVersion());
     return !m_expectedVersion.IsEmpty() ? SUCCESS : ERROR;
     }
 
@@ -217,10 +234,6 @@ BentleyStatus DgnDbProfile::_Init() const
         return ERROR;
 
     m_expectedVersion = ReadProfileVersion(*db);
-
-    m_expectedIncludedProfileVersions.push_back(BeDbProfile::Get().GetExpectedVersion());
-    m_expectedIncludedProfileVersions.push_back(ECDbProfile::Get().GetExpectedVersion());
-
     return !m_expectedVersion.IsEmpty() ? SUCCESS : ERROR;
     }
 
