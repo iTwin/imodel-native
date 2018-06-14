@@ -60,11 +60,11 @@ struct ConnectSignInManager : IConnectSignInManager, std::enable_shared_from_thi
         struct ConnectionClientListener
             {
             private:
-                ConnectSignInManagerPtr m_manager;
+                ConnectSignInManager& m_manager;
                 static ConnectionClientListener* s_instance;
 
             public:
-                ConnectionClientListener(ConnectSignInManagerPtr manager);
+                ConnectionClientListener(ConnectSignInManager& manager);
                 static void callback(int eventId, WCharCP data);
                 void ConnectionClientCallback(int eventId, WCharCP data);
             };
