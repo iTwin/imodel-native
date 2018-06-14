@@ -12,6 +12,7 @@
       <ProductDirectory Name="VendorNotices" Path="Notices"/>
       <ProductDirectory Name="VendorNotices" Path="Notices" LibType="static" />
       <ProductDirectory Name="BuildingSharedIncludes" Path="BuildingShared" />
+      <ProductDirectory Name="ClassificationSystemsIncludes" Path="ClassificationSystems" />
     </ProductDirectoryList>
 
     <ProductDirectoryList ListName="ClassificationSystemsGTestDirectories">
