@@ -482,17 +482,16 @@ void ConnectSignInManager::StartConnectionClientListener()
             }
         }
 
-    ConnectSignInManagerPtr manager = std::shared_ptr<ConnectSignInManager>(this);
-    m_connectionClientListener = std::make_shared<ConnectionClientListener>(manager);
+    m_connectionClientListener = std::make_shared<ConnectionClientListener>(*this);
     m_connectionClient->AddClientEventListener(m_connectionClientListener->callback);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManager::ConnectionClientListener *ConnectSignInManager::ConnectionClientListener::s_instance = 0;
+ConnectSignInManager::ConnectionClientListener *ConnectSignInManager::ConnectionClientListener::s_instance = nullptr;
 
-ConnectSignInManager::ConnectionClientListener::ConnectionClientListener(ConnectSignInManagerPtr manager) : m_manager(manager)
+ConnectSignInManager::ConnectionClientListener::ConnectionClientListener(ConnectSignInManager& manager) : m_manager(manager)
     {
     s_instance = this;
     }
@@ -510,12 +509,12 @@ void ConnectSignInManager::ConnectionClientListener::ConnectionClientCallback(in
     if (IConnectionClientInterface::EVENT_TYPE::LOGIN == eventId)
         {
         LOG.infov("Connection Client: Login event");
-        m_manager->OnUserSignedInViaConnectionClient();
+        m_manager.OnUserSignedInViaConnectionClient();
         }
     else if (IConnectionClientInterface::EVENT_TYPE::LOGOUT == eventId)
         {
         LOG.infov("Connection Client: Logout event");
-        m_manager->SignOut();
+        m_manager.SignOut();
         }
     else if (IConnectionClientInterface::EVENT_TYPE::STARTUP == eventId)
         {
@@ -524,7 +523,7 @@ void ConnectSignInManager::ConnectionClientListener::ConnectionClientCallback(in
     else if (IConnectionClientInterface::EVENT_TYPE::SHUTDOWN == eventId)
         {
         LOG.infov("Connection Client: Shutdown event");
-        m_manager->SignOut();
+        m_manager.SignOut();
         }
     else
         LOG.infov("Connection Client: Unknown Event");
