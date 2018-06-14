@@ -225,8 +225,10 @@ struct EC32KoqsTestECDbCreator final : TestECDbCreator
                 <ECSchema schemaName="EC32Koqs" alias="ec32koqs" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                     <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
-                    <KindOfQuantity typeName="TestKoq_PresFormatWithComposite" persistenceUnit="u:KG" presentationUnits="f:DefaultRealU[u:G]" relativeError="0.6"/>
-                    <KindOfQuantity typeName="TestKoq_NoPresFormat" persistenceUnit="u:KG" relativeError="0.5"/>
+                    <KindOfQuantity typeName="TestKoq_PresFormatWithMandatoryComposite" displayLabel="My first test KOQ" persistenceUnit="u:CM" presentationUnits="f:DefaultRealU(4)[u:M]" relativeError="0.1"/>
+                    <KindOfQuantity typeName="TestKoq_PresFormatWithOptionalComposite" description="My second test KOQ" persistenceUnit="u:CM" presentationUnits="f:AmerFI[u:FT|feet][u:IN|inches]" relativeError="0.2"/>
+                    <KindOfQuantity typeName="TestKoq_PresFormatWithoutComposite" persistenceUnit="u:CM" presentationUnits="f:AmerFI" relativeError="0.3"/>
+                    <KindOfQuantity typeName="TestKoq_NoPresFormat" persistenceUnit="u:KG" relativeError="0.4"/>
                 </ECSchema>)xml"));
             }
     public:

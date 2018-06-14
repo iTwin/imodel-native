@@ -327,7 +327,9 @@ TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
         TestHelper helper(testFile, ecdb);
         helper.AssertLoadSchemas();
 
-        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithComposite", nullptr, nullptr, "u:KG", JsonValue(R"js(["f:DefaultRealU[u:G]"])js"), 0.6);
-        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_NoPresFormat", nullptr, nullptr, "u:KG", JsonValue(), 0.5);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithMandatoryComposite", "My first test KOQ", nullptr, "u:CM", JsonValue(R"js(["f:DefaultRealU(4)[u:M]"])js"), 0.1);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithOptionalComposite", nullptr, "My second test KOQ", "u:CM", JsonValue(R"js(["f:AmerFI[u:FT|feet][u:IN|inches]"])js"), 0.2);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithoutComposite", nullptr, nullptr, "u:CM", JsonValue(R"js(["f:AmerFI]"])js"), 0.3);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_NoPresFormat", nullptr, nullptr, "u:KG", JsonValue(), 0.4);
         }
     }
