@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "CompatibilityTestFixture.h"
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
-#include "ProfileManager.h"
+#include "Profiles.h"
 #include "TestIModelCreators.h"
 #include "TestHelper.h"
 
@@ -21,9 +21,12 @@ struct IModelCompatibilityTestFixture : CompatibilityTestFixture
     protected:
         ScopedDgnHost m_host;
 
-        Profile& Profile() const { return ProfileManager::Get().GetProfile(ProfileType::DgnDb); }
-
-        DgnDbPtr OpenTestFile(DbResult* stat, BeFileNameCR path) { return DgnDb::OpenDgnDb(stat, path, DgnDb::OpenParams(DgnDb::OpenMode::Readonly)); }
+        DgnDbPtr OpenTestFile(DbResult* stat, TestFile const& testFile)
+            {
+            DgnDb::OpenParams params(Db::OpenMode::ReadWrite);
+            params.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
+            return DgnDb::OpenDgnDb(stat, testFile.GetPath(), params);
+            }
 
         void SetUp() override { ASSERT_EQ(SUCCESS, TestIModelCreation::Run()); }
     };
@@ -33,20 +36,21 @@ struct IModelCompatibilityTestFixture : CompatibilityTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
     {
-    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
         DbResult stat = BE_SQLITE_ERROR;
-        DgnDbPtr bim = OpenTestFile(&stat, testFile.GetPath());
+        DgnDbPtr bim = OpenTestFile(&stat, testFile);
         ASSERT_EQ(BE_SQLITE_OK, stat) << testFile.ToString();
         ASSERT_TRUE(bim != nullptr) << testFile.ToString();
 
+        ProfileState profileState = bim->CheckProfileVersion();
         TestHelper helper(testFile, *bim);
         helper.AssertLoadSchemas();
         const int schemaCount = helper.GetSchemaCount();
 
-        switch (testFile.GetProfileState())
+        switch (profileState.GetAge())
             {
-                case ProfileState::Current:
+                case ProfileState::Age::UpToDate:
                 {
                 EXPECT_EQ(8, schemaCount) << testFile.ToString();
 
@@ -87,7 +91,7 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                 EXPECT_EQ(JsonValue(R"js({"classcount":14, "enumcount": 2})js"), helper.GetSchemaItemCounts("CoreCustomAttributes")) << testFile.ToString();
                 break;
                 }
-                case ProfileState::Older:
+                case ProfileState::Age::Older:
                 {
                 EXPECT_EQ(8, schemaCount) << testFile.ToString();
 
@@ -129,7 +133,7 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                 break;
                 }
 
-                case ProfileState::Newer:
+                case ProfileState::Age::Newer:
                 {
                 EXPECT_EQ(8, schemaCount) << testFile.ToString();
 

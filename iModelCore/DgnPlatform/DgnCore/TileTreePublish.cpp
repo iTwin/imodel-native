@@ -34,6 +34,7 @@ struct Texture : Render::Texture
     Texture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& createParams) : Render::Texture(createParams), m_createParams(createParams), m_imageSource(source), m_bottomUp(bottomUp) { }
 
     Render::TileTextureImagePtr CreateTileTexture() const { return TileTextureImage::Create(ImageSource(m_imageSource), !m_createParams.m_isTileSection); }
+    Dimensions GetDimensions() const override { BeAssert(false); return Dimensions(0, 0); }
 };  // Texture
 
 static double    calculateTolerance(TileTree::TileCR inputTile) { return (0.0 == inputTile._GetMaximumSize() || inputTile.GetRange().IsNull()) ? 1.0E6 : inputTile.GetRange().DiagonalDistance() / inputTile._GetMaximumSize();  }   // off by factor two??  

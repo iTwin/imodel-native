@@ -154,10 +154,6 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
 
     private:
         SchemaUpgradeOptions m_schemaUpgradeOptions;
-        BeSQLite::DbResult UpgradeProfile(DgnDbR) const;
-
-    protected:
-        DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgradeProfile(DgnDbR, DgnDbProfileVersion& from) const;
 
     public:
         //! Constructor
@@ -196,7 +192,7 @@ protected:
     Utf8String m_fileName;
     DgnElements m_elements;
     DgnModels m_models;
-    DgnDbProfileVersion m_profileVersion;
+    mutable DgnDbProfileVersion m_profileVersion;
     DgnDomains m_domains;
     DgnFonts m_fonts;
     DgnLineStylesPtr m_lineStyles;
@@ -213,9 +209,10 @@ protected:
     Utf8String m_parentChangeSetId;
     Utf8String m_initialParentChangeSetId;
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _VerifyProfileVersion(BeSQLite::Db::OpenParams const& params) override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeVerifyProfileVersion() override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterVerifyProfileVersion() override;
+    DGNPLATFORM_EXPORT BeSQLite::ProfileState _CheckProfileVersion() const override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _UpgradeProfile() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeProfileUpgrade() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterProfileUpgrade() override;
     DGNPLATFORM_EXPORT void _OnDbClose() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpening() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened(BeSQLite::Db::OpenParams const& params) override;

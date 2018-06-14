@@ -136,3 +136,56 @@ BEGIN_BENTLEY_NAMESPACE
 void PrintTo(BeVersion const& ver, std::ostream* os) { *os << ver.ToString(); }
 
 END_BENTLEY_NAMESPACE
+
+BEGIN_BENTLEY_SQLITE_NAMESPACE
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(ProfileState const& state, std::ostream* os) 
+    { 
+    if (state.IsError())
+        {
+        *os << "Error";
+        return;
+        }
+
+    switch (state.GetAge())
+        {
+            case ProfileState::Age::Newer:
+                *os << "Newer";
+                break;
+            case ProfileState::Age::Older:
+                *os << "Older";
+                break;
+            case ProfileState::Age::UpToDate:
+                *os << "Up-to-date";
+                break;
+            default:
+                BeAssert(false);
+                *os << "<programmer error>";
+                return;
+        }
+
+    *os << " | ";
+
+    switch (state.GetCanOpen())
+        {
+            case ProfileState::CanOpen::No:
+                *os << "CanOpen::No";
+                break;
+            case ProfileState::CanOpen::Readonly:
+                *os << "CanOpen::Readonly";
+                break;
+            case ProfileState::CanOpen::Readwrite:
+                *os << "CanOpen::Readwrite";
+                break;
+            default:
+                BeAssert(false);
+                *os << "<programmer error>";
+                return;
+        }
+
+    *os << " | Upgradable: " << state.IsUpgradable();
+    }
+
+END_BENTLEY_SQLITE_NAMESPACE

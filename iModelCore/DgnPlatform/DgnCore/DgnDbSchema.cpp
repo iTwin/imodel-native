@@ -513,63 +513,36 @@ static ProjectSchemaUpgrader* s_upgraders[] =
 #endif
 
 /*---------------------------------------------------------------------------------**//**
-* Each call to _DoUpgradeProfile will upgrade the profile from its stored version to the immediately succeeding version.
-* @bsimethod                                    Keith.Bentley                   05/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::OpenParams::_DoUpgradeProfile(DgnDbR project, DgnDbProfileVersion& version) const
-    {
-#if defined (WHEN_FIRST_UPGRADER)
-    for (auto upgrader : s_upgraders)
-        {
-        if (version < upgrader->_GetVersion())
-            {
-            DbResult stat = upgrader->_Upgrade(project, version);
-            if (stat == BE_SQLITE_OK)
-                version = upgrader->_GetVersion();
-
-            return stat;
-            }
-        }
-#endif
-    version = DgnDbProfileVersion::GetCurrent();
-    return  BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* The schema stored in the newly opened project is too old. Perform an upgrade, if possible.
-* @bsimethod                                    Keith.Bentley                   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::OpenParams::UpgradeProfile(DgnDbR project) const
-    {
-    if (!_ReopenForProfileUpgrade(project))
-        return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
-
-    DgnDbProfileVersion version = project.GetProfileVersion();
-    for (;;)
-        {
-        DbResult stat = _DoUpgradeProfile(project, version);
-        if (BE_SQLITE_OK != stat)
-            return stat;
-
-        project.SaveDgnDbProfileVersion(version);
-
-        // Stop when we get to the current version.
-        if (DgnDbProfileVersion::GetCurrent() == version)
-            break;
-        }
-
-    return project.SaveChanges();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbProfileVersion DgnDb::GetProfileVersion() { return m_profileVersion; }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+ProfileState DgnDb::_CheckProfileVersion() const
+    {
+    ProfileState ecdbProfileState = T_Super::_CheckProfileVersion();
+
+    Utf8String versionString;
+    DbResult stat = QueryProperty(versionString, DgnProjectProperty::ProfileVersion());
+    if (BE_SQLITE_ROW != stat)
+        {
+        if (BE_SQLITE_ROW == QueryProperty(versionString, DgnDbProfileVersion::LegacyDbProfileVersionProperty()))
+            return ProfileState::Older(ProfileState::CanOpen::No, false); // report Graphite05 and DgnDb0601 as too old rather than invalid
+
+        return ProfileState::Error();
+        }
+
+    m_profileVersion.FromJson(versionString.c_str());
+    ProfileState dgndbProfileState = CheckProfileVersion(DgnDbProfileVersion::GetCurrent(), m_profileVersion, DgnDbProfileVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0), "DgnDb");
+    return ecdbProfileState.Merge(dgndbProfileState);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                      02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnDb::_OnBeforeVerifyProfileVersion()
+BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade()
     {  
     if (IsMasterCopy() || IsReadonly())
         return BE_SQLITE_OK;
@@ -581,7 +554,7 @@ BeSQLite::DbResult DgnDb::_OnBeforeVerifyProfileVersion()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnDb::_OnAfterVerifyProfileVersion()
+BeSQLite::DbResult DgnDb::_OnAfterProfileUpgrade()
     {
     if (IsMasterCopy() || IsReadonly())
         return BE_SQLITE_OK;
@@ -609,35 +582,32 @@ BeSQLite::DbResult DgnDb::_OnAfterVerifyProfileVersion()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::_VerifyProfileVersion(Db::OpenParams const& params)
+DbResult DgnDb::_UpgradeProfile()
     {
-    DbResult result = T_Super::_VerifyProfileVersion(params);
+    DbResult result = T_Super::_UpgradeProfile();
     if (BE_SQLITE_OK != result)
         return result;
 
-    Utf8String versionString;
-    result = QueryProperty(versionString, DgnProjectProperty::ProfileVersion());
-    if (BE_SQLITE_ROW != result)
+#if defined (WHEN_FIRST_UPGRADER)
+    for (auto upgrader : s_upgraders)
         {
-        if (BE_SQLITE_ROW == QueryProperty(versionString, DgnDbProfileVersion::LegacyDbProfileVersionProperty()))
-            return BE_SQLITE_ERROR_ProfileTooOld; // report Graphite05 and DgnDb0601 as too old rather than invalid
+        if (m_profileVersion < upgrader->_GetVersion())
+            {
+            DbResult stat = upgrader->_Upgrade(project, m_profileVersion);
+            if (BE_SQLITE_OK != stat)
+                return stat;
 
-        return BE_SQLITE_ERROR_InvalidProfileVersion;
+            m_profileVersion = upgrader->_GetVersion();
+            }
         }
+#else
+    m_profileVersion = DgnDbProfileVersion::GetCurrent();
+#endif
 
-    m_profileVersion.FromJson(versionString.c_str());
-    DgnDbProfileVersion expectedVersion = DgnDbProfileVersion::GetCurrent();
-    DgnDbProfileVersion minimumAutoUpgradableVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
-
-    bool profileIsAutoUpgradable = false;
-    result = CheckProfileVersion(profileIsAutoUpgradable, expectedVersion, m_profileVersion, minimumAutoUpgradableVersion, params.IsReadonly(), "DgnDb");
-    if (profileIsAutoUpgradable)
-        result = ((DgnDb::OpenParams&)params).UpgradeProfile(*this);
-    if (result != BE_SQLITE_OK)
-        return result;
-
-    return BE_SQLITE_OK;
+    SaveDgnDbProfileVersion(m_profileVersion);
+    return SaveChanges();
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
