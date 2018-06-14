@@ -313,20 +313,37 @@ static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, BeX
             enumeratorName = ECEnumerator::DetermineName(enumeration->GetName(), enumeratorValueString.c_str(), nullptr);
         }
 
+    const auto ecobjectsStatusToMsg = [](ECObjectsStatus status) -> Utf8CP 
+        {
+        switch (status)
+            {
+            case BentleyB0200::ECN::ECObjectsStatus::NamedItemAlreadyExists:
+                return "Named item already exists";
+            case BentleyB0200::ECN::ECObjectsStatus::DataTypeMismatch:
+                return "Datatype mismatch";
+            case BentleyB0200::ECN::ECObjectsStatus::InvalidName:
+                return "Invalid name";
+            default:
+                return "Error creating enumerator.";
+            }
+        };
+
     ECEnumeratorP enumerator = nullptr;
     if (PrimitiveType::PRIMITIVETYPE_Integer == primitiveType)
         {
-        if (ECObjectsStatus::Success != enumeration->CreateEnumerator(enumerator, enumeratorName, enumeratorValueInteger))
+        ECObjectsStatus status = enumeration->CreateEnumerator(enumerator, enumeratorName, enumeratorValueInteger);
+        if (ECObjectsStatus::Success != status)
             {
-            LOG.errorv("Failed to add value '%" PRId32 "' to ECEnumeration '%s'. Duplicate or invalid entry?", enumeratorValueInteger, enumeration->GetName().c_str());
+            LOG.errorv("Failed to add value '%" PRId32 "' to ECEnumeration '%s'. %s.", enumeratorValueInteger, enumeration->GetName().c_str(), ecobjectsStatusToMsg(status));
             return ERROR;
             }
         }
     else if (PrimitiveType::PRIMITIVETYPE_String == primitiveType)
         {
-        if (ECObjectsStatus::Success != enumeration->CreateEnumerator(enumerator, enumeratorName, enumeratorValueString.c_str()))
+        ECObjectsStatus status = enumeration->CreateEnumerator(enumerator, enumeratorName, enumeratorValueString.c_str());
+        if (ECObjectsStatus::Success != status)
             {
-            LOG.errorv("Failed to add value '%s' to ECEnumeration '%s'. Duplicate or invalid entry?", enumeratorValueString.c_str(), enumeration->GetName().c_str());
+            LOG.errorv("Failed to add value '%s' to ECEnumeration '%s'. %s.", enumeratorValueString.c_str(), enumeration->GetName().c_str(), ecobjectsStatusToMsg(status));
             return ERROR;
             }
         }
