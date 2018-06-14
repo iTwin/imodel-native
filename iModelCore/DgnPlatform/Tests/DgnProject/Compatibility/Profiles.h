@@ -45,7 +45,7 @@ struct TestFile final
         BeFileNameCR GetPath() const { return m_path; }
         BeSQLite::ProfileVersion const& GetBeDbVersion() const { return m_bedbVersion; }
         BeSQLite::ProfileVersion const& GetECDbVersion() const { return m_ecdbVersion; }
-        BeSQLite::ProfileVersion const& GeDgnDbVersion() const { return m_dgndbVersion; }
+        BeSQLite::ProfileVersion const& GetDgnDbVersion() const { return m_dgndbVersion; }
 
         Utf8String ToString() const;
     };
