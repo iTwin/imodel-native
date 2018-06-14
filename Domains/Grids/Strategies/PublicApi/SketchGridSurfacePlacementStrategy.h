@@ -19,7 +19,7 @@ struct SketchGridSurfacePlacementStrategy : public BBS::DgnElementPlacementStrat
     DEFINE_T_SUPER(BBS::DgnElementPlacementStrategy)
         
     protected:
-        SketchGridSurfacePlacementStrategy() {}
+        SketchGridSurfacePlacementStrategy(Dgn::DgnDbR db) : T_Super(db) {}
 
         virtual BBS::DgnElementManipulationStrategyCR _GetDgnElementManipulationStrategy() const override { return _GetSketchGridSurfaceManipulationStrategy(); }
         virtual BBS::DgnElementManipulationStrategyR _GetDgnElementManipulationStrategyForEdit() override { return _GetSketchGridSurfaceManipulationStrategyForEdit(); }
