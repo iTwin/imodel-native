@@ -16,6 +16,7 @@
 #include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/BeGetProcAddress.h>
 #include <Logging/bentleylogging.h>
+#include <BeXml/BeXml.h>
 #include "cpl_spawn.h"
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -286,19 +287,52 @@ BentleyStatus iModelBridgeRegistryBase::ComputeBridgeAffinityToDocument(iModelBr
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus       iModelBridgeRegistryBase::ComputeBridgeAffinityInParentContext(iModelBridgeWithAffinity& bridgeAffinity, bool thisBridgeisPP, WStringCR parent)
+    {
+    //Do nothing for no affinity
+    if (iModelBridgeAffinityLevel::None == bridgeAffinity.m_affinity)
+        return SUCCESS;
+    //Do nothing if there is no parent
+    if (parent.empty())
+        return SUCCESS;
+
+    //Do nothing for same parent
+    if (0 == bridgeAffinity.m_bridgeRegSubKey.CompareToI(parent))
+        return SUCCESS;
+
+    //We have a dwg bridge file. But parent is not dwg bridge. Lets ignore its affinity
+    if (0 == bridgeAffinity.m_bridgeRegSubKey.CompareToI(L"RealDWGBridge"))
+        {
+        bridgeAffinity.m_bridgeRegSubKey = parent;
+        return SUCCESS;
+        }
+    
+    //We have a revit bridge file. But parent is not revit bridge. Lets ignore its affinity
+    if (0 == bridgeAffinity.m_bridgeRegSubKey.CompareToI(L"RevitBridge"))
+        {
+        bridgeAffinity.m_affinity = iModelBridgeAffinityLevel::None;
+        return SUCCESS;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(BeFileNameCR sourceFilePath)
+BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStringR bridgeName, BeFileNameCR sourceFilePath, WStringCR parentBridgeName)
     {
-    BeFileName a; WString b;
-    if (BSISUCCESS == QueryBridgeAssignedToDocument(a, b, sourceFilePath)) // If we have already assigned a bridge to this document, then stick with that.
+    BeFileName a; 
+    if (BSISUCCESS == QueryBridgeAssignedToDocument(a, bridgeName, sourceFilePath)) // If we have already assigned a bridge to this document, then stick with that.
         return BSISUCCESS;
 
     LOG.tracev(L"SearchForBridgeToAssignToDocument %ls", sourceFilePath.c_str());
 
     iModelBridgeWithAffinity bestBridge;
 
-    auto iterateInstalled = m_stateDb.GetCachedStatement("SELECT BridgeLibraryPath, AffinityLibraryPath FROM fwk_InstalledBridges");
+    auto iterateInstalled = m_stateDb.GetCachedStatement("SELECT BridgeLibraryPath, AffinityLibraryPath, IsPowerPlatformBased FROM fwk_InstalledBridges");
     while (BE_SQLITE_ROW == iterateInstalled->Step())
         {
         BeFileName bridgePath(iterateInstalled->GetValueText(0));
@@ -310,6 +344,10 @@ BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(BeFile
 
         iModelBridgeWithAffinity thisBridge;
         if (BSISUCCESS != ComputeBridgeAffinityToDocument(thisBridge, affinityLibraryPath, sourceFilePath))
+            continue;
+
+        bool isPPBased = iterateInstalled->GetValueBoolean(2);
+        if (BSISUCCESS != ComputeBridgeAffinityInParentContext(thisBridge, isPPBased, parentBridgeName))
             continue;
 
         LOG.tracev(L"%ls -> (%ls,%d)", affinityLibraryPath.c_str(), thisBridge.m_bridgeRegSubKey.c_str(), (int)thisBridge.m_affinity);
@@ -339,7 +377,7 @@ BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(BeFile
     LOG.tracev(L"%ls := (%ls,%d)", sourceFilePath.c_str(), bestBridge.m_bridgeRegSubKey.c_str(), (int)bestBridge.m_affinity);
 
     EnsureDocumentPropertiesFor(sourceFilePath);
-
+    bridgeName = bestBridge.m_bridgeRegSubKey;
     return BSISUCCESS;
     }
 
@@ -427,10 +465,40 @@ void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocumentsInDir(BeFileNa
         // *** NEEDS WORK: Should probably store relative paths
 
         if (!isDir)
-            SearchForBridgeToAssignToDocument(entryName);
+            {
+            WString bridgeName;
+            SearchForBridgeToAssignToDocument(bridgeName, entryName, L"");
+            }
         else
             SearchForBridgesToAssignToDocumentsInDir(entryName);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeRegistryBase::SearchForBridgesToAssignToFile(BeFileNameCR fileName, WStringCR parentBridgeName)
+    {
+    if (fileName.empty())
+        return ERROR;
+
+    //Assign the incoming file
+    WString bridgeName;
+    SearchForBridgeToAssignToDocument(bridgeName, fileName, parentBridgeName);
+
+    BASFileLocator locator;
+    IDmsFileLocator::DmsInfo info;
+    if (SUCCESS != locator.GetDocumentInfo(info, fileName))
+        return ERROR;
+
+    for (auto refInfo : info.m_refs)
+        {
+        IDmsFileLocator::DmsInfo refDocInfo;
+        if (SUCCESS == locator.GetDocumentInfo(refDocInfo, refInfo.m_id, m_stagingDir))
+            SearchForBridgesToAssignToFile(refDocInfo.m_fileName, bridgeName);
+        }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -438,14 +506,21 @@ void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocumentsInDir(BeFileNa
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocuments()
     {
-    // There are no documents in the staging directory itself. The docs are all in subdirectories (where the
-    // subdir name corresponds to the PW doc GUID).
-    BeFileName entryName;
-    bool        isDir;
-    for (BeDirectoryIterator dirs (m_stagingDir); dirs.GetCurrentEntry (entryName, isDir) == SUCCESS; dirs.ToNext())
+    if (!m_masterFilePath.empty())
         {
-        if (isDir)
-            SearchForBridgesToAssignToDocumentsInDir(entryName);
+        SearchForBridgesToAssignToFile(m_masterFilePath, L"");
+        }
+    else
+        {
+        // There are no documents in the staging directory itself. The docs are all in subdirectories (where the
+        // subdir name corresponds to the PW doc GUID).
+        BeFileName entryName;
+        bool        isDir;
+        for (BeDirectoryIterator dirs(m_stagingDir); dirs.GetCurrentEntry(entryName, isDir) == SUCCESS; dirs.ToNext())
+            {
+            if (isDir)
+                SearchForBridgesToAssignToDocumentsInDir(entryName);
+            }
         }
 
     killAllAffinityCalculators();
@@ -820,7 +895,16 @@ int iModelBridgeRegistryBase::AssignCmdLineArgs::ParseCommandLine(int argc, WCha
             m_loggingConfigFileName.SetName(getArgValueW(argv[iArg]));
             continue;
             }
-
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-input="))
+            {
+            if (!m_inputFileName.empty())
+                {
+                fwprintf(stderr, L"The --fwk-input= option may appear only once.\n");
+                return BSIERROR;
+                }
+            BeFileName::FixPathName(m_inputFileName, getArgValueW(argv[iArg]).c_str());
+            continue;
+            }
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized assign argument\n", argv[iArg]);
         return BSIERROR;
@@ -876,6 +960,7 @@ int iModelBridgeRegistryBase::AssignMain(int argc, WCharCP argv[])
         return RETURN_STATUS_LOCAL_ERROR;
 
     app._DiscoverInstalledBridges();
+    app.m_masterFilePath = args.m_inputFileName;
     app.SearchForBridgesToAssignToDocuments();
     app.m_stateDb.SaveChanges();
 
@@ -1033,6 +1118,221 @@ BentleyStatus   iModelBridgeRegistryBase::RemoveFileAssignment(BeFileNameCR fn)
         return BSIERROR;
 
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BASFileLocator::BASFileLocator()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   BASFileLocator::GetDocumentInfoFromPrp(DmsInfo& info, BeFileNameCR fileName)
+    {
+    if (!fileName.DoesPathExist())
+        {
+        LOG.errorv(L"%ls - Doc.prp file does not exist.", fileName.c_str());
+        return BSIERROR;
+        }
+
+    BeXmlStatus status = BEXML_Success;   
+    WString errmsg;
+    BeXmlReaderPtr  reader = BeXmlReader::CreateAndReadFromFile(status, fileName.c_str(), &errmsg);
+    if (!reader.IsValid() || status != BEXML_Success)
+        {
+        LOG.errorv(L"%ls - Error opening prp file as xml. Msg: %ls", fileName.c_str(), errmsg.c_str());
+        return  BSIERROR;
+        }
+
+    BeFileName directoryName = fileName.GetDirectoryName();
+    bool    foundPwDoc = false;
+    IBeXmlReader::ReadResult result;
+    while ((result = reader->Read()) == IBeXmlReader::READ_RESULT_Success)
+        {
+        if (reader->GetCurrentNodeType() != IBeXmlReader::NODE_TYPE_Element)
+            continue;
+
+        Utf8String  nodeName;
+        if (BEXML_Success != reader->GetCurrentNodeName(nodeName))
+            break;
+
+        // only care about node "PwDoc"
+        if (nodeName.EqualsI("PwDoc"))
+            foundPwDoc = true;
+
+        Utf8String  key, value;
+        while (BEXML_Success == reader->ReadToNextAttribute(&key, &value))
+            {
+            if (key.EqualsI("VaultID"))
+                info.m_id.first = atoi(value.c_str());
+            else if (key.EqualsI("DocumentID"))
+                info.m_id.second = atoi(value.c_str());
+            else if (key.EqualsI("FileName"))
+                {
+                BeFileName docName(directoryName);
+                docName.AppendToPath(WString(value.c_str(), true).c_str());
+                info.m_fileName = docName;
+                }
+            }
+        if (foundPwDoc)
+            return BSISUCCESS;
+        }
+
+    return  BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   BASFileLocator::GetReferenceInfoFromPrp(DmsInfo& info, BeFileNameCR fileName)
+    {
+    BeXmlStatus status = BEXML_Success;
+
+    WString errmsg;
+    BeXmlReaderPtr  reader = BeXmlReader::CreateAndReadFromFile(status, fileName.c_str(), &errmsg);
+    if (!reader.IsValid() || status != BEXML_Success)
+        {
+        LOG.errorv(L"%ls - Error opening prp file as xml. Msg: %ls", fileName.c_str(), errmsg.c_str());
+        return  BSIERROR;
+        }
+
+    bool    foundReferencesNode = false;
+    IBeXmlReader::ReadResult result;
+    while ((result = reader->Read()) == IBeXmlReader::READ_RESULT_Success)
+        {
+        if (reader->GetCurrentNodeType() != IBeXmlReader::NODE_TYPE_Element)
+            continue;
+
+        Utf8String  nodeName;
+        if (BEXML_Success != reader->GetCurrentNodeName(nodeName))
+            break;
+
+        // only care about node "References"
+        if (nodeName.EqualsI("References"))
+            {
+            foundReferencesNode = true;
+            continue;
+            }
+        // walk through "Reference" nodes and parse and check their attributes:
+        if (foundReferencesNode && nodeName.EqualsI("Reference"))
+            {
+            ReferenceInfo refInfo;
+            Utf8String  key, value;
+            while (BEXML_Success == reader->ReadToNextAttribute(&key, &value))
+                {
+                if (key.EqualsI("VaultID"))
+                    refInfo.m_id.first = atoi(value.c_str());
+                else if (key.EqualsI("DocID"))
+                    refInfo.m_id.second = atoi(value.c_str());
+                }
+            info.m_refs.push_back(refInfo);
+            }
+        }
+
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   BASFileLocator::ReadMetaDataFromDmsDir(DmsInfo& info, BeFileNameCR dirName)
+    {
+    BeFileName docPrpFile = dirName;
+    docPrpFile.AppendToPath(L"doc.prp");
+    if (SUCCESS != GetDocumentInfoFromPrp(info, docPrpFile))
+        return BSIERROR;
+
+    BeFileName refPrpFile = dirName;
+    refPrpFile.AppendToPath(L"refs.prp");
+    if (SUCCESS != GetReferenceInfoFromPrp(info, refPrpFile))
+        return BSIERROR;
+
+    m_dmsInfoCache[info.m_id] = info;
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   BASFileLocator::GetDocumentInfo(DmsInfo& info, BeFileNameCR fileName)
+    {
+    //Seach the cache for existing info
+    for (auto iter : m_dmsInfoCache)
+        {
+        if (0 == iter.second.m_fileName.CompareToI(fileName))
+            {
+            LOG.tracev(L"%ls - Found DmsInfo from memory cache.", fileName.c_str());
+            info = iter.second;
+            return BSISUCCESS;
+            }
+        }
+
+    return ReadMetaDataFromDmsDir(info, fileName.GetDirectoryName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IDmsFileLocator::DmsInfo::DmsInfo()
+    {
+    Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void            IDmsFileLocator::DmsInfo::Clear()
+    {
+    m_id.first = 0;
+    m_id.second = 0;
+    m_fileName.clear();
+    m_refs.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IDmsFileLocator::ReferenceInfo::ReferenceInfo()
+    {
+    Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void            IDmsFileLocator::ReferenceInfo::Clear()
+    {
+    m_id.first = 0;
+    m_id.second = 0;
+    m_referenceModelID = 0;
+    m_nestDepth = 0;
+    m_referenceType = 0;
+    m_dmsFlags = 0;
+    m_elementId = 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus  BASFileLocator::GetDocumentInfo(DmsInfo& info, T_DocumentId const& docId, BeFileNameCR dmsFolder)
+    {
+    auto iter = m_dmsInfoCache.find(docId);
+    if (m_dmsInfoCache.end() != iter)
+        {
+        info = iter->second;
+        LOG.tracev(L"%ls - Found DmsInfo from memory cache.", iter->second.m_fileName.c_str());
+        return BSISUCCESS;
+        }
+
+    BeFileName dmsDirName(dmsFolder);
+    WString folderName;
+    folderName.Sprintf(L"%d_%d", docId.first, docId.second);
+    dmsDirName.AppendToPath(folderName.c_str());
+
+    return ReadMetaDataFromDmsDir(info, dmsDirName);
     }
 
 /*

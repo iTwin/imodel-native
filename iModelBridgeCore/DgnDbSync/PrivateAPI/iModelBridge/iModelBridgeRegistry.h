@@ -44,7 +44,7 @@ struct iModelBridgeRegistryBase : RefCounted<IModelBridgeRegistry>
         BeFileName m_stagingDir;
         BeFileName m_loggingConfigFileName;
         Utf8String m_repositoryName;
-
+        BeFileName m_inputFileName;
         int ParseCommandLine(int argc, WCharCP argv[]);
         };
 
@@ -54,11 +54,11 @@ protected:
 private:
     BeFileName m_stateFileName;
     BeFileName m_stagingDir;
-
+    BeFileName m_masterFilePath;
     
     bool QueryAnyInstalledBridges();
   
-    
+    BentleyStatus SearchForBridgesToAssignToFile(BeFileNameCR fileName, WStringCR parentBridgeName);
     void SearchForBridgesToAssignToDocumentsInDir(BeFileNameCR);
     
     BentleyStatus QueryBridgeAssignedToDocument(BeFileNameR libPath, WStringR name, BeFileNameCR docName);
@@ -71,6 +71,7 @@ private:
     
     static void InitCrt(bool quietAsserts);
 
+    BentleyStatus    ComputeBridgeAffinityInParentContext(iModelBridgeWithAffinity& affinity, bool thisBridgeIsPP, WStringCR parent);
 protected:
     //Exported for testing
     
@@ -89,7 +90,7 @@ protected:
     IMODEL_BRIDGE_FWK_EXPORT ~iModelBridgeRegistryBase();
 
 public:
-    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus SearchForBridgeToAssignToDocument(BeFileNameCR);
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus SearchForBridgeToAssignToDocument(WStringR bridgeName, BeFileNameCR, WStringCR parentBridgeName);
 
     IMODEL_BRIDGE_FWK_EXPORT BentleyStatus RemoveFileAssignment(BeFileNameCR fn);
     IMODEL_BRIDGE_FWK_EXPORT void SetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn);
@@ -116,6 +117,54 @@ struct iModelBridgeRegistry : iModelBridgeRegistryBase
     //! @private
     static RefCountedPtr<iModelBridgeRegistry> OpenForFwk(BeSQLite::DbResult&, BeFileNameCR stagingDir, Utf8StringCR iModelName);
     iModelBridgeRegistry(BeFileNameCR stagingDir, BeFileNameCR dbName);
+    };
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IDmsFileLocator
+    {
+    typedef std::pair<int, int> T_DocumentId;//VaultId, DocumentId
+
+    struct ReferenceInfo
+        {
+        T_DocumentId m_id;
+        //Unused variables below
+        int m_referenceModelID;
+        int m_nestDepth;
+        int m_referenceType;
+        int m_dmsFlags;
+        int m_elementId;
+
+        ReferenceInfo();
+        void Clear();
+        };
+
+    struct DmsInfo
+        {
+        T_DocumentId            m_id;
+        BeFileName              m_fileName;
+        bvector<ReferenceInfo> m_refs;
+        DmsInfo();
+        void Clear();
+        };
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct BASFileLocator : public IDmsFileLocator
+    {
+    private:
+    bmap<T_DocumentId, DmsInfo> m_dmsInfoCache;
+    BentleyStatus ReadMetaDataFromDmsDir(DmsInfo& info, BeFileNameCR dirName);
+    static BentleyStatus GetReferenceInfoFromPrp(DmsInfo& info, BeFileNameCR fileName);
+    static BentleyStatus GetDocumentInfoFromPrp(DmsInfo& info, BeFileNameCR fileName);
+    public:
+    IMODEL_BRIDGE_FWK_EXPORT BASFileLocator();
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus GetDocumentInfo(DmsInfo& info, BeFileNameCR fileName);
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus GetDocumentInfo(DmsInfo& info, T_DocumentId const& docId, BeFileNameCR dmsFolder);
     };
 
 END_BENTLEY_DGN_NAMESPACE

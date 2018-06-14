@@ -732,8 +732,9 @@ static void populateRegistryWithFooBar(FakeRegistry& testRegistry, WString bridg
     iModelBridgeDocumentProperties barDocProps(s_barGuid, "wurn2", "durn2", "other2", "");
     testRegistry.SetDocumentProperties(fooDocProps, BeFileName(L"Foo"));
     testRegistry.SetDocumentProperties(barDocProps, BeFileName(L"Bar"));
-    testRegistry.SearchForBridgeToAssignToDocument(BeFileName(L"Foo"));
-    testRegistry.SearchForBridgeToAssignToDocument(BeFileName(L"Bar"));
+    WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName,BeFileName(L"Foo"),L"");
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName,BeFileName(L"Bar"),L"");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1272,3 +1273,54 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         }
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+    TEST_F(iModelBridgeTests, MixedFileTypeBridgeAssignmentTest)
+        {
+        auto testDir = getiModelBridgeTestsOutputDir(L"MixedFileTypeBridgeAssignmentTest");
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+
+        BeFileName assignDbName(testDir);
+        assignDbName.AppendToPath(L"test1Assignments.db");
+        FakeRegistry testRegistry(testDir, assignDbName);
+        testRegistry.WriteAssignments();
+
+        WString mstnBridgeRegSubKey(L"iModelBridgeForMstn");
+        std::function<T_iModelBridge_getAffinity> mstnLamda = [=](BentleyApi::WCharP buffer,
+                                                               const size_t bufferSize,
+                                                               BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+                                                               BentleyApi::WCharCP affinityLibraryPath,
+                                                               BentleyApi::WCharCP sourceFileName)
+            {
+            BeFileName srcFile(sourceFileName);
+            if (srcFile.GetExtension().CompareToI(L"Dgn"))
+                {
+                
+                affinityLevel = iModelBridgeAffinityLevel::Medium;
+                wcsncpy(buffer, mstnBridgeRegSubKey.c_str(), mstnBridgeRegSubKey.length());
+                }
+            };
+
+        testRegistry.AddBridge(mstnBridgeRegSubKey, mstnLamda);
+
+        
+        WString realDwgBridgeRegSubKey(L"RealDWG");
+        std::function<T_iModelBridge_getAffinity> realDWGLamda = [=](BentleyApi::WCharP buffer,
+                                                                  const size_t bufferSize,
+                                                                  BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+                                                                  BentleyApi::WCharCP affinityLibraryPath,
+                                                                  BentleyApi::WCharCP sourceFileName)
+            {
+            BeFileName srcFile(sourceFileName);
+            if (srcFile.GetExtension().CompareToI(L"DWG"))
+                {
+
+                affinityLevel = iModelBridgeAffinityLevel::Medium;
+                wcsncpy(buffer, realDwgBridgeRegSubKey.c_str(), realDwgBridgeRegSubKey.length());
+                }
+            };
+
+        testRegistry.AddBridge(realDwgBridgeRegSubKey, realDWGLamda);
+        }
