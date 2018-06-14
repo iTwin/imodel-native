@@ -2958,7 +2958,11 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
         }
 
     if (this->_GetChangeDetector()._ShouldSkipModel(*this, modelMap))
-        return  BSISUCCESS;
+        {
+        // no entity change is detected in modelspace - check all xRef files attached to it:
+        if (this->ShouldSkipAllXrefs(modelMap, m_modelspaceId))
+            return  BSISUCCESS;
+        }
 
     // set modelspace as current space being processed
     m_currentspaceId = m_modelspaceId;

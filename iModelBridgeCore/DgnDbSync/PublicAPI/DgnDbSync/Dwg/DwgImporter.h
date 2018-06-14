@@ -182,8 +182,8 @@ struct IDwgChangeDetector
     //! Called to check if the specified file could be skipped (i.e., because it has not changed) by checking timestamps that may be stored in the file.
     virtual bool _ShouldSkipFile (DwgImporter&, DwgDbDatabaseCR) = 0;
     //! Called to check if an entire model could be skipped (i.e., because no element in the model is changed).
-    //! @note DwgImporter must not call this during the model-discovery step but only during the element-conversion step.
-    virtual bool _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const&) = 0;
+    //! @note DwgImporter must not call this during the model-discovery step but only skip it during the element-conversion step.
+    virtual bool _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const&,  DwgDbDatabaseCP xref = nullptr) = 0;
 
     //! Used to choose one of many existing entries in DwgSyncInfo
     typedef std::function<bool(DwgSyncInfo::ElementIterator::Entry const&, DwgImporter& converter)> T_DwgSyncInfoElementFilter;
@@ -531,6 +531,7 @@ public:
         BeFileName          m_savedPath;
         WString             m_prefixInRootFile;
         DwgDbObjectId       m_blockIdInRootFile;
+        DgnModelIdSet       m_dgnModels;
 
     public:
         DwgXRefHolder () : m_xrefDatabase() { }
@@ -546,6 +547,9 @@ public:
         WStringCR       GetPrefixInRootFile () const { return m_prefixInRootFile; }
         BeFileNameCR    GetResolvedPath () const { return m_resolvedPath; }
         BeFileNameCR    GetSavedPath () const { return m_savedPath; }
+        bool            HasDgnModel (DgnModelId id) const { return m_dgnModels.Contains(id); }
+        void            AddDgnModel (DgnModelId id) { m_dgnModels.insert(id); }
+        DgnModelIdSet&  GetDgnModelsR () { return m_dgnModels; }
         };  // DwgXRefHolder
     typedef bvector<DwgXRefHolder>    T_LoadedXRefFiles;
 
@@ -1054,6 +1058,7 @@ private:
     Utf8String              GetImportJobNamePrefix () const { return ""; }
     ResolvedModelMapping    FindRootModelFromImportJob ();
     bool                    IsXrefInsertedInPaperspace (DwgDbObjectIdCR xrefInsertId) const;
+    bool                    ShouldSkipAllXrefs (ResolvedModelMapping const& ownerModel, DwgDbObjectIdCR ownerSpaceId);
     DgnDbStatus             UpdateElementName (DgnElementR editElement, Utf8StringCR newValue, Utf8CP label = nullptr, bool save = true);
 
     static void             RegisterProtocalExtensions ();
@@ -1335,7 +1340,7 @@ public:
     void    _Prepare (DwgImporter&) override {}
     void    _Cleanup (DwgImporter&) override {}
     bool    _ShouldSkipFile (DwgImporter&, DwgDbDatabaseCR) override { return false; }
-    bool    _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const& m) override { return false; }
+    bool    _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const& m,  DwgDbDatabaseCP xref = nullptr) override { return false; }
     void    _OnModelSeen (DwgImporter&, ResolvedModelMapping const& m) override {}
     void    _OnViewSeen (DwgImporter&, DgnViewId) override {}
     void    _OnModelInserted (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP) override {}
@@ -1381,7 +1386,7 @@ public:
     //! @name  Override tracking & detection methods
     //! @{
     DGNDBSYNC_EXPORT bool   _ShouldSkipFile (DwgImporter&, DwgDbDatabaseCR) override;
-    DGNDBSYNC_EXPORT bool   _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const&) override;
+    DGNDBSYNC_EXPORT bool   _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP xref = nullptr) override;
     DGNDBSYNC_EXPORT void   _OnModelSeen (DwgImporter&, ResolvedModelMapping const&) override;
     DGNDBSYNC_EXPORT void   _OnModelInserted (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP xRef) override;
     DGNDBSYNC_EXPORT void   _OnViewSeen (DwgImporter&, DgnViewId) override;
