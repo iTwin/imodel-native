@@ -659,7 +659,11 @@ void TaskScheduler::PerformMeshTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
 
 void TaskScheduler::PerformStitchTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
     {
+    IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker());
 
+    StatusInt status = creatorWorkerPtr->ProcessStitchTask(pXmlTaskNode);
+
+    assert(status == SUCCESS);    
     }
 
 END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE

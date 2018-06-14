@@ -36,7 +36,7 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         StatusInt CreateFilterTasks(uint32_t resolutionInd);
 
         StatusInt CreateStitchTasks(uint32_t resolutionInd);
-
+        
       
     protected:
     
@@ -53,6 +53,8 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         StatusInt                    ExecuteNextTaskInTaskPlan();
 
         StatusInt                    ProcessMeshTask(BeXmlNodeP pXmlTaskNode);         
+
+        StatusInt                    ProcessStitchTask(BeXmlNodeP pXmlTaskNode);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

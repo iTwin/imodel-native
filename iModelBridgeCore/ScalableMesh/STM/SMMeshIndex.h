@@ -954,7 +954,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         StatusInt           ChangeGeometricError(const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue);
 
-        virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);
+        virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false, vector<SMMeshIndexNode<POINT, EXTENT>*>* nodesToStitchInfo = nullptr);
         
         void                SetClipStore(HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& clipStore);
         void                SetClipRegistry(ClipRegistry* registry);       

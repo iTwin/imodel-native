@@ -5877,7 +5877,7 @@ template<class POINT, class EXTENT>  int     SMMeshIndex<POINT, EXTENT>::RemoveW
 Stitch
 Stitch the data.
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int pi_levelToStitch, bool do2_5dStitchFirst)
+template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int pi_levelToStitch, bool do2_5dStitchFirst, vector<SMMeshIndexNode<POINT, EXTENT>*>* nodesToStitchInfo)
     {
     HINVARIANTS;
 
@@ -5887,7 +5887,12 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
 
         try
             {
-
+            //Just want the node to stitch without doing anything.
+            if (nodesToStitchInfo != nullptr)
+                { 
+                ((SMMeshIndexNode<POINT, EXTENT>*)&*m_pRootNode)->Stitch(pi_levelToStitch, nodesToStitchInfo);
+                }               
+            else
             if (do2_5dStitchFirst)
                 {
                 //Done for level stitching.
