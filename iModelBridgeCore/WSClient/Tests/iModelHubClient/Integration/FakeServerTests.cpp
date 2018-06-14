@@ -95,7 +95,6 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, CreateiModel)
     {
-
     Utf8String iModelName = "BriefcaseTest";
     Utf8String description = "This is a test uploadfile2";
     Utf8String url = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--1b2b32312-3222-3212-63d3-12312d4rr4/ProjectScope/iModel";
@@ -107,26 +106,27 @@ TEST_F(FakeServerFixture, CreateiModel)
     Response response = request.PerformAsync()->GetResult();
     ASSERT_EQ(HttpStatus::Created, response.GetHttpStatus());
 
-    //uploading seed
-    HttpBodyPtr respBody = response.GetContent()->GetBody();
-    const size_t buffSize = 100000;
-    char readBuff[buffSize];
-    respBody->Read(readBuff, buffSize);
-    Utf8String reqBodyRead(readBuff);
-
     Json::Reader reader;
     Json::Value settings;
-    reader.Parse(reqBodyRead, settings);
-    
-    Utf8String iModelId = Utf8String(settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::InstanceId].asString());
+    reader.Parse(response.GetBody().AsString(), settings);
 
+    ASSERT_EQ(1, settings.getMemberNames().size());
+    EXPECT_STRCASEEQ("changedInstance", settings.getMemberNames()[0].c_str());
+    EXPECT_STRCASEEQ("Created", settings[ServerSchema::ChangedInstance]["change"].asCString());
+    EXPECT_STRCASEEQ("iModel", settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::ClassName].asCString());
+    EXPECT_STRCASEEQ("ProjectScope", settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::SchemaName].asCString());
+    EXPECT_FALSE(settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::Properties]["Initialized"].asBool());
+    EXPECT_STRCASEEQ(description.c_str(), settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::Properties]["Description"].asCString());
+    EXPECT_STRCASEEQ(iModelName.c_str(), settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::Properties]["Name"].asCString());
+    //TODO handle datetime somehow and the user field
+    Utf8String iModelId = Utf8String(settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::InstanceId].asString());
     Utf8String urlCreateSeedInstance("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--");
     urlCreateSeedInstance += iModelId + "/iModelScope/SeedFile";
     Request requestCreateSeedInstance(urlCreateSeedInstance, method, handlePtr);
     Utf8String seedFileInstanceBody("{\"instance\":{\"className\":\"SeedFile\",\"properties\":{\"FileDescription\":\"BriefcaseTest is created by iModelHubHost\",\"FileId\":\"dcf8f343-6a5a-4b1f-a583-4c977696afc9\",\"FileName\":\"BriefcaseTest.bim\",\"FileSize\":1114112,\"MergedChangeSetId\":""},\"schemaName\":\"iModelScope\"}}");
     requestCreateSeedInstance.SetRequestBody(HttpStringBody::Create(seedFileInstanceBody));
     Response responseSeedInstanceCreation = requestCreateSeedInstance.PerformAsync()->GetResult();
-
+    ASSERT_EQ(HttpStatus::Created, responseSeedInstanceCreation.GetHttpStatus());
     BeFileName fileToUpload;
     BeTest::GetHost().GetOutputRoot(fileToUpload);
     fileToUpload.AppendToPath(L"iModelHub");
@@ -140,13 +140,12 @@ TEST_F(FakeServerFixture, CreateiModel)
     uint64_t chunkSize = 4 * 1024 * 1024;   // Max 4MB.
     HttpBodyPtr body = HttpFileBody::Create(fileToUpload);
     Utf8String blockIds = "";
-    int chunkNumber = 0;
-    uint64_t bytesTo = chunkSize * chunkNumber + chunkSize - 1; // -1 because ranges are inclusive.
+    uint64_t bytesTo = chunkSize - 1; // -1 because ranges are inclusive.
     if (bytesTo >= fileSize)
         bytesTo = fileSize - 1;
 
     std::stringstream blockIdStream;
-    blockIdStream << std::setw(5) << std::setfill('0') << chunkNumber;
+    blockIdStream << std::setw(5) << std::setfill('0') << 0;
     std::string blockId = blockIdStream.str();
     Utf8String encodedBlockId = Base64Utilities::Encode(blockId.c_str()).c_str();
     blockIds += Utf8PrintfString("<Latest>%s</Latest>", encodedBlockId.c_str());
@@ -156,7 +155,7 @@ TEST_F(FakeServerFixture, CreateiModel)
     urlUploadSeed += iModelId;
     Request reqUploadingSeed(urlUploadSeed, method, handlePtr);
     reqUploadingSeed.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
-    reqUploadingSeed.SetRequestBody(HttpRangeBody::Create(body, chunkSize * chunkNumber, bytesTo));
+    reqUploadingSeed.SetRequestBody(HttpRangeBody::Create(body, 0, bytesTo));
     response = reqUploadingSeed.PerformAsync()->GetResult();
     ASSERT_EQ(HttpStatus::Created, response.GetHttpStatus());
     }
@@ -182,6 +181,10 @@ TEST_F(FakeServerFixture, CreatingDuplicateNamedModelsReturns409Status)
     duplicateRequest.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)));
     response = duplicateRequest.PerformAsync()->GetResult();
     ASSERT_EQ(HttpStatus::Conflict, response.GetHttpStatus());
+    Json::Reader reader;
+    Json::Value settings;
+    reader.Parse(response.GetBody().AsString(), settings);
+
     }
 
 /*--------------------------------------------------------------------------------------+
