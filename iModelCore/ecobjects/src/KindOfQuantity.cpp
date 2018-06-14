@@ -389,8 +389,9 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), PERSISTENCE_UNIT_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
-
-    if (ECObjectsStatus::Success != ParsePersistenceUnit(value.c_str(), &context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor()))
+    ECFormatCP persistenceFormat = nullptr;
+    Nullable<int32_t> persistencePrecision = nullptr;
+    if (ECObjectsStatus::Success != ParsePersistenceUnit(persistenceFormat, persistencePrecision, value.c_str(), &context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor()))
         return SchemaReadStatus::InvalidECSchemaXml; // Logging in ParsePersistenceUnit
 
     // Read Presentation Formats
@@ -405,12 +406,11 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
                 return SchemaReadStatus::InvalidECSchemaXml; // Logging in ParsePresentationUnit
             first = false;
             }
-        if (presentationFormats.size() > 0 && m_presentationFormats.size() > presentationFormats.size())
-            {
-            // There is a persitence format that is unecessary
-            m_presentationFormats.erase(m_presentationFormats.end() - 1); // Delete the persitence format. It will always be at the end
-            }
         }
+    // Add persistence format if we have one and we also don't have any presentation units. This can only happen for < 3.2
+    if (nullptr != persistenceFormat && m_presentationFormats.empty())
+        AddPresentationFormatSingleUnitOverride(*persistenceFormat, persistencePrecision, GetPersistenceUnit());
+
     return SchemaReadStatus::Success;
     }
 
@@ -494,68 +494,63 @@ ECObjectsStatus KindOfQuantity::ParseDescriptorAndAddRefs(Utf8StringR unitName, 
     return ECObjectsStatus::Success;
     }
 
+// Used for upgrading from ECXml 3.1.
+static const Utf8String oldDefaultFormatName = "DefaultReal";
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion)
+ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(ECFormatCP& persFormat, Nullable<int32_t>& prec, Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion)
     {
     bool xmlLessThan32 = (3 == ecXmlMajorVersion && 2 > ecXmlMinorVersion) && (nullptr != context);
-    ECUnitCP unit = nullptr;
-    Nullable<int32_t> prec = nullptr;
-    ECFormatCP persistenceFormat = nullptr;
+    ECUnitCP persUnit = nullptr;
+    prec = nullptr;
+    persFormat = nullptr;
     if (xmlLessThan32)
         {
         Utf8String unitName;
         Utf8String formatName;
-        if (ECObjectsStatus::Success != ParseDescriptorAndAddRefs(unitName, formatName, unit, descriptor, context))
+        if (ECObjectsStatus::Success != ParseDescriptorAndAddRefs(unitName, formatName, persUnit, descriptor, context))
             return ECObjectsStatus::Error;
+    
+        bvector<Utf8String> unitNames;
+        bvector<Nullable<Utf8String>> unitLabels; // TODO make these optional since we don't care about them here
         if (!Utf8String::IsNullOrEmpty(formatName.c_str()))
-            {
-            bvector<Utf8String> unitNames;
-            bvector<Nullable<Utf8String>> unitLabels; // TODO make these optional since we don't care about them here
             Formatting::Format::ParseFormatString(formatName, prec, unitNames, unitLabels, formatName);
-            persistenceFormat = GetSchema().LookupFormat(formatName.c_str());
-            if (nullptr == persistenceFormat)
-                {
-                LOG.errorv("EC3.2 upgrade failed: Failed to find format with name '%s' in standard formats schema", formatName.c_str());
-                return ECObjectsStatus::Error;
-                }
+        else
+            formatName = "f:" + oldDefaultFormatName;
+        persFormat = GetSchema().LookupFormat(formatName.c_str());
+        if (nullptr == persFormat)
+            {
+            LOG.errorv("EC3.2 upgrade failed: Failed to find format with name '%s' in standard formats schema", formatName.c_str());
+            return ECObjectsStatus::Error;
             }
         }
     else
-        unit = GetSchema().GetUnitsContext().LookupUnit(descriptor);
+        persUnit = GetSchema().GetUnitsContext().LookupUnit(descriptor);
 
-    if (nullptr == unit)
+    if (nullptr == persUnit)
         {
         LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a Unit '%s' that could not be located",
             descriptor, GetFullName().c_str(), descriptor);
         return ECObjectsStatus::Error;
         }
 
-    BeAssert(nullptr != unit);
-    if (unit->IsConstant())
+    BeAssert(nullptr != persUnit);
+    if (persUnit->IsConstant())
         { 
         LOG.errorv("Persistence FormatUnitSet: '%s' on KindOfQuanity '%s' has a Constant as a persistence unit", descriptor, GetFullName().c_str());
         return ECObjectsStatus::Error;
         }
 
-    if (ECObjectsStatus::Success != SetPersistenceUnit(*unit))
+    if (ECObjectsStatus::Success != SetPersistenceUnit(*persUnit))
         {
-        LOG.errorv("On KOQ '%s' failed to set persistence unit with name '%s'", GetFullName().c_str(), unit->GetFullName().c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    if (nullptr != persistenceFormat && ECObjectsStatus::Success != AddPresentationFormatSingleUnitOverride(*persistenceFormat, prec, unit))
-        {
-        LOG.errorv("On KOQ '%s' failed to set presentation format with name '%s'", GetFullName().c_str(), persistenceFormat->GetFullName().c_str());
+        LOG.errorv("On KOQ '%s' failed to set persistence unit with name '%s'", GetFullName().c_str(), persUnit->GetFullName().c_str());
         return ECObjectsStatus::Error;
         }
 
     return ECObjectsStatus::Success;
     }
-
-// Used for upgrading from ECXml 3.1.
-static const Utf8CP oldDefaultFormatName = "DefaultRealU";
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
@@ -596,7 +591,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
             // Assuming since there was previously a format that it should contain the Unit with it.
             Utf8String alias;
             Utf8String localFormatName;
-            Utf8CP mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(oldDefaultFormatName);
+            Utf8CP mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(oldDefaultFormatName.c_str());
             BeAssert(nullptr != mappedName); // Default should always map
             ECClass::ParseClassName(alias, localFormatName, mappedName);
             Utf8String lookupFormat = "f:" + localFormatName;
@@ -742,9 +737,12 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
         formatStrings.push_back(formatString);
         }
 
-    // If we have a persistence FUS with a specified format. Put it at the end
-    if (!persistenceFormat.empty() && formatStrings.size() == 0)
+    // If there are no presentation units, create on using the persistence fus. Use the default format if none is provided
+    if (formatStrings.size() == 0)
         {
+        if (persistenceFormat.empty())
+            persistenceFormat = oldDefaultFormatName;
+
         Utf8String unqualifiedPersFormat;
         if(ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPersFormat, persistenceFormat))
             return ECObjectsStatus::Error;
@@ -923,7 +921,7 @@ NamedFormatCP KindOfQuantity::GetOrCreateCachedPersistenceFormat() const
         if (Units::Unit::AreEqual(m_persFormatCache.Value().GetCompositeMajorUnit(), m_persistenceUnit))
             return &m_persFormatCache.Value();
         }
-    Utf8String name = oldDefaultFormatName;
+    Utf8String name = "DefaultRealU";
     name += "[";
     name += m_persistenceUnit->GetQualifiedName(GetSchema());
     name += "]";

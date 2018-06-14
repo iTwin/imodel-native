@@ -990,7 +990,9 @@ TEST_F(UnitsCustomAttributesConversionTests, EC3KOQsConvertBackToUnitSpecificati
     EXPECT_FALSE(schema->GetClassCP("A")->GetPropertyP("PropA")->GetCustomAttribute("OldPersistenceUnit").IsValid());
     EXPECT_STREQ("FOOT", getUnitName(schema.get(), "A", "PropA", "DisplayUnitSpecificationAttr", "DisplayUnitName").c_str());
     EXPECT_STREQ("NEWTON", getUnitName(schema.get(), "D", "Prop1", "UnitSpecificationAttr", "UnitName").c_str());
-    EXPECT_FALSE(schema->GetClassCP("D")->GetPropertyP("Prop1")->GetCustomAttributeLocal("DisplayUnitSpecificationAttr").IsValid());
+    EXPECT_TRUE(schema->GetClassCP("D")->GetPropertyP("Prop1")->GetCustomAttributeLocal("DisplayUnitSpecificationAttr").IsValid());
+    EXPECT_STREQ("NEWTON", getUnitName(schema.get(), "D", "Prop1", "UnitSpecificationAttr", "UnitName").c_str());
+    EXPECT_STREQ("NEWTON", getUnitName(schema.get(), "D", "Prop1", "DisplayUnitSpecificationAttr", "DisplayUnitName").c_str());
     EXPECT_STREQ("NEWTON_PER_METRE_SQUARED", getUnitName(schema.get(), "D", "Prop2", "UnitSpecificationAttr", "UnitName").c_str());
     EXPECT_STREQ("POUND_FORCE_PER_INCH_SQUARED", getUnitName(schema.get(), "D", "Prop2", "DisplayUnitSpecificationAttr", "DisplayUnitName").c_str());
     EXPECT_FALSE(schema->GetClassCP("B")->GetPropertyP("PropA")->GetCustomAttributeLocal("UnitSpecificationAttr").IsValid());

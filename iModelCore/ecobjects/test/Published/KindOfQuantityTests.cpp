@@ -299,7 +299,8 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     presFUSes.clear();
     EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM", presFUSes, schema));
     EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
-    EXPECT_TRUE(presFormatStrings.empty());
+    EXPECT_EQ(1, presFormatStrings.size());
+    EXPECT_STRCASEEQ("f:DefaultReal[u:MM]", presFormatStrings[0].c_str());
     }
     {
     persUnitName.clear();
@@ -318,7 +319,7 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(real)", presFUSes, schema));
     EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
     EXPECT_EQ(1, presFormatStrings.size());
-    EXPECT_STRCASEEQ("f:DefaultRealU[u:CM]", presFormatStrings[0].c_str());
+    EXPECT_STRCASEEQ("f:DefaultReal[u:CM]", presFormatStrings[0].c_str());
     }
     {
     persUnitName.clear();
@@ -1604,8 +1605,8 @@ TEST_F(KindOfQuantityUpgradeTest, ec31_noPersistenceFormatIfPresentationFUSesDef
     auto koq = schemaP->GetKindOfQuantityCP("MyKindOfQuantity");
     ASSERT_NE(nullptr, koq);
     EXPECT_EQ(2, koq->GetPresentationFormats().size());
-    EXPECT_STRCASEEQ("DefaultRealU[u:FT]", koq->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_STRCASEEQ("DefaultRealU[u:IN]", koq->GetPresentationFormats()[1].GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultReal[u:FT]", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultReal[u:IN]", koq->GetPresentationFormats()[1].GetName().c_str());
 }
 
 //--------------------------------------------------------------------------------------
@@ -1625,8 +1626,8 @@ TEST_F(KindOfQuantityUpgradeTest, ec31_persistenceFormatShouldBeDefaultIfNoPrese
     DeserializeSchema(schemaP, *schemaContext, schema);
     auto koq = schemaP->GetKindOfQuantityCP("MyKindOfQuantity");
     ASSERT_NE(nullptr, koq);
-    EXPECT_EQ(0, koq->GetPresentationFormats().size());
-    EXPECT_STRCASEEQ("DefaultRealU[u:CM]", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("DefaultReal[u:CM]", koq->GetDefaultPresentationFormat()->GetName().c_str());
 }
 
 //--------------------------------------------------------------------------------------
@@ -1669,8 +1670,8 @@ TEST_F(KindOfQuantityUpgradeTest, ec31_ValidKindOfQuantityInReferencedSchema)
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDisplayLabel().c_str());
     EXPECT_STRCASEEQ("CM", koq->GetPersistenceUnit()->GetName().c_str());
     ASSERT_EQ(2, koq->GetPresentationFormats().size());
-    EXPECT_STRCASEEQ("DefaultRealU[u:FT]", koq->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_STRCASEEQ("DefaultRealU[u:IN]", koq->GetPresentationFormats()[1].GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultReal[u:FT]", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultReal[u:IN]", koq->GetPresentationFormats()[1].GetName().c_str());
     auto entityClass = schema->GetClassCP("Foo");
     auto propWithKoq = entityClass->GetPropertyP("Length");
     auto arrayPropWithKoq = entityClass->GetPropertyP("AlternativeLengths");
