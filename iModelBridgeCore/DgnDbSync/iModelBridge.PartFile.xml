@@ -155,9 +155,21 @@
       <ProductDirectory Name="VendorNotices"             Path="notices" LibType="static" />
     </ProductDirectoryList>
 
+    <Part Name="iModelBridgeExeSubPartsShim_Static" OnlyPlatforms="linux*,macos*">
+        <SubPart PartName="BeSQLite" LibType="Static" PartFile="BeSQLite" Repository="BeSQLite"/>
+        <SubPart PartName="BeXml" LibType="Static" PartFile="Bentley" Repository="Bentley"/>
+    </Part>
+    <Part Name="iModelBridgeExeSubPartsShim_Dynamic" OnlyPlatforms="x64">
+        <SubPart PartName="BeSQLite" LibType="Dynamic" PartFile="BeSQLite" Repository="BeSQLite"/>
+        <SubPart PartName="BeXml" LibType="Dynamic" PartFile="Bentley" Repository="Bentley"/>
+    </Part>
+    <Part Name="iModelBridgeExeSubPartsShim">
+        <SubPart PartName="iModelBridgeExeSubPartsShim_Static"/>
+        <SubPart PartName="iModelBridgeExeSubPartsShim_Dynamic"/>
+    </Part>
+
     <Part Name="iModelBridgeAssignExe" BentleyBuildMakeFile="iModelBridge/Fwk/Registry/iModelBridgeAssignMain.mke">
-      <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
-      <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
+      <SubPart PartName="iModelBridgeExeSubPartsShim"/>
       <SubPart PartName="PublicApi"/>
       <Bindings>
         <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeAssign$(exeext)</Files>
@@ -165,8 +177,7 @@
     </Part>
 
     <Part Name="iModelBridgeGetAffinityHostExe" BentleyBuildMakeFile="iModelBridge/Fwk/Registry/iModelBridgeGetAffinityHost.mke">
-      <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
-      <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
+      <SubPart PartName="iModelBridgeExeSubPartsShim"/>
       <SubPart PartName="PublicApi"/>
       <Bindings>
         <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
