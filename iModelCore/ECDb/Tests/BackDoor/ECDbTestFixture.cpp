@@ -22,7 +22,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 //no need to release a static non-POD variable (Bentley C++ coding standards)
 //static
-ProfileVersion const* ECDbTestFixture::s_expectedProfileVersion = new ProfileVersion(4, 0, 0, 1);
+ProfileVersion const* ECDbTestFixture::s_expectedProfileVersion = new ProfileVersion(4, 0, 0, 2);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     10/2015
@@ -429,14 +429,6 @@ void ECDbTestFixture::Initialize()
 
         ECDb::Initialize(temporaryDir, &applicationSchemaDir);
         srand((uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
-
-        BeFileName sqlangFile;
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
-        sqlangFile.AppendToPath(L"sqlang");
-        sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
-
-        BeSQLite::L10N::Shutdown();
-        BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
 
         s_isInitialized = true;
         }

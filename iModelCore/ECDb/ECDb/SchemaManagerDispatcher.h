@@ -65,8 +65,19 @@ public:
     ECN::ECEnumerationCP GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetEnumeration(schemaNameOrAlias, enumName, mode); }
     ECN::ECEnumerationId GetEnumerationId(ECN::ECEnumerationCR ecenum) const { return m_reader.GetEnumerationId(ecenum); }
 
+    ECN::UnitSystemCP GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetUnitSystem(schemaNameOrAlias, systemName, mode); }
+    ECN::UnitSystemId GetUnitSystemId(ECN::UnitSystemCR us) const { return m_reader.GetUnitSystemId(us); }
+    ECN::PhenomenonCP GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetPhenomenon(schemaNameOrAlias, phenName, mode); }
+    ECN::PhenomenonId GetPhenomenonId(ECN::PhenomenonCR ph) const { return m_reader.GetPhenomenonId(ph); }
+    ECN::UnitId GetUnitId(ECN::ECUnitCR unit) const { return m_reader.GetUnitId(unit); }
+    ECN::FormatId GetFormatId(ECN::ECFormatCR format) const { return m_reader.GetFormatId(format); }
+
     ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetKindOfQuantity(schemaNameOrAlias, koqName, mode); }
     ECN::KindOfQuantityId GetKindOfQuantityId(ECN::KindOfQuantityCR koq) const { return m_reader.GetKindOfQuantityId(koq); }
+
+    ECN::ECUnitCP GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unitName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetUnit(schemaNameOrAlias, unitName, mode); }
+    ECN::ECFormatCP GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR formatName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetFormat(schemaNameOrAlias, formatName, mode); }
+
     ECN::PropertyCategoryCP GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR propertyCategoryName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetPropertyCategory(schemaNameOrAlias, propertyCategoryName, mode); }
     ECN::PropertyCategoryId GetPropertyCategoryId(ECN::PropertyCategoryCR cat) const { return m_reader.GetPropertyCategoryId(cat); }
 
@@ -243,6 +254,10 @@ struct SchemaManager::Dispatcher final
 
         ECN::ECEnumerationCP GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode, Utf8CP tableSpace) const;
+        ECN::ECUnitCP GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unitName, SchemaLookupMode, Utf8CP tableSpace) const;
+        ECN::ECFormatCP GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR formatName, SchemaLookupMode, Utf8CP tableSpace) const;
+        ECN::UnitSystemCP GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode, Utf8CP tableSpace) const;
+        ECN::PhenomenonCP GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::PropertyCategoryCP GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR propertyCategoryName, SchemaLookupMode, Utf8CP tableSpace) const;
 
         void ClearCache() const;

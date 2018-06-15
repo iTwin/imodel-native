@@ -168,6 +168,44 @@ DbResult TestHelper::ExecuteInsertECSql(ECInstanceKey& key, Utf8CP ecsql) const
     return stmt.Step(key);
     }
 
+//---------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                     03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+Nullable<ECVersion> TestHelper::GetECVersion(Utf8CP schemaName) const
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT ECVersion FROM meta.ECSchemaDef WHERE Name=?"))
+        return nullptr;
+
+    stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No);
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return nullptr;
+
+    if (stmt.IsValueNull(0))
+        return nullptr;
+
+    return (ECVersion) stmt.GetValueInt(0);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                     03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BeVersion TestHelper::GetOriginalECXmlVersion(Utf8CP schemaName) const
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT OriginalECXmlVersionMajor,OriginalECXmlVersionMinor FROM meta.ECSchemaDef WHERE Name=?"))
+        return BeVersion();
+    
+    stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No);
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return BeVersion();
+
+    if (stmt.IsValueNull(0))
+        return BeVersion();
+
+    return BeVersion(stmt.GetValueInt(0), stmt.GetValueInt(1));
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="StartupCompany_Supplemental_ECDbTest" alias="sbc" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
-    <ECSchemaReference name="StartupCompany" version="02.00" alias="stco"/>
+<ECSchema schemaName="StartupCompany_Supplemental_ECDbTest" alias="sbc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+    <ECSchemaReference name="StartupCompany" version="02.00.00" alias="stco"/>
     <ECCustomAttributes>
-        <SupplementalSchema xmlns="CoreCustomAttributes.01.00">
+        <SupplementalSchema xmlns="CoreCustomAttributes.01.00.00">
             <PrimarySchemaReference>
                 <SchemaName>StartupCompany</SchemaName>
                 <MajorVersion>2</MajorVersion>
@@ -16,7 +16,7 @@
     </ECCustomAttributes>
     <ECEntityClass typeName="AAA" modifier="None">
         <ECCustomAttributes>
-            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.01.00"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="AAFoo" modifier="None">
@@ -35,7 +35,7 @@
     <ECStructClass typeName="Location" modifier="None">
         <ECProperty propertyName="Zip" typeName="string" displayLabel="Zip Code" readOnly="false">
             <ECCustomAttributes>
-                <Localizable xmlns="CoreCustomAttributes.01.00"/>
+                <Localizable xmlns="CoreCustomAttributes.01.00.00"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECStructClass>

@@ -240,6 +240,9 @@
     - @ref BentleyApi::ECN::ECSchema::GetEnumerations "ECEnumerations": Add
     - @ref BentleyApi::ECN::ECSchema::GetKindOfQuantities "KindOfQuantities": Add
     - @ref BentleyApi::ECN::ECSchema::GetPropertyCategories "PropertyCategories": Add
+    - @ref BentleyApi::ECN::ECSchema::GetPhenomena "Phenomena": Add
+    - @ref BentleyApi::ECN::ECSchema::GetUnitSystems "UnitSystems": Add
+    - @ref BentleyApi::ECN::ECSchema::GetUnits "Units": Add
     - @b CustomAttributes on the ECSchema: Add, Remove, Modify
 
     ### ECClass
@@ -260,6 +263,21 @@
             - not a @ref BentleyApi::ECN::NavigationECProperty
     - @b CustomAttributes on the ECClass: Add, Remove, Modify
 
+    ### ECEnumeration
+    - @b Modify 
+        - @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "IsStrict"
+            - Only when modifying from true to false.
+        - @ref BentleyApi::ECN::ECEnumeration::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::ECEnumeration::GetDescription "Description"
+
+    - @b ECEnumerators
+        - @b Add a new @ref BentleyApi::ECN::ECEnumerator "ECEnumerator"
+
+    ### ECEnumerator
+    - @b Modify 
+        - @ref BentleyApi::ECN::ECEnumerator::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::ECEnumerator::GetDescription "Description"
+
     ### PropertyCategory
     - @ref BentleyApi::ECN::PropertyCategory::GetDescription "Description": Modify
     - @ref BentleyApi::ECN::PropertyCategory::GetDisplayLabel "DisplayLabel": Modify
@@ -269,7 +287,30 @@
     - @ref BentleyApi::ECN::KindOfQuantity::GetDisplayLabel "DisplayLabel": Modify
     - @ref BentleyApi::ECN::KindOfQuantity::GetDescription "Description": Modify
     - @ref BentleyApi::ECN::KindOfQuantity::GetRelativeError "RelativeError": Modify
-    - @ref BentleyApi::ECN::KindOfQuantity::GetPresentationUnitList "PresentationUnits": Add, Remove
+    - @ref BentleyApi::ECN::KindOfQuantity::GetPresentationFormats "PresentationFormats": Add, Remove
+
+    ### Phenomenon
+    - @ref BentleyApi::ECN::Phenomenon::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::Phenomenon::GetDescription "Description": Modify
+
+    ### UnitSystem
+    - @ref BentleyApi::ECN::UnitSystem::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::UnitSystem::GetDescription "Description": Modify
+
+    ### Unit
+    - @ref BentleyApi::ECN::ECUnit::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::ECUnit::GetDescription "Description": Modify
+
+    ### Format
+    - @ref BentleyApi::ECN::ECFormat::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::ECFormat::GetDescription "Description": Modify
+    - @b NumericSpec: Modify any of its attributes
+    - @b CompositeSpec: 
+        - Spacer: Modify
+        - IncludeZero: Modify
+        - Unit labels: Modify
+
+    In other words: Anything can be modified except for the format name and the composite units (neither adding/modifying/removing).
 
     ### ECProperty
     - @ref BentleyApi::ECN::ECProperty::GetDescription "Description": Modify
@@ -283,7 +324,7 @@
     - @ref BentleyApi::ECN::ECProperty::GetPriority "Priority": Assign, Remove
     - @ref BentleyApi::ECN::ECProperty::GetKindOfQuantity "KindOfQuantity":
         - Assign
-        - Replace, only if its "PersistenceUnit" does not change
+        - Replace, only if its @ref BentleyApi::ECN::KindOfQuantity::GetPersistenceUnit "PersistenceUnit" does not change
     - @b CustomAttributes on the ECProperty: Add, Remove, Modify
 
     #### Primitive ECProperty
@@ -562,7 +603,7 @@
     ####Example
 
         <ECCustomAttributes>
-            <SchemaMap xmlns="ECDbMap.02.00">
+            <SchemaMap xmlns="ECDbMap.02.00.00">
                 <TablePrefix>sp</TablePrefix>
             </SchemaMap>
         </ECCustomAttributes>
@@ -621,7 +662,7 @@
 
         <ECEntityClass typeName="Foo" modifier="Sealed">
             <ECCustomAttributes>
-                <ClassMap xmlns="ECDbMap.02.00">
+                <ClassMap xmlns="ECDbMap.02.00.00">
                     <MapStrategy>NotMapped</MapStrategy>
                 </ClassMap>
             </ECCustomAttributes>
@@ -632,7 +673,7 @@
 
         <ECEntityClass typeName="Foo">
             <ECCustomAttributes>
-                <ClassMap xmlns="ECDbMap.02.00">
+                <ClassMap xmlns="ECDbMap.02.00.00">
                     <MapStrategy>TablePerHierarchy</MapStrategy>
                 </ClassMap>
             </ECCustomAttributes>
@@ -643,7 +684,7 @@
 
         <ECEntityClass typeName="Person" modifier="Sealed">
             <ECCustomAttributes>
-                <DbIndexList xmlns="ECDbMap.02.00">
+                <DbIndexList xmlns="ECDbMap.02.00.00">
                     <Indexes>
                         <DbIndex>
                             <Name>ix_Person_Name</Name>
@@ -698,7 +739,7 @@
 
         <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
-               <PropertyMap xmlns="ECDbMap.02.00">
+               <PropertyMap xmlns="ECDbMap.02.00.00">
                     <Collation>NoCase</Collation>
                </PropertyMap>
             </ECCustomAttributes>
@@ -727,7 +768,7 @@
          <ECEntityClass typeName="File">
              <ECNavigationProperty propertyName="Folder" relationshipName="FolderHasFiles" direction="Backward">
                 <ECCustomAttributes>
-                    <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                    <ForeignKeyConstraint xmlns="ECDbMap.02.00.00">
                         <OnDeleteAction>Cascade</OnDeleteAction>
                     </ForeignKeyConstraint>
                 </ECCustomAttributes>
@@ -770,7 +811,7 @@
 
         <ECRelationshipClass typeName="HardwareUsedByEmployee" modifier="Sealed" strength="referencing">
             <ECCustomAttributes>
-                <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
+                <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
                     <SourceECInstanceIdColumn>EmployeeId</SourceECInstanceIdColumn>
                     <TargetECInstanceIdColumn>HardwareId</TargetECInstanceIdColumn>
                 </LinkTableRelationshipMap>

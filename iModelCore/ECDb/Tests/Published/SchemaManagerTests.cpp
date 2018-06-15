@@ -102,7 +102,54 @@ TEST_F(SchemaManagerTests, ImportDifferentInMemorySchemaVersions)
 
     importSchema(m_ecdb, ECVersion::V2_0, false);
     importSchema(m_ecdb, ECVersion::V3_0, false);
-    importSchema(m_ecdb, ECVersion::V3_1, true);
+    importSchema(m_ecdb, ECVersion::V3_1, false);
+    importSchema(m_ecdb, ECVersion::V3_2, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, SchemaECVersion)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SchemaECVersion.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                                       <ECClass typeName="Foo" isDomainClass="True">
+                                        <ECProperty propertyName="Pet" typeName="string"/>
+                                       </ECClass>
+                                     </ECSchema>)xml")));
+
+    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("TestSchema"));
+    ASSERT_EQ(BeVersion(2, 0), GetHelper().GetOriginalECXmlVersion("TestSchema"));
+
+    ASSERT_EQ(SUCCESS, SetupECDb("SchemaECVersion.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+                                       <ECEntityClass typeName="Foo">
+                                        <ECProperty propertyName="Pet" typeName="string"/>
+                                       </ECEntityClass>
+                                     </ECSchema>)xml")));
+
+    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("TestSchema"));
+    ASSERT_EQ(BeVersion(3, 0), GetHelper().GetOriginalECXmlVersion("TestSchema"));
+
+    ASSERT_EQ(SUCCESS, SetupECDb("SchemaECVersion.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                       <ECEntityClass typeName="Foo">
+                                        <ECProperty propertyName="Pet" typeName="string"/>
+                                       </ECEntityClass>
+                                     </ECSchema>)xml")));
+
+    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("TestSchema"));
+    ASSERT_EQ(BeVersion(3, 1), GetHelper().GetOriginalECXmlVersion("TestSchema"));
+
+    ASSERT_EQ(SUCCESS, SetupECDb("SchemaECVersion.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                       <ECEntityClass typeName="Foo">
+                                        <ECProperty propertyName="Pet" typeName="string"/>
+                                       </ECEntityClass>
+                                     </ECSchema>)xml")));
+
+    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("TestSchema"));
+    ASSERT_EQ(BeVersion(3, 2), GetHelper().GetOriginalECXmlVersion("TestSchema"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -689,17 +736,17 @@ TEST_F(SchemaManagerTests, ImportWithLocalizationSchemas)
 
     ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
         "<?xml version='1.0' encoding='utf-8' ?>"
-        "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
-        "    <ECEnumeration typeName='Animal' displayLabel='Animal' backingTypeName='string' isStrict='True'>"
-        "        <ECEnumerator value='Dog' />"
-        "        <ECEnumerator value='Cat'/>"
+        "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA' />"
+        "    <ECEnumeration typeName='Animal' displayLabel='Animal' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator name='Dog' value='1' />"
+        "        <ECEnumerator name='Cat' value='2' />"
         "    </ECEnumeration>"
         "    <ECEntityClass typeName='SpatialElement' displayLabel='Spatial Element'>"
         "        <ECProperty propertyName='Pet' typeName='Animal' displayLabel='Pet Type' />"
         "        <ECProperty propertyName='LastMod' typeName='DateTime' displayLabel='Last Modified Date'>"
         "          <ECCustomAttributes>"
-        "            <DateTimeInfo xmlns='CoreCustomAttributes.01.00'>"
+        "            <DateTimeInfo xmlns='CoreCustomAttributes.01.00.00'>"
         "                <DateTimeKind>Unspecified</DateTimeKind>"
         "            </DateTimeInfo>"
         "          </ECCustomAttributes>"
@@ -711,7 +758,7 @@ TEST_F(SchemaManagerTests, ImportWithLocalizationSchemas)
         "    <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA' />"
         "    <ECSchemaReference name='SchemaLocalizationCustomAttributes' version='01.00.00' alias='LocCA' />"
         "<ECCustomAttributes>"
-        "<SupplementalSchema xmlns='CoreCustomAttributes.01.00'>"
+        "<SupplementalSchema xmlns='CoreCustomAttributes.01.00.00'>"
         "   <PrimarySchemaReference>"
         "       <SchemaName>House</SchemaName>"
         "       <MajorVersion>1</MajorVersion>"
@@ -721,7 +768,7 @@ TEST_F(SchemaManagerTests, ImportWithLocalizationSchemas)
         "   <Precedence>9900</Precedence>"
         "   <Purpose>Localization</Purpose>"
         "</SupplementalSchema>"
-        "<LocalizationSpecification xmlns='SchemaLocalizationCustomAttributes.01.00'>"
+        "<LocalizationSpecification xmlns='SchemaLocalizationCustomAttributes.01.00.00'>"
         "   <Locale>de-DE</Locale>"
         "   <Resource>"
         "      <LocalizationData>"
@@ -768,9 +815,9 @@ TEST_F(SchemaManagerTests, ImportWithLocalizationSchemas)
     ASSERT_EQ(2, (int) animalEnum->GetEnumeratorCount());
     for (ECEnumerator const* enumValue : animalEnum->GetEnumerators())
         {
-        if (enumValue->GetString().EqualsIAscii("Dog"))
+        if (enumValue->GetName().EqualsIAscii("Dog"))
             ASSERT_STRCASEEQ("Dog", enumValue->GetDisplayLabel().c_str());
-        else if (enumValue->GetString().EqualsIAscii("Cat"))
+        else if (enumValue->GetName().EqualsIAscii("Cat"))
             ASSERT_STRCASEEQ("Cat", enumValue->GetDisplayLabel().c_str());
         else
             FAIL();
@@ -794,7 +841,7 @@ TEST_F(SchemaManagerTests, ImportWithLocalizationSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, IncrementalLoading)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemamanagertests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemamanagertests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     BeFileName testFilePath(m_ecdb.GetDbFileName());
 
     const int expectedClassCount = m_ecdb.Schemas().GetSchema("ECSqlTest")->GetClassCount();
@@ -861,7 +908,7 @@ TEST_F(SchemaManagerTests, IncrementalLoading)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CasingTests)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemamanagercasingtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("schemamanagercasingtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("ECDBFILEinfo");
     ASSERT_TRUE(schema != nullptr && schema->GetName().EqualsI("ECDbFileInfo"));
@@ -900,7 +947,7 @@ TEST_F(SchemaManagerTests, CasingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetDerivedClasses)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP baseClass = m_ecdb.Schemas().GetClass("ECSqlTest", "THBase");
     ASSERT_TRUE(baseClass != nullptr) << "Could not retrieve base class";
@@ -920,7 +967,7 @@ TEST_F(SchemaManagerTests, GetDerivedClasses)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetDerivedECClassesWithoutIncrementalLoading)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("ECSqlTest", true);
     ASSERT_TRUE(testSchema != nullptr);
@@ -1653,6 +1700,9 @@ TEST_F(SchemaManagerTests, GetEnumeration)
                                      "  </ECEntityClass>"
                                      "</ECSchema>")));
 
+    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("TestSchema"));
+    ASSERT_EQ(BeVersion(3, 0), GetHelper().GetOriginalECXmlVersion("TestSchema"));
+
     {
     ECEnumerationCP ecEnum = m_ecdb.Schemas().GetEnumeration("ECDbFileInfo", "StandardRootFolderType");
     ASSERT_TRUE(ecEnum != nullptr);
@@ -1735,24 +1785,25 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
         {
         ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDisplayLabel().c_str());
         ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDescription().c_str());
-        ASSERT_STREQ("CM(real)", actualKoq.GetPersistenceUnit().ToText(true).c_str());
+        ASSERT_STREQ("u:CM", actualKoq.GetPersistenceUnit()->GetQualifiedName(actualKoq.GetSchema()).c_str());
         ASSERT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
-        bvector<Formatting::FormatUnitSet> const& actualPresentationUnits = actualKoq.GetPresentationUnitList();
-        ASSERT_EQ(2, actualPresentationUnits.size());
-        ASSERT_STREQ("FT(real)", actualPresentationUnits[0].ToText(true).c_str());
-        ASSERT_STREQ("IN(real)", actualPresentationUnits[1].ToText(true).c_str());
+        ASSERT_EQ(2, actualKoq.GetPresentationFormats().size());
+        ASSERT_STREQ("f:DefaultRealU[u:M]", actualKoq.GetPresentationFormats()[0].GetQualifiedName(actualKoq.GetSchema()).c_str());
+        ASSERT_STREQ("f:DefaultReal[u:M]", actualKoq.GetPresentationFormats()[1].GetQualifiedName(actualKoq.GetSchema()).c_str());
         };
 
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                     <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                     <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                     <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
                                      <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
-                                                     displayLabel="My KindOfQuantity" persistenceUnit="CM" relativeError=".5"
-                                                     presentationUnits="FT;IN" />
+                                                     displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
+                                                     presentationUnits="f:DefaultRealU[u:M];f:DefaultReal[u:M]" />
                                      </ECSchema>)xml"));
 
     testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                     <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                     <ECSchema schemaName="Schema2" alias="s2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                      <ECSchemaReference name="Schema1" version="01.00.00" alias="s1" />
                                        <ECEntityClass typeName="Foo" >
                                          <ECProperty propertyName="Length" typeName="double" kindOfQuantity="s1:MyKindOfQuantity" />
@@ -1763,7 +1814,12 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
                                      </ECSchema>)xml"));
 
     ASSERT_EQ(SUCCESS, SetupECDb("getkindofquantity.ecdb", testSchemas[0]));
+    ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema("Units"));
     ASSERT_EQ(SUCCESS, ImportSchema(testSchemas[1]));
+    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("Schema1"));
+    ASSERT_EQ(BeVersion(3, 2), GetHelper().GetOriginalECXmlVersion("Schema1"));
+    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("Schema2"));
+    ASSERT_EQ(BeVersion(3, 2), GetHelper().GetOriginalECXmlVersion("Schema2"));
 
     {
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -1804,6 +1860,316 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  05/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
+    {
+    //This tests that units, unit systems and phenomena are always loaded entirely if
+    //a KOQ is loaded, a unit is loaded, a unit system is loaded or a phenomenon is loaded.
+
+    ASSERT_EQ(SUCCESS, SetupECDb("LoadAllUnitsImplicitly.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                     <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+                                     <KindOfQuantity typeName="KoqWithoutPresentation" description="My KindOfQuantity"
+                                                     displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5" />
+                                     <KindOfQuantity typeName="KoqWithPresentation" description="My KindOfQuantity"
+                                                     displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
+                                                     presentationUnits="f:DefaultRealU[u:M];f:DefaultReal[u:M]" />
+                                     </ECSchema>)xml")));
+    auto assertLoadCount = [] (ECDbCR ecdb, Utf8CP schemaName, int expectedKoqCount, int expectedUnitCount, int expectedUnitSystemCount, int expectedPhenCount, int expectedFormatCount, Utf8CP assertMessage)
+        {
+        ECSchemaCP schema = ecdb.Schemas().GetSchema(schemaName, false);
+        ASSERT_TRUE(schema != nullptr) << schemaName << " " << assertMessage;
+
+        EXPECT_EQ(expectedKoqCount, schema->GetKindOfQuantityCount()) << schemaName << " " << assertMessage;
+        EXPECT_EQ(expectedUnitCount, schema->GetUnitCount()) << schemaName << " " << assertMessage;
+        EXPECT_EQ(expectedUnitSystemCount, schema->GetUnitSystemCount()) << schemaName << " " << assertMessage;
+        EXPECT_EQ(expectedPhenCount, schema->GetPhenomenonCount()) << schemaName << " " << assertMessage;
+        EXPECT_EQ(expectedFormatCount, schema->GetFormatCount()) << schemaName << " " << assertMessage;
+        };
+
+    const int standardUnitSystemCount = 12;
+    const int standardPhenCount = 66;
+    const int standardUnitCount = 451;
+
+    assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "No schema elements are expected to be loaded at this point");
+    assertLoadCount(m_ecdb, "Units", 0, 0, 0, 0, 0, "No schema elements are expected to be loaded at this point");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "No schema elements are expected to be loaded at this point");
+
+    KindOfQuantityCP koqWithoutPres = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "KoqWithoutPresentation");
+    ASSERT_TRUE(koqWithoutPres != nullptr);
+
+    assertLoadCount(m_ecdb, "TestSchema", 1, 0, 0, 0, 0, "After a KOQ without presentation formats was loaded");
+    assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a KOQ without presentation formats was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a KOQ without presentation formats was loaded");
+
+    m_ecdb.ClearECDbCache();
+
+    KindOfQuantityCP koqWithPres = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "KoqWithPresentation");
+    ASSERT_TRUE(koqWithPres != nullptr);
+
+    assertLoadCount(m_ecdb, "TestSchema", 1, 0, 0, 0, 0, "After a KOQ with 2 presentation formats was loaded");
+    assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a KOQ with 2 presentation formats was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 2, "After a KOQ with 2 presentation formats was loaded");
+
+    koqWithoutPres = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "KoqWithoutPresentation");
+    ASSERT_TRUE(koqWithoutPres != nullptr);
+
+    assertLoadCount(m_ecdb, "TestSchema", 2, 0, 0, 0, 0, "After a second KOQ was loaded");
+    assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a second KOQ was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 2, "After a second KOQ was loaded");
+
+    m_ecdb.ClearECDbCache();
+    ECUnitCP unit = m_ecdb.Schemas().GetUnit("Units", "KM");
+    ASSERT_TRUE(unit != nullptr);
+
+    assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a Unit was loaded");
+    assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a Unit was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a Unit was loaded");
+
+    unit = m_ecdb.Schemas().GetUnit("Units", "KG");
+    ASSERT_TRUE(unit != nullptr);
+
+    assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a second Unit was loaded");
+    assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a second Unit was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a second Unit was loaded");
+
+    m_ecdb.ClearECDbCache();
+    ECFormatCP format = m_ecdb.Schemas().GetFormat("Formats", "Fractional");
+    ASSERT_TRUE(format != nullptr);
+
+    assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a Format without composite units was loaded");
+    assertLoadCount(m_ecdb, "Units", 0, 0, 0, 0, 0, "After a Format without composite units was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 1, "After a Format without composite units was loaded");
+
+    format = m_ecdb.Schemas().GetFormat("Formats", "AngleDMS");
+    ASSERT_TRUE(format != nullptr);
+
+    assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a Format with composite units was loaded");
+    assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a second Format with composite units was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 2, "After a Format with composite units was loaded");
+
+    m_ecdb.ClearECDbCache();
+    UnitSystemCP unitSystem = m_ecdb.Schemas().GetUnitSystem("Units", "SI");
+    ASSERT_TRUE(unitSystem != nullptr);
+
+    assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a UnitSystem was loaded");
+    assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a UnitSystem was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a UnitSystem was loaded");
+
+    unitSystem = m_ecdb.Schemas().GetUnitSystem("Units", "FINANCE");
+    ASSERT_TRUE(unitSystem != nullptr);
+
+    assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a second UnitSystem was loaded");
+    assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a second UnitSystem was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a second UnitSystem was loaded");
+
+    m_ecdb.ClearECDbCache();
+    PhenomenonCP phen = m_ecdb.Schemas().GetPhenomenon("Units", "AREA");
+    ASSERT_TRUE(phen != nullptr);
+
+    assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a Phenomenon was loaded");
+    assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a Phenomenon was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a Phenomenon was loaded");
+
+    phen = m_ecdb.Schemas().GetPhenomenon("Units", "THERMAL_CONDUCTIVITY");
+    ASSERT_TRUE(phen != nullptr);
+
+    assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a second Phenomenon was loaded");
+    assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a second Phenomenon was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a second Phenomenon was loaded");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  04/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, ImportPreEC32KindOfQuantity)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ImportPreEC32KindOfQuantity.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                     <KindOfQuantity typeName="MyKindOfQuantity" persistenceUnit="CM" relativeError=".5"  presentationUnits="FT;IN" />
+                                     </ECSchema>)xml")));
+
+    ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
+    ASSERT_TRUE(testSchema != nullptr);
+    
+    ASSERT_EQ(2, testSchema->GetReferencedSchemas().size());
+    KindOfQuantityCP koq = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
+    ASSERT_TRUE(koq != nullptr);
+    ASSERT_EQ(2, koq->GetPresentationFormats().size());
+    EXPECT_STREQ("f:DefaultReal[u:FT]", koq->GetPresentationFormats()[0].GetQualifiedName(*testSchema).c_str());
+    EXPECT_STREQ("f:DefaultReal[u:IN]", koq->GetPresentationFormats()[1].GetQualifiedName(*testSchema).c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, GetPreEC32KindOfQuantity)
+    {
+    auto assertKoq = [] (KindOfQuantityCR actualKoq)
+        {
+        EXPECT_STREQ("My KindOfQuantity", actualKoq.GetDisplayLabel().c_str());
+        EXPECT_STREQ("My KindOfQuantity", actualKoq.GetDescription().c_str());
+        EXPECT_STREQ("u:CM", actualKoq.GetPersistenceUnit()->GetQualifiedName(actualKoq.GetSchema()).c_str());
+        EXPECT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
+        ASSERT_EQ(2, actualKoq.GetPresentationFormats().size());
+        EXPECT_STREQ("f:DefaultReal[u:FT]", actualKoq.GetPresentationFormats()[0].GetQualifiedName(actualKoq.GetSchema()).c_str());
+        EXPECT_STREQ("f:DefaultReal[u:IN]", actualKoq.GetPresentationFormats()[1].GetQualifiedName(actualKoq.GetSchema()).c_str());
+        };
+
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                     <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
+                                                     displayLabel="My KindOfQuantity" persistenceUnit="CM" relativeError=".5"
+                                                     presentationUnits="FT;IN" />
+                                     </ECSchema>)xml"));
+
+    testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                     <ECSchemaReference name="Schema1" version="01.00.00" alias="s1" />
+                                       <ECEntityClass typeName="Foo" >
+                                         <ECProperty propertyName="Length" typeName="double" kindOfQuantity="s1:MyKindOfQuantity" />
+                                         <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
+                                         <ECArrayProperty propertyName="AlternativeLengths" typeName="double" minOccurs="0" maxOccurs="unbounded" kindOfQuantity="s1:MyKindOfQuantity"/>
+                                         <ECArrayProperty propertyName="Favorites" typeName="string" extendedTypeName="URL" minOccurs="0" maxOccurs="unbounded" />
+                                       </ECEntityClass>
+                                     </ECSchema>)xml"));
+
+    ASSERT_EQ(SUCCESS, SetupECDb("getkindofquantity.ecdb", testSchemas[0]));
+    ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema("Units"));
+    ASSERT_EQ(SUCCESS, ImportSchema(testSchemas[1]));
+    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("Schema1"));
+    ASSERT_EQ(BeVersion(3,1), GetHelper().GetOriginalECXmlVersion("Schema1"));
+    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("Schema2"));
+    ASSERT_EQ(BeVersion(3, 1), GetHelper().GetOriginalECXmlVersion("Schema2"));
+
+    {
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+
+    KindOfQuantityCP koq = m_ecdb.Schemas().GetKindOfQuantity("Schema1", "MyKindOfQuantity");
+    ASSERT_TRUE(koq != nullptr);
+    assertKoq(*koq);
+    }
+
+    {
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1", false);
+    ASSERT_TRUE(schema != nullptr);
+    ASSERT_EQ(0, schema->GetKindOfQuantityCount());
+    ECClassCP classWithKoq = m_ecdb.Schemas().GetClass("Schema2", "Foo");
+    ASSERT_TRUE(classWithKoq != nullptr);
+    ASSERT_EQ(1, schema->GetKindOfQuantityCount());
+    KindOfQuantityCP koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
+    ASSERT_TRUE(koq != nullptr);
+    assertKoq(*koq);
+
+    ECPropertyCP prop = classWithKoq->GetPropertyP("Length");
+    ASSERT_TRUE(prop != nullptr);
+    koq = prop->GetKindOfQuantity();
+    ASSERT_TRUE(koq != nullptr);
+    assertKoq(*koq);
+    }
+
+    {
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1", true);
+    ASSERT_TRUE(schema != nullptr);
+    ASSERT_EQ(1, schema->GetKindOfQuantityCount());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  05/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, Formats)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemamanager_formats.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                    <Unit typeName="MyMeter" displayLabel="My Metre" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+                                    <Format typeName="Format1" displayLabel="Format 1" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                                            precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
+                                    </Format>
+                                    <Format typeName="Format2" displayLabel="Format 2" description="Nice format 2" roundFactor="0.3" type="Scientific" scientificType="ZeroNormalized" showSignOption="NegativeParentheses" formatTraits="ShowUnitLabel|PrependUnitLabel|KeepSingleZero"
+                                            precision="4" decimalSeparator="," thousandSeparator="." uomSeparator="*">
+                                        <Composite>
+                                            <Unit label="m">MyMeter</Unit>
+                                            <Unit label="mm">u:MM</Unit>
+                                        </Composite>
+                                    </Format>
+                                    <Format typeName="Format3" displayLabel="Format 3" roundFactor="2.3" type="Station" stationOffsetSize="12" showSignOption="SignAlways" formatTraits="Use1000Separator|ShowUnitLabel|ApplyRounding"
+                                            precision="5" decimalSeparator="," thousandSeparator="." uomSeparator="(">
+                                        <Composite spacer="/" includeZero="False">
+                                            <Unit label="kilogram">u:KG</Unit>
+                                        </Composite>
+                                    </Format>
+                                    <Format typeName="Format4" displayLabel="Format 4" description="Nice format 4" roundFactor="12" type="Station" stationSeparator="$" stationOffsetSize="12" showSignOption="SignAlways" formatTraits="ShowUnitLabel|ApplyRounding|ZeroEmpty"
+                                            precision="2" decimalSeparator="," thousandSeparator="." uomSeparator="#">
+                                        <Composite spacer="?" includeZero="True">
+                                            <Unit label="Newton">u:N</Unit>
+                                        </Composite>
+                                    </Format>
+                                </ECSchema>)xml")));
+
+    auto assertFormat = [] (ECSchemaCR schema, Utf8CP name, Utf8CP displayLabel, Utf8CP description, JsonValue const& numericSpec, JsonValue const& compSpec)
+        {
+        ECFormatCP format = schema.GetFormatCP(name);
+        ASSERT_TRUE(format != nullptr) << schema.GetFullSchemaName() << ":" << name;
+        ASSERT_STREQ(name, format->GetName().c_str()) << format->GetFullName();
+        ASSERT_STREQ(displayLabel, format->GetDisplayLabel().c_str()) << format->GetFullName();
+        ASSERT_STREQ(description, format->GetDescription().c_str()) << format->GetFullName();
+        if (numericSpec.m_value.isNull())
+            ASSERT_FALSE(format->HasNumeric()) << format->GetFullName();
+        else
+            {
+            ASSERT_TRUE(format->HasNumeric()) << format->GetFullName();
+            Json::Value jval;
+            ASSERT_TRUE(format->GetNumericSpec()->ToJson(jval, false)) << format->GetFullName();
+            ASSERT_EQ(numericSpec, JsonValue(jval)) << format->GetFullName();
+            }
+
+        if (compSpec.m_value.isNull())
+            ASSERT_FALSE(format->HasComposite()) << format->GetFullName();
+        else
+            {
+            Json::Value jval;
+            ASSERT_TRUE(format->GetCompositeSpec()->ToJson(jval)) << format->GetFullName();
+            ASSERT_TRUE(format->HasComposite()) << format->GetFullName();
+            ASSERT_EQ(compSpec, JsonValue(jval)) << format->GetFullName();
+            }
+        };
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
+    ASSERT_TRUE(schema != nullptr);
+
+    assertFormat(*schema, "Format1", "Format 1", "",
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": ["trailZeroes", "keepSingleZero"], "precision": 4, "decimalSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
+                 JsonValue());
+
+    assertFormat(*schema, "Format2", "Format 2", "Nice format 2",
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Scientific", "scientificType": "ZeroNormalized", "showSignOption": "NegativeParentheses", "formatTraits": ["keepSingleZero", "showUnitLabel", "prependUnitLabel"], "precision": 4, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "*"})json"),
+                 JsonValue(R"json({"spacer":" ", "includeZero": true, "units": [
+                              { "name": "MyMeter", "label": "m" },
+                              { "name": "MM", "label": "mm" }]})json"));
+
+    assertFormat(*schema, "Format3", "Format 3", "",
+                 JsonValue(R"json({"roundFactor":2.3, "type": "Station", "stationOffsetSize":12, "showSignOption": "SignAlways", "formatTraits":["applyRounding", "showUnitLabel", "use1000Separator"], "precision": 5, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "("})json"),
+                 JsonValue(R"json({"spacer": "/", "includeZero": false, "units": [
+                              { "name": "KG", "label": "kilogram" }]})json"));
+
+    assertFormat(*schema, "Format4", "Format 4", "Nice format 4",
+                 JsonValue(R"json({"roundFactor":12.0, "type": "Station", "stationOffsetSize":12, "stationSeparator":"$", "showSignOption": "SignAlways", "formatTraits":["zeroEmpty", "applyRounding", "showUnitLabel"], "precision": 2, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "#"})json"),
+                 JsonValue(R"json({"spacer": "?", "includeZero": true, "units": [
+                              { "name": "N", "label": "Newton"}]})json"));
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetPropertyCategory)
@@ -1826,6 +2192,11 @@ TEST_F(SchemaManagerTests, GetPropertyCategory)
                                        </ECEntityClass>
                                      </ECSchema>)xml")));
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("Schema1"));
+    ASSERT_EQ(BeVersion(3, 1), GetHelper().GetOriginalECXmlVersion("Schema1"));
+    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("Schema2"));
+    ASSERT_EQ(BeVersion(3, 1), GetHelper().GetOriginalECXmlVersion("Schema2"));
 
 
     PropertyCategoryCP coreCat = m_ecdb.Schemas().GetPropertyCategory("Schema1", "Core");
@@ -2008,9 +2379,9 @@ TEST_F(SchemaManagerTests, AddDuplicateECSchemaInReadContext)
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecschemamanagertest.ecdb"));
 
     ECSchemaReadContextPtr context1 = nullptr;
-    ASSERT_EQ(SUCCESS, ReadECSchema(context1, m_ecdb, SchemaItem::CreateForFile("BaseSchemaA.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, ReadECSchema(context1, m_ecdb, SchemaItem::CreateForFile("BaseSchemaA.01.00.00.ecschema.xml")));
     ECSchemaReadContextPtr context2 = nullptr;
-    ASSERT_EQ(SUCCESS, ReadECSchema(context2, m_ecdb, SchemaItem::CreateForFile("BaseSchemaA.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, ReadECSchema(context2, m_ecdb, SchemaItem::CreateForFile("BaseSchemaA.01.00.00.ecschema.xml")));
 
     bvector<ECSchemaCP> duplicateSchemas;
     duplicateSchemas.push_back(context1->GetCache().GetSchema(SchemaKey("BaseSchemaA", 1, 0, 0), SchemaMatchType::Latest));
@@ -2025,9 +2396,9 @@ TEST_F(SchemaManagerTests, AddDuplicateECSchemaInReadContext)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, ImportDuplicateSchema)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("BaseSchemaA.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("BaseSchemaA.01.00.00.ecschema.xml")));
 
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem::CreateForFile("BaseSchemaA.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem::CreateForFile("BaseSchemaA.01.00.00.ecschema.xml")));
     ECClassCP ecclass = m_ecdb.Schemas().GetClass("BaseSchemaA", "Address");
     ASSERT_TRUE(ecclass != nullptr) << "Class with the specified name doesn't exist :- ecclass is empty";
     }
@@ -2194,7 +2565,7 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetClass)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ECClassCP ecClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     EXPECT_TRUE(ecClass != nullptr);
     ecClass = m_ecdb.Schemas().GetClass("ecsql", "PSA", SchemaLookupMode::ByAlias);
@@ -2212,7 +2583,7 @@ TEST_F(SchemaManagerTests, GetClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, ClassLocater)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     
     ECClassCP ecClass = m_ecdb.GetClassLocater().LocateClass("ECSqlTest", "PSA");
     EXPECT_TRUE(ecClass != nullptr) << "Look up by schema name";
@@ -2536,7 +2907,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews)
     ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
 
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
     m_ecdb.SaveChanges();
     ASSERT_EQ(BE_SQLITE_OK, PrepareECClassViews(schemasWithECClassViews, m_ecdb));
@@ -2550,7 +2921,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewspartially.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewspartially.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('FileInfo', 'FileInfoOwnership', 'AAA','Cubicle', 'RelationWithLinkTableMapping')"));
@@ -2656,7 +3027,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews_SharedColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CreateECClassViewsForInvalidClasses)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewsforinvalidclasses.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewsforinvalidclasses.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('AnglesStruct', 'ClassMap', 'AClassThatDoesNotGetMappedToDb')"));
@@ -2676,7 +3047,7 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForInvalidClasses)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidClasses)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewsforvalidinvalidclasses.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewsforvalidinvalidclasses.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('AAA', 'AnglesStruct', 'AClassThatDoesNotGetMappedToDb')"));

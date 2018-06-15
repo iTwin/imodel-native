@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlPrepareTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -23,7 +23,7 @@ struct ECSqlPrepareTestFixture : public ECDbTestFixture
 
         void SetUp() override
             {
-            EXPECT_EQ(SUCCESS, SetupECDb("ecsqlpreparetests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+            EXPECT_EQ(SUCCESS, SetupECDb("ecsqlpreparetests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
             EXPECT_EQ(SUCCESS, PopulateECDb(10));
             }
     };

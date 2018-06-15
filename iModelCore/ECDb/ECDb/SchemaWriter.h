@@ -16,6 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct SchemaWriter final
     {
+    friend struct ProfileUpgrader_4010;
     public:
         struct Context final
             {
@@ -23,7 +24,7 @@ struct SchemaWriter final
             ECDbCR m_ecdb;
             SchemaImportContext& m_importCtx;
 
-            ECN::SchemaChanges m_changes;
+            ECN::SchemaDiff m_diff;
             bvector<ECN::ECSchemaCP> m_existingSchemas;
             bvector<ECN::ECSchemaCP> m_schemasToImport;
             bset<ECN::ECSchemaId> m_schemasWithMajorVersionChange;
@@ -32,8 +33,8 @@ struct SchemaWriter final
         public:
             Context(ECDbCR ecdb, SchemaImportContext& ctx) : m_ecdb(ecdb), m_importCtx(ctx)
                 {
-                m_schemaUpgradeCustomAttributeValidator.Reject("CoreCustomAttributes:IsMixin.*");
-                m_schemaUpgradeCustomAttributeValidator.Reject("ECDbMap:*");
+                m_schemaUpgradeCustomAttributeValidator.AddRejectRule("CoreCustomAttributes:IsMixin.*");
+                m_schemaUpgradeCustomAttributeValidator.AddRejectRule("ECDbMap:*");
                 }
 
             void ClearCache() { m_schemasToImport.clear(); m_existingSchemas.clear(); m_ecdb.ClearECDbCache(); }
@@ -44,7 +45,7 @@ struct SchemaWriter final
             bvector<ECN::ECSchemaCP> const& GetExistingSchemas() const { return m_existingSchemas; }
             bvector<ECN::ECSchemaCP>& GetExistingSchemasR() { return m_existingSchemas; }
             void AddExistingSchema(ECN::ECSchemaCR schema) { m_existingSchemas.push_back(&schema); }
-            ECN::SchemaChanges& Changes() { return m_changes; }
+            ECN::SchemaDiff& GetDiff() { return m_diff; }
 
             bool AreMajorSchemaVersionChangesAllowed() const { return !Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade); }
             bool IsMajorSchemaVersionChange(ECN::ECSchemaId schemaId) const { return m_schemasWithMajorVersionChange.find(schemaId) != m_schemasWithMajorVersionChange.end(); }
@@ -63,6 +64,11 @@ struct SchemaWriter final
         static BentleyStatus ImportSchema(Context&, ECN::ECSchemaCR);
         static BentleyStatus ImportClass(Context&, ECN::ECClassCR);
         static BentleyStatus ImportEnumeration(Context&, ECN::ECEnumerationCR);
+        static BentleyStatus ImportUnitSystem(Context&, ECN::UnitSystemCR);
+        static BentleyStatus ImportPhenomenon(Context&, ECN::PhenomenonCR);
+        static BentleyStatus ImportUnit(Context&, ECN::ECUnitCR);
+        static BentleyStatus ImportFormat(Context&, ECN::ECFormatCR);
+        static BentleyStatus ImportFormatComposite(Context&, ECN::ECFormatCR, ECN::FormatId);
         static BentleyStatus ImportKindOfQuantity(Context&, ECN::KindOfQuantityCR);
         static BentleyStatus ImportPropertyCategory(Context&, ECN::PropertyCategoryCR);
         static BentleyStatus ImportProperty(Context&, ECN::ECPropertyCR, int ordinal);
@@ -76,7 +82,8 @@ struct SchemaWriter final
         static BentleyStatus BindPropertyKindOfQuantity(Context&, Statement&, int paramIndex, ECN::ECPropertyCR);
         static BentleyStatus BindPropertyCategory(Context&, Statement&, int paramIndex, ECN::ECPropertyCR);
 
-        static BentleyStatus InsertSchemaEntry(Context&, ECN::ECSchemaCR);
+        static BentleyStatus InsertSchemaEntry(Context& ctx, ECN::ECSchemaCR schema) { return InsertSchemaEntry(ctx.GetECDb(), schema); }
+        static BentleyStatus InsertSchemaEntry(ECDbCR, ECN::ECSchemaCR);  //!< Also used by ProfileUpgrader_4002
         static BentleyStatus InsertBaseClassEntry(Context&, ECN::ECClassId, ECN::ECClassCR baseClass, int ordinal);
         static BentleyStatus InsertRelationshipConstraintEntry(Context&, ECRelationshipConstraintId& constraintId, ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
         static BentleyStatus InsertSchemaReferenceEntries(Context&, ECN::ECSchemaCR);
@@ -84,25 +91,35 @@ struct SchemaWriter final
         static BentleyStatus ReplaceCAEntry(Context&, ECN::IECInstanceR customAttribute, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
         static BentleyStatus DeleteCAEntry(int& ordinal, Context&, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
 
-        static BentleyStatus UpdateRelationshipConstraint(Context&, ECContainerId, ECN::ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR oldConstraint, ECN::ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName);
-        static BentleyStatus UpdateCustomAttributes(Context&, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, ECContainerId, ECN::ECInstanceChanges&, ECN::IECCustomAttributeContainerCR oldClass, ECN::IECCustomAttributeContainerCR newClass);
+        static BentleyStatus UpdateRelationshipConstraint(Context&, ECContainerId, ECN::RelationshipConstraintChange&, ECN::ECRelationshipConstraintCR oldConstraint, ECN::ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName);
+        static BentleyStatus UpdateCustomAttributes(Context&, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, ECContainerId, ECN::CustomAttributeChanges&, ECN::IECCustomAttributeContainerCR oldClass, ECN::IECCustomAttributeContainerCR newClass);
         static BentleyStatus UpdateClass(Context&, ECN::ClassChange&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
-        static BentleyStatus UpdateProperty(Context&, ECN::ECPropertyChange&, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty);
+        static BentleyStatus UpdateProperty(Context&, ECN::PropertyChange&, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty);
         static BentleyStatus UpdateSchema(Context&, ECN::SchemaChange&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        static BentleyStatus UpdateSchemaReferences(Context&, ECN::ReferenceChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        static BentleyStatus UpdateSchemaReferences(Context&, ECN::SchemaReferenceChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
         static BentleyStatus UpdateClasses(Context&, ECN::ClassChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        static BentleyStatus UpdateEnumerations(Context&, ECN::ECEnumerationChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        static BentleyStatus UpdateEnumeration(Context&, ECN::ECEnumerationChange&, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum);
+        static BentleyStatus UpdateEnumerations(Context&, ECN::EnumerationChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        static BentleyStatus UpdateEnumeration(Context&, ECN::EnumerationChange&, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum);
+        static BentleyStatus VerifyEnumeratorChanges(Context&, ECN::ECEnumerationCR oldEnum, ECN::EnumeratorChanges&);
 
         static BentleyStatus UpdateKindOfQuantities(Context&, ECN::KindOfQuantityChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
         static BentleyStatus UpdateKindOfQuantity(Context&, ECN::KindOfQuantityChange&, ECN::KindOfQuantityCR oldKoq, ECN::KindOfQuantityCR newKoq);
         static BentleyStatus UpdatePropertyCategories(Context&, ECN::PropertyCategoryChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
         static BentleyStatus UpdatePropertyCategory(Context&, ECN::PropertyCategoryChange&, ECN::PropertyCategoryCR oldCat, ECN::PropertyCategoryCR newCat);
+        static BentleyStatus UpdatePhenomena(Context&, ECN::PhenomenonChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        static BentleyStatus UpdatePhenomenon(Context&, ECN::PhenomenonChange&, ECN::PhenomenonCR oldVal, ECN::PhenomenonCR newVal);
+        static BentleyStatus UpdateUnitSystems(Context&, ECN::UnitSystemChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        static BentleyStatus UpdateUnitSystem(Context&, ECN::UnitSystemChange&, ECN::UnitSystemCR oldVal, ECN::UnitSystemCR newVal);
+        static BentleyStatus UpdateUnits(Context&, ECN::UnitChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        static BentleyStatus UpdateUnit(Context&, ECN::UnitChange&, ECN::ECUnitCR oldVal, ECN::ECUnitCR newVal);
+        static BentleyStatus UpdateFormats(Context&, ECN::FormatChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        static BentleyStatus UpdateFormat(Context&, ECN::FormatChange&, ECN::ECFormatCR oldVal, ECN::ECFormatCR newVal);
+        static BentleyStatus UpdateFormatCompositeUnitLabel(Context&, ECN::FormatId, ECN::StringChange& unitLabelChange, int ordinal);
 
-        static BentleyStatus UpdateProperties(Context&, ECN::ECPropertyChanges&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
+        static BentleyStatus UpdateProperties(Context&, ECN::PropertyChanges&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
 
         static BentleyStatus DeleteClass(Context&, ECN::ClassChange&, ECN::ECClassCR);
-        static BentleyStatus DeleteProperty(Context&, ECN::ECPropertyChange&, ECN::ECPropertyCR);
+        static BentleyStatus DeleteProperty(Context&, ECN::PropertyChange&, ECN::ECPropertyCR);
         static BentleyStatus DeleteCustomAttributes(Context&, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
         static BentleyStatus DeleteInstances(Context&, ECN::ECClassCR);
         static BentleyStatus DeleteCustomAttributeClass(Context&, ECN::ECCustomAttributeClassCR);
@@ -121,7 +138,6 @@ struct SchemaWriter final
 
     public:
         static BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, ECDbCR, SchemaImportContext&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
-
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

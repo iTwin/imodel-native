@@ -33,7 +33,7 @@ struct ECInstanceInserterTests : ECSqlAdapterTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaName, int numberOfInstances, bool populateAllProperties)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("insertInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass(schemaName, className);
 
@@ -83,7 +83,7 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipClassName, Utf8CP sourceClassName, Utf8CP targetClassName, Utf8CP schemaName, int numberOfSourceInstances, int numberOfTargetInstancesPerSource)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("insertInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
 
     ECClassCP sourceClass = m_ecdb.Schemas().GetClass(schemaName, sourceClassName);
     ECClassCP targetClass = m_ecdb.Schemas().GetClass(schemaName, targetClassName);
@@ -125,7 +125,7 @@ void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipCla
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertIntoRelationships)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertIntoelationships.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("InsertIntoelationships.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP navPropRelClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSAHasP_N1");
     ASSERT_TRUE(navPropRelClass != nullptr);
@@ -176,7 +176,7 @@ TEST_F(ECInstanceInserterTests, InsertMultipleInstancesOfPrimitiveClassWithNullV
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertIntoStructClass)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("insertInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
 
     ECClassCP structClass = m_ecdb.Schemas().GetClass("KitchenSink", "Struct1");
     ASSERT_TRUE(structClass != nullptr);
@@ -277,7 +277,7 @@ TEST_F(ECInstanceInserterTests, InsertIntoStructArray)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertIntoNestedStructArray)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertStructArray.ecdb", SchemaItem::CreateForFile("NestedStructArrayTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("InsertStructArray.ecdb", SchemaItem::CreateForFile("NestedStructArrayTest.01.00.00.ecschema.xml")));
 
     ECInstanceList instanceList = NestedStructArrayTestSchemaHelper::CreateECInstances(m_ecdb, 1, "ClassP");
 
@@ -321,7 +321,7 @@ TEST_F(ECInstanceInserterTests, InsertSingleInstanceOfComplexClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertSingleRuleInstance)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertRulesInstances.ecdb", SchemaItem::CreateForFile("ECRules.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("insertRulesInstances.ecdb", SchemaItem::CreateForFile("ECRules.01.00.00.ecschema.xml")));
     ECSchemaCP rulesECSchema = m_ecdb.Schemas().GetSchema("ECRules");
     ASSERT_TRUE(rulesECSchema != nullptr);
 
@@ -361,7 +361,7 @@ TEST_F(ECInstanceInserterTests, InsertSingleRuleInstance)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertwithuserprovidedecinstanceid.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("insertwithuserprovidedecinstanceid.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "P");
     ASSERT_TRUE(testClass != nullptr);
@@ -511,7 +511,7 @@ void AssertCurrentTimeStamp(ECDbR ecdb, ECInstanceId id, bool expectedIsNull, Ut
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertwithcurrenttimestamptrigger.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("insertwithcurrenttimestamptrigger.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     auto testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "ClassWithLastModProp");
     ASSERT_TRUE(testClass != nullptr);
 
@@ -729,7 +729,7 @@ TEST_F(ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassI
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlAdapterTestFixture, CheckClassBeforeOperation)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     //Get two classes and create instance of second
     ECClassCP employee = m_ecdb.Schemas().GetClass("StartupCompany", "Employee");

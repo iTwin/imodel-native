@@ -39,7 +39,7 @@ private:
 
 public:
     //! Expected version of the ECDb profile for this version of the ECDb API.
-    static ProfileVersion GetExpectedVersion() { return ProfileVersion(4, 0, 0, 1); }
+    static ProfileVersion GetExpectedVersion() { return ProfileVersion(4, 0, 1, 0); }
 
     static ProfileState CheckProfileVersion(ProfileVersion& fileProfileVersion, ECDbCR);
 

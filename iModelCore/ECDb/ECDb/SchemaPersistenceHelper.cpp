@@ -315,6 +315,166 @@ PropertyCategoryId SchemaPersistenceHelper::GetPropertyCategoryId(ECDbCR ecdb, D
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 02/2018
+//---------------------------------------------------------------------------------------
+//static
+UnitSystemId SchemaPersistenceHelper::GetUnitSystemId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP unitSystemName, SchemaLookupMode lookupMode)
+    {
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT us.Id FROM main." TABLE_UnitSystem " us, main." TABLE_Schema " s");
+    else
+        sql.Sprintf("SELECT us.Id FROM [%s]." TABLE_UnitSystem " us, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+
+    switch (lookupMode)
+        {
+            case SchemaLookupMode::ByName:
+                sql.append(" WHERE us.SchemaId=s.Id AND s.Name=?1 AND us.Name=?2");
+                break;
+
+            case SchemaLookupMode::ByAlias:
+                sql.append(" WHERE us.SchemaId=s.Id AND s.Alias=?1 AND us.Name=?2");
+                break;
+
+            default:
+                sql.append(" WHERE us.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND us.Name=?2");
+                break;
+        }
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
+    if (stmt == nullptr)
+        return UnitSystemId();
+
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
+    stmt->BindText(2, unitSystemName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return UnitSystemId();
+
+    return stmt->GetValueId<UnitSystemId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 02/2018
+//---------------------------------------------------------------------------------------
+//static
+PhenomenonId SchemaPersistenceHelper::GetPhenomenonId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP phenomenonName, SchemaLookupMode lookupMode)
+    {
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT phen.Id FROM main." TABLE_Phenomenon " phen, main." TABLE_Schema " s");
+    else
+        sql.Sprintf("SELECT phen.Id FROM [%s]." TABLE_Phenomenon " phen, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+
+    switch (lookupMode)
+        {
+            case SchemaLookupMode::ByName:
+                sql.append(" WHERE phen.SchemaId=s.Id AND s.Name=?1 AND phen.Name=?2");
+                break;
+
+            case SchemaLookupMode::ByAlias:
+                sql.append(" WHERE phen.SchemaId=s.Id AND s.Alias=?1 AND phen.Name=?2");
+                break;
+
+            default:
+                sql.append(" WHERE phen.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND phen.Name=?2");
+                break;
+        }
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
+    if (stmt == nullptr)
+        return PhenomenonId();
+
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
+    stmt->BindText(2, phenomenonName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return PhenomenonId();
+
+    return stmt->GetValueId<PhenomenonId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 02/2018
+//---------------------------------------------------------------------------------------
+//static
+UnitId SchemaPersistenceHelper::GetUnitId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP unitName, SchemaLookupMode lookupMode)
+    {
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT u.Id FROM main." TABLE_Unit " u, main." TABLE_Schema " s");
+    else
+        sql.Sprintf("SELECT u.Id FROM [%s]." TABLE_Unit " u, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+
+    switch (lookupMode)
+        {
+            case SchemaLookupMode::ByName:
+                sql.append(" WHERE u.SchemaId=s.Id AND s.Name=?1 AND u.Name=?2");
+                break;
+
+            case SchemaLookupMode::ByAlias:
+                sql.append(" WHERE u.SchemaId=s.Id AND s.Alias=?1 AND u.Name=?2");
+                break;
+
+            default:
+                sql.append(" WHERE u.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND u.Name=?2");
+                break;
+        }
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
+    if (stmt == nullptr)
+        return UnitId();
+
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
+    stmt->BindText(2, unitName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return UnitId();
+
+    return stmt->GetValueId<UnitId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 04/2018
+//---------------------------------------------------------------------------------------
+//static
+FormatId SchemaPersistenceHelper::GetFormatId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP formatName, SchemaLookupMode lookupMode)
+    {
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT f.Id FROM main." TABLE_Format " f, main." TABLE_Schema " s");
+    else
+        sql.Sprintf("SELECT f.Id FROM [%s]." TABLE_Format " f, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+
+    switch (lookupMode)
+        {
+            case SchemaLookupMode::ByName:
+                sql.append(" WHERE f.SchemaId=s.Id AND s.Name=?1 AND f.Name=?2");
+                break;
+
+            case SchemaLookupMode::ByAlias:
+                sql.append(" WHERE f.SchemaId=s.Id AND s.Alias=?1 AND f.Name=?2");
+                break;
+
+            default:
+                sql.append(" WHERE f.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND f.Name=?2");
+                break;
+        }
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
+    if (stmt == nullptr)
+        return FormatId();
+
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
+    stmt->BindText(2, formatName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return FormatId();
+
+    return stmt->GetValueId<FormatId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
 ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR ecdb, DbTableSpace const& tableSpace, ECClassId ecClassId, Utf8CP propertyName)
@@ -397,6 +557,10 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
         {
         rapidjson::Value enumValueJson(rapidjson::kObjectType);
 
+        Utf8StringCR enumValueName = enumValue->GetName();
+        enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_Name, rapidjson::Value(enumValueName.c_str(), (rapidjson::SizeType) enumValueName.size(), jsonAllocator).Move(),
+                                jsonAllocator);
+
         if (enumValue->IsInteger())
             enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_IntValue, rapidjson::Value(enumValue->GetInteger()).Move(), jsonAllocator);
         else if (enumValue->IsString())
@@ -412,11 +576,20 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
             return ERROR;
             }
 
+        
         if (enumValue->GetIsDisplayLabelDefined())
             {
             Utf8StringCR displayLabel = enumValue->GetInvariantDisplayLabel();
             enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel,
                                     rapidjson::Value(displayLabel.c_str(), (rapidjson::SizeType) displayLabel.size(), jsonAllocator).Move(),
+                                    jsonAllocator);
+            }
+
+        if (!enumValue->GetInvariantDescription().empty())
+            {
+            Utf8StringCR description = enumValue->GetInvariantDescription();
+            enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_Description,
+                                    rapidjson::Value(description.c_str(), (rapidjson::SizeType) description.size(), jsonAllocator).Move(),
                                     jsonAllocator);
 
             }
@@ -449,22 +622,26 @@ BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumeratio
     for (rapidjson::Value const& enumValueJson : enumValuesJson.GetArray())
         {
         BeAssert(enumValueJson.IsObject());
-        BeAssert(enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_IntValue) || enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_StringValue));
+        BeAssert(enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_Name) && (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_IntValue) || enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_StringValue)));
 
         ECEnumeratorP enumValue = nullptr;
+
+        rapidjson::Value const& nameVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_Name];
+        BeAssert(nameVal.IsString());
+        Utf8CP name = nameVal.GetString();
 
         if (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_IntValue))
             {
             rapidjson::Value const& intVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_IntValue];
             BeAssert(intVal.IsInt());
-            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, intVal.GetInt()))
+            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, name, intVal.GetInt()))
                 return ERROR;
             }
         else if (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_StringValue))
             {
             rapidjson::Value const& stringVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_StringValue];
             BeAssert(stringVal.IsString());
-            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, stringVal.GetString()))
+            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, name, stringVal.GetString()))
                 return ERROR;
             }
         else
@@ -478,6 +655,12 @@ BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumeratio
             Utf8CP displayLabel = enumValueJson[ECDBMETA_PROP_ECEnumerator_DisplayLabel].GetString();
             enumValue->SetDisplayLabel(displayLabel);
             }
+
+        if (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_Description))
+            {
+            Utf8CP description = enumValueJson[ECDBMETA_PROP_ECEnumerator_Description].GetString();
+            enumValue->SetDescription(description);
+            }
         }
 
     return SUCCESS;
@@ -486,80 +669,117 @@ BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumeratio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationUnits(Utf8StringR jsonStr, ECDbCR ecdb, KindOfQuantityCR koq)
+BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8StringR jsonStr, ECDbCR ecdb, KindOfQuantityCR koq)
     {
-    BeAssert(!koq.GetPresentationUnitList().empty());
-    rapidjson::Document presUnitsJson(rapidjson::kArrayType);
-    rapidjson::MemoryPoolAllocator<>& jsonAllocator = presUnitsJson.GetAllocator();
-
-    for (Formatting::FormatUnitSet const& presUnit : koq.GetPresentationUnitList())
+    BeAssert(!koq.GetPresentationFormats().empty());
+    bvector<Utf8String> formatList;
+    for (NamedFormat const& format : koq.GetPresentationFormats())
         {
-        if (presUnit.HasProblem())
+        if (format.IsProblem())
             {
-            ecdb.GetImpl().Issues().ReportV("Failed to import KindOfQuantity '%s'. One of its presentation units is invalid: %s.", koq.GetFullName().c_str(), presUnit.GetProblemDescription().c_str());
+            ecdb.GetImpl().Issues().ReportV("Failed to import KindOfQuantity '%s'. One of its presentation formats is invalid: %s.", koq.GetFullName().c_str(), format.GetProblemDescription().c_str());
             return ERROR;
             }
 
-        Utf8String presUnitStr = presUnit.ToText(false);
-        if (presUnitStr.empty())
+        Utf8StringCR formatStr = format.GetQualifiedName(koq.GetSchema());
+        if (formatStr.empty())
             {
-            BeAssert(!presUnitStr.empty());
+            BeAssert(!formatStr.empty());
             return ERROR;
             }
 
-        presUnitsJson.PushBack(rapidjson::Value(presUnitStr.c_str(), (rapidjson::SizeType) presUnitStr.size(), jsonAllocator).Move(), jsonAllocator);
+        formatList.push_back(formatStr);
+        }
+
+    return SerializeKoqPresentationFormats(jsonStr, formatList);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  06/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8StringR jsonStr, bvector<Utf8String> const& presentationFormats)
+    {
+    BeAssert(!presentationFormats.empty());
+    rapidjson::Document presFormatsJson(rapidjson::kArrayType);
+    rapidjson::MemoryPoolAllocator<>& jsonAllocator = presFormatsJson.GetAllocator();
+
+    for (Utf8StringCR format : presentationFormats)
+        {
+        if (format.empty())
+            {
+            BeAssert(!format.empty());
+            return ERROR;
+            }
+
+        presFormatsJson.PushBack(rapidjson::Value(format.c_str(), (rapidjson::SizeType) format.size(), jsonAllocator).Move(), jsonAllocator);
         }
 
     rapidjson::StringBuffer jsonStrBuf;
     rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStrBuf);
-    presUnitsJson.Accept(writer);
+    presFormatsJson.Accept(writer);
     jsonStr.assign(jsonStrBuf.GetString());
     return SUCCESS;
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQuantityR koq, ECDbCR ecdb, Utf8CP jsonStr, bool fileUsesEC32Koqs)
+BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationFormats(KindOfQuantityR koq, TableSpaceSchemaManager const& schemaManager, Utf8CP jsonStr)
     {
-    rapidjson::Document presUnitsJson;
-    if (presUnitsJson.Parse<0>(jsonStr).HasParseError())
+    rapidjson::Document presFormatsJson;
+    if (presFormatsJson.Parse<0>(jsonStr).HasParseError())
         {
-        BeAssert(false && "Could not parse KindOfQuantity PresentationUnits values JSON string.");
+        BeAssert(false && "Could not parse KindOfQuantity Presentation Formats values JSON string.");
         return ERROR;
         }
 
-    BeAssert(presUnitsJson.IsArray());
+    BeAssert(presFormatsJson.IsArray());
 
-    const bool persUnitIsDummy = !koq.GetPersistenceUnit().GetUnit()->IsValid();
-    for (rapidjson::Value const& presUnitJson : presUnitsJson.GetArray())
+    auto lookupFormat = [&schemaManager] (Utf8String alias, Utf8StringCR formatName)
         {
-        BeAssert(presUnitJson.IsString() && presUnitJson.GetStringLength() > 0);
+        return schemaManager.GetFormat(alias, formatName, SchemaLookupMode::ByAlias);
+        };
 
-        Formatting::FormatUnitSet fus;
-        bool hasDummyUnit = false;
-        if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(fus, hasDummyUnit, presUnitJson.GetString(), koq, true, !fileUsesEC32Koqs) ||
-            hasDummyUnit)
+    auto lookupUnit = [&schemaManager] (Utf8String alias, Utf8StringCR unitName)
+        {
+        return schemaManager.GetUnit(alias, unitName, SchemaLookupMode::ByAlias);
+        };
+
+    for (rapidjson::Value const& presFormatJson : presFormatsJson.GetArray())
+        {
+        BeAssert(presFormatJson.IsString() && presFormatJson.GetStringLength() > 0);
+        if (ECObjectsStatus::Success != koq.AddPresentationFormatByString(presFormatJson.GetString(), lookupFormat, lookupUnit))
             {
-            if (fileUsesEC32Koqs)
-                continue; //drop presentation units if file uses EC3.2 or older
-
-            LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation unit's FormatUnitSet descriptor '%s' could not be parsed.", koq.GetFullName().c_str(), presUnitJson.GetString());
+            LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation format '%s' could not be parsed.", koq.GetFullName().c_str(), presFormatJson.GetString());
             return ERROR;
             }
-
-        if (!koq.AddPresentationUnit(fus))
-            {
-            if (!persUnitIsDummy) //if pers unit is dummy, we cannot have presentation units, so ignore errors in that case
-                return ERROR;
-            }
-
-        BeAssert(!fus.HasProblem() && "KOQ PresentationUnit could not be read. Its format is invalid");
         }
 
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  05/2018
+//---------------------------------------------------------------------------------------
+Utf8String SchemaPersistenceHelper::SerializeNumericSpec(Formatting::NumericFormatSpecCR spec)
+    {
+    Json::Value json;
+    if (!spec.ToJson(json, false))
+        return Utf8String();
+
+    return json.ToString();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  05/2018
+//---------------------------------------------------------------------------------------
+Utf8String SchemaPersistenceHelper::SerializeCompositeSpecWithoutUnits(Formatting::CompositeValueSpecCR spec)
+    {
+    Json::Value json;
+    if (!spec.ToJson(json, false, true))
+        return Utf8String();
+
+    return json.ToString();
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

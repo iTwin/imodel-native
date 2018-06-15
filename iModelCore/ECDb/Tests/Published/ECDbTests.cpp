@@ -402,7 +402,7 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     
     BeBriefcaseId id = m_ecdb.GetBriefcaseId();
     ASSERT_TRUE(id.IsValid());
@@ -418,7 +418,7 @@ TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     BeGuid guid = m_ecdb.GetDbGuid();
     ASSERT_TRUE(guid.IsValid());
