@@ -197,23 +197,23 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32Enums)
         helper.AssertLoadSchemas();
 
         helper.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
-        {{ECValue("Unspecified"), nullptr},
-        {ECValue("Utc"), nullptr},
-        {ECValue("Local"), nullptr}});
+        {{"Unspecified", ECValue("Unspecified"), nullptr},
+        {"Utc", ECValue("Utc"), nullptr},
+        {"Local", ECValue("Local"), nullptr}});
 
         helper.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-        {{ECValue(0), "None"},
-        {ECValue(1), "Abstract"},
-        {ECValue(2), "Sealed"}});
+        {{"None", ECValue(0), "None"},
+        {"Abstract", ECValue(1), "Abstract"},
+        {"Sealed", ECValue(2), "Sealed"}});
 
         helper.AssertEnum("PreEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-        {{ECValue(0), nullptr},
-        {ECValue(1), nullptr},
-        {ECValue(2), nullptr}});
+        {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+        {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+        {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
 
         helper.AssertEnum("PreEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-        {{ECValue("On"), "Turned On"},
-        {ECValue("Off"), "Turned Off"}});
+        {{"On", ECValue("On"), "Turned On"},
+        {"Off", ECValue("Off"), "Turned Off"}});
         }
     }
 
@@ -233,26 +233,26 @@ TEST_F(IModelCompatibilityTestFixture, EC32Enums)
         helper.AssertLoadSchemas();
 
         helper.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
-        {{ECValue("Unspecified"), nullptr},
-        {ECValue("Utc"), nullptr},
-        {ECValue("Local"), nullptr}});
+        {{"Unspecified", ECValue("Unspecified"), nullptr},
+        {"Utc", ECValue("Utc"), nullptr},
+        {"Local", ECValue("Local"), nullptr}});
 
         helper.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-        {{ECValue(0), "None"},
-        {ECValue(1), "Abstract"},
-        {ECValue(2), "Sealed"}});
+        {{"None", ECValue(0), "None"},
+        {"Abstract", ECValue(1), "Abstract"},
+        {"Sealed", ECValue(2), "Sealed"}});
 
         helper.AssertEnum("EC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-        {{ECValue(0), nullptr},
-        {ECValue(1), nullptr},
-        {ECValue(2), nullptr}});
+        {{"Unknown", ECValue(0), nullptr},
+        {"On", ECValue(1), nullptr},
+        {"Off", ECValue(2), nullptr}});
 
         helper.AssertEnum("EC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-        {{ECValue("On"), "Turned On"},
-        {ECValue("Off"), "Turned Off"}});
+        {{"On", ECValue("On"), "Turned On"},
+        {"Off", ECValue("Off"), "Turned Off"}});
         }
-
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      06/18
 //+---------------+---------------+---------------+---------------+---------------+------
