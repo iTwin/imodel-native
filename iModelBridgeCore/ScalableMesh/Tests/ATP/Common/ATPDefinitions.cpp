@@ -5083,7 +5083,7 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
                 }
             if (allTestPass)
                 {
-                nOfTrianglesResult = GetTriangleCount(cesiumMesh.get(), clipP);
+                nOfTrianglesResult = GetTriangleCount(cesiumMesh.get(), nullptr);
                 allTestPass = nOfTrianglesResult == nOfTriangles3SM;
                 }
             break;

@@ -1800,6 +1800,7 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
             }
         polyfaces.resize(clipPolys.size() + 1);
         }
+    if (clipPolys.empty()) return true;
     return Process3dRegions(polyfaces, clippedMesh, clipPolys);
     }
 
