@@ -470,7 +470,7 @@
       
     <Product Name="ScalableMeshCommandLine">
         <SubPart PartName="ScalableMeshCommandLineTest" />  
-        <Directories DirectoryListName="TilePublisherDirs" PartFile="DgnPlatform" Repository="DgnPlatform" />            
+        <Directories DirectoryListName="DgnPlatformDirList" PartFile="DgnPlatform" Repository="DgnPlatform" />            
         <Directories DirectoryListName="ScalableMeshCmd" />        
     </Product>
   
