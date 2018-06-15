@@ -2482,6 +2482,7 @@ BentleyStatus   ElementFactory::CreateElement ()
         return  BSIERROR;
         }
 
+#ifdef NEED_UNIQUE_CODE_PER_ELEMENT
     if (m_results.m_importedElement.IsValid())
         {
         // a parent element has been created - set element params for children
@@ -2489,6 +2490,7 @@ BentleyStatus   ElementFactory::CreateElement ()
         DgnCode             childCode = m_importer.CreateCode (codeValue);
         m_elementParams.SetCode (childCode);
         }
+#endif  // NEED_UNIQUE_CODE_PER_ELEMENT
 
     // create a new element from current geometry builder:
     DgnElementPtr   element = m_elementHandler->Create (m_elementParams);
@@ -2803,6 +2805,7 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
 
     params.m_placementPoint = DwgHelper::DefaultPlacementPoint (ent);
 
+#ifdef NEED_UNIQUE_CODE_PER_ELEMENT
     Utf8String      codeNamespace = model.GetName ();
     Utf8String      codeValue;
     if (nullptr != desiredCode)
@@ -2810,6 +2813,10 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
     else
         codeValue.Sprintf ("%s:%llx", codeNamespace.c_str(), ent.GetObjectId().ToUInt64());
     params.m_elementCode = this->CreateCode (codeValue);
+#else
+    if (nullptr != desiredCode)
+        params.m_elementCode = this->CreateCode (desiredCode);
+#endif  // NEED_UNIQUE_CODE_PER_ELEMENT
 
     return  BSISUCCESS;
     }
