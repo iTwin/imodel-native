@@ -90,7 +90,7 @@ BentleyStatus ChangeSummaryExtractor::Extract(Context& ctx, ECInstanceId summary
             continue;
             }
 
-        if (mode == ExtractMode::RelationshipInstancesOnly && primaryClass->IsRelationshipClass())
+        if (mode == ExtractMode::RelationshipInstancesOnly)
             {
             if (SUCCESS != ExtractRelInstance(ctx, summaryId, rowEntry))
                 return ERROR;
