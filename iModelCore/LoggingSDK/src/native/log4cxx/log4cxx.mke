@@ -76,8 +76,9 @@ Objects =% $(MultiCompileObjectList)
 #   Create the Windows NT DLL from Objects
 #-----------------------------------------------------------------------
 LINKER_LIBRARIES =  $(BuildContextSubParts)StaticLibs/$(stlibprefix)liblog4cxx010$(stlibext) \
-                    $(BuildContextSubParts)StaticLibs/$(stlibprefix)libapr010502$(stlibext) \
-                    $(BuildContextSubParts)StaticLibs/$(stlibprefix)libaprutil010504$(stlibext)
+                    $(BuildContextSubParts)StaticLibs/$(stlibprefix)libapr$(stlibext) \
+                    $(BuildContextSubParts)StaticLibs/$(stlibprefix)libaprutil$(stlibext) \
+                    $(BuildContextSubParts)StaticLibs/$(stlibprefix)libexpat$(stlibext)
 
 %if $(TARGET_PLATFORM)=="Windows"
 LINKER_LIBRARIES   +   ws2_32.lib odbc32.lib advapi32.lib mswsock.lib Rpcrt4.lib
