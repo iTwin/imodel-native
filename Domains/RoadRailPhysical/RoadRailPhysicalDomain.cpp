@@ -19,6 +19,7 @@
 #include <RoadRailPhysical/TypicalSection.h>
 #include <RoadRailPhysical/TypicalSectionPoint.h>
 
+HANDLER_DEFINE_MEMBERS(RoadRailNetworkHandler)
 DOMAIN_DEFINE_MEMBERS(RoadRailPhysicalDomain)
 
 /*---------------------------------------------------------------------------------**//**
@@ -26,6 +27,7 @@ DOMAIN_DEFINE_MEMBERS(RoadRailPhysicalDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "Bentley RoadRailPhysical Domain", 1)
     {    
+    RegisterHandler(RoadRailNetworkHandler::GetHandler());
     RegisterHandler(CorridorHandler::GetHandler());    
 
     RegisterHandler(TypicalSectionPointDefinitionHandler::GetHandler());
@@ -45,27 +47,6 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(RoadwayHandler::GetHandler());    
 
     RegisterHandler(AssociatedFacetAspectHandler::GetHandler());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus createPhysicalPartition(SubjectCR subject, Utf8CP physicalPartitionName)
-    {
-    DgnDbStatus status;
-
-    auto physicalPartitionPtr = PhysicalPartition::Create(subject, physicalPartitionName);
-    if (physicalPartitionPtr->Insert(&status).IsNull())
-        return status;
-
-    auto& physicalModelHandlerR = dgn_ModelHandler::Physical::GetHandler();
-    auto physicalModelPtr = physicalModelHandlerR.Create(DgnModel::CreateParams(subject.GetDgnDb(), subject.GetDgnDb().Domains().GetClassId(physicalModelHandlerR),
-        physicalPartitionPtr->GetElementId()));
-
-    if (DgnDbStatus::Success != (status = physicalModelPtr->Insert()))
-        return status;
-
-    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -111,22 +92,29 @@ DgnDbStatus createRailwayStandardsPartition(SubjectCR subject)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(SubjectCR subject, bool shouldCreatePhysicalPartition)
+DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(SubjectCR subject, Utf8CP physicalPartitionName, Utf8CP networkName)
     {
-    DgnDbStatus status;
+    auto physicalPartitionId = subject.GetDgnDb().Elements().QueryElementIdByCode(PhysicalPartition::CreateCode(subject, physicalPartitionName));
+    if (!physicalPartitionId.IsValid())
+        return DgnDbStatus::BadArg;
 
+    auto physicalPartitionCPtr = subject.GetDgnDb().Elements().Get<PhysicalPartition>(physicalPartitionId);
+    auto physicalModelP = physicalPartitionCPtr->GetSubModel()->ToPhysicalModelP();
+    if (!physicalModelP)
+        return DgnDbStatus::BadModel;
+
+    DgnDbStatus status;
     if (DgnDbStatus::Success != (status = createRailwayStandardsPartition(subject)))
         return status;
 
     if (DgnDbStatus::Success != (status = createRoadwayStandardsPartition(subject)))
         return status;
 
-    if (shouldCreatePhysicalPartition)
-        {
-        if (DgnDbStatus::Success != (status = createPhysicalPartition(subject, GetDefaultPhysicalPartitionName())))
-            return status;
-        }
-    
+    PhysicalModelPtr breakDownModelPtr;
+    if (RoadRailNetwork::Insert(*physicalModelP, RoadRailNetwork::CreateCode(*physicalModelP, networkName), breakDownModelPtr).IsNull() ||
+        breakDownModelPtr.IsNull())
+        return DgnDbStatus::WriteError;
+
     return status;
     }
 
@@ -135,7 +123,15 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(SubjectCR subject, bool 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void createCodeSpecs(DgnDbR dgndb)
     {
-    auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_Corridor, CodeScopeSpec::CreateModelScope());
+    auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadRailNetwork, CodeScopeSpec::CreateModelScope());
+    BeAssert(codeSpecPtr.IsValid());
+    if (codeSpecPtr.IsValid())
+        {
+        codeSpecPtr->Insert();
+        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
+        }
+
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_Corridor, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {
@@ -338,17 +334,16 @@ BentleyStatus create2dView(ConfigurationModelR model, Utf8CP viewName,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewId RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, Utf8CP physicalPartitionName, bvector<DgnCategoryId> const* additionalCategoriesForSelector)
+DgnViewId RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, PhysicalModelR physicalNetworkModel, bvector<DgnCategoryId> const* additionalCategoriesForSelector)
     {
     auto& dgnDb = subject.GetDgnDb();
 
     auto configurationModelPtr = ConfigurationModel::Query(subject);
-    auto physicalModelPtr = PhysicalModelUtilities::QueryPhysicalModel(subject, physicalPartitionName);
     
     auto displayStyle3dPtr = getDisplayStyle3d(*configurationModelPtr);
     auto spatialCategorySelectorPtr = getSpatialCategorySelector(*configurationModelPtr, additionalCategoriesForSelector);
     auto model3dSelectorPtr = getModelSelector(*configurationModelPtr, "3D - Road/Rail");
-    model3dSelectorPtr->AddModel(physicalModelPtr->GetModelId());
+    model3dSelectorPtr->AddModel(physicalNetworkModel.GetModelId());
 
     return create3dView(*configurationModelPtr, "3D - Road/Rail", *spatialCategorySelectorPtr, *model3dSelectorPtr, *displayStyle3dPtr);
     }
@@ -405,9 +400,88 @@ DgnElementIdSet RoadRailPhysicalDomain::QuerySheetIdsBoundedBy(GeometricElementC
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode RoadRailNetwork::CreateCode(PhysicalModelCR scopeModel, Utf8StringCR networkCode)
+    {
+    return CodeSpec::CreateCode(BRRP_CODESPEC_RoadRailNetwork, scopeModel, networkCode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RoadRailNetworkCPtr RoadRailNetwork::Insert(PhysicalModelR parentModel, DgnCodeCR networkCode, PhysicalModelPtr& breakDownModelPtr)
+    {
+    if (!parentModel.GetModelId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(parentModel.GetDgnDb(), parentModel.GetModelId(), QueryClassId(parentModel.GetDgnDb()),
+        RoadRailCategory::GetCorridor(parentModel.GetDgnDb()));
+    createParams.m_code = networkCode;
+
+    RoadRailNetworkPtr newPtr(new RoadRailNetwork(createParams));
+    auto networkCPtr = parentModel.GetDgnDb().Elements().Insert<RoadRailNetwork>(*newPtr);
+    if (networkCPtr.IsNull())
+        return nullptr;
+
+    auto& physicalModelHandlerR = dgn_ModelHandler::Physical::GetHandler();
+    auto newDgnModelPtr = physicalModelHandlerR.Create(DgnModel::CreateParams(parentModel.GetDgnDb(), parentModel.GetDgnDb().Domains().GetClassId(physicalModelHandlerR),
+        networkCPtr->GetElementId()));
+
+    if (newDgnModelPtr.IsValid())
+        {
+        if (DgnDbStatus::Success == newDgnModelPtr->Insert())
+            breakDownModelPtr = newDgnModelPtr->ToPhysicalModelP();
+        }
+
+    return networkCPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalPartitionCPtr PhysicalModelUtilities::CreateAndInsertPhysicalPartitionAndModel(SubjectCR subject, Utf8CP physicalPartitionName)
+    {
+    DgnDbStatus status;
+
+    auto physicalPartitionPtr = PhysicalPartition::Create(subject, physicalPartitionName);
+    auto physicalPartitionCPtr = physicalPartitionPtr->Insert(&status);
+    if (physicalPartitionCPtr.IsNull())
+        return nullptr;
+
+    auto& physicalModelHandlerR = dgn_ModelHandler::Physical::GetHandler();
+    auto physicalModelPtr = physicalModelHandlerR.Create(DgnModel::CreateParams(subject.GetDgnDb(), subject.GetDgnDb().Domains().GetClassId(physicalModelHandlerR),
+        physicalPartitionCPtr->GetElementId()));
+
+    if (DgnDbStatus::Success != (status = physicalModelPtr->Insert()))
+        return nullptr;
+
+    return dynamic_cast<PhysicalPartitionCP>(physicalPartitionCPtr.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet PhysicalModelUtilities::QueryPhysicalPartitions(SubjectCR subject)
+    {
+    ECSqlStatement stmt;
+    stmt.Prepare(subject.GetDgnDb(), "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_PhysicalPartition)
+        " WHERE Parent.Id = ?;");
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindId(1, subject.GetElementId());
+
+    DgnElementIdSet retVal;
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        retVal.insert(stmt.GetValueId<DgnElementId>(0));
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 -* @bsimethod                                    Diego.Diaz                      06/2017
 -+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModelPtr PhysicalModelUtilities::QueryPhysicalModel(SubjectCR parentSubject, Utf8CP physicalPartitionName)
+PhysicalModelPtr PhysicalModelUtilities::QueryPhysicalNetworkModel(SubjectCR parentSubject, Utf8CP physicalPartitionName, Utf8CP roadRailNetworkName)
     {
     DgnDbR db = parentSubject.GetDgnDb();
     DgnCode partitionCode = PhysicalPartition::CreateCode(parentSubject, physicalPartitionName);
@@ -416,7 +490,14 @@ PhysicalModelPtr PhysicalModelUtilities::QueryPhysicalModel(SubjectCR parentSubj
     if (!partition.IsValid())
         return nullptr;
 
-    return dynamic_cast<PhysicalModelP>(partition->GetSubModel().get());
+    auto parentModelCPtr = partition->GetSubModel()->ToPhysicalModel();
+    DgnCode networkCode = RoadRailNetwork::CreateCode(*parentModelCPtr, roadRailNetworkName);
+    DgnElementId networkId = db.Elements().QueryElementIdByCode(networkCode);
+    auto networkCPtr = RoadRailNetwork::Get(db, networkId);
+    if (!networkCPtr.IsValid())
+        return nullptr;
+
+    return networkCPtr->GetSubModel()->ToPhysicalModelP();
     }
 
 /*---------------------------------------------------------------------------------**//**

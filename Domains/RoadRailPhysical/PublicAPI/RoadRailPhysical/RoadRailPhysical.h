@@ -63,6 +63,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_GenericTypicalSectionPointDefinition             "GenericTypicalSectionPointDefinition"
 #define BRRP_CLASS_PathwayElement                                   "PathwayElement"
 #define BRRP_CLASS_Railway                                          "Railway"
+#define BRRP_CLASS_RoadRailNetwork                                  "RoadRailNetwork"
 #define BRRP_CLASS_Roadway                                          "Roadway"
 #define BRRP_CLASS_TypicalSectionPointDefinition                    "TypicalSectionPointDefinition"
 
@@ -103,6 +104,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CODESPEC_Corridor                                      "Corridor"
 #define BRRP_CODESPEC_DesignSpeedDefinition                         "DesignSpeedDefinition"
 #define BRRP_CODESPEC_Pathway                                       "Pathway"
+#define BRRP_CODESPEC_RoadRailNetwork                               "RoadRailNetwork"
 #define BRRP_CODESPEC_TypicalSectionPointDefinition                 "TypicalSectionPointDefinition"
 
 
@@ -167,6 +169,7 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedTransition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(GenericTypicalSectionPointDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailNetwork)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailPhysicalModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionPointDefinition)
 

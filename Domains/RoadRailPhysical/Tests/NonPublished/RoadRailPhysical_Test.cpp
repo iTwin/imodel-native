@@ -45,8 +45,8 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
 #pragma endregion
 
 #pragma region Create Road Elements
-    auto physicalModelPtr = PhysicalModelUtilities::QueryPhysicalModel(*projectPtr->Elements().GetRootSubject(),
-        RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
+    auto physicalModelPtr = PhysicalModelUtilities::QueryPhysicalNetworkModel(*projectPtr->Elements().GetRootSubject(),
+        RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName(), RoadRailPhysicalDomain::GetDefaultPhysicalNetworkName());
 
     // Create Corridor
     auto corridorPtr = Corridor::Create(*physicalModelPtr);
