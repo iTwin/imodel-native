@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
-
+#include <iModelBridge/iModelBridgeSacAdapter.h>
 //----------------------------------------------------------------------------------------
 // @bsiclass                                    Umar.Hayat                      08/15
 //----------------------------------------------------------------------------------------
@@ -1308,3 +1308,34 @@ TEST_F(TransformTests, Test1)
     UpdateWithSpatialDataTransform(BentleyApi::DPoint3d::FromOne(), Angle::PiOver2(), true);
     UpdateWithSpatialDataTransform(BentleyApi::DPoint3d::FromOne(), Angle::PiOver2(), false);
     }
+
+extern "C" iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+//TEST_F(ConverterTests, StandAloneAdapterTest)
+//    {
+//    LineUpFiles(L"ElementCRUD.ibim", L"Test3d.dgn", true); // creates Test1.idgndb from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+//    //WString testName(BeTest::GetNameOfCurrentTest(), BentleyCharEncoding::Utf8);
+//    //BeFileName outputFileName = GetOutputFileName(testName.c_str());
+//
+//
+//    WCharCP args[] = {L"Dgnv8Bridge"};
+//    iModelBridge* bridge = iModelBridge_getInstance(L"Dgnv8Bridge");
+//    iModelBridgeSacAdapter::ParseCommandLineForBeTest(*bridge, {
+//            {L"--input=", m_v8FileName.c_str()},
+//            {L"--output=",m_dgnDbFileName.c_str()}//,
+//            });
+//
+//    BentleyApi::BentleyStatus status = bridge->_Initialize(1, (WCharCP*) &args);
+//    ASSERT_EQ(BentleyStatus::SUCCESS, status);
+//
+//    iModelBridgeSacAdapter::Params saparams;
+//    iModelBridgeSacAdapter::Execute(*bridge, saparams);
+//    ASSERT_TRUE(m_dgnDbFileName.DoesPathExist());
+//
+//    BentleyApi::BeSQLite::DbResult result;
+//    DgnDbPtr db = DgnDb::OpenDgnDb(&result, m_dgnDbFileName, DgnDb::OpenParams(BentleyApi::BeSQLite::Db::OpenMode::Readonly));
+//    ASSERT_TRUE(db.IsValid());
+//    ASSERT_TRUE(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK == result);
+//    }
