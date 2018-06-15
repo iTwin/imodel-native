@@ -84,7 +84,7 @@ Response RequestHandler::PluginRequest(Request req)
     const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>();
     auto newHeaders = headers;
     newHeaders["Content-Type"] = "application/json";
-    Utf8String responseBody("{\"instances\":[{\"instanceId\":\"Project\",\"schemaName\":\"Plugins\",\"className\":\"PluginIdentifier\",\"properties\":{\"ECPluginID\":\"Project\",\"DisplayLabel\":\"Project\"},\"eTag\":\"\\\"XX8D88hmQX54h3Mq4muPnVO0yVQ=\\\"\"},{\"instanceId\":\"iModel\",\"schemaName\":\"Plugins\",\"className\":\"PluginIdentifier\",\"properties\":{\"ECPluginID\":\"iModel\",\"DisplayLabel\":\"iModel\"},\"eTag\":\"\\\"rCWzHX/X9jqKDPqDqq1rSrXMseI=\\\"\"},{\"instanceId\":\"Bentley.ECServices\",\"schemaName\":\"Plugins\",\"className\":\"PluginIdentifier\",\"properties\":{\"ECPluginID\":\"Bentley.ECServices\",\"DisplayLabel\":\"Bentley.ECServices\"},\"eTag\":\"\\\"HqP0PTZyesAOhccoX8fGr3fosBk=\\\"\"}]}");
+    Utf8String responseBody = "{\"instances\":[{\"instanceId\":\"Project\",\"schemaName\":\"Plugins\",\"className\":\"PluginIdentifier\",\"properties\":{\"ECPluginID\":\"Project\",\"DisplayLabel\":\"Project\"},\"eTag\":\"\\\"XX8D88hmQX54h3Mq4muPnVO0yVQ=\\\"\"},{\"instanceId\":\"iModel\",\"schemaName\":\"Plugins\",\"className\":\"PluginIdentifier\",\"properties\":{\"ECPluginID\":\"iModel\",\"DisplayLabel\":\"iModel\"},\"eTag\":\"\\\"rCWzHX/X9jqKDPqDqq1rSrXMseI=\\\"\"},{\"instanceId\":\"Bentley.ECServices\",\"schemaName\":\"Plugins\",\"className\":\"PluginIdentifier\",\"properties\":{\"ECPluginID\":\"Bentley.ECServices\",\"DisplayLabel\":\"Bentley.ECServices\"},\"eTag\":\"\\\"HqP0PTZyesAOhccoX8fGr3fosBk=\\\"\"}]}";
     auto content = HttpResponseContent::Create(HttpStringBody::Create(responseBody));
     for (const auto& header : headers)
         content->GetHeaders().SetValue(header.first, header.second);
@@ -119,7 +119,7 @@ Response RequestHandler::ImsTokenRequest(Request req)
     const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>();
     auto newHeaders = headers;
     newHeaders["Content-Type"] = "application/json";
-    Utf8String responseBody("{\"RequestedSecurityToken\":\"<saml:Assertion MajorVersion=\\\"1\\\" MinorVersion=\\\"1\\\" AssertionID=\\\"_f0e79a5d-6b8b-4f6c-9dc2-84950140a776\\\" Issuer=\\\"https:\\/\\/qa-ims.bentley.com\\/\\\" IssueInstant=\\\"2018-01-23T06:59:22.817Z\\\" xmlns:saml=\\\"urn:oasis:names:tc:SAML:1.0:assertion\\\"><saml:Conditions NotBefore=\\\"2018-01-23T06:59:22.785Z\\\" NotOnOrAfter=\\\"2018-01-30T06:59:22.785Z\\\"><saml:AudienceRestrictionCondition><saml:Audience>sso:\\/\\/wsfed_desktop\\/1654<\\/saml:Audience><\\/saml:AudienceRestrictionCondition><\\/saml:Conditions><saml:AttributeStatement><saml:Subject><saml:NameIdentifier>87313509-6248-41e0-b43f-62aa4513a3e4<\\/saml:NameIdentifier><saml:SubjectConfirmation><saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key<\\/saml:ConfirmationMethod><KeyInfo xmlns=\\\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#\\\"><trust:BinarySecret xmlns:trust=\\\"http:\\/\\/docs.oasis-open.org\\/ws-sx\\/ws-trust\\/200512\\\">fS7XRoWI0KsO1u0L8dtk96kaxmf4yxxV74dPz9DlWKE=<\\/trust:BinarySecret><\\/KeyInfo><\\/saml:SubjectConfirmation><\\/saml:Subject><saml:Attribute AttributeName=\\\"name\\\" AttributeNamespace=\\\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\\\"><saml:AttributeValue>farhad.kabir@bentley.com<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"givenname\\\" AttributeNamespace=\\\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\\\"><saml:AttributeValue>Farhad<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"surname\\\" AttributeNamespace=\\\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\\\"><saml:AttributeValue>Kabir<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"emailaddress\\\" AttributeNamespace=\\\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\\\"><saml:AttributeValue>farhad.kabir@bentley.com<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"role\\\" AttributeNamespace=\\\"http:\\/\\/schemas.microsoft.com\\/ws\\/2008\\/06\\/identity\\/claims\\\"><saml:AttributeValue>BENTLEY_EMPLOYEE<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"sapbupa\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>1004183475<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"site\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>1004174721<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"ultimatesite\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>1001389117<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"sapentitlement\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>INTERNAL<\\/saml:AttributeValue><saml:AttributeValue>BENTLEY_LEARN<\\/saml:AttributeValue><saml:AttributeValue>SELECT_2006<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"entitlement\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>BENTLEY_EMPLOYEE<\\/saml:AttributeValue><saml:AttributeValue>BENTLEY_LEARN<\\/saml:AttributeValue><saml:AttributeValue>SELECT_2006<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"countryiso\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>PK<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"languageiso\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>EN<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"ismarketingprospect\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>false<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"isbentleyemployee\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>true<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"becommunitiesusername\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>87313509-6248-41E0-B43F-62AA4513A3E4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"becommunitiesemailaddress\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>Farhad.Kabir@bentley.com<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"userid\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>87313509-6248-41e0-b43f-62aa4513a3e4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"organization\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>Bentley Systems Inc<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"has_select\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>true<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"organizationid\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>e82a584b-9fae-409f-9581-fd154f7b9ef9<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"ultimateid\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>72adad30-c07c-465d-a1fe-2f2dfac950a4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"ultimatereferenceid\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>72adad30-c07c-465d-a1fe-2f2dfac950a4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"usagecountryiso\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>PK<\\/saml:AttributeValue><\\/saml:Attribute><\\/saml:AttributeStatement><ds:Signature xmlns:ds=\\\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#\\\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\\\"http:\\/\\/www.w3.org\\/2001\\/10\\/xml-exc-c14n#\\\" \\/><ds:SignatureMethod Algorithm=\\\"http:\\/\\/www.w3.org\\/2001\\/04\\/xmldsig-more#rsa-sha256\\\" \\/><ds:Reference URI=\\\"#_f0e79a5d-6b8b-4f6c-9dc2-84950140a776\\\"><ds:Transforms><ds:Transform Algorithm=\\\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#enveloped-signature\\\" \\/><ds:Transform Algorithm=\\\"http:\\/\\/www.w3.org\\/2001\\/10\\/xml-exc-c14n#\\\" \\/><\\/ds:Transforms><ds:DigestMethod Algorithm=\\\"http:\\/\\/www.w3.org\\/2001\\/04\\/xmlenc#sha256\\\" \\/><ds:DigestValue>d9YJQ24N1Yqgy5t2goeaXxC+e4YKLSVkv3jV3sOu0t4=<\\/ds:DigestValue><\\/ds:Reference><\\/ds:SignedInfo><ds:SignatureValue>LQwKIaerw5fJbtgUdi4nyrXaNS1I+R90z+hBruz9\\/pK3EABOPit4n673yt5LoMStkUY+Pori8Lmi+1xMd6qgTmo3Rlv8owwFXmTpGqZGlCsS67\\/yI3t8+fWjqP5T97\\/FCfOvM9WAu4jiiKkZd4BhaabImGKlSZpsAIFtTrvFnapX8UBRKDnXZIgoYJd8F1Q4Ky\\/qBfVBUOnQfOwoqo8X9xz65tZfN9\\/f6+3hZMcDdyC2r63Cm09g\\/IEvcItIAAQWWExiMzUFdjfg\\/fnYzt\\/QHhjCeKCsy9c94j71NFj\\/sa5fPgp6D+gp130Aqim+gsQ+wj4mgBT6RWH9zej5T2nAeA==<\\/ds:SignatureValue><KeyInfo xmlns=\\\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#\\\"><X509Data><X509Certificate>MIIFXjCCBEagAwIBAgITXwAAMAAnZoWkOOCfDgAAAAAwADANBgkqhkiG9w0BAQsFADBMMRMwEQYKCZImiZPyLGQBGRYDY29tMRcwFQYKCZImiZPyLGQBGRYHYmVudGxleTEcMBoGA1UEAxMTQmVudGxleS1JbnRlcm5hbC1DQTAeFw0xNzA4MjgxOTQ2MDdaFw0yMjA4MjcxOTQ2MDdaMH0xCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJQQTEOMAwGA1UEBxMFRXh0b24xHDAaBgNVBAoTE0JlbnRsZXkgU3lzdGVtcyBJbmMxCzAJBgNVBAsTAklUMSYwJAYDVQQDEx1pbXMtdG9rZW4tc2lnbmluZy5iZW50bGV5LmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALnpXaPUjWevGxnIkY9bJsdatInIbo2StS3xAmVX3dd9uGUFu7HL4ciJMOlHFlwsASOGreMGdHVQmPnFgL2W5ekghzs\\/Vk\\/asXSYzWtVwQftS2VZZqTcuLrwaYNPznv6vaNPNTTbUI4kXgBCH0S+pA\\/ulhqF03dCopRCB4BR0z\\/9r1WrkxYzUF2fKhKifoyBaX8TqqEnw6ZKAyCMDVRN\\/Dm7ORVEDw\\/\\/iMO0vtXXjFPH3KV2EZn02+K5pdqWpkVzf9TSCfEQZL2JoYAfCVC6Z5gh5Dja+UTIfjJw45lTy4TPD+ivVpPcni6Wiln6i701OCYXMK1WxhwU1vV+eeaQvDUCAwEAAaOCAgYwggICMAsGA1UdDwQEAwIFoDAdBgNVHQ4EFgQUadvHSgG2syhu++t\\/OnkpOawqhOQwKAYDVR0RBCEwH4IdaW1zLXRva2VuLXNpZ25pbmcuYmVudGxleS5jb20wHwYDVR0jBBgwFoAUbjdsNQxJ7tInD1RS39J9x4\\/\\/Zt0wUQYDVR0fBEowSDBGoESgQoZAaHR0cDovL2V4dHByZGNhMDEuYmVudGxleS5jb20vQ2VydEVucm9sbC9CZW50bGV5LUludGVybmFsLUNBLmNybDCBxQYIKwYBBQUHAQEEgbgwgbUwgbIGCCsGAQUFBzAChoGlbGRhcDovLy9DTj1CZW50bGV5LUludGVybmFsLUNBLENOPUFJQSxDTj1QdWJsaWMlMjBLZXklMjBTZXJ2aWNlcyxDTj1TZXJ2aWNlcyxDTj1Db25maWd1cmF0aW9uLERDPWJzaXJvb3QsREM9Y29tP2NBQ2VydGlmaWNhdGU\\/YmFzZT9vYmplY3RDbGFzcz1jZXJ0aWZpY2F0aW9uQXV0aG9yaXR5MDwGCSsGAQQBgjcVBwQvMC0GJSsGAQQBgjcVCIXHrEDf+UuDsZcegeqVQoex+FwxgYOFKoGk0EgCAWQCAQYwEwYDVR0lBAwwCgYIKwYBBQUHAwEwGwYJKwYBBAGCNxUKBA4wDDAKBggrBgEFBQcDATANBgkqhkiG9w0BAQsFAAOCAQEAVyEM1YbcQbtxXpt9qheZ4VIDaCKmhyf1PyyqRQqqzZF9KKpbEnV\\/XRf0qSQNGO4CU6HwOp5zpOpCDX3pKOJYP3NRL6OkvU01jiDg6d9v9EyTd6sqVbEUJ7pKkzmGWkEL1URXPAZY6TiHShpMdkC5+BGLOSIXYcbdp2aMGRMT5Y6e+vWggvy4BUC1Ced9mULAKMSIQeEH76tLYKyLQ44ftqaYep+piGEdtEzah8S9bsS9dcbiIm+yeXiCgyNGvmV1SteaKLn+o2r\\/bU3BAzjA3slKLzZG5u295SeRh6+xRxbm4tOAq\\/s02uN7Jxn22GwXv\\/l+RRhpK4RmgPVnygmbUA==<\\/X509Certificate><\\/X509Data><\\/KeyInfo><\\/ds:Signature><\\/saml:Assertion> \",\"TokenType\":\"\"}");
+    Utf8String responseBody = "{\"RequestedSecurityToken\":\"<saml:Assertion MajorVersion=\\\"1\\\" MinorVersion=\\\"1\\\" AssertionID=\\\"_f0e79a5d-6b8b-4f6c-9dc2-84950140a776\\\" Issuer=\\\"https:\\/\\/qa-ims.bentley.com\\/\\\" IssueInstant=\\\"2018-01-23T06:59:22.817Z\\\" xmlns:saml=\\\"urn:oasis:names:tc:SAML:1.0:assertion\\\"><saml:Conditions NotBefore=\\\"2018-01-23T06:59:22.785Z\\\" NotOnOrAfter=\\\"2018-01-30T06:59:22.785Z\\\"><saml:AudienceRestrictionCondition><saml:Audience>sso:\\/\\/wsfed_desktop\\/1654<\\/saml:Audience><\\/saml:AudienceRestrictionCondition><\\/saml:Conditions><saml:AttributeStatement><saml:Subject><saml:NameIdentifier>87313509-6248-41e0-b43f-62aa4513a3e4<\\/saml:NameIdentifier><saml:SubjectConfirmation><saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key<\\/saml:ConfirmationMethod><KeyInfo xmlns=\\\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#\\\"><trust:BinarySecret xmlns:trust=\\\"http:\\/\\/docs.oasis-open.org\\/ws-sx\\/ws-trust\\/200512\\\">fS7XRoWI0KsO1u0L8dtk96kaxmf4yxxV74dPz9DlWKE=<\\/trust:BinarySecret><\\/KeyInfo><\\/saml:SubjectConfirmation><\\/saml:Subject><saml:Attribute AttributeName=\\\"name\\\" AttributeNamespace=\\\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\\\"><saml:AttributeValue>farhad.kabir@bentley.com<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"givenname\\\" AttributeNamespace=\\\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\\\"><saml:AttributeValue>Farhad<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"surname\\\" AttributeNamespace=\\\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\\\"><saml:AttributeValue>Kabir<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"emailaddress\\\" AttributeNamespace=\\\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\\\"><saml:AttributeValue>farhad.kabir@bentley.com<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"role\\\" AttributeNamespace=\\\"http:\\/\\/schemas.microsoft.com\\/ws\\/2008\\/06\\/identity\\/claims\\\"><saml:AttributeValue>BENTLEY_EMPLOYEE<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"sapbupa\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>1004183475<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"site\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>1004174721<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"ultimatesite\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>1001389117<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"sapentitlement\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>INTERNAL<\\/saml:AttributeValue><saml:AttributeValue>BENTLEY_LEARN<\\/saml:AttributeValue><saml:AttributeValue>SELECT_2006<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"entitlement\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>BENTLEY_EMPLOYEE<\\/saml:AttributeValue><saml:AttributeValue>BENTLEY_LEARN<\\/saml:AttributeValue><saml:AttributeValue>SELECT_2006<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"countryiso\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>PK<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"languageiso\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>EN<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"ismarketingprospect\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>false<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"isbentleyemployee\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>true<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"becommunitiesusername\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>87313509-6248-41E0-B43F-62AA4513A3E4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"becommunitiesemailaddress\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>Farhad.Kabir@bentley.com<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"userid\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>87313509-6248-41e0-b43f-62aa4513a3e4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"organization\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>Bentley Systems Inc<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"has_select\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>true<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"organizationid\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>e82a584b-9fae-409f-9581-fd154f7b9ef9<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"ultimateid\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>72adad30-c07c-465d-a1fe-2f2dfac950a4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"ultimatereferenceid\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>72adad30-c07c-465d-a1fe-2f2dfac950a4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"usagecountryiso\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>PK<\\/saml:AttributeValue><\\/saml:Attribute><\\/saml:AttributeStatement><ds:Signature xmlns:ds=\\\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#\\\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\\\"http:\\/\\/www.w3.org\\/2001\\/10\\/xml-exc-c14n#\\\" \\/><ds:SignatureMethod Algorithm=\\\"http:\\/\\/www.w3.org\\/2001\\/04\\/xmldsig-more#rsa-sha256\\\" \\/><ds:Reference URI=\\\"#_f0e79a5d-6b8b-4f6c-9dc2-84950140a776\\\"><ds:Transforms><ds:Transform Algorithm=\\\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#enveloped-signature\\\" \\/><ds:Transform Algorithm=\\\"http:\\/\\/www.w3.org\\/2001\\/10\\/xml-exc-c14n#\\\" \\/><\\/ds:Transforms><ds:DigestMethod Algorithm=\\\"http:\\/\\/www.w3.org\\/2001\\/04\\/xmlenc#sha256\\\" \\/><ds:DigestValue>d9YJQ24N1Yqgy5t2goeaXxC+e4YKLSVkv3jV3sOu0t4=<\\/ds:DigestValue><\\/ds:Reference><\\/ds:SignedInfo><ds:SignatureValue>LQwKIaerw5fJbtgUdi4nyrXaNS1I+R90z+hBruz9\\/pK3EABOPit4n673yt5LoMStkUY+Pori8Lmi+1xMd6qgTmo3Rlv8owwFXmTpGqZGlCsS67\\/yI3t8+fWjqP5T97\\/FCfOvM9WAu4jiiKkZd4BhaabImGKlSZpsAIFtTrvFnapX8UBRKDnXZIgoYJd8F1Q4Ky\\/qBfVBUOnQfOwoqo8X9xz65tZfN9\\/f6+3hZMcDdyC2r63Cm09g\\/IEvcItIAAQWWExiMzUFdjfg\\/fnYzt\\/QHhjCeKCsy9c94j71NFj\\/sa5fPgp6D+gp130Aqim+gsQ+wj4mgBT6RWH9zej5T2nAeA==<\\/ds:SignatureValue><KeyInfo xmlns=\\\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#\\\"><X509Data><X509Certificate>MIIFXjCCBEagAwIBAgITXwAAMAAnZoWkOOCfDgAAAAAwADANBgkqhkiG9w0BAQsFADBMMRMwEQYKCZImiZPyLGQBGRYDY29tMRcwFQYKCZImiZPyLGQBGRYHYmVudGxleTEcMBoGA1UEAxMTQmVudGxleS1JbnRlcm5hbC1DQTAeFw0xNzA4MjgxOTQ2MDdaFw0yMjA4MjcxOTQ2MDdaMH0xCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJQQTEOMAwGA1UEBxMFRXh0b24xHDAaBgNVBAoTE0JlbnRsZXkgU3lzdGVtcyBJbmMxCzAJBgNVBAsTAklUMSYwJAYDVQQDEx1pbXMtdG9rZW4tc2lnbmluZy5iZW50bGV5LmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALnpXaPUjWevGxnIkY9bJsdatInIbo2StS3xAmVX3dd9uGUFu7HL4ciJMOlHFlwsASOGreMGdHVQmPnFgL2W5ekghzs\\/Vk\\/asXSYzWtVwQftS2VZZqTcuLrwaYNPznv6vaNPNTTbUI4kXgBCH0S+pA\\/ulhqF03dCopRCB4BR0z\\/9r1WrkxYzUF2fKhKifoyBaX8TqqEnw6ZKAyCMDVRN\\/Dm7ORVEDw\\/\\/iMO0vtXXjFPH3KV2EZn02+K5pdqWpkVzf9TSCfEQZL2JoYAfCVC6Z5gh5Dja+UTIfjJw45lTy4TPD+ivVpPcni6Wiln6i701OCYXMK1WxhwU1vV+eeaQvDUCAwEAAaOCAgYwggICMAsGA1UdDwQEAwIFoDAdBgNVHQ4EFgQUadvHSgG2syhu++t\\/OnkpOawqhOQwKAYDVR0RBCEwH4IdaW1zLXRva2VuLXNpZ25pbmcuYmVudGxleS5jb20wHwYDVR0jBBgwFoAUbjdsNQxJ7tInD1RS39J9x4\\/\\/Zt0wUQYDVR0fBEowSDBGoESgQoZAaHR0cDovL2V4dHByZGNhMDEuYmVudGxleS5jb20vQ2VydEVucm9sbC9CZW50bGV5LUludGVybmFsLUNBLmNybDCBxQYIKwYBBQUHAQEEgbgwgbUwgbIGCCsGAQUFBzAChoGlbGRhcDovLy9DTj1CZW50bGV5LUludGVybmFsLUNBLENOPUFJQSxDTj1QdWJsaWMlMjBLZXklMjBTZXJ2aWNlcyxDTj1TZXJ2aWNlcyxDTj1Db25maWd1cmF0aW9uLERDPWJzaXJvb3QsREM9Y29tP2NBQ2VydGlmaWNhdGU\\/YmFzZT9vYmplY3RDbGFzcz1jZXJ0aWZpY2F0aW9uQXV0aG9yaXR5MDwGCSsGAQQBgjcVBwQvMC0GJSsGAQQBgjcVCIXHrEDf+UuDsZcegeqVQoex+FwxgYOFKoGk0EgCAWQCAQYwEwYDVR0lBAwwCgYIKwYBBQUHAwEwGwYJKwYBBAGCNxUKBA4wDDAKBggrBgEFBQcDATANBgkqhkiG9w0BAQsFAAOCAQEAVyEM1YbcQbtxXpt9qheZ4VIDaCKmhyf1PyyqRQqqzZF9KKpbEnV\\/XRf0qSQNGO4CU6HwOp5zpOpCDX3pKOJYP3NRL6OkvU01jiDg6d9v9EyTd6sqVbEUJ7pKkzmGWkEL1URXPAZY6TiHShpMdkC5+BGLOSIXYcbdp2aMGRMT5Y6e+vWggvy4BUC1Ced9mULAKMSIQeEH76tLYKyLQ44ftqaYep+piGEdtEzah8S9bsS9dcbiIm+yeXiCgyNGvmV1SteaKLn+o2r\\/bU3BAzjA3slKLzZG5u295SeRh6+xRxbm4tOAq\\/s02uN7Jxn22GwXv\\/l+RRhpK4RmgPVnygmbUA==<\\/X509Certificate><\\/X509Data><\\/KeyInfo><\\/ds:Signature><\\/saml:Assertion> \",\"TokenType\":\"\"}";
     auto content = HttpResponseContent::Create(HttpStringBody::Create(responseBody));
     for (const auto& header : headers)
         content->GetHeaders().SetValue(header.first, header.second);
@@ -177,7 +177,7 @@ Utf8CP ParseUrlFilter(Utf8String filter, Utf8CP table = "")
     if (filter.Contains("$select")) BeStringUtilities::Split(tokens[2].c_str(), "$+", nullptr, tokens2);
     else BeStringUtilities::Split(tokens[1].c_str(), "$+", nullptr, tokens2);
     tokens.clear();
-    Utf8String filterQuery("");
+    Utf8String filterQuery = "";
     for (size_t i = 0; i < (tokens2.size() + 1) / 4; i++)
         {
         if (!tokens2[4 * i].Contains("FollowingChangeSet"))
@@ -266,15 +266,10 @@ Http::Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8CP url, Utf8Strin
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value ParsedJson(Request req)
     {
-    HttpBodyPtr reqBody = req.GetRequestBody();
-    char readBuff[10000];
-    size_t buffSize = 1000000;
-    reqBody->Read(readBuff, buffSize);
-    Utf8String reqBodyRead(readBuff);
-
+    auto reqBody = req.GetRequestBody()->AsString();
     Json::Reader reader;
     Json::Value settings;
-    reader.Parse(reqBodyRead, settings);
+    reader.Parse(reqBody.c_str(), settings);
     return settings;
     }
 
@@ -312,18 +307,15 @@ Response RequestHandler::CreateiModelInstance(Request req)
     CheckDb();
     if (iModelAlreadyExists(input[1]))
         {
-        static Utf8String alreadyExistsError = R"JSON({
-                                                          "errorId": "iModelHub.iModelAlreadyExists",
-                                                          "errorMessage": "iModel already exists.",
-                                                          "errorDescription": null,
-                                                          "iModelInitialized": false
-                                                      })JSON";
+        static Utf8String alreadyExistsError = R"JSON({"errorId": "iModelHub.iModelAlreadyExists",
+                                                       "errorMessage": "iModel already exists.",
+                                                       "errorDescription": null,
+                                                       "iModelInitialized": false})JSON";
         auto content = HttpResponseContent::Create(HttpStringBody::Create(alreadyExistsError));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::Conflict);
         }
 
     Insert(input);
-
     Json::Value iModelCreation(Json::objectValue);
     JsonValueR changedInstance = iModelCreation[ServerSchema::ChangedInstance] = Json::objectValue;
     changedInstance["change"] = "Created";
@@ -337,8 +329,7 @@ Response RequestHandler::CreateiModelInstance(Request req)
     properties[ServerSchema::Property::UserCreated] = "DummyUserValue";
     properties[ServerSchema::Property::CreatedDate] = DateTime::GetCurrentTimeUtc().ToString();
     properties[ServerSchema::Property::Initialized] = false;
-    Utf8String contentToWrite(Json::FastWriter().write(iModelCreation));
-
+    Utf8String contentToWrite = Json::FastWriter().write(iModelCreation);
     return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
     }
 
@@ -350,11 +341,13 @@ Response RequestHandler::CreateSeedFileInstance(Request req)
     Json::Value settings = ParsedJson(req);
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = GetInstanceid(args[4]);
-    bvector<Utf8String> input = {
-        settings["instance"]["properties"]["FileId"].asString(),
-        settings["instance"]["properties"]["FileName"].asString(),
-        settings["instance"]["properties"]["FileDescription"].asString(),
-        iModelid };
+    bvector<Utf8String> input = 
+        {
+        settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileId].asString(),
+        settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileName].asString(),
+        settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileDescription].asString(),
+        iModelid
+        };
 
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
@@ -365,7 +358,7 @@ Response RequestHandler::CreateSeedFileInstance(Request req)
         insertSt.BindText(1, input[0], Statement::MakeCopy::No);
         insertSt.BindText(2, input[1], Statement::MakeCopy::No);
         insertSt.BindText(3, input[2], Statement::MakeCopy::No);
-        insertSt.BindInt(4, settings["instance"]["properties"]["FileSize"].asInt());
+        insertSt.BindInt(4, settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileSize].asInt());
         insertSt.BindText(5, input[3], Statement::MakeCopy::No);
         if (BE_SQLITE_DONE != insertSt.Step())
             return Response();
@@ -381,7 +374,7 @@ Response RequestHandler::CreateSeedFileInstance(Request req)
         properties[ServerSchema::Property::FileDescription] = input[2].c_str();
         properties[ServerSchema::Property::FileId] = input[0].c_str();
         properties[ServerSchema::Property::FileName] = input[1].c_str();
-        properties[ServerSchema::Property::FileSize] = settings["instance"]["properties"]["FileSize"].ToString().c_str();
+        properties[ServerSchema::Property::FileSize] = settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileSize].ToString().c_str();
         properties[ServerSchema::Property::MergedChangeSetId] = "";
         properties[ServerSchema::Property::IsUploaded] = false;
         properties[ServerSchema::Property::Index] = 0;
@@ -396,11 +389,11 @@ Response RequestHandler::CreateSeedFileInstance(Request req)
         relatedInstance[ServerSchema::SchemaName] = "iModelScope";
         relatedInstance[ServerSchema::ClassName] = "AccessKey";
         JsonValueR propertiesl2 = relatedInstance[ServerSchema::Properties] = Json::objectValue;
-        Utf8String UploadUrl("https://imodelhubqasa01.blob.core.windows.net/imodelhub-");
+        Utf8String UploadUrl = "https://imodelhubqasa01.blob.core.windows.net/imodelhub-";
         UploadUrl += iModelid + "/BriefcaseTestsu-" + input[0];
         propertiesl2[ServerSchema::Property::UploadUrl] = UploadUrl.c_str();
         propertiesl2[ServerSchema::Property::DownloadUrl] = NULL;
-        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
+        Utf8String contentToWrite = Json::FastWriter().write(instancesinfo);
 
         insertSt.Finalize();
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
@@ -416,7 +409,6 @@ Response RequestHandler::UploadSeedFile(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String instanceid = GetInstanceid(args[2]);
-
     HttpBodyPtr body = req.GetRequestBody();
     Utf8String requestBody = body->AsString();
     if (requestBody.Contains("<?xml"))
@@ -441,7 +433,7 @@ Response RequestHandler::UploadSeedFile(Request req)
 
         if (BeFileNameStatus::Success == FakeServer::CreateiModelFromSeed(filePath.GetWCharCP(), serverFilePath.GetWCharCP()))
             {
-            Utf8String contentEmp("");
+            Utf8String contentEmp = "";
             auto content = HttpResponseContent::Create(HttpStringBody::Create(contentEmp));
             return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::Created);
             }
@@ -457,11 +449,13 @@ Response RequestHandler::FileCreationConfirmation(Request req)
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = args[7];
     Json::Value settings = ParsedJson(req);
-    bvector<Utf8String> input = {
-        settings["instance"]["properties"]["FileId"].asString(),
-        settings["instance"]["properties"]["FileName"].asString(),
-        settings["instance"]["properties"]["FileDescription"].asString(),
-        iModelid };
+    bvector<Utf8String> input = 
+        {
+        settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileId].asString(),
+        settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileName].asString(),
+        settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileDescription].asString(),
+        iModelid
+        };
 
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
@@ -486,11 +480,11 @@ Response RequestHandler::FileCreationConfirmation(Request req)
         properties[ServerSchema::Property::FileDescription] = input[2].c_str();
         properties[ServerSchema::Property::FileId] = input[0].c_str();
         properties[ServerSchema::Property::FileName] = input[1].c_str();
-        properties[ServerSchema::Property::FileSize] = settings["instance"]["properties"]["FileSize"].ToString().c_str();
+        properties[ServerSchema::Property::FileSize] = settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileSize].ToString().c_str();
         properties[ServerSchema::Property::MergedChangeSetId] = "";
         properties[ServerSchema::Property::IsUploaded] = true;
         properties[ServerSchema::Property::Index] = 0;
-        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
+        Utf8String contentToWrite = Json::FastWriter().write(instancesinfo);
 
         insertSt.Finalize();
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
@@ -537,7 +531,7 @@ Response RequestHandler::GetInitializationState(Request req)
         properties[ServerSchema::Property::UserCreated] = "";
         properties[ServerSchema::Property::InitializationState] = 0;
 
-        Utf8String contentToWrite(Json::FastWriter().write(instanceState));
+        Utf8String contentToWrite = Json::FastWriter().write(instanceState);
         st.Finalize();
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
@@ -575,7 +569,7 @@ Response RequestHandler::UploadNewSeedFile(Request req)
             st.BindText(1, instanceid, Statement::MakeCopy::No);
 
             st.Step();
-            Utf8String fileToDelete(st.GetValueText(0));
+            Utf8String fileToDelete = st.GetValueText(0);
             fileToDelete += ".bim";
             BeFileName fileDelete(serverFilePath);
             fileDelete.AppendToPath(BeFileName(fileToDelete));
@@ -590,7 +584,7 @@ Response RequestHandler::UploadNewSeedFile(Request req)
             stUpdate.BindText(2, instanceid, Statement::MakeCopy::No);
             stUpdate.Step();
             stUpdate.Finalize();
-            Utf8String contentEmpty("");
+            Utf8String contentEmpty = "";
             auto content = HttpResponseContent::Create(HttpStringBody::Create(contentEmpty));
             return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::Created);
             }
@@ -660,11 +654,11 @@ Response RequestHandler::CreateBriefcaseInstance(Request req)
         relatedInstance[ServerSchema::SchemaName] = "iModelScope";
         relatedInstance[ServerSchema::ClassName] = "AccessKey";
         JsonValueR propertiesl2 = relatedInstance[ServerSchema::Properties] = Json::objectValue;
-        Utf8String downloadloadUrl("https://imodelhubqasa01.blob.core.windows.net/imodelhub-");
+        Utf8String downloadloadUrl = "https://imodelhubqasa01.blob.core.windows.net/imodelhub-";
         downloadloadUrl += instanceid + "/BriefcaseTestsm-" + fileId;
         propertiesl2[ServerSchema::Property::UploadUrl] = NULL;
         propertiesl2[ServerSchema::Property::DownloadUrl] = downloadloadUrl.c_str();
-        Utf8String contentToWrite(Json::FastWriter().write(instanceCreation));
+        Utf8String contentToWrite = Json::FastWriter().write(instanceCreation);
         st.Finalize();
 
         Statement stInsert;
@@ -711,7 +705,7 @@ Response RequestHandler::DeleteBriefcaseInstance(Request req)
         st.Step();
         }
 
-    Utf8String contentToWrite("");
+    Utf8String contentToWrite = "";
     auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
     return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
     }
@@ -727,7 +721,7 @@ Response RequestHandler::GetBriefcaseInfo(Request req)
     BentleyB0200::BeSQLite::Db m_db;
 
     int briefcaseId = 0;
-    Utf8String sql("SELECT B.BriefcaseId, S.Id, S.FileName, S.FileDescription, S.FileSize FROM Briefcases As B Inner Join SeedFile As S ON B.iModelid = S.iModelid where B.iModelid = ? ");
+    Utf8String sql = "SELECT B.BriefcaseId, S.Id, S.FileName, S.FileDescription, S.FileSize FROM Briefcases As B Inner Join SeedFile As S ON B.iModelid = S.iModelid where B.iModelid = ? ";
     if (args.size() == 8)
         {
         sscanf(args[7].c_str(), "%d", &briefcaseId);
@@ -763,7 +757,7 @@ Response RequestHandler::GetBriefcaseInfo(Request req)
             result = st.Step();
             }
         st.Finalize();
-        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
+        Utf8String contentToWrite = Json::FastWriter().write(instancesinfo);
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }
@@ -831,7 +825,7 @@ Response RequestHandler::GetiModels(Request req)
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
 
-    Utf8String sql("Select * from Instances");
+    Utf8String sql = "Select * from Instances";
     if (args[6].Contains("$filter"))
         {
         sql.append(" where ");
@@ -861,7 +855,7 @@ Response RequestHandler::GetiModels(Request req)
             result = st.Step();
             }
         st.Finalize();
-        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
+        Utf8String contentToWrite = Json::FastWriter().write(instancesinfo);
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }
@@ -914,7 +908,7 @@ Response RequestHandler::DeleteiModels(Request req)
             instanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
             instanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::iModel;
 
-            Utf8String contentToWrite(Json::FastWriter().write(instanceDeletion));
+            Utf8String contentToWrite = Json::FastWriter().write(instanceDeletion);
             auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
             return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
             }
@@ -930,11 +924,13 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = GetInstanceid(args[4]);
     Json::Value settings = ParsedJson(req);
-    bvector<Utf8String> input = {
-        settings["instance"]["properties"]["Id"].asString(),
-        settings["instance"]["properties"]["Description"].asString(),
-        settings["instance"]["properties"]["ParentId"].asString(),
-        settings["instance"]["properties"]["SeedFileId"].asString() };
+    bvector<Utf8String> input =
+        {
+        settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::Id].asString(),
+        settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::Description].asString(),
+        settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::ParentId].asString(),
+        settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::SeedFileId].asString()
+        };
 
     CheckDb();
     BeFileName dbPath = GetDbPath();
@@ -947,7 +943,7 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
         st.BindText(2, iModelid, Statement::MakeCopy::No);
         st.Step();
         int index;
-        if (settings["instance"]["properties"]["BriefcaseId"].empty())
+        if (settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::BriefcaseId].empty())
             index = 1;
         else
             index = st.GetValueInt(0);
@@ -956,7 +952,7 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
         char buffer[50];
         sprintf(buffer, "%d", index);
         char buffFileSize[50];
-        sprintf(buffFileSize, "%d", (int)settings["instance"]["properties"]["FileSize"].asInt());
+        sprintf(buffFileSize, "%d", (int)settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileSize].asInt());
         Json::Value changesetMetadata(Json::objectValue);
         JsonValueR changedInstance = changesetMetadata[ServerSchema::ChangedInstance] = Json::objectValue;
         changedInstance["change"] = "Created";
@@ -965,8 +961,8 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
         InstanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
         InstanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::ChangeSet;
         JsonValueR properties = InstanceAfterChange[ServerSchema::Properties] = Json::objectValue;
-        properties[ServerSchema::Property::BriefcaseId] = settings["instance"]["properties"]["BriefcaseId"].asInt();
-        properties[ServerSchema::Property::ContainingChanges] = settings["instance"]["properties"]["ContainingChanges"].asInt();
+        properties[ServerSchema::Property::BriefcaseId] = settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::BriefcaseId].asInt();
+        properties[ServerSchema::Property::ContainingChanges] = settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::ContainingChanges].asInt();
         properties[ServerSchema::Property::Description] = input[1];
         properties[ServerSchema::Property::FileSize] = buffFileSize;
         properties[ServerSchema::Property::Id] = input[0];
@@ -985,7 +981,7 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
         relatedInstance[ServerSchema::SchemaName] = "iModelScope";
         relatedInstance[ServerSchema::ClassName] = "AccessKey";
         JsonValueR propertiesl1 = relatedInstance[ServerSchema::Properties] = Json::objectValue;
-        Utf8String uploadUrl("https://imodelhubqasa01.blob.core.windows.net/imodelhub-");
+        Utf8String uploadUrl = "https://imodelhubqasa01.blob.core.windows.net/imodelhub-";
         uploadUrl += iModelid + "/" + input[0] + ".cs";
         propertiesl1[ServerSchema::Property::UploadUrl] = uploadUrl.c_str();
         propertiesl1[ServerSchema::Property::DownloadUrl] = NULL;
@@ -995,15 +991,15 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
         st.BindText(1, input[0], Statement::MakeCopy::No);
         st.BindText(2, input[1], Statement::MakeCopy::No);
         st.BindText(3, iModelid, Statement::MakeCopy::No);
-        st.BindInt(4, settings["instance"]["properties"]["FileSize"].asInt());
-        st.BindInt(5, settings["instance"]["properties"]["BriefcaseId"].asInt());
+        st.BindInt(4, settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileSize].asInt());
+        st.BindInt(5, settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::BriefcaseId].asInt());
         st.BindText(6, input[2], Statement::MakeCopy::No);
         st.BindText(7, input[3], Statement::MakeCopy::No);
         st.BindInt(8, index);
         st.BindBoolean(9, false);
         st.Step();
         st.Finalize();
-        Utf8String contentToWrite(Json::FastWriter().write(changesetMetadata));
+        Utf8String contentToWrite = Json::FastWriter().write(changesetMetadata);
         return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
         }
     return Response();
@@ -1081,7 +1077,7 @@ Response RequestHandler::GetChangeSetInfo(Request req)
             result = st.Step();
             }
         st.Finalize();
-        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
+        Utf8String contentToWrite = Json::FastWriter().write(instancesinfo);
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }
@@ -1094,14 +1090,14 @@ Response RequestHandler::GetChangeSetInfo(Request req)
 bool CheckConflict(BentleyB0200::BeSQLite::Db* m_db, Json::Value properties, Utf8String iModelid, Utf8String ObjectId)
     {
     Statement st;
-    CharCP sql = "";
-    if (properties["LockLevel"].asInt() == 1) sql = "Select * from Locks where iModelId = ? AND ObjectId = ? AND LockType = ? AND LockLevel = 2 AND BriefcaseId != ?";
-    else if (properties["LockLevel"].asInt() == 2) sql = "Select * from Locks where iModelId = ? AND ObjectId = ? AND LockType = ? AND LockLevel IN (1,2) AND BriefcaseId != ?";
-    st.Prepare(*m_db, sql);
+    Utf8String sql = "";
+    if (properties[ServerSchema::Property::LockLevel].asInt() == 1) sql = "Select * from Locks where iModelId = ? AND ObjectId = ? AND LockType = ? AND LockLevel = 2 AND BriefcaseId != ?";
+    else if (properties[ServerSchema::Property::LockLevel].asInt() == 2) sql = "Select * from Locks where iModelId = ? AND ObjectId = ? AND LockType = ? AND LockLevel IN (1,2) AND BriefcaseId != ?";
+    st.Prepare(*m_db, sql.c_str());
     st.BindText(1, iModelid, Statement::MakeCopy::No);
     st.BindText(2, ObjectId, Statement::MakeCopy::No);
-    st.BindInt(3, properties["LockType"].asInt());
-    st.BindInt(4, properties["BriefcaseId"].asInt());
+    st.BindInt(3, properties[ServerSchema::Property::LockType].asInt());
+    st.BindInt(4, properties[ServerSchema::Property::BriefcaseId].asInt());
     DbResult res = st.Step();
     st.Finalize();
     if (res == DbResult::BE_SQLITE_ROW) return true;
@@ -1122,11 +1118,11 @@ Response RequestHandler::PushAcquiredLocks(Request req)
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         Statement st;
-        if (settings["instances"][0]["className"] == "ChangeSet")
+        if (settings[ServerSchema::Instances][0][ServerSchema::ClassName] == "ChangeSet")
             {
             st.Prepare(m_db, "Update ChangeSets SET IsUploaded = ? where Id = ?");
             st.BindBoolean(1, true);
-            st.BindText(2, settings["instances"][0]["instanceId"].asString(), Statement::MakeCopy::No);
+            st.BindText(2, settings[ServerSchema::Instances][0][ServerSchema::InstanceId].asString(), Statement::MakeCopy::No);
             if (BE_SQLITE_DONE != st.Step())
                 return Response();
             st.Finalize();
@@ -1136,24 +1132,24 @@ Response RequestHandler::PushAcquiredLocks(Request req)
 
         int records;
         Json::Value properties;
-        for (Json::ArrayIndex i = 0; i < settings["instances"].size(); i++)
+        for (Json::ArrayIndex i = 0; i < settings[ServerSchema::Instances].size(); i++)
             {
-            properties = settings["instances"][i]["properties"];
+            properties = settings[ServerSchema::Instances][i][ServerSchema::Properties];
 
-            if (settings["instances"][i]["className"] == "MultiLock")
+            if (settings[ServerSchema::Instances][i][ServerSchema::ClassName] == "MultiLock")
                 {
-                for (Json::ArrayIndex j = 0; j < properties["ObjectIds"].size(); j++)
+                for (Json::ArrayIndex j = 0; j < properties[ServerSchema::Property::ObjectIds].size(); j++)
                     {
-                    if (CheckConflict(&m_db, properties, iModelid, properties["ObjectIds"][j].asString()))
+                    if (CheckConflict(&m_db, properties, iModelid, properties[ServerSchema::Property::ObjectIds][j].asString()))
                         {
                         auto content = HttpResponseContent::Create(HttpStringBody::Create(Utf8String("{\"errorId\":\"iModelHub.LockOwnedByAnotherBriefcase\",\"errorMessage\":\"Lock(s) is owned by another briefcase.\",\"errorDescription\":null,\"ConflictingLocks\":null}")));
                         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::Conflict);
                         }
                     size_t changeSetIndex = 0;
-                    if (!Utf8String::IsNullOrEmpty(properties["ReleasedWithChangeSet"].asString().c_str()))
+                    if (!Utf8String::IsNullOrEmpty(properties[ServerSchema::Property::ReleasedWithChangeSet].asString().c_str()))
                         {
                         st.Prepare(m_db, "Select IndexNo from ChangeSets where Id = ?");
-                        st.BindText(1, properties["ReleasedWithChangeSet"].asString(), Statement::MakeCopy::No);
+                        st.BindText(1, properties[ServerSchema::Property::ReleasedWithChangeSet].asString(), Statement::MakeCopy::No);
                         st.Step();
                         changeSetIndex = st.GetValueInt(0);
                         st.Finalize();
@@ -1161,20 +1157,20 @@ Response RequestHandler::PushAcquiredLocks(Request req)
 
                     st.Prepare(m_db, "Select Count(*) from Locks where iModelId = ? AND ObjectId = ? AND LockType = ? AND BriefcaseId IN (0,?)");
                     st.BindText(1, iModelid, Statement::MakeCopy::No);
-                    st.BindText(2, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
-                    st.BindInt(3, properties["LockType"].asInt());
-                    st.BindInt(4, properties["BriefcaseId"].asInt());
+                    st.BindText(2, properties[ServerSchema::Property::ObjectIds][j].asString(), Statement::MakeCopy::No);
+                    st.BindInt(3, properties[ServerSchema::Property::LockType].asInt());
+                    st.BindInt(4, properties[ServerSchema::Property::BriefcaseId].asInt());
                     st.Step();
                     records = st.GetValueInt(0);
                     st.Finalize();
                     char buff[50], buff2[50];
 
-                    sprintf(buff, "%d", properties["LockType"].asInt());
-                    Utf8String id(buff);
+                    sprintf(buff, "%d", properties[ServerSchema::Property::LockType].asInt());
+                    Utf8String id = buff;
                     id.append("-");
-                    id.append(properties["ObjectIds"][j].asString());
-                    if (properties["LockLevel"].asInt() == 0) sprintf(buff2, "%d", 0);
-                    else sprintf(buff2, "%d", properties["BriefcaseId"].asInt());
+                    id.append(properties[ServerSchema::Property::ObjectIds][j].asString());
+                    if (properties[ServerSchema::Property::LockLevel].asInt() == 0) sprintf(buff2, "%d", 0);
+                    else sprintf(buff2, "%d", properties[ServerSchema::Property::BriefcaseId].asInt());
                     id.append("-");
                     id.append(buff2);
                     printf("%s\n", id.c_str());
@@ -1182,29 +1178,29 @@ Response RequestHandler::PushAcquiredLocks(Request req)
                         {
                         st.Prepare(m_db, "INSERT INTO Locks(Id, ObjectId, iModelId, LockType, LockLevel, BriefcaseId, ReleasedWithChangeSet, ReleasedWithChangeSetIndex) VALUES (?,?,?,?,?,?,?,?)");
                         st.BindText(1, id, Statement::MakeCopy::No);
-                        st.BindText(2, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
+                        st.BindText(2, properties[ServerSchema::Property::ObjectIds][j].asString(), Statement::MakeCopy::No);
                         st.BindText(3, iModelid, Statement::MakeCopy::No);
-                        st.BindInt(4, properties["LockType"].asInt());
-                        st.BindInt(5, properties["LockLevel"].asInt());
-                        st.BindInt(6, properties["BriefcaseId"].asInt());
-                        st.BindText(7, properties["ReleasedWithChangeSet"].asString(), Statement::MakeCopy::No);
+                        st.BindInt(4, properties[ServerSchema::Property::LockType].asInt());
+                        st.BindInt(5, properties[ServerSchema::Property::LockLevel].asInt());
+                        st.BindInt(6, properties[ServerSchema::Property::BriefcaseId].asInt());
+                        st.BindText(7, properties[ServerSchema::Property::ReleasedWithChangeSet].asString(), Statement::MakeCopy::No);
                         st.BindInt(8, changeSetIndex);
                         st.Step();
                         st.Finalize();
                         }
                     else
                         {
-                        if (Utf8String::IsNullOrEmpty(properties["ReleasedWithChangeSet"].asString().c_str()))
+                        if (Utf8String::IsNullOrEmpty(properties[ServerSchema::Property::ReleasedWithChangeSet].asString().c_str()))
                             {
                             st.Prepare(m_db, "UPDATE Locks Set Id = ?, LockLevel = ?, BriefcaseId = ? where iModelId = ? AND ObjectId = ? AND LockType = ? AND BriefcaseId In(0,?)");
                             st.BindText(1, id, Statement::MakeCopy::No);
-                            st.BindInt(2, properties["LockLevel"].asInt());
-                            if (properties["LockLevel"].asInt() == 0) st.BindInt(3, 0);
-                            else st.BindInt(3, properties["BriefcaseId"].asInt());
+                            st.BindInt(2, properties[ServerSchema::Property::LockLevel].asInt());
+                            if (properties[ServerSchema::Property::LockLevel].asInt() == 0) st.BindInt(3, 0);
+                            else st.BindInt(3, properties[ServerSchema::Property::BriefcaseId].asInt());
                             st.BindText(4, iModelid, Statement::MakeCopy::No);
-                            st.BindText(5, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
-                            st.BindInt(6, properties["LockType"].asInt());
-                            st.BindInt(7, properties["BriefcaseId"].asInt());
+                            st.BindText(5, properties[ServerSchema::Property::ObjectIds][j].asString(), Statement::MakeCopy::No);
+                            st.BindInt(6, properties[ServerSchema::Property::LockType].asInt());
+                            st.BindInt(7, properties[ServerSchema::Property::BriefcaseId].asInt());
                             st.Step();
                             st.Finalize();
                             }
@@ -1212,26 +1208,25 @@ Response RequestHandler::PushAcquiredLocks(Request req)
                             {
                             st.Prepare(m_db, "UPDATE Locks Set Id = ?, LockLevel = ?, BriefcaseId = ?, ReleasedWithChangeSet = ?, ReleasedWithChangeSetIndex = ? where iModelId = ? AND ObjectId = ? AND LockType = ? AND BriefcaseId In(0,?)");
                             st.BindText(1, id, Statement::MakeCopy::No);
-                            st.BindInt(2, properties["LockLevel"].asInt());
-                            if (properties["LockLevel"].asInt() == 0) st.BindInt(3, 0);
-                            else st.BindInt(3, properties["BriefcaseId"].asInt());
-                            st.BindText(4, properties["ReleasedWithChangeSet"].asString(), Statement::MakeCopy::No);
+                            st.BindInt(2, properties[ServerSchema::Property::LockLevel].asInt());
+                            if (properties[ServerSchema::Property::LockLevel].asInt() == 0) st.BindInt(3, 0);
+                            else st.BindInt(3, properties[ServerSchema::Property::BriefcaseId].asInt());
+                            st.BindText(4, properties[ServerSchema::Property::ReleasedWithChangeSet].asString(), Statement::MakeCopy::No);
                             st.BindInt(5, changeSetIndex);
                             st.BindText(6, iModelid, Statement::MakeCopy::No);
-                            st.BindText(7, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
-                            st.BindInt(8, properties["LockType"].asInt());
-                            st.BindInt(9, properties["BriefcaseId"].asInt());
+                            st.BindText(7, properties[ServerSchema::Property::ObjectIds][j].asString(), Statement::MakeCopy::No);
+                            st.BindInt(8, properties[ServerSchema::Property::LockType].asInt());
+                            st.BindInt(9, properties[ServerSchema::Property::BriefcaseId].asInt());
                             st.Step();
                             st.Finalize();
                             }
-                        
                         }
                     }
                 }
-            else if (settings["instances"][i]["className"] == "Lock" && settings["instances"][i]["changeState"] == "deleted")
+            else if (settings[ServerSchema::Instances][i][ServerSchema::ClassName] == "Lock" && settings[ServerSchema::Instances][i]["changeState"] == "deleted")
                 {
                 bvector<Utf8String> tokens;
-                BeStringUtilities::Split(settings["instances"][i]["instanceId"].asString().c_str(), "-", nullptr, tokens);
+                BeStringUtilities::Split(settings[ServerSchema::Instances][i][ServerSchema::InstanceId].asString().c_str(), "-", nullptr, tokens);
                 st.Prepare(m_db, "Select * from Locks where iModelId = ? AND BriefcaseId = ?");
                 st.BindText(1, iModelid, Statement::MakeCopy::No);
                 int briefcaseId;
@@ -1298,12 +1293,13 @@ Response RequestHandler::MultiLocksInfo(Request req)
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
 
-    Utf8String sql("Select Count(*), LockLevel, LockType, BriefcaseId from Locks where iModelId = ?");
+    Utf8String sql = "Select Count(*), LockLevel, LockType, BriefcaseId from Locks where iModelId = ?";
     if (args[6].Contains("filter"))
         {
         sql.append(" AND ");
         sql.append(ParseUrlFilter(req.GetUrl()));
         }
+
     sql.append(" Group By LockLevel, LockType, BriefcaseId");
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
@@ -1349,7 +1345,7 @@ Response RequestHandler::MultiLocksInfo(Request req)
             result = st.Step();
             }
         st.Finalize();
-        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
+        Utf8String contentToWrite = Json::FastWriter().write(instancesinfo);
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }
@@ -1366,7 +1362,7 @@ Response RequestHandler::LocksInfo(Request req)
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
 
-    Utf8String sql("Select * from Locks where iModelId = ?");
+    Utf8String sql = "Select * from Locks where iModelId = ?";
     if (args[6].Contains("filter"))
         {
         sql.append(" AND ");
@@ -1400,7 +1396,7 @@ Response RequestHandler::LocksInfo(Request req)
             properties[ServerSchema::Property::QueryOnly] = true;
             result = st.Step();
             }
-        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
+        Utf8String contentToWrite = Json::FastWriter().write(instancesinfo);
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }
@@ -1412,7 +1408,7 @@ Response RequestHandler::LocksInfo(Request req)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::CodesInfo(Request req)
     {
-    Utf8String contentToWrite("{\"instances\":[]}");
+    Utf8String contentToWrite = "{\"instances\":[]}";
     auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
     return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
     }
@@ -1422,7 +1418,7 @@ Response RequestHandler::CodesInfo(Request req)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::PerformGetRequest(Request req)
     {
-    Utf8String urlExpected("https://qa-imodelhubapi.bentley.com/v2.0/Plugins");
+    Utf8String urlExpected = "https://qa-imodelhubapi.bentley.com/v2.0/Plugins";
 
     if (!req.GetUrl().CompareTo(urlExpected))
         return RequestHandler::PluginRequest(req);
@@ -1450,9 +1446,9 @@ Response RequestHandler::PerformGetRequest(Request req)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Response RequestHandler::PerformOtherRequest(Request req)
     {
-    Utf8String urlExpected("https://buddi.bentley.com/discovery.asmx");
-    Utf8String urlExpected2("https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx");
-    Utf8String urlExpected3("https://qa-ims.bentley.com/rest/DelegationSTSService/json/IssueEx");
+    Utf8String urlExpected = "https://buddi.bentley.com/discovery.asmx";
+    Utf8String urlExpected2 = "https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx";
+    Utf8String urlExpected3 = "https://qa-ims.bentley.com/rest/DelegationSTSService/json/IssueEx";
 
     if (!req.GetUrl().CompareTo(urlExpected))
         return RequestHandler::BuddiRequest(req);
@@ -1489,3 +1485,4 @@ Response RequestHandler::PerformOtherRequest(Request req)
         return RequestHandler::UploadNewSeedFile(req);
     return Response();
     }
+
