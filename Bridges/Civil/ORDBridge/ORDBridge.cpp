@@ -130,12 +130,27 @@ SubjectCPtr ORDBridge::_InitializeJob()
         auto& subjectCR = m_converter->GetImportJob().GetSubject();
 
         AlignmentBim::RoadRailAlignmentDomain::GetDomain().SetUpModelHierarchy(subjectCR);
-        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(subjectCR, true);
+        auto physicalPartitionIds = RoadRailBim::PhysicalModelUtilities::QueryPhysicalPartitions(subjectCR);
+        if (physicalPartitionIds.empty())
+            {
+            auto partitionCPtr = RoadRailBim::PhysicalModelUtilities::CreateAndInsertPhysicalPartitionAndModel(
+                subjectCR, RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
+            BeAssert(partitionCPtr.IsValid());
+
+            physicalPartitionIds.insert(partitionCPtr->GetElementId());
+            }
+
+        auto physicalPartitionCPtr = subjectCR.GetDgnDb().Elements().Get<PhysicalPartition>(*physicalPartitionIds.begin());
+
+        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(subjectCR, 
+            physicalPartitionCPtr->GetCode().GetValueUtf8CP(), RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalNetworkName());
 
         // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
-        auto physicalModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalModel(subjectCR,
-            RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
-        InsertElementHasLinksRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
+        auto physicalNetworkModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalNetworkModel(subjectCR,
+            physicalPartitionCPtr->GetCode().GetValueUtf8CP(), RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalNetworkName());
+        m_converter->SetPhysicalNetworkModel(*physicalNetworkModelPtr);
+
+        InsertElementHasLinksRelationship(GetDgnDbR(), physicalPartitionCPtr->GetElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
 
         auto designAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(subjectCR, AlignmentBim::RoadRailAlignmentDomain::GetDesignPartitionName());
         InsertElementHasLinksRelationship(GetDgnDbR(), designAlignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));

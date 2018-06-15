@@ -616,12 +616,11 @@ struct ORDCorridorsConverter: RefCountedBase
 
 private:
     Transform m_unitsScaleTransform;
-    Dgn::DgnDbSync::DgnV8::Converter& m_converter;
-    Dgn::PhysicalModelPtr m_bimPhysicalModelPtr;
+    ORDConverter& m_converter;
     RoadRailBim::DesignSpeedDefinitionCPtr m_defaultDesignSpeedDef;
 
 private:
-    ORDCorridorsConverter(DgnDbSync::DgnV8::Converter& converterLib, TransformCR unitsScaleTransform);
+    ORDCorridorsConverter(ORDConverter& converterLib, TransformCR unitsScaleTransform);
 
     BentleyStatus Marshal(PolyfaceHeaderPtr& bimMesh, Bentley::PolyfaceHeaderCR v8Mesh);
     BentleyStatus CreateNewCorridor(CorridorCR cifCorridor,
@@ -632,23 +631,20 @@ private:
     BentleyStatus AssignCorridorGeomStream(CorridorCR cifCorridor, RoadRailBim::CorridorR corridor);
 
 public:
-    static ORDCorridorsConverterPtr Create(DgnDbSync::DgnV8::Converter& converter, TransformCR unitsScaleTransform)
+    static ORDCorridorsConverterPtr Create(ORDConverter& converter, TransformCR unitsScaleTransform)
         {
         return new ORDCorridorsConverter(converter, unitsScaleTransform);
         }
 
-    Dgn::PhysicalModelR GetPhysicalModel() const { return *m_bimPhysicalModelPtr; }
     DgnElementId ConvertCorridor(CorridorCR cifCorridor, ORDConverter::Params& params, DgnCategoryId targetCategoryId = DgnCategoryId());
 }; // ORDCorridorsConverter
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ORDCorridorsConverter::ORDCorridorsConverter(DgnDbSync::DgnV8::Converter& converter, TransformCR unitsScaleTransform):
+ORDCorridorsConverter::ORDCorridorsConverter(ORDConverter& converter, TransformCR unitsScaleTransform):
     m_converter(converter), m_unitsScaleTransform(unitsScaleTransform)
     {
-    m_bimPhysicalModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalModel(m_converter.GetJobSubject(),
-        RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -717,7 +713,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     ORDConverter::Params& params,
     iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, RoadRailBim::CorridorCPtr& bimCorridorCPtr, DgnCategoryId targetCategoryId)
     {
-    auto corridorPtr = RoadRailBim::Corridor::Create(*m_bimPhysicalModelPtr);
+    auto corridorPtr = RoadRailBim::Corridor::Create(m_converter.GetPhysicalNetworkModel());
     if (targetCategoryId.IsValid())
         corridorPtr->SetCategoryId(targetCategoryId);
 
@@ -736,7 +732,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
         auto iterEntry = iterator.begin();
         if (iterEntry != iterator.end())
             {
-            bimMainAlignmentPtr = AlignmentBim::Alignment::GetForEdit(m_bimPhysicalModelPtr->GetDgnDb(), iterEntry.GetDgnElementId());
+            bimMainAlignmentPtr = AlignmentBim::Alignment::GetForEdit(m_converter.GetPhysicalNetworkModel().GetDgnDb(), iterEntry.GetDgnElementId());
             if (bimMainAlignmentPtr.IsValid())
                 {
                 if (bimMainAlignmentPtr->GetILinearElementSource().IsValid())
@@ -1273,12 +1269,10 @@ void ORDConverter::CreateRoadRailElements()
     auto designHorizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(GetDgnDb(), designHorizontalAlignmentModelId);
     auto linearsHorizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*linearsAlignmentModelPtr);
     auto linearsHorizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(GetDgnDb(), linearsHorizontalAlignmentModelId);
-    auto physicalModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalModel(GetJobSubject(),
-        RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
 
     updateProjectExtents(*designHorizAlignmentModelCPtr, *m_ordParams, false);
     updateProjectExtents(*linearsHorizAlignmentModelCPtr, *m_ordParams, false);
-    updateProjectExtents(*physicalModelPtr, *m_ordParams, true);
+    updateProjectExtents(GetPhysicalNetworkModel(), *m_ordParams, true);
 
     if (IsCreatingNewDgnDb())
         {
@@ -1293,7 +1287,7 @@ void ORDConverter::CreateRoadRailElements()
             additionalCategoriesForSelector.push_back(categoryId);
 
         auto viewId = RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(GetJobSubject(), 
-            RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName(), &additionalCategoriesForSelector);
+            GetPhysicalNetworkModel(), &additionalCategoriesForSelector);
         if (viewId.IsValid())
             {
             m_defaultViewId = viewId;
@@ -1371,18 +1365,16 @@ void ORDConverter::SetUpModelFormatters(Dgn::SubjectCR jobSubject)
     {    
     auto designAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, AlignmentBim::RoadRailAlignmentDomain::GetDesignPartitionName());
     auto linearsAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, AlignmentBim::RoadRailAlignmentDomain::Get3DLinearsPartitionName());
-    auto physicalModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalModel(jobSubject,
-        RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
 
     DgnV8Api::ModelInfo const& v8ModelInfo = _GetModelInfo(*GetRootModelP());
 
     setUpModelFormatter(*designAlignmentModelPtr, v8ModelInfo);
     setUpModelFormatter(*linearsAlignmentModelPtr, v8ModelInfo);
-    setUpModelFormatter(*physicalModelPtr, v8ModelInfo);
+    setUpModelFormatter(GetPhysicalNetworkModel(), v8ModelInfo);
 
     designAlignmentModelPtr->Update();
     linearsAlignmentModelPtr->Update();
-    physicalModelPtr->Update();
+    GetPhysicalNetworkModel().Update();
     }
 
 /*---------------------------------------------------------------------------------**//**

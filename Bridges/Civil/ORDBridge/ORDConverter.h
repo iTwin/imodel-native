@@ -44,6 +44,7 @@ public:
 
 private:
     Params* m_ordParams;
+    Dgn::PhysicalModelPtr m_physicalNetworkModelPtr;
     bmap<Bentley::ElementRefP, Dgn::DgnElementPtr> m_v8ToBimElmMap;
 
     typedef bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>, Bentley::ElementRefP> CifAlignmentV8RefPair;
@@ -67,6 +68,8 @@ public:
     void SetORDParams(Params* ordParams) { m_ordParams = ordParams; }
     void SetIsProcessing(bool newVal) { m_isProcessing = newVal; }
 
+    Dgn::PhysicalModelR GetPhysicalNetworkModel() const { return *m_physicalNetworkModelPtr; }
+    void SetPhysicalNetworkModel(Dgn::PhysicalModelR physicalNetworkModel) { m_physicalNetworkModelPtr = &physicalNetworkModel; }
     void SetUpModelFormatters(Dgn::SubjectCR jobSubject);
     Dgn::UnitSystem GetRootModelUnitSystem();
 }; // ORDConverter
