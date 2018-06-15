@@ -210,7 +210,7 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
     std::vector<ProfileVersion> expectedOlderReadonlyAndUpgradable = {ProfileVersion(4,0,0,0), ProfileVersion(4,0,0,1)};
     ProfileVersion expectedUpToDate = ProfileVersion(4,0,1,0);
     std::vector<ProfileVersion> expectedNewerReadWrite = {ProfileVersion(4,0,1,1), ProfileVersion(4,0,1,2)};
-    std::vector<ProfileVersion> expectedNewerReadonly = {ProfileVersion(4,0,1,0)};
+    std::vector<ProfileVersion> expectedNewerReadonly = {ProfileVersion(4,0,2,0)};
     std::vector<ProfileVersion> expectedTooNew = {ProfileVersion(4,1,0,0), ProfileVersion(5,0,0,0)};
 
     auto fakeModifyProfileVersion = [] (BeFileNameCR filePath, ProfileVersion const& version)

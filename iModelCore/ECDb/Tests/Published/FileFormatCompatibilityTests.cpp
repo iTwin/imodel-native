@@ -1500,12 +1500,13 @@ TEST_F(FileFormatCompatibilityTests, OpenOldFileWithDifferentOptions)
     ScopedDisableFailOnAssertion disableAssertion;
     ASSERT_EQ((int) BE_SQLITE_READONLY, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ProfileUpgradeOptions::Upgrade))) << "ProfileUpgradeOptions::Upgrade requires OpenMode::ReadWrite";
     }
-    ASSERT_EQ((int) BE_SQLITE_ERROR_ProfileTooOldForReadWrite, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly))) << "Opens without upgrade";
-    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::None))) << "Open without upgrade";
+    ASSERT_EQ((int) BE_SQLITE_ERROR_ProfileTooOldForReadWrite, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite))) << "Can only open readonly";
+    ASSERT_EQ((int) BE_SQLITE_ERROR_ProfileTooOldForReadWrite, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::None))) << "Can only open readonly";
+    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly))) << "Can open readonly";
     EXPECT_EQ(ProfileVersion(4, 0, 0, 0), oldFile.GetECDbProfileVersion()) << "Open without upgrade";
     oldFile.CloseDb();
     ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade))) << "Open with upgrade";
-    EXPECT_EQ(ProfileVersion(4, 0, 1, 0), oldFile.GetECDbProfileVersion()) << "Open with upgrade";
+    EXPECT_EQ(ExpectedProfileVersion(), oldFile.GetECDbProfileVersion()) << "Open with upgrade";
     oldFile.CloseDb();
     }
 
@@ -1620,7 +1621,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade_Enums)
     {
     //upgrade and close again
     ECDb upgradedFile;
-    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade)));
     }
 
     ECDb upgradedFile;

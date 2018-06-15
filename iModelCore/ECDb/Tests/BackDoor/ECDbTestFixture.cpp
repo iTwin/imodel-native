@@ -22,7 +22,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 //no need to release a static non-POD variable (Bentley C++ coding standards)
 //static
-ProfileVersion const* ECDbTestFixture::s_expectedProfileVersion = new ProfileVersion(4, 0, 0, 2);
+ProfileVersion const* ECDbTestFixture::s_expectedProfileVersion = new ProfileVersion(4, 0, 1, 0);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     10/2015
