@@ -30,69 +30,105 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
     {
     for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EMPTY))
         {
+        ProfileState::Age originalFileAge = testFile.GetAge();
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
 
-        ProfileState profileState = ecdb.CheckProfileVersion();
+        ProfileState actualProfileState = ecdb.CheckProfileVersion();
 
         TestHelper helper(testFile, ecdb);
         helper.AssertLoadSchemas();
         const int schemaCount = helper.GetSchemaCount();
 
-        switch (profileState.GetAge())
+        switch (originalFileAge)
             {
                 case ProfileState::Age::UpToDate:
-                case ProfileState::Age::Older:
                 {
+                EXPECT_TRUE(actualProfileState.IsUpToDate()) << testFile.ToString();
+                EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << testFile.ToString();
+
                 EXPECT_EQ(5, schemaCount) << testFile.ToString();
                 for (ECSchemaCP schema : ecdb.Schemas().GetSchemas(false))
                     {
-                    //ECVersion not persisted by ECDb, so ECObjects defaults to 3.1
-                    EXPECT_EQ((int) ECVersion::V3_1, (int) schema->GetECVersion()) << schema->GetFullSchemaName() << " | " << testFile.ToString();
-                    //OriginalECXML version not persisted in ECDb pre 4.0.0.2, so ECObjects defaults to 3.1
-                    EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor()) << schema->GetFullSchemaName() << " | " << testFile.ToString();
-                    EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor()) << schema->GetFullSchemaName() << " | " << testFile.ToString();
+                    EXPECT_EQ((int) ECVersion::V3_2, (int) schema->GetECVersion()) << schema->GetFullSchemaName() << " | " << testFile.ToString();;
                     }
 
                 //ECDb built-in schema versions
-                EXPECT_EQ(SchemaVersion(2, 0, 0), helper.GetSchemaVersion("ECDbFileInfo")) << testFile.ToString();
+                EXPECT_EQ(SchemaVersion(2, 0, 1), helper.GetSchemaVersion("ECDbFileInfo")) << testFile.ToString();
+                EXPECT_EQ(BeVersion(3, 2), helper.GetOriginalECXmlVersion("ECDbFileInfo")) << testFile.ToString();
                 EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), helper.GetSchemaItemCounts("ECDbFileInfo")) << testFile.ToString();
                 EXPECT_EQ(SchemaVersion(2, 0, 0), helper.GetSchemaVersion("ECDbMap")) << testFile.ToString();
+                EXPECT_EQ(BeVersion(3, 2), helper.GetOriginalECXmlVersion("ECDbMap")) << testFile.ToString();
                 EXPECT_EQ(JsonValue(R"js({"classcount":9})js"), helper.GetSchemaItemCounts("ECDbMap")) << testFile.ToString();
-                EXPECT_EQ(SchemaVersion(4, 0, 0), helper.GetSchemaVersion("ECDbMeta")) << testFile.ToString();
-                EXPECT_EQ(JsonValue(R"js({"classcount":24, "enumcount": 8})js"), helper.GetSchemaItemCounts("ECDbMeta")) << testFile.ToString();
-                EXPECT_EQ(SchemaVersion(5, 0, 0), helper.GetSchemaVersion("ECDbSystem")) << testFile.ToString();
+                EXPECT_EQ(SchemaVersion(4, 0, 1), helper.GetSchemaVersion("ECDbMeta")) << testFile.ToString();
+                EXPECT_EQ(BeVersion(3, 2), helper.GetOriginalECXmlVersion("ECDbMeta")) << testFile.ToString();
+                EXPECT_EQ(JsonValue(R"js({"classcount":38, "enumcount": 9})js"), helper.GetSchemaItemCounts("ECDbMeta")) << testFile.ToString();
+                EXPECT_EQ(SchemaVersion(5, 0, 1), helper.GetSchemaVersion("ECDbSystem")) << testFile.ToString();
+                EXPECT_EQ(BeVersion(3, 2), helper.GetOriginalECXmlVersion("ECDbSystem")) << testFile.ToString();
                 EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), helper.GetSchemaItemCounts("ECDbSystem")) << testFile.ToString();
 
                 //Standard schema versions
                 EXPECT_EQ(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("CoreCustomAttributes")) << testFile.ToString();
+                EXPECT_EQ(BeVersion(3, 1), helper.GetOriginalECXmlVersion("CoreCustomAttributes")) << testFile.ToString();
+                EXPECT_EQ(JsonValue(R"js({"classcount":14, "enumcount": 2})js"), helper.GetSchemaItemCounts("CoreCustomAttributes")) << testFile.ToString();
+                break;
+                }
+
+                case ProfileState::Age::Older:
+                {
+                EXPECT_TRUE(actualProfileState.IsUpToDate()) << "File is expected to be auto-upgraded. " << testFile.ToString();
+                EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << "File is expected to be auto-upgraded. " << testFile.ToString();
+
+                EXPECT_EQ(5, schemaCount) << testFile.ToString();
+                for (ECSchemaCP schema : ecdb.Schemas().GetSchemas(false))
+                    {
+                    EXPECT_EQ((int) ECVersion::V3_2, (int) schema->GetECVersion()) << schema->GetFullSchemaName() << " | " << testFile.ToString();
+                    }
+
+                //ECDb built-in schema versions
+                EXPECT_EQ(SchemaVersion(2, 0, 1), helper.GetSchemaVersion("ECDbFileInfo")) << testFile.ToString();
+                EXPECT_EQ(BeVersion(3, 2), helper.GetOriginalECXmlVersion("ECDbFileInfo")) << "Schema has enums which were upgraded to EC32 format, therefore original XML version was set to 3.2 | " << testFile.ToString();
+                EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), helper.GetSchemaItemCounts("ECDbFileInfo")) << testFile.ToString();
+                EXPECT_EQ(SchemaVersion(2, 0, 0), helper.GetSchemaVersion("ECDbMap")) << testFile.ToString();
+                EXPECT_EQ(BeVersion(), helper.GetOriginalECXmlVersion("ECDbMap")) << "Schema has no enums, so was not upgraded to EC32, so no original ECXML persisted yet | " << testFile.ToString();
+                EXPECT_EQ(JsonValue(R"js({"classcount":9})js"), helper.GetSchemaItemCounts("ECDbMap")) << testFile.ToString();
+                EXPECT_EQ(SchemaVersion(4, 0, 1), helper.GetSchemaVersion("ECDbMeta")) << testFile.ToString();
+                EXPECT_EQ(BeVersion(3, 2), helper.GetOriginalECXmlVersion("ECDbMeta")) << "Schema has enums which were upgraded to EC32 format, therefore original XML version was set to 3.2 | " << testFile.ToString();
+                EXPECT_EQ(JsonValue(R"js({"classcount":24, "enumcount": 8})js"), helper.GetSchemaItemCounts("ECDbMeta")) << testFile.ToString();
+                EXPECT_EQ(SchemaVersion(5, 0, 1), helper.GetSchemaVersion("ECDbSystem")) << testFile.ToString();
+                EXPECT_EQ(BeVersion(), helper.GetOriginalECXmlVersion("ECDbSystem")) << "Schema has no enums, so was not upgraded to EC32, so no original ECXML persisted yet | " << testFile.ToString();
+                EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), helper.GetSchemaItemCounts("ECDbSystem")) << testFile.ToString();
+
+                //Standard schema versions
+                EXPECT_EQ(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("CoreCustomAttributes")) << testFile.ToString();
+                EXPECT_EQ(BeVersion(), helper.GetOriginalECXmlVersion("CoreCustomAttributes")) << "Schema has no enums, so was not upgraded to EC32, so no original ECXML persisted yet | " << testFile.ToString();
                 EXPECT_EQ(JsonValue(R"js({"classcount":14, "enumcount": 2})js"), helper.GetSchemaItemCounts("CoreCustomAttributes")) << testFile.ToString();
                 break;
                 }
 
                 case ProfileState::Age::Newer:
                 {
+                EXPECT_TRUE(actualProfileState.IsNewer()) << testFile.ToString();
+                EXPECT_LT(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << testFile.ToString();
+
                 EXPECT_EQ(5, schemaCount) << testFile.ToString();
 
                 for (ECSchemaCP schema : ecdb.Schemas().GetSchemas(false))
                     {
-                    //ECVersion not read by ECDb, so ECObjects defaults to 3.1
-                    EXPECT_EQ((int) ECVersion::V3_1, (int) schema->GetECVersion()) << schema->GetFullSchemaName() << " | " << testFile.ToString();
-                    //OriginalECXML version not read by ECDb, so ECObjects defaults to 3.1
-                    EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor()) << schema->GetFullSchemaName() << " | " << testFile.ToString();
-                    EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor()) << schema->GetFullSchemaName() << " | " << testFile.ToString();
+                    EXPECT_LE((int) ECVersion::V3_2, (int) schema->GetECVersion()) << schema->GetFullSchemaName() << " | " << testFile.ToString();
                     }
 
-                //ECDb built-in schema versions
-                //ECDbFileInfo version was incremented in next profile, so must be higher in newer file
-                EXPECT_LT(SchemaVersion(2, 0, 0), helper.GetSchemaVersion("ECDbFileInfo")) << testFile.ToString();
+                EXPECT_LE(SchemaVersion(2, 0, 1), helper.GetSchemaVersion("ECDbFileInfo")) << testFile.ToString();
+                EXPECT_LE(BeVersion(3, 2), helper.GetOriginalECXmlVersion("ECDbFileInfo")) << testFile.ToString();
                 EXPECT_LE(SchemaVersion(2, 0, 0), helper.GetSchemaVersion("ECDbMap")) << testFile.ToString();
-                //ECDbMeta version was incremented in next profile, so must be higher in newer file
-                EXPECT_LT(SchemaVersion(4, 0, 0), helper.GetSchemaVersion("ECDbMeta")) << testFile.ToString();
-                //ECDbSystem version was incremented in next profile, so must be higher in newer file
-                EXPECT_LT(SchemaVersion(5, 0, 0), helper.GetSchemaVersion("ECDbSystem")) << testFile.ToString();
+                EXPECT_LE(BeVersion(3, 2), helper.GetOriginalECXmlVersion("ECDbMap")) << testFile.ToString();
+                EXPECT_LE(SchemaVersion(4, 0, 1), helper.GetSchemaVersion("ECDbMeta")) << testFile.ToString();
+                EXPECT_LE(BeVersion(3, 2), helper.GetOriginalECXmlVersion("ECDbMeta")) << testFile.ToString();
+                EXPECT_LE(SchemaVersion(5, 0, 1), helper.GetSchemaVersion("ECDbSystem")) << testFile.ToString();
+                EXPECT_LE(BeVersion(3, 2), helper.GetOriginalECXmlVersion("ECDbSystem")) << testFile.ToString();
                 //Standard schema versions
                 EXPECT_LE(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("CoreCustomAttributes")) << testFile.ToString();
+                EXPECT_LE(BeVersion(3, 1), helper.GetOriginalECXmlVersion("CoreCustomAttributes")) << testFile.ToString();
 
                 break;
                 }
@@ -108,30 +144,52 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32Enums)
     {
     for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_PREEC32ENUMS))
         {
+        ProfileState::Age originalFileAge = testFile.GetAge();
+
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
+
+        ProfileState actualProfileState = ecdb.CheckProfileVersion();
+        switch (originalFileAge)
+            {
+                case ProfileState::Age::Older:
+                    EXPECT_TRUE(actualProfileState.IsUpToDate()) << "File is expected to be auto-upgraded. " << testFile.ToString();
+                    EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << "File is expected to be auto-upgraded. " << testFile.ToString();
+                    break;
+                case ProfileState::Age::UpToDate:
+                    EXPECT_TRUE(actualProfileState.IsUpToDate()) << testFile.ToString();
+                    EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << testFile.ToString();
+                    break;
+                case ProfileState::Age::Newer:
+                    EXPECT_TRUE(actualProfileState.IsNewer()) << testFile.ToString();
+                    EXPECT_LT(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << testFile.ToString();
+                    break;
+
+                default:
+                    FAIL() << "unhandled enum value";
+            }
 
         TestHelper helper(testFile, ecdb);
         helper.AssertLoadSchemas();
 
         helper.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
-                    {{ECValue("Unspecified"), nullptr},
-                    {ECValue("Utc"), nullptr},
-                    {ECValue("Local"), nullptr}});
+                    {{"Unspecified", ECValue("Unspecified"), nullptr},
+                    {"Utc", ECValue("Utc"), nullptr},
+                    {"Local", ECValue("Local"), nullptr}});
 
         helper.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-                {{ECValue(0), "None"},
-                {ECValue(1), "Abstract"},
-                {ECValue(2), "Sealed"}});
+                {{"None", ECValue(0), "None"},
+                {"Abstract", ECValue(1), "Abstract"},
+                {"Sealed", ECValue(2), "Sealed"}});
 
         helper.AssertEnum("PreEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                {{ECValue(0), nullptr},
-                {ECValue(1), nullptr},
-                {ECValue(2), nullptr}});
+                {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
 
         helper.AssertEnum("PreEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-                {{ECValue("On"), "Turned On"},
-                {ECValue("Off"), "Turned Off"}});
+                {{"On", ECValue("On"), "Turned On"},
+                {"Off", ECValue("Off"), "Turned Off"}});
         }
     }
 
@@ -142,30 +200,52 @@ TEST_F(ECDbCompatibilityTestFixture, EC32Enums)
     {
     for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EC32ENUMS))
         {
+        ProfileState::Age originalFileAge = testFile.GetAge();
+
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
+
+        ProfileState actualProfileState = ecdb.CheckProfileVersion();
+        switch (originalFileAge)
+            {
+                case ProfileState::Age::Older:
+                    EXPECT_TRUE(actualProfileState.IsUpToDate()) << "File is expected to be auto-upgraded. " << testFile.ToString();
+                    EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << "File is expected to be auto-upgraded. " << testFile.ToString();
+                    break;
+                case ProfileState::Age::UpToDate:
+                    EXPECT_TRUE(actualProfileState.IsUpToDate()) << testFile.ToString();
+                    EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << testFile.ToString();
+                    break;
+                case ProfileState::Age::Newer:
+                    EXPECT_TRUE(actualProfileState.IsNewer()) << testFile.ToString();
+                    EXPECT_LT(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << testFile.ToString();
+                    break;
+
+                default:
+                    FAIL() << "unhandled enum value";
+            }
 
         TestHelper helper(testFile, ecdb);
         helper.AssertLoadSchemas();
 
         helper.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
-            {{ECValue("Unspecified"), nullptr},
-            {ECValue("Utc"), nullptr},
-            {ECValue("Local"), nullptr}});
+            {{"Unspecified", ECValue("Unspecified"), nullptr},
+            {"Utc", ECValue("Utc"), nullptr},
+            {"Local", ECValue("Local"), nullptr}});
 
         helper.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-            {{ECValue(0), "None"},
-            {ECValue(1), "Abstract"},
-            {ECValue(2), "Sealed"}});
+            {{"None", ECValue(0), "None"},
+            {"Abstract", ECValue(1), "Abstract"},
+            {"Sealed", ECValue(2), "Sealed"}});
 
         helper.AssertEnum("EC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-            {{ECValue(0), nullptr},
-            {ECValue(1), nullptr},
-            {ECValue(2), nullptr}});
+            {{"Unknown", ECValue(0), nullptr},
+            {"On", ECValue(1), nullptr},
+            {"Off", ECValue(2), nullptr}});
 
         helper.AssertEnum("EC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-            {{ECValue("On"), "Turned On"},
-            {ECValue("Off"), "Turned Off"}});
+            {{"On", ECValue("On"), "Turned On"},
+            {"Off", ECValue("Off"), "Turned Off"}});
         }
 
     }
@@ -176,8 +256,30 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
     {
     for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_PREEC32KOQS))
         {
+        ProfileState::Age originalFileAge = testFile.GetAge();
+
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
+
+        ProfileState actualProfileState = ecdb.CheckProfileVersion();
+        switch (originalFileAge)
+            {
+                case ProfileState::Age::Older:
+                    EXPECT_TRUE(actualProfileState.IsUpToDate()) << "File is expected to be auto-upgraded. " << testFile.ToString();
+                    EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << "File is expected to be auto-upgraded. " << testFile.ToString();
+                    break;
+                case ProfileState::Age::UpToDate:
+                    EXPECT_TRUE(actualProfileState.IsUpToDate()) << testFile.ToString();
+                    EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << testFile.ToString();
+                    break;
+                case ProfileState::Age::Newer:
+                    EXPECT_TRUE(actualProfileState.IsNewer()) << testFile.ToString();
+                    EXPECT_LT(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << testFile.ToString();
+                    break;
+
+                default:
+                    FAIL() << "unhandled enum value";
+            }
 
         TestHelper helper(testFile, ecdb);
         helper.AssertLoadSchemas();
@@ -198,8 +300,30 @@ TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
     {
     for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EC32KOQS))
         {
+        ProfileState::Age originalFileAge = testFile.GetAge();
+
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
+
+        ProfileState actualProfileState = ecdb.CheckProfileVersion();
+        switch (originalFileAge)
+            {
+                case ProfileState::Age::Older:
+                    EXPECT_TRUE(actualProfileState.IsUpToDate()) << "File is expected to be auto-upgraded. " << testFile.ToString();
+                    EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << "File is expected to be auto-upgraded. " << testFile.ToString();
+                    break;
+                case ProfileState::Age::UpToDate:
+                    EXPECT_TRUE(actualProfileState.IsUpToDate()) << testFile.ToString();
+                    EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << testFile.ToString();
+                    break;
+                case ProfileState::Age::Newer:
+                    EXPECT_TRUE(actualProfileState.IsNewer()) << testFile.ToString();
+                    EXPECT_LT(ECDbProfile::Get().GetExpectedVersion(), ecdb.GetECDbProfileVersion()) << testFile.ToString();
+                    break;
+
+                default:
+                    FAIL() << "unhandled enum value";
+            }
 
         TestHelper helper(testFile, ecdb);
         helper.AssertLoadSchemas();

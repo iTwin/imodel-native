@@ -131,7 +131,7 @@ JsonValue TestHelper::GetSchemaItemCounts(Utf8CP schemaName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-void TestHelper::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::pair<ECN::ECValue, Utf8CP>> const& expectedEnumerators) const
+void TestHelper::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::tuple<Utf8CP, ECValue, Utf8CP>> const& expectedEnumerators) const
     {
     // 1) Via schema manager
     ECEnumerationCP ecEnum = m_db.Schemas().GetEnumeration(schemaName, enumName);
@@ -155,14 +155,18 @@ void TestHelper::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedD
     size_t i = 0;
     for (ECEnumeratorCP enumerator : ecEnum->GetEnumerators())
         {
-        std::pair<ECValue, Utf8CP> const& expectedEnumValue = expectedEnumerators[i];
-        Utf8CP expectedDisplayLabel = expectedEnumValue.second;
+        std::tuple<Utf8CP, ECValue, Utf8CP> const& expectedEnumValue = expectedEnumerators[i];
+        Utf8CP expectedName = std::get<0>(expectedEnumValue);
+        ECValueCR expectedValue = std::get<1>(expectedEnumValue);
+        Utf8CP expectedDisplayLabel = std::get<2>(expectedEnumValue);
+
+        EXPECT_STREQ(expectedName, enumerator->GetName().c_str()) << assertMessage << " Enumerator: " << i;
+
         if (expectedDisplayLabel == nullptr)
             EXPECT_FALSE(enumerator->GetIsDisplayLabelDefined()) << assertMessage << " Enumerator: " << i;
         else
             EXPECT_STREQ(expectedDisplayLabel, enumerator->GetInvariantDisplayLabel().c_str()) << assertMessage << " Enumerator: " << i;
 
-        ECValueCR expectedValue = expectedEnumValue.first;
         if (expectedType == ECN::PRIMITIVETYPE_Integer)
             {
             ASSERT_TRUE(expectedValue.IsInteger()) << assertMessage << " Enumerator: " << i;
@@ -203,9 +207,13 @@ void TestHelper::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedD
     i = 0;
     for (IECSqlValue const& enumValue : enumValues.GetArrayIterable())
         {
-        std::pair<ECValue, Utf8CP> const& expectedEnumValue = expectedEnumerators[i];
-        ECValueCR expectedValue = expectedEnumValue.first;
-        Utf8CP expectedDisplayLabel = expectedEnumValue.second;
+        std::tuple<Utf8CP, ECValue, Utf8CP> const& expectedEnumValue = expectedEnumerators[i];
+        Utf8CP expectedName = std::get<0>(expectedEnumValue);
+        ECValueCR expectedValue = std::get<1>(expectedEnumValue);
+        Utf8CP expectedDisplayLabel = std::get<2>(expectedEnumValue);
+
+        EXPECT_STREQ(expectedName, enumValue["Name"].GetText()) << assertMessage << " Enumerator: " << i;
+
         if (expectedDisplayLabel == nullptr)
             EXPECT_TRUE(enumValue["DisplayLabel"].IsNull()) << assertMessage << " Enumerator: " << i;
         else
@@ -230,7 +238,7 @@ void TestHelper::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedD
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-void TestHelper::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationUnits, double expectedRelError) const
+void TestHelper::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationFormats, double expectedRelError) const
     {
     // 1) Via schema manager
     KindOfQuantityCP koq = m_db.Schemas().GetKindOfQuantity(schemaName, koqName);
@@ -247,11 +255,19 @@ void TestHelper::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP 
     else
         EXPECT_TRUE(koq->GetDescription().empty()) << assertMessage;
 
-    EXPECT_STREQ(expectedPersistenceUnit, koq->GetPersistenceUnit().ToText(false).c_str()) << assertMessage;
-    if (expectedPresentationUnits.m_value.isNull() || expectedPresentationUnits.m_value.empty())
-        EXPECT_TRUE(koq->GetPresentationUnitList().empty()) << assertMessage;
+    EXPECT_STREQ(expectedPersistenceUnit, koq->GetPersistenceUnit()->GetQualifiedName(koq->GetSchema()).c_str()) << assertMessage;
+    if (expectedPresentationFormats.m_value.isNull() || expectedPresentationFormats.m_value.empty())
+        EXPECT_TRUE(koq->GetPresentationFormats().empty()) << assertMessage;
     else
-        EXPECT_EQ(expectedPresentationUnits, JsonValue(koq->GetPresentationsJson(false))) << assertMessage;
+        {
+        ASSERT_EQ((int) koq->GetPresentationFormats().size(), (int) expectedPresentationFormats.m_value.size()) << assertMessage;
+        size_t i = 0;
+        for (NamedFormat const& presFormat : koq->GetPresentationFormats())
+            {
+            EXPECT_STREQ(expectedPresentationFormats.m_value[(Json::ArrayIndex) i].asCString(), presFormat.GetQualifiedName(koq->GetSchema()).c_str()) << "Presentation Format #" << i << " | " << assertMessage;
+            i++;
+            }
+        }
 
     EXPECT_DOUBLE_EQ(expectedRelError, koq->GetRelativeError()) << assertMessage;
 
@@ -273,20 +289,15 @@ void TestHelper::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP 
     else
         EXPECT_TRUE(stmt.IsValueNull(2)) << stmt.GetECSql() << " | " << assertMessage;
 
-    EXPECT_STREQ(expectedPersistenceUnit, stmt.GetValueText(3)) << stmt.GetECSql() << " | " << assertMessage;
+    // persisted persistence unit may differ from expected if it was persisted pre EC3.2, so don't verify that via plain ECSQL
 
-    if (expectedPresentationUnits.m_value.isNull() || expectedPresentationUnits.m_value.empty())
+    if (expectedPresentationFormats.m_value.isNull() || expectedPresentationFormats.m_value.empty())
         EXPECT_TRUE(stmt.IsValueNull(4)) << stmt.GetECSql() << " | " << assertMessage;
     else
         {
         IECSqlValue const& presUnitsVal = stmt.GetValue(4);
-        EXPECT_EQ((int) expectedPresentationUnits.m_value.size(), presUnitsVal.GetArrayLength()) << stmt.GetECSql() << " | " << assertMessage;
-        size_t i = 0;
-        for (IECSqlValue const& presUnitVal : presUnitsVal.GetArrayIterable())
-            {
-            EXPECT_STREQ(expectedPresentationUnits.m_value[(Json::ArrayIndex) i].asCString(), presUnitVal.GetText()) << "Array index: " << i << " | " << stmt.GetECSql() << " | " << assertMessage;
-            i++;
-            }
+        EXPECT_EQ((int) expectedPresentationFormats.m_value.size(), presUnitsVal.GetArrayLength()) << stmt.GetECSql() << " | " << assertMessage;
+        // persisted presentation format may differ from expected if it was persisted pre EC3.2, so don't verify that via plain ECSQL
         }
 
     EXPECT_DOUBLE_EQ(expectedRelError, stmt.GetValueDouble(5)) << stmt.GetECSql() << " | " << assertMessage;

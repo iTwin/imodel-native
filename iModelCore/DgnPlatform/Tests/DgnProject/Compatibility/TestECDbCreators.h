@@ -25,7 +25,9 @@
 // 3) Add a unique_ptr to the TESTECDBCREATOR_LIST macro
 
 #define TESTECDBCREATOR_LIST {std::make_shared<EmptyTestECDbCreator>(), \
+                              std::make_shared<EC32EnumsTestECDbCreator>(), \
                               std::make_shared<PreEC32EnumsTestECDbCreator>(), \
+                              std::make_shared<EC32KoqsTestECDbCreator>(), \
                                std::make_shared<PreEC32KoqsTestECDbCreator>()}
 
 //======================================================================================
@@ -107,6 +109,36 @@ struct PreEC32EnumsTestECDbCreator final : TestECDbCreator
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
 //======================================================================================
+struct EC32EnumsTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, TESTECDB_EC32ENUMS))
+                return ERROR;
+
+            // add types of enums which don't exist in the schemas already in the test file
+            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="EC32Enums" alias="ec32enums" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                                        <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                                                            <ECEnumerator name="Unknown" value="0"/>
+                                                            <ECEnumerator name="On" value="1"/>
+                                                            <ECEnumerator name="Off" value="2"/>
+                                                        </ECEnumeration>
+                                                        <ECEnumeration typeName="StringEnum_EnumeratorsWithDisplayLabel" displayLabel="String Enumeration with enumerators with display label" backingTypeName="string" isStrict="false">
+                                                            <ECEnumerator name="On" value="On" displayLabel="Turned On"/>
+                                                            <ECEnumerator name="Off" value="Off" displayLabel="Turned Off"/>
+                                                        </ECEnumeration>
+                                                     </ECSchema>)xml"));
+            }
+    public:
+        ~EC32EnumsTestECDbCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
 struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
     {
     private:
@@ -178,3 +210,26 @@ struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
         ~PreEC32KoqsTestECDbCreator() {}
     };
 
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct EC32KoqsTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, TESTECDB_EC32KOQS))
+                return ERROR;
+
+            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="EC32Koqs" alias="ec32koqs" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                    <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+                    <KindOfQuantity typeName="TestKoq_PresFormatWithComposite" persistenceUnit="u:KG" presentationUnits="f:DefaultRealU[u:G]" relativeError="0.6"/>
+                    <KindOfQuantity typeName="TestKoq_NoPresFormat" persistenceUnit="u:KG" relativeError="0.5"/>
+                </ECSchema>)xml"));
+            }
+    public:
+        ~EC32KoqsTestECDbCreator() {}
+    };

@@ -60,7 +60,7 @@
     <IntDir>$(OutRoot)Winx64\Build\DgnCompatibility\</IntDir>
     <IntermediateOutputPath>$(OutRoot)Winx64\Build\DgnPlatformTest\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\DgnPlatformTest\</BaseIntermediateOutputPath>
-    <NMakeOutput>$(OutRoot)Winx64\iModelSchemaEvolution\BackwardsCompatibility\iModelSchemaEvolution.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\Product\iModelSchemaEvolutionGTest\iModelSchemaEvolution.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(SrcRoot)DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\Delivery\</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
