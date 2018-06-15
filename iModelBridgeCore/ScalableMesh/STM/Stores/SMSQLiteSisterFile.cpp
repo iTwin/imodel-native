@@ -37,12 +37,17 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
         case SMStoreDataType::LinearFeature:
         case SMStoreDataType::Graph:
             {
-            assert(m_smSQLiteFile.IsValid()); // Must have a valid SQLite database 
-            Utf8String dbFileName;
-            bool result = m_smSQLiteFile->GetFileName(dbFileName);
-            assert(result == true);
-
-            sqlFileName.AssignUtf8(dbFileName.c_str());
+            if (m_smSQLiteFile.IsValid())
+                {                 
+                Utf8String dbFileName;
+                bool result = m_smSQLiteFile->GetFileName(dbFileName);
+                assert(result == true);
+                sqlFileName.AssignUtf8(dbFileName.c_str());            
+                }
+            else //For PWContextShare there is not local path, so used temp path.
+                {
+                sqlFileName = useTempPath ? GetTempPathFromProjectPath(m_projectFilesPath) : m_projectFilesPath;                
+                }
 
             sqlFileName.append(L"_feature"); //temporary file, deleted after generation
             }

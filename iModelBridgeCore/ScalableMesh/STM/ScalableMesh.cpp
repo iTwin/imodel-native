@@ -1567,7 +1567,16 @@ DTMStatusInt ScalableMeshDTM::_GetBoundary(DTMPointArray& result)
     DTMPointArray boundary;
     if (m_scMesh->GetBoundary(boundary) != SUCCESS)
         return DTM_ERROR;
-    m_transformToUors.Multiply(result, boundary);
+
+    if (m_scMesh->IsCesium3DTiles())
+        {
+        result = boundary;
+        }
+    else
+        {
+        m_transformToUors.Multiply(result, boundary);
+        }
+
     return DTM_SUCCESS;
     }
 
@@ -2026,7 +2035,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
     bvector<IScalableMeshNodePtr> returnedNodes;
     IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
     params->SetLevel(std::min((size_t)3, _GetTerrainDepth()));
-    meshQueryInterface->Query(returnedNodes, 0,0, params);
+    meshQueryInterface->Query(returnedNodes, 0,0, params); 
     if (returnedNodes.size() == 0) return ERROR;
     bvector<DPoint3d> current;
     DRange3d rangeCurrent = DRange3d::From(current);
@@ -2038,6 +2047,10 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
         flags->SetLoadGraph(true);
         auto meshP = node->GetMesh(flags);
+
+        if (IsCesium3DTiles()) 
+            meshP->SetTransform(m_reprojectionTransform);
+ 
         bvector<DPoint3d> bound;
         if (meshP.get() != nullptr && meshP->GetBoundary(bound) == DTM_SUCCESS)
             {
