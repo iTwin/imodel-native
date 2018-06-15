@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "CompatibilityTestFixture.h"
-#include "ProfileManager.h"
+#include "Profiles.h"
 
 //=======================================================================================
 //! Provides helper methods for testing certain areas of a DgnDb or ECDb file in the compatibility tests

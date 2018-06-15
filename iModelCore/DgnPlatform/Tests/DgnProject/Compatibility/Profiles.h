@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Compatibility/ProfileManager.h $
+|  $Source: Tests/DgnProject/Compatibility/Profiles.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -45,8 +45,10 @@ struct TestFile final
         BeFileNameCR GetPath() const { return m_path; }
         BeSQLite::ProfileVersion const& GetBeDbVersion() const { return m_bedbVersion; }
         BeSQLite::ProfileVersion const& GetECDbVersion() const { return m_ecdbVersion; }
-        BeSQLite::ProfileVersion const& GeDgnDbVersion() const { return m_dgndbVersion; }
+        BeSQLite::ProfileVersion const& GetDgnDbVersion() const { return m_dgndbVersion; }
 
+        //Indicates whether the test file in its un-upgraded state is older/newer/up-to-date compared to the version expected by the software.
+        BeSQLite::ProfileState::Age GetAge() const;
         Utf8String ToString() const;
     };
 
@@ -56,19 +58,18 @@ struct TestFile final
 struct Profile : NonCopyableClass
     {
     protected:
+        ProfileType m_type;
         mutable BeSQLite::ProfileVersion m_expectedVersion = BeSQLite::ProfileVersion(0, 0, 0, 0);
         BeSQLite::PropertySpec m_versionPropertySpec;
-        mutable std::vector<BeSQLite::ProfileVersion> m_expectedIncludedProfileVersions;
 
     private:
-        ProfileType m_type;
         Utf8CP m_name = nullptr;
         BeFileName m_profileSeedFolder;
 
         virtual BentleyStatus _Init() const = 0;
 
     protected:
-        Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name, BeFileNameCR seedFolder);
+        Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name);
 
         BeSQLite::ProfileVersion ReadProfileVersion(BeSQLite::Db const&) const;
 
@@ -78,12 +79,10 @@ struct Profile : NonCopyableClass
         BentleyStatus Init() const;
 
         BeSQLite::ProfileVersion const& GetExpectedVersion() const { return m_expectedVersion; }
-        std::vector<BeSQLite::ProfileVersion> const& GetExpectedIncludedProfileVersions() const { return m_expectedIncludedProfileVersions; }
 
         std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles = true) const;
         BeFileNameCR GetSeedFolder() const { return m_profileSeedFolder; }
         BeFileName GetPathForNewTestFile(Utf8CP testFileName) const;
-        static ProfileType ParseProfileType(Utf8CP);
     };
 
 //======================================================================================
@@ -92,19 +91,23 @@ struct Profile : NonCopyableClass
 struct BeDbProfile final : Profile
     {
     private:
-        explicit BeDbProfile(BeFileNameCR seedFolder) : Profile(ProfileType::BeDb, "be_Db", PROFILE_NAME_BEDB, seedFolder) {}
+        static BeDbProfile const* s_singleton;
+
+        BeDbProfile() : Profile(ProfileType::BeDb, "be_Db", PROFILE_NAME_BEDB) {}
         BentleyStatus _Init() const override;
 
     public:
         ~BeDbProfile() {}
 
-        static std::unique_ptr<BeDbProfile> Create(BeFileNameCR seedFolder)
+        static BeDbProfile const& Get()
             {
-            std::unique_ptr<BeDbProfile> profile(new BeDbProfile(seedFolder));
-            if (SUCCESS != profile->Init())
-                return nullptr;
+            if (s_singleton == nullptr)
+                {
+                s_singleton = new BeDbProfile();
+                EXPECT_EQ(SUCCESS, s_singleton->Init()) << "Failed to initialize BeDbProfile";
+                }
 
-            return profile;
+            return *s_singleton;
             }
     };
 
@@ -114,18 +117,22 @@ struct BeDbProfile final : Profile
 struct ECDbProfile final : Profile
     {
     private:
-        explicit ECDbProfile(BeFileNameCR seedFolder) : Profile(ProfileType::ECDb, "ec_Db", PROFILE_NAME_ECDB, seedFolder) {}
+        static ECDbProfile const* s_singleton;
+
+        ECDbProfile() : Profile(ProfileType::ECDb, "ec_Db", PROFILE_NAME_ECDB) {}
         BentleyStatus _Init() const override;
     public:
         ~ECDbProfile() {}
 
-        static std::unique_ptr<ECDbProfile> Create(BeFileNameCR seedFolder)
+        static ECDbProfile const& Get()
             {
-            std::unique_ptr<ECDbProfile> profile(new ECDbProfile(seedFolder));
-            if (SUCCESS != profile->Init())
-                return nullptr;
+            if (s_singleton == nullptr)
+                {
+                s_singleton = new ECDbProfile();
+                EXPECT_EQ(SUCCESS, s_singleton->Init()) << "Failed to initialize ECDbProfile";
+                }
 
-            return profile;
+            return *s_singleton;
             }
     };
 
@@ -135,35 +142,21 @@ struct ECDbProfile final : Profile
 struct DgnDbProfile final : Profile
     {
     private:
-        explicit DgnDbProfile(BeFileNameCR seedFolder) : Profile(ProfileType::DgnDb, "dgn_Db", PROFILE_NAME_DGNDB, seedFolder) {}
+        static DgnDbProfile const* s_singleton;
+
+        DgnDbProfile() : Profile(ProfileType::DgnDb, "dgn_Db", PROFILE_NAME_DGNDB) {}
         BentleyStatus _Init() const override;
     public:
         ~DgnDbProfile() {}
 
-        static std::unique_ptr<DgnDbProfile> Create(BeFileNameCR seedFolder)
+        static DgnDbProfile const& Get()
             {
-            std::unique_ptr<DgnDbProfile> profile(new DgnDbProfile(seedFolder));
-            if (SUCCESS != profile->Init())
-                return nullptr;
+            if (s_singleton == nullptr)
+                {
+                s_singleton = new DgnDbProfile();
+                EXPECT_EQ(SUCCESS, s_singleton->Init()) << "Failed to initialize DgnDbProfile";
+                }
 
-            return profile;
+            return *s_singleton;
             }
-    };
-
-//======================================================================================
-// @bsiclass                                                 Affan.Khan          03/2018
-//======================================================================================
-struct ProfileManager final : NonCopyableClass
-    {
-    private:
-        std::map<ProfileType, std::unique_ptr<Profile>> m_profiles;
-        BeFileName m_testSeedFolder;
-        static ProfileManager* s_singleton;
-
-        ProfileManager();
-
-    public:
-        static ProfileManager& Get() { return *s_singleton; }
-        Profile& GetProfile(ProfileType) const;
-        BeFileNameCR GetSeedFolder() const { return m_testSeedFolder; }
     };

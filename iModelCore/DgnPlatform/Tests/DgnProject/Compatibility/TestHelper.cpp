@@ -135,7 +135,7 @@ void TestHelper::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedD
     {
     // 1) Via schema manager
     ECEnumerationCP ecEnum = m_db.Schemas().GetEnumeration(schemaName, enumName);
-    ASSERT_TRUE(ecEnum != nullptr) << schemaName << "." << enumName;
+    ASSERT_TRUE(ecEnum != nullptr) << schemaName << "." << enumName << " | " << m_testFile.ToString();
     Utf8String assertMessage(schemaName);
     assertMessage.append(".").append(enumName).append(" | ").append(m_testFile.ToString());
 
@@ -234,7 +234,7 @@ void TestHelper::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP 
     {
     // 1) Via schema manager
     KindOfQuantityCP koq = m_db.Schemas().GetKindOfQuantity(schemaName, koqName);
-    ASSERT_TRUE(koq != nullptr) << schemaName << "." << koqName;
+    ASSERT_TRUE(koq != nullptr) << schemaName << "." << koqName << " | " << m_testFile.ToString();
     Utf8String assertMessage(schemaName);
     assertMessage.append(".").append(koqName).append(" | ").append(m_testFile.ToString());
 

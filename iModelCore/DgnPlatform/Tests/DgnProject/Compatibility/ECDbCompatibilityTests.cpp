@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "CompatibilityTestFixture.h"
-#include "ProfileManager.h"
+#include "Profiles.h"
 #include "TestECDbCreators.h"
 #include "TestHelper.h"
 
@@ -18,7 +18,6 @@ USING_NAMESPACE_BENTLEY_EC
 struct ECDbCompatibilityTestFixture : CompatibilityTestFixture
     {
     protected:
-        Profile& Profile() const { return ProfileManager::Get().GetProfile(ProfileType::ECDb); }
         DbResult OpenTestFile(ECDb& ecdb, TestFile const& testFile) { return ecdb.OpenBeSQLiteDb(testFile.GetPath(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade)); }
 
         void SetUp() override { ASSERT_EQ(SUCCESS, TestECDbCreation::Run()); }
@@ -29,7 +28,7 @@ struct ECDbCompatibilityTestFixture : CompatibilityTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
     {
-    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_EMPTY))
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EMPTY))
         {
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
@@ -107,7 +106,7 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, PreEC32Enums)
     {
-    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_PREEC32ENUMS))
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_PREEC32ENUMS))
         {
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
@@ -141,7 +140,7 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32Enums)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, EC32Enums)
     {
-    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_EC32ENUMS))
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EC32ENUMS))
         {
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
@@ -175,7 +174,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32Enums)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
     {
-    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_PREEC32KOQS))
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_PREEC32KOQS))
         {
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
@@ -188,6 +187,7 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
         helper.AssertKindOfQuantity("PreEC32Koqs", "LIQUID_VOLUME", "Liquid Volume", nullptr, "CUB.M(DefaultReal)", JsonValue(R"json(["LITRE(Real4U)", "GALLON(Real4U)"])json"), 0.0001);
         helper.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_NoPresUnit", nullptr, nullptr, "W/(M*K)(DefaultReal)", JsonValue(), 0.4);
         helper.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormat_NoPresUnit", nullptr, nullptr, "W/(M*K)(DefaultReal)", JsonValue(), 0.5);
+        helper.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormatWithUnit_NoPresUnit", nullptr, nullptr, "FT(AmerFI8)", JsonValue(), 0.6);
         }
     }
 
@@ -196,7 +196,7 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
     {
-    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_EC32KOQS))
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EC32KOQS))
         {
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
@@ -204,8 +204,9 @@ TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
         TestHelper helper(testFile, ecdb);
         helper.AssertLoadSchemas();
 
-        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatNoComposite", nullptr, "KOQ with presentation formats without composite units", "u:CM", JsonValue(R"json(["f:DefaultRealU", "f:DefaultReal"])json"), 0.5);
-        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithComposite", nullptr, nullptr, "u:KG", JsonValue(R"js(["f:DefaultRealU[u:G]"])js"), 0.6);
-        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_NoPresFormat", nullptr, nullptr, "u:KG", JsonValue(), 0.5);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithMandatoryComposite", "My first test KOQ", nullptr, "u:CM", JsonValue(R"js(["TBD"])js"), 0.1);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithOptionalComposite", nullptr, "My second test KOQ", "u:CM", JsonValue(R"js(["TBD"])js"), 0.2);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithoutComposite", nullptr, nullptr, "u:CM", JsonValue(R"js(["TBD"])js"), 0.3);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_NoPresFormat", nullptr, nullptr, "u:KG", JsonValue(), 0.4);
         }
     }

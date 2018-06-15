@@ -1243,6 +1243,24 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
     adapter.GetRow(elementJson, true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Add the name of the most derived class in BisCore as the "bisBaseClass" member to the supplied
+* Json object. This helps frontend code determine the "bis type" for classes from other domains.
+* @bsimethod                                    Keith.Bentley                   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::AddBisClassName(JsonValueR val, ECClassCP ecClass)
+    {
+    while (0 != BeStringUtilities::Strnicmp("biscore", ecClass->GetFullName(), 6))
+        {
+        auto baseClasses = ecClass->GetBaseClasses();
+        if (baseClasses.empty())
+            return;
+        ecClass = baseClasses[0];
+        }
+
+    val[json_bisBaseClass()] = ecClass->GetName();
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/18
 //---------------+---------------+---------------+---------------+---------------+------
@@ -1275,6 +1293,8 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     auto ecClass = GetElementClass();
     BeAssert(ecClass != nullptr);
     val[json_classFullName()] = ecClass->GetFullName();
+    AddBisClassName(val, ecClass);
+
     val[json_model()] = m_modelId.ToHexStr();
     val[json_code()] = m_code.ToJson2();
 
@@ -1300,7 +1320,7 @@ void DgnElement::_FromJson(JsonValueR props)
     {
     if (props.isMember(json_model()))
         m_modelId.FromJson(props[json_model()]);
-
+        
     if (props.isMember(json_code()))
         m_code = DgnCode::FromJson2(props[json_code()]);
 

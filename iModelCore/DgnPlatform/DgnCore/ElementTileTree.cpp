@@ -3244,7 +3244,8 @@ Utf8CP TileCache::GetCurrentVersion()
     //  8: Fix issue in which MeshGenerator::AddPolyface() decimates a polyface in a tile which later becomes a leaf tile (TFS#889847)
     //  9: We were failing to align most chunks of the binary data. In JavaScript this produces exceptions when trying to read unaligned data.
     //  10: Change tile cache key such that if tile has no 'zoom factor', it is written as 0, not 1.
-    return "10";
+    //  11: Added width + height to textures.
+    return "11";
     }
 
 /*---------------------------------------------------------------------------------**//**
