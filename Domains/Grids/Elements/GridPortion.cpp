@@ -331,7 +331,7 @@ CreateParams const& params
     if (!thisGrid->Insert ().IsValid ())
         return nullptr;
 
-    Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb ().GetDictionaryModel ();
+    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(thisGrid->GetDgnDb());
 
     GeneralGridAxisPtr horizontalAxis = GeneralGridAxis::CreateAndInsert(defModel, *thisGrid);
 

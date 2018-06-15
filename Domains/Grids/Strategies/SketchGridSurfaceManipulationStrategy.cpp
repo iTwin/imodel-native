@@ -130,7 +130,8 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::GetOrCreateGridAndAxis(Sket
             grid = sketchGrid.get();
             }
        
-        Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
+         
+        Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(db);
         m_axis = GeneralGridAxis::CreateAndInsert(defModel, *grid).get();
         if (m_axis.IsNull())
             return BentleyStatus::ERROR;

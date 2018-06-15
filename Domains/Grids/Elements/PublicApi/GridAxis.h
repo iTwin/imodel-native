@@ -12,9 +12,9 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 //! Physical building element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GridAxis : Dgn::DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE GridAxis : Dgn::GroupInformationElement
 {
-    DEFINE_T_SUPER(Dgn::DefinitionElement);
+    DEFINE_T_SUPER(Dgn::GroupInformationElement);
 
     struct CreateParams : T_Super::CreateParams
         {

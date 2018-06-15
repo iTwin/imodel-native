@@ -8,6 +8,7 @@
 #include <Grids/Domain/GridsDomain.h>
 #include <Grids/gridsApi.h>
 #include <DgnPlatform/DgnCategory.h>
+#include <BuildingShared/BuildingSharedApi.h>
 
 #define GRIDLINE_STYLE_NAME "GridlineStyle1"
 
@@ -200,6 +201,27 @@ void GridsDomain::_OnSchemaImported(DgnDbR db) const
     tmpColorDef = Dgn::ColorDef::Green ();
     DgnStyleId gridlineStyleId = getGridlineStyleId (db);
     InsertCategory (db, GRIDS_CATEGORY_CODE_GridCurve, &tmpColorDef, NULL, NULL, &bTRUE, &bTRUE, NULL, &gridlineStyleId, NULL, NULL, NULL);
+
+    // Insert GroupInformationModel
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject(); // TODO: May want to change this
+    DgnCode code = DefinitionPartition::CreateCode(*rootSubject, BUILDING_InformationPartition);
+    DgnModelId definitionModelId = db.Models().QuerySubModelId(code);
+    if (!definitionModelId.IsValid())
+        {
+        DefinitionPartitionPtr partition = DefinitionPartition::Create(*rootSubject, BUILDING_InformationPartition);
+        BeAssert(partition.IsValid());
+        DgnElementCPtr iPartition = partition->Insert();
+        BeAssert(iPartition.IsValid());
+        DefinitionModelPtr model = DefinitionModel::Create(*partition);
+
+        IBriefcaseManager::Request request;
+        auto stat = model->PopulateRequest(request, BeSQLite::DbOpcode::Insert);
+        model->GetDgnDb().BriefcaseManager().Acquire(request);
+
+        DgnDbStatus status = model->Insert();
+        BeAssert(status == DgnDbStatus::Success);
+        }
+
     InsertDomainAuthorities (db);
     }
 

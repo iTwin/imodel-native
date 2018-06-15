@@ -93,7 +93,7 @@
     </ECRelationshipClass>
   
     <ECEntityClass typeName="GridAxis" modifier="Abstract" description="an element which groups (typically parallel) GridSurfaces">
-      <BaseClass>bis:DefinitionElement</BaseClass>
+      <BaseClass>bis:GroupInformationElement</BaseClass>
       <ECProperty propertyName="Name" displayLabel="Name" typeName="string"/>
       <ECNavigationProperty propertyName="Grid" relationshipName="GridHasAxes" direction="Backward" description="Grid this axis belong to" />
     </ECEntityClass>

@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Domain/PublicApi/GridsDomain.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -52,7 +52,6 @@ public:
     GRIDSDOMAIN_EXPORT static bool EnsureECSchemaIsLoaded(Dgn::DgnDbR db);
     GRIDSDOMAIN_EXPORT static bool EnsureDomainCategoriesExist (Dgn::DgnDbR db);
     GRIDSDOMAIN_EXPORT static void EnsureDomainAuthoritiesExist (Dgn::DgnDbR db);
-
 };
 
 END_GRIDS_NAMESPACE

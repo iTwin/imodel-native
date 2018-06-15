@@ -2269,7 +2269,7 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
     /////////////////////////////////////////////////////////////
     ASSERT_EQ(0, sketchGrid->MakeAxesIterator().BuildIdList<DgnElementId>().size()) << "new sketch grid should contain no elements";
 
-    Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
+    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(db);
     Grids::GeneralGridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert(defModel, *sketchGrid);
 
     ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create sketch grid axis";
@@ -2461,7 +2461,7 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     SketchGridPtr grid = SketchGrid::Create (*m_model, m_model->GetModeledElementId(), "SketchGrid-1", 0.0, 10.0);
     BuildingLocks_LockElementForOperation(*grid.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     grid->Insert ();
-    GeneralGridAxisPtr axis1 = GeneralGridAxis::CreateAndInsert (db.GetDictionaryModel (), *grid);
+    GeneralGridAxisPtr axis1 = GeneralGridAxis::CreateAndInsert (BuildingUtils::GetGroupInformationModel(db), *grid);
 
     /////////////////////////////////////////////////////////////
     // Check if invalid grid plane surfaces can't be added to sketch grid
@@ -2946,7 +2946,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     ASSERT_TRUE(sketchGrid->Insert().IsValid()) << "Failed to insert sketch grid";
     db.SaveChanges();
 
-    Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
+    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(db);
     Grids::GridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert(defModel, *sketchGrid);
 
     ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create sketch grid axis";
@@ -3239,7 +3239,7 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     /////////////////////////////////////////////////////////////
     // Use Create method to create grid axis
     /////////////////////////////////////////////////////////////
-    Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
+    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(db);
     Grids::GridAxisPtr gridAxis0 = GeneralGridAxis::Create(defModel, *grid);
 
     ASSERT_TRUE(gridAxis0.IsValid()) << "Failed to create grid axis";
@@ -3356,7 +3356,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     BuildingLocks_LockElementForOperation(*grid.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
 
-    Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
+    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(db);
     Grids::GeneralGridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert(defModel, *grid);
     ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create and insert grid axis";
 

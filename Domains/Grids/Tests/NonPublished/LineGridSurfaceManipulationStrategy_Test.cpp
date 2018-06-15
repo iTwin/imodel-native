@@ -70,7 +70,7 @@ TEST_F(LineGridSurfaceManipulationStrategyTestFixture, ModifyExisting)
     BuildingLocks_LockElementForOperation(*grid.get(), BeSQLite::DbOpcode::Insert, "SketchGrid :  Insert for LineGridSurfacePlacementStrategy_Test");
     ASSERT_TRUE(grid->Insert().IsValid());
 
-    Dgn::DefinitionModelCR defModel = GetDgnDb().GetDictionaryModel();
+    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(GetDgnDb());
     GridAxisPtr axis = GeneralGridAxis::CreateAndInsert(defModel, *grid);
     ASSERT_TRUE(axis.IsValid());
 
