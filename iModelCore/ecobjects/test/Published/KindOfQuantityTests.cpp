@@ -363,6 +363,25 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_EQ(1, presFormatStrings.size());
     EXPECT_STRCASEEQ("f:AmerFI", presFormatStrings[0].c_str());
     }
+    {
+    persUnitName.clear();
+    presFormatStrings.clear();
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(fi8)", presFUSes, schema));
+    EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
+    EXPECT_EQ(1, presFormatStrings.size());
+    EXPECT_STRCASEEQ("f:AmerFI", presFormatStrings[0].c_str());
+    }
+    {
+    persUnitName.clear();
+    presFormatStrings.clear();
+    presFUSes.clear();
+    presFUSes.push_back("IN(fi8)");
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "IN", presFUSes, schema));
+    EXPECT_STRCASEEQ("u:IN", persUnitName.c_str());
+    EXPECT_EQ(1, presFormatStrings.size());
+    EXPECT_STRCASEEQ("f:AmerFI", presFormatStrings[0].c_str());
+    }
     }
 
 //--------------------------------------------------------------------------------------
@@ -1702,6 +1721,41 @@ TEST_F(KindOfQuantityUpgradeTest, ec31_IncompatibleFUSPresentationUnitAndFormat)
     KindOfQuantityCP koq = schema->GetKindOfQuantityCP("LENGTH_SHORT");
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
     NamedFormatCP format = koq->GetDefaultPresentationFormat();
+    EXPECT_TRUE(format->HasCompositeMajorUnit());
+    EXPECT_STREQ("FT", format->GetCompositeMajorUnit()->GetName().c_str());
+    EXPECT_TRUE(format->HasCompositeMiddleUnit());
+    EXPECT_STREQ("IN", format->GetCompositeMiddleUnit()->GetName().c_str());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                06/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityUpgradeTest, ec31_formatWithMutipleUnitsButOnlyOneInputUnitShouldUpgradeProperly)
+    {
+    SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="Test"  persistenceUnit="FT(AmerFI8)" presentationUnits="IN(AmerFI8)" relativeError="0.6"/>
+            <KindOfQuantity typeName="Test1"  persistenceUnit="FT(AmerFI8)" relativeError="0.6"/>
+        </ECSchema>)xml");
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    DeserializeSchema(schema, *schemaContext, schemaItem);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(schema->Validate());
+
+    KindOfQuantityCP koq = schema->GetKindOfQuantityCP("Test");
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    NamedFormatCP format = koq->GetDefaultPresentationFormat();
+    EXPECT_TRUE(format->HasCompositeMajorUnit());
+    EXPECT_STREQ("FT", format->GetCompositeMajorUnit()->GetName().c_str());
+    EXPECT_TRUE(format->HasCompositeMiddleUnit());
+    EXPECT_STREQ("IN", format->GetCompositeMiddleUnit()->GetName().c_str());
+
+    koq = schema->GetKindOfQuantityCP("Test1");
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    format = koq->GetDefaultPresentationFormat();
     EXPECT_TRUE(format->HasCompositeMajorUnit());
     EXPECT_STREQ("FT", format->GetCompositeMajorUnit()->GetName().c_str());
     EXPECT_TRUE(format->HasCompositeMiddleUnit());

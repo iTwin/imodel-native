@@ -409,7 +409,13 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         }
     // Add persistence format if we have one and we also don't have any presentation units. This can only happen for < 3.2
     if (nullptr != persistenceFormat && m_presentationFormats.empty())
-        AddPresentationFormatSingleUnitOverride(*persistenceFormat, persistencePrecision, GetPersistenceUnit());
+        {
+        // Upgrading a fus that specifies an input unit. Just remove it as long as it is compatible
+        if (persistenceFormat->HasCompositeMajorUnit() && ECUnit::AreCompatible(persistenceFormat->GetCompositeMajorUnit(), GetPersistenceUnit()))
+            AddPresentationFormatSingleUnitOverride(*persistenceFormat, persistencePrecision, nullptr);
+        else
+            AddPresentationFormatSingleUnitOverride(*persistenceFormat, persistencePrecision, GetPersistenceUnit());
+        }
 
     return SchemaReadStatus::Success;
     }
@@ -607,7 +613,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
             return ECObjectsStatus::Error;
             }
 
-        if (format->HasCompositeMajorUnit() && !Units::Unit::AreEqual(unit, format->GetCompositeMajorUnit()))
+        if (format->HasCompositeMajorUnit() && Units::Unit::AreCompatible(unit, format->GetCompositeMajorUnit()))
             {
             LOG.warningv("EC3.2 upgrade: Dropping the presentation input unit '%s' from FUS '%s' on KindOfQuantity '%s' because the format '%s' has a major unit that is not equal to the original FUS Unit '%s'.", 
                 descriptor, GetFullName().c_str(), format->GetFullName().c_str(), unit->GetFullName().c_str(), format->GetParentFormat()->GetFullName().c_str());
