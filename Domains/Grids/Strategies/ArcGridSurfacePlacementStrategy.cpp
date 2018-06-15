@@ -18,7 +18,7 @@ ArcGridSurfacePlacementStrategy::ArcGridSurfacePlacementStrategy
     BBS::ArcPlacementMethod arcPlacementStrategyType,
     Dgn::DgnDbR db
 )
-    : T_Super()
+    : T_Super(db)
     , m_manipulationStrategy(ArcGridSurfaceManipulationStrategy::Create(arcPlacementStrategyType, db))
     {
     BeAssert(m_manipulationStrategy.IsValid());

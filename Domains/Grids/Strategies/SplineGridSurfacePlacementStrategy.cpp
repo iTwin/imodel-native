@@ -17,7 +17,7 @@ SplineGridSurfacePlacementStrategy::SplineGridSurfacePlacementStrategy
 (
     SplinePlacementStrategyType strategyType,
     Dgn::DgnDbR db
-)   : T_Super()
+)   : T_Super(db)
     , m_manipulationStrategy(SplineGridSurfaceManipulationStrategy::Create(strategyType, db))
     {
     BeAssert(m_manipulationStrategy.IsValid() && "Manipulation strategy should be valid");
