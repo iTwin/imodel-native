@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "DataSourceAccount.h"
 #include "DataSourceBuffered.h"
+#include "DataSourceCached.h"
 #include "DataSourceManager.h"
 #include "include\DataSourceAccount.h"
 
@@ -59,7 +60,10 @@ bool DataSourceAccount::destroyAll(void)
             DataSourceService *cacheService = getDataSourceManager().getService(getCacheAccount()->getServiceName());
                                                             // Inform Service that Cache Account has been released
             if (cacheService)
+                {
                 cacheService->releaseAccount(getCacheAccount()->getAccountName());
+                CacheWriter::ShutdownCacheWriter();
+                }
 
             }
 
