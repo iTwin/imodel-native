@@ -1857,6 +1857,9 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
         cp = ClipVector::CreateFromCurveVector(*curvePtr,1e-8,1e-8);
 
         InsertMeshCuts(clippedMesh, vis, currentPoly, triangleBoxes, polyBox);
+
+		for (auto& prim : *cp)
+			prim->SetIsMask(true);
         clipPolys.push_back(cp);
         }
      bool ret = Process3dRegions(polyfaces, clippedMesh, clipPolys);
