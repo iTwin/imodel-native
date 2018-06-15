@@ -632,7 +632,7 @@ bool iModelBridge::Params::IsFileAssignedToBridge(BeFileNameCR fn) const
     if (nullptr == m_documentPropertiesAccessor) // if there is no checker assigned, then assume that this is a standalone converter. It converts everything fed to it.
         return true;
     return m_documentPropertiesAccessor->_IsFileAssignedToBridge(fn, m_thisBridgeRegSubKey.c_str());
-	}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson              08/17

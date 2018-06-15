@@ -2,10 +2,10 @@
 |
 |     $Source: iModelBridge/Fwk/Registry/iModelBridgeAssignMain.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "iModelBridgeRegistry.h"
+#include <iModelBridge/iModelBridgeRegistry.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 

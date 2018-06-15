@@ -17,7 +17,7 @@
 #include <Bentley/BeGetProcAddress.h>
 #include <Logging/bentleylogging.h>
 #include <iModelBridge/iModelBridgeBimHost.h>
-#include "Registry/iModelBridgeRegistry.h"
+#include <iModelBridge/iModelBridgeRegistry.h>
 #include "../iModelBridgeHelpers.h"
 #include "DgnDbServerClientUtils.h"
 #include <BentleyLog4cxx/log4cxx.h>
