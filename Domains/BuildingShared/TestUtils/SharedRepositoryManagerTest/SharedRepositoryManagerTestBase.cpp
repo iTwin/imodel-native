@@ -20,7 +20,7 @@ USING_NAMESPACE_BUILDING_SHARED
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void SharedRepositoryManagerTestBase::CreateSeedDb(WCharCP seedFileName, void(*RegisterDomainFunction)())
+void SharedRepositoryManagerTestBase::CreateSeedDb(WCharCP seedFileName, WCharCP appendedPath, void(*RegisterDomainFunction)())
     {
     DgnDbPtr dgnDbPtr;
     ScopedDgnHost host;
@@ -38,7 +38,7 @@ void SharedRepositoryManagerTestBase::CreateSeedDb(WCharCP seedFileName, void(*R
 
     BeSQLite::EC::ECDb::Initialize(temporaryDir, &applicationSchemaDir);
 
-    temporaryDir.AppendToPath(L"BuildingTests");
+    temporaryDir.AppendToPath(appendedPath);
     BeFileName::CreateNewDirectory(temporaryDir);
     
     (*RegisterDomainFunction)();
@@ -59,11 +59,11 @@ void SharedRepositoryManagerTestBase::CreateSeedDb(WCharCP seedFileName, void(*R
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Martynas.Saulius                06/18
 //---------------------------------------------------------------------------------------
-BeFileName SharedRepositoryManagerTestBase::GetSeedProjectPath()
+BeFileName SharedRepositoryManagerTestBase::BuildProjectPath(WCharCP seedFileName)
     {
     BeFileName seedPath;
     BeTest::GetHost().GetOutputRoot(seedPath);
-    seedPath.AppendToPath(PROJECT_SEED_NAME);
+    seedPath.AppendToPath(seedFileName);
     return seedPath;
     }
 
@@ -73,9 +73,10 @@ BeFileName SharedRepositoryManagerTestBase::GetSeedProjectPath()
 void SharedRepositoryManagerTestBase::SetUp()
     {
     BentleyApi::DgnClientFx::TestHelpers::DgnClientFxTests::SetUp();
-    BeFileName projectPath = GetProjectPath();
+    BeFileName projectPath = GetGivenProjectPath();
     projectPath.BeDeleteFile();
-    BeFileName::BeCopyFile(GetSeedProjectPath(), projectPath.c_str(), true);
+    CopyFile(projectPath);
+    //BeFileName::BeCopyFile(GetSeedProjectPath(), projectPath.c_str(), true);
 
     RegisterDomains();
 
@@ -91,17 +92,6 @@ void SharedRepositoryManagerTestBase::SetUp()
 void SharedRepositoryManagerTestBase::TearDown()
     {
     BentleyApi::DgnClientFx::TestHelpers::DgnClientFxTests::TearDown();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Martynas.Saulius                06/18
-//---------------------------------------------------------------------------------------
-BeFileName SharedRepositoryManagerTestBase::GetProjectPath() const
-    {
-    BeFileName projectPath;
-    BeTest::GetHost().GetOutputRoot(projectPath);
-    projectPath.AppendToPath(PROJECT_DEFAULT_NAME);
-    return projectPath;
     }
 
 //---------------------------------------------------------------------------------------
