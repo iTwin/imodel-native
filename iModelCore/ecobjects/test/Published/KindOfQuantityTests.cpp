@@ -451,6 +451,16 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
     koq->SetPersistenceUnit(*m_schema->GetUnitsContext().LookupUnit("u:M"));
     EXPECT_NE(nullptr, koq->GetDefaultPresentationFormat());
+    // Cannot add a format with a composite without specifying all units defined in the overrides
+    EXPECT_EQ(ECObjectsStatus::Error, koq->AddPresentationFormatByString("f:AmerFI[u:FT]", formatLookerUpper, unitLookerUpper));
+    }
+
+    {
+    CreateTestSchema(true);
+    m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
+    m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
+    koq->SetPersistenceUnit(*m_schema->GetUnitsContext().LookupUnit("u:M"));
+    EXPECT_NE(nullptr, koq->GetDefaultPresentationFormat());
     koq->AddPresentationFormatByString("f:DefaultRealU[u:M]", formatLookerUpper, unitLookerUpper);
     EXPECT_STRCASEEQ("DefaultRealU[u:M]", koq->GetDefaultPresentationFormat()->GetName().c_str());
     }
