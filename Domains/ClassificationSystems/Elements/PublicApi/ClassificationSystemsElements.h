@@ -10,9 +10,15 @@
 
 //__PUBLISH_SECTION_START__
 
+#include <DgnPlatform/DgnPlatformApi.h>
+#include <ClassificationSystems/Domain/ClassificationSystemsMacros.h>
+#include <BuildingShared/BuildingSharedApi.h>
+
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ClassificationSystem)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(Classification)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ClassificationGroup)
+
+#include "IClassified.h"
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 

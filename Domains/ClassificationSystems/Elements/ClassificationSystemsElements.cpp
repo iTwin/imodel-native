@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <ClassificationSystems/ClassificationSystemsApi.h>
+#include "PublicApi/ClassificationSystemsElements.h"
 
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
