@@ -8573,6 +8573,159 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* TFS#905749
+* @bsitest                                      Aidas.Kilinskas                06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfCalculatedProperty)
+    {
+    //set up data
+    ECRelationshipClassCP widgetHasGadgets = m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
+
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID",ECValue("Test1"));});
+    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
+    IECInstancePtr gadget3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget, *gadget1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget, *gadget2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget, *gadget3);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    CalculatedPropertiesSpecification* calcProp1 = new CalculatedPropertiesSpecification("CalculatedMyID", 1000, "this.MyID+\"Calculated\"");
+    ContentInstancesOfSpecificClassesSpecification* specificSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", m_gadgetClass->GetFullName(), false);
+    specificSpec->AddCalculatedProperty(*calcProp1);
+    contentRule->AddSpecification(*specificSpec);
+    CalculatedPropertiesSpecification* calcProp2 = new CalculatedPropertiesSpecification("CalculatedMyID", 1000, "this.MyID+\"Calculated\"");
+    ContentRelatedInstancesSpecification* relatedSpec = new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection::RequiredRelationDirection_Both, widgetHasGadgets->GetFullName(), m_gadgetClass->GetFullName());
+    relatedSpec->AddCalculatedProperty(*calcProp2);
+    contentRule->AddSpecification(*relatedSpec);
+    SelectedNodeInstancesSpecification* selectedSpec = new SelectedNodeInstancesSpecification();
+    CalculatedPropertiesSpecification* calcProp3 = new CalculatedPropertiesSpecification("CalculatedMyID", 1000, "this.MyID+\"Calculated\"");
+    selectedSpec->AddCalculatedProperty(*calcProp3);
+    contentRule->AddSpecification(*selectedSpec);
+
+    rules->AddPresentationRule(*contentRule);
+
+    KeySetPtr keys = KeySet::Create(bvector<IECInstancePtr>{widget, gadget1, gadget2, gadget3});
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *keys, nullptr, options.GetJson()).get();
+    ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
+    bvector<ContentDescriptor::Field*> fieldVectorCopy = descriptor->GetAllFields();
+    // hide all fields except CalculatedProperty_0
+    for (ContentDescriptor::Field const* field : fieldVectorCopy)
+        {
+        if (!field->GetName().Equals("CalculatedProperty_0"))
+            overridenDescriptor->RemoveField(field->GetName().c_str());
+        }
+    overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
+
+    // validate descriptor
+    EXPECT_EQ(1, overridenDescriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*overridenDescriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    RapidJsonValueCR values1 = contentSet.Get(0)->GetValues();
+    rapidjson::Document expectedValues1;
+    expectedValues1.Parse(R"({"CalculatedProperty_0": "Test1Calculated"})");
+    EXPECT_EQ(expectedValues1, values1)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values1);
+
+    RapidJsonValueCR values2 = contentSet.Get(1)->GetValues();
+    rapidjson::Document expectedValues2;
+    expectedValues2.Parse(R"({"CalculatedProperty_0": "Test2Calculated"})");
+    EXPECT_EQ(expectedValues2, values2)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* TFS#905749
+* @bsitest                                      Aidas.Kilinskas                06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfDisplayLabel)
+    {
+    ECRelationshipClassCP widgetHasGadgets = m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
+
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
+    IECInstancePtr gadget3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget, *gadget1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget, *gadget2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget, *gadget3);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* specificSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", m_gadgetClass->GetFullName(), false);
+    contentRule->AddSpecification(*specificSpec);
+    ContentRelatedInstancesSpecification* relatedSpec = new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection::RequiredRelationDirection_Both, widgetHasGadgets->GetFullName(), m_gadgetClass->GetFullName());
+    contentRule->AddSpecification(*relatedSpec);
+    SelectedNodeInstancesSpecification* selectedSpec = new SelectedNodeInstancesSpecification();
+    contentRule->AddSpecification(*selectedSpec);
+
+    rules->AddPresentationRule(*contentRule);
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, m_gadgetClass->GetFullName(), "MyID"));
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, m_widgetClass->GetFullName(), "MyID"));
+
+    KeySetPtr keys = KeySet::Create(bvector<IECInstancePtr>{widget, gadget1, gadget2, gadget3});
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *keys, nullptr, options.GetJson()).get();
+    ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
+    bvector<ContentDescriptor::Field*> fieldVectorCopy = descriptor->GetAllFields();
+    // hide all fields except DisplayLabel
+    for (ContentDescriptor::Field const* field : fieldVectorCopy)
+        {
+        if (!field->GetName().Equals("Gadget_Widget_MyID"))
+            overridenDescriptor->RemoveField(field->GetName().c_str());
+        }
+    overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
+
+    // validate descriptor
+    EXPECT_EQ(1, overridenDescriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*overridenDescriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    RapidJsonValueCR values1 = contentSet.Get(0)->GetValues();
+    rapidjson::Document expectedValues1;
+    expectedValues1.Parse(R"({"Gadget_Widget_MyID": "Test1"})");
+    EXPECT_EQ(expectedValues1, values1)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values1);
+
+    RapidJsonValueCR values2 = contentSet.Get(1)->GetValues();
+    rapidjson::Document expectedValues2;
+    expectedValues2.Parse(R"({"Gadget_Widget_MyID": "Test2"})");
+    EXPECT_EQ(expectedValues2, values2)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMergedField)
