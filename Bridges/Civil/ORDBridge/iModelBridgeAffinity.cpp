@@ -50,6 +50,15 @@ USING_NAMESPACE_BENTLEY_ORDBRIDGE
 extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
     WCharCP affinityLibraryPath, WCharCP sourceFileName)
     {
+    affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::None;
+    BentleyApi::BeFileName sourceFile(sourceFileName);
+    BentleyApi::BeFileName lowercaseSourceFile(sourceFile.ToLower().c_str());
+    if (!lowercaseSourceFile.EndsWith(L".dgn"))
+        return;
+
+    if (lowercaseSourceFile.EndsWith(L".i.dgn"))
+        return;
+
     BentleyApi::BeFileName originalPath(::_wgetenv(L"PATH"));
 
     BentleyApi::BeFileName dirPath(BentleyApi::BeFileName::DevAndDir, affinityLibraryPath);
@@ -70,8 +79,6 @@ extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize,
     path.append(L";");
     path.append(::_wgetenv(L"PATH"));
     _wputenv(path.c_str());    
-
-    affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::None;
 
     DgnV8Api::DgnPlatformLib::Host* threadHost = nullptr;
 
