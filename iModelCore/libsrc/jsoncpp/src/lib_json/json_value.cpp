@@ -2,7 +2,7 @@
 |
 |     $Source: src/lib_json/json_value.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // Copyright 2007-2010 Baptiste Lepilleur
@@ -276,9 +276,7 @@ Value::UInt64 Value::asUInt64(UInt64 defaultVal) const
         {
         UInt64 val = defaultVal;
         auto fmt = (value_.string_[0] == '0' && (value_.string_[1] == 'X' || value_.string_[1] == 'x')) ? "%" SCNx64 : "%" SCNu64;
-        int stat = sscanf(value_.string_, fmt, &val);
-        BeAssert(stat == 1);
-        UNUSED_VARIABLE(stat);;
+        sscanf(value_.string_, fmt, &val);
         return val;
         }
    }
