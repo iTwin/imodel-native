@@ -56,6 +56,8 @@ struct IScalableMeshSourceCreatorWorker : public IScalableMeshSourceCreator
         BENTLEY_SM_IMPORT_EXPORT StatusInt                    ProcessMeshTask(BeXmlNodeP pXmlTaskNode) const;
 
         BENTLEY_SM_IMPORT_EXPORT StatusInt                    ProcessStitchTask(BeXmlNodeP pXmlTaskNode) const;
+
+        BENTLEY_SM_IMPORT_EXPORT StatusInt                    ProcessFilterTask(BeXmlNodeP pXmlTaskNode) const;        
                 
     };
 

@@ -334,11 +334,11 @@ void TaskScheduler::Start()
 
     
     
-    bool isThereTaskAvaialble = true;
+    bool isThereTaskAvailable = true;
 
-    while (isThereTaskAvaialble)
+    while (isThereTaskAvailable)
         { 
-        isThereTaskAvaialble = false;
+        isThereTaskAvailable = false;
 
         BeDirectoryIterator dirIter(m_taskFolderName);
 
@@ -349,7 +349,7 @@ void TaskScheduler::Start()
             {                                
             if (isDir == false && 0 == name.GetExtension().CompareTo(L"xml"))
                 {
-                isThereTaskAvaialble = true;
+                isThereTaskAvailable = true;
 
                 struct _stat64i32 buffer;
 
@@ -371,6 +371,16 @@ void TaskScheduler::Start()
 
             dirIter.ToNext();
             }                   
+
+        if (!isThereTaskAvailable)
+            {
+            StatusInt status = GetSourceCreatorWorker()->ExecuteNextTaskInTaskPlan();        
+            
+            if (status == ERROR)
+                break;
+
+            isThereTaskAvailable = true;
+            }
         }
 
     m_sourceCreatorWorkerPtr = nullptr;
@@ -631,6 +641,10 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
 
             assert(status == SUCCESS);
 
+            status = creatorWorkerPtr->CreateTaskPlan();
+
+            assert(status == SUCCESS);
+            
 /*
 smFileName
 

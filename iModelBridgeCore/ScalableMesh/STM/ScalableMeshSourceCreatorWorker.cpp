@@ -25,6 +25,11 @@ StatusInt IScalableMeshSourceCreatorWorker::CreateMeshTasks() const
     return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateMeshTasks();
     }
 
+StatusInt IScalableMeshSourceCreatorWorker::CreateTaskPlan() const
+    {
+    return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateTaskPlan();
+    }
+
 StatusInt IScalableMeshSourceCreatorWorker::ExecuteNextTaskInTaskPlan() const
     {
     return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->ExecuteNextTaskInTaskPlan();
@@ -39,6 +44,12 @@ StatusInt IScalableMeshSourceCreatorWorker::ProcessStitchTask(BeXmlNodeP pXmlTas
     {
     return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->ProcessStitchTask(pXmlTaskNode);
     }
+
+StatusInt IScalableMeshSourceCreatorWorker::ProcessFilterTask(BeXmlNodeP pXmlTaskNode) const
+    {
+    return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->ProcessFilterTask(pXmlTaskNode);
+    }
+
 
 IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(const WChar*  filePath,
                                                                        StatusInt&      status)
@@ -66,6 +77,7 @@ IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(con
 
     return pCreatorWorker.get();
 }
+
 
 IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(const IScalableMeshPtr& scmPtr,
                                                                              StatusInt&              status)
@@ -214,30 +226,31 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateStitchTasks(uint32_t res
 
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateFilterTasks(uint32_t resolutionInd)
-{
-#if 0
+    {
     BeFileName taskDirectory(m_scmFileName);
 
     taskDirectory = taskDirectory.GetDirectoryName();
 
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
-    bvector<uint64_t> nodesToMesh;
+    bvector<SMPointIndexNode<DPoint3d, DRange3d>*> nodesToFilter;
 
-    wchar_t stringBuffer[100000];
+    wchar_t stringBuffer[100000];    
 
-    pDataIndex->Mesh(&nodesToMesh);
+    pDataIndex->Filter(resolutionInd, &nodesToFilter);
 
-    for (auto& nodeId : nodesToMesh)
+    for (auto& meshNode : nodesToFilter)
     {
         BeFileName meshTaskFile(taskDirectory);
 
-        swprintf(stringBuffer, L"Mesh%zi.xml", nodeId);
+        uint64_t nodeId = meshNode->GetBlockID().m_integerID;
+
+        swprintf(stringBuffer, L"Filter%zi.xml", nodeId);
         meshTaskFile.AppendString(stringBuffer);
 
         BeXmlDomPtr xmlDomPtr(BeXmlDom::CreateEmpty());
         BeXmlNodeP workerNode(xmlDomPtr->AddNewElement("workerTask", nullptr, nullptr));
-        workerNode->AddAttributeStringValue("type", "mesh");
+        workerNode->AddAttributeStringValue("type", "filter");
 
         BeXmlNodeP tileNode(xmlDomPtr->AddNewElement("tile", nullptr, workerNode));
         tileNode->AddAttributeUInt64Value("id", nodeId);
@@ -246,10 +259,10 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateFilterTasks(uint32_t res
 
         BeXmlStatus status = xmlDomPtr->ToFile(meshTaskFile, toStrOption, BeXmlDom::FILE_ENCODING_Utf8);
         assert(status == BEXML_Success);
-    }
-#endif
+        }
+
     return SUCCESS;
-}
+    }
 
 
 
@@ -288,6 +301,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
     return SUCCESS;    
     }
 
+
 StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP pXmlTaskNode)
     {
     BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
@@ -323,6 +337,40 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
     return SUCCESS;
     }
 
+
+StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP pXmlTaskNode)
+    {
+    BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
+
+    assert(pChildNode != nullptr);
+    assert(Utf8String(pChildNode->GetName()).CompareTo("tile") == 0);
+
+    uint64_t tileId;
+
+    BeXmlStatus xmlStatus = pChildNode->GetAttributeUInt64Value(tileId, "id");
+    assert(xmlStatus == BEXML_Success);
+    assert(pChildNode->GetNextSibling() == nullptr);
+
+    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
+
+    HPMBlockID blockID(tileId);
+
+    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false).GetPtr());
+
+    meshNode->Load();
+
+    assert(!meshNode->m_nodeHeader.m_arePoints3d);
+    
+    meshNode->Filter((int)meshNode->GetLevel(), nullptr);
+        
+    meshNode->SetDirty(true);
+
+    meshNode = nullptr;
+
+    return SUCCESS;
+    }
+
+
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTaskPlan()
     {        
     BeXmlDomPtr xmlDomPtr(BeXmlDom::CreateEmpty());
@@ -331,13 +379,13 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTaskPlan()
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());    
     uint32_t nbRes = (uint32_t)pDataIndex->GetDepth();
 
-    for (uint32_t resInd = nbRes; resInd > 0; resInd)
+    for (uint32_t resInd = nbRes; resInd > 0; resInd--)
         {        
         BeXmlNodeP stitchTaskNode(xmlDomPtr->AddNewElement("stitch", nullptr, taskPlanNode));
         stitchTaskNode->AddAttributeUInt32Value("res", resInd);
 
         BeXmlNodeP filterTaskNode(xmlDomPtr->AddNewElement("filter", nullptr, taskPlanNode));
-        filterTaskNode->AddAttributeUInt32Value("res", resInd);        
+        filterTaskNode->AddAttributeUInt32Value("res", resInd - 1);        
         }
 
     BeFileName taskPlanFileName;

@@ -55,6 +55,8 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         StatusInt                    ProcessMeshTask(BeXmlNodeP pXmlTaskNode);         
 
         StatusInt                    ProcessStitchTask(BeXmlNodeP pXmlTaskNode);
+
+        StatusInt                    ProcessFilterTask(BeXmlNodeP pXmlTaskNode);        
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

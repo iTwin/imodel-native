@@ -7468,7 +7468,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::PreFil
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter(int pi_levelToFilter)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter(int pi_levelToFilter, bvector<SMPointIndexNode<POINT, EXTENT>*>* pNodesToFilter)
     {
     if (!IsLoaded())
         Load();
@@ -7490,7 +7490,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                 if (pi_levelToFilter == -1 || (int)this->m_nodeHeader.m_level < pi_levelToFilter)
                     {
                     if (static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->NeedsFiltering())
-                        static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->Filter(pi_levelToFilter);
+                        static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->Filter(pi_levelToFilter, pNodesToFilter);
                     }
 
                 if (pi_levelToFilter == -1 || (int)this->m_nodeHeader.m_level == pi_levelToFilter)
@@ -7499,6 +7499,13 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
 
                     if (subNodePointsPtr->size() > 0)
                         {
+                        //If not null don't do any filtering, just return the nodes to filter.
+                        if (pNodesToFilter != nullptr)
+                            {
+                            pNodesToFilter->push_back(this);
+                            return;
+                            }
+
                         vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >> pSubNodes(1);
                         pSubNodes[0] = static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit);
 
@@ -7548,12 +7555,19 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                             this->m_parentOfAnUnspliteableNode = true;
         #endif
                         if (static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->NeedsFiltering())
-                            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->Filter(pi_levelToFilter);
+                            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->Filter(pi_levelToFilter, pNodesToFilter);
                         }
                     }
 
                 if ((pi_levelToFilter == -1 || this->m_nodeHeader.m_level == pi_levelToFilter) && (this->m_nodeHeader.m_level > 0 || NeedsFiltering()))
                     {
+                    //If not null don't do any filtering, just return the nodes to filter.
+                    if (pNodesToFilter != nullptr)
+                        {
+                        pNodesToFilter->push_back(this);
+                        return;
+                        }
+                        
                     vector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> subNodes(GetNumberOfSubNodesOnSplit());
                     for (size_t indexNodes = 0 ; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
                         subNodes[indexNodes] = static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_apSubNodes[indexNodes]);
@@ -8280,7 +8294,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::GatherCoun
  Filter
  Filter the data.
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::Filter(int pi_levelToFilter)
+template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::Filter(int pi_levelToFilter, bvector<SMPointIndexNode<POINT, EXTENT>*>* pNodesToFilter)
     {
     HINVARIANTS;
 
@@ -8299,7 +8313,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::Filter(int
                         m_pRootNode->PreFilter ();
                         }
 
-                    m_pRootNode->Filter(pi_levelToFilter);
+                    m_pRootNode->Filter(pi_levelToFilter, pNodesToFilter);
                     }
                 catch (...)
                     {

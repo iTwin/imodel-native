@@ -554,7 +554,7 @@ public:
      Initiates the filtering of the node.
      The filtering is recursive and will call sub-nodes filtering.
     -----------------------------------------------------------------------------*/
-    virtual void Filter(int pi_levelToFilter = -1);    
+    virtual void Filter(int pi_levelToFilter = -1, bvector<SMPointIndexNode<POINT, EXTENT>*>* pNodesToFilter = nullptr);
 
     /**----------------------------------------------------------------------------
      Initiates a post-filtering of the node. This is called after calling the
@@ -1365,7 +1365,7 @@ public:
      node post-filtering then global post-filtering.
 
     -----------------------------------------------------------------------------*/
-    BENTLEY_SM_EXPORT virtual void        Filter(int pi_levelToFilter);
+    BENTLEY_SM_EXPORT virtual void        Filter(int pi_levelToFilter, bvector<SMPointIndexNode<POINT, EXTENT>*>* nodesToFilter = nullptr);
 
 
     /**----------------------------------------------------------------------------
