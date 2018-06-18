@@ -190,9 +190,6 @@ LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeo
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeJsonCpp$(stlibext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)Units$(libext)
 
-%ifdef BuildCGJsonValueBuilder
-LINKER_LIBRARIES            + d:/topaz1/out/Winx64/BuildContexts/DgnPlatform/SdkSources/MobileDgnSdk-Winx64/lib/Winx64/BeJsonCpp.lib
-%endif
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
