@@ -49,6 +49,7 @@ class RequestHandler
         FAKESERVER_EXPORT Response MultiLocksInfo(Request req);
         FAKESERVER_EXPORT Response CodesInfo(Request req);
         FAKESERVER_EXPORT BeFileName GetDbPath();
+        FAKESERVER_EXPORT BeFileName GetServerPath() {return BeFileName(serverPath);}
 
         FAKESERVER_EXPORT void CheckDb();
         FAKESERVER_EXPORT void CreateTables(BentleyB0200::BeSQLite::Db *m_db);

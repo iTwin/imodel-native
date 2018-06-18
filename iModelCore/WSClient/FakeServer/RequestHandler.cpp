@@ -152,7 +152,6 @@ void RequestHandler::CheckDb()
     {
     BentleyB0200::BeSQLite::Db m_db;
     BeFileName dbPath = GetDbPath();
-
     if (dbPath.DoesPathExist())
         {
         if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
