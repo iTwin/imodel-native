@@ -1168,18 +1168,31 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
     if (prop == nullptr)
         {
-        LOG.warningv("Found UnitSpecification custom attribute on a container which is not a property, removing.  Container is %s.", container.GetContainerName());
+        LOG.warningv("Found UnitSpecification or DisplayUnitSpecification custom attribute on a container which is not a property, removing.  Container is %s.", container.GetContainerName());
         removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
         return ECObjectsStatus::Success;
         }
 
     Unit oldUnit;
+    ECUnitCP newUnit = nullptr;
     if(!Unit::GetUnitForECProperty(oldUnit, *prop))
         {
-        Utf8String fullName = schema.GetFullSchemaName();
-        LOG.errorv("The property %s:%s.%s has a UnitSpecification but it does not resolve to a unit.", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str());
-        removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
-        return ECObjectsStatus::Success;
+        auto koq = prop->GetKindOfQuantity();
+        if (nullptr == koq)
+            {
+            Utf8String fullName = schema.GetFullSchemaName();
+            LOG.warningv("The property %s:%s.%s has a UnitSpecification or DisplayUnitSpecification but the persistence unit cannot be resloved.  Dropping units information.", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str());
+            removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
+            return ECObjectsStatus::Success;
+            }
+        // Base property has already been converted and this property just has a DisplayUnitSpecification applied
+        newUnit = koq->GetPersistenceUnit();
+        if (nullptr == newUnit)
+            {
+            Utf8String fullName = schema.GetFullSchemaName();
+            LOG.errorv("The property %s:%s.%s has a KOQ %s:%s that does not have a unit, failing conversion.  ", fullName.c_str(), prop->GetClass().GetName(), prop->GetName(), koq->GetSchema().GetName(), koq->GetName());
+            return ECObjectsStatus::Error;
+            }
         }
 
     if (nullptr == context)
@@ -1206,13 +1219,16 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         return ECObjectsStatus::SchemaNotFound;
         }
 
-    Utf8CP ecName = Units::UnitNameMappings::TryGetECNameFromOldName(oldUnit.GetName());
+    if (nullptr == newUnit)
+        {
+        Utf8CP ecName = Units::UnitNameMappings::TryGetECNameFromOldName(oldUnit.GetName());
 
-    Utf8String schemaName;
-    Utf8String name;
-    ECClass::ParseClassName(schemaName, name, ecName);
+        Utf8String schemaName;
+        Utf8String name;
+        ECClass::ParseClassName(schemaName, name, ecName);
 
-    ECUnitCP newUnit = unitSchema->GetUnitCP(name.c_str());
+        newUnit = unitSchema->GetUnitCP(name.c_str());
+        }
     if (nullptr == newUnit)
         {
         Utf8String fullName = schema.GetFullSchemaName();

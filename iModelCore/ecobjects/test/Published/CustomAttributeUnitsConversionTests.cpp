@@ -20,8 +20,7 @@ struct UnitsCustomAttributesConversionTests : ECTestFixture
     {
     ECSchemaPtr     m_schema;
     void CreateTestSchema();
-    void SerializeAndCheck(ECSchemaPtr &outputSchema, ECSchemaPtr inputSchema, Utf8CP customAttributeName, Utf8CP customAttributeInMemory = "");
-    void SerializeAndCheck(ECSchemaPtr inputSchema, bvector<Utf8CP> customAttributeNames);
+    void SerializeAndCheck(ECSchemaPtr &outputSchema, ECSchemaPtr inputSchema, bvector<Utf8CP> customAttributeNames, bvector<Utf8CP> customAttributeNamesInMemory);
 
     //---------------------------------------------------------------------------------------//
     // Stores the format of the reference schema xml as a string
@@ -714,18 +713,20 @@ void UnitsCustomAttributesConversionTests::CreateTestSchema()
     }
 
 //---------------------------------------------------------------------------------------//
-// Serializes the schema and checks for the presence of Custom Attributes
+// Serializes the schema, checks for the presence/absence of strings in the serialized xml 
+// and that the schema can be loaded again
 // @bsimethod                             Prasanna.Prakash                       03/2016
 //+---------------+---------------+---------------+---------------+---------------+------//
-void UnitsCustomAttributesConversionTests::SerializeAndCheck(ECSchemaPtr &outputSchema, ECSchemaPtr inputSchema, Utf8CP customAttributeName, Utf8CP customAttributeInMemory)
+void UnitsCustomAttributesConversionTests::SerializeAndCheck(ECSchemaPtr &outputSchema, ECSchemaPtr inputSchema, bvector<Utf8CP> customAttributeNames, bvector<Utf8CP> customAttributeNamesInMemory)
     {
     Utf8String schemaXmlString;
     ASSERT_EQ(SchemaWriteStatus::Success, inputSchema->WriteToXmlString(schemaXmlString, ECVersion::V3_0))
            << "Cannot serialize the schema";
 
-    ASSERT_NE(Utf8String::npos, schemaXmlString.find(customAttributeName));
-    if (!Utf8String::IsNullOrEmpty(customAttributeInMemory))
-        ASSERT_EQ(Utf8String::npos, schemaXmlString.find(customAttributeInMemory));
+    for (auto customAttributeName : customAttributeNames)
+        ASSERT_NE(Utf8String::npos, schemaXmlString.find(customAttributeName));
+    for (auto inMemoryName : customAttributeNamesInMemory)
+        ASSERT_EQ(Utf8String::npos, schemaXmlString.find(inMemoryName));
 
     ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
 
@@ -734,113 +735,52 @@ void UnitsCustomAttributesConversionTests::SerializeAndCheck(ECSchemaPtr &output
     }
 
 //---------------------------------------------------------------------------------------//
-// Serializes the schema and checks for the presence of Custom Attributes
+// Tests that Custom Attributes are not lost due to the  'Attr' name swizzling we do to 
+// load CAs for classes which were marked as both CA and Struct in EC2 
 // @bsimethod                             Prasanna.Prakash                       03/2016
 //+---------------+---------------+---------------+---------------+---------------+------//
-void UnitsCustomAttributesConversionTests::SerializeAndCheck(ECSchemaPtr inputSchema, bvector<Utf8CP> customAttributeNames)
-    {
-    Utf8String schemaXmlString;
-    ASSERT_EQ(SchemaWriteStatus::Success, inputSchema->WriteToXmlString(schemaXmlString, ECVersion::V3_0))
-           << "Cannot serialize the schema";
-    
-    for (auto customAttributeName: customAttributeNames)
-        ASSERT_NE(Utf8String::npos, schemaXmlString.find(customAttributeName));
-    }
-
-//---------------------------------------------------------------------------------------//
-// Tests the IsUnitSystemSchema conversion at the schema level
-// @bsimethod                             Prasanna.Prakash                       03/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(UnitsCustomAttributesConversionTests, TestIsUnitSystemSchemaCustomAttributeConversion)
+TEST_F(UnitsCustomAttributesConversionTests, TestUnitsCustomAttributesAreNotLostOnRoundTrip)
     {
     CreateTestSchema();
 
     ASSERT_TRUE(m_schema->IsDefined("Unit_Attributes", "IsUnitSystemSchema"))
              << "IsUnitSystemSchema custom attribute was not read at schema level";
+    ASSERT_TRUE(m_schema->IsDefined("Unit_Attributes", "UnitSpecifications"))
+        << "UnitSpecifications custom attribute was not read at schema level";
+    ASSERT_TRUE(m_schema->GetClassP("TestClass")->GetPropertyP("PropertyA")->IsDefined("Unit_Attributes", "UnitSpecificationAttr"))
+        << "UnitSpecifications custom attribute was not read at property level";
+    ASSERT_TRUE(m_schema->GetClassP("TestClass")->GetPropertyP("PropertyB")->IsDefined("Unit_Attributes", "DisplayUnitSpecificationAttr"))
+        << "UnitSpecifications custom attribute was not read at schema level";
 
+    bvector<Utf8CP> stringsToFind;
+    // CustomAttribute Names
+    stringsToFind.push_back("IsUnitSystemSchema");
+    stringsToFind.push_back("UnitSpecifications");
+    stringsToFind.push_back("UnitSpecification");
+    stringsToFind.push_back("DisplayUnitSpecification");
+    // Property Names
+    stringsToFind.push_back("UnitSpecificationList");
+    stringsToFind.push_back("UnitName");
+    stringsToFind.push_back("KindOfQuantityName");
+    stringsToFind.push_back("DimensionName");
+    stringsToFind.push_back("DisplayUnitName");
+    stringsToFind.push_back("DisplayFormatString");
+
+    bvector<Utf8CP> stringsToNotFind;
+    stringsToNotFind.push_back("UnitSpecificationAttr");
+    stringsToNotFind.push_back("DisplayUnitSpecificationAttr");
     ECSchemaPtr schema;
-    SerializeAndCheck(schema, m_schema, "IsUnitSystemSchema");
+    SerializeAndCheck(schema, m_schema, stringsToFind, stringsToNotFind);
 
     ASSERT_TRUE(schema->IsDefined("Unit_Attributes", "IsUnitSystemSchema"))
              << "IsUnitSystemSchema custom attribute was not read at schema level";
-    }
-
-//---------------------------------------------------------------------------------------//
-// Tests the UnitSpecifications conversion at the schema level
-// @bsimethod                             Prasanna.Prakash                       03/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(UnitsCustomAttributesConversionTests, TestUnitSpecificationsCustomAttributeConversion)
-    {
-    CreateTestSchema();
-
-    ASSERT_TRUE(m_schema->IsDefined("Unit_Attributes", "UnitSpecifications"))
-             << "UnitSpecifications custom attribute was not read at schema level";
-
-    ECSchemaPtr schema;
-    SerializeAndCheck(schema, m_schema, "UnitSpecifications");
-
     ASSERT_TRUE(schema->IsDefined("Unit_Attributes", "UnitSpecifications"))
              << "UnitSpecifications custom attribute was not read at schema level";
-    }
-
-//---------------------------------------------------------------------------------------//
-// Tests the UnitSpecification conversion at the property level
-// @bsimethod                             Prasanna.Prakash                       03/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(UnitsCustomAttributesConversionTests, TestUnitSpecificationCustomAttributeConversion)
-    {
-    CreateTestSchema();
-
-    ASSERT_TRUE(m_schema->GetClassP("TestClass")->GetPropertyP("PropertyA")->IsDefined("Unit_Attributes", "UnitSpecificationAttr"))
-             << "UnitSpecifications custom attribute was not read at property level";
-
-    ECSchemaPtr schema;
-    SerializeAndCheck(schema, m_schema, "UnitSpecification", "UnitSpecificationAttr");
-
     ASSERT_TRUE(schema->GetClassP("TestClass")->GetPropertyP("PropertyA")->IsDefined("Unit_Attributes", "UnitSpecificationAttr"))
              << "UnitSpecifications custom attribute was not read at property level";
-    }
-
-//---------------------------------------------------------------------------------------//
-// Tests the DisplayUnitSpecification conversion at the property level
-// @bsimethod                             Prasanna.Prakash                       03/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(UnitsCustomAttributesConversionTests, TestDisplayUnitSpecificationCustomAttributeConversion)
-    {
-    CreateTestSchema();
-
-    ASSERT_TRUE(m_schema->GetClassP("TestClass")->GetPropertyP("PropertyB")->IsDefined("Unit_Attributes", "DisplayUnitSpecificationAttr"))
-             << "UnitSpecifications custom attribute was not read at schema level";
-
-    ECSchemaPtr schema;
-    SerializeAndCheck(schema, m_schema, "DisplayUnitSpecification", "DisplayUnitSpecificationAttr");
-
     ASSERT_TRUE(schema->GetClassP("TestClass")->GetPropertyP("PropertyB")->IsDefined("Unit_Attributes", "DisplayUnitSpecificationAttr"))
              << "UnitSpecifications custom attribute was not read at schema level";
     }
-
-//---------------------------------------------------------------------------------------//
-// Tests whether the ElementNames of the internal attributes defined under the BaseUnit 
-// Custom Attribute remains the same.
-// @bsimethod                             Prasanna.Prakash                       03/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(UnitsCustomAttributesConversionTests, TestInternalCustomAttributes)
-    {
-    CreateTestSchema();
-
-    ECSchemaPtr tempSchema;
-    bvector<Utf8CP> testCustomAttributes;
-    
-    testCustomAttributes.push_back("UnitSpecificationList");
-    testCustomAttributes.push_back("UnitName");
-    testCustomAttributes.push_back("KindOfQuantityName");
-    testCustomAttributes.push_back("DimensionName");
-    testCustomAttributes.push_back("DisplayUnitName");
-    testCustomAttributes.push_back("DisplayFormatString");
-
-    SerializeAndCheck(m_schema, testCustomAttributes);
-    }
-
 
 //---------------------------------------------------------------------------------------//
 //* @bsimethod                                Colin.Kerr                       07/2017
@@ -875,6 +815,81 @@ TEST_F(UnitsCustomAttributesConversionTests, OldUnitsWithKoqNameConflicts)
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
+    expectedRefSchemas.push_back("Units.01.00.00");
+    expectedRefSchemas.push_back("Formats.01.00.00");
+    verifyReferencedSchemas(*schema, expectedRefSchemas);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationIsRemovedWhenNoUnitSpecificationCanBeFound)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+            <ECClass typeName="Pipe" displayLabel="A generic pipe" isDomainClass="True">
+                <ECProperty propertyName="ShouldDrop" typeName="double">
+                    <ECCustomAttributes>
+                        <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+                            <DisplayFormatString>F4</DisplayFormatString>
+                            <DisplayUnitName>METRE_SQUARED</DisplayUnitName>
+                        </DisplayUnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECProperty propertyName="ShouldDrop2" typeName="double">
+                    <ECCustomAttributes>
+                        <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+                            <DisplayFormatString>F4</DisplayFormatString>
+                        </DisplayUnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECProperty propertyName="ShouldWork" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <DimensionName>M_PER_L3</DimensionName>
+                            <KindOfQuantityName>DENSITY</KindOfQuantityName>
+                            <UnitName>KILOGRAM_PER_METRE_CUBED</UnitName>
+                        </UnitSpecification>
+                        <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+                            <DisplayFormatString>F4</DisplayFormatString>
+                            <DisplayUnitName>BANANA_APPLE_JUICE</DisplayUnitName>
+                        </DisplayUnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+            <ECClass typeName="SuperPipe" displayLabel="A super pipe" isDomainClass="True">
+                <BaseClass>Pipe</BaseClass>
+                <ECProperty propertyName="ShouldWork" typeName="double">
+                    <ECCustomAttributes>
+                        <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+                            <DisplayFormatString>F4</DisplayFormatString>
+                            <DisplayUnitName>POUND_PER_GALLON</DisplayUnitName>
+                        </DisplayUnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Failed to convert schema";
+
+    auto koq = schema->GetClassCP("Pipe")->GetPropertyP("ShouldWork")->GetKindOfQuantity();
+    EXPECT_STREQ("KG_PER_CUB_M", koq->GetPersistenceUnit()->GetName().c_str());
+    EXPECT_FALSE(koq->HasPresentationFormats());
+    EXPECT_EQ(nullptr, schema->GetClassCP("Pipe")->GetPropertyP("ShouldDrop")->GetKindOfQuantity());
+    EXPECT_EQ(nullptr, schema->GetClassCP("Pipe")->GetPropertyP("ShouldDrop2")->GetKindOfQuantity());
+
+    koq = schema->GetClassCP("SuperPipe")->GetPropertyP("ShouldWork")->GetKindOfQuantity();
+    EXPECT_STREQ("KG_PER_CUB_M", koq->GetPersistenceUnit()->GetName().c_str());
+    EXPECT_TRUE(koq->HasPresentationFormats());
+
+    bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("Units.01.00.00");
     expectedRefSchemas.push_back("Formats.01.00.00");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
