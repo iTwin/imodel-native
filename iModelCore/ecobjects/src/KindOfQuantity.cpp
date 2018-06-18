@@ -403,7 +403,7 @@ static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR
             }
         Utf8String alias;
         Utf8String name;
-        ECClass::ParseClassName(alias, name, mappedName);
+        SchemaParseUtils::ParseName(alias, name, mappedName);
         formatName = ("f:" + name).c_str();
         }
 
@@ -420,7 +420,7 @@ ECObjectsStatus KindOfQuantity::ParseDescriptorAndAddRefs(Utf8StringR unitName, 
         return status;
 
     Utf8String alias;
-    ECClass::ParseClassName(alias, unitName, unitName);
+    SchemaParseUtils::ParseName(alias, unitName, unitName);
     SchemaKey key("Units", 1, 0, 0);
     auto unitsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
 

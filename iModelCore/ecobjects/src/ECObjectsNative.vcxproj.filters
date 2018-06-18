@@ -165,9 +165,6 @@
     <ClCompile Include="Format.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StandardFormatsHelper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -300,9 +297,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PrivateApi\ECObjects\StandardUnitsHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PrivateApi\ECObjects\StandardFormatsHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

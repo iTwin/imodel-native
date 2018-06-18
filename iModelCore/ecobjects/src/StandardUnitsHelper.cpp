@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
-
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 #define UNITS_SCHEMA_NAME "Units"
@@ -73,38 +72,6 @@ StandardUnitsSchemaHolderPtr StandardUnitsSchemaHolder::GetHolder()
 ECUnitCP StandardUnitsHelper::GetUnit(Utf8CP unitName)
     {
     return StandardUnitsSchemaHolder::GetSchema()->GetUnitCP(unitName);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 03/2018
-//--------------------------------------------------------------------------------------
-ECUnitCP StandardUnitsHelper::GetInvertedUnit(Utf8CP unitName)
-    {
-    return StandardUnitsSchemaHolder::GetSchema()->GetInvertedUnitCP(unitName);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 03/2018
-//--------------------------------------------------------------------------------------
-ECUnitCP StandardUnitsHelper::GetConstant(Utf8CP unitName) 
-    {
-    return StandardUnitsSchemaHolder::GetSchema()->GetConstantCP(unitName);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 03/2018
-//--------------------------------------------------------------------------------------
-PhenomenonCP StandardUnitsHelper::GetPhenomenon(Utf8CP phenomName)
-    {
-    return StandardUnitsSchemaHolder::GetSchema()->GetPhenomenonCP(phenomName);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 03/2018
-//--------------------------------------------------------------------------------------
-UnitSystemCP StandardUnitsHelper::GetUnitSystem(Utf8CP systemName)
-    {
-    return StandardUnitsSchemaHolder::GetSchema()->GetUnitSystemCP(systemName);
     }
 
 //--------------------------------------------------------------------------------------
