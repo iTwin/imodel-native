@@ -613,12 +613,15 @@ Utf8String SchemaParseUtils::MultiplicityToLegacyString(RelationshipMultiplicity
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Kyle.Abramowitz                   06/2018
 //---------------+---------------+---------------+---------------+---------------+-------
+// static
 Utf8String SchemaParseUtils::GetJsonFormatString(NamedFormatCR format, ECSchemaCR primarySchema)
     {
     Utf8String name;
     Nullable<int32_t> precision;
     bvector<Utf8String> unitNames;
     bvector<Nullable<Utf8String>> unitLabels;
+
+    // The name of a NamedFormat is a format string representing that NamedFormat.
     Formatting::Format::ParseFormatString(name, precision, unitNames, unitLabels, format.GetName());
     auto& parentSchema = format.GetParentFormat()->GetSchema();
     Utf8String qualifiedFormatName = parentSchema.GetName() + "." + name;
@@ -643,6 +646,43 @@ Utf8String SchemaParseUtils::GetJsonFormatString(NamedFormatCR format, ECSchemaC
         qualifiedFormatName += "]";
         }
     return qualifiedFormatName;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    06/2018
+//--------------------------------------------------------------------------------------
+// static 
+ECObjectsStatus SchemaParseUtils::ParseName(Utf8StringR alias, Utf8StringR itemName, Utf8StringCR stringToParse)
+    {
+    if (0 == stringToParse.length())
+        {
+        LOG.error("Failed to parse an alias and schema item name from a qualified name because the string is empty.");
+        return ECObjectsStatus::ParseError;
+        }
+
+    Utf8String::size_type colonIndex = stringToParse.find(':');
+    if (Utf8String::npos == colonIndex)
+        {
+        alias.clear();
+        itemName = stringToParse;
+        return ECObjectsStatus::Success;
+        }
+
+    if (stringToParse.length() == colonIndex + 1)
+        {
+        LOG.errorv("Failed to parse an alias and schema item name from the qualified name '%s' because the string ends with a colon. There must be characters after the colon.",
+            stringToParse.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    if (0 == colonIndex)
+        alias.clear();
+    else
+        alias = stringToParse.substr(0, colonIndex);
+
+    itemName = stringToParse.substr(colonIndex + 1);
+
+    return ECObjectsStatus::Success;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -54,19 +54,7 @@ Utf8StringCR ECUnit::GetFullName() const
 //--------------------------------------------------------------------------------------
 Utf8String ECUnit::GetQualifiedName(ECSchemaCR primarySchema) const
     {
-    Utf8String alias;
-    Utf8StringCR name = GetName();
-    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias(GetSchema(), alias)))
-        {
-        LOG.warningv ("warning: Cannot qualify an Unit name with an alias unless the schema containing the Unit is referenced by the primary schema."
-            "The name will remain unqualified.\n  Primary ECSchema: %s\n  Unit: %s\n ECSchema containing Unit: %s", primarySchema.GetName().c_str(), name.c_str(), GetSchema().GetName().c_str());
-        return name;
-        }
-
-    if (alias.empty())
-        return name;
-    else
-        return alias + ":" + name;
+    return SchemaParseUtils::GetQualifiedName(primarySchema, *this);
     }
 
 //--------------------------------------------------------------------------------------

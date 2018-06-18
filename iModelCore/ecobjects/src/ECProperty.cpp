@@ -683,7 +683,7 @@ ECObjectsStatus resolveKindOfQuantityType(KindOfQuantityCP& kindOfQuantity, Utf8
     // typeName may potentially be qualified so we must parse into an alias and short class name
     Utf8String alias;
     Utf8String kindOfQuantityName;
-    if (ECObjectsStatus::Success != KindOfQuantity::ParseName(alias, kindOfQuantityName, typeName))
+    if (ECObjectsStatus::Success != SchemaParseUtils::ParseName(alias, kindOfQuantityName, typeName))
         {
         LOG.warningv("Cannot resolve the type name '%s'.", typeName.c_str());
         return ECObjectsStatus::ParseError;
@@ -1216,7 +1216,7 @@ Utf8String PrimitiveECProperty::_GetTypeName (bool useFullName) const
         return SchemaParseUtils::PrimitiveTypeToString (m_primitiveType);
     if (useFullName)
         return ECJsonUtilities::FormatEnumerationName(*m_enumeration);
-    return ECEnumeration::GetQualifiedEnumerationName(this->GetClass().GetSchema(), *m_enumeration);
+    return SchemaParseUtils::GetQualifiedName<ECEnumeration>(this->GetClass().GetSchema(), *m_enumeration);
     }
 
 Utf8String PrimitiveECProperty::_GetTypeNameForXml(ECVersion ecXmlVersion) const
@@ -1232,7 +1232,7 @@ ECObjectsStatus ResolveEnumerationType(ECEnumerationCP& enumeration, Utf8StringC
     // typeName may potentially be qualified so we must parse into an alias and short class name
     Utf8String alias;
     Utf8String enumName;
-    ECObjectsStatus status = ECEnumeration::ParseEnumerationName(alias, enumName, typeName);
+    ECObjectsStatus status = SchemaParseUtils::ParseName(alias, enumName, typeName);
     if (ECObjectsStatus::Success != status)
         {
         LOG.warningv("Cannot resolve the type name '%s'.", typeName.c_str());
@@ -1908,7 +1908,7 @@ Utf8String PrimitiveArrayECProperty::_GetTypeName (bool useFullName) const
         return SchemaParseUtils::PrimitiveTypeToString (m_primitiveType);
     if (useFullName)
         return ECJsonUtilities::FormatEnumerationName(*m_enumeration);
-    return ECEnumeration::GetQualifiedEnumerationName(this->GetClass().GetSchema(), *m_enumeration);
+    return SchemaParseUtils::GetQualifiedName<ECEnumeration>(this->GetClass().GetSchema(), *m_enumeration);
     }
 
 /*---------------------------------------------------------------------------------**//**

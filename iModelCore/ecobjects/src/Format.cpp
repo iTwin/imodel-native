@@ -24,40 +24,24 @@ NamedFormat::NamedFormat(Utf8StringCR name, ECFormatCP format) : Formatting::For
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman                  02/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECFormat::SetSchema(ECSchemaCR schema)
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+Utf8String NamedFormat::GetQualifiedFormatString(ECSchemaCR primarySchema) const
     {
-    m_schema = &schema;
-    return ECObjectsStatus::Success;
-    }
+    Utf8String alias;
+    Utf8StringCR name = GetName();
+    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias(m_ecFormat->GetSchema(), alias)))
+        {
+        LOG.warningv ("warning: Cannot qualify a NamedFormat name with an alias unless the schema containing the ECFormat is referenced by the primary schema."
+            "The name will remain unqualified.\n  Primary ECSchema: %s\n  NamedFormat: %s\n ECSchema containing the parent ECFormat: %s", primarySchema.GetName().c_str(), name.c_str(), m_ecFormat->GetSchema().GetName().c_str());
+        return name;
+        }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman                  02/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-ECFormat::ECFormat(ECSchemaCR schema, Utf8StringCR name) : NamedFormat(name.c_str(), this), m_isDisplayLabelExplicitlyDefined(false), m_schema(&schema), m_fullName(schema.GetName() + ":" + name) {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  04/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECFormat::_ToJson(Json::Value& out, bool verbose) const
-    {
-    if (!T_Super::_ToJson(out, verbose))
-        return false;
-    if (!ToJsonInternal(out, true, verbose))
-        return false;
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-Utf8StringCR ECFormat::GetFullName() const
-    {
-    if (m_fullName.size() == 0)
-        m_fullName = GetSchema().GetName() + ":" + GetName();
-    return m_fullName;
+    if (alias.empty())
+        return name;
+    else
+        return alias + ":" + name;
     }
 
 //--------------------------------------------------------------------------------------
@@ -97,24 +81,64 @@ bool NamedFormat::_ToJson(Json::Value& out, bool verbose) const
     return true;
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    02/2018
-//--------------------------------------------------------------------------------------
-Utf8String NamedFormat::GetQualifiedName(ECSchemaCR primarySchema) const
-    {
-    Utf8String alias;
-    Utf8StringCR name = GetName();
-    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias(m_ecFormat->GetSchema(), alias)))
-        {
-        LOG.warningv ("warning: Cannot qualify a NamedFormat name with an alias unless the schema containing the ECFormat is referenced by the primary schema."
-            "The name will remain unqualified.\n  Primary ECSchema: %s\n  NamedFormat: %s\n ECSchema containing the parent ECFormat: %s", primarySchema.GetName().c_str(), name.c_str(), m_ecFormat->GetSchema().GetName().c_str());
-        return name;
-        }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman                  02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECFormat::ECFormat(ECSchemaCR schema, Utf8StringCR name) : NamedFormat(name.c_str(), this), m_isDisplayLabelExplicitlyDefined(false), m_schema(&schema), m_fullName(schema.GetName() + ":" + name) {}
 
-    if (alias.empty())
-        return name;
-    else
-        return alias + ":" + name;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman                  02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECFormat::SetSchema(ECSchemaCR schema)
+    {
+    m_schema = &schema;
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECFormat::_ToJson(Json::Value& out, bool verbose) const
+    {
+    if (!T_Super::_ToJson(out, verbose))
+        return false;
+    if (!ToJsonInternal(out, true, verbose))
+        return false;
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8StringCR ECFormat::GetFullName() const
+    {
+    if (m_fullName.size() == 0)
+        m_fullName = GetSchema().GetName() + ":" + GetName();
+    return m_fullName;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                   03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8StringCR ECFormat::GetDisplayLabel() const
+    {
+    return GetSchema().GetLocalizedStrings().GetFormatDisplayLabel(*this, GetInvariantDisplayLabel());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                   03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8StringCR ECFormat::GetDescription() const
+    {
+    return GetSchema().GetLocalizedStrings().GetFormatDescription(*this, GetInvariantDescription());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    06/2018
+//--------------------------------------------------------------------------------------
+Utf8String ECFormat::GetQualifiedName(ECSchemaCR primarySchema) const
+    {
+    return SchemaParseUtils::GetQualifiedName<ECFormat>(primarySchema, *this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -489,22 +513,6 @@ bool ECFormat::ToJsonInternal(Json::Value& outValue, bool standalone, bool inclu
     if (!Utf8String::IsNullOrEmpty(GetInvariantDescription().c_str()))
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
     return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Kyle.Abramowitz                   03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-Utf8StringCR ECFormat::GetDisplayLabel() const
-    {
-    return GetSchema().GetLocalizedStrings().GetFormatDisplayLabel(*this, GetInvariantDisplayLabel());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Kyle.Abramowitz                   03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-Utf8StringCR ECFormat::GetDescription() const
-    {
-    return GetSchema().GetLocalizedStrings().GetFormatDescription(*this, GetInvariantDescription());
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

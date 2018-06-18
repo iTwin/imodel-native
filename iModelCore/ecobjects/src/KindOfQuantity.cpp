@@ -73,59 +73,18 @@ Utf8StringCR KindOfQuantity::GetFullName() const
     return m_fullName;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    06/2018
+//--------------------------------------------------------------------------------------
 Utf8String KindOfQuantity::GetQualifiedName(ECSchemaCR primarySchema) const
     {
-    Utf8String alias;
-    Utf8StringCR name = GetName();
-    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias (GetSchema(), alias)))
-        {
-        LOG.warningv ("warning: Cannot qualify an KindOfQuantity name with an alias unless the schema containing the KindOfQuantity is referenced by the primary schema."
-            "The name will remain unqualified.\n  Primary ECSchema: %s\n  KindOfQuantity: %s\n ECSchema containing KindOfQuantity: %s", primarySchema.GetName().c_str(), name.c_str(), GetSchema().GetName().c_str());
-        return name;
-        }
-
-    if (alias.empty())
-        return name;
-    else
-        return alias + ":" + name;
+    return SchemaParseUtils::GetQualifiedName<KindOfQuantity>(primarySchema, *this);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
 ECObjectsStatus KindOfQuantity::SetDisplayLabel(Utf8CP value) {m_validatedName.SetDisplayLabel(value); return ECObjectsStatus::Success;}
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    02/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::ParseName(Utf8StringR alias, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse)
-    {
-    if (0 == stringToParse.length())
-        return ECObjectsStatus::ParseError;
-
-    Utf8String::size_type colonIndex = stringToParse.find(':');
-    if (Utf8String::npos == colonIndex)
-        {
-        alias.clear();
-        kindOfQuantityName = stringToParse;
-        return ECObjectsStatus::Success;
-        }
-
-    if (stringToParse.length() == colonIndex + 1)
-        return ECObjectsStatus::ParseError;
-
-    if (0 == colonIndex)
-        alias.clear();
-    else
-        alias = stringToParse.substr(0, colonIndex);
-
-    kindOfQuantityName = stringToParse.substr(colonIndex + 1);
-
-    return ECObjectsStatus::Success;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                12/2016
@@ -283,7 +242,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
                 mapped = Formatting::AliasMappings::TryGetAliasFromName(mapped);
                 if (nullptr == mapped)
                     {
-                    LOG.warningv("Dropping presentation format '%s' for KindOfQuantity '%s' because it could not be mapped to an old format", format.GetQualifiedName(GetSchema()).c_str(), GetFullName().c_str());
+                    LOG.warningv("Dropping presentation format '%s' for KindOfQuantity '%s' because it could not be mapped to an old format", format.GetQualifiedFormatString(GetSchema()).c_str(), GetFullName().c_str());
                     continue;
                     }
                 if (!first)
@@ -298,7 +257,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
                 {
                 if (!first)
                     presentationUnitString += ";";
-                presentationUnitString += format.GetQualifiedName(GetSchema());
+                presentationUnitString += format.GetQualifiedFormatString(GetSchema());
                 first = false;
                 }
             }
@@ -907,7 +866,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatInternal(NamedFormat format
     {
     if (format.HasCompositeMajorUnit() && !Units::Unit::AreCompatible(format.GetCompositeMajorUnit(), GetPersistenceUnit()))
         {
-        LOG.errorv("KoQ '%s' cannot add presentation format '%s' because its major unit is not compatible with this KoQ's persistence unit", GetFullName().c_str(), format.GetName().c_str());
+        LOG.errorv("KOQ '%s' cannot add presentation format '%s' because its major unit is not compatible with this KoQ's persistence unit", GetFullName().c_str(), format.GetName().c_str());
         return ECObjectsStatus::Error;
         }
     m_presentationFormats.emplace_back(format);
@@ -953,7 +912,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
     // Parent has no units and we don't provide any overrides
     if (!parent.HasCompositeMajorUnit() && (nullptr == unitsAndLabels || unitsAndLabels->empty()))
         {
-        LOG.errorv("KOQ '%s' cannot have a format with no composite units without adding unit overrides", GetFullName().c_str());
+        LOG.errorv("KOQ '%s' cannot have a format without composite units and no unit overrides.", GetFullName().c_str());
         return ECObjectsStatus::Error;
         }
 
@@ -1130,7 +1089,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatSingleUnitOverride(ECFormat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  06/2017
 //---------------------------------------------------------------------------------------
-Json::Value KindOfQuantity::GetPresentationsJson() const
+Json::Value KindOfQuantity::GetPresentationFormatsJson() const
     {
     Json::Value arrayObj(Json::arrayValue);
 

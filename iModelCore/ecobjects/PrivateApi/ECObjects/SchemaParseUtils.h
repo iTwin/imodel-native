@@ -285,6 +285,38 @@ public:
     ECOBJECTS_EXPORT static Utf8String ContainerTypeToString(CustomAttributeContainerType containerType);
     ECOBJECTS_EXPORT static Utf8String MultiplicityToLegacyString(RelationshipMultiplicity multiplicity);
     ECOBJECTS_EXPORT static Utf8String GetJsonFormatString(NamedFormatCR format, ECSchemaCR primarySchema);
+
+    //! Given a schema and a schema item, will return the fully qualified name.  If the schema item is part of the passed in schema, there
+    //! is no alias.  Otherwise, the item's schema must be a referenced schema in the passed in schema
+    //! @param[in]  primarySchema   The schema used to lookup the alias of the class's schema
+    //! @param[in]  schemaItem      The schema item whose schema should be searched for
+    //! @return Utf8String    The alias if the item's schema is not the primarySchema
+    template<typename T>
+    static Utf8String GetQualifiedName(ECSchemaCR primarySchema, T const& schemaItem)
+        {
+        Utf8String alias;
+        Utf8StringCR name = schemaItem.GetName();
+        if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias(schemaItem.GetSchema(), alias)))
+            {
+            NativeLogging::LoggingManager::GetLogger(L"ECObjectsNative")->warningv ("warning: Cannot qualify a SchemaItem name with an alias unless the schema containing the SchemaItem is referenced by the primary schema."
+                "The name will remain unqualified.\n  Primary ECSchema: %s\n  SchemaItem: %s\n ECSchema containing SchemaItem: %s", primarySchema.GetName().c_str(), name.c_str(), schemaItem.GetSchema().GetName().c_str());
+            return name;
+            }
+
+        if (alias.empty())
+            return name;
+        else
+            return alias + ":" + name;
+        }
+
+    //! Given a qualified schema item name, will parse out the schema's alias and the item name.
+    //!
+    //! If anything other than a qualified item name is provided it will it will be split on the first `:` found.
+    //! @param[out] alias       The alias of the schema
+    //! @param[out] className   The name of the class
+    //! @param[in]  qualifiedItemName  The qualified name of the item, in the format of ns:itemName
+    //! @return A status code indicating whether the qualified name was successfully parsed or not
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseName(Utf8StringR alias, Utf8StringR itemName, Utf8StringCR qualifiedItemName);
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

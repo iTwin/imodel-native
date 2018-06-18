@@ -361,9 +361,7 @@ struct KoqProxy final
                 return formats;
 
             for (NamedFormat const& format : m_koq->GetPresentationFormats())
-                {
-                formats.push_back(format.GetQualifiedName(m_koq->GetSchema()));
-                }
+                formats.push_back(format.GetQualifiedFormatString(m_koq->GetSchema()));
 
             return formats;
             }

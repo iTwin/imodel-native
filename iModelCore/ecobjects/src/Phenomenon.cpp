@@ -42,19 +42,7 @@ Utf8StringCR Phenomenon::GetFullName() const
 //--------------------------------------------------------------------------------------
 Utf8String Phenomenon::GetQualifiedName(ECSchemaCR primarySchema) const
     {
-    Utf8String alias;
-    Utf8StringCR name = GetName();
-    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias(GetSchema(), alias)))
-        {
-        LOG.warningv ("warning: Cannot qualify an Phenomenon name with an alias unless the schema containing the Phenomenon is referenced by the primary schema."
-            "The name will remain unqualified.\n  Primary ECSchema: %s\n  Phenomenon: %s\n ECSchema containing Phenomenon: %s", primarySchema.GetName().c_str(), name.c_str(), GetSchema().GetName().c_str());
-        return name;
-        }
-
-    if (alias.empty())
-        return name;
-    else
-        return alias + ":" + name;
+    return SchemaParseUtils::GetQualifiedName<Phenomenon>(primarySchema, *this);
     }
 
 //--------------------------------------------------------------------------------------

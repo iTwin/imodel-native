@@ -44,53 +44,12 @@ Utf8StringCR ECEnumeration::GetFullName () const
     return m_fullName;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+-------
-Utf8String ECEnumeration::GetQualifiedEnumerationName(ECSchemaCR primarySchema, ECEnumerationCR ecEnumeration)
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    06/2018
+//--------------------------------------------------------------------------------------
+Utf8String ECEnumeration::GetQualifiedName(ECSchemaCR primarySchema) const
     {
-    Utf8String alias;
-    Utf8StringCR enumName = ecEnumeration.GetName();
-    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias (ecEnumeration.GetSchema(), alias)))
-        {
-        LOG.warningv ("warning: Cannot qualify an ECEnumeration name with an alias unless the schema containing the ECEnumeration is referenced by the primary schema."
-            "The name will remain unqualified.\n  Primary ECSchema: %s\n  ECEnumeration: %s\n ECSchema containing ECEnumeration: %s", primarySchema.GetName().c_str(), enumName.c_str(), ecEnumeration.GetSchema().GetName().c_str());
-        return enumName;
-        }
-
-    if (alias.empty())
-        return enumName;
-    else
-        return alias + ":" + enumName;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR alias, Utf8StringR enumName, Utf8StringCR qualifiedEnumName)
-    {
-    if (0 == qualifiedEnumName.length())
-        return ECObjectsStatus::ParseError;
-
-    Utf8String::size_type colonIndex = qualifiedEnumName.find(':');
-    if (Utf8String::npos == colonIndex)
-        {
-        alias.clear();
-        enumName = qualifiedEnumName;
-        return ECObjectsStatus::Success;
-        }
-
-    if (qualifiedEnumName.length() == colonIndex + 1)
-        return ECObjectsStatus::ParseError;
-
-    if (0 == colonIndex)
-        alias.clear();
-    else
-        alias = qualifiedEnumName.substr(0, colonIndex);
-
-    enumName = qualifiedEnumName.substr(colonIndex + 1);
-
-    return ECObjectsStatus::Success;
+    return SchemaParseUtils::GetQualifiedName<ECEnumeration>(primarySchema, *this);
     }
 
 //---------------------------------------------------------------------------------------

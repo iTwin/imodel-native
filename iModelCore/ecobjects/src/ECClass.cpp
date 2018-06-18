@@ -53,15 +53,7 @@ ECClass::~ECClass ()
     
     m_propertyMap.clear();
 
-    m_defaultStandaloneEnabler = NULL;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECClass::GetName () const
-    {        
-    return m_validatedName.GetName();
+    m_defaultStandaloneEnabler = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -115,14 +107,6 @@ Utf8StringCR ECClass::GetDisplayLabel () const
     return GetSchema().GetLocalizedStrings().GetClassDisplayLabel(this, GetInvariantDisplayLabel());
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECClass::GetInvariantDisplayLabel() const
-    {
-    return m_validatedName.GetDisplayLabel();
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -130,14 +114,6 @@ ECObjectsStatus ECClass::SetDisplayLabel (Utf8StringCR displayLabel)
     {        
     m_validatedName.SetDisplayLabel (displayLabel.c_str());
     return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECClass::GetIsDisplayLabelDefined () const
-    {
-    return m_validatedName.IsDisplayLabelDefined();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2334,35 +2310,7 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
 // static
 ECObjectsStatus ECClass::ParseClassName(Utf8StringR alias, Utf8StringR className, Utf8StringCR qualifiedClassName)
     {
-    if (0 == qualifiedClassName.length())
-        {
-        LOG.error("Failed to parse an alias and class name from a qualified class name because the string is empty.");
-        return ECObjectsStatus::ParseError;
-        }
-        
-    Utf8String::size_type colonIndex = qualifiedClassName.find (':');
-    if (Utf8String::npos == colonIndex)
-        {
-        alias.clear();
-        className = qualifiedClassName;
-        return ECObjectsStatus::Success;
-        }
-
-    if (qualifiedClassName.length() == colonIndex + 1)
-        {
-        LOG.errorv("Failed to parse an alias and class name from the qualified class name '%s' because the string ends with a colon. There must be characters after the colon.",
-            qualifiedClassName.c_str());
-        return ECObjectsStatus::ParseError;
-        }
-
-    if (0 == colonIndex)
-        alias.clear();
-    else
-        alias = qualifiedClassName.substr (0, colonIndex);
-
-    className = qualifiedClassName.substr (colonIndex + 1);
-
-    return ECObjectsStatus::Success;
+    return SchemaParseUtils::ParseName(alias, className, qualifiedClassName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2371,18 +2319,7 @@ ECObjectsStatus ECClass::ParseClassName(Utf8StringR alias, Utf8StringR className
 // static
 Utf8String ECClass::GetQualifiedClassName(ECSchemaCR primarySchema, ECClassCR ecClass)
     {
-    Utf8String alias;
-    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias(ecClass.GetSchema(), alias)))
-        {
-        LOG.warningv ("warning: Cannot qualify an ECClass name with an alias unless the schema containing the ECClass is referenced by the primary schema."
-            "The class name will remain unqualified.\n  Primary ECSchema: %s\n  ECClass: %s\n ECSchema containing ECClass: %s", primarySchema.GetName().c_str(), ecClass.GetName().c_str(), ecClass.GetSchema().GetName().c_str());
-        return ecClass.GetName();
-        }
-
-    if (alias.empty())
-        return ecClass.GetName();
-    else
-        return alias + ":" + ecClass.GetName();
+    return SchemaParseUtils::GetQualifiedName<ECClass>(primarySchema, ecClass);
     }
     
 /*---------------------------------------------------------------------------------**//**

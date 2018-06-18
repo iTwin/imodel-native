@@ -1292,10 +1292,10 @@ public:
 //=======================================================================================
 struct ECEnumeration : NonCopyableClass
 {
-friend struct ECSchema;
-friend struct SchemaXmlWriter;
-friend struct SchemaXmlReaderImpl;
-friend struct SchemaJsonWriter;
+friend struct ECSchema; // needed for SetName() method
+friend struct SchemaXmlWriter; // needed for WriteXml() method
+friend struct SchemaXmlReaderImpl; // needed for ReadXml() method
+friend struct SchemaJsonWriter; // needed for the ToJson() method
 
 private:
     ECSchemaCR m_schema;
@@ -1337,75 +1337,48 @@ private:
     bool EnumeratorIsUnique(Utf8CP enumeratorName, Utf8CP enumeratorValue) const;
 
 public:
-    //! The ECSchema that this enumeration is defined in
-    ECSchemaCR GetSchema() const {return m_schema;}
-    //! The name of this Enumeration
-    Utf8StringCR GetName() const {return m_validatedName.GetName();}
-    //! The fully qualified name of this ECEnumeration in the format {SchemaName}:{EnumerationName}.
-    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
-    //! Given a schema and an enumeration, will return the fully qualified name.  If the enumeration is part of the passed in schema, there
-    //! is no alias.  Otherwise, the enumeration's schema must be a referenced schema in the passed in schema
-    //! @param[in]  primarySchema   The schema used to lookup the alias of the class's schema
-    //! @param[in]  ecEnumeration   The enumeration whose schema should be searched for
-    //! @return WString    The alias if the enumeration's schema is not the primarySchema
-    ECOBJECTS_EXPORT static Utf8String GetQualifiedEnumerationName(ECSchemaCR primarySchema, ECEnumerationCR ecEnumeration);
-    //! Given a qualified enum name, will parse out the schema's alias and the enum name.
-    //! @param[out] alias      The alias of the schema
-    //! @param[out] enumName    The name of the enum
-    //! @param[in]  qualifiedEnumName  The qualified name of the enum, in the format of ns:enumName
-    //! @return A status code indicating whether the qualified name was successfully parsed or not
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseEnumerationName(Utf8StringR alias, Utf8StringR enumName, Utf8StringCR qualifiedEnumName);
+    ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this enumeration is defined in
 
-    //! Gets the PrimitiveType of this ECEnumeration
-    PrimitiveType GetType() const {return m_primitiveType;}
-    //! Gets the name of the backing primitive type.
-    ECOBJECTS_EXPORT Utf8String GetTypeName() const;
+    void SetId(ECEnumerationId id) {BeAssert(!m_ecEnumerationId.IsValid()); m_ecEnumerationId = id;} //!< Intended to be called by ECDb or a similar system
+    ECEnumerationId GetId() const {BeAssert(HasId()); return m_ecEnumerationId;} //!< Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+    bool HasId() const {return m_ecEnumerationId.IsValid();}
+    
+    Utf8StringCR GetName() const {return m_validatedName.GetName();} //!< The name of this Enumeration
+    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const; //!< The full name of this ECEnumeration in the format {SchemaName}:{EnumerationName}.
+    //!< Gets a qualified name of the ECEnumeration, prefixed by the schema alias if it does not match the primary schema.
+    ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
 
-    //! Whether the display label is explicitly defined or not
-    bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();}
+    void SetDescription(Utf8CP value) {m_description = value;} //!< Sets the description of this ECEnumeration
+    ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Gets the description of this ECEnumeration.  Returns the localized description if one exists.
+    Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this ECEnumeration.
+
     //! Sets the display label of this ECEnumeration
-    ECOBJECTS_EXPORT void SetDisplayLabel(Utf8CP value);
+    ECOBJECTS_EXPORT void SetDisplayLabel(Utf8CP displayLabel);
     //! Gets the display label of this ECEnumeration.  If no display label has been set explicitly, it will return the name of the ECEnumeration
     ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
-    //! Gets the invariant display label for this ECEnumeration.
-    Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();}
+    Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();} //!< Gets the invariant display label for this ECEnumeration.
+    bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();} //!< Whether the display label is explicitly defined or not
 
-    //! Sets the description of this ECEnumeration
-    void SetDescription(Utf8CP value) {m_description = value;}
-    //! Gets the description of this ECEnumeration.  Returns the localized description if one exists.
-    ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
-    //! Gets the invariant description for this ECEnumeration.
-    Utf8StringCR GetInvariantDescription() const {return m_description;}
+    PrimitiveType GetType() const { return m_primitiveType; } //!< Gets the PrimitiveType of this ECEnumeration.
+    ECOBJECTS_EXPORT Utf8String GetTypeName() const; //!< Gets the name of the backing primitive type.
 
+    //! Sets the IsStrict flag to a given value. NonStrict enums will be treated as suggestions and not enforce values.
+    void SetIsStrict(bool value) { m_isStrict = value; }
     //! Gets the IsStrict flag of this enum. True means that values on properties will be enforced.
     bool GetIsStrict() const {return m_isStrict;}
-    //! Sets the IsStrict flag to a given value. NonStrict enums will be treated as suggestions and not enforce values.
-    void SetIsStrict(bool value) {m_isStrict = value;}
 
-    //!Creates a new enumerator at the end of this enumeration.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerator(ECEnumeratorP& enumerator, Utf8StringCR name, Utf8CP value);
-    //!Creates a new enumerator at the end of this enumeration.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerator(ECEnumeratorP& enumerator, Utf8StringCR name, int32_t value);
-    //! Finds the enumerator with the provided name, returns nullptr if none found.
-    ECOBJECTS_EXPORT ECEnumeratorP FindEnumeratorByName(Utf8CP name) const;
-    //! Finds the enumerator with the provided integer value, returns nullptr if none found.
-    ECOBJECTS_EXPORT ECEnumeratorP FindEnumerator(int32_t value) const;
-    //! Finds the enumerator with the provided string value, returns nullptr if none found.
-    ECOBJECTS_EXPORT ECEnumeratorP FindEnumerator(Utf8CP value) const;
-    //! Removes the provided enumerator from this enumeration
-    ECOBJECTS_EXPORT ECObjectsStatus DeleteEnumerator(ECEnumeratorCR enumerator);
-    //! Removes all enumerators in this enumeration
-    ECOBJECTS_EXPORT void Clear();
-    //! Get the enumerator list held by this object
-    EnumeratorIterable const& GetEnumerators() const {return m_enumeratorIterable;}
-    //! Get the amount of enumerators in this enumeration
-    size_t GetEnumeratorCount() const {return m_enumeratorList.size();}
+    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerator(ECEnumeratorP& enumerator, Utf8StringCR name, Utf8CP value); //!< Creates a new enumerator at the end of this enumeration.
+    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerator(ECEnumeratorP& enumerator, Utf8StringCR name, int32_t value); //!< Creates a new enumerator at the end of this enumeration.
 
-    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
-    ECEnumerationId GetId() const {BeAssert(HasId()); return m_ecEnumerationId;}
-    //! Intended to be called by ECDb or a similar system
-    void SetId(ECEnumerationId id) {BeAssert(!m_ecEnumerationId.IsValid()); m_ecEnumerationId = id;}
-    bool HasId() const {return m_ecEnumerationId.IsValid();}
+    EnumeratorIterable const& GetEnumerators() const { return m_enumeratorIterable; } //!< Get the enumerator list held by this object
+    size_t GetEnumeratorCount() const { return m_enumeratorList.size(); } //!< Get the amount of enumerators in this enumeration
+
+    ECOBJECTS_EXPORT ECEnumeratorP FindEnumeratorByName(Utf8CP name) const; //!< Finds the enumerator with the provided name, returns nullptr if none found.
+    ECOBJECTS_EXPORT ECEnumeratorP FindEnumerator(int32_t value) const; //!< Finds the enumerator with the provided integer value, returns nullptr if none found.
+    ECOBJECTS_EXPORT ECEnumeratorP FindEnumerator(Utf8CP value) const; //!< Finds the enumerator with the provided string value, returns nullptr if none found.
+
+    ECOBJECTS_EXPORT ECObjectsStatus DeleteEnumerator(ECEnumeratorCR enumerator); //!< Removes the provided enumerator from this enumeration    
+    ECOBJECTS_EXPORT void Clear(); //!< Removes all enumerators in this enumeration
 
     //! Write the Enumeration as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
@@ -1419,10 +1392,10 @@ public:
 //=======================================================================================
 struct KindOfQuantity : NonCopyableClass
 {
-friend struct ECSchema;
-friend struct SchemaXmlWriter;
-friend struct SchemaXmlReaderImpl;
-friend struct SchemaJsonWriter;
+friend struct ECSchema; // needed for SetName() method 
+friend struct SchemaXmlWriter; // needed for WriteXml() method
+friend struct SchemaXmlReaderImpl; // needed for ReadXml() method
+friend struct SchemaJsonWriter; // needed for the ToJson() method
 
 typedef bvector<bpair<ECUnitCP, Utf8CP>> UnitAndLabelPairs;
 private:
@@ -1480,51 +1453,55 @@ private:
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this kind of quantity is defined in.
 
+    void SetId(KindOfQuantityId id) { BeAssert(!m_kindOfQuantityId.IsValid()); m_kindOfQuantityId = id; } //!< Intended to be called by ECDb or a similar system
+    KindOfQuantityId GetId() const {BeAssert(HasId()); return m_kindOfQuantityId;} //!< Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+    bool HasId() const {return m_kindOfQuantityId.IsValid();}
+
     Utf8StringCR GetName() const {return m_validatedName.GetName();} //!< The name of this KindOfQuantity
-
-    //! The fully qualified name of this KindOfQuantity in the format {SchemaName}:{KindOfQuantityName}.
-    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
-    //! Given a qualified KindOfQuantity name, will parse out the schema's alias and the kind of quantity name.
-    //! @param[out] alias               The alias of the schema
-    //! @param[out] kindOfQuantityName  The name of the KindOfQuantity
-    //! @param[in]  stringToParse  The qualified name, in the format of {SchemaName}:{KindOfQuantityName}
-    //! @return A status code indicating whether the qualified name was successfully parsed or not
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseName(Utf8StringR alias, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse);
-
-    //! Gets a qualified name of the enumeration, prefixed by the schema alias if it does not match the primary schema.
+    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const; //!< The full name of this KindOfQuantity in the format {SchemaName}:{KindOfQuantityName}.
+    //! Gets a qualified name of the kind of quantity, prefixed by the schema alias if it does not match the primary schema.
     ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
-
-    //! Sets the display label of this KindOfQuantity
-    //! @param[in]  value  The new value to apply
-    ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8CP value);
-
-    //! Gets the invariant display label of this KindOfQuantity. If no display label has been set explicitly, it will return the name of the KindOfQuantity.
-    Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();}
-
-    //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
-    ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
-    bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();} //!< Whether the display label is explicitly defined or not
 
     //! Sets the description of this KindOfQuantity
     //! @param[in]  value  The new value to apply
     ECObjectsStatus SetDescription(Utf8CP value) {m_description = value; return ECObjectsStatus::Success;}
-    Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description of this KindOfQuantity.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Get the description of this KindOfQuantity
+    Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description of this KindOfQuantity.
+
+    //! Sets the display label of this KindOfQuantity
+    //! @param[in]  value  The new value to apply
+    ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8CP value);
+    //! Gets the display label of this KindOfQuantity.  If a display label has not been explicitly set, returns the name of the KindOfQuantity.
+    ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
+    //! Gets the invariant display label of this KindOfQuantity.  If a display label has not been explicitly set, returns the name of the KindOfQuantity.
+    Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();}
+    bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();} //!< Whether the display label is explicitly defined or not
 
     //! Sets the Precision used for persisting the information. A precision of zero indicates that a default will be used.
     //! @param[in]  value  The new value to apply
     void SetRelativeError(double value) {m_relativeError = value;}
     double GetRelativeError() const {return m_relativeError;}; //!< Gets the precision used for persisting the information. A precision of zero indicates that a default will be used.
-    ECOBJECTS_EXPORT ECObjectsStatus SetPersistenceUnit(ECUnitCR unit);
-    //! Gets the Unit of measurement used for persisting the information
-    ECUnitCP GetPersistenceUnit() const {return m_persistenceUnit;}
+
+    //! Given a string representating the name of a unit and a mapping function, adds the unit as the persistence unit if it is found
+    //! by the mapping function
+    //!
+    //! @param[in] unitName           The name of the unit to be added as a persistence unit
+    //! @param[in] nameToUnitMapper   Function that maps unit names to ECUnitCP
+    //! @return ECObjectsStatus::Success if successfully updates the persistence unit. Otherwise error codes
+    ECOBJECTS_EXPORT ECObjectsStatus AddPersistenceUnitByName(Utf8StringCR unitName, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper);
+    ECOBJECTS_EXPORT ECObjectsStatus SetPersistenceUnit(ECUnitCR unit); //!< Sets the provided ECUnit as the persistence unit.
+    ECUnitCP GetPersistenceUnit() const {return m_persistenceUnit;} //!< Gets the Unit of measurement used for persisting the information
+
     //! Constructs a NamedFormat and sets it as the default (First in the presentation format list).
     ECObjectsStatus SetDefaultPresentationFormat(ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, ECUnitCP inputUnitOverride = nullptr, Utf8CP labelOverride = nullptr)
         {return AddPresentationFormatSingleUnitOverride(parent, precisionOverride, inputUnitOverride, labelOverride, true);}
     //! Gets the default presentation format of this KindOfQuantity.
     NamedFormatCP GetDefaultPresentationFormat() const {return HasPresentationFormats() ? &m_presentationFormats[0] : GetOrCreateCachedPersistenceFormat();}
+    bvector<NamedFormat> const& GetPresentationFormats() const { return m_presentationFormats; } //!< Gets a list of all presentation formats available for this KoQ.
+    ECOBJECTS_EXPORT bvector<ECFormatCP> const GetReferencedFormats() const;
+    bool HasPresentationFormats() const { return m_presentationFormats.size() > 0; } //!< Returns true if one or more presentation formats exist
 
-    //! Adds NamedFormat to this KoQ's list of presentation formats. If the format has any units,
+    //! Adds a NamedFormat to this KoQ's list of presentation formats. If the format has any units,
     //! they must be compatible with the persistence unit and each other.
     //! @param[in]  parent              The format to base this override off of
     //! @param[in]  precisionOverride   Optionally specify an override for precision
@@ -1544,55 +1521,6 @@ public:
     //! @return ECObjectsStatus::Succcess if format is successfully added as a presentation format. Otherwise, ECObjectsStatus::Error.
     ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, ECUnitCP majorUnitOverride = nullptr, Utf8CP labelOverride = nullptr, bool isDefault = false);
 
-    //! Removes the specified presentation format.
-    ECOBJECTS_EXPORT void RemovePresentationFormat(NamedFormatCR fus);
-    //! Removes all presentation formats.
-    void RemoveAllPresentationFormats() {m_presentationFormats.clear();}
-    //! Gets a list of all presentation formats available for this KoQ.
-    bvector<NamedFormat> const& GetPresentationFormats() const {return m_presentationFormats;}
-    ECOBJECTS_EXPORT bvector<ECFormatCP> const GetReferencedFormats() const;
-    //! Returns true if one or more presentation formats exist
-    bool HasPresentationFormats() const {return m_presentationFormats.size() > 0;}
-
-    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
-    KindOfQuantityId GetId() const {BeAssert(HasId()); return m_kindOfQuantityId;}
-    //! Intended to be called by ECDb or a similar system
-    void SetId(KindOfQuantityId id) {BeAssert(!m_kindOfQuantityId.IsValid()); m_kindOfQuantityId = id;}
-    bool HasId() const {return m_kindOfQuantityId.IsValid();}
-
-    //! Return Json array of allowable presentation units.
-    ECOBJECTS_EXPORT Json::Value GetPresentationsJson() const;
-    //! Returns the Phenomenon supported by this KindOfQuantity.
-    //!
-    //! All Units within this KindOfQuantity must have the same Phenomenon.
-    ECOBJECTS_EXPORT PhenomenonCP GetPhenomenon() const;
-
-    //! Write the KindOfQuantity as a standalone schema child in the ECSchemaJSON format.
-    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
-    //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
-    ECOBJECTS_EXPORT bool ToJson(Json::Value& outValue, bool includeSchemaVersion = true) const {return ToJson(outValue, true, includeSchemaVersion);};
-   
-    //! Given an old EC3.1 persistence FUS descriptor as well as the semi-colon separated string of 
-    //! presentation FUS descriptors in the format: {unitName}({formatName}), it will extract and convert 
-    //! the persistence unit to a new unit name. If the persistence fus has a format, it will be added to the end of the
-    //! formatString that is returned
-    //!
-    //! @param[out] persUnitName    The qualified name of the persistence unit mapped to a unit name in the standard units schema
-    //! @param[out] formatStrings   List of presentation format strings representing format overrides. 
-    //! @param[in] persFus          The descriptor for the persistence FUS that is of the format for the old FUS descriptor, 
-    //!                             format: {unitName}({formatName}), where the format part is optional.
-    //! @param[in] presFuses        List of presentation FUS descriptors
-    //! @param[in] formatSchema     Reference to standard formats schema use to locate formats and verify if they have a composite or not
-    //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName 
-    //! if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
-    ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptors(Utf8StringR persUnitName, bvector<Utf8String>& formatStrings, Utf8CP persFus, bvector<Utf8CP> const& presFuses, ECSchemaCR formatSchema);
-    //! Given a string representating the name of a unit and a mapping function, adds the unit as the persistence unit if it is found
-    //! by the mapping function
-    //!
-    //! @param[in] unitName           The name of the unit to be added as a persistence unit
-    //! @param[in] nameToUnitMapper   Function that maps unit names to ECUnitCP
-    //! @return ECObjectsStatus::Success if successfully updates the persistence unit. Otherwise error codes
-    ECOBJECTS_EXPORT ECObjectsStatus AddPersistenceUnitByName(Utf8StringCR unitName, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper);
     //! Given a string representating a format string and a mapping function, adds the unit as the format as a presentation format if it is found
     //! by the mapping function
     //!
@@ -1601,6 +1529,35 @@ public:
     //! @param[in] nameToUnitMapper     Function that maps unit names to ECUnitCP
     //! @return ECObjectsStatus::Success if successfully updates the presentation format. Otherwise error codes
     ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper);
+
+    ECOBJECTS_EXPORT void RemovePresentationFormat(NamedFormatCR fus); //!< Removes the specified presentation format.
+    void RemoveAllPresentationFormats() {m_presentationFormats.clear();} //!< Removes all presentation formats.
+
+    //! Returns the Phenomenon supported by this KindOfQuantity.
+    //!
+    //! @remarks All Units within this KindOfQuantity must have the same Phenomenon.
+    ECOBJECTS_EXPORT PhenomenonCP GetPhenomenon() const;
+
+    //! Write the KindOfQuantity as a standalone schema child in the ECSchemaJSON format.
+    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
+    //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
+    ECOBJECTS_EXPORT bool ToJson(Json::Value& outValue, bool includeSchemaVersion = true) const { return ToJson(outValue, true, includeSchemaVersion); };
+    ECOBJECTS_EXPORT Json::Value GetPresentationFormatsJson() const; //!< Return Json array of allowable presentation formats.
+
+    //! Given an old EC3.1 persistence FUS descriptor as well as the semi-colon separated string of
+    //! presentation FUS descriptors in the format: {unitName}({formatName}), it will extract and convert
+    //! the persistence unit to a new unit name. If the persistence FUS has a format, it will be added to the end of the
+    //! formatString that is returned
+    //!
+    //! @param[out] persUnitName    The qualified name of the persistence unit mapped to a unit name in the standard units schema
+    //! @param[out] formatStrings   List of presentation format strings representing format overrides.
+    //! @param[in] persFus          The descriptor for the persistence FUS that is of the format for the old FUS descriptor,
+    //!                             format: {unitName}({formatName}), where the format part is optional.
+    //! @param[in] presFuses        List of presentation FUS descriptors
+    //! @param[in] formatSchema     Reference to standard formats schema use to locate formats and verify if they have a composite or not
+    //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName
+    //! if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
+    ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptors(Utf8StringR persUnitName, bvector<Utf8String>& formatStrings, Utf8CP persFus, bvector<Utf8CP> const& presFuses, ECSchemaCR formatSchema);
 };
 
 //=======================================================================================
@@ -1609,7 +1566,7 @@ public:
 //=======================================================================================
 struct PropertyCategory : NonCopyableClass
 {
-friend struct ECSchema; // needed for SetName() method 
+friend struct ECSchema; // needed for SetName() method
 friend struct SchemaXmlWriter; // needed for WriteXml() method
 friend struct SchemaXmlReaderImpl; // needed for ReadXml() method
 friend struct SchemaJsonWriter; // needed for the ToJson() method
@@ -1623,6 +1580,9 @@ private:
     mutable PropertyCategoryId m_propertyCategoryId;
     mutable Utf8String m_fullName;
 
+    PropertyCategory(ECSchemaCR schema) : m_schema(schema), m_priority(0) {};
+    ~PropertyCategory() {};
+
     SchemaReadStatus ReadXml(BeXmlNodeR propertyCategoryNode, ECSchemaReadContextR context);
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
@@ -1630,18 +1590,15 @@ private:
 
     ECObjectsStatus SetName(Utf8CP name);
 
-protected:
-    PropertyCategory(ECSchemaCR schema) : m_schema(schema), m_priority(0) {};
-    ~PropertyCategory() {};
-
 public:
-    //! The ECSchema that this PropertyCategory is defined in
-    ECSchemaCR GetSchema() const {return m_schema;}
+    ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this PropertyCategory is defined in
 
-    //! The name of this PropertyCategory
-    Utf8StringCR GetName() const {return m_validatedName.GetName();}
-    //! The fully qualified name of this PropertyCategory in the format {SchemaName}:{PropertyCategoryName}.
-    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
+    void SetId(PropertyCategoryId id) { BeAssert(!m_propertyCategoryId.IsValid()); m_propertyCategoryId = id; } //!< Intended to be called by ECDb or a similar system
+    PropertyCategoryId GetId() const {BeAssert(HasId()); return m_propertyCategoryId;} //!< Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+    bool HasId() const {return m_propertyCategoryId.IsValid();}
+
+    Utf8StringCR GetName() const {return m_validatedName.GetName();} //!< The name of this PropertyCategory
+    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const; //!< The full name of this PropertyCategory in the format, {SchemaName}:{PropertyCategoryName}.
     //! Gets a qualified name of the PropertyCategory, prefixed by the schema alias if it does not match the primary schema.
     ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
 
@@ -1654,21 +1611,15 @@ public:
     //! Sets the display label for this PropertyCategory
     //! @param[in]  displayLabel  The new value to set as the display label
     ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8CP displayLabel);
-    //! Gets the DisplayLabel for this PropertyCategory.  If a DisplayLabel has not been explicitly set, returns the name of the PropertyCategory.
+    //! Gets the display label for this PropertyCategory.  If a display label has not been explicitly set, returns the name of the PropertyCategory.
     ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
-    Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();} 
-    bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();}
+    Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();} //!< Gets the invariant display label for this PropertyCategory.
+    bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();} //!< Whether the display label is explicitly defined or not
 
     //! Sets the priority for this PropertyCategory
     //! @param[in]  priority  The priority to set
     ECObjectsStatus SetPriority(uint32_t priority) {m_priority = priority; return ECObjectsStatus::Success;}
     uint32_t GetPriority() const {return m_priority;} //!< Gets the priority for this PropertyCategory
-
-    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
-    PropertyCategoryId GetId() const {BeAssert(HasId()); return m_propertyCategoryId;}
-    //! Intended to be called by ECDb or a similar system
-    void SetId(PropertyCategoryId id) {BeAssert(!m_propertyCategoryId.IsValid()); m_propertyCategoryId = id;}
-    bool HasId() const {return m_propertyCategoryId.IsValid();}
 
     //! Write the PropertyCategory as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
@@ -1704,12 +1655,12 @@ enum class ECClassType
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ECClass /*abstract*/ : IECCustomAttributeContainer
 {
-friend struct ECSchema;
-friend struct SchemaXmlReaderImpl;
+friend struct ECSchema; // needed for SetName() method
+friend struct SchemaXmlReaderImpl; // needed for ReadXml() method
 friend struct SchemaXmlReader2;
 friend struct SchemaXmlReader3;
-friend struct SchemaXmlWriter;
-friend struct SchemaJsonWriter;
+friend struct SchemaXmlWriter; // needed for WriteXml() method
+friend struct SchemaJsonWriter; // needed for the ToJson() method
 friend struct ECPropertyIterable::IteratorState;
 friend struct SupplementedSchemaBuilder;
 friend struct ECProperty; // for access to InvalidateDefaultStandaloneEnabler() when property is modified
@@ -1830,11 +1781,25 @@ public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this class is defined in
     ECSchemaR GetSchemaR() {return const_cast<ECSchemaR>(m_schema);}
 
-    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
-    ECClassId GetId() const {BeAssert(HasId()); return m_ecClassId;}
-    //! Intended to be called by ECDb or a similar system
-    void SetId(ECClassId id) {BeAssert(!m_ecClassId.IsValid()); m_ecClassId = id;}
+    void SetId(ECClassId id) {BeAssert(!m_ecClassId.IsValid()); m_ecClassId = id;} //!< Intended to be called by ECDb or a similar system.
+    ECClassId GetId() const {BeAssert(HasId()); return m_ecClassId;} //!< Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
     bool HasId() const {return m_ecClassId.IsValid();}
+
+    Utf8StringCR GetName() const {return m_validatedName.GetName();} //!< The name of this ECClass
+    ECOBJECTS_EXPORT Utf8CP GetFullName() const; //!< {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
+    //! Formats the class name for use in an ECSQL statement: [{SchemaName}].[{ClassName}]
+    //! @remarks The pointer will remain valid as long as the ECClass exists.
+    ECOBJECTS_EXPORT Utf8StringCR GetECSqlName() const;
+
+    ECOBJECTS_EXPORT ECObjectsStatus SetDescription(Utf8StringCR description) {m_description = description; return ECObjectsStatus::Success;} //!< Sets the description of this ECClass
+    Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this ECClass.
+    ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Gets the description of this ECClass.  Returns the localized description if one exists.
+
+    ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8StringCR displayLabel); //!< Sets the display label of this ECClass
+    //! Gets the display label of this ECClass.  If no display label has been set explicitly, it will return the name of the ECClass
+    ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
+    Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();} //!< Gets the invariant display label for this ECClass.
+    bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();} //!< Whether the display label is explicitly defined or not.
 
     //! Returns the StandaloneECEnabler for this class
     ECOBJECTS_EXPORT StandaloneECEnablerP GetDefaultStandaloneEnabler() const;
@@ -1868,29 +1833,6 @@ public:
 
     ECClassModifier GetClassModifier() const {return m_modifier;} //!< Returns the class modifier
     void SetClassModifier(ECClassModifier modifier) {m_modifier = modifier;} //!< Sets the class modifier
-
-    // schemas index class by name so publicly name can not be reset
-    //! The name of this ECClass
-    ECOBJECTS_EXPORT Utf8StringCR GetName() const;
-    //! {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
-    ECOBJECTS_EXPORT Utf8CP GetFullName() const;
-    //! Formats the class name for use in an ECSQL statement: [{SchemaName}].[{ClassName}]
-    //! @remarks The pointer will remain valid as long as the ECClass exists.
-    ECOBJECTS_EXPORT Utf8StringCR GetECSqlName() const;
-
-    ECOBJECTS_EXPORT ECObjectsStatus SetDescription(Utf8StringCR description) {m_description = description; return ECObjectsStatus::Success;} //!< Sets the description of this ECClass
-    Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this ECClass.
-    //! Gets the description of this ECClass.  Returns the localized description if one exists.
-    ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
-
-    //! Sets the display label of this ECClass
-    ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8StringCR displayLabel);
-    //! Whether the display label is explicitly defined or not
-    ECOBJECTS_EXPORT bool GetIsDisplayLabelDefined() const;
-    //! Gets the display label of this ECClass.  If no display label has been set explicitly, it will return the name of the ECClass
-    ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
-    //! Gets the invariant display label for this ECClass.
-    ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
 
     //! Adds a base class
     //! You cannot add a base class if it creates a cycle. For example, if A is a base class
@@ -2130,7 +2072,7 @@ private:
     ECCustomAttributeClass(ECSchemaCR schema) : ECClass(schema), m_containerType(CustomAttributeContainerType::Any) {}
     virtual ~ECCustomAttributeClass () {}
 
-    bool _Validate() const override { return true; }
+    bool _Validate() const override {return true;}
 
 protected:
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
