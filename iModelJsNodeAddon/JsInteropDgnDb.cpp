@@ -356,13 +356,38 @@ DgnDbStatus JsInterop::UpdateElement(DgnDbR dgndb, JsonValueR inJson)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Nate.Rex                        01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus JsInterop::UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtents)
+void JsInterop::UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtents)
 	{
 	auto& geolocation = dgndb.GeoLocation();
 	AxisAlignedBox3d extents;
 	extents.FromJson(newExtents);
 	geolocation.SetProjectExtents(extents);
-	return DgnDbStatus::Success;	// Is there a failure case here?
+    geolocation.Save();
+	}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::UpdateIModelProps(DgnDbR dgndb, JsonValueCR props)
+	{
+	auto& geolocation = dgndb.GeoLocation();
+    if (props.isMember(json_projectExtents()))
+        {
+        AxisAlignedBox3d extents;
+	    extents.FromJson(props[json_projectExtents()]);
+	    geolocation.SetProjectExtents(extents);
+        }
+    if (props.isMember(json_globalOrigin()))
+        geolocation.SetGlobalOrigin(JsonUtils::ToDPoint3d(props[json_globalOrigin()]));
+
+    if (props.isMember(json_ecefLocation()))
+        {
+        EcefLocation ecef;
+        ecef.FromJson(props[json_ecefLocation()]);
+        geolocation.SetEcefLocation(ecef);
+        }
+    
+    geolocation.Save();
 	}
 
 /*---------------------------------------------------------------------------------**//**
@@ -630,34 +655,7 @@ void JsInterop::GetIModelProps(JsonValueR val, DgnDbCR dgndb)
     // add global origin
     val[json_globalOrigin()] = JsonUtils::DPoint3dToJson(geolocation.GetGlobalOrigin());
 
-    // if the project is geolocated, add the world to ecef transform
-    auto* dgnGCS = geolocation.GetDgnGCS();
-    if (nullptr == dgnGCS)
-        return;
-
-    DPoint3d origin = extents.GetCenter();
-    DPoint3d ecefOrigin, ecefNorth;
-    DPoint3d north = origin;
-    north.y += 100.0;
-
-    GeoPoint originLatLong, northLatLong;
-    dgnGCS->LatLongFromUors(originLatLong, origin);
-    dgnGCS->XYZFromLatLong(ecefOrigin, originLatLong);
-    dgnGCS->LatLongFromUors(northLatLong, north);
-    dgnGCS->XYZFromLatLong(ecefNorth, northLatLong);
-
-    DVec3d zVector, yVector;
-    zVector.Normalize((DVec3dCR) ecefOrigin);
-    yVector.NormalizedDifference(ecefNorth, ecefOrigin);
-
-    auto ecefJson = val[json_ecefLocation()];
-    ecefJson[json_origin()] = JsonUtils::DPoint3dToJson(ecefOrigin);
-
-    RotMatrix rMatrix = RotMatrix::FromIdentity();
-    rMatrix.SetColumn(yVector, 1);
-    rMatrix.SetColumn(zVector, 2);
-    rMatrix.SquareAndNormalizeColumns(rMatrix, 1, 2);
-    YawPitchRollAngles angles;
-    YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix);
-    ecefJson[json_orientation()] = JsonUtils::YawPitchRollToJson(angles);
+    auto ecefLocation = geolocation.GetEcefLocation();
+    if (ecefLocation.m_isValid)
+        val[json_ecefLocation()] = ecefLocation.ToJson();
     }

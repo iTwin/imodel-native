@@ -263,8 +263,8 @@ declare class NativeDgnDb {
 
     /**
      * Get the properties of a set of tiles belonging to a single tile tree
-     * @param treeId The ID of the tile tree
-     * @param tileIds The IDs of the tiles to retrieve
+     * @param treeId The Id of the tile tree
+     * @param tileIds The Ids of the tiles to retrieve
      * @returns In case of success, the result property will be a stringified JSON array of tile properties.
      */
     getTiles(treeId: string, tileIds: string[]): ErrorStatusOrResult<IModelStatus, any>;
@@ -342,10 +342,16 @@ declare class NativeDgnDb {
     deleteModel(modelIdJson: string): IModelStatus;
 
     /**
-     * Update the imodel project extents.
-     * @param newExtentsJson The new project extents in stringified JSON format
+     * Update the iModel project extents.
+     * @param newExtentsJson The new project extents in stringified JSON
      */
     updateProjectExtents(newExtentsJson: string): void;
+
+    /**
+     * Update the iModel properties see
+     * @param props the [IModelProps]($common) in stringified JSON
+     */
+    updateIModelProps(props: string): void;
 
     /**
      * Format an element's properties, suitable for display to the user.
