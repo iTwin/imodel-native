@@ -92,6 +92,9 @@ struct PerformanceTests : public IntegrationTestsBase
         ASSERT_SUCCESS(briefcaseResult);
         m_briefcase = briefcaseResult.GetValue();
         m_model = CreateModel(TestCodeName().c_str(), m_briefcase->GetDgnDb());
+
+        auto pushResult = m_briefcase->PullMergeAndPush(nullptr, true)->GetResult();
+        ASSERT_SUCCESS(pushResult);
         }
 
     virtual void TearDown() override
@@ -259,6 +262,9 @@ struct PerformanceTests : public IntegrationTestsBase
         auto element = GenericPhysicalObject::Create(*model->ToPhysicalModelP(), catId);
 
         DgnElement::MultiAspect::AddAspect(*element, *aspect);
+
+        IBriefcaseManager::Request req;
+        RepositoryStatus statusR = model->GetDgnDb().BriefcaseManager().PrepareForElementInsert(req, *element, IBriefcaseManager::PrepareAction::Acquire);
         auto newElement = model->GetDgnDb().Elements().Insert(*element);
         return aspect;
         }
@@ -577,7 +583,7 @@ TEST_F(PerformanceTests, PushLocks)
     StopWatch timer(true);
     db.SaveChanges();
     result = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
-    ExpectAllLocksCount(*m_briefcase, postRequestSize);
+    ExpectAllLocksCount(*m_briefcase, postRequestSize + 2);
     EXPECT_SUCCESS(result);
     timer.Stop();
     LogTiming(timer, postRequestSize, result.IsSuccess());
@@ -670,6 +676,10 @@ TEST_F(PerformanceTests, RetrieveFractionOfAllAvailableLocks)
     ASSERT_SUCCESS(briefcaseResult);
     auto secondBriefcase = briefcaseResult.GetValue();
     auto secondModel = CreateModel(TestCodeName(1).c_str(), secondBriefcase->GetDgnDb());
+
+    auto pushResult = secondBriefcase->PullMergeAndPush(nullptr, true)->GetResult();
+    ASSERT_SUCCESS(pushResult);
+
     auto aspectModel2 = CreateAspect(secondModel, TestCodeName(2).c_str());
 
     auto currentGetRequestSize = 0;
@@ -724,6 +734,9 @@ TEST_F(PerformanceTests, RetrieveFractionOfAllAvailableLocksById)
     totalGetSize += getRequestSize;
 
     auto secondModel = CreateModel(TestCodeName(1).c_str(), m_briefcase->GetDgnDb());
+    auto pushResult = m_briefcase->PullMergeAndPush(nullptr, true)->GetResult();
+    ASSERT_SUCCESS(pushResult);
+
     auto queryLockSet = RetrieveLocksHelper(postRequestSize, getRequestSize, m_briefcase, secondModel, aspect->GetToken());
     EXPECT_EQ(getRequestSize, queryLockSet.size());
     StopWatch timer(true);
