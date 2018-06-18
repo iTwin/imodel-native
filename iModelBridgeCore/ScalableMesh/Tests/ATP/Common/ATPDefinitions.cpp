@@ -31,6 +31,7 @@
 using namespace std;
 
 #include <ScalableMesh/IScalableMesh.h>
+#include <ScalableMesh/IScalableMeshSaveAs.h>
 #include <ScalableMesh/IScalableMeshGroundExtractor.h>
 #include <ScalableMesh/IScalableMeshATP.h>
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
@@ -106,6 +107,8 @@ enum
     ACCELERATOR_CPU = 0,
     ACCELERATOR_GPU
     };
+
+uint64_t GetTriangleCount(IScalableMesh* meshP, ClipVectorPtr clips = nullptr);
 
 void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
@@ -404,7 +407,7 @@ void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     for (int areaInd = 0; areaInd < areas.size(); areaInd++)
         {
-        WPrintfString groundOutputName(L"%s\\groundArea%i.3sm", outputDir.c_str(), areaInd);
+        WPrintfString groundOutputName(L"%s\\groundArea%i.stm2", outputDir.c_str(), areaInd);
 
         if (BeFileName::DoesPathExist(groundOutputName.c_str()))
             {            
@@ -4197,17 +4200,18 @@ void PerformNodeCreationTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : stmFileName attribute not found\r\n");
         }
     int openStatus;
+    SMStatus addNodeStatus;
     IScalableMeshNodeCreatorPtr ptr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshNodeCreator::GetFor(stmFileName.c_str(), openStatus);
     IScalableMeshNodeEditPtr rootNode = ptr->AddNode(openStatus);
     DRange3d extent = DRange3d::FromMinMax(-1.0, 1.0);
     rootNode->SetNodeExtent(extent);
     rootNode->SetContentExtent(extent);
     DRange3d childExt = DRange3d::From(BENTLEY_NAMESPACE_NAME::DPoint3d::From(-1.0, -1.0), BENTLEY_NAMESPACE_NAME::DPoint3d::From(0.0, 0.0));
-    IScalableMeshNodeEditPtr childNode = ptr->AddNode(rootNode, childExt, openStatus);
+    IScalableMeshNodeEditPtr childNode = ptr->AddNode(rootNode, childExt, addNodeStatus);
     childExt = DRange3d::From(BENTLEY_NAMESPACE_NAME::DPoint3d::From(-1.0, 0.0), BENTLEY_NAMESPACE_NAME::DPoint3d::From(0.0, 1.0));
-    childNode = ptr->AddNode(rootNode, childExt, openStatus);
+    childNode = ptr->AddNode(rootNode, childExt, addNodeStatus);
     childExt = DRange3d::From(BENTLEY_NAMESPACE_NAME::DPoint3d::From(0.0, -1.0), BENTLEY_NAMESPACE_NAME::DPoint3d::From(1.0, 0.0));
-    childNode = ptr->AddNode(rootNode, childExt, openStatus);
+    childNode = ptr->AddNode(rootNode, childExt, addNodeStatus);
     }
 
 void PerformLoadingTest(BeXmlNodeP pTestNode, FILE* pResultFile)
@@ -5015,6 +5019,178 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
     fflush(pResultFile);
     }
 
+void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    bool allTestPass = true;
+    Transform tr = Transform::FromIdentity();
+    ClipVectorPtr clipP = nullptr;
+
+    enum class SaveAsType { DEFAULT, _3DTILES, _3DTILES_CLIPPED, _3SM_CLIPPED };
+    enum class ClipType { NONE, MASK, BOUNDARY, BOTH };
+    SaveAsType type;
+    ClipType clipType = ClipType::NONE;
+
+    WString smFileName, outputDirectory, typeStr, clipTypeStr;
+
+    // Parses the test(s) definition:
+    if (pTestNode->GetAttributeStringValue(smFileName, "smFileName") != BEXML_Success)
+        {
+        printf("ERROR : smFileName attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(outputDirectory, "outputDirectory") != BEXML_Success)
+        {
+        printf("ERROR : outputDirectory attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(typeStr, "type") != BEXML_Success)
+        {
+        printf("ERROR : type attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(clipTypeStr, "clipType") != BEXML_Success)
+        { // Optional
+        printf("Testing saveas without clips\r\n");
+        }
+
+    if (0 == BeStringUtilities::Wcsicmp(typeStr.c_str(), L"3dtiles"))
+        type = SaveAsType::_3DTILES;
+    else if (0 == BeStringUtilities::Wcsicmp(typeStr.c_str(), L"3dtiles_clipped"))
+        type = SaveAsType::_3DTILES_CLIPPED;
+    else if (0 == BeStringUtilities::Wcsicmp(typeStr.c_str(), L"3sm_clipped"))
+        type = SaveAsType::_3SM_CLIPPED;
+    else
+        type = SaveAsType::DEFAULT;
+
+    if (!clipTypeStr.empty() && 0 == BeStringUtilities::Wcsicmp(clipTypeStr.c_str(), L"mask"))
+        clipType = ClipType::MASK;
+    else if (!clipTypeStr.empty() && 0 == BeStringUtilities::Wcsicmp(clipTypeStr.c_str(), L"boundary"))
+        clipType = ClipType::BOUNDARY;
+    else if (!clipTypeStr.empty() && 0 == BeStringUtilities::Wcsicmp(clipTypeStr.c_str(), L"both"))
+        clipType = ClipType::BOTH;
+    else
+        clipType = ClipType::NONE;
+
+    double t = clock();
+
+    bool isClipped = type == SaveAsType::_3DTILES_CLIPPED || type == SaveAsType::_3SM_CLIPPED;
+
+    if (isClipped && clipType == ClipType::NONE)
+        {
+        printf("ERROR : Must define a clipType to save as clipped mesh\r\n");
+        return;
+        }
+
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr myScalableMesh = ScalableMesh::IScalableMesh::GetFor(smFileName.c_str(), true, true, status);
+    allTestPass = status == SUCCESS && myScalableMesh.IsValid();
+
+    DRange3d range;
+    if (isClipped)
+        {
+        if (allTestPass = DTM_SUCCESS == myScalableMesh->GetRange(range))
+            {
+            range.scaleAboutCenter(&range, 0.75);
+
+            // Create clip
+            auto clipPrimitive = DgnPlatform::ClipPrimitive::CreateFromBlock(range.low, range.high, clipType == ClipType::MASK /*isMask*/, DgnPlatform::ClipMask::None, &tr, false /*invisible*/);
+            clipP = DgnPlatform::ClipVector::CreateFromPrimitive(clipPrimitive);
+
+            if (clipType == ClipType::BOTH)
+                {
+                double length = range.XLength() *0.5;
+                range.low.x += length; range.high.x += length;
+                range.scaleAboutCenter(&range, 0.75);
+                auto clipPrimitive = DgnPlatform::ClipPrimitive::CreateFromBlock(range.low, range.high, true /*isMask*/, DgnPlatform::ClipMask::None, &tr, false /*invisible*/);
+                clipP->push_back(clipPrimitive);
+                }
+            }
+        }
+    uint64_t nOfTriangles3SM = 0, nOfTrianglesResult = -1;
+
+    if (allTestPass)
+        {
+        nOfTriangles3SM = GetTriangleCount(myScalableMesh.get(), clipP);
+        switch (type)
+            {
+            case SaveAsType::_3DTILES:
+            case SaveAsType::_3DTILES_CLIPPED:
+            {
+            WString name = BeFileName::GetFileNameWithoutExtension(smFileName.c_str());
+            BeFileName tilesOutDir (outputDirectory.c_str());
+            tilesOutDir.AppendToPath((name + L"_" + typeStr + (clipTypeStr.empty() ? L"" : L"_" + clipTypeStr)).c_str());
+            BeFileName::EmptyAndRemoveDirectory(tilesOutDir.c_str());
+
+            allTestPass = SUCCESS == IScalableMeshSaveAs::Generate3DTiles(myScalableMesh, tilesOutDir, L"", SMCloudServerType::LocalDisk, nullptr, clipP, (uint64_t)-1);
+
+            ScalableMesh::IScalableMeshPtr cesiumMesh = nullptr;
+            if (allTestPass)
+                {
+                BeFileName cesiumFile((tilesOutDir + L"\\n_0.json").c_str());
+                cesiumMesh = ScalableMesh::IScalableMesh::GetFor(cesiumFile.c_str(), true, true, status);
+                allTestPass = status == SUCCESS && cesiumMesh.IsValid();
+                }
+            if (allTestPass)
+                {
+                nOfTrianglesResult = GetTriangleCount(cesiumMesh.get(), clipP);
+                allTestPass = nOfTrianglesResult == nOfTriangles3SM;
+                }
+            break;
+            }
+            case SaveAsType::_3SM_CLIPPED:
+            {
+            WString name = BeFileName::GetFileNameWithoutExtension(smFileName.c_str());
+            BeFileName smOutFileName(outputDirectory.c_str());
+            smOutFileName.AppendToPath((name + L"_" + typeStr + (clipTypeStr.empty() ? L"" : L"_" + clipTypeStr) + L".3sm").c_str());
+            if (BeFileName::DoesPathExist(smOutFileName.c_str()))
+                {
+#ifdef VANCOUVER_API      
+                BeFileNameStatus status = BeFileName::BeDeleteFile(smOutFileName.c_str(), true);
+#else 
+                BeFileNameStatus status = BeFileName::BeDeleteFile(smOutFileName.c_str());
+#endif
+                if (status != BeFileNameStatus::Success)
+                    {
+                    printf("ERROR : Cannot delete saveas 3sm file : %ls ", smOutFileName.c_str());
+                    return;
+                    }
+                }
+            allTestPass = SUCCESS == IScalableMeshSaveAs::DoSaveAs(myScalableMesh, smOutFileName, clipP, nullptr /*progress*/);
+            ScalableMesh::IScalableMeshPtr newMesh = nullptr;
+            if (allTestPass)
+                {
+                newMesh = ScalableMesh::IScalableMesh::GetFor(smOutFileName.c_str(), true, true, status);
+                allTestPass = status == SUCCESS && newMesh.IsValid();
+                }
+            if (allTestPass)
+                {
+                nOfTrianglesResult = GetTriangleCount(newMesh.get(), clipP);
+                allTestPass = nOfTrianglesResult == nOfTriangles3SM;
+                }
+            break;
+            }
+            default:
+            {
+            BeAssert(!"Invalid type");
+            allTestPass = false;
+            break;
+            }
+            }
+        }
+    t = clock() - t;
+
+    fwprintf(pResultFile, L"%s,%s,%I64d,%I64d,%s,%0.5f\n",
+        smFileName.c_str(),
+        outputDirectory.c_str(),
+        nOfTriangles3SM,
+        nOfTrianglesResult,
+        allTestPass ? L"true" : L"false",
+        (double)t / CLOCKS_PER_SEC
+    );
+
+    fflush(pResultFile);
+    }
+
 void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     WString smFileName, cloudContainer, cloudName, server_type, result;
@@ -5083,7 +5259,15 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         {
         // Use default path to output files
         auto position = smFileName.find_last_of(L".3sm");
-        cloudContainer = smFileName.substr(0, position - 3) + L"_stream\\";
+        int positionShift = 3;
+
+        if (position == string::npos)
+            {
+            position = smFileName.find_last_of(L".stm2");
+            positionShift = 4;
+            }   
+
+        cloudContainer = smFileName.substr(0, position - positionShift) + L"_stream\\";
         printf("%ls\n", cloudContainer.c_str());
         }
 
@@ -5384,6 +5568,52 @@ void PerformCloudTests(BeXmlNodeP pTestNode, FILE* pResultFile)
              );
 
     fflush(pResultFile);
+    }
+
+void PrepareClipsForGetMesh(ClipVectorPtr clips)
+    {
+    if (!clips.IsValid()) return;
+
+    auto predicate = [](ClipPrimitivePtr i, ClipPrimitivePtr j)
+        { // put boundary clips first
+        if (!i->IsMask() && j->IsMask()) return true;
+        return false;
+        };
+
+    // Ensure clip vector is sorted
+    if (!std::is_sorted(clips->begin(), clips->end(), predicate))
+        {
+        std::sort(clips->begin(), clips->end(), predicate);
+        }
+
+    // Compute clip planes here as primitives are not thread safe
+    for (auto& primitive : *clips) primitive->GetClipPlanes();
+    }
+
+uint64_t GetTriangleCount(IScalableMesh* meshP, ClipVectorPtr clips)
+    {
+    uint64_t nOfTriangles = 0;
+
+    PrepareClipsForGetMesh(clips);
+
+    IScalableMeshNodePtr root = meshP->GetRootNode();
+
+    queue<IScalableMeshNodePtr> nodes;
+    nodes.push(root);
+    while (!nodes.empty())
+        {
+        IScalableMeshNodePtr currentNode = nodes.front();
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        if (currentNode->IsTextured())
+            flags->SetLoadTexture(true);
+        IScalableMeshMeshPtr mesh = clips.IsValid() ? currentNode->GetMeshUnderClip2(flags, clips, -1, false/*unused?*/) : currentNode->GetMesh(flags);
+        nOfTriangles += mesh.IsValid() ? mesh->GetNbFaces() : 0;
+
+        bvector<IScalableMeshNodePtr> childrenNodes = currentNode->GetChildrenNodes();
+        for (auto child : childrenNodes) nodes.push(child);
+        nodes.pop();
+        }
+    return nOfTriangles;
     }
 
 bool GetMeshAsSingleTileDTM(IScalableMesh* meshP, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& tmP)

@@ -322,7 +322,7 @@ DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & bl
     {
     auto uriEncodedBlobUrl = BeStringUtilities::UriEncode(Utf8String(blobPath.c_str()).c_str());
 
-    auto azureToken = session.getKeyRemapFunction()(Utf8String(session.getSessionKey().c_str()));
+    auto azureToken = session.getKeyRemapFunction()();
 
     if (!azureToken.empty())
         uriEncodedBlobUrl += ("?" + azureToken).c_str();

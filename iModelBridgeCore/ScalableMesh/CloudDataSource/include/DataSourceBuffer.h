@@ -18,6 +18,7 @@ public:
     typedef ActivitySemaphore::Status   TimeoutStatus;
 
 private:
+    friend class DataSourceTransferScheduler;
     bool m_isSegmented = false;
     BufferSize m_totalReadSize = 0;
 

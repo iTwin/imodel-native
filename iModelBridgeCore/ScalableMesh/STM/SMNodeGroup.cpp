@@ -23,6 +23,16 @@ uint32_t s_max_group_depth = 4;
 uint32_t s_max_group_common_ancestor = 2;
 
 mutex SMNodeGroup::s_mutex;
+SMGroupingStrategy<DRange3d>* s_groupingStrategy = nullptr;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConvertToJsonFromBytes(Json::Value & outputJson, std::unique_ptr<DataSource::Buffer[]>& bufferPtr, DataSource::DataSize bufferSize)
+    {
+    char* jsonBlob = reinterpret_cast<char *>(bufferPtr.get());
+    return Json::Reader().parse(jsonBlob, jsonBlob + bufferSize, outputJson);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
@@ -664,8 +674,7 @@ bool SMNodeGroup::DownloadCesiumTileset(const DataSourceURL & url, Json::Value &
     DataSource::DataSize                        readSize;
     if (this->DownloadBlob(dest, readSize, url))
         {
-        char* jsonBlob = reinterpret_cast<char *>(dest.get());
-        return Json::Reader().parse(jsonBlob, jsonBlob + readSize, tileset);
+        return ConvertToJsonFromBytes(tileset, dest, readSize);
         }
 
     assert(!"A problem occured while downloading a group.");
@@ -677,12 +686,119 @@ bool SMNodeGroup::DownloadCesiumTileset(const DataSourceURL & url, Json::Value &
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize & readSize, const DataSourceURL & url)
     {
-    DataSource*                           dataSource;
-    DataSourceBuffer::BufferSize          destSize = 5 * 1024 * 1024;
-    return ((dataSource = this->InitializeDataSource(dest, destSize)) != nullptr &&
-             dataSource->open(url, DataSourceMode_Read).isOK()                   &&
-             dataSource->read(dest.get(), destSize, readSize, 0).isOK()          &&
-             dataSource->close().isOK());
+    DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
+    DataSourceStatus                status;
+    bool                            isFromCache;
+
+    DataSource *dataSource = this->InitializeDataSource(dest, destSize);
+    if (dataSource == nullptr)
+        return false;
+
+    try
+        {
+        if ((status = dataSource->open(url, DataSourceMode_Read)).isFailed())
+            throw status;
+
+        if ((status = dataSource->read(dest.get(), destSize, readSize, 0)).isFailed())
+            throw status;
+
+        isFromCache = dataSource->isFromCache();
+
+        if ((status = dataSource->close()).isFailed())
+            throw status;
+        }
+    catch (DataSourceStatus)
+        {
+        assert(false);
+        }
+
+    DataSourceManager::Get()->destroyDataSource(dataSource);
+
+    if (status.isFailed())
+        return false;
+
+    if (m_isRoot && isFromCache)
+        { // Must download so that we can check timestamp and clear cache if necessary
+        Json::Value cachedTileset;
+        if (ConvertToJsonFromBytes(cachedTileset, dest, readSize) &&
+            !cachedTileset.isNull() &&
+            cachedTileset["root"].isMember("SMMasterHeader") &&
+            cachedTileset["root"]["SMMasterHeader"].isMember("LastModifiedDateTime"))
+            {
+//          bool cacheEnabled = dataSource->getCachingEnabled();
+            std::unique_ptr<DataSource::Buffer[]> newDest;
+            DataSourceBuffer::BufferSize newSize;
+
+            if ((dataSource = this->InitializeDataSource(newDest, destSize)) != nullptr)
+                {
+                dataSource->setCachingEnabled(false);
+
+                try
+                    {
+                    if ((status = dataSource->open(url, DataSourceMode_Read)).isFailed())
+                        throw status;
+
+                    if((status = dataSource->read(newDest.get(), destSize, newSize, 0)).isFailed())
+                        throw status;
+                    }
+                catch (DataSourceStatus)
+                    {
+                    DataSourceManager::Get()->destroyDataSource(dataSource);
+                    assert(false);
+                    return false;
+                    }
+
+                    // Compare timestamps
+                Json::Value networkTileset;
+
+                if (ConvertToJsonFromBytes(networkTileset, newDest, newSize) &&
+                    !networkTileset.isNull() &&
+                    networkTileset["root"].isMember("SMMasterHeader") &&
+                    networkTileset["root"]["SMMasterHeader"].isMember("LastModifiedDateTime"))
+                    {
+                    DateTime cachedTimestamp;
+                    DateTime networkTimestamp;
+
+                    if (BentleyStatus::SUCCESS == DateTime::FromString(cachedTimestamp, cachedTileset["root"]["SMMasterHeader"]["LastModifiedDateTime"].asCString()) &&
+                        BentleyStatus::SUCCESS == DateTime::FromString(networkTimestamp, networkTileset["root"]["SMMasterHeader"]["LastModifiedDateTime"].asCString()) &&
+                        DateTime::CompareResult::EarlierThan == DateTime::Compare(cachedTimestamp, networkTimestamp))
+                        {
+                        // Construct path to tempory folder
+                        BeFileName tempPath;
+                        if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
+                            BeAssert(false); // Couldn't retrieve the temporary path
+                        tempPath.AppendToPath(L"RealityDataCache");
+                        auto accountName = m_parametersPtr->GetDataSourceAccount()->getAccountName();
+                        tempPath.AppendToPath(accountName.c_str());
+                        DataSourceURL cachedDataSourcePath;
+                        dataSource->getURL(cachedDataSourcePath);
+                        tempPath.AppendToPath(cachedDataSourcePath.c_str());
+
+                        // Clear cache
+                        if (BeFileNameStatus::Success != BeFileName::EmptyAndRemoveDirectory(BeFileName::GetDirectoryName(tempPath.c_str()).c_str()))
+                            {
+                            BeAssert(false); // Couldn't remove temp directory
+                            }
+
+                        // Update data
+                        dest = std::move(newDest);
+
+                        // Recreate cache with updated data
+                        dataSource->setForceWriteToCache();
+                        }
+                    }
+                }
+
+            dataSource->setCachingEnabled(isFromCache);
+
+            // Closing the DataSource will write to cache if need be
+            dataSource->close();
+
+            DataSourceManager::Get()->destroyDataSource(dataSource);
+            }
+        }
+
+    return true;
     }
 #endif
 

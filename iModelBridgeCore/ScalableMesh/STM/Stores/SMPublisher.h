@@ -29,6 +29,7 @@ struct SM3SMPublishParams : virtual public IScalableMeshPublishParams
         ClipVectorPtr m_clips = nullptr;
         IScalableMeshProgressPtr m_progress = nullptr;
         bool m_saveTextures = false;
+        Transform m_transform;
 
     public:
 
@@ -39,6 +40,8 @@ struct SM3SMPublishParams : virtual public IScalableMeshPublishParams
         ClipVectorPtr GetClips() { return m_clips; }
 
         IScalableMeshProgressPtr GetProgress() { return m_progress; }
+
+        Transform GetTransform() { return m_transform; }
 
         bool SaveTextures() { return m_saveTextures; }
 
@@ -51,6 +54,8 @@ struct SM3SMPublishParams : virtual public IScalableMeshPublishParams
         void SetProgress(IScalableMeshProgressPtr progress) { m_progress = progress; }
 
         void SetSaveTextures(const bool saveTextures) { m_saveTextures = saveTextures; }
+
+        void SetTransform(const Transform& transform) { m_transform = transform; }
 
     };
 
@@ -65,6 +70,7 @@ struct SM3SMPublisher : virtual public IScalableMeshPublisher
             IScalableMeshNodePtr m_source;
             SMNodeEditPromisePtr m_destParentFuture;
             SMNodeEditPromisePtr m_destNodePromise;
+            Transform            m_transform;
             };
 
         struct ClipRangeInfo
@@ -99,12 +105,12 @@ struct SM3SMPublisher : virtual public IScalableMeshPublisher
     private:
 
         bool      IsNodeClippedOut(IScalableMeshNodePtr sourceNode);
-        StatusInt ProcessNode(IScalableMeshNodePtr sourceNode, IScalableMeshNodeEditPtr parentDestNode, IScalableMeshNodeEditPtr& destNode);
-        StatusInt SetNodeMeshData(IScalableMeshNodePtr sourceNode, IScalableMeshMeshPtr mesh, IScalableMeshNodeEditPtr& destNode);
-        StatusInt PublishRecursive(IScalableMeshNodePtr sourceNode, SMNodeEditPromisePtr parentDestNode);
+        StatusInt ProcessNode(IScalableMeshNodePtr sourceNode, IScalableMeshNodeEditPtr parentDestNode, IScalableMeshNodeEditPtr& destNode, const Transform& transform);
+        StatusInt SetNodeMeshData(IScalableMeshNodePtr sourceNode, IScalableMeshMeshPtr mesh, IScalableMeshNodeEditPtr& destNode, const Transform& transform);
+        StatusInt PublishRecursive(IScalableMeshNodePtr sourceNode, SMNodeEditPromisePtr parentDestNode, const Transform& transform);
         StatusInt CreateAndAddNewNode(IScalableMeshNodePtr sourceNode, IScalableMeshNodeEditPtr parentDestNode, IScalableMeshNodeEditPtr& newDestNode);
 
-        SMNodeEditPromisePtr AddWorkItem(IScalableMeshNodePtr source, SMNodeEditPromisePtr currentPromise);
+        SMNodeEditPromisePtr AddWorkItem(IScalableMeshNodePtr source, SMNodeEditPromisePtr currentPromise, const Transform& transform);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

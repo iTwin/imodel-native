@@ -2102,7 +2102,7 @@ if (stitchedPoints.size() != 0 &&!isColinear)// return false; //nothing to stitc
     }
     bvector<bvector<DPoint3d>> features;
     bvector<DTMFeatureType> types;
-    node->ReadFeatureDefinitions(features, types);
+    node->ReadFeatureDefinitions(features, types, false);
 
     assert(node->m_nodeHeader.m_nbFaceIndexes == 0 || newNodePointData != nullptr);
     

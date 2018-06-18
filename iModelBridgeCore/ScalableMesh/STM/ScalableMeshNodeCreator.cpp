@@ -87,11 +87,11 @@ IScalableMeshNodeCreator::Impl::~Impl()
 
 IScalableMeshNodeEditPtr IScalableMeshNodeCreator::AddNode(const IScalableMeshNodePtr& parentNode,
                                                        DRange3d& extent,
-                                                       StatusInt&                  status,
+    SMStatus&                  status,
                                                        bool computeNodeID,
                                                        uint64_t nodeId)
     {
-    status = BSISUCCESS;
+    status = S_SUCCESS;
     return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->AddChildNode(parentNode,extent, status, computeNodeID, nodeId);
     }
 
@@ -205,7 +205,7 @@ void IScalableMeshNodeCreator::Impl::NotifyAllChildrenAdded(const IScalableMeshN
 
 IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddChildNode(const IScalableMeshNodePtr& parentNode,
                                                                       DRange3d&                   childExtent,
-                                                                      StatusInt&                  status,
+    SMStatus&                  status,
                                                                       bool computeNodeID,
                                                                       uint64_t nodeId)
     {
@@ -214,13 +214,16 @@ IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddChildNode(const ISca
         {
         if (CreateScalableMesh(true) != BSISUCCESS)
             {
-            status = BSIERROR;
+            status = S_ERROR;
             return IScalableMeshNodeEditPtr();
             }
         }
     if (parentNode == 0)
         {
-        return AddNode(status);
+        StatusInt stat;
+        auto ret = AddNode(stat);
+        status = stat == BSISUCCESS ? S_SUCCESS : S_ERROR;
+        return ret;
         }
 
     if (parentNode != 0)
@@ -230,16 +233,16 @@ IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddChildNode(const ISca
         auto nodeP = m_pDataIndex->FindNode(ext, parentNode->GetLevel());
         if (nodeP.GetPtr() == nullptr)
             {
-            status = BSIERROR;
-            return IScalableMeshNodeEditPtr();
+            status = S_WARNING_NODE_NOT_FOUND;
+            nodeP = dynamic_cast<ScalableMeshNode<PointType>*>(parentNode.get())->GetNodePtr();
             }
 
         PointIndexExtentType newExtent = ExtentOp<PointIndexExtentType>::Create(childExtent.low.x, childExtent.low.y, childExtent.low.z, childExtent.high.x, childExtent.high.y, childExtent.high.z);
         auto childNodeP = nodeP->AddChild(newExtent, computeNodeID, nodeId);
-        status = m_pDataIndex->FindNode(newExtent, childNodeP->GetLevel()) != nullptr ? BSISUCCESS : BSIERROR;
+        status = m_pDataIndex->FindNode(newExtent, childNodeP->GetLevel()) != nullptr ? S_SUCCESS : S_WARNING_NODE_NOT_FOUND;
         return IScalableMeshNodeEditPtr(new ScalableMeshNodeEdit<PointType>(childNodeP));
         }
-    status = BSISUCCESS;
+    status = S_SUCCESS;
     return IScalableMeshNodeEditPtr();
     }
 
@@ -247,6 +250,7 @@ IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddNode(StatusInt&   st
                                                                  bool computeNodeID,
                                                                  uint64_t nodeId)
     {
+    status = BSISUCCESS;
     if (m_pDataIndex == 0)
         {
         if (CreateScalableMesh(true) != BSISUCCESS)
@@ -257,7 +261,7 @@ IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddNode(StatusInt&   st
         }
     if (m_pDataIndex->GetRootNode() != nullptr)
         {
-        status = BSIERROR;
+        //status = BSIERROR;
         auto rootNodeP = m_pDataIndex->GetRootNode();
         return IScalableMeshNodeEditPtr(new ScalableMeshNodeEdit<PointType>(rootNodeP));
         }

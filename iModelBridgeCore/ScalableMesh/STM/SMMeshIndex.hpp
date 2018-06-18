@@ -1100,8 +1100,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveW
     IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
     flags->SetLoadTexture(true);
     IScalableMeshMeshPtr meshP = nodeP->GetMesh(flags);
+    bvector<bool> isMask;
     if (meshP.get() != nullptr)
-        GetRegionsFromClipVector3D(polyfaces, boundariesToRemoveWithin, meshP->GetPolyfaceQuery());
+        GetRegionsFromClipVector3D(polyfaces, boundariesToRemoveWithin, meshP->GetPolyfaceQuery(), isMask);
 
     map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
     if (polyfaces[0][0]->GetPointCount() > 0)
@@ -1810,7 +1811,7 @@ template<class EXTENT> void ClipMeshDefinition(EXTENT clipExtent, bvector<DPoint
    // SimplifyMesh(indicesClipped, pointsClipped, inOutUvs);
     }
 
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types)
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types, bool shouldIgnoreOpenFeatures)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
     bvector<bvector<int32_t>> defs;
@@ -1818,7 +1819,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFea
     for (size_t i = 0; i < defs.size(); ++i)
         {
         bvector<DPoint3d> feature;
-        if (!IsClosedFeature(defs[i][0])) continue;
+        if (shouldIgnoreOpenFeatures && !IsClosedFeature(defs[i][0])) continue;
         for (size_t j = 1; j < defs[i].size(); ++j)
             {
             if (defs[i][j] < GetPointsPtr()->size()) feature.push_back(this->GetPointsPtr()->operator[](defs[i][j]));
@@ -4402,6 +4403,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bool polyInclusion = false;
     bset<uint64_t> addedPolyIds;
    // size_t indexOfBiggestPoly = 0;
+    bvector<size_t> useVolumeClips;
+    bvector<bool> isMask;
     for (const auto& diffSet : *diffSetPtr)
         {
         //uint64_t upperId = (diffSet.clientID >> 32);
@@ -4415,6 +4418,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             SMNonDestructiveClipType type;
             bool isActive;
             GetClipRegistry()->GetClipWithParameters(diffSet.clientID, polys.back(), geom, type, isActive);
+            isMask.push_back(type == SMNonDestructiveClipType::Mask);
+            if (geom == SMClipGeometryType::BoundedVolume)
+                useVolumeClips.push_back(polys.size() - 1);
+
 			if (m_SMIndex->IsFromCesium())
 				tr.Multiply(&polys.back()[0], &polys.back()[0], (int)polys.back().size());
 
@@ -4446,7 +4453,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                     }
                 }*/
 
-            if (!polyExtent.IntersectsWith(nodeRange, 2))
+            if (geom != SMClipGeometryType::BoundedVolume && !polyExtent.IntersectsWith(nodeRange, 2))
                 {
                 polys.resize(polys.size() - 1);
                 clipIds.resize(clipIds.size() - 1);
@@ -4500,12 +4507,38 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             }
              
         }
+
+    bvector<ClipVectorPtr> clips(polys.size());
+    //Deal with case where one of the clips is a 3d plane set
+    if (!useVolumeClips.empty())
+        {
+        //create a clipvector with infinite z dimensions for the polygons
+        for (size_t index = 0; index < polys.size(); index++)
+            {
+            if (!polys[index].empty())
+            {
+                auto curvePtr = ICurvePrimitive::CreateLineString(polys[index]);
+                CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+                clips[index] = ClipVector::CreateFromCurveVector(*cv, 0.0, 0.1);
+            }
+            }
+        for (size_t index : useVolumeClips)
+        {
+            SMClipGeometryType geom;
+            SMNonDestructiveClipType type;
+            bool isActive;
+            GetClipRegistry()->GetClipWithParameters(clipIds[index], clips[index], geom, type, isActive);
+            isMask[index] = type == SMNonDestructiveClipType::Mask;
+        }
+        }
+
+
     diffSetPtr->clear();
     for(auto& skirt: skirts) diffSetPtr->push_back(skirt);
     m_nbClips = skirts.size();
 
 
-    
+   
             
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(GetPtsIndicePtr());
 
@@ -4542,38 +4575,64 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             );
 
         bool hasClip = false;
-        if (!m_nodeHeader.m_arePoints3d && !polyInclusion && !m_SMIndex->IsFromCesium() && dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_canUseBcLibClips)
-            {            
-            BcDTMPtr dtm = nodeP->GetBcDTM().get();
-            if (dtm.get() != nullptr)
+        if (useVolumeClips.empty())
+        {
+            if (!m_nodeHeader.m_arePoints3d && !polyInclusion && !m_SMIndex->IsFromCesium() && dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_canUseBcLibClips)
+            {
+                BcDTMPtr dtm = nodeP->GetBcDTM().get();
+                if (dtm.get() != nullptr)
                 {
-                BcDTMPtr toClipBcDTM = dtm->Clone();
-                DTMPtr toClipDTM = toClipBcDTM.get();
-				if (m_SMIndex->IsFromCesium())
-					toClipBcDTM->Transform(tr);
-                if (IsLeaf()) //always clip leaves regardless of width/area criteria
+                    BcDTMPtr toClipBcDTM = dtm->Clone();
+                    DTMPtr toClipDTM = toClipBcDTM.get();
+                    if (m_SMIndex->IsFromCesium())
+                        toClipBcDTM->Transform(tr);
+                    if (IsLeaf()) //always clip leaves regardless of width/area criteria
                     {
-                    for (auto& mdata : metadata)
-                        mdata.second = 0;
+                        for (auto& mdata : metadata)
+                            mdata.second = 0;
                     }
-                if (toClipBcDTM->GetTinHandle() != nullptr) hasClip = clipNode.GetRegionsFromClipPolys(polyfaces, polys, metadata, toClipDTM);
+                    if (toClipBcDTM->GetTinHandle() != nullptr) hasClip = clipNode.GetRegionsFromClipPolys(polyfaces, polys, metadata, toClipDTM);
                 }
             }
-        else
+            else
             {
+                IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+                flags->SetLoadTexture(true);
+                IScalableMeshMeshPtr meshP = nodeP->GetMesh(flags);
+                PolyfaceQueryCP polyfaceQuery = meshP->GetPolyfaceQuery();
+                PolyfaceHeaderPtr polyHeader = PolyfaceHeader::New();
+                if (m_SMIndex->IsFromCesium())
+                {
+                    polyHeader->CopyFrom(*polyfaceQuery);
+                    polyHeader->Transform(tr);
+                }
+                if (meshP.get() != nullptr)
+                    hasClip = GetRegionsFromClipPolys3D(polyfaces, polys, m_SMIndex->IsFromCesium() ? polyHeader.get() : polyfaceQuery);
+            }
+        }
+        else
+        {
             IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
             flags->SetLoadTexture(true);
             IScalableMeshMeshPtr meshP = nodeP->GetMesh(flags);
-			PolyfaceQueryCP polyfaceQuery = meshP->GetPolyfaceQuery();
-			PolyfaceHeaderPtr polyHeader = PolyfaceHeader::New();
-			if (m_SMIndex->IsFromCesium())
-			    {
-				polyHeader->CopyFrom(*polyfaceQuery);
-				polyHeader->Transform(tr);
-			    }
-            if (meshP.get() != nullptr)
-                hasClip = GetRegionsFromClipPolys3D(polyfaces, polys, m_SMIndex->IsFromCesium()? polyHeader.get() : polyfaceQuery);
+            PolyfaceQueryCP polyfaceQuery = meshP->GetPolyfaceQuery();
+            PolyfaceHeaderPtr polyHeader = PolyfaceHeader::New();
+            if (m_SMIndex->IsFromCesium())
+            {
+                polyHeader->CopyFrom(*polyfaceQuery);
+                polyHeader->Transform(tr);
             }
+            ClipVectorPtr clipComplete = ClipVector::Create();
+            bvector<bool> isMaskPrimitive;
+            for (auto&clip : clips)
+            {
+                for (size_t i =0; i < clip->size(); ++i)
+                    isMaskPrimitive.push_back(isMask[&clip - clips.data()]);
+                clipComplete->Append(*clip);
+            }
+            if (meshP.get() != nullptr)
+                hasClip = GetRegionsFromClipVector3D(polyfaces, clipComplete.get(), m_SMIndex->IsFromCesium() ? polyHeader.get() : polyfaceQuery, isMaskPrimitive);
+        }
 
         if (hasClip) 
             {
@@ -4803,8 +4862,10 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
     DRange3d extRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext), 0,
                                        ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext), 0);
     bvector<DPoint3d> polyPts;
-    GetClipRegistry()->GetClip(clipId, polyPts);
-
+    SMClipGeometryType geom;
+    SMNonDestructiveClipType type;
+    bool isActive;
+    GetClipRegistry()->GetClipWithParameters(clipId, polyPts, geom,type, isActive);
 
 	if (!tr.IsIdentity())
 	{
@@ -4819,6 +4880,20 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
 		for (auto& pt : polyPts)
 			tr.Multiply(pt, pt);
 	}
+
+    if (geom == SMClipGeometryType::BoundedVolume)
+    {
+        ClipVectorPtr cp;
+
+        GetClipRegistry()->GetClipWithParameters(clipId, cp, geom, type, isActive);
+        
+        DPoint3d center = DPoint3d::From(extRange.low.x + extRange.XLength() / 2, extRange.low.y + extRange.YLength() / 2, extRange.low.z + extRange.ZLength() / 2);
+        double radius = std::max(std::max(extRange.XLength(), extRange.YLength()), extRange.ZLength());
+
+        return cp->SphereInside(center, radius);
+
+    }
+
     DRange3d polyRange;
     size_t n = 0;
     bool noIntersect = true;

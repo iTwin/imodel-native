@@ -139,6 +139,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         
         virtual bool          _IsCesium3DTiles() override{ return false; }
 
+        virtual bool           _IsStubFile() override { return false; }
+
         virtual Utf8String    _GetProjectWiseContextShareLink() override { return Utf8String(); }
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
@@ -234,7 +236,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual void                               _GetClipType(uint64_t id, SMNonDestructiveClipType& type) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
-
+        virtual bool                               _AddClip(const ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
+        virtual bool                               _ModifyClip(const ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override {}
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override {}
