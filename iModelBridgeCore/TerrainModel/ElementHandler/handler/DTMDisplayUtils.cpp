@@ -274,6 +274,8 @@ bool IsWireframeRendering(ViewContextCR viewContext)
         case MSRenderMode::Radiosity:
         case MSRenderMode::ParticleTrace:
         case MSRenderMode::RenderLuxology:
+        case MSRenderMode::RenderVue:
+        case MSRenderMode::GPUPathTrace:
             return false;
                        
         case MSRenderMode::Wireframe:

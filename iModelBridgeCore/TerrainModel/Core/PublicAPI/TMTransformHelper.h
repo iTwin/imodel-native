@@ -904,8 +904,9 @@ struct TMTransformHelper : RefCountedBase
             m_elevationOffset = m_transform.form3d[2][3];
 
             DPoint3d fixedPoint;
-            DVec3d directionVector;
-            if(!transform.IsUniformScaleAndRotateAroundLine (fixedPoint, directionVector, m_aspectFix, m_scale))
+            RotMatrix axes;
+
+            if (!transform.IsTranslateScaleRotateAroundZ(fixedPoint, axes, m_scale, m_aspectFix))
                 {
                 m_aspectFix = 0;
                 m_scale = 1;
