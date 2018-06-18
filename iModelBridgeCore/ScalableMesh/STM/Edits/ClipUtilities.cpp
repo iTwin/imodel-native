@@ -1660,6 +1660,9 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipV
             for (auto& planes : *(primitive->GetClipPlanes()))
                 for (auto& plane : planes)
                     planesFromSegments.push_back(plane.GetDPlane3d());
+            for (auto& planes : *(primitive->GetClipPlanes()))
+                for (auto& plane : planes)
+                    planesFromSegments.push_back(plane.GetDPlane3d());
       //      }
         }
 
