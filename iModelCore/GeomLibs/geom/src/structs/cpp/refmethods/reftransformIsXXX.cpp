@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/reftransformIsXXX.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -306,7 +306,37 @@ DPoint3dR translation
         }
     }
 
+//! Return true if the transform a combination of only 2 thing: (1) move origin, (2) rotate around Z
+//! @param [out] origin origin of frame.
+//! @param [out] radians positive rotation around Z
+bool Transform::IsTranslateScaleRotateAroundZ
+(
+	DPoint3dR origin,
+	RotMatrixR rigidAxes,
+	double &scale,
+	double &radians
+) const
+    {
 
+	RotMatrix matrix;
+	GetMatrix(matrix);
+	GetTranslation(origin);
+	scale = 1.0;
+	rigidAxes.InitIdentity();
+	radians = 0.0;
+	if (matrix.IsRigidScale(rigidAxes, scale))
+	    {
+		DVec3d xVec, yVec, zVec;
+		rigidAxes.GetColumns(xVec, yVec, zVec);
+		DVec3d globalZ = DVec3d::From(0, 0, 1);
+		if (globalZ.AlmostEqual(zVec))
+		    {
+			radians = atan2(xVec.y, xVec.x);
+			return true;
+	    	}
+	    }
+	return false;
+    }
 
 /*-----------------------------------------------------------------*//**
 * @description Returns true if the transform is a uniform scale with scale factor other than 1.0.

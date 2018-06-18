@@ -1553,6 +1553,19 @@ double          &scale
 ) const;
 
 
+//! Return true if the transform a combination of only 2 thing: (1) move origin, (2) rotate around Z
+//! @param [out] origin origin of frame.
+//! @param [out] rigidAxes unit-length axes.
+//! @param [out] scale scale factor on the original axes.
+//! @param [out] radians positive rotation around Z
+bool IsTranslateScaleRotateAroundZ
+(
+	DPoint3dR origin,
+	RotMatrixR rigidAxes,
+	double &scale,
+	double &radians
+) const;
+
 //flex|| Is there any single point that stays fixed? || bool transform.GetAnyFixedPoint (outPoint) ||
 //flex|| Is there a single line that stays fixed? || bool transform.GetFixedLine (outOrigin, outDirectionVector) ||
 //flex|| Is there a single plane that stays fixed? || bool transform.GetFixedPlane (outOrigin, outPlaneXVector, outPlaneYVector) ||
