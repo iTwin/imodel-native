@@ -688,7 +688,7 @@ bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, Data
     {
     DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
     DataSourceStatus                status;
-    bool                            isFromCache;
+    bool                            isFromCache = false;
 
     DataSource *dataSource = this->InitializeDataSource(dest, destSize);
     if (dataSource == nullptr)
@@ -765,7 +765,11 @@ bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, Data
                         {
                         // Construct path to tempory folder
                         BeFileName tempPath;
+#ifndef VANCOUVER_API
+						if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempPath(tempPath))
+#else
                         if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
+#endif
                             BeAssert(false); // Couldn't retrieve the temporary path
                         tempPath.AppendToPath(L"RealityDataCache");
                         auto accountName = m_parametersPtr->GetDataSourceAccount()->getAccountName();

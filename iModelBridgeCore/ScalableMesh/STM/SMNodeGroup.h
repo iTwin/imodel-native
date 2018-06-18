@@ -1323,7 +1323,11 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         auto wktString = pi_Group->GetParameters()->GetWellKnownText();
         if (!wktString.empty())
             SMMasterHeader["GCS"] = Utf8String(wktString.c_str());
+#ifndef VANCOUVER_API
+		SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
+#else
         SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToUtf8String();
+#endif
         }
 
     //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;

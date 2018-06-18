@@ -25,13 +25,14 @@
 #include <ImagePP/all/h/HFCAccessMode.h>
 #include "ScalableMesh/ScalableMeshLib.h"
 #include "SMExternalProviderDataStore.h"
+#include "../InternalUtilityFunctions.h"
 
 USING_NAMESPACE_IMAGEPP
 
 template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamingSettings(WString url)
     {
     BeFileName filename(url.c_str());
-    if (!filename.IsUrl())
+    if (!IsUrl(filename.c_str()))
         {
         // Local file, is it local 3dtiles or local stub file?
         if (BeFileName::GetExtension(url.c_str()).CompareToI(L"s3sm") == 0)
@@ -58,8 +59,8 @@ template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamin
                 if (config.isMember("version") && config["version"].asDouble() == 1.0)
                     {
                     // Reset url
-                    url = config.isMember("url") ? WString(config["url"].asCString()) : L"";
-                    if (!BeFileName::IsUrl(url.c_str()))
+                    config.isMember("url") ? url.AssignUtf8(config["url"].asCString()) : url = L"";
+                    if (!IsUrl(url.c_str()))
                         {
                         m_isValid = false;
                         return;
@@ -371,7 +372,11 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
             return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
         BeFileName tempPath;
+#ifndef VANCOUVER_API
+		if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempPath(tempPath))
+#else
         if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
+#endif
             BeAssert(false); // Temp path couldn't be extracted
 
         tempPath.AppendToPath(L"RealityDataCache");

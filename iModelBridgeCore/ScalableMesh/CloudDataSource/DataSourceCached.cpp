@@ -91,6 +91,10 @@ DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *d
 
 }
 
+bool IsUrl(WCharCP filename)
+{
+	return NULL != filename && (0 == wcsncmp(L"http:", filename, 5) || 0 == wcsncmp(L"https:", filename, 6));
+}
 
 CacheWriter::Ptr CacheWriter::s_cacheWriter = nullptr;
 
@@ -167,7 +171,7 @@ DataSourceStatus DataSourceCached::open(const DataSourceURL & sourceURL, DataSou
         if (getAccount())
         {
             DataSourceURL url = sourceURL;
-            if (BeFileName::IsUrl(url.c_str()))
+            if (IsUrl(url.c_str()))
                 {
                 auto directoryPath = DataSourceURL(BeFileName::GetDirectoryName(url.c_str()).c_str());
                 directoryPath.findAndReplace(std::wstring(DATA_SOURCE_URL_SEPARATOR_STR), std::wstring(L"-"));

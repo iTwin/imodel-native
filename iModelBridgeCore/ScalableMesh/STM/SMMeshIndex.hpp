@@ -4890,7 +4890,11 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
         DPoint3d center = DPoint3d::From(extRange.low.x + extRange.XLength() / 2, extRange.low.y + extRange.YLength() / 2, extRange.low.z + extRange.ZLength() / 2);
         double radius = std::max(std::max(extRange.XLength(), extRange.YLength()), extRange.ZLength());
 
+#ifdef VANCOUVER_API
         return cp->SphereInside(center, radius);
+#else
+		return cp->PointInside(center, radius);
+#endif
 
     }
 
