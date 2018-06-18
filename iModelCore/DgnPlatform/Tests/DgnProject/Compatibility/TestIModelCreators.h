@@ -20,8 +20,10 @@
 #define TESTIMODEL_EC32KOQS "ec32koqs.bim"
 
 #define TESTIMODELCREATOR_LIST {std::make_shared<EmptyTestIModelCreator>(), \
+                                std::make_shared<EC32EnumsTestIModelCreator>(), \
                                 std::make_shared<PreEC32EnumsTestIModelCreator>(), \
-                                std::make_shared<PreEC32KoqsTestIModelCreator>()}
+                                std::make_shared<PreEC32KoqsTestIModelCreator>(), \
+                                std::make_shared<EC32KoqsTestIModelCreator>()}
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
@@ -99,6 +101,36 @@ struct PreEC32EnumsTestIModelCreator final : TestIModelCreator
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
 //======================================================================================
+struct EC32EnumsTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            DgnDbPtr bim = CreateNewTestFile(TESTIMODEL_EC32ENUMS);
+            if (bim == nullptr)
+                return ERROR;
+
+            // add types of enums which don't exist in the schemas already in the test file
+            return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="EC32Enums" alias="ec32enums" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                                        <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                                                            <ECEnumerator name="Unknown" value="0"/>
+                                                            <ECEnumerator name="On" value="1"/>
+                                                            <ECEnumerator name="Off" value="2"/>
+                                                        </ECEnumeration>
+                                                        <ECEnumeration typeName="StringEnum_EnumeratorsWithDisplayLabel" displayLabel="String Enumeration with enumerators with display label" backingTypeName="string" isStrict="false">
+                                                            <ECEnumerator name="On" value="On" displayLabel="Turned On"/>
+                                                            <ECEnumerator name="Off" value="Off" displayLabel="Turned Off"/>
+                                                        </ECEnumeration>
+                                                     </ECSchema>)xml"));
+            }
+    public:
+        ~EC32EnumsTestIModelCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
 struct PreEC32KoqsTestIModelCreator final : TestIModelCreator
     {
     private:
@@ -168,4 +200,30 @@ struct PreEC32KoqsTestIModelCreator final : TestIModelCreator
             }
     public:
         ~PreEC32KoqsTestIModelCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct EC32KoqsTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            DgnDbPtr bim = CreateNewTestFile(TESTIMODEL_EC32KOQS);
+            if (bim == nullptr)
+                return ERROR;
+
+            return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="EC32Koqs" alias="ec32koqs" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                    <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+                    <KindOfQuantity typeName="TestKoq_PresFormatWithMandatoryComposite" displayLabel="My first test KOQ" persistenceUnit="u:CM" presentationUnits="f:DefaultRealU(4)[u:M]" relativeError="0.1"/>
+                    <KindOfQuantity typeName="TestKoq_PresFormatWithOptionalComposite" description="My second test KOQ" persistenceUnit="u:CM" presentationUnits="f:AmerFI[u:FT|feet][u:IN|inches]" relativeError="0.2"/>
+                    <KindOfQuantity typeName="TestKoq_PresFormatWithoutComposite" persistenceUnit="u:CM" presentationUnits="f:AmerFI" relativeError="0.3"/>
+                    <KindOfQuantity typeName="TestKoq_NoPresFormat" persistenceUnit="u:KG" relativeError="0.4"/>
+                </ECSchema>)xml"));
+            }
+    public:
+        ~EC32KoqsTestIModelCreator() {}
     };

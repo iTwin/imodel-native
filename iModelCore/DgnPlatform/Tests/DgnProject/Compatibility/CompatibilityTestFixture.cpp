@@ -41,11 +41,7 @@ ECN::ECSchemaReadContextPtr TestFileCreator::DeserializeSchemas(ECDbCR ecdb, std
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle     12/17
 //---------------------------------------------------------------------------------------
-JsonValue::JsonValue(Utf8CP json)
-    {
-    if (!Json::Reader::Parse(json, m_value))
-        m_value = Json::Value(Json::nullValue);
-    }
+JsonValue::JsonValue(Utf8CP json) { EXPECT_TRUE(Json::Reader::Parse(json, m_value)); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle     10/17
