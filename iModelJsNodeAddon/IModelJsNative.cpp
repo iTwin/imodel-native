@@ -2794,7 +2794,7 @@ struct NativeElementLocateManager : Napi::ObjectWrap<NativeElementLocateManager>
             //      m_result = ElementLocateManager::DoLocate( ... m_point ... )
 #define NATIVE_ELEMENT_LOCATE_MANAGER_TEST_SUCCESS
 #ifdef NATIVE_ELEMENT_LOCATE_MANAGER_TEST_SUCCESS
-            m_result = "some success value";
+            m_result.Sprintf("TBD locate near %lf,%lf,%lf", m_point.x, m_point.y, m_point.z);
             m_status = DgnDbStatus::Success;
 #else
             // If you want to return an ERROR, do this:
