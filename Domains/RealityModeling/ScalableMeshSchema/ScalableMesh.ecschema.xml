@@ -9,7 +9,8 @@
         </ECCustomAttributes>
         <BaseClass>bis:SpatialModel</BaseClass>
         <ECProperty propertyName="SmModelClips"      typeName="binary" />
-        <ECProperty propertyName="SmGroundCoverages" typeName="binary" />        
+        <ECProperty propertyName="SmGroundCoverages" typeName="binary" />
+        <ECProperty propertyName="SmModelClipVectors"      typeName="binary" />
     </ECEntityClass>
 
 </ECSchema>
