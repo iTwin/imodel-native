@@ -2,11 +2,39 @@
 |
 |     $Source: DgnCore/DgnUnits.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnGeoCoord.h>
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value EcefLocation::ToJson() const
+    {
+    Json::Value val;
+    if (m_isValid)
+        {
+        val[json_origin()] = JsonUtils::DPoint3dToJson(m_origin);
+        val[json_orientation()] = JsonUtils::YawPitchRollToJson(m_angles);
+        }
+    return val;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void EcefLocation::FromJson(JsonValueCR val)
+    {
+    m_isValid = false;
+    if (!val.isMember(json_origin()) || !val.isMember(json_orientation()))
+        return;
+
+    m_origin = JsonUtils::ToDPoint3d(val[json_origin()]);
+    m_angles = JsonUtils::YawPitchRollFromJson(val[json_orientation()]);
+    m_isValid = true;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
@@ -58,10 +86,49 @@ BentleyStatus DgnGeoLocation::LatLongFromXyz(GeoPointR outLatLong, DPoint3dCR in
     {
     if (nullptr == GetDgnGCS())
         return BSIERROR;
+
     return m_geoServices->LatLongFromUors(outLatLong, inUors, *m_gcs);
     }
 
-BE_JSON_NAME(globalOrigin);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+EcefLocation DgnGeoLocation::GetEcefLocation() const
+    {
+    if (!m_ecefLocation.m_isValid)
+        {
+        // The Ecef Location wasn't saved in the iModel. See if we have a DgnGCS to calculate it.
+        auto* dgnGCS = GetDgnGCS();
+        if (nullptr == dgnGCS)
+            return m_ecefLocation;
+
+        auto extents = GetProjectExtents();
+        DPoint3d origin = extents.GetCenter();
+        DPoint3d ecefOrigin, ecefNorth;
+        DPoint3d north = origin;
+        north.y += 100.0;
+
+        GeoPoint originLatLong, northLatLong;
+        dgnGCS->LatLongFromUors(originLatLong, origin);
+        dgnGCS->XYZFromLatLong(ecefOrigin, originLatLong);
+        dgnGCS->LatLongFromUors(northLatLong, north);
+        dgnGCS->XYZFromLatLong(ecefNorth, northLatLong);
+
+        DVec3d zVector, yVector;
+        zVector.Normalize((DVec3dCR) ecefOrigin);
+        yVector.NormalizedDifference(ecefNorth, ecefOrigin);
+
+        RotMatrix rMatrix = RotMatrix::FromIdentity();
+        rMatrix.SetColumn(yVector, 1);
+        rMatrix.SetColumn(zVector, 2);
+        rMatrix.SquareAndNormalizeColumns(rMatrix, 1, 2);
+        m_ecefLocation.m_origin = ecefOrigin;
+        YawPitchRollAngles::TryFromRotMatrix(m_ecefLocation.m_angles, rMatrix);
+        m_ecefLocation.m_isValid = true;
+        }
+
+    return m_ecefLocation;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
@@ -80,6 +147,10 @@ DgnDbStatus DgnGeoLocation::Load()
 
     JsonUtils::DPoint3dFromJson(m_globalOrigin, jsonObj[json_globalOrigin()]);
     LoadProjectExtents();
+
+    if (jsonObj.isMember(json_ecefLocation()))
+        m_ecefLocation.FromJson(jsonObj[json_ecefLocation()]);
+
     return DgnDbStatus::Success;
     }
 
@@ -90,6 +161,11 @@ void DgnGeoLocation::Save()
     {
     Json::Value jsonObj;
     JsonUtils::DPoint3dToJson(jsonObj[json_globalOrigin()], m_globalOrigin);
+
+    // save the EcefLocation, if valid
+    if (m_ecefLocation.m_isValid)
+        jsonObj[json_ecefLocation()] = m_ecefLocation.ToJson();
+
     m_dgndb.SavePropertyString(DgnProjectProperty::Units(), jsonObj.ToString());
     }
 
@@ -110,6 +186,8 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
     Json::Value jsonObj;
     JsonUtils::DRange3dToJson(jsonObj, m_extent);
     m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());
+
+    GetEcefLocation(); // try to calculate the EcefLocation if it isn't set yet.
 
     for (auto const& kvp : m_dgndb.Models().GetLoadedModels())
         {

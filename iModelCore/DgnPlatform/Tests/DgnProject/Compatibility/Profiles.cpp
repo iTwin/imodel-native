@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Compatibility/ProfileManager.cpp $
+|  $Source: Tests/DgnProject/Compatibility/Profiles.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,7 +8,7 @@
 #pragma once
 
 #include "CompatibilityTests.h"
-#include "ProfileManager.h"
+#include "Profiles.h"
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeTest.h>
@@ -24,8 +24,8 @@ USING_NAMESPACE_BENTLEY_DGN
 //+---------------+---------------+---------------+---------------+---------------+------
 Profile::Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name) : m_type(type), m_versionPropertySpec("SchemaVersion", nameSpace), m_name(name)
     {
-    m_profileSeedFolder = ProfileManager::Get().GetSeedFolder();
-    m_profileSeedFolder.AppendSeparator().AppendUtf8(m_name);
+    BeTest::GetHost().GetOutputRoot(m_profileSeedFolder);
+    m_profileSeedFolder.PopDir().AppendSeparator().AppendToPath(L"SeedData").AppendSeparator().AppendUtf8(m_name);
     }
 
 
@@ -68,10 +68,20 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName, boo
         if (separatorPos != BeFileName::npos)
             profileVersionFolderName.erase(0, separatorPos + 1);
 
-        ProfileVersion profileVersion(0, 0, 0, 0);
-        profileVersion.FromString(Utf8String(profileVersionFolderName).c_str());
-        BeAssert(!profileVersion.IsEmpty());
-        testFiles.push_back(TestFile(testFileName, match, GetFileProfileState(profileVersion), profileVersion));
+        bvector<Utf8String> profileVersions;
+        BeStringUtilities::Split(profileVersionFolderName.GetNameUtf8().c_str(), "_", profileVersions);
+        BeAssert(!profileVersions.empty());
+        ProfileVersion bedbVersion(0, 0, 0, 0), ecdbVersion(0, 0, 0, 0), dgndbVersion(0, 0, 0, 0);
+        bedbVersion.FromString(profileVersions.back().c_str());
+        if (profileVersions.size() == 3)
+            {
+            dgndbVersion.FromString(profileVersions[0].c_str());
+            ecdbVersion.FromString(profileVersions[1].c_str());
+            }
+        else if (profileVersions.size() == 2)
+            ecdbVersion.FromString(profileVersions[0].c_str());
+
+        testFiles.push_back(TestFile(testFileName, match, bedbVersion, ecdbVersion, dgndbVersion));
         }
 
     if (logFoundFiles && LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
@@ -98,7 +108,32 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName, boo
 BeFileName Profile::GetPathForNewTestFile(Utf8CP testFileName) const
     {
     BeFileName path(GetSeedFolder());
-    path.AppendToPath(BeFileName(GetExpectedVersion().ToString())).AppendToPath(BeFileName(testFileName));
+    path.AppendToPath(BeFileName(GetExpectedVersion().ToString()));
+
+    switch (m_type)
+        {
+        case ProfileType::DgnDb:
+        {
+        Utf8String ecdbVersion = ECDbProfile::Get().GetExpectedVersion().ToString();
+        Utf8String bedbVersion = BeDbProfile::Get().GetExpectedVersion().ToString();
+        path.AppendString(L"_").AppendString(WString(ecdbVersion.c_str(), BentleyCharEncoding::Utf8).c_str()).AppendString(L"_").AppendString(WString(bedbVersion.c_str(), BentleyCharEncoding::Utf8).c_str());
+        break;
+        }
+        case ProfileType::ECDb:
+        {
+        Utf8String bedbVersion = BeDbProfile::Get().GetExpectedVersion().ToString();
+        path.AppendString(L"_").AppendString(WString(bedbVersion.c_str(), BentleyCharEncoding::Utf8).c_str());
+        break;
+        }
+        case ProfileType::BeDb:
+            break;
+
+        default:
+            EXPECT_TRUE(false) << "Unhandled ProfileType enum value";
+            return BeFileName();
+        }
+
+    path.AppendToPath(BeFileName(testFileName));
     return path;
     }
 
@@ -114,24 +149,11 @@ ProfileVersion Profile::ReadProfileVersion(Db const& db) const
     return ProfileVersion(profileVersionJson.c_str());
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-ProfileType Profile::ParseProfileType(Utf8CP str)
-    {
-    if (BeStringUtilities::StricmpAscii(PROFILE_NAME_BEDB, str) == 0)
-        return ProfileType::BeDb;
-
-    if (BeStringUtilities::StricmpAscii(PROFILE_NAME_ECDB, str) == 0)
-        return ProfileType::ECDb;
-
-    if (BeStringUtilities::StricmpAscii(PROFILE_NAME_DGNDB, str) == 0)
-        return ProfileType::DgnDb;
-
-    BeAssert(false && "Unknown profile name");
-    return ProfileType::BeDb;
-    }
-
+ECDbProfile const* ECDbProfile::s_singleton = nullptr;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
@@ -161,6 +183,11 @@ BentleyStatus ECDbProfile::_Init() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
+BeDbProfile const* BeDbProfile::s_singleton = nullptr;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan                        03/18
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus BeDbProfile::_Init() const
     {
     BeFileName temporaryDir;
@@ -174,6 +201,11 @@ BentleyStatus BeDbProfile::_Init() const
     m_expectedVersion = ReadProfileVersion(db);
     return !m_expectedVersion.IsEmpty() ? SUCCESS : ERROR;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan                        03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+DgnDbProfile const* DgnDbProfile::s_singleton = nullptr;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
@@ -205,69 +237,46 @@ BentleyStatus DgnDbProfile::_Init() const
     return !m_expectedVersion.IsEmpty() ? SUCCESS : ERROR;
     }
 
-//=====================================ProfileManager====================================
+//=====================================TestFile====================================
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   05/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TestFile::TestFile(Utf8StringCR name, BeFileName const& path, ProfileVersion const& bedbVersion, ProfileVersion const& ecdbVersion, ProfileVersion const& dgndbVersion) : m_name(name), m_path(path), m_bedbVersion(bedbVersion), m_ecdbVersion(ecdbVersion), m_dgndbVersion(dgndbVersion) {}
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
+// @bsimethod                                    Krischan.Eberle                   06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-ProfileManager* ProfileManager::s_singleton = new ProfileManager();
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-Profile& ProfileManager::GetProfile(ProfileType type) const
+ProfileState::Age TestFile::GetAge() const
     {
-    auto it = m_profiles.find(type);
-    if (it != m_profiles.end())
-        return *it->second;
+    int comp = 0;
+    if (!m_dgndbVersion.IsEmpty())
+        comp = m_dgndbVersion.CompareTo(DgnDbProfile::Get().GetExpectedVersion());
 
-    std::unique_ptr<Profile> profile = nullptr;
-    switch (type)
-        {
-            case ProfileType::BeDb:
-                profile = BeDbProfile::Create();
-                break;
+    if (comp == 0 && !m_ecdbVersion.IsEmpty())
+        comp = m_ecdbVersion.CompareTo(ECDbProfile::Get().GetExpectedVersion());
 
-            case ProfileType::ECDb:
-                profile = ECDbProfile::Create();
-                break;
+    if (comp == 0)
+        comp = m_bedbVersion.CompareTo(BeDbProfile::Get().GetExpectedVersion());
 
-            case ProfileType::DgnDb:
-                profile = DgnDbProfile::Create();
-                break;
+    if (comp == 0)
+        return ProfileState::Age::UpToDate;
 
-            default:
-                BeAssert(false && "Unhandled ProfileType value. Update the code");
-                break;
-        }
-
-    BeAssert(profile != nullptr && "Failed to create profile");
-    Profile* profileP = profile.get();
-    m_profiles[type] = std::move(profile);
-    return *profileP;
+    return comp > 0 ? ProfileState::Age::Newer : ProfileState::Age::Older;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
+// @bsimethod                                    Krischan.Eberle                   05/18
 //+---------------+---------------+---------------+---------------+---------------+------
-BeFileName const& ProfileManager::GetSeedFolder() const
+Utf8String TestFile::ToString() const
     {
-    if (m_testSeedFolder.empty())
-        {
-        BeTest::GetHost().GetOutputRoot(m_testSeedFolder);
-        m_testSeedFolder.PopDir().AppendSeparator().append(L"SeedData");
-        }
 
-    return m_testSeedFolder;
-    }
+    Utf8String versionString;
+    if (!m_dgndbVersion.IsEmpty())
+        versionString.Sprintf(PROFILE_NAME_DGNDB " %s | " PROFILE_NAME_ECDB " %s | " PROFILE_NAME_BEDB " %s", m_dgndbVersion.ToString().c_str(), m_ecdbVersion.ToString().c_str(), m_bedbVersion.ToString().c_str());
+    else if (!m_ecdbVersion.IsEmpty())
+        versionString.Sprintf(PROFILE_NAME_ECDB " %s | " PROFILE_NAME_BEDB " %s", m_ecdbVersion.ToString().c_str(), m_bedbVersion.ToString().c_str());
+    else
+        versionString.Sprintf(PROFILE_NAME_BEDB " %s", m_bedbVersion.ToString().c_str());
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-BeFileName const& ProfileManager::GetOutFolder() const
-    {
-    if (m_outFolder.empty())
-        BeTest::GetHost().GetOutputRoot(m_outFolder);
-
-    return m_outFolder;
+    return Utf8PrintfString("%s | %s | %s", m_name.c_str(), versionString.c_str(), m_path.GetNameUtf8().c_str());
     }

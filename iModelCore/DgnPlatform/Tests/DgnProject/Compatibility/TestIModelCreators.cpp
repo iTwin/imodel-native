@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestIModelCreators.h"
-#include "ProfileManager.h"
+#include "Profiles.h"
 
 USING_NAMESPACE_BENTLEY_EC
 //---------------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ BentleyStatus TestIModelCreation::Run()
 //+---------------+---------------+---------------+---------------+---------------+------
 DgnDbPtr TestIModelCreator::CreateNewTestFile(Utf8CP fileName)
     {
-    BeFileName filePath = ProfileManager::Get().GetProfile(ProfileType::DgnDb).GetPathForNewTestFile(fileName);
+    BeFileName filePath = DgnDbProfile::Get().GetPathForNewTestFile(fileName);
     BeFileName folder = filePath.GetDirectoryName();
     if (!folder.DoesPathExist())
         {

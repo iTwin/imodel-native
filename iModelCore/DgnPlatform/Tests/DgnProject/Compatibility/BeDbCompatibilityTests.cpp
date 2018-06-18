@@ -6,11 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "CompatibilityTestFixture.h"
-#include "ProfileManager.h"
+#include "Profiles.h"
 
 struct BeDbCompatibilityTestFixture : CompatibilityTestFixture 
     {
-protected:
-    Profile& Profile() const { return ProfileManager::Get().GetProfile(ProfileType::BeDb); }
     };
 

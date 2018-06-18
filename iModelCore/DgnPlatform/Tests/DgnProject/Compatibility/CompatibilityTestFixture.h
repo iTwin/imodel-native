@@ -118,6 +118,12 @@ void PrintTo(BeVersion const&, std::ostream*);
 
 END_BENTLEY_NAMESPACE
 
+BEGIN_BENTLEY_SQLITE_NAMESPACE
+
+void PrintTo(ProfileState const&, std::ostream*);
+
+END_BENTLEY_SQLITE_NAMESPACE
+
 //=======================================================================================
 //! Disables "Fail On Assertion" for the lifetime of this object.
 //! Use this helper classes instead of BeTest::SetFailOnAssert as it automatically resets

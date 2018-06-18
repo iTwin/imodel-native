@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "CompatibilityTestFixture.h"
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
-#include "ProfileManager.h"
+#include "Profiles.h"
 #include "TestIModelCreators.h"
 #include "TestHelper.h"
 
@@ -21,9 +21,12 @@ struct IModelCompatibilityTestFixture : CompatibilityTestFixture
     protected:
         ScopedDgnHost m_host;
 
-        Profile& Profile() const { return ProfileManager::Get().GetProfile(ProfileType::DgnDb); }
-
-        DgnDbPtr OpenTestFile(DbResult* stat, BeFileNameCR path) { return DgnDb::OpenDgnDb(stat, path, DgnDb::OpenParams(DgnDb::OpenMode::Readonly)); }
+        DgnDbPtr OpenTestFile(DbResult* stat, TestFile const& testFile)
+            {
+            DgnDb::OpenParams params(Db::OpenMode::ReadWrite);
+            params.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
+            return DgnDb::OpenDgnDb(stat, testFile.GetPath(), params);
+            }
 
         void SetUp() override { ASSERT_EQ(SUCCESS, TestIModelCreation::Run()); }
     };
@@ -33,21 +36,22 @@ struct IModelCompatibilityTestFixture : CompatibilityTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
     {
-    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
         DbResult stat = BE_SQLITE_ERROR;
-        DgnDbPtr bim = OpenTestFile(&stat, testFile.GetPath());
+        DgnDbPtr bim = OpenTestFile(&stat, testFile);
         ASSERT_EQ(BE_SQLITE_OK, stat) << testFile.ToString();
         ASSERT_TRUE(bim != nullptr) << testFile.ToString();
 
+        ProfileState profileState = bim->CheckProfileVersion();
         TestHelper helper(testFile, *bim);
         helper.AssertLoadSchemas();
         const int schemaCount = helper.GetSchemaCount();
 
-        switch (testFile.GetProfileState())
+        switch (profileState.GetAge())
             {
-                case ProfileState::Current:
-                case ProfileState::Older:
+                case ProfileState::Age::UpToDate:
+                case ProfileState::Age::Older:
                 {
                 EXPECT_EQ(8, schemaCount) << testFile.ToString();
 
@@ -85,7 +89,7 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                 break;
                 }
 
-                case ProfileState::Newer:
+                case ProfileState::Age::Newer:
                 {
                 EXPECT_EQ(8, schemaCount) << testFile.ToString();
 
@@ -121,3 +125,120 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, PreEC32Enums)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_PREEC32ENUMS))
+        {
+        DbResult stat = BE_SQLITE_ERROR;
+        DgnDbPtr bim = OpenTestFile(&stat, testFile);
+        ASSERT_EQ(BE_SQLITE_OK, stat) << testFile.ToString();
+        ASSERT_TRUE(bim != nullptr) << testFile.ToString();
+
+        TestHelper helper(testFile, *bim);
+        helper.AssertLoadSchemas();
+
+        helper.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
+        {{ECValue("Unspecified"), nullptr},
+        {ECValue("Utc"), nullptr},
+        {ECValue("Local"), nullptr}});
+
+        helper.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
+        {{ECValue(0), "None"},
+        {ECValue(1), "Abstract"},
+        {ECValue(2), "Sealed"}});
+
+        helper.AssertEnum("PreEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+        {{ECValue(0), nullptr},
+        {ECValue(1), nullptr},
+        {ECValue(2), nullptr}});
+
+        helper.AssertEnum("PreEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
+        {{ECValue("On"), "Turned On"},
+        {ECValue("Off"), "Turned Off"}});
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, EC32Enums)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32ENUMS))
+        {
+        DbResult stat = BE_SQLITE_ERROR;
+        DgnDbPtr bim = OpenTestFile(&stat, testFile);
+        ASSERT_EQ(BE_SQLITE_OK, stat) << testFile.ToString();
+        ASSERT_TRUE(bim != nullptr) << testFile.ToString();
+
+        TestHelper helper(testFile, *bim);
+        helper.AssertLoadSchemas();
+
+        helper.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
+        {{ECValue("Unspecified"), nullptr},
+        {ECValue("Utc"), nullptr},
+        {ECValue("Local"), nullptr}});
+
+        helper.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
+        {{ECValue(0), "None"},
+        {ECValue(1), "Abstract"},
+        {ECValue(2), "Sealed"}});
+
+        helper.AssertEnum("EC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+        {{ECValue(0), nullptr},
+        {ECValue(1), nullptr},
+        {ECValue(2), nullptr}});
+
+        helper.AssertEnum("EC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
+        {{ECValue("On"), "Turned On"},
+        {ECValue("Off"), "Turned Off"}});
+        }
+
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, PreEC32KindOfQuantities)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_PREEC32KOQS))
+        {
+        DbResult stat = BE_SQLITE_ERROR;
+        DgnDbPtr bim = OpenTestFile(&stat, testFile);
+        ASSERT_EQ(BE_SQLITE_OK, stat) << testFile.ToString();
+        ASSERT_TRUE(bim != nullptr) << testFile.ToString();
+
+        TestHelper helper(testFile, *bim);
+        helper.AssertLoadSchemas();
+
+        helper.AssertKindOfQuantity("PreEC32Koqs", "ANGLE", "Angle", nullptr, "RAD(DefaultReal)", JsonValue(R"json(["ARC_DEG(Real2U)", "ARC_DEG(AngleDMS)"])json"), 0.0001);
+        helper.AssertKindOfQuantity("PreEC32Koqs", "POWER", "Power", nullptr, "W(DefaultReal)", JsonValue(R"json(["W(Real4U)", "KW(Real4U)", "MEGAW(Real4U)", "BTU/HR(Real4U)", "KILOBTU/HR(Real4U)", "HP(Real4U)"])json"), 0.001);
+        helper.AssertKindOfQuantity("PreEC32Koqs", "LIQUID_VOLUME", "Liquid Volume", nullptr, "CUB.M(DefaultReal)", JsonValue(R"json(["LITRE(Real4U)", "GALLON(Real4U)"])json"), 0.0001);
+        helper.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_NoPresUnit", nullptr, nullptr, "W/(M*K)(DefaultReal)", JsonValue(), 0.4);
+        helper.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormat_NoPresUnit", nullptr, nullptr, "W/(M*K)(DefaultReal)", JsonValue(), 0.5);
+        helper.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormatWithUnit_NoPresUnit", nullptr, nullptr, "FT(AmerFI8)", JsonValue(), 0.6);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, EC32KindOfQuantities)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32KOQS))
+        {
+        DbResult stat = BE_SQLITE_ERROR;
+        DgnDbPtr bim = OpenTestFile(&stat, testFile);
+        ASSERT_EQ(BE_SQLITE_OK, stat) << testFile.ToString();
+        ASSERT_TRUE(bim != nullptr) << testFile.ToString();
+
+        TestHelper helper(testFile, *bim);
+        helper.AssertLoadSchemas();
+
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithMandatoryComposite", "My first test KOQ", nullptr, "u:CM", JsonValue(R"js(["TBD"])js"), 0.1);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithOptionalComposite", nullptr, "My second test KOQ", "u:CM", JsonValue(R"js(["TBD"])js"), 0.2);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithoutComposite", nullptr, nullptr, "u:CM", JsonValue(R"js(["TBD"])js"), 0.3);
+        helper.AssertKindOfQuantity("EC32Koqs", "TestKoq_NoPresFormat", nullptr, nullptr, "u:KG", JsonValue(), 0.4);
+        }
+    }
