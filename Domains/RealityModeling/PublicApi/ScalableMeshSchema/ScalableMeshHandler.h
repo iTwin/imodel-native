@@ -298,7 +298,7 @@ struct SMModelClipInfo
 struct SMModelClipVectorInfo
 {
 
-	SMModelClipVectorInfo(const ClipVectorPtr& clip, ScalableMesh::SMNonDestructiveClipType type)
+	SMModelClipVectorInfo(const CLIP_VECTOR_NAMESPACE::ClipVectorPtr& clip, ScalableMesh::SMNonDestructiveClipType type)
 	{
 		m_bounds = ClipVector::Create();
 		*m_bounds = *clip;
@@ -318,7 +318,7 @@ struct SMModelClipVectorInfo
 
 	void ToBlob(bvector<uint8_t>& clipData);
 
-	ClipVectorPtr                    m_bounds;
+	CLIP_VECTOR_NAMESPACE::ClipVectorPtr                    m_bounds;
 	ScalableMesh::SMNonDestructiveClipType m_type;
 	bool                                   m_isActive;
 	uint32_t                               m_geomType;
@@ -341,8 +341,8 @@ struct SMClipProvider : public ScalableMesh::IClipDefinitionDataProvider
         virtual void GetClipPolygon(bvector<DPoint3d>& poly, uint64_t id, ScalableMesh::SMNonDestructiveClipType& type);
         virtual void SetClipPolygon(const bvector<DPoint3d>& poly, uint64_t id, ScalableMesh::SMNonDestructiveClipType type);
         virtual void SetClipPolygon(const bvector<DPoint3d>& poly, uint64_t id);
-		virtual void GetClipVector(ClipVectorPtr& poly, uint64_t id, SMNonDestructiveClipType& type);
-		virtual void SetClipVector(const ClipVectorPtr& poly, uint64_t id, SMNonDestructiveClipType type);
+		virtual void GetClipVector(CLIP_VECTOR_NAMESPACE::ClipVectorPtr& poly, uint64_t id, SMNonDestructiveClipType& type);
+		virtual void SetClipVector(const CLIP_VECTOR_NAMESPACE::ClipVectorPtr& poly, uint64_t id, SMNonDestructiveClipType type);
         virtual void RemoveClipPolygon(uint64_t id);
 
         virtual void RemoveTerrainRegion(uint64_t id);
