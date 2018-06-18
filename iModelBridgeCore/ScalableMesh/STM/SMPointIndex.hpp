@@ -30,7 +30,9 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_delayedDataPropagation = !propagateDataDown;
     m_pParentNode = 0;
     m_isParentNodeSet = true;
+	m_loadNeighbors = true;
     m_isGenerating = false;
+
     m_nodeHeader.m_SplitTreshold = pi_SplitTreshold;
     m_nodeHeader.m_IsLeaf = true;
     m_nodeHeader.m_IsUnSplitSubLevel = false;
@@ -50,6 +52,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_arePoints3d = false;
    m_nodeHeader.m_geometricResolution = 0;
     m_nodeHeader.m_textureResolution = 0;
+
+
 
     for (size_t nodeIndIter = 0; nodeIndIter < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeIndIter++)
         {
@@ -108,6 +112,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_apSubNodes.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
     m_delayedDataPropagation = !pi_rpParentNode->PropagatesDataDown();
     m_isParentNodeSet = true;
+	m_loadNeighbors = true;
+	
     m_isGenerating = pi_rpParentNode->m_isGenerating;
 
     m_nodeHeader.m_IsBranched = false;
@@ -184,6 +190,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_apSubNodes.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
     m_delayedDataPropagation = !pi_rpParentNode->PropagatesDataDown();
     m_isParentNodeSet = true;
+	m_loadNeighbors = true;
+	
     m_isGenerating = pi_rpParentNode->m_isGenerating;
 
     m_nodeHeader.m_IsBranched = false;
@@ -264,6 +272,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_apSubNodes.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
     m_delayedDataPropagation = !pi_rpParentNode->PropagatesDataDown();
     m_isParentNodeSet = true;
+	m_loadNeighbors = true;
     m_isGenerating = pi_rpParentNode->m_isGenerating;
     m_NbObjects = -1;
 
@@ -345,6 +354,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_delayedDataPropagation = propagateDataDown;
     m_pParentNode = 0;
     m_isParentNodeSet = false;
+	m_loadNeighbors = true;
+
 
     if (parent != 0)
         m_isGenerating = parent->m_isGenerating;
@@ -411,6 +422,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_delayedDataPropagation = propagateDataDown;
     m_pParentNode = 0;
     m_isParentNodeSet = false;
+	m_loadNeighbors = true;	
     m_isGenerating = false;
     m_nodeHeader.m_SplitTreshold = 10000;
     m_nodeHeader.m_IsLeaf = true;
@@ -428,6 +440,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_arePoints3d = false;
     m_nodeHeader.m_geometricResolution = 0;
     m_nodeHeader.m_textureResolution = 0;
+
 
     for (size_t nodeInd = 0; nodeInd < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeInd++)
         {
@@ -6014,7 +6027,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::GetAll
             if (node != nullptr) nodes.push_back(node.GetPtr());
             }
         }
-    }
+    }    
 
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 11/15

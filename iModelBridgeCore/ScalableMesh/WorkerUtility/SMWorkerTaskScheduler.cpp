@@ -523,7 +523,11 @@ void TaskScheduler::PerformCutTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
 
 void TaskScheduler::PerformFilterTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
     {
+    IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker());
 
+    StatusInt status = creatorWorkerPtr->ProcessFilterTask(pXmlTaskNode);
+
+    assert(status == SUCCESS);
     }
 
 void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)

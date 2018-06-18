@@ -5328,6 +5328,12 @@ template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
 
 template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndex<POINT, EXTENT>::CreateNewNode(HPMBlockID blockID, bool isRootNode)
     {
+/*
+    typename CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(blockID.m_integerID));
+
+    if (nodeIter != m_createdNodeMap->end())
+        return *nodeIter;
+*/
     HFCPtr<SMMeshIndexNode<POINT, EXTENT>> parent;
 
     auto meshNode = new SMMeshIndexNode<POINT, EXTENT>(blockID, parent, this, m_filter, m_needsBalancing, IsTextured() != SMTextureType::None, PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);

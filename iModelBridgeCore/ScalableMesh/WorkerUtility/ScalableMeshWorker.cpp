@@ -1,4 +1,3 @@
-//#include "ScalableMeshATPPch.h"
 #include "ScalableMeshWorker.h"
 
 
@@ -183,8 +182,10 @@ int ScalableMeshWorker::PrintUsage(WCharCP programName)
              L"\n\
                  ScalableMesh Worker Application For Cloud Computing.\n\
                  \n Usage: \n\
-                %ls -tf|--taskFolder= -h|--help\n\
-                --taskFolder=  (required) path to folder containing the task definitions. \n\
+                %ls -taskFolder=|tf= -startingIndexTask=|it= -h|-help\n\
+                -taskFolder=  (required) path to folder containing the task definitions. \n\
+                -startingIndexTask=  (optional) absolute path to xml file containing the indexing task definition. \n\
+                                     When defined the taskFolder will be cleanup and the index task xml file copy to the taskFolder prior to any task processing\n\
                 --help  (optional) print usage. \n\
                 ", programName);
 
@@ -211,13 +212,11 @@ Utf8String ScalableMeshWorker::GetArgValue(WCharCP arg)
     return Utf8String(GetArgValueW(arg));
     }
 
-int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
+int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[]) 
     {
     if (argc < 2)
         return PrintUsage(argv[0]);
-    
-    //m_optionClean = false;
-    
+            
     for (int iArg = 1; iArg < argc; ++iArg)
         {
         if (argv[iArg] == wcsstr(argv[iArg], L"-help") || argv[iArg] == wcsstr(argv[iArg], L"-h"))
@@ -234,6 +233,18 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"-startingIndexTask=") || argv[iArg] == wcsstr(argv[iArg], L"-it="))
+            {
+            BeFileName::FixPathName(m_startingIndexTask, GetArgValueW(argv[iArg]).c_str());
+            if (!BeFileName::DoesPathExist(m_startingIndexTask.c_str()))
+                {
+                fwprintf(stderr, L"%ls is not an existing file\n", m_startingIndexTask.c_str());
+                return PrintUsage(argv[0]);
+                }
+
+            continue;
+            }
+       
         fwprintf(stderr, L"Unrecognized command line option: %ls\n", argv[iArg]);
         return PrintUsage(argv[0]);
         }
@@ -245,49 +256,21 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
 
 void ScalableMeshWorker::Start()
     {
+    if (m_startingIndexTask.size() > 0)
+        {
+        BeFileNameStatus fileStatus = BeFileName::EmptyDirectory(m_taskFolderName.c_str());
+        assert(fileStatus == BeFileNameStatus::Success);
+
+        BeFileName newFileName(m_taskFolderName);
+        newFileName.AppendString(m_startingIndexTask.GetFileNameAndExtension().c_str());
+
+        fileStatus = BeFileName::BeCopyFile(m_startingIndexTask, newFileName, true);
+        assert(fileStatus == BeFileNameStatus::Success);
+        }
 
     TaskScheduler taskScheduler(m_taskFolderName);
 
     taskScheduler.Start();
-
-
-#if 0
-    if (BeFileName::IsDirectory(m_inputFileName.c_str()))
-        {
-        BeDirectoryIterator iterator(BeDirectoryIterator(BeFileNameCR dir));
-
-
-        ATPFileFinder fileFinder;
-
-        WString filePaths;
-
-        fileFinder.FindFiles(m_inputFileName, filePaths, true);
-
-        WString firstPath;
-
-        while (fileFinder.ParseFilePaths(filePaths, firstPath))
-            {
-            BeFileName name(firstPath.c_str());
-            WString extension;
-            name.ParseName(NULL, NULL, NULL, &extension);
-            if (0 == BeStringUtilities::Wcsicmp(extension.c_str(), L"xml"))
-                {
-                if (m_optionClean)
-                    RemoveStmFiles(name);
-                RunTestPlan(name);
-                }
-
-            }
-        }
-    else
-        {
-/*
-        if (m_optionClean)
-            RemoveStmFiles(m_inputFileName);
-        RunTestPlan(m_inputFileName);
-*/
-        }
-#endif
     }
 
 END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
