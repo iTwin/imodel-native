@@ -105,3 +105,20 @@ L10N::SqlangFiles SharedRepositoryManagerTestBase::_GetApplicationSqlangs()
     BeFileName sqlangDbPath = BeFileName(documentsRoot).AppendToPath(L"../sqlang/DgnClientFx_pseudo.sqlang.db3");
     return L10N::SqlangFiles(sqlangDbPath);
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Martynas.Saulius                05/18
+//---------------------------------------------------------------------------------------
+void SharedRepositoryManagerTestBase::ClearRevisions(DgnDbR db)
+    {
+    // Ensure the seed file doesn't contain any changes pending for a revision
+    if (!db.IsMasterCopy())
+        {
+        DgnRevisionPtr rev = db.Revisions().StartCreateRevision();
+        if (rev.IsValid())
+            {
+            db.Revisions().FinishCreateRevision();
+            db.SaveChanges();
+            }
+        }
+    }
