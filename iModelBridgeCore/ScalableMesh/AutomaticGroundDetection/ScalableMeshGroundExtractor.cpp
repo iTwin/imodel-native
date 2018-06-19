@@ -469,16 +469,15 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
         textureGenerator->SetTextureTempDir(currentTextureDir);
         textureGenerator->SetTransform(m_scalableMesh->GetReprojectionTransform());
 
-        DRange3d covExt = DRange3d::From(m_extractionArea);               
+        DRange3d covExt = DRange3d::From(m_extractionArea);
         covExt.ScaleAboutCenter(covExt, 1.1);
 
-        bvector<DPoint3d> closedPolygonPoints;
-        DPoint3d rangePts[5] = { DPoint3d::From(covExt.low.x, covExt.low.y, covExt.low.z), DPoint3d::From(covExt.low.x, covExt.high.y, covExt.low.z), DPoint3d::From(covExt.high.x, covExt.high.y, covExt.low.z),
-            DPoint3d::From(covExt.high.x, covExt.low.y, covExt.low.z), DPoint3d::From(covExt.low.x, covExt.low.y, covExt.low.z) };
-        closedPolygonPoints.assign(rangePts, rangePts + 5);
+        bvector<DPoint3d> closedPolygonRangePoints(8);
+        covExt.Get8Corners(closedPolygonRangePoints.data());
+
         if (m_createProgress.IsCanceled()) return SMStatus::S_ERROR_CANCELED_BY_USER;;
 
-        textureGenerator->GenerateTexture(closedPolygonPoints, &m_createProgress);
+        textureGenerator->GenerateTexture(closedPolygonRangePoints, &m_createProgress);
 
         BeDirectoryIterator directoryIter(currentTextureDir);
 
