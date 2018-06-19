@@ -136,6 +136,16 @@ void IConnectSignInManager::OnUserTokenExpired() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void IConnectSignInManager::OnUserTokenRenewFailed(int64_t tokenExpireTimestamp) const
+    {
+    auto listeners = m_listeners;
+    for (auto listener : listeners)
+        listener->_OnUserTokenRenewFailed(tokenExpireTimestamp);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void IConnectSignInManager::OnUserChanged() const
     {
     auto listeners = m_listeners;
