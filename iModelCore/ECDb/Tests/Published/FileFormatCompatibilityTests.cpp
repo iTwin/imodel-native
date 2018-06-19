@@ -1510,7 +1510,7 @@ TEST_F(FileFormatCompatibilityTests, OpenOldFileWithDifferentOptions)
     EXPECT_EQ(ProfileVersion(4, 0, 0, 0), oldFile.GetECDbProfileVersion()) << "Open without upgrade";
     oldFile.CloseDb();
     ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade))) << "Open with upgrade";
-    EXPECT_EQ(ExpectedProfileVersion(), oldFile.GetECDbProfileVersion()) << "Open with upgrade";
+    EXPECT_EQ(ECDb::CurrentECDbProfileVersion(), oldFile.GetECDbProfileVersion()) << "Open with upgrade";
     oldFile.CloseDb();
     }
 
