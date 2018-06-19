@@ -18,7 +18,6 @@
 DOMAIN_DEFINE_MEMBERS(RoadRailAlignmentDomain)
 HANDLER_DEFINE_MEMBERS(ConfigurationModelHandler)
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -156,10 +155,21 @@ DgnDbStatus createAlignmentPartition(SubjectCR subject, Utf8CP partitionName)
     {
     DgnDbStatus status;
     auto partitionPtr = SpatialLocationPartition::Create(subject, partitionName);
+
+    IBriefcaseManager::Request req;
+    auto stat = partitionPtr->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
+    if (RepositoryStatus::Success == stat)
+        Dgn::IBriefcaseManager::Response response = partitionPtr->GetDgnDb().BriefcaseManager().Acquire(req);
+
     if (partitionPtr->Insert(&status).IsNull())
         return status;
 
     auto alignmentModelPtr = AlignmentModel::Create(AlignmentModel::CreateParams(subject.GetDgnDb(), partitionPtr->GetElementId()));
+
+    stat = alignmentModelPtr->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
+    if (RepositoryStatus::Success == stat)
+        Dgn::IBriefcaseManager::Response response = alignmentModelPtr->GetDgnDb().BriefcaseManager().Acquire(req);
+
     if (DgnDbStatus::Success != (status = alignmentModelPtr->Insert()))
         return status;
 
@@ -169,6 +179,11 @@ DgnDbStatus createAlignmentPartition(SubjectCR subject, Utf8CP partitionName)
 
     auto horizontalBreakDownModelPtr = HorizontalAlignmentModel::Create(
         HorizontalAlignmentModel::CreateParams(subject.GetDgnDb(), horizontalPartitionCPtr->GetElementId()));
+
+    stat = horizontalBreakDownModelPtr->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
+    if (RepositoryStatus::Success == stat)
+        Dgn::IBriefcaseManager::Response response = horizontalBreakDownModelPtr->GetDgnDb().BriefcaseManager().Acquire(req);
+
 
     if (DgnDbStatus::Success != (status = horizontalBreakDownModelPtr->Insert()))
         return status;
@@ -183,12 +198,23 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(SubjectCR subject)
     {
     DgnDbStatus status;
     auto configurationPartitionPtr = DefinitionPartition::Create(subject, ConfigurationModel::GetDomainPartitionName());
+
+    IBriefcaseManager::Request req;
+    auto stat = configurationPartitionPtr->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
+    if (RepositoryStatus::Success == stat)
+        Dgn::IBriefcaseManager::Response response = configurationPartitionPtr->GetDgnDb().BriefcaseManager().Acquire(req);
+           
     if (configurationPartitionPtr->Insert(&status).IsNull())
         {
         BeAssert(false);
         }
 
     auto configModelPtr = ConfigurationModel::Create(ConfigurationModel::CreateParams(subject.GetDgnDb(), configurationPartitionPtr->GetElementId()));
+
+    stat = configModelPtr->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
+    if (RepositoryStatus::Success == stat)
+        Dgn::IBriefcaseManager::Response response = configModelPtr->GetDgnDb().BriefcaseManager().Acquire(req);
+
     if (!configModelPtr.IsValid() || (DgnDbStatus::Success != configModelPtr->Insert()))
         {
         BeAssert(false);
