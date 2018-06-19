@@ -756,8 +756,8 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
             break; 
         case SMStoreDataType::DiffSet :             
             m_smSQLiteFile->StoreDiffSet(id, nodeData, dataSize);
-            delete [] (DifferenceSet*)dataBuffer;
-            break;             
+            delete [] (int32_t*)dataBuffer;
+            break;          
         case SMStoreDataType::Skirt :             
             m_smSQLiteFile->StoreSkirtPolygon(id, nodeData, countData*sizeof(DATATYPE));            
             break;
