@@ -60,6 +60,8 @@ public:
 
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::DgnCode GetUniqueElementCode(Dgn::DgnDbR db, Dgn::CodeSpecId codeSpecId, Utf8String baseName, Dgn::DgnElementId modeledElementId, int startIndex = 0);
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::DgnCode GetNamedElementCode(Dgn::DgnDbR db, Dgn::CodeSpecId codeSpecId, Utf8String baseName, Dgn::DgnElementId modeledElementId, int startIndex = 0);
+
+    BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::DgnModelCR GetGroupInformationModel(Dgn::DgnDbR db);
 };
 
 class BuildingElementsUtils

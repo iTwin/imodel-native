@@ -20,6 +20,8 @@
 #define END_BUILDING_SHARED_NAMESPACE } END_BUILDING_NAMESPACE
 #define USING_NAMESPACE_BUILDING_SHARED using namespace BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
+#define BUILDING_InformationPartition                             "BuildingConceptStationGroup_InformationPartition"
+
 #if defined (__BUILDINGSHAREDUNITS_BUILD__)
 #define BUILDINGSHAREDUNITS_EXPORT EXPORT_ATTRIBUTE
 #else

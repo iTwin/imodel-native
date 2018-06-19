@@ -47,7 +47,10 @@ FUSProperty& FUSProperty::operator=(FUSProperty const& other)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                05/2018
 //---------------+---------------+---------------+---------------+---------------+------
-DgnElementPlacementStrategy::DgnElementPlacementStrategy()
+DgnElementPlacementStrategy::DgnElementPlacementStrategy
+(
+    Dgn::DgnDbR db
+)
     : T_Super()
     , m_lengthFUS(Formatting::FormatUnitSet("M(Meters4u)"))
     {}

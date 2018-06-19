@@ -839,6 +839,14 @@ Utf8String BuildingUtils::GetTemplateFromName
     return modifiedName;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Vytautas.Kaniusonis           06/2017
+//---------------------------------------------------------------------------------------
+Dgn::DgnModelCR BuildingUtils::GetGroupInformationModel(Dgn::DgnDbR db)
+    {
+    return *db.Models().GetModel(db.Models().QuerySubModelId(Dgn::DefinitionPartition::CreateCode(*db.Elements().GetRootSubject(), BUILDING_InformationPartition)));
+    }
+
 Dgn::DgnElementId ElementIdIteratorEntry::GetElementId() const { return m_statement->GetValueId<Dgn::DgnElementId>(0); }
 
 END_BUILDING_SHARED_NAMESPACE

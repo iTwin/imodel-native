@@ -47,7 +47,7 @@ struct DgnElementPlacementStrategy : ElementPlacementStrategy
         Formatting::FormatUnitSet GetVolumeFUS() const;
 
     protected:
-        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT DgnElementPlacementStrategy();
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT DgnElementPlacementStrategy(Dgn::DgnDbR db);
 
         virtual DgnElementManipulationStrategyCR _GetDgnElementManipulationStrategy() const = 0;
         virtual DgnElementManipulationStrategyR _GetDgnElementManipulationStrategyForEdit() = 0;
@@ -88,6 +88,12 @@ struct DgnElementPlacementStrategy : ElementPlacementStrategy
         using T_Super::SetProperty;
         using T_Super::TryGetProperty;
 
+        //! DO NOT CALL THIS METHOD IN A CONSTRUCTOR!!!
+        //! This method's implementation uses a pure virtual method to retrieve
+        //! the DgnDb. That virtual method is used to retrieve a member
+        //! stored in a descendant class. That member will be initialized only after
+        //! DgnElementPlacementStrategy is initialized.
+        //! Calling this method in a constructor will cause a crash.
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnDbR GetDgnDb() const;
     };
 

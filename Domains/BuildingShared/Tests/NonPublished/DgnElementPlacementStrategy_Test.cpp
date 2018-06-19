@@ -72,7 +72,7 @@ struct TestElementPlacementStrategy : DgnElementPlacementStrategy
 
     protected:
         TestElementPlacementStrategy(Dgn::DgnDbR db)
-            : T_Super()
+            : T_Super(db)
             , m_manipStrategy(TestElementManipulationStrategy::Create(db))
             {}
 
