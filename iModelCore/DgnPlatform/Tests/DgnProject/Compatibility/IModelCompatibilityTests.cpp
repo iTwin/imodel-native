@@ -65,9 +65,9 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     }
 
                 //DgnDb built-in schema versions
-                EXPECT_EQ(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("BisCore")) << testFile.ToString();
+                EXPECT_EQ(SchemaVersion(1, 0, 1), helper.GetSchemaVersion("BisCore")) << testFile.ToString();
                 EXPECT_EQ(BeVersion(3, 1), helper.GetOriginalECXmlVersion("BisCore")) << testFile.ToString();
-                EXPECT_EQ(JsonValue(R"js({"classcount":163, "enumcount": 2})js"), helper.GetSchemaItemCounts("BisCore")) << testFile.ToString();
+                EXPECT_EQ(JsonValue(R"js({"classcount":164, "enumcount": 2})js"), helper.GetSchemaItemCounts("BisCore")) << testFile.ToString();
 
                 EXPECT_EQ(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("Generic")) << testFile.ToString();
                 EXPECT_EQ(BeVersion(3, 1), helper.GetOriginalECXmlVersion("Generic")) << testFile.ToString();
@@ -109,9 +109,9 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     }
 
                 //DgnDb built-in schema versions
-                EXPECT_EQ(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("BisCore")) << testFile.ToString();
+                EXPECT_EQ(SchemaVersion(1, 0, 1), helper.GetSchemaVersion("BisCore")) << testFile.ToString();
                 EXPECT_EQ(BeVersion(3, 1), helper.GetOriginalECXmlVersion("BisCore")) << testFile.ToString();
-                EXPECT_EQ(JsonValue(R"js({"classcount":163, "enumcount": 2})js"), helper.GetSchemaItemCounts("BisCore")) << testFile.ToString();
+                EXPECT_EQ(JsonValue(R"js({"classcount":164, "enumcount": 2})js"), helper.GetSchemaItemCounts("BisCore")) << testFile.ToString();
 
                 EXPECT_EQ(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("Generic")) << testFile.ToString();
                 EXPECT_EQ(BeVersion(3, 1), helper.GetOriginalECXmlVersion("Generic")) << testFile.ToString();
@@ -154,7 +154,7 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     }
 
                 //DgnDb built-in schema versions
-                EXPECT_LE(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("BisCore")) << testFile.ToString();
+                EXPECT_LE(SchemaVersion(1, 0, 1), helper.GetSchemaVersion("BisCore")) << testFile.ToString();
                 EXPECT_LE(BeVersion(3, 2), helper.GetOriginalECXmlVersion("BisCore")) << testFile.ToString();
                 EXPECT_LE(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("Generic")) << testFile.ToString();
                 EXPECT_LE(BeVersion(3, 2), helper.GetOriginalECXmlVersion("Generic")) << testFile.ToString();

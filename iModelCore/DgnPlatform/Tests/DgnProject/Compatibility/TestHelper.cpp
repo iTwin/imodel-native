@@ -264,7 +264,7 @@ void TestHelper::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP 
         size_t i = 0;
         for (NamedFormat const& presFormat : koq->GetPresentationFormats())
             {
-            EXPECT_STREQ(expectedPresentationFormats.m_value[(Json::ArrayIndex) i].asCString(), presFormat.GetQualifiedName(koq->GetSchema()).c_str()) << "Presentation Format #" << i << " | " << assertMessage;
+            EXPECT_STREQ(expectedPresentationFormats.m_value[(Json::ArrayIndex) i].asCString(), presFormat.GetQualifiedFormatString(koq->GetSchema()).c_str()) << "Presentation Format #" << i << " | " << assertMessage;
             i++;
             }
         }
