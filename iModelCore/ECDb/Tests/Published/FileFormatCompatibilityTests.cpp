@@ -1353,7 +1353,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only two entries expected in " << BEDB_TABLE_Local;
     stmt.Finalize();
     
-    //verify 4.0.1.0 upgrade
+    //verify 4.0.0.2 upgrade
     Db benchmarkFile;
     ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly)));
 
@@ -1500,8 +1500,12 @@ TEST_F(FileFormatCompatibilityTests, OpenOldFileWithDifferentOptions)
     ScopedDisableFailOnAssertion disableAssertion;
     ASSERT_EQ((int) BE_SQLITE_READONLY, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ProfileUpgradeOptions::Upgrade))) << "ProfileUpgradeOptions::Upgrade requires OpenMode::ReadWrite";
     }
-    ASSERT_EQ((int) BE_SQLITE_ERROR_ProfileTooOldForReadWrite, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite))) << "Can only open readonly";
-    ASSERT_EQ((int) BE_SQLITE_ERROR_ProfileTooOldForReadWrite, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::None))) << "Can only open readonly";
+    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite))) << "Can open readwrite";
+    EXPECT_EQ(ProfileVersion(4, 0, 0, 0), oldFile.GetECDbProfileVersion()) << "Open without upgrade";
+    oldFile.CloseDb();
+    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::None))) << "Can open readwrite";
+    EXPECT_EQ(ProfileVersion(4, 0, 0, 0), oldFile.GetECDbProfileVersion()) << "Open without upgrade";
+    oldFile.CloseDb();
     ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly))) << "Can open readonly";
     EXPECT_EQ(ProfileVersion(4, 0, 0, 0), oldFile.GetECDbProfileVersion()) << "Open without upgrade";
     oldFile.CloseDb();

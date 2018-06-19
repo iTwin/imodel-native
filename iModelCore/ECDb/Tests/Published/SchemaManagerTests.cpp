@@ -1788,8 +1788,8 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
         ASSERT_STREQ("u:CM", actualKoq.GetPersistenceUnit()->GetQualifiedName(actualKoq.GetSchema()).c_str());
         ASSERT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
         ASSERT_EQ(2, actualKoq.GetPresentationFormats().size());
-        ASSERT_STREQ("f:DefaultRealU[u:M]", actualKoq.GetPresentationFormats()[0].GetQualifiedName(actualKoq.GetSchema()).c_str());
-        ASSERT_STREQ("f:DefaultReal[u:M]", actualKoq.GetPresentationFormats()[1].GetQualifiedName(actualKoq.GetSchema()).c_str());
+        ASSERT_STREQ("f:DefaultRealU[u:M]", actualKoq.GetPresentationFormats()[0].GetQualifiedFormatString(actualKoq.GetSchema()).c_str());
+        ASSERT_STREQ("f:DefaultReal[u:M]", actualKoq.GetPresentationFormats()[1].GetQualifiedFormatString(actualKoq.GetSchema()).c_str());
         };
 
     std::vector<SchemaItem> testSchemas;
@@ -1998,8 +1998,8 @@ TEST_F(SchemaManagerTests, ImportPreEC32KindOfQuantity)
     KindOfQuantityCP koq = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
     ASSERT_TRUE(koq != nullptr);
     ASSERT_EQ(2, koq->GetPresentationFormats().size());
-    EXPECT_STREQ("f:DefaultReal[u:FT]", koq->GetPresentationFormats()[0].GetQualifiedName(*testSchema).c_str());
-    EXPECT_STREQ("f:DefaultReal[u:IN]", koq->GetPresentationFormats()[1].GetQualifiedName(*testSchema).c_str());
+    EXPECT_STREQ("f:DefaultReal[u:FT]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*testSchema).c_str());
+    EXPECT_STREQ("f:DefaultReal[u:IN]", koq->GetPresentationFormats()[1].GetQualifiedFormatString(*testSchema).c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -2014,8 +2014,8 @@ TEST_F(SchemaManagerTests, GetPreEC32KindOfQuantity)
         EXPECT_STREQ("u:CM", actualKoq.GetPersistenceUnit()->GetQualifiedName(actualKoq.GetSchema()).c_str());
         EXPECT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
         ASSERT_EQ(2, actualKoq.GetPresentationFormats().size());
-        EXPECT_STREQ("f:DefaultReal[u:FT]", actualKoq.GetPresentationFormats()[0].GetQualifiedName(actualKoq.GetSchema()).c_str());
-        EXPECT_STREQ("f:DefaultReal[u:IN]", actualKoq.GetPresentationFormats()[1].GetQualifiedName(actualKoq.GetSchema()).c_str());
+        EXPECT_STREQ("f:DefaultReal[u:FT]", actualKoq.GetPresentationFormats()[0].GetQualifiedFormatString(actualKoq.GetSchema()).c_str());
+        EXPECT_STREQ("f:DefaultReal[u:IN]", actualKoq.GetPresentationFormats()[1].GetQualifiedFormatString(actualKoq.GetSchema()).c_str());
         };
 
     std::vector<SchemaItem> testSchemas;

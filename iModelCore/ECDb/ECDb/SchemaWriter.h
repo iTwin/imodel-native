@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct SchemaWriter final
     {
-    friend struct ProfileUpgrader_4010;
+    friend struct ProfileUpgrader_4002;
     public:
         struct Context final
             {

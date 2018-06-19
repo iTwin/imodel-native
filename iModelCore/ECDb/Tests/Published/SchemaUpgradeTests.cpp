@@ -7682,7 +7682,7 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
             if (!isFirstFormat)
                 actualPresentationFormats.append(";");
 
-            actualPresentationFormats.append(format.GetQualifiedName(koq->GetSchema()));
+            actualPresentationFormats.append(format.GetQualifiedFormatString(koq->GetSchema()));
             isFirstFormat = false;
             }
 
