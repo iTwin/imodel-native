@@ -29,6 +29,11 @@ struct CustomFilteringSequence;
 
 struct ImportConfig : RefCountedBase
     {
+#ifndef VANCOUVER_API
+	typedef HVE2DShape ImagePP::HVE2DShape;
+	typedef HFCPtr ImagePP::HFCPtr;
+	typedef HGF2DCoordSys ImagePP::HGF2DCoordSys;
+#endif
     protected:
         virtual void _SetAreAttachmentsImported(bool importAttachments) = 0;
         virtual void _SetDefaultTargetLayer(uint32_t layer) = 0;
@@ -46,9 +51,9 @@ struct ImportConfig : RefCountedBase
         virtual void _SetTargetFilters(const CustomFilteringSequence& targetFilters) = 0;
         virtual const CustomFilteringSequence& _GetTargetFilters(void) const = 0;
 
-        virtual void _SetClipShape(const ImagePP::HFCPtr<ImagePP::HVEClipShape>& clipShapePtr) = 0;
+        virtual void _SetClipShape(const HFCPtr<HVEClipShape>& clipShapePtr) = 0;
 
-        virtual const ImagePP::HVEClipShape* _GetClipShape() const = 0;
+        virtual const HVEClipShape* _GetClipShape() const = 0;
 
         virtual bool                    _HasDefaultTargetGCS() const = 0;
         virtual const GCS&              _GetDefaultTargetGCS() const = 0;
@@ -101,12 +106,12 @@ struct ImportConfig : RefCountedBase
             {
             return _SetTargetFilters(targetFilters);
             }
-        IMPORT_DLLE void SetClipShape(const ImagePP::HFCPtr<ImagePP::HVEClipShape>& clipShapePtr)
+        IMPORT_DLLE void SetClipShape(const HFCPtr<HVEClipShape>& clipShapePtr)
             {
             return _SetClipShape(clipShapePtr);
             }
 
-        IMPORT_DLLE const ImagePP::HVEClipShape* GetClipShape() const
+        IMPORT_DLLE const HVEClipShape* GetClipShape() const
             {
             return _GetClipShape();
             }

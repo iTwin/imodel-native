@@ -9,6 +9,7 @@
 #pragma once
 
 #include <ImagePP/all/h/HPMDataStore.h>
+#include "ImagePPHeaders.h"
 
 USING_NAMESPACE_IMAGEPP
 /** --------------------------------------------------------------------------------------------------------
