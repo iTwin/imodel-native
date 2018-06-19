@@ -890,7 +890,8 @@ void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP dest
         db->CloseDb();
         }
 
-    m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade));
+    m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
     ASSERT_EQ(BE_SQLITE_OK, openStatus);
     ASSERT_TRUE(m_db.IsValid());
     }

@@ -784,6 +784,9 @@ public:
     //! Get the EcefLocation for this iModel. May not be valid if iModel is not geolocated.
     DGNPLATFORM_EXPORT EcefLocation GetEcefLocation() const;
 
+    //! Set the EcefLocation for this iModel.
+    void SetEcefLocation(EcefLocation const& location) const {m_ecefLocation = location;}
+
     //! Convert a GeoPoint to an XYZ point
     //! @param[out] outXyz The output XYZ point
     //! @param[in] inLatLong The input GeoPoint
