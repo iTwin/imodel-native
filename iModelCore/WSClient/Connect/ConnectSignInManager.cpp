@@ -334,6 +334,10 @@ IConnectAuthenticationPersistencePtr persistence
         auth.tokenProvider = IdentityTokenProvider::Create(m_client, auth.persistence, [=] ()
             {
             OnUserTokenExpired();
+            },
+            [=] (int64_t expireTime)
+            {
+            OnUserTokenRenewFailed(expireTime); 
             });
         }
     else if (AuthenticationType::Credentials == type)
