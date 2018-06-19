@@ -168,7 +168,7 @@ void ConnectSpaces::SendJsonMessageToUiThread(Utf8CP messageType, JsonValueCR re
         wrapper["data"] = response;
         }
 
-    MobileDgnApplication::App().Messages().Send(JsonMessage(messageType, wrapper));
+    MobileDgnApplication::MessageSender().Send(JsonMessage(messageType, wrapper));
     }
 
 /*--------------------------------------------------------------------------------------+
