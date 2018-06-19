@@ -4976,7 +4976,7 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
     Transform tr = Transform::FromIdentity();
     ClipVectorPtr clipP = nullptr;
 
-    enum class SaveAsType { DEFAULT, _3DTILES, _3DTILES_CLIPPED, _3SM_CLIPPED };
+    enum class SaveAsType { DEFAULT, _3DTILES, _3SM };
     enum class ClipType { NONE, MASK, BOUNDARY, BOTH };
     SaveAsType type;
     ClipType clipType = ClipType::NONE;
@@ -5006,10 +5006,8 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     if (0 == BeStringUtilities::Wcsicmp(typeStr.c_str(), L"3dtiles"))
         type = SaveAsType::_3DTILES;
-    else if (0 == BeStringUtilities::Wcsicmp(typeStr.c_str(), L"3dtiles_clipped"))
-        type = SaveAsType::_3DTILES_CLIPPED;
-    else if (0 == BeStringUtilities::Wcsicmp(typeStr.c_str(), L"3sm_clipped"))
-        type = SaveAsType::_3SM_CLIPPED;
+    else if (0 == BeStringUtilities::Wcsicmp(typeStr.c_str(), L"3sm"))
+        type = SaveAsType::_3SM;
     else
         type = SaveAsType::DEFAULT;
 
@@ -5024,11 +5022,11 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     double t = clock();
 
-    bool isClipped = type == SaveAsType::_3DTILES_CLIPPED || type == SaveAsType::_3SM_CLIPPED;
+    bool isClipped = clipType != ClipType::NONE; // type == SaveAsType::_3DTILES_CLIPPED || type == SaveAsType::_3SM_CLIPPED;
 
-    if (isClipped && clipType == ClipType::NONE)
+    if (!isClipped && type == SaveAsType::_3SM)
         {
-        printf("ERROR : Must define a clipType to save as clipped mesh\r\n");
+        printf("ERROR : Copying a 3sm is not permitted\r\n");
         return;
         }
 
@@ -5039,6 +5037,7 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
     DRange3d range;
     if (isClipped)
         {
+        // Create clip based on mesh extent
         if (allTestPass = DTM_SUCCESS == myScalableMesh->GetRange(range))
             {
             range.scaleAboutCenter(&range, 0.75);
@@ -5065,7 +5064,6 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
         switch (type)
             {
             case SaveAsType::_3DTILES:
-            case SaveAsType::_3DTILES_CLIPPED:
             {
             WString name = BeFileName::GetFileNameWithoutExtension(smFileName.c_str());
             BeFileName tilesOutDir (outputDirectory.c_str());
@@ -5088,7 +5086,7 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
                 }
             break;
             }
-            case SaveAsType::_3SM_CLIPPED:
+            case SaveAsType::_3SM:
             {
             WString name = BeFileName::GetFileNameWithoutExtension(smFileName.c_str());
             BeFileName smOutFileName(outputDirectory.c_str());
@@ -5106,7 +5104,7 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
                     return;
                     }
                 }
-            allTestPass = SUCCESS == IScalableMeshSaveAs::DoSaveAs(myScalableMesh, smOutFileName, clipP, nullptr /*progress*/);
+            allTestPass = SUCCESS == IScalableMeshSaveAs::DoSaveAs(myScalableMesh, smOutFileName, clipP, nullptr /*progress*/, Transform::FromIdentity());
             ScalableMesh::IScalableMeshPtr newMesh = nullptr;
             if (allTestPass)
                 {
