@@ -45,5 +45,6 @@ public:
     void    RenameAndActivateLayout (DwgStringCR oldName, DwgStringCR newName);
 
     DwgDbObjectIdCR GetCurrentObjectId () const;
+    DwgDbObjectId   GetModelspaceId () const;
 
 }; // DwgFileEditor

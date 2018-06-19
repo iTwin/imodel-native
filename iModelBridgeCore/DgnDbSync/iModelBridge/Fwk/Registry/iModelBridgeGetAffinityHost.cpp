@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <imodelBridge/iModelBridgeRegistry.h>
+#include <iModelBridge/iModelBridgeRegistry.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 
