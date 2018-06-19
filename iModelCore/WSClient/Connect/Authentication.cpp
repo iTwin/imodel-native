@@ -53,7 +53,7 @@ void WebServices::Authenticate(JsonValueCR messageDataObj)
 
         if (isSignOut)
             {
-            MobileDgnApplication::App().Messages().Send(NotificationMessage("FieldApps.Message.Connect.SignOut_Succeeded"));
+            MobileDgnApplication::MessageSender().Send(NotificationMessage("FieldApps.Message.Connect.SignOut_Succeeded"));
             }
         else
             {
@@ -70,19 +70,19 @@ void WebServices::Authenticate(JsonValueCR messageDataObj)
                 }
             Json::Value messageValue(Json::objectValue);
             messageValue["message"] = message;
-            MobileDgnApplication::App().Messages().Send(JsonMessage("FieldApps.Message.Connect.SignIn_Failed", messageValue));
+            MobileDgnApplication::MessageSender().Send(JsonMessage("FieldApps.Message.Connect.SignIn_Failed", messageValue));
             }
         return;
         }
 
     SamlTokenPtr token = result.GetValue();
 
-    MobileDgnApplication::App().Messages().Send(NotificationMessage("FieldApps.Message.Connect.SignIn_Succeeded"));
+    MobileDgnApplication::MessageSender().Send(NotificationMessage("FieldApps.Message.Connect.SignIn_Succeeded"));
     Json::Value userData(Json::objectValue);
     userData[AuthenticationData::USERNAME] = username;
     userData[AuthenticationData::PASSWORD] = password;
     userData[AuthenticationData::TOKEN] = token->AsString();
-    MobileDgnApplication::App().Messages().Send(JsonMessage(CONNECT_COMMAND_SHOW_USER_DATA, userData));
+    MobileDgnApplication::MessageSender().Send(JsonMessage(CONNECT_COMMAND_SHOW_USER_DATA, userData));
 
     Json::Value setupData(messageDataObj);
     setupData[AuthenticationData::TOKEN] = token->AsString();

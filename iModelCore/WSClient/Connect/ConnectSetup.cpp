@@ -92,7 +92,7 @@ void WebServices::ConnectSignOut(JsonValueCR messageDataObj)
     {
     MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, false);
     ConnectAuthenticationPersistence::GetShared()->SetToken(nullptr);
-    MobileDgnApplication::App().Messages().Send(NotificationMessage("FieldApps.Message.Connect.SignOut_Succeeded"));
+    MobileDgnApplication::MessageSender().Send(NotificationMessage("FieldApps.Message.Connect.SignOut_Succeeded"));
     }
 
 bool GetCredentials(JsonValueCR messageDataObj, CredentialsR cred)
