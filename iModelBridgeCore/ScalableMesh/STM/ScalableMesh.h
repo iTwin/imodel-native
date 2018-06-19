@@ -86,6 +86,13 @@ typedef HGF3DExtent<double> YProtFeatureExtentType;
 +----------------------------------------------------------------------------*/
 struct ScalableMeshBase : public RefCounted<IScalableMesh>
     {
+    private:
+
+#ifndef VANCOUVER_API
+        //Avoid assert added on Bim02    
+        virtual uint32_t _GetExcessiveRefCountThreshold() const override { return std::numeric_limits<uint32_t>::max(); }
+#endif
+
 
     protected:
 /*__PUBLISH_SECTION_END__*/
