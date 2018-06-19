@@ -687,11 +687,11 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
         }
 
     ProfileVersion profileVersion(0, 0, 0, 0);
-    if (BE_SQLITE_OK != ProfileManager::ReadProfileVersion(profileVersion, m_ecdb) || ProfileManager::GetExpectedVersion() != profileVersion)
+    if (BE_SQLITE_OK != ProfileManager::ReadProfileVersion(profileVersion, m_ecdb) || ECDb::CurrentECDbProfileVersion() != profileVersion)
         {
         m_ecdb.GetImpl().Issues().ReportV("Failed to import ECSchemas. The ECDb file is too new (version: %s). Schema imports with this version of the software can "
                                          "only be done on files with profile version %s.",
-                                         profileVersion.ToString().c_str(), ProfileManager::GetExpectedVersion().ToString().c_str());
+                                         profileVersion.ToString().c_str(), ECDb::CurrentECDbProfileVersion().ToString().c_str());
         return ERROR;
         }
 

@@ -1254,7 +1254,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_NewFile)
     ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibility_newfile_test.ecdb"));
 
     Db benchmarkFile;
-    BeFileName benchmarkFilePath = GetBenchmarkFileFolder(ExpectedProfileVersion());
+    BeFileName benchmarkFilePath = GetBenchmarkFileFolder(ECDb::CurrentECDbProfileVersion());
     benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
     ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath.GetNameUtf8();
 
@@ -1647,7 +1647,7 @@ TEST_F(FileFormatCompatibilityTests, CompareProfileTables_NewFile)
     ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibility_newfile_test.ecdb"));
 
     Db benchmarkFile;
-    BeFileName benchmarkFilePath = GetBenchmarkFileFolder(ExpectedProfileVersion());
+    BeFileName benchmarkFilePath = GetBenchmarkFileFolder(ECDb::CurrentECDbProfileVersion());
     benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
     ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath.GetNameUtf8();
     

@@ -55,7 +55,7 @@ TEST_F(ECDbTestFixture, Profile)
     Utf8String actualProfileVersionStr;
     EXPECT_EQ(BE_SQLITE_ROW, m_ecdb.QueryProperty(actualProfileVersionStr, PROFILEVERSION_PROPSPEC)) << L"ECDb file is expected to contain an entry for the ECDb profile version in be_prop.";
     ProfileVersion actualProfileVersion(actualProfileVersionStr.c_str());
-    EXPECT_TRUE(ExpectedProfileVersion() == actualProfileVersion) << "Unexpected ECDb profile version of new ECDb file. Actual version: " << actualProfileVersionStr.c_str();
+    EXPECT_EQ(ECDb::CurrentECDbProfileVersion(), actualProfileVersion) << "Unexpected ECDb profile version of new ECDb file. Actual version: " << actualProfileVersionStr.c_str();
 
     size_t sequenceIndex = 0;
     ASSERT_TRUE(m_ecdb.GetBLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));

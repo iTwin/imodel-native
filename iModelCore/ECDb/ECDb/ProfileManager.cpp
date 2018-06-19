@@ -53,7 +53,7 @@ DbResult ProfileManager::CreateProfile(ProfileVersion& version, ECDbR ecdb)
         }
   
     ecdb.SaveChanges();
-    version = GetExpectedVersion();
+    version = ECDb::CurrentECDbProfileVersion();
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End CreateECProfile");
     return BE_SQLITE_OK;
     }
@@ -69,7 +69,7 @@ ProfileState ProfileManager::CheckProfileVersion(ProfileVersion& fileProfileVers
     if (BE_SQLITE_OK != ReadProfileVersion(fileProfileVersion, ecdb))
         return ProfileState::Error();
 
-    return Db::CheckProfileVersion(GetExpectedVersion(), fileProfileVersion, GetMinimumSupportedVersion(), PROFILENAME);
+    return Db::CheckProfileVersion(ECDb::CurrentECDbProfileVersion(), fileProfileVersion, ECDb::MinimumUpgradableECDbProfileVersion(), PROFILENAME);
     }
 
 //--------------------------------------------------------------------------------------
@@ -125,11 +125,11 @@ DbResult ProfileManager::UpgradeProfile(ProfileVersion& newVersion, ECDbR ecdb)
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("Upgraded " PROFILENAME " profile from version %s to version %s in file '%s'.",
-                  fileProfileVersion.ToString().c_str(), GetExpectedVersion().ToString().c_str(), ecdb.GetDbFileName());
+                  fileProfileVersion.ToString().c_str(), ECDb::CurrentECDbProfileVersion().ToString().c_str(), ecdb.GetDbFileName());
         }
 
     PERFLOG_FINISH("ECDb", "Profile upgrade");
-    newVersion = GetExpectedVersion();
+    newVersion = ECDb::CurrentECDbProfileVersion();
     return BE_SQLITE_OK;
     }
 
@@ -166,7 +166,7 @@ DbResult ProfileManager::RunUpgraders(ECDbCR ecdb, ProfileVersion const& actualF
 DbResult ProfileManager::AssignProfileVersion(ECDbR ecdb, bool onProfileCreation)
     {
     //Save the profile version as string (JSON format)
-    Utf8String profileVersionStr = GetExpectedVersion().ToJson();
+    Utf8String profileVersionStr = ECDb::CurrentECDbProfileVersion().ToJson();
 
     if (onProfileCreation)
         {
