@@ -8,7 +8,7 @@
 
 #include "PublicApi/ClassificationSystemsElements.h"
 
-
+  
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystem)
@@ -37,6 +37,28 @@ Utf8CP name
     {
         Dgn::DgnCode code = GetSystemCode(params.m_dgndb, name);
         SetCode(code);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aurimas.Laureckis               06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassificationSystem::_SerializeProperties
+(
+Json::Value& elementData
+) const
+    {
+    elementData["name"] = GetName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aurimas.Laureckis               06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassificationSystem::_FormatSerializedProperties
+(
+Json::Value& elementData
+) const
+    {
+    elementData["name"] = GetName();
     }
 
 /*---------------------------------------------------------------------------------**//**

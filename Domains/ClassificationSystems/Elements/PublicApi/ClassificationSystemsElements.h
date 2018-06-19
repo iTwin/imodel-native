@@ -25,7 +25,7 @@ BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 //=======================================================================================
 //! A Classification System element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem : Dgn::DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem : Dgn::DefinitionElement, BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::IBCSSerializable
     {
     DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem, Dgn::DefinitionElement);
     private:
@@ -37,6 +37,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem : Dgn::DefinitionElement
         friend struct ClassificationSystemsDomain;
 
         virtual void _OnInserted(Dgn::DgnElementP copiedFrom) const override;
+        virtual void _SerializeProperties(Json::Value& elementData) const override;
+        virtual void _FormatSerializedProperties(Json::Value& elementData) const override;
 
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystem, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
