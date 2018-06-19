@@ -152,8 +152,6 @@ public:
     static BeFileName BuildECDbPath(Utf8CP ecdbFileName);
     static DbResult CreateECDb(ECDbR, Utf8CP ecdbFileName = nullptr);
     static BentleyStatus ReadECSchema(ECN::ECSchemaReadContextPtr&, ECDbCR, SchemaItem const&);
-
-    static ProfileVersion const& ExpectedProfileVersion() { return *s_expectedProfileVersion; }
     };
 
 END_ECDBUNITTESTS_NAMESPACE

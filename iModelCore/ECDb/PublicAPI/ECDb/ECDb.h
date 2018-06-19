@@ -247,6 +247,15 @@ public:
     ECDB_EXPORT ECDb();
     ECDB_EXPORT virtual ~ECDb();
 
+    //! Gets the version of the ECDb profile of this file.
+    ECDB_EXPORT ProfileVersion const& GetECDbProfileVersion() const;
+
+    //! Gets the current version of the ECDb profile 
+    static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 1); }
+    //! Gets the minimum version of the ECDb profile for which in-situ upgrades are possible.
+    //! Files with an older version cannot be upgraded in-situ.
+    static ProfileVersion MinimumUpgradableECDbProfileVersion() { return ProfileVersion(4, 0, 0, 0); }
+
     //! Gets the settings with which the ECDb object was constructed.
     Settings const& GetECDbSettings() const { return GetECDbSettingsManager().GetSettings(); }
 
@@ -421,9 +430,6 @@ public:
     //! @note For subclass implementors: calling this method fires the _OnBeforeClearECDbCache callback. This allows subclasses
     //! to free any items that referred to the objects in the cache.
     ECDB_EXPORT void ClearECDbCache() const;
-
-    //! Gets the version of the ECDb profile of this file.
-    ECDB_EXPORT ProfileVersion const& GetECDbProfileVersion() const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetImpl() const;
