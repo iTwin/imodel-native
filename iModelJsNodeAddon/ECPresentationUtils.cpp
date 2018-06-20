@@ -1465,12 +1465,12 @@ private:
 public:
     DescriptorOverrideHelper(JsonValueCR json) : m_overridesJson(json) {}
     Utf8CP GetDisplayType() const { return m_overridesJson["displayType"].asCString(); }
-    ContentDescriptorCPtr GetOverridenDescriptor(ContentDescriptorCR defaultDescriptor) const
+    ContentDescriptorPtr GetOverridenDescriptor(ContentDescriptorCR defaultDescriptor) const
         {
         if (!defaultDescriptor.GetPreferredDisplayType().Equals(GetDisplayType()))
             {
             BeAssert(false);
-            return &defaultDescriptor;
+            return ContentDescriptor::Create(defaultDescriptor);
             }
         ContentDescriptorPtr descriptorCopy = ContentDescriptor::Create(defaultDescriptor);
         descriptorCopy->SetSortingField(GetSortingFieldName());
@@ -1561,6 +1561,55 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(IECPr
                     });
             });
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+    {
+    if (!params.isMember("fieldName"))
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "fieldName");
+
+    IConnectionCP connection = manager.Connections().GetConnection(db);
+    JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
+    PageOptions pageOptions = GetPageOptions(params);
+    Utf8String fieldName = params["fieldName"].asString();
+
+    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, GetManagerOptions(params))
+        .then([&manager, descriptorOverridesJson, pageOptions, fieldName] (ContentDescriptorCPtr descriptor)
+        {
+        if (descriptor.IsNull())
+            return folly::makeFutureWith([] () { return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor"); });
+
+        ContentDescriptorPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
+        bvector<ContentDescriptor::Field*> fieldsCopy = descriptor->GetAllFields();
+        for (ContentDescriptor::Field const* field : fieldsCopy)
+            {
+            if (!field->GetName().Equals(fieldName))
+                overridenDescriptor->RemoveField(field->GetName().c_str());
+            }
+        overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
+
+        return manager.GetContent(*overridenDescriptor, pageOptions)
+            .then([fieldName](ContentCPtr content)
+            {
+            DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+
+            rapidjson::Document response;
+            response.SetArray();
+            for (size_t i = 0; i < contentSet.GetSize(); i++)
+                {
+                RapidJsonValueCR value = contentSet.Get(i)->GetDisplayValues()[fieldName.c_str()];
+                if (value.IsNull() || (value.IsString() && 0 == value.GetStringLength()))
+                    continue;
+
+                response.PushBack(rapidjson::Value(value.GetString(), response.GetAllocator()), response.GetAllocator());
+                }
+            return ECPresentationResult(std::move(response));
+            });
+        });
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                 06/18
