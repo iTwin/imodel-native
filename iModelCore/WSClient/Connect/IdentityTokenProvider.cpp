@@ -22,11 +22,13 @@ IdentityTokenProvider::IdentityTokenProvider
 (
 IImsClientPtr client,
 ITokenStorePtr store,
-std::function<void()> tokenExpiredHandler
+std::function<void()> tokenExpiredHandler,
+std::function<void(int64_t)> tokenRenewFailedHandler
 ) :
 m_client(client),
 m_store(store),
 m_tokenExpiredHandler(tokenExpiredHandler),
+m_tokenRenewFailedHandler(tokenRenewFailedHandler),
 m_tokenLifetime(TOKEN_LIFETIME),
 m_tokenRefreshRate(TOKEN_REFRESH_RATE)
     {}
@@ -34,9 +36,9 @@ m_tokenRefreshRate(TOKEN_REFRESH_RATE)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IdentityTokenProviderPtr IdentityTokenProvider::Create(IImsClientPtr client, ITokenStorePtr store, std::function<void()> tokenExpiredHandler)
+IdentityTokenProviderPtr IdentityTokenProvider::Create(IImsClientPtr client, ITokenStorePtr store, std::function<void()> tokenExpiredHandler, std::function<void(int64_t)> tokenRenewFailedHandler)
     {
-    return std::shared_ptr<IdentityTokenProvider>(new IdentityTokenProvider(client, store, tokenExpiredHandler));
+    return std::shared_ptr<IdentityTokenProvider>(new IdentityTokenProvider(client, store, tokenExpiredHandler, tokenRenewFailedHandler));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -114,6 +116,8 @@ AsyncTaskPtr<SamlTokenResult> IdentityTokenProvider::RenewToken()
                 if (m_tokenExpiredHandler)
                     m_tokenExpiredHandler();
                 }
+            else if (m_tokenRenewFailedHandler)
+                m_tokenRenewFailedHandler(GetTokenExpirationTimestamp());
 
             return result;
             });
@@ -149,4 +153,16 @@ bool IdentityTokenProvider::ShouldRenewToken(DateTimeCR tokenSetTime)
         return true;
 
     return false;
+    }
+
+/*--------------------------------------------------------------------------------------+
+ * @bsimethod                                                    Mantas.Boiko    06/2018
+ +---------------+---------------+---------------+---------------+---------------+------*/
+int64_t IdentityTokenProvider::GetTokenExpirationTimestamp()
+    {
+    int64_t tokenSetTimestamp;
+    if (SUCCESS != m_store->GetTokenSetTime().ToUnixMilliseconds(tokenSetTimestamp))
+        return 0;
+
+    return tokenSetTimestamp + m_tokenLifetime * 60 * 1000;
     }
