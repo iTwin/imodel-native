@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="RoadRailAlignment" alias="rralign" version="01.00.00" description="Base schema for the Alignment domain in light of Road and Rail applications." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
-    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
     <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
 
     <KindOfQuantity typeName="STATION" displayLabel="Station" persistenceUnit="M(DefaultReal)" presentationUnits="M(stop1000-2-3z);FT(stop100-2-2z)" relativeError="0.0001"/>
@@ -157,17 +157,8 @@
             <Class class="Alignment"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="GraphicalElement3dRepresentsSpatialElement" strength="referencing" modifier="Abstract">
-        <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
-            <Class class="bis:GraphicalElement3d"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is represented by" polymorphic="true">
-            <Class class="bis:SpatialElement"/>
-        </Target>
-    </ECRelationshipClass>
     <ECRelationshipClass typeName="GraphicalElement3dRepresentsAlignment" strength="referencing" modifier="Sealed">
-        <BaseClass>GraphicalElement3dRepresentsSpatialElement</BaseClass>
+        <BaseClass>bis:GraphicalElement3dRepresentsElement</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
             <Class class="bis:GraphicalElement3d"/>
         </Source>
