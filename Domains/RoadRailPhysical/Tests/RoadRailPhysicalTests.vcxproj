@@ -34,6 +34,9 @@
     <None Include="BuildTests.mke" />
     <None Include="prewire.mke" />
   </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\RoadRailPhysical.PartFile.xml" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F202C629-EDD5-48ED-845A-4698B2B05B2B}</ProjectGuid>
     <RootNamespace>LinearReferencing</RootNamespace>
