@@ -53,7 +53,41 @@ public:
         Json::Reader reader;
         Json::Value settings;
         reader.Parse(response.GetBody().AsString(), settings);
-        return settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::InstanceId].asString();
+
+        Utf8String iModelId = settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::InstanceId].asString();
+        Utf8String urlCreateSeedInstance = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--";
+        urlCreateSeedInstance += iModelId + "/iModelScope/SeedFile";
+        Request requestCreateSeedInstance(urlCreateSeedInstance, method, handlePtr);
+        Utf8String seedFileInstanceBody = "{\"instance\":{\"className\":\"SeedFile\",\"properties\":{\"FileDescription\":\"BriefcaseTest is created by iModelHubHost\",\"FileId\":\"dcf8f343-6a5a-4b1f-a583-4c977696afc9\",\"FileName\":\"BriefcaseTest.bim\",\"FileSize\":1114112,\"MergedChangeSetId\":""},\"schemaName\":\"iModelScope\"}}";
+        requestCreateSeedInstance.SetRequestBody(HttpStringBody::Create(seedFileInstanceBody));
+        Response responseSeedInstanceCreation = requestCreateSeedInstance.PerformAsync()->GetResult();
+        EXPECT_EQ(HttpStatus::Created, responseSeedInstanceCreation.GetHttpStatus());
+
+        BeFileName fileToUpload;
+        BeTest::GetHost().GetOutputRoot(fileToUpload);
+        fileToUpload.AppendToPath(L"iModelHub");
+        fileToUpload.AppendToPath(L"BriefcaseTest.bim");
+        BeFile file;
+        file.Open(fileToUpload, BeFileAccess::Read);
+        uint64_t fileSize;
+        EXPECT_EQ(BeFileStatus::Success, file.GetSize(fileSize));
+        file.Close();
+        uint64_t chunkSize = 4 * 1024 * 1024;   // Max 4MB.
+        HttpBodyPtr body = HttpFileBody::Create(fileToUpload);
+        uint64_t bytesTo = chunkSize - 1; // -1 because ranges are inclusive.
+        if (bytesTo >= fileSize)
+            bytesTo = fileSize - 1;
+
+        // Update URL
+        Utf8String urlUploadSeed = "https://imodelhubqasa01.blob.core.windows.net/imodelhub-";
+        urlUploadSeed += iModelId;
+        Request reqUploadingSeed(urlUploadSeed, method, handlePtr);
+        reqUploadingSeed.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
+        reqUploadingSeed.SetRequestBody(HttpRangeBody::Create(body, 0, bytesTo));
+        response = reqUploadingSeed.PerformAsync()->GetResult();
+        EXPECT_EQ(HttpStatus::Created, response.GetHttpStatus());
+
+        return iModelId;
         }
 
 /*--------------------------------------------------------------------------------------+
@@ -269,7 +303,7 @@ bvector<Utf8String> ParseUrl(Utf8String requestUrl, Utf8CP delimiter)
 TEST_F(FakeServerFixture, MultiLocks) 
     {
     FakeServerFixture::CreateiModel();
-    Utf8String urlMultiLocksInfo = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--7dfb2388-92cf-4ec7-94a7-ff72853466df/iModelScope/MultiLock";
+    Utf8String urlMultiLocksInfo = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--1b2b32312-3222-3212-63d3-12312d4rr4/iModelScope/MultiLock";
     Utf8String method = "GET";
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
     RequestHandler reqHandler;
@@ -286,7 +320,7 @@ TEST_F(FakeServerFixture, MultiLocks)
 TEST_F(FakeServerFixture, Locks) 
     {
     FakeServerFixture::CreateiModel();
-    Utf8String urlMultiLocksInfo = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--7dfb2388-92cf-4ec7-94a7-ff72853466df/iModelScope/Lock?$filter=BriefcaseId+ne+2+and+(LockLevel+gt+0+and+ReleasedWithChangeSetIndex+gt+2)";
+    Utf8String urlMultiLocksInfo = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--1b2b32312-3222-3212-63d3-12312d4rr4/iModelScope/Lock?$filter=BriefcaseId+ne+2+and+(LockLevel+gt+0+and+ReleasedWithChangeSetIndex+gt+2)";
     Utf8String method = "GET";
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
     RequestHandler reqHandler;
@@ -303,7 +337,7 @@ TEST_F(FakeServerFixture, Locks)
 TEST_F(FakeServerFixture, DeleteLocks) 
     {
     FakeServerFixture::CreateiModel();
-    Utf8String urlDeleteLocks = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--920c7e3d-6b5b-4217-92a8-349caf8a01c4/$changeset";
+    Utf8String urlDeleteLocks = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--1b2b32312-3222-3212-63d3-12312d4rr4/$changeset";
     Utf8String method = "POST";
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
     Request request(urlDeleteLocks, method, handlePtr);
@@ -320,7 +354,7 @@ TEST_F(FakeServerFixture, DeleteLocks)
 TEST_F(FakeServerFixture, GetBriefcaseInfo) 
     {
     FakeServerFixture::CreateiModel();
-    Utf8String urlBriefcaseInfo = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--79e54bc3-a944-4fa8-9db3-9ba02af99b31/iModelScope/Briefcase/3";
+    Utf8String urlBriefcaseInfo = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--1b2b32312-3222-3212-63d3-12312d4rr4/iModelScope/Briefcase/3";
     Utf8String method = "GET";
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
     Request request(urlBriefcaseInfo, method, handlePtr);
@@ -336,7 +370,7 @@ TEST_F(FakeServerFixture, GetBriefcaseInfo)
 TEST_F(FakeServerFixture, GetChangeSetInfo)
     {
     FakeServerFixture::CreateiModel();
-    //Utf8String urlChangeSet("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--28cea910-ad8c-4240-92cb-501aaa7e61c6/iModelScope/ChangeSet");
+    //Utf8String urlChangeSet("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--1b2b32312-3222-3212-63d3-12312d4rr4/iModelScope/ChangeSet");
     Utf8String method = "POST";
     //Utf8String body("{\"instance\":{\"className\":\"ChangeSet\",\"properties\":{\"BriefcaseId\":2,\"ContainingChanges\":0,\"Description\":\"Test ChangeSet\",\"FileSize\":323,\"Id\":\"206755703a1d9f7cb05de482dc89a0aa80abac28\",\"SeedFileId\":\"f14595ba-ee80-4669-b246-97c3eea43b89\",\"IsUploaded\":false,\"ParentId\":""},\"schemaName\":\"iModelScope\"}}");
     
@@ -347,7 +381,7 @@ TEST_F(FakeServerFixture, GetChangeSetInfo)
     /*Response responseChangeSetCreated = reqHandler.PushChangeSetMetadata(requestCreateChangeSet);
     ASSERT_EQ(HttpStatus::Created, responseChangeSetCreated.GetHttpStatus());*/
 
-    Utf8String urlGetLocksInfo = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--bb3a3a0c-57b8-4bcd-9fdf-e41d30dd101d/iModelScope/ChangeSet?$select=Id,Index,ParentId,SeedFileId,FileAccessKey-forward-AccessKey.DownloadURl&$filter=SeedFileId+eq+'1ed549cd-eff3-46c8-a21d-d41f685e0844'";
+    Utf8String urlGetLocksInfo = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--1b2b32312-3222-3212-63d3-12312d4rr4/iModelScope/ChangeSet?$select=Id,Index,ParentId,SeedFileId,FileAccessKey-forward-AccessKey.DownloadURl&$filter=SeedFileId+eq+'1ed549cd-eff3-46c8-a21d-d41f685e0844'";
     method = "GET";
     Request request(urlGetLocksInfo, method, handlePtr);
     Response response = reqHandler.GetChangeSetInfo(request);
@@ -452,7 +486,7 @@ Json::Value GetJsonResponse(Response response)
 TEST_F(FakeServerFixture, DownloadiModel)
     {
     FakeServerFixture::CreateiModel();
-    Utf8String urlGetInfo = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--7dfb2388-92cf-4ec7-94a7-ff72853466df/ProjectScope/iModel";
+    Utf8String urlGetInfo = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--1b2b32312-3222-3212-63d3-12312d4rr4/ProjectScope/iModel";
     Utf8String method = "GET";
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
     Request request(urlGetInfo, method, handlePtr);
@@ -498,7 +532,7 @@ TEST_F(FakeServerFixture, DownloadiModel)
 TEST_F(FakeServerFixture, DeleteiModel)
     {
     FakeServerFixture::CreateiModel();
-    Utf8String urlGetInfo = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--7dfb2388-92cf-4ec7-94a7-ff72853466df/ProjectScope/iModel";
+    Utf8String urlGetInfo = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--1b2b32312-3222-3212-63d3-12312d4rr4/ProjectScope/iModel";
     Utf8String method = "GET";
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
     Request request(urlGetInfo, method, handlePtr);
@@ -513,7 +547,7 @@ TEST_F(FakeServerFixture, DeleteiModel)
     BeGuid projGuid(true);
 
     Utf8String iModelId = Utf8String(settings[ServerSchema::Instances][0][ServerSchema::InstanceId].asString());
-    Utf8String urlDelete = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--7dfb2388-92cf-4ec7-94a7-ff72853466df/ProjectScope/iModel";
+    Utf8String urlDelete = "https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--1b2b32312-3222-3212-63d3-12312d4rr4/ProjectScope/iModel";
     urlDelete += "/" + iModelId;
     Utf8String methodDelete = "DELETE";
     Request requestDelete(urlDelete, methodDelete, handlePtr);
