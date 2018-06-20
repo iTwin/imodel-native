@@ -966,7 +966,7 @@ PresentationQueryContractFunctionField const& ContentQueryContract::GetDisplayLa
 
         Utf8CP labelClause = nullptr != labelProperty ? labelProperty->GetName().c_str() : "''";
         m_displayLabelField = PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, FUNCTION_NAME_GetECInstanceDisplayLabel,
-            CreateFieldsList("ECClassId", "ECInstanceId", labelClause, CreateRelatedInstanceInfoClause(m_relatedClasses)), true, m_descriptor->OnlyDistinctValues());
+            CreateFieldsList("ECClassId", "ECInstanceId", labelClause, CreateRelatedInstanceInfoClause(m_relatedClasses)), true);
 
         if (m_class)
             {
@@ -975,7 +975,7 @@ PresentationQueryContractFunctionField const& ContentQueryContract::GetDisplayLa
             if (!properties.empty())
                 {
                 RefCountedPtr<PresentationQueryContractFunctionField> nestedParameter = m_displayLabelField;
-                m_displayLabelField = PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, "COALESCE", CreateFieldsListFromECProperties(properties), true, m_descriptor->OnlyDistinctValues());
+                m_displayLabelField = PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, "COALESCE", CreateFieldsListFromECProperties(properties), true);
                 m_displayLabelField->GetFunctionParametersR().push_back(nestedParameter);
                 }
             }

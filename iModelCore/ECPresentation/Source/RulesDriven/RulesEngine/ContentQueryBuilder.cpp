@@ -117,7 +117,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
         QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams, RelatedClassPath());
         
         // handle selecting property for distinct values 
-        if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())
+        if (descriptor.GetDistinctField() != nullptr)
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
@@ -198,7 +198,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
         QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams, RelatedClassPath());
             
         // handle selecting property for distinct values 
-        if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())
+        if (descriptor.GetDistinctField() != nullptr)
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
@@ -244,7 +244,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
         QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams, RelatedClassPath());
 
         // handle selecting property for distinct values 
-        if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())
+        if (descriptor.GetDistinctField() != nullptr)
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);

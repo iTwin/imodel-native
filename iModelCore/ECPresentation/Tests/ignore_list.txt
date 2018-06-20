@@ -9,6 +9,4 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-RulesDrivenECPresentationManagerContentTests.GetDistinctValuesOfDisplayLabel                    # Defect TFS#905749
-RulesDrivenECPresentationManagerContentTests.GetDistinctValuesOfCalculatedProperty              # Defect TFS#905749
 

@@ -781,6 +781,15 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
             imageId = ImageHelper::GetImageId(*recordClass, true, false);
         }
 
+    if (descriptor.GetDistinctField() != nullptr)
+        {
+        for (size_t i = 0; i < m_records.size(); i++)
+            {
+            if (values.GetDisplayValues() == m_records[i]->GetDisplayValues())
+                return;
+            }
+        }
+
     ContentSetItemPtr record = ContentSetItem::Create(primaryRecordKeys, displayLabel, imageId, 
         values.GetValues(), values.GetDisplayValues(), values.GetMergedFieldNames(), fieldValueInstanceKeyReader.GetKeys());
     record->SetClass(recordClass);
