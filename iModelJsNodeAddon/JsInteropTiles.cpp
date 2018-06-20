@@ -25,16 +25,21 @@ private:
     // We keep a copy of the image data in memory so that it can be embedded into tiles which reference the texture.
     // This way the front-end can obtain the image data without making a request to the backend.
     ImageSource m_imageSource;
+    Dimensions m_dimensions;
 
-    JsTexture(CreateParams const& params, ImageSource::Format format, ByteStream&& data) : Texture(params), m_imageSource(format, std::move(data)) { }
+    JsTexture(CreateParams const& params, ImageSource::Format format, ByteStream&& data, Dimensions dimensions)
+        : Texture(params), m_imageSource(format, std::move(data)), m_dimensions(dimensions) { }
 
     static RefCountedPtr<JsTexture> CreateForImage(CreateParams const& params, ImageCR image);
+
+    static Dimensions ComputeImageSourceDimensions(ImageSourceCR);
 public:
     static RefCountedPtr<JsTexture> Create(CreateParams const& params, ImageSourceCR image);
     static RefCountedPtr<JsTexture> Create(CreateParams const& params, ImageCR image) { return params.GetKey().IsValid() ? CreateForImage(params, image) : nullptr; }
     static RefCountedPtr<JsTexture> Create(GradientSymbCR);
 
     ImageSource GetImageSource() const override { return m_imageSource; } // ###TODO why does this return a copy??
+    Dimensions GetDimensions() const override { return m_dimensions; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -43,9 +48,18 @@ public:
 RefCountedPtr<JsTexture> JsTexture::Create(CreateParams const& params, ImageSourceCR image)
     {
     if (params.GetKey().IsValid() && image.IsValid())
-        return new JsTexture(params, image.GetFormat(), ByteStream(image.GetByteStream()));
+        return new JsTexture(params, image.GetFormat(), ByteStream(image.GetByteStream()), ComputeImageSourceDimensions(image));
     else
         return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Texture::Dimensions JsTexture::ComputeImageSourceDimensions(ImageSourceCR src)
+    {
+    Image img(src, Image::Format::Rgb);
+    return Dimensions(img.GetWidth(), img.GetHeight());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -69,7 +83,7 @@ RefCountedPtr<JsTexture> JsTexture::CreateForImage(CreateParams const& params, I
     auto format = Image::Format::Rgba == image.GetFormat() ? ImageSource::Format::Png : ImageSource::Format::Jpeg;
     ImageSource src(image, format);
     if (src.IsValid())
-        return new JsTexture(params, format, std::move(src.GetByteStreamR()));
+        return new JsTexture(params, format, std::move(src.GetByteStreamR()), Dimensions(image.GetWidth(), image.GetHeight()));
     else
         return nullptr;
     }
@@ -125,6 +139,9 @@ private:
     void Add(GradientSymbCR grad, JsTexture* texture) { m_gradients.Insert(grad, texture); }
     void Add(MaterialKey key, JsMaterial* material) { BeAssert(key.IsValid()); m_materials.Insert(key, material); }
 
+    JsTexture* CreateTexture(ImageCR, Texture::CreateParams const&);
+    JsTexture* CreateTexture(ImageSourceCR, Texture::CreateParams const&);
+
     template<typename F> auto UnderMutex(F func) -> decltype(func())
         {
         BeMutexHolder lock(m_mutex);
@@ -135,12 +152,9 @@ public:
     JsMaterial* FindMaterial(MaterialKey key) { return key.IsValid() ? UnderMutex([&]() { return m_materials.Find(key); }) : nullptr; }
 
     JsTexture* GetGradient(GradientSymbCR);
-    JsTexture* GetTexture(ImageSourceCR, Texture::CreateParams const&, Image::BottomUp);
+    JsTexture* GetTexture(ImageSourceCR, Texture::CreateParams const&, Image::BottomUp = Image::BottomUp::No);
     JsTexture* GetTexture(ImageCR, Texture::CreateParams const&);
     JsMaterial* GetMaterial(Material::CreateParams const& params);
-
-    JsTexture* CreateTexture(ImageCR, Texture::CreateParams const&);
-    JsTexture* CreateTexture(ImageSourceCR, Texture::CreateParams const&);
 
     static ResourceCache& Get(DgnDbR db) { return static_cast<ResourceCache&>(*db.FindOrAddAppData(GetKey(), []() { return new ResourceCache(); })); }
 
@@ -258,11 +272,11 @@ struct JsSystem : Render::System
     Render::TexturePtr _FindTexture(Render::TextureKeyCR key, Dgn::DgnDbR db) const override { return ResourceCache::Get(db).FindTexture(key); }
     Render::TexturePtr _CreateTexture(Render::ImageCR img, Dgn::DgnDbR db, Render::Texture::CreateParams const& params) const override
         {
-        return ResourceCache::Get(db).CreateTexture(img, params);
+        return ResourceCache::Get(db).GetTexture(img, params);
         }
     Render::TexturePtr _CreateTexture(Render::ImageSourceCR src, Render::Image::BottomUp, Dgn::DgnDbR db, Render::Texture::CreateParams const& params) const override
         {
-        return ResourceCache::Get(db).CreateTexture(src, params);
+        return ResourceCache::Get(db).GetTexture(src, params);
         }
     Render::TexturePtr _GetTexture(Render::GradientSymbCR grad, Dgn::DgnDbR db) const override
         {

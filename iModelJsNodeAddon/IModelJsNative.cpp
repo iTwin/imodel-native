@@ -1482,12 +1482,16 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)JsInterop::BriefcaseManagerEndBulkOperation(GetDgnDb()));
         }
 
-    Napi::Value UpdateProjectExtents(Napi::CallbackInfo const& info)
+    void UpdateProjectExtents(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, newExtentsJson, Env().Undefined())
-        return Napi::Number::New(Env(), (int)JsInterop::UpdateProjectExtents(GetDgnDb(), Json::Value::From(newExtentsJson)));
+        REQUIRE_ARGUMENT_STRING(0, newExtentsJson, )
+        JsInterop::UpdateProjectExtents(GetDgnDb(), Json::Value::From(newExtentsJson));
         }
-
+    void UpdateIModelProps(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, props, )
+        JsInterop::UpdateIModelProps(GetDgnDb(), Json::Value::From(props));
+        }
     Napi::Value ReadFontMap(Napi::CallbackInfo const& info)
         {
         auto const& fontMap = GetDgnDb().Fonts().FontMap();
@@ -1743,6 +1747,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),
             InstanceMethod("updateModel", &NativeDgnDb::UpdateModel),
             InstanceMethod("updateProjectExtents", &NativeDgnDb::UpdateProjectExtents),
+            InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("getTiles", &NativeDgnDb::GetTiles),
         });
