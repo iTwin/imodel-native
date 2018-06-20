@@ -231,9 +231,23 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
         return BSIERROR;
         }
 
-    SaveBriefcaseId();
+    auto rc = SaveBriefcaseId();
 
-    return BSISUCCESS;
+    if (BE_SQLITE_OK != rc)
+        {
+        if (BE_SQLITE_ERROR_SchemaUpgradeRequired == rc)
+            {
+            bool madeSchemaChanges = false;
+            iModelBridge::OpenBimAndMergeSchemaChanges(rc, madeSchemaChanges, m_briefcaseName);
+            rc = SaveBriefcaseId();
+            }
+        else
+            {
+            GetLogger().infov("Cannot open briefcase (error %x)\n", rc);
+            }
+        }
+        
+    return (BE_SQLITE_OK==rc)? BSISUCCESS: BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
