@@ -39,9 +39,9 @@ BESQL_VERSION_STRUCT ScalableMeshDb::GetCurrentVersion() const
 ProfileState ScalableMeshDb::_CheckProfileVersion() const
     {
     CachedStatementPtr stmtTest;
-    GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
-    assert(stmtTest != nullptr);
-    DbResult status = stmtTest->Step();
+    DbResult status = GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
+    assert(stmtTest != nullptr && status == BE_SQLITE_OK);
+    status = stmtTest->Step();
 
     assert(status == BE_SQLITE_ROW);
 
@@ -51,11 +51,23 @@ ProfileState ScalableMeshDb::_CheckProfileVersion() const
 
     BESQL_VERSION_STRUCT currentVersion = GetCurrentVersion();
     if (s_checkShemaVersion && (databaseSchema.CompareTo(currentVersion, BESQL_VERSION_STRUCT::VERSION_All) < 0 || databaseSchema.CompareTo(currentVersion, BESQL_VERSION_STRUCT::VERSION_MajorMinor) != 0))
-        return ProfileState::Older(ProfileState::CanOpen::No, false);
+        return ProfileState::Older(ProfileState::CanOpen::No, true);
 
     return ProfileState::UpToDate();
-
     }
+
+
+DbResult ScalableMeshDb::_UpgradeProfile()
+    {
+    bool update = m_smFile->UpdateDatabase();
+
+    if (!update)
+        return BE_SQLITE_ERROR; 
+
+    return BE_SQLITE_OK;
+    }
+
+
 #else
 static Utf8CP s_versionfmt = "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}";
 Utf8String SchemaVersion::ToJson() const { return Utf8PrintfString(s_versionfmt, m_major, m_minor, m_sub1, m_sub2); }

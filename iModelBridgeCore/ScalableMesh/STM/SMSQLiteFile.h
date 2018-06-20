@@ -93,6 +93,9 @@ struct SQLiteSourcesData
 class SMSQLiteFile : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 {
 public:
+
+    friend class ScalableMeshDb;
+
     SMSQLiteFile();
     virtual ~SMSQLiteFile();
 

@@ -192,16 +192,18 @@ bool SMSQLiteFile::UpdateDatabase()
 bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly, SQLDatabaseType type)
     {
     if (m_database == nullptr)
-        m_database = new ScalableMeshDb(type);
+        m_database = new ScalableMeshDb(type, this);
     DbResult result;
     if (m_database->IsDbOpen())
         m_database->CloseDb();
 
     result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY: READWRITE));
 
-//#ifndef VANCOUVER_API
+#ifndef VANCOUVER_API
+    if (result == BE_SQLITE_SCHEMA || result == BE_SQLITE_ERROR_ProfileTooOld)
+#else
     if (result == BE_SQLITE_SCHEMA)
-//#endif
+#endif     
         {
         Db::OpenParams openParamUpdate(READWRITE);
 
@@ -215,7 +217,9 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 
         if (result == BE_SQLITE_OK)
         {
+#ifdef VANCOUVER_API		
             UpdateDatabase();
+#endif			
 
             m_database->CloseDb();
         }
@@ -396,10 +400,9 @@ DbResult SMSQLiteFile::CreateTables()
     }
 
     bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename, SQLDatabaseType type)
-{
+        {
     if (m_database == nullptr)
-
-        m_database = new ScalableMeshDb(type);
+        m_database = new ScalableMeshDb(type, this);
 
     DbResult result;
     result = m_database->CreateNewDb(filename);

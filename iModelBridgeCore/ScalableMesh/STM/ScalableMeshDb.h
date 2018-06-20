@@ -15,6 +15,9 @@ enum class SQLDatabaseType
     };
 
 
+
+class SMSQLiteFile;
+
 USING_NAMESPACE_BENTLEY_SQLITE
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -71,23 +74,26 @@ public:
 #ifdef VANCOUVER_API
     #define BESQL_VERSION_STRUCT SchemaVersion
 #else
-    #define BESQL_VERSION_STRUCT ProfileVersion
+    #define BESQL_VERSION_STRUCT ProfileVersion    
 #endif
 
 class ScalableMeshDb : public BeSQLite::Db
     {
     private:
         SQLDatabaseType m_type;
+        SMSQLiteFile*   m_smFile; 
         BESQL_VERSION_STRUCT GetCurrentVersion() const;
 
     protected:
 #ifndef VANCOUVER_API    
        ProfileState _CheckProfileVersion() const override;
+
+       virtual DbResult _UpgradeProfile() override;
 #endif
     virtual DbResult _OnDbCreated(CreateParams const& params) override;
 
     public:
-        ScalableMeshDb(SQLDatabaseType type) : m_type(type) {}
+        ScalableMeshDb(SQLDatabaseType type, SMSQLiteFile* smFile) : m_type(type), m_smFile(smFile) {}
         static const BESQL_VERSION_STRUCT CURRENT_VERSION;
     };
 
