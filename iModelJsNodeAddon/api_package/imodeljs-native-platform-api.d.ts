@@ -11,17 +11,6 @@ interface NativeTxnId {
     readonly _id: string;
 }
 
-/* The signature of a callback that takes two arguments, the first being the error that describes a failed outcome and the second being the data
-returned in a successful outcome. */
-interface IModelJsNativeCallback<ERROR_TYPE, SUCCESS_TYPE> {
-    /**
-     * The signature of a callback.
-     * @param error A description of th error, in case of failure.
-     * @param result The result of the operation, in case of success.
-     */
-    (error: ERROR_TYPE, result: SUCCESS_TYPE): void;
-}
-
 /* The signature of a callback that expects a single argument, a status code. */
 interface IModelJsNativeStatusOnlyCallback<STATUS_TYPE> {
     /**
@@ -884,4 +873,10 @@ declare class NativeECSchemaXmlContext {
     addSchemaPath(path: string): void;
     setSchemaLocater(locater: NativeECSchemaXmlContext.SchemaLocaterCallback): void;
     readSchemaFromXmlFile(filePath: string): ErrorStatusOrResult<BentleyStatus, string>;
+}
+
+declare class NativeElementLocateManager {
+    constructor();
+    doLocate(db: NativeDgnDb, point: any, callback: (result: ErrorStatusOrResult<IModelStatus, string>) => void): void;
+    cancelLocate(): void;
 }
