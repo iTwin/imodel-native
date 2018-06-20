@@ -32,6 +32,8 @@ $(o)SMUnitTestUtil.obj   : $(_MakeFilePath)/SMUnitTestUtil.cpp $(_MakeFilePath)/
 
 $(o)SMUnitTestProgress.obj   : $(_MakeFilePath)/SMUnitTestProgress.cpp ${MultiCompileDepends}
 
+$(o)SMUnitTestMeshFlags.obj   : $(_MakeFilePath)/SMUnitTestMeshFlags.cpp ${MultiCompileDepends}
+
 
 libsUsed = \
         $(BuildContext)SubParts/Libs/Bentley.lib \

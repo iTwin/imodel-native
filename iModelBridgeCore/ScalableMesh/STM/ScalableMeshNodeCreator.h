@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 22:03:24 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -37,7 +37,7 @@ struct IScalableMeshNodeCreator::Impl : public IScalableMeshCreator::Impl
         ~Impl();
         IScalableMeshNodeEditPtr AddChildNode(const IScalableMeshNodePtr& parentNode,
                                           DRange3d& childExtent,
-                                                       StatusInt&   status,
+                                                       SMStatus&   status,
                                                        bool computeNodeID = true,
                                                        uint64_t nodeId = 0);
 

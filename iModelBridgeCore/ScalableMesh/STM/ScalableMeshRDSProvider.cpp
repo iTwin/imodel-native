@@ -58,6 +58,14 @@ Utf8String IScalableMeshRDSProvider::GetRootDocument()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String IScalableMeshRDSProvider::GetProjectID()
+    {
+    return _GetProjectID();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 IScalableMeshRDSProviderPtr IScalableMeshRDSProvider::Create(const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid)
     {
     return new ScalableMeshRDSProvider(projectGuid, pwcsMeshGuid);
@@ -128,6 +136,14 @@ Utf8String ScalableMeshRDSProvider::_GetToken()
 Utf8String ScalableMeshRDSProvider::_GetRootDocument()
     {
     return GetRootDocumentName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ScalableMeshRDSProvider::_GetProjectID()
+    {
+    return m_ProjectGuid;
     }
 
 /*---------------------------------------------------------------------------------**//**

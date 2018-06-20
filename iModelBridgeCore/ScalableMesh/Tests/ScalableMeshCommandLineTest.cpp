@@ -39,21 +39,17 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <DgnPlatform/MeshTile.h>
 #include <ScalableMeshSchema/ScalableMeshHandler.h>
 #include <ScalableMeshSchema\ScalableMeshDomain.h>
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+//#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 #include <ImagePP/h/HStlStuff.h>
 #include <ImagePP/h/HTraits.h>
 #include <ImagePP/h/HIterators.h>
 #include <ImagePP/h/HNumeric.h>
 #include <ImagePP/h/ImageppAPI.h>
 #include <ImagePP/all/h/HVEShape.h>
-#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
 #include <ImagePP/all/h/HVE2DShape.h>
 #include <ImagePP/all/h/HVE2DRectangle.h>
 #include <ImagePP/all/h/HVE2DHoledShape.h>
 #include <ImagePP/all/h/HVE2DComplexShape.h>
-#include <ImagePP/all/h/HVE2DPolySegment.h>
-#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
-#include <ImagePP/all/h/HVE2DSegment.h>
 #include <ImagePP/all/h/HVE2DVoidShape.h>
 #include "..\STM\VuPolygonClassifier.h"
 
@@ -428,7 +424,7 @@ void RunDTMClipTest()
 
             stats << "INDEX " + std::to_string(i) + " IS VERTEX: ";
             std::string s;
-            print_polygonarray(s, "", &pt, 1);
+            //print_polygonarray(s, "", &pt, 1);
             stats << s;
             }
         stats.close();
@@ -616,6 +612,7 @@ void RunDTMClipTest()
                 LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, newVertices.size(), newIndices.size(), &newVertices[0], &newIndices[0])
                     }
         }
+
 
 
 void RunPrecisionTest(WString& stmFileName)
@@ -854,10 +851,30 @@ void RunDTMTriangulateTest()
             }
        // }
     }
+
+
+void RunDrapeLinearTinTest()
+{
+	BC_DTM_OBJ* bcDtmP = 0;
+
+	bcdtmRead_fromFileDtmObject(&bcDtmP, L"E:\\Elenie\\beforeAfterTin\\meshtile_2_5_118.tin");
+	TerrainModel::BcDTMPtr dtm = TerrainModel::BcDTM::CreateFromDtmHandle(*bcDtmP);
+	bvector<DPoint3d> listOfPts;
+
+		WString path = L"E:\\Elenie\\beforeAfterTin\\poly2.p";
+		FILE* mesh = _wfopen(path.c_str(), L"rb");
+		size_t nVerts = 0;
+		fread(&nVerts, sizeof(size_t), 1, mesh);
+		listOfPts.resize(nVerts);
+		fread(&listOfPts[0], sizeof(DPoint3d), nVerts, mesh);
+		TerrainModel::DTMDrapedLinePtr test;
+	dtm->GetBcDTM()->DrapeLinear(test, listOfPts.data(), (int)listOfPts.size());
+}
+
 void AddLoopsFromShape(bvector<bvector<DPoint3d>>& polygons, const HGF2DShape* shape, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded)
 {
 
-	if (shape->IsComplex())
+	/*if (shape->IsComplex())
 	{
 		for (auto& elem : shape->GetShapeList())
 		{
@@ -880,12 +897,13 @@ void AddLoopsFromShape(bvector<bvector<DPoint3d>>& polygons, const HGF2DShape* s
 
 		polygons.push_back(vec);
 		afterPolygonAdded(vec);
-	}
+	}*/
 }
 
 
 void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(const size_t i, const bvector<DPoint3d>& element)> choosePolygonInSet, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded)
 {
+#if 0
 	bvector<bvector<DPoint3d>> newUnifiedPoly;
 	HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());
 	HFCPtr<HVEShape> allPolyShape = new HVEShape(coordSysPtr);
@@ -1138,6 +1156,7 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
 
 	AddLoopsFromShape(newUnifiedPoly, allPolyShape->GetLightShape(), afterPolygonAdded);
 	polygons = newUnifiedPoly;
+#endif
 }
 
 void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons)
@@ -1193,7 +1212,7 @@ void RunDTMTriangulateTest2()
 
 	BC_DTM_OBJ* bcDtmP = 0;
 
-	bcdtmRead_fromFileDtmObject(&bcDtmP, L"C:\\work\\tmp\\test.bcdtm");
+	bcdtmRead_fromFileDtmObject(&bcDtmP, L"C:\\work\\2018q2\\CS\\test.tin");
 	bcdtmObject_triangulateDtmObject(bcDtmP);
 	TerrainModel::BcDTMPtr dtm = TerrainModel::BcDTM::CreateFromDtmHandle(*bcDtmP);
 	bvector<DPoint3d> bound;
@@ -1704,6 +1723,7 @@ void RunUpdateTest(WString& stmFileName)
 int wmain(int argc, wchar_t* argv[])
 {
 _set_error_mode(_OUT_TO_MSGBOX);
+/*
 struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     {
 
@@ -1740,7 +1760,7 @@ Dgn::DgnPlatformLib::Initialize(host, false);
     ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
-    DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain());
+    DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain());*/
 #if 0
     if(argc < 2) 
         {
@@ -1900,9 +1920,9 @@ Dgn::DgnPlatformLib::Initialize(host, false);
 
     //DarylsTestFunction();
    // RunDTMClipTest();
-   // RunDTMTriangulateTest2();
+    RunDTMTriangulateTest2();
 	//RunCompareLineTest();
-	RunEnumerateTest();
+	//RunEnumerateTest();
 	//RunMergePolygons();
    //RunDTMSTMTriangulateTest();
    // RunSelectPointsTest();
@@ -1913,7 +1933,9 @@ Dgn::DgnPlatformLib::Initialize(host, false);
     /*WString stmFileName(argv[1]);
     RunWriteTileTest(stmFileName, argv[2]);*/
 
-    BeFileName name("E:\\SMTest.bim");
+	RunDrapeLinearTinTest();
+
+    /*BeFileName name("E:\\SMTest.bim");
     BeSQLite::DbResult status;
     CreateDgnDbParams params("SM_Test");
 
@@ -1928,7 +1950,7 @@ Dgn::DgnPlatformLib::Initialize(host, false);
 
     Utf8String modelName("terrain");
     BeFileName smName = BeFileName(Utf8String("E:\\data\\CCScalableMeshColoradoSprings\\output_SCM\\root.stm"));
-    ScalableMeshSchema::IMeshSpatialModelP meshSpatialModelP = ScalableMeshSchema::ScalableMeshModelHandler::AttachTerrainModel(*myDgnDb, modelName,smName);
+    ScalableMeshSchema::IMeshSpatialModelP meshSpatialModelP = ScalableMeshSchema::ScalableMeshModelHandler::AttachTerrainModel(*myDgnDb, modelName,smName);*/
 
     std::cout << "THE END" << std::endl;
     return 0;

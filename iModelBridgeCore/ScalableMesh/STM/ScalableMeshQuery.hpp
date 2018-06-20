@@ -1254,21 +1254,37 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(m_meshNode->GetPtsIndicePtr());
 
         ScalableMeshMeshWithGraphPtr meshPtr;
+        ScalableMeshMeshPtr myMeshPtr;
+        if (m_meshNode->IsFromCesium())
+        {
+            myMeshPtr = ScalableMeshMesh::Create();
+            myMeshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
+            myMeshPtr->RemoveDuplicates();
+        }
         if (graphPtr->GetSize() > 1)
            meshPtr = ScalableMeshMeshWithGraph::Create(graphPtr->EditData(), ArePoints3d());
         else
             {
             MTGGraph * graph = new MTGGraph();
             bvector<int> componentPointsId;
-            CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
+
+
+            if (m_meshNode->IsFromCesium())
+            {
+                CreateGraphFromIndexBuffer(graph, (const long*)myMeshPtr->GetFaceIndexes(), (int)myMeshPtr->GetNbFaceIndexes(), (int)myMeshPtr->GetNbPoints(), componentPointsId, myMeshPtr->GetPoints());
+            }
+            else
+                CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
 
             meshPtr = ScalableMeshMeshWithGraph::Create(graph, ArePoints3d());
             }
 
 
         
-        int status = meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
-        assert(status == SUCCESS);
+        int status = m_meshNode->IsFromCesium() ?
+            meshPtr->AppendMesh(myMeshPtr->GetNbPoints(), myMeshPtr->EditPoints(), myMeshPtr->GetNbFaceIndexes(), myMeshPtr->GetFaceIndexes(), 0, 0, 0, 0, 0, 0) :
+            meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);;
+        assert(status == SUCCESS); 
         meshP = meshPtr.get();
         }
     else
@@ -1463,22 +1479,38 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(m_meshNode->GetPtsIndicePtr());
 
         ScalableMeshMeshWithGraphPtr meshPtr;
+        ScalableMeshMeshPtr myMeshPtr;
+        if (m_meshNode->IsFromCesium())
+        {
+            myMeshPtr = ScalableMeshMesh::Create();
+            myMeshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
+            myMeshPtr->RemoveDuplicates();
+        }
         if (graphPtr->GetSize() > 1)
             meshPtr = ScalableMeshMeshWithGraph::Create(graphPtr->EditData(), ArePoints3d());
         else
             {
             MTGGraph * graph = new MTGGraph();
             bvector<int> componentPointsId;
-            CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
+            if (m_meshNode->IsFromCesium())
+            {
+                CreateGraphFromIndexBuffer(graph, (const long*)myMeshPtr->GetFaceIndexes(), (int)myMeshPtr->GetNbFaceIndexes(), (int)myMeshPtr->GetNbPoints(), componentPointsId, myMeshPtr->GetPoints());
+            }
+            else
+                CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
 
             meshPtr = ScalableMeshMeshWithGraph::Create(graph, ArePoints3d());
             }
 
 
 
-        int status = meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
+        int status = m_meshNode->IsFromCesium() ? 
+            meshPtr->AppendMesh(myMeshPtr->GetNbPoints(), myMeshPtr->EditPoints(), myMeshPtr->GetNbFaceIndexes(), myMeshPtr->GetFaceIndexes(), 0, 0, 0, 0, 0, 0) :
+            meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);;
         assert(status == SUCCESS);
         meshP = meshPtr.get();
+        myMeshPtr = nullptr;
+
         }
     else
         {
@@ -1588,15 +1620,20 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
            
             if (clips != nullptr /*&& range3D2.XLength() < 150 && range3D2.YLength() < 150*/)
                 {
-               // static std::mutex mtx;
-              //  std::lock_guard<std::mutex> lock(mtx);
+                BeAssert(std::is_sorted(clips->begin(), clips->end(), [](ClipPrimitivePtr i, ClipPrimitivePtr j)
+                    { // boundary clips should be first
+                    if (!i->IsMask() && j->IsMask()) return true;
+                    return false;
+                    }));
+
                 bvector<DPoint3d> clearedPts;
                 bvector<int32_t> clearedIndices;
                 bvector<int32_t> newUvsIndices;
                 bvector<DPoint2d> newUvs;
                 bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
+                bvector<bool> isMask;
                 map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
-                if (!GetRegionsFromClipVector3D(polyfaces, clips.get(), meshPtr->GetPolyfaceQuery()))
+                if (!GetRegionsFromClipVector3D(polyfaces, clips.get(), meshPtr->GetPolyfaceQuery(), isMask))
                 {
                     meshP = meshPtr.get();
                     return meshP;
@@ -1606,17 +1643,36 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                 meshPtr = ScalableMeshMesh::Create();
 
                 // Reconstruct mesh with new polyface
-                auto polyface = polyfaces[0].empty() ? nullptr : polyfaces[0][0];
-                if (polyface != nullptr)
+                auto appendToMesh = [](ScalableMeshMeshPtr meshPtr, PolyfaceHeaderPtr polyface) -> int
                     {
-                    status = meshPtr->AppendMesh(polyface->Point().size(), polyface->Point().data(),
-                                                 polyface->PointIndex().size(), polyface->PointIndex().data(),
-                                                 0, 0, 0,
-                                                 polyface->Param().size(), polyface->Param().data(),
-                                                 polyface->ParamIndex().data());
+                    if (polyface != nullptr)
+                        {
+                        return meshPtr->AppendMesh(polyface->Point().size(), polyface->Point().data(),
+                                                   polyface->PointIndex().size(), polyface->PointIndex().data(),
+                                                   0, 0, 0,
+                                                   polyface->Param().size(), polyface->Param().data(),
+                                                   polyface->ParamIndex().data());
+                        }
+                    return ERROR;
+                    };
+                PolyfaceHeaderPtr polyface = nullptr;
+                if ((*clips)[0]->IsMask())
+                    {
+                    polyface = polyfaces[0].empty() ? nullptr : polyfaces[0][0];
+                    status = appendToMesh(meshPtr, polyface);
                     BeAssert(status == SUCCESS);
                     }
+                else
+                    {
+                    for (int i = 0; i < clips->size(); i++)
+                        {
+                        if ((*clips)[i]->IsMask()) break;
 
+                        polyface = polyfaces[i].empty() ? nullptr : polyfaces[i][0];
+                        status = appendToMesh(meshPtr, polyface);
+                        BeAssert(status == SUCCESS);
+                        }
+                    }
                 }
 
             if ((meshPtr->GetNbFaces() == 0) && flags->ShouldLoadIndices())

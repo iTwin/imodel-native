@@ -17,6 +17,7 @@ void PerformLoadingTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformDrapeBaselineTest(BeXmlNodeP pTestNode, FILE* pResultFile, BeXmlNodeP pRootNode);
 void PerformConstraintTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile);
+void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformCloudTests(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile);

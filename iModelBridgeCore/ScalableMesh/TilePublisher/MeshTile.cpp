@@ -798,8 +798,8 @@ uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileMeshBuilder::VertexKey::Comparator::operator()(VertexKey const& lhs, VertexKey const& rhs) const
     {
-    static const double s_normalTolerance = .1;     
-    static const double s_paramTolerance  = .1;
+    static const double s_normalTolerance = .0001;     
+    static const double s_paramTolerance  = .0001;
 
 //    COMPARE_VALUES (lhs.m_entityId, rhs.m_entityId);
 
@@ -999,9 +999,9 @@ void TileMeshBuilder::AddPolyface(PolyfaceQueryCR polyface, bool twoSidedTriangl
 uint32_t TileMeshBuilder::AddVertex(VertexKey const& vertex)
     {
     // Consider all points, otherwise strange artifacts appear for textured meshes...
-    //auto found = m_unclusteredVertexMap.find(vertex);
-    //if (m_unclusteredVertexMap.end() != found)
-    //    return found->second;
+    auto found = m_unclusteredVertexMap.find(vertex);
+    if (m_unclusteredVertexMap.end() != found)
+        return found->second;
 
     auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam()/*, vertex.m_entityId*/);
     m_unclusteredVertexMap[vertex] = index;

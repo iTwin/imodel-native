@@ -7019,16 +7019,17 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
             {
             if (!static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(nextGroup, progress)) return false;
             // Ensure coherent id values
-            ((this->m_nodeHeader).m_apSubNodeID)[0] = (this->m_nodeHeader).m_SubNodeNoSplitID;
-            pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, 0, pi_pGroup, nextGroup);
+            (this->m_nodeHeader.m_apSubNodeID)[0] = (this->m_nodeHeader).m_SubNodeNoSplitID;
+            pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, m_pSubNodeNoSplit->m_nodeHeader, 0, pi_pGroup, nextGroup);
             }
         else
             {
-            for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
+            size_t indexNode = 0;
+            for (auto childNode : m_apSubNodes)
                 {
-                if (!static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup, progress)) return false;
-                pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, indexNode, pi_pGroup, nextGroup);
-
+                if (!static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(childNode))->SaveGroupedNodeHeaders(nextGroup, progress))
+                    continue; // A node is skipped
+                pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, childNode->m_nodeHeader, indexNode++, pi_pGroup, nextGroup);
                 }
             }
 
@@ -7041,7 +7042,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
         {
         static_cast<ScalableMeshProgress*>(progress.get())->SetCurrentIteration(++currentIter);
         }
-    return true;
+    return !doSkip;
     }
 
 //=======================================================================================
@@ -8432,7 +8433,12 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::Store()
 
     if (m_indexHeaderDirty)
     {
-        m_dataStore->StoreMasterHeader (&m_indexHeader, sizeof(m_indexHeader));
+        if (!m_indexHeader.m_HasMaxExtent)
+            {
+            m_indexHeader.m_MaxExtent = m_pRootNode->GetNodeExtent();
+            m_indexHeader.m_HasMaxExtent = true;
+            }
+        m_dataStore->StoreMasterHeader(&m_indexHeader, sizeof(m_indexHeader));
         m_indexHeaderDirty = false;
     }
 

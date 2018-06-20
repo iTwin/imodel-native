@@ -59,6 +59,8 @@ protected:
 
     virtual Utf8String _GetRootDocument();
 
+    virtual Utf8String _GetProjectID();
+
 public:
 
     static Utf8String GetBuddiUrl();

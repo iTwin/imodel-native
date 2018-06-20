@@ -628,13 +628,13 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
                     }
                 }
             }
-#ifndef VANCOUVER_API
+//#ifndef VANCOUVER_API
         return PolyfaceHeader::CreateIndexedMesh(3,pts, indices);
-#else
+/*#else
         auto headerP = PolyfaceHeader::New();
         auto polyP = new PolyfaceQueryCarrier(3, false, pts.size(), indices.size(), &pts[0], &indices[0]);
         headerP->CopyFrom(*polyP);
         return headerP;
-#endif
+#endif*/
         }
 END_BENTLEY_SCALABLEMESH_NAMESPACE

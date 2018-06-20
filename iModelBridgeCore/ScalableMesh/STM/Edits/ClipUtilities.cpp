@@ -1201,20 +1201,38 @@ bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHe
         for (auto it = clipPolys.rbegin(); it != clipPolys.rend(); it++)
             {            
             ClipVectorPtr& clip = *it;
-            if (!clip.IsValid())
-				continue;
-			bool isInsideAPrimitive = false;
-			for (auto& primitive : *clip)
-			{
-				bool pointInside = primitive->PointInside(centroids[idxFace], 1e-8);
-				if ((primitive->IsMask() && !pointInside) || (!primitive->IsMask() && pointInside))
-				{
-					isInsideAPrimitive = true;
-					break;
-				}
-			}
 
-			if(isInsideAPrimitive)
+            if (!clip.IsValid())
+                continue;
+
+            int nClipBoundaries = 0;
+            for (; nClipBoundaries < clip->size() && !(*clip)[nClipBoundaries]->IsMask(); ++nClipBoundaries);
+
+            bool isInsideAPrimitive = false;
+            for (auto& primitive : *clip)
+                {
+                bool pointInside = primitive->PointInside(centroids[idxFace], 1e-8);
+                if ((primitive->IsMask() && !pointInside))
+                    {
+                    isInsideAPrimitive = true;
+                    break;
+                    }
+                else if (!primitive->IsMask())
+                    {
+                    if (pointInside)
+                    {
+                    isInsideAPrimitive = false;
+                    // Don't break here, must check for clip masks
+                    }
+                    else
+                        {
+                        isInsideAPrimitive = true;
+                        if (--nClipBoundaries == 0) break;
+                        }
+                    }
+                }
+
+            if (isInsideAPrimitive)
                 {
                 idxOfFaces[&clip - &clipPolys.front()].push_back((int)idxFace);
                 nCrossingPolys[idxFace]++;
@@ -1621,27 +1639,40 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, bvect
             }
     }
 
-void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipVectorPtr& clipSegments, bvector<DRange3d>& faceRanges, const DRange3d& polyRange)
+typedef std::pair<bool, DRange3d> PrimitiveResult;
+PrimitiveResult ShouldConsiderPrimitive(ClipPrimitivePtr const& primitive, DRange3dCR range, bool hasMaskInfoOutsidePrimitive, bool isPrimitiveAMask)
+    {
+    DRange3d        primitiveRange;
+    if (!primitive->GetRange(primitiveRange, nullptr, primitive->IsMask()))
+        {
+        return PrimitiveResult(false, DRange3d());
+        }
+    if ((!hasMaskInfoOutsidePrimitive && primitive->IsMask()) || (hasMaskInfoOutsidePrimitive && isPrimitiveAMask))
+        {
+        //if node and primitive are fully disjoint, do not count this primitive
+        bool isFullyDisjoint = !primitiveRange.IntersectsWith(range) && !primitiveRange.IsContained(range.low) && !range.IsContained(primitiveRange.low);
+        return PrimitiveResult(!isFullyDisjoint, primitiveRange);
+        }
+    return PrimitiveResult(primitiveRange.IntersectsWith(range), primitiveRange);
+    }
+
+void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipVectorPtr& clipSegments, bvector<DRange3d>& faceRanges, const DRange3d& polyRange, const bvector<bool>& isMask)
     {
     bvector<DPlane3d> planesFromSegments;
     bool meshHasTexture = inOutMesh->Param().size() > 0 && inOutMesh->ParamIndex().size() > 0;
 	DRange3d meshRange = DRange3d::From(inOutMesh->GetPointCP(), (int)inOutMesh->GetPointCount());
-	for (auto& primitive : *clipSegments)
-	{
-		DRange3d        thisRange;
-
-		if (!primitive->IsMask())
-			continue;
-		if (primitive->GetRange(thisRange, nullptr, primitive->IsMask()))
-		{
-			//if node and primitive are fully disjoint, do not count this primitive
-			if (!thisRange.IntersectsWith(meshRange) && !thisRange.IsContained(meshRange.low) && !meshRange.IsContained(thisRange.low))
-				continue;
-			for (auto& planes : *(primitive->GetClipPlanes()))
-				for (auto& plane : planes)
-					planesFromSegments.push_back(plane.GetDPlane3d());
-		}
-	}
+    for (auto& primitive : *clipSegments)
+        {
+      //  if (ShouldConsiderPrimitive(primitive, meshRange,!isMask.empty(), isMask.empty()? false : isMask[&primitive - &clipSegments->front()]).first)
+      //      {
+            for (auto& planes : *(primitive->GetClipPlanes()))
+                for (auto& plane : planes)
+                    planesFromSegments.push_back(plane.GetDPlane3d());
+            for (auto& planes : *(primitive->GetClipPlanes()))
+                for (auto& plane : planes)
+                    planesFromSegments.push_back(plane.GetDPlane3d());
+      //      }
+        }
 
 	bool doNotOptimizeDistanceChecks = false;
 	if (planesFromSegments.size() > 500)
@@ -1734,7 +1765,7 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipV
         }
     }
 
-bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, ClipVectorCP clip, const PolyfaceQuery* meshP)
+bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, ClipVectorCP clip, const PolyfaceQuery* meshP, const bvector<bool>& isMask)
     {
     polyfaces.resize(2);
     bvector<DRange3d> triangleBoxes;
@@ -1745,56 +1776,41 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
     DRange3d polyBox;
     polyBox.Init();
 
-	DRange3d meshRange = DRange3d::From(clippedMesh->GetPointCP(), (int)clippedMesh->GetPointCount());
+    DRange3d meshRange = DRange3d::From(clippedMesh->GetPointCP(), (int)clippedMesh->GetPointCount());
+
     for (ClipPrimitivePtr const& primitive : *clip)
         {
-        DRange3d        thisRange;
-
-		if (!primitive->IsMask())
-			continue;
-        if (primitive->GetRange(thisRange, nullptr, primitive->IsMask()))
+        auto result = ShouldConsiderPrimitive(primitive, meshRange, !isMask.empty(), isMask.empty()? false : isMask[&primitive - &clip->front()]);
+        if (result.first)
             {
-			//if node and primitive are fully disjoint, do not count this primitive
-			if (!thisRange.IntersectsWith(meshRange) && !thisRange.IsContained(meshRange.low) && !meshRange.IsContained(thisRange.low))
-				continue;
             if (polyBox.IsEmpty())
-                polyBox = thisRange;
+                polyBox = result.second;
             else
-                polyBox.UnionOf(polyBox, thisRange);
+                polyBox.UnionOf(polyBox, result.second);
             }
         }
     ClipVectorPtr currentClip(const_cast<ClipVector*>(clip));
-    InsertMeshCuts(clippedMesh, vis, currentClip, triangleBoxes, polyBox);
+    InsertMeshCuts(clippedMesh, vis, currentClip, triangleBoxes, polyBox, isMask);
     bvector<ClipVectorPtr> clipPolys;
-	bool shouldUseClipPrimitives = true;
-	if(!shouldUseClipPrimitives)
-		clipPolys.push_back(currentClip);
-	else
-	{
-		for (ClipPrimitivePtr const& primitive : *clip)
-		{
-			DRange3d        thisRange;
-
-			if (!primitive->IsMask())
-				continue;
-			if (primitive->GetRange(thisRange, nullptr, primitive->IsMask()))
-			{
-				//if node and primitive are fully disjoint, do not count this primitive
-				if (!thisRange.IntersectsWith(meshRange) && !thisRange.IsContained(meshRange.low) && !meshRange.IsContained(thisRange.low))
-					continue;
-				else
-				{
+    bool shouldUseClipPrimitives = true;
+    if (!shouldUseClipPrimitives)
+        clipPolys.push_back(currentClip);
+    else
+        {
+        for (ClipPrimitivePtr const& primitive : *clip)
+            {
+            if (ShouldConsiderPrimitive(primitive, meshRange,!isMask.empty(), isMask.empty()? false : isMask[&primitive - &clip->front()]).first)
+                {
 #ifndef VANCOUVER_API
-                                        ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive.get());
+                ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive.get());
 #else
-					ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive);
+                ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive);
 #endif
-					clipPolys.push_back(newClip);
-				}
-			}
-		}
-		polyfaces.resize(clipPolys.size() + 1);
-	}
+                clipPolys.push_back(newClip);
+                }
+            }
+        polyfaces.resize(clipPolys.size() + 1);
+        }
     return Process3dRegions(polyfaces, clippedMesh, clipPolys);
     }
 
@@ -1854,6 +1870,9 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
         cp = ClipVector::CreateFromCurveVector(*curvePtr,1e-8,1e-8);
 
         InsertMeshCuts(clippedMesh, vis, currentPoly, triangleBoxes, polyBox);
+
+		for (auto& prim : *cp)
+			prim->SetIsMask(true);
         clipPolys.push_back(cp);
         }
      bool ret = Process3dRegions(polyfaces, clippedMesh, clipPolys);

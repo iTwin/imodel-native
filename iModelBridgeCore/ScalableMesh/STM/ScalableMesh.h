@@ -217,6 +217,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         bool                            m_isInvertingClips;
         bool                            m_needsNeighbors;
         bool                            m_isCesium3DTiles;
+        bool                            m_isFromStubFile;
         double                          m_minScreenPixelsPerPoint;
 
         HFCPtr<MeshIndexType>          m_scmIndexPtr;              
@@ -289,6 +290,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual bool          _IsCesium3DTiles() override;
 
+        virtual bool          _IsStubFile() override;
+
         virtual Utf8String    _GetProjectWiseContextShareLink() override;
         
 
@@ -333,6 +336,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
+        virtual bool                               _AddClip(const ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
+        virtual bool                               _ModifyClip(const ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override;
@@ -504,6 +509,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         virtual bool           _IsCesium3DTiles() override { return false; }
 
+        virtual bool           _IsStubFile() override { return false; }
+
         virtual Utf8String    _GetProjectWiseContextShareLink() override { return Utf8String(); }
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
@@ -546,11 +553,19 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             {
             return false;
             }
+        virtual bool                               _AddClip(const ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+        {
+            return false;
+        }
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
-        virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+        virtual bool                               _ModifyClip(const ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
             {
             return false;
             }
+        virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+        {
+            return false;
+        }
         virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override { return false; }
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;

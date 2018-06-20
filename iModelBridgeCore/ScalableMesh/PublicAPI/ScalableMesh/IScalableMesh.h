@@ -161,6 +161,8 @@ struct IScalableMesh :  IRefCounted
         
         virtual bool          _IsCesium3DTiles() = 0;
 
+        virtual bool           _IsStubFile() = 0;
+
         virtual Utf8String    _GetProjectWiseContextShareLink() = 0;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) = 0;
@@ -267,6 +269,12 @@ struct IScalableMesh :  IRefCounted
 
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) = 0;
 
+
+        virtual bool                               _AddClip(const CLIP_VECTOR_NAMESPACE::ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) = 0;
+
+        virtual bool                               _ModifyClip(const CLIP_VECTOR_NAMESPACE::ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) = 0;
+
+
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& ids) = 0;
         virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) = 0;
         virtual void                               _GetIsClipActive(uint64_t id, bool& isActive) = 0;
@@ -357,17 +365,19 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT bool          IsCesium3DTiles();
 
+        BENTLEY_SM_EXPORT bool          IsStubFile();
+
         BENTLEY_SM_EXPORT Utf8String    GetProjectWiseContextShareLink();
 
         BENTLEY_SM_EXPORT DTMStatusInt     GetRange(DRange3dR range);
 
         BENTLEY_SM_EXPORT StatusInt          GetBoundary(bvector<DPoint3d>& boundary);
 
-        BENTLEY_SM_EXPORT int                    GenerateSubResolutions();
+                          int                    GenerateSubResolutions();
 
         BENTLEY_SM_EXPORT int64_t                GetBreaklineCount() const;
             
-        BENTLEY_SM_EXPORT ScalableMeshCompressionType   GetCompressionType() const;
+                   ScalableMeshCompressionType   GetCompressionType() const;
 
         BENTLEY_SM_EXPORT int                    GetNbResolutions() const;    
 
@@ -438,6 +448,10 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT bool                   ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive = true);
 
+        BENTLEY_SM_EXPORT bool                   AddClip(const CLIP_VECTOR_NAMESPACE::ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive = true);
+
+        BENTLEY_SM_EXPORT bool                   ModifyClip(const CLIP_VECTOR_NAMESPACE::ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive = true);
+
         BENTLEY_SM_EXPORT bool                   RemoveClip(uint64_t clipID);
 
         BENTLEY_SM_EXPORT bool                   GetClip(uint64_t clipID, bvector<DPoint3d>& clipData);
@@ -461,7 +475,7 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT void                   SetInvertClip(bool invertClips);
 
-        BENTLEY_SM_EXPORT void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
+        void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
 
         BENTLEY_SM_EXPORT void                   GetAllClipIds(bvector<uint64_t>& ids);
 
@@ -482,9 +496,9 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT int                    SaveAs(const WString& destination, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips = nullptr, IScalableMeshProgressPtr progress = nullptr);
 
-        BENTLEY_SM_EXPORT void                   ImportTerrainSM(WString terrainPath);
+                          void                   ImportTerrainSM(WString terrainPath);
 
-        BENTLEY_SM_EXPORT IScalableMeshPtr       GetTerrainSM();
+                          IScalableMeshPtr       GetTerrainSM();
 
         BENTLEY_SM_EXPORT SMStatus          DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, GeoCoordinates::BaseGCSCPtr destinationGcs = nullptr, bool limitResolutions = false);
 

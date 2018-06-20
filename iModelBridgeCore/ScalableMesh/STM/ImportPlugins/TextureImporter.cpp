@@ -344,10 +344,10 @@ class TextureFileSourceCreator : public LocalFileSourceCreatorBase
 
     virtual bool                    _Supports                              (const LocalFileSourceRef&   pi_rSourceRef) const override
         {
-        try
-            {
-            HFCPtr<HFCURL> urlPtr;
+        HFCPtr<HFCURL> urlPtr;
 
+        try
+            {            
             ConstructUrl(urlPtr, pi_rSourceRef);
 
 
@@ -355,13 +355,20 @@ class TextureFileSourceCreator : public LocalFileSourceCreatorBase
 
             if (foundCreatorP == nullptr)
                 return false;
-                        
+            }
+        catch (const HFCException&)
+            {
+            return false;
+            }
+             
+        try
+            {           
             HUTDEMRasterXYZPointsExtractor extractor(urlPtr->GetURL(), GetPoolInstance(), false);
 
             return false;
             }
         catch (const HFCException&)
-            {
+            { //Not a DEM raster, thus a valid raster for texturing.
             return true;
             }
         }
