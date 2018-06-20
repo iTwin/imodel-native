@@ -15,7 +15,7 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 
 #define BCSSERIALIZABLE_ELEMENT_ClassName                   "ClassName"
 #define BCSSERIALIZABLE_ELEMENT_SchemaName                  "SchemaName"
-#define BCSSERIALIZABLE_ELEMENT_ElementId                   "AllocationId"
+#define BCSSERIALIZABLE_ELEMENT_ElementId                   "ElementId"
 #define BCSSERIALIZABLE_ELEMENT_Name                        "Name"
 #define BCSSERIALIZABLE_ELEMENT_CodeValue                   "CodeValue"
 
