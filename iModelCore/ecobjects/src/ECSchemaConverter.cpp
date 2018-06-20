@@ -1190,7 +1190,8 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         if (nullptr == newUnit)
             {
             Utf8String fullName = schema.GetFullSchemaName();
-            LOG.errorv("The property %s:%s.%s has a KOQ %s:%s that does not have a unit, failing conversion.  ", fullName.c_str(), prop->GetClass().GetName(), prop->GetName(), koq->GetSchema().GetName(), koq->GetName());
+            LOG.errorv("The property %s:%s.%s has a KOQ %s:%s that does not have a unit, failing conversion.",
+                fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), koq->GetSchema().GetName().c_str(), koq->GetName().c_str());
             return ECObjectsStatus::Error;
             }
         }
