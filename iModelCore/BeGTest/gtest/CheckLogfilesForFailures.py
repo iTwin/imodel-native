@@ -25,6 +25,8 @@ sys.path.append(filedir)
 def PreventAutoIgnoreTests(FailingTestsList):
     filedir=os.path.dirname(os.path.abspath(__file__))
     filepath=os.path.join(filedir,"IgnoreFilters.txt")
+    if not os.path.exists(filepath):
+        return 0
     filteredFile = open (filepath, 'r')
     lines = filteredFile.readlines()
     filteredlist=[]
