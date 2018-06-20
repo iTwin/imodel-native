@@ -179,6 +179,7 @@ CategorySelectorPtr  BuildingUtils::CreateDefaultCategorySelector (DgnDbR db)
     CategorySelector catSel (db.GetDictionaryModel (), DEFAULT_BUILDING_CATEGORY_SELECTOR_NAME);
     catSel.SetCategories (categories);
 
+    BuildingLocks_LockElementForOperation(catSel, BeSQLite::DbOpcode::Insert, "Insert");
     auto insertedElement = db.Elements ().Insert (catSel);
     if (insertedElement.IsValid ())
         {
@@ -341,7 +342,7 @@ CategorySelectorPtr  BuildingUtils::CreateFloorViewCategorySelector (DgnDbR db)
 
     CategorySelector catSel (db.GetDictionaryModel (), FLOOR_VIEW_CATEGORY_SELECTOR_NAME);
     catSel.SetCategories (categories);
-    BuildingLocks_LockElementForOperation(catSel, BeSQLite::DbOpcode::Insert, "Insert floor view definition");
+    BuildingLocks_LockElementForOperation(catSel, BeSQLite::DbOpcode::Insert, "Insert");
     auto insertedElement = db.Elements ().Insert (catSel);
     if (insertedElement.IsValid ())
         {
