@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <memory>
 #include "suppress_warnings.h"
-#include <imodeljs-nodeaddonapi.package.version.h>
+#include "imodeljs-nodeaddonapi.package.version.h"
 #include <node-addon-api/napi.h>
 #include <json/value.h>
 #include "IModelJsNative.h"
@@ -653,22 +653,14 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             }
 
         NativeAppData(NativeDgnDb& adb) : m_addonDb(adb) {}
-
-        static NativeAppData* Find(DgnDbR db)
-            {
-            return (NativeAppData*) db.FindAppData(GetKey());
-            }
-
+        static NativeAppData* Find(DgnDbR db) {return (NativeAppData*) db.FindAppData(GetKey());}
         static void Add(NativeDgnDb& adb)
             {
             BeAssert(nullptr == Find(adb.GetDgnDb()));
             adb.GetDgnDb().AddAppData(GetKey(), new NativeAppData(adb));
             }
 
-        static void Remove(DgnDbR db)
-            {
-            db.DropAppData(GetKey());
-            }
+        static void Remove(DgnDbR db) {db.DropAppData(GetKey());}
         };
 
     static Napi::FunctionReference s_constructor;
@@ -677,14 +669,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
 
-    NativeDgnDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeDgnDb>(info)
-        {
-        }
-
-    ~NativeDgnDb()
-        {
-        CloseDgnDb();
-        }
+    NativeDgnDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeDgnDb>(info) {}
+    ~NativeDgnDb() {CloseDgnDb();}
 
     void CloseDgnDb()
         {
@@ -793,7 +779,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
     Napi::Value GetECClassMetaData(Napi::CallbackInfo const& info)
         {
-        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, s, Env().Undefined());
         REQUIRE_ARGUMENT_STRING(1, c, Env().Undefined());
         Json::Value metaDataJson;
@@ -802,24 +787,22 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         }
 
     Napi::Value GetSchemaItem(Napi::CallbackInfo const& info)
-    {
-        REQUIRE_DB_TO_BE_OPEN
+        {
         REQUIRE_ARGUMENT_STRING(0, schemaName, Env().Undefined());
         REQUIRE_ARGUMENT_STRING(1, itemName, Env().Undefined());
         Json::Value metaDataJson;
         auto status = JsInterop::GetSchemaItem(metaDataJson, GetDgnDb(), schemaName.c_str(), itemName.c_str());
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), metaDataJson.ToString().c_str()));
-    }
+        }
 
     Napi::Value GetSchema(Napi::CallbackInfo const& info)
-    {
-        REQUIRE_DB_TO_BE_OPEN
+        {
         REQUIRE_ARGUMENT_STRING(0, name, Env().Undefined());
 
         Json::Value metaDataJson;
         auto status = JsInterop::GetSchema(metaDataJson, GetDgnDb(), name.c_str());
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), metaDataJson.ToString().c_str()));
-    }
+         }
 
     Napi::Value GetElement(Napi::CallbackInfo const& info)
         {
@@ -1482,12 +1465,16 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)JsInterop::BriefcaseManagerEndBulkOperation(GetDgnDb()));
         }
 
-    Napi::Value UpdateProjectExtents(Napi::CallbackInfo const& info)
+    void UpdateProjectExtents(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, newExtentsJson, Env().Undefined())
-        return Napi::Number::New(Env(), (int)JsInterop::UpdateProjectExtents(GetDgnDb(), Json::Value::From(newExtentsJson)));
+        REQUIRE_ARGUMENT_STRING(0, newExtentsJson, )
+        JsInterop::UpdateProjectExtents(GetDgnDb(), Json::Value::From(newExtentsJson));
         }
-
+    void UpdateIModelProps(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, props, )
+        JsInterop::UpdateIModelProps(GetDgnDb(), Json::Value::From(props));
+        }
     Napi::Value ReadFontMap(Napi::CallbackInfo const& info)
         {
         auto const& fontMap = GetDgnDb().Fonts().FontMap();
@@ -1743,6 +1730,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),
             InstanceMethod("updateModel", &NativeDgnDb::UpdateModel),
             InstanceMethod("updateProjectExtents", &NativeDgnDb::UpdateProjectExtents),
+            InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("getTiles", &NativeDgnDb::GetTiles),
         });

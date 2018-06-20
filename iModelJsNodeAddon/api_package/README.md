@@ -1,9 +1,9 @@
 ﻿# @bentley/imodeljs-native-platform-api
 
 <p style="text-align: center;">
-<b><i><mark>
-<mark><em>The native platform and its API are for the private use of imodeljs-backend only.</em></mark>
-</b></i></mark>
+<i><mark>
+<b>The native platform and its API are for the private use of imodeljs-backend only.</b>
+</i></mark>
 </p>
 
 
@@ -42,7 +42,7 @@ You can build the native platform like this:
 
 To force a rebuild of individual parts, do this:
 
-`bb -s"iModelJsNodeAddon;BuildAll" re DgnPlatformDLL <other libraries...> iModelJsNodeAddonLib* MakePackages`
+`bb -s"iModelJsNodeAddon;BuildAll" re DgnPlatformDLL iModelJsNodeAddonLib* MakePackages`
 
 ## Version
 
@@ -64,9 +64,9 @@ If you change the native platform's API in native code, e.g., by adding a method
 
 You must rebuild the native platform itself and the packages whenever you change the version. Note that the version number is *burned into the code*. This allows imodeljs-backend to do its runtime version-compatibility check. So, it's not enough just to regenerate the packages -- you must also rebuild the native platform. After changing the version number, re-build like this:
 
-```
-bb "iModelJsNodeAddon;BuildAll" re iModelJsNodeAddonLib* MakePackages -c
-bb "iModelJsNodeAddon;BuildAll" re iModelJsNodeAddonLib* MakePackages
+``` cmd
+bb -s "iModelJsNodeAddon;BuildAll" re iModelJsNodeAddonLib* MakePackages -c
+bb -s "iModelJsNodeAddon;BuildAll" re iModelJsNodeAddonLib* MakePackages
 ```
 
 ## Test
