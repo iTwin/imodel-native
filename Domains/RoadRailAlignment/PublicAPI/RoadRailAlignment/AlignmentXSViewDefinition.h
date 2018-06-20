@@ -31,7 +31,9 @@ private:
     static IViewControllerFactory s_factory;
 
 protected:
+    bool m_isDynamic;
     bool m_allowRotation;
+    Json::Value m_dynamicPoints;
 
 protected:
     void _SetRotation(RotMatrixCR rot) override final;
@@ -49,6 +51,10 @@ public:
 
     void SetAllowRotation(bool value) { m_allowRotation = value; }
     bool GetAllowRotation() const { return m_allowRotation; }
+    ROADRAILALIGNMENT_EXPORT void SetIsDynamic(bool value) { m_isDynamic = value; }
+    ROADRAILALIGNMENT_EXPORT bool GetIsDynamic() const { return m_isDynamic; }
+
+
 
     //! Construct a SpatialViewDefinition in the specified DefinitionModel
     ROADRAILALIGNMENT_EXPORT AlignmentXSViewDefinition(ConfigurationModelCR model, Utf8StringCR name, Dgn::CategorySelectorR categories, Dgn::DisplayStyle3dR displayStyle, Dgn::ModelSelectorR modelSelector);
