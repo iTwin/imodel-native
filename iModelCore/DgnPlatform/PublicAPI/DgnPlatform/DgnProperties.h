@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnProperties.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,7 +33,6 @@ struct DgnProjectProperty
     };
 
     struct ProjectProperty : Spec {ProjectProperty(Utf8CP name) : Spec(name, DbPropSpec::Mode::Normal){}};
-    struct ProjectSetting  : Spec {ProjectSetting(Utf8CP name)  : Spec(name, DbPropSpec::Mode::Setting){}};
 
     static ProjectProperty ProfileVersion()  {return ProjectProperty("SchemaVersion");}
     static ProjectProperty Name()            {return ProjectProperty("Name");}

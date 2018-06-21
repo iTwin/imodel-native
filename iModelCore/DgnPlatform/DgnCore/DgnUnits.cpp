@@ -112,17 +112,18 @@ EcefLocation DgnGeoLocation::GetEcefLocation() const
         auto wgs84GCS = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
         wgs84GCS ->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
 
-        GeoPoint originLatLong;
+        GeoPoint originLatLong, yLatLong, tempLatLong;
         dgnGCS->LatLongFromUors(originLatLong, origin);
+        dgnGCS->LatLongFromUors(yLatLong, DPoint3d::FromSumOf(origin, DPoint3d::From(0.0, 10.0, 0.0)));         // Arbitrarily 10 meters in Y direction will be used to calculate y axis of transform.
 
-        GeoPoint tempLatLong = originLatLong;
+        tempLatLong = originLatLong;
         dgnGCS->LatLongFromLatLong(originLatLong, tempLatLong, *wgs84GCS);
+        tempLatLong = yLatLong;
+        dgnGCS->LatLongFromLatLong(yLatLong, tempLatLong, *wgs84GCS);
         
-        DPoint3d ecefOrigin, ecefNorth;
-        GeoPoint northLatLong = originLatLong;
-        northLatLong.latitude += 3.0 / (60.0 * 60.0);   // To get a point north of origin move 3 seconds of latitude (per Alain Robert)                  
-        wgs84GCS->XYZFromLatLong(ecefOrigin, originLatLong);
-        wgs84GCS->XYZFromLatLong(ecefNorth, northLatLong);
+        DPoint3d ecfOrigin, ecfY;
+        wgs84GCS->XYZFromLatLong(ecfOrigin, originLatLong);
+        wgs84GCS->XYZFromLatLong(ecfY, yLatLong);
 
         RotMatrix rMatrix = RotMatrix::FromIdentity();
         DVec3d zVector, yVector;
