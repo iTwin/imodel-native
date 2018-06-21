@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Transactions/BeSQLiteDbTransactionHandler.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -57,6 +57,12 @@ DbResult BeSQLiteDbTransactionHandler::RetryDbOperation(std::function<DbResult()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BeSQLiteDbTransactionHandler::BeginTransaction()
     {
+    if (!m_db->IsDbOpen())
+        {
+        BeAssert(false && "DB is closed");
+        return ERROR;
+        }
+
     if (m_transactionSavepoint || 0 != m_db->GetCurrentSavepointDepth())
         {
         BeAssert(false &&
