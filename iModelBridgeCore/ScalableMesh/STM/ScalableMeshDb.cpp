@@ -62,7 +62,7 @@ DbResult ScalableMeshDb::_UpgradeProfile()
     bool update = m_smFile->UpdateDatabase();
 
     if (!update)
-        return BE_SQLITE_ERROR; 
+        return BE_SQLITE_ERROR;     
 
     return BE_SQLITE_OK;
     }

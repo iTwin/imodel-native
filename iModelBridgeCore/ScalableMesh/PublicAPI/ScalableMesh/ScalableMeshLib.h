@@ -27,8 +27,12 @@ class ScalableMeshLib
 private: 
 
 
+#ifdef VANCOUVER_API
+
 #if !(defined(__BENTLEYSTM_BUILD__) && defined(__BENTLEYSTMIMPORT_BUILD__))    
     static RegisterPODImportPluginFP s_PODImportRegisterFP;
+#endif
+
 #endif
 
 public:

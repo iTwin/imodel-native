@@ -155,7 +155,7 @@ bool SMSQLiteFile::UpdateDatabase()
     stmtTest->Step();
 #ifndef VANCOUVER_API
     BESQL_VERSION_STRUCT databaseSchema(GET_VALUE_STR(stmtTest,0));
-    stmtTest->Finalize();
+
     for (size_t i = 0; i < GetNumberOfReleasedSchemas()- 1; ++i)
         {
         BESQL_VERSION_STRUCT databaseSchemaOld = GetListOfReleasedVersions()[i];
@@ -181,7 +181,10 @@ bool SMSQLiteFile::UpdateDatabase()
         stmt->BindUtf8String(1, versonJson, Statement::MAKE_COPY_Yes);
 #endif
         DbResult status = stmt->Step();
-        if (status == BE_SQLITE_DONE) return true;
+        if (status == BE_SQLITE_DONE) 
+            {
+            return true;
+            }
         }
     #endif
     assert(!"ERROR - Unknown database schema version");
