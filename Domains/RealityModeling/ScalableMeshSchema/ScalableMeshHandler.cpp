@@ -25,6 +25,7 @@
 
 #define SCALABLEMESH_MODEL_PROP_Clips           "SmModelClips"
 #define SCALABLEMESH_MODEL_PROP_GroundCoverages "SmGroundCoverages"
+#define SCALABLEMESH_MODEL_PROP_ClipVectors "SmModelClipVectors"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -2090,6 +2091,7 @@ void ScalableMeshModel::ClearOverviews(IScalableMeshPtr& targetSM)
         {
         if (nullptr != m_progressiveQueryEngine.get() && m_currentDrawingInfoPtr.IsValid()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
         }
+#if 0
     if (targetSM.get() == m_smPtr->GetTerrainSM().get())
         {
         if (nullptr != m_progressiveQueryEngine.get() && m_currentDrawingInfoPtr.IsValid()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_terrainQuery);
@@ -2099,6 +2101,7 @@ void ScalableMeshModel::ClearOverviews(IScalableMeshPtr& targetSM)
             m_currentDrawingInfoPtr->m_terrainOverviewNodes.clear();
             }
         }
+#endif
     }
 
 void ScalableMeshModel::LoadOverviews(IScalableMeshPtr& targetSM)
@@ -2811,6 +2814,158 @@ void SMModelClipInfo::ToBlob(bvector<uint8_t>& clipData)
     memcpy(&clipData[currentBlobInd], &m_geomType, sizeof(m_geomType));
     }
 
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+void SMModelClipVectorInfo::FromBlob(size_t& currentBlobInd, const uint8_t* pClipData)
+    {    
+	m_bounds = ClipVector::Create();
+
+	memcpy(&m_type, &pClipData[currentBlobInd], sizeof(m_type));
+	currentBlobInd += sizeof(m_type);
+
+	memcpy(&m_isActive, &pClipData[currentBlobInd], sizeof(m_isActive));
+	currentBlobInd += sizeof(m_isActive);
+
+	memcpy(&m_geomType, &pClipData[currentBlobInd], sizeof(m_geomType));
+	currentBlobInd += sizeof(m_geomType);
+
+	uint32_t nOfClipPrims;
+	memcpy(&nOfClipPrims, &pClipData[currentBlobInd], sizeof(uint32_t));
+	currentBlobInd += sizeof(uint32_t);
+
+	ClipVectorPtr clipVec = ClipVector::Create();
+	for (uint32_t j = 0; j < nOfClipPrims; ++j)
+	    {
+		uint32_t nOfPlanes;
+		memcpy(&nOfPlanes, &pClipData[currentBlobInd], sizeof(uint32_t));
+		currentBlobInd += sizeof(uint32_t);
+		bvector<ClipPlane> planesVec;
+		for (uint32_t plane_i = 0; plane_i < nOfPlanes; ++plane_i)
+		    {
+			DPoint3d origin;
+			DVec3d normal;
+			memcpy(&origin.x, &pClipData[currentBlobInd], sizeof(double));
+			currentBlobInd += sizeof(double);
+			memcpy(&origin.y, &pClipData[currentBlobInd], sizeof(double));
+			currentBlobInd += sizeof(double);
+			memcpy(&origin.z, &pClipData[currentBlobInd], sizeof(double));
+			currentBlobInd += sizeof(double);
+			memcpy(&normal.x, &pClipData[currentBlobInd], sizeof(double));
+			currentBlobInd += sizeof(double);
+			memcpy(&normal.y, &pClipData[currentBlobInd], sizeof(double));
+			currentBlobInd += sizeof(double);
+			memcpy(&normal.z, &pClipData[currentBlobInd], sizeof(double));
+			currentBlobInd += sizeof(double);
+			planesVec.push_back(ClipPlane(normal, origin));
+		    }
+		ClipPlaneSet planeSet(planesVec.data(), planesVec.size());
+		auto prim = ClipPrimitive::CreateFromClipPlanes(planeSet);
+		bool isMask = false;
+		memcpy((uint8_t*)&isMask, &pClipData[currentBlobInd], sizeof(uint8_t));
+		currentBlobInd += sizeof(uint8_t);
+		prim->SetIsMask(isMask);
+		bool hasZClip = false;
+		memcpy((uint8_t*)&hasZClip, &pClipData[currentBlobInd], sizeof(uint8_t));
+		currentBlobInd += sizeof(uint8_t);
+		if (hasZClip)
+		    {
+			double zClipLow, zClipHigh;
+			memcpy(&zClipLow, &pClipData[currentBlobInd], sizeof(double));
+			currentBlobInd += sizeof(double);
+			memcpy(&zClipHigh, &pClipData[currentBlobInd], sizeof(double));
+			currentBlobInd += sizeof(double);
+			prim->SetZLow(zClipLow);
+			prim->SetZHigh(zClipHigh);
+		    }
+		m_bounds->push_back(prim);
+	    }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+void SMModelClipVectorInfo::ToBlob(bvector<uint8_t>& clipData)
+    {        
+
+	size_t currentBlobInd = clipData.size();
+    clipData.resize(clipData.size() + sizeof(m_type));
+    memcpy(&clipData[currentBlobInd], &m_type, sizeof(m_type));
+
+    currentBlobInd = clipData.size();
+    clipData.resize(clipData.size() + sizeof(m_isActive));
+    memcpy(&clipData[currentBlobInd], &m_isActive, sizeof(m_isActive));
+
+    currentBlobInd = clipData.size();
+    clipData.resize(clipData.size() + sizeof(m_geomType));
+    memcpy(&clipData[currentBlobInd], &m_geomType, sizeof(m_geomType));
+
+	uint32_t nOfClipPrims = m_bounds.IsValid() ? m_bounds->size() : 0;
+	currentBlobInd = clipData.size();
+	clipData.resize(clipData.size() + sizeof(uint32_t));
+	memcpy(&clipData[currentBlobInd], &nOfClipPrims, sizeof(nOfClipPrims));
+	for (auto& prim : *m_bounds)
+	    {
+		prim->ParseClipPlanes();
+		auto cPlaneSet = prim->GetMaskOrClipPlanes();
+		if (nullptr == cPlaneSet)
+			continue;
+
+		uint32_t nOfPlanes = cPlaneSet!= nullptr ? cPlaneSet->size() : 0;
+		currentBlobInd = clipData.size();
+		clipData.resize(clipData.size() + sizeof(uint32_t));
+		memcpy(&clipData[currentBlobInd], &nOfPlanes, sizeof(nOfPlanes));
+
+		for (auto& convexPlane : *cPlaneSet)
+			for (auto& plane : convexPlane)
+			    {
+				auto p = plane.GetDPlane3d();
+				currentBlobInd = clipData.size();
+				clipData.resize(clipData.size() + sizeof(double));
+				memcpy(&clipData[currentBlobInd], &p.origin.x, sizeof(double));
+				currentBlobInd = clipData.size();
+				clipData.resize(clipData.size() + sizeof(double));
+				memcpy(&clipData[currentBlobInd], &p.origin.y, sizeof(double));
+				currentBlobInd = clipData.size();
+				clipData.resize(clipData.size() + sizeof(double));
+				memcpy(&clipData[currentBlobInd], &p.origin.z, sizeof(double));
+				currentBlobInd = clipData.size();
+				clipData.resize(clipData.size() + sizeof(double));
+				memcpy(&clipData[currentBlobInd], &p.normal.x, sizeof(double));
+				currentBlobInd = clipData.size();
+				clipData.resize(clipData.size() + sizeof(double));
+				memcpy(&clipData[currentBlobInd], &p.normal.y, sizeof(double));
+				currentBlobInd = clipData.size();
+				clipData.resize(clipData.size() + sizeof(double));
+				memcpy(&clipData[currentBlobInd], &p.normal.z, sizeof(double));
+			}
+
+		uint8_t isMask = (uint8_t)prim->IsMask();
+		currentBlobInd = clipData.size();
+		clipData.resize(clipData.size() + sizeof(uint8_t));
+		memcpy(&clipData[currentBlobInd], &isMask, sizeof(uint8_t));
+	
+		uint8_t hasZClip = (uint8_t)prim->ClipZHigh() || (uint8_t)prim->ClipZLow();
+		currentBlobInd = clipData.size();
+		clipData.resize(clipData.size() + sizeof(uint8_t));
+		memcpy(&clipData[currentBlobInd], &hasZClip, sizeof(uint8_t));
+		
+		if (hasZClip)
+		    {
+			double zLow = prim->GetZLow();
+			double zHigh = prim->GetZHigh();
+
+			currentBlobInd = clipData.size();
+			clipData.resize(clipData.size() + sizeof(double));
+			memcpy(&clipData[currentBlobInd], &zLow, sizeof(double));
+			currentBlobInd = clipData.size();
+			clipData.resize(clipData.size() + sizeof(double));
+			memcpy(&clipData[currentBlobInd], &zHigh, sizeof(double));
+		    }
+	    }
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  01/2018
 //----------------------------------------------------------------------------------------
@@ -3050,6 +3205,32 @@ void SMClipProvider::SetClipPolygon(const bvector<DPoint3d>& poly, uint64_t id, 
     m_appData->SetClipType(id, type);
 */
     }
+
+void SMClipProvider::GetClipVector(ClipVectorPtr& clip, uint64_t id, SMNonDestructiveClipType& type)
+{
+	auto iterClip = m_smModel->m_scalableClipVectorDefs.find(id);
+
+	if (iterClip != m_smModel->m_scalableClipVectorDefs.end())
+	{
+		type = iterClip->second.m_type;
+		clip = iterClip->second.m_bounds;
+	}
+}
+
+void SMClipProvider::SetClipVector(const ClipVectorPtr& clip, uint64_t id, SMNonDestructiveClipType type)
+{
+	if (m_smModel->m_scalableClipVectorDefs.count(id) == 0)
+	{
+		m_smModel->m_scalableClipVectorDefs.insert(make_bpair(id, SMModelClipVectorInfo(clip, type)));
+	}
+	else
+	{
+		m_smModel->m_scalableClipVectorDefs[id].m_type = type;
+		m_smModel->m_scalableClipVectorDefs[id].m_bounds = clip;
+	}
+
+	m_smModel->Update();
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  01/2018
