@@ -179,6 +179,7 @@ struct DwgSyncInfo
 
             uint64_t    GetValue() const { return m_rowid; }
             bool        IsValid() const { return m_isValid; }
+            void        Invalidate () { m_rowid = 0; m_isValid = false; }
 
             bool operator==(DwgModelSyncInfoId const& rhs) const {return m_rowid == rhs.m_rowid;}
             bool operator!=(DwgModelSyncInfoId const& rhs) const {return !(*this == rhs);}

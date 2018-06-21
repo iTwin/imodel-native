@@ -134,6 +134,14 @@ DwgDbObjectIdCR DwgFileEditor::GetCurrentObjectId () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectId   DwgFileEditor::GetModelspaceId () const
+    {
+    return  m_dwgdb.IsValid() ? m_dwgdb->GetModelspaceId() : DwgDbObjectId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
 void    DwgFileEditor::TransformEntitiesBy (T_EntityHandles const& handles, TransformCR transform)
     {
     ASSERT_TRUE (m_dwgdb.IsValid());
