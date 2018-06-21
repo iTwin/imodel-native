@@ -34,6 +34,9 @@ struct MockWSClient : public IWSClient
 
             ON_CALL(*client, GetServerUrl()).WillByDefault(Return("TestServerUrl"));
 
+            ON_CALL(*client, GetServerInfo(_)).WillByDefault(
+                Return(CreateCompletedAsyncTask(WSInfoResult::Success(WSInfo()))));
+
             return client;
             };
 
