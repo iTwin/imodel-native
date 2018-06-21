@@ -31,12 +31,16 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(WebMercatorModel)
 DEFINE_REF_COUNTED_PTR(MapTile)
 DEFINE_REF_COUNTED_PTR(MapRoot)
 
+enum class MapType : int {None=0, Street=1, Aerial=2, Hybrid=3};
+
 //=======================================================================================
 // Interface between QuadTree implementation and the providers of the imagery.
 // @bsiclass                                                    Barry.Bentley   03/17
 //=======================================================================================
 struct ImageryProvider : RefCountedBase
 {
+    virtual ~ImageryProvider () {}
+
     enum class TemplateUrlLoadStatus : int {NotFetched=0, Requested=1, Received=2, Failed=3, Abandoned=4};
 
     // Imagery Providery implementation-specific methods.
@@ -80,8 +84,31 @@ struct ImageryProvider : RefCountedBase
     // if a Tile Template Url must be retrieved, return the current status. If none is needed, return "Received"
     virtual TemplateUrlLoadStatus _GetTemplateUrlLoadStatus() const {return TemplateUrlLoadStatus::Received;}
 
-    // sets the Tile Template Url retrieval status.
-    virtual void _SetTemplateUrlLoadStatus(TemplateUrlLoadStatus) {}
+    virtual bool _MatchesMissingTile (ByteStream& tileBytes) const {return false;}
+
+    // unions attribution copyright messages based on range, if necessary. If not necessary, add the lone copyright message and return false.
+    virtual bool _UnionAttributionCopyrightMessages (T_Utf8StringVectorR copyrightMessages, MapRootCR mapRoot, int viewIndex) 
+        {
+        // this is if the copyright message is static (doesn't depend on range).
+        copyrightMessages.push_back (_GetCreditMessage());
+        return false;
+        }
+
+    // unions attribution copyright messages based on range, if necessary. If not necessary, add the lone copyright message and return false.
+    virtual bool _HaveAttributionCopyrightMessages (MapRootCR mapRoot) 
+        {
+        return (0 < _GetCreditMessage().length());
+        }
+
+    virtual Render::RgbaSpriteP _GetCopyrightSprite () { return nullptr; }
+
+
+    virtual MapType _GetMapType () const = 0;
+
+    // if the provider wants to set a maximum duration for tiles, set it as a duration in milliseconds.
+    // if not relevant, return 0. Bing Maps uses this to enforce a 3 day limit for tile life.
+    virtual uint64_t _GetMaxValidDuration () const { return 0; }
+
 };
 
 DEFINE_REF_COUNTED_PTR(ImageryProvider)
@@ -96,6 +123,8 @@ struct MapRoot : TileTree::QuadTree::Root
     Render::ImageSource::Format m_format; //! the format of the tile image source
     Transform m_mercatorToWorld;  //! linear transform from web mercator meters to world meters. Only used when reprojection fails.
     ImageryProviderPtr m_imageryProvider; //! procures the image tiles from the source tile server.
+
+    Render::RgbaSpritePtr m_copyrightSprite;
 
     DPoint3d ToWorldPoint(GeoPoint);
     Utf8String _ConstructTileResource(TileTree::TileCR tile) const override;
@@ -115,6 +144,7 @@ struct MapTile : TileTree::QuadTree::Tile
     struct Loader : TileTree::TileLoader
     {
         Loader(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) : TileTree::TileLoader(url, tile, loads, tile._GetTileCacheKey(), renderSys) {}
+        uint64_t      _GetMaxValidDuration() const override;
         BentleyStatus _LoadTile() override;
     };
 
@@ -138,7 +168,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : SpatialModel
     DGNMODEL_DECLARE_MEMBERS("WebMercatorModel", SpatialModel);
 
 protected:
-    TileTree::RootPtr Load(Dgn::Render::SystemP) const;
+    TileTree::RootPtr LoadTileTree(Dgn::Render::SystemP) const;
 
     double m_groundBias;
     double m_transparency;
@@ -151,6 +181,7 @@ public:
     BE_JSON_NAME(providerName);
     BE_JSON_NAME(groundBias);
     BE_JSON_NAME(transparency);
+    BE_JSON_NAME(mapType)       // the mapType in the Json is actually processed by the MapProviders.
     BE_JSON_NAME(providerData); // identifier of ProviderData subfolder
 
     struct CreateParams : T_Super::CreateParams
@@ -180,6 +211,7 @@ public:
     void _OnLoadedJsonProperties() override;
     double GetGroundBias() const {return m_groundBias;}
     Utf8String _GetCopyrightMessage() const override;
+    Render::RgbaSpriteP _GetCopyrightSprite() const override;
 };
 
 DEFINE_REF_COUNTED_PTR(WebMercatorModel)
@@ -200,24 +232,15 @@ struct EXPORT_VTABLE_ATTRIBUTE ModelHandler : dgn_ModelHandler::Spatial
 //=======================================================================================
 struct MapBoxImageryProvider : ImageryProvider
 {
-    // the map types available from MapBox
-    enum class MapType
-    {
-        StreetMap = 0,
-        Satellite = 1,
-        StreetsAndSatellite = 2,
-    };
-
 private:
     Utf8String m_baseUrl;
-    MapType m_mapType = MapType::StreetMap;
-
-public:
-    BE_JSON_NAME(mapType)
-    BE_PROP_NAME(MapBoxProvider)
+    MapType m_mapType = MapType::Street;
 
     // constructor used prior to specifying from stored Json values.
     MapBoxImageryProvider() {}
+
+public:
+    BE_PROP_NAME(MapBoxProvider)
 
     // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
     Utf8String _GetProviderName() const override {return prop_MapBoxProvider();}
@@ -240,7 +263,14 @@ public:
     void _FromJson(Json::Value const& value) override;
 
     void _ToJson(Json::Value&) const override;
+
+    MapType _GetMapType () const override {return m_mapType; }
+
+    static MapBoxImageryProvider* Create (Json::Value const& providerDataValue);
 };
+
+struct BingImageryProvider;
+DEFINE_REF_COUNTED_PTR(BingImageryProvider)
 
 //=======================================================================================
 // Bing Imagery Provider
@@ -248,30 +278,66 @@ public:
 //=======================================================================================
 struct BingImageryProvider : ImageryProvider
 {
-    // the map types available from Bing
-    enum class MapType
-    {
-        Road = 0,
-        Aerial = 1,
-        AerialWithLabels = 2,
-    };
+    struct Coverage
+        {
+        double                      m_lowerLeftLongitude;
+        double                      m_lowerLeftLatitude;
+        double                      m_upperRightLongitude;
+        double                      m_upperRightLatitude;
+        uint8_t                     m_minimumZoomLevel;
+        uint8_t                     m_maximumZoomLevel;
+        };
+
+    struct Attribution
+        {
+        Utf8String                  m_copyrightMessage;
+        std::vector<Coverage>       m_coverageList;
+        };
 
 private:
     Utf8String m_urlTemplate;
     Utf8String m_creditUrl;
-    MapType m_mapType = MapType::Road;
+    MapType m_mapType = MapType::Street;
     uint8_t m_maximumZoomLevel = 19;
     uint8_t m_minimumZoomLevel = 0;
     int m_tileWidth = 256;
     int m_tileHeight = 256;
     BeAtomic<TemplateUrlLoadStatus> m_templateUrlLoadStatus;
+    
+    std::vector<Attribution>        m_attributions;
+
+    BeAtomic<bool>                  m_logoValid;
+    ByteStream                      m_logoByteStream;
+    Utf8String                      m_logoContentType;
+    Render::RgbaSpritePtr           m_copyrightSprite;
+
+    BeAtomic<uint32_t>              m_missingTileDataSize;
+    uint8_t*                        m_missingTileData;  // one third of the data we get back, taken from the middle.
+
+    static BingImageryProviderPtr   s_streetMapProvider;
+    static BingImageryProviderPtr   s_aerialMapProvider;
+    static BingImageryProviderPtr   s_hybridMapProvider;
+
+    // constructor used prior to specifying from stored Json values.
+    void                ReadAttributionsFromJson (Json::Value const& response);
+
+    // constructor used prior to specifying from stored Json values.
+    BingImageryProvider () 
+        {
+        m_templateUrlLoadStatus.store (TemplateUrlLoadStatus::NotFetched); 
+        m_missingTileDataSize.store (0);
+        m_missingTileData = nullptr;
+        m_logoValid.store (false);
+        }
+
+    virtual ~BingImageryProvider()
+        {
+        if (nullptr != m_missingTileData)
+            free (m_missingTileData);
+        }
 
 public:
     BE_PROP_NAME(BingProvider)
-    BE_JSON_NAME(mapType)
-
-    // constructor used prior to specifying from stored Json values.
-    BingImageryProvider() {m_templateUrlLoadStatus.store(TemplateUrlLoadStatus::NotFetched);}
 
     // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
     Utf8String _GetProviderName() const override {return prop_BingProvider();}
@@ -304,11 +370,27 @@ public:
 
     void _ToJson(Json::Value&) const override;
 
+    folly::Future<TemplateUrlLoadStatus> _FetchTemplateUrl() override;
+
     TemplateUrlLoadStatus _GetTemplateUrlLoadStatus() const override {return m_templateUrlLoadStatus;}
 
-    void _SetTemplateUrlLoadStatus(TemplateUrlLoadStatus status) override {m_templateUrlLoadStatus.store(status);}
+    bool _MatchesMissingTile (ByteStream& tileBytes) const override;
 
-    folly::Future<TemplateUrlLoadStatus> _FetchTemplateUrl() override;
+    bool _UnionAttributionCopyrightMessages (T_Utf8StringVectorR copyrightMessages, MapRootCR mapRoot, int viewIndex) override;
+
+    bool _HaveAttributionCopyrightMessages (MapRootCR mapRoot) override;
+
+    ByteStream* GetLogoByteStream ()  { return &m_logoByteStream; }
+
+    Utf8CP GetLogoContentType () { return m_logoContentType.c_str(); }
+
+    Render::RgbaSpriteP _GetCopyrightSprite () override;
+
+    uint64_t _GetMaxValidDuration () const override;
+
+    MapType _GetMapType () const override {return m_mapType; }
+
+    static BingImageryProvider* Create (Json::Value const& providerDataValue);
     };
 
 DEFINE_REF_COUNTED_PTR(BingImageryProvider)
@@ -319,28 +401,18 @@ DEFINE_REF_COUNTED_PTR(BingImageryProvider)
 //=======================================================================================
 struct HereImageryProvider : ImageryProvider
 {
-    enum class MapType
-    {
-        // Note: Here provides a big assortment of different types, I picked these to simplify it.
-        Map      = 0,
-        Aerial   = 1,
-        Combined = 2,
-    };
-
 private:
     Utf8String m_urlTemplate;
     Utf8String m_creditUrl;
     Utf8String m_appId;
     Utf8String m_appCode;
-    MapType m_mapType = MapType::Map;
-    uint8_t m_minimumZoomLevel = 0;
+    MapType m_mapType = MapType::Street;
     uint8_t m_maximumZoomLevel = 21;
     int m_tileWidth = 256;
     int m_tileHeight = 256;
 
 public:
     BE_PROP_NAME(HereProvider)
-    BE_JSON_NAME(mapType)
 
     // constructor used prior to specifying from stored Json values.
     HereImageryProvider();
@@ -357,9 +429,6 @@ public:
     // Gets the maximum zoom level alllowed (provider dependent)
     uint8_t _GetMaximumZoomLevel(bool forPrinting) override {return m_maximumZoomLevel;}
 
-    // Gets the maximum zoom level alllowed (provider dependent)
-    uint8_t _GetMinimumZoomLevel() override {return m_minimumZoomLevel;}
-
     // Gets a root file name to use for the BeSQLite file into which we cache the tiles. Usually depends on provider and the map type returned
     Utf8String _GetCacheFileName() const override;
 
@@ -369,6 +438,10 @@ public:
     void _FromJson(Json::Value const& value) override;
 
     void _ToJson(Json::Value&) const override;
+
+    MapType _GetMapType () const override {return m_mapType; }
+
+    static HereImageryProvider* Create (Json::Value const& providerDataValue);
     };
 
 }; // end WebMercator namespace

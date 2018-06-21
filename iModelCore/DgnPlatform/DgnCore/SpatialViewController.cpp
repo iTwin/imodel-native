@@ -53,26 +53,49 @@ void SpatialViewController::_DrawDecorations(DecorateContextR context)
     DrawGroundPlane(context);
     DrawSkyBox(context);
 
-    if (m_copyrightMsgs.empty())
+    if (m_copyrightSprites.empty() && m_copyrightMsgs.empty())
         return;
 
     DgnViewportCR vp = *context.GetViewport();
-
     static double const TEXT_HEIGHT_INCHES = 0.1;
     double textHeight = vp.PixelsFromInches(TEXT_HEIGHT_INCHES);
     double padding = (textHeight / 2.0);
-    
+
+    BSIRect viewRect = vp.GetViewRect();
+    Render::GraphicBuilderPtr graphic = context.CreateViewOverlay();
+
+    // start the logos from the left (hope they don't collide with the copyright messages, which start from the right).
+    if (!m_copyrightSprites.empty())
+        {
+        DPoint3d    logoBottomLeft = DPoint3d::From(viewRect.Left() + padding, viewRect.Bottom() - padding, 0.0);
+        DPoint3d    xVec = DPoint3d::FromXYZ (1.0, 0.0, 0.0);
+
+        for (RefCountedPtr<Render::ISprite> thisSprite : m_copyrightSprites)
+            {
+            Point2d  spriteSize = thisSprite->_GetSize();
+            DPoint3d viewPosition;
+            viewPosition.x = logoBottomLeft.x + spriteSize.x/2.0;
+            viewPosition.y = logoBottomLeft.y - spriteSize.y/2.0;
+            viewPosition.z = 0.0;
+
+            context.AddSprite (*thisSprite.get(), viewPosition, xVec, 0x10);
+            logoBottomLeft.x += spriteSize.x + padding;
+            }
+        }
+
+    if (m_copyrightMsgs.empty())
+        return;
+
     TextString textString;
     textString.GetStyleR().SetFont(DgnFontManager::GetDecoratorFont());
     textString.GetStyleR().SetSize(textHeight);
     textString.SetOrientation(RotMatrix::FromScaleFactors(1.0, -1.0, 1.0)); // y is flipped in view coords
 
-    BSIRect viewRect = vp.GetViewRect();
     DPoint3d textBottomRight = DPoint3d::From(viewRect.Right() - padding, viewRect.Bottom() - padding);
+
     DRange2d runningTextBounds = DRange2d::NullRange();
 
     // Always draw text in black, then create a white blanking region behind it so that it's always visible.
-    Render::GraphicBuilderPtr graphic = context.CreateViewOverlay();
     graphic->SetSymbology(ColorDef::Black(), ColorDef::Black(), 0);
 
     for (Utf8StringCR msg : m_copyrightMsgs)
@@ -147,6 +170,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
         {
         // Create as many tile trees as we can within the allotted time...
         bool timedOut = false;
+        bool rootCreationDeferred = false;
 
         for (auto modelId : GetViewedModels())
             {
@@ -157,13 +181,26 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
                 TileTree::RootPtr modelRoot = nullptr;
                 if (model.IsValid())
                     {
+                    // a model can defer root creation if it needs some preparation work. Bing Maps does that because it needs to fetch the Bing key and the template URL.
                     modelRoot = model->GetTileTree(context);
-                    Utf8String message = model->GetCopyrightMessage();
-                    if (!message.empty()) // skip emptry strings.
-                        m_copyrightMsgs.insert(message);
+                    if (modelRoot.IsNull())
+                        {
+                        rootCreationDeferred = true;
+                        }
+                    else
+                        {
+                        Utf8String message = model->GetCopyrightMessage();
+                        if (!message.empty()) // skip emptry strings.
+                            m_copyrightMsgs.insert(message);
+
+                        Render::RgbaSpritePtr sprite = model->GetCopyrightSprite();
+                        if (sprite.IsValid())
+                            m_copyrightSprites.push_back (sprite);
+
+                        m_roots.Insert(modelId, modelRoot);
+                        }
                     }
 
-                m_roots.Insert(modelId, modelRoot);
 
                 if (plan.IsTimedOut())
                     {
@@ -174,7 +211,8 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
                 }
             }
 
-        m_allRootsLoaded = !timedOut;
+        // if we either didn't have time to create all roots, or one of our models deferred root creation, go through this loop again later.
+        m_allRootsLoaded = !timedOut && !rootCreationDeferred;
         }
 
     // Always draw all the tile trees we currently have...

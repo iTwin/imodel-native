@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Sprites.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,6 @@
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
-typedef RefCountedPtr<struct RgbaSprite> RgbaSpritePtr;
 //=======================================================================================
 // @bsiclass                                                     KeithBentley    10/02
 //=======================================================================================
