@@ -50,8 +50,8 @@
     </Part>
 
     <Part Name="LoggingManagedLog4net" BentleyBuildMakeFile="src\managed\log4net\log4net.mke" ExcludeLibType="Static" ApiNumber="B02">
-        <NuGetPackage>log4net</NuGetPackage>
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+        <NuGetPackage>log4net</NuGetPackage>
         <SubPart PartName="LoggingManagedInterface"/>
         <Bindings>
             <Assemblies>
