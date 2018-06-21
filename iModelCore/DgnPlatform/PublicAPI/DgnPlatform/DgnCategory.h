@@ -287,9 +287,9 @@ public:
     enum class Rank
     {
         System      = 0, //!< This category is predefined by the system
-        Domain      = 1, //!< This category is defined by a domain. Elements in this category may be unknown to system functionality.
-        Application = 2, //!< This category is defined by an application. Elements in this category may be unknown to system and domain functionality.
-        User        = 3, //!< This category is defined by a user. Elements in this category may be unknown to system, domain, and application functionality.
+        Domain      = 1, //!< This category is defined by a domain.
+        Application = 2, //!< This category is defined by an application.
+        User        = 3, //!< This category is defined by a user.
     };
 
 protected:
