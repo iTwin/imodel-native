@@ -409,6 +409,10 @@ protected:
     //! @return a copyright message or nullptr
     virtual Utf8String _GetCopyrightMessage() const {return "";}
 
+    //! Return the copyright image to display if this model is drawn to a viewport,
+    //! @return a copyright message or nullptr
+    virtual Render::RgbaSpriteP _GetCopyrightSprite () const { return nullptr;}
+
     /** @name Dynamic cast shortcuts for a DgnModel */
     /** @{ */
     virtual GeometricModelCP _ToGeometricModel() const {return nullptr;}
@@ -494,6 +498,8 @@ protected:
 
 public:
     Utf8String GetCopyrightMessage() const {return _GetCopyrightMessage();}
+
+    Render::RgbaSpriteP GetCopyrightSprite () const { return _GetCopyrightSprite();}
 
     virtual Utf8CP _GetHandlerECClassName() const {return BIS_CLASS_Model;} //!< @private
     virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}    //!< @private

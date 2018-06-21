@@ -121,14 +121,14 @@ EcefLocation DgnGeoLocation::GetEcefLocation() const
         tempLatLong = yLatLong;
         dgnGCS->LatLongFromLatLong(yLatLong, tempLatLong, *wgs84GCS);
         
-        DPoint3d ecfOrigin, ecfY;
-        wgs84GCS->XYZFromLatLong(ecfOrigin, originLatLong);
-        wgs84GCS->XYZFromLatLong(ecfY, yLatLong);
+        DPoint3d ecefOrigin, ecefY;
+        wgs84GCS->XYZFromLatLong(ecefOrigin, originLatLong);
+        wgs84GCS->XYZFromLatLong(ecefY, yLatLong);
 
         RotMatrix rMatrix = RotMatrix::FromIdentity();
         DVec3d zVector, yVector;
         zVector.Normalize((DVec3dCR) ecefOrigin);
-        yVector.NormalizedDifference(ecefNorth, ecefOrigin);
+        yVector.NormalizedDifference(ecefY, ecefOrigin);
 
         rMatrix.SetColumn(yVector, 1);
         rMatrix.SetColumn(zVector, 2);
