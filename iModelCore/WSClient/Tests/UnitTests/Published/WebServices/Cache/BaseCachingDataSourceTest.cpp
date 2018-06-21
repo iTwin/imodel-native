@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/BaseCachingDataSourceTest.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,8 +14,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #ifdef USE_GTEST
 
 std::shared_ptr<MockWSRepositoryClient> BaseCachingDataSourceTest::s_mockClient;
-ICachingDataSourcePtr BaseCachingDataSourceTest::s_lastCachingDataSource;
-IDataSourceCache* BaseCachingDataSourceTest::s_lastDataSourceCache;
+CachingDataSourcePtr BaseCachingDataSourceTest::s_lastCachingDataSource;
 BeFileName BaseCachingDataSourceTest::s_seedCacheFolderPath;
 BeFileName BaseCachingDataSourceTest::s_targetCacheFolderPath;
 
@@ -42,8 +41,8 @@ CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSourceV25()
 CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSource(BeVersion webApiVersion)
     {
     // AsyncTask API delays destruction of CachingDataSource, thus DB is not always closed, force close here
-    if (s_lastCachingDataSource && s_lastDataSourceCache->GetECDb().IsDbOpen())
-        s_lastDataSourceCache->Close();
+    if (s_lastCachingDataSource)
+        s_lastCachingDataSource->Close();
     s_lastCachingDataSource = nullptr;
 
     BeFileName seedCacheFolderName(webApiVersion.ToString());
@@ -79,9 +78,6 @@ CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSource(BeVersion webA
 
     // Store for next call
     s_lastCachingDataSource = ds;
-    if (ds != nullptr)
-        s_lastDataSourceCache = &ds->StartCacheTransaction().GetCache();
-
     return ds;
     }
 
@@ -214,7 +210,6 @@ void BaseCachingDataSourceTest::SetUpTestCase()
 
     s_mockClient = nullptr;
     s_lastCachingDataSource = nullptr;
-    s_lastDataSourceCache = nullptr;
 
     s_seedCacheFolderPath = GetTestsOutputDir().AppendToPath(L"BaseCachingDataSourceTest-Seeds");
     s_targetCacheFolderPath = GetTestsTempDir().AppendToPath(L"BaseCachingDataSourceTest-TestCaches");

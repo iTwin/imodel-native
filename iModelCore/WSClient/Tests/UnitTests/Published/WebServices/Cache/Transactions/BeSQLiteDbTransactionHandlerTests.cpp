@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Transactions/BeSQLiteDbTransactionHandlerTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -125,7 +125,37 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, RollbackTransaction_ChangesDone_Change
     EXPECT_EQ(SUCCESS, handler.CommitTransaction());
     }
 
-TEST_F(BeSQLiteDbTransactionHandlerTests, StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction)
+TEST_F(BeSQLiteDbTransactionHandlerTests, BeginTransaction_NotOpenDb_Error)
+    {
+    BeSQLite::Db db;
+    BeSQLiteDbTransactionHandler handler(db);
+
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(ERROR, handler.BeginTransaction());
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(BeSQLiteDbTransactionHandlerTests, BeginTransaction_ClosedDb_Error)
+    {
+    BeSQLite::Db::CreateParams createParams;
+    createParams.SetStartDefaultTxn(BeSQLite::StartDefaultTransaction::DefaultTxn_No);
+    BeSQLite::Db db;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(StubFilePath(), BeDbGuid(), createParams));
+
+    BeSQLiteDbTransactionHandler handler(db);
+    EXPECT_EQ(SUCCESS, handler.BeginTransaction());
+    EXPECT_EQ(SUCCESS, handler.RollbackTransaction());
+
+    db.CloseDb();
+
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(ERROR, handler.BeginTransaction());
+    EXPECT_EQ(ERROR, handler.RollbackTransaction());
+    EXPECT_EQ(ERROR, handler.CommitTransaction());
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(BeSQLiteDbTransactionHandlerTests, BeginTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction)
     {
     auto thread1 = WorkerThread::Create("thread1");
     auto thread2 = WorkerThread::Create("thread2");
@@ -141,7 +171,7 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, StartTransaction_TwoConnections_Second
 
     for (int i = 0; i < 10; i++)
         {
-        DebugLog(">>> \n\n------------------------- StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction -----------\n\n");
+        DebugLog(">>> \n\n------------------------- BeginTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction -----------\n\n");
 
         BeSQLite::Db db1, db2;
         ASSERT_EQ(DbResult::BE_SQLITE_OK, db1.OpenBeSQLiteDb(path, params));
