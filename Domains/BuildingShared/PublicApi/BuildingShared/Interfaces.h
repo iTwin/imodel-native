@@ -25,8 +25,11 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 
 #define BCSJSONACTIONPERFORMER_ACTION_UPDATE                "Update"
 #define BCSJSONACTIONPERFORMER_ACTION_DELETE                "Delete"
+#define BCSJSONACTIONPERFORMER_ACTION_COPYBUILDINGTYPE      "CopyBuildingType"
 
 #define BCSFLOORMANAGER_ACTION_ADDFLOOR                     "AddFloor"
+
+#define BCSBUILDINGTYPEMANAGER_ACTION_ADDBUILDINGTYPE       "AddBuildingType"
 
 
 //=======================================================================================
