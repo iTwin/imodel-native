@@ -39,8 +39,8 @@ let currdir = process.cwd();
 let targetDir = path.normalize(path.join(currdir, "..", "..", "..")); // See comment below
 
 // Install in tmp dir and copy into target dir
-function installNativePlatformPackage(version_prefix) {
-    let cmdLine = `npm install --no-save ${formatPackageName(version_prefix)}@${version}`;
+function installNativePlatformPackage(packages) {
+    let cmdLine = `npm install --no-save ${packages}`;
     console.log(cmdLine);
     exec(cmdLine, { cwd: installDir }, (error, stdout, stderr) => {
         if (error)
@@ -54,7 +54,8 @@ function installNativePlatformPackage(version_prefix) {
 // Install both flavors of the addon for the current platform
 // *** KEEP THIS CONSISTENT WITH iModelJsNodeAddon/MakePackages.py IN MERCURIAL ***
 
-installNativePlatformPackage('n_8');
-
+let packages = `${formatPackageName('n_8')}@${version}`;
 if (process.platform.toLowerCase() != 'linux')
-    installNativePlatformPackage('e_2');
+    packages += ` ${formatPackageName('e_2')}@${version}`;
+
+installNativePlatformPackage(packages);

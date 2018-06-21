@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <memory>
 #include "suppress_warnings.h"
-#include "imodeljs-nodeaddonapi.package.version.h"
+#include <imodeljs-nodeaddonapi.package.version.h>
 #include <node-addon-api/napi.h>
 #include <json/value.h>
 #include "IModelJsNative.h"
@@ -1301,8 +1301,14 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             result = m_dgndb->SaveChanges();
         if (BE_SQLITE_OK == result)
             m_dgndb->CloseDb();
-        if (BE_SQLITE_OK == result)
-            m_dgndb = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        if (BE_SQLITE_OK == result) 
+            {
+            SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade);
+            DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
+
+            m_dgndb = DgnDb::OpenDgnDb(&result, name, openParams);
+            }
+            
         return Napi::Number::New(Env(), (int)result);
         }
 

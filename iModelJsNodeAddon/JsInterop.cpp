@@ -285,7 +285,11 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
         }
 
     DbResult result;
-    db = DgnDb::OpenDgnDb(&result, pathname, DgnDb::OpenParams(mode));
+
+    SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade);
+    DgnDb::OpenParams openParams(mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
+
+    db = DgnDb::OpenDgnDb(&result, pathname, openParams);
     if (db.IsValid())
         db->AddIssueListener(s_listener);
 
@@ -359,7 +363,10 @@ RevisionStatus JsInterop::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, 
 //---------------------------------------------------------------------------------------
 RevisionStatus JsInterop::ApplySchemaChangeSets(BeFileNameCR dbFileName, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption)
     {
-    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(revisions, applyOption));
+    SchemaUpgradeOptions schemaUpgradeOptions(revisions, applyOption);
+    schemaUpgradeOptions.SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade);
+
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
     DbResult result;
     DgnDbPtr dgndb = DgnDb::OpenDgnDb(&result, dbFileName, openParams);
     POSTCONDITION(result == BE_SQLITE_OK, RevisionStatus::ApplyError);
