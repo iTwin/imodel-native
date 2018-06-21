@@ -103,9 +103,9 @@ TEST_F(DgnElementPlacementStrategyTestFixture, GetFUS_Defaults)
     ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(DgnElementPlacementStrategy::prop_AreaFUS(), areaFUSProp));
     ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(DgnElementPlacementStrategy::prop_VolumeFUS(), volumeFUSProp));
 
-    ASSERT_STREQ("M", lengthFUSProp.GetFUS().GetUnitName().c_str());
-    ASSERT_STREQ("SQ.M", areaFUSProp.GetFUS().GetUnitName().c_str());
-    ASSERT_STREQ("CUB.M", volumeFUSProp.GetFUS().GetUnitName().c_str());
+    ASSERT_STREQ("M", lengthFUSProp.GetFUS().GetCompositeMajorUnit()->GetName().c_str());
+    ASSERT_STREQ("SQ_M", areaFUSProp.GetFUS().GetCompositeMajorUnit()->GetName().c_str());
+    ASSERT_STREQ("CUB_M", volumeFUSProp.GetFUS().GetCompositeMajorUnit()->GetName().c_str());
     }
 
 //--------------------------------------------------------------------------------------
@@ -116,14 +116,32 @@ TEST_F(DgnElementPlacementStrategyTestFixture, GetFUS_Inches)
     DgnElementPlacementStrategyPtr sut = TestElementPlacementStrategy::Create(GetDgnDb());
     ASSERT_TRUE(sut.IsValid());
 
-    sut->SetProperty(DgnElementPlacementStrategy::prop_LengthFUS(), FUSProperty(Formatting::FormatUnitSet("IN(real4u)")));
+    ECN::ECUnitCP unit = GetDgnDb().Schemas().GetUnit("Units", "IN");
+
+    static Utf8String formatName = "DefaultRealU"; // real4u
+    static Utf8String formatSchema = "Formats";
+    ECN::ECFormatCP format = GetDgnDb().Schemas().GetFormat(formatSchema, formatName);
+
+    // This creates a copy of the original format so that we can make the precision change.
+    Formatting::Format formatOverride(*format);
+    formatOverride.GetNumericSpecP()->SetPrecision(Formatting::DecimalPrecision::Precision4);
+
+    auto compSpec = formatOverride.GetCompositeSpecP();
+    if (nullptr == compSpec)
+        {
+        Formatting::CompositeValueSpec comp;
+        Formatting::CompositeValueSpec::CreateCompositeSpec(comp, bvector<BEU::UnitCP>{unit});
+        formatOverride.SetCompositeSpec(comp);
+        }
+
+    sut->SetProperty(DgnElementPlacementStrategy::prop_LengthFUS(), FUSProperty(formatOverride));
 
     FUSProperty lengthFUSProp, areaFUSProp, volumeFUSProp;
     ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(DgnElementPlacementStrategy::prop_LengthFUS(), lengthFUSProp));
     ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(DgnElementPlacementStrategy::prop_AreaFUS(), areaFUSProp));
     ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(DgnElementPlacementStrategy::prop_VolumeFUS(), volumeFUSProp));
 
-    ASSERT_STREQ("IN", lengthFUSProp.GetFUS().GetUnitName().c_str());
-    ASSERT_STREQ("SQ.IN", areaFUSProp.GetFUS().GetUnitName().c_str());
-    ASSERT_STREQ("CUB.IN", volumeFUSProp.GetFUS().GetUnitName().c_str());
+    ASSERT_STREQ("IN", lengthFUSProp.GetFUS().GetCompositeMajorUnit()->GetName().c_str());
+    ASSERT_STREQ("SQ_IN", areaFUSProp.GetFUS().GetCompositeMajorUnit()->GetName().c_str());
+    ASSERT_STREQ("CUB_IN", volumeFUSProp.GetFUS().GetCompositeMajorUnit()->GetName().c_str());
     }

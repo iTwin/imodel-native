@@ -9,12 +9,21 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
+#define Standard_Units_Schema "Units"
+#define Standard_Formats_Schema "Formats"
+#define Squared_Template "SQ_%s"
+#define Cubed_Template "CUB_%s"
+
+#define Meter "M"
+#define Meter_Squared "SQ_M"
+#define Meter_Cubed "CUB_M"
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                05/2018
 //---------------+---------------+---------------+---------------+---------------+------
 FUSProperty::FUSProperty
 (
-    Formatting::FormatUnitSet const& fus
+    Formatting::Format const& fus
 )
     : m_fus(fus)
     {
@@ -23,14 +32,14 @@ FUSProperty::FUSProperty
 FUSProperty::FUSProperty
 (
 )
-    : m_fus(Formatting::FormatUnitSet("M(Meters4u)"))
+    : m_fus(Formatting::Format())
     {
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                05/2018
 //---------------+---------------+---------------+---------------+---------------+------
-Formatting::FormatUnitSet FUSProperty::GetFUS() const
+Formatting::Format FUSProperty::GetFUS() const
     {
     return m_fus;
     }
@@ -52,8 +61,27 @@ DgnElementPlacementStrategy::DgnElementPlacementStrategy
     Dgn::DgnDbR db
 )
     : T_Super()
-    , m_lengthFUS(Formatting::FormatUnitSet("M(Meters4u)"))
-    {}
+    {
+    ECN::ECUnitCP unit = db.Schemas().GetUnit(Standard_Units_Schema, Meter);
+
+    static Utf8String formatName = "DefaultRealU"; // real4u
+    static Utf8String formatSchema = "Formats";
+    ECN::ECFormatCP format = db.Schemas().GetFormat(formatSchema, formatName);
+
+    // This creates a copy of the original format so that we can make the precision change.
+    Formatting::Format formatOverride(*format);
+    formatOverride.GetNumericSpecP()->SetPrecision(Formatting::DecimalPrecision::Precision4);
+
+    auto compSpec = formatOverride.GetCompositeSpecP();
+    if (nullptr == compSpec)
+       {
+       Formatting::CompositeValueSpec comp;
+       Formatting::CompositeValueSpec::CreateCompositeSpec(comp, bvector<BEU::UnitCP>{unit});
+       formatOverride.SetCompositeSpec(comp);
+       }
+
+    m_lengthFUS = formatOverride;
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
@@ -128,7 +156,7 @@ Dgn::DgnDbR DgnElementPlacementStrategy::GetDgnDb() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                05/2018
 //---------------+---------------+---------------+---------------+---------------+------
-Formatting::FormatUnitSet DgnElementPlacementStrategy::GetLengthFUS() const
+Formatting::Format DgnElementPlacementStrategy::GetLengthFUS() const
     {
     return m_lengthFUS;
     }
@@ -136,25 +164,59 @@ Formatting::FormatUnitSet DgnElementPlacementStrategy::GetLengthFUS() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                05/2018
 //---------------+---------------+---------------+---------------+---------------+------
-Formatting::FormatUnitSet DgnElementPlacementStrategy::GetAreaFUS() const
-    {
-    Utf8String unitName = m_lengthFUS.GetUnitName();
-    Utf8String format = "real4u";
-    Utf8PrintfString formatDescription("SQ.%s(%s)", unitName, format);
+Formatting::Format DgnElementPlacementStrategy::GetAreaFUS() const
+     {
+    Utf8String unitName = m_lengthFUS.GetCompositeMajorUnit()->GetName();
 
-    return Formatting::FormatUnitSet(formatDescription.c_str());
+    Utf8PrintfString squaredUnitName(Squared_Template, unitName);
+    ECN::ECUnitCP unit = GetDgnDb().Schemas().GetUnit(Standard_Units_Schema, squaredUnitName.c_str());
+
+    static Utf8String formatName = "DefaultRealU"; // real4u
+    static Utf8String formatSchema = "Formats";
+    ECN::ECFormatCP format = GetDgnDb().Schemas().GetFormat(formatSchema, formatName);
+
+    // This creates a copy of the original format so that we can make the precision change.
+    Formatting::Format formatOverride(*format);
+    formatOverride.GetNumericSpecP()->SetPrecision(Formatting::DecimalPrecision::Precision4);
+
+    auto compSpec = formatOverride.GetCompositeSpecP();
+    if (nullptr == compSpec)
+        {
+        Formatting::CompositeValueSpec comp;
+        Formatting::CompositeValueSpec::CreateCompositeSpec(comp, bvector<BEU::UnitCP>{unit});
+        formatOverride.SetCompositeSpec(comp);
+        }
+
+    return formatOverride;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                05/2018
 //---------------+---------------+---------------+---------------+---------------+------
-Formatting::FormatUnitSet DgnElementPlacementStrategy::GetVolumeFUS() const
+Formatting::Format DgnElementPlacementStrategy::GetVolumeFUS() const
     {
-    Utf8String unitName = m_lengthFUS.GetUnitName();
-    Utf8String format = "real4u";
-    Utf8PrintfString formatDescription("CUB.%s(%s)", unitName, format);
+    Utf8String unitName = m_lengthFUS.GetCompositeMajorUnit()->GetName();
 
-    return Formatting::FormatUnitSet(formatDescription.c_str());
+    Utf8PrintfString cubedUnitName(Cubed_Template, unitName);
+    ECN::ECUnitCP unit = GetDgnDb().Schemas().GetUnit(Standard_Units_Schema, cubedUnitName.c_str());
+
+    static Utf8String formatName = "DefaultRealU"; // real4u
+    static Utf8String formatSchema = "Formats";
+    ECN::ECFormatCP format = GetDgnDb().Schemas().GetFormat(formatSchema, formatName);
+ 
+    // This creates a copy of the original format so that we can make the precision change.
+    Formatting::Format formatOverride(*format);
+    formatOverride.GetNumericSpecP()->SetPrecision(Formatting::DecimalPrecision::Precision4);
+
+    auto compSpec = formatOverride.GetCompositeSpecP();
+    if (nullptr == compSpec)
+        {
+        Formatting::CompositeValueSpec comp;
+        Formatting::CompositeValueSpec::CreateCompositeSpec(comp, bvector<BEU::UnitCP>{unit});
+        formatOverride.SetCompositeSpec(comp);
+        }
+
+    return formatOverride;
     }
 
 //--------------------------------------------------------------------------------------
@@ -165,7 +227,7 @@ Utf8String DgnElementPlacementStrategy::GetFormattedLength
     double length
 ) const
     {
-    Units::UnitCP meterUnit = Units::UnitRegistry::Instance().LookupUnit("M");
+    Units::UnitCP meterUnit = GetDgnDb().Schemas().GetUnit(Standard_Units_Schema, Meter);
     BeAssert(nullptr != meterUnit);
     Units::Quantity quantity(length, *meterUnit);
 
@@ -180,7 +242,7 @@ Utf8String DgnElementPlacementStrategy::GetFormattedArea
     double area
 ) const
     {
-    Units::UnitCP sqMeterUnit = Units::UnitRegistry::Instance().LookupUnit("SQ.M");
+    Units::UnitCP sqMeterUnit = GetDgnDb().Schemas().GetUnit(Standard_Units_Schema, Meter_Squared);
     BeAssert(nullptr != sqMeterUnit);
     Units::Quantity quantity(area, *sqMeterUnit);
     
@@ -195,7 +257,7 @@ Utf8String DgnElementPlacementStrategy::GetFormattedVolume
     double volume
 ) const
     {
-    Units::UnitCP cubMeterUnit = Units::UnitRegistry::Instance().LookupUnit("CUB.M");
+    Units::UnitCP cubMeterUnit = GetDgnDb().Schemas().GetUnit(Standard_Units_Schema, Meter_Cubed);
     BeAssert(nullptr != cubMeterUnit);
     Units::Quantity quantity(volume, *cubMeterUnit);
 

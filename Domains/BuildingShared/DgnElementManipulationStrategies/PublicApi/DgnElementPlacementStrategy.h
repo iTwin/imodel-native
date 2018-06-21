@@ -23,13 +23,13 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 struct FUSProperty : GeometryManipulationStrategyProperty
     {
     private:
-        Formatting::FormatUnitSet m_fus;
+        Formatting::Format m_fus;
 
     public:
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT FUSProperty();
         FUSProperty& operator=(FUSProperty const&);
-        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT FUSProperty(Formatting::FormatUnitSet const& fus);
-        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Formatting::FormatUnitSet GetFUS() const;
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT FUSProperty(Formatting::Format const& fus);
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Formatting::Format GetFUS() const;
     };
 
 //=======================================================================================
@@ -40,11 +40,11 @@ struct DgnElementPlacementStrategy : ElementPlacementStrategy
     DEFINE_T_SUPER(ElementPlacementStrategy)
 
     private:
-        Formatting::FormatUnitSet m_lengthFUS;
+        Formatting::Format m_lengthFUS;
 
-        Formatting::FormatUnitSet GetLengthFUS() const;
-        Formatting::FormatUnitSet GetAreaFUS() const;
-        Formatting::FormatUnitSet GetVolumeFUS() const;
+        Formatting::Format GetLengthFUS() const;
+        Formatting::Format GetAreaFUS() const;
+        Formatting::Format GetVolumeFUS() const;
 
     protected:
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT DgnElementPlacementStrategy(Dgn::DgnDbR db);
