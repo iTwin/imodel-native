@@ -500,9 +500,10 @@ declare class NativeECDb implements IDisposable {
     /** Open a existing ECDb.
     * @param dbname The full path to the ECDb in the local file system
     * @param mode The open mode
+    * @param upgradeProfiles If true and open mode is readwrite, the file's profiles are upgraded (if necessary)
     * @return non-zero error status if operation failed.
     */
-    openDb(dbname: string, mode: OpenMode): DbResult;
+    openDb(dbname: string, mode: OpenMode, upgradeProfiles?: boolean): DbResult;
 
     /** Check to see if connection to ECDb is open or not.
     * @return true if connection is open

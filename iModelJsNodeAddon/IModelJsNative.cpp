@@ -393,8 +393,13 @@ struct NativeECDb : Napi::ObjectWrap<NativeECDb>
             {
             REQUIRE_ARGUMENT_STRING(0, dbName, Env().Undefined());
             REQUIRE_ARGUMENT_INTEGER(1, mode, Env().Undefined());
+            OPTIONAL_ARGUMENT_BOOL(2, upgrade, false, Env().Undefined());
 
-            DbResult status = JsInterop::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), (Db::OpenMode) mode);
+            Db::OpenParams params((Db::OpenMode) mode);
+            if (upgrade)
+                params.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
+
+            DbResult status = JsInterop::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), params);
             if (BE_SQLITE_OK == status)
                 {
                 GetECDb().AddFunction(HexStrSqlFunction::GetSingleton());

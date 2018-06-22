@@ -79,7 +79,7 @@ public:
     static void UpdateIModelProps(DgnDbR dgndb, JsonValueCR);
 
     static BeSQLite::DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
-    static BeSQLite::DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode);
+    static BeSQLite::DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
     static BeSQLite::DbResult ImportSchema(BeSQLite::EC::ECDbR ecdb, BeFileNameCR pathname);
     static BeSQLite::DbResult ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname);
     static Utf8StringCR GetLastECDbIssue();

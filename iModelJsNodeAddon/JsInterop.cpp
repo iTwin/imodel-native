@@ -604,12 +604,12 @@ void JsInterop::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesColl
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::OpenECDb(ECDbR ecdb, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode)
+DbResult JsInterop::OpenECDb(ECDbR ecdb, BeFileNameCR pathname, BeSQLite::Db::OpenParams const& params)
     {
     if (!pathname.DoesPathExist())
         return BE_SQLITE_NOTFOUND;
 
-    DbResult res = ecdb.OpenBeSQLiteDb(pathname, BeSQLite::Db::OpenParams(openMode));
+    DbResult res = ecdb.OpenBeSQLiteDb(pathname, params);
     if (res != BE_SQLITE_OK)
         return res;
 
