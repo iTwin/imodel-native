@@ -40,6 +40,7 @@ struct RulesDrivenECPresentationManagerNavigationTests : RulesDrivenECPresentati
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS) && !defined(BENTLEYCONFIG_OS_LINUX)
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, NavigationOptions_GetRuleSetId)
     {
     RulesDrivenECPresentationManager::NavigationOptions options("test id", RuleTargetTree::TargetTree_Both);
@@ -5602,3 +5603,4 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
     EXPECT_STREQ("1_Instance_C", rootNodes[0]->GetLabel().c_str());
     EXPECT_STREQ("2_Instance_A", rootNodes[1]->GetLabel().c_str());
     }
+#endif
