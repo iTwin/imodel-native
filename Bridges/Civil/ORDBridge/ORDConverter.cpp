@@ -624,7 +624,7 @@ private:
 
     BentleyStatus Marshal(PolyfaceHeaderPtr& bimMesh, Bentley::PolyfaceHeaderCR v8Mesh);
     BentleyStatus CreateNewCorridor(CorridorCR cifCorridor,
-        ORDConverter::Params& params, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change,
+        ORDConverter::Params& params, bool isRail, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change,
         RoadRailBim::CorridorCPtr& bimCorridorCPtr, DgnCategoryId targetCategoryId);
     BentleyStatus UpdateCorridor(CorridorCR cifCorridor,
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, DgnCategoryId targetCategoryId);
@@ -636,7 +636,8 @@ public:
         return new ORDCorridorsConverter(converter, unitsScaleTransform);
         }
 
-    DgnElementId ConvertCorridor(CorridorCR cifCorridor, ORDConverter::Params& params, DgnCategoryId targetCategoryId = DgnCategoryId());
+    DgnElementId ConvertCorridor(CorridorCR cifCorridor, ORDConverter::Params& params, bool isRail, 
+        DgnCategoryId targetCategoryId = DgnCategoryId());
 }; // ORDCorridorsConverter
 
 /*---------------------------------------------------------------------------------**//**
@@ -711,6 +712,7 @@ BentleyStatus ORDCorridorsConverter::AssignCorridorGeomStream(CorridorCR cifCorr
 BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     CorridorCR cifCorridor, 
     ORDConverter::Params& params,
+    bool isRail, 
     iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, RoadRailBim::CorridorCPtr& bimCorridorCPtr, DgnCategoryId targetCategoryId)
     {
     auto corridorPtr = RoadRailBim::Corridor::Create(m_converter.GetPhysicalNetworkModel());
@@ -759,14 +761,23 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
 
     bimCorridorCPtr = RoadRailBim::Corridor::Get(corridorPtr->GetDgnDb(), corridorPtr->GetElementId());
 
-    auto roadwayPtr = RoadRailBim::Roadway::Create(*bimCorridorCPtr);
-    roadwayPtr->SetMainLinearElement(bimMainAlignmentPtr.get());
-    if (roadwayPtr->Insert(RoadRailBim::PathwayElement::Order::LeftMost).IsNull())
+    RoadRailBim::PathwayElementPtr pathwayPtr;
+    if (isRail)
+        pathwayPtr = RoadRailBim::Railway::Create(*bimCorridorCPtr);
+    else
+        pathwayPtr = RoadRailBim::Roadway::Create(*bimCorridorCPtr);
+
+    pathwayPtr->SetMainLinearElement(bimMainAlignmentPtr.get());
+    if (pathwayPtr->Insert(RoadRailBim::PathwayElement::Order::LeftMost).IsNull())
         return BentleyStatus::ERROR;
 
     if (m_defaultDesignSpeedDef.IsNull())
         {
-        auto roadwayStandardsModelPtr = RoadRailBim::RoadwayStandardsModel::Query(*params.subjectCPtr);
+        Dgn::DefinitionModelPtr standardsModelPtr;
+        if (isRail)
+            standardsModelPtr = RoadRailBim::RailwayStandardsModel::Query(*params.subjectCPtr);
+        else
+            standardsModelPtr = RoadRailBim::RoadwayStandardsModel::Query(*params.subjectCPtr);
 
         double msecSpeed = 0.0;
         Utf8String speedLabel;
@@ -787,7 +798,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
             }        
 
         // Hard-coded for now - while the CIF SDK exposes an API for it
-        auto designSpeedDefPtr = RoadRailBim::DesignSpeedDefinition::Create(*roadwayStandardsModelPtr, msecSpeed); 
+        auto designSpeedDefPtr = RoadRailBim::DesignSpeedDefinition::Create(*standardsModelPtr, msecSpeed); 
         designSpeedDefPtr->SetUserLabel(speedLabel.c_str());
         m_defaultDesignSpeedDef = designSpeedDefPtr->Insert();
 
@@ -799,7 +810,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
         {
         auto designSpeedPtr = 
             RoadRailBim::DesignSpeed::Create(RoadRailBim::DesignSpeed::CreateFromToParams(
-                *roadwayPtr, *m_defaultDesignSpeedDef, 0, bimMainAlignmentPtr->GetLength()));
+                *pathwayPtr, *m_defaultDesignSpeedDef, 0, bimMainAlignmentPtr->GetLength()));
         if (designSpeedPtr->Insert().IsNull())
             return BentleyStatus::ERROR;
         }
@@ -832,7 +843,8 @@ BentleyStatus ORDCorridorsConverter::UpdateCorridor(CorridorCR cifCorridor,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, ORDConverter::Params& params, DgnCategoryId targetCategoryId)
+DgnElementId ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, ORDConverter::Params& params, bool isRail, 
+    DgnCategoryId targetCategoryId)
     {
     CifCorridorSourceItem sourceItem(cifCorridor);
 
@@ -846,7 +858,7 @@ DgnElementId ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, ORDC
         }
     else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New == change.GetChangeType())
         {
-        if (BentleyStatus::SUCCESS != CreateNewCorridor(cifCorridor, params, change, bimCorridorCPtr, targetCategoryId))
+        if (BentleyStatus::SUCCESS != CreateNewCorridor(cifCorridor, params, isRail, change, bimCorridorCPtr, targetCategoryId))
             return DgnElementId();
         }
     else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed == change.GetChangeType())
@@ -1115,6 +1127,34 @@ void ORDConverter::CreatePathways(bset<DgnCategoryId>& additionalCategoriesForSe
     std::sort(m_cifCorridors.begin(), m_cifCorridors.end(), [](CifCorridorV8RefPair const& a, CifCorridorV8RefPair const& b)
         { return a.first->GetElementHandle()->GetElementRef() > b.first->GetElementHandle()->GetElementRef(); });
 
+    // The following query will get all element ids that have an "IsRail" property.
+    auto& dgndb = GetDgnDb();
+    BeSQLite::EC::ECSqlStatement stmt;
+    stmt.Prepare(dgndb,
+        "SELECT aspect.Element.Id, aspect.ECInstanceId, aspect.ECClassId FROM " BIS_SCHEMA(BIS_CLASS_ElementMultiAspect) " aspect, meta.ECPropertyDef propDef "
+        "WHERE propDef.Name = 'IsRail' AND aspect.ECClassId = propDef.Class.Id");
+    BeAssert(stmt.IsPrepared());
+
+    bset<DgnElementId> railCorridorIds;
+    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
+        {
+        auto elementId = stmt.GetValueId<DgnElementId>(0);
+        auto dgnElementCPtr = dgndb.Elements().GetElement(elementId);
+        auto ecInstanceId = stmt.GetValueId<BeSQLite::EC::ECInstanceId>(1);
+        auto ecClassId = stmt.GetValueId<DgnClassId>(2);
+        auto ecClass = dgndb.Schemas().GetClass(ecClassId);
+        auto aspect = DgnElement::MultiAspect::GetAspect(*dgnElementCPtr, *ecClass, ecInstanceId);
+        ECN::ECValue value;
+        aspect->GetPropertyValue(value, "IsRail");
+
+        if (!value.GetBoolean())
+            continue;
+
+        // elementId is a Rail corridor. Store elementId in a bset to be looked up later...
+        railCorridorIds.insert(elementId);
+        }
+
+
     Bentley::DgnPlatform::ModelId modelIdForConverter = 0;
     ORDCorridorsConverterPtr corridorsConverterPtr;
 
@@ -1150,7 +1190,8 @@ void ORDConverter::CreatePathways(bset<DgnCategoryId>& additionalCategoriesForSe
                 }
             }
 
-        auto bimCorridorId = corridorsConverterPtr->ConvertCorridor(*cifCorridorPtr, *m_ordParams, categoryId);
+        bool isRail = bimElmPtr.IsValid() && railCorridorIds.find(bimElmPtr->GetElementId()) != railCorridorIds.end();
+        auto bimCorridorId = corridorsConverterPtr->ConvertCorridor(*cifCorridorPtr, *m_ordParams, isRail, categoryId);
         lastCorridorRefP = cifCorridorPtr->GetElementHandle()->GetElementRef();
         corridorElmCPtr = RoadRailPhysical::Corridor::Get(GetDgnDb(), bimCorridorId);
 
