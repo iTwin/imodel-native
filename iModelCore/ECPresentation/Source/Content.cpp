@@ -197,6 +197,21 @@ bvector<ContentDescriptor::Field*> ContentDescriptor::GetVisibleFields() const
         });
     return fields;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field const* ContentDescriptor::GetDistinctField() const
+    {
+    if (OnlyDistinctValues() && GetVisibleFields().size() == 1)
+        {
+        Field const* field = GetVisibleFields()[0];
+        if (field->IsPropertiesField() || field->IsCalculatedPropertyField() || (field->IsDisplayLabelField() && ShowLabels()))
+            return field;
+        }
+    return nullptr;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

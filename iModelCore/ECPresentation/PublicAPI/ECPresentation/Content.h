@@ -1000,6 +1000,10 @@ public:
     ECPRESENTATION_EXPORT bvector<Field*> GetVisibleFields() const;
     //! Get the fields in this descriptor (including system ones).
     bvector<Field*> const& GetAllFields() const {return m_fields;}
+
+    //! Returns a field if descriptor has DistinctValues flag set, has a single field and that field qualifies to be used with DistinctValues flag. Returns nullptr otherwise.
+    Field const* GetDistinctField() const;
+
     //! Get the ECInstance key fields in this descriptor.
     bvector<ECInstanceKeyField*> const& GetECInstanceKeyFields() const { return m_keyFields; }
     //! Add field to this descriptor.
