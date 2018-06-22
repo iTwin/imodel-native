@@ -1103,7 +1103,7 @@ GEOMDLLIMPEXP StatusInt   ClipToPlaneSetIntersection (T_ClipPlaneSets const& pla
 
 
 //!  @description Fas clustered vertex decimator - used during tile generation.
-GEOMDLLIMPEXP PolyfaceHeaderPtr ClusteredVertexDecimate (double tolerance);
+GEOMDLLIMPEXP PolyfaceHeaderPtr ClusteredVertexDecimate (double tolerance, double minCompressionRatio = .5);
 
 
  //! @description Clip polyface to range.

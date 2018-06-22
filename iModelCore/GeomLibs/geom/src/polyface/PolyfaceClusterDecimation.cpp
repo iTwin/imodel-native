@@ -34,7 +34,7 @@ struct IPointComparator
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
+PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, double minCompressionRatio)
     {
     bmap<Point3d, size_t, IPointComparator> pointMap; 
     DPoint3dCP                      points = GetPointCP();
@@ -115,7 +115,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
             }
         }
 
-    if (clusters.size() == GetPointCount())
+    if (clusters.size() > GetPointCount() * minCompressionRatio)
         return nullptr;     // No Clusters found.
 
     PolyfaceHeaderPtr                   decimatedPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
