@@ -22,6 +22,32 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 using namespace BeSQLite::EC;
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
+static bvector<Utf8CP> s_dgnV8DeliveredSchemas = {
+    "BaseElementSchema",
+    "BentleyDesignLinksPersistence",
+    "BentleyDesignLinksPresetnation",
+    "BentleyDrawingLinksPersistence",
+    "DetailSymbolExtender",
+    "DgnComponentSchema",
+    "DgnContentRelationshipSchema",
+    "DgnCustomAttributes",
+    "DgnElementSchema",
+    "DgnFileSchema",
+    "DgnindexQueryschema",
+    "DgnLevelSchema",
+    "DgnModelSchema",
+    "DgnPointCloudSchema",
+    "DgnTextStyleObjSchema",
+    "DgnVisualizationObjSchema",
+    "ExtendedElementSchema",
+    "MstnPropertyFormatter",
+    "Ustn_ElementParams",
+    "DTMElement_TemplateExtender_Schema",
+    "dgn",
+    "ECDbSystem",
+    "ECDb_FileInfo"
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1263,6 +1289,22 @@ DynamicSchemaGenerator::SchemaConversionScope::~SchemaConversionScope()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            06/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void RemoveDgnV8CustomAttributes(ECN::IECCustomAttributeContainerR container)
+    {
+    for (ECN::IECInstancePtr instance : container.GetCustomAttributes(false))
+        {
+        Utf8String v8SchemaName(instance->GetClass().GetSchema().GetName().c_str());
+        auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [v8SchemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8) == 0; });
+        if (found == s_dgnV8DeliveredSchemas.end())
+            continue;
+        container.RemoveCustomAttribute(instance->GetClass().GetSchema().GetName(), instance->GetClass().GetName());
+        container.RemoveSupplementedCustomAttribute(instance->GetClass().GetSchema().GetName(), instance->GetClass().GetName());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   11/2014
 //---------------------------------------------------------------------------------------
 BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
@@ -1412,6 +1454,13 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
              Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", schema->GetFullSchemaName().c_str());
              ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
              return BentleyApi::BSIERROR;
+             }
+         RemoveDgnV8CustomAttributes(*schema);
+         for (ECN::ECClassP ecClass : schema->GetClasses())
+             {
+             RemoveDgnV8CustomAttributes(*ecClass);
+             for (ECN::ECPropertyP ecProp : ecClass->GetProperties())
+                 RemoveDgnV8CustomAttributes(*ecProp);
              }
          }
      ECN::ECSchemaConverter::RemoveConverter(ECN::ECSchemaConverter::GetQualifiedClassName("EditorCustomAttributes", EXTEND_TYPE));
@@ -2331,32 +2380,6 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::Analyze(DgnV8Api::ElementHandl
 
     return BentleyApi::SUCCESS;
     }
-
-static bvector<Utf8CP> s_dgnV8DeliveredSchemas = {
-    "BaseElementSchema",
-    "BentleyDesignLinksPersistence",
-    "BentleyDesignLinksPresetnation",
-    "BentleyDrawingLinksPersistence",
-    "DetailSymbolExtender",
-    "DgnComponentSchema",
-    "DgnContentRelationshipSchema",
-    "DgnCustomAttributes",
-    "DgnElementSchema",
-    "DgnFileSchema",
-    "DgnindexQueryschema",
-    "DgnLevelSchema",
-    "DgnModelSchema",
-    "DgnPointCloudSchema",
-    "DgnTextStyleObjSchema",
-    "DgnVisualizationObjSchema",
-    "ExtendedElementSchema",
-    "MstnPropertyFormatter",
-    "Ustn_ElementParams",
-    "DTMElement_TemplateExtender_Schema",
-    "dgn",
-    "ECDbSystem",
-    "ECDb_FileInfo"
-    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
