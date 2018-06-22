@@ -184,6 +184,14 @@ ClassificationCP specializes
     return nullptr;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Aurimas.Laureckis              06/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::ElementIterator ClassificationSystemsDomain::MakeClassificationIterator(Dgn::DgnDbR dgnDbR)
+    {
+    return dgnDbR.Elements().MakeIterator(CLASSIFICATIONSYSTEMS_SCHEMA(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem));
+    }
+
 
 
 
