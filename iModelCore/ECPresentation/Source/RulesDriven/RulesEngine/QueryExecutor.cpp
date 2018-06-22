@@ -128,6 +128,7 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
     // read the records
     m_readStarted = true;
     _l = LoggingHelper::CreatePerformanceLogger(Log::Default, "[QueryExecutor] Reading and caching new records", NativeLogging::LOG_TRACE);
+    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb());
     DbResult result = DbResult::BE_SQLITE_ERROR;
     uint32_t recordsRead = 0;
     while (DbResult::BE_SQLITE_ROW == (result = statement->Step()))

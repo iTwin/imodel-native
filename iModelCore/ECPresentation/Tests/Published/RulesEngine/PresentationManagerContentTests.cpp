@@ -3687,6 +3687,60 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     EXPECT_STREQ("WidgetID", jsonValues["CalculatedProperty_0"].GetString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Kilinskas                06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpecification_GetsRelatedValueThroughCalculatedProperty)
+    {
+    // insert some widget & gadget instances
+    ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
+
+    // set up input
+    KeySetPtr input = KeySet::Create(*gadgetInstance);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget"));
+    rules->AddPresentationRule(*rule);
+
+    ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
+    rules->AddPresentationRule(*modifier);
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 1200, "this.GetRelatedValue(\"RulesEngineTest:WidgetHasGadget\", \"Forward\", \"RulesEngineTest:Gadget\", \"MyID\")"));
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(8, descriptor->GetVisibleFields().size()); //Widget_MyId,Widget_Description, Widget_IntProperty, Widget_BoolProperty, Widget_DoubleProperty, Widget_LongProperty, Widget_Date, CalculatedProperty_0
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
+    RapidJsonValueCR jsonValues = jsonDoc["Values"];
+    EXPECT_TRUE(jsonValues["Widget_Description"].IsNull());
+    EXPECT_STREQ("WidgetID", jsonValues["Widget_MyID"].GetString());
+    EXPECT_TRUE(jsonValues["Widget_IntProperty"].IsNull());
+    EXPECT_TRUE(jsonValues["Widget_BoolProperty"].IsNull());
+    EXPECT_TRUE(jsonValues["Widget_DoubleProperty"].IsNull());
+    EXPECT_TRUE(jsonValues["Widget_LongProperty"].IsNull());
+    EXPECT_TRUE(jsonValues["Widget_DateProperty"].IsNull());
+    EXPECT_STREQ("GadgetID", jsonValues["CalculatedProperty_0"].GetString());
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                06/2017
