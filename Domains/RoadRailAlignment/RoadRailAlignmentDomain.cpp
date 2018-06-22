@@ -11,7 +11,7 @@
 #include <RoadRailAlignment/Alignment.h>
 #include <RoadRailAlignment/AlignmentReferent.h>
 #include <RoadRailAlignment/AlignmentProfileViewDefinition.h>
-#include <RoadRailAlignment/AlignmentXSViewDefinition.h>
+#include <RoadRailAlignment/ClipPlanesViewDefinition.h>
 
 #define DEFAULT_VIEWDEF_ASPECT_RATIO_SKEW 10.0 // For Profile and XS view definitions
 
@@ -34,7 +34,7 @@ RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME,
     RegisterHandler(AlignmentProfileViewDefinitionHandler::GetHandler());
     RegisterHandler(LinearlyLocatedReferentElementHandler::GetHandler());
     RegisterHandler(AlignmentStationHandler::GetHandler());
-    RegisterHandler(AlignmentXSViewDefinitionHandler::GetHandler());
+    RegisterHandler(ClipPlanesViewDefinitionHandler::GetHandler());
     RegisterHandler(VerticalAlignmentModelHandler::GetHandler());
     RegisterHandler(VerticalAlignmentHandler::GetHandler());    
     }
@@ -129,12 +129,12 @@ END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        09/2017
-// Inserts the 'system' private views for AlignmentXSViewDefinition and AlignmentProfileViewDefinition classes
+// Inserts the 'system' private views for ClipPlanesViewDefinition and AlignmentProfileViewDefinition classes
 //---------------------------------------------------------------------------------------
 DgnDbStatus RoadRailAlignmentDomain::InsertViewDefinitions(ConfigurationModelR model)
     {
     AlignmentProfileViewDefinitionPtr profileDefinition = createViewDefinition<AlignmentProfileViewDefinition>(model, AlignmentProfileViewDefinition::SYSTEM_VIEW_NAME);
-    AlignmentXSViewDefinitionPtr xsDefinition = createViewDefinition<AlignmentXSViewDefinition>(model, AlignmentXSViewDefinition::SYSTEM_VIEW_NAME);
+    ClipPlanesViewDefinitionPtr xsDefinition = createViewDefinition<ClipPlanesViewDefinition>(model, ClipPlanesViewDefinition::SYSTEM_VIEW_NAME);
 
     if (!profileDefinition.IsValid() || !xsDefinition.IsValid())
         return DgnDbStatus::BadElement;

@@ -24,4 +24,4 @@
 #include "AlignmentCategory.h"
 #include "RoadRailAlignmentDomain.h"
 #include "AlignmentProfileViewDefinition.h"
-#include "AlignmentXSViewDefinition.h"
+#include "ClipPlanesViewDefinition.h"
