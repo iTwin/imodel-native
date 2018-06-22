@@ -226,14 +226,34 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
     if (BSISUCCESS != m_clientUtils->AcquireBriefcase(m_briefcaseName, m_serverArgs.m_repositoryName.c_str()))
         {
         if (Error::Id::iModelDoesNotExist == m_clientUtils->GetLastError().GetId())
+            {
             m_lastServerError = EffectiveServerError::iModelDoesNotExist;
-        GetLogger().infov("%s - iModel not found in project\n", m_serverArgs.m_repositoryName.c_str());
+            GetLogger().infov("%s - iModel not found in project\n", m_serverArgs.m_repositoryName.c_str());
+            }
+        else
+            {
+            GetLogger().fatalv("%s - AcquireBriefcase failed\n", m_serverArgs.m_repositoryName.c_str());
+            }
         return BSIERROR;
         }
 
-    SaveBriefcaseId();
+    auto rc = SaveBriefcaseId();
 
-    return BSISUCCESS;
+    if (BE_SQLITE_OK != rc)
+        {
+        if (BE_SQLITE_ERROR_SchemaUpgradeRequired == rc)
+            {
+            bool madeSchemaChanges = false;
+            iModelBridge::OpenBimAndMergeSchemaChanges(rc, madeSchemaChanges, m_briefcaseName);
+            rc = SaveBriefcaseId();
+            }
+        else
+            {
+            GetLogger().infov("Cannot open briefcase (error %x)\n", rc);
+            }
+        }
+        
+    return (BE_SQLITE_OK==rc)? BSISUCCESS: BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -483,7 +503,13 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
         clientInfo = m_bridge->GetParamsCR().GetClientInfo();
         }
 
-    m_clientUtils = s_iModelHubFXForTesting? s_iModelHubFXForTesting: new DgnDbServerClientUtils(m_serverArgs.m_environment, m_serverArgs.m_maxRetryCount, clientInfo);
+    if (s_iModelHubFXForTesting)
+        m_clientUtils = s_iModelHubFXForTesting;
+    else
+        {
+        m_clientUtils = new DgnDbServerClientUtils(m_serverArgs.m_environment, m_serverArgs.m_maxRetryCount, clientInfo, m_jobEnvArgs.m_imodelBankUrl);
+        }
+
     Tasks::AsyncError serror;
     if (BSISUCCESS != m_clientUtils->SignIn(&serror, m_serverArgs.m_credentials))
         {
