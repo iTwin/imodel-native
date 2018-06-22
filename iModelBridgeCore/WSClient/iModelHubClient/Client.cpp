@@ -94,11 +94,25 @@ iModelConnectionTaskPtr Client::ConnectToiModel(Utf8StringCR projectId, Utf8Stri
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-ClientPtr Client::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler)
+ClientPtr Client::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, bool isImodelBank)
     {
     const Utf8String methodName = "Client::Create";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return new Client(clientInfo, customHandler);
+    auto client = new Client(clientInfo, customHandler);
+    if (isImodelBank)
+        client->SetCredentialsForImodelBank();
+    return client;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Sam.Wilson                     06/2018
+//---------------------------------------------------------------------------------------
+void Client::SetCredentialsForImodelBank()
+    {
+    // WIP_IMODEL_BANK Must stub in fake credentials, as there are many places in the Client methods that assert
+    // that m_credentials are valid (even though they aren't actually used).
+    m_credentials.SetUsername("iModelBank");
+    m_credentials.SetPassword("iModelBank");
     }
 
 //---------------------------------------------------------------------------------------

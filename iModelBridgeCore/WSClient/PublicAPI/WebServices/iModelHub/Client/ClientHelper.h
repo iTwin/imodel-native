@@ -51,6 +51,9 @@ public:
     //! Get the singleton instance
     IMODELHUBCLIENT_EXPORT static ClientHelper* GetInstance();
 
+    //! Create a client for use with iModelHub
+    IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr CreateClientForImodelBank(Utf8CP url);
+
     //! Sign in with credentials
     //! @param errorOut     Optional. If not null, an explanation of signin failure is returned here.
     //! @param credentials  User credentials.
