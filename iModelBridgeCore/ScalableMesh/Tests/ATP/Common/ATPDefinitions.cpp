@@ -2143,10 +2143,7 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
         StatusInt status;
         IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
-
-        //Line in lns file are in meters, apply scaling if required.    
-        SetReprojectionMatrixForMeterData(stmFile);
-
+        
         uint64_t pointCount = 0;
         WString result;
 
@@ -2158,7 +2155,12 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         else
         {
             result = L"FAILURE";
+            return;
         }
+
+        //Line in lns file are in meters, apply scaling if required.    
+        SetReprojectionMatrixForMeterData(stmFile);
+
         //parse dgn file name
         if (pTestNode->GetAttributeStringValue(linesFileName, "linesFileName") != BEXML_Success)
         {
