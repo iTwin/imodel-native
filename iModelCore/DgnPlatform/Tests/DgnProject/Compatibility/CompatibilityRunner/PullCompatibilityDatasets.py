@@ -42,9 +42,10 @@ def pullAllNugets(path, pathToNugetPuller, name):
     import nugetpkg
     address = "http://nuget.bentley.com/nuget/default/"
     versions = nugetpkg.SearchVersionsFromServer(address, name)
-
+    excludeVersions = ["2018.6.5.1", "2018.5.31.15"]
     for v in versions:
-        # Dowload and save all versions
+        if v in excludeVersions:
+            continue
         localDir = path
         DownloadPackage(address, name, v, localDir)
 
