@@ -2215,7 +2215,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
         {
         BeAssert(0 == polyface->GetEdgeChainCount());       // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
         PolyfaceHeaderPtr   decimated;
-        if (doDecimate && (decimated = polyface->ClusteredVertexDecimate(m_tolerance)).IsValid())
+        if (doDecimate && (decimated = polyface->ClusteredVertexDecimate(m_tolerance, .25 /* No decimation unless point count reduced by at least 25% */)).IsValid())
             {
             polyface = decimated.get();
             m_didDecimate = true;

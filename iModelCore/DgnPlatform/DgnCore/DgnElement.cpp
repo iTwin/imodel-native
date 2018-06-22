@@ -1370,6 +1370,7 @@ void DgnElement::_FromJson(JsonValueR props)
     ECN::JsonECInstanceConverter::JsonToECInstance(ec, props, GetDgnDb().GetClassLocater(), shouldSerializeProperty);
     }
 
+   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1389,6 +1390,7 @@ DgnElement::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
     m_parentId = parent.m_id;
     m_parentRelClassId = parent.m_relClassId;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
