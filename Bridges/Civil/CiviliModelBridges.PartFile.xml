@@ -17,6 +17,13 @@
             <Directory SourceName="Delivery/CifSdk/ECSchemas" ProductDirectoryName="CifDlls" ProductSubDirectory="ECSchemas" SubPartDirectory="CifSdk/ECSchemas" Required="true"/>
         </Bindings>
     </Part>
+    
+    <Part Name="Resources" BentleyBuildMakeFile="ORDBridge/Resources.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <Bindings>
+            <Directory SourceName="Delivery/Resources/Dgnlibs" ProductDirectoryName="Dgnlibs" SubPartDirectory="Resources/Dgnlibs" 
+            Required="true"/>
+        </Bindings>
+    </Part>
 
     <ProductDirectoryList ListName="ORDBridgeDirectoryList">
         <ProductDirectory Name="ApplicationRoot" Path=""/>
@@ -33,6 +40,7 @@
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
         <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
         <ProductDirectory Name="CifDlls"  Path="Cif"/>
+        <ProductDirectory Name="Dgnlibs"  RelativeTo="ApplicationRoot" Path="Dgnlibs"/>
     </ProductDirectoryList>
 
     <Part Name="ORDBridgeLibrary" BentleyBuildMakeFile="ORDBridge/ORDBridge.mke" >
@@ -66,7 +74,8 @@
         <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync" />
         <SubPart PartName="RoadRailAlignment-Tested" Repository="DgnDomains-RoadRailAlignment" PartFile="RoadRailAlignment" />
         <SubPart PartName="RoadRailPhysical-Tested" Repository="DgnDomains-RoadRailPhysical" PartFile="RoadRailPhysical" />
-        <SubPart PartName="CiviliModelBridgesTested" />        
+        <SubPart PartName="CiviliModelBridgesTested" />
+        <SubPart PartName="Resources" />
         <InstallerWixFile SourceFile="ORDBridge\Installer\ORDBridgeInstaller"/>
         <Directories DirectoryListName="ORDBridgeDirectoryList" />
     </Product>
