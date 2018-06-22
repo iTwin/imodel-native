@@ -196,7 +196,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                                                                                      CreatedNodeMap*                      createdNodeMap)
                                                                                      : SMPointIndexNode<POINT, EXTENT>(blockID, static_pcast<SMPointIndexNode<POINT, EXTENT>, SMMeshIndexNode<POINT, EXTENT>>(parent), filter, balanced, propagateDataDown, createdNodeMap)
                  
-    {
+    { 
     m_SMIndex = meshIndex;
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
@@ -5405,14 +5405,24 @@ template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
     return pNewNode;
     }
 
-template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndex<POINT, EXTENT>::CreateNewNode(HPMBlockID blockID, bool isRootNode)
+template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndex<POINT, EXTENT>::CreateNewNode(HPMBlockID blockID, bool isRootNode, bool useNodeMap)
     {
-/*
-    typename CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(blockID.m_integerID));
 
-    if (nodeIter != m_createdNodeMap->end())
-        return *nodeIter;
-*/
+    if (useNodeMap)
+        {
+        typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap::iterator nodeIter(m_createdNodeMap.find(blockID.m_integerID));
+
+        if (nodeIter != m_createdNodeMap.end())
+            return nodeIter->second;
+        }
+#ifndef NDEBUG
+    else
+        {
+        typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap::iterator nodeIter(m_createdNodeMap.find(blockID.m_integerID));
+        assert(nodeIter == m_createdNodeMap.end());
+        }
+#endif
+    
     HFCPtr<SMMeshIndexNode<POINT, EXTENT>> parent;
 
     auto meshNode = new SMMeshIndexNode<POINT, EXTENT>(blockID, parent, this, m_filter, m_needsBalancing, IsTextured() != SMTextureType::None, PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);

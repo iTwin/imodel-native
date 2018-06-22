@@ -1005,7 +1005,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         //NEEDS_WORK_SM : Why the same 2 functions in point index?
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode = false);
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);        
-        virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
+        virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false, bool useNodeMap = false);
 
         int64_t  AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes);
 

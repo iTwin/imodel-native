@@ -261,6 +261,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateFilterTasks(uint32_t res
         assert(status == BEXML_Success);
         }
 
+   // pDataIndex->ClearNodeMap();
+
     return SUCCESS;
     }
 
@@ -283,8 +285,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
     
     HPMBlockID blockID(tileId);    
 
-    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false).GetPtr());
-
+    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
+    
+    meshNode->NeedToLoadNeighbors(false);
     meshNode->Load();
 
     assert(!meshNode->m_nodeHeader.m_arePoints3d);
@@ -296,6 +299,11 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
         meshNode->SetDirty(true);
         }
 
+    meshNode->Discard();
+   // pDataIndex->ClearNodeMap();
+    pDataIndex->Store();
+    m_smSQLitePtr->Save();
+    meshNode->Unload();
     meshNode = nullptr;
 
     return SUCCESS;    
@@ -319,8 +327,14 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
 
     HPMBlockID blockID(tileId);
 
-    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false).GetPtr());
+    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
+    
+    if (!meshNode->IsNeighborsLoaded())
+        {
+        meshNode->Unload();
+        }
 
+    meshNode->NeedToLoadNeighbors(true);    
     meshNode->Load();
 
     assert(!meshNode->m_nodeHeader.m_arePoints3d);
@@ -332,6 +346,11 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
         meshNode->SetDirty(true);
         }
 
+    meshNode->Discard();    
+   // pDataIndex->ClearNodeMap();
+    pDataIndex->Store();
+    m_smSQLitePtr->Save();
+    meshNode->Unload();
     meshNode = nullptr;
 
     return SUCCESS;
@@ -355,8 +374,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
 
     HPMBlockID blockID(tileId);
 
-    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false).GetPtr());
+    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
 
+    meshNode->NeedToLoadNeighbors(false);
     meshNode->Load();
 
     assert(!meshNode->m_nodeHeader.m_arePoints3d);
@@ -364,6 +384,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
     meshNode->Filter((int)meshNode->GetLevel(), nullptr);
         
     meshNode->SetDirty(true);
+
+    meshNode->Discard();        
+   // pDataIndex->ClearNodeMap();
+    pDataIndex->Store();
+    m_smSQLitePtr->Save();
+    meshNode->Unload();
 
     meshNode = nullptr;
 
@@ -441,6 +467,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ExecuteNextTaskInTaskPlan()
 
     if (pTaskNode == nullptr)
         {
+        int closeStatus = fclose(file);
+        assert(closeStatus == 0);
+
         return SUCCESS_TASK_PLAN_COMPLETE;
         }
 
@@ -473,7 +502,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ExecuteNextTaskInTaskPlan()
 
     file = _wfreopen(taskPlanFileName.c_str(), L"wb", file);
     fwrite(updatedTaskPlanXml.c_str(), updatedTaskPlanXml.SizeInBytes(), 1, file);        
-    fclose(file);
+    int closeStatus = fclose(file);
+    assert(closeStatus == 0);
 
     return SUCCESS;
 }

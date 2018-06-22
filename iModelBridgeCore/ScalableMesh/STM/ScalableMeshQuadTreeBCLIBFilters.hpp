@@ -308,6 +308,9 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 	{
 		if (subNodes[indexNodes] != NULL) 
 		{
+            if (!subNodes[indexNodes]->IsLoaded())
+                subNodes[indexNodes]->Load();
+                    
 			RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
 			totalNumberOfPoints += subNodePointsPtr->size();
         

@@ -376,7 +376,7 @@ void TaskScheduler::Start()
             {
             StatusInt status = GetSourceCreatorWorker()->ExecuteNextTaskInTaskPlan();        
             
-            if (status == ERROR)
+            if (status == SUCCESS_TASK_PLAN_COMPLETE)
                 break;
 
             isThereTaskAvailable = true;

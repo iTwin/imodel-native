@@ -599,7 +599,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
                     {                
                     UNCONSTTHIS->m_apSubNodes[indexNode] = UNCONSTTHIS->CreateNewChildNode(UNCONSTTHIS->m_nodeHeader.m_apSubNodeID[indexNode]);
                     m_createdNodeMap->insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(UNCONSTTHIS->m_nodeHeader.m_apSubNodeID[indexNode].m_integerID, UNCONSTTHIS->m_apSubNodes[indexNode]));                
-                    }
+                    }   
                 else
                     {
                     UNCONSTTHIS->m_apSubNodes[indexNode] = nodeIter->second;                    
@@ -6030,6 +6030,14 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::GetAll
     }    
 
 //=======================================================================================
+// @bsimethod                                                   Mathieu.St-Pierre   06/18
+//=======================================================================================
+template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::IsNeighborsLoaded() const
+    {
+    return m_loadNeighbors;
+    }
+
+//=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 11/15
 //=======================================================================================
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::NeedToLoadNeighbors(const bool& needsNeighbors)
@@ -7509,17 +7517,20 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
 
                 if (pi_levelToFilter == -1 || (int)this->m_nodeHeader.m_level == pi_levelToFilter)
                     {
-                    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(m_pSubNodeNoSplit->GetPointsPtr());
+                    //If not null don't do any filtering, just return the nodes to filter.
+                    if (pNodesToFilter != nullptr)
+                        {
+                        pNodesToFilter->push_back(this);
+                        return;
+                        }
+
+                    if (!m_pSubNodeNoSplit->IsLoaded())
+                        m_pSubNodeNoSplit->Load();
+
+                    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(m_pSubNodeNoSplit->GetPointsPtr());                    
 
                     if (subNodePointsPtr->size() > 0)
                         {
-                        //If not null don't do any filtering, just return the nodes to filter.
-                        if (pNodesToFilter != nullptr)
-                            {
-                            pNodesToFilter->push_back(this);
-                            return;
-                            }
-
                         vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >> pSubNodes(1);
                         pSubNodes[0] = static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit);
 
@@ -8301,7 +8312,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::GatherCoun
     m_nFilteredNodes = 0;
     m_nStitchedNodes = 0;
     m_nTexturedNodes = 0;
-    }
+    }     
 
 
 /**----------------------------------------------------------------------------

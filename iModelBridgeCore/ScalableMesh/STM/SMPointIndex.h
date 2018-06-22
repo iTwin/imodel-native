@@ -366,7 +366,9 @@ public:
 
     void GetAllNeighborNodes(vector<SMPointIndexNode*>& nodes) const;
 
-    void NeedToLoadNeighbors(const bool& needsNeighbors);
+    BENTLEY_SM_EXPORT bool IsNeighborsLoaded() const;
+
+    BENTLEY_SM_EXPORT void NeedToLoadNeighbors(const bool& needsNeighbors);    
 
     /**----------------------------------------------------------------------------
     Indicates if node is leaf
@@ -1399,7 +1401,7 @@ public:
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
     
     BENTLEY_SM_EXPORT bool                AddArray (const POINT* pointsArray, size_t countOfPoints, bool arePoints3d, bool regularGrid=false);
-    bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
+    bool                                  Clear(HFCPtr<HVEShape> pi_shapeToClear);        
     BENTLEY_SM_EXPORT bool                RemovePoints(const EXTENT& pi_extentToClear);
 
     StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, const short& pi_pGroupMode, bool pi_pCompress = true);
@@ -1687,7 +1689,9 @@ protected:
 
     //progress info
     bvector<size_t> m_countsOfNodesAtLevel;
-    size_t m_countsOfNodesTotal = 0;
+
+    //Avoid division by 0 if not used.
+    size_t m_countsOfNodesTotal = 1; 
 
     bool m_precomputedCountNodes = false;
 

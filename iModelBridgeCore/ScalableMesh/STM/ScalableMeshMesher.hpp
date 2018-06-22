@@ -1511,6 +1511,10 @@ for (size_t& neighborInd : neighborIndices)
             //if (node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] == false)
                 {
                 HFCPtr < SMMeshIndexNode<POINT, EXTENT>> meshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(node->m_apNeighborNodes[neighborInd][neighborSubInd]);
+
+                if (!meshNode->IsLoaded())
+                    meshNode->Load();                
+
                 if (meshNode->m_nodeHeader.m_nbFaceIndexes == 0) continue;
                 meshGraphNeighbor = MTGGraph();
                 if (node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] == false)
