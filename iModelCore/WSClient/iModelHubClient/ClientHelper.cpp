@@ -58,6 +58,21 @@ ClientHelper* ClientHelper::GetInstance()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+ClientPtr ClientHelper::CreateClientForImodelBank(Utf8CP url)
+    {
+    // WIP_IMODEL_BANK Must re-direct requests for the "iModelHubApi" to the iModelBank server.
+    // Do this BEFORE calling Client::Create, as that method looks up the "iModelHubApi" API to get the server URL.
+    Json::Value cachedValue (Json::objectValue);
+    cachedValue["TimeCached"] = BeJsonUtilities::StringValueFromInt64(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    cachedValue["URL"] = url;
+    m_localState->SaveJsonValue("UrlCache", "iModelHubApi", cachedValue);
+    
+    return Client::Create(m_clientInfo, nullptr, true);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr ClientHelper::SignInWithCredentials(AsyncError* errorOut, Credentials credentials)
     {
     Tasks::AsyncError ALLOW_NULL_OUTPUT(error, errorOut);

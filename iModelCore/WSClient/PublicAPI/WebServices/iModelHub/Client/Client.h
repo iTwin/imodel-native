@@ -76,6 +76,8 @@ private:
     RevisionProcessOption processOption = RevisionProcessOption::Merge
     );
 
+    void SetCredentialsForImodelBank();
+
 public:
     //! Set custom handler.
     //! @param[in] customHandler
@@ -99,8 +101,9 @@ public:
     //! Create an instance of the client.
     //! @param[in] clientInfo Application information sent to server.
     //! @param[in] customHandler Http handler for connect authentication.
+    //! @param[in] isIModelBank Set up Client for use with IModelBank? Else set up for iModelHub.
     //! @return Returns a shared pointer to the created instance.
-    IMODELHUBCLIENT_EXPORT static ClientPtr Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler = nullptr);
+    IMODELHUBCLIENT_EXPORT static ClientPtr Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler = nullptr, bool isIModelBank = false);
 
     //! Creates a connection to a iModel. Use this method if you need to access iModel information without acquirying a briefcase.
     //! If you already have a briefcase, please use Briefcase.GetiModelConnection()
