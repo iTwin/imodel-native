@@ -399,6 +399,9 @@
         <SubPart PartName="ECPresentation"  PartFile="ECPresentation"   Repository="ECPresentation"/>
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"       Repository="DgnDisplay" />
         <SubPart PartName="Planning"        PartFile="Planning"         Repository="DgnDomains-Planning"/>
+        <SubPart PartName="Raster"              PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="PointCloud"          PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="BimFromDgnDbPublicApi"/>
         <Bindings>
             <Libs ProductDirectoryName="BimFromDgnDbLibs" Required="false">Delivery/$(libprefix)BimFromJson$(libext)</Libs>
