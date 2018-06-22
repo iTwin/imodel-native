@@ -81,11 +81,12 @@ def main():
         path = os.path.join(nugetPath, subdir)
         if os.path.isdir(path) and subdir != "Datasets":
             datasetPath = os.path.join(path, "Datasets")
-            for db in os.listdir(datasetPath):
-                dbPath = os.path.join(datasetPath, db)
-                for version in os.listdir(dbPath):
-                    if not os.path.exists(os.path.join(extractedDataDir, db, version)):
-                        copytree(os.path.join(dbPath, version), os.path.join(extractedDataDir, db, version))
+            if os.path.exists(datasetPath):
+                for db in os.listdir(datasetPath):
+                    dbPath = os.path.join(datasetPath, db)
+                    for version in os.listdir(dbPath):
+                        if not os.path.exists(os.path.join(extractedDataDir, db, version)):
+                            copytree(os.path.join(dbPath, version), os.path.join(extractedDataDir, db, version))
 
 if __name__ == "__main__":
     main()
