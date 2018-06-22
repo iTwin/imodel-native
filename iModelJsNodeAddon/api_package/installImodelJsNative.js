@@ -9,17 +9,16 @@ let version = require("./package.json").version;
 var formatPackageName = require('./formatPackageName.js').formatPackageName;
 
 function copyFolderRecursiveSync(source, target) {
-    var targetFolder = path.join(target, path.basename(source));
-    if (!fs.existsSync(targetFolder))
-        fs.mkdirSync(targetFolder);
+    if (!fs.existsSync(target))
+        fs.mkdirSync(target);
 
     if (fs.lstatSync(source).isDirectory()) {
         fs.readdirSync(source).forEach(function (file) {
             var curSource = path.join(source, file);
             if (fs.lstatSync(curSource).isDirectory()) {
-                copyFolderRecursiveSync(curSource, targetFolder);
+                copyFolderRecursiveSync(curSource, path.join(target, path.basename(curSource)));
             } else {
-                fs.writeFileSync(path.join(targetFolder, file), fs.readFileSync(curSource));
+                fs.writeFileSync(path.join(target, file), fs.readFileSync(curSource));
             }
         });
     }
@@ -34,9 +33,9 @@ fs.copyFileSync(path.join(__dirname, "package.json"),  path.join(installDir, "pa
 
 // We will then copy the results of the install from teh temp directory into the targetDirectory
 // We know that this script is in:               <somewhere>/node_modules/@bentley/imodeljs-native-platform-api
-// We want to put the native addon packages in:  <somewhere>/node_modules
+// We want to put the native addon packages in:  <somewhere>/node_modules/@bentley/imodeljs-native-platform-api/lib
 let currdir = process.cwd();
-let targetDir = path.normalize(path.join(currdir, "..", "..", "..")); // See comment below
+let targetDir = path.normalize(path.join(currdir, "lib")); // See comment below
 
 // Install in tmp dir and copy into target dir
 function installNativePlatformPackage(packages) {
