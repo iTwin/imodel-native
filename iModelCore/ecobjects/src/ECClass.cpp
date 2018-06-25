@@ -1117,7 +1117,7 @@ static const Utf8CP s_schemasThatAllowOverridingArrays[] =
     "speedikon.01"
     };
 
-static const size_t s_numSchemasThatAllowOverridingArrays = 11;
+static const size_t s_numSchemasThatAllowOverridingArrays = 12;
 
 /*---------------------------------------------------------------------------------**//**
 From .NET implementation:
