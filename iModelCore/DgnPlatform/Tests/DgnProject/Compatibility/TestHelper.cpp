@@ -473,7 +473,7 @@ void TestHelper::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expec
     ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(2, formatName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | " << assertMessage;
 
-    EXPECT_EQ(format->GetId(), stmt.GetValueId<ECN::UnitSystemId>(0)) << stmt.GetECSql() << " | " << assertMessage;
+    EXPECT_EQ(format->GetId(), stmt.GetValueId<ECN::FormatId>(0)) << stmt.GetECSql() << " | " << assertMessage;
     if (expectedDisplayLabel != nullptr)
         EXPECT_STREQ(expectedDisplayLabel, stmt.GetValueText(1)) << stmt.GetECSql() << " | " << assertMessage;
     else
@@ -490,72 +490,43 @@ void TestHelper::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expec
         EXPECT_EQ(expectedNumericSpec, JsonValue(stmt.GetValueText(3))) << assertMessage;
 
     if (expectedCompSpec.m_value.isNull())
-        EXPECT_TRUE(stmt.IsValueNull(4)) << stmt.GetECSql() << " | " << assertMessage;
-    else
         {
-        Formatting::CompositeValueSpecCP expectedCompSpec = format->GetCompositeSpec();
-        Json::Value expectedCompSpecWithoutUnitsJson;
-        ASSERT_TRUE(expectedCompSpec->ToJson(expectedCompSpecWithoutUnitsJson, false, true)) << assertMessage;
-        EXPECT_EQ(JsonValue(expectedCompSpecWithoutUnitsJson), JsonValue(stmt.GetValueText(4))) << assertMessage;
+        EXPECT_TRUE(stmt.IsValueNull(4)) << stmt.GetECSql() << " | " << assertMessage;
+        return;
+        }
+    ASSERT_TRUE(expectedCompSpec.m_value.isMember("units")) << stmt.GetECSql() << " | " << assertMessage;
+    JsonValue expectedCompositeWithoutUnitsJson(expectedCompSpec.m_value);
+    expectedCompositeWithoutUnitsJson.m_value.removeMember("units");
+    EXPECT_EQ(expectedCompositeWithoutUnitsJson, JsonValue(stmt.GetValueText(4))) << assertMessage;
+    stmt.Finalize();
 
-        ECSqlStatement compUnitStmt;
-        ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, compUnitStmt.Prepare(m_db, "SELECT Label,Unit.Id FROM meta.FormatCompositeUnitDef WHERE Format.Id=? ORDER BY Ordinal")) << assertMessage;
-        ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, compUnitStmt.BindId(1, format->GetId())) << stmt.GetECSql() << " | " << assertMessage;
-        size_t ordinal = 0;
-        while (BE_SQLITE_ROW == compUnitStmt.Step())
-            {
-            switch (ordinal)
-                {
-                    case 0:
-                    {
-                    if (expectedCompSpec->HasMajorLabel())
-                        EXPECT_STREQ(expectedCompSpec->GetMajorLabel().c_str(), compUnitStmt.GetValueText(0)) << "Composite unit" << ordinal << " | " << assertMessage;
-                    else
-                        EXPECT_TRUE(compUnitStmt.IsValueNull(0)) << "Composite unit" << ordinal << " | " << assertMessage;
+    Json::Value const& expectedCompositeUnitsJson = expectedCompSpec.m_value["units"];
+    ASSERT_TRUE(expectedCompositeUnitsJson.isArray()) << assertMessage;
+    ECSqlStatement unitLookupStmt;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, unitLookupStmt.Prepare(m_db, "SELECT Name FROM meta.UnitDef WHERE ECInstanceId=?")) << assertMessage;
 
-                    ASSERT_TRUE(expectedCompSpec->HasMajorUnit()) << "Composite unit" << ordinal << " | " << assertMessage;
-                    EXPECT_EQ(((ECUnitCP) expectedCompSpec->GetMajorUnit())->GetId().GetValue(), compUnitStmt.GetValueId<UnitId>(1).GetValue()) << "Composite unit" << ordinal << " | " << assertMessage;
-                    break;
-                    }
-                    case 1:
-                    {
-                    if (expectedCompSpec->HasMiddleLabel())
-                        EXPECT_STREQ(expectedCompSpec->GetMiddleLabel().c_str(), compUnitStmt.GetValueText(0)) << "Composite unit" << ordinal << " | " << assertMessage;
-                    else
-                        EXPECT_TRUE(compUnitStmt.IsValueNull(0)) << "Composite unit" << ordinal << " | " << assertMessage;
+    ECSqlStatement compUnitStmt;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, compUnitStmt.Prepare(m_db, "SELECT Label,Unit.Id FROM meta.FormatCompositeUnitDef WHERE Format.Id=? ORDER BY Ordinal")) << assertMessage;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, compUnitStmt.BindId(1, format->GetId())) << compUnitStmt.GetECSql() << " | " << assertMessage;
+    int ordinal = 0;
+    while (BE_SQLITE_ROW == compUnitStmt.Step())
+        {
+        ASSERT_LT(ordinal, (int) expectedCompositeUnitsJson.size()) << assertMessage;
+        Json::Value const& expectedCompositeUnitJson = expectedCompositeUnitsJson[(Json::ArrayIndex) ordinal];
+        EXPECT_FALSE(compUnitStmt.IsValueNull(1)) << "Composite unit" << ordinal << " | " << assertMessage;
+        BeInt64Id unitId = compUnitStmt.GetValueId<BeInt64Id>(1);
+        ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, unitLookupStmt.BindId(1, unitId)) << "Composite unit" << ordinal << " | " << assertMessage;
+        ASSERT_EQ(BE_SQLITE_ROW, unitLookupStmt.Step()) << "Composite unit" << ordinal << " | " << assertMessage;
+        EXPECT_STREQ(expectedCompositeUnitJson["name"].asCString(), unitLookupStmt.GetValueText(0)) << "Composite unit" << ordinal << " | " << assertMessage;
+        unitLookupStmt.Reset();
+        unitLookupStmt.ClearBindings();
 
-                    ASSERT_TRUE(expectedCompSpec->HasMiddleUnit()) << "Composite unit" << ordinal << " | " << assertMessage;
-                    EXPECT_EQ(((ECUnitCP) expectedCompSpec->GetMiddleUnit())->GetId().GetValue(), compUnitStmt.GetValueId<UnitId>(1).GetValue()) << "Composite unit" << ordinal << " | " << assertMessage;
-                    break;
-                    }
-                    case 2:
-                    {
-                    if (expectedCompSpec->HasMinorLabel())
-                        EXPECT_STREQ(expectedCompSpec->GetMinorLabel().c_str(), compUnitStmt.GetValueText(0)) << "Composite unit" << ordinal << " | " << assertMessage;
-                    else
-                        EXPECT_TRUE(compUnitStmt.IsValueNull(0)) << "Composite unit" << ordinal << " | " << assertMessage;
+        if (expectedCompositeUnitJson.isMember("label"))
+            EXPECT_STREQ(expectedCompositeUnitJson["label"].asCString(), compUnitStmt.GetValueText(0)) << "Composite unit" << ordinal << " | " << assertMessage;
+        else
+            EXPECT_TRUE(compUnitStmt.IsValueNull(0)) << "Composite unit" << ordinal << " | " << assertMessage;
 
-                    ASSERT_TRUE(expectedCompSpec->HasMinorUnit()) << "Composite unit" << ordinal << " | " << assertMessage;
-                    EXPECT_EQ(((ECUnitCP) expectedCompSpec->GetMinorUnit())->GetId().GetValue(), compUnitStmt.GetValueId<UnitId>(1).GetValue()) << "Composite unit" << ordinal << " | " << assertMessage;
-                    break;
-                    }
-                    case 3:
-                    {
-                    if (expectedCompSpec->HasSubLabel())
-                        EXPECT_STREQ(expectedCompSpec->GetSubLabel().c_str(), compUnitStmt.GetValueText(0)) << "Composite unit" << ordinal << " | " << assertMessage;
-                    else
-                        EXPECT_TRUE(compUnitStmt.IsValueNull(0)) << "Composite unit" << ordinal << " | " << assertMessage;
-
-                    ASSERT_TRUE(expectedCompSpec->HasSubUnit()) << "Composite unit" << ordinal << " | " << assertMessage;
-                    EXPECT_EQ(((ECUnitCP) expectedCompSpec->GetSubUnit())->GetId().GetValue(), compUnitStmt.GetValueId<UnitId>(1).GetValue()) << "Composite unit" << ordinal << " | " << assertMessage;
-                    break;
-                    }
-                    default:
-                        FAIL() << "No more than 4 composite units expected. But was: " << ordinal << " | " << assertMessage;
-                }
-
-            ordinal++;
-            }
+        ordinal++;
         }
     }
 
