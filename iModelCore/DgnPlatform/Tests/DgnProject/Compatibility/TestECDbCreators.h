@@ -17,6 +17,7 @@
 #define TESTECDB_EC32ENUMS "ec32enums.ecdb"
 #define TESTECDB_PREEC32KOQS "preec32koqs.ecdb"
 #define TESTECDB_EC32KOQS "ec32koqs.ecdb"
+#define TESTECDB_EC32UNITS "ec32units.ecdb"
 
 
 // *** Instructions for adding new test file creators ***
