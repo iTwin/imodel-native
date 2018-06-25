@@ -128,6 +128,7 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
     // read the records
     m_readStarted = true;
     _l = LoggingHelper::CreatePerformanceLogger(Log::Default, "[QueryExecutor] Reading and caching new records", NativeLogging::LOG_TRACE);
+    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb());
     DbResult result = DbResult::BE_SQLITE_ERROR;
     uint32_t recordsRead = 0;
     while (DbResult::BE_SQLITE_ROW == (result = statement->Step()))
@@ -779,6 +780,15 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
 
         if (descriptor.ShowImages() && nullptr != recordClass)
             imageId = ImageHelper::GetImageId(*recordClass, true, false);
+        }
+
+    if (descriptor.GetDistinctField() != nullptr)
+        {
+        for (size_t i = 0; i < m_records.size(); i++)
+            {
+            if (values.GetDisplayValues() == m_records[i]->GetDisplayValues())
+                return;
+            }
         }
 
     ContentSetItemPtr record = ContentSetItem::Create(primaryRecordKeys, displayLabel, imageId, 
