@@ -1308,7 +1308,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             m_dgndb->CloseDb();
         if (BE_SQLITE_OK == result) 
             {
-            SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade);
+            SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
             DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
 
             m_dgndb = DgnDb::OpenDgnDb(&result, name, openParams);
