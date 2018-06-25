@@ -335,7 +335,7 @@ BeBriefcaseId                  briefcaseId
 
     Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, 
                                              Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes,
-                                                                    SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)));
+                                                                    SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck)));
     if (BeSQLite::DbResult::BE_SQLITE_OK == status && db.IsValid())
         {
         StatusResult result = m_iModelInfo.WriteiModelInfo(*db, briefcaseId);
