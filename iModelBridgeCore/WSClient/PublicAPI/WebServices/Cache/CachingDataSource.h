@@ -204,6 +204,9 @@ struct CachingDataSource :
             BeFileNameCR temporaryDir
             );
 
+        //! Force close connection to server and local database. Makes object unusable after this.
+        WSCACHE_EXPORT void Close();
+
         WSCACHE_EXPORT IWSRepositoryClientPtr GetClient() const override;
         WSCACHE_EXPORT void SetClient(IWSRepositoryClientPtr client) override;
 
