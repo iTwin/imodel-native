@@ -23,12 +23,12 @@ IdentityTokenProvider::IdentityTokenProvider
 IImsClientPtr client,
 ITokenStorePtr store,
 std::function<void()> tokenExpiredHandler,
-std::function<void(int64_t)> tokenRenewFailedHandler
+std::function<void(bool, int64_t)> tokenRenewHandler
 ) :
 m_client(client),
 m_store(store),
 m_tokenExpiredHandler(tokenExpiredHandler),
-m_tokenRenewFailedHandler(tokenRenewFailedHandler),
+m_tokenRenewHandler(tokenRenewHandler),
 m_tokenLifetime(TOKEN_LIFETIME),
 m_tokenRefreshRate(TOKEN_REFRESH_RATE)
     {}
@@ -36,9 +36,9 @@ m_tokenRefreshRate(TOKEN_REFRESH_RATE)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IdentityTokenProviderPtr IdentityTokenProvider::Create(IImsClientPtr client, ITokenStorePtr store, std::function<void()> tokenExpiredHandler, std::function<void(int64_t)> tokenRenewFailedHandler)
+IdentityTokenProviderPtr IdentityTokenProvider::Create(IImsClientPtr client, ITokenStorePtr store, std::function<void()> tokenExpiredHandler, std::function<void(bool, int64_t)> tokenRenewHandler)
     {
-    return std::shared_ptr<IdentityTokenProvider>(new IdentityTokenProvider(client, store, tokenExpiredHandler, tokenRenewFailedHandler));
+    return std::shared_ptr<IdentityTokenProvider>(new IdentityTokenProvider(client, store, tokenExpiredHandler, tokenRenewHandler));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -102,22 +102,23 @@ AsyncTaskPtr<SamlTokenResult> IdentityTokenProvider::RenewToken()
         return m_client->RequestToken(*oldToken, nullptr, m_tokenLifetime)
             ->Then<SamlTokenResult>([=] (SamlTokenResult result)
             {
-            if (result.IsSuccess())
-                {
-                auto newToken = result.GetValue();
-                m_store->SetToken(newToken);
-                LOG.infov("Renewed identity token lifetime %d minutes", newToken->GetLifetime());
-                return result;
-                }
-
             if (result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
                 {
                 LOG.infov("Identity token expired");
                 if (m_tokenExpiredHandler)
                     m_tokenExpiredHandler();
+                return result;
                 }
-            else if (m_tokenRenewFailedHandler)
-                m_tokenRenewFailedHandler(GetTokenExpirationTimestamp());
+
+            if (result.IsSuccess())
+                {
+                auto newToken = result.GetValue();
+                m_store->SetToken(newToken);
+                LOG.infov("Renewed identity token lifetime %d minutes", newToken->GetLifetime());
+                }
+
+            if (m_tokenRenewHandler)
+                m_tokenRenewHandler(result.IsSuccess(), GetTokenExpirationTimestamp());
 
             return result;
             });

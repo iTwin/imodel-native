@@ -335,9 +335,9 @@ IConnectAuthenticationPersistencePtr persistence
             {
             OnUserTokenExpired();
             },
-            [=] (int64_t expireTime)
+            [=] (bool success, int64_t expireTime)
             {
-            OnUserTokenRenewFailed(expireTime); 
+            OnUserTokenRenew(success, expireTime); 
             });
         }
     else if (AuthenticationType::Credentials == type)
