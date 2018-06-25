@@ -743,8 +743,16 @@ ECObjectsStatus KindOfQuantity::AddPersistenceUnitByName(Utf8StringCR unitName, 
     Utf8String alias;
     Utf8String name;
     ECClass::ParseClassName(alias, name, unitName);
+    if (alias.empty())
+        alias.assign(GetSchema().GetAlias());
+
     auto unit = nameToUnitMapper(alias, name);
-    
+    if (unit == nullptr)
+        {
+        LOG.errorv("KoQ '%s' persistence unit with name '%s' was not found.", GetFullName().c_str(), unitName.c_str());
+        return ECObjectsStatus::Error;
+        }
+
     if (nullptr == GetSchema().GetUnitsContext().LookupUnit(unitName.c_str()))
         {
         LOG.errorv("On KoQ '%s' persistence unit with name '%s' could not be located", GetFullName().c_str(), unitName.c_str());
@@ -790,10 +798,10 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatByString(Utf8StringCR forma
         int i = 0;
         for (const auto& u : unitNames)
             {
+            ECClass::ParseClassName(alias, unqualifiedName, u);
             if (alias.empty())
                 alias = GetSchema().GetAlias();
 
-            ECClass::ParseClassName(alias, unqualifiedName, u);
             auto unit = nameToUnitMapper(alias, unqualifiedName);
             if (nullptr == unit)
                 {
