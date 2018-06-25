@@ -241,7 +241,7 @@ static bool HasStreetsModel (DgnDbR db)
         if (!model.IsValid())
             continue;
 
-        if (model->GetName().Equals ("Streets"))
+        if (model->GetName().Equals ("Bing Streets"))
             return true;
         }
 
@@ -261,17 +261,17 @@ void AddExternalDataModels (DgnDbR db)
     if (HasStreetsModel (db))
         return;
 
-    RepositoryLinkPtr streetsLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), nullptr, "Streets");
+    RepositoryLinkPtr streetsLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), nullptr, "Bing Streets");
     if (streetsLink.IsValid() && streetsLink->Insert().IsValid())
         {
-        // set up the MapBox Streets properties Json.
+        // set up the Bing Street map properties Json.
         BentleyApi::Json::Value jsonParameters;
-        jsonParameters[WebMercatorModel::json_providerName()] = MapBoxImageryProvider::prop_MapBoxProvider();
+        jsonParameters[WebMercatorModel::json_providerName()] = BingImageryProvider::prop_BingProvider();
         jsonParameters[WebMercatorModel::json_groundBias()] = -1.0;
         jsonParameters[WebMercatorModel::json_transparency()] = 0.0;
-        BentleyApi::Json::Value& mapBoxStreetsJson = jsonParameters[WebMercatorModel::json_providerData()];
+        BentleyApi::Json::Value& bingStreetsJson = jsonParameters[WebMercatorModel::json_providerData()];
 
-        mapBoxStreetsJson[WebMercator::MapBoxImageryProvider::json_mapType()] = (int)MapBoxImageryProvider::MapType::StreetMap;
+        bingStreetsJson[WebMercatorModel::json_mapType()] = (int)MapType::Street;
         WebMercatorModel::CreateParams createParams (db, streetsLink->GetElementId(), jsonParameters);
 
         WebMercatorModelPtr model = new WebMercatorModel (createParams);
@@ -283,18 +283,18 @@ void AddExternalDataModels (DgnDbR db)
         BeAssert (false);
         }
 
-    RepositoryLinkPtr satelliteLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), nullptr, "Satellite");
-    if (satelliteLink.IsValid() && satelliteLink->Insert().IsValid())
+    RepositoryLinkPtr aerialLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), nullptr, "Bing Aerial");
+    if (aerialLink.IsValid() && aerialLink->Insert().IsValid())
         {
-        // set up the MapBox Satellite properties Json.
+        // set up the Bing Aerial map properties Json.
         BentleyApi::Json::Value jsonParameters;
-        jsonParameters[WebMercatorModel::json_providerName()] = MapBoxImageryProvider::prop_MapBoxProvider();
+        jsonParameters[WebMercatorModel::json_providerName()] = BingImageryProvider::prop_BingProvider();
         jsonParameters[WebMercatorModel::json_groundBias()] = -1.0;
         jsonParameters[WebMercatorModel::json_transparency()] = 0.0;
-        BentleyApi::Json::Value& mapBoxSatelliteJson = jsonParameters[WebMercatorModel::json_providerData()];
+        BentleyApi::Json::Value& bingAerialJson = jsonParameters[WebMercatorModel::json_providerData()];
 
-        mapBoxSatelliteJson[WebMercator::MapBoxImageryProvider::json_mapType()] = (int)MapBoxImageryProvider::MapType::Satellite;
-        WebMercatorModel::CreateParams createParams (db, satelliteLink->GetElementId(), jsonParameters);
+        bingAerialJson[WebMercatorModel::json_mapType()] = (int)MapType::Aerial;
+        WebMercatorModel::CreateParams createParams (db, aerialLink->GetElementId(), jsonParameters);
 
         WebMercatorModelPtr model = new WebMercatorModel (createParams);
         DgnDbStatus insertStatus = model->Insert();
@@ -304,6 +304,30 @@ void AddExternalDataModels (DgnDbR db)
         {
         BeAssert (false);
         }
+
+#if defined (INSERT_MAPBOX_ALSO)
+    RepositoryLinkPtr mapBoxStreetsLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), nullptr, "Mapbox Streets");
+    if (mapBoxStreetsLink.IsValid() && mapBoxStreetsLink->Insert().IsValid())
+        {
+        // set up the MapBox Streets properties Json.
+        BentleyApi::Json::Value jsonParameters;
+        jsonParameters[WebMercatorModel::json_providerName()] = MapBoxImageryProvider::prop_MapBoxProvider();
+        jsonParameters[WebMercatorModel::json_groundBias()] = -1.0;
+        jsonParameters[WebMercatorModel::json_transparency()] = 0.0;
+        BentleyApi::Json::Value& mapBoxStreetsJson = jsonParameters[WebMercatorModel::json_providerData()];
+
+        mapBoxStreetsJson[WebMercatorModel::json_mapType()] = (int)MapType::Street;
+        WebMercatorModel::CreateParams createParams (db, mapBoxStreetsLink->GetElementId(), jsonParameters);
+
+        WebMercatorModelPtr model = new WebMercatorModel (createParams);
+        DgnDbStatus insertStatus = model->Insert();
+        BeAssert (DgnDbStatus::Success == insertStatus);
+        }
+    else
+        {
+        BeAssert (false);
+        }
+#endif 
 
     db.SaveChanges();
     }
