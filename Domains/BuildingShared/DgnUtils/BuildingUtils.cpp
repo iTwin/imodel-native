@@ -179,6 +179,7 @@ CategorySelectorPtr  BuildingUtils::CreateDefaultCategorySelector (DgnDbR db)
     CategorySelector catSel (db.GetDictionaryModel (), DEFAULT_BUILDING_CATEGORY_SELECTOR_NAME);
     catSel.SetCategories (categories);
 
+    BuildingLocks_LockElementForOperation(catSel, BeSQLite::DbOpcode::Insert, "Insert");
     auto insertedElement = db.Elements ().Insert (catSel);
     if (insertedElement.IsValid ())
         {
@@ -326,7 +327,7 @@ CategorySelectorPtr  BuildingUtils::GetDefaultCategorySelector (DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Nerijus.Jakeliunas                09/2016
 //---------------------------------------------------------------------------------------
-CategorySelectorPtr  BuildingUtils::CreateFloorViewCategorySelector (DgnDbR db)
+CategorySelectorPtr  BuildingUtils::CreateAndInsertFloorViewCategorySelector (DgnDbR db)
     {
     // A CategorySelector is a definition element that is normally shared by many ViewDefinitions.
     // We have to give the selector a unique name of its own.
@@ -341,7 +342,7 @@ CategorySelectorPtr  BuildingUtils::CreateFloorViewCategorySelector (DgnDbR db)
 
     CategorySelector catSel (db.GetDictionaryModel (), FLOOR_VIEW_CATEGORY_SELECTOR_NAME);
     catSel.SetCategories (categories);
-    BuildingLocks_LockElementForOperation(catSel, BeSQLite::DbOpcode::Insert, "Insert floor view definition");
+    BuildingLocks_LockElementForOperation(catSel, BeSQLite::DbOpcode::Insert, "Insert");
     auto insertedElement = db.Elements ().Insert (catSel);
     if (insertedElement.IsValid ())
         {
@@ -356,10 +357,21 @@ CategorySelectorPtr  BuildingUtils::CreateFloorViewCategorySelector (DgnDbR db)
 //---------------------------------------------------------------------------------------
 CategorySelectorPtr  BuildingUtils::GetFloorViewCategorySelector (DgnDbR db)
     {
-    CategorySelectorPtr catSel = GetCategorySelector (FLOOR_VIEW_CATEGORY_SELECTOR_NAME, db);
-    if (!catSel.IsValid ())
+    return GetCategorySelector (FLOOR_VIEW_CATEGORY_SELECTOR_NAME, db);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                06/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::CategorySelectorPtr BuildingUtils::GetOrCreateAndInsertFloorViewCategorySelector
+(
+    Dgn::DgnDbR db
+)
+    {
+    CategorySelectorPtr catSel = GetFloorViewCategorySelector(db);
+    if (!catSel.IsValid())
         {
-        catSel = CreateFloorViewCategorySelector (db);
+        catSel = CreateAndInsertFloorViewCategorySelector(db);
         }
 
     return catSel;

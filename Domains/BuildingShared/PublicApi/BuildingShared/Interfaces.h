@@ -15,7 +15,7 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 
 #define BCSSERIALIZABLE_ELEMENT_ClassName                   "ClassName"
 #define BCSSERIALIZABLE_ELEMENT_SchemaName                  "SchemaName"
-#define BCSSERIALIZABLE_ELEMENT_ElementId                   "AllocationId"
+#define BCSSERIALIZABLE_ELEMENT_ElementId                   "ElementId"
 #define BCSSERIALIZABLE_ELEMENT_Name                        "Name"
 #define BCSSERIALIZABLE_ELEMENT_CodeValue                   "CodeValue"
 
@@ -25,8 +25,13 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 
 #define BCSJSONACTIONPERFORMER_ACTION_UPDATE                "Update"
 #define BCSJSONACTIONPERFORMER_ACTION_DELETE                "Delete"
+#define BCSJSONACTIONPERFORMER_ACTION_COPYBUILDINGTYPE      "CopyBuildingType"
+#define BCSJSONACTIONPERFORMER_ACTION_COPYSPACETYPE         "CopySpaceType"
 
 #define BCSFLOORMANAGER_ACTION_ADDFLOOR                     "AddFloor"
+
+#define BCSBUILDINGTYPEMANAGER_ACTION_ADDBUILDINGTYPE       "AddBuildingType"
+#define BCSBUILDINGTYPEMANAGER_ACTION_ADDSPACETYPE          "AddSpaceType"
 
 
 //=======================================================================================
