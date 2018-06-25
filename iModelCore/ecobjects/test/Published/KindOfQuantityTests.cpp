@@ -258,70 +258,107 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_TRUE(presFormatStrings.empty());
     }
     {
+    // old persistenceFUS: MM
+    // old presentationFUS': -
+    // new persistenceUnit: u:MM
+    // new presentationFormats: -
     persUnitName.clear();
     presFormatStrings.clear();
     presFUSes.clear();
-    presFUSes.push_back("MM");
-    EXPECT_EQ(ECObjectsStatus::InvalidUnitName, KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "badUnit", presFUSes, schema));
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM", presFUSes, schema))
+        << "Should succeed if the persistenceFUS has a valid unit.";
+    EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
+    EXPECT_TRUE(presFormatStrings.empty());
+    }
+    {
+    // old persistenceFUS: badUnit
+    // old presentationFUS': -
+    // new persistenceUnit: -
+    // new presentationFormats: -
+    persUnitName.clear();
+    presFormatStrings.clear();
+    presFUSes.clear();
+    EXPECT_EQ(ECObjectsStatus::InvalidUnitName, KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "badUnit", presFUSes, schema))
+        << "Should fail if the persistenceFUS has an invalid Unit.";
     EXPECT_TRUE(persUnitName.empty());
     EXPECT_TRUE(presFormatStrings.empty());
     }
     {
+    // old persistenceFUS: MM(real)
+    // old presentationFUS': -
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:defaultReal[u:MM]
+    persUnitName.clear();
+    presFormatStrings.clear();
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(real)", presFUSes, schema))
+        << "Should succeed if persistenceFUS has a valid unit and format";
+    EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
+    EXPECT_EQ(1, presFormatStrings.size());
+    EXPECT_STRCASEEQ("f:DefaultReal[u:MM]", presFormatStrings[0].c_str()) << "A presentation format should have been created from the persistenceFUS' format.";
+    }
+    {
+    // old persistenceFUS: MM
+    // old presentationFUS': badUnit
+    // new persistenceUnit: -
+    // new presentationFormats: -
     persUnitName.clear();
     presFormatStrings.clear();
     presFUSes.clear();
     presFUSes.push_back("badUnit");
-    EXPECT_EQ(ECObjectsStatus::InvalidUnitName, KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM", presFUSes, schema));
+    EXPECT_EQ(ECObjectsStatus::InvalidUnitName, KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM", presFUSes, schema))
+        << "Should fail if a presentation FUS has an invalid Unit";
     EXPECT_TRUE(persUnitName.empty());
     EXPECT_TRUE(presFormatStrings.empty());
     }
     {
+    // old persistenceFUS: MM
+    // old presentationFUS': MM(KindOfFormat)
+    // new persistenceUnit: u:MM
+    // new presentationFormats: -
     persUnitName.clear();
     presFormatStrings.clear();
     presFUSes.clear();
     presFUSes.push_back("MM(KindOfFormat)");
-    EXPECT_EQ(ECObjectsStatus::InvalidFormat, KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM", presFUSes, schema));
-    EXPECT_TRUE(persUnitName.empty());
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM", presFUSes, schema))
+        << "Should drop a presentation FUS if it has an invalid Format.";
+    EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
     EXPECT_TRUE(presFormatStrings.empty());
     }
     {
+    // old persistenceFUS: MM(KindOfFormat)
+    // old presentationFUS': MM
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:DefaultReal[u:MM]
     persUnitName.clear();
     presFormatStrings.clear();
     presFUSes.clear();
     presFUSes.push_back("MM");
-    EXPECT_EQ(ECObjectsStatus::InvalidFormat, KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(KindOfFormat)", presFUSes, schema));
-    EXPECT_TRUE(persUnitName.empty());
-    EXPECT_TRUE(presFormatStrings.empty());
-    }
-    {
-    persUnitName.clear();
-    presFormatStrings.clear();
-    presFUSes.clear();
-    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM", presFUSes, schema));
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(KindOfFormat)", presFUSes, schema))
+        << "Should drop the format from the persistence FUS if it cannot be found.";
     EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
     EXPECT_EQ(1, presFormatStrings.size());
     EXPECT_STRCASEEQ("f:DefaultReal[u:MM]", presFormatStrings[0].c_str());
     }
     {
-    persUnitName.clear();
-    presFormatStrings.clear();
-    presFUSes.clear();
-    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(real)", presFUSes, schema));
-    EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
-    EXPECT_EQ(1, presFormatStrings.size());
-    EXPECT_STRCASEEQ("f:DefaultReal[u:MM]", presFormatStrings[0].c_str());
-    }
-    {
+    // old persistenceFUS: MM(realu)
+    // old presentationFUS': CM
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:DefaultReal[u:CM]
     persUnitName.clear();
     presFormatStrings.clear();
     presFUSes.clear();
     presFUSes.push_back("CM");
-    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(real)", presFUSes, schema));
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(realu)", presFUSes, schema));
     EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
     EXPECT_EQ(1, presFormatStrings.size());
     EXPECT_STRCASEEQ("f:DefaultReal[u:CM]", presFormatStrings[0].c_str());
     }
     {
+    // old persistenceFUS: MM(real)
+    // old presentationFUS': CM(real4u)
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:DefaultRealU(4)[u:CM]
     persUnitName.clear();
     presFormatStrings.clear();
     presFUSes.clear();
@@ -332,6 +369,10 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM]", presFormatStrings[0].c_str());
     }
     {
+    // old persistenceFUS: MM
+    // old presentationFUS': CM(real4u)
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:DefaultRealU(4)[u:CM]
     persUnitName.clear();
     presFormatStrings.clear();
     presFUSes.clear();
@@ -342,6 +383,10 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM]", presFormatStrings[0].c_str());
     }
     {
+    // old persistenceFUS: MM(real)
+    // old presentationFUS': DM(real);CM(real4u)
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:DefaultRealU[u:DM];f:DefaultRealU(4)[u:CM]
     persUnitName.clear();
     presFormatStrings.clear();
     presFUSes.clear();
@@ -354,6 +399,10 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM]", presFormatStrings[1].c_str());
     }
     {
+    // old persistenceFUS: MM(fi8)
+    // old presentationFUS': DM(fi8)
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:AmerFI
     persUnitName.clear();
     presFormatStrings.clear();
     presFUSes.clear();
@@ -364,6 +413,10 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_STRCASEEQ("f:AmerFI", presFormatStrings[0].c_str());
     }
     {
+    // old persistenceFUS: MM(fi8)
+    // old presentationFUS': -
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:AmerFI
     persUnitName.clear();
     presFormatStrings.clear();
     presFUSes.clear();
@@ -373,6 +426,10 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_STRCASEEQ("f:AmerFI", presFormatStrings[0].c_str());
     }
     {
+    // old persistenceFUS: IN
+    // old presentationFUS': IN(fi8)
+    // new persistenceUnit: u:IN
+    // new presentationFormats: f:AmerFI
     persUnitName.clear();
     presFormatStrings.clear();
     presFUSes.clear();
@@ -1616,6 +1673,20 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTrip)
 //=======================================================================================
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    06/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityUpgradeTest, ec31_FormatWithNoMapping)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schemaP;
+    ECTestFixture::ExpectSchemaDeserializationFailure(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="K1" description="My KOQ 5" displayLabel="KOQ 5" persistenceUnit="M" presentationUnits="M(Stop100-2);FT(AmerMYFI4)" relativeError="5" />
+        </ECSchema>)xml"));
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 04/2018
 //--------------------------------------------------------------------------------------
 TEST_F(KindOfQuantityUpgradeTest, ec31_noPersistenceFormatIfPresentationFUSesDefined)
@@ -1636,7 +1707,7 @@ TEST_F(KindOfQuantityUpgradeTest, ec31_noPersistenceFormatIfPresentationFUSesDef
     EXPECT_EQ(2, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("DefaultReal[u:FT]", koq->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_STRCASEEQ("DefaultReal[u:IN]", koq->GetPresentationFormats()[1].GetName().c_str());
-}
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Kyle.Abramowitz                   04/2018
@@ -1657,7 +1728,7 @@ TEST_F(KindOfQuantityUpgradeTest, ec31_persistenceFormatShouldBeDefaultIfNoPrese
     ASSERT_NE(nullptr, koq);
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("DefaultReal[u:CM]", koq->GetDefaultPresentationFormat()->GetName().c_str());
-}
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018

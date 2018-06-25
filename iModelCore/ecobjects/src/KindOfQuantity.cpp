@@ -398,7 +398,7 @@ static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR
         mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName((nullptr == mappedName) ? formatName.c_str() : mappedName);
         if (nullptr == mappedName)
             {
-            LOG.errorv("Failed to find format mapping for format with name '%s' in legacy format mappings", mappedName);
+            LOG.warningv("EC3.2 upgrade: Failed to find a mapping for the legacy name/alias '%s'. Dropping the format.", mappedName);
             return ECObjectsStatus::InvalidFormat;
             }
         Utf8String alias;
@@ -416,7 +416,7 @@ static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR
 ECObjectsStatus KindOfQuantity::ParseDescriptorAndAddRefs(Utf8StringR unitName, Utf8StringR formatName, ECUnitCP& unit, Utf8CP descriptor, ECSchemaReadContextP context)
     {
     ECObjectsStatus status = ExtractUnitFormatAndMap(unitName, formatName, descriptor);
-    if (ECObjectsStatus::Success != status)
+    if (ECObjectsStatus::Success != status && ECObjectsStatus::InvalidFormat != status) // if there is an invalid format the unit still needs to be used.
         return status;
 
     Utf8String alias;
@@ -442,6 +442,9 @@ ECObjectsStatus KindOfQuantity::ParseDescriptorAndAddRefs(Utf8StringR unitName, 
             descriptor, GetFullName().c_str(), unitName.c_str());
         return ECObjectsStatus::Error;
         }
+
+    if (ECObjectsStatus::InvalidFormat == status)
+        return ECObjectsStatus::Success;
 
     key = SchemaKey("Formats", 1, 0, 0);
     auto formatsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
@@ -652,7 +655,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
     Utf8String alias;
     Utf8String unqualifiedPers;
     ECObjectsStatus status = ExtractUnitFormatAndMap(persistenceUnit, persistenceFormat, persFus);
-    if (ECObjectsStatus::Success != status )
+    if (ECObjectsStatus::Success != status && ECObjectsStatus::InvalidFormat != status)
         return status;
 
     if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPers, persistenceUnit))
@@ -665,7 +668,11 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
         Utf8String presentationFormat;
         status = ExtractUnitFormatAndMap(presentationUnit, presentationFormat, presFus);
         if (ECObjectsStatus::Success != status)
+            {
+            if (ECObjectsStatus::InvalidFormat == status)
+                continue; // Dropping the presentation FUS
             return status;
+            }
 
         if (presentationUnit.empty())
             {
@@ -703,11 +710,8 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
         }
 
     // If there are no presentation units, create on using the persistence fus. Use the default format if none is provided
-    if (formatStrings.size() == 0)
+    if (formatStrings.size() == 0 && !persistenceFormat.empty())
         {
-        if (persistenceFormat.empty())
-            persistenceFormat = oldDefaultFormatName;
-
         Utf8String unqualifiedPersFormat;
         if(ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPersFormat, persistenceFormat))
             return ECObjectsStatus::Error;
@@ -747,10 +751,10 @@ ECObjectsStatus KindOfQuantity::AddPersistenceUnitByName(Utf8StringCR unitName, 
         alias.assign(GetSchema().GetAlias());
 
     auto unit = nameToUnitMapper(alias, name);
-    if (unit == nullptr)
+    if (nullptr == unit)
         {
-        LOG.errorv("KoQ '%s' persistence unit with name '%s' was not found.", GetFullName().c_str(), unitName.c_str());
-        return ECObjectsStatus::Error;
+        LOG.errorv("Unable to add unit name '%s' ", unitName.c_str());
+        return ECObjectsStatus::InvalidUnitName;
         }
 
     if (nullptr == GetSchema().GetUnitsContext().LookupUnit(unitName.c_str()))
