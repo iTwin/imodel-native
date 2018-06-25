@@ -16,47 +16,8 @@ runpat = re.compile (r"RUN\s*]\s*(\w+\.\w+)", re.I)
 
 filedir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(filedir)
-
-# HACK is to copy/paste this function until we can figure out why it generates a PYC file in the build context.
-# import IgnoreFilters as filters
-#-------------------------------------------------------------------------------------------
-# bsimethod                                     Ridha.Malik      06/2018
-#-------------------------------------------------------------------------------------------
-def PreventAutoIgnoreTests(FailingTestsList):
-    filedir=os.path.dirname(os.path.abspath(__file__))
-    filepath=os.path.join(filedir,"IgnoreFilters.txt")
-    if not os.path.exists(filepath):
-        return 0
-    filteredFile = open (filepath, 'r')
-    lines = filteredFile.readlines()
-    filteredlist=[]
-    for filteredline in lines:
-        # strip comments
-        startComment = filteredline.find ('#')
-        if startComment != -1 :
-            filteredline = filteredline[0:startComment]
-            # strip leading and trailing blanks
-            filteredline = filteredline.strip()
-            # see if the line identifies anything other than performance tests (which we always suppress)
-            if len(filteredline) == 0:
-                continue
-            if filteredline.lower().find ('performance') != -1:
-                continue
-            filteredlist.append(filteredline)
-        else:
-            if not filteredline.strip():continue
-            filteredline=filteredline.strip()
-            filteredlist.append(filteredline)
-    for filters in filteredlist:
-        for failingtest in FailingTestsList:
-            if filters.startswith("*") and filters.endswith("*"):
-               filters=filters.replace("*",'')
-            pattern=re.compile(filters)
-            testobj=re.search(pattern,failingtest)
-            if testobj != None:
-                print "*** compatibility test failed",failingtest
-                return 1
-    return 0
+sys.dont_write_bytecode = True
+import IgnoreFilters as filters
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Jeff.Marker
@@ -217,11 +178,11 @@ if __name__ == '__main__':
     if 0 == len(advicestr):
         print "All tests passed."
         exit (0)
-    
-    #preventautoignore=filters.PreventAutoIgnoreTests(failedtestlist_temp)
-    preventautoignore=PreventAutoIgnoreTests(failedtestlist_temp)
-    if preventautoignore==1:
-        breakonfailure=1
+    buildstrategy=os.environ.get("BuildStrategy")
+    if  buildstrategy!=None and buildstrategy.lower()=="dgnclientsdk":
+        preventautoignore=filters.PreventAutoIgnoreTests(failedtestlist_temp)
+        if preventautoignore==1:
+            breakonfailure=1
      
     print advicestr
     exit(breakonfailure)
