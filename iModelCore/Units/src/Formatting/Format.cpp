@@ -375,7 +375,6 @@ BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<int32_t
     // Get format name. Should always be the first match
     formatName = match[1].str().c_str();
 
-    
     if (match[2].matched && match[3].matched)
         {
         Utf8String const overrideStr(match[2].str().c_str());

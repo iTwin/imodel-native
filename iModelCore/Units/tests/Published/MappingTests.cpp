@@ -239,6 +239,48 @@ bvector<Utf8String> onlyNames =
     "CAngleDM8"
     };
 
+bvector<Utf8String> namesWithoutFormatString =
+    {
+    "Stop100-2",
+    "Stop100-2u",
+    "Stop100-2uz",
+    "Stop100-2-4",
+    "Stop100-2-4u",
+    "Stop1000-2",
+    "Stop1000-2u",
+    "Stop1000-2-4",
+    "Stop1000-2-4u",
+    "SignedReal",
+    "ParenthsReal",
+    "DefaultFractionalU",
+    "Fractional64U",
+    "SignedFractional",
+    "Fractional4U",
+    "Fractional8U",
+    "Fractional16U",
+    "Fractional32U",
+    "Fractional128U",
+    "DefaultExp",
+    "SignedExp",
+    "NormalizedExp",
+    "AngleDM8",
+    "CAngleDM8",
+    "AmerMYFI4",
+    "AmerYFI8",
+    "StationFt2",
+    "StationM4"
+    };
+
+bool IsNameWithoutFormatString(Utf8CP tmpName)
+    {
+    for (auto const& name : namesWithoutFormatString)
+        {
+        if (0 == name.CompareToI(tmpName))
+            return true;
+        }
+    return false;
+    }
+
 bool IsNameThatDoesNotMap(Utf8CP tmpName)
     {
     for (auto const& name : onlyNames)
@@ -257,9 +299,15 @@ TEST_F(MappingTest, AliasFormatString)
     for (auto const& name : names)
         {
         auto formatString = LegacyNameMappings::TryGetFormatStringFromLegacyName(name.c_str());
+        if (IsNameWithoutFormatString(name.c_str()))
+            {
+            EXPECT_TRUE(Utf8String::IsNullOrEmpty(formatString)) << "The name " << name.c_str() << " should not have a format string mapping.";
+            continue;
+            }
+
         EXPECT_FALSE(Utf8String::IsNullOrEmpty(formatString)) << "Did not find a FormatString mapped to the LegacyName '" << name.c_str() << "'.";
 
-        // Skip the reverse for name that don't map back from FormatString -> LegacyName
+        // Skip the reverse. The name doesn't map back from FormatString -> LegacyName because there are two potential LegacyNames.
         if (IsNameThatDoesNotMap(name.c_str()))
             continue;
 
