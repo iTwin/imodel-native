@@ -499,6 +499,9 @@ struct EXPORT_VTABLE_ATTRIBUTE CachedECSqlStatement final : ECSqlStatement
 
         ~CachedECSqlStatement() {}
 
+        //! CachedECSqlStatements can never be finalized externally. That will corrupt the cache.
+        void Finalize() = delete;
+
         uint32_t AddRef() const { return m_refCount.IncrementAtomicPre(); }
         uint32_t GetRefCount() const { return m_refCount.load(); }
         ECDB_EXPORT uint32_t Release();
