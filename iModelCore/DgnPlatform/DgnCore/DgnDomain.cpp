@@ -184,26 +184,6 @@ SchemaStatus DgnDomain::ValidateSchema(ECSchemaCR schema, DgnDbCR dgndb) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                    10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SchemaUpgradeOptions::AreDomainUpgradesAllowed() const
-    {
-    return m_domainUpgradeOptions == DomainUpgradeOptions::UseDefaults || m_domainUpgradeOptions == DomainUpgradeOptions::CompatibleOnly || m_domainUpgradeOptions == DomainUpgradeOptions::IncompatibleAlso;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                    02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaUpgradeOptions::DomainUpgradeOptions SchemaUpgradeOptions::GetDomainUpgradeOptions() const
-    {
-    if (m_domainUpgradeOptions != SchemaUpgradeOptions::DomainUpgradeOptions::UseDefaults)
-        return m_domainUpgradeOptions;
-
-    DevelopmentPhase appPhase = T_HOST.GetDevelopmentPhase();
-    return (appPhase == DevelopmentPhase::Development) ? SchemaUpgradeOptions::DomainUpgradeOptions::IncompatibleAlso : SchemaUpgradeOptions::DomainUpgradeOptions::IncompatibleAlso;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * load a Domain found in the Domain table of a DgnDb into that dgndb's DgnDomains
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -407,7 +387,7 @@ SchemaStatus DgnDomains::ImportSchemas()
     bvector<DgnDomainP> domainsToImport;
 
     SchemaStatus status = DoValidateSchemas(&schemasToImport, &domainsToImport);
-    if (status != SchemaStatus::SchemaUpgradeRequired)
+    if (status != SchemaStatus::SchemaUpgradeRequired && status != SchemaStatus::SchemaUpgradeRecommended)
         return status;
 
     return DoImportSchemas(schemasToImport, domainsToImport);
@@ -437,8 +417,6 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToIm
     if (RepositoryStatus::Success != m_dgndb.BriefcaseManager().EndBulkOperation().Result())
         return SchemaStatus::CouldNotAcquireLocksOrCodes;
 
-    SaveDevelopmentPhase();
-
     return SchemaStatus::Success;
     }
 
@@ -451,7 +429,8 @@ SchemaStatus DgnDomains::UpgradeSchemas()
     bvector<DgnDomainP> domainsToImport;
     SchemaStatus status = DoValidateSchemas(&schemasToImport, &domainsToImport);
 
-    BeAssert(status == SchemaStatus::SchemaUpgradeRequired && m_schemaUpgradeOptions.AreDomainUpgradesAllowed() && !schemasToImport.empty());
+    BeAssert(status == SchemaStatus::SchemaUpgradeRequired || status == SchemaStatus::SchemaUpgradeRecommended);
+    BeAssert(m_schemaUpgradeOptions.AreDomainUpgradesAllowed() && !schemasToImport.empty());
 
     bvector<ECSchemaCP> importSchemas;
     for (auto& schema : schemasToImport)
@@ -466,9 +445,6 @@ SchemaStatus DgnDomains::UpgradeSchemas()
     status = DoImportSchemas(importSchemas, importOptions);
     if (SchemaStatus::Success != status)
         return status;
-
-    if (allowedUpgrades == SchemaUpgradeOptions::DomainUpgradeOptions::IncompatibleAlso)
-        DeleteHandlers(); // Since ClassId-s can change, recreate the Handler-ClassId associations
 
     SyncWithSchemas();
 
@@ -504,18 +480,24 @@ SchemaStatus DgnDomains::UpgradeSchemas()
 SchemaStatus DgnDomains::InitializeSchemas(SchemaUpgradeOptions const& schemaUpgradeOptions)
     {
     m_schemaUpgradeOptions = schemaUpgradeOptions;
+    SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = m_schemaUpgradeOptions.GetDomainUpgradeOptions();
 
     SchemaStatus status = SchemaStatus::Success;
-    if (m_schemaUpgradeOptions.GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)
-        status = ValidateSchemas();
-  
-    if (status == SchemaStatus::Success)
+    if (domainUpgradeOptions != SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck)
         {
-        SyncWithSchemas();
-        OnDbOpened();
+        status = ValidateSchemas();
+        if (status == SchemaStatus::SchemaTooNew || status == SchemaStatus::SchemaTooOld || status == SchemaStatus::SchemaUpgradeRequired)
+            return status;
+        if (status == SchemaStatus::SchemaUpgradeRecommended && 
+            (domainUpgradeOptions == SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades ||
+            domainUpgradeOptions == SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade))
+            return status;
         }
 
-    return status;
+    SyncWithSchemas();
+    OnDbOpened();
+
+    return SchemaStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -550,12 +532,16 @@ SchemaStatus DgnDomains::DoValidateSchemas(bvector<ECSchemaPtr>* schemasToImport
     SchemaStatus status = SchemaStatus::Success;
     DgnDbR dgndb = GetDgnDb();
     ECSchemaReadContextPtr schemaContext = PrepareSchemaReadContext();
+    ECSchemaCacheR cache = schemaContext->GetCache();
     bset<ECSchemaP> validatedSchemas;
 
     /* Validate the schema for all the domains */
     auto& hostDomains = T_HOST.RegisteredDomains();
     for (DgnDomainP domain : hostDomains)
         {
+        bvector<ECSchemaP> existingSchemas;
+        cache.GetSchemas(existingSchemas);
+
         ECSchemaPtr schema = domain->ReadSchema(*schemaContext);
         if (!schema.IsValid())
             return SchemaStatus::SchemaReadFailed;
@@ -563,65 +549,71 @@ SchemaStatus DgnDomains::DoValidateSchemas(bvector<ECSchemaPtr>* schemasToImport
         SchemaStatus locStatus = domain->ValidateSchema(*schema, dgndb);
         validatedSchemas.insert(schema.get());
 
-        if (locStatus == SchemaStatus::Success || (locStatus == SchemaStatus::SchemaNotFound && !domain->IsRequired()))
+        if (locStatus == SchemaStatus::Success)
             continue;
 
-        if (locStatus == SchemaStatus::SchemaNotFound && domain->IsRequired())
+        if (locStatus == SchemaStatus::SchemaNotFound)
             {
-            status = SchemaStatus::SchemaUpgradeRequired; // It could get worse!
+            if (!domain->IsRequired())
+                {
+                // Restore schema context to the state before the read so that we don't 
+                // later import unwanted references of optional domain schemas.
+                bvector<ECSchemaP> currentSchemas;
+                cache.GetSchemas(currentSchemas);
+                for (ECSchemaP currentSchema : currentSchemas)
+                    {
+                    if (std::find(existingSchemas.begin(), existingSchemas.end(), currentSchema) == existingSchemas.end())
+                        cache.DropSchema(currentSchema->GetSchemaKey());
+                    }
+                continue;
+                }
 
+            status = SchemaStatus::SchemaUpgradeRequired; // It could get worse!
             if (domainsToImport)
                 domainsToImport->push_back(domain);
-
             if (schemasToImport)
                 schemasToImport->push_back(schema);
-
             LOG.warningv("Schema for a required domain %s is not found. Either call DgnDomain::ImportSchema(), or RegisterDomain as optional, or re-create a new Db from scratch", domain->GetDomainName());
             continue;
             }
+            
+        if (locStatus == SchemaStatus::SchemaTooNew || locStatus == SchemaStatus::SchemaTooOld)
+            return locStatus;
 
-        if (locStatus == SchemaStatus::SchemaUpgradeRequired)
-            {
-            status = locStatus;
-
-            if (schemasToImport)
-                schemasToImport->push_back(schema);
-
-            continue;
-            }
-
-        BeAssert(locStatus == SchemaStatus::SchemaTooNew || locStatus == SchemaStatus::SchemaTooOld);
-        return locStatus;
+        BeAssert(locStatus == SchemaStatus::SchemaUpgradeRequired || locStatus == SchemaStatus::SchemaUpgradeRecommended);
+        if (status != SchemaStatus::SchemaUpgradeRequired)
+            status = locStatus; // SchemaUpgradeRequired trumps SchemaUpgradeRecommended
+        if (schemasToImport)
+            schemasToImport->push_back(schema);
         }
 
-    BeAssert(status == SchemaStatus::Success || status == SchemaStatus::SchemaUpgradeRequired);
+    BeAssert(status == SchemaStatus::Success || status == SchemaStatus::SchemaUpgradeRequired || status == SchemaStatus::SchemaUpgradeRecommended);
 
     /* Validate all (remaining) reference schemas */
     bvector<ECSchemaP> allSchemas;
-    schemaContext->GetCache().GetSchemas(allSchemas);
+    cache.GetSchemas(allSchemas);
     for (ECSchemaP schema : allSchemas)
         {
         if (validatedSchemas.end() != std::find(validatedSchemas.begin(), validatedSchemas.end(), schema))
             continue;
 
         SchemaStatus locStatus = DoValidateSchema(*schema, true /*=isReadonly*/, dgndb);
+        
         validatedSchemas.insert(schema);
 
         if (locStatus == SchemaStatus::Success)
             continue;
 
-        if (locStatus == SchemaStatus::SchemaNotFound || locStatus == SchemaStatus::SchemaUpgradeRequired)
-            {
+        if (locStatus == SchemaStatus::SchemaTooNew || locStatus == SchemaStatus::SchemaTooOld)
+            return locStatus;
+
+        BeAssert(locStatus == SchemaStatus::SchemaNotFound || locStatus == SchemaStatus::SchemaUpgradeRequired || locStatus == SchemaStatus::SchemaUpgradeRecommended);
+        if (locStatus == SchemaStatus::SchemaUpgradeRecommended && status != SchemaStatus::SchemaUpgradeRequired)
+            status = SchemaStatus::SchemaUpgradeRecommended;
+        else
             status = SchemaStatus::SchemaUpgradeRequired;
-
-            if (schemasToImport)
-                schemasToImport->push_back(schema);
-
-            continue;
-            }
-
-        BeAssert(locStatus == SchemaStatus::SchemaTooNew || locStatus == SchemaStatus::SchemaTooOld);
-        return locStatus;
+        if (schemasToImport)
+            schemasToImport->push_back(schema);
         }
 
     return status;
@@ -657,10 +649,16 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
         return SchemaStatus::SchemaTooOld;
         }
 
-    if (appSchemaKey.GetVersionWrite() > bimSchemaKey.GetVersionWrite() || appSchemaKey.GetVersionMinor() > bimSchemaKey.GetVersionMinor())
+    if (appSchemaKey.GetVersionWrite() > bimSchemaKey.GetVersionWrite())
         {
         LOG.debugv("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
         return SchemaStatus::SchemaUpgradeRequired;
+        }
+
+    if (appSchemaKey.GetVersionMinor() > bimSchemaKey.GetVersionMinor())
+        {
+        LOG.debugv("Schema found in the BIM %s is recommended to be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+        return SchemaStatus::SchemaUpgradeRecommended;
         }
 
     BeAssert(appSchemaKey.GetVersionWrite() < bimSchemaKey.GetVersionWrite());
@@ -671,6 +669,7 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
         return SchemaStatus::SchemaTooNew;
         }
 
+    LOG.debugv("Schema found in the BIM %s is newer and found to be write incompatible to that in the application %s. However, this is not an issue since the application or domain is readonly.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
     return SchemaStatus::Success;
     }
 
@@ -959,35 +958,6 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
 
     m_handlers.Insert(id, &handler);
     return BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                    04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-// static 
-Utf8CP DgnDomains::ConvertDevelopmentPhaseToString(DevelopmentPhase devPhase)
-    {
-    switch (devPhase)
-        {
-        case DevelopmentPhase::Certified:
-            return "Certified";
-        case DevelopmentPhase::Beta:
-            return "Beta";
-        case DevelopmentPhase::Development:
-            return "Development";
-        default:
-            BeAssert(false && "Unknown DevelopmentPhase");
-            return "";
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                    04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnDomains::SaveDevelopmentPhase()
-    {
-    Utf8String devPhaseStr(ConvertDevelopmentPhaseToString(T_HOST.GetDevelopmentPhase()));
-    return m_dgndb.SavePropertyString(DgnProjectProperty::LastSchemaUpgradeInPhase(), devPhaseStr);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -143,17 +143,22 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
 DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
     {
     SchemaUpgradeOptions const& schemaUpgradeOptions = ((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions();
-    SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = schemaUpgradeOptions.GetDomainUpgradeOptions();
-
+    
     SchemaStatus status = Domains().InitializeSchemas(schemaUpgradeOptions);
-    if (status != SchemaStatus::Success && (status != SchemaStatus::SchemaUpgradeRequired || domainUpgradeOptions == SchemaUpgradeOptions::DomainUpgradeOptions::ValidateOnly))
+    if (status == SchemaStatus::SchemaTooNew || status == SchemaStatus::SchemaTooOld)
         return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
 
+    SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = schemaUpgradeOptions.GetDomainUpgradeOptions();
+    bool upgrade = (status == SchemaStatus::SchemaUpgradeRequired || status == SchemaStatus::SchemaUpgradeRecommended) &&
+        domainUpgradeOptions == SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade;
+    if (!upgrade && status != SchemaStatus::Success)
+        return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
+        
     DbResult result;
     if (BE_SQLITE_OK != (result = ProcessRevisions(params)))
         return result;
 
-    if (status == SchemaStatus::SchemaUpgradeRequired && domainUpgradeOptions != SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)
+    if (upgrade)
         status = Domains().UpgradeSchemas();
 
     return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
@@ -175,6 +180,8 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
             return BE_SQLITE_ERROR_SchemaTooOld;
         case SchemaStatus::SchemaUpgradeRequired:
             return BE_SQLITE_ERROR_SchemaUpgradeRequired;
+        case SchemaStatus::SchemaUpgradeRecommended:
+            return BE_SQLITE_ERROR_SchemaUpgradeRecommended;
         case SchemaStatus::CouldNotAcquireLocksOrCodes:
             return BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes;
         default:

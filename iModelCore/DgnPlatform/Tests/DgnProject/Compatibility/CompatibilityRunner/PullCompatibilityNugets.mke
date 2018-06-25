@@ -28,6 +28,7 @@ always:
     ~mkdir $(NUGET_DIR)
     ~mkdir $(IMS_DIR)
     ~mkdir $(ASSETS_DIR)
+    ~mkdir $(NUGET_DATASETS_DIR)
     $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(BuildContext)Delivery/Gtest/DgnCompatibility/Assets/ $(ASSETS_DIR)
     python Tests/DgnProject/Compatibility/CompatibilityRunner/PullCompatibilityNugets.py $(NUGET_DIR) $(SrcRoot)BentleyBuild/bentleybuild $(CURRENT_DATASET_DIR)
     $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(NUGET_DIR) $(IMS_NUGETS_DIR)

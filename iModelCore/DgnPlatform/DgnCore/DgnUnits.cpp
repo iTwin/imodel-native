@@ -104,25 +104,40 @@ EcefLocation DgnGeoLocation::GetEcefLocation() const
 
         auto extents = GetProjectExtents();
         DPoint3d origin = extents.GetCenter();
-        DPoint3d ecefOrigin, ecefNorth;
-        DPoint3d north = origin;
-        north.y += 100.0;
+        origin.z = 0; // always use ground plane
 
-        GeoPoint originLatLong, northLatLong;
+        // Create a WGS84 GCS to convert the WGS84 Lat/Long to ECEF/XYZ
+        WString warningMsg;
+        StatusInt warning;
+        auto wgs84GCS = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
+        wgs84GCS ->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
+
+        GeoPoint originLatLong, yLatLong, tempLatLong;
         dgnGCS->LatLongFromUors(originLatLong, origin);
-        dgnGCS->XYZFromLatLong(ecefOrigin, originLatLong);
-        dgnGCS->LatLongFromUors(northLatLong, north);
-        dgnGCS->XYZFromLatLong(ecefNorth, northLatLong);
+        dgnGCS->LatLongFromUors(yLatLong, DPoint3d::FromSumOf(origin, DPoint3d::From(0.0, 10.0, 0.0)));         // Arbitrarily 10 meters in Y direction will be used to calculate y axis of transform.
 
-        DVec3d zVector, yVector;
-        zVector.Normalize((DVec3dCR) ecefOrigin);
-        yVector.NormalizedDifference(ecefNorth, ecefOrigin);
+        tempLatLong = originLatLong;
+        dgnGCS->LatLongFromLatLong(originLatLong, tempLatLong, *wgs84GCS);
+        tempLatLong = yLatLong;
+        dgnGCS->LatLongFromLatLong(yLatLong, tempLatLong, *wgs84GCS);
+        
+        DPoint3d ecefOrigin, ecefY;
+        wgs84GCS->XYZFromLatLong(ecefOrigin, originLatLong);
+        wgs84GCS->XYZFromLatLong(ecefY, yLatLong);
 
         RotMatrix rMatrix = RotMatrix::FromIdentity();
+        DVec3d zVector, yVector;
+        zVector.Normalize((DVec3dCR) ecefOrigin);
+        yVector.NormalizedDifference(ecefY, ecefOrigin);
+
         rMatrix.SetColumn(yVector, 1);
         rMatrix.SetColumn(zVector, 2);
         rMatrix.SquareAndNormalizeColumns(rMatrix, 1, 2);
-        m_ecefLocation.m_origin = ecefOrigin;
+
+        auto ecefTrans = Transform::From(rMatrix, ecefOrigin);
+        ecefTrans.TranslateInLocalCoordinates(ecefTrans, -origin.x, -origin.y, -origin.z);
+
+        m_ecefLocation.m_origin = ecefTrans.Origin();
         YawPitchRollAngles::TryFromRotMatrix(m_ecefLocation.m_angles, rMatrix);
         m_ecefLocation.m_isValid = true;
         }
@@ -187,7 +202,11 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
     JsonUtils::DRange3dToJson(jsonObj, m_extent);
     m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());
 
-    GetEcefLocation(); // try to calculate the EcefLocation if it isn't set yet.
+    if (!m_ecefLocation.m_isValid)
+        {
+        GetEcefLocation(); // try to calculate the EcefLocation if it isn't set yet.
+        Save();
+        }
 
     for (auto const& kvp : m_dgndb.Models().GetLoadedModels())
         {

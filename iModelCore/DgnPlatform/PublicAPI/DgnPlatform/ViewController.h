@@ -13,6 +13,7 @@
 #include "ViewContext.h"
 #include "UpdatePlan.h"
 #include "ViewDefinition.h"
+#include "ISprite.h"
 #include <Bentley/BeThread.h>
 #include <BeSQLite/RTreeMatch.h>
 #include "TileTree.h"
@@ -579,6 +580,7 @@ protected:
     double m_nonSceneLODSize = 7.0; 
     mutable double m_queryElementPerSecond = 10000;
     bset<Utf8String> m_copyrightMsgs;  // from reality models. Only keep unique ones
+    bvector<RefCountedPtr<Render::ISprite>> m_copyrightSprites; // copyright images we must draw on the view (Bing Maps, for example) not owned by the view.
 
     void QueryModelExtents(FitContextR);
 

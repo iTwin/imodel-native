@@ -82,18 +82,17 @@ enum class RevisionProcessOption : int
 //=======================================================================================
 struct SchemaUpgradeOptions
 {
-//! Option to control upgrade of schemas in the DgnDb from the domains.
+//! Option to control the validation and upgrade of domain schemas in the DgnDb.
 enum class DomainUpgradeOptions : int
     {
-    SkipUpgrade, //!< Domain schemas will neither be validated nor be upgraded. Used only internally. 
-    ValidateOnly, //!< Domain schemas will be validated. Any errors will be reported back, and cause the application to fail opening the DgnDb.
-    CompatibleOnly, //!< Domain schemas will be upgraded if necessary. However, only compatible schema upgrades will be allowed - these are typically additions of classes, properties, and changes to custom attributes. 
-    IncompatibleAlso, //!< Domain schemas will be upgraded if necessary. Certain incompatible schema upgrades will be allowed - this option should not be used in certified or beta builds. 
-    UseDefaults //!< Upgrade domain schemas depending on the application's development phase. If the application is in Certified/Beta phase, the setting allows CompatibleOnly upgrades. Otherwise, it will allow IncompatibleAlso. @see DgnPlatformLib::Host::_SupplyDevelopmentPhase(). 
+    CheckRequiredUpgrades, //!< Domain schemas will be validated for any required upgrades. Any errors will be reported back, and cause the application to fail opening the DgnDb. 
+    CheckRecommendedUpgrades, //!< Domain schemas will be validated for any required or optional upgrades. Any errors will be reported back, and cause the application to fail opening the DgnDb. 
+    SkipCheck, //!< Domain schemas will neither be validated nor be upgraded. Used only internally. 
+    Upgrade //!< Domain schemas will be upgraded if necessary. However, only compatible schema upgrades will be allowed - these are typically additions of classes, properties, and changes to custom attributes. 
     };
 
 private:
-    DomainUpgradeOptions m_domainUpgradeOptions = DomainUpgradeOptions::ValidateOnly;
+    DomainUpgradeOptions m_domainUpgradeOptions = DomainUpgradeOptions::CheckRequiredUpgrades;
     bvector<DgnRevisionCP> m_revisions;
     RevisionProcessOption m_revisionProcessOption = RevisionProcessOption::None;
 
@@ -111,7 +110,7 @@ public:
     SchemaUpgradeOptions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge) { SetUpgradeFromRevisions(revisions, revisionOptions); }
 
     //! Setup to upgrade schemas from the registered domains
-    void SetUpgradeFromDomains(DomainUpgradeOptions domainOptions = DomainUpgradeOptions::UseDefaults)
+    void SetUpgradeFromDomains(DomainUpgradeOptions domainOptions = DomainUpgradeOptions::CheckRequiredUpgrades)
         {
         m_domainUpgradeOptions = domainOptions;
         }
@@ -132,7 +131,7 @@ public:
         }
 
     //! Get the option that controls upgrade of schemas in the DgnDb from the domains.
-    DomainUpgradeOptions GetDomainUpgradeOptions() const;
+    DomainUpgradeOptions GetDomainUpgradeOptions() const { return m_domainUpgradeOptions; }
 
     //! Gets the revisions that are to be processed
     bvector<DgnRevisionCP> const& GetRevisions() const { return m_revisions; }
@@ -141,12 +140,12 @@ public:
     RevisionProcessOption GetRevisionProcessOption() const { return m_revisionProcessOption;  }
 
     //! Returns true if schemas are to be upgraded from the domains.
-    bool AreDomainUpgradesAllowed() const;
+    bool AreDomainUpgradesAllowed() const { return m_domainUpgradeOptions == DomainUpgradeOptions::Upgrade; }
 
     //! Resets the options
     void Reset()
         {
-        m_domainUpgradeOptions = DomainUpgradeOptions::ValidateOnly;
+        m_domainUpgradeOptions = DomainUpgradeOptions::CheckRequiredUpgrades;
         m_revisions.clear();
         m_revisionProcessOption = RevisionProcessOption::None;
         }
@@ -171,18 +170,7 @@ enum class SchemaStatus
     DbHasLocalChanges,
     DbIsReadonly,
     CouldNotAcquireLocksOrCodes,
-    };
-
-//=======================================================================================
-//! Development phase of the host application, or of the DgnDb created by the host application
-//! @note These correspond with build environment settings setup by the Product Release Group. 
-//! @see DgnPlatformLib::Host::_SupplyDevelopmentPhase()
-//=======================================================================================
-enum class DevelopmentPhase
-    {
-    Development = 0,
-    Beta = 1,
-    Certified = 2
+    SchemaUpgradeRecommended,
     };
 
 struct DgnDomains;
@@ -542,13 +530,11 @@ private:
     SchemaStatus UpgradeSchemas();
     SchemaStatus ValidateSchemas();
     SchemaStatus DoValidateSchemas(bvector<ECN::ECSchemaPtr>* schemasToImport, bvector<DgnDomainP>* domainsToImport);
+    SchemaStatus ValidateSchemaReferences(SchemaStatus& status, bvector<ECN::ECSchemaPtr>* schemasToImport, ECN::ECSchemaReadContextR schemaContext, bset<ECN::ECSchemaP>& validatedSchemas);
     static SchemaStatus DoValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
     SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaCP> const& schemasToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions);
     SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport);
     ECN::ECSchemaReadContextPtr PrepareSchemaReadContext() const;
-
-    static Utf8CP ConvertDevelopmentPhaseToString(DevelopmentPhase developmentPhase);
-    BeSQLite::DbResult SaveDevelopmentPhase();
 
     explicit DgnDomains(DgnDbR db) : DgnDbTable(db), m_allowSchemaImport(true) {}
 
