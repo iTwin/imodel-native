@@ -27,10 +27,12 @@ private:
     static Dgn::DisplayStyle3dPtr CreateFloorView3dDisplayStyle(Dgn::DgnDbR db);
     static Utf8String GetTemplateFromName(Utf8String name, int &index);
 
+    static Dgn::CategorySelectorPtr CreateAndInsertFloorViewCategorySelector(Dgn::DgnDbR db);
+
 public:
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::CategorySelectorPtr GetDefaultCategorySelector(Dgn::DgnDbR db);
-    BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::CategorySelectorPtr CreateFloorViewCategorySelector(Dgn::DgnDbR db);
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::CategorySelectorPtr GetFloorViewCategorySelector(Dgn::DgnDbR db);
+    BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::CategorySelectorPtr GetOrCreateAndInsertFloorViewCategorySelector(Dgn::DgnDbR db);
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::CategorySelectorPtr GetSiteViewCategorySelector(Dgn::DgnDbR db);
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::CategorySelectorPtr GetEgressPathViewCategorySelector(Dgn::DgnDbR db);
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::CategorySelectorPtr CreateSiteViewCategorySelector(Dgn::DgnDbR db);
