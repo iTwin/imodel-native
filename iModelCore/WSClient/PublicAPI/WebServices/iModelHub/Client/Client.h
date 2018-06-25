@@ -72,7 +72,7 @@ private:
     static DgnDbPtr OpenWithSchemaUpgradeInternal
     (
     BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, 
-    SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = SchemaUpgradeOptions::DomainUpgradeOptions::ValidateOnly,
+    SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades,
     RevisionProcessOption processOption = RevisionProcessOption::Merge
     );
 
