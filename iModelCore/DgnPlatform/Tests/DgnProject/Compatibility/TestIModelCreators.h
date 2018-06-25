@@ -18,12 +18,14 @@
 #define TESTIMODEL_EC32ENUMS "ec32enums.bim"
 #define TESTIMODEL_PREEC32KOQS "preec32koqs.bim"
 #define TESTIMODEL_EC32KOQS "ec32koqs.bim"
+#define TESTIMODEL_EC32UNITS "ec32units.bim"
 
 #define TESTIMODELCREATOR_LIST {std::make_shared<EmptyTestIModelCreator>(), \
                                 std::make_shared<EC32EnumsTestIModelCreator>(), \
                                 std::make_shared<PreEC32EnumsTestIModelCreator>(), \
                                 std::make_shared<PreEC32KoqsTestIModelCreator>(), \
-                                std::make_shared<EC32KoqsTestIModelCreator>()}
+                                std::make_shared<EC32KoqsTestIModelCreator>(), \
+                                std::make_shared<EC32UnitsTestIModelCreator>()}
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
@@ -226,4 +228,43 @@ struct EC32KoqsTestIModelCreator final : TestIModelCreator
             }
     public:
         ~EC32KoqsTestIModelCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct EC32UnitsTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            DgnDbPtr bim = CreateNewTestFile(TESTIMODEL_EC32UNITS);
+            if (bim == nullptr)
+                return ERROR;
+
+            return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="EC32Units" alias="ec32units" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                    <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+                    <UnitSystem typeName="MyMetric" displayLabel="Metric" description="Metric Units of measure" />
+                    <UnitSystem typeName="MyImperial" displayLabel="Imperial" description="Units of measure from the British Empire" />
+                    <Phenomenon typeName="MyArea" displayLabel="Area" definition="LENGTH*LENGTH" />
+                    <Unit typeName="MySquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="MyArea" unitSystem="MyMetric" />
+                    <Unit typeName="MySquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="MyArea" unitSystem="MyImperial" />
+                    <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                            precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
+                    </Format>
+                    <Format typeName="MyFormatWithComposite" displayLabel="My Format with composite" type="Decimal" formatTraits="keepSingleZero|keepDecimalPoint|showUnitLabel" precision="2" >
+                        <Composite spacer="-">
+                            <Unit label="hour">u:HR</Unit>
+                            <Unit label="min">u:MIN</Unit>
+                        </Composite>
+                    </Format>
+                    <KindOfQuantity typeName="KoqWithCustomFormat" persistenceUnit="u:M" presentationUnits="MyFormat[u:M]" relativeError="0.1"/>
+                    <KindOfQuantity typeName="KoqWithCustomUnit" persistenceUnit="MySquareM" presentationUnits="f:DefaultRealU(4)[MySquareM]" relativeError="0.2"/>
+                    <KindOfQuantity typeName="KoqWithCustomUnitAndFormat" persistenceUnit="MySquareFt" presentationUnits="MyFormat[MySquareFt]" relativeError="0.3"/>
+                </ECSchema>)xml"));
+            }
+    public:
+        ~EC32UnitsTestIModelCreator() {}
     };

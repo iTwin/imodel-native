@@ -278,7 +278,7 @@ void TestHelper::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP 
     ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(2, koqName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | " << assertMessage;
 
-    EXPECT_EQ(koq->GetId(), stmt.GetValueId<ECN::ECEnumerationId>(0)) << stmt.GetECSql() << " | " << assertMessage;
+    EXPECT_EQ(koq->GetId(), stmt.GetValueId<ECN::KindOfQuantityId>(0)) << stmt.GetECSql() << " | " << assertMessage;
     if (expectedDisplayLabel != nullptr)
         EXPECT_STREQ(expectedDisplayLabel, stmt.GetValueText(1)) << stmt.GetECSql() << " | " << assertMessage;
     else
@@ -301,6 +301,350 @@ void TestHelper::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP 
         }
 
     EXPECT_DOUBLE_EQ(expectedRelError, stmt.GetValueDouble(5)) << stmt.GetECSql() << " | " << assertMessage;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void TestHelper::AssertUnit(Utf8CP schemaName, Utf8CP unitName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedDefinition, 
+                            Nullable<double> expectedNumerator, Nullable<double> expectedDenominator, Nullable<double> expectedOffset, 
+                            QualifiedName const& expectedUnitSystem, QualifiedName const& expectedPhenomenon, bool expectedIsConstant, QualifiedName const& expectedInvertingUnit) const
+    {
+    // 1) Via schema manager
+    ECUnitCP unit = m_db.Schemas().GetUnit(schemaName, unitName);
+    ASSERT_TRUE(unit != nullptr) << schemaName << "." << unitName << " | " << m_testFile.ToString();
+    Utf8String assertMessage(schemaName);
+    assertMessage.append(".").append(unitName).append(" | ").append(m_testFile.ToString());
+
+    EXPECT_EQ(expectedDisplayLabel != nullptr, unit->GetIsDisplayLabelDefined()) << assertMessage;
+    if (expectedDisplayLabel != nullptr)
+        EXPECT_STREQ(expectedDisplayLabel, unit->GetInvariantDisplayLabel().c_str()) << assertMessage;
+
+    if (expectedDescription != nullptr)
+        EXPECT_STREQ(expectedDescription, unit->GetDescription().c_str()) << assertMessage;
+    else
+        EXPECT_TRUE(unit->GetDescription().empty()) << assertMessage;
+
+    if (Utf8String::IsNullOrEmpty(expectedDefinition))
+        EXPECT_FALSE(unit->HasDefinition()) << assertMessage;
+    else
+        EXPECT_STREQ(expectedDefinition, unit->GetDefinition().c_str()) << assertMessage;
+
+    if (expectedNumerator == nullptr)
+        EXPECT_FALSE(unit->HasNumerator()) << assertMessage;
+    else
+        EXPECT_DOUBLE_EQ(expectedNumerator.Value(), unit->GetNumerator()) << assertMessage;
+
+    if (expectedDenominator == nullptr)
+        EXPECT_FALSE(unit->HasDenominator()) << assertMessage;
+    else
+        EXPECT_DOUBLE_EQ(expectedDenominator.Value(), unit->GetDenominator()) << assertMessage;
+
+    if (expectedOffset == nullptr)
+        EXPECT_FALSE(unit->HasOffset()) << assertMessage;
+    else
+        EXPECT_DOUBLE_EQ(expectedOffset.Value(), unit->GetOffset()) << assertMessage;
+
+    if (!expectedUnitSystem.IsValid())
+        EXPECT_FALSE(unit->HasUnitSystem()) << assertMessage;
+    else
+        {
+        EXPECT_STREQ(expectedUnitSystem.GetName().c_str(), unit->GetUnitSystem()->GetName().c_str()) << assertMessage;
+        EXPECT_STREQ(expectedUnitSystem.GetSchemaName().c_str(), unit->GetUnitSystem()->GetSchema().GetName().c_str()) << assertMessage;
+        }
+
+    EXPECT_STREQ(expectedPhenomenon.GetName().c_str(), unit->GetPhenomenon()->GetName().c_str()) << assertMessage;
+    EXPECT_STREQ(expectedPhenomenon.GetSchemaName().c_str(), unit->GetPhenomenon()->GetSchema().GetName().c_str()) << assertMessage;
+
+    EXPECT_EQ(expectedIsConstant, unit->IsConstant()) << assertMessage;
+
+    if (!expectedInvertingUnit.IsValid())
+        EXPECT_FALSE(unit->IsInvertedUnit()) << assertMessage;
+    else
+        {
+        EXPECT_STREQ(expectedInvertingUnit.GetName().c_str(), unit->GetInvertingUnit()->GetName().c_str()) << assertMessage;
+        EXPECT_STREQ(expectedInvertingUnit.GetSchemaName().c_str(), unit->GetInvertingUnit()->GetSchema().GetName().c_str()) << assertMessage;
+        }
+
+    // 2) Via ECSQL
+    ECSqlStatement stmt;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(m_db, "SELECT u.ECInstanceId,u.DisplayLabel,u.Description,u.Definition,u.Numerator,u.Denominator,u.[Offset],u.UnitSystem.Id,u.Phenomenon.Id,u.IsConstant,u.InvertingUnit.Id FROM meta.UnitDef u JOIN meta.ECSchemaDef s ON u.Schema.Id=s.ECInstanceId WHERE s.Name=? AND u.Name=?")) << assertMessage;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(2, unitName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | " << assertMessage;
+
+    EXPECT_EQ(unit->GetId(), stmt.GetValueId<ECN::UnitId>(0)) << stmt.GetECSql() << " | " << assertMessage;
+    if (expectedDisplayLabel != nullptr)
+        EXPECT_STREQ(expectedDisplayLabel, stmt.GetValueText(1)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_TRUE(stmt.IsValueNull(1)) << stmt.GetECSql() << " | " << assertMessage;
+
+    if (expectedDescription != nullptr)
+        EXPECT_STREQ(expectedDescription, stmt.GetValueText(2)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_TRUE(stmt.IsValueNull(2)) << stmt.GetECSql() << " | " << assertMessage;
+
+    if (Utf8String::IsNullOrEmpty(expectedDefinition))
+        EXPECT_TRUE(stmt.IsValueNull(3)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_STREQ(expectedDefinition, stmt.GetValueText(3)) << stmt.GetECSql() << " | " << assertMessage;
+
+    if (expectedNumerator.IsNull())
+        EXPECT_TRUE(stmt.IsValueNull(4)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_DOUBLE_EQ(expectedNumerator.Value(), stmt.GetValueDouble(4)) << stmt.GetECSql() << " | " << assertMessage;
+
+    if (expectedDenominator.IsNull())
+        EXPECT_TRUE(stmt.IsValueNull(5)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_DOUBLE_EQ(expectedDenominator.Value(), stmt.GetValueDouble(5)) << stmt.GetECSql() << " | " << assertMessage;
+
+    if (expectedOffset.IsNull())
+        EXPECT_TRUE(stmt.IsValueNull(6)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_DOUBLE_EQ(expectedOffset.Value(), stmt.GetValueDouble(6)) << stmt.GetECSql() << " | " << assertMessage;
+
+    if (!expectedUnitSystem.IsValid())
+        EXPECT_TRUE(stmt.IsValueNull(7)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        {
+        UnitSystemId actualUnitSystemId = stmt.GetValueId<UnitSystemId>(7);
+        EXPECT_EQ(JsonValue(Utf8PrintfString("[{\"schema\":\"%s\", \"unitsystem\":\"%s\"}]", expectedUnitSystem.GetSchemaName().c_str(), expectedUnitSystem.GetName().c_str())), ExecuteECSqlSelect(Utf8PrintfString("SELECT s.Name schema, us.Name unitsystem FROM meta.UnitSystemDef us JOIN meta.ECSchemaDef s ON s.ECInstanceId=us.Schema.Id WHERE us.ECInstanceId=%s", actualUnitSystemId.ToHexStr().c_str()).c_str())) << stmt.GetECSql() << " | " << assertMessage;
+        }
+
+    PhenomenonId actualPhenId = stmt.GetValueId<PhenomenonId>(8);
+    EXPECT_EQ(JsonValue(Utf8PrintfString("[{\"schema\":\"%s\", \"phen\":\"%s\"}]", expectedPhenomenon.GetSchemaName().c_str(), expectedPhenomenon.GetName().c_str())),
+                ExecuteECSqlSelect(Utf8PrintfString("SELECT s.Name schema, ph.Name phen FROM meta.PhenomenonDef ph JOIN meta.ECSchemaDef s ON s.ECInstanceId=ph.Schema.Id WHERE ph.ECInstanceId=%s", actualPhenId.ToHexStr().c_str()).c_str())) << stmt.GetECSql() << " | " << assertMessage;
+
+    EXPECT_EQ(expectedIsConstant, stmt.GetValueBoolean(9)) << stmt.GetECSql() << " | " << assertMessage;
+
+    if (!expectedInvertingUnit.IsValid())
+        EXPECT_TRUE(stmt.IsValueNull(10)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        {
+        UnitId actualInvertingUnitId = stmt.GetValueId<UnitId>(10);
+        EXPECT_EQ(JsonValue(Utf8PrintfString("[{\"schema\":\"%s\", \"invertingunit\":\"%s\"}]", expectedInvertingUnit.GetSchemaName().c_str(), expectedInvertingUnit.GetName().c_str())),
+                  ExecuteECSqlSelect(Utf8PrintfString("SELECT s.Name schema, u.Name invertingunit FROM meta.UnitDef u JOIN meta.ECSchemaDef s ON s.ECInstanceId=u.Schema.Id WHERE u.ECInstanceId=%s", actualInvertingUnitId.ToHexStr().c_str()).c_str())) << stmt.GetECSql() << " | " << assertMessage;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void TestHelper::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, JsonValue const& expectedNumericSpec, JsonValue const& expectedCompSpec) const
+    {
+    // 1) Via schema manager
+    ECFormatCP format = m_db.Schemas().GetFormat(schemaName, formatName);
+    ASSERT_TRUE(format != nullptr) << schemaName << "." << formatName << " | " << m_testFile.ToString();
+    Utf8String assertMessage(schemaName);
+    assertMessage.append(".").append(formatName).append(" | ").append(m_testFile.ToString());
+
+    EXPECT_EQ(expectedDisplayLabel != nullptr, format->GetIsDisplayLabelDefined()) << assertMessage;
+    if (expectedDisplayLabel != nullptr)
+        EXPECT_STREQ(expectedDisplayLabel, format->GetInvariantDisplayLabel().c_str()) << assertMessage;
+
+    if (expectedDescription != nullptr)
+        EXPECT_STREQ(expectedDescription, format->GetDescription().c_str()) << assertMessage;
+    else
+        EXPECT_TRUE(format->GetDescription().empty()) << assertMessage;
+
+    if (expectedNumericSpec.m_value.isNull())
+        EXPECT_FALSE(format->HasNumeric()) << assertMessage;
+    else
+        {
+        Json::Value actualNumericSpec;
+        ASSERT_TRUE(format->GetNumericSpec()->ToJson(actualNumericSpec, false));
+        EXPECT_EQ(expectedNumericSpec, JsonValue(actualNumericSpec)) << assertMessage;
+        }
+
+    if (expectedCompSpec.m_value.isNull())
+        EXPECT_FALSE(format->HasComposite()) << assertMessage;
+    else
+        {
+        Json::Value actualCompSpec;
+        ASSERT_TRUE(format->GetCompositeSpec()->ToJson(actualCompSpec, true));
+        EXPECT_EQ(expectedCompSpec, JsonValue(actualCompSpec)) << assertMessage;
+        }
+
+    // 2) Via ECSQL
+    ECSqlStatement stmt;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(m_db, "SELECT f.ECInstanceId,f.DisplayLabel,f.Description,f.NumericSpec,f.CompositeSpec FROM meta.FormatDef f JOIN meta.ECSchemaDef s ON f.Schema.Id=s.ECInstanceId WHERE s.Name=? AND f.Name=?")) << assertMessage;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(2, formatName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | " << assertMessage;
+
+    EXPECT_EQ(format->GetId(), stmt.GetValueId<ECN::UnitSystemId>(0)) << stmt.GetECSql() << " | " << assertMessage;
+    if (expectedDisplayLabel != nullptr)
+        EXPECT_STREQ(expectedDisplayLabel, stmt.GetValueText(1)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_TRUE(stmt.IsValueNull(1)) << stmt.GetECSql() << " | " << assertMessage;
+
+    if (expectedDescription != nullptr)
+        EXPECT_STREQ(expectedDescription, stmt.GetValueText(2)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_TRUE(stmt.IsValueNull(2)) << stmt.GetECSql() << " | " << assertMessage;
+
+    if (expectedNumericSpec.m_value.isNull())
+        EXPECT_TRUE(stmt.IsValueNull(3)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_EQ(expectedNumericSpec, JsonValue(stmt.GetValueText(3))) << assertMessage;
+
+    if (expectedCompSpec.m_value.isNull())
+        EXPECT_TRUE(stmt.IsValueNull(4)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        {
+        Formatting::CompositeValueSpecCP expectedCompSpec = format->GetCompositeSpec();
+        Json::Value expectedCompSpecWithoutUnitsJson;
+        ASSERT_TRUE(expectedCompSpec->ToJson(expectedCompSpecWithoutUnitsJson, false, true)) << assertMessage;
+        EXPECT_EQ(JsonValue(expectedCompSpecWithoutUnitsJson), JsonValue(stmt.GetValueText(4))) << assertMessage;
+
+        ECSqlStatement compUnitStmt;
+        ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, compUnitStmt.Prepare(m_db, "SELECT Label,Unit.Id FROM meta.FormatCompositeUnitDef WHERE Format.Id=? ORDER BY Ordinal")) << assertMessage;
+        ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, compUnitStmt.BindId(1, format->GetId())) << stmt.GetECSql() << " | " << assertMessage;
+        size_t ordinal = 0;
+        while (BE_SQLITE_ROW == compUnitStmt.Step())
+            {
+            switch (ordinal)
+                {
+                    case 0:
+                    {
+                    if (expectedCompSpec->HasMajorLabel())
+                        EXPECT_STREQ(expectedCompSpec->GetMajorLabel().c_str(), compUnitStmt.GetValueText(0)) << "Composite unit" << ordinal << " | " << assertMessage;
+                    else
+                        EXPECT_TRUE(compUnitStmt.IsValueNull(0)) << "Composite unit" << ordinal << " | " << assertMessage;
+
+                    ASSERT_TRUE(expectedCompSpec->HasMajorUnit()) << "Composite unit" << ordinal << " | " << assertMessage;
+                    EXPECT_EQ(((ECUnitCP) expectedCompSpec->GetMajorUnit())->GetId().GetValue(), compUnitStmt.GetValueId<UnitId>(1).GetValue()) << "Composite unit" << ordinal << " | " << assertMessage;
+                    break;
+                    }
+                    case 1:
+                    {
+                    if (expectedCompSpec->HasMiddleLabel())
+                        EXPECT_STREQ(expectedCompSpec->GetMiddleLabel().c_str(), compUnitStmt.GetValueText(0)) << "Composite unit" << ordinal << " | " << assertMessage;
+                    else
+                        EXPECT_TRUE(compUnitStmt.IsValueNull(0)) << "Composite unit" << ordinal << " | " << assertMessage;
+
+                    ASSERT_TRUE(expectedCompSpec->HasMiddleUnit()) << "Composite unit" << ordinal << " | " << assertMessage;
+                    EXPECT_EQ(((ECUnitCP) expectedCompSpec->GetMiddleUnit())->GetId().GetValue(), compUnitStmt.GetValueId<UnitId>(1).GetValue()) << "Composite unit" << ordinal << " | " << assertMessage;
+                    break;
+                    }
+                    case 2:
+                    {
+                    if (expectedCompSpec->HasMinorLabel())
+                        EXPECT_STREQ(expectedCompSpec->GetMinorLabel().c_str(), compUnitStmt.GetValueText(0)) << "Composite unit" << ordinal << " | " << assertMessage;
+                    else
+                        EXPECT_TRUE(compUnitStmt.IsValueNull(0)) << "Composite unit" << ordinal << " | " << assertMessage;
+
+                    ASSERT_TRUE(expectedCompSpec->HasMinorUnit()) << "Composite unit" << ordinal << " | " << assertMessage;
+                    EXPECT_EQ(((ECUnitCP) expectedCompSpec->GetMinorUnit())->GetId().GetValue(), compUnitStmt.GetValueId<UnitId>(1).GetValue()) << "Composite unit" << ordinal << " | " << assertMessage;
+                    break;
+                    }
+                    case 3:
+                    {
+                    if (expectedCompSpec->HasSubLabel())
+                        EXPECT_STREQ(expectedCompSpec->GetSubLabel().c_str(), compUnitStmt.GetValueText(0)) << "Composite unit" << ordinal << " | " << assertMessage;
+                    else
+                        EXPECT_TRUE(compUnitStmt.IsValueNull(0)) << "Composite unit" << ordinal << " | " << assertMessage;
+
+                    ASSERT_TRUE(expectedCompSpec->HasSubUnit()) << "Composite unit" << ordinal << " | " << assertMessage;
+                    EXPECT_EQ(((ECUnitCP) expectedCompSpec->GetSubUnit())->GetId().GetValue(), compUnitStmt.GetValueId<UnitId>(1).GetValue()) << "Composite unit" << ordinal << " | " << assertMessage;
+                    break;
+                    }
+                    default:
+                        FAIL() << "No more than 4 composite units expected. But was: " << ordinal << " | " << assertMessage;
+                }
+
+            ordinal++;
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void TestHelper::AssertUnitSystem(Utf8CP schemaName, Utf8CP unitsystemName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription) const
+    {
+    // 1) Via schema manager
+    UnitSystemCP sys = m_db.Schemas().GetUnitSystem(schemaName, unitsystemName);
+    ASSERT_TRUE(sys != nullptr) << schemaName << "." << unitsystemName << " | " << m_testFile.ToString();
+    Utf8String assertMessage(schemaName);
+    assertMessage.append(".").append(unitsystemName).append(" | ").append(m_testFile.ToString());
+
+    EXPECT_EQ(expectedDisplayLabel != nullptr, sys->GetIsDisplayLabelDefined()) << assertMessage;
+    if (expectedDisplayLabel != nullptr)
+        EXPECT_STREQ(expectedDisplayLabel, sys->GetInvariantDisplayLabel().c_str()) << assertMessage;
+
+    if (expectedDescription != nullptr)
+        EXPECT_STREQ(expectedDescription, sys->GetDescription().c_str()) << assertMessage;
+    else
+        EXPECT_TRUE(sys->GetDescription().empty()) << assertMessage;
+
+    // 2) Via ECSQL
+    ECSqlStatement stmt;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(m_db, "SELECT us.ECInstanceId,us.DisplayLabel,us.Description FROM meta.UnitSystemDef us JOIN meta.ECSchemaDef s ON us.Schema.Id=s.ECInstanceId WHERE s.Name=? AND us.Name=?")) << assertMessage;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(2, unitsystemName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | " << assertMessage;
+
+    EXPECT_EQ(sys->GetId(), stmt.GetValueId<ECN::UnitSystemId>(0)) << stmt.GetECSql() << " | " << assertMessage;
+    if (expectedDisplayLabel != nullptr)
+        EXPECT_STREQ(expectedDisplayLabel, stmt.GetValueText(1)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_TRUE(stmt.IsValueNull(1)) << stmt.GetECSql() << " | " << assertMessage;
+
+    if (expectedDescription != nullptr)
+        EXPECT_STREQ(expectedDescription, stmt.GetValueText(2)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_TRUE(stmt.IsValueNull(2)) << stmt.GetECSql() << " | " << assertMessage;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void TestHelper::AssertPhenomenon(Utf8CP schemaName, Utf8CP phenName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedDefinition) const
+    {
+    // 1) Via schema manager
+    PhenomenonCP phen = m_db.Schemas().GetPhenomenon(schemaName, phenName);
+    ASSERT_TRUE(phen != nullptr) << schemaName << "." << phenName << " | " << m_testFile.ToString();
+    Utf8String assertMessage(schemaName);
+    assertMessage.append(".").append(phenName).append(" | ").append(m_testFile.ToString());
+
+    EXPECT_EQ(expectedDisplayLabel != nullptr, phen->GetIsDisplayLabelDefined()) << assertMessage;
+    if (expectedDisplayLabel != nullptr)
+        EXPECT_STREQ(expectedDisplayLabel, phen->GetInvariantDisplayLabel().c_str()) << assertMessage;
+
+    if (expectedDescription != nullptr)
+        EXPECT_STREQ(expectedDescription, phen->GetDescription().c_str()) << assertMessage;
+    else
+        EXPECT_TRUE(phen->GetDescription().empty()) << assertMessage;
+
+    if (expectedDefinition != nullptr)
+        EXPECT_STREQ(expectedDefinition, phen->GetDefinition().c_str()) << assertMessage;
+    else
+        EXPECT_TRUE(phen->GetDefinition().empty()) << assertMessage;
+
+    // 2) Via ECSQL
+    ECSqlStatement stmt;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(m_db, "SELECT p.ECInstanceId,p.DisplayLabel,p.Description,p.Definition FROM meta.PhenomenonDef p JOIN meta.ECSchemaDef s ON p.Schema.Id=s.ECInstanceId WHERE s.Name=? AND p.Name=?")) << assertMessage;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(2, phenName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | " << assertMessage;
+
+    EXPECT_EQ(phen->GetId(), stmt.GetValueId<ECN::PhenomenonId>(0)) << stmt.GetECSql() << " | " << assertMessage;
+    if (expectedDisplayLabel != nullptr)
+        EXPECT_STREQ(expectedDisplayLabel, stmt.GetValueText(1)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_TRUE(stmt.IsValueNull(1)) << stmt.GetECSql() << " | " << assertMessage;
+
+    if (expectedDescription != nullptr)
+        EXPECT_STREQ(expectedDescription, stmt.GetValueText(2)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_TRUE(stmt.IsValueNull(2)) << stmt.GetECSql() << " | " << assertMessage;
+
+    if (expectedDefinition != nullptr)
+        EXPECT_STREQ(expectedDefinition, stmt.GetValueText(3)) << stmt.GetECSql() << " | " << assertMessage;
+    else
+        EXPECT_TRUE(stmt.IsValueNull(3)) << stmt.GetECSql() << " | " << assertMessage;
     }
 
 //---------------------------------------------------------------------------------------

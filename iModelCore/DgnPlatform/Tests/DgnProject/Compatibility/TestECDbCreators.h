@@ -17,6 +17,7 @@
 #define TESTECDB_EC32ENUMS "ec32enums.ecdb"
 #define TESTECDB_PREEC32KOQS "preec32koqs.ecdb"
 #define TESTECDB_EC32KOQS "ec32koqs.ecdb"
+#define TESTECDB_EC32UNITS "ec32units.ecdb"
 
 
 // *** Instructions for adding new test file creators ***
@@ -28,7 +29,8 @@
                               std::make_shared<EC32EnumsTestECDbCreator>(), \
                               std::make_shared<PreEC32EnumsTestECDbCreator>(), \
                               std::make_shared<EC32KoqsTestECDbCreator>(), \
-                               std::make_shared<PreEC32KoqsTestECDbCreator>()}
+                              std::make_shared<PreEC32KoqsTestECDbCreator>(), \
+                              std::make_shared<EC32UnitsTestECDbCreator>()}
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
@@ -234,4 +236,43 @@ struct EC32KoqsTestECDbCreator final : TestECDbCreator
             }
     public:
         ~EC32KoqsTestECDbCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct EC32UnitsTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, TESTECDB_EC32UNITS))
+                return ERROR;
+
+            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="EC32Units" alias="ec32units" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                    <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+                    <UnitSystem typeName="MyMetric" displayLabel="Metric" description="Metric Units of measure" />
+                    <UnitSystem typeName="MyImperial" displayLabel="Imperial" description="Units of measure from the British Empire" />
+                    <Phenomenon typeName="MyArea" displayLabel="Area" definition="LENGTH*LENGTH" />
+                    <Unit typeName="MySquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="MyArea" unitSystem="MyMetric" />
+                    <Unit typeName="MySquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="MyArea" unitSystem="MyImperial" />
+                    <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                            precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
+                    </Format>
+                    <Format typeName="MyFormatWithComposite" displayLabel="My Format with composite" type="Decimal" formatTraits="keepSingleZero|keepDecimalPoint|showUnitLabel" precision="2" >
+                        <Composite spacer="-">
+                            <Unit label="hour">u:HR</Unit>
+                            <Unit label="min">u:MIN</Unit>
+                        </Composite>
+                    </Format>
+                    <KindOfQuantity typeName="KoqWithCustomFormat" persistenceUnit="u:M" presentationUnits="MyFormat[u:M]" relativeError="0.1"/>
+                    <KindOfQuantity typeName="KoqWithCustomUnit" persistenceUnit="MySquareM" presentationUnits="f:DefaultRealU(4)[MySquareM]" relativeError="0.2"/>
+                    <KindOfQuantity typeName="KoqWithCustomUnitAndFormat" persistenceUnit="MySquareFt" presentationUnits="MyFormat[MySquareFt]" relativeError="0.3"/>
+                </ECSchema>)xml"));
+            }
+    public:
+        ~EC32UnitsTestECDbCreator() {}
     };

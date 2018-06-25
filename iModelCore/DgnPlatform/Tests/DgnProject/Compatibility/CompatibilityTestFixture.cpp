@@ -41,7 +41,7 @@ ECN::ECSchemaReadContextPtr TestFileCreator::DeserializeSchemas(ECDbCR ecdb, std
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle     12/17
 //---------------------------------------------------------------------------------------
-JsonValue::JsonValue(Utf8CP json) { EXPECT_TRUE(Json::Reader::Parse(json, m_value)); }
+JsonValue::JsonValue(Utf8CP json) { EXPECT_TRUE(Json::Reader::Parse(json, m_value)) << json; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle     10/17
@@ -114,6 +114,15 @@ bool JsonValue::operator==(JsonValue const& rhs) const
     return false;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(QualifiedName const& name, std::ostream* os) 
+    { 
+    if (!name.IsValid())
+        *os << "<invalid QualifiedName>";
+    else
+        *os << name.GetSchemaName() << "." << name.GetName(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/17
