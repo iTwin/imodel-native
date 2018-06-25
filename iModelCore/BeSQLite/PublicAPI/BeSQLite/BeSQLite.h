@@ -1379,6 +1379,9 @@ public:
     uint32_t GetRefCount() const {return m_refCount.load();}
     BE_SQLITE_EXPORT uint32_t Release();
     Utf8CP GetSQL() const {return m_sql;}
+    
+    //! CachedStatements can never be Finalized externally. That will corrupt the cache.
+    void Finalize() = delete;
 };
 
 typedef RefCountedPtr<CachedStatement> CachedStatementPtr;
