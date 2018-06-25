@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/DataSourceCache.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,6 +31,7 @@ struct DataSourceCache : public IDataSourceCache
         std::shared_ptr<struct DataSourceCacheOpenState> m_state;
 
     private:
+        DataSourceCacheOpenState& GetState();
         BentleyStatus ExecuteWithinTransaction(std::function<BentleyStatus()> execute);
 
         BentleyStatus InitializeCreatedDb();

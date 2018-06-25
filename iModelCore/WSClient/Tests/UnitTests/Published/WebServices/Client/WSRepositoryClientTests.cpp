@@ -2877,7 +2877,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_EnableJobsWebApiV2JobSucce
     IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
     options->GetJobOptions()->EnableJobsIfPossible();
     auto result = client->SendUpdateFileRequestWithOptions({"TestSchema.TestClass", "TestId"}, StubFile("TestContent"), nullptr, options)->GetResult();
-    EXPECT_TRUE(result.IsSuccess());
+    ASSERT_TRUE(result.IsSuccess());
     EXPECT_STREQ("Good Content", result.GetValue().GetBody()->AsString().c_str());
     }
 

@@ -78,6 +78,89 @@ TEST_F(DataSourceCacheTests, Open_ExistingDbWithNoDefaultTransaction_Success)
     EXPECT_EQ(SUCCESS, DataSourceCache().Open(path, CacheEnvironment(), params));
     }
 
+TEST_F(DataSourceCacheTests, Close_NotOpened_DoesNothing)
+    {
+    DataSourceCache cache;
+    cache.Close();
+    }
+
+TEST_F(DataSourceCacheTests, Close_MultipleTimes_Succeeds)
+    {
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Create(StubFilePath(), StubCacheEnvironemnt()));
+
+    cache.Close();
+    cache.Close();
+    cache.Close();
+    }
+
+TEST_F(DataSourceCacheTests, Close_CreatedDb_ClosesAndQueriesFailWithException)
+    {
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Create(StubFilePath(), StubCacheEnvironemnt()));
+
+    cache.Close();
+
+    bool failed = false;
+    try
+        {
+        cache.FindOrCreateRoot("Foo");
+        }
+    catch (...)
+        {
+        failed = true;
+        }
+    EXPECT_TRUE(failed);
+    }
+
+TEST_F(DataSourceCacheTests, Close_OpenedDb_ClosesAndQueriesFailWithException)
+    {
+    auto path = StubFilePath();
+    auto env = StubCacheEnvironemnt();
+    DataSourceCache cache1;
+    ASSERT_EQ(SUCCESS, cache1.Create(path, env));
+    ASSERT_EQ(BE_SQLITE_OK, cache1.GetAdapter().GetECDb().AbandonChanges()); // Remove all uncommited changes from default txn
+    cache1.Close();
+
+    DataSourceCache cache;
+    EXPECT_EQ(SUCCESS, cache.Open(path, env));
+
+    cache.Close();
+    bool failed = false;
+    try
+        {
+        cache.FindOrCreateRoot("Foo");
+        }
+    catch (...)
+        {
+        failed = true;
+        }
+    EXPECT_TRUE(failed);
+    }
+
+TEST_F(DataSourceCacheTests, Close_RegisteredSchemaChangeListener_CallsListenerAndCloses)
+    {
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Create(StubFilePath(), StubCacheEnvironemnt()));
+
+    MockECDbSchemaChangeListener listener;
+    cache.RegisterSchemaChangeListener(&listener);
+
+    EXPECT_CALL(listener, OnSchemaChanged()).Times(1);
+    cache.Close();
+    }
+
+TEST_F(DataSourceCacheTests, Close_CachedStatementsExist_ClearsCachesAndCloses)
+    {
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Create(StubFilePath(), StubCacheEnvironemnt()));
+
+    cache.FindOrCreateRoot("Foo");
+    cache.FindOrCreateRoot("Foo");
+
+    cache.Close();
+    }
+
 TEST_F(DataSourceCacheTests, GetEnvironment_CreatedWithEmptyEnvironment_Empty)
     {
     DataSourceCache cache;
@@ -377,6 +460,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaChangeListenerRegisteredAndSche
 
     EXPECT_CALL(listener, OnSchemaChanged()).Times(2);
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
+    cache->UnRegisterSchemaChangeListener(&listener);
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListenerOnceTransactionIsStarted)
@@ -412,6 +496,9 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListener
     Mock::VerifyAndClear(&listener2);
 
     ASSERT_EQ(BE_SQLITE_OK, sp2.Commit());
+
+    cache1.UnRegisterSchemaChangeListener(&listener1);
+    cache2.UnRegisterSchemaChangeListener(&listener2);
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_DefaultUsedSchemasPassed_Success)

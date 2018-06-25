@@ -63,11 +63,29 @@ m_fileDownloadManager(new FileDownloadManager(*this))
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachingDataSource::~CachingDataSource()
     {
+    Close();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CachingDataSource::Close()
+    {
     // Prevent from hanging when destroyed after failed open/create
-    if (m_isOpen)
+    if (!m_isOpen)
+        return;
+
+    m_isOpen = false;
+
+    CancelAllTasks()->Wait();
+
+    m_cacheAccessThread->ExecuteAsync([=]
         {
-        CancelAllTasks()->Wait();
-        }
+        auto txn = StartCacheTransaction();
+        IDataSourceCache& cache = txn.GetCache();
+        txn.Rollback();
+        cache.Close();
+        })->Wait();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -815,7 +833,7 @@ ICancellationTokenPtr ct
             txn.Commit();
             result->SetSuccess({cachedData, returningDataOrigin});
             return isObjectNotFound;
-            })->Then(m_cacheAccessThread, [=](bool isObjectNotFound)
+            })->Then(m_cacheAccessThread, [=] (bool isObjectNotFound)
                 {
                 if (isObjectNotFound)
                     {
@@ -844,7 +862,7 @@ ICancellationTokenPtr ct
     {
     ct = CreateCancellationToken(ct);
 
-    return GetObjectInternal(objectId, retrieveOptions.GetOrigin(), format, ct)->Then<CachingDataSource::ObjectsResult>([=](CachingDataSource::ObjectsResult& result)
+    return GetObjectInternal(objectId, retrieveOptions.GetOrigin(), format, ct)->Then<CachingDataSource::ObjectsResult>([=] (CachingDataSource::ObjectsResult& result)
         {
         if (!result.IsSuccess())
             return result;
@@ -886,7 +904,7 @@ ICancellationTokenPtr ct
             }
 
         GetObjectInternal(objectId, DataOrigin::RemoteData, format, ct)
-            ->Then(m_cacheAccessThread, [=](CachingDataSource::ObjectsResult& result)
+            ->Then(m_cacheAccessThread, [=] (CachingDataSource::ObjectsResult& result)
             {
             if (!result.IsSuccess() && result.GetError().GetWSError().IsInstanceNotAvailableError())
                 finalBackgroundSyncResult->SetSuccess(SyncStatus::Synced);
@@ -1064,7 +1082,7 @@ ICancellationTokenPtr ct
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                              
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CachingDataSource::CacheObjectsInBackgroundIfNeeded
 (
