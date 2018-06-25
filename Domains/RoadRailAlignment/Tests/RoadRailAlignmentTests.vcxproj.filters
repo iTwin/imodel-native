@@ -63,4 +63,9 @@
       <Filter>Build Files</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\RoadRailAlignment.PartFile.xml">
+      <Filter>Build Files</Filter>
+    </Xml>
+  </ItemGroup>
 </Project>

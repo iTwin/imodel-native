@@ -560,6 +560,10 @@ HorizontalAlignmentsCPtr HorizontalAlignments::Insert(AlignmentModelCR model)
     createParams.m_code = CreateCode(*dynamic_cast<SpatialLocationPartitionCP>(model.GetModeledElement().get()), "Horizontal Alignments");
 
     HorizontalAlignmentsPtr newPtr(new HorizontalAlignments(createParams));
+    IBriefcaseManager::Request req;
+    auto stat = newPtr->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
+    if (RepositoryStatus::Success == stat)
+        Dgn::IBriefcaseManager::Response response = newPtr->GetDgnDb().BriefcaseManager().Acquire(req);
     return model.GetDgnDb().Elements().Insert<HorizontalAlignments>(*newPtr);
     }
 
