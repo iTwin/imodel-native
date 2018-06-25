@@ -263,24 +263,28 @@ public:
     //! <li> A DgnDb can have an expiration date. See Db::IsExpired
     //! <li> The ECSchemas supplied by registered DgnDomain-s are validated against the corresponding ones in the DgnDb, and 
     //! an appropriate error status is returned in the case of a failure. See table below for the various ECSchema compatibility errors. 
-    //! If the error status is BE_SQLITE_ERROR_SchemaUpgradeRequired, it may be possible to upgrade (or import) the schemas in the DgnDb. 
-    //! This is done by opening the DgnDb with setting the option request upgrade of domain schemas (See @ref DgnDb::OpenParams). 
+    //! If the error status is BE_SQLITE_ERROR_SchemaUpgradeRequired, it may be possible to 
+    //! upgrade (or import) the schemas in the DgnDb. This is done by opening the DgnDb with setting the option request upgrade of 
+    //! domain schemas (See @ref DgnDb::OpenParams). These domain schema validation errors can also be avoided by restricting the 
+    //! specific checks made to validate the domain schemas by by setting the appopriate @ref SchemaUpgradeOptions::DomainUpgradeOptions
+    //! in @ref DgnDb::OpenParams.
     //! <pre>
     //! Sample schema compatibility validation results for an ECSchema in the BIM with Version 2.2.2 (Read.Write.Minor)
-    //! ----------------------------------------------------------------------------------------------
-    //! Application   |  Validation result                    | Validation result
-    //! Version       |  (Readonly)                           | (ReadWrite)
-    //! ----------------------------------------------------------------------------------------------
-    //! 2.2.2 (same)  | BE_SQLITE_OK                          | BE_SQLITE_OK
-    //! ----------------------------------------------------------------------------------------------
-    //! 1.2.2 (older) | BE_SQLITE_ERROR_SchemaTooNew          | BE_SQLITE_ERROR_SchemaTooNew
-    //! 2.1.2 (older) | BE_SQLITE_OK                          | BE_SQLITE_ERROR_SchemaTooNew
-    //! 2.2.1 (older) | BE_SQLITE_OK                          | BE_SQLITE_OK
-    //! ----------------------------------------------------------------------------------------------
-    //! 3.2.2 (newer) | BE_SQLITE_ERROR_SchemaTooOld          | BE_SQLITE_ERROR_SchemaTooOld
-    //! 2.3.2 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired | BE_SQLITE_ERROR_SchemaUpgradeRequired
-    //! 2.2.3 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired | BE_SQLITE_ERROR_SchemaUpgradeRequired
-    //! ----------------------------------------------------------------------------------------------
+    //! -------------------------------------------------------------------------------------------------
+    //! Application   |  Validation result                       | Validation result
+    //! Version       |  (Readonly)                              | (ReadWrite)
+    //! -------------------------------------------------------------------------------------------------
+    //! 2.2.2 (same)  | BE_SQLITE_OK                             | BE_SQLITE_OK
+    //! -------------------------------------------------------------------------------------------------
+    //! 1.2.2 (older) | BE_SQLITE_ERROR_SchemaTooNew             | BE_SQLITE_ERROR_SchemaTooNew
+    //! 2.1.2 (older) | BE_SQLITE_OK                             | BE_SQLITE_ERROR_SchemaTooNew
+    //! 2.2.1 (older) | BE_SQLITE_OK                             | BE_SQLITE_OK
+    //! -------------------------------------------------------------------------------------------------
+    //! 3.2.2 (newer) | BE_SQLITE_ERROR_SchemaTooOld             | BE_SQLITE_ERROR_SchemaTooOld
+    //! 2.3.2 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired    | BE_SQLITE_ERROR_SchemaUpgradeRequired
+    //! 2.2.3 (newer) | BE_SQLITE_OK by default, or BE_SQLITE_ERROR_SchemaUpgradeRecommended if 
+    //!               | SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades is passed in
+    //! -------------------------------------------------------------------------------------------------
     //! </pre>
     //! <li> If the domain schemas are setup to be upgraded, a schema lock is first obtained before the upgrade. 
     //! Note that any previously committed local changes that haven't been pushed up to the server 
