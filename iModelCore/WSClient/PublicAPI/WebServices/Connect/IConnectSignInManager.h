@@ -31,6 +31,8 @@ struct IConnectSignInManager : IConnectAuthenticationProvider
             virtual ~IListener() {};
             //! Will be called when token expiration is detected
             virtual void _OnUserTokenExpired() {};
+            //! Will be called when token expiration is detected
+            virtual void _OnUserTokenRenewFailed(int64_t tokenExpireTimestamp) {};
             //! Will be called when user change is detected
             virtual void _OnUserChanged() {};
             //! Will be called after finalizing user sign-in
@@ -66,6 +68,7 @@ struct IConnectSignInManager : IConnectAuthenticationProvider
 
     protected:
         void OnUserTokenExpired() const;
+        void OnUserTokenRenewFailed(int64_t expireTime) const;
         void OnUserChanged() const;
         void OnUserSignedIn() const;
         void OnUserSignedOut() const;
