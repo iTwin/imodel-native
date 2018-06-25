@@ -24,14 +24,14 @@ struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_th
         IImsClientPtr m_client;
         ITokenStorePtr m_store;
         std::function<void()> m_tokenExpiredHandler;
-        std::function<void(int64_t)> m_tokenRenewFailedHandler;
+        std::function<void(bool, int64_t)> m_tokenRenewHandler;
         UniqueTaskHolder<SamlTokenResult> m_tokenRetrieveTask;
 
         uint32_t m_tokenLifetime;
         uint32_t m_tokenRefreshRate;
 
     private:
-        IdentityTokenProvider(IImsClientPtr client, ITokenStorePtr store, std::function<void()> tokenExpiredHandler, std::function<void(int64_t)> tokenRenewFailedHandler);
+        IdentityTokenProvider(IImsClientPtr client, ITokenStorePtr store, std::function<void()> tokenExpiredHandler, std::function<void(bool, int64_t)> tokenRenewHandler);
         bool ShouldRenewToken(DateTimeCR tokenSetTime);
         AsyncTaskPtr<SamlTokenResult> RenewToken();
         void RenewTokenIfNeeded();
@@ -43,7 +43,7 @@ struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_th
             IImsClientPtr client,
             ITokenStorePtr store,
             std::function<void()> tokenExpiredHandler = nullptr,
-            std::function<void(int64_t)> tokenRenewFailedHandler = nullptr
+            std::function<void(bool, int64_t)> tokenRenewHandler = nullptr
             );
 
         //! Set new token lifetime and refresh rate in minutes
