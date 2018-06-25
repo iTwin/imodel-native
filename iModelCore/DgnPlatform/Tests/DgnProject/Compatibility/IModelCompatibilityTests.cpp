@@ -304,7 +304,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32KindOfQuantities)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IModelCompatibilityTestFixture, EC32Units)
     {
-    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32UNITS))
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32UNITS))
         {
         ProfileState::Age originalFileAge = testFile.GetAge();
 
