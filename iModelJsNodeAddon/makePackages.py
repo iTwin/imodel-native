@@ -32,7 +32,7 @@ def publishPackage(packagedir, doPublish, tag):
         exit(1);
 
 # Replace ${macros} with values in specified file
-def setMacros(packagefile, NODE_VERSION_CODE = None, NODE_OS = None, NODE_CPU = None, PACKAGE_VERSION = None, COMPATIBLE_API_PACKAGE_VERSIONS = None, DECL_FILE_NAME = None, NODE_ENGINES = None):
+def setMacros(packagefile, NODE_VERSION_CODE = None, NODE_OS = None, NODE_CPU = None, PACKAGE_VERSION = None, COMPATIBLE_API_PACKAGE_VERSIONS = None, NODE_ENGINES = None):
     str = ''
     with open(packagefile, 'r') as pf:
         str = pf.read()
@@ -50,8 +50,6 @@ def setMacros(packagefile, NODE_VERSION_CODE = None, NODE_OS = None, NODE_CPU = 
             str = str.replace(r'${PACKAGE_VERSION}', PACKAGE_VERSION.lower())
         if (COMPATIBLE_API_PACKAGE_VERSIONS):
             str = str.replace(r'${COMPATIBLE_API_PACKAGE_VERSIONS}', COMPATIBLE_API_PACKAGE_VERSIONS.lower())
-        if (DECL_FILE_NAME):
-            str = str.replace(r'${DECL_FILE_NAME}', DECL_FILE_NAME)
         pf.write(str)
 
 # Compute the range of versions of addon apis that are compatible with this addon.
@@ -141,11 +139,10 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
 
     os.makedirs(outputpackagedir);
 
-    declFileName = 'imodeljs-native-platform-api.d.ts'
     packageTemplateFileName = 'package.json.template'
 
     # Copy some files into place without modifying them.
-    filesToCopy = [declFileName, 'installImodelJsNative.js', 'formatPackageName.js', 'loadNativePlatform.js', 'README.md']
+    filesToCopy = ['installImodelJsNative.js', 'formatPackageName.js', 'loadNativePlatform.js', 'README.md']
 
     for fileToCopy in filesToCopy:
         shutil.copyfile(os.path.join(apiSourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
@@ -154,7 +151,7 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
     dstpackagefile = os.path.join(outputpackagedir, 'package.json')
     shutil.copyfile(os.path.join(apiSourceDir, packageTemplateFileName), dstpackagefile);
 
-    setMacros(dstpackagefile, PACKAGE_VERSION = packageVersion, DECL_FILE_NAME = declFileName)
+    setMacros(dstpackagefile, PACKAGE_VERSION = packageVersion)
 
     return outputpackagedir;
 
