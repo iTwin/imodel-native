@@ -20,8 +20,9 @@
         <SubPart PartName="RunGtest" PartFile="geomlibs" Repository="GeomLibs"/>
         <SubPart PartName="RunGtest" PartFile="Units" Repository="Units"/>
 
-        <!-- These are built, but not run, due to time. -->
+        <!-- These are built, but not run. -->
         <SubProduct ProductName="GeoCoord-Gtest" PartFile="GeoCoord" Repository="GeoCoord"/>
+        <SubProduct ProductName="BeHttp-IntegrationGtest" PartFile="BeHttp" Repository="BeHttp"/>
     </Part>
 
     <Part Name="RunUnitJUnit" OnlyPlatforms="android*" Sequential="true" DeferType="RunUnitTests"
