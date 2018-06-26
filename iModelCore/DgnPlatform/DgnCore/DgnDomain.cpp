@@ -436,8 +436,6 @@ SchemaStatus DgnDomains::UpgradeSchemas()
     for (auto& schema : schemasToImport)
         importSchemas.push_back(schema.get());
 
-    // unused - SchemaUpgradeOptions::DomainUpgradeOptions allowedUpgrades = m_schemaUpgradeOptions.GetDomainUpgradeOptions();
-    
     if (m_dgndb.IsBriefcase())
         m_dgndb.Txns().EnableTracking(true); // Ensure all schema changes are captured in the txn table for creating revisions
 
