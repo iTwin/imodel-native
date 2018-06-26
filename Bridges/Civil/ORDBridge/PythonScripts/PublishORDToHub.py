@@ -5,6 +5,7 @@
 
 from Tkinter import *
 import tkFileDialog
+import ttk
 
 
 class MainWindow:
@@ -44,6 +45,50 @@ class MainWindow:
             .grid(row=3, column=1, padx=5, pady=5, sticky=NSEW)
         self.__input_file_browse_button = Button(self.__root, text='...', command=self.__input_file_browse_callback)\
             .grid(row=3, column=2, padx=5, pady=5)
+
+        self.__server_project_label = Label(self.__root, text='CONNECT Project:')\
+            .grid(row=4, column=0, padx=5, pady=5, sticky=W)
+        self.__server_project_entry_var = StringVar()
+        self.__server_project_entry = Entry(self.__root, textvariable=self.__server_project_entry_var)\
+            .grid(row=4, column=1, columnspan=2, padx=5, pady=5, sticky=NSEW)
+
+        self.__server_repo_label = Label(self.__root, text='CONNECT iModel Name:')\
+            .grid(row=5, column=0, padx=5, pady=5, sticky=W)
+        self.__server_repo_entry_var = StringVar()
+        self.__server_repo_entry = Entry(self.__root, textvariable=self.__server_repo_entry_var)\
+            .grid(row=5, column=1, columnspan=2, padx=5, pady=5, sticky=NSEW)
+
+        self.__server_user_label = Label(self.__root, text='User Name:') \
+            .grid(row=6, column=0, padx=5, pady=5, sticky=W)
+        self.__server_user_entry_var = StringVar()
+        self.__server_user_entry = Entry(self.__root, textvariable=self.__server_user_entry_var) \
+            .grid(row=6, column=1, columnspan=2, padx=5, pady=5, sticky=NSEW)
+
+        self.__server_password_label = Label(self.__root, text='Password:') \
+            .grid(row=7, column=0, padx=5, pady=5, sticky=W)
+        self.__server_password_entry_var = StringVar()
+        self.__server_password_entry = Entry(self.__root, textvariable=self.__server_password_entry_var, show='*') \
+            .grid(row=7, column=1, columnspan=2, padx=5, pady=5, sticky=NSEW)
+
+        self.__server_env_label = Label(self.__root, text='Server Environment:')\
+            .grid(row=8, column=0, padx=5, pady=5, sticky=W)
+        self.__server_env_combo_var = StringVar()
+        self.__server_env_combo = ttk.Combobox(self.__root, textvariable=self.__server_env_combo_var,
+                                               state='readonly', values=['QA', 'PROD'])\
+            .grid(row=8, column=1, columnspan=2, padx=5, pady=5, sticky=NSEW)
+        self.__server_env_combo_var.set('QA')
+
+        self.__create_repo_checkbutton_var = IntVar()
+        self.__create_repo_checkbutton = Checkbutton(self.__root, text='Create Repository (if necessary)?',
+                                                     variable=self.__create_repo_checkbutton_var)\
+            .grid(row=9, column=0, columnspan=3, padx=5, pady=5, sticky=W)
+        self.__create_repo_checkbutton_var.set(1)
+
+        self.__skip_assignment_check_checkbutton_var = IntVar()
+        self.__skip_assignment_check_checkbutton = Checkbutton(self.__root, text='Skip Assignment Check?',
+                                                               variable=self.__skip_assignment_check_checkbutton_var)\
+            .grid(row=10, column=0, columnspan=3, padx=5, pady=5, sticky=W)
+        self.__skip_assignment_check_checkbutton_var.set(1)
 
         self.__root.columnconfigure(1, weight=1)
 
