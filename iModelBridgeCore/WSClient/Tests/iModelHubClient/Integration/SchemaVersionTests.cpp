@@ -55,7 +55,7 @@ struct SchemaVersionTests : public iModelTestsBase
     +---------------+---------------+---------------+---------------+---------------+------*/
     void AcquireAndOpenBriefcase(BriefcasePtr& briefcase, iModelInfoPtr info)
         {
-        DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly));
+        DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade));
         BriefcaseInfoResult acquireResult = iModelHubHelpers::AcquireBriefcase(s_client, info);
         ASSERT_SUCCESS(acquireResult);
 

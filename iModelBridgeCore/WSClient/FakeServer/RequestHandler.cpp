@@ -296,7 +296,7 @@ Response RequestHandler::CreateiModelInstance(Request req)
             st.Prepare(m_db, "SELECT Name FROM Instances WHERE Name = ?");
             st.BindText(1, name, Statement::MakeCopy::No);
             auto dbResult = st.Step();
-            auto text = st.GetValueText(0);
+            //auto text = st.GetValueText(0);
             if (DbResult::BE_SQLITE_DONE != dbResult)
                 return true;
             }

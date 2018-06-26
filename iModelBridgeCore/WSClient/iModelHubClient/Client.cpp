@@ -782,7 +782,7 @@ DgnDbPtr Client::OpenWithSchemaUpgradeInternal(BeSQLite::DbResult* status, BeFil
 //---------------------------------------------------------------------------------------
 DgnDbPtr Client::OpenWithSchemaUpgrade(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, RevisionProcessOption processOption)
     {
-    return OpenWithSchemaUpgradeInternal(status, filePath, changeSets, SchemaUpgradeOptions::DomainUpgradeOptions::ValidateOnly, processOption);
+    return OpenWithSchemaUpgradeInternal(status, filePath, changeSets, SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades, processOption);
     }
 
 //---------------------------------------------------------------------------------------
@@ -812,7 +812,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         }
 
     BeSQLite::DbResult status;
-    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)));
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck)));
     if (BeSQLite::DbResult::BE_SQLITE_OK != status)
         {
         StatusResult result = StatusResult::Error(Error(db, status));
@@ -873,7 +873,7 @@ StatusResult Client::MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets
         db->CloseDb();
 
         BeSQLite::DbResult status;
-        db = OpenWithSchemaUpgradeInternal(&status, filePath, changeSets, SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade);
+        db = OpenWithSchemaUpgradeInternal(&status, filePath, changeSets, SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
         if (BeSQLite::DbResult::BE_SQLITE_OK != status)
             {
             StatusResult result = StatusResult::Error(Error(db, status));
@@ -1317,7 +1317,7 @@ ICancellationTokenPtr cancellationToken
 
     BeSQLite::DbResult status;
     Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, 
-                                                                                       SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade));
+                                                                                       SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck));
     if (BeSQLite::DbResult::BE_SQLITE_OK != status)
         {
         StatusResult result = StatusResult::Error(Error(db, status));
