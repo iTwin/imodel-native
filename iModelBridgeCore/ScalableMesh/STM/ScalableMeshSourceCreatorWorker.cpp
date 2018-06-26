@@ -113,12 +113,16 @@ IScalableMeshSourceCreatorWorker::~IScalableMeshSourceCreatorWorker()
 
 IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName)
     : IScalableMeshSourceCreator::Impl(scmFileName) 
-    {    
+    {        
+    //Setting meshing and filtering to thread lead to crash/unexpected behavior.
+    SetThreadingOptions(false, true, false);    
     }
 
 IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr)
     : IScalableMeshSourceCreator::Impl(scmPtr)
     {      
+    //Setting meshing and filtering to thread lead to crash/unexpected behavior.
+    SetThreadingOptions(false, true, false);
     }
 
 IScalableMeshSourceCreatorWorker::Impl::~Impl()

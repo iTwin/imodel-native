@@ -673,6 +673,13 @@ void IScalableMeshCreator::Impl::ConfigureMesherFilter(ISMPointIndexFilter<Point
 
 }
 
+void IScalableMeshCreator::Impl::SetThreadingOptions(bool useThreadsInMeshing, bool useThreadsInStitching, bool useThreadsInFiltering)
+    {    
+    s_useThreadsInMeshing = useThreadsInMeshing;
+    s_useThreadsInStitching = useThreadsInStitching;
+    s_useThreadsInFiltering = useThreadsInFiltering;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Raymond.Gauthier   12/2011

@@ -90,6 +90,7 @@ typedef DPoint3d                          PointType;
 typedef DRange3d PointIndexExtentType;
 typedef SMMeshIndex <PointType, PointIndexExtentType> MeshIndexType;
 
+
 BENTLEY_SM_EXPORT void RegisterDelayedImporters();
 inline bool fileExist(const WChar* fileName)
     {
@@ -193,6 +194,8 @@ struct IScalableMeshCreator::Impl
     protected:
 
         BENTLEY_SM_EXPORT virtual void ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d);
+
+        BENTLEY_SM_EXPORT void SetThreadingOptions(bool useThreadsInMeshing, bool useThreadsInStitching, bool useThreadsInFiltering);
           
     public :  
 
