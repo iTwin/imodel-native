@@ -432,8 +432,11 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
     BeTest::SetFailOnAssert(true);
 
     SchemaVersionTestDomain::GetDomain().SetVersion("02.03.02");
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades)));
+    EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRecommended);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
-    EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    CloseDb();
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)));
@@ -447,6 +450,11 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
     RestoreTestFile();
     SchemaVersionTestDomain::GetDomain().SetVersion("02.02.03");
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades)));
+    EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRecommended);
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    CloseDb();
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades)));
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRecommended);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
