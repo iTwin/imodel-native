@@ -1,0 +1,81 @@
+# --------------------------------------------------------------------------------------
+#      $Source: ORDBridge/PythonScripts/PublishORDToHub.py $
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#--------------------------------------------------------------------------------------
+
+from Tkinter import *
+import tkFileDialog
+
+
+class MainWindow:
+    def __init__(self, root):
+        self.__root = root
+        self.__initialize_controls()
+
+
+    def __initialize_controls(self):
+        self.__fwk_exe_label = Label(self.__root, text='iModelBridgeFwk.exe Path:')\
+            .grid(row=0, column=0, padx=5, pady=5, sticky=W)
+        self.__fwk_exe_entry_var = StringVar()
+        self.__fwk_exe_entry = Entry(self.__root, textvariable=self.__fwk_exe_entry_var)\
+            .grid(row=0, column=1, padx=5, pady=5, sticky=NSEW)
+        self.__fwk_exe_browse_button = Button(self.__root, text='...', command=self.__fwk_exe_browse_callback)\
+            .grid(row=0, column=2, padx=5, pady=5)
+
+        self.__bridge_lib_label = Label(self.__root, text='Bridge Library Path:')\
+            .grid(row=1, column=0, padx=5, pady=5, sticky=W)
+        self.__bridge_lib_entry_var = StringVar()
+        self.__bridge_lib_entry = Entry(self.__root, textvariable=self.__bridge_lib_entry_var)\
+            .grid(row=1, column=1, padx=5, pady=5, sticky=NSEW)
+        self.__bridge_lib_browse_button = Button(self.__root, text='...', command=self.__bridge_lib_browse_callback)\
+            .grid(row=1, column=2, padx=5, pady=5)
+
+        self.__staging_dir_label = Label(self.__root, text='Staging Directory:')\
+            .grid(row=2, column=0, padx=5, pady=5, sticky=W)
+        self.__staging_dir_entry_var = StringVar()
+        self.__staging_dir_entry = Entry(self.__root, textvariable=self.__staging_dir_entry_var)\
+            .grid(row=2, column=1, padx=5, pady=5, sticky=NSEW)
+        self.__staging_dir_browse_button = Button(self.__root, text='...', command=self.__staging_dir_browse_callback)\
+            .grid(row=2, column=2, padx=5, pady=5)
+
+        self.__input_file_label = Label(self.__root, text='Input File:').grid(row=3, column=0, padx=5, pady=5, sticky=W)
+        self.__input_file_entry_var = StringVar()
+        self.__input_file_entry = Entry(self.__root, textvariable=self.__input_file_entry_var)\
+            .grid(row=3, column=1, padx=5, pady=5, sticky=NSEW)
+        self.__input_file_browse_button = Button(self.__root, text='...', command=self.__input_file_browse_callback)\
+            .grid(row=3, column=2, padx=5, pady=5)
+
+        self.__root.columnconfigure(1, weight=1)
+
+
+    def __fwk_exe_browse_callback(self):
+        path = tkFileDialog.askopenfilename(initialdir='.', title='Find iModelBridgeFwk.exe...',
+                                     filetypes=[('Executable Files', '*.exe')])
+        if path:
+            self.__fwk_exe_entry_var.set(path)
+
+
+    def __bridge_lib_browse_callback(self):
+        path = tkFileDialog.askopenfilename(initialdir='.', title='Find bridge library...',
+                                            filetypes=[('Library Files', '*.dll')])
+        if path:
+            self.__bridge_lib_entry_var.set(path)
+
+
+    def __staging_dir_browse_callback(self):
+        path = tkFileDialog.askdirectory(initialdir='.', title='Select staging directory...')
+        if path:
+            self.__staging_dir_entry_var.set(path)
+
+
+    def __input_file_browse_callback(self):
+        path = tkFileDialog.askopenfilename(initialdir='.', title='Find input file...',
+                                            filetypes=[('OpenRoads Designer Files', '*.dgn')])
+        if (path):
+            self.__input_file_entry_var.set(path)
+
+
+if __name__ == '__main__':
+    root = Tk()
+    main_window = MainWindow(root)
+    root.mainloop()
