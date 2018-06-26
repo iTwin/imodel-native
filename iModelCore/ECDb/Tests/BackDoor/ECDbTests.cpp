@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/BackDoor/ECDbTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/ECDbTests.h"
@@ -234,6 +234,57 @@ void PrintTo(DbResult r, std::ostream* os) { *os << Db::InterpretDbResult(r); }
 // @bsimethod                                    Krischan.Eberle                  10/17
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(BeBriefcaseBasedId id, std::ostream* os) { PrintTo((BeInt64Id) id, os); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(ProfileState state, std::ostream* os) 
+    {
+    if (state.IsError())
+        {
+        *os << "ProfileState(Error)";
+        return;
+        }
+
+    *os << "ProfileState(";
+    switch (state.GetAge())
+        {
+            case ProfileState::Age::Older:
+                *os << "Age::Older";
+                break;
+            case ProfileState::Age::UpToDate:
+                *os << "Age::UpToDate";
+                break;
+            case ProfileState::Age::Newer:
+                *os << "Age::Newer";
+                break;
+            default:
+                *os << "Invalid ProfileState::Age";
+                return;
+        }
+
+    *os << ",";
+    switch (state.GetCanOpen())
+        {
+            case ProfileState::CanOpen::No:
+                *os << "CanOpen::No";
+                break;
+            case ProfileState::CanOpen::Readonly:
+                *os << "CanOpen::Readonly";
+                break;
+            case ProfileState::CanOpen::Readwrite:
+                *os << "CanOpen::Readwrite";
+                break;
+            default:
+                *os << "Invalid ProfileState::CanOpen";
+                return;
+        }
+
+    if (state.GetAge() == ProfileState::Age::Older)
+        *os << ",Upgradable: " << state.IsUpgradable() ? "yes" : "no";
+
+    *os << ")";
+    }
 
 END_BENTLEY_SQLITE_NAMESPACE
 
