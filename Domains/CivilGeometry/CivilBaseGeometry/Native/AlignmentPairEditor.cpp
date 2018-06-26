@@ -2089,13 +2089,16 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
                 {
                 ICurvePrimitivePtr parent = vt[i]->GetPartialCurveDetailCP()->parentCurve;
                 if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve != parent->GetCurvePrimitiveType())
-                    isError = true;
-
-                BeAssert(!"&&AG NEEDSWORK PARTIAL CURVES");
-                AlignmentPVI pvi;
-                if (LoadVerticalParabolaData(pvi, *vt[i]))
                     {
-                    pvi.SetProvenance(*AlignmentPVI::Provenance::Create(*vt[i]));
+                    CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::GetPVIs - unexpected primitive type for partial curve");
+                    isError = true;
+                    break;
+                    }
+
+                AlignmentPVI pvi;
+                if (LoadVerticalParabolaData(pvi, *parent))
+                    {
+                    pvi.SetProvenance(*AlignmentPVI::Provenance::Create(*parent));
                     pvis.push_back(pvi);
                     }
                 else
