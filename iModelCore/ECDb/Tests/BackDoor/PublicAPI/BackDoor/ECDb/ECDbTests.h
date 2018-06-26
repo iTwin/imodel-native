@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/ECDbTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -109,6 +109,7 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 
 void PrintTo(DbResult, std::ostream*);
 void PrintTo(BeBriefcaseBasedId, std::ostream*);
+void PrintTo(ProfileState, std::ostream*);
 
 END_BENTLEY_SQLITE_NAMESPACE
 

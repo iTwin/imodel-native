@@ -39,7 +39,7 @@ TEST_F(ECDbTestFixture, Profile)
     EXPECT_FALSE(db.TableExists(PROFILE_TABLE)) << "BeSQLite file is not expected to contain tables of the EC profile";
 
     Utf8String profileVersion;
-    EXPECT_EQ(BE_SQLITE_ERROR, db.QueryProperty(profileVersion, PROFILEVERSION_PROPSPEC)) << L"BeSQLite file is not expected to contain the ECDb profile version.";
+    EXPECT_EQ(BE_SQLITE_ERROR, db.QueryProperty(profileVersion, PROFILEVERSION_PROPSPEC)) << "BeSQLite file is not expected to contain the ECDb profile version.";
 
     size_t sequenceIndex = 0;
     ASSERT_FALSE(db.GetBLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
@@ -82,6 +82,26 @@ TEST_F(ECDbTestFixture, ProfileSchemas)
     ASSERT_TRUE(fileInfoSchema != nullptr);
 
     ASSERT_FALSE(fileInfoSchema->IsSystemSchema());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, GetECDbProfileVersion)
+    {
+    //Test GetECDbProfileVersion on freshly created file
+    BeFileName ecdbPath = BuildECDbPath("empty.ecdb");
+    if (ecdbPath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, ecdbPath.BeDeleteFile());
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateNewDb(ecdbPath));
+    EXPECT_FALSE(m_ecdb.GetECDbProfileVersion().IsEmpty()) << "Profile version is expected to be set in the ECDb handle during open";
+    EXPECT_EQ(ECDb::CurrentECDbProfileVersion(), m_ecdb.GetECDbProfileVersion()) << "Profile version is expected to be set in the ECDb handle during open";
+
+    //now test that version is set on open
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    EXPECT_FALSE(m_ecdb.GetECDbProfileVersion().IsEmpty()) << "Profile version is expected to be set in the ECDb handle during open";
+    EXPECT_EQ(ECDb::CurrentECDbProfileVersion(), m_ecdb.GetECDbProfileVersion()) << "Profile version is expected to be set in the ECDb handle during open";
     }
 
 //---------------------------------------------------------------------------------------
@@ -163,7 +183,6 @@ TEST_F(ECDbTestFixture, ProfileCreation)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
     std::vector<std::pair<ProfileVersion, ProfileState>> expectedProfileStates {
             {ProfileVersion(3,6,99,0), ProfileState::Older(ProfileState::CanOpen::No, false)},
             {ProfileVersion(3,7,0,0), ProfileState::Older(ProfileState::CanOpen::No, false)},
@@ -186,24 +205,10 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
 
     for (std::pair<ProfileVersion, ProfileState> const& testVersion : expectedProfileStates)
         {
-        Utf8String schemaVersionJson = testVersion.first.ToJson();
-        Statement stmt;
-        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "UPDATE be_Prop SET StrData=? WHERE Namespace='ec_Db' AND Name='SchemaVersion'"));
-        ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, schemaVersionJson, Statement::MakeCopy::Yes));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << schemaVersionJson.c_str();
-        ASSERT_EQ(1, m_ecdb.GetModifiedRowCount()) << schemaVersionJson.c_str();
-        stmt.Reset();
-        stmt.ClearBindings();
-
+        ProfileVersion const& testProfileVersion = testVersion.first;
         ProfileState const& expectedProfileState = testVersion.second;
-        ProfileState actualProfileState = m_ecdb.CheckProfileVersion();
-        EXPECT_EQ(expectedProfileState, actualProfileState) << schemaVersionJson.c_str();
+        EXPECT_EQ(expectedProfileState, ECDb::CheckProfileVersion(ECDb::CurrentECDbProfileVersion(), testProfileVersion, ECDb::MinimumUpgradableECDbProfileVersion(), "ECDb")) << testVersion.first.ToJson();
         }
-
-    m_ecdb.AbandonChanges();
-
-    BeFileName filePath(m_ecdb.GetDbFileName());
-    CloseECDb();
 
     std::vector<ProfileVersion> expectedTooOld = {ProfileVersion(3,6,99,0), ProfileVersion(3,7,0,0),ProfileVersion(3,7,0,1),ProfileVersion(3,7,3,1),ProfileVersion(3,7,3,2),ProfileVersion(3,7,4,3),ProfileVersion(3,100,0,0), ProfileVersion(3,100,0,1), ProfileVersion(3,100,1,1)};
     std::vector<ProfileVersion> expectedOlderReadwriteAndUpgradable = {ProfileVersion(4,0,0,0)};
@@ -225,6 +230,10 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
         ASSERT_EQ(1, db.GetModifiedRowCount()) << versionStr;
         ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges()) << versionStr;
         };
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
 
     for (ProfileVersion const& testVersion : expectedTooOld)
         {

@@ -125,7 +125,7 @@ void ECDb::_OnDbChangedByOtherConnection()
 ProfileState ECDb::_CheckProfileVersion() const 
     { 
     ProfileState besqliteState = Db::_CheckProfileVersion();
-    return besqliteState.Merge(m_pimpl->CheckProfileVersion()); 
+    return besqliteState.Merge(m_pimpl->GetProfileManager().CheckProfileVersion()); 
     }
 
 //--------------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ DbResult ECDb::_UpgradeProfile()
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return m_pimpl->UpgradeProfile();
+    return m_pimpl->GetProfileManager().UpgradeProfile();
     }
 
 //--------------------------------------------------------------------------------------
@@ -264,7 +264,7 @@ void ECDb::ClearECDbCache() const { m_pimpl->ClearECDbCache(); }
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
-ProfileVersion const& ECDb::GetECDbProfileVersion() const { return m_pimpl->GetProfileVersion(); }
+ProfileVersion const& ECDb::GetECDbProfileVersion() const { return m_pimpl->GetProfileManager().GetProfileVersion(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012

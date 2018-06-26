@@ -750,18 +750,9 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     //        If unknown Pers. or Pres.: use "DefaultRealU"
     //    All
     //        If empty: use "DefaultReal" (Note: Need this to not break current API)
-    bool fileUsesEC32Koqs = false;
-    {
-    ProfileVersion fileProfileVersion(0, 0, 0, 0);
-    if (BE_SQLITE_OK != ProfileManager::ReadProfileVersion(fileProfileVersion, GetECDb()))
-        {
-        BeAssert(false && "Could not read profile version of the file");
-        return ERROR;
-        }
+
     // 4.0.0.1 is the last EC3.1 profile version. 4.0.0.2 includes EC3.2 units
-    if (fileProfileVersion > ProfileVersion(4, 0, 0, 1))
-        fileUsesEC32Koqs = true;
-    }
+    const bool fileUsesEC32Koqs = GetECDb().GetECDbProfileVersion() > ProfileVersion(4, 0, 0, 1);
 
     Formatting::FormatUnitSet persistenceFus;
     bool hasDummyUnit = false; // unused

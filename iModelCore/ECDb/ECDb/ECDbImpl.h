@@ -71,7 +71,7 @@ private:
     static bool s_isInitalized;
     mutable BeMutex m_mutex;
     ECDbR m_ecdb;
-    mutable ProfileVersion m_profileVersion = ProfileVersion(0, 0, 0, 0);
+    ProfileManager m_profileManager;
     std::unique_ptr<SchemaManager> m_schemaManager;
     ChangeManager m_changeManager;
     SettingsManager m_settingsManager;
@@ -85,7 +85,7 @@ private:
     IssueReporter m_issueReporter;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
-    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_changeManager(ecdb), m_sqliteStatementCache(50, &m_mutex), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
+    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_profileManager(ecdb), m_changeManager(ecdb), m_sqliteStatementCache(50, &m_mutex), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
         {
         m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
         }
@@ -94,9 +94,7 @@ private:
     Impl(Impl const&) = delete;
     Impl& operator=(Impl const&) = delete;
 
-    ProfileState CheckProfileVersion() const { return ProfileManager::CheckProfileVersion(m_profileVersion, m_ecdb); }
-    DbResult UpgradeProfile() const { return ProfileManager::UpgradeProfile(m_profileVersion, m_ecdb); }
-    ProfileVersion const& GetProfileVersion() const { return m_profileVersion; }
+    ProfileManager const& GetProfileManager() const { return m_profileManager; }
 
     SchemaManager const& Schemas() const { return *m_schemaManager; }
     ECN::IECSchemaLocaterR GetSchemaLocater() const { return *m_schemaManager; }

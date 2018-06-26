@@ -33,7 +33,7 @@ DbResult ECDb::Impl::OnDbCreated() const
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return ProfileManager::CreateProfile(m_profileVersion, m_ecdb);
+    return m_profileManager.CreateProfile();
     }
 
 

@@ -1869,6 +1869,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
     //bump up profile version (which is expected if the file format changes)
     ASSERT_EQ(BE_SQLITE_OK, IncrementProfileVersion(m_ecdb));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
     }
 
     {
