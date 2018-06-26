@@ -2399,6 +2399,22 @@ BentleyStatus PropertyDataReader::_Read(Json::Value& propData)
         PropertySpec prop = DgnViewProperty::DefaultView();
         GetDgnDb()->SaveProperty(prop, &mappedView, sizeof(mappedView));
         }
+
+    if (propData.isMember("GCS"))
+        {
+        bvector<Byte> blob;
+        if (SUCCESS == ECJsonUtilities::JsonToBinary(blob, propData["GCS"]))
+            {
+            PropertySpec prop = DgnProjectProperty::DgnGCS();
+            GetDgnDb()->SaveProperty(prop, blob.data(), blob.size());
+            DgnGeoLocation& geoLocate = GetDgnDb()->GeoLocation();
+            DPoint3d globalOrigin;
+            if (SUCCESS == ECJsonUtilities::JsonToPoint3d(globalOrigin, propData["globalOrigin"]))
+                geoLocate.SetGlobalOrigin(globalOrigin);
+            }
+
+        }
+
     return SUCCESS;
     }
 
