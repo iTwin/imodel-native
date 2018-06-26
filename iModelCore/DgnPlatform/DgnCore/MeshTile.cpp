@@ -1474,41 +1474,41 @@ TileGeometry::T_TilePolyfaces AttachmentTileGeometry::_GetPolyfaces(IFacetOption
     return polyfaces;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley   07/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int     compareDoubleArray (double const* array1, double const* array2, size_t count, double tolerance)
-    {
-    for (uint32_t i=0; i<count; i++, array1++, array2++)
-        if (*array1 < *array2 - tolerance)
-            return -1;
-        else if (*array1 > *array2 + tolerance)
-            return 1;
 
-    return 0;
-    }
-
-    static const double     s_compareTolerance = 1.0E-5;
+static const double     s_compareTolerance = 1.0E-5;
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     12/2016
 //=======================================================================================
 struct SolidPrimitivePartMapKey 
 {
+    int64_t                 m_range[6];
     ISolidPrimitivePtr      m_solidPrimitive;
-    DRange3d                m_range;
     TileDisplayParamsCPtr   m_displayParams;
 
 
     SolidPrimitivePartMapKey() { }
-    SolidPrimitivePartMapKey(ISolidPrimitiveR solidPrimitive, DRange3dCR range, TileDisplayParamsCR displayParams) : m_range(range), m_solidPrimitive(&solidPrimitive), m_displayParams(&displayParams) { }
+    SolidPrimitivePartMapKey(ISolidPrimitiveR solidPrimitive, DRange3dCR range, TileDisplayParamsCR displayParams) : m_solidPrimitive(&solidPrimitive), m_displayParams(&displayParams) 
+        { 
+        double const* in =      &range.low.x;
 
-    bool operator < (SolidPrimitivePartMapKey const& rhs) const { return compareDoubleArray (&m_range.low.x, &rhs.m_range.low.x, 6, s_compareTolerance) < 0; }
+        for (size_t i=0; i<6; i++)
+            m_range[i] = (int64_t) (in[i] / s_compareTolerance);
+        }
+
+    bool operator < (SolidPrimitivePartMapKey const& rhs) const 
+        { 
+        for (size_t i=0; i<6; i++)
+            if (m_range[i] != rhs.m_range[i])
+                return (m_range[i] < rhs.m_range[i]);
+
+        return false;
+        }
     
     bool IsEqual (SolidPrimitivePartMapKey const& other) const { return !(*m_displayParams < *other.m_displayParams) && !(*other.m_displayParams < *m_displayParams) && m_solidPrimitive->IsSameStructureAndGeometry(*other.m_solidPrimitive, s_compareTolerance); }
 
 };
-
+                                               
 
 
 //=======================================================================================
@@ -1518,9 +1518,9 @@ struct  SolidPrimitivePartMap : bmultimap<SolidPrimitivePartMapKey,  TileGeomPar
 {
     TileGeomPartPtr Find (SolidPrimitivePartMapKey const& key)
         {
-        auto const&   range = equal_range (key);
+        auto  range = equal_range (key);
 
-        for (iterator curr = range.first; curr != range.second; ++curr)
+        for (auto curr = range.first; curr != range.second; ++curr)
             {
             if (curr->first.IsEqual(key))
                 return curr->second;
@@ -2961,7 +2961,7 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
 
         geometryList.push_back(TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, hasCurvedFaceOrEdge, false, m_dgndb));
         
-        m_solidPrimitiveParts.Insert(key, tileGeomPart = TileGeomPart::Create(range, geometryList));
+        m_solidPrimitiveParts.insert(bpair<SolidPrimitivePartMapKey, TileGeomPartPtr> (key, tileGeomPart = TileGeomPart::Create(range, geometryList)));
         }
     
     tileGeomPart->IncrementInstanceCount();

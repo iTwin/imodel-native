@@ -422,6 +422,24 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     ExpectLevel(db, LockLevel::Shared);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SingleBriefcaseLocksTest, ElementSpecificLockTests)
+    {
+    SetupDb(L"AcquireLocksTest.bim", m_bcId);
+    DgnDbR db = *m_db;
+
+    // TFS#901239: Test category and its subcategory insertion inside the _OnInserted call, need locks for sub category
+    SpatialCategory cat(db.GetDictionaryModel(), "SpatialCategoryTestInsert", DgnCategory::Rank::Domain); 
+    DgnDbStatus catStat;
+    IBriefcaseManager::Request req;
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementInsert(req, cat, IBriefcaseManager::PrepareAction::Acquire));
+    DgnSubCategory::Appearance appearance;
+    cat.Insert(appearance, &catStat);
+    EXPECT_EQ(catStat, DgnDbStatus::Success);
+    }
+
 //-------------------------------------------------------------------------------------------
 // @bsimethod                                                 Diego.Pinate     01/18
 //-------------------------------------------------------------------------------------------
@@ -737,6 +755,17 @@ TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjectsBulkMode)
     ExpectLevel(*newElem, LockLevel::Exclusive);
     ExpectLevel(*model, LockLevel::None);
     ExpectLevel(*elem, LockLevel::None);
+
+    // TFS#904880: Even though the QueryLockLevel calls return that we have newElem exclusively locked, this is inferred
+    // by the element's model being exclusively locked. If we iterate over the owned locks locally, then we should find that
+    // newElem is actually not locked, but its lock is inferred by the locked state of its model
+    IBriefcaseManagerR bc = db.BriefcaseManager();
+    IOwnedLocksIteratorPtr pIter = bc.GetOwnedLocks();
+    for (;pIter->IsValid();++(*pIter))
+        {
+        DgnLock lock = **pIter;
+        EXPECT_FALSE(lock.GetId() == newElem->GetElementId());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -466,7 +466,8 @@ public:
             virtual void _OnNewTileReady(DgnDbR) { }
 
             virtual bool _WantCachedHiResTiles(DgnDbR) const { return false; } //!< @private
-            virtual bool _WantEmbedMaterials(DgnDbR) const { return false; } //!< @private
+            virtual bool _WantEmbedMaterials() const { return false; } //!< @private
+            virtual bool _WantWaitOnSave(DgnDbR) const { return false; } //!< @private
 
             //! Return the full path to a .tilecache file for caching generated element tiles.
             DGNPLATFORM_EXPORT BeFileName _GetElementCacheFileName(DgnDbCR db) const;
@@ -494,7 +495,6 @@ public:
         RepositoryAdmin*        m_repositoryAdmin;
         TileAdmin*              m_tileAdmin;
         Utf8String              m_productName;
-        DevelopmentPhase        m_developmentPhase;
         T_RegisteredDomains     m_registeredDomains;
 
     public:
@@ -545,9 +545,6 @@ public:
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
 
-        //! Supply the development phase of the host application
-        DGNPLATFORM_EXPORT virtual DevelopmentPhase  _SupplyDevelopmentPhase();
-
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
 
         //! Supply the HttpClient::Options for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
@@ -596,7 +593,6 @@ public:
         RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}
         TileAdmin&              GetTileAdmin()             {return *m_tileAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
-        DevelopmentPhase        GetDevelopmentPhase()      {return m_developmentPhase;}
 
         DgnProgressMeterP GetProgressMeter() {return m_progressMeter;}
         void SetProgressMeter(DgnProgressMeterP meter) {m_progressMeter=meter;}

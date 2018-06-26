@@ -643,6 +643,14 @@ struct Texture : RefCounted<NonCopyableClass>
 
         explicit CreateParams(TextureKeyCR key=TextureKey()) : m_key(key) { }
     };
+
+    struct Dimensions
+    {
+        uint32_t width;
+        uint32_t height;
+
+        Dimensions(uint32_t w = 0, uint32_t h = 0) : width(w), height(h) { }
+    };
 protected:
     TextureKey m_key;
     bool m_isGlyph;
@@ -658,6 +666,7 @@ public:
 
     // Named textures should preserve their image data so it can be obtained later.
     virtual ImageSource GetImageSource() const { BeAssert(false); return ImageSource(); }
+    virtual Dimensions GetDimensions() const = 0;
 };
 
 //=======================================================================================
@@ -3023,6 +3032,7 @@ struct Plan
     ColorDef            m_bgColor;
     ColorDef            m_monoColor;
     HiliteSettings      m_hiliteSettings;
+    bool                m_fadeOutActive;
     AntiAliasPref       m_aaLines;
     AntiAliasPref       m_aaText;
     HiddenLineParams    m_hline;
@@ -3115,8 +3125,8 @@ public:
     bool FindIndex(uint32_t& index, FeatureCR feature) const
         {
         auto iter = m_map.find(feature);
-        bool found;
-        if (found = (m_map.end() != iter))
+        bool found = (m_map.end() != iter);
+        if (found)
             index = iter->second;
 
         return found;

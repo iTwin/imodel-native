@@ -16,20 +16,23 @@ from shutil import rmtree
 def main():
     if len(sys.argv) < 2:
         print "Must give the test root"
-        return
-    
+        return 1
+        
+    hasError = False
     testRoot = sys.argv[1]
 
-    print "TestRoot: " + testRoot + "\n"
-    # All these packages should be of the form DgnCompatiblityNugetxx.xx.xx.xx
     for subdir in os.listdir(testRoot):
         fullPath = os.path.join(testRoot, subdir);
         if (os.path.isdir(fullPath) and subdir != "Assets"):
-            print "calling " + os.path.join(fullPath, "DgnCompatibility.exe")
-            subprocess.check_call(os.path.join(fullPath, "DgnCompatibility.exe"))
-        else:
-            print "not a dir: " + fullPath
+            try:
+                subprocess.check_call(os.path.join(fullPath, "iModelSchemaEvolution.exe"))
+                print "Compatibility test runner for '" + subdir + "' succeeded."
+            except subprocess.CalledProcessError as err:
+                print >> sys.stderr, "Compatibility test runner for '{0}' failed: {1}".format(subdir, err)
+                hasError = True
 
-
+    if hasError:
+        return 1
+        
 if __name__ == "__main__":
     main()

@@ -661,7 +661,7 @@ BentleyStatus DgnTrueTypeFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGl
     
     // UTF-8 is mulit-byte; need to figure out each UCS "character" so we can look up the glyph.
     bvector<Byte> ucs4CharsBuffer;
-    size_t numUcs4Chars;
+    size_t numUcs4Chars=0;
     uint32_t const* ucs4Chars = DgnFont::Utf8ToUcs4(ucs4CharsBuffer, numUcs4Chars, context.m_string);
     if (0 == numUcs4Chars)
         return SUCCESS;

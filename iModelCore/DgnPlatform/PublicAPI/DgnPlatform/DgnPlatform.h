@@ -54,6 +54,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(BeJsContext)
 BENTLEY_NAMESPACE_TYPEDEFS(BeJsNativePointer)
 BENTLEY_NAMESPACE_TYPEDEFS(BeJsEnvironment)
 
+
 DGNPLATFORM_TYPEDEFS(AnnotationElement)
 DGNPLATFORM_TYPEDEFS(AnnotationElement2d)
 DGNPLATFORM_TYPEDEFS(AuxCoordSystem)
@@ -419,6 +420,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(PixelData);
     DEFINE_POINTER_SUFFIX_TYPEDEFS(IPixelDataBuffer);
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ThematicGradientSettings);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(RgbaSprite);
 
     DEFINE_REF_COUNTED_PTR(Device)
     DEFINE_REF_COUNTED_PTR(GradientSymb)
@@ -436,6 +438,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_REF_COUNTED_PTR(IPixelDataBuffer);
     DEFINE_REF_COUNTED_PTR(FeatureSymbologyOverrides);
     DEFINE_REF_COUNTED_PTR(ThematicGradientSettings);
+    DEFINE_REF_COUNTED_PTR(RgbaSprite);
 END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -988,7 +991,7 @@ public:
     void SetGreen(Byte v) {m_green=v;}
     void SetBlue(Byte v) {m_blue=v;}
     void SetAlpha(Byte v) {m_alpha=v;}
-    void SetColorNoAlpha(ColorDefCR color) { m_red = color.GetRed(), m_green=color.GetGreen(), m_blue = color.GetBlue(); }
+    void SetColorNoAlpha(ColorDefCR color) { m_red = color.GetRed(); m_green=color.GetGreen(); m_blue = color.GetBlue(); }
     Byte GetRed() const {return m_red;}
     Byte GetGreen() const {return m_green;}
     Byte GetBlue() const {return m_blue;}

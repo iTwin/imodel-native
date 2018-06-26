@@ -154,10 +154,6 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
 
     private:
         SchemaUpgradeOptions m_schemaUpgradeOptions;
-        BeSQLite::DbResult UpgradeProfile(DgnDbR) const;
-
-    protected:
-        DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgradeProfile(DgnDbR, DgnDbProfileVersion& from) const;
 
     public:
         //! Constructor
@@ -196,7 +192,7 @@ protected:
     Utf8String m_fileName;
     DgnElements m_elements;
     DgnModels m_models;
-    DgnDbProfileVersion m_profileVersion;
+    mutable DgnDbProfileVersion m_profileVersion;
     DgnDomains m_domains;
     DgnFonts m_fonts;
     DgnLineStylesPtr m_lineStyles;
@@ -213,9 +209,10 @@ protected:
     Utf8String m_parentChangeSetId;
     Utf8String m_initialParentChangeSetId;
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _VerifyProfileVersion(BeSQLite::Db::OpenParams const& params) override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeVerifyProfileVersion() override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterVerifyProfileVersion() override;
+    DGNPLATFORM_EXPORT BeSQLite::ProfileState _CheckProfileVersion() const override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _UpgradeProfile() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeProfileUpgrade() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterProfileUpgrade() override;
     DGNPLATFORM_EXPORT void _OnDbClose() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpening() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened(BeSQLite::Db::OpenParams const& params) override;
@@ -266,24 +263,30 @@ public:
     //! <li> A DgnDb can have an expiration date. See Db::IsExpired
     //! <li> The ECSchemas supplied by registered DgnDomain-s are validated against the corresponding ones in the DgnDb, and 
     //! an appropriate error status is returned in the case of a failure. See table below for the various ECSchema compatibility errors. 
-    //! If the error status is BE_SQLITE_ERROR_SchemaUpgradeRequired, it may be possible to upgrade (or import) the schemas in the DgnDb. 
-    //! This is done by opening the DgnDb with setting the option request upgrade of domain schemas (See @ref DgnDb::OpenParams). 
+    //! If the error status is BE_SQLITE_ERROR_SchemaUpgradeRequired, it may be possible to 
+    //! upgrade (or import) the schemas in the DgnDb. This is done by opening the DgnDb with setting the option request upgrade of 
+    //! domain schemas (See @ref DgnDb::OpenParams). These domain schema validation errors can also be avoided by restricting the 
+    //! specific checks made to validate the domain schemas by by setting the appopriate @ref SchemaUpgradeOptions::DomainUpgradeOptions
+    //! in @ref DgnDb::OpenParams.
     //! <pre>
     //! Sample schema compatibility validation results for an ECSchema in the BIM with Version 2.2.2 (Read.Write.Minor)
-    //! ----------------------------------------------------------------------------------------------
-    //! Application   |  Validation result                    | Validation result
-    //! Version       |  (Readonly)                           | (ReadWrite)
-    //! ----------------------------------------------------------------------------------------------
-    //! 2.2.2 (same)  | BE_SQLITE_OK                          | BE_SQLITE_OK
-    //! ----------------------------------------------------------------------------------------------
-    //! 1.2.2 (older) | BE_SQLITE_ERROR_SchemaTooNew          | BE_SQLITE_ERROR_SchemaTooNew
-    //! 2.1.2 (older) | BE_SQLITE_OK                          | BE_SQLITE_ERROR_SchemaTooNew
-    //! 2.2.1 (older) | BE_SQLITE_OK                          | BE_SQLITE_OK
-    //! ----------------------------------------------------------------------------------------------
-    //! 3.2.2 (newer) | BE_SQLITE_ERROR_SchemaTooOld          | BE_SQLITE_ERROR_SchemaTooOld
-    //! 2.3.2 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired | BE_SQLITE_ERROR_SchemaUpgradeRequired
-    //! 2.2.3 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired | BE_SQLITE_ERROR_SchemaUpgradeRequired
-    //! ----------------------------------------------------------------------------------------------
+    //! -------------------------------------------------------------------------------------------------
+    //! Application   |  Validation result              | Validation result
+    //! Version       |  (Readonly)                     | (ReadWrite)
+    //! -------------------------------------------------------------------------------------------------
+    //! 2.2.2 (same)  | BE_SQLITE_OK                    | BE_SQLITE_OK
+    //! -------------------------------------------------------------------------------------------------
+    //! 1.2.2 (older) | BE_SQLITE_ERROR_SchemaTooNew    | BE_SQLITE_ERROR_SchemaTooNew
+    //! 2.1.2 (older) | BE_SQLITE_OK                    | BE_SQLITE_ERROR_SchemaTooNew
+    //! 2.2.1 (older) | BE_SQLITE_OK                    | BE_SQLITE_OK
+    //! -------------------------------------------------------------------------------------------------
+    //! 3.2.2 (newer) | BE_SQLITE_ERROR_SchemaTooOld    | BE_SQLITE_ERROR_SchemaTooOld
+    //! 2.3.2 (newer) | BE_SQLITE_OK by default*        | BE_SQLITE_ERROR_SchemaUpgradeRequired
+    //! 2.2.3 (newer) | BE_SQLITE_OK by default*        | BE_SQLITE_OK by default*
+    //!                                                                                       
+    //! * - BE_SQLITE_OK by default, or BE_SQLITE_ERROR_SchemaUpgradeRecommended if 
+    //! SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades is passed in
+    //! -------------------------------------------------------------------------------------------------
     //! </pre>
     //! <li> If the domain schemas are setup to be upgraded, a schema lock is first obtained before the upgrade. 
     //! Note that any previously committed local changes that haven't been pushed up to the server 

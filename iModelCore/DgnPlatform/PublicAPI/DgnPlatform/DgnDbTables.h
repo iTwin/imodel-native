@@ -696,26 +696,48 @@ public:
 };
 
 //=======================================================================================
+/// The location/orientation of an iModel on the earth via [ECEF](https://en.wikipedia.org/wiki/ECEF) (Earth Centered Earth Fixed) coordinates
+// @bsiclass                                                    Keith.Bentley   06/18
+//=======================================================================================
+struct EcefLocation
+{
+    BE_JSON_NAME(origin);
+    BE_JSON_NAME(orientation);
+
+    bool m_isValid;
+    DPoint3d m_origin;
+    YawPitchRollAngles m_angles;
+    DGNPLATFORM_EXPORT Json::Value ToJson() const; //!< Convert to json
+    DGNPLATFORM_EXPORT void FromJson(JsonValueCR); //!< load from json
+    EcefLocation() {m_isValid = false;}
+    EcefLocation(DPoint3dCR origin, YawPitchRollAnglesCR angles) : m_origin(origin), m_angles(angles) {m_isValid = true;}
+};
+
+//=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/13
 //=======================================================================================
 struct DgnGeoLocation : NonCopyableClass
 {
+    BE_JSON_NAME(globalOrigin);
+    BE_JSON_NAME(ecefLocation);
+
 private:
     friend struct DgnDb;
     DgnDbR  m_dgndb;
     mutable AxisAlignedBox3d m_extent;
     DPoint3d m_globalOrigin;
+    mutable EcefLocation m_ecefLocation;
     mutable bool m_hasCheckedForGCS = false;
     mutable DgnGCS* m_gcs = nullptr;
     mutable IGeoCoordinateServicesP m_geoServices = nullptr;
 
     DgnGeoLocation(DgnDbR db);
-    void    LoadProjectExtents() const;
+    void LoadProjectExtents() const;
 
 public:
     //! @private
     //! Called only internally, on the rare occasions when a new GCS has been stored to the DgnDb.
-    void    NewGCSStored () {m_hasCheckedForGCS = false;}
+    void NewGCSStored () {m_hasCheckedForGCS = false;}
 
     //! @private
     //! Return a reasonable value that can be used if the project extents have never been established for this BIM.
@@ -758,6 +780,12 @@ public:
 
     //! Get the union of the ranges of all elements in the iModel.
     DGNPLATFORM_EXPORT AxisAlignedBox3d QueryRTreeExtents() const;
+
+    //! Get the EcefLocation for this iModel. May not be valid if iModel is not geolocated.
+    DGNPLATFORM_EXPORT EcefLocation GetEcefLocation() const;
+
+    //! Set the EcefLocation for this iModel.
+    void SetEcefLocation(EcefLocation const& location) const {m_ecefLocation = location;}
 
     //! Convert a GeoPoint to an XYZ point
     //! @param[out] outXyz The output XYZ point

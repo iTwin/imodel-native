@@ -450,8 +450,9 @@ TEST_F(PerformanceElementsTests, ServerElementsDelete)
     Execute(Op::Delete);
     }
 
+
 /*---------------------------------------------------------------------------------**//**
-//                                    Maha Nasir                       02/2018
+// @beClass                                     Maha Nasir                       05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PerformanceFixtureCRUD : PerformanceElementsCRUDTestFixture
     {
@@ -473,91 +474,162 @@ struct PerformanceFixtureCRUD : PerformanceElementsCRUDTestFixture
         return classes;
         }
 
-    static std::array<int, 3> GetInitalInstanceCount()
+    /*---------------------------------------------------------------------------------**//**
+    //                                    Maha Nasir                       05/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+
+    void Execute(Op op, int percentageOfInitialCount, int initalInstanceCount)
         {
-        return{ 100000, 500000, 10000000 };
+
+        ASSERT_NE(0, initalInstanceCount) << "InitialCount should be greater than zero for the test to execute.";
+
+        ASSERT_NE(0, percentageOfInitialCount) << "Percentage of the initial count should not be zero.";
+
+        //Calculating the %age of the initial count to be used as OperationCount
+        int opCount = initalInstanceCount * percentageOfInitialCount / 100;
+
+        for (Utf8StringCR perfClass : GetClasses())
+            {
+            if (perfClass.empty())
+                continue;
+
+            if (op == Op::Select)
+                ApiSelectTime(perfClass.c_str(), initalInstanceCount, opCount);
+            else if (op == Op::Insert)
+                ApiInsertTime(perfClass.c_str(), initalInstanceCount, opCount);
+            else if (op == Op::Update)
+                ApiUpdateTime(perfClass.c_str(), initalInstanceCount, opCount);
+            else if (op == Op::Delete)
+                ApiDeleteTime(perfClass.c_str(), initalInstanceCount, opCount);
+            else
+                {
+                ASSERT_TRUE(false);
+                }
+            }
+
         }
 
-    void Execute(Op op, int percentageOfInitialCount)
+    /*---------------------------------------------------------------------------------**//**
+    //                                     Maha Nasir                       05/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void ParseJsonAndRunTest(BeFileName jsonFilePath, Op op)
         {
-        for (int initalInstanceCount : GetInitalInstanceCount())
+        BeFile file;
+        if (BeFileStatus::Success != file.Open(jsonFilePath.c_str(), BeFileAccess::Read))
+            return;
+
+        ByteStream byteStream;
+        if (BeFileStatus::Success != file.ReadEntireFile(byteStream))
+            return;
+
+        Utf8String json((Utf8CP)byteStream.GetData(), byteStream.GetSize());
+        file.Close();
+
+        Json::Reader reader;
+        Json::Value value;
+
+        if (reader.Parse(json, value))
             {
-            if (initalInstanceCount <= 0)
-                continue;
+            auto requirements = value["CrudTestRequirement"];
 
-            //Calculating the %age of the initial count to be used as OperationCount
-            if (percentageOfInitialCount <= 0)
-                continue;
-
-            int opCount = initalInstanceCount * percentageOfInitialCount / 100;
-
-            for (Utf8StringCR perfClass : GetClasses())
+            for (auto iter : requirements)
                 {
-                if (perfClass.empty())
-                    continue;
-
-                if (op == Op::Select)
-                    ApiSelectTime(perfClass.c_str(), initalInstanceCount, opCount);
-                else if (op == Op::Insert)
-                    ApiInsertTime(perfClass.c_str(), initalInstanceCount, opCount);
-                else if (op == Op::Update)
-                    ApiUpdateTime(perfClass.c_str(), initalInstanceCount, opCount);
-                else if (op == Op::Delete)
-                    ApiDeleteTime(perfClass.c_str(), initalInstanceCount, opCount);
-                else
+                auto InitialCount = iter["InitialCount"].asInt();
+                for (auto percentage : iter["InitialCountPercentage"])
                     {
-                    ASSERT_TRUE(false);
+                    switch (op) {
+
+                        case Op::Insert:
+                            Execute(Op::Insert, percentage.asInt(), InitialCount);
+                            break;
+
+                        case Op::Delete:
+                            Execute(Op::Delete, percentage.asInt(), InitialCount);
+                            break;
+
+                        case Op::Select:
+                            Execute(Op::Select, percentage.asInt(), InitialCount);
+                            break;
+
+                        case Op::Update:
+                            Execute(Op::Update, percentage.asInt(), InitialCount);
+                            break;
+
+                        default:
+                            printf("Invalid operation.");
+                        }
                     }
                 }
-
             }
         }
+
     };
 
+
 /*---------------------------------------------------------------------------------**//**
-// @betest                                     Maha Nasir                       02/2018
+// @betest                                     Maha Nasir                       05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceFixtureCRUD, ElementsInsert)
     {
-    int InitialCountPercentage[] = {1,10,50};
-    for (int percentage : InitialCountPercentage)
-        {
-        Execute(Op::Insert, percentage);
-        }
+    WString jsonFile;
+    jsonFile.Sprintf(L"ElementCrud.json");
+
+    BeFileName jsonFilePath;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsonFilePath);
+    jsonFilePath.AppendToPath(L"PerformanceTestData");
+    jsonFilePath.AppendToPath(jsonFile.c_str());
+    ASSERT_TRUE(jsonFilePath.DoesPathExist());
+
+    ParseJsonAndRunTest(jsonFilePath, Op::Insert);
     }
 
 /*---------------------------------------------------------------------------------**//**
-// @betest                                     Maha Nasir                       02/2018
+// @betest                                     Maha Nasir                       05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceFixtureCRUD, ElementsRead) 
+TEST_F(PerformanceFixtureCRUD, ElementsDelete)
     {
-    int InitialCountPercentage[] = {1,10,50};
-    for (int percentage : InitialCountPercentage)
-        {
-        Execute(Op::Select, percentage);
-        }
+    WString jsonFile;
+    jsonFile.Sprintf(L"ElementCrud.json");
+
+    BeFileName jsonFilePath;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsonFilePath);
+    jsonFilePath.AppendToPath(L"PerformanceTestData");
+    jsonFilePath.AppendToPath(jsonFile.c_str());
+    ASSERT_TRUE(jsonFilePath.DoesPathExist());
+
+    ParseJsonAndRunTest(jsonFilePath, Op::Delete);
     }
 
 /*---------------------------------------------------------------------------------**//**
-// @betest                                     Maha Nasir                       02/2018
+// @betest                                     Maha Nasir                       05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceFixtureCRUD, ElementsUpdate) 
+TEST_F(PerformanceFixtureCRUD, ElementsUpdate)
     {
-    int InitialCountPercentage[] = {1,10,50};
-    for (int percentage : InitialCountPercentage)
-        {
-        Execute(Op::Update, percentage);
-        }
+    WString jsonFile;
+    jsonFile.Sprintf(L"ElementCrud.json");
+
+    BeFileName jsonFilePath;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsonFilePath);
+    jsonFilePath.AppendToPath(L"PerformanceTestData");
+    jsonFilePath.AppendToPath(jsonFile.c_str());
+    ASSERT_TRUE(jsonFilePath.DoesPathExist());
+
+    ParseJsonAndRunTest(jsonFilePath, Op::Update);
     }
 
 /*---------------------------------------------------------------------------------**//**
-// @betest                                     Maha Nasir                       02/2018
+// @betest                                     Maha Nasir                       05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceFixtureCRUD, ElementsDelete) 
+TEST_F(PerformanceFixtureCRUD, ElementsSelect)
     {
-    int InitialCountPercentage[] = {1,10,50};
-    for (int percentage : InitialCountPercentage)
-        {
-        Execute(Op::Delete, percentage);
-        }
+    WString jsonFile;
+    jsonFile.Sprintf(L"ElementCrud.json");
+
+    BeFileName jsonFilePath;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsonFilePath);
+    jsonFilePath.AppendToPath(L"PerformanceTestData");
+    jsonFilePath.AppendToPath(jsonFile.c_str());
+    ASSERT_TRUE(jsonFilePath.DoesPathExist());
+
+    ParseJsonAndRunTest(jsonFilePath, Op::Select);
     }

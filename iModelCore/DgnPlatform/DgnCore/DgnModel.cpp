@@ -508,7 +508,7 @@ SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SpatialLocationModel::_OnInsertElement(DgnElementR element)
     {
-    return dynamic_cast<SpatialLocationElement*>(&element) ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    return dynamic_cast<PhysicalElement*>(&element) ? DgnDbStatus::WrongModel : T_Super::_OnInsertElement(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -768,6 +768,8 @@ void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
     auto ecClass = GetDgnDb().Schemas().GetClass(m_classId);
 
     val[json_classFullName()] = ecClass->GetFullName();
+    DgnElement::AddBisClassName(val, ecClass);
+    
     if (m_parentModelId.IsValid())
         val[json_parentModel()] = m_parentModelId.ToHexStr();
 

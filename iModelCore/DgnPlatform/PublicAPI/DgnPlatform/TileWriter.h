@@ -36,6 +36,7 @@ struct TileTexture : Render::Texture
     TileTexture(Render::ImageCR image, CreateParams const& createParams) : Render::Texture(createParams), m_image(image), m_createParams(createParams) { }
 
     bool GetRepeat() const { return !m_createParams.m_isTileSection; }
+    Dimensions GetDimensions() const override { BeAssert(false); return Dimensions(0, 0); }
  }; // TileTexture
 
 

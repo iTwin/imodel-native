@@ -525,7 +525,13 @@ TextureMapping GltfReader::GetTextureMapping(Utf8CP name, Json::Value const& par
     if (!m_namedTextures.isMember(name))
         return TextureMapping();
 
-    TextureKey key(name);
+    TextureKey key;
+    BeInt64Id textureId;
+    if (BeStringUtilities::HasHexPrefix(name) && SUCCESS == BeInt64Id::FromString(textureId, name))
+        key = TextureKey(DgnTextureId(textureId.GetValue()));
+    else
+        key = TextureKey(name);
+
     TexturePtr tex = m_renderSystem._FindTexture(key, m_model.GetDgnDb());
     if (tex.IsNull())
         {

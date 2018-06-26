@@ -13,7 +13,7 @@
 
 #Copy files
 
-COPYDIR_INPUT   = $(OutputRootDir)Product/GTest-DgnPlatform-Compatibility/
+COPYDIR_INPUT   = $(OutputRootDir)Product/iModelSchemaEvolutionGTest/
 COPYDIR_OUTPUT  = $(OutputRootDir)iModelSchemaEvolution/BackwardsCompatibility/
 
 always:
@@ -21,8 +21,8 @@ always:
 
 %include $(SrcRoot)bsicommon/build/copyDir.mki
 
-COPYDIR_INPUT   = $(OutputRootDir)iModelSchemaEvolution/Data
-COPYDIR_OUTPUT  = $(OutputRootDir)iModelSchemaEvolution/BackwardsCompatibility/run/SeedData
+COPYDIR_INPUT   = $(OutputRootDir)iModelSchemaEvolution/Data/SeedData/
+COPYDIR_OUTPUT  = $(OutputRootDir)iModelSchemaEvolution/BackwardsCompatibility/run/SeedData/
 
 always:
     ~mkdir $(COPYDIR_OUTPUT)

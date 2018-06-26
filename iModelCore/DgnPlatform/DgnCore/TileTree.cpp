@@ -92,12 +92,17 @@ folly::Future<BentleyStatus> TileLoader::Perform()
                     tile.SetNotFound();
                 return ERROR;
                 }
-            
+
             T_HOST.GetTileAdmin()._OnNewTileReady(tile.GetRoot().GetDgnDb());
             tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
             
             // On a successful load, potentially store the tile in the cache.   
-            me->_SaveToDb();    // don't wait on the save.
+            auto saveToDb = me->_SaveToDb();
+
+            // don't wait on the save unless caller wants to immediately extract data from cache.
+            if (T_HOST.GetTileAdmin()._WantWaitOnSave(tile.GetRoot().GetDgnDb()))
+                saveToDb.get();
+
             return SUCCESS;
             });
     }
@@ -111,6 +116,7 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
 
     if (isHttp)
         {
+        m_maxValidDuration = _GetMaxValidDuration();
         auto query = std::make_shared<HttpDataQuery>(m_resourceName, m_loads);
 
         TileLoaderPtr me(this);
@@ -124,7 +130,7 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
 
             me->m_tileBytes = std::move(query->m_responseBody->GetByteStream()); // NEEDSWORK this is a copy not a move...
             me->m_contentType = response.GetHeaders().GetContentType();
-            me->m_saveToCache = query->GetCacheContolExpirationDate(me->m_expirationDate, response);
+            me->m_saveToCache = query->GetCacheControlExpirationDate(me->m_expirationDate, me->m_maxValidDuration, response);
 
             return SUCCESS;
             });
@@ -485,7 +491,7 @@ folly::Future<Http::Response> HttpDataQuery::Perform()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate, Http::Response const& response)
+bool HttpDataQuery::GetCacheControlExpirationDate(uint64_t& expirationDate, uint64_t maxValidDuration, Http::Response const& response)
     {
     expirationDate = 0;
 
@@ -526,6 +532,16 @@ bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate, Http:
             }
         }
        
+    // We need to check to see whether the TileTree itself sets a maximum valid duration. For example, we enforce a 3-day expiration on Bing Map tiles.
+    if (0 != maxValidDuration)
+        {
+        uint64_t maxAllowedExpirationDate = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + maxValidDuration;
+
+        // if we got no expiration date, or the furthestExpirationDate is sooner, we use that.
+        if ( (0 == expirationDate) || (maxAllowedExpirationDate < expirationDate) )
+            expirationDate = maxAllowedExpirationDate;
+        }
+
     return true;
     }
 
