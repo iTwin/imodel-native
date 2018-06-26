@@ -781,17 +781,17 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
 
         double msecSpeed = 0.0;
         Utf8String speedLabel;
-        auto msecUnitCP = BENTLEY_NAMESPACE_NAME::Units::UnitRegistry::Instance().LookupUnit("M/SEC");
+        auto msecUnitCP = corridorPtr->GetDgnDb().Schemas().GetUnit("Units", "M_PER_SEC");
         if (params.rootModelUnitSystem == Dgn::UnitSystem::Metric)
             {
-            auto kphUnitCP = BENTLEY_NAMESPACE_NAME::Units::UnitRegistry::Instance().LookupUnit("KM/HR");
+            auto kphUnitCP = corridorPtr->GetDgnDb().Schemas().GetUnit("Units", "KM_PER_HR");
             BENTLEY_NAMESPACE_NAME::Units::Quantity speedQty(100.0, *kphUnitCP); // 100 Km/h
             msecSpeed = speedQty.ConvertTo(msecUnitCP).GetMagnitude();
             speedLabel = "100 Km/h";
             }
         else
             { 
-            auto mphUnitCP = BENTLEY_NAMESPACE_NAME::Units::UnitRegistry::Instance().LookupUnit("MPH");
+            auto mphUnitCP = corridorPtr->GetDgnDb().Schemas().GetUnit("Units", "MPH");
             BENTLEY_NAMESPACE_NAME::Units::Quantity speedQty(70.0, *mphUnitCP); // 70 MPH
             msecSpeed = speedQty.ConvertTo(msecUnitCP).GetMagnitude();
             speedLabel = "70 MPH";
