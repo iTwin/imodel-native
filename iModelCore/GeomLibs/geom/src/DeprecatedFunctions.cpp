@@ -1187,6 +1187,111 @@ GraphicsPointArrayP         pInstance
         pInstance->vbArray_hdr.back ().mask |= HPOINT_MASK_BREAK;
     }
 
+/*-----------------------------------------------------------------*//**
+*
+* Clear the range set to an empty set. (No intervals)
+*
+* @see
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     bsiRange1d_clear
+(
+SmallSetRange1dP rangeSetP
+)
+
+    {
+    rangeSetP->n = 0;
+    }
+/*-----------------------------------------------------------------*//**
+*
+* Set an arc sweep as the only entry in a small range set.
+* All prior entries in the set are ignored.  The sweep is inserted
+* as is, with no attempt to normalize direction or range.
+* Caveat emptor.
+*
+* @param theta0 => Start of interval.
+* @param dtheta => Angular sweep.  May be negative.
+* @see #addArcSweep
+* @see #setArcSweep
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     bsiRange1d_setUncheckedArcSweep
+
+(
+SmallSetRange1dP arcSetP,
+double          theta0,
+double          dtheta
+)
+
+
+    {
+    double theta1 = theta0 + dtheta;
+
+    arcSetP->interval[0].minValue = theta0;
+    arcSetP->interval[0].maxValue = theta1;
+    arcSetP->n = 1;
+    }
+
+/*-----------------------------------------------------------------*//**
+*
+* Set an arc sweep as the only entry in a small range set.
+* All prior entries in the set are ignored.  The arc sweep is normalized
+* and split as needed.
+*
+* @param theta0 => start of interval.
+* @param dtheta => angular sweep.  May be negative.
+* @see #addArcSweep
+* @see #setUncheckedArcSweep
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     bsiRange1d_setArcSweep
+
+(
+SmallSetRange1dP arcSetP,
+double          theta0,
+double          dtheta
+)
+
+
+    {
+    double theta1;
+
+    if (dtheta < 0.0)
+        {
+        theta0 = theta0 + dtheta;
+        dtheta = -dtheta;
+        }
+
+    if (dtheta >= msGeomConst_2pi)
+        {
+        arcSetP->interval[0].minValue = -msGeomConst_pi;
+        arcSetP->interval[0].maxValue =  msGeomConst_pi;
+        arcSetP->n = 1;
+        }
+    else
+        {
+        theta1 = theta0 + dtheta;
+
+        if (theta1 <= msGeomConst_pi)
+            {
+            arcSetP->interval[0].minValue = theta0;
+            arcSetP->interval[0].maxValue = theta1;
+            arcSetP->n = 1;
+            }
+        else
+            {
+            theta1 -= msGeomConst_2pi;
+            arcSetP->interval[0].minValue = -msGeomConst_pi;
+            arcSetP->interval[0].maxValue =  theta1;
+            arcSetP->interval[1].minValue = theta0;
+            arcSetP->interval[1].maxValue = msGeomConst_pi;
+            arcSetP->n = 2;
+            }
+        }
+    }
 
 
 /*-----------------------------------------------------------------*//**
@@ -1392,6 +1497,41 @@ double          beta
                 }
         }
     return true;
+    }
+
+/*-----------------------------------------------------------------*//**
+*
+* Add an interval with no test for min/max relationship
+*
+* @param minValue => new interval min.
+* @param maxValue => new interval max
+* @see #addArcSweep
+* @see #setArcSweep
+* @see #setUncheckedArcSweep
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void      bsiRange1d_addUnordered
+
+(
+SmallSetRange1dP setP,
+double          minValue,
+double          maxValue
+)
+
+
+    {
+    int i = setP->n;
+    if (i >= MSGEOM_SMALL_SET_SIZE)
+        {
+        /* ignore the overflow */
+        }
+    else
+        {
+        setP->interval[i].minValue = minValue;
+        setP->interval[i].maxValue = maxValue;
+        setP->n++;
+        }
     }
 
 

@@ -102,7 +102,7 @@ $(OUT_DIR)dconic4d$(OUT_EXT)        : $(geomSrcStructs)dconic4d.cpp         $(OT
 
 #$(OUT_DIR)dellipse4d$(OUT_EXT)      : $(geomSrcStructs)dellipse4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)smallsetrange1d$(OUT_EXT) : $(geomSrcStructs)smallsetrange1d.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)smallsetrange1d$(OUT_EXT) : $(geomSrcStructs)smallsetrange1d.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)dspiral2dbase$(OUT_EXT) : $(geomSrcStructs)dspiral2dbase.cpp $(geomSrcStructs)directEvaluationSpiral.h   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 

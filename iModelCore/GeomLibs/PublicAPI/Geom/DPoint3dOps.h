@@ -1539,6 +1539,7 @@ double      tol
 //! Classify a point with respect to a polygon.
 //! @param point => point to test
 //! @param points => polygon points.  Last point does not need to be duplicated.
+//! @param numPoint => number of points
 //! @param tol => tolerance for "on" detection. May be zero.
 //! @return 1 if point is "in" by parity, 0 if "on", -1 if "out", -2 if nothing worked.
 public: static GEOMDLLIMPEXP int PointPolygonParity

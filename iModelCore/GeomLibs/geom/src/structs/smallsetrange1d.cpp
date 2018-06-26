@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/smallsetrange1d.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -242,6 +242,41 @@ double          dtheta
     arcSetP->n = 1;
     }
 
+
+/*-----------------------------------------------------------------*//**
+*
+* Add an interval with no test for min/max relationship
+*
+* @param minValue => new interval min.
+* @param maxValue => new interval max
+* @see #addArcSweep
+* @see #setArcSweep
+* @see #setUncheckedArcSweep
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void      bsiRange1d_addUnordered
+
+(
+SmallSetRange1dP setP,
+double          minValue,
+double          maxValue
+)
+
+
+    {
+    int i = setP->n;
+    if (i >= MSGEOM_SMALL_SET_SIZE)
+        {
+        /* ignore the overflow */
+        }
+    else
+        {
+        setP->interval[i].minValue = minValue;
+        setP->interval[i].maxValue = maxValue;
+        setP->n++;
+        }
+    }
 
 /*-----------------------------------------------------------------*//**
 *
