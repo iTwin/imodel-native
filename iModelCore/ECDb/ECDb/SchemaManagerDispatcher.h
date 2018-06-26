@@ -117,7 +117,7 @@ private:
     static bmap<ECN::SchemaKey, ECN::ECSchemaCP, ECN::SchemaKeyLessThan<ECN::SchemaMatchType::Exact>> FindAllSchemasInGraph(ECN::ECSchemaCR, bool includeThisSchema);
     static bvector<ECN::ECSchemaCP> Sort(bvector<ECN::ECSchemaCP> const&);
     static bvector<ECN::ECSchemaCP> GetNextLayer(bvector<ECN::ECSchemaCP> const&, bvector<ECN::ECSchemaCP> const& referencedBy);
-
+    static DbResult UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb);
 public:
     explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb) {}
     ~MainSchemaManager() {}

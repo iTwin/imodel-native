@@ -782,11 +782,100 @@ BentleyStatus MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvector<EC
 
     PERFLOG_FINISH("ECDb", "Schema import> Validate mappings");
 
+    PERFLOG_START("ECDb", "Schema import> Upgrading existing ECInstances with new property map to overflow tables");
+    if (BE_SQLITE_OK != UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(m_ecdb))
+        return ERROR;
+    
+    PERFLOG_FINISH("ECDb", "Schema import> Upgrading existing ECInstances with new property map to overflow tables");
+
     ClearCache();
     PERFLOG_FINISH("ECDb", "Schema import> Map schemas");
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan    06/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult MainSchemaManager::UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb)
+    {
+    Statement stmt;
+    DbResult st = stmt.Prepare(ecdb, "SELECT PRI.Id, OVR.Id FROM ec_Table PRI INNER JOIN ec_Table OVR ON OVR.ParentTableId = PRI.Id WHERE OVR.Type = " SQLVAL_DbTable_Type_Overflow );
+    if (st != BE_SQLITE_OK)
+        return st;
+
+    // We need to go over all the overflow table and ensure that if a existing class is
+    // mapped to overflow it must have a corresponding row.
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        const DbTable* primaryTable = ecdb.Schemas().Main().GetDbSchema().FindTable(stmt.GetValueId<DbTableId>(0));
+        const DbTable* overflowTable = ecdb.Schemas().Main().GetDbSchema().FindTable(stmt.GetValueId<DbTableId>(1));
+        if (primaryTable == nullptr || overflowTable == nullptr)
+            {
+            BeAssert(primaryTable != nullptr && overflowTable != nullptr);
+            return BE_SQLITE_ERROR;
+            }
+
+        //Overflow table
+        Utf8CP overflowTableName = overflowTable->GetName().c_str();
+        Utf8CP overflowId = overflowTable->FindFirst(DbColumn::Kind::ECInstanceId)->GetName().c_str();
+        Utf8CP overflowClassId = overflowTable->FindFirst(DbColumn::Kind::ECClassId)->GetName().c_str();
+
+        //Primary table
+        Utf8CP primaryTableName = primaryTable->GetName().c_str();
+        Utf8CP primaryId = primaryTable->FindFirst(DbColumn::Kind::ECInstanceId)->GetName().c_str();
+        Utf8CP primaryClassId = primaryTable->FindFirst(DbColumn::Kind::ECClassId)->GetName().c_str();
+
+        /*
+        -- Template query for reference.
+        INSERT INTO bis_ElementUniqueAspect_Overflow(Id, ECClassId)
+            SELECT bis_ElementUniqueAspect.Id, bis_ElementUniqueAspect.ECClassId
+            FROM bis_ElementUniqueAspect
+                LEFT JOIN bis_ElementUniqueAspect_Overflow ON bis_ElementUniqueAspect_Overflow.Id = bis_ElementUniqueAspect.Id
+            WHERE bis_ElementUniqueAspect_Overflow.Id IS NULL AND
+                bis_ElementUniqueAspect.ECClassId IN (
+                SELECT M.ClassId
+                FROM ec_PropertyMap M
+                    INNER JOIN ec_Column C ON C.Id = M.ColumnId
+                    INNER JOIN ec_Table O  ON O.Id = C.TableId AND O.Type = 3 --has overflow table
+                GROUP BY M.ClassId)
+        */
+
+        //Generated query for a given overflow
+        Utf8String transformSql;
+
+        //Replace template with current overflow/primary table column a table name
+        transformSql.Sprintf(R"sql(
+            INSERT INTO [%s] ([%s], [%s])  
+              SELECT P.[%s], P.[%s]
+              FROM [%s] P
+                   LEFT JOIN [%s] O ON O.[%s] = P.[%s]
+              WHERE O.[%s] IS NULL AND
+                P.[%s] IN (
+                SELECT M.ClassId 
+                FROM ec_PropertyMap M
+                       INNER JOIN ec_Column C ON C.Id = M.ColumnId
+                       INNER JOIN ec_Table O  ON O.Id = C.TableId AND O.Type = %s
+                GROUP BY M.ClassId ))sql",
+                             overflowTableName, overflowId, overflowClassId,
+                             primaryId, primaryClassId,
+                             primaryTableName,
+                             overflowTableName, overflowId, primaryId,
+                             overflowId,
+                             primaryClassId, SQLVAL_DbTable_Type_Overflow);
+
+        st = ecdb.ExecuteSql(transformSql.c_str());
+        if (st != BE_SQLITE_OK)
+            return st;
+
+        const int modifiedCount = ecdb.GetModifiedRowCount();
+        if (modifiedCount > 0)
+            {
+            LOG.infov("Schema Import/Upgrade inserted '%d' empty rows in '%s' overflow table corresponding to rows in '%s'", modifiedCount, overflowTableName, primaryTableName);
+            }
+        }
+
+    return BE_SQLITE_OK;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         09/2012

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/JoinedTableTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -3178,6 +3178,581 @@ TEST_F(JoinedTableTestFixture, JoinedTableForClassesWithoutBusinessProperties)
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(4, statement.GetValueInt(0));
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khanr                         06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JoinedTableTestFixture, UpgradingOverflowECInstances_RootClassGetNewProperties)
+    {
+    SchemaItem v1(
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />
+                <ECEntityClass typeName='B0'>
+                    <ECCustomAttributes>
+                        <ClassMap xmlns='ECDbMap.02.00'>
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns='ECDbMap.02.00'>
+                            <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                            <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName='A' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B1'>
+                    <BaseClass>B0</BaseClass>
+                    <ECProperty propertyName='B' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B2'>
+                    <BaseClass>B1</BaseClass>
+                    <ECProperty propertyName='C' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B3'>
+                    <BaseClass>B2</BaseClass>
+                    <ECProperty propertyName='D' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B4'>
+                    <BaseClass>B3</BaseClass>
+                    <ECProperty propertyName='E' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B5'>
+                    <BaseClass>B4</BaseClass>
+                    <ECProperty propertyName='F' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B6'>
+                    <BaseClass>B5</BaseClass>
+                    <ECProperty propertyName='G' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B7'>
+                    <BaseClass>B6</BaseClass>
+                    <ECProperty propertyName='H' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B8'>
+                    <BaseClass>B7</BaseClass>
+                    <ECProperty propertyName='I' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B9'>
+                    <BaseClass>B8</BaseClass>
+                    <ECProperty propertyName='J' typeName='int'/>
+                </ECEntityClass>
+            </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("overflow_t.ecdb", v1));
+    std::function<void(Utf8CP, DbResult)> ecsql = [&] (Utf8CP sql, DbResult r = BE_SQLITE_DONE)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+        ASSERT_EQ(r, stmt.Step());
+        };
+
+    std::function<int(Utf8CP)> count = [&] (Utf8CP cls)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("select count(*) from %s", cls)));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        return stmt.GetValueInt(0);
+        };
+
+    std::function<bool(Utf8CP, std::vector<int>)> equalls = [&] (Utf8CP sql, std::vector<int> r)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for (int i = 0; i < r.size(); ++i)
+            {
+            if (stmt.GetValueInt(i) != r[i])
+                return false;
+            }
+
+        return true;
+        };
+
+
+    ecsql("insert into ts.b0(a) values(1)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b1(a,b) values(1,2)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b2(a,b,c) values(1,2,3)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b3(a,b,c,d) values(1,2,3,4)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b4(a,b,c,d,e) values(1,2,3,4,5)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b5(a,b,c,d,e,f) values(1,2,3,4,5,6)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b6(a,b,c,d,e,f,g) values(1,2,3,4,5,6,7)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b7(a,b,c,d,e,f,g,h) values(1,2,3,4,5,6,7,8)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b8(a,b,c,d,e,f,g,h,i) values(1,2,3,4,5,6,7,8,9)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b9(a,b,c,d,e,f,g,h,i,j) values(1,2,3,4,5,6,7,8,9,10)", BE_SQLITE_DONE);
+
+    ASSERT_EQ(10, count("ts.b0"));
+    ASSERT_EQ(9, count("ts.b1"));
+    ASSERT_EQ(8, count("ts.b2"));
+    ASSERT_EQ(7, count("ts.b3"));
+    ASSERT_EQ(6, count("ts.b4"));
+    ASSERT_EQ(5, count("ts.b5"));
+    ASSERT_EQ(4, count("ts.b6"));
+    ASSERT_EQ(3, count("ts.b7"));
+    ASSERT_EQ(2, count("ts.b8"));
+    ASSERT_EQ(1, count("ts.b9"));
+
+    ASSERT_EQ(1, count("only ts.b0"));
+    ASSERT_EQ(1, count("only ts.b1"));
+    ASSERT_EQ(1, count("only ts.b2"));
+    ASSERT_EQ(1, count("only ts.b3"));
+    ASSERT_EQ(1, count("only ts.b4"));
+    ASSERT_EQ(1, count("only ts.b5"));
+    ASSERT_EQ(1, count("only ts.b6"));
+    ASSERT_EQ(1, count("only ts.b7"));
+    ASSERT_EQ(1, count("only ts.b8"));
+    ASSERT_EQ(1, count("only ts.b9"));
+
+    SchemaItem v2(
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />
+                <ECEntityClass typeName='B0'>
+                    <ECCustomAttributes>
+                        <ClassMap xmlns='ECDbMap.02.00'>
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns='ECDbMap.02.00'>
+                            <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                            <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName='Z' typeName='int'/>
+                    <ECProperty propertyName='A' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B1'>
+                    <BaseClass>B0</BaseClass>
+                    <ECProperty propertyName='B' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B2'>
+                    <BaseClass>B1</BaseClass>
+                    <ECProperty propertyName='C' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B3'>
+                    <BaseClass>B2</BaseClass>
+                    <ECProperty propertyName='D' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B4'>
+                    <BaseClass>B3</BaseClass>
+                    <ECProperty propertyName='E' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B5'>
+                    <BaseClass>B4</BaseClass>
+                    <ECProperty propertyName='F' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B6'>
+                    <BaseClass>B5</BaseClass>
+                    <ECProperty propertyName='G' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B7'>
+                    <BaseClass>B6</BaseClass>
+                    <ECProperty propertyName='H' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B8'>
+                    <BaseClass>B7</BaseClass>
+                    <ECProperty propertyName='I' typeName='int'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='B9'>
+                    <BaseClass>B8</BaseClass>
+                    <ECProperty propertyName='J' typeName='int'/>
+                </ECEntityClass>
+            </ECSchema>)xml");
+
+    ReopenECDb();
+    ASSERT_EQ(SUCCESS, ImportSchema(v2));
+
+    ASSERT_EQ(10, count("ts.b0"));
+    ASSERT_EQ(9, count("ts.b1"));
+    ASSERT_EQ(8, count("ts.b2"));
+    ASSERT_EQ(7, count("ts.b3"));
+    ASSERT_EQ(6, count("ts.b4"));
+    ASSERT_EQ(5, count("ts.b5"));
+    ASSERT_EQ(4, count("ts.b6"));
+    ASSERT_EQ(3, count("ts.b7"));
+    ASSERT_EQ(2, count("ts.b8"));
+    ASSERT_EQ(1, count("ts.b9"));
+
+    ASSERT_EQ(1, count("only ts.b0"));
+    ASSERT_EQ(1, count("only ts.b1"));
+    ASSERT_EQ(1, count("only ts.b2"));
+    ASSERT_EQ(1, count("only ts.b3"));
+    ASSERT_EQ(1, count("only ts.b4"));
+    ASSERT_EQ(1, count("only ts.b5"));
+    ASSERT_EQ(1, count("only ts.b6"));
+    ASSERT_EQ(1, count("only ts.b7"));
+    ASSERT_EQ(1, count("only ts.b8"));
+    ASSERT_EQ(1, count("only ts.b9"));
+
+    ecsql("update only ts.b0 set z=101", BE_SQLITE_DONE);
+    ecsql("update only ts.b1 set z=102", BE_SQLITE_DONE);
+    ecsql("update only ts.b2 set z=103", BE_SQLITE_DONE);
+    ecsql("update only ts.b3 set z=104", BE_SQLITE_DONE);
+    ecsql("update only ts.b4 set z=105", BE_SQLITE_DONE);
+    ecsql("update only ts.b5 set z=106", BE_SQLITE_DONE);
+    ecsql("update only ts.b6 set z=107", BE_SQLITE_DONE);
+    ecsql("update only ts.b7 set z=108", BE_SQLITE_DONE);
+    ecsql("update only ts.b8 set z=109", BE_SQLITE_DONE);
+    ecsql("update only ts.b9 set z=110", BE_SQLITE_DONE);
+
+    ASSERT_TRUE(equalls("select z,a from only ts.b0 where z=101", {101, 1}));
+    ASSERT_TRUE(equalls("select z,a,b from only ts.b1 where z=102", {102, 1, 2}));
+    ASSERT_TRUE(equalls("select z,a,b,c from only ts.b2 where z=103", {103, 1, 2, 3}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d from only ts.b3 where z=104", {104, 1, 2, 3, 4}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d,e from only ts.b4 where z=105", {105, 1, 2, 3, 4, 5}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d,e,f from only ts.b5 where z=106", {106, 1, 2, 3, 4, 5, 6}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d,e,f,g from only ts.b6 where z=107", {107, 1, 2, 3, 4, 5, 6, 7}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d,e,f,g,h from only ts.b7 where z=108", {108, 1, 2, 3, 4, 5, 6, 7, 8}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d,e,f,g,h,i from only ts.b8 where z=109", {109, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d,e,f,g,h,i,j from only ts.b9 where z=110", {110, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+
+
+    ecsql("insert into ts.b0(z,a) values(0,1)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b1(z,a,b) values(0,1,2)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b2(z,a,b,c) values(0,1,2,3)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b3(z,a,b,c,d) values(0,1,2,3,4)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b4(z,a,b,c,d,e) values(0,1,2,3,4,5)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b5(z,a,b,c,d,e,f) values(0,1,2,3,4,5,6)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b6(z,a,b,c,d,e,f,g) values(0,1,2,3,4,5,6,7)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b7(z,a,b,c,d,e,f,g,h) values(0,1,2,3,4,5,6,7,8)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b8(z,a,b,c,d,e,f,g,h,i) values(0,1,2,3,4,5,6,7,8,9)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b9(z,a,b,c,d,e,f,g,h,i,j) values(0,1,2,3,4,5,6,7,8,9,10)", BE_SQLITE_DONE);
+
+    ecsql("update only ts.b0 set z=201", BE_SQLITE_DONE);
+    ecsql("update only ts.b1 set z=202", BE_SQLITE_DONE);
+    ecsql("update only ts.b2 set z=203", BE_SQLITE_DONE);
+    ecsql("update only ts.b3 set z=204", BE_SQLITE_DONE);
+    ecsql("update only ts.b4 set z=205", BE_SQLITE_DONE);
+    ecsql("update only ts.b5 set z=206", BE_SQLITE_DONE);
+    ecsql("update only ts.b6 set z=207", BE_SQLITE_DONE);
+    ecsql("update only ts.b7 set z=208", BE_SQLITE_DONE);
+    ecsql("update only ts.b8 set z=209", BE_SQLITE_DONE);
+    ecsql("update only ts.b9 set z=210", BE_SQLITE_DONE);
+
+    ASSERT_TRUE(equalls("select z,a from only ts.b0 where z=201", {201, 1}));
+    ASSERT_TRUE(equalls("select z,a,b from only ts.b1 where z=202", {202, 1, 2}));
+    ASSERT_TRUE(equalls("select z,a,b,c from only ts.b2 where z=203", {203, 1, 2, 3}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d from only ts.b3 where z=204", {204, 1, 2, 3, 4}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d,e from only ts.b4 where z=205", {205, 1, 2, 3, 4, 5}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d,e,f from only ts.b5 where z=206", {206, 1, 2, 3, 4, 5, 6}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d,e,f,g from only ts.b6 where z=207", {207, 1, 2, 3, 4, 5, 6, 7}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d,e,f,g,h from only ts.b7 where z=208", {208, 1, 2, 3, 4, 5, 6, 7, 8}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d,e,f,g,h,i from only ts.b8 where z=209", {209, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+    ASSERT_TRUE(equalls("select z,a,b,c,d,e,f,g,h,i,j from only ts.b9 where z=210", {210, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+
+    m_ecdb.Schemas().CreateClassViewsInDb();
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khanr                         06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JoinedTableTestFixture, UpgradingOverflowECInstances_DerivedClassGetNewProperties)
+    {
+    SchemaItem v1(
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+            <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />
+            <ECEntityClass typeName='B0'>
+                <ECCustomAttributes>
+                    <ClassMap xmlns='ECDbMap.02.00'>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns='ECDbMap.02.00'>
+                        <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName='A' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B1'>
+                <BaseClass>B0</BaseClass>
+                <ECProperty propertyName='B' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B2'>
+                <BaseClass>B1</BaseClass>
+                <ECProperty propertyName='C' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B3'>
+                <BaseClass>B2</BaseClass>
+                <ECProperty propertyName='D' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B4'>
+                <BaseClass>B3</BaseClass>
+                <ECProperty propertyName='E' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B5'>
+                <BaseClass>B4</BaseClass>
+                <ECProperty propertyName='F' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B6'>
+                <BaseClass>B5</BaseClass>
+                <ECProperty propertyName='G' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B7'>
+                <BaseClass>B6</BaseClass>
+                <ECProperty propertyName='H' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B8'>
+                <BaseClass>B7</BaseClass>
+                <ECProperty propertyName='I' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B9'>
+                <BaseClass>B8</BaseClass>
+                <ECProperty propertyName='J' typeName='int'/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("overflow_t.ecdb", v1));
+    std::function<void(Utf8CP, DbResult)> ecsql = [&] (Utf8CP sql, DbResult r = BE_SQLITE_DONE)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+        ASSERT_EQ(r, stmt.Step());
+        };
+
+    std::function<int(Utf8CP)> count = [&] (Utf8CP cls)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("select count(*) from %s", cls)));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        return stmt.GetValueInt(0);
+        };
+
+    std::function<bool(Utf8CP, std::vector<int>)> equalls = [&] (Utf8CP sql, std::vector<int> r)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for (int i = 0; i < r.size(); ++i)
+            {
+            if (stmt.GetValueInt(i) != r[i])
+                return false;
+            }
+
+        return true;
+        };
+
+
+    ecsql("insert into ts.b0(a) values(1)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b1(a,b) values(1,2)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b2(a,b,c) values(1,2,3)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b3(a,b,c,d) values(1,2,3,4)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b4(a,b,c,d,e) values(1,2,3,4,5)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b5(a,b,c,d,e,f) values(1,2,3,4,5,6)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b6(a,b,c,d,e,f,g) values(1,2,3,4,5,6,7)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b7(a,b,c,d,e,f,g,h) values(1,2,3,4,5,6,7,8)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b8(a,b,c,d,e,f,g,h,i) values(1,2,3,4,5,6,7,8,9)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b9(a,b,c,d,e,f,g,h,i,j) values(1,2,3,4,5,6,7,8,9,10)", BE_SQLITE_DONE);
+
+    ASSERT_EQ(10, count("ts.b0"));
+    ASSERT_EQ(9, count("ts.b1"));
+    ASSERT_EQ(8, count("ts.b2"));
+    ASSERT_EQ(7, count("ts.b3"));
+    ASSERT_EQ(6, count("ts.b4"));
+    ASSERT_EQ(5, count("ts.b5"));
+    ASSERT_EQ(4, count("ts.b6"));
+    ASSERT_EQ(3, count("ts.b7"));
+    ASSERT_EQ(2, count("ts.b8"));
+    ASSERT_EQ(1, count("ts.b9"));
+
+    ASSERT_EQ(1, count("only ts.b0"));
+    ASSERT_EQ(1, count("only ts.b1"));
+    ASSERT_EQ(1, count("only ts.b2"));
+    ASSERT_EQ(1, count("only ts.b3"));
+    ASSERT_EQ(1, count("only ts.b4"));
+    ASSERT_EQ(1, count("only ts.b5"));
+    ASSERT_EQ(1, count("only ts.b6"));
+    ASSERT_EQ(1, count("only ts.b7"));
+    ASSERT_EQ(1, count("only ts.b8"));
+    ASSERT_EQ(1, count("only ts.b9"));
+
+    SchemaItem v2(
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+            <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />
+            <ECEntityClass typeName='B0'>
+                <ECCustomAttributes>
+                    <ClassMap xmlns='ECDbMap.02.00'>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns='ECDbMap.02.00'>
+                        <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName='A' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B1'>
+                <BaseClass>B0</BaseClass>
+                <ECProperty propertyName='B' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B2'>
+                <BaseClass>B1</BaseClass>
+                <ECProperty propertyName='C' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B3'>
+                <BaseClass>B2</BaseClass>
+                <ECProperty propertyName='D' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B4'>
+                <BaseClass>B3</BaseClass>
+                <ECProperty propertyName='E' typeName='int'/>
+                <ECProperty propertyName='Z' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B5'>
+                <BaseClass>B4</BaseClass>
+                <ECProperty propertyName='F' typeName='int'/>
+                <ECProperty propertyName='Z0' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B6'>
+                <BaseClass>B5</BaseClass>
+                <ECProperty propertyName='G' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B7'>
+                <BaseClass>B6</BaseClass>
+                <ECProperty propertyName='H' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B8'>
+                <BaseClass>B7</BaseClass>
+                <ECProperty propertyName='I' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B9'>
+                <BaseClass>B8</BaseClass>
+                <ECProperty propertyName='J' typeName='int'/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ReopenECDb();
+    ASSERT_EQ(SUCCESS, ImportSchema(v2));
+    ecsql("insert into ts.b5(a,b,c,d,e,f,z0) values(1,2,3,4,5,6,101)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b6(a,b,c,d,e,f,g,z0) values(1,2,3,4,5,6,7,102)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b7(a,b,c,d,e,f,g,h,z0) values(1,2,3,4,5,6,7,8,103)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b8(a,b,c,d,e,f,g,h,i,z0) values(1,2,3,4,5,6,7,8,9,104)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b9(a,b,c,d,e,f,g,h,i,j,z0) values(1,2,3,4,5,6,7,8,9,10,105)", BE_SQLITE_DONE);
+
+
+    ASSERT_EQ(15, count("ts.b0"));
+    ASSERT_EQ(14, count("ts.b1"));
+    ASSERT_EQ(13, count("ts.b2"));
+    ASSERT_EQ(12, count("ts.b3"));
+    ASSERT_EQ(11, count("ts.b4"));
+    ASSERT_EQ(10, count("ts.b5"));
+    ASSERT_EQ(8, count("ts.b6"));
+    ASSERT_EQ(6, count("ts.b7"));
+    ASSERT_EQ(4, count("ts.b8"));
+    ASSERT_EQ(2, count("ts.b9"));
+
+    ASSERT_EQ(1, count("only ts.b0"));
+    ASSERT_EQ(1, count("only ts.b1"));
+    ASSERT_EQ(1, count("only ts.b2"));
+    ASSERT_EQ(1, count("only ts.b3"));
+    ASSERT_EQ(1, count("only ts.b4"));
+    ASSERT_EQ(2, count("only ts.b5"));
+    ASSERT_EQ(2, count("only ts.b6"));
+    ASSERT_EQ(2, count("only ts.b7"));
+    ASSERT_EQ(2, count("only ts.b8"));
+    ASSERT_EQ(2, count("only ts.b9"));
+
+
+    SchemaItem v3(
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+            <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />
+            <ECEntityClass typeName='B0'>
+                <ECCustomAttributes>
+                    <ClassMap xmlns='ECDbMap.02.00'>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns='ECDbMap.02.00'>
+                        <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName='A' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B1'>
+                <BaseClass>B0</BaseClass>
+                <ECProperty propertyName='B' typeName='int'/>
+                <ECProperty propertyName='Z1' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B2'>
+                <BaseClass>B1</BaseClass>
+                <ECProperty propertyName='C' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B3'>
+                <BaseClass>B2</BaseClass>
+                <ECProperty propertyName='D' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B4'>
+                <BaseClass>B3</BaseClass>
+                <ECProperty propertyName='E' typeName='int'/>
+                <ECProperty propertyName='Z' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B5'>
+                <BaseClass>B4</BaseClass>
+                <ECProperty propertyName='F' typeName='int'/>
+                <ECProperty propertyName='Z0' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B6'>
+                <BaseClass>B5</BaseClass>
+                <ECProperty propertyName='G' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B7'>
+                <BaseClass>B6</BaseClass>
+                <ECProperty propertyName='H' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B8'>
+                <BaseClass>B7</BaseClass>
+                <ECProperty propertyName='I' typeName='int'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='B9'>
+                <BaseClass>B8</BaseClass>
+                <ECProperty propertyName='J' typeName='int'/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ReopenECDb();
+    ASSERT_EQ(SUCCESS, ImportSchema(v3));
+    ecsql("insert into ts.b5(a,b,c,d,e,f,z0) values(1,2,3,4,5,6,101)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b6(a,b,c,d,e,f,g,z0) values(1,2,3,4,5,6,7,102)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b7(a,b,c,d,e,f,g,h,z0) values(1,2,3,4,5,6,7,8,103)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b8(a,b,c,d,e,f,g,h,i,z0) values(1,2,3,4,5,6,7,8,9,104)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b9(a,b,c,d,e,f,g,h,i,j,z0) values(1,2,3,4,5,6,7,8,9,10,105)", BE_SQLITE_DONE);
+
+    ecsql("insert into ts.b0(a) values(1)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b1(a,b,z1) values(1,2,201)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b2(a,b,c,z1) values(1,2,3,202)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b3(a,b,c,d,z1) values(1,2,3,4,203)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b4(a,b,c,d,e,z1) values(1,2,3,4,5,204)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b5(a,b,c,d,e,f,z1,z0) values(1,2,3,4,5,6,205,106)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b6(a,b,c,d,e,f,g,z1,z0) values(1,2,3,4,5,6,7,206,107)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b7(a,b,c,d,e,f,g,h,z1,z0) values(1,2,3,4,5,6,7,8,207,108)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b8(a,b,c,d,e,f,g,h,i,z1,z0) values(1,2,3,4,5,6,7,8,9,208,109)", BE_SQLITE_DONE);
+    ecsql("insert into ts.b9(a,b,c,d,e,f,g,h,i,j,z1,z0) values(1,2,3,4,5,6,7,8,9,10,209,110)", BE_SQLITE_DONE);
+
+    ASSERT_EQ(30, count("ts.b0"));
+    ASSERT_EQ(28, count("ts.b1"));
+    ASSERT_EQ(26, count("ts.b2"));
+    ASSERT_EQ(24, count("ts.b3"));
+    ASSERT_EQ(22, count("ts.b4"));
+    ASSERT_EQ(20, count("ts.b5"));
+    ASSERT_EQ(16, count("ts.b6"));
+    ASSERT_EQ(12, count("ts.b7"));
+    ASSERT_EQ(8, count("ts.b8"));
+    ASSERT_EQ(4, count("ts.b9"));
+
+    ASSERT_EQ(2, count("only ts.b0"));
+    ASSERT_EQ(2, count("only ts.b1"));
+    ASSERT_EQ(2, count("only ts.b2"));
+    ASSERT_EQ(2, count("only ts.b3"));
+    ASSERT_EQ(2, count("only ts.b4"));
+    ASSERT_EQ(4, count("only ts.b5"));
+    ASSERT_EQ(4, count("only ts.b6"));
+    ASSERT_EQ(4, count("only ts.b7"));
+    ASSERT_EQ(4, count("only ts.b8"));
+    ASSERT_EQ(4, count("only ts.b9"));
+
+    m_ecdb.Schemas().CreateClassViewsInDb();
+    }
+
 
 END_ECDBUNITTESTS_NAMESPACE
 

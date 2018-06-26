@@ -117,7 +117,7 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
     bool isNewClass = classMap.GetState() == ObjectState::New;
     if (!isNewClass)
         relationshipFilter = RelationshpFilter::Direct;
-
+    
     if (filter == Filter::InheritedAndLocal)
         {
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
