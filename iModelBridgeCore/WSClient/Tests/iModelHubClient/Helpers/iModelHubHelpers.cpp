@@ -657,14 +657,12 @@ namespace iModelHubHelpers
     +---------------+---------------+---------------+---------------+---------------+------*/
     StatusResult UpdateToChangeSet(BriefcaseCR briefcase, ChangeSetInfoCR changeSet, bool expectSuccess)
         {
+        Utf8String expectedChangeSetId = expectSuccess ? changeSet.GetId() : briefcase.GetLastChangeSetPulled();
         TestsProgressCallback callback;
         StatusResult result = briefcase.UpdateToChangeSet(changeSet.GetId(), callback.Get())->GetResult();
         EXPECT_RESULT(result, expectSuccess);
-        callback.Verify(expectSuccess);
-        if (expectSuccess)
-            {
-            EXPECT_EQ(changeSet.GetId(), briefcase.GetLastChangeSetPulled());
-            }
+        callback.Verify();
+        EXPECT_EQ(expectedChangeSetId, briefcase.GetLastChangeSetPulled());
         return result;
         }
 

@@ -106,7 +106,7 @@ TEST_F(VersionsTests, CreateUserDoesNotHavePermission)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(VersionsTests, CreateMissingRequiredProperties)
+TEST_F(VersionsTests, CreateInvalidPropertiesValues)
     {
     VersionsManagerCR versionManager = s_connection->GetVersionsManager();
 
@@ -114,7 +114,7 @@ TEST_F(VersionsTests, CreateMissingRequiredProperties)
     VersionInfo version = VersionInfo(nullptr, nullptr, changeSet->GetId());
     VersionInfoResult result = versionManager.CreateVersion(version)->GetResult();
     ASSERT_FAILURE(result);
-    EXPECT_EQ(Error::Id::MissingRequiredProperties, result.GetError().GetId());
+    EXPECT_EQ(Error::Id::InvalidPropertiesValues, result.GetError().GetId());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -222,7 +222,7 @@ TEST_F(VersionsTests, UpdateVersionAlreadyExists)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(VersionsTests, UpdateMissingRequiredProperties)
+TEST_F(VersionsTests, UpdateInvalidPropertiesValues)
     {
     VersionInfoPtr version;
     iModelHubHelpers::CreateNamedVersion(version, s_connection, TestCodeName(), 13);
@@ -232,7 +232,7 @@ TEST_F(VersionsTests, UpdateMissingRequiredProperties)
     VersionsManagerCR versionManager = s_connection->GetVersionsManager();
     StatusResult result = versionManager.UpdateVersion(*version)->GetResult();
     ASSERT_FAILURE(result);
-    EXPECT_EQ(Error::Id::MissingRequiredProperties, result.GetError().GetId());
+    EXPECT_EQ(Error::Id::InvalidPropertiesValues, result.GetError().GetId());
     }
 
 /*--------------------------------------------------------------------------------------+

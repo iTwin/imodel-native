@@ -7,5 +7,4 @@ WebsiteSeedFileTests.CreateSeedFile
 #----------------------------------------------------------------------------------------
 #   Tests that are failing
 #----------------------------------------------------------------------------------------
-BriefcaseSchemaChangesTests.*
 SeedFileTests.ReplaceWithoutLockediModel
