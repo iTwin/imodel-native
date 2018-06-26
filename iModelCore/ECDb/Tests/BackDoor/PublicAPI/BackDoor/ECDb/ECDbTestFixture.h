@@ -113,7 +113,6 @@ private:
 
     static bool s_isInitialized;
     static SeedECDbManager* s_seedECDbManager;
-    static ProfileVersion const* s_expectedProfileVersion;
 
     static SeedECDbManager& SeedECDbs();
 
@@ -142,7 +141,7 @@ public:
     ECDbTestFixture() : ::testing::Test() {}
     virtual ~ECDbTestFixture() {}
     void SetUp() override { Initialize(); }
-    void TearDown() override {}
+    void TearDown() override { CloseECDb(); }
 
     //! Initializes the test environment by setting up the schema read context and search dirs etc.
     //! Gets implicitly called when calling SetupECDb, too. Tests that don't use

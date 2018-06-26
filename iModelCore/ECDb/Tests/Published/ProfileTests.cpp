@@ -39,7 +39,7 @@ TEST_F(ECDbTestFixture, Profile)
     EXPECT_FALSE(db.TableExists(PROFILE_TABLE)) << "BeSQLite file is not expected to contain tables of the EC profile";
 
     Utf8String profileVersion;
-    EXPECT_EQ(BE_SQLITE_ERROR, db.QueryProperty(profileVersion, PROFILEVERSION_PROPSPEC)) << L"BeSQLite file is not expected to contain the ECDb profile version.";
+    EXPECT_EQ(BE_SQLITE_ERROR, db.QueryProperty(profileVersion, PROFILEVERSION_PROPSPEC)) << "BeSQLite file is not expected to contain the ECDb profile version.";
 
     size_t sequenceIndex = 0;
     ASSERT_FALSE(db.GetBLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
@@ -82,6 +82,23 @@ TEST_F(ECDbTestFixture, ProfileSchemas)
     ASSERT_TRUE(fileInfoSchema != nullptr);
 
     ASSERT_FALSE(fileInfoSchema->IsSystemSchema());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, GetECDbProfileVersion)
+    {
+    //Test GetECDbProfileVersion on freshly created file
+    BeFileName ecdbPath = BuildECDbPath("empty.ecdb");
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateNewDb(ecdbPath));
+    EXPECT_FALSE(m_ecdb.GetECDbProfileVersion().IsEmpty()) << "Profile version is expected to be set in the ECDb handle during open";
+    EXPECT_EQ(ECDb::CurrentECDbProfileVersion(), m_ecdb.GetECDbProfileVersion()) << "Profile version is expected to be set in the ECDb handle during open";
+
+    //now test that version is set on open
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    EXPECT_FALSE(m_ecdb.GetECDbProfileVersion().IsEmpty()) << "Profile version is expected to be set in the ECDb handle during open";
+    EXPECT_EQ(ECDb::CurrentECDbProfileVersion(), m_ecdb.GetECDbProfileVersion()) << "Profile version is expected to be set in the ECDb handle during open";
     }
 
 //---------------------------------------------------------------------------------------
