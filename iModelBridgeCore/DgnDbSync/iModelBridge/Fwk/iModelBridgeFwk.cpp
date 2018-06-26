@@ -1129,17 +1129,18 @@ static RepositoryStatus acquireSharedLocks(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::SaveBriefcaseId()
+DbResult iModelBridgeFwk::SaveBriefcaseId()
     {
-    auto db = DgnDb::OpenDgnDb(nullptr, m_briefcaseName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+    DbResult rc;
+    auto db = DgnDb::OpenDgnDb(&rc, m_briefcaseName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
     if (!db.IsValid())
         {
-        BeAssert(false);
-        return;
+        return rc;
         }
     uint32_t bcid = db->GetBriefcaseId().GetValue();
     m_stateDb.SaveProperty(s_briefcaseIdPropSpec, &bcid, sizeof(bcid));
     m_stateDb.SaveChanges();
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**

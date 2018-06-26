@@ -107,7 +107,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     void SetSyncState(SyncState);
     SyncState GetSyncState();
 
-    void SaveBriefcaseId();
+    BeSQLite::DbResult SaveBriefcaseId();
     //void SaveParentRevisionId();
 
     static void DecryptCredentials(Http::Credentials& credentials);
