@@ -4045,7 +4045,7 @@ property ECL::LightweightClass^     GCSDescriptionClass
 
             m_gcsDescriptionClass = gcnew ECL::LightweightClass("GCSDescriptionClass");
 
-            gcsDescriptionProp = AddProperty(m_gcsDescriptionClass, "Description", nullptr, Priority::Description, m_csCategory, PropIndex::Description, false, stringType);
+            gcsDescriptionProp = AddProperty(m_gcsDescriptionClass, "Description", nullptr, Priority::Description, m_csCategory, PropIndex::Description, !m_editNonCSMapData, stringType);
             }
 
         return m_gcsDescriptionClass;
