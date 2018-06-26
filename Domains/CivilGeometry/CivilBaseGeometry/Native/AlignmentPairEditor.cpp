@@ -1881,6 +1881,9 @@ bool AlignmentPairEditor::LoadVerticalParabolaData(AlignmentPVIR pvi, ICurvePrim
     AlignmentPVI::ParabolaInfoP pPara = pvi.GetParabolaP();
 
     MSBsplineCurveCP pSpline = primitiveParabola.GetBsplineCurveCP();
+    if (pSpline == nullptr)
+        return false;
+
     size_t count = pSpline->GetNumPoles();
     if (3 == count)
         {
