@@ -80,13 +80,14 @@ void ExerciseSingleSheetCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, 
     double cutVolume0, fillVolume0;
     PolyfaceQuery::ComputeSingleSheetCutFillVolumes (*dtm, *road, cutVolume0, fillVolume0, messages);
     PolyfaceQuery::ComputeSingleSheetCutFillMeshes (*dtm, *road, cutMesh, fillMesh, messages);
-
     Check::SaveTransformed (*dtm);
     Check::SaveTransformed (*road);
     auto range = dtm->PointRange ();
     Check::Shift (0, 1.5 * range.YLength (), 0);
-    Check::SaveTransformed (*cutMesh);
-    Check::SaveTransformed (*fillMesh);
+    if (cutMesh.IsValid ())
+        Check::SaveTransformed (*cutMesh);
+    if (fillMesh.IsValid ())
+        Check::SaveTransformed (*fillMesh);
 
 
     auto cutVolume1 = GetVolume (cutMesh);
@@ -101,6 +102,13 @@ void ExerciseSingleSheetCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, 
     polyfaceA.push_back (dtm);
     polyfaceB.push_back (road);
     PolyfaceQuery::ComputeCutAndFill (polyfaceA, polyfaceB, fill2, cut2);
+    Check::Shift (0,10,0);
+
+    for (auto &a : fill2)
+        Check::SaveTransformed (*a);
+    for (auto &a : cut2)
+        Check::SaveTransformed (*a);
+
     double fillVolume2 = 0, cutVolume2 = 0;
     int errors = 0;
     for (auto &m : fill2)
@@ -277,7 +285,6 @@ TEST(FastCutFill,NoEdgeContact)
 
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -287,7 +294,7 @@ TEST(FastCutFill,VerticalGaps)
     int dtmNumX = 1;
     int dtmNumY = 1;
 
-    for (double z1 : bvector<double>{0, 0, 0})
+    for (double z1 : bvector<double>{0, 1.5, 3.0, 6.0})
         {
         SaveAndRestoreCheckTransform shifter (30.0, 0, 0);
     // 1x1 dtm (large face)
@@ -319,6 +326,71 @@ TEST(FastCutFill,VerticalGaps)
     Check::ClearGeometry ("FastCutFill.VerticalGaps");
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(FastCutFill,ManyVerticals)
+    {
+    double dtmSide = 6.0;
+    int dtmNumX = 1;
+    int dtmNumY = 1;
+    auto options = IFacetOptions::CreateForSurfaces ();
+
+    // We need a mesh with multiple vertical breaks.
+    // Stroke a curve ..
+        auto bcurve = MSBsplineCurve::CreateFromPolesAndOrder (
+        bvector<DPoint3d> {            
+            DPoint3d::From (1,1.1,1),
+            DPoint3d::From (2,1.1,2),
+            DPoint3d::From (3,2,1),
+            DPoint3d::From (4,2,3),
+            DPoint3d::From (5,1,1)
+            },
+            nullptr, nullptr,
+            4, false, false);
+    bvector<DPoint3d> strokes;
+    bcurve->AddStrokes (strokes, 0, 0.15, 0.0);
+
+    double z1 = 1.0;
+    for (size_t n1 : {3, 6, 15})
+        {
+        if (n1 > strokes.size ())
+            break;
+        SaveAndRestoreCheckTransform shifter (30.0, 0, 0);
+
+        auto dtm = UnitGridPolyface (
+                DPoint3dDVec3dDVec3d (DPoint3d::From (0,-1.0),   DVec3d::From (dtmSide,0,z1),   DVec3d::From (0,dtmSide,0)),
+                                dtmNumX, dtmNumY, false);
+        bvector<DPoint3d> strokeA = strokes;
+        strokeA.resize (n1);
+        bvector<DPoint3d> strokeB = strokeA;
+        for (auto &xyz : strokeB)
+            xyz.z += 1.0;
+        bvector<DPoint3d> strokeB1 = strokeB;
+        bvector<DPoint3d> strokeA1 = strokeA;
+        for (auto &xyz : strokeB1)
+            {
+            xyz.y = 0.5;
+            xyz.z -= 0.25;
+            }
+        for (auto &xyz : strokeA1)
+            xyz.y = 2.5;
+
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+        bvector<DTriangle3d> triangles;
+        PolylineOps::GreedyTriangulationBetweenLinestrings (strokeA, strokeA1, triangles);
+        builder->AddTriangles (triangles);
+        triangles.clear ();
+        PolylineOps::GreedyTriangulationBetweenLinestrings (strokeB1, strokeB, triangles);
+        builder->AddTriangles (triangles);
+        auto road = builder->GetClientMeshPtr ();
+        ExerciseSingleSheetCutFill (dtm, road, "CutFill with single touch");
+        }
+    Check::ClearGeometry ("FastCutFill.ManyVerticals");
+
+    }
+
 
 
 /*---------------------------------------------------------------------------------**//**

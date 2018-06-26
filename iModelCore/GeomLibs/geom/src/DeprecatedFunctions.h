@@ -1186,5 +1186,138 @@ DPoint3dCP pPointArray,
 int              n,
 DPoint3dCP pTestPoint
 );
+/*-----------------------------------------------------------------*//**
+*
+* Matrix multiplication, using all components of both the matrix
+* and the points.
+*
+* @instance pA => Matrix term of multiplication.
+* @param pOutPoint <= Array of homogeneous products A*pInPoint[i]
+* @param pInPoint => Array of homogeneous points
+* @param n => number of points
+* @see bsiDMatrix4d_multiplyAndRenormalize
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDMatrix4d_multiply4dPoints
 
+(
+DMatrix4dCP pA,
+DPoint4dP pOutPoint,
+DPoint4dCP pInPoint,
+int n
+);
+
+Public GEOMDLLIMPEXP void bsiDMatrix4d_multiply4dPoints
+
+(
+DMatrix4dCP pA,
+DPoint4dP pOutPoint,
+DPoint4dCP pInPoint,
+int n
+);
+/*-----------------------------------------------------------------*//**
+* Matrix*point multiplication, with input points represented by
+* separate DPoint3d and weight arrays.
+
+* @instance pA => matrix
+* @param pHPoint <= Array of homogeneous products A*pPoint[i]
+* @param pPoint => Array of xyz coordinates
+* @param pWeight => weight array. If NULL, unit weight is used
+* @param n => number of points
+* @see
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDMatrix4d_multiplyWeightedDPoint3dArray
+
+(
+DMatrix4dCP pA,
+DPoint4dP pHPoint,
+DPoint3dCP pPoint,
+const double *pWeight,
+int n
+);
+/*-----------------------------------------------------------------*//**
+* Multiply an array of points by a matrix, using all components of both the matrix
+* and the points.
+*
+* @instance pA => matrix term of product.
+* @param pOutPoint <= Array of products A*pPoint[i] renormalized
+* @param pInPoint => Array of points points
+* @param n => number of points
+* @see
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDMatrix4d_multiplyAndRenormalizeDPoint3dArray
+
+(
+DMatrix4dCP pA,
+DPoint3dP pOutPoint,
+DPoint3dCP pInPoint,
+int n
+);
+
+//!
+//! Reutrn world-to-local and local-to-world transforms for translating to/from
+//! a local origin.  The local origin is taken as the 3d (cartesian) normalized
+//! image of a 4D point.
+//! @param pWorldToLocal OUT transformation from world to local coordiantes
+//! @param pLocalToWorld OUT transformation from local to world coordinates
+//! @param pPoint IN Homogeneous origin.
+//! @return false if homogeneous origin cannot be normalized to xyz.
+//!
+Public GEOMDLLIMPEXP bool    bsiDMatrix4d_initForDPoint4dOrigin
+(
+DMatrix4dP   pWorldToLocal,
+DMatrix4dP   pLocalToWorld,
+DPoint4dCP pPoint
+);
+
+/*-----------------------------------------------------------------*//**
+* Fill the affine part using xyz vectors for each row of the basis
+* part and an xyz vector for the translation
+*
+* @instance pA <= matrix initialized as an identity
+* @param pRow0 => data for row 0 of leading 3x3 submatrix
+* @param pRow1 => data for row 1 of leading 3x3 submatrix
+* @param pRow2 => data for row 2 of leading 3x3 submatrix
+* @param pTranslation => data for translation part of matrix
+* @see
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDMatrix4d_initAffineRows
+
+(
+DMatrix4dP pA,
+DPoint3dCP pRow0,
+DPoint3dCP pRow1,
+DPoint3dCP pRow2,
+DPoint3dCP pTranslation
+);
+
+/*-----------------------------------------------------------------*//**
+* Fill the affine part using xyz vectors for each column of the basis
+* part and an xyz vector for the translation
+
+* @instance pA <= matrix initialized as an identity
+* @param pCol0 => data for column 0 of leading 3x3 submatrix
+* @param pCol1 => data for column 1 of leading 3x3 submatrix
+* @param pCol2 => data for column 2 of leading 3x3 submatrix
+* @param pTranslation => data for translation part of matrix
+* @see
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDMatrix4d_initAffineColumns
+
+(
+DMatrix4dP pA,
+DPoint3dCP pCol0,
+DPoint3dCP pCol1,
+DPoint3dCP pCol2,
+DPoint3dCP pTranslation
+);
 END_BENTLEY_GEOMETRY_NAMESPACE

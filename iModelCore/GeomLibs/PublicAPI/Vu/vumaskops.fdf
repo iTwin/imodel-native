@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Vu/vumaskops.fdf $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -217,6 +217,13 @@ bvector<bvector<VuP>> &loops    //!< [out] node loops
 @bsimethod                                                    EarlinLutz      10/08
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public GEOMDLLIMPEXP void vu_exchangeNullFacesToBringMaskInside (VuSetP pGraph, VuMask mask);
+
+/*---------------------------------------------------------------------------------**//**
+@description Within each bundle of null faces (2 nodes), reorder edges so that those with stated mask value
+   precede all others.  All other orderings are preserved.
+@bsimethod                                                    EarlinLutz      06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void vu_sortMaskToFrontOfBundle (VuSetP pGraph, VuMask mask, bool targetMask = true);
 
 /*---------------------------------------------------------------------------------**//**
 @description test if specified mask has identical value at each node and its face successor.

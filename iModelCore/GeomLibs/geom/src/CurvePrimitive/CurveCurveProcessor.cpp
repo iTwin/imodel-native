@@ -2,11 +2,11 @@
 |
 |     $Source: geom/src/CurvePrimitive/CurveCurveProcessor.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-
+#include "../deprecatedFunctions.h"
 #include "CurveCurveProcessor.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 

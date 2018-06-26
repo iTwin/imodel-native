@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/pf_integrals.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -89,9 +89,9 @@ DPoint3dCR point3
     {
     DVec3d u1, u2, u3;
 
-    bsiDVec3d_subtractDPoint3dDPoint3d (&u1, &point1, &point0);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&u2, &point2, &point0);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&u3, &point3, &point0);
+    u1.DifferenceOf (point1, point0);
+    u2.DifferenceOf (point2, point0);
+    u3.DifferenceOf (point3, point0);
 
     accumulateTetrahedralVolumeProperties (u1, u2, u3,
             moments.coff[3][3],
@@ -182,9 +182,9 @@ DVec3dCR scales
 )
     {
     DVec3d vector0, vector1, vector2;
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector0, &point0, &origin);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector1, &point1, &origin);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector2, &point2, &origin);
+    vector0.DifferenceOf (point0, origin);
+    vector1.DifferenceOf (point1, origin);
+    vector2.DifferenceOf (point2, origin);
 
     DMatrix4d triangleProducts = TriangleProducts (vector0, vector1, vector2);
     bsiDMatrix4d_addScaledDMatrix4dInPlace (sums[0].areaProducts, triangleProducts, scales.x);
@@ -196,7 +196,7 @@ DVec3dCR scales
     bsiDMatrix4d_addScaledDMatrix4dInPlace (sums[5].areaProducts, triangleProducts, fabs (scales.z));
 
     bsiDMatrix4d_addScaledDMatrix4dInPlace (sums[6].areaProducts, triangleProducts,
-        bsiDVec3d_magnitude (&scales));
+        scales.Magnitude ());
     DMatrix4d matrixB;
     DMatrix4d matrixA, matrixAT, matrixABAT;
     DPoint3d sweep0, sweep1, sweep2;
@@ -218,10 +218,10 @@ DVec3dCR scales
         accumulateTetrahedralVolumeMoments (matrixB, sweep0, sweep1, sweep2, point1);
         // Shift to global origin ...
         DVec3d translationVector;
-        bsiDVec3d_subtractDPoint3dDPoint3d (&translationVector, &sweep0, &origin);
-        bsiDMatrix4d_initTranslate (&matrixA, translationVector.x, translationVector.y, translationVector.z);
-        bsiDMatrix4d_transpose (&matrixAT, &matrixA);
-        bsiDMatrix4d_multiply3 (&matrixABAT, &matrixA, &matrixB, &matrixAT);
+        translationVector.DifferenceOf (sweep0, origin);
+        matrixA.InitFromTranslation (translationVector.x, translationVector.y, translationVector.z);
+        matrixAT.TransposeOf (matrixA);
+        matrixABAT.InitProduct (matrixA, matrixB, matrixAT);
         bsiDMatrix4d_addScaledDMatrix4dInPlace (directionalProducts[i], matrixABAT, 1.0);
         }
     }
@@ -249,12 +249,12 @@ void AddTriangle (DPoint3dCR point0, DPoint3dCR point1, DPoint3dCR point2)
     {
     DVec3d vector01, vector02, cross;
     DPoint3d triangleCentroid;
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector01, &point1, &point0);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector02, &point2, &point0);
+    vector01.DifferenceOf (point1, point0);
+    vector02.DifferenceOf (point2, point0);
     static double oneThird = 1.0 / 3.0;
 
-    bsiDVec3d_crossProduct (&cross, &vector01, &vector02);
-    //bsiDVec3d_scaleInPlace (&cross, 0.5);
+    cross.CrossProduct (vector01, vector02);
+    //cross.Scale (0.5);
     bsiDPoint3d_add2ScaledDVec3d (&triangleCentroid, &point0, &vector01, oneThird, &vector02, oneThird);
     // full cross product is used as jacobian in area moment accumulations.
     AccumulateScaledPrincipalProducts (data, directionalProducts, origin, point0, point1, point2, cross);
@@ -388,9 +388,9 @@ DVec3dR missingFacetFactors
         int kAbs = 3 + k;
         // pluck out the 2nd moments from the other two planes.  axx is the properly signed integral (and should vanish), q uses absolute differentials (and should not)
         // the ration is 
-        bsiDPoint3d_setXYZ (&axx, integrals[k].areaProducts.coff[k0][k0], integrals[k].areaProducts.coff[k0][k1], integrals[k].areaProducts.coff[k1][k1]);
-        bsiDPoint3d_setXYZ (&q,   integrals[kAbs].areaProducts.coff[k0][k0], integrals[kAbs].areaProducts.coff[k0][k1], integrals[kAbs].areaProducts.coff[k1][k1]);
-        bsiTrig_safeDivide (&ratios[k], bsiDVec3d_magnitude (&axx), bsiDVec3d_magnitude (&q), 1.0);
+        axx.Init ( integrals[k].areaProducts.coff[k0][k0], integrals[k].areaProducts.coff[k0][k1], integrals[k].areaProducts.coff[k1][k1]);
+        q.Init (   integrals[kAbs].areaProducts.coff[k0][k0], integrals[kAbs].areaProducts.coff[k0][k1], integrals[kAbs].areaProducts.coff[k1][k1]);
+        DoubleOps::SafeDivide (ratios[k], axx.Magnitude (), q.Magnitude (), 1.0);
         }
     directionalVolumes.Init (integrals[0].volume, integrals[1].volume, integrals[2].volume);
     signedDirectionalAreas.Init (integrals[0].areaProducts.coff[3][3], integrals[1].areaProducts.coff[3][3], integrals[2].areaProducts.coff[3][3]);

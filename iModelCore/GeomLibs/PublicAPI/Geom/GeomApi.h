@@ -838,7 +838,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 //#include "internal/ddisk3d.fdf"
 //#include "internal/dellipsoid3d.fdf"
 #include "dmap4d.fdf"
-#include "dmatrix4d.fdf"
 #include "doublefuncs.fdf"
 #include "dpoint3d.fdf"
 #include "dpoint3darray.fdf"

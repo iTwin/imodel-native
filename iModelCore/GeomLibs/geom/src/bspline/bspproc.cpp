@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspproc.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1088,48 +1088,6 @@ wrapup:
     bspcurv_freeCurve (&curve);
     return status;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     07/92
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspproc_initializeBezierPatch
-(
-MSBsplineSurface        *patchP,            /* <= bezier patch */
-MSBsplineSurface        *surfP              /* => surface (bezier prepped) */
-)
-    {
-    int                 numPatchPoles;
-
-    /* bezier is the patch under consideration */
-    numPatchPoles = surfP->uParams.order * surfP->vParams.order;
-    if (NULL ==
-        (patchP->poles = (DPoint3d*)msbspline_malloc (numPatchPoles * sizeof(DPoint3d), HEAPSIG_BPRC)))
-        return ERROR;
-
-    if (surfP->rational &&
-        NULL ==
-        (patchP->weights = (double*)msbspline_malloc (numPatchPoles * sizeof(double), HEAPSIG_BPRC)))
-        return ERROR;
-
-    patchP->rational         = surfP->rational;
-    patchP->uParams.numPoles =
-    patchP->uParams.order    = surfP->uParams.order;
-    patchP->vParams.numPoles =
-    patchP->vParams.order    = surfP->vParams.order;
-    patchP->uParams.closed   =
-    patchP->vParams.closed   =
-    patchP->uParams.numKnots =
-    patchP->vParams.numKnots = 0;
-
-    patchP->uKnots           = bspknot_bezierKnotVector (patchP->uParams.order);
-    patchP->vKnots           = bspknot_bezierKnotVector (patchP->vParams.order);
-
-    patchP->holeOrigin       = surfP->holeOrigin;
-    patchP->numBounds        = surfP->numBounds;
-    patchP->boundaries       = surfP->boundaries;
-
-    return SUCCESS;
-    }
 /*---------------------------------------------------------------------------------**//**
 * Initialize a bezier curve struct to hold a bezier of same order as a given curve.
 * @bsimethod                                                    earlinLutz      10/94
@@ -2058,65 +2016,6 @@ void            *argsP                 /* => passed through to processFunc */
 #endif /* !FONTIMPORTER */
 
 
-/*---------------------------------------------------------------------------------**//**
-* Four ways to use this function: 1). numPts != 0 && data != NULL -> evaluate at given parametrs #). numPts != 0 && data == NULL -> evaluate
-* at numPts evenly 2). rulesByLength == true ... spaced along arc length 3). rulesByLength == false ... spaced from 0.0 to 1.0 4). numPts == 0
-* && -> stroke curve according to data[0] = chord tol chord tolerance, set numPts to number of points returned
-* @bsimethod                                                    BFP             09/90
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspcurv_evaluateCurve
-(
-DPoint3d        **pts,         /* <= evaluated points */
-double          *data,         /* => params to evaluate at */
-int             *numPts,       /* <=> number evaluated points */
-MSBsplineCurve  *curve         /* => curve structure */
-)
-    {
-    int         i, status;
-    double      *dPtr, x, delta, tol, *endP;
-    DPoint3d    *pPtr;
 
-    if (*numPts)
-        {
-        if (NULL == (*pts = static_cast<DPoint3d *>(BSIBaseGeom::Malloc (*numPts * sizeof (DPoint3d)))))
-            return ERROR;
-        pPtr = *pts;
-        if (data)                               /* case 1 */
-            {
-            for (dPtr=endP=data, endP += *numPts; dPtr < endP; dPtr++, pPtr++)
-                bspcurv_evaluateCurvePoint (pPtr, NULL, curve, *dPtr);
-
-            status = SUCCESS;
-            }
-/*      else if (curve->display.rulesByLength)   case 2
-            {
-            Not currently supported
-            }*/
-        else                                    /* case 3 */
-            {
-            delta = (double) (curve->params.closed ? *numPts : *numPts - 1);
-            if (delta > 0.0)
-                delta = 1.0 / delta;
-            for (i=0, x=0.0; i < *numPts; i++, pPtr++, x += delta)
-                bspcurv_evaluateCurvePoint (pPtr, NULL, curve, x);
-
-            status = SUCCESS;
-            }
-        }
-    else if (data)                              /* case 4 */
-        {
-        tol = *data;
-        bvector <DPoint3d> points;
-        // TFS1226
-        curve->AddStrokes (points, tol, 0.0 /* no angle tol */);
-        *numPts = (int)points.size ();
-        *pts = DPoint3dOps::MallocAndCopy (points);
-        return *numPts > 0 ? SUCCESS : ERROR;
-        }
-    else
-        status = ERROR;
-
-    return status;
-    }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -651,6 +651,14 @@ bvector<bool> &roadBoundaryFlag,    //!< [in] true if the succeeding edge is a b
 bool isCut                          //!< [in] true if this is a "cut" -- road below dtm.  false if this is "fill" -- dtm below road
 ) {}
 
+// Announce a vertical panel or a specific target mesh.
+// <ul>
+// <li>The loop is oriented CCW from outside in its destination
+// <li>Default action is to do nothing.
+// </ul>
+//
+GEOMAPI_VIRTUAL void ProcessSideFacet (bvector<DPoint3d> &points, bool isCut) {}
+
 //! Called to reset the computation.
 //! This is important:  The FastCutFill caller may decide to throw away partially completed results
 //!    and restart.

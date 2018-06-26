@@ -21,7 +21,7 @@
 * @bsistruct                                                    EarlinLutz      02/99
 +===============+===============+===============+===============+===============+======*/
 #include <bsibasegeomPCH.h>
-
+#include "../deprecatedFunctions.h"
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -49,7 +49,7 @@ double          sweep
 )
     {
     double theta1 = theta0 + sweep;
-    if (bsiTrig_isAngleFullCircle (sweep))
+    if (Angle::IsFullCircle (sweep))
         {
         pRange->InitFrom (-1.0, -1.0, 0.0, 1.0, 1.0, 0.0);
         }
@@ -60,22 +60,22 @@ double          sweep
                 cos (theta1), sin (theta1), 0.0);
 
         /* Force the range out to the axis extremes if they are in the sweep */
-        if (bsiTrig_angleInSweep (0.0,              theta0, sweep))
+        if (Angle::InSweepAllowPeriodShift (0.0,              theta0, sweep))
             {
             pRange->high.x = 1.0;
             }
 
-        if (bsiTrig_angleInSweep (msGeomConst_pi,  theta0, sweep))
+        if (Angle::InSweepAllowPeriodShift (msGeomConst_pi,  theta0, sweep))
             {
             pRange->low.x = -1.0;
             }
 
-        if (bsiTrig_angleInSweep (msGeomConst_piOver2, theta0, sweep))
+        if (Angle::InSweepAllowPeriodShift (msGeomConst_piOver2, theta0, sweep))
             {
             pRange->high.y = 1.0;
             }
 
-        if (bsiTrig_angleInSweep (-msGeomConst_piOver2, theta0, sweep))
+        if (Angle::InSweepAllowPeriodShift (-msGeomConst_piOver2, theta0, sweep))
             {
             pRange->low.y = -1.0;
             }
@@ -259,8 +259,8 @@ double          sweep
 
     {
     DPoint3d vector0, vector90;
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vector0, pPoint0, pCenter);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vector90, pPoint90, pCenter);
+    vector0.DifferenceOf (*pPoint0, *pCenter);
+    vector90.DifferenceOf (*pPoint90, *pCenter);
     bsiDConic4d_initFrom3dVectors (pConic,
                     pCenter,
                     &vector0,
@@ -377,12 +377,12 @@ bool        ccw
 
     if (isInvertible)
         {
-        bsiDPoint4d_initFromDPoint3dAndWeight (&point[0], pStartPoint, 1.0);
-        bsiDPoint4d_initFromDPoint3dAndWeight (&point[1], pStartPoint, 1.0);
+        point[0].InitFrom (*pStartPoint, 1.0);
+        point[1].InitFrom (*pStartPoint, 1.0);
 
         bsiDMatrix4d_multiply4dPoints (&inverseFrame, paramPoint, point, 2);
-        theta0 = bsiTrig_atan2 (paramPoint[0].y, paramPoint[0].x);
-        theta1 = bsiTrig_atan2 (paramPoint[1].y, paramPoint[1].x);
+        theta0 = Angle::Atan2 (paramPoint[0].y, paramPoint[0].x);
+        theta1 = Angle::Atan2 (paramPoint[1].y, paramPoint[1].x);
         sweep  = theta1 - theta0;
         if (sweep < 0.0)
             {
@@ -473,8 +473,8 @@ double              sweep
     {
     DPoint3d vectorU, vectorV;
 
-    bsiDPoint3d_scale (&vectorU, pVector0, r0);
-    bsiDPoint3d_scale (&vectorV, pVector90, r1);
+    vectorU.Scale (*pVector0, r0);
+    vectorV.Scale (*pVector90, r1);
     bsiDConic4d_initFrom3dVectors (pConic,
                 pCenter,
                 &vectorU,
@@ -508,13 +508,13 @@ double          radius
     if (pNormal)
         {
         bsiDPoint3d_getNormalizedTriad(pNormal, &uVector, &vVector, &wVector);
-        bsiDPoint3d_scale (&uVector, &uVector, radius);
-        bsiDPoint3d_scale (&vVector, &vVector, radius);
+        uVector.Scale (uVector, radius);
+        vVector.Scale (vVector, radius);
         }
     else
         {
-        bsiDPoint3d_setXYZ (&uVector, radius,  0.0,    0.0);
-        bsiDPoint3d_setXYZ (&uVector, 0.0,     radius, 0.0);
+        uVector.Init ( radius,  0.0,    0.0);
+        uVector.Init ( 0.0,     radius, 0.0);
         }
 
     bsiDConic4d_initFrom3dVectors
@@ -542,7 +542,7 @@ Public GEOMDLLIMPEXP bool    bsiDConic4d_isFullSweep
 DConic4dCP pConic
 )
     {
-    return bsiTrig_isAngleFullCircle (pConic->sweep);
+    return Angle::IsFullCircle (pConic->sweep);
     }
 
 
@@ -608,7 +608,7 @@ double      theta
             &pConic->vector0, cosTheta,
             &pConic->vector90, sinTheta
             );
-    return bsiDPoint4d_normalize (&homogeneousPoint, pPoint);
+    return homogeneousPoint.GetProjectedXYZ (*pPoint);
     }
 
 
@@ -825,7 +825,7 @@ double      theta
         bsiDConic4d_angleParameterToDPoint4dDerivatives (pConic, &X, &dX, &ddX, theta);
         w = X.w;
         dw = dX.w;
-        boolstat = bsiTrig_safeDivide (&divw, 1.0, w, 1.0);
+        boolstat = DoubleOps::SafeDivide (divw, 1.0, w, 1.0);
         w2 = w * w;
         wdw = w * dw;
         divw2 = divw * divw;
@@ -846,7 +846,7 @@ double      theta
         {
         bsiDConic4d_angleParameterToDPoint4dDerivatives (pConic, &X, &dX, NULL, theta);
         w = X.w;
-        boolstat = bsiTrig_safeDivide (&divw, 1.0, w, 1.0);
+        boolstat = DoubleOps::SafeDivide (divw, 1.0, w, 1.0);
         divw2 = divw * divw;
 
         bsiDPoint4d_weightedDifference (&D1, &dX, &X);
@@ -1005,9 +1005,9 @@ DMatrix4dP pInverse
 
     /* Calculations work with first 3 columns.  */
     memset (&A, 0, sizeof (DMatrix4d));
-    bsiDMatrix4d_setColumnDPoint4d (&A, 0, &pConic->vector0);
-    bsiDMatrix4d_setColumnDPoint4d (&A, 1, &pConic->vector90);
-    bsiDMatrix4d_setColumnDPoint4d (&A, 2, &pConic->center);
+    A.SetColumn (0, pConic->vector0);
+    A.SetColumn (1, pConic->vector90);
+    A.SetColumn (2, pConic->center);
     centerScale = fabs (pConic->center.x)
              + fabs (pConic->center.y)
              + fabs (pConic->center.z);
@@ -1034,7 +1034,7 @@ DMatrix4dP pInverse
     R = A;
 
     bsiLinAlg_givensQR ((double*)&QT, (double*)&R, 4, 3, 4, 1, 4, 1);
-    bsiDMatrix4d_transpose (&Q, &QT);
+    Q.TransposeOf (QT);
 
 #ifdef VERIFY
         {
@@ -1060,10 +1060,10 @@ DMatrix4dP pInverse
         {
 
         if (pFrame)
-            bsiDMatrix4d_initIdentity (pFrame);
+            pFrame->InitIdentity ();
 
         if (pInverse)
-            bsiDMatrix4d_initIdentity (pInverse);
+            pInverse->InitIdentity ();
 
         return false;
         }
@@ -1071,9 +1071,9 @@ DMatrix4dP pInverse
     /* The last column of the orthogonal part becomes
         the last colum of the expanded A */
 
-    bsiDMatrix4d_getColumnDPoint4d (&Q, &q3, 3);
-    bsiDMatrix4d_setColumnDPoint4d (&A, 3, &q3);
-    bsiDMatrix4d_setColumn (&R, 3, 0.0, 0.0, 0.0, 1.0);
+    Q.GetColumn (q3, 3);
+    A.SetColumn (3, q3);
+    R.SetColumn ( 3, 0.0, 0.0, 0.0, 1.0);
 
     AI = QT;
     bsiLinAlg_backSub ((double*)&AI, 4, 1, 4, (double*)&R, 4, 1, 4);
@@ -1100,8 +1100,8 @@ DMatrix4dP pInverse
     /* Swap final columns to conform to usual interpretation
         with the out-of-plane part as z */
 
-    bsiDMatrix4d_swapColumns (&A, 2, 3);
-    bsiDMatrix4d_swapRows    (&AI, 2, 3);
+    A.SwapColumns (2, 3);
+    AI.SwapRows (2, 3);
 
 #ifdef VERIFY
         {
@@ -1128,19 +1128,19 @@ DMatrix4dP pInverse
     bsiDPoint4d_weightedDifference (&diff90, &pConic->vector90, &pConic->center);
     bsiDPoint4d_cartesianFromHomogeneous (&diff0, &vec0);
     bsiDPoint4d_cartesianFromHomogeneous (&diff90, &vec90);
-    bsiDPoint3d_normalizedCrossProduct (&vecZ, &vec0, &vec90);
-    bsiDMatrix4d_setColumnDPoint4d (&A, 0, &pConic->vector0);
-    bsiDMatrix4d_setColumnDPoint4d (&A, 1, &pConic->vector90);
-    bsiDMatrix4d_setColumn (&A, 2, vecZ.x, vecZ.y, vecZ.z, 0.0);
-    bsiDMatrix4d_setColumnDPoint4d (&A, 3, &pConic->center);
+    vecZ.NormalizedCrossProduct (vec0, vec90);
+    A.SetColumn (0, pConic->vector0);
+    A.SetColumn (1, pConic->vector90);
+    A.SetColumn ( 2, vecZ.x, vecZ.y, vecZ.z, 0.0);
+    A.SetColumn (3, pConic->center);
 
     if (!bsiDMatrix4d_invertQR (&AI, &A))
         {
         if (pFrame)
-            bsiDMatrix4d_initIdentity (pFrame);
+            pFrame->InitIdentity ();
 
         if (pInverse)
-            bsiDMatrix4d_initIdentity (pInverse);
+            pInverse->InitIdentity ();
         return false;
         }
 
@@ -1206,9 +1206,9 @@ DEllipse3dP pEllipse
     {
     pEllipse->start = pConic->start;
     pEllipse->sweep = pConic->sweep;
-    bsiDPoint4d_getXYW (&pConic->center,   &pEllipse->center);
-    bsiDPoint4d_getXYW (&pConic->vector0,  &pEllipse->vector0);
-    bsiDPoint4d_getXYW (&pConic->vector90, &pEllipse->vector90);
+    pConic->center.GetXYW (pEllipse->center);
+    pConic->vector0.GetXYW (pEllipse->vector0);
+    pConic->vector90.GetXYW (pEllipse->vector90);
     }
 
 
@@ -1229,9 +1229,9 @@ RotMatrixP  pMatrix
 )
     {
     DVec3d vec0, vec1, vec2;
-    bsiDPoint4d_getXYW (&pConic->vector0,  &vec0);
-    bsiDPoint4d_getXYW (&pConic->vector90, &vec1);
-    bsiDPoint4d_getXYW (&pConic->center,   &vec2);
+    pConic->vector0.GetXYW (vec0);
+    pConic->vector90.GetXYW (vec1);
+    pConic->center.GetXYW (vec2);
     pMatrix->InitFromColumnVectors (vec0, vec1, vec2);
     }
 
@@ -1260,25 +1260,25 @@ RotMatrixP pMatrix
     bool    boolstat = false;
     RotMatrix basis, translate, inverseTranslate;
     bsiDConic4d_getRotMatrixXYW (pConic, &basis);
-    bsiRotMatrix_initIdentity (&translate);
+    translate.InitIdentity ();
     inverseTranslate = translate;
 
-    if (bsiTrig_safeDivide (&a, 1.0, pConic->center.w, 1.0))
+    if (DoubleOps::SafeDivide (a, 1.0, pConic->center.w, 1.0))
         {
         DVec3d vec;
-        bsiDPoint4d_getXYW (&pConic->center, &vec);
+        pConic->center.GetXYW (vec);
         translate.SetColumn (vec, 2);
         inverseTranslate.form3d[0][2] = -translate.form3d[0][2] * a;
         inverseTranslate.form3d[1][2] = -translate.form3d[1][2] * a;
         inverseTranslate.form3d[2][2] = a;
-        bsiRotMatrix_multiplyRotMatrixRotMatrix (&basis, &inverseTranslate, &basis);
+        basis.InitProduct (inverseTranslate, basis);
         boolstat = true;
         }
 #define CHECK_INVERSE_not
 #ifdef CHECK_INVERSE
         {
         RotMatrix product;
-        bsiRotMatrix_multiplyRotMatrixRotMatrix (&product, &translate, &inverseTranslate);
+        product.InitProduct (translate, inverseTranslate);
         assert (product.IsIdentity ());
         }
 #endif
@@ -1322,7 +1322,7 @@ RotMatrixP pInverse
         *pMatrix = matrix;
 
     if (pInverse)
-        myStat = bsiRotMatrix_invert (pInverse, &matrix);
+        myStat = pInverse->InverseOf (matrix);
 
     return myStat;
     }
@@ -1389,7 +1389,7 @@ DPoint3dCP pPoint
     if (bsiDConic4d_getLocalFrame (pConic, NULL, &inverse))
         {
         bsiDMatrix4d_multiplyWeightedDPoint3dArray (&inverse, &localPoint, pPoint, NULL, 1);
-        theta = bsiTrig_atan2 (localPoint.y, localPoint.x);
+        theta = Angle::Atan2 (localPoint.y, localPoint.x);
         }
     return theta;
 }
@@ -1420,7 +1420,7 @@ DPoint4dCP pPoint
     if (bsiDConic4d_getLocalFrame (pConic, NULL, &inverse))
         {
         bsiDMatrix4d_multiply4dPoints (&inverse, &localPoint, pPoint, 1);
-        theta = bsiTrig_atan2 (localPoint.y, localPoint.x);
+        theta = Angle::Atan2 (localPoint.y, localPoint.x);
         }
     return theta;
 }
@@ -1458,7 +1458,7 @@ DPoint3dCP pXYZ
         double rw;
         bsiDMatrix4d_multiplyWeightedDPoint3dArray (&localInverse, &localXYZW, pXYZ, NULL, 1);
         localXYZW.z = 0.0;
-        boolStat &= bsiTrig_safeDivide (&rw, 1.0, localXYZW.w, 1.0);
+        boolStat &= DoubleOps::SafeDivide (rw, 1.0, localXYZW.w, 1.0);
         if (pCoff0)
             *pCoff0 = localXYZW.x * rw;
         if (pCoff90)
@@ -1467,7 +1467,7 @@ DPoint3dCP pXYZ
         if (pXYZ)
             {
             bsiDMatrix4d_multiply4dPoints (&localMatrix, &worldXYZW, &localXYZW, 1);
-            boolStat &= bsiDPoint4d_normalize (&worldXYZW, pXYZNear);
+            boolStat &= worldXYZW.GetProjectedXYZ (*pXYZNear);
             }
         }
     return boolStat;
@@ -1499,8 +1499,8 @@ double          tol
 
     if (tol > 0.0)
         {
-        r0 = bsiDPoint3d_dotProduct (&pConic->vector0, &pConic->vector0);
-        r90 = bsiDPoint3d_dotProduct (&pConic->vector90, &pConic->vector90);
+        r0 = pConic->vector0.DotProduct (pConic->vector0);
+        r90 = pConic->vector90.DotProduct (pConic->vector90);
 
         if (r0 > r90)
             {
@@ -1595,8 +1595,8 @@ int       numPoint
 
     for (i = 0; i < numPoint; i++)
         {
-        double theta = bsiTrig_atan2 (pTrig[i].y, pTrig[i].x);
-        if (bsiTrig_angleInSweep (theta, pConic->start, pConic->sweep))
+        double theta = Angle::Atan2 (pTrig[i].y, pTrig[i].x);
+        if (Angle::InSweepAllowPeriodShift (theta, pConic->start, pConic->sweep))
             {
             bsiDConic4d_angleParameterToTrigPairs (pConic, &pPoint[n++], &pTrig[i], 1);
             }
@@ -1620,7 +1620,7 @@ DConic4dCP pConic,
 double      angle
 )
     {
-    return bsiTrig_angleInSweep (angle, pConic->start, pConic->sweep);
+    return Angle::InSweepAllowPeriodShift (angle, pConic->start, pConic->sweep);
     }
 
 
@@ -1914,9 +1914,9 @@ DConic4dCP pSource
     double   ax, ay, a, tol;
     DPoint3d vector0, vector90;
 
-    dotUV = bsiDPoint3d_dotProduct(&pSource->vector0,  &pSource->vector90);
-    dotUU = bsiDPoint3d_dotProduct(&pSource->vector0,  &pSource->vector0 );
-    dotVV = bsiDPoint3d_dotProduct(&pSource->vector90, &pSource->vector90);
+    dotUV = pSource->vector0.DotProduct (pSource->vector90);
+    dotUU = pSource->vector0.DotProduct (pSource->vector0);
+    dotVV = pSource->vector90.DotProduct (pSource->vector90);
 
     ay = dotUU - dotVV;
     ax = 2.0 * dotUV;
@@ -1934,13 +1934,9 @@ DConic4dCP pSource
             if the same conic is being used for input and output. */
         vector0 = pSource->vector0;
         vector90 = pSource->vector90;
-        bsiDPoint3d_add2ScaledDPoint3d (&pConic->vector0, NULL,
-                                    &vector0,   c,
-                                    &vector90,  s);
-        bsiDPoint3d_add2ScaledDPoint3d (&pConic->vector90, NULL,
-                                    &vector0,  -s,
-                                    &vector90,  c);
-        theta = bsiTrig_atan2 (s,c);
+        pConic->vector0.SumOf(*NULL, vector0, c, vector90, s);
+        pConic->vector90.SumOf(*NULL, vector0, -s, vector90, c);
+        theta = Angle::Atan2 (s,c);
         pConic->start -= theta;
         }
     }
@@ -2056,7 +2052,7 @@ double      theta
     {
     DPoint3d tangent;
     bsiDConic4d_angleParameterToDPoint3dDerivatives (pConic, NULL, &tangent, NULL, theta);
-    return bsiDPoint3d_magnitude (&tangent);
+    return tangent.Magnitude ();
     }
 
 
@@ -2207,7 +2203,7 @@ DRange3dP pRange
         /* The DConic4d is a complete complete true ellipse.    Only local extrema need to
             be considered, and they do not need to have angular range tests applied. */
         /* Take the center as an initial range limit. */
-        bsiDPoint4d_normalize (&pConic->center, &pRange->low);
+        pConic->center.GetProjectedXYZ (pRange->low);
         pRange->high = pRange->low;
 
         bsiTrig_extendComponentRange (&pRange->low.x, &pRange->high.x,
@@ -2301,16 +2297,16 @@ DPoint3dP pTrigPoints,
 DPoint4dCP pPlane
 )
     {
-    double alpha = bsiDPoint4d_dotProduct ( pPlane, &pConic->center);
-    double beta  = bsiDPoint4d_dotProduct ( pPlane, &pConic->vector0);
-    double gamma = bsiDPoint4d_dotProduct ( pPlane, &pConic->vector90);
+    double alpha = pPlane->DotProduct (pConic->center);
+    double beta  = pPlane->DotProduct (pConic->vector0);
+    double gamma = pPlane->DotProduct (pConic->vector90);
 
     double mag = sqrt (beta * beta + gamma * gamma);
     int n;
 
 
     if  (   mag == 0.0
-        || !bsiTrig_safeDivide (&alpha, alpha, mag, 0.0)
+        || !DoubleOps::SafeDivide (alpha, alpha, mag, 0.0)
         )
         return 0;
     beta /= mag;
@@ -2326,12 +2322,12 @@ DPoint4dCP pPlane
         /* Take the on-circle solution */
         pTrigPoints[0].x = pTrigPoints[1].x;
         pTrigPoints[0].y = pTrigPoints[1].y;
-        pTrigPoints[0].z = bsiTrig_atan2 ( pTrigPoints[0].y, pTrigPoints[0].x );
+        pTrigPoints[0].z = Angle::Atan2 ( pTrigPoints[0].y, pTrigPoints[0].x );
         }
     else if ( n == 2 )
         {
-        pTrigPoints[0].z = bsiTrig_atan2 ( pTrigPoints[0].y, pTrigPoints[0].x );
-        pTrigPoints[1].z = bsiTrig_atan2 ( pTrigPoints[1].y, pTrigPoints[1].x );
+        pTrigPoints[0].z = Angle::Atan2 ( pTrigPoints[0].y, pTrigPoints[0].x );
+        pTrigPoints[1].z = Angle::Atan2 ( pTrigPoints[1].y, pTrigPoints[1].x );
         }
     else
         {
@@ -2371,12 +2367,12 @@ DPoint3dP pTrigPoints
         /* Take the on-circle solution */
         pTrigPoints[0].x = pTrigPoints[1].x;
         pTrigPoints[0].y = pTrigPoints[1].y;
-        pTrigPoints[0].z = pTrigPoints[1].z = bsiTrig_atan2 ( pTrigPoints[0].x, pTrigPoints[0].y );
+        pTrigPoints[0].z = pTrigPoints[1].z = Angle::Atan2 ( pTrigPoints[0].x, pTrigPoints[0].y );
         }
     else if ( n == 2 )
         {
-        pTrigPoints[0].z = bsiTrig_atan2 ( pTrigPoints[0].y, pTrigPoints[0].x );
-        pTrigPoints[1].z = bsiTrig_atan2 ( pTrigPoints[1].y, pTrigPoints[1].x );
+        pTrigPoints[0].z = Angle::Atan2 ( pTrigPoints[0].y, pTrigPoints[0].x );
+        pTrigPoints[1].z = Angle::Atan2 ( pTrigPoints[1].y, pTrigPoints[1].x );
         }
     else
         {
@@ -2474,7 +2470,7 @@ bool          clipZ
                                                 &pConic->vector90, trigPoints[root].y
                                                 );
 
-                            if (bsiDPoint4d_normalize (&hPoint, &point))
+                            if (hPoint.GetProjectedXYZ (point))
                                 {
                                 if (selectiveRangeCheck (pRange, &point, clipX, clipY, clipZ, i))
                                     {
@@ -2640,7 +2636,7 @@ RotMatrixCP pB1
     int i;
     int numInt;
 
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (&C, pB0inv, pB1);
+    C.InitProduct (*pB0inv, *pB1);
 
     numRoot = bsiMath_conicIntersectUnitCircle
                             (
@@ -2661,7 +2657,7 @@ RotMatrixCP pB1
             nominal solution vector */
         if (F.z < 0.0)
             bsiDPoint3d_negateInPlace (&F);
-        angle0[i] = bsiTrig_atan2 (F.y, F.x);
+        angle0[i] = Angle::Atan2 (F.y, F.x);
         c0[i] = cos (angle0[i]);
         s0[i] = sin (angle0[i]);
 
@@ -2792,8 +2788,8 @@ DConic4dCP pConic1
         */
         if (condition0 > condition1)
             {
-            bsiRotMatrix_multiplyRotMatrixRotMatrix (&C, &T0inv, &T1);
-            bsiRotMatrix_multiplyRotMatrixRotMatrix (&C, &C, &B1);
+            C.InitProduct (T0inv, T1);
+            C.InitProduct (C, B1);
             numRoot = intersectConicConic
                                     (
                                     pConic0Points,
@@ -2809,8 +2805,8 @@ DConic4dCP pConic1
             }
         else
             {
-            bsiRotMatrix_multiplyRotMatrixRotMatrix (&C, &T1inv, &T0);
-            bsiRotMatrix_multiplyRotMatrixRotMatrix (&C, &C, &B0);
+            C.InitProduct (T1inv, T0);
+            C.InitProduct (C, B0);
             numRoot = intersectConicConic
                                     (
                                     pConic1Points,
@@ -2977,12 +2973,12 @@ DTransform3dCP pFrame1
                 {
                 c0 = ax + bx * c1 + cx * s1;
                 s0 = ay + by * c1 + cy * s1;
-                bsiDPoint3d_setXYZ (&pEllipse0Params[i], c0, s0, 0.0);
+                pEllipse0Params[i].Init ( c0, s0, 0.0);
                 }
 
             if  (pEllipse1Params)
                 {
-                bsiDPoint3d_setXYZ (&pEllipse1Params[i], c1, s1, 0.0);
+                pEllipse1Params[i].Init ( c1, s1, 0.0);
                 }
 
             }
@@ -3075,8 +3071,8 @@ int           numUnBounded
     double theta0, theta1;
     for (i = 0; i < numUnBounded ; i++)
         {
-        theta0  = bsiTrig_atan2 (pEllipse0InCoffs[i].y, pEllipse0InCoffs[i].x);
-        theta1  = bsiTrig_atan2 (pEllipse1InCoffs[i].y, pEllipse1InCoffs[i].x);
+        theta0  = Angle::Atan2 (pEllipse0InCoffs[i].y, pEllipse0InCoffs[i].x);
+        theta1  = Angle::Atan2 (pEllipse1InCoffs[i].y, pEllipse1InCoffs[i].x);
 
         if  (
                 bsiDConic4d_angleInSweep (pEllipse0, theta0)
@@ -3317,9 +3313,9 @@ DSegment3dCP pSegment
         {
         double aa, ab, bb;
         bsiDSegment3d_transform (&localSegment, &ellipseInverse, pSegment);
-        aa = bsiDPoint3d_dotProductXY (&localSegment.point[0], &localSegment.point[0]) - 1.0;
-        ab = bsiDPoint3d_dotProductXY (&localSegment.point[0], &localSegment.point[1]) - 1.0;
-        bb = bsiDPoint3d_dotProductXY (&localSegment.point[1], &localSegment.point[1]) - 1.0;
+        aa = localSegment.point[0].DotProductXY (*(&localSegment.point[0])) - 1.0;
+        ab = localSegment.point[0].DotProductXY (*(&localSegment.point[1])) - 1.0;
+        bb = localSegment.point[1].DotProductXY (*(&localSegment.point[1])) - 1.0;
 
         numUnbounded = bsiMath_solveConvexQuadratic (lambda0, lambda1, aa, 2.0 * ab, bb);
 
@@ -3329,13 +3325,9 @@ DSegment3dCP pSegment
                 pLineParams[i] = lambda1[i];
 
             if (pConicParams)
-                bsiDPoint3d_add2ScaledDPoint3d (&pConicParams[i], NULL,
-                                               &localSegment.point[0], lambda0[i],
-                                               &localSegment.point[1], lambda1[i]);
+                pConicParams[i].SumOf(*NULL, *(&localSegment.point[0]), lambda0[i], *(&localSegment.point[1]), lambda1[i]);
             if (pPointArray)
-                bsiDPoint3d_add2ScaledDPoint3d (&pPointArray[i], NULL,
-                                               &pSegment->point[0], lambda0[i],
-                                               &pSegment->point[1], lambda1[i]);
+                pPointArray[i].SumOf(*NULL, *(&pSegment->point[0]), lambda0[i], *(&pSegment->point[1]), lambda1[i]);
             }
         }
     return  numUnbounded;
@@ -3391,7 +3383,7 @@ DSegment3dCP pSegment
         {
         if (lineParam[i] >= - s_lineTol && lineParam[i] <= 1.0 + s_lineTol)
             {
-            double theta = bsiTrig_atan2 (ellipseParam[i].y, ellipseParam[i].x);
+            double theta = Angle::Atan2 (ellipseParam[i].y, ellipseParam[i].x);
             if (bsiDConic4d_angleInSweep (pConic, theta))
                 {
                 if (pPointArray)
@@ -3440,7 +3432,7 @@ DPoint3dCP pPoint
     int         numTheta, numOut;
     //bool        boolStat = false;
 
-    bsiDPoint3d_setXYZ (&xywPoint, pPoint->x, pPoint->y, 1.0);
+    xywPoint.Init ( pPoint->x, pPoint->y, 1.0);
 
     bsiDConic4d_getRotMatrixXYW (pConic, &matrixB);
 
@@ -3493,7 +3485,7 @@ DPoint3dCP pPoint
 
     for (i = 0; i < numUnBounded; i++)
         {
-        if (bsiTrig_angleInSweep (angle[i], pConic->start, pConic->sweep))
+        if (Angle::InSweepAllowPeriodShift (angle[i], pConic->start, pConic->sweep))
             {
             if (pXYZOut)
                 pXYZOut[numBounded] = cartesianPoint[i];
@@ -3558,7 +3550,7 @@ bool extend
             if (!extend &&!bsiDConic4d_angleInSweep (pConic, angle[i]))
                 continue;
 
-            distSquared = bsiDPoint3d_distanceSquaredXY (pPoint, &cartesianPoint[i]);
+            distSquared = pPoint->DistanceSquaredXY (cartesianPoint[i]);
             if (distSquared < minDistSquared)
                 {
                 minDistSquared = distSquared;
@@ -3636,14 +3628,14 @@ double        sine
         eye.y = pEye->y;
         eye.z = pEye->z;
 
-        aCenter   = sine *   bsiDPoint3d_dotProductXY (&eye, &ellipse1.center  )
-                  - cosine * bsiDPoint3d_crossProductXY (&eye, &ellipse1.center  );
+        aCenter   = sine *   eye.DotProductXY (ellipse1.center)
+                  - cosine * eye.CrossProductXY (ellipse1.center);
 
-        aVector0  = sine *   bsiDPoint3d_dotProductXY (&eye, &ellipse1.vector0 )
-                  - cosine * bsiDPoint3d_crossProductXY (&eye, &ellipse1.vector0 );
+        aVector0  = sine *   eye.DotProductXY (ellipse1.vector0)
+                  - cosine * eye.CrossProductXY (ellipse1.vector0);
 
-        aVector90 = sine *   bsiDPoint3d_dotProductXY (&eye, &ellipse1.vector90)
-                  - cosine * bsiDPoint3d_crossProductXY (&eye, &ellipse1.vector90);
+        aVector90 = sine *   eye.DotProductXY (ellipse1.vector90)
+                  - cosine * eye.CrossProductXY (ellipse1.vector90);
 
         numQuadSolution = bsiMath_solveApproximateUnitQuadratic
                                 (
@@ -3677,8 +3669,8 @@ double        sine
             for (j = 0; j < 3; j++)
                 {
                 coffMatrix.form3d[i][j] =
-                             sine *   bsiDPoint3d_dotProductXY (&vector0[i], &vector1[j])
-                           - cosine * bsiDPoint3d_crossProductXY (&vector0[i], &vector1[j]);
+                             sine *   vector0[i].DotProductXY (vector1[j])
+                           - cosine * vector0[i].CrossProductXY (vector1[j]);
                 }
             }
         bsiBezier_implicitConicIntersectUnitCircle (cc, ss, theta, &numTheta, NULL, NULL, &coffMatrix);
@@ -3757,7 +3749,7 @@ DPoint3dCP pEndPoint
         if  (lineParam[i] >= 0.0 && lineParam[i] <= 1.0)
             {
             angle = ellipseAngle[i];
-            if  (bsiTrig_angleInSweep (angle, pConic->start, pConic->sweep))
+            if  (Angle::InSweepAllowPeriodShift (angle, pConic->start, pConic->sweep))
                 {
                 if  (pCartesianPoints)
                     pCartesianPoints[numBounded] = cartesianPoint[i];
@@ -3810,9 +3802,9 @@ DPoint3dCP pPoint
 
     double detJ = bsiDConic4d_determinantJXY (pConic);
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&globalVector, pPoint, &pConic->center);
+    globalVector.DifferenceOf (*pPoint, pConic->center);
     bsiDConic4d_getXYLocalOrientation (pConic, &matrix, &inverse);
-    bsiRotMatrix_multiplyDPoint3dArray (&inverse, &localVector, &globalVector, 1);
+    inverse.Multiply (&localVector, &globalVector, 1);
 
     c = localVector.x;
     s = localVector.y;
@@ -3828,8 +3820,8 @@ DPoint3dCP pPoint
     if (pArea)
         {
         localArea = 0.5 * ( pConic->sweep
-                      - bsiDPoint2d_crossXYXY (c0, s0, c,  s)
-                      - bsiDPoint2d_crossXYXY (c,  s,  c1, s1)
+                      - DoubleOps::DeterminantXYXY (c0, s0, c,  s)
+                      - DoubleOps::DeterminantXYXY (c,  s,  c1, s1)
                         );
         *pArea = localArea * detJ;
         }
@@ -3837,20 +3829,14 @@ DPoint3dCP pPoint
     if (pSweep)
         {
 
-        bsiDPoint3d_add2ScaledDPoint3d (&centerToStart,
-                                        NULL,
-                                        &pConic->vector0,  c0,
-                                        &pConic->vector90, s0);
-        bsiDPoint3d_add2ScaledDPoint3d (&centerToEnd,
-                                        NULL,
-                                        &pConic->vector0,  c1,
-                                        &pConic->vector90, s1);
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&pointToStart, &centerToStart, &globalVector);
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&pointToEnd,   &centerToEnd,   &globalVector);
+        centerToStart.SumOf(*NULL, pConic->vector0, c0, pConic->vector90, s0);
+        centerToEnd.SumOf(*NULL, pConic->vector0, c1, pConic->vector90, s1);
+        pointToStart.DifferenceOf (centerToStart, globalVector);
+        pointToEnd.DifferenceOf (centerToEnd, globalVector);
 
-        angle = bsiTrig_atan2 (
-                        bsiDPoint3d_crossProductXY (&pointToStart, &pointToEnd),
-                        bsiDPoint3d_dotProductXY   (&pointToStart, &pointToEnd)
+        angle = Angle::Atan2 (
+                        pointToStart.CrossProductXY (pointToEnd),
+                        pointToStart.DotProductXY (pointToEnd)
                         );
 
         /* Imagine contracting the elliptical arc towards the chord between the start and end points.
@@ -3864,14 +3850,11 @@ DPoint3dCP pPoint
             cMid = cos (thetaMid);
             sMid = sin (thetaMid);
 
-            bsiDPoint3d_add2ScaledDPoint3d (&centerToMid,
-                                        NULL,
-                                        &pConic->vector0,  cMid,
-                                        &pConic->vector90, sMid);
+            centerToMid.SumOf(*NULL, pConic->vector0, cMid, pConic->vector90, sMid);
 
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&midToStart, &centerToStart, &centerToMid);
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&midToEnd,   &centerToEnd,   &centerToMid);
-            midCross = bsiDPoint3d_crossProductXY (&midToStart, &midToEnd);
+            midToStart.DifferenceOf (centerToStart, centerToMid);
+            midToEnd.DifferenceOf (centerToEnd, centerToMid);
+            midCross = midToStart.CrossProductXY (midToEnd);
 
             if (angle > 0.0)
                 {
@@ -4097,7 +4080,7 @@ int  *pCurveType
                     &vector0,  -s,
                     &vector90, c);
             D.GivensRowOp (c, s, 0, 1);
-            theta = bsiTrig_atan2 (s,c);
+            theta = Angle::Atan2 (s,c);
             axes.start -= theta;
             double a = Angle::TwoPi ();
             if (axes.sweep > a)
@@ -4217,12 +4200,12 @@ double aww
     int iCenter, iVector0, iVector90, i;
     int typeCode = 4;
 
-    bsiRotMatrix_initFromRowValues (&matrixA,
+    matrixA.InitFromRowValues (
                 axx, 0.5 * axy, 0.5 * axw,
                 0.5 * axy, ayy, 0.5 * ayw,
                 0.5 * axw, 0.5 * ayw, aww);
     bsiRotMatrix_symmetricEigensystem (&matrixQ, &lambda, &matrixA);
-    bsiDPoint3d_setXYZ (&absLambda, fabs (lambda.x), fabs (lambda.y), fabs(lambda.z));
+    absLambda.Init ( fabs (lambda.x), fabs (lambda.y), fabs(lambda.z));
     lambdaScale = bsiDPoint3d_maxAbs (&absLambda);
     tol = s_relTol * lambdaScale;
 
@@ -4264,14 +4247,14 @@ double aww
         lambda.z = - lambda.z;
         }
 
-    bsiRotMatrix_transpose (&matrixQT, &matrixQ);
+    matrixQT.TransposeOf (matrixQ);
     matrixB.ScaleColumns (matrixQ, gamma[0], gamma[1], gamma[2]);
 
 #ifdef CHECK_EIGENSYSTEM
         {
         RotMatrix QLambda, QLambdaQT;
         QLambda.ScaleColumns (matrixQ, lambda.x, lambda.y, lambda.z);
-        bsiRotMatrix_multiplyRotMatrixRotMatrix (&QLambdaQT, &QLambda, &matrixQT);
+        QLambdaQT.InitProduct (QLambda, matrixQT);
         QLambdaQT.IsIdentity ();
         }
 #endif
@@ -4403,7 +4386,7 @@ DPoint3dP pCirclePoleArray
     stepAngle = restrictedSweep * 0.25;
     c = cos (stepAngle);
 
-    if (bsiTrig_isAngleFullCircle (restrictedSweep))
+    if (Angle::IsFullCircle (restrictedSweep))
         {
         /* Force everything to dead-on values */
         circlePoleArray[0].z = circlePoleArray[4].z = 1.0;
@@ -4488,7 +4471,7 @@ DPoint3dP pTrigPoint
         if (numRoot < 0)
             numRoot = 0;
         for (i = 0; i < numRoot; i++)
-            pTrigPoint[i].z = bsiTrig_atan2 (pTrigPoint[i].y, pTrigPoint[i].x);
+            pTrigPoint[i].z = Angle::Atan2 (pTrigPoint[i].y, pTrigPoint[i].x);
         }
 
     return numRoot;
@@ -4529,7 +4512,7 @@ int clipType
     int i;
     for (i = 0; i < numPlane; i++)
         {
-        if (bsiDPoint4d_dotProduct (pTestPoint, &pPlaneCoffs[i]) > 0.0)
+        if (pTestPoint->DotProduct (pPlaneCoffs[i]) > 0.0)
             {
             return clipType == 0 ? false : true;
             }
@@ -4620,9 +4603,9 @@ int        clipType
                     bsiTrig_adjustAngleToSweep (rawAngle, theta0, arcSweep);
                 }
 
-            bsiDPoint3d_setXYZ (&pCriticalAngleArray[numCritical++],
+            pCriticalAngleArray[numCritical++].Init (
                                 cos (theta0), sin(theta0), theta0);
-            bsiDPoint3d_setXYZ (&pCriticalAngleArray[numCritical++],
+            pCriticalAngleArray[numCritical++].Init (
                                 cos (theta1), sin(theta1), theta1);
             qsort (pCriticalAngleArray, numCritical, sizeof (pCriticalAngleArray[0]), compareZ);
 
@@ -4630,7 +4613,7 @@ int        clipType
                 {
                 thetaMid = (pCriticalAngleArray[i-1].z + pCriticalAngleArray[i].z) * 0.5;
                 dtheta = pCriticalAngleArray[i].z - pCriticalAngleArray[i-1].z;
-                if (bsiTrig_angleInSweep (thetaMid, theta0, arcSweep))
+                if (Angle::InSweepAllowPeriodShift (thetaMid, theta0, arcSweep))
                     {
                     DPoint4d midPoint;
                     bsiDConic4d_angleParameterToDPoint4d (pConic, &midPoint, thetaMid);
@@ -4673,12 +4656,12 @@ DVec3dR vector
     if ( n == 1 )
         {
         /* Take the on-circle solution */
-        angles[0] = bsiTrig_atan2 (trigPoints[0].y, trigPoints[0].x);
+        angles[0] = Angle::Atan2 (trigPoints[0].y, trigPoints[0].x);
         }
     else if ( n == 2 )
         {
-        angles[0] = bsiTrig_atan2 (trigPoints[0].y, trigPoints[0].x);
-        angles[1] = bsiTrig_atan2 (trigPoints[1].y, trigPoints[1].x);
+        angles[0] = Angle::Atan2 (trigPoints[0].y, trigPoints[0].x);
+        angles[1] = Angle::Atan2 (trigPoints[1].y, trigPoints[1].x);
         }
     else
         {

@@ -9,6 +9,7 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <math.h>
+#include "../deprecatedFunctions.h"
 #if defined (INCLUDE_PPL)
     #include <Bentley\Iota.h>
     #include <ppl.h>
@@ -1485,7 +1486,7 @@ void MSBsplineCurve::AllTangentsXY (bvector<DPoint3d>& points, bvector<double>& 
 
     homogeneousPoint.Init (spacePoint, 1.0);
     if (matrix != NULL)
-        bsiDMatrix4d_multiplyMatrixPoint (matrix, &homogeneousPoint, &homogeneousPoint);
+        matrix->Multiply (homogeneousPoint, homogeneousPoint);
 
     for (size_t spanIndex = 0; GetBezier (segment, spanIndex); spanIndex++)
         {

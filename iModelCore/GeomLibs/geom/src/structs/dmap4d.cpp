@@ -2,13 +2,19 @@
 |
 |     $Source: geom/src/structs/dmap4d.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
+#include "../deprecatedFunctions.h"
 #include <stdlib.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+Public GEOMDLLIMPEXP bool    bsiDMatrix4d_invertQR
 
+(
+DMatrix4dP    pMatrixB,
+DMatrix4dCP    pMatrixA
+);
 
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -172,8 +178,8 @@ DMap4dP  pHMap
 )
 
     {
-    bsiDMatrix4d_initIdentity ( &pHMap->M0);
-    bsiDMatrix4d_initIdentity ( &pHMap->M1);
+    pHMap->M0.InitIdentity ();
+    pHMap->M1.InitIdentity ();
     pHMap->mask = 0;
     MDL_HM_CLEARMASK(pHMap,
           MDL_HM_SCALE_BIT
@@ -287,8 +293,8 @@ DPoint3dCP hiBP
                                                 loBP, hiBP, loAP, hiAP )
        )
         {
-        bsiDMatrix4d_initScaleAndTranslate( &pHMap->M0, &slopeAinB, &orgAinB );
-        bsiDMatrix4d_initScaleAndTranslate( &pHMap->M1, &slopeBinA, &orgBinA );
+        pHMap->M0.InitFromScaleAndTranslation (slopeAinB, orgAinB );
+        pHMap->M1.InitFromScaleAndTranslation (slopeBinA, orgBinA );
         pHMap->mask = 0;
         MDL_HM_SETTYPE( pHMap, MDL_HM_FRAME_BIT | MDL_HM_TRANSLATE_BIT );
         return true;
@@ -378,7 +384,7 @@ double vz
     pHMap->M0.coff[3][1] = 0.0;
     pHMap->M0.coff[3][2] = 0.0;
 
-    bsiDMatrix4d_transpose( &pHMap->M1, &pHMap->M0 );
+    pHMap->M1.TransposeOf (pHMap->M0);
     pHMap->mask = 0;
     MDL_HM_SETTYPE( pHMap, MDL_HM_FRAME_BIT );
     }
@@ -487,7 +493,7 @@ double az
     {
 
     double bx, by, bz;
-    bsiDMatrix4d_initIdentity ( &pHMap->M0);
+    pHMap->M0.InitIdentity ();
     pHMap->M0.coff[0][0] = ax;
     pHMap->M0.coff[1][1] = ay;
     pHMap->M0.coff[2][2] = az;
@@ -498,7 +504,7 @@ double az
     by =  ( ay == 0.0 ? 0.0 : 1.0 / ay);
     bz =  ( az == 0.0 ? 0.0 : 1.0 / az);
 
-    bsiDMatrix4d_initIdentity ( &pHMap->M1);
+    pHMap->M1.InitIdentity ();
     pHMap->M1.coff[0][0] = bx;
     pHMap->M1.coff[1][1] = by;
     pHMap->M1.coff[2][2] = bz;
@@ -531,7 +537,7 @@ double height,
 int    axis
 )
     {
-    bsiDMatrix4d_initIdentity ( &pHMap->M0);
+    pHMap->M0.InitIdentity ();
     axis = axis % 3;
     pHMap->M0.coff[axis][axis] = 0.0;
     pHMap->M0.coff[axis][3]    = height;
@@ -576,14 +582,14 @@ DMap4dCP pLocalFrame
         }
     else
         {
-        bsiDPoint3d_zero (&origin);
+        origin.Zero ();
         bsiDMatrix4d_multiplyAndRenormalizeDPoint3dArray (
                     &pTargetToWorld->M0, workPoint, &origin, 1);
         }
 
     if (pXDir)
         {
-        bsiDPoint3d_addDPoint3dDPoint3d (&workPoint[1], workPoint, pXDir);
+        workPoint[1].SumOf (*workPoint, *pXDir);
         numWorkPoint++;
         }
 
@@ -656,8 +662,8 @@ double ty,
 double tz
 )
     {
-    bsiDMatrix4d_initTranslate ( &pHMap->M0, tx, ty, tz );
-    bsiDMatrix4d_initTranslate ( &pHMap->M1, -tx, -ty, -tz);
+    pHMap->M0.InitFromTranslation (tx, ty, tz );
+    pHMap->M1.InitFromTranslation (-tx, -ty, -tz);
     pHMap->mask = 0;
     MDL_HM_SETTYPE( pHMap, MDL_HM_TRANSLATE_BIT );
     }
@@ -741,20 +747,20 @@ bool        invert
 
     {
     Transform inverseTransform;
-    bool    boolStat = bsiTransform_invertTransform (&inverseTransform, pTransform);
+    bool    boolStat = inverseTransform.InverseOf (*pTransform);
 
     if (!boolStat)
-        bsiTransform_initIdentity (&inverseTransform);
+        inverseTransform.InitIdentity ();
 
     if (invert)
         {
-        bsiDMatrix4d_initFromTransform (&pHMap->M1, pTransform);
-        bsiDMatrix4d_initFromTransform (&pHMap->M0, &inverseTransform);
+        pHMap->M1.InitFrom (*pTransform);
+        pHMap->M0.InitFrom (inverseTransform);
         }
     else
         {
-        bsiDMatrix4d_initFromTransform (&pHMap->M0, pTransform);
-        bsiDMatrix4d_initFromTransform (&pHMap->M1, &inverseTransform);
+        pHMap->M0.InitFrom (*pTransform);
+        pHMap->M1.InitFrom (inverseTransform);
         }
 
     pHMap->mask = 0;
@@ -833,22 +839,22 @@ double farCoord
     pHMap->mask = 0;
     MDL_HM_SETTYPE( pHMap, MDL_HM_AFFINE_BITS );
 
-    bsiDMatrix4d_setRow(&pHMap->M0,0,
+    pHMap->M0.SetRow (0,
                 1.0/sx, 0.0,   0.0, - xm/sx );
-    bsiDMatrix4d_setRow(&pHMap->M0,1,
+    pHMap->M0.SetRow (1,
                 0.0, 1.0/sy,   0.0, - ym/sy );
-    bsiDMatrix4d_setRow(&pHMap->M0,2,
+    pHMap->M0.SetRow (2,
                 0.0,  0.0 ,  1.0/sz ,  - zm / sz );
-    bsiDMatrix4d_setRow(&pHMap->M0,3,
+    pHMap->M0.SetRow (3,
                 0.0,  0.0 ,  0.0, 1.0 );
 
-    bsiDMatrix4d_setRow(&pHMap->M1,0,
+    pHMap->M1.SetRow (0,
                 sx , 0.0, 0.0,   xm );
-    bsiDMatrix4d_setRow(&pHMap->M1,1,
+    pHMap->M1.SetRow (1,
                 0.0, sy ,  0.0,  ym );
-    bsiDMatrix4d_setRow(&pHMap->M1,2,
+    pHMap->M1.SetRow (2,
                 0.0, 0.0,  sz,   zm );
-    bsiDMatrix4d_setRow(&pHMap->M1,3,
+    pHMap->M1.SetRow (3,
                 0.0, 0.0, 0.0,  1.0 );
     }
 
@@ -893,22 +899,22 @@ double farCoord
 
     pHMap->mask = 0;
     MDL_HM_SETTYPE( pHMap, MDL_HM_TYPE_BITS );
-    bsiDMatrix4d_setRow(&pHMap->M0,0,
+    pHMap->M0.SetRow (0,
                 nearCoord / sx, 0.0, xm/sx , 0.0 );
-    bsiDMatrix4d_setRow(&pHMap->M0,1,
+    pHMap->M0.SetRow (1,
                 0.0,  nearCoord / sy,  ym/sy , 0.0 );
-    bsiDMatrix4d_setRow(&pHMap->M0,2,
+    pHMap->M0.SetRow (2,
                 0.0,  0.0 ,   -zm/sz , farCoord*nearCoord / sz );
-    bsiDMatrix4d_setRow(&pHMap->M0,3,
+    pHMap->M0.SetRow (3,
                 0.0,  0.0 ,  -1.0, 0.0 );
 
-    bsiDMatrix4d_setRow(&pHMap->M1,0,
+    pHMap->M1.SetRow (0,
                 sx / nearCoord, 0.0, 0.0, xm / nearCoord );
-    bsiDMatrix4d_setRow(&pHMap->M1,1,
+    pHMap->M1.SetRow (1,
                 0.0, sy / nearCoord,  0.0, ym / nearCoord );
-    bsiDMatrix4d_setRow(&pHMap->M1,2,
+    pHMap->M1.SetRow (2,
                 0.0, 0.0, 0.0, -1.0 );
-    bsiDMatrix4d_setRow(&pHMap->M1,3,
+    pHMap->M1.SetRow (3,
                 0.0, 0.0, sz / (farCoord*nearCoord), -zm / ( farCoord*nearCoord) );
     }
 
@@ -999,14 +1005,14 @@ double      fraction
 
 
     bsiDMap4d_initIdentity (&slabToNpcMap);
-    bsiDMatrix4d_setRow(&slabToNpcMap.M0,2,
+    slabToNpcMap.M0.SetRow (2,
                 0.0, 0.0, fraction , 0.0 );
-    bsiDMatrix4d_setRow(&slabToNpcMap.M0,3,
+    slabToNpcMap.M0.SetRow (3,
                 0.0, 0.0, fraction - 1.0 , 1.0 );
 
-    bsiDMatrix4d_setRow(&slabToNpcMap.M1,2,
+    slabToNpcMap.M1.SetRow (2,
                 0.0, 0.0, 1.0 / fraction , 0.0 );
-    bsiDMatrix4d_setRow(&slabToNpcMap.M1,3,
+    slabToNpcMap.M1.SetRow (3,
                 0.0, 0.0, (1.0 - fraction) / fraction , 1.0 );
 
     if (viewIsFlat)
@@ -1019,17 +1025,17 @@ double      fraction
         }
 
     /* world-camera transformation */
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&cameraXVector, pUPoint, pOrigin);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&cameraYVector, pVPoint, pOrigin);
-    bsiDPoint3d_normalizedCrossProduct (&cameraZVector, &cameraXVector, &cameraYVector);
-    bsiDPoint3d_normalizedCrossProduct (&cameraYVector, &cameraZVector, &cameraXVector);
-    bsiDPoint3d_normalizedCrossProduct (&cameraXVector, &cameraYVector, &cameraZVector);
+    cameraXVector.DifferenceOf (*pUPoint, *pOrigin);
+    cameraYVector.DifferenceOf (*pVPoint, *pOrigin);
+    cameraZVector.NormalizedCrossProduct (cameraXVector, cameraYVector);
+    cameraYVector.NormalizedCrossProduct (cameraZVector, cameraXVector);
+    cameraXVector.NormalizedCrossProduct (cameraYVector, cameraZVector);
 
     DPoint3d cameraTranslation;
     if (viewIsFlat )
         {
         /* Artificially place the camera on the front plane of the frustum */
-        bsiTransform_multiplyComponents (&slabToWorldTransform, &cameraTranslation, fraction, fraction, 1.0);
+        slabToWorldTransform.Multiply (cameraTranslation, fraction, fraction, 1.0);
         }
     else
         {
@@ -1123,14 +1129,14 @@ double      fraction
         {
         /* Premulitply by perspective effects matrix, which we build ad mysterium ... */
         bsiDMap4d_initIdentity (&slabToNpcMap);
-        bsiDMatrix4d_setRow(&slabToNpcMap.M0,2,
+        slabToNpcMap.M0.SetRow (2,
                     0.0, 0.0, fraction , 0.0 );
-        bsiDMatrix4d_setRow(&slabToNpcMap.M0,3,
+        slabToNpcMap.M0.SetRow (3,
                     0.0, 0.0, fraction - 1.0 , 1.0 );
 
-        bsiDMatrix4d_setRow(&slabToNpcMap.M1,2,
+        slabToNpcMap.M1.SetRow (2,
                     0.0, 0.0, 1.0 / fraction , 0.0 );
-        bsiDMatrix4d_setRow(&slabToNpcMap.M1,3,
+        slabToNpcMap.M1.SetRow (3,
                     0.0, 0.0, (1.0 - fraction) / fraction , 1.0 );
         MDL_HM_SETTYPE( &slabToNpcMap, MDL_HM_TYPE_BITS );
         bsiDMap4d_multiply (pWorldToNpcMap, &slabToNpcMap, &worldToSlabMap);
@@ -1246,8 +1252,8 @@ double zetaHalf
 )
 
     {
-    bsiDMatrix4d_initIdentity(&pHMap->M0);
-    bsiDMatrix4d_initIdentity(&pHMap->M1);
+    pHMap->M0.InitIdentity ();
+    pHMap->M1.InitIdentity ();
     pHMap->M0.coff[2][2] = -zetaHalf;
     pHMap->M0.coff[2][3] = zetaHalf*z0;
     pHMap->M0.coff[3][2] = 1.0;
@@ -1306,27 +1312,27 @@ DPoint3dCP pHiPoint
     bool    boolStat = false;
     DPoint3d glLL, glUR;
 
-    bsiDPoint3d_setXYZ( &glLL, -1.0, -1.0, -1.0 );
-    bsiDPoint3d_setXYZ( &glUR,  1.0,  1.0,  1.0 );
+    glLL.Init ( -1.0, -1.0, -1.0 );
+    glUR.Init (  1.0,  1.0,  1.0 );
 
     yVec = *pUpVector;
 
-    if (   0.0 < (dTarget = bsiDPoint3d_computeNormal( &zVec, pTarget, pCamera))
-        && 0.0 < bsiDPoint3d_normalizeInPlace( &yVec )
-        && 0.0 < bsiDPoint3d_normalizedCrossProduct ( &xVec, &yVec, &zVec )
-        && 0.0 < bsiDPoint3d_normalizedCrossProduct ( &yVec, &zVec, &xVec )
+    if (   0.0 < (dTarget = zVec.NormalizedDifference (*pTarget, *pCamera))
+        && 0.0 < yVec.Normalize ()
+        && 0.0 < xVec.NormalizedCrossProduct (yVec, zVec)
+        && 0.0 < yVec.NormalizedCrossProduct (zVec, xVec)
         && dFront > 0.0
         && dBack > 0.0
         && dBack != dFront
         && pViewplaneWindow->low.x != pViewplaneWindow->high.x
         && pViewplaneWindow->low.y != pViewplaneWindow->high.y
         && ( !pLoPoint || !pHiPoint ||
-                bsiDPoint3d_distance ( pLoPoint, pHiPoint ) != 0.0 )
+                pLoPoint->Distance (*pHiPoint) != 0.0 )
        )
         {
-        originFromCamera.x = - bsiDPoint3d_dotProduct( pCamera, &xVec );
-        originFromCamera.y = - bsiDPoint3d_dotProduct( pCamera, &yVec );
-        originFromCamera.z = - bsiDPoint3d_dotProduct( pCamera, &zVec );
+        originFromCamera.x = - pCamera->DotProduct (xVec);
+        originFromCamera.y = - pCamera->DotProduct (yVec);
+        originFromCamera.z = - pCamera->DotProduct (zVec);
         bsiDMatrix4d_initAffineRows(
                         &dollyMap.M0, &xVec, &yVec, &zVec, &originFromCamera );
         bsiDMatrix4d_initAffineColumns(
@@ -1472,11 +1478,11 @@ DMap4dCP pB
     int frameBit, translateBit, scaleBit, perspectiveBit;
 
     /* Multiply the forward matrices .. */
-    bsiDMatrix4d_multiply( &pC->M0, &pA->M0, &pB->M0);
+    pC->M0.InitProduct (pA->M0, pB->M0);
 
 
     /* then the (reversed) inverses .. */
-    bsiDMatrix4d_multiply( &pC->M1, &pB->M1, &pA->M1);
+    pC->M1.InitProduct (pB->M1, pA->M1);
 
 
     /* and symbolically multiply the bits for non-identity entries */
@@ -1544,13 +1550,9 @@ bool        invertB
     static double zeroTol = 1.0e-14;
     int frameBit, translateBit, scaleBit, perspectiveBit;
 
-    bsiDMatrix4d_multiply( &pC->M0,
-                    invertA ? &pA->M1 : &pA->M0,
-                    invertB ? &pB->M1 : &pB->M0);
+    pC->M0.InitProduct (*(invertA ? &pA->M1 : &pA->M0), *(invertB ? &pB->M1 : &pB->M0));
 
-    bsiDMatrix4d_multiply( &pC->M1,
-                    invertB ? &pB->M0 : &pB->M1,
-                    invertA ? &pA->M0 : &pA->M1);
+    pC->M1.InitProduct (*(invertB ? &pB->M0 : &pB->M1), *(invertA ? &pA->M0 : &pA->M1));
 
     /* and symbolically multiply the bits for non-identity entries */
     frameBit = MDL_HM_BIT_DOT( MDL_HM_FRAME_BIT,
@@ -1742,8 +1744,8 @@ Public GEOMDLLIMPEXP bool    bsiDMap4d_isIdentity
 DMap4dCP pInstance
 )
     {
-    return    bsiDMatrix4d_isIdentity (&pInstance->M0)
-           && bsiDMatrix4d_isIdentity (&pInstance->M1);
+    return    pInstance->M0.IsIdentity ()
+           && pInstance->M1.IsIdentity ();
     }
 
 /*----------------------------------------------------------------------+
@@ -2070,8 +2072,8 @@ void process(FILE *fp)
             {
             DRange3d window;
             DPoint3d loPoint,hiPoint;
-            bsiDPoint3d_setXYZ ( &loPoint, 0.0, 0.0, 0.0);
-            bsiDPoint3d_setXYZ ( &hiPoint, 1.0, 1.0, 1.0);
+            loPoint.Init ( 0.0, 0.0, 0.0);
+            hiPoint.Init ( 1.0, 1.0, 1.0);
             window.low.x = vL;
             window.low.y = vB;
             window.high.x = vR;
@@ -2136,8 +2138,8 @@ void process(FILE *fp)
             DMatrix4d P,Q,D;
             int i;
             hStack_peek ( &A );
-            bsiDMatrix4d_multiply(&P,&A.M0,&A.M1);
-            bsiDMatrix4d_initIdentity(&Q);
+            P.InitProduct (A.M0, A.M1);
+            Q.InitIdentity ();
             bsiDMatrix4d_subtract(&D,&P,&Q);
             printf("========== inverse error norm %le \n",
                         bsiDMatrix4d_RMS(&D));

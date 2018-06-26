@@ -2,7 +2,7 @@
 |
 |     $Source: vu/src/vuprint.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -45,6 +45,8 @@ GeomPrintFuncs&     gs
     vu_getMask (currP, VU_V_SLICE) ? gs.EmitChar ('V') : gs.EmitChar (' ');
     vu_getMask (currP, VU_BOUNDARY_EDGE) ? gs.EmitChar ('B') : gs.EmitChar (' ');
     vu_getMask (currP, VU_EXTERIOR_EDGE) ? gs.EmitChar ('X') : gs.EmitChar (' ');
+    vu_getMask (currP, VU_NULL_FACE) ? gs.EmitChar ('N') : gs.EmitChar (' ');
+    
     gs.EmitChar (')');
     sprintf (str1, "(M%5d", VU_ID(mateP));
     gs.EmitString (str1);
@@ -54,10 +56,12 @@ GeomPrintFuncs&     gs
     vu_getMask (mateP, VU_V_SLICE) ? gs.EmitChar ('v') : gs.EmitChar (' ');
     vu_getMask (mateP, VU_BOUNDARY_EDGE) ? gs.EmitChar ('b') : gs.EmitChar (' ');
     vu_getMask (mateP, VU_EXTERIOR_EDGE) ? gs.EmitChar ('x') : gs.EmitChar (' ');
+    vu_getMask (mateP, VU_NULL_FACE) ? gs.EmitChar ('n') : gs.EmitChar (' ');
     gs.EmitChar (')');
 
     char str2[1024];
-    sprintf (str2, " %8d", vu_getUserDataPAsInt (currP));
+    sprintf (str2, " %8d %8d", vu_getUserDataPAsInt (currP),
+                (int)vu_getUserData1 (currP));
     gs.EmitString (str2);
     char str3[1024];
     sprintf (str3, " (%10lg,%10lg)", VU_U(currP), VU_V(currP));

@@ -2,11 +2,14 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdmap4d.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+
+
 /*-----------------------------------------------------------------*//**
 *
 * Initialize and identity mapping.
