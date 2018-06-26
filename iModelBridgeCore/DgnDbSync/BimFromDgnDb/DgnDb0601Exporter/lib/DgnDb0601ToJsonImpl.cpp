@@ -11,7 +11,9 @@
 #include <limits>
 #include <DgnDb06Api/DgnPlatform/WebMercator.h>
 #include <DgnDb06Api/DgnPlatform/DgnIModel.h>
+#include <DgnDb06Api/DgnPlatform/DgnGeoCoord.h>
 #include <DgnDb06Api/Planning/PlanningApi.h>
+#include <DgnDb06Api/ECObjects/ECJsonUtilities.h>
 
 DGNDB06_USING_NAMESPACE_BENTLEY
 DGNDB06_USING_NAMESPACE_BENTLEY_SQLITE
@@ -2376,7 +2378,23 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportPropertyData()
     propData.clear();
 
     MakeNavigationProperty(propData, "DefaultView", existingId);
+    uint32_t propSize;
+    if (m_dgndb->QueryPropertySize(propSize, DgnProjectProperty::DgnGCS()) == BeSQLite::BE_SQLITE_ROW)
+        {
+
+        ScopedArray<Byte> buffer(propSize);
+        m_dgndb->QueryProperty(buffer.GetData(), propSize, DgnProjectProperty::DgnGCS());
+        propData["GCS"] = Json::Value(Json::ValueType::objectValue);
+        ECN::ECJsonUtilities::BinaryToJson(propData["GCS"], buffer.GetData(), propSize);
+
+        DPoint3d globalOrigin;
+        globalOrigin = m_dgndb->Units().GetGlobalOrigin();
+        propData["globalOrigin"] = Json::Value(Json::ValueType::objectValue);
+        ECN::ECJsonUtilities::Point3DToJson(propData["globalOrigin"], globalOrigin);
+        }
+
     (QueueJson) (entry.toStyledString().c_str());
+
     return SUCCESS;
     }
 
