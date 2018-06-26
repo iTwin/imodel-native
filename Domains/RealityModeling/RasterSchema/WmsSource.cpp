@@ -439,7 +439,7 @@ folly::Future<BentleyStatus> WmsTile::WmsTileLoader::_GetFromSource()
             }
 
         me->m_tileBytes = std::move(query->GetData());
-        me->m_saveToCache = TileTree::HttpDataQuery::GetCacheContolExpirationDate(me->m_expirationDate, response);
+        me->m_saveToCache = TileTree::HttpDataQuery::GetCacheControlExpirationDate(me->m_expirationDate, 0, response);
 
         return SUCCESS;
         });
