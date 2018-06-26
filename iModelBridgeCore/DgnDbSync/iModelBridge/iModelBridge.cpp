@@ -203,7 +203,7 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
         // We must do a schema upgrade.
         // Probably, the bridge registered some required domains, and they must be imported
         DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
-        oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains();
+        oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
         db = DgnDb::OpenDgnDb(&dbres, dbName, oparams);
         if (!db.IsValid())
             return nullptr;
