@@ -24,10 +24,10 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
     m_clipProvider = nullptr;
 
 #ifndef VANCOUVER_API
-    if (!m_smSQLiteFile->IsDbOpen() && m_smSQLiteFile->IsShared())
+    if (!m_smSQLiteFile->IsOpen() && m_smSQLiteFile->IsShared())
     {
-        m_smSQLiteFile->ReOpenShared(true, true);
-        m_smSQLiteFile->StartTransaction();
+        m_smSQLiteFile->GetDb()->ReOpenShared(true, true);
+        m_smSQLiteFile->GetDb()->StartTransaction();
     }
 #endif
 
@@ -114,7 +114,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
 #ifndef VANCOUVER_API
     bool wasAbandoned;
     if (m_smSQLiteFile->IsShared())
-        m_smSQLiteFile->CloseShared(wasAbandoned);
+        m_smSQLiteFile->GetDb()->CloseShared(wasAbandoned);
 #endif
 
     }

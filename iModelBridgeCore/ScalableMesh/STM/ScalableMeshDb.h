@@ -110,7 +110,7 @@ class ScalableMeshDb : public BeSQLite::Db
 #ifndef VANCOUVER_API   
         //Offer functions to more explicitly deal with shared db's; open/close after specific transactions, allow implicit transactions, busy-retry
 
-        void OpenShared(BENTLEY_NAMESPACE_NAME::Utf8CP path, bool readonly, bool allowBusyRetry);
+        DbResult OpenShared(BENTLEY_NAMESPACE_NAME::Utf8CP path, bool readonly, bool allowBusyRetry);
         bool ReOpenShared(bool readonly, bool allowBusyRetry);
         bool StartTransaction();
         bool CommitTransaction();
