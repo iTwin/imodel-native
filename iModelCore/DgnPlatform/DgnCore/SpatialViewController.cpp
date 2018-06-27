@@ -149,6 +149,19 @@ AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) cons
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewController::_OnRenderFrame()
+    {
+    BeAssert(nullptr != m_vp);
+
+    // Barry added the concept of 'deferred' loading of TileTree::Roots for Bing map tile trees...
+    // We could solve this another way but it's going to be totally different in iModelJs so do what Sheet::ViewController does.
+    if (!m_allRootsLoaded)
+        m_vp->InvalidateScene();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)

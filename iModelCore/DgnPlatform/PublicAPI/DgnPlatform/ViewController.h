@@ -598,6 +598,7 @@ protected:
     bool _Allow3dManipulations() const override {return true;}
     DGNPLATFORM_EXPORT void _AddModelLights(Render::SceneLightsR, Render::TargetR) const override;
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
+    DGNPLATFORM_EXPORT void _OnRenderFrame() override;
     BentleyStatus CreateThumbnailScene(SceneContextR context);
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
 
