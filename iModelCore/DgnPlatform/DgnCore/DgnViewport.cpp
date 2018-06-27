@@ -121,7 +121,7 @@ void DgnViewport::ViewToWorld(DPoint3dP rootPts, DPoint4dCP screenPts, int nPts)
     DPoint4d  tPt;
     for (int i=0; i<nPts; i++)
         {
-        bsiDMatrix4d_multiplyMatrixPoint(&m_rootToView.M1, &tPt, screenPts+i);
+        tPt = m_rootToView.M1 * screenPts[i];
         tPt.GetProjectedXYZ(rootPts[i]);
         }
     }
@@ -158,7 +158,7 @@ void DgnViewport::ScreenToView(DPoint3dP viewPts, DPoint3dCP screenPts, int nPts
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::WorldToView(DPoint4dP screenPts, DPoint3dCP rootPts, int nPts) const
     {
-    bsiDMatrix4d_multiplyWeightedDPoint3dArray(&m_rootToView.M0, screenPts, rootPts, nullptr, nPts);
+    m_rootToView.M0.Multiply (screenPts, rootPts, nullptr, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -167,7 +167,7 @@ void DgnViewport::WorldToView(DPoint4dP screenPts, DPoint3dCP rootPts, int nPts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::WorldToView(DPoint3dP viewPts, DPoint3dCP rootPts, int nPts) const
     {
-    bsiDMatrix4d_multiplyAndRenormalizeDPoint3dArray(&m_rootToView.M0, viewPts, rootPts, nPts);
+    m_rootToView.M0.MultiplyAndRenormalize (viewPts, rootPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -193,7 +193,7 @@ void DgnViewport::WorldToView2d(DPoint2dP viewPts, DPoint3dCP rootPts, int nPts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ViewToWorld(DPoint3dP rootPts, DPoint3dCP viewPts, int nPts) const
     {
-    bsiDMatrix4d_multiplyAndRenormalizeDPoint3dArray(&m_rootToView.M1, rootPts, viewPts, nPts);
+    m_rootToView.M1.MultiplyAndRenormalize (rootPts, viewPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**

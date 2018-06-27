@@ -73,6 +73,28 @@ public:
         }
     };
 
+//=======================================================================================    
+// @bsiclass                                   Krischan.Eberle                  06/18
+//=======================================================================================    
+struct QualifiedName final
+    {
+private:
+    Utf8String m_schemaName;
+    Utf8String m_name;
+
+public:
+    QualifiedName() {}
+    QualifiedName(Utf8CP schemaName, Utf8CP name) : m_schemaName(schemaName), m_name(name) {}
+
+    bool operator==(QualifiedName const& rhs) const { return m_schemaName == rhs.m_schemaName && m_name == rhs.m_name; }
+    bool operator!=(QualifiedName const& rhs) const { return !(*this == rhs); }
+
+    bool IsValid() const { return !m_schemaName.empty() && !m_name.empty(); }
+    Utf8StringCR GetSchemaName() const { return m_schemaName; }
+    Utf8StringCR GetName() const { return m_name; }
+    };
+
+void PrintTo(QualifiedName const&, std::ostream*);
 
 //=======================================================================================
 // Wrapper for JsonCpp that allows for easy use in GTest macros
