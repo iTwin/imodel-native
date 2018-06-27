@@ -75,10 +75,11 @@ public:
     static DgnDbStatus UpdateModel(DgnDbR db, Json::Value &props);
     static DgnDbStatus DeleteModel(DgnDbR db, Utf8StringCR idStr);
     static DgnDbStatus GetModel(JsonValueR results, DgnDbR db, Json::Value const &inOpts);
-    static DgnDbStatus UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtents);
+    static void UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtents);
+    static void UpdateIModelProps(DgnDbR dgndb, JsonValueCR);
 
     static BeSQLite::DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
-    static BeSQLite::DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode);
+    static BeSQLite::DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
     static BeSQLite::DbResult ImportSchema(BeSQLite::EC::ECDbR ecdb, BeFileNameCR pathname);
     static BeSQLite::DbResult ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname);
     static Utf8StringCR GetLastECDbIssue();

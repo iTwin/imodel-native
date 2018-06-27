@@ -233,7 +233,7 @@ struct NapiUtils
 
         return env.Undefined();
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                05/18
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -302,7 +302,7 @@ Json::Value Convert(Napi::Value jsValue)
             return Json::Value(jsValue.ToBoolean().Value());
         case napi_valuetype::napi_null:
             return Json::Value();
-        case napi_valuetype::napi_number:           
+        case napi_valuetype::napi_number:
             return Json::Value(jsValue.ToNumber().DoubleValue());
         case napi_valuetype::napi_object:
             {
@@ -393,8 +393,13 @@ struct NativeECDb : Napi::ObjectWrap<NativeECDb>
             {
             REQUIRE_ARGUMENT_STRING(0, dbName, Env().Undefined());
             REQUIRE_ARGUMENT_INTEGER(1, mode, Env().Undefined());
+            OPTIONAL_ARGUMENT_BOOL(2, upgrade, false, Env().Undefined());
 
-            DbResult status = JsInterop::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), (Db::OpenMode) mode);
+            Db::OpenParams params((Db::OpenMode) mode);
+            if (upgrade)
+                params.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
+
+            DbResult status = JsInterop::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), params);
             if (BE_SQLITE_OK == status)
                 {
                 GetECDb().AddFunction(HexStrSqlFunction::GetSingleton());
@@ -653,22 +658,14 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             }
 
         NativeAppData(NativeDgnDb& adb) : m_addonDb(adb) {}
-
-        static NativeAppData* Find(DgnDbR db)
-            {
-            return (NativeAppData*) db.FindAppData(GetKey());
-            }
-
+        static NativeAppData* Find(DgnDbR db) {return (NativeAppData*) db.FindAppData(GetKey());}
         static void Add(NativeDgnDb& adb)
             {
             BeAssert(nullptr == Find(adb.GetDgnDb()));
             adb.GetDgnDb().AddAppData(GetKey(), new NativeAppData(adb));
             }
 
-        static void Remove(DgnDbR db)
-            {
-            db.DropAppData(GetKey());
-            }
+        static void Remove(DgnDbR db) {db.DropAppData(GetKey());}
         };
 
     static Napi::FunctionReference s_constructor;
@@ -677,14 +674,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
 
-    NativeDgnDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeDgnDb>(info)
-        {
-        }
-
-    ~NativeDgnDb()
-        {
-        CloseDgnDb();
-        }
+    NativeDgnDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeDgnDb>(info) {}
+    ~NativeDgnDb() {CloseDgnDb();}
 
     void CloseDgnDb()
         {
@@ -786,14 +777,13 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         DbResult status;
         DgnDbPtr db = JsInterop::CreateIModel(status, fileName, Json::Value::From(args), Env());
         if (db.IsValid())
-            OnDgnDbOpened(db.get());    
+            OnDgnDbOpened(db.get());
 
         return Napi::Number::New(Env(), (int)status);
         }
 
     Napi::Value GetECClassMetaData(Napi::CallbackInfo const& info)
         {
-        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, s, Env().Undefined());
         REQUIRE_ARGUMENT_STRING(1, c, Env().Undefined());
         Json::Value metaDataJson;
@@ -802,24 +792,22 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         }
 
     Napi::Value GetSchemaItem(Napi::CallbackInfo const& info)
-    {
-        REQUIRE_DB_TO_BE_OPEN
+        {
         REQUIRE_ARGUMENT_STRING(0, schemaName, Env().Undefined());
         REQUIRE_ARGUMENT_STRING(1, itemName, Env().Undefined());
         Json::Value metaDataJson;
         auto status = JsInterop::GetSchemaItem(metaDataJson, GetDgnDb(), schemaName.c_str(), itemName.c_str());
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), metaDataJson.ToString().c_str()));
-    }
+        }
 
     Napi::Value GetSchema(Napi::CallbackInfo const& info)
-    {
-        REQUIRE_DB_TO_BE_OPEN
+        {
         REQUIRE_ARGUMENT_STRING(0, name, Env().Undefined());
 
         Json::Value metaDataJson;
         auto status = JsInterop::GetSchema(metaDataJson, GetDgnDb(), name.c_str());
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), metaDataJson.ToString().c_str()));
-    }
+         }
 
     Napi::Value GetElement(Napi::CallbackInfo const& info)
         {
@@ -828,7 +816,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         Json::Value opts = Json::Value::From(optsJsonStr);
         Json::Value elementJson;  // ouput
         auto status = JsInterop::GetElement(elementJson, GetDgnDb(), opts);
-        
+
         Napi::Value jsValue = NapiUtils::Convert(Env(), elementJson);
         return CreateBentleyReturnObject(status, jsValue);
         }
@@ -857,7 +845,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         {
         REQUIRE_ARGUMENT_STRING(0, changeSetTokens, Env().Undefined());
         REQUIRE_ARGUMENT_INTEGER(1, applyOption, Env().Undefined());
-        
+
         bvector<DgnRevisionPtr> revisionPtrs;
         bool containsSchemaChanges;
         Utf8String dbGuid = m_dgndb->GetDbGuid().ToString();
@@ -1121,7 +1109,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         if ((uint32_t)CodeScopeSpec::Type::Model != specType && (uint32_t)CodeScopeSpec::Type::ParentElement != specType &&
             (uint32_t)CodeScopeSpec::Type::RelatedElement != specType && (uint32_t)CodeScopeSpec::Type::Repository != specType)
             THROW_TYPE_EXCEPTION_AND_RETURN("Argument 1 must be a CodeScopeSpec.Type", Env().Undefined());
-    
+
         if ((uint32_t)CodeScopeSpec::ScopeRequirement::ElementId != scopeReq && (uint32_t)CodeScopeSpec::ScopeRequirement::FederationGuid != scopeReq)
             THROW_TYPE_EXCEPTION_AND_RETURN("Argument 2 must be a CodeScopeSpec.ScopeRequirement", Env().Undefined());
 
@@ -1318,8 +1306,14 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             result = m_dgndb->SaveChanges();
         if (BE_SQLITE_OK == result)
             m_dgndb->CloseDb();
-        if (BE_SQLITE_OK == result)
-            m_dgndb = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        if (BE_SQLITE_OK == result) 
+            {
+            SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
+            DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
+
+            m_dgndb = DgnDb::OpenDgnDb(&result, name, openParams);
+            }
+            
         return Napi::Number::New(Env(), (int)result);
         }
 
@@ -1366,7 +1360,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     Napi::Value SetAsMaster(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
-        OPTIONAL_ARGUMENT_STRING(0, guidStr, Env().Undefined());        
+        OPTIONAL_ARGUMENT_STRING(0, guidStr, Env().Undefined());
         if (!guidStr.empty())
             {
             BeGuid guid;
@@ -1482,12 +1476,16 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)JsInterop::BriefcaseManagerEndBulkOperation(GetDgnDb()));
         }
 
-    Napi::Value UpdateProjectExtents(Napi::CallbackInfo const& info)
+    void UpdateProjectExtents(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, newExtentsJson, Env().Undefined())
-        return Napi::Number::New(Env(), (int)JsInterop::UpdateProjectExtents(GetDgnDb(), Json::Value::From(newExtentsJson)));
+        REQUIRE_ARGUMENT_STRING(0, newExtentsJson, )
+        JsInterop::UpdateProjectExtents(GetDgnDb(), Json::Value::From(newExtentsJson));
         }
-
+    void UpdateIModelProps(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, props, )
+        JsInterop::UpdateIModelProps(GetDgnDb(), Json::Value::From(props));
+        }
     Napi::Value ReadFontMap(Napi::CallbackInfo const& info)
         {
         auto const& fontMap = GetDgnDb().Fonts().FontMap();
@@ -1570,12 +1568,12 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_ARGUMENT_STRING(0, fileProps, Env().Undefined())
         REQUIRE_ARGUMENT_BOOL(1, wantString, Env().Undefined()) // boolean indicating whether the desired property is a string or blob.
         auto propsJson = Json::Value::From(fileProps);
-        if (!propsJson.isMember(JsInterop::json_namespace()) || !propsJson.isMember(JsInterop::json_name())) 
+        if (!propsJson.isMember(JsInterop::json_namespace()) || !propsJson.isMember(JsInterop::json_name()))
             {
             Napi::TypeError::New(Env(), "Invalid FilePropertyProps").ThrowAsJavaScriptException();
             return Env().Undefined();
             }
-        
+
         PropertySpec spec(propsJson[JsInterop::json_name()].asCString(), propsJson[JsInterop::json_namespace()].asCString());
         auto& db = GetDgnDb();
         uint64_t id = propsJson[JsInterop::json_id()].asUInt64();
@@ -1592,7 +1590,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         auto stat = db.QueryPropertySize(size, spec, id, subId);
         if (stat != BE_SQLITE_ROW || size == 0)
             return Env().Undefined();
-    
+
         auto blob = Napi::ArrayBuffer::New(Env(), size);
         db.QueryProperty(blob.Data(), size, spec, id, subId);
         return blob;
@@ -1606,7 +1604,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
         REQUIRE_ARGUMENT_STRING(0, fileProps, Env().Undefined())
         auto propsJson = Json::Value::From(fileProps);
-        if (!propsJson.isMember(JsInterop::json_namespace()) || !propsJson.isMember(JsInterop::json_name())) 
+        if (!propsJson.isMember(JsInterop::json_namespace()) || !propsJson.isMember(JsInterop::json_name()))
             {
             Napi::TypeError::New(Env(), "Invalid FilePropertyProps").ThrowAsJavaScriptException();
             return Env().Undefined();
@@ -1636,17 +1634,17 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
         return Napi::Number::New(Env(), (int) stat);
         }
-    
+
     Napi::Value QueryNextAvailableFileProperty(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, fileProps, Env().Undefined())
         auto propsJson = Json::Value::From(fileProps);
-        if (!propsJson.isMember(JsInterop::json_namespace()) || !propsJson.isMember(JsInterop::json_name())) 
+        if (!propsJson.isMember(JsInterop::json_namespace()) || !propsJson.isMember(JsInterop::json_name()))
             {
             Napi::TypeError::New(Env(), "Invalid FilePropertyProps").ThrowAsJavaScriptException();
             return Env().Undefined();
             }
-        
+
         auto& db = GetDgnDb();
         Statement stmt(db, "SELECT count(Id),max(Id) FROM " BEDB_TABLE_Property " WHERE Namespace=? AND Name=?");
         stmt.BindText(1, propsJson[JsInterop::json_namespace()].asCString(), Statement::MakeCopy::No);
@@ -1657,7 +1655,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         int next = (result != BE_SQLITE_ROW || 0 == count) ? 0 : max + 1;
         return Napi::Number::New(Env(), next);
         }
-        
+
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -1743,6 +1741,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),
             InstanceMethod("updateModel", &NativeDgnDb::UpdateModel),
             InstanceMethod("updateProjectExtents", &NativeDgnDb::UpdateProjectExtents),
+            InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("getTiles", &NativeDgnDb::GetTiles),
         });
@@ -1857,7 +1856,7 @@ public:
         {
         if (info.Length() == 0)
             THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires an argument", Env().Undefined());
-        
+
         Napi::Value blobVal = info[0];
         if (blobVal.IsArrayBuffer())
             {
@@ -1865,10 +1864,10 @@ public:
             ECSqlStatus stat = GetBinder().BindBlob(arrayBuf.Data(), (int) arrayBuf.ByteLength(), IECSqlBinder::MakeCopy::Yes);
             return Napi::Number::New(Env(), (int) ToDbResult(stat));
             }
-        
+
         if (!blobVal.IsString())
             THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires either a base64-encoded-string or an ArrayBuffer", Env().Undefined());
-        
+
         Utf8String base64Str(blobVal.ToString().Utf8Value().c_str());
         ByteStream blob;
         Base64Utilities::Decode(blob, base64Str);
@@ -2756,6 +2755,138 @@ public:
 };
 
 //=======================================================================================
+// Projects ElementLocateManager into JS
+//! @bsiclass
+//=======================================================================================
+struct NativeElementLocateManager : Napi::ObjectWrap<NativeElementLocateManager>
+{
+    //=======================================================================================
+    // Async Worker which does a locate on another thread.
+    //! @bsiclass
+    //=======================================================================================
+    struct Locater : Napi::AsyncWorker
+    {
+    private:
+        // Inputs:
+        DgnDbPtr m_db;      // ?? Viewport ??
+        DPoint3d m_point;
+        Napi::ObjectReference m_locateManager;
+
+        // Outputs:
+        DgnDbStatus m_status;
+        // Store the results that we obtain when doing the locate in the background thread
+        // HitListCP    m_result;       ?
+        Utf8String m_result;   // *** NEEDS WORK: Replace this with the real result of DoLocate
+
+        void OnComplete()
+            {
+            NativeElementLocateManager::Unwrap(m_locateManager.Value())->m_pendingLocate = nullptr;
+            }
+
+    protected:
+        // This is invoked by node/uv in the BACKGROUND THREAD. DO NOT CALL N-API OR JS METHODS IN HERE.
+        void Execute() override
+            {
+            // TODO: Call DoLocate
+            //       Store the results that we obtain when doing the locate in the background thread
+            //      Utf8StringP cantAcceptExplanation;
+            //      m_result = ElementLocateManager::DoLocate( ... m_point ... )
+#define NATIVE_ELEMENT_LOCATE_MANAGER_TEST_SUCCESS
+#ifdef NATIVE_ELEMENT_LOCATE_MANAGER_TEST_SUCCESS
+            m_result.Sprintf("TBD locate near %lf,%lf,%lf", m_point.x, m_point.y, m_point.z);
+            m_status = DgnDbStatus::Success;
+#else
+            // If you want to return an ERROR, do this:
+            m_status = DgnDbStatus::BadRequest;     // Set to the appropriate error status
+            SetError("some error message");         // You MUST call SetError with a string. That tells N-API to invoke OnError
+#endif
+            }
+
+        // This is invoked by node/uv in the main JS thread when the operation is completed successfully
+        void OnOK() override
+            {
+            OnComplete();
+            auto locateResult = Napi::String::New(Env(), m_result.c_str());  // *** NEEDS WORK: Replace this with logic to convert the real return value to JS
+            auto retval = NapiUtils::CreateBentleyReturnSuccessObject(locateResult, Env());
+            Callback().MakeCallback(Receiver().Value(), {retval});
+            }
+
+        // This is invoked by node/uv in the main JS thread when the operation is completed with an error
+        void OnError(const Napi::Error& e) override
+            {
+            OnComplete();
+            auto retval = NapiUtils::CreateBentleyReturnErrorObject(m_status, e.Message().c_str(), Env());
+            Callback().MakeCallback(Receiver().Value(), {retval});
+            }
+
+    public:
+        Locater(Napi::Function& callback, NativeElementLocateManager const& locateManager, DgnDbR db, DPoint3dCR pt) : Napi::AsyncWorker(callback), m_db(&db), m_point(pt)
+            {
+            m_locateManager.Reset(locateManager.Value(), 1);
+            }
+        ~Locater()
+            {
+            m_locateManager.Reset();
+            }
+    };
+
+    static Napi::FunctionReference s_constructor;
+    Locater* m_pendingLocate;
+
+    void DoLocate(Napi::CallbackInfo const& info)
+        {
+        if (m_pendingLocate != nullptr)
+            CancelLocate(info);
+
+        BeAssert(m_pendingLocate == nullptr);
+
+        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db, );     // *** NEEDS WORK: Viewport?
+        REQUIRE_ARGUMENT_ANY_OBJ(1, ptobj, );
+        REQUIRE_ARGUMENT_FUNCTION(2, callback, );
+        if (!db->IsOpen())
+            {
+            callback.Call({NapiUtils::CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen, "", Env())});
+            return;
+            }
+
+        DPoint3d pt;
+        pt.x = ptobj.Get("x").ToNumber().FloatValue();
+        pt.y = ptobj.Get("y").ToNumber().FloatValue();
+        pt.z = ptobj.Get("z").ToNumber().FloatValue();
+
+        m_pendingLocate = new Locater(callback, *this, db->GetDgnDb(), pt);
+        m_pendingLocate->Queue();                       // Run the locate in another thread
+        }
+
+    void CancelLocate(Napi::CallbackInfo const& info)
+        {
+        if (nullptr == m_pendingLocate)
+            return;
+        m_pendingLocate->Cancel();
+        m_pendingLocate = nullptr;
+        }
+
+    NativeElementLocateManager(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeElementLocateManager>(info)
+        {
+        m_pendingLocate = nullptr;
+        }
+
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "NativeElementLocateManager", {
+          InstanceMethod("doLocate", &NativeElementLocateManager::DoLocate),
+          InstanceMethod("cancelLocate", &NativeElementLocateManager::CancelLocate)
+        });
+
+        exports.Set("NativeElementLocateManager", t);
+
+        s_constructor = Napi::Persistent(t);
+        s_constructor.SuppressDestruct();
+        }
+};
+
+//=======================================================================================
 // Projects the NativeECPresentationManager class into JS.
 //! @bsiclass
 //=======================================================================================
@@ -2899,16 +3030,18 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             result = ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params);
         else if (0 == strcmp("GetChildren", requestId))
             result = ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params);
+        else if (0 == strcmp("GetNodePaths", requestId))
+            result = ECPresentationUtils::GetNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
+        else if (0 == strcmp("GetFilteredNodePaths", requestId))
+            result = ECPresentationUtils::GetFilteredNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
         else if (0 == strcmp("GetContentDescriptor", requestId))
             result = ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params);
         else if (0 == strcmp("GetContent", requestId))
             result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params);
         else if (0 == strcmp("GetContentSetSize", requestId))
             result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params);
-        else if (0 == strcmp("GetNodePaths", requestId))
-            result = ECPresentationUtils::GetNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
-        else if (0 == strcmp("GetFilteredNodePaths", requestId))
-            result = ECPresentationUtils::GetFilteredNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
+        else if(0 == strcmp("GetDistinctValues", requestId))
+            result = ECPresentationUtils::GetDistinctValues(*m_presentationManager, db->GetDgnDb(), params);
 
         result.then([responseSender](ECPresentationResult result)
             {
@@ -3187,6 +3320,7 @@ static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exp
     IModelJsNative::NativeBriefcaseManagerResourcesRequest::Init(env, exports);
     IModelJsNative::NativeECPresentationManager::Init(env, exports);
     IModelJsNative::NativeECSchemaXmlContext::Init(env, exports);
+    IModelJsNative::NativeElementLocateManager::Init(env, exports);
 
     exports.DefineProperties(
         {
@@ -3207,5 +3341,6 @@ Napi::FunctionReference IModelJsNative::NativeDgnDb::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECPresentationManager::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECDb::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECSchemaXmlContext::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeElementLocateManager::s_constructor;
 
 NODE_API_MODULE(at_bentley_imodeljs_nodeaddon, iModelJsNativeRegisterModule)
