@@ -203,12 +203,7 @@ DbResult ChangeManager::AddMetadataToChangeCacheFile(ECDb& cacheFile, ECDbCR pri
             return r;
         }
 
-    ProfileVersion ecdbProfileVersion(0, 0, 0, 0);
-    DbResult r = ProfileManager::ReadProfileVersion(ecdbProfileVersion, primaryECDb);
-    if (BE_SQLITE_OK != r || ecdbProfileVersion.IsEmpty())
-        return r;
-
-    return cacheFile.SavePropertyString(PropertySpec("ECDbSchemaVersion", CHANGE_PROPSPEC_NAMESPACE), ecdbProfileVersion.ToJson().c_str());
+    return cacheFile.SavePropertyString(PropertySpec("ECDbSchemaVersion", CHANGE_PROPSPEC_NAMESPACE), primaryECDb.GetECDbProfileVersion().ToJson().c_str());
     }
 
 //---------------------------------------------------------------------------------------

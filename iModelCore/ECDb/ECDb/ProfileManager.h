@@ -21,45 +21,46 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ProfileManager final
     {
 private:
-    ProfileManager() = delete;
-    ~ProfileManager() = delete;
+    ECDbR m_ecdb;
+    mutable ProfileVersion m_profileVersion = ProfileVersion(0, 0, 0, 0);
 
-    static DbResult CreateProfileTables(ECDbCR);
+    //! Reads the version of the ECDb profile of the given ECDb file
+    //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
+    //! ECDb file, i.e. does not have the ECDb profile
+    DbResult ReadProfileVersion() const;
+
+    DbResult CreateProfileTables() const;
     //! @param onProfileCreation true if this method is called during profile creation. false if 
     //! called during profile upgrade
-    static DbResult AssignProfileVersion(ECDbR, bool onProfileCreation);
+    DbResult AssignProfileVersion(bool onProfileCreation) const;
 
-    static DbResult RunUpgraders(ECDbCR, ProfileVersion const& actualFileProfileVersion);
+    DbResult RunUpgraders() const;
 
     static PropertySpec GetProfileVersionPropertySpec() { return PropertySpec("SchemaVersion", ECDB_PROPSPEC_NAMESPACE); }
     static PropertySpec GetInitialProfileVersionPropertySpec() { return PropertySpec("InitialSchemaVersion", ECDB_PROPSPEC_NAMESPACE); }
 
 public:
-    static ProfileState CheckProfileVersion(ProfileVersion& fileProfileVersion, ECDbCR);
+    explicit ProfileManager(ECDbR ecdb): m_ecdb(ecdb) {}
 
-
-    //! Reads the version of the ECDb profile of the given ECDb file
-    //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
-    //! ECDb file, i.e. does not have the ECDb profile
-    static DbResult ReadProfileVersion(ProfileVersion& profileVersion, ECDbCR);
+    ProfileState CheckProfileVersion() const;
 
     //! Creates the ECDb profile in the specified ECDb file.
     //! @remarks In case of success the outermost transaction is committed.
     //!     In case of error, the outermost transaction is rolled back.
-    //! @param[out] version the profile version
-    //! @param[in] ecdb ECDb file handle to create the profile in.
     //! @return BE_SQLITE_OK if successful. Error code otherwise.
-    static DbResult CreateProfile(ProfileVersion& version, ECDbR ecdb);
+    DbResult CreateProfile() const;
 
     //! Upgrades the ECDb profile in the specified ECDb file to the latest version (if the file's profile
     //! is not up-to-date).
     //! @remarks In case an upgrade was necessary and the upgrade was successful,
     //! the outermost transaction is committed. In case of
     //! error, the outermost transaction is rolled back. 
-    //! @param[out] newVersion the new version after the upgrade has happened
-    //! @param[in] ecdb ECDb file handle to upgrade
     //! @return BE_SQLITE_OK if successful. Error code otherwise.
-    static DbResult UpgradeProfile(ProfileVersion& newVersion, ECDbR ecdb);
+    DbResult UpgradeProfile() const;
+
+    //! Returns the profile version of the current file. 
+    //! Note this method must only be called after having called CheckProfileVersion, CreateProfile or UpgradeProfile.
+    ProfileVersion const& GetProfileVersion() const { BeAssert(!m_profileVersion.IsEmpty()); return m_profileVersion; }
 
     static bset<Utf8CP, CompareIUtf8Ascii> GetECDbSchemaNames()
         { 
