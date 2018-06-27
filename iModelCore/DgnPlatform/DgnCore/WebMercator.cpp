@@ -271,6 +271,7 @@ MapRoot::MapRoot(WebMercatorModelCR model, TransformCR trans, ImageryProviderR i
 
     CreateCache(imageryProvider._GetCacheFileName().c_str(), MAX_DB_CACHE_SIZE);
     m_rootTile = new MapTile(*this, QuadTree::TileId(0,0,0), nullptr);
+    m_rootTile->SetIsReady();
 
     // get the copyright sprite from the imagery provider.
     m_copyrightSprite = imageryProvider._GetCopyrightSprite();
@@ -527,9 +528,8 @@ static Utf8String tileXYToQuadKey(int tileX, int tileY, int levelOfDetail)
     // blatantly ripped off from C# example in bing documentation https://msdn.microsoft.com/en-us/library/bb259689.aspx
     Utf8String  quadKey;
 
-    // this is wrong. It is only here because we are asking for a tile at levelOfDetail 0, which we should not be doing.
-    if (0 == levelOfDetail)
-        return "0";
+    // Root tile is not displayable. Returns 0 for _GetMaximumSize(). Should not end up here.
+    BeAssert(0 != levelOfDetail);
 
     for (int i = levelOfDetail; i > 0; i--)
         {
