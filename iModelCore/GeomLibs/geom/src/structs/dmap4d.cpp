@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-#include "../deprecatedFunctions.h"
+#include "../DeprecatedFunctions.h"
 #include <stdlib.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 Public GEOMDLLIMPEXP bool    bsiDMatrix4d_invertQR

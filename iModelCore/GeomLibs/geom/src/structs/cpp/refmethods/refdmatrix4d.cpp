@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-#include "../deprecatedFunctions.h"
+#include "../DeprecatedFunctions.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 #define HDIM 4
 

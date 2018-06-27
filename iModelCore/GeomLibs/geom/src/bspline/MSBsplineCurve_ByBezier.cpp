@@ -9,7 +9,7 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <math.h>
-#include "../deprecatedFunctions.h"
+#include "../DeprecatedFunctions.h"
 #if defined (INCLUDE_PPL)
     #include <Bentley\Iota.h>
     #include <ppl.h>

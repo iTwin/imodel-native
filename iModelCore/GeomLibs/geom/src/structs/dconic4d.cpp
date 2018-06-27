@@ -21,7 +21,7 @@
 * @bsistruct                                                    EarlinLutz      02/99
 +===============+===============+===============+===============+===============+======*/
 #include <bsibasegeomPCH.h>
-#include "../deprecatedFunctions.h"
+#include "../DeprecatedFunctions.h"
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>

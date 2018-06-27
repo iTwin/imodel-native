@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-#include "../deprecatedFunctions.h"
+#include "../DeprecatedFunctions.h"
 BCurveSegment::BCurveSegment ()
     {
     m_order = m_numKnots = m_workOrder = 0;
