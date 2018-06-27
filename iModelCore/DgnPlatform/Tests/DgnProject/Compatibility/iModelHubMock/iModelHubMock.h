@@ -20,15 +20,15 @@ private:
     BeFileName                              m_storage;
     bmap<BeGuid, BeFileName>                m_storageMap;
     BeSQLite::BeBriefcaseId                 m_currentId;
-    bmap<BeGuid, bvector<DgnRevisionCPtr>>  m_revisions;
+    bmap<BeGuid, bvector<DgnRevisionPtr>>   m_revisions;
 public:
     IModelHubMock(BeFileName storageDirectory) : m_storage(storageDirectory), m_iModel(nullptr), m_currentId(2) {}
     ~IModelHubMock() {BeFileName::EmptyDirectory(m_storage);}
     BeGuid CreateiModel(Utf8StringCR name);
     bool AcquireBriefcase(BeGuid iModelId, BeFileName briefcaseDownloadPath);
-    bool AcquireModelLock(BeGuid iModelId);
     Utf8String PushChangeset(DgnRevisionPtr revision, BeGuid iModelId);
     DgnRevisionCPtr PullChangeset(Utf8StringCR changesetId, BeGuid iModelId);
     bool ManualMergeAllChangesets(BeGuid iModelId);
-    void ClearStoredRevisions() {m_revisions.clear();}
+    void ClearStoredRevisions(BeGuid iModelId) {m_revisions[iModelId].clear();}
+    void GetRevisionCount(BeGuid iModelId) {m_revisions[iModelId].size();}
 };

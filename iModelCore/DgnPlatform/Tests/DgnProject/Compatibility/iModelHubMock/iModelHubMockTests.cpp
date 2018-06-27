@@ -4,34 +4,41 @@
 #include "iModelHubMock.h"
 #include "../CompatibilityTestFixture.h"
 
-
 struct IModelHubMockTestFixture : public ::testing::Test, DgnPlatformLib::Host::RepositoryAdmin {
     static bool s_isInitialized;
     static ScopedDgnHost* s_host;
     mutable TestRepositoryManager m_server;
+    BeFileName m_tempPath;
+    BeFileName m_outputRoot;
+    IModelHubMock* m_mock;
 private:
     void Initialize() 
         {
-        BeFileName fn;
-        BeFileName temp;
         BeFileName assets;
-        BeTest::GetHost().GetOutputRoot(fn);
-        BeTest::GetHost().GetTempDir(temp);
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(assets);
-        DgnDb::Initialize(temp, &assets);
+        DgnDb::Initialize(m_tempPath, &assets);
         s_isInitialized = true;
         }
 public:
     IRepositoryManagerP _GetRepositoryManager(DgnDbR) const override {return &m_server;}
+    IModelHubMock* GetMock() {return m_mock;}
+    BeFileNameCR GetTempPath() {return m_tempPath;}
+    BeFileNameCR GetOutputPath() {return m_outputRoot;}
+
     void SetUp() override 
         {
         if (!s_isInitialized)
             Initialize();
         s_host = new ScopedDgnHost();
         s_host->SetRepositoryAdmin(this);
+        BeTest::GetHost().GetOutputRoot(m_outputRoot);
+        BeTest::GetHost().GetTempDir(m_tempPath);
+        m_mock = new IModelHubMock(m_outputRoot);
         }
+
     void TearDown() override 
         {
+        delete m_mock;
         delete s_host;
         }
 
@@ -44,11 +51,19 @@ bool IModelHubMockTestFixture::s_isInitialized = false;
 //-------------------------------------------------------------------------------------
 TEST_F(IModelHubMockTestFixture, CreateiModel)
     {
-    BeFileName fn;
-    BeFileName temp;
-    IModelHubMock mock(fn);
-    auto id = mock.CreateiModel("test");
+    auto id = GetMock()->CreateiModel("test");
     ASSERT_TRUE(id.IsValid());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                            Kyle.Abramowitz       06/2018
+//-------------------------------------------------------------------------------------
+TEST_F(IModelHubMockTestFixture, CreateMultipleiModels)
+    {
+    auto id = GetMock()->CreateiModel("test");
+    ASSERT_TRUE(id.IsValid());
+    auto id2 = GetMock()->CreateiModel("test2");
+    ASSERT_TRUE(id2.IsValid());
     }
 
 //-------------------------------------------------------------------------------------
@@ -56,22 +71,47 @@ TEST_F(IModelHubMockTestFixture, CreateiModel)
 //-------------------------------------------------------------------------------------
 TEST_F(IModelHubMockTestFixture, AcquireBriefcase)
     {
-    BeFileName fn;
-    BeTest::GetHost().GetOutputRoot(fn);
-    BeFileName temp;
-    BeTest::GetHost().GetTempDir(temp);
-    IModelHubMock mock(fn);
-    auto id = mock.CreateiModel("test");
+    auto id = GetMock()->CreateiModel("test");
     ASSERT_TRUE(id.IsValid());
-    auto briefcasePath = BeFileName(temp).AppendToPath(L"briefcase.bim");
-    auto status = mock.AcquireBriefcase(id, briefcasePath);
+    auto briefcasePath = BeFileName(GetTempPath()).AppendToPath(L"briefcase.bim");
+    auto status = GetMock()->AcquireBriefcase(id, briefcasePath);
     ASSERT_TRUE(BeFileName::DoesPathExist(briefcasePath));
     DbResult stat;
     auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(db.IsValid());
     ASSERT_TRUE(db->IsBriefcase());
     ASSERT_FALSE(db->IsMasterCopy());
     ASSERT_FALSE(db->IsStandaloneBriefcase());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                            Kyle.Abramowitz       06/2018
+//-------------------------------------------------------------------------------------
+TEST_F(IModelHubMockTestFixture, AcquireMultipleBriefcase)
+    {
+    auto id = GetMock()->CreateiModel("test");
+    ASSERT_TRUE(id.IsValid());
+    auto briefcasePath = BeFileName(GetTempPath()).AppendToPath(L"briefcase.bim");
+    ASSERT_TRUE(GetMock()->AcquireBriefcase(id, briefcasePath));
+    ASSERT_TRUE(BeFileName::DoesPathExist(briefcasePath));
+    DbResult stat;
+    auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(db.IsValid());
+    ASSERT_TRUE(db->IsBriefcase());
+    ASSERT_FALSE(db->IsMasterCopy());
+    ASSERT_FALSE(db->IsStandaloneBriefcase());
+
+    // Acquire another briefcase
+    briefcasePath = BeFileName(GetTempPath()).AppendToPath(L"briefcase2.bim");
+    ASSERT_TRUE(GetMock()->AcquireBriefcase(id, briefcasePath));
+    ASSERT_TRUE(BeFileName::DoesPathExist(briefcasePath));
+    auto db2 = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(db2.IsValid());
+    ASSERT_TRUE(db2->IsBriefcase());
+    ASSERT_FALSE(db2->IsMasterCopy());
+    ASSERT_FALSE(db2->IsStandaloneBriefcase());
+
+    ASSERT_NE(db->GetBriefcaseId(), db2->GetBriefcaseId());
     }
 
 //-------------------------------------------------------------------------------------
@@ -79,15 +119,10 @@ TEST_F(IModelHubMockTestFixture, AcquireBriefcase)
 //-------------------------------------------------------------------------------------
 TEST_F(IModelHubMockTestFixture, CreateAndPushChangeset)
     {
-    BeFileName fn;
-    BeTest::GetHost().GetOutputRoot(fn);
-    BeFileName temp;
-    BeTest::GetHost().GetTempDir(temp);
-    IModelHubMock mock(fn);
-    auto id = mock.CreateiModel("test");
+    auto id = GetMock()->CreateiModel("test");
     ASSERT_TRUE(id.IsValid());
-    auto briefcasePath = BeFileName(temp).AppendToPath(L"briefcase.bim");
-    auto status = mock.AcquireBriefcase(id, briefcasePath);
+    auto briefcasePath = BeFileName(GetTempPath()).AppendToPath(L"briefcase.bim");
+    auto status = GetMock()->AcquireBriefcase(id, briefcasePath);
 
     DbResult stat;
     auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
@@ -114,7 +149,7 @@ TEST_F(IModelHubMockTestFixture, CreateAndPushChangeset)
     auto rev = db->Revisions().StartCreateRevision();
     ASSERT_TRUE(rev.IsValid());
     ASSERT_EQ(RevisionStatus::Success, db->Revisions().FinishCreateRevision());
-    ASSERT_FALSE(mock.PushChangeset(rev, id).empty());
+    ASSERT_FALSE(GetMock()->PushChangeset(rev, id).empty());
     }
 
 //-------------------------------------------------------------------------------------
@@ -122,15 +157,10 @@ TEST_F(IModelHubMockTestFixture, CreateAndPushChangeset)
 //-------------------------------------------------------------------------------------
 TEST_F(IModelHubMockTestFixture, MergeChangesets)
     {
-    BeFileName fn;
-    BeTest::GetHost().GetOutputRoot(fn);
-    BeFileName temp;
-    BeTest::GetHost().GetTempDir(temp);
-    IModelHubMock mock(fn);
-    auto id = mock.CreateiModel("test");
+    auto id = GetMock()->CreateiModel("test");
     ASSERT_TRUE(id.IsValid());
-    auto briefcasePath = BeFileName(temp).AppendToPath(L"briefcase.bim");
-    auto status = mock.AcquireBriefcase(id, briefcasePath);
+    auto briefcasePath = BeFileName(GetTempPath()).AppendToPath(L"briefcase.bim");
+    ASSERT_TRUE(GetMock()->AcquireBriefcase(id, briefcasePath));
 
     DbResult stat;
     auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
@@ -157,10 +187,38 @@ TEST_F(IModelHubMockTestFixture, MergeChangesets)
     auto rev = db->Revisions().StartCreateRevision();
     ASSERT_TRUE(rev.IsValid());
     ASSERT_EQ(RevisionStatus::Success, db->Revisions().FinishCreateRevision());
-    ASSERT_FALSE(mock.PushChangeset(rev, id).empty());
+    ASSERT_FALSE(GetMock()->PushChangeset(rev, id).empty());
 
-    ASSERT_TRUE(mock.ManualMergeAllChangesets(id)) << "Merging a changeset with correct iModelId and parent should succeed";
-    mock.ClearStoredRevisions();
-    ASSERT_TRUE(mock.ManualMergeAllChangesets(id)) << "Merging 0 changesets should succeed always";
+    ASSERT_TRUE(GetMock()->ManualMergeAllChangesets(id)) << "Merging a changeset with correct iModelId and parent should succeed";
+    GetMock()->ClearStoredRevisions(id);
+    ASSERT_TRUE(GetMock()->ManualMergeAllChangesets(id)) << "Merging 0 changesets should succeed always";
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                            Kyle.Abramowitz       06/2018
+//-------------------------------------------------------------------------------------
+TEST_F(IModelHubMockTestFixture, Locking)
+    {
+    auto id = GetMock()->CreateiModel("test");
+    ASSERT_TRUE(id.IsValid());
+    auto briefcasePath = BeFileName(GetTempPath()).AppendToPath(L"briefcase.bim");
+    ASSERT_TRUE(GetMock()->AcquireBriefcase(id, briefcasePath));
+
+    DbResult stat;
+    auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_EQ(RepositoryStatus::Success,  db->BriefcaseManager().LockDb(LockLevel::Exclusive).Result());
+
+    auto briefcasePath2 = BeFileName(GetTempPath()).AppendToPath(L"briefcase2.bim");
+    ASSERT_TRUE(GetMock()->AcquireBriefcase(id, briefcasePath2));
+
+    auto db2 = DgnDb::OpenDgnDb(&stat, briefcasePath2, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_EQ(RepositoryStatus::LockAlreadyHeld, db2->BriefcaseManager().LockDb(LockLevel::Exclusive).Result());
+
+    db->BriefcaseManager().RelinquishLocks();
+    ASSERT_EQ(RepositoryStatus::Success, db2->BriefcaseManager().LockDb(LockLevel::Exclusive).Result());
+
+    db2->BriefcaseManager().RelinquishLocks();
+    ASSERT_EQ(RepositoryStatus::Success, db->BriefcaseManager().LockDb(LockLevel::Shared).Result());
+    ASSERT_EQ(RepositoryStatus::Success, db2->BriefcaseManager().LockDb(LockLevel::Shared).Result());
     }
 
