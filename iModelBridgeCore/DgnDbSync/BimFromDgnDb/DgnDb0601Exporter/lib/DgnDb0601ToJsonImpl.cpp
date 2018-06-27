@@ -11,7 +11,9 @@
 #include <limits>
 #include <DgnDb06Api/DgnPlatform/WebMercator.h>
 #include <DgnDb06Api/DgnPlatform/DgnIModel.h>
+#include <DgnDb06Api/DgnPlatform/DgnGeoCoord.h>
 #include <DgnDb06Api/Planning/PlanningApi.h>
+#include <DgnDb06Api/ECObjects/ECJsonUtilities.h>
 
 DGNDB06_USING_NAMESPACE_BENTLEY
 DGNDB06_USING_NAMESPACE_BENTLEY_SQLITE
@@ -1142,7 +1144,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportCategories()
     CachedECSqlStatementPtr statement = m_dgndb->GetPreparedECSqlStatement("select DISTINCT Code.Namespace from [dgn].[Category] WHERE ModelId = 1");
     if (!statement.IsValid())
         {
-        LogMessage(BimFromDgnDbLoggingSeverity::LOG_FATAL, "Unable to get cached statement ptr.");
+        LogMessage(BimFromDgnDbLoggingSeverity::LOG_FATAL, "DgnDb0601ToJson: (Export Categories) Unable to get cached statement ptr.");
         return ERROR;
         }
 
@@ -1483,14 +1485,15 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportModels()
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus DgnDb0601ToJsonImpl::ExportModel(Utf8CP schemaName, Utf8CP className, Utf8CP whereClause)
     {
-    Utf8PrintfString ecSql("SELECT ECInstanceId, * FROM ONLY %s.%s", schemaName, className);
+    Utf8PrintfString ecSql("SELECT ECInstanceId, * FROM ONLY [%s].[%s]", schemaName, className);
     if (nullptr != whereClause)
         ecSql.append(whereClause);
 
     CachedECSqlStatementPtr statement = m_dgndb->GetPreparedECSqlStatement(ecSql.c_str());
     if (!statement.IsValid())
         {
-        LogMessage(BimFromDgnDbLoggingSeverity::LOG_FATAL, "Unable to get cached statement ptr.");
+        Utf8PrintfString error("DgnDb0601ToJson: (Export Model) Unable to get cached statement ptr for \"%s\".", ecSql.c_str());
+        LogMessage(BimFromDgnDbLoggingSeverity::LOG_FATAL, error.c_str());
         return ERROR;
         }
     JsonECSqlSelectAdapter jsonAdapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
@@ -1664,13 +1667,14 @@ void RenameConflictMembers(Json::Value& obj, Utf8CP prefix, Utf8CP member)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus DgnDb0601ToJsonImpl::ExportElements(Json::Value& entry, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause, bool sendToQueue, bool allowDuplicates)
     {
-    Utf8PrintfString ecSql("SELECT ECInstanceId, * FROM ONLY %s.%s WHERE ModelId=?", schemaName, className);
+    Utf8PrintfString ecSql("SELECT ECInstanceId, * FROM ONLY [%s].[%s] WHERE ModelId=?", schemaName, className);
     if (nullptr != whereClause)
         ecSql.append(whereClause);
     CachedECSqlStatementPtr statement = m_dgndb->GetPreparedECSqlStatement(ecSql.c_str());
     if (!statement.IsValid())
         {
-        LogMessage(BimFromDgnDbLoggingSeverity::LOG_FATAL, "Unable to get cached statement ptr.");
+        Utf8PrintfString error("DgnDb0601ToJson: (Export Elements) Unable to get cached statement ptr for \"%s\".", ecSql.c_str());
+        LogMessage(BimFromDgnDbLoggingSeverity::LOG_FATAL, error.c_str());
         return ERROR;
         }
     statement->BindId(1, parentModel);
@@ -1975,7 +1979,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportTimelines()
     CachedECSqlStatementPtr statement = m_dgndb->GetPreparedECSqlStatement("select Label, PlanId from only [bp].[Timeline];");
     if (!statement.IsValid())
         {
-        LogMessage(BimFromDgnDbLoggingSeverity::LOG_FATAL, "Unable to get cached statement ptr.");
+        LogMessage(BimFromDgnDbLoggingSeverity::LOG_FATAL, "DgnDb0601ToJson: (Export Timelines) Unable to get cached statement ptr.");
         return ERROR;
         }
 
@@ -2035,7 +2039,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId, ECIns
     {
     ECClassCP ecClass = m_dgndb->Schemas().GetECClass(classId);
 
-    Utf8PrintfString ecSql("SELECT * FROM ONLY %s.%s", ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    Utf8PrintfString ecSql("SELECT * FROM ONLY [%s].[%s]", ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
     if (aspectId.IsValid())
         {
         ecSql.append(" WHERE ECInstanceId=%" PRIu64, aspectId.GetValue());
@@ -2043,7 +2047,8 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId, ECIns
     CachedECSqlStatementPtr statement = m_dgndb->GetPreparedECSqlStatement(ecSql.c_str());
     if (!statement.IsValid())
         {
-        LogMessage(BimFromDgnDbLoggingSeverity::LOG_FATAL, "Unable to get cached statement ptr.");
+        Utf8PrintfString error("DgnDb0601ToJson: (Export Element Aspects) Unable to get cached statement ptr for \"%s\".", ecSql.c_str());
+        LogMessage(BimFromDgnDbLoggingSeverity::LOG_FATAL, error.c_str());
         return ERROR;
         }
     JsonECSqlSelectAdapter jsonAdapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
@@ -2373,7 +2378,23 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportPropertyData()
     propData.clear();
 
     MakeNavigationProperty(propData, "DefaultView", existingId);
+    uint32_t propSize;
+    if (m_dgndb->QueryPropertySize(propSize, DgnProjectProperty::DgnGCS()) == BeSQLite::BE_SQLITE_ROW)
+        {
+
+        ScopedArray<Byte> buffer(propSize);
+        m_dgndb->QueryProperty(buffer.GetData(), propSize, DgnProjectProperty::DgnGCS());
+        propData["GCS"] = Json::Value(Json::ValueType::objectValue);
+        ECN::ECJsonUtilities::BinaryToJson(propData["GCS"], buffer.GetData(), propSize);
+
+        DPoint3d globalOrigin;
+        globalOrigin = m_dgndb->Units().GetGlobalOrigin();
+        propData["globalOrigin"] = Json::Value(Json::ValueType::objectValue);
+        ECN::ECJsonUtilities::Point3DToJson(propData["globalOrigin"], globalOrigin);
+        }
+
     (QueueJson) (entry.toStyledString().c_str());
+
     return SUCCESS;
     }
 

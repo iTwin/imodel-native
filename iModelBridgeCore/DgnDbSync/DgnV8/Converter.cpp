@@ -1671,7 +1671,6 @@ void Converter::ReportDgnFileStatus(DbResult fileStatus, BeFileNameCR projectFil
 
         case BE_SQLITE_ERROR_InvalidProfileVersion:
         case BE_SQLITE_ERROR_ProfileUpgradeFailed:
-        case BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite:
         case BE_SQLITE_ERROR_ProfileTooOld:
             category = Converter::IssueCategory::Compatibility();
             issue = Converter::Issue::Error();
@@ -2752,21 +2751,6 @@ void Converter::_ConvertDrawingElement(DgnV8EhCR v8eh, ResolvedModelMapping cons
     ProcessConversionResults(results, changeInfo, v8eh, v8mm);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::_ConvertSheetElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm)
-    {
-    ElementConversionResults results;
-    
-    IChangeDetector::SearchResults changeInfo;
-    if (GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, v8mm))
-        {
-        DoConvertDrawingElement(results, v8eh, v8mm, (IChangeDetector::ChangeType::Insert == changeInfo.m_changeType));
-        }
-
-    ProcessConversionResults(results, changeInfo, v8eh, v8mm);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15

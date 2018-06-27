@@ -8,13 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#ifdef __IMODEL_BRIDGE_FWK_BUILD__
-    #define IMODEL_BRIDGE_FWK_EXPORT EXPORT_ATTRIBUTE
-#else
-    #define IMODEL_BRIDGE_FWK_EXPORT IMPORT_ATTRIBUTE
-#endif
-
-
 #include <iModelBridge/iModelBridge.h>
 #include <iModelBridge/iModelBridgeFwkTypes.h>
 #include <DgnPlatform/DgnPlatformLib.h>
@@ -22,6 +15,14 @@
 #include <Logging/bentleylogging.h>
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
+
+BEGIN_BENTLEY_LOGGING_NAMESPACE
+namespace Provider //Forward declaration for logging provider;
+    {
+    class Log4cxxProvider;
+    }
+END_BENTLEY_LOGGING_NAMESPACE
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct iModelHubFX;
@@ -106,7 +107,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     void SetSyncState(SyncState);
     SyncState GetSyncState();
 
-    void SaveBriefcaseId();
+    BeSQLite::DbResult SaveBriefcaseId();
     //void SaveParentRevisionId();
 
     static void DecryptCredentials(Http::Credentials& credentials);
@@ -125,6 +126,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName m_loggingConfigFileName;
         BeFileName m_stagingDir;
         BeFileName m_inputFileName;
+        Utf8String m_jobRunCorrelationId;
+        Utf8String m_imodelBankUrl;
         
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
@@ -153,11 +156,11 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     //! The command-line arguments required by the iModelBridgeFwk that pertain to the iModelHub
     struct ServerArgs
         {
-        bool m_haveProjectGuid {};                  //!< Was a project GUID supplied? If so, m_bcsProjectId is the GUID. Else, assume m_bcsProjectId is the project name.
-        Utf8String m_bcsProjectId;                  //!< iModelHub project 
-        Utf8String m_repositoryName;                //!< A repository in the iModelHub project
-        Http::Credentials m_credentials;            //!< User credentials
-        bool              m_isEncrypted;
+        bool                m_haveProjectGuid {};                  //!< Was a project GUID supplied? If so, m_bcsProjectId is the GUID. Else, assume m_bcsProjectId is the project name.
+        Utf8String          m_bcsProjectId;                  //!< iModelHub project 
+        Utf8String          m_repositoryName;                //!< A repository in the iModelHub project
+        Http::Credentials   m_credentials;            //!< User credentials
+        bool                m_isEncrypted;
         WebServices::UrlProvider::Environment m_environment; //!< Connect environment
         uint8_t m_maxRetryCount = 3;                //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
         bvector<WString> m_bargs;
@@ -228,6 +231,7 @@ protected:
     DmsServerArgs m_dmsServerArgs;
     FwkRepoAdmin* m_repoAdmin {};
     IDmsSupport*    m_dmsSupport;
+    NativeLogging::Provider::Log4cxxProvider* m_logProvider;
     BeSQLite::DbResult OpenOrCreateStateDb();
     void PrintUsage(WCharCP programName);
     void RedirectStderr();
@@ -247,7 +251,6 @@ protected:
     //! @{
     BentleyStatus Briefcase_Initialize(int argc, WCharCP argv[]);
     bool Briefcase_IsInitialized() const {return nullptr != m_clientUtils;}
-    BentleyStatus Briefcase_ParseCommandLine(int argc, WCharCP argv[]);
     void Briefcase_PrintUsage();
     void Briefcase_Shutdown();
     bool Briefcase_IsBriefcase();
@@ -265,6 +268,7 @@ protected:
 
     WString GetMutexName();
     int RunExclusive(int argc, WCharCP argv[]);
+    BentleyStatus  TryOpenBimWithBisSchemaUpgrade();
     int UpdateExistingBim();
     Utf8String GetRevisionComment();
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);
@@ -283,6 +287,8 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT iModelBridgeFwk();
     IMODEL_BRIDGE_FWK_EXPORT ~iModelBridgeFwk();
 
+    bool UseIModelBank() const {return !m_jobEnvArgs.m_imodelBankUrl.empty();}
+
     //! wmain should call this first
     IMODEL_BRIDGE_FWK_EXPORT BentleyStatus ParseCommandLine(int argc, WCharCP argv[]);
 
@@ -295,7 +301,6 @@ public:
     BeFileName GetLoggingConfigFileName() const {return m_jobEnvArgs.m_loggingConfigFileName;}
     void SetBriefcaseBim(DgnDbR db) { m_briefcaseDgnDb = &db; }
     DgnDbPtr GetBriefcaseBim() { return m_briefcaseDgnDb; }
-
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static BeFileName ComputeReportFileName(BeFileNameCR bcName);
     //! @private

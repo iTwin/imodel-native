@@ -187,6 +187,8 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeSQLiteEC.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ECObjects.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)Units.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BentleyGeom.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BentleyGeomSerialization.lib
+
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)DgnPlatform.lib

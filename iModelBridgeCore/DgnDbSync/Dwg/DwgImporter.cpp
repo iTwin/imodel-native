@@ -217,7 +217,7 @@ void            DwgImporter::ReportDbFileStatus (DbResult fileStatus, BeFileName
 
         case BE_SQLITE_ERROR_InvalidProfileVersion:
         case BE_SQLITE_ERROR_ProfileUpgradeFailed:
-        case BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite:
+        case BE_SQLITE_ERROR_ProfileTooOldForReadWrite:
         case BE_SQLITE_ERROR_ProfileTooOld:
             category = DwgImporter::IssueCategory::Compatibility();
             issue = DwgImporter::Issue::Error();
@@ -1177,8 +1177,11 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
                         continue;
                         }
 
+                    // cache the mapped model in the xref holder:
+                    m_loadedXrefFiles.back().AddDgnModel (model->GetModelId());
+
                     // give the updater a chance to cache skipped models as we may not see xref inserts during importing phase:
-                    changeDetector._ShouldSkipModel (*this, modelMap);
+                    changeDetector._ShouldSkipModel (*this, modelMap, xref.GetDatabaseP());
 
                     if (!hasPushedReferencesSubject && parentSubject.IsValid())
                         {
@@ -1344,7 +1347,8 @@ DefinitionModelPtr  DwgImporter::GetOrCreateJobDefinitionModel ()
 
     // get or create the importer job partition
     auto const& jobSubject = this->GetJobSubject ();
-    Utf8PrintfString    partitionName("%s:%ls", s_definitionPartitionName, m_rootFileName.GetFileNameWithoutExtension());
+    Utf8String  utf8Name (m_rootFileName.GetFileNameWithoutExtension());
+    Utf8PrintfString    partitionName("%s:%s", s_definitionPartitionName, utf8Name.c_str());
 
     auto partitionCode = DefinitionPartition::CreateCode (jobSubject, partitionName);
     auto partitionId = m_dgndb->Elements().QueryElementIdByCode (partitionCode);
@@ -1395,7 +1399,8 @@ BentleyStatus DwgImporter::GetOrCreateGeometryPartsModel ()
         }
 
     // create a GeometryParts subject
-    Utf8PrintfString  partitionName("%s:%ls", s_geometryPartsPartitionName, m_rootFileName.GetFileNameWithoutExtension());
+    Utf8String  utf8Name (m_rootFileName.GetFileNameWithoutExtension());
+    Utf8PrintfString  partitionName("%s:%s", s_geometryPartsPartitionName, utf8Name.c_str());
     auto partsSubject = this->GetOrCreateModelSubject (*m_spatialParentSubject, partitionName, ModelSubjectType::GeometryParts);
     if (!partsSubject.IsValid())
         {

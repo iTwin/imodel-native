@@ -497,11 +497,13 @@ struct ShapeTextProcessor : NonCopyableClass
 private:
     DwgGiTextStyleR     m_textstyle;
     DwgStringCR         m_textstring;
+    bool                m_raw;
 
 public:
-    ShapeTextProcessor (DwgGiTextStyleR styleIn, DwgStringCR stringIn) :  m_textstyle(styleIn), m_textstring(stringIn) { }
+    ShapeTextProcessor (DwgGiTextStyleR styleIn, DwgStringCR stringIn) :  m_textstyle(styleIn), m_textstring(stringIn), m_raw(true) { }
+    DWGDB_EXPORT void           SetIsRaw (bool raw) { m_raw = raw; }
     DWGDB_EXPORT DwgDbStatus    Drop (bvector<DPoint3dArray>& linestringsOut, double deviation = 0.0);
-    DWGDB_EXPORT DwgDbStatus    GetExtents (DRange2dR extentsOut, bool bearings = false, bool raw = true);
+    DWGDB_EXPORT DwgDbStatus    GetExtents (DPoint2dR extentsOut, bool bearings = false);
     };  // ShapeTextProcessor
 
 END_DWGDB_NAMESPACE
