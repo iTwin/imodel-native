@@ -208,7 +208,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
 
                         Render::RgbaSpritePtr sprite = model->GetCopyrightSprite();
                         if (sprite.IsValid())
-                            m_copyrightSprites.push_back (sprite);
+                            m_copyrightSprites.insert(sprite);
 
                         m_roots.Insert(modelId, modelRoot);
                         }

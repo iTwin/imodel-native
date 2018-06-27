@@ -571,6 +571,9 @@ private:
     Utf8String m_viewSQL; // don't rely on this - it will soon be removed from the API!
 
 protected:
+    using SpritePtr = RefCountedPtr<Render::ISprite>;
+    using Sprites = bset<SpritePtr>;
+
     bool m_loading = false;
     bool m_defaultDeviceOrientationValid = false;
     bool m_allRootsLoaded = false;
@@ -580,7 +583,7 @@ protected:
     double m_nonSceneLODSize = 7.0; 
     mutable double m_queryElementPerSecond = 10000;
     bset<Utf8String> m_copyrightMsgs;  // from reality models. Only keep unique ones
-    bvector<RefCountedPtr<Render::ISprite>> m_copyrightSprites; // copyright images we must draw on the view (Bing Maps, for example) not owned by the view.
+    Sprites m_copyrightSprites; // copyright images we must draw on the view (Bing Maps, for example) not owned by the view.
 
     void QueryModelExtents(FitContextR);
 
