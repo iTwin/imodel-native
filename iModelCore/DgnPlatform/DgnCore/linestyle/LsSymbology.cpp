@@ -698,6 +698,19 @@ void LineStyleParams::ApplyTransform(TransformCR transform, uint32_t options)
         
         rMatrix.InverseOf(rTmp);
         }
+    else
+        {
+        RotMatrix rTmp = RotMatrix::FromIdentity();
+
+        rTmp.InitProduct(transform, rTmp);
+        rTmp.SquareAndNormalizeColumns(rTmp, 0, 1);
+
+        if (!rTmp.IsIdentity())
+            {
+            rMatrix.InverseOf(rTmp);
+            modifiers |= STYLEMOD_RMATRIX;
+            }
+        }
 
     if (options & 0x01)
         return;
