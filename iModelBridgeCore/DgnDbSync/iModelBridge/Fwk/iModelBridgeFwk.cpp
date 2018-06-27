@@ -203,6 +203,7 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-jobrun-guid=          (optional)  A unique GUID that identifies this job run for correlation. This will be passed along to all dependant services and logs.\n"
         L"--fwk-assetsDir=            (optional)  Asset directory for the iModelBridgeFwk resources if default location is not suitable.\n"
         L"--fwk-bridgeAssetsDir=      (optional)  Asset directory for the iModelBridge resources if default location is not suitable.\n"
+        L"--fwk-imodelbank-url=       (optional)  The URL of the iModelBank server to use. If none is provided, then iModelHub will be used.\n"
         );
     }
 
@@ -374,6 +375,12 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-revision-comment="))
             {
             m_revisionComment.append(getArgValue(argv[iArg]).c_str());
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-imodelbank-url="))
+            {
+            m_imodelBankUrl = getArgValue(argv[iArg]);
             continue;
             }
 
@@ -562,7 +569,7 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
 
     m_bargptrs.push_back(argv[0]);
 
-    if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bargptrs, (int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data(), m_serverArgs.m_isEncrypted)) || (BSISUCCESS != m_serverArgs.Validate((int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data())))
+    if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bargptrs, (int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data(), m_serverArgs.m_isEncrypted)) || (BSISUCCESS != m_dmsServerArgs.Validate((int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data())))
         {
         PrintUsage(argv[0]);
         return BSIERROR;

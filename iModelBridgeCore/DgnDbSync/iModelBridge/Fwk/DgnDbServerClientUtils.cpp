@@ -59,19 +59,24 @@ struct ServiceLocalState : public IJsonLocalState
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ServiceLocalState* getLocalState()
     {
-    // MT Note: C++11 guarantees that the following line of code will be executed only once and in a thread-safe manner:
-    ServiceLocalState* s_localState = new ServiceLocalState;
+    BeSystemMutexHolder threadSafety;
+    static ServiceLocalState* s_localState;
+    if (s_localState == nullptr)
+        s_localState = new ServiceLocalState;
     return s_localState;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbServerClientUtils::DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment, uint8_t nretries, WebServices::ClientInfoPtr info)
+DgnDbServerClientUtils::DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment, uint8_t nretries, WebServices::ClientInfoPtr info, Utf8StringCR iModelBankUrl)
     :m_clientInfo(info)
     {
+    m_iModelBankUrl = iModelBankUrl;
+    BeAssert((m_iModelBankUrl.empty() == UseImodelHub()) && "UseImodelHub returns true if m_iModelBankUrl is empty");
     m_maxRetryCount = nretries;
-    UrlProvider::Initialize(environment, UrlProvider::DefaultTimeout, getLocalState());
+    int64_t cacheTimeOutMs = UseImodelHub()? UrlProvider::DefaultTimeout: INT64_MAX;
+    UrlProvider::Initialize(environment, cacheTimeOutMs, getLocalState());
     ClientHelper::Initialize(m_clientInfo, getLocalState());
     }
 
@@ -80,7 +85,10 @@ DgnDbServerClientUtils::DgnDbServerClientUtils(WebServices::UrlProvider::Environ
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnDbServerClientUtils::SignIn(Tasks::AsyncError* errorOut, Credentials credentials)
     {
-    m_client = ClientHelper::GetInstance()->SignInWithCredentials(errorOut, credentials);
+    if (UseImodelHub())
+        m_client = ClientHelper::GetInstance()->SignInWithCredentials(errorOut, credentials);
+    else
+        m_client = ClientHelper::GetInstance()->CreateClientForImodelBank(m_iModelBankUrl.c_str());
     return (m_client == nullptr)? BSIERROR: BSISUCCESS;
     }
 
@@ -89,6 +97,12 @@ BentleyStatus DgnDbServerClientUtils::SignIn(Tasks::AsyncError* errorOut, Creden
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnDbServerClientUtils::QueryProjectId(WebServices::WSError* errorOut, Utf8StringCR bcsProjectName)
     {
+    if (!UseImodelHub())
+        {
+        m_projectId = "";
+        return BSISUCCESS;
+        }
+
     auto pid = ClientHelper::GetInstance()->QueryProjectId(errorOut, bcsProjectName);
 	m_projectId = pid;
     return pid.empty()? BSIERROR: BSISUCCESS;
@@ -115,6 +129,7 @@ static iModelInfoPtr getRepositoryInfo(Error& err, Client& client, Utf8String pr
     if (result.IsSuccess())
         return result.GetValue();
     
+    err = result.GetError();
     return nullptr;
     }
 
@@ -139,7 +154,7 @@ StatusInt DgnDbServerClientUtils::AcquireBriefcase(BeFileNameCR bcFileName, Utf8
     auto ri = getRepositoryInfo(m_lastServerError, *m_client, m_projectId, repoId);
     if (ri.IsNull())
         {
-        m_lastServerError = Error::Id::iModelDoesNotExist;
+        // m_lastServerError = Error::Id::iModelDoesNotExist;       Why hard-wire this? getRepositoryInfo set m_lastServerError. That's what we should report!
         return BSIERROR;
         }
 

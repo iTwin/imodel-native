@@ -127,6 +127,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName m_stagingDir;
         BeFileName m_inputFileName;
         Utf8String m_jobRunCorrelationId;
+        Utf8String m_imodelBankUrl;
         
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
@@ -285,6 +286,8 @@ protected:
 public:
     IMODEL_BRIDGE_FWK_EXPORT iModelBridgeFwk();
     IMODEL_BRIDGE_FWK_EXPORT ~iModelBridgeFwk();
+
+    bool UseIModelBank() const {return !m_jobEnvArgs.m_imodelBankUrl.empty();}
 
     //! wmain should call this first
     IMODEL_BRIDGE_FWK_EXPORT BentleyStatus ParseCommandLine(int argc, WCharCP argv[]);

@@ -76,10 +76,14 @@ protected:
 	Utf8String m_projectId;
     uint8_t m_maxRetryCount {};
     WebServices::ClientInfoPtr m_clientInfo;
+    Utf8String m_iModelBankUrl;
 
 public:
-    DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment, uint8_t nretries, WebServices::ClientInfoPtr info);
+
+    DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment, uint8_t nretries, WebServices::ClientInfoPtr info, Utf8StringCR iModelBankUrl);
     ~DgnDbServerClientUtils() {}
+
+    bool UseImodelHub() const {return m_iModelBankUrl.empty();}
 
     //! Sign in to iModel Hub Services via Connect. If sign in succeeds, that moves this object to a valid state.
     //! @return non-zero error status if signin failed.
