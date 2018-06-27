@@ -436,8 +436,6 @@ SchemaStatus DgnDomains::UpgradeSchemas()
     for (auto& schema : schemasToImport)
         importSchemas.push_back(schema.get());
 
-    // unused - SchemaUpgradeOptions::DomainUpgradeOptions allowedUpgrades = m_schemaUpgradeOptions.GetDomainUpgradeOptions();
-    
     if (m_dgndb.IsBriefcase())
         m_dgndb.Txns().EnableTracking(true); // Ensure all schema changes are captured in the txn table for creating revisions
 
@@ -651,8 +649,14 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
 
     if (appSchemaKey.GetVersionWrite() > bimSchemaKey.GetVersionWrite())
         {
-        LOG.debugv("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
-        return SchemaStatus::SchemaUpgradeRequired;
+        if (!isSchemaReadonly)
+            {
+            LOG.debugv("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+            return SchemaStatus::SchemaUpgradeRequired;
+            }
+
+        LOG.debugv("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s. However, this is not an issue since the application or domain is readonly.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+        return SchemaStatus::SchemaUpgradeRecommended;
         }
 
     if (appSchemaKey.GetVersionMinor() > bimSchemaKey.GetVersionMinor())
@@ -670,7 +674,7 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
         }
 
     LOG.debugv("Schema found in the BIM %s is newer and found to be write incompatible to that in the application %s. However, this is not an issue since the application or domain is readonly.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
-    return SchemaStatus::Success;
+    return SchemaStatus::SchemaUpgradeRecommended;
     }
 
 /*---------------------------------------------------------------------------------**//**
