@@ -127,7 +127,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 Utf8String sqlNameUtf8(sqlFileName.c_str());
                 remove(sqlNameUtf8.c_str());
                 StatusInt status;
-                m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_GENERATION_FILE);
+                m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_GENERATION_FILE);
                 m_smFeatureSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_GENERATION_FILE);
                 }
 
@@ -144,7 +144,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 GetSisterSQLiteFileName(sqlFileName, dataType, useTempPath);
                     
                 StatusInt status;
-                m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_DIFFSETS_FILE);
+                m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_DIFFSETS_FILE);
 
                 if (status == 0)
                     {
@@ -185,7 +185,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 GetSisterSQLiteFileName(sqlFileName, dataType, useTempPath);
 
                 StatusInt status;
-                m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_CLIP_DEF_FILE);
+                m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_CLIP_DEF_FILE);
 
                 if (status == 0)
                     {

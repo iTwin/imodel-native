@@ -99,16 +99,18 @@ public:
     SMSQLiteFile();
     virtual ~SMSQLiteFile();
 
-    bool Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly = true, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
-    bool Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly = true, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
+    bool Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly = true, bool openShareable = false, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
+    bool Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly = true, bool openShareable = false, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     bool Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     bool Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     bool Close();
     bool IsOpen() { return m_database->IsDbOpen(); }
     bool IsReadOnly() { return m_database->IsReadonly(); }
+    bool IsShared() { return m_isShared; }
+    ScalableMeshDb* GetDb() { return m_database; }
     BENTLEY_SM_EXPORT void Save();
 
-    static SMSQLiteFilePtr Open(const WString& filename, bool openReadOnly, StatusInt& status, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
+    static SMSQLiteFilePtr Open(const WString& filename, bool openReadOnly, StatusInt& status, bool openShareable = false, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     void SetSource();
     bool SetWkt(WCharCP extendedWkt);
     bool HasWkt();
@@ -249,6 +251,8 @@ private:
     //Avoid assert added on Bim02    
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return std::numeric_limits<uint32_t>::max(); }
 #endif
+
+    bool m_isShared;
 
     // string table name
     const std::string m_sMasterHeaderTable = "SMMasterHeader";

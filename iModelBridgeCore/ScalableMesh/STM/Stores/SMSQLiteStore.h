@@ -5,6 +5,17 @@
 #include "SMStoreUtils.h"
 #include "../ScalableMeshSources.h"
 
+
+struct SharedTransaction
+{
+private:
+    bool m_transactionNeedsClosing;
+    SMSQLiteFilePtr m_smSQLiteFile;
+public:
+    SharedTransaction(SMSQLiteFilePtr fileP, bool readonly, bool startTransaction = false);
+    ~SharedTransaction();
+};
+
 template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>, public SMSQLiteSisterFile
     {        
     private:

@@ -18,6 +18,7 @@ const BESQL_VERSION_STRUCT SMSQLiteFile::CURRENT_VERSION = BESQL_VERSION_STRUCT(
 SMSQLiteFile::SMSQLiteFile()
 {
     m_database = nullptr;
+    m_isShared = false;
 }
 
 SMSQLiteFile::~SMSQLiteFile()
@@ -192,14 +193,20 @@ bool SMSQLiteFile::UpdateDatabase()
     }
 
 
-bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly, SQLDatabaseType type)
+bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly, bool openShareable, SQLDatabaseType type)
     {
     if (m_database == nullptr)
         m_database = new ScalableMeshDb(type, this);
-    DbResult result;
+    DbResult result = BE_SQLITE_OK;
     if (m_database->IsDbOpen())
         m_database->CloseDb();
-
+#ifndef VANCOUVER_API
+    if (openShareable)
+    {
+        result = m_database->OpenShared(filename, openReadOnly, true);
+    }
+    else
+#endif
     result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY: READWRITE));
 
 #ifndef VANCOUVER_API
@@ -227,19 +234,26 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
             m_database->CloseDb();
         }
 
+#ifndef VANCOUVER_API
+        if (openShareable)
+        {
+            m_database->OpenShared(filename, openReadOnly, true);
+        }
+        else
+#endif
         result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
         }
-    
+    m_isShared = openShareable;
     return result == BE_SQLITE_OK;
     }
 
-bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly, SQLDatabaseType type)
+bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly, bool openShareable, SQLDatabaseType type)
     {
     Utf8String utf8FileName(filename);        
-    return Open(utf8FileName.c_str(), openReadOnly, type);
+    return Open(utf8FileName.c_str(), openReadOnly, openShareable, type);
     }
 
-SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, StatusInt& status, SQLDatabaseType type)
+SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, StatusInt& status, bool openShareable, SQLDatabaseType type)
     {
     bool result;
     SMSQLiteFilePtr smSQLiteFile;
@@ -260,7 +274,7 @@ SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, S
 
     Utf8String utf8File(filename);
 
-    result = smSQLiteFile->Open(utf8File.c_str(), openReadOnly, type);
+    result = smSQLiteFile->Open(utf8File.c_str(), openReadOnly, openShareable, type);
     // need to check version file ?
     status = result ? 1 : 0;
     return smSQLiteFile;

@@ -132,6 +132,7 @@ struct IScalableMeshCreator::Impl
 
         const size_t                        m_workingLayer;
 
+        bool m_isShareable;
 
         //CREATOR2
 #ifndef LINUX_SCALABLEMESH_BUILD
@@ -191,6 +192,8 @@ struct IScalableMeshCreator::Impl
 
           HFCPtr<MeshIndexType>                   m_pDataIndex;
 
+          ScalableMeshDb* GetDatabaseFile();
+
     protected:
 
         BENTLEY_SM_EXPORT virtual void ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d);
@@ -226,6 +229,10 @@ struct IScalableMeshCreator::Impl
         bool                               IsCanceled();
 
         void                               Cancel();
+
+        bool IsShareable();
+
+        void SetShareable(bool isShareable);
 
       //  IScalableMeshNodePtr                AddChildNode (const IScalableMeshNodePtr& parentNode, 
        //                                                   StatusInt&                  status);

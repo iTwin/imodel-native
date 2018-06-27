@@ -365,6 +365,16 @@ IScalableMeshProgress* IScalableMeshCreator::GetProgress()
     return &*m_implP->GetProgress();
     }
 
+bool  IScalableMeshCreator::IsShareable()
+    {
+    return m_implP->IsShareable();
+    }
+
+void  IScalableMeshCreator::SetShareable(bool isShareable)
+    {
+    return m_implP->SetShareable(isShareable);
+    }
+
 /*----------------------------------------------------------------------------+
 |ScalableMeshCreator class
 +----------------------------------------------------------------------------*/
@@ -544,6 +554,24 @@ StatusInt IScalableMeshCreator::Impl::SetTextureProvider(ITextureProviderPtr pro
     return SUCCESS;
     }
 
+bool  IScalableMeshCreator::Impl::IsShareable()
+{
+    return m_isShareable;
+}
+
+void  IScalableMeshCreator::Impl::SetShareable(bool isShareable)
+{
+    if (m_smSQLitePtr.IsValid())
+        return;
+    m_isShareable = isShareable;
+}
+
+ScalableMeshDb* IScalableMeshCreator::Impl::GetDatabaseFile()
+{
+    if (!m_smSQLitePtr.IsValid())
+        return nullptr;
+    return m_smSQLitePtr->GetDb();
+}
 
 /*
 ScalableMeshFilterType scm_getFilterType ()
@@ -826,7 +854,7 @@ SMSQLiteFilePtr IScalableMeshCreator::Impl::GetFile(bool fileExists)
             if (!fileExists)
                 success = m_smSQLitePtr->Create(m_scmFileName);
             else
-                success = m_smSQLitePtr->Open(m_scmFileName, false); // open in read/write
+                success = m_smSQLitePtr->Open(m_scmFileName, false, m_isShareable); // open in read/write
         }
         else
            m_smSQLitePtr = dynamic_cast<const ScalableMeshBase&>(*m_scmPtr).GetDbFile();

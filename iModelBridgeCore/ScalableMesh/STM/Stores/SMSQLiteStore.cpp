@@ -210,3 +210,33 @@ void SMSQLiteClipDefinitionExtOps::SetAutoCommit(bool autoCommit)
     {
     m_smSQLiteFile->m_autocommit = autoCommit;
     }
+
+SharedTransaction::SharedTransaction(SMSQLiteFilePtr fileP, bool readonly, bool startTransaction)
+{
+#ifndef VANCOUVER_API
+    m_transactionNeedsClosing = false;
+    if (!m_smSQLiteFile->IsOpen() && m_smSQLiteFile->IsShared())
+    {
+        m_smSQLiteFile = fileP;
+        m_smSQLiteFile->GetDb()->ReOpenShared(readonly, true);
+        if (startTransaction)
+        {
+            m_smSQLiteFile->GetDb()->StartTransaction();
+            m_transactionNeedsClosing = true;
+        }
+    }
+#endif
+}
+
+SharedTransaction::~SharedTransaction()
+{
+#ifndef VANCOUVER_API
+    bool wasAbandoned;
+    if (m_smSQLiteFile->IsShared())
+    {
+        if (m_transactionNeedsClosing)
+            m_smSQLiteFile->GetDb()->CommitTransaction();
+        m_smSQLiteFile->GetDb()->CloseShared(wasAbandoned);
+    }
+#endif
+}

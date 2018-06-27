@@ -90,3 +90,74 @@ DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
         
     return BeSQLite::Db::_OnDbCreated(params);
     }
+
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+#ifndef VANCOUVER_API 
+bool s_enableSharedDatabase = true;
+#else
+bool s_enableSharedDatabase = false;
+#endif
+END_BENTLEY_SCALABLEMESH_NAMESPACE
+
+int InfiniteRetries::_OnBusy(int count) const
+{
+    return 1;
+}
+
+#ifndef VANCOUVER_API   
+DbResult ScalableMeshDb::OpenShared(BENTLEY_NAMESPACE_NAME::Utf8CP path, bool readonly,bool allowBusyRetry)
+{
+    m_path = path;
+    DbResult result = this->OpenBeSQLiteDb(path, BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::No, allowBusyRetry? new InfiniteRetries(): nullptr));
+    this->SetAllowImplictTransactions(true);
+    return result;
+}
+
+bool ScalableMeshDb::ReOpenShared(bool readonly, bool allowBusyRetry)
+{
+    if (m_path.empty())
+        return false;
+
+    this->OpenBeSQLiteDb(m_path.c_str(), BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::No, allowBusyRetry ? new InfiniteRetries() : nullptr));
+    this->SetAllowImplictTransactions(true);
+    return true;
+}
+
+bool ScalableMeshDb::StartTransaction()
+{
+    if (m_currentSavepoint != nullptr)
+        return false;
+    if (!this->IsDbOpen())
+        return false;
+
+    m_currentSavepoint = new BeSQLite::Savepoint(*this, "DefaultSavePoint");
+    return true;
+}
+
+bool ScalableMeshDb::CommitTransaction()
+{
+    if (m_currentSavepoint == nullptr)
+        return false;
+
+    if (!this->IsDbOpen())
+        return false;
+
+    m_currentSavepoint->Commit();
+    return true;
+}
+
+void ScalableMeshDb::CloseShared(bool& wasTransactionAbandoned)
+{
+    if (!this->IsDbOpen())
+        return;
+    wasTransactionAbandoned = false;
+
+    if (m_currentSavepoint != nullptr)
+    {
+        m_currentSavepoint->Cancel();
+        wasTransactionAbandoned = true;
+    }
+
+    this->CloseDb();
+}
+#endif

@@ -702,7 +702,15 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
         (BeFileName::GetExtension(filePath).CompareToI(L"stm2") == 0))
         { // Open 3sm file
         StatusInt openStatus;
-        smSQLiteFile = SMSQLiteFile::Open(filePath, openReadOnly, openStatus);
+        if (openShareable && s_enableSharedDatabase)
+            {
+            smSQLiteFile = SMSQLiteFile::Open(filePath, openReadOnly, openStatus, true);
+            }
+        else
+            {
+            smSQLiteFile = SMSQLiteFile::Open(filePath, openReadOnly, openStatus);
+            }
+			
         if (smSQLiteFile == nullptr)
             {
             status = BSIERROR;
