@@ -25,7 +25,7 @@ END_BENTLEY_LOGGING_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct iModelHubFX;
+struct IModelClientForBridges;
 
 //=======================================================================================
 // @bsiclass
@@ -92,9 +92,9 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     BootstrappingState GetState();
     BentleyStatus AssertPreConditions();
     BentleyStatus DoInitial();
-    BentleyStatus DoCreatedLocalDb();
-    BentleyStatus DoCreatedRepository();
-    BentleyStatus DoNewBriefcaseNeedsLocks();
+    BentleyStatus IModelHub_DoCreatedLocalDb();
+    BentleyStatus IModelHub_DoCreatedRepository();
+    BentleyStatus IModelHub_DoNewBriefcaseNeedsLocks();
     BentleyStatus BootstrapBriefcase(bool& createdNewRepo);
 
     enum class SyncState
@@ -127,7 +127,6 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName m_stagingDir;
         BeFileName m_inputFileName;
         Utf8String m_jobRunCorrelationId;
-        Utf8String m_imodelBankUrl;
         
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
@@ -153,26 +152,41 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 
         };
 
-    //! The command-line arguments required by the iModelBridgeFwk that pertain to the iModelHub
-    struct ServerArgs
+    //! The command-line arguments required by the iModelBridgeFwk that pertain to iModelBanks
+    struct IModelBankArgs
         {
-        bool                m_haveProjectGuid {};                  //!< Was a project GUID supplied? If so, m_bcsProjectId is the GUID. Else, assume m_bcsProjectId is the project name.
-        Utf8String          m_bcsProjectId;                  //!< iModelHub project 
-        Utf8String          m_repositoryName;                //!< A repository in the iModelHub project
-        Http::Credentials   m_credentials;            //!< User credentials
-        bool                m_isEncrypted;
-        WebServices::UrlProvider::Environment m_environment; //!< Connect environment
-        uint8_t m_maxRetryCount = 3;                //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
+        bool m_parsedAny {};
+        bool m_dmsCredentialsEncrypted{};
+        uint8_t m_maxRetryCount = 3; //!< The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
+        Utf8String m_url;            //!< Where the iModelBank server is 
+        Utf8String m_iModelId;       //!< The GUID of the iModel that the bank serves. This is used to name to local briefcase and as a means of checking that the URL is correct.
         bvector<WString> m_bargs;
-        //! Parse the command-line arguments required by the iModelBridgeFwk itself that pertain to the iModelHub, and return a vector of pointers to the remaining
-        //! arguments (which are presumably the arguments to the bridge).
+
         BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);
-
-        //! Validate that all require arguments were supplied and are valid
         BentleyStatus Validate(int argc, WCharCP argv[]);
-
-        //! Print a message describing the framework command-line arguments
         static void PrintUsage();
+        bool IsDefined() const {return !m_url.empty();}
+        bool ParsedAny() const {return m_parsedAny;}
+        Utf8String GetBriefcaseBasename() const;
+        };
+
+    //! The command-line arguments required by the iModelBridgeFwk that pertain to the iModelHub
+    struct IModelHubArgs
+        {
+        bool m_parsedAny {};
+        bool                m_haveProjectGuid {}; //!< Was a project GUID supplied? If so, m_bcsProjectId is the GUID. Else, assume m_bcsProjectId is the project name.
+        bool                m_isEncrypted;        //!< Are credentials encrypted?
+        Utf8String          m_bcsProjectId;       //!< iModelHub project 
+        Utf8String          m_repositoryName;     //!< A repository in the iModelHub project
+        Http::Credentials   m_credentials;        //!< User credentials
+        WebServices::UrlProvider::Environment m_environment;    //!< Connect environment
+        uint8_t             m_maxRetryCount = 3;  //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
+        bvector<WString>    m_bargs;
+        
+        BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);
+        BentleyStatus Validate(int argc, WCharCP argv[]);
+        static void PrintUsage();
+        bool ParsedAny() const {return m_parsedAny;}
         };
 
     struct DmsServerArgs
@@ -221,13 +235,21 @@ protected:
     BeFileName m_briefcaseName;
     BeFileName m_stdoutFileName;
     BeFileName m_stderrFileName;
-    iModelHubFX* m_clientUtils;
+    IModelClientForBridges* m_client;
     EffectiveServerError m_lastServerError;
     bvector<DgnModelId> m_modelsInserted;
     iModelBridge* m_bridge;
     bvector<WCharCP> m_bargptrs;        // bridge command-line arguments
-    JobDefArgs m_jobEnvArgs;                  // the framework's command-line arguments
-    ServerArgs m_serverArgs;            // the framework's command-line arguments that pertain to the iModelHub
+    JobDefArgs m_jobEnvArgs;            // the framework's command-line arguments
+    struct {
+        bool m_useIModelHub;
+        union {
+            IModelHubArgs* m_iModelHubArgs;
+            IModelBankArgs* m_iModelBankArgs;
+            };
+        };
+    Utf8String m_briefcaseBasename;
+    int m_maxRetryCount;
     DmsServerArgs m_dmsServerArgs;
     FwkRepoAdmin* m_repoAdmin {};
     IDmsSupport*    m_dmsSupport;
@@ -250,12 +272,12 @@ protected:
     //! @name sync with server
     //! @{
     BentleyStatus Briefcase_Initialize(int argc, WCharCP argv[]);
-    bool Briefcase_IsInitialized() const {return nullptr != m_clientUtils;}
+    bool Briefcase_IsInitialized() const {return nullptr != m_client;}
     void Briefcase_PrintUsage();
     void Briefcase_Shutdown();
     bool Briefcase_IsBriefcase();
     BentleyStatus Briefcase_CreateRepository0(BeFileNameCR localDb);
-    BentleyStatus Briefcase_CreateRepository();
+    BentleyStatus Briefcase_IModelHub_CreateRepository();
     void Briefcase_MakeBriefcaseName(); // Sets m_outputName
     BentleyStatus Briefcase_AcquireBriefcase();
     BentleyStatus Briefcase_AcquireExclusiveLocks();
@@ -287,8 +309,6 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT iModelBridgeFwk();
     IMODEL_BRIDGE_FWK_EXPORT ~iModelBridgeFwk();
 
-    bool UseIModelBank() const {return !m_jobEnvArgs.m_imodelBankUrl.empty();}
-
     //! wmain should call this first
     IMODEL_BRIDGE_FWK_EXPORT BentleyStatus ParseCommandLine(int argc, WCharCP argv[]);
 
@@ -310,7 +330,7 @@ public:
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
     //! @private
-    IMODEL_BRIDGE_FWK_EXPORT static void SetiModelHubFXForTesting(iModelHubFX&);
+    IMODEL_BRIDGE_FWK_EXPORT static void SetIModelClientForBridgesForTesting(IModelClientForBridges&);
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetBridgeForTesting(iModelBridge&);
     //! @private
