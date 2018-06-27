@@ -127,6 +127,11 @@ BentleyStatus SchemaManager::CreateClassViewsInDb(bvector<ECN::ECClassId> const&
 BentleyStatus SchemaManager::RepopulateCacheTables() const { return Main().RepopulateCacheTables(); }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle   04/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaManager::UpgradeECInstances() const { return Main().UpgradeECInstances() == BE_SQLITE_OK ? SUCCESS : ERROR; }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle   11/2017
 //---------------------------------------------------------------------------------------
 SchemaManager::Dispatcher const& SchemaManager::GetDispatcher() const { BeAssert(m_dispatcher != nullptr); return *m_dispatcher; }
