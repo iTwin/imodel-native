@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -14,6 +14,8 @@
     <ClCompile Include="BeDbCompatibilityTests.cpp" />
     <ClCompile Include="CompatibilityTestFixture.cpp" />
     <ClCompile Include="IModelCompatibilityTests.cpp" />
+    <ClCompile Include="iModelHubMock\iModelHubMock.cpp" />
+    <ClCompile Include="iModelHubMock\iModelHubMockTests.cpp" />
     <ClCompile Include="Profiles.cpp" />
     <ClCompile Include="TestHelper.cpp" />
     <ClCompile Include="TestIModelCreators.cpp" />
@@ -23,6 +25,7 @@
   <ItemGroup>
     <ClInclude Include="CompatibilityTestFixture.h" />
     <ClInclude Include="CompatibilityTests.h" />
+    <ClInclude Include="iModelHubMock\iModelHubMock.h" />
     <ClInclude Include="Profiles.h" />
     <ClInclude Include="TestHelper.h" />
     <ClInclude Include="TestIModelCreators.h" />
@@ -32,19 +35,19 @@
     <Xml Include="..\..\..\DgnPlatform.PartFile.xml" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{7782F16A-217A-417A-BF3B-B7B8A137BE16}</ProjectGuid>
+    <ProjectGuid>{01CF7ED1-682B-4A35-9836-B812E68CB906}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
