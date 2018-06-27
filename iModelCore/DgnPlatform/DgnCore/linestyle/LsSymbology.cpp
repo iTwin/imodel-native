@@ -698,7 +698,7 @@ void LineStyleParams::ApplyTransform(TransformCR transform, uint32_t options)
         
         rMatrix.InverseOf(rTmp);
         }
-    else
+    else if (!(modifiers & STYLEMOD_NORMAL))
         {
         RotMatrix rTmp = RotMatrix::FromIdentity();
 
