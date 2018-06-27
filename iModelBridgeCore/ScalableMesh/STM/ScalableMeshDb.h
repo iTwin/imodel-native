@@ -105,7 +105,7 @@ class ScalableMeshDb : public BeSQLite::Db
     virtual DbResult _OnDbCreated(CreateParams const& params) override;
 
     public:
-        ScalableMeshDb(SQLDatabaseType type, SMSQLiteFile* smFile) : m_type(type), m_smFile(smFile) {}
+        ScalableMeshDb(SQLDatabaseType type, SMSQLiteFile* smFile) : m_type(type), m_smFile(smFile), m_currentSavepoint(nullptr){}
 
 #ifndef VANCOUVER_API   
         //Offer functions to more explicitly deal with shared db's; open/close after specific transactions, allow implicit transactions, busy-retry

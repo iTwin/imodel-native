@@ -116,6 +116,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName)
     {        
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
     SetThreadingOptions(false, true, false);    
+    SetShareable(true);
     }
 
 IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr)
@@ -123,6 +124,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr)
     {      
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
     SetThreadingOptions(false, true, false);
+    SetShareable(true);
     }
 
 IScalableMeshSourceCreatorWorker::Impl::~Impl()

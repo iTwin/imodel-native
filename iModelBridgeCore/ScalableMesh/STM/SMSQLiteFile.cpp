@@ -38,7 +38,7 @@ SMSQLiteFile::~SMSQLiteFile()
 
 void SMSQLiteFile::Save()
     {
-    if (m_database != nullptr) m_database->SaveChanges();
+    if (m_database != nullptr && m_database->IsDbOpen()) m_database->SaveChanges();
     }
 
 bool SMSQLiteFile::Close()

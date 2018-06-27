@@ -192,7 +192,7 @@ struct IScalableMeshCreator::Impl
 
           HFCPtr<MeshIndexType>                   m_pDataIndex;
 
-          ScalableMeshDb* GetDatabaseFile();
+          BENTLEY_SM_EXPORT ScalableMeshDb* GetDatabaseFile();
 
     protected:
 
@@ -230,9 +230,9 @@ struct IScalableMeshCreator::Impl
 
         void                               Cancel();
 
-        bool IsShareable();
+        BENTLEY_SM_EXPORT bool IsShareable();
 
-        void SetShareable(bool isShareable);
+        BENTLEY_SM_EXPORT void SetShareable(bool isShareable);
 
       //  IScalableMeshNodePtr                AddChildNode (const IScalableMeshNodePtr& parentNode, 
        //                                                   StatusInt&                  status);

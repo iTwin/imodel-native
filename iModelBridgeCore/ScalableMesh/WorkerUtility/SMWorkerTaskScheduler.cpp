@@ -547,7 +547,7 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
         return;
         }
    
-
+    creatorPtr->SetShareable(true);
     ScalableMeshCreationMethod creationMethod = SCM_CREATION_METHOD_ONE_SPLIT;
 
     creatorPtr->SetCreationMethod(creationMethod);
@@ -627,7 +627,7 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
 #endif
 
             bool isSingleFile = true;
-
+            creatorPtr->SetShareable(true);
             StatusInt status = creatorPtr->Create(isSingleFile);
 
 #if 0
@@ -640,7 +640,7 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
             
 
             IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker());
-                        
+
             status = creatorWorkerPtr->CreateMeshTasks();
 
             assert(status == SUCCESS);

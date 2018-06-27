@@ -129,7 +129,10 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::~SMSQLiteStore()
 template <class EXTENT> uint64_t SMSQLiteStore<EXTENT>::GetNextID() const
     {
     //return m_smSQLiteFile->GetLastInsertRowId(); // This only works if last insert was performed on the same database connection
-    return m_smSQLiteFile->GetLastNodeId();
+        {
+            SharedTransaction trans(m_smSQLiteFile, false);
+            return m_smSQLiteFile->GetLastNodeId();
+        }
     }
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::Close()
