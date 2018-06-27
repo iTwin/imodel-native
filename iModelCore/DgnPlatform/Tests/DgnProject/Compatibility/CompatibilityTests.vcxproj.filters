@@ -9,6 +9,8 @@
     <ClCompile Include="IModelCompatibilityTests.cpp" />
     <ClCompile Include="TestHelper.cpp" />
     <ClCompile Include="Profiles.cpp" />
+    <ClCompile Include="iModelHubMock\iModelHubMock.cpp" />
+    <ClCompile Include="iModelHubMock\iModelHubMockTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\..\..\DgnPlatform.PartFile.xml" />
@@ -20,5 +22,6 @@
     <ClInclude Include="TestHelper.h" />
     <ClInclude Include="CompatibilityTests.h" />
     <ClInclude Include="Profiles.h" />
+    <ClInclude Include="iModelHubMock\iModelHubMock.h" />
   </ItemGroup>
 </Project>

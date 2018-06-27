@@ -305,12 +305,12 @@ void EndBatchedModel(uint32_t startPosition, uint32_t lengthDataPosition)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus  WriteBatchedModel(Render::FeatureTableCR featureTable, DPoint3dCR centroid)
+BentleyStatus  WriteBatchedModel(Render::FeatureTableCR featureTable)
     {
     uint32_t       startPosition = 0, lengthDataPosition = 0;
 
     BeginBatchedModel(startPosition, lengthDataPosition, featureTable);
-    WriteGltf(centroid);
+    WriteGltf();
     EndBatchedModel(startPosition, lengthDataPosition);
 
     return SUCCESS;
@@ -400,7 +400,7 @@ WriteStatus WriteTile(PublishedTileR outputTile)
     if (m_range.IsNull())
         return WriteStatus::NoGeometry;
 
-    m_writer.WriteBatchedModel(m_featureTable, m_range.LocalToGlobal(.5, .5, .5));
+    m_writer.WriteBatchedModel(m_featureTable);
 
     BeFile          outputFile;
 

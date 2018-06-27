@@ -421,7 +421,7 @@ void AddMeshes(Render::Primitives::GeometryCollectionCR geometry)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WriteTile(ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, DPoint3dCR centroid, bool isLeaf)
+BentleyStatus WriteTile(ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, bool isLeaf)
     {
     uint32_t        startPosition = m_buffer.GetSize();
     DgnTile::Flags  flags = isLeaf ? DgnTile::Flags::IsLeaf : DgnTile::Flags::None;
@@ -443,7 +443,7 @@ BentleyStatus WriteTile(ElementAlignedBox3dCR contentRange, Render::Primitives::
     PadToBoundary ();
 
     AddMeshes(geometry);
-    if (SUCCESS != WriteGltf (centroid))
+    if (SUCCESS != WriteGltf ())
         return ERROR;
 
     PadToBoundary ();
@@ -461,8 +461,8 @@ END_TILETREE_IO_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileTree::IO::WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, DPoint3dCR centroid, bool isLeaf)
+BentleyStatus TileTree::IO::WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, bool isLeaf)
     {
-    return TileTree::IO::DgnCacheTileWriter(streamBuffer, model).WriteTile(contentRange, geometry, centroid, isLeaf);
+    return TileTree::IO::DgnCacheTileWriter(streamBuffer, model).WriteTile(contentRange, geometry, isLeaf);
     }
 
