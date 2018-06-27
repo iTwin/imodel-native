@@ -1666,6 +1666,21 @@ uint32_t DrawArgs::GetMaxDepth() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawArgs::InvalidateCopyrightInfo()
+    {
+    // Barry wants to update attribution info for bing map tiles based on the currently-selected set of tiles.
+    auto& vp = m_context.GetViewportR();
+    auto view = vp.GetSpatialViewControllerP();
+    if (nullptr != view)
+        {
+        view->InvalidateCopyrightInfo();
+        vp.InvalidateDecorations();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool StreamBuffer::ReadBytes(void* buf, uint32_t size)

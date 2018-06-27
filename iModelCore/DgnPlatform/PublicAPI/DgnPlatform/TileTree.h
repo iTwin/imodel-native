@@ -728,6 +728,8 @@ struct DrawArgs : TileArgs
     BeTimePoint GetDeadline() const;
     uint32_t GetMinDepth() const;
     uint32_t GetMaxDepth() const;
+
+    void InvalidateCopyrightInfo();
     };
     
 //=======================================================================================

@@ -197,9 +197,14 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
                     // a model can defer root creation if it needs some preparation work. Bing Maps does that because it needs to fetch the Bing key and the template URL.
                     modelRoot = model->GetTileTree(context);
                     if (modelRoot.IsNull())
+                        {
                         rootCreationDeferred = true;
+                        }
                     else
+                        {
                         m_roots.Insert(modelId, modelRoot);
+                        InvalidateCopyrightInfo();
+                        }
                     }
 
 
@@ -214,8 +219,9 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
 
         // if we either didn't have time to create all roots, or one of our models deferred root creation, go through this loop again later.
         m_allRootsLoaded = !timedOut && !rootCreationDeferred;
-        BuildCopyrightInfo();
         }
+
+    BuildCopyrightInfo();
 
     // Always draw all the tile trees we currently have...
     // NB: We assert that m_roots will contain ONLY models that are in our viewed models list (it may not yet contain ALL of them though)
@@ -258,6 +264,9 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::BuildCopyrightInfo()
     {
+    if (m_copyrightInfoValid)
+        return;
+
     m_copyrightMsgs.clear();
     m_copyrightSprites.clear();
 
@@ -275,6 +284,8 @@ void SpatialViewController::BuildCopyrightInfo()
                 m_copyrightSprites.insert(sprite);
             }
         }
+
+    m_copyrightInfoValid = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -441,12 +452,12 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     if (onOff == models.Contains(modelId))
         return;
 
-    // NB: We used to only set this if a new model was toggled *on* - but we want to remove copyright msgs/sprites if model toggled *off* and that keys off of this flag.
-    m_allRootsLoaded = false;
+    InvalidateCopyrightInfo();
 
     if (onOff)
         {
         models.insert(modelId);
+        m_allRootsLoaded = false;
         }
     else
         {

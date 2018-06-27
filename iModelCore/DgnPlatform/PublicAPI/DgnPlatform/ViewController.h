@@ -577,6 +577,7 @@ protected:
     bool m_loading = false;
     bool m_defaultDeviceOrientationValid = false;
     bool m_allRootsLoaded = false;
+    bool m_copyrightInfoValid = false;
     bmap<DgnModelId, TileTree::RootPtr> m_roots;
     RotMatrix m_defaultDeviceOrientation;
     double m_sceneLODSize = 6.0; 
@@ -647,6 +648,8 @@ public:
     bool _AllTileTreesLoaded() const override { return m_allRootsLoaded; }
     DGNPLATFORM_EXPORT void _CancelAllTileLoads(bool wait) override;
     void _UnloadAllTileTrees() override { m_allRootsLoaded = false; m_roots.clear(); }
+
+    void InvalidateCopyrightInfo() { m_copyrightInfoValid = false; }
 };
 
 //=======================================================================================
