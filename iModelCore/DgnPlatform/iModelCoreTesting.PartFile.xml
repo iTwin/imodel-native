@@ -22,7 +22,6 @@
 
         <!-- These are built, but not run. -->
         <SubProduct ProductName="GeoCoord-Gtest" PartFile="GeoCoord" Repository="GeoCoord"/>
-        <SubProduct ProductName="BeHttp-IntegrationGtest" PartFile="BeHttp" Repository="BeHttp"/>
     </Part>
 
     <Part Name="RunUnitJUnit" OnlyPlatforms="android*" Sequential="true" DeferType="RunUnitTests"
