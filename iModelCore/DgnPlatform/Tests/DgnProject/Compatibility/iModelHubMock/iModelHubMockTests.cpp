@@ -5,13 +5,13 @@
 #include "../CompatibilityTestFixture.h"
 
 struct IModelHubMockTestFixture : public ::testing::Test, DgnPlatformLib::Host::RepositoryAdmin {
+private:
     static bool s_isInitialized;
     static ScopedDgnHost* s_host;
     mutable TestRepositoryManager m_server;
     BeFileName m_tempPath;
     BeFileName m_outputRoot;
     IModelHubMock* m_mock;
-private:
     void Initialize() 
         {
         BeFileName assets;
