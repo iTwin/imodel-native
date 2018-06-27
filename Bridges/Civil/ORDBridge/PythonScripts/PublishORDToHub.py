@@ -6,13 +6,26 @@
 from Tkinter import *
 import tkFileDialog
 import ttk
+import win32api
+import win32con
+import win32event
+import win32file
+import win32process
+import win32security
 
 
 class MainWindow:
-    def __init__(self, root):
-        self.__root = root
+    __server_env_values = ['QA', 'PROD']
+
+
+    def __init__(self):
+        self.__root = Tk()
         self.__root.title('Publish ORD To iModel Hub')
         self.__initialize_controls()
+
+
+    def show_dialog(self):
+        self.__root.mainloop()
 
 
     def __initialize_controls(self):
@@ -95,9 +108,9 @@ class MainWindow:
         self.__server_env_label.grid(row=8, column=0, padx=5, pady=5, sticky=W)
         self.__server_env_combo_var = StringVar()
         self.__server_env_combo = ttk.Combobox(self.__fwk_label_frame, textvariable=self.__server_env_combo_var,
-                                               state='readonly', values=['QA', 'PROD'])
+                                               state='readonly', values=MainWindow.__server_env_values)
         self.__server_env_combo.grid(row=8, column=1, columnspan=2, padx=5, pady=5, sticky=NSEW)
-        self.__server_env_combo_var.set('QA')
+        self.__server_env_combo_var.set(MainWindow.__server_env_values[0])
 
         self.__create_repo_checkbutton_var = IntVar()
         self.__create_repo_checkbutton = Checkbutton(self.__fwk_label_frame, text='Create Repository (if necessary)?',
@@ -132,34 +145,79 @@ class MainWindow:
         path = tkFileDialog.askopenfilename(initialdir='.', title='Find iModelBridgeFwk.exe...',
                                      filetypes=[('Executable Files', '*.exe')])
         if path:
-            self.__fwk_exe_entry_var.set(path)
+            self.__fwk_exe_entry_var.set(path.replace('/', '\\'))
 
 
     def __bridge_lib_browse_callback(self):
         path = tkFileDialog.askopenfilename(initialdir='.', title='Find bridge library...',
                                             filetypes=[('Library Files', '*.dll')])
         if path:
-            self.__bridge_lib_entry_var.set(path)
+            self.__bridge_lib_entry_var.set(path.replace('/', '\\'))
 
 
     def __staging_dir_browse_callback(self):
         path = tkFileDialog.askdirectory(initialdir='.', title='Select staging directory...')
         if path:
-            self.__staging_dir_entry_var.set(path)
+            self.__staging_dir_entry_var.set(path.replace('/', '\\'))
 
 
     def __input_file_browse_callback(self):
         path = tkFileDialog.askopenfilename(initialdir='.', title='Find input file...',
                                             filetypes=[('OpenRoads Designer Files', '*.dgn')])
         if (path):
-            self.__input_file_entry_var.set(path)
+            self.__input_file_entry_var.set(path.replace('/', '\\'))
 
 
     def __publish_button_callback(self):
-        pass
+        command_string = self.__prepare_command_string()
+        self.__execute_command_string(command_string)
+
+
+    def __prepare_command_string(self):
+        command_string = '{fwk_exe} --server-project="{server_proj}" --server-repository="{server_repo}" ' \
+               '--server-environment={server_env} --server-user="{server_user}" ' \
+               '--server-password="{server_password}" --fwk-input="{fwk_input}" --fwk-staging-dir="{staging_dir}" ' \
+               '--fwk-bridge-library="{bridge_lib}"'.format(fwk_exe=self.__fwk_exe_entry_var.get(),
+                                                            server_proj=self.__server_project_entry_var.get(),
+                                                            server_repo=self.__server_repo_entry_var.get(),
+                                                            server_env=self.__server_env_combo_var.get(),
+                                                            server_user=self.__server_user_entry_var.get(),
+                                                            server_password=self.__server_password_entry_var.get(),
+                                                            fwk_input=self.__input_file_entry_var.get(),
+                                                            staging_dir=self.__staging_dir_entry_var.get(),
+                                                            bridge_lib=self.__bridge_lib_entry_var.get())
+        if self.__create_repo_checkbutton_var.get() == 1:
+            command_string += ' --fwk-create-repository-if-necessary'
+        if self.__skip_assignment_check_checkbutton_var.get() == 1:
+            command_string += ' --fwk-skip-assignment-check'
+        return command_string
+
+
+    def __execute_command_string(self, command_string):
+        security_attributes = win32security.SECURITY_ATTRIBUTES()
+        security_attributes.bInheritHandle = True
+        startup_info = win32process.STARTUPINFO()
+        startup_info.dwFlags = win32process.STARTF_USESTDHANDLES
+        #stdout_file_handle = win32file.CreateFile(abs_stdout_file, win32file.GENERIC_WRITE,
+        #                                          win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE,
+        #                                          security_attributes, win32file.CREATE_ALWAYS,
+        #                                          win32file.FILE_FLAG_SEQUENTIAL_SCAN, None)
+        #startup_info.hStdOutput = stdout_file_handle
+        startup_info.hStdOutput = win32api.GetStdHandle(win32api.STD_OUTPUT_HANDLE)
+        startup_info.hStdError = win32api.GetStdHandle(win32api.STD_ERROR_HANDLE)
+        startup_info.hStdInput = win32api.GetStdHandle(win32api.STD_INPUT_HANDLE)
+        process_info = win32process.CreateProcess(None, command_string, None, None, True, win32con.CREATE_NO_WINDOW,
+                                                  None, None, startup_info)
+        process_handle = process_info[0]
+        return_code = win32event.WaitForSingleObject(process_handle, win32event.INFINITE)
+        if return_code == win32event.WAIT_OBJECT_0:
+            publisher_error_code = win32process.GetExitCodeProcess(process_handle)
+        else:
+            publisher_error_code = 0x8000
+        #win32file.CloseHandle(stdout_file_handle)
+        return publisher_error_code
 
 
 if __name__ == '__main__':
-    root = Tk()
-    main_window = MainWindow(root)
-    root.mainloop()
+    main_window = MainWindow()
+    main_window.show_dialog()
