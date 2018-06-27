@@ -614,6 +614,7 @@ protected:
     AxisAlignedBox3d GetGroundExtents(DgnViewportCR) const;
     void DrawGroundPlane(DecorateContextR);
     DGNPLATFORM_EXPORT void DrawSkyBox(DecorateContextR);
+    void BuildCopyrightInfo();
 
 public:
     virtual double _ForceMinFrontDist() const {return 0.0;}

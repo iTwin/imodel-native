@@ -197,21 +197,9 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
                     // a model can defer root creation if it needs some preparation work. Bing Maps does that because it needs to fetch the Bing key and the template URL.
                     modelRoot = model->GetTileTree(context);
                     if (modelRoot.IsNull())
-                        {
                         rootCreationDeferred = true;
-                        }
                     else
-                        {
-                        Utf8String message = model->GetCopyrightMessage();
-                        if (!message.empty()) // skip emptry strings.
-                            m_copyrightMsgs.insert(message);
-
-                        Render::RgbaSpritePtr sprite = model->GetCopyrightSprite();
-                        if (sprite.IsValid())
-                            m_copyrightSprites.insert(sprite);
-
                         m_roots.Insert(modelId, modelRoot);
-                        }
                     }
 
 
@@ -226,6 +214,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
 
         // if we either didn't have time to create all roots, or one of our models deferred root creation, go through this loop again later.
         m_allRootsLoaded = !timedOut && !rootCreationDeferred;
+        BuildCopyrightInfo();
         }
 
     // Always draw all the tile trees we currently have...
@@ -262,6 +251,30 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
     //DEBUG_PRINTF("CreateScene: %f", timer.GetCurrentSeconds());
 
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewController::BuildCopyrightInfo()
+    {
+    m_copyrightMsgs.clear();
+    m_copyrightSprites.clear();
+
+    for (auto const& kvp : m_roots)
+        {
+        auto model = GetDgnDb().Models().Get<GeometricModel3d>(kvp.first);
+        if (model.IsValid())
+            {
+            Utf8String message = model->GetCopyrightMessage();
+            if (!message.empty())
+                m_copyrightMsgs.insert(message);
+
+            Render::RgbaSpritePtr sprite = model->GetCopyrightSprite();
+            if (sprite.IsValid())
+                m_copyrightSprites.insert(sprite);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -428,10 +441,12 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     if (onOff == models.Contains(modelId))
         return;
 
+    // NB: We used to only set this if a new model was toggled *on* - but we want to remove copyright msgs/sprites if model toggled *off* and that keys off of this flag.
+    m_allRootsLoaded = false;
+
     if (onOff)
         {
         models.insert(modelId);
-        m_allRootsLoaded = false;
         }
     else
         {
