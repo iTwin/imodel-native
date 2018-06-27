@@ -42,7 +42,7 @@ def pullAllNugets(path, pathToNugetPuller, name):
     import nugetpkg
     address = "http://nuget.bentley.com/nuget/default/"
     versions = nugetpkg.SearchVersionsFromServer(address, name)
-    excludeVersions = ["2018.6.5.1", "2018.5.31.15"]
+    excludeVersions = ["2018.6.7.2", "2018.6.7.1", "2018.6.5.2", "2018.6.5.1","2018.5.31.19","2018.6.1.4","2018.6.22.6","2018.6.22.7"]
     for v in versions:
         if v in excludeVersions:
             continue
