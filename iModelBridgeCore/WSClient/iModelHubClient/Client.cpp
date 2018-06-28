@@ -94,14 +94,14 @@ iModelConnectionTaskPtr Client::ConnectToiModel(Utf8StringCR projectId, Utf8Stri
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-ClientPtr Client::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, bool isImodelBank)
+ClientPtr Client::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, Utf8CP url)
     {
     const Utf8String methodName = "Client::Create";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    auto client = new Client(clientInfo, customHandler);
-    if (isImodelBank)
-        client->SetCredentialsForImodelBank();
-    return client;
+    if (!Utf8String::IsNullOrEmpty(url))
+        return new Client(clientInfo, customHandler, url);
+    Utf8String resolvedUrl = UrlProvider::Urls::iModelHubApi.Get();
+    return new Client(clientInfo, customHandler, resolvedUrl.c_str());
     }
 
 //---------------------------------------------------------------------------------------
