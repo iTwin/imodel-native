@@ -1389,6 +1389,12 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
             ReportStatus(0, nullptr, -1, "RealityData creation failed\n");
             ReportStatus(0, nullptr, -1, Utf8PrintfString("with error %s\n", createResponse.body).c_str());
             ReportStatus(0, nullptr, -1, Utf8PrintfString("server code : %lu\n", createResponse.responseCode).c_str());
+
+            m_creationError.m_errorOrigin = TransferError::TransferErrorOrigin::RDS_SERVICE;
+            m_creationError.m_errorCode = (instance["errorId"].isNull() ? createResponse.responseCode : instance["errorId"].asInt());
+            m_creationError.m_errorContext = "Creation of Reality Data failed";
+            m_creationError.m_errorMessage = (instance["errorMessage"].isNull() ? createResponse.body : instance["errorMessage"].asString());
+
             status = BentleyStatus::ERROR;
             }
         }
@@ -1415,12 +1421,29 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
                 {
                 ReportStatus(0, nullptr, -1, Utf8PrintfString("Creation Error message : %s\n", createResponse.body).c_str());
                 ReportStatus(0, nullptr, -1, Utf8PrintfString("server code : %lu\n", createResponse.responseCode).c_str());
+
+                Json::Value jsonError(Json::objectValue);
+                Json::Reader::Parse(createResponse.body, jsonError);
+                m_creationError.m_errorOrigin = TransferError::TransferErrorOrigin::RDS_SERVICE;
+                m_creationError.m_errorCode = (jsonError["errorId"].isNull() ? createResponse.responseCode : jsonError["errorId"].asInt());
+                m_creationError.m_errorContext = "Creation of Reality Data failed";
+                m_creationError.m_errorMessage = (jsonError["errorMessage"].isNull() ? createResponse.body : jsonError["errorMessage"].asString());
+
                 status = BentleyStatus::ERROR;
                 }
-            if ((idResponse = RealityDataService::BasicRequest((RealityDataUrl*)getRequest)).status == RequestStatus::BADREQ)
+            if ((BentleyStatus::SUCCESS == status) && (idResponse = RealityDataService::BasicRequest((RealityDataUrl*)getRequest)).status == RequestStatus::BADREQ)
                 {
                 ReportStatus(0, nullptr, -1, "Unable to create RealityData with specified parameters\n");
                 ReportStatus(0, nullptr, -1, Utf8PrintfString("server code : %lu\n", idResponse.responseCode).c_str());
+
+                Json::Value jsonErrorId(Json::objectValue);
+                Json::Reader::Parse(idResponse.body, jsonErrorId);
+
+                m_creationError.m_errorOrigin = TransferError::TransferErrorOrigin::RDS_SERVICE;
+                m_creationError.m_errorCode = (jsonErrorId["errorId"].isNull() ? idResponse.responseCode : jsonErrorId["errorId"].asInt());
+                m_creationError.m_errorContext = "Unable to create RealityData with specified parameters";
+                m_creationError.m_errorMessage = (jsonErrorId["errorMessage"].isNull() ? idResponse.body : jsonErrorId["errorMessage"].asString());
+
                 status = BentleyStatus::ERROR;
                 }
             }
@@ -1432,7 +1455,7 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
         delete getRequest;
         }
 
-    return BentleyStatus::SUCCESS;
+    return status;
     }
 
 //=====================================================================================
@@ -1744,6 +1767,13 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
         fileUp = new RealityDataFileUpload(uploadPath, uploadPath.GetDirectoryName(), m_azureServer, 0);
         m_filesToTransfer.push_back(fileUp);
         m_fullTransferSize = fileUp->GetFileSize();
+        }
+    else
+        {
+        m_creationError.m_errorOrigin = TransferError::TransferErrorOrigin::OTHER;
+        m_creationError.m_errorCode = BentleyStatus::ERROR;
+        m_creationError.m_errorContext = "Scanning upload source directory";
+        m_creationError.m_errorMessage = "No files found";
         }
 
     InitTool();

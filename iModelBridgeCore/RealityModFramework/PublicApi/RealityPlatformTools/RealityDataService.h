@@ -899,6 +899,39 @@ struct TransferReport
     REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report) const;
     };
 
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert          06/2018
+//! TransferError
+//! struct that stores an error code and error message related to operation
+//! of the RealityDataServiceTransfer structure. This error is usually related
+//! to Upload or download creation or set-up prior to starting the transfer.
+//=====================================================================================
+struct TransferError
+{
+    TransferError::TransferError(): m_errorCode((int)BentleyStatus::SUCCESS) {}
+    enum class TransferErrorOrigin
+    {
+         RDS_SERVICE,
+         OTHER
+    };
+
+    TransferErrorOrigin  m_errorOrigin;
+    int                  m_errorCode;
+    Utf8String           m_errorContext;
+    Utf8String           m_errorMessage;
+};
+
+inline bool operator==(int errorCode, const TransferError& transferError) {return transferError.m_errorCode == errorCode;}
+inline bool operator!=(int errorCode, const TransferError& transferError) {return transferError.m_errorCode != errorCode;}
+inline bool operator==(BentleyStatus errorCode, const TransferError& transferError) {return transferError.m_errorCode == (int)errorCode;}
+inline bool operator!=(BentleyStatus errorCode, const TransferError& transferError) {return transferError.m_errorCode != (int)errorCode;}
+
+inline bool operator==(const TransferError& transferError, int errorCode) {return transferError.m_errorCode == errorCode;}
+inline bool operator!=(const TransferError& transferError, int errorCode) {return transferError.m_errorCode != errorCode;}
+inline bool operator==(const TransferError& transferError, BentleyStatus errorCode) {return transferError.m_errorCode == (int)errorCode;}
+inline bool operator!=(const TransferError& transferError, BentleyStatus errorCode) {return transferError.m_errorCode != (int)errorCode;}
+
 //! Callback function to prep a request, if necessary
 //! @return If RealityDataDownload_ProgressCallBack returns 0   All downloads continue.
 //! @param[in] request          Structure containing the url/header/body of the request
@@ -949,6 +982,12 @@ struct RealityDataServiceTransfer : public RequestConstructor
     //! Start the upload progress for all links.
     //! Returns a reference to the internal transfer report structure.
     REALITYDATAPLATFORM_EXPORT virtual const TransferReport& Perform();
+
+    //! Returns the current TransferReport. 
+    //! Normally this io only performed before calling Perfrom() as the Perform()
+    //! call clears the report. This can be used to extract the error status
+    //! when IsTransferValid() report false.
+    REALITYDATAPLATFORM_EXPORT virtual const TransferError& GetError() {return m_creationError;}
     
     //! Specifies if the the transfer report will track every operation or only those that failed
     REALITYDATAPLATFORM_EXPORT void OnlyReportErrors(bool onlyErrors) { m_onlyReportErrors = onlyErrors; }
@@ -997,6 +1036,7 @@ protected:
     bvector<Utf8String>         m_headers;
 
     TransferReport              m_report;
+    TransferError               m_creationError;
     size_t                      m_curEntry;
     int64_t                     m_azureTokenTimer;
 

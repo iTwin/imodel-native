@@ -1642,6 +1642,19 @@ void RealityDataConsole::Upload()
         DisplayInfo("if any files failed to upload, they will be listed here: \n", DisplayOption::Tip);
         DisplayInfo(report);
         }
+	else
+		{
+		DisplayInfo("No files to Transfer!\n", DisplayOption::Error);
+        TransferError tError = upload.GetError();
+        if (tError.m_errorOrigin == TransferError::TransferErrorOrigin::RDS_SERVICE)
+            DisplayInfo("Reality Data Service returned an error:\n");
+        else
+            DisplayInfo("Error during creation or setting up upload:\n");
+
+        DisplayInfo(Utf8PrintfString("Error Context    : %s\n", tError.m_errorContext), DisplayOption::Error);
+        DisplayInfo(Utf8PrintfString("Error Code       : %d\n", tError.m_errorCode), DisplayOption::Error);
+        DisplayInfo(Utf8PrintfString("Error Message    : %s\n", tError.m_errorMessage), DisplayOption::Error);
+		}
     }
 
 void RealityDataConsole::Details()
@@ -1840,6 +1853,8 @@ void RealityDataConsole::ChangeProps()
                 else
                     DisplayInfo(Utf8PrintfString("%s is boolean. Value must be true or false\n", input), DisplayOption::Error);
                 }
+            else if (input.Equals("Footprint")) // Footprint prop does not require value between quotes
+                propertyString.append(Utf8PrintfString("\"%s\" : %s", input, value));
             else
                 propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", input, value));
             }
