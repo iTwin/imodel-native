@@ -161,8 +161,6 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 
     _GetParams().SetJobSubjectId(jobsubj->GetElementId());
 
-    iModelBridgeLockOutTxnMonitor prohibitTxnSave(*db);
-
     if (BSISUCCESS != _ConvertToBim(*jobsubj))
         {
         LOG.fatalv("Failed to populate new repository");
@@ -249,8 +247,6 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
             }
 
         _GetParams().SetJobSubjectId(jobsubj->GetElementId());
-
-        iModelBridgeLockOutTxnMonitor prohibitTxnSave(db);
 
         if (BSISUCCESS != _ConvertToBim(*jobsubj))
             {
@@ -858,4 +854,48 @@ WebServices::ClientInfoPtr iModelBridge::Params::GetClientInfo() const
     WebServices::ClientInfoPtr clientInfo = WebServices::ClientInfoPtr(
         new WebServices::ClientInfo("Bentley-Test", BeVersion(1, 0), "{41FE7A91-A984-432D-ABCF-9B860A8D5360}", "TestDeviceId", "TestSystem", s_productId, GetDefaultHeaderProvider()));
     return clientInfo;
+    }
+
+struct MemoryUsageAppData : DgnDb::AppData
+    {
+    int m_rowsChanged{};
+    static Key const& GetKey() { static Key s_key; return s_key; }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge::SaveChangesToConserveMemory(DgnDbR db, Utf8CP commitComment, int maxRowsChangedPerTxn)
+    {
+    MemoryUsageAppData& lastCheck = *(MemoryUsageAppData*)db.FindOrAddAppData(MemoryUsageAppData::GetKey(), []() { return new MemoryUsageAppData(); });
+
+    int rowsChanged = db.GetTotalModifiedRowCount();
+    if ((rowsChanged - lastCheck.m_rowsChanged) <= maxRowsChangedPerTxn)
+        return BSISUCCESS;
+
+    lastCheck.m_rowsChanged = rowsChanged;
+
+    auto status = db.SaveChanges(commitComment);
+    if (BE_SQLITE_OK != status)
+        return BSIERROR;
+
+    db.BriefcaseManager().StartBulkOperation();
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge::SaveChanges(DgnDbR db, Utf8CP commitComment)
+    {
+    MemoryUsageAppData& lastCheck = *(MemoryUsageAppData*)db.FindOrAddAppData(MemoryUsageAppData::GetKey(), []() { return new MemoryUsageAppData(); });
+
+    lastCheck.m_rowsChanged = db.GetTotalModifiedRowCount();
+
+    auto status = db.SaveChanges(commitComment);
+    if (BE_SQLITE_OK != status)
+        return BSIERROR;
+
+    db.BriefcaseManager().StartBulkOperation();
+    return BSISUCCESS;
     }

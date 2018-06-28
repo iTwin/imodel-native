@@ -757,6 +757,7 @@ SyncInfo::V8ModelSource     m_v8Model;
 bvector<GeometricPrimitivePtr>  m_symbolGeometry;
 bvector<Render::GeometryParams> m_symbolParams;
 bool                            m_allowMultiSymb = false;
+bool                            m_foundText = false;
 
 protected:
 
@@ -787,10 +788,71 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Bentley::BentleyStatus _ProcessSolidPrimitive(Bentley::ISolidPrimitiveCR primitive) override
+    {
+    BentleyApi::ISolidPrimitivePtr clone;
+
+    Converter::ConvertSolidPrimitive(clone, primitive);
+
+    GeometricPrimitivePtr elemGeom = GeometricPrimitive::Create(clone);
+
+    AddSymbolGeometry(elemGeom, false);
+
+    return Bentley::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Bentley::BentleyStatus _ProcessSurface(Bentley::MSBsplineSurfaceCR surface) override
+    {
+    BentleyApi::MSBsplineSurfacePtr clone;
+
+    Converter::ConvertMSBsplineSurface(clone, surface);
+
+    GeometricPrimitivePtr elemGeom = GeometricPrimitive::Create(clone);
+
+    AddSymbolGeometry(elemGeom, false);
+
+    return Bentley::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR meshData, bool isFilled) override
+    {
+    BentleyApi::PolyfaceHeaderPtr clone;
+
+    Converter::ConvertPolyface(clone, meshData);
+
+    GeometricPrimitivePtr elemGeom = GeometricPrimitive::Create(clone);
+
+    AddSymbolGeometry(elemGeom, false);
+
+    return Bentley::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Bentley::BentleyStatus _ProcessBody(Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMaterialAttachmentsCP attachments)
+    {
+    // Don't allow BReps in symbols...output non-BRep face geometry...
+    DgnV8Api::DgnPlatformLib::GetHost().GetSolidsKernelAdmin()._OutputBodyAsSurfaces(entity, *m_context, true, attachments);
+
+    return Bentley::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual Bentley::BentleyStatus _ProcessTextString(Bentley::TextStringCR v8Text)
     {
+    m_foundText = true; // Ugh, we don't have a good place to clear this...hopefully a single symbol won't contain both text and shapes...
+
     return Bentley::ERROR; // Is there any reason we shouldn't always drop symbol text?
     }
 
@@ -811,7 +873,7 @@ void AddSymbolGeometry(GeometricPrimitivePtr& geometry, bool isFilled)
     Render::GeometryParams geomParams;
     m_converter.InitGeometryParams(geomParams, m_currentDisplayParams, *m_context, true, m_v8Model);
 
-    if (isFilled && Render::FillDisplay::Never == geomParams.GetFillDisplay())
+    if (isFilled && Render::FillDisplay::Never == geomParams.GetFillDisplay() && m_foundText)
         geomParams.SetFillDisplay(Render::FillDisplay::Always); // Dropped glyph regions should always be drawn filled...
 
     m_symbolParams.push_back(geomParams);
