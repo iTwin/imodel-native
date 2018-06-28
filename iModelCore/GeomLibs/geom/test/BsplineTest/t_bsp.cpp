@@ -15,8 +15,9 @@ MSBsplineCurvePtr CreateCurve (bvector<DPoint3d> &poles, int order)
     return MSBsplineCurve::CreateFromPolesAndOrder (poles, NULL, NULL, order, false, false);
     }
 
-void PrintLengthFractions (MSBsplineCurve **curveA, double *lengthA, int numCurves)
+void PrintLengthFractions (bvector<MSBsplineCurvePtr> &curveA, bvector<double> &lengthA)
     {
+    size_t numCurves = curveA.size ();
     int numKnots0 = curveA[0]->NumberAllocatedKnots ();
     if (s_noisy)
         printf ("Corresponding length fractions\n");
@@ -58,22 +59,83 @@ void PrintKnots (MSBsplineCurve *curve, char const *name, int i)
     printf ("\n");
     }
 
-void CheckCompatibleCurves (MSBsplineCurve **curveA, MSBsplineCurve **curveB, int numCurves)
+
+void ShowGrid (bvector<bvector<DPoint3d>> &points, bool showU = true, bool showV = true)
     {
-    double lengthA[100], lengthB[100];
+    if (showV)
+        {
+        for (size_t i = 1; i < points.size (); i++)
+            {
+            for (size_t j = 0; j < points[i].size (); j++)
+                {
+                Check::SaveTransformed (DSegment3d::From (points[i-1][j], points[i][j]));
+                }
+            }
+        }
+    if (showU)
+        for (auto &p : points)
+            Check::SaveTransformed (p);
+    }
+void CheckCompatibleCurves (bvector<MSBsplineCurvePtr> &curveA, bvector<MSBsplineCurvePtr> &curveB)
+    {
+    if (!Check::Size (curveA.size (), curveB.size (), "matched curve counts"))
+        return;
+    bvector<bvector <DPoint3d>> pointA, pointA1, pointA2, pointB;
+    size_t numEdge = 10;
+    for (auto &c: curveA)
+        {
+        Check::SaveTransformed (c);
+
+        bvector<DPoint3d> strokes;
+        bvector<double> params;
+        c->StrokeFixedNumberWithEqualFractionLength (strokes, params, numEdge);
+        pointA.push_back (strokes);
+
+        c->StrokeFixedNumberWithEqualChordLength (strokes, params, numEdge);
+        pointA1.push_back (strokes);
+
+        if (c->StrokeFixedNumberWithEqualChordError (strokes, params, numEdge))
+            pointA2.push_back (strokes);
+        }
+    ShowGrid (pointA);
+    Check::Shift (0,1,0);
+    ShowGrid (pointA1);
+    Check::Shift (0,1,0);
+    ShowGrid (pointA2);
+
+    Check::Shift (0,5,0);
+    for (auto &c: curveB)
+        {
+        bvector<DPoint3d> points;
+        bvector<double> params;
+        c->StrokeFixedNumberWithEqualFractionLength (points, params, numEdge);
+        pointB.push_back (points);
+        Check::SaveTransformed (c);
+
+        bvector<DPoint3d> strokes;
+        c->StrokeFixedNumberWithEqualChordLength (strokes, params, numEdge);
+        Check::SaveTransformed (c);
+        Check::SaveTransformed (strokes);
+        }
+    ShowGrid (pointB);
+    Check::Shift (0,10,0);
+
+
+    bvector<double> lengthA, lengthB;
     bool ok = true;
     int numKnots0 = curveB[0]->NumberAllocatedKnots ();
+    size_t numCurves = curveA.size ();
     for (int i = 0; i < numCurves; i++)
         {
-        lengthA[i] = curveA[i]->Length ();
-        lengthB[i] = curveB[i]->Length ();
+        lengthA.push_back (curveA[i]->Length ());
+        lengthB.push_back (curveB[i]->Length ());
         Check::Near (lengthA[i], lengthB[i], "Compatible curve maintains length");
-        PrintKnots (curveA[i], "curveA", i);
-        PrintKnots (curveB[i], "curveB", i);
+        PrintKnots (curveA[i].get (), "curveA", i);
+        PrintKnots (curveB[i].get (), "curveB", i);
         ok &= curveB[i]->NumberAllocatedKnots () == numKnots0;
         }
     if (Check::True (ok, "ArcCompatible curves have same knot counts"))
-        PrintLengthFractions (curveB, lengthB, numCurves);
+        PrintLengthFractions (curveB, lengthB);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -81,7 +143,7 @@ void CheckCompatibleCurves (MSBsplineCurve **curveA, MSBsplineCurve **curveB, in
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bspline, CompatibleByArcLenth)
     {
-    bvector<DPoint3d> pointA, pointB, pointC;
+    bvector<DPoint3d> pointA, pointB, pointC, pointD;
     AddPoint (pointA, 0,0,0);
     AddPoint (pointA, 1,0,0);
     AddPoint (pointA, 2,1,0);
@@ -100,32 +162,78 @@ TEST(Bspline, CompatibleByArcLenth)
     AddPoint (pointC, 3,1,2);
     AddPoint (pointC, 4,1,2);       // curveC lifted to z=2, no interior knot
     
+    AddPoint (pointD, 0,0,3);
+    AddPoint (pointD, 1,0,3);
+    AddPoint (pointD, 2,4,3);
+    AddPoint (pointD, 2.5,4,3);
+    AddPoint (pointD, 3,1,3);
+    AddPoint (pointD, 4,1,3);       // curveD lifted to z=3, no interior knot, will be built as order 3
+
     MSBsplineCurvePtr inputA = CreateCurve (pointA, 4);
     MSBsplineCurvePtr inputB = CreateCurve (pointB, 4);
     MSBsplineCurvePtr inputC = CreateCurve (pointC, 4);
-    
-    MSBsplineCurve *inputABC[3] = {inputA.get (), inputB.get(), inputC.get ()};
-    MSBsplineCurvePtr outputA = MSBsplineCurve::CreatePtr ();
-    MSBsplineCurvePtr outputB = MSBsplineCurve::CreatePtr ();
-    MSBsplineCurvePtr outputC = MSBsplineCurve::CreatePtr ();
-    MSBsplineCurve *outputABC[3] = {outputA.get (), outputB.get (), outputC.get ()};
+    MSBsplineCurvePtr inputD = CreateCurve (pointD, 3);
+    bvector<MSBsplineCurvePtr> inputCurves;
+    bvector<MSBsplineCurvePtr> outputCurves;
     
     Check::StartScope ("bspcurv_makeCompatibleByArcLength");
-    if (Check::Int (SUCCESS, bspcurv_makeCompatibleByArcLength (outputABC, inputABC, 2, 0, 0), "2 identical curves"))
-      CheckCompatibleCurves (inputABC, outputABC, 2);
-    outputA->ReleaseMem ();
-    outputB->ReleaseMem ();
-    outputC->ReleaseMem ();
+    inputCurves.push_back (inputA);
+    inputCurves.push_back (inputB);
+    if (Check::True (MSBsplineCurve::CloneArcLengthCompatibleCurves (outputCurves, inputCurves, false, false), "2 identical curves"))
+      CheckCompatibleCurves (inputCurves, outputCurves);
 
-    if (Check::Int (SUCCESS,  bspcurv_makeCompatibleByArcLength (outputABC, inputABC, 3, 0, 0), "3 curves"))
-      CheckCompatibleCurves (inputABC, outputABC, 3);
-    outputA->ReleaseMem ();
-    outputB->ReleaseMem ();
-    outputC->ReleaseMem ();
+    inputCurves.push_back (inputC);
+    if (Check::True (MSBsplineCurve::CloneArcLengthCompatibleCurves (outputCurves, inputCurves, false, false), "3 curves"))
+      CheckCompatibleCurves (inputCurves, outputCurves);
 
-    Check::EndScope ();    
+    inputCurves.push_back (inputD);
+    if (Check::True (MSBsplineCurve::CloneArcLengthCompatibleCurves (outputCurves, inputCurves, false, false), "4 curves"))
+      CheckCompatibleCurves (inputCurves, outputCurves);
+
+    Check::EndScope ();
+    Check::ClearGeometry ("Bspline.CompatibleByArcLength");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Bspline, FromCoplanarTangents)
+    {
+    bvector<DRay3d> tangents;
+    double a = 1.0;
+    double b = 2.0;
+    for (double theta = 0.0; theta < 3.0;  theta += 0.25)
+        {
+        double c = cos (theta);
+        double s = sin (theta);
+        auto ray = DRay3d::FromOriginAndVector (DPoint3d::From (a * c,b * s,0), DVec3d::From (-s * a, c * b,0));
+        tangents.push_back (ray);
+        Check::SaveTransformed (DSegment3d::From (ray.FractionParameterToPoint (-0.1), ray.FractionParameterToPoint (0.1)));
+        }
+    double tolerance = 1.0e-5;
+    MSBsplineCurve curve;
+    if (Check::Int (0, mdlBspline_interpolateCoplanarTangents (&curve, &tangents[0], (int)tangents.size (), false, false, tolerance)))
+        {
+        auto curve1 = curve.CreateCapture ();
+        Check::SaveTransformed (curve1);
+        curve1->ElevateDegree (3);
+        Check::Shift (2 * a, 0,0);
+        Check::SaveTransformed (curve1);
+        for (double toleranceA : {0.001, 0.01, 0.05, 0.1, 0.5})
+            {
+            Check::Shift (0,2 * b, 0);
+            MSBsplineCurve curveB;
+            if (Check::Int (0, bspcurv_cubicDataReduce (&curveB, curve1.get (), toleranceA)))
+                {
+                Check::SaveTransformed (curve1);
+                auto curveB1 = curveB.CreateCapture ();
+                Check::SaveTransformed (curveB1);
+                }
+            }
+        }
+
+    Check::ClearGeometry ("Bspline.FromCoplanarTangents");
+    }
 
 void PrintBearingCurvature (char const *title, DSpiral2dBase &spiral, double fraction)
     {

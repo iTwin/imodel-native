@@ -6,8 +6,84 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
+
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
+
+//#define NoGeomPrintFuncs
+struct GeomPrintFuncs;
+
+// Virtuals for debug output.
+typedef GeomPrintFuncs *GeomPrintFuncsP;
+
+struct GEOMDLLIMPEXP GeomPrintFuncs
+    {
+    public:
+        // Default implementation of the lowest level EmitChar does nothing -- derived class must override and output to actual device.
+        GEOMAPI_VIRTUAL void EmitChar (char ch);
+        // Default implementations reduce to EmitChar ...
+        GEOMAPI_VIRTUAL void EmitString (char const *pString);
+        GEOMAPI_VIRTUAL void EmitInt (int value);
+        GEOMAPI_VIRTUAL void EmitDouble (double value);
+        GEOMAPI_VIRTUAL void EmitLineBreak ();
+
+   };
+
+struct GEOMDLLIMPEXP GeomPrintToBeConsole : public GeomPrintFuncs
+{
+void EmitChar (char ch) override;
+void EmitString (char const *pString) override;
+};
+
+
+
+// Default implementations of the lowest level EmitChar does nothing -- derived class must override and output to actual device.
+void GeomPrintFuncs::EmitChar (char ch)
+    {
+    }
+        // Default implementations reduce to EmitChar ...
+void GeomPrintFuncs::EmitString (char const *pString)
+    {
+    for (int i = 0; pString[i] != 0; i++)
+        EmitChar (pString[i]);
+    }
+
+void GeomPrintFuncs::EmitInt (int value)
+    {
+    char buffer[100];
+    sprintf (buffer, "%i", value);
+    EmitString (buffer);
+    }
+
+void GeomPrintFuncs::EmitDouble (double value)
+    {
+    char buffer[100];
+    sprintf (buffer, "%g", value);
+    EmitString (buffer);
+    }
+
+void GeomPrintFuncs::EmitLineBreak ()
+    {
+    EmitChar ('\n');
+    }
+
+
+void GeomPrintToBeConsole::EmitChar (char ch)
+    {
+#ifdef GEOMAPI_PRINTF
+    GEOMAPI_PRINTF ("%c", ch);
+#else
+    BeConsole::Printf ("%c", ch);
+#endif
+    }
+void GeomPrintToBeConsole::EmitString (char const *pString)
+    {
+#ifdef GEOMAPI_PRINTF
+    GEOMAPI_PRINTF  ("%s", pString);
+#else
+    BeConsole::Printf ("%s", pString);
+#endif
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -106,30 +182,6 @@ GeomPrintFuncs&     gs
         vu_printNode (graphP, currP, true, gs);
         }
     END_VU_FACE_LOOP (currP, faceSeedP)
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description Print statistics for masked nodes in the graph.
-* @param graphP     IN  vu graph
-* @param mask       IN  node mask on nodes to print
-* @param pTitle     IN  unused
-* @group "VU Debugging"
-* @bsimethod                                                    EarlinLutz      05/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     vu_printMaskedNodes
-(
-VuSetP          graphP,
-VuMask          mask,
-char const      *pTitle,
-GeomPrintFuncs&     gs
-)
-    {
-    VU_SET_LOOP (pCurr, graphP)
-        {
-        if (vu_getMask (pCurr, mask))
-            vu_printNode (graphP, pCurr, false, gs);
-        }
-    END_VU_SET_LOOP (pCurr, graphP)
     }
 
 static void emitInt
@@ -283,8 +335,8 @@ VuSetP          graphP,
 char const      *pTitle
 )
     {
-    if (NULL != GeomPrintFuncs::GetDefault ())
-        vu_printFaceLabels (graphP, pTitle, *GeomPrintFuncs::GetDefault ());
+    GeomPrintToBeConsole printFuncs;
+    vu_printFaceLabels (graphP, pTitle, printFuncs);
     }
 
 Public GEOMDLLIMPEXP void     vu_printFaceLabelsOneFace
@@ -293,8 +345,8 @@ VuSetP          graphP,
 VuP             nodeP
 )
     {
-    if (NULL != GeomPrintFuncs::GetDefault ())
-        vu_printFaceLabelsOneFace (graphP, nodeP, *GeomPrintFuncs::GetDefault ());
+    GeomPrintToBeConsole printFuncs;
+    vu_printFaceLabelsOneFace (graphP, nodeP, printFuncs);
     }
 
 

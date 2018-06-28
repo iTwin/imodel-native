@@ -286,7 +286,7 @@ $(OUT_DIR)bspCubicFit$(OUT_EXT)    : $(geomSrcBspline)bspCubicFit.cpp $(OTHER_DE
 
 $(OUT_DIR)bspsurf$(OUT_EXT)    : $(geomSrcBspline)bspsurf.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-$(OUT_DIR)bspsurf_cliptrim$(OUT_EXT)    : $(geomSrcBspline)bspsurf_cliptrim.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+#$(OUT_DIR)bspsurf_cliptrim$(OUT_EXT)    : $(geomSrcBspline)bspsurf_cliptrim.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 
 $(OUT_DIR)bspconv$(OUT_EXT)    : $(geomSrcBspline)bspconv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
@@ -444,7 +444,7 @@ $(OUT_DIR)vuprint$(OUT_EXT)             : $(vuSrc)vuprint.cpp $(OTHER_DEPENDENCI
 
 $(OUT_DIR)vupointin$(OUT_EXT)             : $(vuSrc)vupointin.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)GeomPrintFuncs$(OUT_EXT)      : $(vuSrc)GeomPrintFuncs.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)GeomPrintFuncs$(OUT_EXT)      : $(vuSrc)GeomPrintFuncs.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)vumerge$(OUT_EXT)             : $(vuSrc)vumerge.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 

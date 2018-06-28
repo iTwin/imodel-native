@@ -1,5 +1,5 @@
 #include "testHarness.h"
-
+#include <Vu/vuprint.fdf>
 static int s_noisy = 0;
 
 /// Support context for constructing offset to display vu graphs.
@@ -658,3 +658,15 @@ TEST (Vu, FlightPathC)
     Check::ClearGeometry ("Vu.FlightPathC");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (Vu,PrintFuncs)
+    {
+    VuSetP graph = vu_newVuSet(0);
+    VuP node0;
+    AddTestGraph00(graph, node0);
+    vu_printFaceLabels (graph, "Exercise vu_printFaceLabels");
+    GEOMAPI_PRINTF ("OneFace\n");
+    vu_printFaceLabelsOneFace (graph, node0);
+    }

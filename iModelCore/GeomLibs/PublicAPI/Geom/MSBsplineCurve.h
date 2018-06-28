@@ -251,6 +251,14 @@ int             derivative,     //!< [in] Highest derivatives maintained. Ignore
 bool            fastMode        //!< [in] true: to remove less data but faster
 );
 
+//! Create copies of all curves, with knots added as needed to make them arclength compatible.
+GEOMDLLIMPEXP static bool CloneArcLengthCompatibleCurves
+(
+bvector<MSBsplineCurvePtr> &outputCurves,/* <= array of output curves */
+bvector<MSBsplineCurvePtr> const &inputCurves,           /* => array of input curves */
+bool          enableReverse,         /* => allows reversing output */
+bool          openAll                /* => forces opening */
+);
 
 
     //! Check whether the B-spline curve is physically closed. A B-spline curve may be non-periodic, but still return 
@@ -860,7 +868,7 @@ public:
     //! @param [in] matrix optional transformation into viewing space.
     GEOMDLLIMPEXP void AddCuspsXY (bvector<DPoint3d>*points, bvector<double> *fractionParameters, DMatrix4dCP matrix) const;
 
-    //! Compute points along the bspline, spaced to have equal point-to-point sitance (chordLength)
+    //! Compute points along the bspline, spaced to have equal point-to-point distance (chordLength)
     //! Stroke length is measured along the stroke, NOT along the arc.
     //! The first point will be the start point of the curve.
     //! The last point is usually NOT the end point of the curve.
@@ -869,6 +877,39 @@ public:
     bvector<DPoint3d> &points,  //!< [out] stroke points
     bvector<double> &params,    //!< [out] fraction parameters for the strokes
     double          chordLength //!< [in] stroke length.
+    );
+
+    //! Compute points along the bspline, spaced to have equal point-to-point distance (chordLength)
+    //! Stroke length is measured along the stroke, NOT along the arc.
+    //! Stroke length adapts to the count and shape.
+    //! The first point will be the start point of the curve.
+    //! The last point is the end of the curve.
+    GEOMDLLIMPEXP bool StrokeFixedNumberWithEqualChordLength
+    (
+    bvector<DPoint3d> &points,  //!< [out] stroke points
+    bvector<double> &params,    //!< [out] fraction parameters for the strokes
+    size_t          numSeg      //!< [in] segment count
+    );
+
+    //! Compute points along the bspline, spaced to have equal chord error (true perpendicular from chord to curve)
+    //! Stroke length adapts to the count and shape.
+    //! The first point will be the start point of the curve.
+    //! The last point is the end of the curve.
+    GEOMDLLIMPEXP bool StrokeFixedNumberWithEqualChordError
+    (
+    bvector<DPoint3d> &points,  //!< [out] stroke points
+    bvector<double> &params,    //!< [out] fraction parameters for the strokes
+    size_t          numSeg      //!< [in] segment count
+    );
+
+    //! Compute points along the bspline, spaced to have equal fraction spacing.
+    //! The first point will be the start point of the curve.
+    //! The last point is the end of the curve.
+    GEOMDLLIMPEXP void StrokeFixedNumberWithEqualFractionLength
+    (
+    bvector<DPoint3d> &points,  //!< [out] stroke points
+    bvector<double> &params,    //!< [out] fraction parameters for the strokes
+    size_t          numSeg      //!< [in] segment count
     );
 
     //! Open the closed B-spline curve.

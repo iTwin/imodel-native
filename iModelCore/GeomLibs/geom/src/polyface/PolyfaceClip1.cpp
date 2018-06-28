@@ -675,7 +675,6 @@ void AnalyzeCutPlaneLoops(size_t numComplexFaces)
     {
     numComplexFaces = 0;
     m_globalEdgeData.SortByPlaneVertexAVertexB ();
-    //m_globalEdgeData.Print ("Sort Clip Edges", GeomPrintFuncs::GetDefault (L"PolyfaceClip::AnalyzeCutPlaneLoops"));
 
     size_t beginIndex = 0;
     size_t endIndex;

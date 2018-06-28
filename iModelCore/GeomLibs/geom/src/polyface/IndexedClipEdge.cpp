@@ -2,45 +2,13 @@
 |
 |     $Source: geom/src/polyface/IndexedClipEdge.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include <map>
 #include "IndexedClipEdge.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-void ClipEdgeDataArray::Print (char const *title, GeomPrintFuncsP funcs) const
-    {
-#ifndef NoGeomPrintFuncs
-    if (NULL == funcs)
-        funcs = GeomPrintFuncs::GetDefault ();
-    if (NULL == funcs)
-        return;
-
-    funcs->EmitString ("****");
-    funcs->EmitString (title);
-    funcs->EmitString ("****");
-    funcs->EmitLineBreak();
-    for(ClipEdgeData cd : *this)
-        {
-        funcs->EmitString ("(A");
-        funcs->EmitInt (cd.m_vertexA);
-        funcs->EmitString (") (B");
-        funcs->EmitInt (cd.m_vertexB);
-        funcs->EmitString (") (Pl ");
-        funcs->EmitInt (cd.m_planeIndex);
-        funcs->EmitString (")");
-        funcs->EmitLineBreak ();
-        }
-#endif
-    }
-
-
 
 
 /*--------------------------------------------------------------------------------**//**

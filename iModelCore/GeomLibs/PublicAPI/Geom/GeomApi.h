@@ -744,63 +744,7 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "DTriangle3d.h"
 #include "GeometryNode.h"
 
-BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
-
-//#define NoGeomPrintFuncs
-struct GeomPrintFuncs;
-#ifndef NoGeomPrintFuncs
-
-// Virtuals for debug output.
-typedef GeomPrintFuncs *GeomPrintFuncsP;
-
-struct GEOMDLLIMPEXP GeomPrintFuncs
-    {
-    public:
-        // Default implementation of the lowest level EmitChar does nothing -- derived class must override and output to actual device.
-        GEOMAPI_VIRTUAL void EmitChar (char ch);
-        // Default implementations reduce to EmitChar ...
-        GEOMAPI_VIRTUAL void EmitString (char const *pString);
-        GEOMAPI_VIRTUAL void EmitInt (int value);
-        GEOMAPI_VIRTUAL void EmitDouble (double value);
-        GEOMAPI_VIRTUAL void EmitHex (int value);
-        GEOMAPI_VIRTUAL void EmitLineBreak ();
-        // Default implementations produce xml tag with type as tag, members as attributes, optional description as content.
-        GEOMAPI_VIRTUAL void EmitTag (DPoint4dCR, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTag (DPoint3dCR, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTag (DPoint2dCR, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTag (DVec3dCR, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTag (DVec2dCR, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTag (GraphicsPointCR, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTag (DEllipse3dCR, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTag (RotMatrixCR, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTag (TransformCR, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTagRadians (double radians, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTagDegrees (double degrees, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTagDouble (double value, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTagInt32 (int32_t value, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTagInt64 (int64_t value, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTagString (const char *value, const char *description = NULL);
-        GEOMAPI_VIRTUAL void EmitTagPointer (void const *pointer, const char *description = NULL);
-
-        GEOMAPI_VIRTUAL void EmitAttributeDouble (const char *name, double value);
-    // Get and set a default print object.
-    static GeomPrintFuncsP GetDefault ();
-    static void SetDefault (GeomPrintFuncsP);
-    // Enable/disable output to default printfuncs by specified source
-    static void EnableDefault (wchar_t const*name, bool enable);
-    // Get the default printfuncs for specified source.
-    static GeomPrintFuncsP GetDefault (wchar_t const *name);
-    };
-
-struct GEOMDLLIMPEXP GeomPrintToBeConsole : public GeomPrintFuncs
-{
-void EmitChar (char ch) override;
-void EmitString (char const *pString) override;
-};
-#endif
-
-END_BENTLEY_GEOMETRY_NAMESPACE
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
     typedef bvector<DPoint3d> STDVectorDPoint3d;

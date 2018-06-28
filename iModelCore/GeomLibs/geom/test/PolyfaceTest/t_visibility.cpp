@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_visibility.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -221,4 +221,51 @@ TEST(Polyface,PartitionReadIndicesByNormal)
             }
         }
     Check::ClearGeometry ("Polyface.PartitionReadIndicesByNormal");
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface,PartitionXY)
+    {
+    double a = 100.0;
+    double b = 4.0;
+    for (int method : {0,1})
+        {
+        for (size_t numX : {5,10,20})
+            {
+            SaveAndRestoreCheckTransform shift0 (a, 0, 0);
+            for (size_t numY : { 5,10,20})
+                {
+                SaveAndRestoreCheckTransform shift0 (0, 10.0 * a, 0);
+                DPoint3dDVec3dDVec3d quad (
+                    DPoint3d::From (0,0,0),
+                    DVec3d::From (b, 0,0),
+                    DVec3d::From (0, b, 0));
+                auto mesh = UnitGridPolyface (quad, (int)numX, (int)numY, false, true);
+                mesh->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
+                Check::SaveTransformed (mesh);
+                for (size_t faceTarget : {0, 10,40})
+                    {
+                    for (size_t componentTarget : {0, 2, 10})
+                        {
+                        SaveAndRestoreCheckTransform shift1 (0, (numY + 2) * b, 0);
+                        bvector<PolyfaceHeaderPtr> splitMesh;
+                        if (method == 1)
+                            mesh->PartitionByXYRange (faceTarget, componentTarget, splitMesh);
+                        else
+                            mesh->PartitionMaintainFaceOrder (faceTarget, componentTarget, splitMesh);
+                        GEOMAPI_PRINTF (" (f %d) (c %d) (# %d)\n", (int)faceTarget, (int)componentTarget, (int)splitMesh.size ());
+                        for (auto &m : splitMesh)
+                            {
+                            GEOMAPI_PRINTF ("   (points %d)\n", (int)m->Point ().size ());
+                            Check::SaveTransformed (m);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry ("Polyface.PartitionXY");
     }

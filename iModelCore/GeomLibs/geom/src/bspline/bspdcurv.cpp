@@ -23,203 +23,6 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 #define TOLERANCE_Relative  0.0005
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Lu.Han          04/92
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspcurv_catmullRomPoles
-(
-DPoint3d        *outPts,            /* <= poles (count: 3*numPoles - 2  !!!)*/
-double          *outWts,            /* <= weights or NULL */
-double          *knots,             /* <= knots or NULL */
-DPoint3d        *points,            /* => points to be interpolated */
-double          *weights,           /* => weights or NULL */
-double          *inValues,          /* => u parameters or NULL */
-int             numPoles,           /* => number of poles */
-int             numKnots,           /* => number of interior knots */
-int             numPoints           /* => number of points */
-)
-    {
-    int             i, itmpM, itmpP, status=SUCCESS;
-    double          mu, len1, len2;
-    DPoint3d        tan1, tan2;
-    BsplineParam    params;
-
-    ScopedArray <double>uArray (numPoints);
-    ScopedArray<double> betaArray (numPoints);
-    double * u = uArray.GetData ();
-    double * beta = betaArray.GetData ();
-    
-    /* If inValues is NULL, use accumulative chord length */
-    if (inValues)
-        memcpy (u, inValues, numPoints * sizeof (double));
-    else
-        {
-        u[0] = 0.0;
-        for (i=1; i<numPoints; i++)
-            u[i] = u[i-1] + bsiDPoint3d_distance (points+i-1, points+i);
-        double scale = 1.0 /u[numPoints-1];
-        for (i=0; i<numPoints; i++)
-            u[i] *= scale;
-        for (i=0; i< numPoints-1; i++)
-            beta[i] = u[i+1] - u[i];
-        }
-
-    /* assign pole values */
-    for (i = 0; i < numPoints; i++)
-        {
-        itmpP = 3*i;
-        outPts[itmpP] = points[i];
-        if (outWts)
-            outWts[itmpP] = weights[i];
-        }
-
-    double oneThird = 1.0 / 3.0;
-    for (i=1; i<numPoints-1; i++)
-        {
-        itmpP = 3*i+1;
-        itmpM = 3*i-1;
-        mu = beta[i-1] / (beta[i-1] + beta[i]);
-        DVec3d dX = DVec3d::FromStartEnd (points[i-1], points[i+1]);
-        outPts[itmpM].SumOf (points[i], dX, - oneThird * mu);
-        outPts[itmpP].SumOf (points[i], dX,   oneThird * (1.0 - mu));
-
-        if (outWts)
-            {
-            double dw = weights[i+1] - weights[i-1];
-            outWts[itmpM] = weights[i] - mu * dw * oneThird;
-            outWts[itmpP] = weights[i] + (1.0-mu) * dw * oneThird;
-            if (outWts[itmpM] < 0.0)
-                outWts[itmpM] = NEAR_ZERO;
-            if (outWts[itmpP] < 0.0)
-                outWts[itmpP] = NEAR_ZERO;
-            }
-        }
-
-    /* Compute the second and the second to the last poles */
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&tan1, outPts+2, points+1);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&tan2, points, points+1);
-    len2 = bsiDPoint3d_magnitude(&tan2);
-    len1 = bsiDPoint3d_dotProduct (&tan1, &tan2)/len2;
-    len1 = len2 - 2.0*len1;
-    if (len1 < 0.0)
-        outPts[1] = outPts[2];
-    else
-        bsiDPoint3d_addScaledDPoint3d (outPts+1, outPts+2, &tan2, len1/len2);
-
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&tan1, outPts+numPoles-3, points+numPoints-2);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&tan2, points+numPoints-1, points+numPoints-2);
-    len2 = bsiDPoint3d_magnitude(&tan2);
-    len1 = bsiDPoint3d_dotProduct (&tan1, &tan2)/len2;
-    len1 = len2 - 2.0*len1;
-    if (len1 < 0.0)
-        outPts[numPoles-2] = outPts[numPoles-3];
-    else
-        bsiDPoint3d_addScaledDPoint3d (outPts+numPoles-2, outPts+numPoles-3,
-                     &tan2, len1/len2);
-
-    /* Compute the second and the second to the last poles */
-    if (outWts)
-        {
-        outWts[1] = outWts[2] + (weights[0] - weights[1]) / 3.0;
-        outWts[numPoles-2] = outWts[numPoles-3] + (weights[numPoints-1] -
-                                            weights[numPoints-2]) / 3.0;
-        if (outWts[1] < 0.0)
-            outWts[1] = NEAR_ZERO;
-        if (outWts[numPoles-2] < 0.0)
-            outWts[numPoles-2] = NEAR_ZERO;
-        }
-
-    /* Compute knots vector */
-    if (knots)
-        {
-        if (numKnots)
-            {
-            for (i=0; i<4; i++)
-                {
-                knots[i] = 0.0;
-                knots[numPoles+i] = 1.0;
-                }
-            for (i=1; i<numPoints-1; i++)
-                {
-                knots[3*i+1] = knots[3*i+2] = knots[3*i+3] = u[i];
-                }
-            }
-        else
-            {
-            params.order = 4;
-            params.closed = false;
-            params.numPoles = numPoles;
-            params.numKnots = numKnots;
-            bspknot_computeKnotVector (knots, &params, NULL);
-            }
-        }
-
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Lu.Han          04/92
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspcurv_catmullRomCurve
-(
-MSBsplineCurve  *curve,             /* <= open cubic spline curve */
-DPoint3d        *inPts,             /* => points to be interpolated */
-double          *inValues,          /* => u parameters or NULL */
-int             inNum               /* => number of points */
-)
-    {
-    int         numPoints, order, status;
-    DPoint3d    *points, *pP, *pEnd;
-
-    if (!inPts || inNum < 2)
-        return ERROR;
-
-    ScopedArray<DPoint3d> pointsArray (inNum);
-    points = pointsArray.GetData ();
-
-    /* Removing repeated points */
-    points[0]=inPts[0];
-    for (numPoints=1, pP=inPts+1, pEnd=inPts+inNum; pP < pEnd; pP++)
-        if (!bsputil_isSamePoint (points+numPoints-1, pP))
-            {
-            points[numPoints++] = *pP;
-            }
-
-    if (numPoints < 2)
-        return ERROR;
-
-    if (numPoints == 2)
-        {
-        status = curve->InitFromPoints (points, 2);
-//        status = bspprof_fitPoints (curve, points, 2);
-        return status;
-        }
-
-    /* Assign curve params and allocate curve */
-    order = curve->params.order = 4;
-    curve->params.closed = curve->rational = false;
-    curve->params.numPoles = 3 * numPoints - 2;
-    curve->params.numKnots = curve->params.numPoles - order;
-
-    if (SUCCESS != (status = bspcurv_allocateCurve (curve)))
-        return status;
-
-    if (SUCCESS != (status = bspcurv_catmullRomPoles(curve->poles, NULL, curve->knots,
-                                                     points, NULL, inValues,
-                                                     curve->params.numPoles,
-                                                     curve->params.numKnots, numPoints)))
-        {
-        bspcurv_freeCurve (curve);
-        goto wrapup;
-        }
-
-    curve->display.curveDisplay = true;
-
-wrapup:
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Note: See Farin's book (3rd edition, section 9.6) for ref.
 * @bsimethod                                                    Lu.Han          03/93
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1552,13 +1355,12 @@ wrapup:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lu.Han          05/95
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspcurv_makeCompatibleByArcLength
+bool MSBsplineCurve::CloneArcLengthCompatibleCurves
 (
-MSBsplineCurve  **outputCurves,
-MSBsplineCurve  **inputCurves,
-int             numCurves,
-int             enableReverse,         /* => allows reversing output */
-int             openAll                /* => forces opening */
+bvector<MSBsplineCurvePtr> &outputCurves,/* <= array of output curves */
+bvector<MSBsplineCurvePtr> const &inputCurves,           /* => array of input curves */
+bool enableReverse,         /* => allows reversing output */
+bool openAll                /* => forces opening */
 )
     {
     int             i, j, k, highestOrder, highestDegree, bezier, numSegments,
@@ -1570,9 +1372,14 @@ int             openAll                /* => forces opening */
                     **distinctKnots = NULL, *knots = NULL,
                     *length = NULL;
     MSBsplineCurve  *cvP;
+    size_t numCurves = inputCurves.size ();
+    outputCurves.clear ();
+    if (numCurves == 1) 
+        outputCurves.push_back (inputCurves[0]->CreateCopy ());
+    if (numCurves < 2)
+        return true;
 
-    if (numCurves < 2)  return SUCCESS;
-    if (numCurves > MAX_POLES)      return (ERROR);
+    if (numCurves > MAX_POLES)      return false;
     
     numDistinct      = (int*)BSIBaseGeom::Malloc (numCurves * sizeof(int));
     knotMultiplicity = (int**)BSIBaseGeom::Malloc (numCurves * sizeof(int*));
@@ -1597,7 +1404,7 @@ int             openAll                /* => forces opening */
 
     for (i=1; i < numCurves; i++)
         {
-        cvP = inputCurves[i];
+        cvP = inputCurves[i].get ();
         highestOrder = cvP->params.order > highestOrder ? cvP->params.order : highestOrder;
         allClosed = allClosed && cvP->params.closed;
         rational  = rational || cvP->rational;
@@ -1607,11 +1414,11 @@ int             openAll                /* => forces opening */
 
     for (i=0; i < numCurves; i++)
         {
-        cvP = outputCurves[i];
-
+        outputCurves.push_back (MSBsplineCurve::CreatePtr ());
+        cvP = outputCurves.back ().get ();
         /* prepare curves into chain of beziers */
         if (SUCCESS != (status = bspproc_prepareCurve (cvP, &numSegments, &starts,
-            inputCurves[i])))
+            inputCurves[i].get ())))
             goto wrapup;
         // We make no further use of the starts array ...
         if (starts != nullptr)
@@ -1664,7 +1471,7 @@ int             openAll                /* => forces opening */
     memset (maxMult, 0, allocSize);
     for (i=0; i < numCurves; i++)
         {
-        cvP = outputCurves[i];
+        cvP = outputCurves[i].get ();
         allocSize = cvP->params.numPoles + cvP->params.order;
         if (NULL ==
             (distinctKnots[i]    = (double*)msbspline_malloc (allocSize * sizeof(double), HEAPSIG_BCRV)) ||
@@ -1720,7 +1527,7 @@ int             openAll                /* => forces opening */
             /* make all interior knots of maximum multiplicity */
             for (i=0; i < numCurves; i++)
                 {
-                cvP = outputCurves[i];
+                cvP = outputCurves[i].get ();
                 for (j=1; j < numDistinct[i]-1; j++)
                     {
                     bspknot_addKnot (cvP, distinctKnots[i][j], knotTolerance, maxMult[j],
@@ -1739,7 +1546,7 @@ int             openAll                /* => forces opening */
 
             for (j=0; j < numCurves; j++)
                 {
-                cvP = outputCurves[j];
+                cvP = outputCurves[j].get ();
                 newMult = (sameKnots && sameMult) ? knotMultiplicity[j][i] : maxMult[i];
                 for (k=0; k < newMult; k++)
                     cvP->knots[index + k] = avgKnot;
@@ -1755,15 +1562,14 @@ int             openAll                /* => forces opening */
         newMult = index - 1;
         for (i = 0; i < numCurves; i++)
             {
-            cvP = outputCurves[i];
-            length[i] = cvP->Length ();
+            length[i] = outputCurves[i]->Length ();
             }
         do
             {
             sum = 0;
             for (i = 0; i < numCurves; i++)
                 {
-                cvP = outputCurves[i];
+                cvP = outputCurves[i].get ();
                 if (cvP->params.numPoles == index)
                     sum += 1;
                 knots[i] = cvP->LengthBetweenKnots (cvP->knots[0], cvP->knots[index]);
@@ -1774,7 +1580,7 @@ int             openAll                /* => forces opening */
             else
                 {
                 /* sort the knots from smallest to largest */
-                util_tagSort (tags, knots, numCurves);
+                util_tagSort (tags, knots, (int)numCurves);
 
                 /* add the knot to the curves to full multiplicity  */
                 for (i = 0; i < numCurves; i++)
@@ -1782,7 +1588,7 @@ int             openAll                /* => forces opening */
                     if (i != tags[0])
                         {
                         double actualDistance;
-                        cvP = outputCurves[i];
+                        cvP = outputCurves[i].get ();
                         cvP->FractionAtSignedDistance (0.0, knots[tags[0]] * length[i],
                                         avgKnot, actualDistance);
                         bspknot_addKnot (cvP, avgKnot, knotTolerance, newMult, false);
@@ -1798,7 +1604,7 @@ int             openAll                /* => forces opening */
     if (allClosed && !openAll)
         for (i=0; i< numCurves; i++)
             {
-            cvP = outputCurves[i];
+            cvP = outputCurves[i].get ();
             if (SUCCESS != (status = bspcurv_closeCurve (cvP, cvP)))
                 goto wrapup;
             }
@@ -1819,47 +1625,8 @@ wrapup:
     BSIBaseGeom::Free (knots);
 
     if (status)
-        {
-        for (i=0; i < numCurves; i++)
-            {
-            cvP = outputCurves[i];
-            if (cvP)    bspcurv_freeCurve (cvP);
-            }
-        }
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Lu.Han          05/95
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspcurv_make2CompatibleByArcLength
-(
-MSBsplineCurve  *curve1,
-MSBsplineCurve  *curve2
-)
-    {
-    int             status;
-    MSBsplineCurve  compat[2], *compatPtr[2], *curvePtr[2];
-
-    memset (compat, 0, sizeof(compat));
-
-    curvePtr[0] = curve1;
-    curvePtr[1] = curve2;
-    compatPtr[0] = &compat[0];
-    compatPtr[1] = &compat[1];
-
-    if (SUCCESS !=
-        (status = bspcurv_makeCompatibleByArcLength (compatPtr, curvePtr, 2,
-        false, false)))
-        return status;
-
-    bspcurv_freeCurve (curve1);
-    bspcurv_freeCurve (curve2);
-
-    *curve1 = compat[0];
-    *curve2 = compat[1];
-
-    return SUCCESS;
+        outputCurves.clear ();
+    return status == SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1925,10 +1692,10 @@ int     dimension
 +---------------+---------------+---------------+---------------+---------------+------*/
 static StatusInt computeEqualChordByNumber
 (
-DPoint3d        *pointsP,   /* <= chord points with length of numSeg+1 */
-double          *paramsP,   /* <= parameters for equal chord length */
+bvector<DPoint3d> &outpoints,  //!< [out] stroke points
+bvector<double> &outparams,    //!< [out] fraction parameters for the strokes
 MSBsplineCurve  *curveP,    /* => input B-spline curve */
-int             numSeg,     /* => number of chords: number of pointsP - 1 */
+size_t          numSeg,     /* => number of chords: number of pointsP - 1 */
 int             initMethod      /* => 0 for equal parameter step, 1 for equal arc length */
 )
     {
@@ -1936,19 +1703,23 @@ int             initMethod      /* => 0 for equal parameter step, 1 for equal ar
     int         status = ERROR, i, j, allocSize, numParams;
     double      paramTol, step, deltaPlus = 0, deltaMinus;
     DPoint3d    ends[2], tmp;
-
+    outparams.clear ();
+    outpoints.clear ();
     if (numSeg <= 0)
         return ERROR;
 
-    if (numSeg == 1)
+    if (numSeg <= 1)
         {
-        paramsP[0] = 0.0; paramsP[1] = 1.0;
-        if (pointsP)
-            bspcurv_extractEndPoints (pointsP, pointsP+1, curveP);
+        outparams.push_back(0.0);
+        outparams.push_back(1.0);
+        DPoint3d xyz0, xyz1;
+        bspcurv_extractEndPoints (&xyz0, &xyz1, curveP);
+        outpoints.push_back (xyz0);
+        outpoints.push_back (xyz1);
         return (SUCCESS);
         }
 
-    allocSize = ((numParams = numSeg - 1)) * sizeof(double);
+    allocSize = ((numParams = (int)numSeg - 1)) * sizeof(double);
     ScopedArray <double>upDiagArray (numParams);    double   *upDiag     = upDiagArray.GetData ();
     ScopedArray <double>lowDiagArray (numParams);   double   *lowDiag    = lowDiagArray.GetData ();
     ScopedArray <double>midDiagArray (numParams);   double   *midDiag    = midDiagArray.GetData ();
@@ -2038,13 +1809,14 @@ int             initMethod      /* => 0 for equal parameter step, 1 for equal ar
 
         if (converge || i == MAX_CHORD_ITER - 1)
             {
-            paramsP[0] = 0.0; paramsP[numSeg] = 1.0;
-            memcpy (paramsP+1, oldParams, numParams * sizeof(double));
-            if (pointsP)
-                {
-                pointsP[0] = ends[0]; pointsP[numSeg] = ends[1];
-                memcpy (pointsP+1, points, numParams * sizeof(DPoint3d));
-                }
+            outparams.push_back (0.0);
+            for (int i = 0; i < numParams; i++)
+                outparams.push_back (oldParams[i]);
+            outparams.push_back (1.0);
+            outpoints.push_back (ends[0]);
+            for (int i = 0; i < numParams; i++)
+                outpoints.push_back (points[i]);
+            outpoints.push_back (ends[1]);
             status = converge ? SUCCESS : ERROR;
             goto wrapup;
             }
@@ -2074,23 +1846,43 @@ wrapup:
     return status;
     }
 
-Public GEOMDLLIMPEXP int      bspcurv_computeEqualChordByNumber
+bool MSBsplineCurve::StrokeFixedNumberWithEqualChordLength
 (
-DPoint3d        *pointsP,   /* <= chord points with length of numSeg+1 */
-double          *paramsP,   /* <= parameters for equal chord length */
-MSBsplineCurve  *curveP,    /* => input B-spline curve */
-int             numSeg,     /* => number of chords: number of pointsP - 1 */
-double          convergeTol /* => tolerance checking if chords are same length */
+bvector<DPoint3d> &points,  //!< [out] stroke points
+bvector<double> &params,    //!< [out] fraction parameters for the strokes
+size_t          numSeg
 )
     {
-    if (SUCCESS == computeEqualChordByNumber (pointsP, paramsP, curveP, numSeg, 0))
-        return SUCCESS;
-    if (SUCCESS == computeEqualChordByNumber (pointsP, paramsP, curveP, numSeg, 1))
-        return SUCCESS;
-    return ERROR;
+    if (SUCCESS == computeEqualChordByNumber (points, params, this, numSeg, 0))
+        return true;
+    if (SUCCESS == computeEqualChordByNumber (points, params, this, numSeg, 1))
+        return true;
+    return false;
     }
 
-
+//! Compute points along the bspline, spaced to have equal fraction spacing.
+//! The first point will be the start point of the curve.
+//! The last point is the end of the curve.
+void MSBsplineCurve::StrokeFixedNumberWithEqualFractionLength
+(
+bvector<DPoint3d> &points,  //!< [out] stroke points
+bvector<double> &params,    //!< [out] fraction parameters for the strokes
+size_t          numSeg      //!< [in] segment count
+)
+    {
+    points.clear ();
+    params.clear ();
+    if (numSeg == 0)
+        numSeg = 1;
+    for (size_t i = 0; i <= numSeg; i++)
+        {
+        double f = (double)i / (double)numSeg;
+        DPoint3d xyz;
+        FractionToPoint (xyz, f);
+        points.push_back (xyz);
+        params.push_back (f);
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lu.Han          09/97
@@ -2324,6 +2116,25 @@ double s1               /* => end of interval */
     return ERROR;
     }
 
+
+//! Compute points along the bspline, spaced to have equal chord error (true perpendicular from chord to curve)
+//! Stroke length adapts to the count and shape.
+//! The first point will be the start point of the curve.
+//! The last point is the end of the curve.
+bool MSBsplineCurve::StrokeFixedNumberWithEqualChordError
+(
+bvector<DPoint3d> &points,  //!< [out] stroke points
+bvector<double> &params,    //!< [out] fraction parameters for the strokes
+size_t          numSeg      //!< [in] segment count
+)
+    {
+    points.clear ();
+    points.resize (numSeg);
+    params.resize (numSeg);
+    double minDist, maxDist;
+    auto status = mdlBspline_computeEqualDeviationChordByNumber (&points[0], &params[0], &minDist, &maxDist, this, (int)numSeg);
+    return status == SUCCESS;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz     07/01
 +---------------+---------------+---------------+---------------+---------------+------*/

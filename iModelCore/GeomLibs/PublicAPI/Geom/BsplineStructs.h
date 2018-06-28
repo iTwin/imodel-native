@@ -49,12 +49,6 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /* Tolerances */
 #define KNOT_TOLERANCE_BASIS    1E-10
 
-/* Fit modes */
-#define FIT_POLES           0
-#define FIT_POINTS          1
-#define FIT_LEASTSQUARES    2
-#define FIT_CATMULLROM      3
-
 /* Offset cusp treatments */
 #define OFFSET_JUMP_CUSP        0
 #define OFFSET_CHAMFER_CUSP     1

@@ -538,6 +538,7 @@ int firstValue,
 int terminator
 )
     {
+    SetActive (true);
     if (clearFirst)
         clear ();
     int value = firstValue;

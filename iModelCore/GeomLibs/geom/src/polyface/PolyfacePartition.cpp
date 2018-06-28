@@ -906,6 +906,7 @@ static void ReindexAndAssembleOneBasedIndexedData (PolyfaceQueryCR source, Polyf
         if (dest.IntColor ().Active ())
             ReindexAndCopyOneBasedIndexedData (sourceP->GetIntColorCP (), sourceP->GetColorCount (), dest.IntColor (), dest.ColorIndex (), oldToNew);
         }
+    dest.Compress ();
     }
 
 /*--------------------------------------------------------------------------------**//**

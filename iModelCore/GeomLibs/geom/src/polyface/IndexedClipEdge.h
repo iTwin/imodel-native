@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/IndexedClipEdge.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <map>
@@ -26,8 +26,6 @@ void SetNeighbors (size_t succ, size_t pred);
 struct ClipEdgeDataArray : bvector <ClipEdgeData>
 {
 static bool compare_PlaneIdVertexAVertexB (ClipEdgeData const& edge0, ClipEdgeData const& edge1);
-// Print to the default GeomPrintFuncs.
-void Print (char const *title, GeomPrintFuncsP funcs = NULL) const;
 // Find endIndex so {i :: beginIndex <= i < endIndex} have same plane id as beginIndex.
 size_t FindEndOfPlaneCluster (size_t beginIndex);
 
