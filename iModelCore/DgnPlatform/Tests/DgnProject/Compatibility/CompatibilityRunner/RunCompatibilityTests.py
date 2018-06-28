@@ -16,7 +16,7 @@ from shutil import rmtree
 def main():
     if len(sys.argv) < 2:
         print "Must give the test root"
-        return 1
+        return sys.exit(1)
         
     hasError = False
     testRoot = sys.argv[1]
@@ -32,7 +32,7 @@ def main():
                 hasError = True
 
     if hasError:
-        return 1
+        return sys.exit(1)
         
 if __name__ == "__main__":
     main()

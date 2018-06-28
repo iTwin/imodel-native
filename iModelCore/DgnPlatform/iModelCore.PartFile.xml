@@ -22,6 +22,12 @@
         <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
         <SubPart PartName="ECObjectsNative" PartFile="ECObjects" Repository="ecobjects"/>
         <SubPart PartName="iModelCoreSqlang" PartFile="iModelCoreL10N" Repository="DgnPlatform"/>
+        
+        <SubPart PartName="__iModelCore-AndroidOnly"/>
+    </Part>
+
+    <Part Name="__iModelCore-AndroidOnly" OnlyPlatforms="android*">
+        <SubPart PartName="BeHttpMavenArchive" PartFile="BeHttp" Repository="BeHttp"/>
     </Part>
 
     <Part Name="RunUnitTests" DeferType="RunUnitTests">
