@@ -79,9 +79,9 @@ void GeometryClipper::ProcessLine(Strokes::PointLists& pointListsOut, const Stro
 
     ProcessSegments(clipSegsFinal, clipSegsTemp1, clipSegsTemp0);
 
-    clipSegsTemp0.clear();
     while (!clipSegsTemp1.empty())
         {
+        clipSegsTemp0.clear();
         ProcessSegments(clipSegsFinal, clipSegsTemp0, clipSegsTemp1);
         clipSegsTemp1 = std::move(clipSegsTemp0);
         }
