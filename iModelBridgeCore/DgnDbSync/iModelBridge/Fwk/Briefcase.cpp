@@ -203,7 +203,8 @@ void iModelBridgeFwk::IModelBankArgs::PrintUsage()
 SERVER:\n\
     --imodel-bank-url=              The URL of the iModelBank server to use.\n\
     --imodel-bank-imodel-id=        The GUID of the iModel that is served by the bank at the specified URL.\n\
-    --imodel-bank=       (optional)  The number of times to retry a pull, merge, and/or push to iModelBank. Must be a value between 0 and 255.\n\
+    --imodel-bank-access-token=     (optional) The JSON-encoded user access token, if needed by the project mgmt system.\n\
+    --imodel-bank-retries=          (optional) The number of times to retry a pull, merge, and/or push to iModelBank. Must be a value between 0 and 255.\n\
     --imodel-bank-dms-credentials-isEncrypted (optional) The DMS user name and password passed in is encrypted.\n\
     \n");
     }
@@ -244,6 +245,12 @@ BentleyStatus iModelBridgeFwk::IModelBankArgs::ParseCommandLine(bvector<WCharCP>
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-access-token="))
+            {
+            m_accessToken = getArgValue(argv[iArg]);
+            continue;
+            }
+        
         if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-imodel-id="))
             {
             m_iModelId = getArgValue(argv[iArg]);

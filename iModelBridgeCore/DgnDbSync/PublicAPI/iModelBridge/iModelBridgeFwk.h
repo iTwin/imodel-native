@@ -160,6 +160,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         uint8_t m_maxRetryCount = 3; //!< The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
         Utf8String m_url;            //!< Where the iModelBank server is 
         Utf8String m_iModelId;       //!< The GUID of the iModel that the bank serves. This is used to name to local briefcase and as a means of checking that the URL is correct.
+        Utf8String m_accessToken;    //!< The token that identifies the user and the user's rights in this environment. (Is passed in http headers as the authorization property.)
         bvector<WString> m_bargs;
 
         BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);

@@ -83,8 +83,8 @@ IModelBankClient::IModelBankClient(iModelBridgeFwk::IModelBankArgs const& args, 
     IModelClientBase(info, args.m_maxRetryCount, WebServices::UrlProvider::Environment::Release, INT64_MAX),
     m_iModelId(args.m_iModelId)
     {
-    ClientHelper::GetInstance()->SetUrl(m_iModelBankUrl);
-	m_client = ClientHelper::GetInstance()->SignInWithStaticHeader("");     // TODO: Should pass in the AuthenticationToken as the authorizationHeader argument value
+    ClientHelper::GetInstance()->SetUrl(args.m_url);
+	m_client = ClientHelper::GetInstance()->SignInWithStaticHeader(args.m_accessToken);
     ClientHelper::GetInstance()->SetUrl("");
 	}
 
@@ -99,7 +99,7 @@ IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, Web
     m_client = ClientHelper::GetInstance()->SignInWithCredentials(&serror, args.m_credentials);
     if (m_client == nullptr)
         {
-        GetLogger().fatalv("briefcase sign in failed: %s - %s", serror.GetMessage().c_str(), serror.GetDescription().c_str());
+        GetLogger().fatalv("Connect sign-in failed: %s - %s", serror.GetMessage().c_str(), serror.GetDescription().c_str());
         BeAssert(!IsConnected());
         return;
         }
