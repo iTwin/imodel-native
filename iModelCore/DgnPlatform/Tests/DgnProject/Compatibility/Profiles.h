@@ -34,15 +34,24 @@ struct TestFile final
     private:
         Utf8String m_name;
         BeFileName m_path;
+        BeFileName m_seedPath;
         BeSQLite::ProfileVersion m_bedbVersion = BeSQLite::ProfileVersion(0, 0, 0, 0);
         BeSQLite::ProfileVersion m_ecdbVersion = BeSQLite::ProfileVersion(0, 0, 0, 0);
         BeSQLite::ProfileVersion m_dgndbVersion = BeSQLite::ProfileVersion(0, 0, 0, 0);
 
     public:
-        TestFile(Utf8StringCR name, BeFileName const& path, BeSQLite::ProfileVersion const& bedbVersion, BeSQLite::ProfileVersion const& ecdbVersion, BeSQLite::ProfileVersion const& dgndbVersion);
+        TestFile(Utf8StringCR name, BeFileNameCR path, BeFileNameCR seedPath, BeSQLite::ProfileVersion const& bedbVersion, BeSQLite::ProfileVersion const& ecdbVersion, BeSQLite::ProfileVersion const& dgndbVersion);
+
+        TestFile(TestFile const&) = delete;
+        TestFile& operator=(TestFile const&) = delete;
+        TestFile(TestFile&&) = default;
+        TestFile& operator=(TestFile&&) = default;
+
+        BeFileNameStatus CloneFromSeed() const;
 
         Utf8StringCR GetName() const { return m_name; }
         BeFileNameCR GetPath() const { return m_path; }
+        BeFileNameCR GetSeedPath() const { return m_seedPath; }
         BeSQLite::ProfileVersion const& GetBeDbVersion() const { return m_bedbVersion; }
         BeSQLite::ProfileVersion const& GetECDbVersion() const { return m_ecdbVersion; }
         BeSQLite::ProfileVersion const& GetDgnDbVersion() const { return m_dgndbVersion; }
@@ -64,6 +73,7 @@ struct Profile : NonCopyableClass
 
     private:
         Utf8CP m_name = nullptr;
+        BeFileName m_profileOutFolder;
         BeFileName m_profileSeedFolder;
 
         virtual BentleyStatus _Init() const = 0;
@@ -81,6 +91,7 @@ struct Profile : NonCopyableClass
         BeSQLite::ProfileVersion const& GetExpectedVersion() const { return m_expectedVersion; }
 
         std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles = true) const;
+        BeFileNameCR GetOutFolder() const { return m_profileOutFolder; }
         BeFileNameCR GetSeedFolder() const { return m_profileSeedFolder; }
         BeFileName GetPathForNewTestFile(Utf8CP testFileName) const;
     };

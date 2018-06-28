@@ -24,8 +24,11 @@ USING_NAMESPACE_BENTLEY_DGN
 //+---------------+---------------+---------------+---------------+---------------+------
 Profile::Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name) : m_type(type), m_versionPropertySpec("SchemaVersion", nameSpace), m_name(name)
     {
+    BeTest::GetHost().GetOutputRoot(m_profileOutFolder);
+    m_profileOutFolder.AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
+
     BeTest::GetHost().GetOutputRoot(m_profileSeedFolder);
-    m_profileSeedFolder.PopDir().AppendSeparator().AppendToPath(L"SeedData").AppendSeparator().AppendUtf8(m_name);
+    m_profileSeedFolder.PopDir().AppendSeparator().AppendToPath(L"SeedData").AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
     }
 
 
@@ -34,6 +37,16 @@ Profile::Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name) : m_type(type)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus Profile::Init() const
     {
+    if (!m_profileOutFolder.DoesPathExist())
+        {
+        BeFileNameStatus status = BeFileName::CreateNewDirectory(m_profileOutFolder.GetName());
+        if (status != BeFileNameStatus::Success)
+            {
+            BeAssert(status == BeFileNameStatus::Success);
+            return ERROR;
+            }
+        }
+
     if (!m_profileSeedFolder.DoesPathExist())
         {
         BeFileNameStatus status = BeFileName::CreateNewDirectory(m_profileSeedFolder.GetName());
@@ -52,14 +65,12 @@ BentleyStatus Profile::Init() const
 //+---------------+---------------+---------------+---------------+---------------+------
 std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles) const
     {
-    BeFileName profileSeedFolder(GetSeedFolder());
-    bvector<BeFileName> matches;
-    BeDirectoryIterator::WalkDirsAndMatch(matches, profileSeedFolder, WString(testFileName, BentleyCharEncoding::Utf8).c_str(), true);
+    bvector<BeFileName> seedFileMatches;
+    BeDirectoryIterator::WalkDirsAndMatch(seedFileMatches, GetSeedFolder(), WString(testFileName, BentleyCharEncoding::Utf8).c_str(), true);
     std::vector<TestFile> testFiles;
-    for (BeFileNameCR match : matches)
+    for (BeFileNameCR seedFilePath : seedFileMatches)
         {
-        Utf8String testFileName(match.GetFileNameAndExtension().c_str());
-        BeFileName profileVersionFolderName = match.GetDirectoryName();
+        BeFileName profileVersionFolderName = seedFilePath.GetDirectoryName();
         //just get folder name without path
         if (profileVersionFolderName.EndsWith(L"/") || profileVersionFolderName.EndsWith(L"\\"))
             profileVersionFolderName.erase(profileVersionFolderName.size() - 1, 1);
@@ -81,7 +92,9 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName, boo
         else if (profileVersions.size() == 2)
             ecdbVersion.FromString(profileVersions[0].c_str());
 
-        testFiles.push_back(TestFile(testFileName, match, bedbVersion, ecdbVersion, dgndbVersion));
+        BeFileName testFilePath(GetOutFolder());
+        testFilePath.AppendToPath(profileVersionFolderName).AppendToPath(seedFilePath.GetFileNameAndExtension().c_str());
+        testFiles.push_back(TestFile(testFileName, testFilePath, seedFilePath, bedbVersion, ecdbVersion, dgndbVersion));
         }
 
     if (logFoundFiles && LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
@@ -241,7 +254,23 @@ BentleyStatus DgnDbProfile::_Init() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   05/18
 //+---------------+---------------+---------------+---------------+---------------+------
-TestFile::TestFile(Utf8StringCR name, BeFileName const& path, ProfileVersion const& bedbVersion, ProfileVersion const& ecdbVersion, ProfileVersion const& dgndbVersion) : m_name(name), m_path(path), m_bedbVersion(bedbVersion), m_ecdbVersion(ecdbVersion), m_dgndbVersion(dgndbVersion) {}
+TestFile::TestFile(Utf8StringCR name, BeFileName const& path, BeFileName const& seedFilePath, ProfileVersion const& bedbVersion, ProfileVersion const& ecdbVersion, ProfileVersion const& dgndbVersion) : m_name(name), m_path(path), m_seedPath(seedFilePath), m_bedbVersion(bedbVersion), m_ecdbVersion(ecdbVersion), m_dgndbVersion(dgndbVersion) {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BeFileNameStatus TestFile::CloneFromSeed() const
+    {
+    BeFileName targetFolder = m_path.GetDirectoryName();
+    if (!targetFolder.DoesPathExist())
+        {
+        BeFileNameStatus stat = BeFileName::CreateNewDirectory(targetFolder);
+        if (BeFileNameStatus::Success != stat)
+            return stat;
+        }
+
+    return BeFileName::BeCopyFile(m_seedPath, m_path);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   06/18
@@ -269,7 +298,6 @@ ProfileState::Age TestFile::GetAge() const
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String TestFile::ToString() const
     {
-
     Utf8String versionString;
     if (!m_dgndbVersion.IsEmpty())
         versionString.Sprintf(PROFILE_NAME_DGNDB " %s | " PROFILE_NAME_ECDB " %s | " PROFILE_NAME_BEDB " %s", m_dgndbVersion.ToString().c_str(), m_ecdbVersion.ToString().c_str(), m_bedbVersion.ToString().c_str());
@@ -278,5 +306,5 @@ Utf8String TestFile::ToString() const
     else
         versionString.Sprintf(PROFILE_NAME_BEDB " %s", m_bedbVersion.ToString().c_str());
 
-    return Utf8PrintfString("%s | %s | %s", m_name.c_str(), versionString.c_str(), m_path.GetNameUtf8().c_str());
+    return Utf8PrintfString("%s | %s | %s | Seed: %s ", m_name.c_str(), versionString.c_str(), m_path.GetNameUtf8().c_str(), m_seedPath.GetNameUtf8().c_str());
     }

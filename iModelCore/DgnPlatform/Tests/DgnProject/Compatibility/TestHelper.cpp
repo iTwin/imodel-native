@@ -556,6 +556,37 @@ void TestDb::AssertLoadSchemas() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
+DbResult TestDb::Open()
+    {
+    if (BeFileNameStatus::Success != m_testFile.CloneFromSeed())
+        return BE_SQLITE_ERROR;
+
+    return _Open();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TestDb::State TestDb::GetState() const
+    {
+    switch (GetTestFile().GetAge())
+        {
+            case ProfileState::Age::Older:
+                return GetOpenParams().GetProfileUpgradeOptions() == Db::ProfileUpgradeOptions::Upgrade ? State::Upgraded : State::Older;
+            case ProfileState::Age::UpToDate:
+                return State::UpToDate;
+            case ProfileState::Age::Newer:
+                return State::Newer;
+
+            default:
+                BeAssert(false && "Unhandled enum value");
+                return TestDb::State::UpToDate;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
 Utf8String TestDb::GetDescription() const
     {
     Utf8CP openModeStr = nullptr;
@@ -569,40 +600,50 @@ Utf8String TestDb::GetDescription() const
             openModeStr = "read-write without upgrade";
         }
 
-    return Utf8PrintfString("Opened %s | %s", openModeStr, m_testFile.ToString().c_str());
+    return Utf8PrintfString("Opened %s | %s", openModeStr, GetTestFile().ToString().c_str());
     }
 
 //***************************** TestECDb ********************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+TestECDb::Iterable TestECDb::GetPermutationsFor(TestFile const& testFile)
+    {
+    std::vector<ECDb::OpenParams> testParams {ECDb::OpenParams(ECDb::OpenMode::Readonly), ECDb::OpenParams(ECDb::OpenMode::ReadWrite)};
+    if (testFile.GetAge() == ProfileState::Age::Older)
+        testParams.push_back(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade));
+
+    return Iterable(testFile, testParams);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 void TestECDb::AssertProfileVersion() const
     {
     ASSERT_TRUE(m_ecdb.IsDbOpen()) << "AssertProfileVersion must be called on open file";
-    switch (m_testFile.GetAge())
+    switch (GetState())
         {
-            case ProfileState::Age::UpToDate:
+            case State::UpToDate:
                 EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsUpToDate()) << GetDescription();
                 EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
                 break;
-            case ProfileState::Age::Newer:
+            case State::Newer:
                 EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsNewer()) << GetDescription();
                 EXPECT_LT(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
                 break;
-            case ProfileState::Age::Older:
-                if (m_openParams.GetProfileUpgradeOptions() == BeSQLite::Db::ProfileUpgradeOptions::None)
-                    {
-                    EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsOlder()) << GetDescription();
-                    EXPECT_GT(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
-                    }
-                else
-                    {
-                    EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsUpToDate()) << GetDescription();
-                    EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
-                    }
+            case State::Older:
+                EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsOlder()) << GetDescription();
+                EXPECT_GT(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
+                break;
+            case State::Upgraded:
+                EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsUpToDate()) << GetDescription();
+                EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
                 break;
             default:
-                FAIL() << "Unhandled ProfileState::Age enum value";
+                FAIL() << "Unhandled TestECDb::State enum value";
         }
     }
 
@@ -611,32 +652,45 @@ void TestECDb::AssertProfileVersion() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
+//static
+TestIModel::Iterable TestIModel::GetPermutationsFor(TestFile const& testFile)
+    {
+    std::vector<DgnDb::OpenParams> testParams {DgnDb::OpenParams(DgnDb::OpenMode::Readonly), DgnDb::OpenParams(ECDb::OpenMode::ReadWrite)};
+    if (testFile.GetAge() == ProfileState::Age::Older)
+        {
+        DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite);
+        params.SetProfileUpgradeOptions(DgnDb::ProfileUpgradeOptions::Upgrade);
+        testParams.push_back(params);
+        }
+
+    return Iterable(testFile, testParams);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
 void TestIModel::AssertProfileVersion() const
     {
     ASSERT_TRUE(m_dgndb != nullptr && m_dgndb->IsDbOpen()) << "AssertProfileVersion must be called on open file";
-    switch (m_testFile.GetAge())
+    switch (GetState())
         {
-            case ProfileState::Age::UpToDate:
+            case State::UpToDate:
                 EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsUpToDate()) << GetDescription();
                 EXPECT_EQ(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
                 break;
-            case ProfileState::Age::Newer:
+            case State::Newer:
                 EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsNewer()) << GetDescription();
                 EXPECT_LT(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
                 break;
-            case ProfileState::Age::Older:
-                if (m_openParams.GetProfileUpgradeOptions() == BeSQLite::Db::ProfileUpgradeOptions::None)
-                    {
-                    EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsOlder()) << GetDescription();
-                    EXPECT_GT(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
-                    }
-                else
-                    {
-                    EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsUpToDate()) << GetDescription();
-                    EXPECT_EQ(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
-                    }
+            case State::Older:
+                EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsOlder()) << GetDescription();
+                EXPECT_GT(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
+                break;
+            case State::Upgraded:
+                EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsUpToDate()) << GetDescription();
+                EXPECT_EQ(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
                 break;
             default:
-                FAIL() << "Unhandled ProfileState::Age enum value";
+                FAIL() << "Unhandled TestDb::State enum value";
         }
     }
