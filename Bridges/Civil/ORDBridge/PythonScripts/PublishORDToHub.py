@@ -6,10 +6,8 @@
 from Tkinter import *
 import tkFileDialog
 import ttk
-import win32api
 import win32con
 import win32event
-import win32file
 import win32process
 import win32security
 
@@ -197,16 +195,7 @@ class MainWindow:
         security_attributes = win32security.SECURITY_ATTRIBUTES()
         security_attributes.bInheritHandle = True
         startup_info = win32process.STARTUPINFO()
-        startup_info.dwFlags = win32process.STARTF_USESTDHANDLES
-        #stdout_file_handle = win32file.CreateFile(abs_stdout_file, win32file.GENERIC_WRITE,
-        #                                          win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE,
-        #                                          security_attributes, win32file.CREATE_ALWAYS,
-        #                                          win32file.FILE_FLAG_SEQUENTIAL_SCAN, None)
-        #startup_info.hStdOutput = stdout_file_handle
-        startup_info.hStdOutput = win32api.GetStdHandle(win32api.STD_OUTPUT_HANDLE)
-        startup_info.hStdError = win32api.GetStdHandle(win32api.STD_ERROR_HANDLE)
-        startup_info.hStdInput = win32api.GetStdHandle(win32api.STD_INPUT_HANDLE)
-        process_info = win32process.CreateProcess(None, command_string, None, None, True, win32con.CREATE_NO_WINDOW,
+        process_info = win32process.CreateProcess(None, command_string, None, None, True, win32con.CREATE_NEW_CONSOLE,
                                                   None, None, startup_info)
         process_handle = process_info[0]
         return_code = win32event.WaitForSingleObject(process_handle, win32event.INFINITE)
@@ -214,7 +203,6 @@ class MainWindow:
             publisher_error_code = win32process.GetExitCodeProcess(process_handle)
         else:
             publisher_error_code = 0x8000
-        #win32file.CloseHandle(stdout_file_handle)
         return publisher_error_code
 
 
