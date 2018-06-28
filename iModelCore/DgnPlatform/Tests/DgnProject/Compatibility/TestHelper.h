@@ -15,23 +15,42 @@
 //=======================================================================================    
 struct TestDb
     {
+public:
+    enum class State
+        {
+        Older,
+        Upgraded,
+        UpToDate,
+        Newer
+        };
+
 protected:
     TestFile const& m_testFile;
 
 private:
     virtual ECDbR _GetDb() const = 0;
+    virtual DbResult _Open() = 0;
+    virtual void _Close() = 0;
     virtual ECDb::OpenParams const& _GetOpenParams() const = 0;
 
 protected:
     explicit TestDb(TestFile const& testFile) : m_testFile(testFile) {}
 
-public:
+ public:
     virtual ~TestDb() {}
+    TestDb(TestDb const&) = delete;
+    TestDb& operator=(TestDb const&) = delete;
+    TestDb(TestDb&&) = default;
+    TestDb& operator=(TestDb&&) = default;
+
+    State GetState() const;
     TestFile const& GetTestFile() const { return m_testFile; }
     ECDbR GetDb() const { return _GetDb(); }
     ECDb::OpenParams const& GetOpenParams() const { return _GetOpenParams(); }
     Utf8String GetDescription() const;
 
+    DbResult Open();
+    void Close() { _Close(); }
     JsonValue ExecuteECSqlSelect(Utf8CP ecsql) const;
     SchemaVersion GetSchemaVersion(Utf8CP schemaName) const;
     BeVersion GetOriginalECXmlVersion(Utf8CP schemaName) const;
@@ -55,32 +74,53 @@ public:
 //=======================================================================================    
 struct TestECDb final : TestDb
     {
+public:
+    struct Iterable final
+        {
+        public:
+            struct const_iterator final : std::iterator<std::forward_iterator_tag, std::unique_ptr<TestECDb>>
+                {
+                private:
+                    TestFile const& m_testFile;
+                    std::vector<ECDb::OpenParams>::const_iterator m_paramsIt;
+                public:
+                    const_iterator(TestFile const& testFile, std::vector<ECDb::OpenParams>::const_iterator paramsIt) : m_testFile(testFile), m_paramsIt(paramsIt) {}
+                    std::unique_ptr<TestECDb> operator* () const { return std::make_unique<TestECDb>(m_testFile, *m_paramsIt); }
+
+                    const_iterator& operator++ () { m_paramsIt++; return *this; }
+                    bool operator== (const_iterator const& rhs) const { return m_paramsIt == rhs.m_paramsIt; }
+                    bool operator!= (const_iterator const& rhs) const { return !(*this == rhs); }
+                };
+
+        private:
+            TestFile const& m_testFile;
+            std::vector<ECDb::OpenParams> m_params;
+
+        public:
+            Iterable(TestFile const& testFile, std::vector<ECDb::OpenParams> const& params) : m_testFile(testFile), m_params(params) {}
+            const_iterator begin() const { return const_iterator(m_testFile, m_params.begin()); }
+            const_iterator end() const { return const_iterator(m_testFile, m_params.end()); }
+        };
 private:
     ECDb m_ecdb;
     ECDb::OpenParams m_openParams;
 
     ECDbR _GetDb() const override { return const_cast<ECDbR> (m_ecdb); }
-    ECDb::OpenParams const& _GetOpenParams() const override { return m_openParams; }
-public:
-    TestECDb(TestFile const& testFile, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::Readonly)): TestDb(testFile), m_openParams(openParams) {}
-    ~TestECDb() { Close(); }
-    DbResult Open() { return m_ecdb.OpenBeSQLiteDb(m_testFile.GetPath(), m_openParams); }
-    void Close()
+    DbResult _Open() override { return m_ecdb.OpenBeSQLiteDb(m_testFile.GetPath(), m_openParams); }
+    void _Close() override
         {
         if (m_ecdb.IsDbOpen())
             m_ecdb.CloseDb();
         }
 
+    ECDb::OpenParams const& _GetOpenParams() const override { return m_openParams; }
+public:
+    TestECDb(TestFile const& testFile, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::Readonly)): TestDb(testFile), m_openParams(openParams) {}
+    ~TestECDb() { _Close(); }
+
+    static Iterable GetPermutationsFor(TestFile const&);
+
     void AssertProfileVersion() const;
-
-    static std::vector<std::unique_ptr<TestECDb>> CreateFor(TestFile const& testFile)
-        {
-        std::vector<std::unique_ptr<TestECDb>> testECDbs {std::make_unique<TestECDb>(testFile, ECDb::OpenParams(ECDb::OpenMode::Readonly)), std::make_unique<TestECDb>(testFile, ECDb::OpenParams(ECDb::OpenMode::ReadWrite))};
-        if (testFile.GetAge() == ProfileState::Age::Older)
-            testECDbs.pusb_back(std::make_unique<TestECDb>(testFile, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade)));
-
-        return testECDbs;
-        }
     };
 
 //=======================================================================================
@@ -89,28 +129,60 @@ public:
 //=======================================================================================    
 struct TestIModel final : TestDb
     {
+    struct Iterable final
+        {
+        public:
+            struct const_iterator final : std::iterator<std::forward_iterator_tag, std::unique_ptr<TestIModel>>
+                {
+                private:
+                    TestFile const& m_testFile;
+                    std::vector<DgnDb::OpenParams>::const_iterator m_paramsIt;
+                public:
+                    const_iterator(TestFile const& testFile, std::vector<DgnDb::OpenParams>::const_iterator paramsIt) : m_testFile(testFile), m_paramsIt(paramsIt) {}
+                    std::unique_ptr<TestIModel> operator* () const { return std::make_unique<TestIModel>(m_testFile, *m_paramsIt); }
+
+                    const_iterator& operator++ () { m_paramsIt++; return *this; }
+                    bool operator== (const_iterator const& rhs) const { return m_paramsIt == rhs.m_paramsIt; }
+                    bool operator!= (const_iterator const& rhs) const { return !(*this == rhs); }
+                };
+
+        private:
+            TestFile const& m_testFile;
+            std::vector<DgnDb::OpenParams> m_params;
+
+        public:
+            Iterable(TestFile const& testFile, std::vector<DgnDb::OpenParams> const& params) : m_testFile(testFile), m_params(params) {}
+            const_iterator begin() const { return const_iterator(m_testFile, m_params.begin()); }
+            const_iterator end() const { return const_iterator(m_testFile, m_params.end()); }
+        };
+
     private:
         DgnDbPtr m_dgndb = nullptr;
         DgnDb::OpenParams m_openParams;
 
-        ECDbR _GetDb() const override { return *m_dgndb; }
-        ECDb::OpenParams const& _GetOpenParams() const override { return m_openParams; }
-
-    public:
-        TestIModel(TestFile const& testFile, DgnDb::OpenParams const& openParams = DgnDb::OpenParams(DgnDb::OpenMode::Readonly)) : TestDb(testFile), m_openParams(openParams) {}
-        ~TestIModel() { Close(); }
-        DbResult Open()
-            { 
+        ECDbR _GetDb() const override { BeAssert(m_dgndb != nullptr); return *m_dgndb; }
+        DbResult _Open() override
+            {
             DbResult stat = BeSQLite::BE_SQLITE_OK;
             m_dgndb = DgnDb::OpenDgnDb(&stat, m_testFile.GetPath(), m_openParams);
             return stat;
             }
-
-        void Close()
+        void _Close() override
             {
             if (m_dgndb != nullptr && m_dgndb->IsDbOpen())
                 m_dgndb->CloseDb();
+
+            m_dgndb = nullptr;
             }
+
+        ECDb::OpenParams const& _GetOpenParams() const override { return m_openParams; }
+
+    public:
+        TestIModel(TestFile const& testFile, DgnDb::OpenParams const& openParams = DgnDb::OpenParams(DgnDb::OpenMode::Readonly)) : TestDb(testFile), m_openParams(openParams) {}
+        ~TestIModel() { _Close(); }
+
+        static Iterable GetPermutationsFor(TestFile const&);
 
         void AssertProfileVersion() const;
     };
+
