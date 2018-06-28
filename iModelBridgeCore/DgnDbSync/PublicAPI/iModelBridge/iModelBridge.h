@@ -857,6 +857,29 @@ public:
     //! @name Helper functions
     //! @{
 
+    //! Save changes locally if memory usage is excessive. 
+    //! This function *may* create a local savepoint in order to conserve memory.
+    //! A bridge should call SaveChangesToConserveMemory as it converts elements, perhaps even on every element that it converts.
+    //! A local savepoint will be created only when accumulated changes exceed the specified maximum.
+    //! Normally, all local savepoints are combined into a single, all-in ChangeSet that is then pushed to the iModel server.
+    //! In some cases, such as if the bridge is interrupted, the conversion process will stop at the latest savepoint.
+    //! The bridge can then resume the conversion as of that savepoint when it is called the next time.
+    //! @note This function is called automatically by iModelBridgeSyncInfoFile::ChangeDetector, and so bridges that use 
+    //! iModelBridgeSyncInfoFile and follow the recommended pattern do not need to call this function themselves.
+    //! @param db The DgnDb that is being updated.
+    //! @param commitComment Optional description of changes made. May be included in final ChangeSet comment.
+    //! @param maxRowsChangedPerTxn The maximum number of rows (not bytes) that should be in a single transaction.
+    IMODEL_BRIDGE_EXPORT static BentleyStatus SaveChangesToConserveMemory(DgnDbR db, Utf8CP commitComment = nullptr, int maxRowsChangedPerTxn = 1000);
+
+    //! Call this function periodically to save changes locally. This creates a local savepoint, and it helps to conserves memory.
+    //! A bridge should call SaveChanges at major points in the conversion process, such as after processing all changes
+    //! in a file. Normally, all local savepoints are combined into a single, all-in ChangeSet that is then pushed to the iModel server.
+    //! In some cases, such as if the bridge is interrupted, the conversion process will stop at the latest savepoint.
+    //! The bridge can then resume the conversion as of that savepoint when it is called the next time.
+    //! @param db The DgnDb that is being updated.
+    //! @param commitComment Optional description of changes made. May be included in final ChangeSet comment.
+    IMODEL_BRIDGE_EXPORT static BentleyStatus SaveChanges(DgnDbR db, Utf8CP commitComment = nullptr);
+
     IMODEL_BRIDGE_EXPORT static WString GetArgValueW (WCharCP arg);
     IMODEL_BRIDGE_EXPORT static Utf8String GetArgValue (WCharCP arg);
 
