@@ -34,12 +34,15 @@ private:
     static ClientHelper* s_instance;
     static BeMutex s_mutex;
     IHttpHandlerPtr m_customHandler;
+    Utf8String m_url;
 
     static Utf8CP str_BentleyConnectMain() {return "BentleyCONNECT--Main";}
 
     //! Construct the helper
     ClientHelper(ClientInfoPtr clientInfo, IJsonLocalState* ls = nullptr, IHttpHandlerPtr customHandler = nullptr)
-        : m_clientInfo(clientInfo), m_localState(ls), m_customHandler(customHandler){}
+        : m_clientInfo(clientInfo), m_localState(ls), m_customHandler(customHandler) {}
+
+    Utf8StringCR GetUrl();
 public:
     //! Create or update the singleton instance.
     //! @param clientInfo       Client information.
@@ -50,9 +53,6 @@ public:
 
     //! Get the singleton instance
     IMODELHUBCLIENT_EXPORT static ClientHelper* GetInstance();
-
-    //! Create a client for use with iModelHub
-    IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr CreateClientForImodelBank(Utf8CP url);
 
     //! Sign in with credentials
     //! @param errorOut     Optional. If not null, an explanation of signin failure is returned here.
@@ -87,6 +87,12 @@ public:
 
     //! Get user information stored in identity token
     IMODELHUBCLIENT_EXPORT ConnectSignInManager::UserInfo GetUserInfo() { return m_signinMgr->GetUserInfo(); }
+
+    //! Create a client that always uses the same authorizationHeader
+    IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr SignInWithStaticHeader(Utf8StringCR authorizationHeader);
+
+    //! Set a custom iModelHub Url
+    void SetUrl(Utf8StringCR url) { m_url = url; }
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

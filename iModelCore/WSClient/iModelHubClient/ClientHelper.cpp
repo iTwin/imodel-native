@@ -16,6 +16,13 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 ClientHelper* ClientHelper::s_instance = nullptr;
 BeMutex ClientHelper::s_mutex{};
 
+Utf8StringCR ClientHelper::GetUrl()
+    {
+    if (Utf8String::IsNullOrEmpty(m_url.c_str()))
+        m_url = UrlProvider::Urls::iModelHubApi.Get();
+    return m_url;
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -55,19 +62,51 @@ ClientHelper* ClientHelper::GetInstance()
     return s_instance;
     }
 
+
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                    Sam.Wilson                      03/17
+* @bsiclass                                     Karolis.Dziedzelis              06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClientPtr ClientHelper::CreateClientForImodelBank(Utf8CP url)
+struct StaticAuthenticationHandler : public Http::AuthenticationHandler
+{
+private:
+    Utf8String m_authorizationHeader;
+protected:
+    virtual Tasks::AsyncTaskPtr<Http::AuthenticationHandler::AuthorizationResult> _RetrieveAuthorization(Http::AuthenticationHandler::AttemptCR previousAttempt) override;
+public:
+    StaticAuthenticationHandler(Utf8StringCR authorizationHeader, IHttpHandlerPtr customHandler = nullptr);
+    static Http::AuthenticationHandlerPtr Create(Utf8StringCR authorizationHeader, IHttpHandlerPtr customHandler = nullptr);
+};
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tasks::AsyncTaskPtr<AuthenticationHandler::AuthorizationResult> StaticAuthenticationHandler::_RetrieveAuthorization(AuthenticationHandler::AttemptCR previousAttempt)
     {
-    // WIP_IMODEL_BANK Must re-direct requests for the "iModelHubApi" to the iModelBank server.
-    // Do this BEFORE calling Client::Create, as that method looks up the "iModelHubApi" API to get the server URL.
-    Json::Value cachedValue (Json::objectValue);
-    cachedValue["TimeCached"] = BeJsonUtilities::StringValueFromInt64(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
-    cachedValue["URL"] = url;
-    m_localState->SaveJsonValue("UrlCache", "iModelHubApi", cachedValue);
-    
-    return Client::Create(m_clientInfo, nullptr, true);
+    return CreateCompletedAsyncTask<AuthenticationHandler::AuthorizationResult>(AuthenticationHandler::AuthorizationResult::Success(m_authorizationHeader));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+StaticAuthenticationHandler::StaticAuthenticationHandler(Utf8StringCR authorizationHeader, IHttpHandlerPtr customHandler)
+    : m_authorizationHeader(authorizationHeader), Http::AuthenticationHandler(customHandler)
+    {
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Http::AuthenticationHandlerPtr StaticAuthenticationHandler::Create(Utf8StringCR authorizationHeader, IHttpHandlerPtr customHandler)
+    {
+    return std::make_shared<StaticAuthenticationHandler>(authorizationHeader, customHandler);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ClientPtr ClientHelper::SignInWithStaticHeader(Utf8StringCR authorizationHeader)
+    {
+    return Client::Create(m_clientInfo, StaticAuthenticationHandler::Create(authorizationHeader, m_customHandler), GetUrl().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -113,8 +152,8 @@ ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr)
     {
     m_signinMgr = managerPtr;
 
-    AuthenticationHandlerPtr authHandler = m_signinMgr->GetAuthenticationHandler(UrlProvider::Urls::iModelHubApi.Get());
-    ClientPtr client = Client::Create(m_clientInfo, authHandler);
+    AuthenticationHandlerPtr authHandler = m_signinMgr->GetAuthenticationHandler(GetUrl());
+    ClientPtr client = Client::Create(m_clientInfo, authHandler, GetUrl().c_str());
 
     return client;
     }

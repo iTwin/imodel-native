@@ -51,8 +51,8 @@ private:
     static StatusResult MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath, 
                                                  ICancellationTokenPtr cancellationToken = nullptr);
 
-    Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler) : 
-        m_clientInfo(clientInfo), m_customHandler(customHandler), m_iModelAdmin(this) { m_serverUrl = UrlProvider::Urls::iModelHubApi.Get(); }
+    Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, Utf8StringCR url) :
+        m_clientInfo(clientInfo), m_customHandler(customHandler), m_iModelAdmin(this), m_serverUrl(url) {}
 
     StatusResult DownloadBriefcase(iModelConnectionPtr connection, BeFileName filePath, BriefcaseInfoCR briefcaseInfo,
                                    bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
@@ -91,7 +91,7 @@ public:
 
     //! Get the server URL
     //! @private
-    Utf8StringCR GetServerUrl() const {return m_serverUrl;}
+    Utf8StringCR GetServerUrl() const { return m_serverUrl; }
 
     //! Returns iModel admin that caches iModelManager instances.
     DgnPlatformLib::Host::RepositoryAdmin* GetiModelAdmin() {return dynamic_cast<DgnPlatformLib::Host::RepositoryAdmin*>(&m_iModelAdmin);}
@@ -101,9 +101,9 @@ public:
     //! Create an instance of the client.
     //! @param[in] clientInfo Application information sent to server.
     //! @param[in] customHandler Http handler for connect authentication.
-    //! @param[in] isIModelBank Set up Client for use with IModelBank? Else set up for iModelHub.
+    //! @param[in] url Optional url for the server.
     //! @return Returns a shared pointer to the created instance.
-    IMODELHUBCLIENT_EXPORT static ClientPtr Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler = nullptr, bool isIModelBank = false);
+    IMODELHUBCLIENT_EXPORT static ClientPtr Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler = nullptr, Utf8CP url = nullptr);
 
     //! Creates a connection to a iModel. Use this method if you need to access iModel information without acquirying a briefcase.
     //! If you already have a briefcase, please use Briefcase.GetiModelConnection()
