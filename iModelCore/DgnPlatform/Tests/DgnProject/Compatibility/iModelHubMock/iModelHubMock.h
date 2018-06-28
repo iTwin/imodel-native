@@ -29,6 +29,6 @@ public:
     Utf8String PushChangeset(DgnRevisionPtr revision, BeGuid iModelId);
     DgnRevisionCPtr PullChangeset(Utf8StringCR changesetId, BeGuid iModelId);
     bool ManualMergeAllChangesets(BeGuid iModelId);
-    void ClearStoredRevisions(BeGuid iModelId) {m_revisions[iModelId].clear();}
+    void ClearStoredRevisions(BeGuid iModelId) {m_revisions.erase(m_revisions.find(iModelId));}
     void GetRevisionCount(BeGuid iModelId) {m_revisions[iModelId].size();}
 };
