@@ -11,14 +11,13 @@
 
 USING_NAMESPACE_BENTLEY_EC
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonValue TestHelper::ExecuteECSqlSelect(Utf8CP ecsql) const
+JsonValue TestDb::ExecuteECSqlSelect(Utf8CP ecsql) const
     {
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_db, ecsql))
+    if (ECSqlStatus::Success != stmt.Prepare(GetDb(), ecsql))
         return JsonValue();
 
     JsonValue val(Json::arrayValue);
@@ -38,10 +37,10 @@ JsonValue TestHelper::ExecuteECSqlSelect(Utf8CP ecsql) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaVersion TestHelper::GetSchemaVersion(Utf8CP schemaName) const
+SchemaVersion TestDb::GetSchemaVersion(Utf8CP schemaName) const
     {
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_db, "SELECT VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name=?") ||
+    if (ECSqlStatus::Success != stmt.Prepare(GetDb(), "SELECT VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name=?") ||
         ECSqlStatus::Success != stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No) || stmt.Step() != BE_SQLITE_ROW)
         {
         return SchemaVersion();
@@ -50,16 +49,16 @@ SchemaVersion TestHelper::GetSchemaVersion(Utf8CP schemaName) const
     SchemaVersion version((uint16_t) stmt.GetValueInt(0), (uint16_t) stmt.GetValueInt(1), (uint16_t) stmt.GetValueInt(2));
 
     //verify that version is the same if fetched via ECObjects
-    ECSchemaCP schema = m_db.Schemas().GetSchema(schemaName, false);
-    EXPECT_TRUE(schema != nullptr) << schemaName;
-    EXPECT_EQ(version, SchemaVersion(*schema)) << "Version of " << schemaName << " retrieved from ECObjects differs from when retrieved with ECSQL";
+    ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
+    EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
+    EXPECT_EQ(version, SchemaVersion(*schema)) << "Version of " << schemaName << " retrieved from ECObjects differs from when retrieved with ECSQL" << " | " << GetDescription();
     return version;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-BeVersion TestHelper::GetOriginalECXmlVersion(Utf8CP schemaName) const
+BeVersion TestDb::GetOriginalECXmlVersion(Utf8CP schemaName) const
     {
     JsonValue rows = ExecuteECSqlSelect(Utf8PrintfString("SELECT OriginalECXmlVersionMajor major, OriginalECXmlVersionMinor minor FROM meta.ECSchemaDef WHERE Name='%s'", schemaName).c_str());
     if (!rows.m_value.isArray() || rows.m_value.size() != 1)
@@ -78,9 +77,9 @@ BeVersion TestHelper::GetOriginalECXmlVersion(Utf8CP schemaName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-int TestHelper::GetSchemaCount() const
+int TestDb::GetSchemaCount() const
     {
-    JsonValue rows = TestHelper::ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef");
+    JsonValue rows = ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef");
     if (!rows.m_value.isArray() || rows.m_value.size() != 1 || !rows.m_value[0].isMember("cnt"))
         return -1;
 
@@ -90,7 +89,7 @@ int TestHelper::GetSchemaCount() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonValue TestHelper::GetSchemaItemCounts(Utf8CP schemaName) const
+JsonValue TestDb::GetSchemaItemCounts(Utf8CP schemaName) const
     {
     JsonValue counts(Json::objectValue);
     JsonValue classCount = ExecuteECSqlSelect(Utf8PrintfString("SELECT count(*) cnt FROM meta.ECClassDef i JOIN meta.ECSchemaDef s ON i.Schema.Id=s.ECInstanceId WHERE s.Name='%s'", schemaName).c_str());
@@ -131,13 +130,14 @@ JsonValue TestHelper::GetSchemaItemCounts(Utf8CP schemaName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-void TestHelper::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::pair<ECN::ECValue, Utf8CP>> const& expectedEnumerators) const
+void TestDb::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::pair<ECN::ECValue, Utf8CP>> const& expectedEnumerators) const
     {
-    // 1) Via schema manager
-    ECEnumerationCP ecEnum = m_db.Schemas().GetEnumeration(schemaName, enumName);
-    ASSERT_TRUE(ecEnum != nullptr) << schemaName << "." << enumName << " | " << m_testFile.ToString();
     Utf8String assertMessage(schemaName);
-    assertMessage.append(".").append(enumName).append(" | ").append(m_testFile.ToString());
+    assertMessage.append(".").append(enumName).append(" | ").append(GetDescription());
+
+    // 1) Via schema manager
+    ECEnumerationCP ecEnum = GetDb().Schemas().GetEnumeration(schemaName, enumName);
+    ASSERT_TRUE(ecEnum != nullptr) << assertMessage;
 
     EXPECT_EQ((int) expectedType, (int) ecEnum->GetType()) << assertMessage;
     EXPECT_EQ(expectedIsStrict, ecEnum->GetIsStrict()) << assertMessage;
@@ -179,7 +179,7 @@ void TestHelper::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedD
 
     // 2) Via ECSQL
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_db, "SELECT e.ECInstanceId,e.DisplayLabel,e.Description,e.IsStrict,e.Type,e.EnumValues FROM meta.ECEnumerationDef e JOIN meta.ECSchemaDef s ON e.Schema.Id=s.ECInstanceId WHERE s.Name=? AND e.Name=?")) << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDb(), "SELECT e.ECInstanceId,e.DisplayLabel,e.Description,e.IsStrict,e.Type,e.EnumValues FROM meta.ECEnumerationDef e JOIN meta.ECSchemaDef s ON e.Schema.Id=s.ECInstanceId WHERE s.Name=? AND e.Name=?")) << assertMessage;
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, enumName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | " << assertMessage;
@@ -230,13 +230,14 @@ void TestHelper::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedD
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-void TestHelper::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationUnits, double expectedRelError) const
+void TestDb::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationUnits, double expectedRelError) const
     {
-    // 1) Via schema manager
-    KindOfQuantityCP koq = m_db.Schemas().GetKindOfQuantity(schemaName, koqName);
-    ASSERT_TRUE(koq != nullptr) << schemaName << "." << koqName << " | " << m_testFile.ToString();
     Utf8String assertMessage(schemaName);
-    assertMessage.append(".").append(koqName).append(" | ").append(m_testFile.ToString());
+    assertMessage.append(".").append(koqName).append(" | ").append(GetDescription());
+
+    // 1) Via schema manager
+    KindOfQuantityCP koq = GetDb().Schemas().GetKindOfQuantity(schemaName, koqName);
+    ASSERT_TRUE(koq != nullptr) << assertMessage;
 
     EXPECT_EQ(expectedDisplayLabel != nullptr, koq->GetIsDisplayLabelDefined()) << assertMessage;
     if (expectedDisplayLabel != nullptr)
@@ -257,12 +258,12 @@ void TestHelper::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP 
 
     // 2) Via ECSQL
     ECSqlStatement stmt;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(m_db, "SELECT koq.ECInstanceId,koq.DisplayLabel,koq.Description,koq.PersistenceUnit,koq.PresentationUnits,koq.RelativeError FROM meta.KindOfQuantityDef koq JOIN meta.ECSchemaDef s ON koq.Schema.Id=s.ECInstanceId WHERE s.Name=? AND koq.Name=?")) << assertMessage;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(2, koqName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDb(), "SELECT koq.ECInstanceId,koq.DisplayLabel,koq.Description,koq.PersistenceUnit,koq.PresentationUnits,koq.RelativeError FROM meta.KindOfQuantityDef koq JOIN meta.ECSchemaDef s ON koq.Schema.Id=s.ECInstanceId WHERE s.Name=? AND koq.Name=?")) << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, koqName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | " << assertMessage;
 
-    EXPECT_EQ(koq->GetId(), stmt.GetValueId<ECN::ECEnumerationId>(0)) << stmt.GetECSql() << " | " << assertMessage;
+    EXPECT_EQ(koq->GetId(), stmt.GetValueId<ECN::KindOfQuantityId>(0)) << stmt.GetECSql() << " | " << assertMessage;
     if (expectedDisplayLabel != nullptr)
         EXPECT_STREQ(expectedDisplayLabel, stmt.GetValueText(1)) << stmt.GetECSql() << " | " << assertMessage;
     else
@@ -295,18 +296,18 @@ void TestHelper::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-void TestHelper::AssertUnit(Utf8CP schemaName, Utf8CP unitName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedDefinition,
-                            Nullable<double> expectedNumerator, Nullable<double> expectedDenominator, Nullable<double> expectedOffset,
+void TestDb::AssertUnit(Utf8CP schemaName, Utf8CP unitName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedDefinition, 
+                            Nullable<double> expectedNumerator, Nullable<double> expectedDenominator, Nullable<double> expectedOffset, 
                             QualifiedName const& expectedUnitSystem, QualifiedName const& expectedPhenomenon, bool expectedIsConstant, QualifiedName const& expectedInvertingUnit) const
     {
     //Units are not available in this version of the software, but we can use ECSQL against the meta data to verify it.
     Utf8String assertMessage(schemaName);
-    assertMessage.append(".").append(unitName).append(" | ").append(m_testFile.ToString());
+    assertMessage.append(".").append(unitName).append(" | ").append(GetDescription());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(m_db, "SELECT u.ECInstanceId,u.DisplayLabel,u.Description,u.Definition,u.Numerator,u.Denominator,u.[Offset],u.UnitSystem.Id,u.Phenomenon.Id,u.IsConstant,u.InvertingUnit.Id FROM meta.UnitDef u JOIN meta.ECSchemaDef s ON u.Schema.Id=s.ECInstanceId WHERE s.Name=? AND u.Name=?")) << assertMessage;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(2, unitName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDb(), "SELECT u.ECInstanceId,u.DisplayLabel,u.Description,u.Definition,u.Numerator,u.Denominator,u.[Offset],u.UnitSystem.Id,u.Phenomenon.Id,u.IsConstant,u.InvertingUnit.Id FROM meta.UnitDef u JOIN meta.ECSchemaDef s ON u.Schema.Id=s.ECInstanceId WHERE s.Name=? AND u.Name=?")) << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, unitName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | " << assertMessage;
 
     BeInt64Id unitId = stmt.GetValueId<BeInt64Id>(0);
@@ -369,16 +370,16 @@ void TestHelper::AssertUnit(Utf8CP schemaName, Utf8CP unitName, Utf8CP expectedD
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-void TestHelper::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, JsonValue const& expectedNumericSpec, JsonValue const& expectedCompSpec) const
+void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, JsonValue const& expectedNumericSpec, JsonValue const& expectedCompSpec) const
     {
     //Units are not available in this version of the software, but we can use ECSQL against the meta data to verify it.
     Utf8String assertMessage(schemaName);
-    assertMessage.append(".").append(formatName).append(" | ").append(m_testFile.ToString());
+    assertMessage.append(".").append(formatName).append(" | ").append(GetDescription());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(m_db, "SELECT f.ECInstanceId,f.DisplayLabel,f.Description,f.NumericSpec,f.CompositeSpec FROM meta.FormatDef f JOIN meta.ECSchemaDef s ON f.Schema.Id=s.ECInstanceId WHERE s.Name=? AND f.Name=?")) << assertMessage;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(2, formatName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDb(), "SELECT f.ECInstanceId,f.DisplayLabel,f.Description,f.NumericSpec,f.CompositeSpec FROM meta.FormatDef f JOIN meta.ECSchemaDef s ON f.Schema.Id=s.ECInstanceId WHERE s.Name=? AND f.Name=?")) << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, formatName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | " << assertMessage;
 
     BeInt64Id formatId = stmt.GetValueId<BeInt64Id>(0);
@@ -414,11 +415,11 @@ void TestHelper::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expec
     Json::Value const& expectedCompositeUnitsJson = expectedCompSpec.m_value["units"];
     ASSERT_TRUE(expectedCompositeUnitsJson.isArray()) << assertMessage;
     ECSqlStatement unitLookupStmt;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, unitLookupStmt.Prepare(m_db, "SELECT Name FROM meta.UnitDef WHERE ECInstanceId=?")) << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, unitLookupStmt.Prepare(GetDb(), "SELECT Name FROM meta.UnitDef WHERE ECInstanceId=?")) << assertMessage;
 
     ECSqlStatement compUnitStmt;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, compUnitStmt.Prepare(m_db, "SELECT Label,Unit.Id FROM meta.FormatCompositeUnitDef WHERE Format.Id=? ORDER BY Ordinal")) << assertMessage;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, compUnitStmt.BindId(1, formatId)) << compUnitStmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, compUnitStmt.Prepare(GetDb(), "SELECT Label,Unit.Id FROM meta.FormatCompositeUnitDef WHERE Format.Id=? ORDER BY Ordinal")) << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, compUnitStmt.BindId(1, formatId)) << compUnitStmt.GetECSql() << " | " << assertMessage;
     int ordinal = 0;
     while (BE_SQLITE_ROW == compUnitStmt.Step())
         {
@@ -426,7 +427,7 @@ void TestHelper::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expec
         Json::Value const& expectedCompositeUnitJson = expectedCompositeUnitsJson[(Json::ArrayIndex) ordinal];
         EXPECT_FALSE(compUnitStmt.IsValueNull(1)) << "Composite unit" << ordinal << " | " << assertMessage;
         BeInt64Id unitId = compUnitStmt.GetValueId<BeInt64Id>(1);
-        ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, unitLookupStmt.BindId(1, unitId)) << "Composite unit" << ordinal << " | " << assertMessage;
+        ASSERT_EQ(ECSqlStatus::Success, unitLookupStmt.BindId(1, unitId)) << "Composite unit" << ordinal << " | " << assertMessage;
         ASSERT_EQ(BE_SQLITE_ROW, unitLookupStmt.Step()) << "Composite unit" << ordinal << " | " << assertMessage;
         EXPECT_STREQ(expectedCompositeUnitJson["name"].asCString(), unitLookupStmt.GetValueText(0)) << "Composite unit" << ordinal << " | " << assertMessage;
         unitLookupStmt.Reset();
@@ -444,16 +445,16 @@ void TestHelper::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expec
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-void TestHelper::AssertUnitSystem(Utf8CP schemaName, Utf8CP unitsystemName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription) const
+void TestDb::AssertUnitSystem(Utf8CP schemaName, Utf8CP unitsystemName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription) const
     {
     //Units are not available in this version of the software, but we can use ECSQL against the meta data to verify it.
     Utf8String assertMessage(schemaName);
-    assertMessage.append(".").append(unitsystemName).append(" | ").append(m_testFile.ToString());
+    assertMessage.append(".").append(unitsystemName).append(" | ").append(GetDescription());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(m_db, "SELECT us.ECInstanceId,us.DisplayLabel,us.Description FROM meta.UnitSystemDef us JOIN meta.ECSchemaDef s ON us.Schema.Id=s.ECInstanceId WHERE s.Name=? AND us.Name=?")) << assertMessage;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(2, unitsystemName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDb(), "SELECT us.ECInstanceId,us.DisplayLabel,us.Description FROM meta.UnitSystemDef us JOIN meta.ECSchemaDef s ON us.Schema.Id=s.ECInstanceId WHERE s.Name=? AND us.Name=?")) << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, unitsystemName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | " << assertMessage;
 
     EXPECT_TRUE(stmt.GetValueId<BeInt64Id>(0).IsValid()) << stmt.GetECSql() << " | " << assertMessage;
@@ -471,16 +472,16 @@ void TestHelper::AssertUnitSystem(Utf8CP schemaName, Utf8CP unitsystemName, Utf8
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-void TestHelper::AssertPhenomenon(Utf8CP schemaName, Utf8CP phenName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedDefinition) const
+void TestDb::AssertPhenomenon(Utf8CP schemaName, Utf8CP phenName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedDefinition) const
     {
     //Units are not available in this version of the software, but we can use ECSQL against the meta data to verify it.
     Utf8String assertMessage(schemaName);
-    assertMessage.append(".").append(phenName).append(" | ").append(m_testFile.ToString());
+    assertMessage.append(".").append(phenName).append(" | ").append(GetDescription());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(m_db, "SELECT p.ECInstanceId,p.DisplayLabel,p.Description,p.Definition FROM meta.PhenomenonDef p JOIN meta.ECSchemaDef s ON p.Schema.Id=s.ECInstanceId WHERE s.Name=? AND p.Name=?")) << assertMessage;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
-    ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.BindText(2, phenName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDb(), "SELECT p.ECInstanceId,p.DisplayLabel,p.Description,p.Definition FROM meta.PhenomenonDef p JOIN meta.ECSchemaDef s ON p.Schema.Id=s.ECInstanceId WHERE s.Name=? AND p.Name=?")) << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, phenName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | " << assertMessage;
 
     EXPECT_TRUE(stmt.GetValueId<BeInt64Id>(0).IsValid()) << stmt.GetECSql() << " | " << assertMessage;
@@ -503,51 +504,193 @@ void TestHelper::AssertPhenomenon(Utf8CP schemaName, Utf8CP phenName, Utf8CP exp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-void TestHelper::AssertLoadSchemas() const
+void TestDb::AssertLoadSchemas() const
     {
     //1) via schema manager
-    for (ECSchemaCP schema : m_db.Schemas().GetSchemas(true))
+    for (ECSchemaCP schema : GetDb().Schemas().GetSchemas(true))
         {
-        EXPECT_TRUE(schema->HasId()) << schema->GetFullSchemaName() << " | " << m_testFile.ToString();
-        EXPECT_FALSE(schema->GetName().empty()) << schema->GetFullSchemaName() << " | " << m_testFile.ToString();
+        EXPECT_TRUE(schema->HasId()) << schema->GetFullSchemaName() << " | " << GetDescription();
+        EXPECT_FALSE(schema->GetName().empty()) << schema->GetFullSchemaName() << " | " << GetDescription();
         for (ECClassCP ecClass : schema->GetClasses()) 
             {
-            EXPECT_TRUE(ecClass->HasId()) << ecClass->GetFullName() << " | " << m_testFile.ToString();
-            EXPECT_FALSE(ecClass->GetName().empty()) << ecClass->GetFullName() << " | " << m_testFile.ToString();
+            EXPECT_TRUE(ecClass->HasId()) << ecClass->GetFullName() << " | " << GetDescription();
+            EXPECT_FALSE(ecClass->GetName().empty()) << ecClass->GetFullName() << " | " << GetDescription();
             for (ECPropertyCP prop : ecClass->GetProperties())
                 { 
-                EXPECT_TRUE(prop->HasId()) << ecClass->GetFullName() << "." << prop->GetName() << " | " << m_testFile.ToString();
-                EXPECT_FALSE(prop->GetName().empty()) << ecClass->GetFullName() << "." << prop->GetName() << " | " << m_testFile.ToString();
+                EXPECT_TRUE(prop->HasId()) << ecClass->GetFullName() << "." << prop->GetName() << " | " << GetDescription();
+                EXPECT_FALSE(prop->GetName().empty()) << ecClass->GetFullName() << "." << prop->GetName() << " | " << GetDescription();
                 }
             }
 
         for (ECEnumerationCP ecEnum : schema->GetEnumerations()) 
             {
-            EXPECT_TRUE(ecEnum->HasId()) << ecEnum->GetFullName() << " | " << m_testFile.ToString();
-            EXPECT_FALSE(ecEnum->GetName().empty()) << ecEnum->GetFullName() << " | " << m_testFile.ToString();
+            EXPECT_TRUE(ecEnum->HasId()) << ecEnum->GetFullName() << " | " << GetDescription();
+            EXPECT_FALSE(ecEnum->GetName().empty()) << ecEnum->GetFullName() << " | " << GetDescription();
             }
 
         for (KindOfQuantityCP koq : schema->GetKindOfQuantities()) 
             {
-            EXPECT_TRUE(koq->HasId()) << koq->GetFullName() << " | " << m_testFile.ToString();
-            EXPECT_FALSE(koq->GetName().empty()) << koq->GetFullName() << " | " << m_testFile.ToString();
+            EXPECT_TRUE(koq->HasId()) << koq->GetFullName() << " | " << GetDescription();
+            EXPECT_FALSE(koq->GetName().empty()) << koq->GetFullName() << " | " << GetDescription();
             }
 
         for (PropertyCategoryCP cat : schema->GetPropertyCategories())
             {
-            EXPECT_TRUE(cat->HasId()) << cat->GetFullName() << " | " << m_testFile.ToString();
-            EXPECT_FALSE(cat->GetName().empty()) << cat->GetFullName() << " | " << m_testFile.ToString();
+            EXPECT_TRUE(cat->HasId()) << cat->GetFullName() << " | " << GetDescription();
+            EXPECT_FALSE(cat->GetName().empty()) << cat->GetFullName() << " | " << GetDescription();
             }
         }
 
-    m_db.ClearECDbCache();
+    GetDb().ClearECDbCache();
 
     // 2) via ECSQL
-    EXPECT_FALSE(ExecuteECSqlSelect("SELECT * FROM meta.ECSchemaDef").m_value.empty());
-    EXPECT_FALSE(ExecuteECSqlSelect("SELECT * FROM meta.ECClassDef").m_value.empty());
-    EXPECT_FALSE(ExecuteECSqlSelect("SELECT * FROM meta.ECEnumerationDef").m_value.empty());
-    EXPECT_FALSE(ExecuteECSqlSelect("SELECT * FROM meta.ECPropertyDef").m_value.empty());
+    EXPECT_FALSE(ExecuteECSqlSelect("SELECT * FROM meta.ECSchemaDef").m_value.empty()) << GetDescription();
+    EXPECT_FALSE(ExecuteECSqlSelect("SELECT * FROM meta.ECClassDef").m_value.empty()) << GetDescription();
+    EXPECT_FALSE(ExecuteECSqlSelect("SELECT * FROM meta.ECEnumerationDef").m_value.empty()) << GetDescription();
+    EXPECT_FALSE(ExecuteECSqlSelect("SELECT * FROM meta.ECPropertyDef").m_value.empty()) << GetDescription();
     // Not all test files contain KOQs or PropertyCategories, so just test that the result is a JSON array
-    EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.KindOfQuantityDef").m_value.isArray());
-    EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.PropertyCategoryDef").m_value.isArray());
+    EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.KindOfQuantityDef").m_value.isArray()) << GetDescription();
+    EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.PropertyCategoryDef").m_value.isArray()) << GetDescription();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult TestDb::Open()
+    {
+    if (BeFileNameStatus::Success != m_testFile.CloneFromSeed())
+        return BE_SQLITE_ERROR;
+
+    return _Open();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TestDb::State TestDb::GetState() const
+    {
+    switch (GetTestFile().GetAge())
+        {
+            case ProfileState::Age::Older:
+                return GetOpenParams().GetProfileUpgradeOptions() == Db::ProfileUpgradeOptions::Upgrade ? State::Upgraded : State::Older;
+            case ProfileState::Age::UpToDate:
+                return State::UpToDate;
+            case ProfileState::Age::Newer:
+                return State::Newer;
+
+            default:
+                BeAssert(false && "Unhandled enum value");
+                return TestDb::State::UpToDate;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String TestDb::GetDescription() const
+    {
+    Utf8CP openModeStr = nullptr;
+    if (GetOpenParams().m_openMode == Db::OpenMode::Readonly)
+        openModeStr = "read-only";
+    else
+        {
+        if (GetOpenParams().m_profileUpgradeOptions == Db::ProfileUpgradeOptions::Upgrade)
+            openModeStr = "read-write with upgrade";
+        else
+            openModeStr = "read-write without upgrade";
+        }
+
+    return Utf8PrintfString("Opened %s | %s", openModeStr, GetTestFile().ToString().c_str());
+    }
+
+//***************************** TestECDb ********************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+TestECDb::Iterable TestECDb::GetPermutationsFor(TestFile const& testFile)
+    {
+    std::vector<ECDb::OpenParams> testParams {ECDb::OpenParams(ECDb::OpenMode::Readonly), ECDb::OpenParams(ECDb::OpenMode::ReadWrite)};
+    if (testFile.GetAge() == ProfileState::Age::Older)
+        testParams.push_back(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade));
+
+    return Iterable(testFile, testParams);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void TestECDb::AssertProfileVersion() const
+    {
+    ASSERT_TRUE(m_ecdb.IsDbOpen()) << "AssertProfileVersion must be called on open file";
+    switch (GetState())
+        {
+            case State::UpToDate:
+                EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsUpToDate()) << GetDescription();
+                EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
+                break;
+            case State::Newer:
+                EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsNewer()) << GetDescription();
+                EXPECT_LT(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
+                break;
+            case State::Older:
+                EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsOlder()) << GetDescription();
+                EXPECT_GT(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
+                break;
+            case State::Upgraded:
+                EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsUpToDate()) << GetDescription();
+                EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
+                break;
+            default:
+                FAIL() << "Unhandled TestECDb::State enum value";
+        }
+    }
+
+
+//***************************** TestIModel ********************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+TestIModel::Iterable TestIModel::GetPermutationsFor(TestFile const& testFile)
+    {
+    std::vector<DgnDb::OpenParams> testParams {DgnDb::OpenParams(DgnDb::OpenMode::Readonly), DgnDb::OpenParams(ECDb::OpenMode::ReadWrite)};
+    if (testFile.GetAge() == ProfileState::Age::Older)
+        {
+        DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite);
+        params.SetProfileUpgradeOptions(DgnDb::ProfileUpgradeOptions::Upgrade);
+        testParams.push_back(params);
+        }
+
+    return Iterable(testFile, testParams);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void TestIModel::AssertProfileVersion() const
+    {
+    ASSERT_TRUE(m_dgndb != nullptr && m_dgndb->IsDbOpen()) << "AssertProfileVersion must be called on open file";
+    switch (GetState())
+        {
+            case State::UpToDate:
+                EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsUpToDate()) << GetDescription();
+                EXPECT_EQ(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
+                break;
+            case State::Newer:
+                EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsNewer()) << GetDescription();
+                EXPECT_LT(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
+                break;
+            case State::Older:
+                EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsOlder()) << GetDescription();
+                EXPECT_GT(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
+                break;
+            case State::Upgraded:
+                EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsUpToDate()) << GetDescription();
+                EXPECT_EQ(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
+                break;
+            default:
+                FAIL() << "Unhandled TestDb::State enum value";
+        }
     }
