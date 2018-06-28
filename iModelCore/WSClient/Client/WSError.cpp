@@ -32,6 +32,8 @@
 #define XML_Azure_Message       "Message"
 #define XML_Azure_BlobNotFound  "BlobNotFound"
 
+#define HEADER_MasRequestId "Mas-Request-Id"
+
 std::once_flag s_initErrorIdmap;
 
 /*--------------------------------------------------------------------------------------+
@@ -101,13 +103,16 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
     if (ConnectionStatus::OK == httpResponse.GetConnectionStatus() &&
         LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_INFO))
         {
+        Utf8CP requestId = httpResponse.GetHeaders().GetValue(HEADER_MasRequestId);
         LOG.infov
             (
             "Received WSError: %d %s\n"
-            "Server response: %s\n",
+            "Server response: %s\n"
+            "Request ID: '%s'",
             httpResponse.GetHttpStatus(),
             httpResponse.GetEffectiveUrl().c_str(),
-            httpResponse.GetBody().AsString().c_str()
+            httpResponse.GetBody().AsString().c_str(),
+            requestId ? requestId : "n/a"
             );
         }
 
