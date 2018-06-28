@@ -777,6 +777,8 @@ void UnitNameMappings::AddMappings()
     AddECMapping("M/KM", "UNITS:M_PER_KM");
     AddECMapping("M/M", "UNITS:M_PER_M");
     AddECMapping("M/MIN", "UNITS:M_PER_MIN");
+    AddECMapping("M/RAD", "UNITS:M_PER_RAD");
+    AddECMapping("M/REVOLUTION", "UNITS:M_PER_REVOLUTION");
     AddECMapping("M/SEC", "UNITS:M_PER_SEC");
     AddECMapping("M/SEC.SQ", "UNITS:M_PER_SEC_SQ");
     AddECMapping("M^4", "UNITS:M_TO_THE_FOURTH");
