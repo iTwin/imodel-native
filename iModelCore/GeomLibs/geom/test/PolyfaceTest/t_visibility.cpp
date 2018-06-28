@@ -256,10 +256,8 @@ TEST(Polyface,PartitionXY)
                             mesh->PartitionByXYRange (faceTarget, componentTarget, splitMesh);
                         else
                             mesh->PartitionMaintainFaceOrder (faceTarget, componentTarget, splitMesh);
-                        GEOMAPI_PRINTF (" (f %d) (c %d) (# %d)\n", (int)faceTarget, (int)componentTarget, (int)splitMesh.size ());
                         for (auto &m : splitMesh)
                             {
-                            GEOMAPI_PRINTF ("   (points %d)\n", (int)m->Point ().size ());
                             Check::SaveTransformed (m);
                             }
                         }

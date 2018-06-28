@@ -136,10 +136,10 @@ double DiagonalKeyFunc (VuP pDiagonalNode)
         vectorBC_DA.DifferenceOf (xyzBC, xyzDA);
         vectorAB_CD.z = 0.0;
         vectorBC_DA.z = 0.0;
-        double thetaAB = bsiDVec3d_smallerAngleBetweenUnorientedVectors (&vectorAB_CD, &vectorAB);
-        double thetaBC = bsiDVec3d_smallerAngleBetweenUnorientedVectors (&vectorBC_DA, &vectorBC);
-        double thetaCD = bsiDVec3d_smallerAngleBetweenUnorientedVectors (&vectorAB_CD, &vectorCD);
-        double thetaDA = bsiDVec3d_smallerAngleBetweenUnorientedVectors (&vectorBC_DA, &vectorDA);
+        double thetaAB = vectorAB_CD.SmallerUnorientedAngleTo (vectorAB);
+        double thetaBC = vectorBC_DA.SmallerUnorientedAngleTo (vectorBC);
+        double thetaCD = vectorAB_CD.SmallerUnorientedAngleTo (vectorCD);
+        double thetaDA = vectorBC_DA.SmallerUnorientedAngleTo (vectorDA);
         
         double alpha = thetaAB < thetaCD ? thetaAB : thetaCD;
         double beta  = thetaBC < thetaDA ? thetaBC : thetaDA;
@@ -197,7 +197,7 @@ void SelectTriangleInteriorPoint (DPoint3d *pXYZ, DPoint3d &xyzInterior)
             {
             DVec3d edgeToInterior;
             edgeToInterior.DifferenceOf (interiorCandidate[k], xyzMid[i]);
-            theta[i] = bsiDVec3d_smallerAngleBetweenUnorientedVectors (&edgeVector[i], &edgeToInterior);
+            theta[i] = edgeVector[i].SmallerUnorientedAngleTo (edgeToInterior);
             if (theta[i] < thetaMin)
                 thetaMin = theta[i];
             }
@@ -257,8 +257,8 @@ bool splitOK (DPoint3d &xyzA, DPoint3d &xyzB, DPoint3d xyzQ, DPoint3d xyzC, doub
     vectorAB.DifferenceOf (xyzB, xyzA);
     vectorAQ.DifferenceOf (xyzQ, xyzA);
     vectorAC.DifferenceOf (xyzC, xyzA);
-    double angleBAQ = bsiDVec3d_angleBetweenVectorsXY (&vectorAB, &vectorAQ);
-    double angleQAC = bsiDVec3d_angleBetweenVectorsXY (&vectorAQ, &vectorAC);
+    double angleBAQ = vectorAB.AngleToXY (vectorAQ);
+    double angleQAC = vectorAQ.AngleToXY (vectorAC);
     return fabs (angleBAQ) > minAngle && fabs (angleQAC) > minAngle;
     }
 
@@ -287,8 +287,8 @@ int AddPerpendicularsToBoundaries (double minSplitRadians, double minCandidateRa
             vu_getDPoint2dDXY (&vectorBC, pB);
             vu_getDPoint2dDXY (&vectorCA, pC);
             double candidateRadians = msGeomConst_pi - vectorCA.AngleTo (vectorAB);
-            //double candidateDot     = bsiDPoint2d_dotProduct (&vectorCA, &vectorAB);
-            if (candidateRadians > minCandidateRadians)//bsiDPoint2d_dotProduct (&vectorCA, &vectorAB) > 0.0)
+            //double candidateDot     = vectorCA.DotProduct (vectorAB);
+            if (candidateRadians > minCandidateRadians)//vectorCA.DotProduct (vectorAB) > 0.0)
                 {
                 double bb = vectorBC.DotProduct (vectorBC);
                 double ba = -vectorBC.DotProduct (vectorAB);
