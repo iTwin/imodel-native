@@ -20,6 +20,15 @@ class MainWindow:
         self.__root = Tk()
         self.__root.title('Publish ORD To iModel Hub')
         self.__initialize_controls()
+        screen_width = self.__root.winfo_screenwidth()
+        screen_height = self.__root.winfo_screenheight()
+        win_width = self.__root.winfo_width()
+        win_height = self.__root.winfo_height()
+        desired_width = screen_width // 2
+        desired_height = screen_height // 2
+        desired_x = (desired_width - win_width) // 2
+        desired_y = (desired_height - win_height) // 2
+        self.__root.geometry('{}x{}+{}+{}'.format(desired_width, desired_height, desired_x, desired_y))
 
 
     def show_dialog(self):
@@ -114,7 +123,7 @@ class MainWindow:
         self.__create_repo_checkbutton = Checkbutton(self.__fwk_label_frame, text='Create Repository (if necessary)?',
                                                      variable=self.__create_repo_checkbutton_var)
         self.__create_repo_checkbutton.grid(row=9, column=0, columnspan=3, padx=5, pady=5, sticky=W)
-        self.__create_repo_checkbutton_var.set(1)
+        self.__create_repo_checkbutton_var.set(0)
 
         self.__skip_assignment_check_checkbutton_var = IntVar()
         self.__skip_assignment_check_checkbutton = Checkbutton(self.__fwk_label_frame, text='Skip Assignment Check?',
