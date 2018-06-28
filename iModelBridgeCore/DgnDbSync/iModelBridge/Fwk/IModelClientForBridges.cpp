@@ -83,8 +83,10 @@ IModelBankClient::IModelBankClient(iModelBridgeFwk::IModelBankArgs const& args, 
     IModelClientBase(info, args.m_maxRetryCount, WebServices::UrlProvider::Environment::Release, INT64_MAX),
     m_iModelId(args.m_iModelId)
     {
-    m_client = ClientHelper::GetInstance()->CreateClientForImodelBank(args.m_url.c_str());
-    }
+    ClientHelper::GetInstance()->SetUrl(m_iModelBankUrl);
+	m_client = ClientHelper::GetInstance()->SignInWithStaticHeader("");     // TODO: Should pass in the AuthenticationToken as the authorizationHeader argument value
+    ClientHelper::GetInstance()->SetUrl("");
+	}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
