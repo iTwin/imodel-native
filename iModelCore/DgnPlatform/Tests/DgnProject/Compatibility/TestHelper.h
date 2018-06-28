@@ -75,11 +75,11 @@ public:
 
     static std::vector<std::unique_ptr<TestECDb>> CreateFor(TestFile const& testFile)
         {
-        std::vector<std::unique_ptr<TestECDb>> testECDbs {std::make_unique<TestECDb>(testFile, ECDb::OpenParams(ECDb::OpenMode::Readonly)), std::make_unique<TestECDb>(testFile, ECDb::OpenParams(ECDb::OpenMode::ReadWrite))};
-        if (testFile.GetAge() == ProfileState::Age::Older)
-            testECDbs.pusb_back(std::make_unique<TestECDb>(testFile, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade)));
+        std::vector<std::unique_ptr<TestECDb>> testECDbs;// {std::make_unique<TestECDb>(testFile, ECDb::OpenParams(ECDb::OpenMode::Readonly)), std::make_unique<TestECDb>(testFile, ECDb::OpenParams(ECDb::OpenMode::ReadWrite))};
+        //if (testFile.GetAge() == ProfileState::Age::Older)
+        //    testECDbs.push_back(std::make_unique<TestECDb>(testFile, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade)));
 
-        return testECDbs;
+        return std::move(testECDbs);
         }
     };
 

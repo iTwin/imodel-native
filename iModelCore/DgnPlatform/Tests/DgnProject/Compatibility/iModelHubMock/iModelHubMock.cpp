@@ -31,14 +31,16 @@ bool IModelHubMock::AcquireBriefcase(BeGuid iModelId, BeFileName briefcaseDownlo
     {
     DbResult stat;
     auto filepath = m_storage;
-    filepath.AppendToPath(BeFileName(iModelId.ToString()));
+    filepath.AppendToPath(BeFileName(BeGuid(true).ToString()));
     filepath.AppendExtension(L"bim");
     if (!BeFileName::DoesPathExist(filepath))
         BeFileName::BeCopyFile(m_storageMap[iModelId], filepath);
+
     auto db = DgnDb::OpenDgnDb(&stat, filepath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     m_currentId = m_currentId.GetNextBriefcaseId(); // Update briefcaseID
     if (db->IsBriefcase()) // Can't set briefcaseID if already a briefcase. Hacky workaround. This comes up when pulling multiple briefcases for 1 model
         db->SetAsMaster(iModelId);
+
     db->SetAsBriefcase(m_currentId);
     db->Txns().EnableTracking(true);
     db->SaveChanges();
@@ -73,18 +75,27 @@ bool IModelHubMock::ManualMergeAllChangesets(BeGuid iModelId)
     {
     auto path = m_storageMap[iModelId];
     DbResult stat;
-    auto db = DgnDb::OpenDgnDb(&stat, path, DgnDb::OpenParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes));
-    db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
-    for (const auto& rev : m_revisions[iModelId])
+    if (true)
         {
-        auto status = db->Revisions().MergeRevision(*rev);
-        if (RevisionStatus::Success != status)
-            {
-            db->SetAsMaster(iModelId);
-            return false;
-            }
+        auto db = DgnDb::OpenDgnDb(&stat, path, DgnDb::OpenParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes));
+        db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
+        db->SaveChanges();
         }
+
+    bvector<DgnRevisionCP> revisions;
+    for (const auto& rev : m_revisions[iModelId])
+        revisions.push_back(rev.get());
+
+    auto openParam = DgnDb::OpenParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
+    openParam.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(revisions);
+    auto db = DgnDb::OpenDgnDb(&stat, path, openParam);
+
+    db->SaveChanges();
     db->SetAsMaster(iModelId);
+
+    db->SaveChanges();
+    m_revisions[iModelId].clear();
     return true;
     }
+
 
