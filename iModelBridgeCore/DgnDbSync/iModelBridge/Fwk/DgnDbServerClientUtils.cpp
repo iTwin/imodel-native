@@ -88,7 +88,11 @@ BentleyStatus DgnDbServerClientUtils::SignIn(Tasks::AsyncError* errorOut, Creden
     if (UseImodelHub())
         m_client = ClientHelper::GetInstance()->SignInWithCredentials(errorOut, credentials);
     else
-        m_client = ClientHelper::GetInstance()->CreateClientForImodelBank(m_iModelBankUrl.c_str());
+        {
+        ClientHelper::GetInstance()->SetUrl(m_iModelBankUrl);
+        m_client = ClientHelper::GetInstance()->SignInWithStaticHeader("");     // TODO: Should pass in the AuthenticationToken as the authorizationHeader argument value
+        ClientHelper::GetInstance()->SetUrl("");
+        }
     return (m_client == nullptr)? BSIERROR: BSISUCCESS;
     }
 
