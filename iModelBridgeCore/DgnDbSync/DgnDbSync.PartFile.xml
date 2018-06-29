@@ -129,18 +129,18 @@
 
     <ProductDirectoryList ListName="DgnDbSyncAppCommonDirList">
         <ProductDirectory Name="applicationroot"            Path=""/>
-        <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot"/>
-        <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot" LibType="static"/>
-        <ProductDirectory Name="VendorNotices"              Path="notices" />
-        <ProductDirectory Name="VendorNotices"              Path="notices" LibType="Static" />
-        <ProductDirectory Name="BentleyEulaDelivery"        Path="notices"/>
+        <ProductDirectory Name="Assets"                     RelativeTo="applicationroot" Path="assets"/>
+        <ProductDirectory Name="Assets"                     RelativeTo="applicationroot" Path="assets" LibType="static"/>
+        <ProductDirectory Name="VendorNotices"              RelativeTo="applicationroot" Path="notices"/>
+        <ProductDirectory Name="VendorNotices"              RelativeTo="applicationroot" Path="notices" LibType="Static"/>
+        <ProductDirectory Name="BentleyEulaDelivery"        RelativeTo="applicationroot" Path="notices"/>
         <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
-        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
-        <ProductDirectory Name="dgnplatformlinestylersc"    Path="LineStyles"            RelativeTo="applicationroot"/>
+        <ProductDirectory Name="dgnplatformlinestylersc"    RelativeTo="applicationroot" Path="LineStyles"/>
         <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="DgnV8Dlls"                  RelativeTo="applicationroot" Path="DgnV8"/>
+        
+        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
         <ProductDirectory Name="PdfLibInitNativeAssemblies" Deliver="false"/>
-        <ProductDirectory Name="DgnV8Dlls"                  Path="DgnV8"/>
-
     </ProductDirectoryList>
 
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -183,6 +183,17 @@
         <Directories DirectoryListName="DgnV8ConverterDirList" />
     </Product>
 
+    <ProductDirectoryList ListName="DgnV8ConverterNugetDirsOverride">
+        <ProductDirectory Name="applicationroot" Path="DgnV8Converter"/>
+    </ProductDirectoryList>
+
+    <NuGetProduct Name="DgnV8ConverterNuget" OnlyPlatforms="x64" Description="DgnV8ConverterNuget">
+        <SubPart PartName="TiledDgnV8ConverterExe"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+        <Directories DirectoryListName="DgnV8ConverterDirList"/>
+        <Directories DirectoryListName="DgnV8ConverterNugetDirsOverride"/>
+    </NuGetProduct>
+    
     <ProductDirectoryList ListName="Bimv8SyncSDKDirList">
         <ProductDirectory Name="PublicAPI"                  Deliver="true" Path="PublicAPI"/>
         <ProductDirectory Name="DgnV8ConverterLibs"         Deliver="true" Path="Libs"/>
@@ -227,11 +238,11 @@
 
     <ProductDirectoryList ListName="DgnV8ConverterDirList">
         <ProductDirectory Name="applicationroot" Path=""/>
-        <ProductDirectory Name="DgnPlatformV8Assemblies"                         RelativeTo="applicationroot"/>
-        <ProductDirectory Name="DgnPlatformV8TranskitEn"            Path="en"    RelativeTo="applicationroot"/>
-        <ProductDirectory Name="BentleyClientSharedAssemblies"                   RelativeTo="applicationroot"/>
-        <ProductDirectory Name="BentleyDesktopClientApi"                         RelativeTo="applicationroot" />
-        <ProductDirectory Name="BentleyDesktopClientApi_Native"                  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="DgnPlatformV8Assemblies"        RelativeTo="applicationroot"/>
+        <ProductDirectory Name="DgnPlatformV8TranskitEn"        RelativeTo="applicationroot" Path="en"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="applicationroot"/>
     </ProductDirectoryList>
 
     <Part Name="ConverterApp-Source" BentleyBuildMakeFile="DgnV8/Converters/DeliverConverterAppSource.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
