@@ -1152,7 +1152,7 @@ TEST_F(BeSQLiteDbTests, InsertMismatchedColumns)
     EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("DELETE FROM TestTable"));
 
     DbResult result = changeSet.ApplyChanges(m_db);
-    EXPECT_TRUE(result == BE_SQLITE_OK); // SQLite seems to let this through, but it's OK
+    EXPECT_TRUE(result == BE_SQLITE_OK); // SQLite lets this through, and that's good!
 
     // Drop a column, and attempt to apply the change set
     EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("DROP TABLE TestTable"));
@@ -1280,6 +1280,11 @@ TEST_F(BeSQLiteDbTests, CreateChangeSetWithSchemaAndDataChanges)
     // Add column to TestTable1
     result = m_db.AddColumnToTable("TestTable1", "Column2", "REAL");
     ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    // Create change set - fails!
+    changeSet.Free();
+    result = changeSet.FromChangeTrack(changeTracker);
+    ASSERT_TRUE(result == BE_SQLITE_SCHEMA); // Failure!
 
     // Add row to TestTable 1
     result = m_db.ExecuteSql("INSERT INTO TestTable1 (Column1,Column2) values (3.3,4.4)");
