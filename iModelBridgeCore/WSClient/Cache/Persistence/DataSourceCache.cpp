@@ -70,7 +70,7 @@ DataSourceCache::~DataSourceCache()
 DataSourceCacheOpenState& DataSourceCache::GetState()
     {
     if (nullptr == m_state)
-        throw std::exception("DataSourceCache is not open!");
+        throw std::runtime_error("DataSourceCache is not open!");
     return *m_state;
     }
 
