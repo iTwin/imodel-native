@@ -8,4 +8,3 @@ WebsiteSeedFileTests.CreateSeedFile
 #   Tests that are failing
 #----------------------------------------------------------------------------------------
 SeedFileTests.ReplaceWithoutLockediModel
-ClientHelperTests.*
