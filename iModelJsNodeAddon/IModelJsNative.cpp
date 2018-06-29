@@ -393,8 +393,13 @@ struct NativeECDb : Napi::ObjectWrap<NativeECDb>
             {
             REQUIRE_ARGUMENT_STRING(0, dbName, Env().Undefined());
             REQUIRE_ARGUMENT_INTEGER(1, mode, Env().Undefined());
+            OPTIONAL_ARGUMENT_BOOL(2, upgrade, false, Env().Undefined());
 
-            DbResult status = JsInterop::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), (Db::OpenMode) mode);
+            Db::OpenParams params((Db::OpenMode) mode);
+            if (upgrade)
+                params.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
+
+            DbResult status = JsInterop::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), params);
             if (BE_SQLITE_OK == status)
                 {
                 GetECDb().AddFunction(HexStrSqlFunction::GetSingleton());
@@ -653,22 +658,14 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             }
 
         NativeAppData(NativeDgnDb& adb) : m_addonDb(adb) {}
-
-        static NativeAppData* Find(DgnDbR db)
-            {
-            return (NativeAppData*) db.FindAppData(GetKey());
-            }
-
+        static NativeAppData* Find(DgnDbR db) {return (NativeAppData*) db.FindAppData(GetKey());}
         static void Add(NativeDgnDb& adb)
             {
             BeAssert(nullptr == Find(adb.GetDgnDb()));
             adb.GetDgnDb().AddAppData(GetKey(), new NativeAppData(adb));
             }
 
-        static void Remove(DgnDbR db)
-            {
-            db.DropAppData(GetKey());
-            }
+        static void Remove(DgnDbR db) {db.DropAppData(GetKey());}
         };
 
     static Napi::FunctionReference s_constructor;
@@ -677,14 +674,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
 
-    NativeDgnDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeDgnDb>(info)
-        {
-        }
-
-    ~NativeDgnDb()
-        {
-        CloseDgnDb();
-        }
+    NativeDgnDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeDgnDb>(info) {}
+    ~NativeDgnDb() {CloseDgnDb();}
 
     void CloseDgnDb()
         {
@@ -793,7 +784,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
     Napi::Value GetECClassMetaData(Napi::CallbackInfo const& info)
         {
-        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, s, Env().Undefined());
         REQUIRE_ARGUMENT_STRING(1, c, Env().Undefined());
         Json::Value metaDataJson;
@@ -802,24 +792,22 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         }
 
     Napi::Value GetSchemaItem(Napi::CallbackInfo const& info)
-    {
-        REQUIRE_DB_TO_BE_OPEN
+        {
         REQUIRE_ARGUMENT_STRING(0, schemaName, Env().Undefined());
         REQUIRE_ARGUMENT_STRING(1, itemName, Env().Undefined());
         Json::Value metaDataJson;
         auto status = JsInterop::GetSchemaItem(metaDataJson, GetDgnDb(), schemaName.c_str(), itemName.c_str());
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), metaDataJson.ToString().c_str()));
-    }
+        }
 
     Napi::Value GetSchema(Napi::CallbackInfo const& info)
-    {
-        REQUIRE_DB_TO_BE_OPEN
+        {
         REQUIRE_ARGUMENT_STRING(0, name, Env().Undefined());
 
         Json::Value metaDataJson;
         auto status = JsInterop::GetSchema(metaDataJson, GetDgnDb(), name.c_str());
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), metaDataJson.ToString().c_str()));
-    }
+         }
 
     Napi::Value GetElement(Napi::CallbackInfo const& info)
         {
@@ -1318,8 +1306,14 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             result = m_dgndb->SaveChanges();
         if (BE_SQLITE_OK == result)
             m_dgndb->CloseDb();
-        if (BE_SQLITE_OK == result)
-            m_dgndb = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        if (BE_SQLITE_OK == result) 
+            {
+            SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
+            DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
+
+            m_dgndb = DgnDb::OpenDgnDb(&result, name, openParams);
+            }
+            
         return Napi::Number::New(Env(), (int)result);
         }
 

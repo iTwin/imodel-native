@@ -19,5 +19,6 @@ function getCurrentPlatformPrefix() {
 // Load the right node addon for this platform (node|electron, OS, cpu)
 // @param dir - optional directory from which addon should be loaded
 exports.loadNativePlatform = function(dir) {
-    return require(path.join(dir || "", formatPackageName(getCurrentPlatformPrefix()), "addon", "imodeljs.node"));
+    const addonDir = dir || path.join("@bentley", "imodeljs-native-platform-api", "lib");
+    return require(path.join(addonDir, formatPackageName(getCurrentPlatformPrefix()), "addon", "imodeljs.node"));
 }

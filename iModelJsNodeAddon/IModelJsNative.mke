@@ -41,7 +41,7 @@ always:
 #
 PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
 
-$(o)imodeljs-nodeaddonapi.package.version.h: $(baseDir)/imodeljs-nodeaddonapi.package.version.h $(baseDir)/package_version.txt
+$(o)imodeljs-nodeaddonapi.package.version.h: $(baseDir)/imodeljs-nodeaddonapi.package.version.h.template $(baseDir)/package_version.txt
     $(msg)
     $(copyCmd) "$<" $@
     python $(baseDir)makePackgeVersionHeaderFile.py $@ $(baseDir)/package_version.txt

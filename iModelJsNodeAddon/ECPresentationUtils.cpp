@@ -1569,14 +1569,15 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
     {
     if (!params.isMember("fieldName"))
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "fieldName");
+    if (!params.isMember("maximumValueCount"))
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "maximumValueCount");
 
     IConnectionCP connection = manager.Connections().GetConnection(db);
     JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
-    PageOptions pageOptions = GetPageOptions(params);
     Utf8String fieldName = params["fieldName"].asString();
-
+    int64_t maximumValueCount = params["maximumValueCount"].asInt64();
     return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, GetManagerOptions(params))
-        .then([&manager, descriptorOverridesJson, pageOptions, fieldName] (ContentDescriptorCPtr descriptor)
+        .then([&manager, descriptorOverridesJson, fieldName, maximumValueCount] (ContentDescriptorCPtr descriptor)
         {
         if (descriptor.IsNull())
             return folly::makeFutureWith([] () { return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor"); });
@@ -1589,9 +1590,10 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
                 overridenDescriptor->RemoveField(field->GetName().c_str());
             }
         overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
-
+        
+        PageOptions pageOptions;
         return manager.GetContent(*overridenDescriptor, pageOptions)
-            .then([fieldName](ContentCPtr content)
+            .then([fieldName, maximumValueCount](ContentCPtr content)
             {
             DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
 
@@ -1599,6 +1601,9 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
             response.SetArray();
             for (size_t i = 0; i < contentSet.GetSize(); i++)
                 {
+                if (maximumValueCount != 0 && response.Size() >= maximumValueCount)
+                    break;
+
                 RapidJsonValueCR value = contentSet.Get(i)->GetDisplayValues()[fieldName.c_str()];
                 if (value.IsNull() || (value.IsString() && 0 == value.GetStringLength()))
                     continue;
