@@ -654,7 +654,7 @@ BentleyStatus FontReader::_Read(Json::Value& font)
         return ERROR;
         }
 
-    DgnFontId oldId = ECJsonUtilities::JsonToId<DgnFontId>(font["Id"]);
+    DgnFontId oldId = ECJsonUtilities::JsonToId<DgnFontId>(font["id"]);
     GetSyncInfo()->InsertFont(oldId, id);
     m_importer->RemapFont(oldId);
 
