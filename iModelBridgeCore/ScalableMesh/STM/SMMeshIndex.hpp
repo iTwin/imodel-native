@@ -4577,7 +4577,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         bool hasClip = false;
         if (useVolumeClips.empty())
         {
-            if (!m_nodeHeader.m_arePoints3d && !polyInclusion && !m_SMIndex->IsFromCesium() && dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_canUseBcLibClips)
+            if (!m_nodeHeader.m_arePoints3d && dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->IsTerrain() && !polyInclusion && !m_SMIndex->IsFromCesium() && dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_canUseBcLibClips)
             {
                 BcDTMPtr dtm = nodeP->GetBcDTM().get();
                 if (dtm.get() != nullptr)
@@ -5062,9 +5062,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
 //=======================================================================================
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ModifyClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn, Transform tr)
     {
-    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+    //RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
 
-    if (pointsPtr->size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return true;
+    if (m_nodeHeader.m_nodeCount == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return true;
 
     bool found = false;
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
