@@ -45,10 +45,8 @@ ClientHelper* ClientHelper::Initialize(ClientInfoPtr clientInfo, IJsonLocalState
     else
         {
         s_instance->m_clientInfo = clientInfo;
-        if (nullptr != ls)
-            s_instance->m_localState = ls;
-        if (nullptr != customHandler)
-            s_instance->m_customHandler = customHandler;
+        s_instance->m_localState = ls;
+        s_instance->m_customHandler = customHandler;
         }
     return s_instance;
     }
