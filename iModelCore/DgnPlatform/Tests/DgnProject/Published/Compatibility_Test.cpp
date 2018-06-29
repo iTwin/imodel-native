@@ -882,7 +882,7 @@ void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP dest
 
     if (BE_SQLITE_ERROR_SchemaUpgradeRequired == openStatus)
         {
-        DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly));
+        DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade));
         DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
         ASSERT_EQ(BE_SQLITE_OK, openStatus);
         ASSERT_TRUE(db.IsValid());
@@ -890,7 +890,8 @@ void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP dest
         db->CloseDb();
         }
 
-    m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck));
+    m_db = DgnDb::OpenDgnDb(&openStatus, destFileName, openParams);
     ASSERT_EQ(BE_SQLITE_OK, openStatus);
     ASSERT_TRUE(m_db.IsValid());
     }

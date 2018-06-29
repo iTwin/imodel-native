@@ -116,6 +116,7 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
 
     if (isHttp)
         {
+        m_maxValidDuration = _GetMaxValidDuration();
         auto query = std::make_shared<HttpDataQuery>(m_resourceName, m_loads);
 
         TileLoaderPtr me(this);
@@ -129,7 +130,7 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
 
             me->m_tileBytes = std::move(query->m_responseBody->GetByteStream()); // NEEDSWORK this is a copy not a move...
             me->m_contentType = response.GetHeaders().GetContentType();
-            me->m_saveToCache = query->GetCacheContolExpirationDate(me->m_expirationDate, response);
+            me->m_saveToCache = query->GetCacheControlExpirationDate(me->m_expirationDate, me->m_maxValidDuration, response);
 
             return SUCCESS;
             });
@@ -490,7 +491,7 @@ folly::Future<Http::Response> HttpDataQuery::Perform()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate, Http::Response const& response)
+bool HttpDataQuery::GetCacheControlExpirationDate(uint64_t& expirationDate, uint64_t maxValidDuration, Http::Response const& response)
     {
     expirationDate = 0;
 
@@ -531,6 +532,16 @@ bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate, Http:
             }
         }
        
+    // We need to check to see whether the TileTree itself sets a maximum valid duration. For example, we enforce a 3-day expiration on Bing Map tiles.
+    if (0 != maxValidDuration)
+        {
+        uint64_t maxAllowedExpirationDate = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + maxValidDuration;
+
+        // if we got no expiration date, or the furthestExpirationDate is sooner, we use that.
+        if ( (0 == expirationDate) || (maxAllowedExpirationDate < expirationDate) )
+            expirationDate = maxAllowedExpirationDate;
+        }
+
     return true;
     }
 
@@ -1656,6 +1667,21 @@ uint32_t DrawArgs::GetMinDepth() const
 uint32_t DrawArgs::GetMaxDepth() const
     {
     return m_context.GetUpdatePlan().GetTileOptions().GetMaxDepth();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawArgs::InvalidateCopyrightInfo()
+    {
+    // Barry wants to update attribution info for bing map tiles based on the currently-selected set of tiles.
+    auto& vp = m_context.GetViewportR();
+    auto view = vp.GetSpatialViewControllerP();
+    if (nullptr != view)
+        {
+        view->InvalidateCopyrightInfo();
+        vp.InvalidateDecorations();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

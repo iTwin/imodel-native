@@ -20,7 +20,7 @@
         <SubPart PartName="RunGtest" PartFile="geomlibs" Repository="GeomLibs"/>
         <SubPart PartName="RunGtest" PartFile="Units" Repository="Units"/>
 
-        <!-- These are built, but not run, due to time. -->
+        <!-- These are built, but not run. -->
         <SubProduct ProductName="GeoCoord-Gtest" PartFile="GeoCoord" Repository="GeoCoord"/>
     </Part>
 

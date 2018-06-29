@@ -513,6 +513,7 @@ protected:
     Utf8String m_cacheKey;      // for loading or saving to tile cache
     StreamBuffer m_tileBytes;   // when available, bytes are saved here
     Utf8String m_contentType;   // MIME type of the data. Can be empty.
+    uint64_t m_maxValidDuration; // default validity time of tile. 0 if not enforced by the Tile subclass.
     uint64_t m_expirationDate;  // Expiration date. Will be 0 when not available.
     bool m_saveToCache = false;
 
@@ -547,6 +548,7 @@ public:
 
     //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data. Called from worker threads.
     virtual BentleyStatus _LoadTile() = 0; 
+    virtual uint64_t      _GetMaxValidDuration() const { return 0; }
 
     //! Given the time (in unix millis) at which the tile was written to the cache, return true if the cached tile is no longer usable.
     //! If so, it will be deleted from the cache and _LoadTile() will be used to produce a new tile instead.
@@ -582,7 +584,7 @@ struct HttpDataQuery
     Http::Request& GetRequest() {return m_request;}
 
     //! Parse expiration date from the response. Return false if caching is not allowed.
-    DGNPLATFORM_EXPORT static bool GetCacheContolExpirationDate(uint64_t& expiration, Http::Response const& response);
+    DGNPLATFORM_EXPORT static bool GetCacheControlExpirationDate(uint64_t& expiration, uint64_t maxValidDuration, Http::Response const& response);
 
     //! Valid only after 'Perform' has completed.
     ByteStream const& GetData() const {return m_responseBody->GetByteStream();}
@@ -729,6 +731,8 @@ struct DrawArgs : TileArgs
     BeTimePoint GetDeadline() const;
     uint32_t GetMinDepth() const;
     uint32_t GetMaxDepth() const;
+
+    void InvalidateCopyrightInfo();
     };
     
 //=======================================================================================

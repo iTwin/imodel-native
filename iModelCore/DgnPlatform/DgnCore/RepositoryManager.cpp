@@ -157,6 +157,7 @@ protected:
     void AddDependentElements(DgnLockSet& locks, bvector<DgnModelId> const& models);
     RepositoryStatus PromoteDependentElements(LockRequestCR usedLocks, bvector<DgnModelId> const& models);
     void Cull(DgnLockSet& locks);
+    void CullElementsInExclusiveModels(DgnLockSet& locks);
     RepositoryStatus AcquireLocks(LockRequestR locks, bool cull);
     Response DoFastQuery(Request const&);
     RepositoryStatus FastQueryLocks(Response& response, LockRequest const& locks, ResponseOptions options);
@@ -180,6 +181,7 @@ protected:
     bool LockRequired(DgnElementId elementId)
         {
         CachedStatementPtr stmt = GetDgnDb().GetCachedStatement(STMT_ModelIdFromElement);
+        stmt->BindId(1, elementId);
         stmt->Step();
         DgnModelId modelId = stmt->GetValueId<DgnModelId>(0);
         stmt->Reset();
@@ -1015,6 +1017,27 @@ void BriefcaseManagerBase::Cull(DgnLockSet& locks)
 
         stmt->Reset();
         }
+
+    CullElementsInExclusiveModels(locks);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void BriefcaseManagerBase::CullElementsInExclusiveModels(DgnLockSet& locks)
+    {
+    DgnLockSet toDelete;
+    for (DgnLock lock : locks)
+        {
+        if (lock.GetType() != LockableType::Element)
+            continue;
+        DgnElementId elementId(lock.GetId().GetValue());
+        if (!LockRequired(elementId))
+            toDelete.insert(lock);
+        }
+
+    for (DgnLock lock : toDelete)
+        locks.erase(lock);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2685,7 +2708,10 @@ void BulkUpdateBriefcaseManager::_OnModelInserted(DgnModelId id)
     BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
 #endif
     if (LocksRequired()) // don't Validate
+        {
         m_req.Locks().GetLockSet().insert(DgnLock(LockableId(id), LockLevel::Exclusive));
+        m_exclusivelyLockedModels.insert(id);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

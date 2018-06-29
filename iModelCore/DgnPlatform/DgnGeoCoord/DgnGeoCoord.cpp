@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/DgnGeoCoord.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -4905,7 +4905,7 @@ DgnDbR          cache
 //          char    errorMsg[512];
 //          CSMap::CS_errmsg (errorMsg, DIM(errorMsg));
 //          printf ("ERROR: %s trying to create from saved type 66 parameters\n", errorMsg);
-            BeAssert(false);
+//          BeAssert(false);
             return NULL;
             }
         }

@@ -6,17 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "CompatibilityTestFixture.h"
+#include "Profiles.h"
 
 struct BeDbCompatibilityTestFixture : CompatibilityTestFixture 
     {
-protected:
-    Profile& Profile() const { return ProfileManager().GetProfile(ProfileType::BeDb); }
     };
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Affan.Khan                          05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(BeDbCompatibilityTestFixture, OpenAllVersionInReadWriteMode)
-    {
-    }
 

@@ -114,6 +114,10 @@ BentleyStatus MapTile::Loader::_LoadTile()
     MapTileR tile = static_cast<MapTileR>(*m_tile);
     MapRootR mapRoot = tile.GetMapRoot();
 
+    // don't accept tiles that match the missing tile data.
+    if (mapRoot.m_imageryProvider->_MatchesMissingTile (m_tileBytes))
+        return ERROR;
+
     // some tile servers (for example Bing) start returning PNG tiles at a certain zoom level, even if you request Jpeg.
     ImageSource::Format format = mapRoot.m_format;
     if (0 == m_contentType.CompareTo("image/png"))
@@ -125,6 +129,7 @@ BentleyStatus MapTile::Loader::_LoadTile()
     Texture::CreateParams textureParams;
     textureParams.SetIsTileSection();
     auto texture = GetRenderSystem()->_CreateTexture(source, Image::BottomUp::No, mapRoot.GetDgnDb(), textureParams);
+
     m_tileBytes = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
 
     GraphicParams gfParams = GraphicParams::FromSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0); // this is to set transparency
@@ -134,6 +139,16 @@ BentleyStatus MapTile::Loader::_LoadTile()
 
     tile.SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Returns the default default duration, which it gets from the imagery provider
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t MapTile::Loader::_GetMaxValidDuration() const
+    {
+    MapTileR tile = static_cast<MapTileR>(*m_tile);
+    MapRootR mapRoot = tile.GetMapRoot();
+    return mapRoot.m_imageryProvider->_GetMaxValidDuration();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -172,16 +187,16 @@ MapTile::MapTile(MapRootR root, QuadTree::TileId id, MapTileCP parent) : QuadTre
     {
     // First, convert from tile coordinates to LatLong.
     double nTiles = (1 << id.m_level);
-    double east  = columnToLongitude(id.m_column, nTiles);
-    double west  = columnToLongitude(id.m_column+1, nTiles);
+    double west  = columnToLongitude(id.m_column, nTiles);
+    double east  = columnToLongitude(id.m_column+1, nTiles);
     double north = rowToLatitude(id.m_row, nTiles);
     double south = rowToLatitude(id.m_row+1, nTiles);
 
     LatLongPoint llPts[4];             //    ----x----->
-    llPts[0].Init(east, north, 0.0);   //  | [0]     [1]
-    llPts[1].Init(west, north, 0.0);   //  y
-    llPts[2].Init(east, south, 0.0);   //  | [2]     [3]
-    llPts[3].Init(west, south, 0.0);   //  v
+    llPts[0].Init(west, north, 0.0);   //  | [0]     [1]
+    llPts[1].Init(east, north, 0.0);   //  y
+    llPts[2].Init(west, south, 0.0);   //  | [2]     [3]
+    llPts[3].Init(east, south, 0.0);   //  v
 
     // attempt to reproject using BIM's GCS
     if (SUCCESS != ReprojectCorners(llPts))
@@ -256,6 +271,10 @@ MapRoot::MapRoot(WebMercatorModelCR model, TransformCR trans, ImageryProviderR i
 
     CreateCache(imageryProvider._GetCacheFileName().c_str(), MAX_DB_CACHE_SIZE);
     m_rootTile = new MapTile(*this, QuadTree::TileId(0,0,0), nullptr);
+    m_rootTile->SetIsReady();
+
+    // get the copyright sprite from the imagery provider.
+    m_copyrightSprite = imageryProvider._GetCopyrightSprite();
     }
 
 
@@ -288,27 +307,22 @@ void WebMercatorModel::FromJson(Json::Value const& value)
     {
     m_groundBias = value[json_groundBias()].asDouble(-1.0);
     m_transparency = value[json_transparency()].asDouble(0.0);
-    LIMIT_RANGE(0.0, .9, m_transparency);
+    LIMIT_RANGE(0.0, .95, m_transparency);
 
     Utf8String providerName = value[json_providerName()].asString();
+    Json::Value const& providerDataValue = value[json_providerData()];
 
     if (0 == providerName.CompareToI(WebMercator::MapBoxImageryProvider::prop_MapBoxProvider()))
         {
-        m_provider = new MapBoxImageryProvider();
+        m_provider = MapBoxImageryProvider::Create(providerDataValue);
         }
     else if (0 == providerName.CompareToI(WebMercator::BingImageryProvider::prop_BingProvider()))
         {
-        m_provider = new BingImageryProvider();
+        m_provider = BingImageryProvider::Create(providerDataValue);
         }
     else if (0 == providerName.CompareToI(WebMercator::HereImageryProvider::prop_HereProvider()))
         {
-        m_provider = new HereImageryProvider();
-        }
-
-    if (m_provider.IsValid())
-        {
-        BeAssert(value.isMember(json_providerData()));
-        m_provider->_FromJson(value[json_providerData()]);
+        m_provider = HereImageryProvider::Create(providerDataValue);
         }
     }
 
@@ -343,9 +357,22 @@ Utf8String WebMercatorModel::_GetCopyrightMessage() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::RgbaSpriteP WebMercatorModel::_GetCopyrightSprite() const
+    { 
+    // make sure we have a root.
+    MapRoot* root = dynamic_cast<MapRoot*> (m_root.get());
+    if (nullptr != root)
+        return root->m_copyrightSprite.get();
+    else
+        return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr WebMercatorModel::Load(SystemP renderSys) const
+TileTree::RootPtr WebMercatorModel::LoadTileTree(SystemP renderSys) const
     {
     if (m_provider.IsNull())
         {
@@ -353,11 +380,22 @@ TileTree::RootPtr WebMercatorModel::Load(SystemP renderSys) const
         return nullptr;
         }
 
-    Transform biasTrans;
-    biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, m_groundBias));
+    // Here we would like to create the TileTree root (MapRoot), but we might not be ready to do that for some ImageryProviders.
+    // For example, the Bing provider isn't ready to go until it has fetched the template URL.
+    ImageryProvider::TemplateUrlLoadStatus templateStatus = m_provider->_GetTemplateUrlLoadStatus();
+    if (ImageryProvider::TemplateUrlLoadStatus::Received == templateStatus)
+        {
+        Transform biasTrans;
+        biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, m_groundBias));
 
-    uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
-    return new MapRoot(*this, biasTrans, *m_provider.get(), renderSys, ImageSource::Format::Jpeg, m_transparency, maxSize);
+
+        uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
+        return new MapRoot(*this, biasTrans, *m_provider.get(), renderSys, ImageSource::Format::Jpeg, m_transparency, maxSize);
+        }
+
+    // Here we do not yet have the TemplateUrl. _FetchTemplateUrl can be called multiple times - it takes care of checking the status, etc.
+    m_provider->_FetchTemplateUrl();
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -372,6 +410,21 @@ WebMercatorModel::WebMercatorModel(CreateParams const& params) : T_Super(params)
 
     // if not null, this is a new model creation. Get the parameters from those passed in to the constructor of CreateParams.
     FromJson(params.m_jsonParameters);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MapBoxImageryProvider*  MapBoxImageryProvider::Create (Json::Value const& providerDataValue)
+    {
+    MapBoxImageryProvider*    imageryProvider = new MapBoxImageryProvider();
+    imageryProvider->_FromJson (providerDataValue);
+
+    // if the mapType is None, return null.
+    if (MapType::None == imageryProvider->m_mapType)
+        return nullptr;
+
+    return imageryProvider;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -408,13 +461,13 @@ Utf8String MapBoxImageryProvider::_GetCacheFileName() const
     {
     switch (m_mapType)
         {
-        case MapBoxImageryProvider::MapType::StreetMap:
+        case MapType::Street:
             return "MapBoxStreets";
 
-        case MapBoxImageryProvider::MapType::Satellite:
+        case MapType::Aerial:
             return "MapBoxSatellite";
 
-        case MapBoxImageryProvider::MapType::StreetsAndSatellite:
+        case MapType::Hybrid:
             return "MapBoxHybrid";
         }
     BeAssert(false);
@@ -427,19 +480,19 @@ Utf8String MapBoxImageryProvider::_GetCacheFileName() const
 void MapBoxImageryProvider::_FromJson(Json::Value const& value)
     {
     // the only thing currently stored in the MapBoxImageryProvider Json is the MapType.
-    m_mapType = (MapBoxImageryProvider::MapType) value[json_mapType()].asInt((int)MapBoxImageryProvider::MapType::StreetMap);
+    m_mapType = (MapType) value[WebMercatorModel::json_mapType()].asInt((int)MapType::Street);
 
     switch (m_mapType)
         {
-        case MapBoxImageryProvider::MapType::StreetMap:
+        case MapType::Street:
             m_baseUrl = "http://api.mapbox.com/v4/mapbox.streets/";
             break;
 
-        case MapBoxImageryProvider::MapType::Satellite:
+        case MapType::Aerial:
             m_baseUrl = "http://api.mapbox.com/v4/mapbox.satellite/";
             break;
 
-        case MapBoxImageryProvider::MapType::StreetsAndSatellite:
+        case MapType::Hybrid:
             m_baseUrl = "http://api.mapbox.com/v4/mapbox.streets-satellite/";
             break;
 
@@ -454,7 +507,7 @@ void MapBoxImageryProvider::_FromJson(Json::Value const& value)
 void MapBoxImageryProvider::_ToJson(Json::Value& value) const
     {
     // the only thing currently stored in the MapBoxImageryProvider Json is the MapType.
-    value[json_mapType()] = (int)m_mapType;
+    value[WebMercatorModel::json_mapType()] = (int)m_mapType;
     }
 
     
@@ -475,6 +528,9 @@ static Utf8String tileXYToQuadKey(int tileX, int tileY, int levelOfDetail)
     // blatantly ripped off from C# example in bing documentation https://msdn.microsoft.com/en-us/library/bb259689.aspx
     Utf8String  quadKey;
 
+    // Root tile is not displayable. Returns 0 for _GetMaximumSize(). Should not end up here.
+    BeAssert(0 != levelOfDetail);
+
     for (int i = levelOfDetail; i > 0; i--)
         {
         char digit = '0';
@@ -491,6 +547,49 @@ static Utf8String tileXYToQuadKey(int tileX, int tileY, int levelOfDetail)
         quadKey.append(1, digit);
         }
     return quadKey;
+    }
+
+BingImageryProviderPtr  BingImageryProvider::s_streetMapProvider;
+BingImageryProviderPtr  BingImageryProvider::s_aerialMapProvider;
+BingImageryProviderPtr  BingImageryProvider::s_hybridMapProvider;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BingImageryProvider*  BingImageryProvider::Create (Json::Value const& providerDataValue)
+    {
+    // the only thing currently stored in the BingImageryProvider Json is the MapType.
+    MapType mapType = (MapType) providerDataValue[WebMercatorModel::json_mapType()].asInt((int)MapType::Street);
+
+    // if the background tupe is None, return nullptr.
+    if (MapType::None == mapType)
+        return nullptr;
+
+    // we keep one imagery provider for each MapType of map. That way we don't have to query
+    // again for the URL to ask, and Bing's accounting might be based off those queries, so we use
+    // as few as possible.
+
+    BingImageryProviderPtr* providerForTypeP = nullptr;
+    if (MapType::Street == mapType)
+        providerForTypeP = &s_streetMapProvider;
+    else if (MapType::Aerial == mapType)
+        providerForTypeP = &s_aerialMapProvider;
+    else if (MapType::Hybrid == mapType)
+        providerForTypeP = &s_hybridMapProvider;
+
+    if (nullptr == providerForTypeP)
+        {
+        BeAssert (false);
+        providerForTypeP = &s_streetMapProvider;
+        }
+
+    if ((*providerForTypeP).IsNull())
+        {
+        (*providerForTypeP) = new BingImageryProvider();
+        (*providerForTypeP)->_FromJson (providerDataValue);
+        }
+
+    return (*providerForTypeP).get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -516,7 +615,7 @@ Utf8String BingImageryProvider::_ConstructUrl(TileTree::QuadTree::Tile const& ti
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BingImageryProvider::_GetCreditMessage() const
     {
-    return "(c) Microsoft";
+    return "";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -526,13 +625,13 @@ Utf8String BingImageryProvider::_GetCacheFileName() const
     {
     switch (m_mapType)
         {
-        case BingImageryProvider::MapType::Road:
+        case MapType::Street:
             return "BingRoad";
 
-        case BingImageryProvider::MapType::Aerial:
+        case MapType::Aerial:
             return "BingAerial";
 
-        case BingImageryProvider::MapType::AerialWithLabels:
+        case MapType::Hybrid:
             return "BingHybrid";
         }
     BeAssert(false);
@@ -545,7 +644,7 @@ Utf8String BingImageryProvider::_GetCacheFileName() const
 void    BingImageryProvider::_FromJson(Json::Value const& value)
     {
     // the only thing currently stored in the BingImageryProvider Json is the MapType.
-    m_mapType = (BingImageryProvider::MapType) value[json_mapType()].asInt((int)BingImageryProvider::MapType::Road);
+    m_mapType = (MapType) value[WebMercatorModel::json_mapType()].asInt((int)MapType::Street);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -554,7 +653,7 @@ void    BingImageryProvider::_FromJson(Json::Value const& value)
 void    BingImageryProvider::_ToJson(Json::Value& value) const
     {
     // the only thing currently stored in the BingImageryProvider Json is the MapType.
-    value[json_mapType()] = (int)m_mapType;
+    value[WebMercatorModel::json_mapType()] = (int)m_mapType;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -564,6 +663,109 @@ Utf8String  BingImageryProvider::_GetCreditUrl() const
     {
     // NEEDSWORK_MapBox
     return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BingImageryProvider::ReadAttributionsFromJson (Json::Value const& response)
+    {
+    Json::Value const& imageryProvidersJson = response["imageryProviders"];
+    for (Json::ArrayIndex iAttribution = 0; iAttribution < 1000; iAttribution++)
+        {
+        BingImageryProvider::Attribution    thisAttribution;
+
+        if (!imageryProvidersJson.isValidIndex (iAttribution))
+            break;
+
+        Json::Value const& attributionJson = imageryProvidersJson[iAttribution];
+        thisAttribution.m_copyrightMessage = attributionJson["attribution"].asString();
+
+        Json::Value const& coverageAreas = attributionJson["coverageAreas"];
+        for (Json::ArrayIndex iCoverage = 0; iCoverage < 1000; iCoverage++)
+            {
+            BingImageryProvider::Coverage   thisCoverage;
+
+            if (!coverageAreas.isValidIndex (iCoverage))
+                break;
+
+            Json::Value const& coverageJson     = coverageAreas[iCoverage];
+            Json::Value const& boundingBox      = coverageJson["bbox"];
+            thisCoverage.m_lowerLeftLatitude    = boundingBox[0].asDouble();
+            thisCoverage.m_lowerLeftLongitude   = boundingBox[1].asDouble();
+            thisCoverage.m_upperRightLatitude   = boundingBox[2].asDouble();
+            thisCoverage.m_upperRightLongitude  = boundingBox[3].asDouble();
+            thisCoverage.m_minimumZoomLevel     = (uint8_t) coverageJson["zoomMin"].asInt();
+            thisCoverage.m_maximumZoomLevel     = (uint8_t) coverageJson["zoomMax"].asInt();
+            thisAttribution.m_coverageList.push_back (thisCoverage);
+            }
+
+        m_attributions.push_back (thisAttribution);
+        }
+
+    }
+
+#if defined (NEEDSWORK_BING_EXTENT)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     AddUniqueString (T_Utf8StringVectorR messages, Utf8StringCR thisMessage)
+    {
+    for each (Utf8StringCR message in messages)
+        {
+        if (0 == thisMessage.CompareTo (message))
+            return;
+        }
+    messages.push_back (thisMessage);
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BingImageryProvider::_UnionAttributionCopyrightMessages (T_Utf8StringVectorR copyrightMessages, MapRootCR mapRoot, int viewIndex)
+    {
+#if defined (NEEDSWORK_BING_EXTENT)
+    Extent const& extent = mapRoot.m_extent[viewIndex];
+
+    for each (Attribution const& attribution in m_attributions)
+        {
+        for each (Coverage const& coverage in attribution.m_coverageList)
+            {
+            // does the range overlap with the mapRoots range?
+            if (coverage.m_minimumZoomLevel > extent.m_lowestZoomLevel)
+                continue;
+            if (coverage.m_maximumZoomLevel < extent.m_highestZoomLevel)
+                continue;
+
+            if (coverage.m_upperRightLongitude < extent.m_lowerLeft.longitude)
+                continue;
+
+            if (coverage.m_lowerLeftLongitude > extent.m_upperRight.longitude)
+                continue;
+
+            if (coverage.m_upperRightLatitude < extent.m_lowerLeft.latitude)
+                continue;
+
+            if (coverage.m_lowerLeftLatitude > extent.m_upperRight.latitude)
+                continue;
+
+            // if we get here, the data is used, and there is no need to look through the rest of the coverages.
+            AddUniqueString (copyrightMessages, attribution.m_copyrightMessage);
+            break;
+            }
+        }
+#endif
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BingImageryProvider::_HaveAttributionCopyrightMessages (MapRootCR mapRoot)
+    {
+    return !m_attributions.empty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -583,15 +785,15 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
     Utf8String imagerySetName;
     switch (m_mapType)
         {
-        case BingImageryProvider::MapType::Road:
+        case MapType::Street:
             imagerySetName.assign("Road");
             break;
 
-        case BingImageryProvider::MapType::Aerial:
+        case MapType::Aerial:
             imagerySetName.assign("Aerial");
             break;
 
-        case BingImageryProvider::MapType::AerialWithLabels:
+        case MapType::Hybrid:
             imagerySetName.assign("AerialWithLabels");
             break;
 
@@ -600,8 +802,17 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
         }
 
     // prepare the url.
-    Utf8String url;
-    url.Sprintf("http://dev.virtualearth.net/REST/v1/Imagery/Metadata/%s?o=json&key=Am-FIomxQ8COwv6zeuMNoc9xx3rMoeNYo8prPUJysZeQSuGLHQ9VbrHa9hNaO23z", imagerySetName.c_str());
+    Utf8String  url;
+
+#if defined (NEEDSWORK_Bing_FetchKeyFromURL)
+    // The key from our Microsoft agreement.
+    Utf8String  bingKey = fetchKeyFromURL;
+#else
+    Utf8String  bingKey = "AtaeI3QDNG7Bpv1L53cSfDBgBKXIgLq3q-xmn_Y2UyzvF-68rdVxwAuje49syGZt";
+#endif
+
+    // this is hardcoding the Bentley key.
+    url.Sprintf("http://dev.virtualearth.net/REST/v1/Imagery/Metadata/%s?o=json&incl=ImageryProviders&key=%s", imagerySetName.c_str(), bingKey.c_str());
 
     // make the URL request.
     Http::Request request(url);
@@ -644,7 +855,10 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
             Json::Value                     responseJson;
             Json::Reader::Parse(responseString.c_str(), responseJson);
             if (responseJson.isNull())
+                {
+                me->m_templateUrlLoadStatus.store(ImageryProvider::TemplateUrlLoadStatus::Failed);
                 return ImageryProvider::TemplateUrlLoadStatus::Failed;
+                }
 
             // get the url for the bing logo.
             me->m_creditUrl             = responseJson["brandLogoUri"].asString();
@@ -654,6 +868,8 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
             me->m_maximumZoomLevel      = resourceUrl["zoomMax"].asInt();
             me->m_tileHeight            = resourceUrl["imageHeight"].asInt();
             me->m_tileWidth             = resourceUrl["imageWidth"].asInt();
+
+            me->ReadAttributionsFromJson (resourceUrl);
 
             Utf8String rawTemplate      = resourceUrl["imageUrl"].asString();
 
@@ -667,16 +883,149 @@ folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_Fetc
 
             // NEEDSWORK_Culture
             size_t culture              = rawTemplate.find("{culture}");
-            BeAssert(Utf8String::npos != culture);
-            rawTemplate.replace(culture, 9, "en-US");
+            if (Utf8String::npos != culture)
+                rawTemplate.replace(culture, 9, "en-US");
 
             me->m_urlTemplate = rawTemplate;
 
+            // if we got a creditUrl from the response, download it also.
+            if (!me->m_creditUrl.empty ())
+                {
+                Http::Request logoRequest (me->m_creditUrl);
+                Http::HttpByteStreamBodyPtr byteStream = new Http::HttpByteStreamBody();
+                logoRequest.SetResponseBody (byteStream);
+                logoRequest.Perform().then ([me, byteStream] (Http::Response logoResponse)
+                    {
+                    if (Http::ConnectionStatus::OK == logoResponse.GetConnectionStatus() && Http::HttpStatus::OK == logoResponse.GetHttpStatus())
+                        {
+                        Http::HttpResponseContentPtr    logoContent = logoResponse.GetContent();
+                        me->m_logoByteStream = std::move (byteStream->GetByteStream());
+                        me->m_logoContentType = logoResponse.GetHeaders().GetContentType();
+                        me->m_logoValid.store(true);
+                        }
+                    });
+                }
+
+            // download a tile that we know is the worthless tile that Bing map sends out when they don't have data.
+            if (true)
+                {
+                // get the key of a tile we know is missing 
+                Utf8String missingTileKey = tileXYToQuadKey (0, 0, me->m_maximumZoomLevel-1);
+
+                // from the template url, construct the tile url.
+                Utf8String url;
+                url.Sprintf (me->m_urlTemplate.c_str(), 0, missingTileKey.c_str());
+
+                // make the URL request.
+                Http::Request request (url);
+                Http::HttpByteStreamBodyPtr byteStream = new Http::HttpByteStreamBody();
+                request.SetResponseBody (byteStream);
+
+                request.Perform().then([me, byteStream] (Http::Response response)
+                    {
+                    // we got the response from the server.
+                    if (Http::ConnectionStatus::OK == response.GetConnectionStatus() && Http::HttpStatus::OK == response.GetHttpStatus())
+                        {
+                        Http::HttpResponseContentPtr    content = response.GetContent();
+                        StreamBuffer                    tileBytes   = std::move(byteStream->GetByteStream());
+                        // use  the middle 1/3 of the data.
+                        uint32_t                        dataSize = tileBytes.GetSize() / 3;   
+
+                        me->m_missingTileData = (uint8_t*) malloc (dataSize);
+                        memcpy (me->m_missingTileData, (tileBytes.GetData() + dataSize), dataSize);
+                        me->m_missingTileDataSize.store (tileBytes.GetSize());
+                        }
+                    });
+                }
+
+            me->m_templateUrlLoadStatus.store(ImageryProvider::TemplateUrlLoadStatus::Received);
             return ImageryProvider::TemplateUrlLoadStatus::Received;
             }
 
+        me->m_templateUrlLoadStatus.store(ImageryProvider::TemplateUrlLoadStatus::Failed);
         return ImageryProvider::TemplateUrlLoadStatus::Failed;
         });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BingImageryProvider::_MatchesMissingTile (ByteStream& tileBytes) const
+    {
+    // missing tile data might not have come in yet.
+    uint32_t missingTileDataSize;
+    if (0 == (missingTileDataSize = m_missingTileDataSize.load()))
+        return false;
+
+    // If it's not the same size, it doesn't match.
+    uint32_t dataSize;
+    if ((dataSize = tileBytes.GetSize()) != missingTileDataSize)
+        return false;
+
+    // start 1/3 of the way in, look at 1/3 of the data.
+    uint32_t compareSize = dataSize/3;
+    uint8_t const* thisData = tileBytes.GetData() + compareSize;
+    return 0 == memcmp (thisData, m_missingTileData, compareSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::RgbaSpriteP   BingImageryProvider::_GetCopyrightSprite ()
+    {
+    if (!m_logoValid.load())
+        return nullptr;
+
+    if (m_copyrightSprite.IsValid())
+        return m_copyrightSprite.get();
+
+    ByteStream* logoByteStream = GetLogoByteStream();
+
+    // we have a byte stream, create the logo image
+    Render::ImageSource::Format format;
+    Utf8String contentType (GetLogoContentType());
+    if (0 == contentType.CompareTo ("image/png"))
+        format = Render::ImageSource::Format::Png;
+    else if (0 == contentType.CompareTo ("image/jpeg"))
+        format = Render::ImageSource::Format::Jpeg;
+    else
+        {
+        BeAssert (false);
+        return nullptr;
+        }
+
+    Render::ImageSource source (format, std::move(*logoByteStream));
+    m_copyrightSprite = Render::RgbaSprite::CreateFrom(source);
+
+    return m_copyrightSprite.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   06/17
+* Our Bing Maps provider limits the tile lifetime to three days.
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t    BingImageryProvider::_GetMaxValidDuration () const
+    {
+    // testing - 3 minute
+    // return 3.0 * 60.0 * 1000.0;
+
+    //     days  hours/day    seconds/Hour  milli/second
+    return 3.0 * 24.0       * 3600          * 1000;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+HereImageryProvider*  HereImageryProvider::Create (Json::Value const& providerDataValue)
+    {
+    HereImageryProvider*    imageryProvider = new HereImageryProvider();
+    imageryProvider->_FromJson (providerDataValue);
+
+    // if the mapType is None, return null.
+    if (MapType::None == imageryProvider->m_mapType)
+        return nullptr;
+
+    return imageryProvider;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -729,13 +1078,13 @@ Utf8String HereImageryProvider::_GetCacheFileName() const
     {
     switch (m_mapType)
         {
-        case HereImageryProvider::MapType::Map:
+        case MapType::Street:
             return "HereRoad";
 
-        case HereImageryProvider::MapType::Aerial:
+        case MapType::Aerial:
             return "HereAerial";
 
-        case HereImageryProvider::MapType::Combined:
+        case MapType::Hybrid:
             return "HereHybrid";
         }
     BeAssert(false);
@@ -748,19 +1097,19 @@ Utf8String HereImageryProvider::_GetCacheFileName() const
 void    HereImageryProvider::_FromJson(Json::Value const& value)
     {
     // the only thing currently stored in the HereImageryProvider Json is the MapType.
-    m_mapType = (HereImageryProvider::MapType) value[json_mapType()].asInt((int)HereImageryProvider::MapType::Map);
+    m_mapType = (MapType) value[WebMercatorModel::json_mapType()].asInt((int)MapType::Street);
 
     switch (m_mapType)
         {
-        case HereImageryProvider::MapType::Map:
+        case MapType::Street:
             m_urlTemplate = "https://%d.base.maps.api.here.com/maptile/2.1/maptile/newest/normal.day/%d/%d/%d/256/jpg?app_id=%s&app_code=%s";
             break;
 
-        case HereImageryProvider::MapType::Aerial:
+        case MapType::Aerial:
             m_urlTemplate = "https://%d.aerial.maps.api.here.com/maptile/2.1/maptile/newest/satellite.day/%d/%d/%d/256/jpg?app_id=%s&app_code=%s";
             break;
 
-        case HereImageryProvider::MapType::Combined:
+        case MapType::Hybrid:
             m_urlTemplate = "https://%d.aerial.maps.api.here.com/maptile/2.1/maptile/newest/hybrid.day/%d/%d/%d/256/jpg?app_id=%s&app_code=%s";
             break;
 
@@ -775,7 +1124,7 @@ void    HereImageryProvider::_FromJson(Json::Value const& value)
 void    HereImageryProvider::_ToJson(Json::Value& value) const
     {
     // the only thing currently stored in the HereImageryProvider Json is the MapType.
-    value[json_mapType()] = (int)m_mapType;
+    value[WebMercatorModel::json_mapType()] = (int)m_mapType;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -786,118 +1135,6 @@ Utf8String  HereImageryProvider::_GetCreditUrl() const
     // NEEDSWORK_MapBox
     return nullptr;
     }
-
-#if defined(TODO_ELEMENT_TILE)
-BEGIN_BENTLEY_DGN_NAMESPACE
-
-namespace WebMercator
-{
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct FetchTemplateUrlProgressiveTask : ProgressiveTask 
-    {
-    folly::Future<ImageryProvider::TemplateUrlLoadStatus>   m_future;
-    WebMercatorModelCPtr                                    m_model;
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Barry.Bentley                   04/17
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    FetchTemplateUrlProgressiveTask(folly::Future<ImageryProvider::TemplateUrlLoadStatus>&& future, WebMercatorModel const* model) : m_future(std::move(future)), m_model(model) {}
-
-    ~FetchTemplateUrlProgressiveTask() 
-        {
-        // The progressive display is deleted if the view is closed.
-        // If the request is still outstanding, then set it back to "NotFetched"
-        ImageryProvider::TemplateUrlLoadStatus status = m_model->m_provider->_GetTemplateUrlLoadStatus();
-        if (ImageryProvider::TemplateUrlLoadStatus::Requested == status)
-            m_model->m_provider->_SetTemplateUrlLoadStatus(ImageryProvider::TemplateUrlLoadStatus::NotFetched);
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * Called periodically (on a timer) on the client thread to check for arrival of the template Url.
-    * @bsimethod                                    Keith.Bentley                   08/16
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual ProgressiveTask::Completion _DoProgressive(RenderListContext& context, WantShow& wantShow) override
-        {
-        // won't affect the screen.
-        wantShow = WantShow::No;
-
-        // if we haven't gotten a response yet, go around another progressive cycle.
-        if (!m_future.isReady())
-            return Completion::Aborted;
-
-        // now we have the response from the server.
-        m_model->m_provider->_SetTemplateUrlLoadStatus(m_future.get());
-
-        switch (m_future.get())
-            {
-            case ImageryProvider::TemplateUrlLoadStatus::Received:
-                {
-                // got it - go on to the next task.
-                m_model->Load(&context.GetTargetR().GetSystem());
-
-                if (m_model->m_root.IsValid())
-                    m_model->m_root->DrawInView(context, m_model->m_root->GetLocation(), m_model->m_root->m_clip.get());
-                return Completion::Finished;
-                }
-
-            case ImageryProvider::TemplateUrlLoadStatus::Requested:
-                {
-                // still waiting.
-                return Completion::Aborted;
-                }
-            case ImageryProvider::TemplateUrlLoadStatus::Failed:
-            case ImageryProvider::TemplateUrlLoadStatus::Abandoned:
-                {
-                return Completion::Finished;
-                }
-            }
-
-        return Completion::Aborted;
-        }
-    };
-};
-
-END_BENTLEY_DGN_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
-    {
-    // need a provider to get the tiles.
-    if (m_provider.IsNull())
-        return;
-
-    folly::Future<ImageryProvider::TemplateUrlLoadStatus> future = m_provider->_FetchTemplateUrl();
-    if (!future.isReady())
-        {
-        for (;;)
-            {
-            if (!context.GetUpdatePlan().GetQuitTime().IsInFuture()) // do we want to wait for them? This is really just for thumbnails
-                {
-                // don't have the tile template yet, schedule a progressive pass to get it.
-                context.GetViewport()->ScheduleProgressiveTask(*new FetchTemplateUrlProgressiveTask(std::move(future), this));
-                return;
-                }
-            else
-                {
-                // this is for the thumbnail case - wait for the fetch to finish.
-                BeDuration::FromMilliseconds(20).Sleep(); // we want to wait. Give tiles some time to arrive
-                if (ImageryProvider::TemplateUrlLoadStatus::Received == m_provider->_GetTemplateUrlLoadStatus())
-                    break;
-                }
-            }
-        }
-
-    // don't need or already have TemplateUrl - go on to load and display the model.
-    Load(&context.GetTargetR().GetSystem());
-
-    if (m_root.IsValid())
-        m_root->DrawInView(context, m_root->GetLocation(), m_root->m_clip.get());
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
@@ -912,6 +1149,6 @@ TileTree::RootPtr WebMercatorModel::_GetTileTree(RenderContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootPtr WebMercatorModel::_CreateTileTree(Render::SystemP system)
     {
-    return Load(system);
+    return LoadTileTree(system);
     }
 

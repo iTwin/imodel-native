@@ -157,6 +157,7 @@ struct FakeMaterial : Material
 struct FakeTexture : Texture
 {
     explicit FakeTexture(CreateParams const& params) : Texture(params) { }
+    Dimensions GetDimensions() const override { return Dimensions(0, 0); }
 };
 
 //=======================================================================================

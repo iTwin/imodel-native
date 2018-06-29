@@ -793,6 +793,9 @@ public:
     //! @return the size of the thumbnail. Will be {0,0} if no thumbnail is available.
     DGNPLATFORM_EXPORT Point2d GetThumbnailSize() const;
 
+    //! Return true if thumbnail is present.
+    DGNPLATFORM_EXPORT bool HasThumbnail() const;
+
     //! Delete the thumbnail for this view.
     DGNPLATFORM_EXPORT void DeleteThumbnail() const;
     /** @} */

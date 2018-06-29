@@ -1055,6 +1055,17 @@ Point2d ViewDefinition::GetThumbnailSize() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool  ViewDefinition::HasThumbnail() const
+    {
+    DgnDbR db = GetDgnDb();
+    Utf8String jsonStr;
+    auto stat = db.QueryProperty(jsonStr, DgnViewProperty::ViewThumbnail(), GetViewId().GetValue());
+    return (BE_SQLITE_ROW == stat);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::DeleteThumbnail() const

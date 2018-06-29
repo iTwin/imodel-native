@@ -1117,7 +1117,6 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     if (!IsInAbandon())
         OnBeginApplyChanges();
 
-
     bool wasTracking = EnableTracking(false);
     DbResult result = changeset.ApplyChanges(m_dgndb, rebase); // this actually updates the database with the changes
     if (result != BE_SQLITE_OK)
@@ -1133,6 +1132,7 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
          */
         m_dgndb.ClearECDbCache();
         m_dgndb.Schemas().RepopulateCacheTables();
+        m_dgndb.Schemas().UpgradeECInstances();
         m_dgndb.Domains().SyncWithSchemas();
         }
 

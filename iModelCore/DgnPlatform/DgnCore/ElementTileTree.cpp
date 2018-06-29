@@ -1178,7 +1178,7 @@ BentleyStatus Loader::DoGetFromSource()
         // (it can be refined to higher zoom level - those tiles are not cached unless admin specifically requests so).
         BeAssert(!tile.HasZoomFactor() || 1.0 == tile.GetZoomFactor() || T_HOST.GetTileAdmin()._WantCachedHiResTiles(root.GetDgnDb()));
         bool isLeaf = tile.IsLeaf() || tile.HasZoomFactor();
-        if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter(), isLeaf))
+        if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), isLeaf))
             return ERROR;
 
 #if defined(DEBUG_TILE_CACHE_GEOMETRY)
@@ -2215,7 +2215,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
         {
         BeAssert(0 == polyface->GetEdgeChainCount());       // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
         PolyfaceHeaderPtr   decimated;
-        if (doDecimate && (decimated = polyface->ClusteredVertexDecimate(m_tolerance)).IsValid())
+        if (doDecimate && (decimated = polyface->ClusteredVertexDecimate(m_tolerance, .25 /* No decimation unless point count reduced by at least 25% */)).IsValid())
             {
             polyface = decimated.get();
             m_didDecimate = true;
@@ -3244,7 +3244,8 @@ Utf8CP TileCache::GetCurrentVersion()
     //  8: Fix issue in which MeshGenerator::AddPolyface() decimates a polyface in a tile which later becomes a leaf tile (TFS#889847)
     //  9: We were failing to align most chunks of the binary data. In JavaScript this produces exceptions when trying to read unaligned data.
     //  10: Change tile cache key such that if tile has no 'zoom factor', it is written as 0, not 1.
-    return "10";
+    //  11: Added width + height to textures.
+    return "11";
     }
 
 /*---------------------------------------------------------------------------------**//**

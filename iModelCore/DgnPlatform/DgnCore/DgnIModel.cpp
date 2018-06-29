@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnIModel.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -22,17 +22,18 @@ static DgnDbStatus performEmbeddedProjectVersionChecks(DbResult& dbResult, Db& d
     ProfileVersion actualDgnVersion(0, 0, 0, 0);
     actualDgnVersion.FromJson(versionString.c_str());
     ProfileVersion expectedDgnVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);
-    ProfileVersion minimumAutoUpgradableDgnVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
+    ProfileVersion minimumUpgradableDgnVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
 
-    bool isProfileAutoUpgradable = false; //unused as this method is not attempting to auto-upgrade
-    dbResult = Db::CheckProfileVersion(isProfileAutoUpgradable, expectedDgnVersion, actualDgnVersion, minimumAutoUpgradableDgnVersion, db.IsReadonly(), "DgnDb");
-    switch (dbResult)
+    const ProfileState profileState = Db::CheckProfileVersion(expectedDgnVersion, actualDgnVersion, minimumUpgradableDgnVersion, "DgnDb");
+    if (profileState.IsError())
+        return DgnDbStatus::InvalidProfileVersion;
+
+    if (profileState.GetCanOpen() == ProfileState::CanOpen::No || (profileState.GetCanOpen() == ProfileState::CanOpen::Readonly && !db.IsReadonly()))
         {
-        case BE_SQLITE_ERROR_ProfileTooOld:
-            return DgnDbStatus::VersionTooOld;
-
-        case BE_SQLITE_ERROR_ProfileTooNew:
+        if (profileState.IsNewer())
             return DgnDbStatus::VersionTooNew;
+
+        return DgnDbStatus::VersionTooOld;
         }
 
     return DgnDbStatus::Success;
@@ -51,17 +52,18 @@ static DgnDbStatus performPackageVersionChecks(DbResult& dbResult, Db& db)
     ProfileVersion actualPackageVersion(0,0,0,0);
     actualPackageVersion.FromJson(versionString.c_str());
     ProfileVersion expectedPackageVersion(PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
-    ProfileVersion minimumAutoUpgradablePackageVersion(PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
+    ProfileVersion minimumUpgradablePackageVersion(PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
 
-    bool isProfileAutoUpgradable = false; //unused as this method is not attempting to auto-upgrade
-    dbResult = Db::CheckProfileVersion(isProfileAutoUpgradable, expectedPackageVersion, actualPackageVersion, minimumAutoUpgradablePackageVersion, db.IsReadonly(), "Package");
-    switch (dbResult)
+    const ProfileState profileState = Db::CheckProfileVersion(expectedPackageVersion, actualPackageVersion, minimumUpgradablePackageVersion, "Package");
+    if (profileState.IsError())
+        return DgnDbStatus::InvalidProfileVersion;
+
+    if (profileState.GetCanOpen() == ProfileState::CanOpen::No || (profileState.GetCanOpen() == ProfileState::CanOpen::Readonly && !db.IsReadonly()))
         {
-        case BE_SQLITE_ERROR_ProfileTooOld:
-            return DgnDbStatus::VersionTooOld;
-
-        case BE_SQLITE_ERROR_ProfileTooNew:
+        if (profileState.IsNewer())
             return DgnDbStatus::VersionTooNew;
+
+        return DgnDbStatus::VersionTooOld;
         }
 
     return DgnDbStatus::Success;

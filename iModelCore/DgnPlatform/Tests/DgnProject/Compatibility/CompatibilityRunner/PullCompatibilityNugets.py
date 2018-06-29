@@ -28,25 +28,30 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir):
         return
     # Lower before we do the replace
     pkgGetUrl = '{0}/package/{1}/{2}'.format(pkgAddress, pkgName, version)
-    nugetpkg.GetPackage(pkgGetUrl, pkgName, pkgPathName, version, localDir)
+    try:
+        nugetpkg.GetPackage(pkgGetUrl, pkgName, pkgPathName, version, localDir)
+        return pkgPathName
+    except utils.BuildError as err:
+        print >> sys.stderr, err
+        sys.exit(1)
 
-    return pkgPathName
 
  #------------------------------------------------------------------------
  # bsimethod                         Kyle.Abramowitz             05/2018
  #------------------------------------------------------------------------
-def pullAllNugets(path, pathToNugetPuller):
+def pullAllNugets(path, pathToNugetPuller, name):
     import nugetpkg
-    address = "http://nuget.bentley.com/nuget/default/"
-    name = "iModelSchemaEvolutionTestNuget_bim0200dev_x64";
-    versions = nugetpkg.SearchVersionsFromServer(address, name)
+    from distutils.version import LooseVersion
 
+    address = "http://nuget.bentley.com/nuget/default/"
+    versions = nugetpkg.SearchVersionsFromServer(address, name)
     for v in versions:
+        # ignore stale versions until they have been deleted fromthe nuget server
+        if LooseVersion(v) < LooseVersion("2018.6.28.2"):
+            continue
         # Dowload and save all versions
-        pkgAddress = "http://nuget.bentley.com/nuget/default/"
-        pkgName = "iModelSchemaEvolutionTestNuget_bim0200dev_x64"
         localDir = path
-        DownloadPackage(pkgAddress, pkgName, v, localDir)
+        DownloadPackage(address, name, v, localDir)
 
  #------------------------------------------------------------------------
  # bsimethod                         Kyle.Abramowitz             05/2018
@@ -58,7 +63,8 @@ def main():
 
     nugetPath = sys.argv[1]
     sys.path.insert(0, sys.argv[2])
-    pullAllNugets(nugetPath, sys.argv[2])
+    pullAllNugets(nugetPath, sys.argv[2], "iModelSchemaEvolutionTestNuget_bim0200dev_x64")
+    pullAllNugets(nugetPath, sys.argv[2], "iModelSchemaEvolutionTestNuget_bim0200dev_ec32_x64")
     dataPath = sys.argv[3]
     # Remove extracted nugets to prevent unzipping overwrite issues
     for filename in os.listdir(nugetPath):

@@ -2,7 +2,7 @@
 |
 |  $Source: DgnHandlers/ScopedDgnHost.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -229,7 +229,7 @@ BentleyStatus   TestDataManager::OpenTestFile(bool needBriefcase)
     m_dgndb = DgnDb::OpenDgnDb(&stat, BeFileName(m_fileName), params);
     if (m_dgndb == NULL)
         {
-        if (stat == BE_SQLITE_ERROR_ProfileTooOld || stat == BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite)
+        if (stat == BE_SQLITE_ERROR_ProfileTooOld)
             {
             NativeLogging::LoggingManager::GetLogger(L"BeTest")->errorv(L"HORNSWAGGLED! \"%ls\"", m_fileName.c_str());
             BeAssert(false && "HORNSWAGGLED!");

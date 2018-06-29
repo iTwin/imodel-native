@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/SchemaVersion_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -260,13 +260,13 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     * Reopen Db after explicitly setting up option to validate - BE_SQLITE_ERROR_SchemaUpgradeRequired
     */
     SchemaVersionTestDomain::GetDomain().SetRequired(DgnDomain::Required::Yes);
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::ValidateOnly)));
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades)));
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
 
     /*
      * Reopen Db after disallowing domain schema upgrades - the API should allow this (to allow setting up briefcase ids, merge change sets, etc.)
      */
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)));
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck)));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_FALSE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
     CloseDb();
@@ -275,7 +275,7 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     * Reopen Db after read-write registration with UpgradeDomain flag - schemas are imported now
     */
     SchemaVersionTestDomain::GetDomain().SetRequired(DgnDomain::Required::Yes);
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly)));
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_TRUE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
     EXPECT_TRUE(SchemaVersionTestDomain::GetDomain().IsSchemaImported(*m_db));
@@ -349,20 +349,21 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
     //! and @see OpenParams for setting the option to upgrade the ECSchema-s. 
     //! <pre>
     //! Sample schema compatibility validation results for an ECSchema in the BIM with Version 2.2.2 (Read.Write.Minor)
-    //! ----------------------------------------------------------------------------------------------
-    //! Application   |  Validation result                    | Validation result
-    //! Version       |  (Readonly)                           | (ReadWrite)
-    //! ----------------------------------------------------------------------------------------------
-    //! 2.2.2 (same)  | BE_SQLITE_OK                          | BE_SQLITE_OK
-    //! ----------------------------------------------------------------------------------------------
-    //! 1.2.2 (older) | BE_SQLITE_ERROR_SchemaTooNew          | BE_SQLITE_ERROR_SchemaTooNew
-    //! 2.1.2 (older) | BE_SQLITE_OK                          | BE_SQLITE_ERROR_SchemaTooNew
-    //! 2.2.1 (older) | BE_SQLITE_OK                          | BE_SQLITE_OK
-    //! ----------------------------------------------------------------------------------------------
-    //! 3.2.2 (newer) | BE_SQLITE_ERROR_SchemaTooOld          | BE_SQLITE_ERROR_SchemaTooOld
-    //! 2.3.2 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired | BE_SQLITE_ERROR_SchemaUpgradeRequired
-    //! 2.2.3 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired | BE_SQLITE_ERROR_SchemaUpgradeRequired
-    //! ----------------------------------------------------------------------------------------------
+    //! -------------------------------------------------------------------------------------------------
+    //! Application   |  Validation result                       | Validation result
+    //! Version       |  (Readonly)                              | (ReadWrite)
+    //! -------------------------------------------------------------------------------------------------
+    //! 2.2.2 (same)  | BE_SQLITE_OK                             | BE_SQLITE_OK
+    //! -------------------------------------------------------------------------------------------------
+    //! 1.2.2 (older) | BE_SQLITE_ERROR_SchemaTooNew             | BE_SQLITE_ERROR_SchemaTooNew
+    //! 2.1.2 (older) | BE_SQLITE_OK                             | BE_SQLITE_ERROR_SchemaTooNew
+    //! 2.2.1 (older) | BE_SQLITE_OK                             | BE_SQLITE_OK
+    //! -------------------------------------------------------------------------------------------------
+    //! 3.2.2 (newer) | BE_SQLITE_ERROR_SchemaTooOld             | BE_SQLITE_ERROR_SchemaTooOld
+    //! 2.3.2 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired    | BE_SQLITE_ERROR_SchemaUpgradeRequired
+    //! 2.2.3 (newer) | BE_SQLITE_OK by default, or BE_SQLITE_ERROR_SchemaUpgradeRecommended if 
+    //!               | SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades is passed in
+    //! -------------------------------------------------------------------------------------------------
     //! </pre>
 
     /* 
@@ -374,7 +375,7 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
 
     SchemaVersionTestDomain::Register("02.02.02", DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     SchemaVersionTestDomain::GetDomain().RegisterHandler(TestElementHandler::GetHandler());
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly)));
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_TRUE(m_db->Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
 
@@ -426,16 +427,19 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaTooOld);
     BeTest::SetFailOnAssert(false);
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly)));
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)));
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaTooOld);
     BeTest::SetFailOnAssert(true);
 
     SchemaVersionTestDomain::GetDomain().SetVersion("02.03.02");
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades)));
+    EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRecommended);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
-    EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    CloseDb();
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly)));
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     SaveDb();
     CloseDb();
@@ -445,15 +449,22 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
 
     RestoreTestFile();
     SchemaVersionTestDomain::GetDomain().SetVersion("02.02.03");
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades)));
+    EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRecommended);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
-    EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    CloseDb();
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades)));
+    EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRecommended);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-    EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly)));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     SaveDb();
     CloseDb();
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)));
+    EXPECT_TRUE(result == BE_SQLITE_OK);
+    SaveDb();
+    CloseDb();
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades)));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     CloseDb();
     }
@@ -497,7 +508,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
 
     /* Create revision with schema upgrade */
     SchemaVersionTestDomain::GetDomain().SetVersion("02.03.02");
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly)));
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)));
     EXPECT_TRUE(result == BE_SQLITE_OK);
 
     testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty4");
@@ -595,10 +606,7 @@ TEST_F(SchemaVersionTestFixture, IncompatibleUpgrade)
     /* Upgrade schema with incompatible changes (property and class deleted) */
 
     SchemaVersionTestDomain::GetDomain().SetVersion("02.02.04");
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly)));
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)));
     EXPECT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, result);
     EXPECT_TRUE(!m_db.IsValid());
-
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::IncompatibleAlso)));
-    EXPECT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, result);
     }

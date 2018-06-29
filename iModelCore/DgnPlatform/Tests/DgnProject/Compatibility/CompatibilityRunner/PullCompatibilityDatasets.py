@@ -30,26 +30,29 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir):
     #rmtree(pkgDirName, ignore_errors=True)
     # Lower before we do the replace
     pkgGetUrl = '{0}/package/{1}/{2}'.format(pkgAddress, pkgName, version)
-    nugetpkg.GetPackage(pkgGetUrl, pkgName, pkgPathName, version, localDir)
-
-    return pkgPathName
+    try:
+        nugetpkg.GetPackage(pkgGetUrl, pkgName, pkgPathName, version, localDir)
+        return pkgPathName
+    except utils.BuildError as err:
+        print >> sys.stderr, err
+        sys.exit(1)
 
  #------------------------------------------------------------------------
  # bsimethod                         Kyle.Abramowitz             05/2018
  # Pull all test data nugets to path
  #------------------------------------------------------------------------
-def pullAllNugets(path, pathToNugetPuller):
+def pullAllNugets(path, pathToNugetPuller, name):
     import nugetpkg
-    address = "http://nuget.bentley.com/nuget/default/"
-    name = "iModelSchemaEvolutionTestFilesNuget_bim0200dev_x64";
-    versions = nugetpkg.SearchVersionsFromServer(address, name)
+    from distutils.version import LooseVersion
 
+    address = "http://nuget.bentley.com/nuget/default/"
+    versions = nugetpkg.SearchVersionsFromServer(address, name)
     for v in versions:
-        # Dowload and save all versions
-        pkgAddress = "http://nuget.bentley.com/nuget/default/"
-        pkgName = "iModelSchemaEvolutionTestFilesNuget_bim0200dev_x64"
+        # ignore stale versions until they have been deleted fromthe nuget server
+        if LooseVersion(v) < LooseVersion("2018.6.28.2"):
+            continue
         localDir = path
-        DownloadPackage(pkgAddress, pkgName, v, localDir)
+        DownloadPackage(address, name, v, localDir)
 
  #------------------------------------------------------------------------
  # bsimethod                         Kyle.Abramowitz             05/2018
@@ -61,7 +64,9 @@ def main():
 
     nugetPath = sys.argv[1]
     sys.path.insert(0, sys.argv[2])
-    pullAllNugets(nugetPath, sys.argv[2])
+    pullAllNugets(nugetPath, sys.argv[2], "iModelSchemaEvolutionTestFilesNuget_bim0200dev_x64")
+    #TODO remove once we merge back
+    pullAllNugets(nugetPath, sys.argv[2], "iModelSchemaEvolutionTestFilesNuget_bim0200dev_ec32_x64")
     # Remove old extracted nugets to prevent issues with extraction overwrites
     for filename in os.listdir(nugetPath):
         path = os.path.join(nugetPath, filename)
@@ -75,15 +80,18 @@ def main():
         zip_ref.close()
     # Extract datasets out of nugets and put into seeddata folder. Only 1 file per version for now. #TODO
     extractedDataDir = os.path.join(nugetPath, "SeedData")
+    if not os.path.exists(extractedDataDir):
+        os.makedirs(extractedDataDir)
     for subdir in os.listdir(nugetPath):
         path = os.path.join(nugetPath, subdir)
         if os.path.isdir(path) and subdir != "Datasets":
             datasetPath = os.path.join(path, "Datasets")
-            for db in os.listdir(datasetPath):
-                dbPath = os.path.join(datasetPath, db)
-                for version in os.listdir(dbPath):
-                    if not os.path.exists(os.path.join(extractedDataDir, db, version)):
-                        copytree(os.path.join(dbPath, version), os.path.join(extractedDataDir, db, version))
+            if os.path.exists(datasetPath):
+                for db in os.listdir(datasetPath):
+                    dbPath = os.path.join(datasetPath, db)
+                    for version in os.listdir(dbPath):
+                        if not os.path.exists(os.path.join(extractedDataDir, db, version)):
+                            copytree(os.path.join(dbPath, version), os.path.join(extractedDataDir, db, version))
 
 if __name__ == "__main__":
     main()

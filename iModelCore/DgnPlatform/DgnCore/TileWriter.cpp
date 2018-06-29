@@ -64,9 +64,9 @@ BEGIN_TILETREE_IO_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Writer::WriteGltf(DPoint3dCR centroid)
+BentleyStatus Writer::WriteGltf()
     {
-    AddExtensions(centroid);
+    AddExtensions();
     AddDefaultScene();
 
     // Binary data must be aligned to 32-bit boundary...
@@ -130,20 +130,14 @@ void    Writer::PadToBoundary(size_t boundarySize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Writer::AddExtensions(DPoint3dCR centroid)
+void Writer::AddExtensions()
     {
     m_json["extensionsUsed"] = Json::arrayValue;
     m_json["extensionsUsed"].append("KHR_binary_glTF");
-    m_json["extensionsUsed"].append("CESIUM_RTC");
     m_json["extensionsUsed"].append("WEB3D_quantized_attributes");
 
     m_json["glExtensionsUsed"] = Json::arrayValue;
     m_json["glExtensionsUsed"].append("OES_element_index_uint");
-
-    m_json["extensions"]["CESIUM_RTC"]["center"] = Json::arrayValue;
-    m_json["extensions"]["CESIUM_RTC"]["center"].append(centroid.x);
-    m_json["extensions"]["CESIUM_RTC"]["center"].append(centroid.y);
-    m_json["extensions"]["CESIUM_RTC"]["center"].append(centroid.z);
     }
 
 /*---------------------------------------------------------------------------------**//**
