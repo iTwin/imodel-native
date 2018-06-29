@@ -52,7 +52,7 @@ DgnProgressMeter& iModelBridgeFwk::GetProgressMeter() const
 void iModelBridgeFwk::IModelHubArgs::PrintUsage()
     {
     fwprintf(stderr, L"\n\
-SERVER:\n\
+iModelHub:\n\
     --server-project=       (optional)  The name of a project in the iModel Hub Services. Optional if --server-project-guid is specified.\n\
     --server-project-guid= (optional)  The GUID of a project in the iModel Hub Services. Optional if --server-project is specified.\n\
     --server-repository=    (required)  The name of a repository in the project.\n\
@@ -200,7 +200,7 @@ BentleyStatus iModelBridgeFwk::IModelHubArgs::Validate(int argc, WCharCP argv[])
 void iModelBridgeFwk::IModelBankArgs::PrintUsage()
     {
     fwprintf(stderr, L"\n\
-SERVER:\n\
+iModelBank:\n\
     --imodel-bank-url=              The URL of the iModelBank server to use.\n\
     --imodel-bank-imodel-id=        The GUID of the iModel that is served by the bank at the specified URL.\n\
     --imodel-bank-access-token=     (optional) The JSON-encoded user access token, if needed by the project mgmt system.\n\
