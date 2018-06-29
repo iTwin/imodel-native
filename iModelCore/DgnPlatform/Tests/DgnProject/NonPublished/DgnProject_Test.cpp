@@ -336,6 +336,38 @@ TEST_F(DgnDbTest, SetUntrackedDbAsMaster)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                 06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnDbTest, ImportSchemaWithLocalChanges)
+    {
+    // TFS#906843 was resolved as WAD. This ensures that that's really WAD - i.e., 
+    // importing schema into a standalone briefcase with local changes should NOT be possible. 
+    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+
+    DbResult result = BE_SQLITE_ERROR;
+    CreateDgnDbParams params(TEST_NAME);
+    DgnDbPtr dgndb = DgnDb::CreateDgnDb(&result, DgnDbTestDgnManager::GetOutputFilePath(L"MasterCopy.ibim"), params);
+    ASSERT_TRUE(dgndb.IsValid());
+
+    dgndb->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+    dgndb->Txns().EnableTracking(true);
+
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*dgndb, "TestPartition");
+    ASSERT_TRUE(model.IsValid());
+
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*dgndb, "TestCategory");
+    ASSERT_TRUE(categoryId.IsValid());
+
+    dgndb->SaveChanges();
+
+    BeTest::SetFailOnAssert(false);
+    SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*dgndb);
+    BeTest::SetFailOnAssert(true);
+
+    ASSERT_TRUE(schemaStatus != SchemaStatus::Success);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adeel.Shoukat                      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, CreateWithInvalidName)
