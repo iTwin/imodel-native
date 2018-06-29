@@ -139,7 +139,7 @@ public:
     size_t GetRelationshipConstraintTableCount(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
 
     BentleyStatus RepopulateCacheTables() const;
-
+    DbResult UpgradeECInstances() const { return UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(GetECDb()); }
     BentleyStatus CreateClassViews() const;
     BentleyStatus CreateClassViews(bvector<ECN::ECClassId> const& ecclassids) const;
 
