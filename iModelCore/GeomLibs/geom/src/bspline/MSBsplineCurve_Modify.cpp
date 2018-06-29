@@ -17,9 +17,9 @@
         #include <algorithm>
     #endif
 #endif
+#include "msbsplinemaster.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
-#include "msbsplinemaster.h"
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,20 +170,20 @@ int                 mult
     for (int k=0; k<numPoles; k++)
         {
         if (pCurve->rational)
-            bsiDPoint4d_initFromDPoint3dAndWeight (&polesWeighted[k], &pCurve->poles[k], pCurve->weights[k]);
+            polesWeighted[k].InitFrom (*(&pCurve->poles[k]), pCurve->weights[k]);
         else
-            bsiDPoint4d_initFromDPoint3dAndWeight (&polesWeighted[k], &pCurve->poles[k], 1.0);
+            polesWeighted[k].InitFrom (*(&pCurve->poles[k]), 1.0);
         }
     
     if (pCurve->rational)
         {
-        bsiDPoint4d_initFromDPoint3dAndWeight (&tmpPoles[0], &pCurve->poles[index-degree-1], pCurve->weights[index-degree-1]);
-        bsiDPoint4d_initFromDPoint3dAndWeight (&tmpPoles[degree-mult+2], &pCurve->poles[index-mult+1], pCurve->weights[index-mult+1]);
+        tmpPoles[0].InitFrom (*(&pCurve->poles[index-degree-1]), pCurve->weights[index-degree-1]);
+        tmpPoles[degree-mult+2].InitFrom (*(&pCurve->poles[index-mult+1]), pCurve->weights[index-mult+1]);
         }
     else
         {
-        bsiDPoint4d_initFromDPoint3dAndWeight (&tmpPoles[0], &pCurve->poles[index-degree-1], 1.0);
-        bsiDPoint4d_initFromDPoint3dAndWeight (&tmpPoles[degree-mult+2], &pCurve->poles[index-mult+1], 1.0);
+        tmpPoles[0].InitFrom (*(&pCurve->poles[index-degree-1]), 1.0);
+        tmpPoles[degree-mult+2].InitFrom (*(&pCurve->poles[index-mult+1]), 1.0);
         }
     
     while(j-i > 0)
@@ -210,38 +210,6 @@ int                 mult
 
         weightSumDPoint4d(A, alf, tmpPoles[ii+1], oma, tmpPoles[ii-1]);
         return distanceDPoint4d(polesWeighted[i], A);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    peter.yu                        03/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void curveMinWeightAndMaxLength 
-(
-double              &wMin,
-double              &pMax,
-MSBsplineCurveCP    pCurve
-)
-    {
-    int i, num = pCurve->params.numPoles;
-    double length;
-    wMin = pCurve->weights[0];
-    DVec3d vec;
-    DPoint3d pt;
-    bsiDPoint3d_scale (&pt, &pCurve->poles[0], 1.0 / pCurve->weights[0]);
-    bsiDVec3d_fromDPoint3d (&vec, &pt);
-    pMax = bsiDVec3d_magnitude (&vec);
-    
-    for (i=1; i<num; i++)
-        {
-        if (wMin > pCurve->weights[i])
-            wMin = pCurve->weights[i];
-
-        bsiDPoint3d_scale (&pt, &pCurve->poles[i], 1.0 / pCurve->weights[i]);
-        bsiDVec3d_fromDPoint3d (&vec, &pt);
-        length = bsiDVec3d_magnitude (&vec);
-        if (pMax < length)
-            pMax = length;
         }
     }
 
@@ -277,7 +245,7 @@ double              tol   // Tolerance to check removability
     if (pCurve->rational)
         {
         double wMin, pMax;
-        curveMinWeightAndMaxLength (wMin, pMax, pCurve);
+        curveMinWeightAndMaxProjectedMagnitude (wMin, pMax, pCurve);
         tol *= wMin/(1.0+pMax);
         rat = true;
         }
@@ -285,9 +253,9 @@ double              tol   // Tolerance to check removability
     for (k=0; k<n+1; k++)
         {
         if (pCurve->rational)
-            bsiDPoint4d_initFromDPoint3dAndWeight (&polesWeighted[k], &pCurve->poles[k], pCurve->weights[k]);
+            polesWeighted[k].InitFrom (*(&pCurve->poles[k]), pCurve->weights[k]);
         else
-            bsiDPoint4d_initFromDPoint3dAndWeight (&polesWeighted[k], &pCurve->poles[k], 1.0);
+            polesWeighted[k].InitFrom (*(&pCurve->poles[k]), 1.0);
         }
     
     for( i=0; i<=m; i++ )
@@ -547,7 +515,7 @@ double              tol
     if (pCurve->rational)
         {
         double wMin, pMax;
-        curveMinWeightAndMaxLength (wMin, pMax, pCurve);
+        curveMinWeightAndMaxProjectedMagnitude (wMin, pMax, pCurve);
         tol *= wMin/(1.0+pMax);
         rat = true;
         }
@@ -555,9 +523,9 @@ double              tol
     for (k=0; k<n+1; k++)
         {
         if (pCurve->rational)
-            bsiDPoint4d_initFromDPoint3dAndWeight (&polesWeighted[k], &pCurve->poles[k], pCurve->weights[k]);
+            polesWeighted[k].InitFrom (*(&pCurve->poles[k]), pCurve->weights[k]);
         else
-            bsiDPoint4d_initFromDPoint3dAndWeight (&polesWeighted[k], &pCurve->poles[k], 1.0);
+            polesWeighted[k].InitFrom (*(&pCurve->poles[k]), 1.0);
         }
     
     for( i=0; i<=m; i++ )

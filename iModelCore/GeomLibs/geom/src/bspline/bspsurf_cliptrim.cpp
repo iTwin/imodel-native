@@ -6,7 +6,7 @@
 |       $Date: 2008/06/17 02:41:53 $
 |     $Author: Peter.Yu $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -44,8 +44,8 @@ struct RGElmDescrContext
         //pElmPool = NULL;
 
         activeFaces = MTG_MarkSet (jmdlRG_getGraph (pRG), MTG_ScopeFace);
-        bsiTransform_initIdentity (&planeToWorld);
-        bsiTransform_initIdentity (&worldToPlane);
+        planeToWorld.InitIdentity ();
+        worldToPlane.InitIdentity ();
         }
     ~RGElmDescrContext ()
         {
@@ -147,7 +147,7 @@ void AddLinear (DPoint3d &xyzCurr)
         return;
 
     if (   mNumXYZ > 0
-        && bsiDPoint3d_distanceXY (&xyzCurr, &mXYZBuffer[mNumXYZ - 1]) < sDuplicateParamTol)
+        && xyzCurr.DistanceXY (mXYZBuffer[mNumXYZ - 1]) < sDuplicateParamTol)
         return;
 
     if (mNumXYZ >= MAX_VERTICES)

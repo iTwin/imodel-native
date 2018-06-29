@@ -520,9 +520,9 @@ double globalRelTol
     DRange3d range;
     DVec3d diagonal;
     range.InitFrom(pXYZ, numXYZ);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&diagonal, &range.low, &range.high);
+    diagonal.DifferenceOf (range.low, range.high);
     maxAbs = range.LargestCoordinate ();
-    maxDiagonal = bsiDVec3d_maxAbs (&diagonal);
+    maxDiagonal = diagonal.MaxAbs ();
 
     if (absTol < sDefaultAbsTol)
         absTol = sDefaultAbsTol;
@@ -893,13 +893,13 @@ double              *pMaxRelErr         /* => max ratio of midpoint error over d
         row1P = poleArrayP + j * uOrder;
         for (i = 1; i < uOrder; i++)
             {
-            bsiDPoint3d_interpolate (&point0, &row0P[i-1], 0.5, &row1P[i]);
-            bsiDPoint3d_interpolate (&point1, &row0P[i], 0.5, &row1P[i-1]);
-            currDiff = bsiDPoint3d_distanceSquared (&point0, &point1);
-            d0 = bsiDPoint3d_distanceSquared (&row0P[i-1], &row1P[i]);
-            d1 = bsiDPoint3d_distanceSquared (&row0P[i], &row1P[i-1]);
+            point0.Interpolate (row0P[i-1], 0.5, row1P[i]);
+            point1.Interpolate (row0P[i], 0.5, row1P[i-1]);
+            currDiff = point0.DistanceSquared (point1);
+            d0 = row0P[i-1].DistanceSquared (row1P[i]);
+            d1 = row0P[i].DistanceSquared (row1P[i-1]);
             d2 = d0 > d1 ? d0 : d1;
-            if (bsiTrig_safeDivide (&ratio, currDiff, d2, 0.0)
+            if (DoubleOps::SafeDivide (ratio, currDiff, d2, 0.0)
                 && ratio > maxRatio)
                 maxRatio = ratio;
 
@@ -952,24 +952,24 @@ BuilderParams          *mpP                /* => mesh parameters */
     double h;
     DPoint3d crossProduct;
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vec01, pPoint1, pPoint0);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vec02, pPoint2, pPoint0);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vec12, pPoint2, pPoint1);
+    vec01.DifferenceOf (*pPoint1, *pPoint0);
+    vec02.DifferenceOf (*pPoint2, *pPoint0);
+    vec12.DifferenceOf (*pPoint2, *pPoint1);
 
     if (mpP->toleranceMode & STROKETOL_XYProjection)
         {
-        mag12   = bsiDPoint3d_magnitudeXY (&vec12);
-        mag01   = bsiDPoint3d_magnitudeXY (&vec01);
-        mag02   = bsiDPoint3d_magnitudeXY (&vec02);
-        cross   = fabs (bsiDPoint3d_crossProductXY (&vec01, &vec02));
+        mag12   = vec12.MagnitudeXY ();
+        mag01   = vec01.MagnitudeXY ();
+        mag02   = vec02.MagnitudeXY ();
+        cross   = fabs (vec01.CrossProductXY (vec02));
         }
     else
         {
-        mag12   = bsiDPoint3d_magnitude (&vec12);
-        mag01   = bsiDPoint3d_magnitude (&vec01);
-        mag02   = bsiDPoint3d_magnitude (&vec02);
-        bsiDPoint3d_crossProduct (&crossProduct, &vec01, &vec02);
-        cross       = bsiDPoint3d_magnitude(&crossProduct);
+        mag12   = vec12.Magnitude ();
+        mag01   = vec01.Magnitude ();
+        mag02   = vec02.Magnitude ();
+        crossProduct.CrossProduct (vec01, vec02);
+        cross       = crossProduct.Magnitude ();
         }
 
     polygonLength += mag12;

@@ -496,3 +496,31 @@ TEST(Spiral,AustralianReversal)
         }
     Check::ClearGeometry ("Spiral.AustralianReversal");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Spiral,SpiralStartEndMatch)
+    {
+    double tol = 1e-4;
+
+    DPoint3d startPoint = DPoint3d::From(1000, 1000, 1000);
+    double  length = 50.7574;
+    double startAngle = Angle::Pi ();
+    double endRadius = 720.0;
+    double startRadius = 0.0;
+    ICurvePrimitivePtr curvePrimiP = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius(DSpiral2dBase::TransitionType_NewSouthWales,
+        startPoint, startAngle, startRadius, length, endRadius);
+    double spiralLength = curvePrimiP->GetSpiralPlacementCP()->SpiralLength01();
+    double position;
+    curvePrimiP->SignedDistanceBetweenFractions(0.0, 1.0, position);
+    Check::True (fabs (spiralLength - position) <= tol);
+
+    startRadius = 720.0;
+    endRadius = 0.0;
+    curvePrimiP = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius(DSpiral2dBase::TransitionType_NewSouthWales,
+        startPoint, startAngle, startRadius, length, endRadius);
+    spiralLength = curvePrimiP->GetSpiralPlacementCP()->SpiralLength01();
+    curvePrimiP->SignedDistanceBetweenFractions(0.0, 1.0, position);
+    Check::True (fabs (spiralLength - position) <= tol);
+    }

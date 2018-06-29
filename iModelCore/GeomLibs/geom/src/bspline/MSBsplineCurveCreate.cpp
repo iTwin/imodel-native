@@ -57,7 +57,7 @@ double          axis2
                   (fabs(sweep) <= 2.0*msGeomConst_2pi/3.0 ? 2:
                    3));
 
-    int bClosed = bsiTrig_isAngleFullCircle (sweep);
+    int bClosed = Angle::IsFullCircle (sweep);
 
     /* Calculate weights */
     alpha = 0.5 * fabs(sweep) / numSections;
@@ -835,7 +835,7 @@ RotMatrixP axes
     Allocate ();
 
     // Full ellipse?
-    if (bsiTrig_isAngleFullCircle (sweepRadians))
+    if (Angle::IsFullCircle (sweepRadians))
         curveType++;
     // Circular?
     if (0 == bsiTrig_tolerancedComparison (rX, rY))
@@ -843,7 +843,7 @@ RotMatrixP axes
 
     display.curveDisplay = true;
     display.polygonDisplay = false;
-    bsiTransform_multiplyDPoint3dArray (&transform, poles, tmpPoles, numPoles);
+    transform.Multiply (poles, tmpPoles, numPoles);
     memcpy (weights, tmpWeights, numPoles * sizeof (double));
     bspknot_computeKnotVector (knots, &params, tmpKnots);
     DPoint3d::MultiplyArrayByScales (poles, poles, weights, params.numPoles);
@@ -1015,7 +1015,7 @@ MSBsplineCurvePtr MSBsplineCurve::CreateFromBeziers (bvector<MSBsplineCurvePtr> 
 
         length1 = tangent1.Normalize();
         length2 = tangent2.Normalize();
-        if (bsiDVec3d_dotProduct (&tangent1, &tangent2)+mgds_fc_epsilon > 1.0 && length1 > mgds_fc_epsilon && length2 > mgds_fc_epsilon)
+        if (tangent1.DotProduct (tangent2)+mgds_fc_epsilon > 1.0 && length1 > mgds_fc_epsilon && length2 > mgds_fc_epsilon)
             ratio[k+1] = ratio[k]*length2/length1;
         else
             ratio[k+1] = ratio[k];

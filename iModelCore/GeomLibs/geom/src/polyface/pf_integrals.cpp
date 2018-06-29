@@ -255,7 +255,7 @@ void AddTriangle (DPoint3dCR point0, DPoint3dCR point1, DPoint3dCR point2)
 
     cross.CrossProduct (vector01, vector02);
     //cross.Scale (0.5);
-    bsiDPoint3d_add2ScaledDVec3d (&triangleCentroid, &point0, &vector01, oneThird, &vector02, oneThird);
+    triangleCentroid = DPoint3d::FromSumOf (point0, vector01, oneThird, vector02, oneThird);
     // full cross product is used as jacobian in area moment accumulations.
     AccumulateScaledPrincipalProducts (data, directionalProducts, origin, point0, point1, point2, cross);
     // but it is scaled for voume frusta

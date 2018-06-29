@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bsp_mxspline.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -509,12 +509,12 @@ double *pExtraParams
     double Q;
     // L = 2 theta / (K1 + K2)
     // K2 unknown ====> K2 = (2 theta /L) - K1
-    if (!bsiTrig_safeDivide (&Q, 2 * (endBearingRadians - startBearingRadians), length, 0.0))
+    if (!DoubleOps::SafeDivide (Q, 2 * (endBearingRadians - startBearingRadians), length, 0.0))
         return ERROR;
     double endRadius, endCurvature, startCurvature;
     startCurvature = startRadius == 0.0 ? 0.0 : 1.0 / startRadius;
     endCurvature = Q - startCurvature;
-    bsiTrig_safeDivide (&endRadius, 1.0, endCurvature, 0.0);
+    DoubleOps::SafeDivide (endRadius, 1.0, endCurvature, 0.0);
     return bspcurv_curveFromTransitionSpiralBearingAndCurvature (pCurve, spiralType, pOrigin, pFrame,
                 startBearingRadians, startRadius, endBearingRadians, endRadius, pExtraParams);
     }

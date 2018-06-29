@@ -285,35 +285,35 @@ int             selector            /* => selects integrand */
     static double squareDistTol = 1.0e-20;
     *fP = 0.0;
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&offset, &point, originP);
+    offset.DifferenceOf (point, *originP);
     if (selector == SweepArea)
         {
-        *fP = 0.5 * bsiDPoint3d_crossProductXY (&offset, &tangent);
+        *fP = 0.5 * offset.CrossProductXY (tangent);
         }
     else if (selector == SweepAngle)
         {
-        double rr = bsiDPoint3d_dotProductXY (&offset, &offset);
-        double tt = bsiDPoint3d_dotProductXY (&tangent, &tangent);
+        double rr = offset.DotProductXY (offset);
+        double tt = tangent.DotProductXY (tangent);
         /* Hmm .. how big is zero ? */
         if (rr <= squareDistTol * tt)
             return ERROR;
-        *fP = bsiDPoint3d_crossProductXY (&offset, &tangent) / rr;
+        *fP = offset.CrossProductXY (tangent) / rr;
         }
     else if (selector == ArcLength)
         {
-        *fP = sqrt (bsiDPoint3d_dotProduct (&tangent, &tangent));
+        *fP = sqrt (tangent.DotProduct (tangent));
         }
     else if (selector == momentXdL)
         {
-        *fP = (point.x - originP->x) * sqrt (bsiDPoint3d_dotProductXY (&tangent, &tangent));
+        *fP = (point.x - originP->x) * sqrt (tangent.DotProductXY (tangent));
         }
     else if (selector == momentYdL)
         {
-        *fP = (point.y - originP->y) * sqrt (bsiDPoint3d_dotProductXY (&tangent, &tangent));
+        *fP = (point.y - originP->y) * sqrt (tangent.DotProductXY (tangent));
         }
     else if (selector == momentZdL)
         {
-        *fP = (point.z - originP->z) * sqrt (bsiDPoint3d_dotProductXY (&tangent, &tangent));
+        *fP = (point.z - originP->z) * sqrt (tangent.DotProductXY (tangent));
         }
 
     return SUCCESS;

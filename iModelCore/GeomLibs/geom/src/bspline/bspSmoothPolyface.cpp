@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspSmoothPolyface.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -292,13 +292,13 @@ bool                laplacianSmoothing
     
     DPoint3d origin = range.low;
     double ax0, ay0, ax1, ay1;
-    bsiTrig_safeDivide (&ax0, range.low.x - origin.x, meshXLength, 0.0);
-    bsiTrig_safeDivide (&ay0, range.low.y - origin.y, meshYLength, 0.0);
+    DoubleOps::SafeDivide (ax0, range.low.x - origin.x, meshXLength, 0.0);
+    DoubleOps::SafeDivide (ay0, range.low.y - origin.y, meshYLength, 0.0);
     int ix0 = (int) floor (ax0);
     int iy0 = (int) floor (ay0);
 
-    bsiTrig_safeDivide (&ax1, range.high.x - origin.x, meshXLength, 0.0);
-    bsiTrig_safeDivide (&ay1, range.high.y - origin.y, meshYLength, 0.0);
+    DoubleOps::SafeDivide (ax1, range.high.x - origin.x, meshXLength, 0.0);
+    DoubleOps::SafeDivide (ay1, range.high.y - origin.y, meshYLength, 0.0);
     int ix1 = (int)ceil (ax1);
     int iy1 = (int)ceil (ay1);
 
@@ -366,7 +366,7 @@ bool                laplacianSmoothing
                     0, c, 0, 0,
                     0, 0, 1, 0);
         bsiTransform_setFixedPoint (&localToWorld, &range.low);
-        bsiTransform_invertTransform (&worldToLocal, &localToWorld);
+        worldToLocal.InverseOf (localToWorld);
         vu_transform (graph, &worldToLocal);
         int numX = ix1 - ix0;
         int numY = iy1 - iy0;

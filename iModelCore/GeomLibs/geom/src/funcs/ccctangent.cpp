@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/ccctangent.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -19,7 +19,7 @@ DVec3dCR   lineVector
     double uv = spaceVector.DotProductXY(lineVector);
     double uu = lineVector.DotProductXY(lineVector);
     double fraction;
-    bsiTrig_safeDivide (&fraction, uv, uu, 0.0);
+    DoubleOps::SafeDivide (fraction, uv, uu, 0.0);
     DPoint3d result;
     result.SumOf (linePoint,lineVector, fraction);
     return result;
@@ -134,15 +134,15 @@ double rB   // SIGNED
     DPoint3d origin;
     DPoint3d centerA = *pCenterA;
     DPoint3d centerB = *pCenterB;
-    double d = bsiDPoint3d_distance (&centerA, &centerB);
-    bsiDPoint3d_interpolate (&origin, &centerA, 0.5, &centerB);
+    double d = centerA.Distance (centerB);
+    origin.Interpolate (centerA, 0.5, centerB);
     double h = rA + rB;
     double disc = d * d - h * h;
     double hy = sqrt (fabs (disc));
     DVec3d xAxis, yAxis;
     bool boolstat = false;
 
-    bsiDVec3d_computeNormal (&xAxis, &centerB, &origin);
+    xAxis.NormalizedDifference(centerB, origin);
 
     yAxis = xAxis;
     yAxis.y =  xAxis.x;
@@ -248,8 +248,8 @@ int      *pExternalToInternal
     for (int i = 0; i < 3; i++)
         {
         id[i] = i;
-        f[i] = bsiDPoint3d_distance (&pCenterArrayIn[i], &pCenterArrayIn[next[i]])
-             + bsiDPoint3d_distance (&pCenterArrayIn[i], &pCenterArrayIn[pred[i]]);
+        f[i] = pCenterArrayIn[i].Distance (pCenterArrayIn[next[i]])
+             + pCenterArrayIn[i].Distance (pCenterArrayIn[pred[i]]);
         }
     
     for (int i = 0; i < 3; i++)
@@ -304,15 +304,15 @@ double   r2
 )
     {
     DVec3d vec01, vec02;
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vec01, &pCenterArrayIn[1], &pCenterArrayIn[0]);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vec02, &pCenterArrayIn[2], &pCenterArrayIn[0]);
+    vec01.DifferenceOf (pCenterArrayIn[1], pCenterArrayIn[0]);
+    vec02.DifferenceOf (pCenterArrayIn[2], pCenterArrayIn[0]);
     vec01.z = vec02.z = 0.0;
     double x1 = bsiDVec3d_magnitudeXY (&vec01);
     double x2 = bsiDVec3d_magnitudeXY (&vec02);
-    if (bsiDVec3d_dotProduct (&vec01, &vec02) < 0.0)
+    if (vec01.DotProduct (vec02) < 0.0)
         x2 = - x2;
     DVec3d vectorU, vectorV;
-    bsiDVec3d_normalize (&vectorU, &vec01);
+    vectorU.Normalize (vec01);
     bsiDVec3d_unitPerpendicularXY (&vectorV, &vectorU);
 
     /*
@@ -354,8 +354,8 @@ double   r2
             {
             double y = sqrt (dd);
             DPoint3d xyz0, xyz1;
-            bsiDPoint3d_add2ScaledDVec3d (&xyz0, &pCenterArrayIn[0], &vectorU, x, &vectorV,  y);
-            bsiDPoint3d_add2ScaledDVec3d (&xyz1, &pCenterArrayIn[0], &vectorU, x, &vectorV, -y);
+            xyz0 = DPoint3d::FromSumOf (pCenterArrayIn[0], vectorU, x, vectorV,  y);
+            xyz1 = DPoint3d::FromSumOf (pCenterArrayIn[0], vectorU, x, vectorV, -y);
             RecordCenterAndTangencies (pCenterArrayOut, pRadiusArrayOut,
                           pTangentArrayAOut, pTangentArrayBOut, pTangentArrayCOut, numOut, maxOut,
                           xyz0, fabs (r),
@@ -461,13 +461,13 @@ double   *pRadiusArrayIn
 
     double r0 = pRadiusArrayIn[0];
     DPoint3d xyz0 = pCenterArrayIn[0];
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector01, &pCenterArrayIn[1], &pCenterArrayIn[0]);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector02, &pCenterArrayIn[2], &pCenterArrayIn[0]);
+    vector01.DifferenceOf (pCenterArrayIn[1], pCenterArrayIn[0]);
+    vector02.DifferenceOf (pCenterArrayIn[2], pCenterArrayIn[0]);
 
     det = bsiDVec3d_crossProductXY (&vector01, &vector02);
     dot = bsiDVec3d_dotProductXY (&vector01, &vector02);
     double a;
-    if (fabs (det) <= sDetTol * fabs (dot) || !bsiTrig_safeDivide (&a, 1.0, det, 0.0))
+    if (fabs (det) <= sDetTol * fabs (dot) || !DoubleOps::SafeDivide (a, 1.0, det, 0.0))
         {
         for (int k1 = 0; k1 < n1; k1++)
             {
@@ -482,7 +482,7 @@ double   *pRadiusArrayIn
             }
         return;
         }
-    bsiRotMatrix_initFromRowValues (&Minverse,
+    Minverse.InitFromRowValues (
                          vector02.y * a,  -vector01.y * a, 0.0,
                         -vector02.x * a,   vector01.x * a, 0.0,
                          0.0,          0.0,        1.0);
@@ -496,12 +496,12 @@ double   *pRadiusArrayIn
             {
             double r2 = radiusSign[k2] * pRadiusArrayIn[2];
 
-            bsiDPoint3d_setXYZ (&vectorA,
+            vectorA.Init (
                 -0.5 * (SQUARE(r1) - SQUARE(vector01.x) - SQUARE(vector01.y)- SQUARE(r0)),
                 -0.5 * (SQUARE(r2) - SQUARE(vector02.x) - SQUARE(vector02.y) - SQUARE(r0)),
                 0.0);
 
-            bsiDPoint3d_setXYZ (&vectorB,
+            vectorB.Init (
                 -(r1-r0),
                 -(r2-r0),
                 0.0);
@@ -705,15 +705,15 @@ Solve for two x values.  Substitute in with largest c0, c1.
 
     xVec = lineDirectionC;
     xVec.z = 0.0;
-    bsiDVec3d_normalizeInPlace (&xVec);
+    xVec.Normalize ();
     bsiDVec3d_unitPerpendicularXY (&yVec, &xVec);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&xyGlobal[0], &centerA, &linePointC);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&xyGlobal[1], &centerB, &linePointC);
+    xyGlobal[0].DifferenceOf (centerA, linePointC);
+    xyGlobal[1].DifferenceOf (centerB, linePointC);
 
     for (int i = 0; i < 2; i++)
         {
-        xy[i].x = bsiDVec3d_dotProduct (&xyGlobal[i], &xVec);
-        xy[i].y = bsiDVec3d_dotProduct (&xyGlobal[i], &yVec);
+        xy[i].x = xyGlobal[i].DotProduct (xVec);
+        xy[i].y = xyGlobal[i].DotProduct (yVec);
         }
 
     numOut = 0;
@@ -739,13 +739,13 @@ Solve for two x values.  Substitute in with largest c0, c1.
 
         for (int i = 0; i < numRoot; i++)
             {
-            if (bsiTrig_safeDivide (&yRoot[i],
+            if (DoubleOps::SafeDivide (yRoot[i],
                         xRoot[i] * xRoot[i] + bb[k] * xRoot[i] + aa[k],
                         -cc[k], 0.0))
                 {
                 DPoint3d xyz;
                 double tangentRadius = fabs (yRoot[i]);
-                bsiDPoint3d_add2ScaledDVec3d (&xyz, &linePointC, &xVec, xRoot[i], &yVec, yRoot[i]);
+                xyz = DPoint3d::FromSumOf (linePointC, xVec, xRoot[i], yVec, yRoot[i]);
 
                 RecordCenterAndTangencies (pCenterArrayOut, pRadiusArrayOut,
                             pTangentAOut, pTangentBOut, pTangentCOut, numOut, maxOut,
@@ -1134,7 +1134,7 @@ double     radiusC
                 double fraction;
                 double r1 = circleCenterB.Distance (pCenterArrayOut[numOut]);
                 // Circles centered on this intersectio will have two radii tangent to circleA ... one should be exactly radiusC
-                if (bsiTrig_safeDivide (&fraction,
+                if (DoubleOps::SafeDivide (fraction,
                                 fabs (fabs (r1-radiusB) - radiusC) < fabs (fabs (r1 + radiusB) - radiusC)
                                         ? radiusB : - radiusB,
                                 r1, 0.0))
@@ -1162,7 +1162,7 @@ DPoint3dR tangentPoint
     //double a = radius1 + radius2;
     //double b = fabs (radius1 - radius2);
     double f;
-    if (bsiTrig_safeDivide (&f, radius1, d01, 0.0))
+    if (DoubleOps::SafeDivide (f, radius1, d01, 0.0))
         {
         DPoint3d tangentA, tangentB;
         tangentA.SumOf (center1,vector01, f);
@@ -1228,12 +1228,12 @@ double     radiusC
             {
             double rB = offsetRadiusB[iB];
             double alpha, f0, f1;
-            if (bsiTrig_safeDivide (&alpha, rA * rA - rB * rB + dAB * dAB, 2.0 * dAB, 0.0)
-                && bsiTrig_safeDivide (&f0, alpha, dAB, 0.0))
+            if (DoubleOps::SafeDivide (alpha, rA * rA - rB * rB + dAB * dAB, 2.0 * dAB, 0.0)
+                && DoubleOps::SafeDivide (f0, alpha, dAB, 0.0))
                 {
                 // special case tangency???
                 double dPerp2 = rA * rA - alpha * alpha;
-                if (dPerp2 >= 0.0 && bsiTrig_safeDivide (&f1, sqrt (dPerp2), dAB, 0.0))
+                if (dPerp2 >= 0.0 && DoubleOps::SafeDivide (f1, sqrt (dPerp2), dAB, 0.0))
                     {
                     DPoint3d centerC, tangentA, tangentB;
                     centerC.SumOf (centerA,centerVector, f0, perpVector, f1);

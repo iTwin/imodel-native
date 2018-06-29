@@ -19,11 +19,11 @@
 #endif
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
-
+// NOTE These are exported for use in msbsplineSurface, msbsplineCurve_modify
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    peter.yu                        03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void curmwp 
+void curveMinWeightAndMaxProjectedMagnitude 
 (
 double              &wMin,
 double              &pMax,
@@ -31,24 +31,31 @@ MSBsplineCurveCP    pCurve
 )
     {
     int i, num = pCurve->params.numPoles;
-    double length;
-    wMin = pCurve->weights[0];
-    DVec3d vec;
-    DPoint3d pt;
-    bsiDPoint3d_scale (&pt, &pCurve->poles[0], 1.0 / pCurve->weights[0]);
-    bsiDVec3d_fromDPoint3d (&vec, &pt);
-    pMax = bsiDVec3d_magnitude (&vec);
-    
-    for (i=1; i<num; i++)
+    wMin = DBL_MAX;
+    pMax = 0.0;
+    for (i=0; i<num; i++)
         {
-        if (wMin > pCurve->weights[i])
-            wMin = pCurve->weights[i];
-
-        bsiDPoint3d_scale (&pt, &pCurve->poles[i], 1.0 / pCurve->weights[i]);
-        bsiDVec3d_fromDPoint3d (&vec, &pt);
-        length = bsiDVec3d_magnitude (&vec);
-        if (pMax < length)
-            pMax = length;
+        wMin = DoubleOps::Min (wMin, pCurve->weights[i]);
+        pMax = DoubleOps::Max (pMax, pCurve->poles[i].Magnitude () / pCurve->weights[i]);
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    peter.yu                        03/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+void surfaceMinWeightAndMaxMagnitude
+(
+double              &wMin,
+double              &pMax,
+MSBsplineSurfaceCP  pSurf
+)
+    {
+    int i, num = pSurf->uParams.numPoles * pSurf->vParams.numPoles;
+    wMin = DBL_MAX;
+    pMax = 0.0;
+    for (i=0; i<num; i++)
+        {
+        wMin = DoubleOps::Min (wMin, pSurf->weights[i]);
+        pMax = DoubleOps::Max (pMax, pSurf->poles[i].Magnitude () / pSurf->weights[i]);
         }
     }
 
@@ -102,12 +109,12 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
 
     if( out[0]->rational )
         {
-        curmwp (wmin, pmax, out[0].get ());
+        curveMinWeightAndMaxProjectedMagnitude (wmin, pmax, out[0].get ());
         alf = (tol*wmin)/(1.0+pmax);
 
         for(ll=1; ll<=kk; ll++ )
             {
-            curmwp(wmin, pmax, out[ll].get ());
+            curveMinWeightAndMaxProjectedMagnitude(wmin, pmax, out[ll].get ());
             bet = (tol*wmin)/(1.0 + pmax);
             if( bet < alf )  
                 alf = bet;
@@ -482,11 +489,11 @@ bool            *shift          /* if true, the coincident points are shifted */
 
     shiftDist = 0.0001;
     for (pP = endP = points, endP += numPts-1; pP < endP; pP++)
-        if (bsiDPoint3d_distance (pP, pP+1) > 0.00001)
+        if (pP->Distance (pP[1]) > 0.00001)
             {
             if (*shift)
                 for (pP = endP = points, endP += numPts-1; pP < endP; pP++)
-                    if (bsiDPoint3d_distance (pP, pP+1) < 0.00001)
+                    if (pP->Distance (pP[1]) < 0.00001)
                         {
                         pP->x -= shiftDist;
                         shiftDist /= 2.0;

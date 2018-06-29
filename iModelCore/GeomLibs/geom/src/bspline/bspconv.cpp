@@ -248,9 +248,9 @@ DPoint3d        *centerP
     BsplineParam    tParams;
     Transform       tMatrix;
 
-    bsiTransform_initIdentity (&tMatrix);
+    tMatrix.InitIdentity ();
     bsiTransform_translateInLocalCoordinates (&tMatrix, &tMatrix, centerP->x, centerP->y, centerP->z);
-    bsiTransform_multiplyTransformRotMatrix (&tMatrix, &tMatrix, rotMatrixP);
+    tMatrix.InitProduct (tMatrix, *rotMatrixP);
 
     bspconv_computeCurveFromArc (tPoles, tKnots, tWeights, &tParams,
                                  start, sweep, axis1, axis2);
@@ -280,7 +280,7 @@ DPoint3d        *centerP
         else
             memcpy (*poles, tPoles, allocSize);
 
-        bsiTransform_multiplyDPoint3dArray ( &tMatrix, *poles, *poles,  numPoles);
+        tMatrix.Multiply (*poles, *poles, numPoles);
         }
 
     if (knots)
@@ -341,9 +341,9 @@ bool        bClosed
     DVec3d normal, UxM, VxM;
     int i;
 
-    bsiDVec3d_normalizedCrossProduct (&normal, &pEllipse->vector0, &pEllipse->vector90);
-    bsiDVec3d_crossProduct (&UxM, &pEllipse->vector0, &normal);
-    bsiDVec3d_crossProduct (&VxM, &pEllipse->vector90, &normal);
+    normal.NormalizedCrossProduct (pEllipse->vector0, pEllipse->vector90);
+    UxM.CrossProduct (pEllipse->vector0, normal);
+    VxM.CrossProduct (pEllipse->vector90, normal);
     if (maxStep > sMaxStep)
         maxStep = sMaxStep;
     if (maxStep < sMinStep)
@@ -368,11 +368,10 @@ bool        bClosed
             theta += i * dtheta;
         c = cos (theta);
         s = sin (theta);
-        bsiDPoint3d_add2ScaledDVec3d (&xyz0, &pEllipse->center,
-                    &pEllipse->vector0, c, &pEllipse->vector90, s);
-        bsiDVec3d_add2ScaledDVec3d (&perpVector, NULL, &UxM, -s, &VxM, c);
-        bsiDVec3d_normalizeInPlace (&perpVector);
-        bsiDPoint3d_addScaledDVec3d (&xyz[i], &xyz0, &perpVector, offsetDistance);
+        xyz0 = DPoint3d::FromSumOf (pEllipse->center, pEllipse->vector0, c, pEllipse->vector90, s);
+        perpVector = UxM * (-s) + VxM * c;
+        perpVector.Normalize ();
+        xyz[i].SumOf (xyz0, perpVector, offsetDistance);
         }
 
     MSBsplineCurvePtr curvePtr = MSBsplineCurve::CreatePtr ();
@@ -404,8 +403,8 @@ double       offsetDistance     /* => SIGNED offset. Positive is outward. */
     double thetaStar;
     bool    bClosed = false;
     majorMinorEllipse.InitWithPerpendicularAxes (*pEllipse);
-    a = bsiDVec3d_magnitude (&majorMinorEllipse.vector0);
-    b = bsiDVec3d_magnitude (&majorMinorEllipse.vector90);
+    a = majorMinorEllipse.vector0.Magnitude ();
+    b = majorMinorEllipse.vector90.Magnitude ();
     cutFraction[0] = 0.0;
     cutFraction[1] = 1.0;
     // Find the first quadrant angle at which a cut occurs ...
@@ -549,10 +548,10 @@ DPoint3d            *baseCenterP
     if (SUCCESS != (status = bspknot_computeKnotVector (base.knots, &base.params, tKnots)))
         goto wrapup;
 
-    bsiRotMatrix_multiplyDPoint3dArray (  rotMatrixP, top.poles, top.poles,  top.params.numPoles);
-    bsiRotMatrix_multiplyDPoint3dArray ( rotMatrixP, base.poles, base.poles,  base.params.numPoles);
-    bsiDPoint3d_addDPoint3dArray (top.poles, topCenterP, top.params.numPoles);
-    bsiDPoint3d_addDPoint3dArray (base.poles, baseCenterP, base.params.numPoles);
+    rotMatrixP->Multiply (top.poles, top.poles, top.params.numPoles);
+    rotMatrixP->Multiply (base.poles, base.poles, base.params.numPoles);
+    DPoint3d::AddToArray (top.poles, top.params.numPoles, *topCenterP);
+    DPoint3d::AddToArray (base.poles, base.params.numPoles, *baseCenterP);
 
     bsputil_weightPoles (top.poles, top.poles, top.weights, top.params.numPoles);
     bsputil_weightPoles (base.poles, base.poles, base.weights, base.params.numPoles);
@@ -1070,9 +1069,9 @@ DEllipse3dP     ellipseP,
     bsiDPoint4d_cartesianFromHomogeneous (vector0P, &vector0);
     bsiDPoint4d_cartesianFromHomogeneous (vector90P, &vector1);
 
-    rad0 = bsiDPoint3d_normalizeInPlace (&vector0);
-    rad1 = bsiDPoint3d_normalizeInPlace (&vector1);
-    dot = bsiDPoint3d_dotProduct (&vector0, &vector1);  /* like cos(angle between vec0 and vec1) * rad0 * rad1) */
+    rad0 = vector0.Normalize ();
+    rad1 = vector1.Normalize ();
+    dot = vector0.DotProduct (vector1);  /* like cos(angle between vec0 and vec1) * rad0 * rad1) */
     if  (   fabs (vector0P->w)      < zeroTol * rad0
          && fabs (vector90P->w)      < zeroTol * rad1
          && fabs (1.0 - centerP->w) < zeroTol
@@ -1080,15 +1079,15 @@ DEllipse3dP     ellipseP,
         )
         {
         double ds = s1 - s0;
-        bsiDPoint3d_crossProduct (&vector2, &vector0, &vector1);
+        vector2.CrossProduct (vector0, vector1);
         mdlRMatrix_fromColumnVectors (&rotMatrix, &vector0, &vector1, &vector2);
         if (isEllipseP)
             *isEllipseP = true;
         status = bspconv_arcToCurveStruct (curveP, s0, ds, rad0, rad1, &rotMatrix, &center);
         if (ellipseP)
             {
-            bsiDVec3d_scaleInPlace (&vector0, rad0);
-            bsiDVec3d_scaleInPlace (&vector1, rad1);
+            vector0.Scale (rad0);
+            vector1.Scale (rad1);
             ellipseP->InitFromVectors (center, vector0, vector1, s0, ds);
             }
         }
@@ -1099,8 +1098,8 @@ DEllipse3dP     ellipseP,
         static double zeroWeightTol = 1.0e-8;
         double refWeight;
         double maxWeight, minWeight;
-        bsiDPoint3d_zero (&center);
-        bsiRotMatrix_initIdentity (&rotMatrix);
+        center.Zero ();
+        rotMatrix.InitIdentity ();
         *isEllipseP = false;
 
         /* Any conic section is a unit circle mangled by a homogeneous transformation.  The center, vector0,
@@ -1269,8 +1268,8 @@ const HConic    *hConicP,       /* => conic to evaluate */
                                     s1
                                     );
 
-            if (   bsiDPoint4d_normalize(&hStart, &pointList[0])
-                && bsiDPoint4d_normalize(&hEnd, &pointList[1])
+            if (   hStart.GetProjectedXYZ (pointList[0])
+                && hEnd.GetProjectedXYZ (pointList[1])
                )
                 {
                 status = bspconv_lstringToCurveStruct (curveP, pointList, 2);

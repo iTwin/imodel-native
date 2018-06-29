@@ -96,7 +96,7 @@ DPoint3d    *P
     O.Zero ();
     for( i=n; i>=0; i-- )
         {
-        if (!bsiTrig_safeDivide (&ratio, 1.0, B[i*bw + sbw], fc_hugeVal))
+        if (!DoubleOps::SafeDivide (ratio, 1.0, B[i*bw + sbw], fc_hugeVal))
             return false;
 
         fact = 1.0/B[i*bw + sbw];
@@ -158,7 +158,7 @@ double                  tolerance
                 {
                 DPoint3d    center;
                 int         i;
-                bsiDPoint3d_interpolate (&center, &range.high, 0.5, &range.low);
+                center.Interpolate (range.high, 0.5, range.low);
                 for (i = 0; i < approxCurve.params.numPoles; i++) {approxCurve.poles[i] = center;}
 
                 if (pOut == pIn)
@@ -525,7 +525,7 @@ int                 type
 
           for( i=1; i<=n; i++ )
           {
-          dist[i] = bsiDPoint3d_distance (pts+i-1, pts+i);
+          dist[i] = pts[i-1].Distance (pts[i]);
           sum += dist[i];
           }
           break;
@@ -534,7 +534,7 @@ int                 type
 
          for( i=1; i<=n; i++ )
           {
-          dist[i] = bsiDPoint3d_distance (pts+i-1, pts+i);
+          dist[i] = pts[i-1].Distance (pts[i]);
           dist[i] = sqrt(dist[i]);
           sum += dist[i];
           }
@@ -1107,9 +1107,9 @@ int                     der  /* Order of end contrainsts */
     for (k=0; k<n+1; k++)
         {
         if (pCurve->rational)
-            bsiDPoint4d_initFromDPoint3dAndWeight (&Pw[k], &pCurve->poles[k], pCurve->weights[k]);
+            Pw[k].InitFrom (*(&pCurve->poles[k]), pCurve->weights[k]);
         else
-            bsiDPoint4d_initFromDPoint3dAndWeight (&Pw[k], &pCurve->poles[k], 1.0);
+            Pw[k].InitFrom (*(&pCurve->poles[k]), 1.0);
         }
 
     for( i=0; i<=m; i++ )
@@ -2047,9 +2047,9 @@ MSBsplineCurveP         pCurve
     for (k=0; k<n+1; k++)
         {
         if (pCurve->rational)
-            bsiDPoint4d_initFromDPoint3dAndWeight (&Pw[k], &pCurve->poles[k], pCurve->weights[k]);
+            Pw[k].InitFrom (*(&pCurve->poles[k]), pCurve->weights[k]);
         else
-            bsiDPoint4d_initFromDPoint3dAndWeight (&Pw[k], &pCurve->poles[k], 1.0);
+            Pw[k].InitFrom (*(&pCurve->poles[k]), 1.0);
         }
 
     int a, b;
@@ -2188,14 +2188,14 @@ double              tol
 
         if(j-i < t)
             {
-            if( bsiDPoint4d_realDistance(temp+ii-1, temp+jj+1) < tol )
+            if( temp[ii-1].RealDistance (temp[jj+1]) < tol )
                     remflag = true;
             }
         else
             {
             alfi = (u-pIn->knots[i])/(pIn->knots[i+ord+t]-pIn->knots[i]);
             bsiDPoint4d_interpolate (&pt, temp+ii+t+1, 1.0-alfi, temp+ii-1);
-            if( bsiDPoint4d_realDistance( ctrlpt+i, &pt ) < tol )
+            if( ctrlpt[i].RealDistance (pt) < tol )
                     remflag = true;
             }
 
@@ -2348,7 +2348,7 @@ double              toc     /* => Zero cosine tolerance */
         /* Check #2: zero cosine */
 
         double ratio;
-        if (!bsiTrig_safeDivide (&ratio, num, der*dis, fc_hugeVal))
+        if (!DoubleOps::SafeDivide (ratio, num, der*dis, fc_hugeVal))
             return MSB_ERROR;
 
         zco = fabs(num)/(der*dis);
@@ -2360,7 +2360,7 @@ double              toc     /* => Zero cosine tolerance */
         dot = V.DotProduct (D[2]);
         den = dot + der*der;
 
-        if (!bsiTrig_safeDivide (&ratio, num, den, fc_hugeVal))
+        if (!DoubleOps::SafeDivide (ratio, num, den, fc_hugeVal))
             return MSB_ERROR;
 
         uold = unew;
@@ -2505,7 +2505,7 @@ double                  ptol            /* => point equal tolerance, recommand s
     if ( Ts != NULL && Te != NULL )  
         keepTangent = true;
     else
-        d1 = bsiDPoint3d_distance (&P[0], &P[m]);
+        d1 = P[0].Distance (P[m]);
     
     VO.Zero ();
     if ( keepTangent || (d1 <= ptol && m > 2) )
@@ -2539,7 +2539,7 @@ double                  ptol            /* => point equal tolerance, recommand s
             {
             if ( d1 > ptol && d2 > ptol )
                 {  /* get cosine of angle between end derivatives */
-                d3 = bsiDVec3d_dotProduct (&Vs, &Ve);
+                d3 = Vs.DotProduct (Ve);
                 d3 = d3/(d1*d2);       /* cosine */
                 if ( d3 > 0.9986 )    /* 3 degrees */
                     {
@@ -2992,7 +2992,7 @@ double                  ptol            /* => point equal tolerance, recommand s
         DPoint3d zeroP;
         zeroP.Zero ();
         Qw.SumOf (zeroP,Pw[jj+1], d1, Pw[jj-1], 1.0-d1);
-        Ebnd = bsiDPoint3d_distance (&Pw[jj], &Qw);
+        Ebnd = Pw[jj].Distance (Qw);
         if ( Ebnd < ptol )  /* can remove without insertion */
             {          
             i += 1;   
@@ -3176,7 +3176,7 @@ bool             isClosed
         {
         pCurve->FractionToPoint (xyz, tangent1, 0.0);
         pCurve->FractionToPoint (xyz, tangent2, 1.0);
-        dot = bsiDVec3d_dotProduct (&tangent1, &tangent1);
+        dot = tangent1.DotProduct (tangent1);
         }
     else
         {
@@ -3187,7 +3187,7 @@ bool             isClosed
         cur2.CopyFractionSegment (*pCurve, rightParam, 1.0);
         cur1.FractionToPoint (xyz, tangent1, 1.0);
         cur2.FractionToPoint (xyz, tangent2, 0.0);
-        dot = bsiDVec3d_dotProduct (&tangent1, &tangent1);
+        dot = tangent1.DotProduct (tangent1);
         cur1.ReleaseMem ();
         cur2.ReleaseMem ();
         }
@@ -3638,7 +3638,7 @@ double          tolerance   // => fitting tolerance
 
     d = 0;
     for( i=1; i<=m; i++ )
-        d += bsiDPoint3d_distance (points + i-1, points + i);
+        d += points[ i-1].Distance (points[ i]);
 
     ltop = d*top;
     ltoc = toc;
@@ -3812,7 +3812,7 @@ double          tolerance   // => fitting tolerance
                     break;  
                     }
 
-                er[k] = bsiDPoint3d_distance(&P[k], &R);
+                er[k] = P[k].Distance (R);
 
                 if( er[k] > tolerance )  
                     {  
@@ -3924,7 +3924,7 @@ int             numPnts
     else
         {
         for (i=1, u[0] = 0.0; i < numPoints; i++)
-            u[i] =  u[i-1] + bsiDPoint3d_distance (&points[i], &points[i-1]);
+            u[i] =  u[i-1] + points[i].Distance (points[i-1]);
         divisor = u[numPoints-1];
         for (dP=endD=u, endD += numPoints; dP < endD; dP++)
             *dP /= divisor;

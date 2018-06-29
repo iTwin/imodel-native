@@ -81,7 +81,7 @@ int                 dimension
         {
         previousValue = currentValue;
         if (NULL != rotMatrixP)
-            currentValue = bsiDPoint3d_dotProduct ((DPoint3d *) poleP, &rows[dimension]);
+            currentValue = ((DPoint3d *) poleP)->DotProduct (rows[dimension]);
         else
             currentValue = poleP[dimension];
 
@@ -506,18 +506,18 @@ double              param       /* => parameter to test */
     DPoint3d        tangent, tangent0, tangent1;
 
     bspcurv_evaluateCurvePoint (NULL, &tangent, curveP, param);
-    bsiDPoint3d_normalizeInPlace (&tangent);
-    if (1.0 - fabs (bsiDPoint3d_dotProduct (&tangent, testDir)) < NEAR_ZERO)
+    tangent.Normalize ();
+    if (1.0 - fabs (tangent.DotProduct (*testDir)) < NEAR_ZERO)
         {
         if (param < 1.0 - NEAR_ZERO && param > NEAR_ZERO)
             {
             bspcurv_evaluateCurvePoint (NULL, &tangent0, curveP, param - NEAR_ZERO);
             bspcurv_evaluateCurvePoint (NULL, &tangent1, curveP, param + NEAR_ZERO);
-            bsiDPoint3d_normalizeInPlace (&tangent0);
-            bsiDPoint3d_normalizeInPlace (&tangent1);
-            bsiDPoint3d_crossProduct (&tangent0, &tangent0, &tangent);
-            bsiDPoint3d_crossProduct (&tangent1, &tangent1, &tangent);
-            if (bsiDPoint3d_dotProduct (&tangent0, &tangent1) > 0.0)
+            tangent0.Normalize ();
+            tangent1.Normalize ();
+            tangent0.CrossProduct (tangent0, tangent);
+            tangent1.CrossProduct (tangent1, tangent);
+            if (tangent0.DotProduct (tangent1) > 0.0)
                 isReflect = false;
             }
         }
@@ -564,7 +564,7 @@ double              tolerance
         /* ASSUME ... direction is in xy plane */
         direction = *(DVec3d*)directionP;
         bsiRotMatrix_getRow ( rotMatrixP, &zDir,  2);
-        bsiDPoint3d_crossProduct (&normal, &zDir, directionP);
+        normal.CrossProduct (zDir, *directionP);
         }
     else
         {
@@ -572,7 +572,7 @@ double              tolerance
         bsiRotMatrix_getRow ( rotMatrixP, &normal,  1);
         }
 
-    bsiDPoint3d_normalizeInPlace (&normal);
+    normal.Normalize ();
     first = true;
     maxPerp = minPerp = 0.0;  /* Will be replaced on first pass */
     minTangent = maxTangent = 0.0;
@@ -583,10 +583,10 @@ double              tolerance
                 pP < pEnd;
                     wP++, pP++)
             {
-            bsiDPoint3d_scale (&unWeighted, pP, 1.0 / *wP);
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&delta, &unWeighted, &rayPoints[0]);
-            tangentDot = bsiDPoint3d_dotProduct (&delta, &direction);
-            perpDot = bsiDPoint3d_dotProduct (&delta, &normal);
+            unWeighted.Scale (*pP, 1.0 / *wP);
+            delta.DifferenceOf (unWeighted, rayPoints[0]);
+            tangentDot = delta.DotProduct (direction);
+            perpDot = delta.DotProduct (normal);
             if (first)
                 {
                 maxTangent = minTangent = tangentDot;
@@ -610,9 +610,9 @@ double              tolerance
         {
         for (pP=pEnd=curveP->poles, pEnd += curveP->params.numPoles; pP < pEnd;  pP++)
             {
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&delta, pP, &rayPoints[0]);
-            tangentDot = bsiDPoint3d_dotProduct (&delta, &direction);
-            perpDot = bsiDPoint3d_dotProduct (&delta, &normal);
+            delta.DifferenceOf (*pP, rayPoints[0]);
+            tangentDot = delta.DotProduct (direction);
+            perpDot = delta.DotProduct (normal);
             if (first)
                 {
                 maxTangent = minTangent = tangentDot;
@@ -655,7 +655,7 @@ double              tolerance
         }
     else
         {
-        bsiDPoint3d_addScaledDPoint3d (&rayPoints[1], &rayPoints[0], &direction, maxTangent + 1.0);
+        rayPoints[1].SumOf (rayPoints[0], direction, maxTangent + 1.0);
         bspconv_convertLstringToCurve (reinterpret_cast<int *>(&rayCurve.type),  reinterpret_cast<int *>(&rayCurve.rational),
                                        &rayCurve.display, &rayCurve.params,
                                        &rayCurve.poles, &rayCurve.knots,
@@ -667,7 +667,7 @@ double              tolerance
         if (numIntersection)
             {
             paramTolerance = fabs (tolerance / (maxTangent + 1.0));
-            bsiDPoint3d_normalizeInPlace (&direction);
+            direction.Normalize ();
             for (param0P = endP = rayParamP, param1P = curveParamP,
                  endP += numIntersection, numRepeat = 0;
                  param0P < endP; param0P++, param1P++)

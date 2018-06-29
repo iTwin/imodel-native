@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/sortutil.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -67,10 +67,10 @@ typedef struct bufstruct
     void    *optArg;                    /* => optional argument passed to comparefunc */
     } SortUtilData;
 
-/*ff Major Public Code Section */
+/*ff MajorPublic Code Section */
 /*----------------------------------------------------------------------+
 |                                                                       |
-|   Major Public Code Section                                           |
+|   MajorPublic Code Section                                           |
 |                                                                       |
 +----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------+

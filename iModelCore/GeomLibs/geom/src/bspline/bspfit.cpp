@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspfit.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -96,10 +96,17 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
             {
             // edl june 2017 this use of null arg and pointer assignment as parameter setup defeats gema remap
             // leave pTan NULL if tan is zero vector; o.w., set it to normalized tan
-            if (!bsiDPoint3d_pointEqualTolerance (&endTangents[0], NULL, fc_nearZero))
-                bsiDPoint3d_normalizeInPlace (pStartTan = &endTangents[0]);
-            if (!bsiDPoint3d_pointEqualTolerance (&endTangents[1], NULL, fc_nearZero))
-                bsiDPoint3d_normalizeInPlace (pEndTan = &endTangents[1]);
+            DPoint3d zeroPoint = DPoint3d::FromZero ();
+            if (!endTangents[0].IsEqual (zeroPoint, fc_nearZero))
+                {
+                pStartTan = &endTangents[0];
+                endTangents[0].Normalize ();
+                }
+            if (!endTangents[1].IsEqual (zeroPoint, fc_nearZero))
+                {
+                pEndTan = &endTangents[1];
+                endTangents[1].Normalize ();
+                }
             }
 
         status = bspcurv_constructInterpolationWithKnots (pCurve, points, pStartTan, pEndTan, curve.knots, &params);
@@ -158,14 +165,14 @@ MSInterpolationCurve    *pCurve
 
     if (pStartTangentPoint)
         {
-        mag = bsiDPoint3d_distance (&pCurve->fitPoints[0], &pCurve->fitPoints[1]) * INTERPOLATION_TANGENT_SCALE;
-        bsiDPoint3d_addScaledDPoint3d (pStartTangentPoint, &pCurve->fitPoints[0], &pCurve->startTangent, mag);
+        mag = pCurve->fitPoints[0].Distance (*(&pCurve->fitPoints[1])) * INTERPOLATION_TANGENT_SCALE;
+        pStartTangentPoint->SumOf (*(&pCurve->fitPoints[0]), pCurve->startTangent, mag);
         }
 
     if (pEndTangentPoint)
         {
-        mag = bsiDPoint3d_distance (&pCurve->fitPoints[numPoints-1], &pCurve->fitPoints[numPoints-2]) * INTERPOLATION_TANGENT_SCALE;
-        bsiDPoint3d_addScaledDPoint3d (pEndTangentPoint, &pCurve->fitPoints[numPoints-1], &pCurve->endTangent, mag);
+        mag = pCurve->fitPoints[numPoints-1].Distance (*(&pCurve->fitPoints[numPoints-2])) * INTERPOLATION_TANGENT_SCALE;
+        pEndTangentPoint->SumOf (*(&pCurve->fitPoints[numPoints-1]), pCurve->endTangent, mag);
         }
 
     return  SUCCESS;
@@ -241,9 +248,9 @@ double                  u          /* => currently only allows u=0.0 */
         /* periodic curve end tangents aren't stored: convert to pole-based and compute 'em */
         bspcurv_evaluateCurvePoint (NULL, &outCurve->startTangent, &curve, start);  /* into curve */
         bspcurv_evaluateCurvePoint (NULL, &outCurve->endTangent, &curve, end);      /* away from curve */
-        bsiDPoint3d_scale (&outCurve->endTangent, &outCurve->endTangent, -1.0);    /* into curve */
-        bsiDPoint3d_normalizeInPlace (&outCurve->startTangent);
-        bsiDPoint3d_normalizeInPlace (&outCurve->endTangent);
+        outCurve->endTangent.Scale (outCurve->endTangent, -1.0);    /* into curve */
+        outCurve->startTangent.Normalize ();
+        outCurve->endTangent.Normalize ();
 
         // clamp knot vector
         for (i = 0; i < outCurve->params.order - 1; i++)
@@ -334,7 +341,7 @@ MSInterpolationCurve    *inCurve
         return SUCCESS;
 
     /* must be geometrically closed */
-    if (bsiDPoint3d_distance (&inCurve->fitPoints[0], &inCurve->fitPoints[inCurve->params.numPoints-1]) >= fc_epsilon * fc_epsilon)
+    if (inCurve->fitPoints[0].Distance (*(&inCurve->fitPoints[inCurve->params.numPoints-1])) >= fc_epsilon * fc_epsilon)
         return ERROR;
 
     // cannot make curve periodic with less than 5 points (counting first = last point)
@@ -400,8 +407,8 @@ bool            bPeriodic       // if true, it is assumed that first/last pole a
         // compute interior knots
         for (i = 0; i < nIntKnots; i++)
             {
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, &pPoles[i + 1], &pPoles[i]);
-            delta = bsiDPoint3d_dotProduct (&diff, &diff);
+            diff.DifferenceOf (pPoles[i + 1], pPoles[i]);
+            delta = diff.DotProduct (diff);
             if (pWeights)
                 {
                 diffw = pWeights[i + 1] - pWeights[i];
@@ -411,8 +418,8 @@ bool            bPeriodic       // if true, it is assumed that first/last pole a
             }
 
         // compute end knot
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, &pPoles[0], &pPoles[nIntKnots]);
-        delta = bsiDPoint3d_dotProduct (&diff, &diff);
+        diff.DifferenceOf (pPoles[0], pPoles[nIntKnots]);
+        delta = diff.DotProduct (diff);
         if (pWeights)
             {
             diffw = pWeights[0] - pWeights[nIntKnots];
@@ -443,8 +450,8 @@ bool            bPeriodic       // if true, it is assumed that first/last pole a
         // initialize pole distances
         for (i = 0; i < numPoles - 1; i++)
             {
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, &pPoles[i + 1], &pPoles[i]);
-            delta = bsiDPoint3d_dotProduct (&diff, &diff);
+            diff.DifferenceOf (pPoles[i + 1], pPoles[i]);
+            delta = diff.DotProduct (diff);
             if (pWeights)
                 {
                 diffw = pWeights[i + 1] - pWeights[i];
@@ -618,10 +625,10 @@ DPoint3d    *pVector2                /* => second vector */
     DPoint3d crossProduct;
     double cross, dot;
     double theta;
-    bsiDPoint3d_crossProduct (&crossProduct, pVector1, pVector2);
-    cross   = bsiDPoint3d_magnitude (&crossProduct);
-    dot     = bsiDPoint3d_dotProduct (pVector1, pVector2);
-    theta = bsiTrig_atan2 (cross, dot);
+    crossProduct.CrossProduct (*pVector1, *pVector2);
+    cross   = crossProduct.Magnitude ();
+    dot     = pVector1->DotProduct (*pVector2);
+    theta = Angle::Atan2 (cross, dot);
     return theta;
     }
 #define TOLERANCE_BoundaryCornerAngle           .5
@@ -647,11 +654,11 @@ double              tolerance
 
     while (pointP < endP)
         {
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&nextDelta, pointP + 1, pointP);
+        nextDelta.DifferenceOf (pointP[ 1], *pointP);
         for (startP = pointP, pointP++; pointP < endP; pointP++)
             {
             delta = nextDelta;
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&nextDelta, pointP + 1, pointP);
+            nextDelta.DifferenceOf (pointP[ 1], *pointP);
 
             if (angleBetweenVectors (&delta, &nextDelta) > s_sharpTurnTolerance
                 || zeroVector (&delta))
@@ -727,7 +734,7 @@ Transform const         *transformP         /* => transform */
     if (SUCCESS != (status = bspcurv_copyInterpolationCurve (outCurveP, inCurveP)))
         return status;
 
-    if (!transformP || bsiTransform_isIdentity (transformP))
+    if (!transformP || transformP->IsIdentity ())
         return SUCCESS;
 
     mdlRMatrix_fromTMatrix (&matrix, transformP);
@@ -742,8 +749,8 @@ Transform const         *transformP         /* => transform */
             {
             mdlRMatrix_multiplyPoint (&outCurveP->startTangent, &matrix);
             mdlRMatrix_multiplyPoint (&outCurveP->endTangent, &matrix);
-            bsiDPoint3d_normalizeInPlace (&outCurveP->startTangent);
-            bsiDPoint3d_normalizeInPlace (&outCurveP->endTangent);
+            outCurveP->startTangent.Normalize ();
+            outCurveP->endTangent.Normalize ();
             }
 
         return SUCCESS;
@@ -766,22 +773,22 @@ Transform const         *transformP         /* => transform */
 
     // extract geometric end tangents pointing into curve (actual end derivatives may be zero!)
     pole = curve.poles[0];
-    bsiDPoint3d_zero (&outCurveP->startTangent);
+    outCurveP->startTangent.Zero ();
     for (i = 1; i < numPoles; i++)
         {
-            if (!bsiDPoint3d_pointEqualTolerance (&pole, &curve.poles[i], fc_epsilon))
+            if (!pole.IsEqual (*(&curve.poles[i]), fc_epsilon))
             {
-                bsiDPoint3d_computeNormal (&outCurveP->startTangent, &curve.poles[i], &pole);
+                outCurveP->startTangent.NormalizedDifference (*(&curve.poles[i]), pole);
             break;
             }
         }
     pole = curve.poles[numPoles - 1];
-    bsiDPoint3d_zero (&outCurveP->endTangent);
+    outCurveP->endTangent.Zero ();
     for (i = numPoles - 2; i >= 0; i--)
         {
-            if (!bsiDPoint3d_pointEqualTolerance (&pole, &curve.poles[i], fc_epsilon))
+            if (!pole.IsEqual (*(&curve.poles[i]), fc_epsilon))
             {
-                bsiDPoint3d_computeNormal (&outCurveP->endTangent, &curve.poles[i], &pole);
+                outCurveP->endTangent.NormalizedDifference (*(&curve.poles[i]), pole);
             break;
             }
         }
@@ -825,7 +832,7 @@ bool            close
     if (rotMatrixP)
         matrix = *rotMatrixP;
     else
-        bsiRotMatrix_initIdentity (&matrix);
+        matrix.InitIdentity ();
 
     return bspconv_arcToCurveStruct (curveP, start, sweep, x1, x2, &matrix, &center);
     }
@@ -879,7 +886,7 @@ DPoint3d        *directionPt
 
     twoWover3 = 2.0 * wts[1] / fc_3;
     weight = (2.0*wts[1] + 1.0) / fc_3;
-    bsiDPoint3d_scale (&poles[1], &poles[1], twoWover3);
+    poles[1].Scale (poles[1], twoWover3);
 
     /* Blend to get poles of spiral */
     for (i=0, sectIRad=iRad; i < numSections; i++)
@@ -887,15 +894,15 @@ DPoint3d        *directionPt
         index = 3*i;
         sectFRad = sectIRad + sectionDeltaR;
 
-        bsiDPoint3d_scale (&curve->poles[index], &poles[0], sectIRad);
+        curve->poles[index].Scale (poles[0], sectIRad);
 
-        bsiDPoint3d_scale (&curve->poles[index+1], &poles[1], sectIRad);
-        bsiDPoint3d_scale (&temp, &poles[0], sectFRad/fc_3);
-        bsiDPoint3d_addDPoint3dDPoint3d (&curve->poles[index+1], &curve->poles[index+1],&temp);
+        curve->poles[index+1].Scale (poles[1], sectIRad);
+        temp.Scale (poles[0], sectFRad/fc_3);
+        curve->poles[index+1].SumOf (*(&curve->poles[index+1]), temp);
 
-        bsiDPoint3d_scale (&curve->poles[index+2], &poles[2], sectIRad/fc_3);
-        bsiDPoint3d_scale (&temp, &poles[1], sectFRad);
-        bsiDPoint3d_addDPoint3dDPoint3d (&curve->poles[index+2], &curve->poles[index+2],&temp);
+        curve->poles[index+2].Scale (poles[2], sectIRad/fc_3);
+        temp.Scale (poles[1], sectFRad);
+        curve->poles[index+2].SumOf (*(&curve->poles[index+2]), temp);
 
         curve->weights[index] = 1.0;
         curve->weights[index+1] = curve->weights[index+2] = weight;
@@ -907,10 +914,10 @@ DPoint3d        *directionPt
             }
 
         sectIRad = sectFRad;
-        bsiRotMatrix_multiplyDPoint3dArray ( &rotMatrix1, poles, poles,  3);
+        rotMatrix1.Multiply (poles, poles, 3);
         }
 
-    bsiDPoint3d_scale (&curve->poles[3*numSections], &poles[0], fRad);
+    curve->poles[3*numSections].Scale (poles[0], fRad);
     curve->weights[3*numSections] = 1.0;
     curve->knots[0] = curve->knots[1] =
     curve->knots[2] = curve->knots[3] = 0.0;
@@ -928,24 +935,24 @@ DPoint3d        *directionPt
     curve->poles[0].x = curve->poles[0].y = curve->poles[0].z = 0.0;
 
     /* Orthogonal system from spiral poles, x-axis = tangent at zero */
-    bsiDPoint3d_computeNormal (poles, curve->poles+1, curve->poles);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (poles+1, curve->poles+2, curve->poles);
-    bsiDPoint3d_crossProduct (poles+2, poles, poles+1);
-    bsiDPoint3d_normalizeInPlace (poles+2);
-    bsiDPoint3d_crossProduct (poles+1, poles+2, poles);
-    bsiRotMatrix_initFromColumnVectors (&rotMatrix1, poles, poles+1, poles+2);
+    poles->NormalizedDifference (*(curve->poles+1), *(curve->poles));
+    poles[1].DifferenceOf (*(curve->poles+2), *(curve->poles));
+    poles[2].CrossProduct (*poles, poles[1]);
+    poles[2].Normalize ();
+    poles[1].CrossProduct (poles[2], *poles);
+    rotMatrix1.InitFromColumnVectors (*poles, poles[1], poles[2]);
 
     /* Orthogonal system from input data points, x-axis = tangentPt-startPt */
-    bsiDPoint3d_computeNormal (poles, tangentPt, startPt);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (poles+1, directionPt, startPt);
-    bsiDPoint3d_crossProduct (poles+2, poles, poles+1);
-    bsiDPoint3d_normalizeInPlace (poles+2);
-    bsiDPoint3d_crossProduct (poles+1, poles+2, poles);
-    bsiRotMatrix_initFromRowVectors (&rotMatrix2, poles, poles+1, poles+2);
+    poles->NormalizedDifference (*tangentPt, *startPt);
+    poles[1].DifferenceOf (*directionPt, *startPt);
+    poles[2].CrossProduct (*poles, poles[1]);
+    poles[2].Normalize ();
+    poles[1].CrossProduct (poles[2], *poles);
+    rotMatrix2.InitFromRowVectors (*poles, poles[1], poles[2]);
 
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (&rotMatrix1, &rotMatrix1, &rotMatrix2);
-    bsiRotMatrix_multiplyTransposeDPoint3dArray ( &rotMatrix1, curve->poles, curve->poles,  curve->params.numPoles);
-    bsiDPoint3d_addDPoint3dArray (curve->poles, startPt, curve->params.numPoles);
+    rotMatrix1.InitProduct (rotMatrix1, rotMatrix2);
+    rotMatrix1.MultiplyTranspose (curve->poles, curve->poles, curve->params.numPoles);
+    DPoint3d::AddToArray (curve->poles, curve->params.numPoles, *startPt);
 
     bsputil_weightPoles (curve->poles, curve->poles, curve->weights, curve->params.numPoles);
 
@@ -986,23 +993,23 @@ DPoint3d        *endPt
     curve->poles[2] = *tangentPt;
     curve->poles[3] = *endPt;
 
-/*    bsiDPoint3d_computeNormal (&norm, tangentPt, startPt);
-    dist = bsiDPoint3d_computeNormal (&diff, endPt, startPt);
-    dot = bsiDPoint3d_dotProduct (&norm, &diff);
+/*    norm.NormalizedDifference (*tangentPt, *startPt);
+    dist = diff.NormalizedDifference (*endPt, *startPt);
+    dot = norm.DotProduct (diff);
     alpha = acos (dot);
     scale = dist / sin ( msGeomConst_pi  - sweep) * sin (sweep - alpha);
 
-    bsiDPoint3d_addScaledDPoint3d (curve->poles+2, startPt, &norm, scale);*/
+    (curve->poles+2)->SumOf (*startPt, norm, scale);*/
 
     curve->poles[1].x = (curve->poles[0].x + curve->poles[2].x) / 2.0;
     curve->poles[1].y = (curve->poles[0].y + curve->poles[2].y) / 2.0;
     curve->poles[1].z = (curve->poles[0].z + curve->poles[2].z) / 2.0;
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&leg0, curve->poles+1, curve->poles+2);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&leg1, curve->poles+3, curve->poles+2);
-    dist = bsiDPoint3d_magnitude (&leg1);
-    bsiDPoint3d_crossProduct (&norm, &leg0, &leg1);
-    area = bsiDPoint3d_magnitude (&norm);
+    leg0.DifferenceOf (*(curve->poles+1), *(curve->poles+2));
+    leg1.DifferenceOf (*(curve->poles+3), *(curve->poles+2));
+    dist = leg1.Magnitude ();
+    norm.CrossProduct (leg0, leg1);
+    area = norm.Magnitude ();
 
     curve->weights[0] = curve->weights[2] = curve->weights[3] = 1.0;
     curve->weights[1] = fc_3/fc_4 * dist * dist * dist / area / fRad;
@@ -1076,7 +1083,7 @@ int             valueIsHeight
     DPoint3d     *pP, *endP;
     RotMatrix   rotMatrix;
 
-    height = bsiDPoint3d_distance (axis1, axis2);
+    height = axis1->Distance (*axis2);
     turns = valueIsHeight ? height/pitchValue : pitchValue;
     sweep = msGeomConst_2pi  * turns;
 
@@ -1091,13 +1098,13 @@ int             valueIsHeight
     for (i=0, pP=endP=curve->poles, endP += curve->params.numPoles; pP < endP; pP++, i++)
         pP->z = i * height / (curve->params.numPoles - 1);
 
-    bsiDPoint3d_computeNormal (&tmp1, startPt, axis1);
-    bsiDPoint3d_computeNormal (&tmp3, axis2, axis1);
-    bsiDPoint3d_crossProduct (&tmp2, &tmp3, &tmp1);
-    bsiRotMatrix_initFromRowVectors (&rotMatrix, &tmp1, &tmp2, &tmp3);
+    tmp1.NormalizedDifference (*startPt, *axis1);
+    tmp3.NormalizedDifference (*axis2, *axis1);
+    tmp2.CrossProduct (tmp3, tmp1);
+    rotMatrix.InitFromRowVectors (tmp1, tmp2, tmp3);
 
-    bsiRotMatrix_multiplyTransposeDPoint3dArray ( &rotMatrix, curve->poles, curve->poles,  curve->params.numPoles);
-    bsiDPoint3d_addDPoint3dArray (curve->poles, axis1, curve->params.numPoles);
+    rotMatrix.MultiplyTranspose (curve->poles, curve->poles, curve->params.numPoles);
+    DPoint3d::AddToArray (curve->poles, curve->params.numPoles, *axis1);
 
     bsputil_weightPoles (curve->poles, curve->poles, curve->weights, curve->params.numPoles);
 
@@ -1169,16 +1176,16 @@ DPoint3d    *zAxis
 
     world.Zero ();
     zNormal = *zAxis;
-    bsiDPoint3d_normalizeInPlace (&zNormal);
+    zNormal.Normalize ();
     if ((fabs (zNormal.x) < fc_p01) && (fabs (zNormal.y) < fc_p01))
         world.y = 1.0;
     else
         world.z = 1.0;
 
-    bsiDPoint3d_crossProduct (&xNormal, &world, &zNormal);
-    bsiDPoint3d_normalizeInPlace (&xNormal);
-    bsiDPoint3d_crossProduct (&yNormal, &zNormal, &xNormal);
-    bsiDPoint3d_normalizeInPlace (&yNormal);
+    xNormal.CrossProduct (world, zNormal);
+    xNormal.Normalize ();
+    yNormal.CrossProduct (zNormal, xNormal);
+    yNormal.Normalize ();
 
     xvec = (double *) &xNormal;
     yvec = (double *) &yNormal;
@@ -1224,23 +1231,23 @@ int             aboutZero
         incr   = -1;
         }
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&tmp, second, first);
+    tmp.DifferenceOf (*second, *first);
     bsputil_arbitraryTransform (&rM, &tmp);
 
     for (pP=second; pP != last; pP += incr)
         {
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&tmp, pP, first);
+        tmp.DifferenceOf (*pP, *first);
         bsputil_rotatePoint (&tmp, &rM);
         tmp.z *= -1.0 ;
         bsputil_unrotatePoint (&tmp, &rM);
-        bsiDPoint3d_addDPoint3dDPoint3d (pP, &tmp, first);
+        pP->SumOf (tmp, *first);
         }
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&tmp, last, first);
+    tmp.DifferenceOf (*last, *first);
     bsputil_rotatePoint (&tmp, &rM);
     tmp.z *= -1.0 ;
     bsputil_unrotatePoint (&tmp, &rM);
-    bsiDPoint3d_addDPoint3dDPoint3d (last, &tmp, first);
+    last->SumOf (tmp, *first);
 
     return SUCCESS;
     }
@@ -1288,10 +1295,10 @@ double          mag2           /*    tangent between 0.0 and 1.0 */
         SUCCESS != (status = bspcurv_getTangent (&segTan, 0.0, seg, false)))
         goto wrapup;
 
-    if ((segTanMag = bsiDPoint3d_magnitude (&segTan)) > fc_epsilon)
-        scaleFactor = mag1 * bsiDPoint3d_magnitude (&tan) / segTanMag;
+    if ((segTanMag = segTan.Magnitude ()) > fc_epsilon)
+        scaleFactor = mag1 * tan.Magnitude () / segTanMag;
     else
-        scaleFactor = mag1 * bsiDPoint3d_magnitude (&tan);
+        scaleFactor = mag1 * tan.Magnitude ();
     if ((tmp = 1.0 - param1) > 0.0)
         scaleFactor /= tmp;
     if (seg[0].rational)
@@ -1300,9 +1307,9 @@ double          mag2           /*    tangent between 0.0 and 1.0 */
     origin = seg[0].poles[0];
     for (pP=seg[0].poles+1, endP=seg[0].poles + seg[0].params.numPoles; pP < endP; pP++)
         {
-        bsiDPoint3d_subtractDPoint3dDPoint3d (pP, pP, &origin);
-        bsiDPoint3d_scale (pP, pP, scaleFactor);
-        bsiDPoint3d_addDPoint3dDPoint3d (pP, pP, &origin);
+        pP->DifferenceOf (*pP, origin);
+        pP->Scale (*pP, scaleFactor);
+        pP->SumOf (*pP, origin);
         }
     if (seg[0].rational)
         bsputil_weightPoles (seg[0].poles, seg[0].poles, seg[0].weights,
@@ -1323,10 +1330,10 @@ double          mag2           /*    tangent between 0.0 and 1.0 */
     if (SUCCESS != (status = bspcurv_getTangent (&tan, param2, inCurve2, false)) ||
         SUCCESS != (status = bspcurv_getTangent (&segTan, 1.0, seg + 1, true)))
         goto wrapup;
-    if ((segTanMag = bsiDPoint3d_magnitude (&segTan)) > fc_epsilon)
-        scaleFactor = mag2 * bsiDPoint3d_magnitude (&tan) / segTanMag;
+    if ((segTanMag = segTan.Magnitude ()) > fc_epsilon)
+        scaleFactor = mag2 * tan.Magnitude () / segTanMag;
     else
-        scaleFactor = mag2 * bsiDPoint3d_magnitude (&tan);
+        scaleFactor = mag2 * tan.Magnitude ();
     if (param2 > 0.0)
         scaleFactor /= param2;
 
@@ -1337,9 +1344,9 @@ double          mag2           /*    tangent between 0.0 and 1.0 */
     origin = seg[1].poles[offset];
     for (pP=endP=seg[1].poles, endP += offset; pP < endP; pP++)
         {
-        bsiDPoint3d_subtractDPoint3dDPoint3d (pP, pP, &origin);
-        bsiDPoint3d_scale (pP, pP, scaleFactor);
-        bsiDPoint3d_addDPoint3dDPoint3d (pP, pP, &origin);
+        pP->DifferenceOf (*pP, origin);
+        pP->Scale (*pP, scaleFactor);
+        pP->SumOf (*pP, origin);
         }
     if (seg[1].rational)
         bsputil_weightPoles (seg[1].poles, seg[1].poles, seg[1].weights,
@@ -1472,7 +1479,7 @@ int             numPnts
     else
         {
         for (i=1, u[0] = 0.0; i < numPoints; i++)
-            u[i] =  u[i-1] + bsiDPoint3d_distance (&points[i], &points[i-1]);
+            u[i] =  u[i-1] + points[i].Distance (points[i-1]);
         divisor = u[numPoints-1];
         for (dP=endD=u, endD += numPoints; dP < endD; dP++)
             *dP /= divisor;
@@ -1498,8 +1505,8 @@ int             numPnts
             {
             if (curve->params.closed || (0 < row && row < numPoles-1))
                 {
-                bsiDPoint3d_scale (&temp, &points[i], bfuncs[j]);
-                bsiDPoint3d_addDPoint3dDPoint3d (&curve->poles[row%numPoles], &curve->poles[row%numPoles], &temp);
+                temp.Scale (points[i], bfuncs[j]);
+                curve->poles[row%numPoles].SumOf (*(&curve->poles[row%numPoles]), temp);
                 for (k=0, col = (left - order + numPoles) % numPoles;
                      k < order; k++, col++)
                     matrix[row%numPoles*numPoles + col%numPoles] += bfuncs[j] * bfuncs[k];
@@ -1546,7 +1553,7 @@ int             numPnts
                 temp.y += bfuncs[j] * curve->poles[k % numPoles].y;
                 temp.z += bfuncs[j] * curve->poles[k % numPoles].z;
                 }
-            totalDistance += distance[i] = bsiDPoint3d_distance (&points[i], &temp);
+            totalDistance += distance[i] = points[i].Distance (temp);
             }
 
         for (dP=endD=distance, endD += numPoints, *maxDistance=0.0; dP < endD; dP++)

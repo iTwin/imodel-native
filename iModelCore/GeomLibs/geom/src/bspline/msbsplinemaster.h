@@ -7,7 +7,7 @@
 |       $Date$
 |     $Author$
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,8 +28,6 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 #define msbspline_calloc(_p,_q,_d) BSIBaseGeom::Calloc (_p,_q)
 #define msbspline_realloc(_p,_q) BSIBaseGeom::Realloc (_p,_q)
 #define mdlRMatrix_fromColumnVectors bsiRotMatrix_initFromColumnVectors
-#define mdlVec_arePerpendicular bsiDVec3d_arePerpendicular
-#define mdlVec_areParallel bsiDVec3d_areParallel
 #define mdlRMatrix_fromTMatrix bsiRotMatrix_initFromTransform
 
 #define mdlTMatrix_transformPointArray(_points,_transform,_count) bsiTransform_multiplyDPoint3dArrayInPlace(_transform, _points, _count)
@@ -137,7 +135,24 @@ int mdlCnv_roundDoubleToLong (double);
 
 #include "bspLocal.fdf"
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    peter.yu                        03/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+void curveMinWeightAndMaxProjectedMagnitude
+(
+double              &wMin,
+double              &pMax,
+MSBsplineCurveCP  pCurve
+);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    peter.yu                        03/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+void surfaceMinWeightAndMaxMagnitude
+(
+double              &wMin,
+double              &pMax,
+MSBsplineSurfaceCP  pSurf
+);
 END_BENTLEY_GEOMETRY_NAMESPACE
 
 #include "sortutil.h"

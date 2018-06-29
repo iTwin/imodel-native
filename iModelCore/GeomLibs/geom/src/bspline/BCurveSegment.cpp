@@ -230,7 +230,7 @@ int     numFunc
                 pBezier->GetWorkPoleP (0), (int)pBezier->GetWorkOrder (),
                 &s, 1);
 
-    a = bsiDPoint3d_magnitude (&tangent);
+    a = tangent.Magnitude ();
     pF[INDEX_LENGTH] = a;
     if (numFunc >= 4)
         {

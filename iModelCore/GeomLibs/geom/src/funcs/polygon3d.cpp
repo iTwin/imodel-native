@@ -103,11 +103,11 @@ double      tolDistSquared
         DPoint3d basePoint = pPointArray[i0];
         DVec3d vectorU, vectorV;
 
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorV, pPoint, &basePoint);
-        VdotV = bsiDPoint3d_magnitudeSquared (&vectorV);
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorU, &pPointArray[i1], &basePoint);
-        UdotU = bsiDPoint3d_magnitudeSquared (&vectorU);
-        UdotV = bsiDPoint3d_dotProduct (&vectorU, &vectorV);
+        vectorV.DifferenceOf (*pPoint, basePoint);
+        VdotV = vectorV.MagnitudeSquared ();
+        vectorU.DifferenceOf (pPointArray[i1], basePoint);
+        UdotU = vectorU.MagnitudeSquared ();
+        UdotV = vectorU.DotProduct (vectorV);
         if (UdotU < tolDistSquared)
             continue;
 
@@ -127,11 +127,10 @@ double      tolDistSquared
             if (VdotV < d2Min)
                 {
                 DVec3d vectorU0;
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorU0, &oldBasePoint, &basePoint);
-                if (bsiDPoint3d_dotProduct (&vectorU0, &vectorV) <= 0.0)
+                vectorU0.DifferenceOf (oldBasePoint, basePoint);
+                if (vectorU0.DotProduct (vectorV) <= 0.0)
                     {
-                    bsiDPoint3d_crossProduct (pClassificationVector,
-                                                    &vectorU0, &vectorU);
+                    pClassificationVector->CrossProduct (vectorU0, vectorU);
                     *pBaseVertexId = i0;
                     *pNearestPoint = basePoint;
                     *pParam = 0.0;
@@ -185,8 +184,8 @@ double      tolDistSquared
                 /* We have found a new closest point */
                 *pBaseVertexId = i0;
                 *pParam        = param;
-                bsiDPoint3d_addScaledDPoint3d (pNearestPoint, &basePoint, &vectorU, param);
-                bsiDPoint3d_crossProduct (pClassificationVector, &vectorU, &vectorV);
+                pNearestPoint->SumOf (basePoint, vectorU, param);
+                pClassificationVector->CrossProduct (vectorU, vectorV);
                 d2Min = d2Normal;
                 code = 2;
                 }
@@ -271,7 +270,7 @@ double      tolDistSquared
                                 tolDistSquared);
         if (code == 2 || code == 3)
             {
-            if (bsiDPoint3d_dotProduct (&classificationVector, &normal) < 0.0)
+            if (classificationVector.DotProduct (normal) < 0.0)
                 {
                 code = -code;
                 }
@@ -547,15 +546,15 @@ DPoint3dCP pSweepDirection
     bool    bStat = false;
 
     /* Normal vector for cut plane containing the ray and sweep directions */
-    bsiDPoint3d_normalize (&xDir, pRayDirection);
-    bsiDPoint3d_normalizedCrossProduct (&yDir, pRayDirection, pSweepDirection);
+    xDir.Normalize (*pRayDirection);
+    yDir.NormalizedCrossProduct (*pRayDirection, *pSweepDirection);
 
     bsiTransform_initFromOriginAndVectors (&localToWorld, pPoint, pRayDirection, &yDir, pSweepDirection);
 
     numPositiveCrossing = numNegativeCrossing = 0;
     bExactOnEdge = false;
 
-    if (!bsiTransform_invertTransform (&worldToLocal, &localToWorld))
+    if (!worldToLocal.InverseOf (localToWorld))
         {
         bStat = false;
         }
@@ -571,7 +570,7 @@ DPoint3dCP pSweepDirection
         bStat = true;
         /* transform to local system where x is "along the ray" and y is "above the plane of the
                 ray and sweep direction" */
-        bsiTransform_multiplyDPoint3dArray (&worldToLocal, pXYZ, pPointArray, numPoint);
+        worldToLocal.Multiply (pXYZ, pPointArray, numPoint);
 
         /* Force duplicate first/last point (even if it creates a bogus zero-length edge at end)
             The counting logic will not be affected by a duplicate point.
@@ -730,7 +729,7 @@ double      tol
     int numOut = 0;
     for (int i1 = 0; i1 <= numPoint;)
         {
-        if (i1 >= numPoint || bsiDPoint3d_isDisconnect (&pPointArray[i1]))
+        if (i1 >= numPoint || pPointArray[i1].IsDisconnect ())
             {
             int numThisLoop = i1 - i0;
             if (numThisLoop > 1)
@@ -839,7 +838,7 @@ double          reltol
         memmove (pIntOut2, pIntIn, numIn * sizeof (*pIntOut2));
 
     /* Eliminate trailing points which duplicate first point */
-    while (1 < numIn && bsiDPoint3d_pointEqualTolerance (pXYZIn, pXYZIn + numIn - 1, tol))
+    while (1 < numIn && pXYZIn->IsEqual (pXYZIn[ numIn - 1], tol))
         {
         numIn--;
 
@@ -858,7 +857,7 @@ double          reltol
             pIntOut[k] = pIntIn[i];
 
         /* skip past dups in this run (j points to 1st vertex/int of this run) */
-        while (++i < numIn && bsiDPoint3d_pointEqualTolerance (pXYZIn + j, pXYZIn + i, tol))
+        while (++i < numIn && pXYZIn[ j].IsEqual (pXYZIn[ i], tol))
             {
             if (bInts2)
                 pIntOut2[i] = pIntIn[j];    /* duplicate the int corresp to the 1st vertex in this run */
@@ -1148,7 +1147,7 @@ double              eps2
     double      mag2;
 
     bsiDPoint3d_crossProduct3DPoint3d (&normal, pXYZ, pXYZ+1, pXYZ+2);
-    mag2 = bsiDPoint3d_magnitudeSquared (&normal);
+    mag2 = normal.MagnitudeSquared ();
 
     /*
     If the angle at first vertex is too large, split it with the median and choose
@@ -1159,13 +1158,13 @@ double              eps2
         double m1, m2;
         DPoint3d v, n1, n2;
 
-        bsiDPoint3d_interpolate (&v, pXYZ+1, 0.5, pXYZ+2);
+        v.Interpolate (pXYZ[1], 0.5, pXYZ[2]);
 
         bsiDPoint3d_crossProduct3DPoint3d (&n1, pXYZ, pXYZ+1, &v);
-        m1 = bsiDPoint3d_magnitudeSquared (&n1);
+        m1 = n1.MagnitudeSquared ();
 
         bsiDPoint3d_crossProduct3DPoint3d (&n2, pXYZ, &v, pXYZ+2);
-        m2 = bsiDPoint3d_magnitudeSquared (&n2);
+        m2 = n2.MagnitudeSquared ();
 
         // compare sin^2 of subangles
         if (m1 * dot2 >= m2 * dot1)
@@ -1211,9 +1210,9 @@ double              eps2
     int             maxIndex;
 
     // get squared side lengths
-    dot01 = bsiDPoint3d_distanceSquared (pXYZ  , pXYZ+1);
-    dot02 = bsiDPoint3d_distanceSquared (pXYZ  , pXYZ+2);
-    dot12 = bsiDPoint3d_distanceSquared (pXYZ+1, pXYZ+2);
+    dot01 = pXYZ->DistanceSquared (pXYZ[1]);
+    dot02 = pXYZ->DistanceSquared (pXYZ[2]);
+    dot12 = pXYZ[1].DistanceSquared (pXYZ[2]);
 
     // cyclically extend the array
     xyz[0] = xyz[3] = pXYZ[0];
@@ -1287,11 +1286,11 @@ double      eps2
     c = (a+2) % 3;
     denom = 0.5 / l2norm;
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&ba, &pXYZ[b], &pXYZ[a]);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&ca, &pXYZ[c], &pXYZ[a]);
+    ba.DifferenceOf (pXYZ[b], pXYZ[a]);
+    ca.DifferenceOf (pXYZ[c], pXYZ[a]);
 
-    l2ba = bsiDPoint3d_magnitudeSquared (&ba);
-    l2ca = bsiDPoint3d_magnitudeSquared (&ca);
+    l2ba = ba.MagnitudeSquared ();
+    l2ca = ca.MagnitudeSquared ();
 
     // calculate offset (from pXYZ[a]) of circumcenter
     ctra.x = ((l2ba * ca.y - l2ca * ba.y) * norm.z - (l2ba * ca.z - l2ca * ba.z) * norm.y) * denom;
@@ -1299,7 +1298,7 @@ double      eps2
     ctra.z = ((l2ba * ca.x - l2ca * ba.x) * norm.y - (l2ba * ca.y - l2ca * ba.y) * norm.x) * denom;
 
     if (pCenter)
-        bsiDPoint3d_addDPoint3dDPoint3d (pCenter, &pXYZ[a], &ctra);
+        pCenter->SumOf (pXYZ[a], ctra);
 
     if (pBaryCenter)
         {
@@ -1326,7 +1325,7 @@ double      eps2
         pBaryCenter->x = 1.0 - pBaryCenter->y - pBaryCenter->z;
         }
 
-    return bsiDPoint3d_magnitudeSquared (&ctra);
+    return ctra.MagnitudeSquared ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1467,7 +1466,7 @@ double tol
         else if (z0 * z1 < 0.0)
             {
             double s = z0 / (z0 - z1);
-            bsiDPoint3d_interpolate (&xyz, &pXYZA[iA0], s, &pXYZA[iA1]);
+            xyz.Interpolate (pXYZA[iA0], s, pXYZA[iA1]);
             if (bsiGeom_XYPolygonParity (&xyz, pXYZB, numB, tol) >= 0)
                 return true;
             }
@@ -1515,7 +1514,7 @@ int numB
                     pPointArrayB, numB))
         return false;
 
-    bsiTransform_multiplyDPoint3dArray (&worldToLocalB, pXYZA_localB, pPointArrayA, numA);
+    worldToLocalB.Multiply (pXYZA_localB, pPointArrayA, numA);
 
     rangeA_localB.InitFrom(pXYZA_localB, numA);
     rangeB_localB.InitFrom(pXYZB_localB, numB);
@@ -1588,8 +1587,8 @@ int numB
                     pPointArrayB, numB))
         return false;
 
-    bsiTransform_multiplyDPoint3dArray (&worldToLocalB, pXYZA_localB, pXYZA_world, numA);
-    bsiTransform_multiplyDPoint3dArray (&worldToLocalA, pXYZB_localA, pXYZB_world, numB);
+    worldToLocalB.Multiply (pXYZA_localB, pXYZA_world, numA);
+    worldToLocalA.Multiply (pXYZB_localA, pXYZB_world, numB);
 
     rangeA_localB.InitFrom(pXYZA_localB, numA);
     rangeB_localA.InitFrom(pXYZB_localA, numB);
@@ -1691,8 +1690,8 @@ DPoint3dCR spacePoint
         return -1;
         }
 
-    h = bsiDPoint3d_dotDifference (&spacePoint, &origin, &normal);
-    bsiDPoint3d_addScaledDVec3d (&planePoint, &spacePoint, &normal, -h);
+    h = spacePoint.DotDifference(origin, normal);
+    planePoint.SumOf (spacePoint, normal, -h);
 
     code = bsiPolygon_closestEdgeToPoint (
                             &nearestPoint,
@@ -1712,7 +1711,7 @@ DPoint3dCR spacePoint
         }
     else if (code == 2 || code == 3)
         {
-        if (bsiDPoint3d_dotProduct (&classificationVector, &normal) < 0.0)
+        if (classificationVector.DotProduct (normal) < 0.0)
             {
             // "outside".   Take the closest edge or vertex
             closestPoint = nearestPoint;
@@ -1778,16 +1777,11 @@ DPoint3dCP pXYZ,
 DRay3dCP pParameterizationRay
 )
     {
-    double param = bsiDPoint3d_dotDifference
-                        (
-                        pXYZ,
-                        &pParameterizationRay->origin,
-                        &pParameterizationRay->direction
-                        );
+    double param = pXYZ->DotDifference(pParameterizationRay->origin, pParameterizationRay->direction);
 
     if (*pCount < max)
         {
-        bsiDPoint4d_initFromDPoint3dAndWeight (&pArray[*pCount], pXYZ, param);
+        pArray[*pCount].InitFrom (*pXYZ, param);
         *pCount += 1;
         return true;
         }
@@ -1818,7 +1812,7 @@ void const *vpB
 +---------------+---------------+---------------+---------------+---------------+------*/
 double      tolerancedDotDiff (DPoint3dCP point, DPoint3dCP origin, DVec3dCP direction, double *tolerance)
     {
-    double  dot = bsiDPoint3d_dotDifference (point, origin, direction);
+    double  dot = point->DotDifference(*origin, *direction);
     return (NULL != tolerance && fabs (dot) < *tolerance)  ? 0.0 : dot;
     }
 
@@ -1869,7 +1863,7 @@ double*     onTolerance
     if (!bsiDPoint3d_safeDivide (&scaledRay.direction, &rayVector, bsiDVec3d_magnitudeSquared (&rayVector)))
         return false;
 
-    bsiDVec3d_crossProduct (&rayPerp, pPolygonPerp, &rayVector);
+    rayPerp.CrossProduct (*pPolygonPerp, rayVector);
 
     amax = amin = pAltitude[0] = tolerancedDotDiff (&pXYZArray[0], &rayOrg, &rayPerp, onTolerance);
     imax = imin = 0;
@@ -1937,7 +1931,7 @@ double*     onTolerance
             {
             double s = -pAltitude[i0] / (pAltitude[i1] - pAltitude[i0]);
             DPoint3d xyz;
-            bsiDPoint3d_interpolate (&xyz, &pXYZArray[i0], s, &pXYZArray[i1]);
+            xyz.Interpolate (pXYZArray[i0], s, pXYZArray[i1]);
                 ok = savePoint (pCrossing, &numCrossing, numXYZ, &xyz, &scaledRay);
             }
         // Next pass will look forward from i1 ...
@@ -1955,7 +1949,7 @@ double*     onTolerance
         *pNumClipPoints = numCrossing;
         if (pClipPoints)
             for (i = 0; i < numCrossing; i++)
-                bsiDPoint3d_setXYZ (&pClipPoints[i],
+                pClipPoints[i].Init (
                         pCrossing[i].x, pCrossing[i].y, pCrossing[i].z);
         if (pClipParams)
             for (i = 0; i < numCrossing; i++)
@@ -2159,8 +2153,8 @@ DVec3dCP pNormal
     DVec3d unitX, unitY, unitZ;
     if (!bsiDVec3d_getNormalizedTriad (pNormal, &unitX, &unitY, &unitZ))
         {
-        bsiTransform_initIdentity (pWorldToLocal);
-        bsiTransform_initIdentity (pLocalToWorld);
+        pWorldToLocal->InitIdentity ();
+        pLocalToWorld->InitIdentity ();
         return false;
         }
 
@@ -2193,8 +2187,8 @@ int numB
 
     if (!buildTransformToLocal (&localToWorldA, &worldToLocalA, &pPolygonA[0], pNormalA))
         return;
-    bsiTransform_multiplyDPoint3dArray (&worldToLocalA, pLocalA, pPolygonA, numA);
-    bsiTransform_multiplyDPoint3dArray (&worldToLocalA, pLocalB, pPolygonB, numB);
+    worldToLocalA.Multiply (pLocalA, pPolygonA, numA);
+    worldToLocalA.Multiply (pLocalB, pPolygonB, numB);
 
     for (iB = 0; iB < numB; iB++)
         {
@@ -2416,7 +2410,7 @@ int numB
     if (numB > 1 && bsiDPoint3d_pointEqual (&pPolygonB[0], &pPolygonB[numB-1]))
         numB -= 1;
 
-    minDistSquared = bsiDPoint3d_distanceSquared (pPointA, pPointB);
+    minDistSquared = pPointA->DistanceSquared (*pPointB);
     // Vertex projection
     pLocalA = (DPoint3d*)_alloca ( numA * sizeof (DPoint3d));
     pLocalB = (DPoint3d*)_alloca ( numB * sizeof (DPoint3d));
@@ -2690,7 +2684,7 @@ bool Add (DPoint3dCR xyz)
 bool AddDisconnect ()
     {
     DPoint3d xyz;
-    bsiDPoint3d_initDisconnect (&xyz);
+    xyz.InitDisconnect ();
     return Add (xyz);
     }
 };
@@ -2799,7 +2793,7 @@ int count
 // Evaluate altitude above the plane ...
 double altitude (DPoint3dCR xyz)
     {
-    return bsiDPoint3d_dotDifference (&xyz, &mPlane.origin, &mPlane.normal);
+    return xyz.DotDifference(mPlane.origin, mPlane.normal);
     }
 
 void GetCrossingCoordinates
@@ -2812,8 +2806,8 @@ double h1
 )
     {
     double s;
-    bsiTrig_safeDivide (&s, h0, h0 - h1, 0.0);
-    bsiDPoint3d_interpolate (&xyz, &xyz0, s, &xyz1);
+    DoubleOps::SafeDivide (s, h0, h0 - h1, 0.0);
+    xyz.Interpolate (xyz0, s, xyz1);
     }
 
 // Load loop from index 0 to count-1 and back to 0.  Precheck for trailing dups.
@@ -2948,7 +2942,7 @@ void LoadLoops
     int i0 = 0; // "start" of loop
     for (i1 = 0; i0 <= mNumXYZ; i1++)
         {
-        if (i1 == mNumXYZ || bsiDPoint3d_isDisconnect (&mpXYZ[i1]))
+        if (i1 == mNumXYZ || mpXYZ[i1].IsDisconnect ())
             {
             LoadOneLoop (mpXYZ + i0, i0, i1 - i0);
             i0 = i1 + 1;
@@ -3177,13 +3171,13 @@ DPlane3dCP      pPlane
     int i0, i1, iA;
     for (int i0 = 0; i0 < numXYZ;)
         {
-        if (bsiDPoint3d_isDisconnect (pXYZ[i]))
+        if (pXYZ[i]->IsDisconnect ())
             {
             i0++;
             }
         else
             {
-            h0 = bsiDPoint3d_dotDifference (&pXYZ[i0], &pPlane->origin, &pPlane->normal);
+            h0 = pXYZ[i0].DotDifference(pPlane->origin, pPlane->normal);
             iA = i0;
             if (h0 > 0.0
                 {
@@ -3192,16 +3186,16 @@ DPlane3dCP      pPlane
             else
                 {
                 buffer.Add (pXYZ[i0];
-                for (i1 = i0 + 1; i1 < numXYZ && !bsiDPoint3d_isDisconnect (&pXYZ[i1]); h0 = h1, i0 = i1++)
+                for (i1 = i0 + 1; i1 < numXYZ && !pXYZ[i1].IsDisconnect (); h0 = h1, i0 = i1++)
                     {
-                    h1 = bsiDPoint3d_dotDifference (&pXYZ[i1], &pPlane->origin, &pPlane->normal);
+                    h1 = pXYZ[i1].DotDifference(pPlane->origin, pPlane->normal);
                     if (h1 <= 0.0)
                         buffer.Add (pXYZ[i1]);
                     else
                         {
                         DPoint3d xyzI;
                         double s;
-                        bsiTrig_safeDivide (&s, -h0, h1 - h0, 0.0);
+                        DoubleOps::SafeDivide (s, -h0, h1 - h0, 0.0);
                         xyzI.Interpolate (pXYZ[i0], s, pXYZ[i1]);
                         buffer.Add (xyzI);
                         i0 = i1;

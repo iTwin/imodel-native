@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/akima.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -124,7 +124,7 @@ double          absTol
 
     for (int i = 0; i < numPoints - 1; i++)
         {
-        if (absTol <= (chordLength = bsiDPoint2d_distance (pPoints + i, pPoints + i + 1)))
+        if (absTol <= (chordLength = pPoints[ i].Distance (pPoints[ i + 1])))
             totalLength += chordLength;
         }
 
@@ -151,7 +151,7 @@ double          absTol
 
     for (int i = 0; i < numPoints - 1; i++)
         {
-        if (absTol <= (chordLength = bsiDPoint3d_distance (pPoints + i, pPoints + i + 1)))
+        if (absTol <= (chordLength = pPoints[ i].Distance (pPoints[ i + 1])))
             totalLength += chordLength;
         }
 
@@ -188,7 +188,7 @@ double          relTol
         bsiDSegment3d_initFromDPoint2d (&akimaChord, &pAkimaPts2d[bezierIndex + 2], &pAkimaPts2d[bezierIndex + 3]);
 
     bsiDSegment3d_evaluateEndPoints (&akimaChord, &akimaPts[2], &akimaPts[3]);
-    bezierChordLength = bsiDPoint3d_computeNormal (&akimaUnitChords[2], &akimaPts[3], &akimaPts[2]);
+    bezierChordLength = akimaUnitChords[2].NormalizedDifference (akimaPts[3], akimaPts[2]);
 
     if (pBezierPoles)
         {
@@ -208,7 +208,7 @@ double          relTol
                 else
                     bsiDPoint3d_initFromDPoint2d (&akimaPts[iRelevant], &pAkimaPts2d[i]);
 
-                chordLength = bsiDPoint3d_computeNormal (&akimaUnitChords[iRelevant], &akimaPts[iRelevant + 1], &akimaPts[iRelevant]);
+                chordLength = akimaUnitChords[iRelevant].NormalizedDifference (akimaPts[iRelevant + 1], akimaPts[iRelevant]);
                 if (chordLength >= absTol && --iRelevant < 0)
                     break;
                 }
@@ -226,7 +226,7 @@ double          relTol
                 else
                     bsiDPoint3d_initFromDPoint2d (&akimaPts[iRelevant], &pAkimaPts2d[i]);
 
-                chordLength = bsiDPoint3d_computeNormal (&akimaUnitChords[iRelevant - 1], &akimaPts[iRelevant], &akimaPts[iRelevant - 1]);
+                chordLength = akimaUnitChords[iRelevant - 1].NormalizedDifference (akimaPts[iRelevant], akimaPts[iRelevant - 1]);
                 if (chordLength >= absTol && ++iRelevant > 5)
                     break;
                 }
@@ -240,8 +240,8 @@ double          relTol
             akima_computeForwardTangent (&endTangent, akimaUnitChords + 1, relTol);
 
             pBezierPoles[0] = akimaPts[2];
-            bsiDPoint3d_addScaledDPoint3d (&pBezierPoles[1], &akimaPts[2], &startTangent, bezierChordLength / 3.0);
-            bsiDPoint3d_addScaledDPoint3d (&pBezierPoles[2], &akimaPts[3], &endTangent,  -bezierChordLength / 3.0);
+            pBezierPoles[1].SumOf (akimaPts[2], startTangent, bezierChordLength / 3.0);
+            pBezierPoles[2].SumOf (akimaPts[3], endTangent, -bezierChordLength / 3.0);
             pBezierPoles[3] = akimaPts[3];
             }
         }
@@ -273,10 +273,10 @@ double          relTol
         akimaVisiblePolygonLength = akimaVisiblePolygonLengthBefore + bezierChordLength + akimaVisiblePolygonLengthAfter;
 
         if (pBsplineStartParam && bezierIndex > 0)
-            bsiTrig_safeDivide (pBsplineStartParam, akimaVisiblePolygonLengthBefore, akimaVisiblePolygonLength, 0.0);
+            DoubleOps::SafeDivide (*pBsplineStartParam, akimaVisiblePolygonLengthBefore, akimaVisiblePolygonLength, 0.0);
 
         if (pBsplineEndParam && bezierIndex < numAkimaPts - 6)
-            bsiTrig_safeDivide (pBsplineEndParam, akimaVisiblePolygonLengthBefore + bezierChordLength, akimaVisiblePolygonLength, 1.0);
+            DoubleOps::SafeDivide (*pBsplineEndParam, akimaVisiblePolygonLengthBefore + bezierChordLength, akimaVisiblePolygonLength, 1.0);
         }
 
     return status;
@@ -559,7 +559,7 @@ PUSH_MSVC_IGNORE(6385)
     //memcpy (p, pnts, 6*sizeof (DPoint3d));
 
     for (i=0; i < 4; i++)
-        d[i] = bsiDPoint3d_computeNormal ( &m[i], &p[i+1], &p[i]);
+        d[i] = m[i].NormalizedDifference (p[i+1], p[i]);
 
     /* needed below to ensure bspline has same parametrization as curve     */
     if (knots)
@@ -576,7 +576,7 @@ PUSH_MSVC_IGNORE(6385)
 
     for (i=2; true; i++)
         {
-        d[4] = bsiDPoint3d_computeNormal (&m[4], &p[5], &p[4]);
+        d[4] = m[4].NormalizedDifference (p[5], p[4]);
 
         if (knots && (i < numVerts-4))
             intrKnots[3*i] = d[4];
@@ -589,8 +589,8 @@ PUSH_MSVC_IGNORE(6385)
 
         if (poles)
             {
-            bsiDPoint3d_addScaledDPoint3d (&poleArray[3*(i-1)-2], &p[2], &t[0],  d[2] / 3.0);
-            bsiDPoint3d_addScaledDPoint3d (&poleArray[3*(i-1)-1], &p[3], &t[1], -d[2] / 3.0);
+            poleArray[3*(i-1)-2].SumOf (p[2], t[0], d[2] / 3.0);
+            poleArray[3*(i-1)-1].SumOf (p[3], t[1], -d[2] / 3.0);
 
             poleArray[3*(i-1)] = p[3];
             }
@@ -689,7 +689,7 @@ DPoint3dCP      pSpacePoint
         if (SUCCESS == extractIndexedBezierFromAkimaPoints (xyz, NULL, NULL, pAkimaPts3d, pAkimaPts2d, numAkimaPts, segment, absTol, relTol))
             {
             if (pElementToWorld)
-                bsiTransform_multiplyDPoint3dArrayInPlace (pElementToWorld, xyz, AKIMA_BEZIER_ORDER);
+                pElementToWorld->Multiply (xyz, AKIMA_BEZIER_ORDER);
 
             if (bsiBezierDPoint3d_closestPoint (&segmentPoint, &segmentParam, &segmentDist2, xyz, NULL, AKIMA_BEZIER_ORDER,
                                                  pSpacePoint->x, pSpacePoint->y, pSpacePoint->z, 0.0, 1.0))
@@ -798,7 +798,7 @@ DMatrix4dCP     pWorldToView
         if (SUCCESS == extractIndexedBezierFromAkimaPoints (xyz, NULL, NULL, pAkimaPts3d, pAkimaPts2d, numAkimaPts, segment, absTol, relTol))
             {
             if (pElementToWorld)
-                bsiTransform_multiplyDPoint3dArrayInPlace (pElementToWorld, xyz, AKIMA_BEZIER_ORDER);
+                pElementToWorld->Multiply (xyz, AKIMA_BEZIER_ORDER);
 
             bsiDMatrix4d_multiplyWeightedDPoint3dArray (pWorldToView, xyzView, xyz, NULL, AKIMA_BEZIER_ORDER);
 

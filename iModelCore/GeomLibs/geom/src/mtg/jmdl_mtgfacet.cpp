@@ -1788,7 +1788,7 @@ typedef struct
             {
             DVec3d localCentroid;
             localCentroid.Scale (balanceMoments, 1.0 / q);
-            bsiDPoint3d_addDPoint3dDVec3d (&centroid, &origin, &localCentroid);
+            centroid = DPoint3d::FromSumOf (origin, localCentroid);
 
             ixx -= q * localCentroid.x * localCentroid.x;
             iyy -= q * localCentroid.y * localCentroid.y;

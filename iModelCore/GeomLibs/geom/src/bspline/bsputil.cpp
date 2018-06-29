@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bsputil.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -993,7 +993,7 @@ int             numPoles
         {
         for (wtP=endP=weights, poleP=poles, wtPoleP=weightedPoles, endP += numPoles;
              wtP < endP; wtP++, poleP++, wtPoleP++)
-            bsiDPoint3d_scale (wtPoleP, poleP, *wtP);
+            wtPoleP->Scale (*poleP, *wtP);
         }
     }
 
@@ -1023,7 +1023,7 @@ int             numPoles
         {
         for (wtP=endP=weights, poleP=poles, wtPoleP=weightedPoles, endP += numPoles;
              wtP < endP; wtP++, poleP++, wtPoleP++)
-            bsiDPoint3d_scale (poleP, wtPoleP, 1.0 / *wtP);
+            poleP->Scale (*wtPoleP, 1.0 / *wtP);
         }
     }
 
@@ -1088,7 +1088,7 @@ int             numPoints
         bsputil_unWeightPoles (points, points, weights, numPoints);
 
     for (i=1, pPtr=points; i<numPoints; i++, pPtr++)
-        sum += bsiDPoint3d_distance (pPtr, pPtr+1);
+        sum += pPtr->Distance (pPtr[1]);
 
     if (rational)
         bsputil_weightPoles (points, points, weights, numPoints);
@@ -1112,7 +1112,7 @@ DPoint3d        *p0,
 DPoint3d        *p1
 )
     {
-    double      mag = bsiDPoint3d_computeNormal (norm, p0, p1);
+    double      mag = norm->NormalizedDifference (*p0, *p1);
 
     if (mag < fc_1em15)
         norm->x = 0.0;
@@ -1138,7 +1138,7 @@ double          cosineTol
 
     for (p0=p1=endP=points, p1 += 1, endP += numPoints; p1 < endP; p0++, p1++)
         {
-        if (bsiDPoint3d_computeNormal (&diff0, p1, p0) > fc_1em15)
+        if (diff0.NormalizedDifference (*p1, *p0) > fc_1em15)
             break;
         }
 
@@ -1148,9 +1148,9 @@ double          cosineTol
 
     for (p0++, p1++; p1 < endP; p0++, p1++)
         {
-        if (bsiDPoint3d_computeNormal (&diff1, p1, p0) > fc_1em15)
+        if (diff1.NormalizedDifference (*p1, *p0) > fc_1em15)
             {
-            if (bsiDPoint3d_dotProduct (&diff0, &diff1) < cosineTol)
+            if (diff0.DotProduct (diff1) < cosineTol)
                 return (false);
             diff0 = diff1;
             }
@@ -1177,7 +1177,7 @@ int             numPoints
 
     for (p0=p1=endP=points, p1 += 1, endP += numPoints; p1 < endP; p0++, p1++)
         {
-        if (bsiDPoint3d_computeNormal (&diff0, p1, p0) > fc_1em15)
+        if (diff0.NormalizedDifference (*p1, *p0) > fc_1em15)
             break;
         }
 
@@ -1187,11 +1187,11 @@ int             numPoints
 
     for (p0++, p1++; p1 < endP; p0++, p1++)
         {
-        if (bsiDPoint3d_computeNormal (&diff1, p1, p0) > fc_1em15)
+        if (diff1.NormalizedDifference (*p1, *p0) > fc_1em15)
             {
-            bsiDPoint3d_crossProduct (&thisB, &diff0, &diff1);
+            thisB.CrossProduct (diff0, diff1);
             if (previous &&
-                bsiDPoint3d_dotProduct (&thisB, &lastB) < 0.0)
+                thisB.DotProduct (lastB) < 0.0)
                 return (true);
             else
                 previous = true;
@@ -1304,8 +1304,8 @@ int             endFlag
 
     if (bezier->rational)
         {
-        bsiDPoint3d_scale (&tmp0, bezier->poles + lastM1, 1.0 / bezier->weights[lastM1]);
-        bsiDPoint3d_scale (&tmp1, bezier->poles + last, 1.0 / bezier->weights[last]);
+        tmp0.Scale (*(bezier->poles + lastM1), 1.0 / bezier->weights[lastM1]);
+        tmp1.Scale (*(bezier->poles + last), 1.0 / bezier->weights[last]);
         computeNormalAllowDegenerate (tangent, &tmp1, &tmp0);
         }
     else
@@ -1361,7 +1361,7 @@ int             endFlag
     for (p0=p1=endP=poleP, p1 += incr, endP += incr * curve->params.numPoles;
          p1 != endP; p0 += incr, p1 += incr)
         {
-        if (bsiDPoint3d_computeNormal (&diff0, p1, p0) > fc_1em15)
+        if (diff0.NormalizedDifference (*p1, *p0) > fc_1em15)
             break;
         }
 
@@ -1371,15 +1371,15 @@ int             endFlag
 
     for (p0 += incr, p1 += incr; p1 != endP; p0 += incr, p1 += incr)
         {
-        if (bsiDPoint3d_computeNormal (&diff1, p1, p0) > fc_1em15)
+        if (diff1.NormalizedDifference (*p1, *p0) > fc_1em15)
             {
-            bsiDPoint3d_crossProduct (normal, &diff0, &diff1);
+            normal->CrossProduct (diff0, diff1);
             break;
             }
         }
 
     if (endFlag)
-        bsiDPoint3d_scale (normal, normal, -1.0 );
+        normal->Scale (*normal, -1.0);
 
     if (curve->rational && curve->params.numPoles > MAX_ORDER)
         bsputil_weightPoles (curve->poles, curve->poles, curve->weights,
@@ -1428,10 +1428,10 @@ DPoint3d        *defaultNormalP
     // position is one of the widely separated points---it is NOT an average point!
     if (bsiGeom_planeThroughPoints (&normal, &position, points, numPoints))
         {
-        if (bsiDPoint3d_dotProduct (&normal, &areaNormal) < 0.0)
-            bsiDPoint3d_scale (&normal, &normal, -1.0);
+        if (normal.DotProduct (areaNormal) < 0.0)
+            normal.Scale (normal, -1.0);
 
-        bsiDPoint3d_normalizeInPlace (&normal);
+        normal.Normalize ();
         }
     else
         {
@@ -1446,7 +1446,7 @@ DPoint3d        *defaultNormalP
 
         // points are colinear; find their direction
         if (bsiGeom_findWidelySeparatedPoints (&pt0, &index0, &pt1, &index1, points, numPoints))
-            mag = index0 < index1 ? bsiDPoint3d_computeNormal (&direction, &pt1, &pt0) : bsiDPoint3d_computeNormal (&direction, &pt0, &pt1);
+            mag = index0 < index1 ? direction.NormalizedDifference (pt1, pt0) : direction.NormalizedDifference (pt0, pt1);
 
         if (defaultNormalP)
             normal = *(DVec3dP)defaultNormalP;
@@ -1457,9 +1457,9 @@ DPoint3d        *defaultNormalP
             }
 
         // use default normal if it is perpendicular to line, or if points are coincident
-        if (mag > 0.0 && !mdlVec_arePerpendicular (&normal, &direction))
+        if (mag > 0.0 && !normal.IsPerpendicularTo (direction))
             {
-            if (mdlVec_areParallel (&normal, &direction))
+            if (normal.IsParallelTo (direction))
                 {
                 bsiRotMatrix_initFrom1Vector (&matrix, &direction, 0, true);
                 bsiRotMatrix_getColumn (&matrix, &normal, 2);
@@ -1467,7 +1467,7 @@ DPoint3d        *defaultNormalP
             else
                 {
                 bsiRotMatrix_initFrom2Vectors (&matrix, &direction, &normal);
-                bsiRotMatrix_squareAndNormalizeColumns (&matrix, &matrix, 0, 1);
+                matrix.SquareAndNormalizeColumns (matrix, 0, 1);
                 bsiRotMatrix_getColumn (&matrix, &normal, 1);
                 }
             }
@@ -1484,11 +1484,11 @@ DPoint3d        *defaultNormalP
 
     if (planarDeviationP)
         {
-        double deviation, positionZ = bsiDPoint3d_dotProduct (&normal, &position);
+        double deviation, positionZ = normal.DotProduct (position);
 
         for (i=0, poleP=points; i<numPoints; i++, poleP++)
             {
-            deviation = fabs (bsiDPoint3d_dotProduct (&normal, poleP) - positionZ);
+            deviation = fabs (normal.DotProduct (*poleP) - positionZ);
 
             if (i==0 || deviation > *planarDeviationP)
                 *planarDeviationP = deviation;
@@ -1574,11 +1574,11 @@ double          relativeTolerance
             int         i, numPts = numPoles;
 
             // common case of duplicate endpts skews average
-            if (numPoles > 2 && bsiDPoint3d_pointEqualTolerance (&pPoles[0], &pPoles[numPoles - 1], tol))
+            if (numPoles > 2 && pPoles[0].IsEqual (pPoles[numPoles - 1], tol))
                 numPts--;
 
             for (i = 0; i < numPts; i++)
-                bsiDPoint3d_addDPoint3dInPlace (&averageUnweightedPole, &pPoles[i]);
+                averageUnweightedPole.Add (pPoles[i]);
 
             bsiDPoint3d_scaleInPlace (&averageUnweightedPole, 1.0 / numPts);
 
@@ -3049,23 +3049,23 @@ double      endTol
 
     *code0P = *code1P = INTERSECT_NONE;
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&aa, segment0P+1, segment0P);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&bb, segment1P+1, segment1P);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&cc, segment1P, segment0P);
+    aa.DifferenceOf (segment0P[1], *segment0P);
+    bb.DifferenceOf (segment1P[1], *segment1P);
+    cc.DifferenceOf (*segment1P, *segment0P);
 
-    a = bsiDPoint3d_dotProduct (&aa, &cc);
-    b = bsiDPoint3d_dotProduct (&aa, &aa);
-    c = bsiDPoint3d_dotProduct (&aa, &bb);
-    d = bsiDPoint3d_dotProduct (&bb, &cc);
-    f = bsiDPoint3d_dotProduct (&bb, &bb);
+    a = aa.DotProduct (cc);
+    b = aa.DotProduct (aa);
+    c = aa.DotProduct (bb);
+    d = bb.DotProduct (cc);
+    f = bb.DotProduct (bb);
 
     denominator = (b*f - c*c);
     if (fabs (denominator) > PARALLEL_TOLERANCE)
         {
         *param0P = (a*f - c*d)/denominator;
         *param1P = (c*a - b*d)/denominator;
-        bsiDPoint3d_addScaledDPoint3d (pointP0, segment0P, &aa, *param0P);
-        bsiDPoint3d_addScaledDPoint3d (pointP1, segment1P, &bb, *param1P);
+        pointP0->SumOf (*segment0P, aa, *param0P);
+        pointP1->SumOf (*segment1P, bb, *param1P);
 
         *code0P = bsputil_segmentIntersectCode (*param0P, 1.0, endTol / sqrt (b));
         *code1P = bsputil_segmentIntersectCode (*param1P, 1.0, endTol / sqrt (f));
@@ -3116,11 +3116,11 @@ double      tolerance
                                          &distance0, &distance1, p0, p1, tolerance);
 
             if ((code0 & acceptMask0) && (code1 && acceptMask1) &&
-                bsiDPoint3d_distance (&point0, &point1) <= tolerance)
+                point0.Distance (point1) <= tolerance)
                 {
                 if (u0P)    u0P[nIntersects]    = param0 + incr0 * distance0;
                 if (u1P)    u1P[nIntersects]    = param1 + incr1 * distance1;
-                if (pointP) bsiDPoint3d_interpolate (&pointP[nIntersects],  &point0, 0.5,  &point1);
+                if (pointP) pointP[nIntersects].Interpolate (point0, 0.5, point1);
 
                 nIntersects++;
                 }
@@ -3329,9 +3329,9 @@ int                     nFullCircleIsoparametrics
     firstPoleP = lastPoleP = curveP->poles;
     for (poleP = lastPoleP + 1, endP = lastPoleP + nPoles; poleP < endP; poleP++)
        {
-       bsiDPoint3d_computeNormal (&normal, lastPoleP, poleP);
+       normal.NormalizedDifference (*lastPoleP, *poleP);
        if (lastPoleP > curveP->poles)
-            angle += fabs (bsiDVec3d_angleBetweenVectors (&normal, &lastNormal));
+            angle += fabs (normal.AngleTo (lastNormal));
 
         lastPoleP = poleP;
         lastNormal = normal;
@@ -3941,7 +3941,7 @@ MSBsplineCurveCP curveP
 
             for (i = 0; i < curveP->params.order - 1; i++)
                 {
-                if (bsiDPoint3d_distance (&curveP->poles[i], &curveP->poles[curveP->params.numPoles-order+1+i]) > fc_epsilon)
+                if (curveP->poles[i].Distance (*(&curveP->poles[curveP->params.numPoles-order+1+i])) > fc_epsilon)
                     {
                     isPeriodic  = false;
                     break;
@@ -4047,7 +4047,7 @@ int             closed
             if (tol > 1.0)
                 tol = 1.0;  // v8.5 tolerance
 
-            if (bsiDPoint3d_pointEqualTolerance (pPoles, pPoles + numPoles - 1, tol) &&
+            if (pPoles->IsEqual (pPoles[ numPoles - 1], tol) &&
                 (!pWeights || bsputil_isSameWeight (pWeights[0], pWeights[numPoles - 1])))
                 return true;
             }

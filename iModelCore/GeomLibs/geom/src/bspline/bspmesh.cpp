@@ -418,9 +418,9 @@ double globalRelTol
     DRange3d range;
     DVec3d diagonal;
     range.InitFrom(pXYZ, numXYZ);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&diagonal, &range.low, &range.high);
+    diagonal.DifferenceOf (range.low, range.high);
     maxAbs = range.LargestCoordinate ();
-    maxDiagonal = bsiDVec3d_maxAbs (&diagonal);
+    maxDiagonal = diagonal.MaxAbs ();
 
     if (absTol < sDefaultAbsTol)
         absTol = sDefaultAbsTol;
@@ -804,9 +804,9 @@ int                 toleranceMode       /* => tolerance mode */
                 tmp=patchBezP->weights[i*uOrder+j];
                 minWeight = (tmp < minWeight) ? tmp : minWeight;
                 }
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&diffPt, poleP+1, poleP);
+            diffPt.DifferenceOf (poleP[1], *poleP);
             tmp = (toleranceMode & STROKETOL_XYProjection) ?
-              sqrt (diffPt.x * diffPt.x + diffPt.y * diffPt.y) : bsiDPoint3d_magnitude (&diffPt);
+              sqrt (diffPt.x * diffPt.x + diffPt.y * diffPt.y) : diffPt.Magnitude ();
 
             maxDiff = (maxDiff < tmp) ? tmp : maxDiff;
             }
@@ -828,9 +828,9 @@ int                 toleranceMode       /* => tolerance mode */
                 tmp=patchBezP->weights[i*uOrder+j];
                 minWeight = (tmp < minWeight) ? tmp : minWeight;
                 }
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&diffPt, poleP+uOrder, poleP);
+            diffPt.DifferenceOf (poleP[uOrder], *poleP);
             tmp = (toleranceMode & STROKETOL_XYProjection) ?
-              sqrt (diffPt.x * diffPt.x + diffPt.y * diffPt.y) : bsiDPoint3d_magnitude (&diffPt);
+              sqrt (diffPt.x * diffPt.x + diffPt.y * diffPt.y) : diffPt.Magnitude ();
 
             maxDiff = (maxDiff < tmp) ? tmp : maxDiff;
             }
@@ -864,13 +864,13 @@ double              *pMaxRelErr         /* => max ratio of midpoint error over d
         row1P = poleArrayP + j * uOrder;
         for (i = 1; i < uOrder; i++)
             {
-            bsiDPoint3d_interpolate (&point0, &row0P[i-1], 0.5, &row1P[i]);
-            bsiDPoint3d_interpolate (&point1, &row0P[i], 0.5, &row1P[i-1]);
-            currDiff = bsiDPoint3d_distanceSquared (&point0, &point1);
-            d0 = bsiDPoint3d_distanceSquared (&row0P[i-1], &row1P[i]);
-            d1 = bsiDPoint3d_distanceSquared (&row0P[i], &row1P[i-1]);
+            point0.Interpolate (row0P[i-1], 0.5, row1P[i]);
+            point1.Interpolate (row0P[i], 0.5, row1P[i-1]);
+            currDiff = point0.DistanceSquared (point1);
+            d0 = row0P[i-1].DistanceSquared (row1P[i]);
+            d1 = row0P[i].DistanceSquared (row1P[i-1]);
             d2 = d0 > d1 ? d0 : d1;
-            if (bsiTrig_safeDivide (&ratio, currDiff, d2, 0.0)
+            if (DoubleOps::SafeDivide (ratio, currDiff, d2, 0.0)
                 && ratio > maxRatio)
                 maxRatio = ratio;
 
@@ -921,24 +921,24 @@ MeshParams          *mpP                /* => mesh parameters */
     double h;
     DPoint3d crossProduct;
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vec01, pPoint1, pPoint0);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vec02, pPoint2, pPoint0);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vec12, pPoint2, pPoint1);
+    vec01.DifferenceOf (*pPoint1, *pPoint0);
+    vec02.DifferenceOf (*pPoint2, *pPoint0);
+    vec12.DifferenceOf (*pPoint2, *pPoint1);
 
     if (mpP->toleranceMode & STROKETOL_XYProjection)
         {
-        mag12   = bsiDPoint3d_magnitudeXY (&vec12);
-        mag01   = bsiDPoint3d_magnitudeXY (&vec01);
-        mag02   = bsiDPoint3d_magnitudeXY (&vec02);
-        cross   = fabs (bsiDPoint3d_crossProductXY (&vec01, &vec02));
+        mag12   = vec12.MagnitudeXY ();
+        mag01   = vec01.MagnitudeXY ();
+        mag02   = vec02.MagnitudeXY ();
+        cross   = fabs (vec01.CrossProductXY (vec02));
         }
     else
         {
-        mag12   = bsiDPoint3d_magnitude (&vec12);
-        mag01   = bsiDPoint3d_magnitude (&vec01);
-        mag02   = bsiDPoint3d_magnitude (&vec02);
-        bsiDPoint3d_crossProduct (&crossProduct, &vec01, &vec02);
-        cross       = bsiDPoint3d_magnitude(&crossProduct);
+        mag12   = vec12.Magnitude ();
+        mag01   = vec01.Magnitude ();
+        mag02   = vec02.Magnitude ();
+        crossProduct.CrossProduct (vec01, vec02);
+        cross       = crossProduct.Magnitude ();
         }
 
     if (   fabs (mag01)  > EPSILON
@@ -1450,15 +1450,14 @@ bool                reverse         /* => true to reverse U direction and normal
                 tmpWeights = 0.0;
                 for (t = 0; t < uOrder; t++)
                     {
-                    bsiDPoint3d_addScaledDPoint3d (&tmpPoles, &tmpPoles,
-                                 patchBezP->poles+s*uOrder+t, uBlend[i*uOrder+t]);
+                    tmpPoles.SumOf (tmpPoles, *(patchBezP->poles+s*uOrder+t), uBlend[i*uOrder+t]);
                     if (rational)
                         {
                         tmpWeights += patchBezP->weights[s*uOrder+t] *
                                       uBlend[i*uOrder+t];
                         }
                     }
-                bsiDPoint3d_addScaledDPoint3d (&pole, &pole, &tmpPoles, vBlend[j*vOrder+s]);
+                pole.SumOf (pole, tmpPoles, vBlend[j*vOrder+s]);
                 if (rational)
                     {
                     weight += tmpWeights * vBlend[j*vOrder+s];
@@ -1474,10 +1473,8 @@ bool                reverse         /* => true to reverse U direction and normal
                     derTmpPoles.x = derTmpPoles.y = derTmpPoles.z = tmpWeights = 0.0;
                     for (t = 0; t < uDegree; t++)
                         {
-                        bsiDPoint3d_subtractDPoint3dDPoint3d (&diffPoles, patchBezP->poles+s*uOrder+t+1,
-                                                     patchBezP->poles+s*uOrder+t);
-                        bsiDPoint3d_addScaledDPoint3d (&derTmpPoles, &derTmpPoles, &diffPoles,
-                                                   uBlendDer[i*uDegree+t]);
+                        diffPoles.DifferenceOf (*(patchBezP->poles+s*uOrder+t+1), *(patchBezP->poles+s*uOrder+t));
+                        derTmpPoles.SumOf (derTmpPoles, diffPoles, uBlendDer[i*uDegree+t]);
                         if (rational)
                             {
                             diffWgts = patchBezP->weights[s*uOrder+t+1]-
@@ -1485,7 +1482,7 @@ bool                reverse         /* => true to reverse U direction and normal
                             tmpWeights += diffWgts * uBlendDer[i*uDegree+t];
                             }
                         }
-                    bsiDPoint3d_addScaledDPoint3d (&derUPole, &derUPole, &derTmpPoles, vBlend[j*vOrder+s]);
+                    derUPole.SumOf (derUPole, derTmpPoles, vBlend[j*vOrder+s]);
                     if (rational)
                         {
                         derUWgts += tmpWeights * vBlend[j*vOrder+s];
@@ -1500,10 +1497,8 @@ bool                reverse         /* => true to reverse U direction and normal
                     derTmpPoles.x = derTmpPoles.y = derTmpPoles.z = tmpWeights = 0.0;
                     for (t = 0; t < uOrder; t++)
                         {
-                        bsiDPoint3d_subtractDPoint3dDPoint3d (&diffPoles, patchBezP->poles+(s+1)*uOrder+t,
-                                         patchBezP->poles+s*uOrder+t);
-                        bsiDPoint3d_addScaledDPoint3d (&derTmpPoles, &derTmpPoles, &diffPoles,
-                                     uBlend[i*uOrder+t]);
+                        diffPoles.DifferenceOf (*(patchBezP->poles+(s+1)*uOrder+t), *(patchBezP->poles+s*uOrder+t));
+                        derTmpPoles.SumOf (derTmpPoles, diffPoles, uBlend[i*uOrder+t]);
                         if (rational)
                             {
                             diffWgts = patchBezP->weights[(s+1)*uOrder+t]-
@@ -1511,7 +1506,7 @@ bool                reverse         /* => true to reverse U direction and normal
                             tmpWeights += diffWgts * uBlend[i*uOrder+t];
                             }
                         }
-                    bsiDPoint3d_addScaledDPoint3d (&derVPole, &derVPole, &derTmpPoles, vBlendDer[j*vDegree+s]);
+                    derVPole.SumOf (derVPole, derTmpPoles, vBlendDer[j*vDegree+s]);
                     if (rational)
                         {
                         derVWgts += tmpWeights * vBlendDer[j*vDegree+s];
@@ -1521,19 +1516,19 @@ bool                reverse         /* => true to reverse U direction and normal
 
             if (rational)
                 {
-                bsiDPoint3d_scale (&pole, &pole, 1.0/weight);
+                pole.Scale (pole, 1.0/weight);
                 }
             meshPointsP[index] = pole;
             if (meshNormP)
                 {
                 if (rational)
                     {
-                    bsiDPoint3d_addScaledDPoint3d (&derUPole, &derUPole, &pole, -1.0 *derUWgts);
-                    bsiDPoint3d_addScaledDPoint3d (&derVPole, &derVPole, &pole, -1.0 *derVWgts);
+                    derUPole.SumOf (derUPole, pole, -1.0 *derUWgts);
+                    derVPole.SumOf (derVPole, pole, -1.0 *derVWgts);
                     }
 
                 /* Check if derUPole or derVPole dPdV is zero */
-                if (bsiDPoint3d_magnitude (&derUPole) < fc_epsilon)
+                if (derUPole.Magnitude () < fc_epsilon)
                     {
                     vtmp=vLo+j*vStep;
                     vtmp=(vtmp<=fc_epsilon) ? vtmp+fc_epsilon : vtmp-fc_epsilon;
@@ -1541,7 +1536,7 @@ bool                reverse         /* => true to reverse U direction and normal
                                         uLo+i*uStep, vtmp, patchBezP);
                     }
 
-                if (bsiDPoint3d_magnitude (&derVPole) < fc_epsilon)
+                if (derVPole.Magnitude () < fc_epsilon)
                     {
                     utmp=uLo+i*uStep;
                     utmp=(utmp<=fc_epsilon) ? utmp+fc_epsilon : utmp-fc_epsilon;
@@ -1550,11 +1545,11 @@ bool                reverse         /* => true to reverse U direction and normal
                     }
 
                 if (reverse)
-                    bsiDPoint3d_crossProduct (meshNormP+index, &derVPole, &derUPole);
+                    meshNormP[index].CrossProduct (derVPole, derUPole);
                 else
-                    bsiDPoint3d_crossProduct (meshNormP+index, &derUPole, &derVPole);
+                    meshNormP[index].CrossProduct (derUPole, derVPole);
 
-                bsiDPoint3d_normalizeInPlace (meshNormP+index);
+                meshNormP[index].Normalize ();
                 }
             }
 wrapup:
@@ -1591,7 +1586,7 @@ double          u               /* value to evaluate at */
     nChoosei = 1;
     u1 = 1.0 - u;
     factor = 1.0;
-    bsiDPoint3d_scale (&sumPole, polesP, u1);
+    sumPole.Scale (*polesP, u1);
     if (wgtOut)
         {
         wPtr = weightsP+1;
@@ -1608,11 +1603,11 @@ double          u               /* value to evaluate at */
             sumWgt = (sumWgt + factor * nChoosei * *wPtr) * u1;
             wPtr++;
             }
-        bsiDPoint3d_addScaledDPoint3d (&sumPole, &sumPole, pPtr, factor*nChoosei);
-        bsiDPoint3d_scale (&sumPole, &sumPole, u1);
+        sumPole.SumOf (sumPole, *pPtr, factor*nChoosei);
+        sumPole.Scale (sumPole, u1);
         }
 
-    bsiDPoint3d_addScaledDPoint3d (ptOut, &sumPole, polesP+degree, factor*u);
+    ptOut->SumOf (sumPole, polesP[degree], factor*u);
     if (wgtOut)
         *wgtOut = sumWgt + factor * u * *(weightsP+degree);
     }
@@ -1688,7 +1683,7 @@ bool                reverseNormal   /* => if true negate normal (dPdV X DPdU) */
                                    rowPoles, rational ? rowWgts : NULL, vOrder, uv.y);
 
         if (rational)
-            bsiDPoint3d_scale (&xyz, &xyz, 1.0/weight);
+            xyz.Scale (xyz, 1.0/weight);
         points.push_back (xyz);
 
         /* Compute u and v partial derivatives if necessary */
@@ -1715,7 +1710,7 @@ bool                reverseNormal   /* => if true negate normal (dPdV X DPdU) */
                         j<uDegree;
                             j++, pUDtr++, rowUPDtr++)
                     {
-                    bsiDPoint3d_subtractDPoint3dDPoint3d (rowUPDtr, pUDtr+1, pUDtr);
+                    rowUPDtr->DifferenceOf (pUDtr[1], *pUDtr);
                     if (rational)
                         {
                         *rowUWDtr = *(wUDtr+1) - *wUDtr;
@@ -1740,7 +1735,7 @@ bool                reverseNormal   /* => if true negate normal (dPdV X DPdU) */
                                         rational ? rowUParWgts : NULL,
                                         vOrder, uv.y);
             if (rational)
-                bsiDPoint3d_addScaledDPoint3d (&dPdU, &dPdU, &xyz, -1.0 *tmpUWgt);
+                dPdU.SumOf (dPdU, xyz, -1.0 *tmpUWgt);
 
             wgtP = NULL;
             rowVWtr = NULL;
@@ -1764,7 +1759,7 @@ bool                reverseNormal   /* => if true negate normal (dPdV X DPdU) */
                         j<vDegree;
                             j++, pVDtr += uOrder, rowVPDtr++)
                     {
-                    bsiDPoint3d_subtractDPoint3dDPoint3d (rowVPDtr, pVDtr+uOrder, pVDtr);
+                    rowVPDtr->DifferenceOf (pVDtr[uOrder], *pVDtr);
                     if (rational)
                         {
                         *rowVWDtr = *(wVDtr+uOrder) - *wVDtr;
@@ -1791,16 +1786,16 @@ bool                reverseNormal   /* => if true negate normal (dPdV X DPdU) */
                                         rational ? rowVParWgts : NULL,
                                         uOrder, uv.x);
             if (rational)
-                bsiDPoint3d_addScaledDPoint3d (&dPdV, &dPdV, &xyz, -1.0 *tmpVWgt);
+                dPdV.SumOf (dPdV, xyz, -1.0 *tmpVWgt);
 
             /* Check if dPdU or zero dPdV is zero */
-            if (bsiDPoint3d_magnitude (&dPdU) < fc_epsilon)
+            if (dPdU.Magnitude () < fc_epsilon)
                 {
                 bspsurf_evaluateSurfacePoint (NULL, NULL, &dPdU, NULL, uv.x,
                   (uv.y <= fc_epsilon) ? uv.y+fc_epsilon : uv.y-fc_epsilon, patchBezP);
                 }
 
-            if (bsiDPoint3d_magnitude (&dPdV) < fc_epsilon)
+            if (dPdV.Magnitude () < fc_epsilon)
                 {
                 bspsurf_evaluateSurfacePoint (NULL, NULL, NULL, &dPdV,
                   (uv.x <= fc_epsilon) ? uv.x+fc_epsilon : uv.x-fc_epsilon, uv.y,
@@ -1813,7 +1808,7 @@ bool                reverseNormal   /* => if true negate normal (dPdV X DPdU) */
             else
                 normal.CrossProduct (dPdU, dPdV);
 
-            bsiDPoint3d_normalizeInPlace (&normal);
+            normal.Normalize ();
             normals.push_back (normal);
             }
         }
@@ -5007,7 +5002,7 @@ double tolerance
         if (poleRange.IsNull ())
             return ERROR;
         tolerance = s_defaultToleranceFraction *
-                bsiDPoint3d_distance (&poleRange.low, &poleRange.high);
+                poleRange.low.Distance (poleRange.high);
         if (tolerance <= 0.0)
             return ERROR;
         }
@@ -5068,10 +5063,10 @@ double tolerance
     meshRange.Init ();
     /* rotMatrix_orthogonalFromZRow constructs by ROW  */
     rotMatrix_orthogonalFromZRow (&matrix, (DVec3dCP) pNormal);
-    bsiRotMatrix_transpose (&matrix, &matrix);
+    matrix.TransposeOf (matrix);
 
-    bsiTransform_initFromMatrixAndTranslation (&planeToWorld, &matrix, pOrigin);
-    bsiTransform_invertTransform (&worldToPlane, &planeToWorld);
+    planeToWorld.InitFrom (matrix, *pOrigin);
+    worldToPlane.InverseOf (planeToWorld);
 
     bspsurf_transformSurface (&localSurface, pSurface, &worldToPlane);
 

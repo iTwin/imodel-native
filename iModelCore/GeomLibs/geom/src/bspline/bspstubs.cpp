@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspstubs.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -65,7 +65,7 @@ double          fractionTol
         DVec3d tangent;
         segment.Length (newLength, 0.0, fraction);
         segment.FractionToPoint (point, tangent, fraction, false);
-        double a = bsiDVec3d_magnitude (&tangent);
+        double a = tangent.Magnitude ();
         double du;
         double signedLengthError = targetLength - newLength;
         absLengthError = fabs (signedLengthError);

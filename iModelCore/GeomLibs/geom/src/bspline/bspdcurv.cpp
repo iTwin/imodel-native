@@ -617,7 +617,7 @@ int             dimension
         for (i = k+1, prod0P = product+i*tmpnum+newIndex0, dP0=auxTmpPoles+i*dimension;
              i < minp; i++, prod0P += tmpnum, dP0 += dimension)
             {
-            bsiDPoint3d_addScaledDPoint3d (tmpPoles+i, tmpPoles+i, tmpPoles+k, -1.0  * (*prod0P));
+            tmpPoles[i].SumOf (tmpPoles[i], tmpPoles[k], -1.0  * (*prod0P));
             offsetPointRn (dP0, dP0, dP1, -1.0  * (*prod0P), dimension);
             }
         }
@@ -628,14 +628,14 @@ int             dimension
         maxp = ((tmplWidth = j - lWidth) > 0) ? tmplWidth : 0;
         jNum = j * num + degree;
         factor = 1.0/product[jNum];
-        bsiDPoint3d_scale (tmpPoles+j, tmpPoles+j, factor);
+        tmpPoles[j].Scale (tmpPoles[j], factor);
         scaleVectorRn (dP0, dP0, factor, dimension);
 
         l = (j < uWidth) ? j : uWidth;
         for (i = maxp, dP1=auxTmpPoles+i*dimension; i < j; i++, l--, dP1 += dimension)
             {
             factor = -product[i*num + degree + l];
-            bsiDPoint3d_addScaledDPoint3d (tmpPoles+i, tmpPoles+i, tmpPoles+j, factor);
+            tmpPoles[i].SumOf (tmpPoles[i], tmpPoles[j], factor);
             offsetPointRn (dP1, dP1, dP0, factor, dimension);
             }
         }
@@ -713,7 +713,7 @@ int             dimension
                     *prodP += *mP * factor;
 
                 newIndex = index + itmp;
-                bsiDPoint3d_addScaledDPoint3d (tmpPoles+j, tmpPoles+j, curvePoles+i, matrix[newIndex]);
+                tmpPoles[j].SumOf (tmpPoles[j], curvePoles[i], matrix[newIndex]);
                 offsetPointRn (dP0, dP0, dP1, matrix[newIndex], dimension);
                 }
             }
@@ -757,7 +757,7 @@ int             dimension
     auxTol = auxTmp = auxMaxdiff = NULL;
 
     factor = 1.0 / sqrt ((double) order);
-    bsiDPoint3d_scale (&tol, tolerance, factor);
+    tol.Scale (*tolerance, factor);
     maxdiff.x = maxdiff.y = maxdiff.z = 0.0;
     allocSize = 0;
     if (dimension)
@@ -779,7 +779,7 @@ int             dimension
         {
         tmp.x = tmp.y = tmp.z = 0.0;
         for (i = 0, mP=matrix+j*order, gPP=gPolesP+uLeft[j]; i < order; i++, mP++, gPP++)
-            bsiDPoint3d_addScaledDPoint3d (&tmp, &tmp, gPP, *mP);
+            tmp.SumOf (tmp, *gPP, *mP);
 
         if (dimension)
             {
@@ -1762,37 +1762,35 @@ int             initMethod      /* => 0 for equal parameter step, 1 for equal ar
             {
             bspcurv_evaluateCurvePoint (&points[j], &tangents[j], curveP, oldParams[j]);
             if (j == 0)
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&diff[0], &points[0], &ends[0]);
+                diff[0].DifferenceOf (points[0], ends[0]);
             else
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&diff[j], &points[j], &points[j-1]);
+                diff[j].DifferenceOf (points[j], points[j-1]);
             }
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&diff[numParams], &ends[1], &points[numParams-1]);
+        diff[numParams].DifferenceOf (ends[1], points[numParams-1]);
 
         /* Compute the Jacobian matrix */
         lowDiag[0] = upDiag[numParams-1] = 0.0;
-        bsiDPoint3d_addDPoint3dDPoint3d (&tmp, &diff[0], &diff[1]);
-        midDiag[0] = 2.0 * bsiDPoint3d_dotProduct (&tangents[0], &tmp);
-        upDiag[0] = (numParams == 1) ? 0.0 : -2.0 * bsiDPoint3d_dotProduct (&tangents[1], &diff[1]);
-        rightSide[0] = bsiDPoint3d_dotProduct (&diff[0], &diff[0]) - bsiDPoint3d_dotProduct (&diff[1], &diff[1]);
+        tmp.SumOf (diff[0], diff[1]);
+        midDiag[0] = 2.0 * tangents[0].DotProduct (tmp);
+        upDiag[0] = (numParams == 1) ? 0.0 : -2.0 * tangents[1].DotProduct (diff[1]);
+        rightSide[0] = diff[0].DotProduct (diff[0]) - diff[1].DotProduct (diff[1]);
 
         if (numParams > 1)
             {
-            lowDiag[numParams-1] = -2.0 * bsiDPoint3d_dotProduct (&tangents[numParams-2],
-                &diff[numParams-1]);
-            bsiDPoint3d_addDPoint3dDPoint3d (&tmp, &diff[numParams-1], &diff[numParams]);
-            midDiag[numParams-1] = 2.0 * bsiDPoint3d_dotProduct (&tangents[numParams-1], &tmp);
-            rightSide[numParams-1] = bsiDPoint3d_dotProduct (&diff[numParams-1], &diff[numParams-1]) -
-                bsiDPoint3d_dotProduct (&diff[numParams], &diff[numParams]);
+            lowDiag[numParams-1] = -2.0 * tangents[numParams-2].DotProduct (diff[numParams-1]);
+            tmp.SumOf (diff[numParams-1], diff[numParams]);
+            midDiag[numParams-1] = 2.0 * tangents[numParams-1].DotProduct (tmp);
+            rightSide[numParams-1] = diff[numParams-1].DotProduct (diff[numParams-1]) -
+                diff[numParams].DotProduct (diff[numParams]);
             }
 
         for (j = 1; j < numParams-1; j++)
             {
-            rightSide[j] = bsiDPoint3d_dotProduct (&diff[j], &diff[j]) -        bsiDPoint3d_dotProduct (&diff[j+1],
-                                  &diff[j+1]);
-            upDiag[j]  = -2.0 * bsiDPoint3d_dotProduct(&tangents[j+1], &diff[j+1]);
-            bsiDPoint3d_addDPoint3dDPoint3d (&tmp, &diff[j], &diff[j+1]);
-            midDiag[j] = 2.0 * bsiDPoint3d_dotProduct (&tangents[j], &tmp);
-            lowDiag[j] = -2.0 * bsiDPoint3d_dotProduct (&tangents[j-1], &diff[j]);
+            rightSide[j] = diff[j].DotProduct (diff[j]) -        diff[j+1].DotProduct (diff[j+1]);
+            upDiag[j]  = -2.0 * tangents[j+1].DotProduct (diff[j+1]);
+            tmp.SumOf (diff[j], diff[j+1]);
+            midDiag[j] = 2.0 * tangents[j].DotProduct (tmp);
+            lowDiag[j] = -2.0 * tangents[j-1].DotProduct (diff[j]);
             }
 
         /* Solve the tridiagonal system */
@@ -1925,7 +1923,7 @@ double          paramI      /* => barry centric cood of another point */
         /* Assign poles */
         pCurve->poles[0] = *pStart;
         pCurve->poles[2] = *pEnd;
-        bsiDPoint3d_scale (&pCurve->poles[1], pInt, pCurve->weights[1]);
+        pCurve->poles[1].Scale (*pInt, pCurve->weights[1]);
         }
 
     return  status;
@@ -2001,26 +1999,26 @@ DPoint3d *pPoint1
     tangent2   = xyz[1];
     curvature2 = xyz[2];
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vector01, pPoint1, pPoint0);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vector02, pPoint2, pPoint0);
+    vector01.DifferenceOf (*pPoint1, *pPoint0);
+    vector02.DifferenceOf (*pPoint2, *pPoint0);
 
-    UdotU = bsiDPoint3d_dotProduct (&vector01, &vector01);
-    UdotV = bsiDPoint3d_dotProduct (&vector01, &vector02);
+    UdotU = vector01.DotProduct (vector01);
+    UdotV = vector01.DotProduct (vector02);
 
     if (UdotV <= 0.0 || UdotV >= UdotU)
         return ERROR;
 
     lambda = UdotV / UdotU;
-    dlambda = bsiDPoint3d_dotProduct (&tangent2, &vector01) / UdotU;
-    bsiDPoint3d_addScaledDPoint3d (&dvector32, &tangent2, &vector01, -dlambda);
+    dlambda = tangent2.DotProduct (vector01) / UdotU;
+    dvector32.SumOf (tangent2, vector01, -dlambda);
 
-    bsiDPoint3d_addScaledDPoint3d (pPoint3,  pPoint0, &vector01, lambda);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vector32, pPoint2, pPoint3);
+    pPoint3->SumOf (*pPoint0, vector01, lambda);
+    vector32.DifferenceOf (*pPoint2, *pPoint3);
 
-    *pf = bsiDPoint3d_dotProduct (&vector32, &tangent2);
+    *pf = vector32.DotProduct (tangent2);
 
-    *pdf = bsiDPoint3d_dotProduct (&dvector32, &tangent2)
-         + bsiDPoint3d_dotProduct (&vector32, &curvature2);
+    *pdf = dvector32.DotProduct (tangent2)
+         + vector32.DotProduct (curvature2);
     return SUCCESS;
     }
 
@@ -2066,7 +2064,7 @@ double s1               /* => end of interval */
         if (SUCCESS != curveParallelToSegmentFunc
                     (pCurve, &f, &df, &point2, &point3, s, &point0, &point1))
             return ERROR;
-        dCurr = bsiDPoint3d_distance (&point2, &point3);
+        dCurr = point2.Distance (point3);
         if (tStart == 0.0 || dCurr > dMax)
             {
             dMax = dCurr;
@@ -2200,7 +2198,7 @@ int             numSeg     /* => number of chords: number of pointsP - 1 */
                             pParamBuffer[i], pParamBuffer[i+1]
                             ))
                 goto cleanup;
-            pDistanceBuffer[i] = bsiDPoint3d_distance (&point2, &point3);
+            pDistanceBuffer[i] = point2.Distance (point3);
 #ifdef NOISY
             printf (" Interval %lf %lf parallel param %lf distance %lf\n",
                                 pParamBuffer[i], pParamBuffer[i+1],
@@ -2220,7 +2218,7 @@ int             numSeg     /* => number of chords: number of pointsP - 1 */
                             pParamBuffer[k], shiftedParameter
                             ))
                 goto cleanup;
-            dist0 = bsiDPoint3d_distance (&point2, &point3);
+            dist0 = point2.Distance (point3);
             if (SUCCESS != mdlBspline_findChordErrorPoint
                             (curveP,
                             &point2, &point3,
@@ -2228,7 +2226,7 @@ int             numSeg     /* => number of chords: number of pointsP - 1 */
                             shiftedParameter, pParamBuffer[k+2]
                             ))
                 goto cleanup;
-            dist1 = bsiDPoint3d_distance (&point2, &point3);
+            dist1 = point2.Distance (point3);
             pLeftDeriv[k] = (dist0 - pDistanceBuffer[k]) / shift;
             pRightDeriv[k] = (dist1 - pDistanceBuffer[k + 1]) / shift;
             }
@@ -2310,7 +2308,7 @@ cleanup:
                                 pParamBuffer[i], pParamBuffer[i+1]
                                 ))
                     {
-                    currDist = bsiDPoint3d_distance (&point2, &point3);
+                    currDist = point2.Distance (point3);
                     if (i == 0)
                         {
                         minDist = maxDist = currDist;
@@ -2360,7 +2358,7 @@ double          tolerance
         if ((size0 >= fc_nearZero || size1 >= fc_nearZero)                  // rule out coincidence
             && p0 > -fc_nearZero
             && p1 < fc_nearZero
-            && bsiDPoint3d_pointEqualTolerance (&pt0, &pt1, tolerance))    // planarity check
+            && pt0.IsEqual (pt1, tolerance))    // planarity check
             {
             bIntersect = true;
             if (pPoint)
@@ -2461,9 +2459,9 @@ double              tolerance
     tan1 = pTangents[pIndices[numTangents - 1]];
     if (bClosed)
         {
-        if (!bsiDPoint3d_pointEqualTolerance (&tan0.origin, &tan1.origin, tolerance))
+        if (!tan0.origin.IsEqual (tan1.origin, tolerance))
             pIndices[numTangents++] = pIndices[0];      // add end tangent
-        else if (!bsiDPoint3d_pointEqualTolerance (&tan0.direction, &tan1.direction, tolerance))
+        else if (!tan0.direction.IsEqual (tan1.direction, tolerance))
             pIndices[numTangents - 1] = pIndices[0];    // prefer tan0 over tan1
 
         tan1 = pTangents[pIndices[numTangents - 1]];    // get the new endTangent
@@ -2525,7 +2523,7 @@ double              tolerance
                     *pKnot++ = previousKnot;
                     }
 
-                bsiDPoint3d_interpolate (&pt, &tan0.origin, 0.5, &tan1.origin);
+                pt.Interpolate (tan0.origin, 0.5, tan1.origin);
                 *pPole++ = pt;              // midpoint
                 double previousKnot = pKnot[-1];
                 *pKnot++ = previousKnot + 1;   // arbitrary end knot
@@ -2547,8 +2545,8 @@ double              tolerance
                     *pKnot++ = 1.0;                 // arbitrary
                 else
                     {
-                    d0 = bsiDPoint3d_distance (&tan0.origin, &pPole[-1]);
-                    inc = d0 ? (pKnot[-1] - pKnot[-2]) * (bsiDPoint3d_distance (&pt, &tan0.origin) / d0) : 1.0;
+                    d0 = tan0.origin.Distance (pPole[-1]);
+                    inc = d0 ? (pKnot[-1] - pKnot[-2]) * (pt.Distance (tan0.origin) / d0) : 1.0;
                     double previousKnot = pKnot[-1];
                     *pKnot++ = previousKnot + inc;
                     }

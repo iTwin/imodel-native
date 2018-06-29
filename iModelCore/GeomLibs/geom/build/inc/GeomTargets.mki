@@ -56,7 +56,7 @@ $(OUT_DIR)PolylineOffset$(OUT_EXT)     : $(geomSrcFuncs)PolylineOffset.cpp      
 
 $(OUT_DIR)PolygonOps$(OUT_EXT)     : $(geomSrcFuncs)PolygonOps.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dpoint3ddvec3d$(OUT_EXT)  : $(geomSrcStructs)dpoint3ddvec3d.cpp   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dpoint3ddvec3d$(OUT_EXT)  : $(geomSrcStructs)dpoint3ddvec3d.cpp   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)dvec3d$(OUT_EXT)          : $(geomSrcStructs)dvec3d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
