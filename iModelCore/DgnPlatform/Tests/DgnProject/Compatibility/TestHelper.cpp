@@ -60,18 +60,67 @@ SchemaVersion TestDb::GetSchemaVersion(Utf8CP schemaName) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BeVersion TestDb::GetOriginalECXmlVersion(Utf8CP schemaName) const
     {
-    JsonValue rows = ExecuteECSqlSelect(Utf8PrintfString("SELECT OriginalECXmlVersionMajor major, OriginalECXmlVersionMinor minor FROM meta.ECSchemaDef WHERE Name='%s'", schemaName).c_str());
-    if (!rows.m_value.isArray() || rows.m_value.size() != 1)
-        return BeVersion();
+    if (GetDb().GetECDbProfileVersion() >= ProfileVersion(4, 0, 0, 2))
+        {
+        JsonValue rows = ExecuteECSqlSelect(Utf8PrintfString("SELECT OriginalECXmlVersionMajor major, OriginalECXmlVersionMinor minor FROM meta.ECSchemaDef WHERE Name='%s'", schemaName).c_str());
+        if (!rows.m_value.isArray() || rows.m_value.size() != 1)
+            return BeVersion();
 
-    JsonValueCR versionJson = rows.m_value[0];
-    if (!versionJson.isMember("major"))
-        return BeVersion();
+        JsonValueCR versionJson = rows.m_value[0];
+        if (!versionJson.isMember("major"))
+            return BeVersion();
 
-    if (versionJson.isMember("minor"))
-        return BeVersion(versionJson["major"].asInt(), versionJson["minor"].asInt());
+        const BeVersion originalXmlVersion = versionJson.isMember("minor") ? BeVersion(versionJson["major"].asInt(), versionJson["minor"].asInt()) : BeVersion(versionJson["major"].asInt(), 0);
 
-    return BeVersion(versionJson["major"].asInt(), 0);
+        //verify that version is the same if fetched via ECObjects
+        ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
+        EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
+        EXPECT_EQ((int) originalXmlVersion.GetMajor(), (int) schema->GetOriginalECXmlVersionMajor()) << "Original ECXml Major Version of " << schemaName << " retrieved from ECObjects differs from when retrieved with ECSQL" << " | " << GetDescription();
+        EXPECT_EQ((int) originalXmlVersion.GetMinor(), (int) schema->GetOriginalECXmlVersionMinor()) << "Original ECXml Minor Version of " << schemaName << " retrieved from ECObjects differs from when retrieved with ECSQL" << " | " << GetDescription();
+        return originalXmlVersion;
+        }
+
+    // older files where Original ECXml Version was not persisted yet
+    ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
+    EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
+    return BeVersion((uint16_t) schema->GetOriginalECXmlVersionMajor(), (uint16_t) schema->GetOriginalECXmlVersionMinor());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+ECVersion TestDb::GetECVersion(Utf8CP schemaName) const
+    {
+    if (GetDb().GetECDbProfileVersion() >= ProfileVersion(4, 0, 0, 2))
+        {
+        JsonValue rows = ExecuteECSqlSelect(Utf8PrintfString("SELECT ECVersion ver FROM meta.ECSchemaDef WHERE Name='%s'", schemaName).c_str());
+        if (!rows.m_value.isArray() || rows.m_value.size() != 1)
+            return ECVersion::V2_0;
+
+        JsonValueCR versionJson = rows.m_value[0];
+        if (!versionJson.isMember("ver"))
+            {
+            EXPECT_TRUE(false) << "ECSQL to retrieve ECVersion did not return the version for schema " << schemaName << ". | " << GetDescription();
+            return ECVersion::V2_0;
+            }
+
+        const ECVersion ver = (ECVersion) versionJson["ver"].asInt();
+
+        //verify that version is the same if fetched via ECObjects
+        ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
+        EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
+        if (GetState() != State::Newer)
+            EXPECT_EQ(ver, schema->GetECVersion()) << "ECVersion of " << schemaName << " retrieved from ECObjects differs from when retrieved with ECSQL" << " | " << GetDescription();
+        else
+            EXPECT_GE(ver, schema->GetECVersion()) << "ECVersion of " << schemaName << " retrieved from ECObjects differs from when retrieved with ECSQL" << " | " << GetDescription();
+
+        return ver;
+        }
+
+    // older files where ECVersion was not persisted yet
+    ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
+    EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
+    return schema->GetECVersion();
     }
 
 //---------------------------------------------------------------------------------------
@@ -123,6 +172,41 @@ JsonValue TestDb::GetSchemaItemCounts(Utf8CP schemaName) const
     count = catCount.m_value[0]["cnt"].asInt();
     if (count != 0)
         counts.m_value["propertycategorycount"] = count;
+
+    if (GetDb().GetECDbProfileVersion() >= ProfileVersion(4, 0, 0, 2))
+        {
+        JsonValue unitCount = ExecuteECSqlSelect(Utf8PrintfString("SELECT count(*) cnt FROM meta.UnitDef i JOIN meta.ECSchemaDef s ON i.Schema.Id=s.ECInstanceId WHERE s.Name='%s'", schemaName).c_str());
+        if (unitCount.m_value.size() != 1)
+            return JsonValue();
+
+        count = unitCount.m_value[0]["cnt"].asInt();
+        if (count != 0)
+            counts.m_value["unitcount"] = count;
+
+        JsonValue formatCount = ExecuteECSqlSelect(Utf8PrintfString("SELECT count(*) cnt FROM meta.FormatDef i JOIN meta.ECSchemaDef s ON i.Schema.Id=s.ECInstanceId WHERE s.Name='%s'", schemaName).c_str());
+        if (formatCount.m_value.size() != 1)
+            return JsonValue();
+
+        count = formatCount.m_value[0]["cnt"].asInt();
+        if (count != 0)
+            counts.m_value["formatcount"] = count;
+
+        JsonValue unitSystemCount = ExecuteECSqlSelect(Utf8PrintfString("SELECT count(*) cnt FROM meta.UnitSystemDef i JOIN meta.ECSchemaDef s ON i.Schema.Id=s.ECInstanceId WHERE s.Name='%s'", schemaName).c_str());
+        if (unitSystemCount.m_value.size() != 1)
+            return JsonValue();
+
+        count = unitSystemCount.m_value[0]["cnt"].asInt();
+        if (count != 0)
+            counts.m_value["unitsystemcount"] = count;
+
+        JsonValue phenCount = ExecuteECSqlSelect(Utf8PrintfString("SELECT count(*) cnt FROM meta.PhenomenonDef i JOIN meta.ECSchemaDef s ON i.Schema.Id=s.ECInstanceId WHERE s.Name='%s'", schemaName).c_str());
+        if (phenCount.m_value.size() != 1)
+            return JsonValue();
+
+        count = phenCount.m_value[0]["cnt"].asInt();
+        if (count != 0)
+            counts.m_value["phenomenoncount"] = count;
+        }
 
     return counts;
     }
@@ -212,7 +296,11 @@ void TestDb::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDispl
         ECValueCR expectedValue = std::get<1>(expectedEnumValue);
         Utf8CP expectedDisplayLabel = std::get<2>(expectedEnumValue);
 
-        EXPECT_STREQ(expectedName, enumValue["Name"].GetText()) << assertMessage << " Enumerator: " << i;
+        if (GetDb().GetECDbProfileVersion() >= ProfileVersion(4, 0, 0, 2))
+            {
+            //enumerator names were added in 4.0.0.2
+            EXPECT_STREQ(expectedName, enumValue["Name"].GetText()) << assertMessage << " Enumerator: " << i;
+            }
 
         if (expectedDisplayLabel == nullptr)
             EXPECT_TRUE(enumValue["DisplayLabel"].IsNull()) << assertMessage << " Enumerator: " << i;
@@ -311,6 +399,10 @@ void TestDb::AssertUnit(Utf8CP schemaName, Utf8CP unitName, Utf8CP expectedDispl
                             Nullable<double> expectedNumerator, Nullable<double> expectedDenominator, Nullable<double> expectedOffset, 
                             QualifiedName const& expectedUnitSystem, QualifiedName const& expectedPhenomenon, bool expectedIsConstant, QualifiedName const& expectedInvertingUnit) const
     {
+    // units were added in 4.0.0.2
+    if (GetDb().GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 2))
+        return;
+
     Utf8String assertMessage(schemaName);
     assertMessage.append(".").append(unitName).append(" | ").append(GetDescription());
 
@@ -435,6 +527,10 @@ void TestDb::AssertUnit(Utf8CP schemaName, Utf8CP unitName, Utf8CP expectedDispl
 //+---------------+---------------+---------------+---------------+---------------+------
 void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, JsonValue const& expectedNumericSpec, JsonValue const& expectedCompSpec) const
     {
+    // formats were added in 4.0.0.2
+    if (GetDb().GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 2))
+        return;
+
     Utf8String assertMessage(schemaName);
     assertMessage.append(".").append(formatName).append(" | ").append(GetDescription());
 
@@ -497,6 +593,7 @@ void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedD
         EXPECT_TRUE(stmt.IsValueNull(4)) << stmt.GetECSql() << " | " << assertMessage;
         return;
         }
+
     ASSERT_TRUE(expectedCompSpec.m_value.isMember("units")) << stmt.GetECSql() << " | " << assertMessage;
     JsonValue expectedCompositeWithoutUnitsJson(expectedCompSpec.m_value);
     expectedCompositeWithoutUnitsJson.m_value.removeMember("units");
@@ -538,6 +635,10 @@ void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedD
 //+---------------+---------------+---------------+---------------+---------------+------
 void TestDb::AssertUnitSystem(Utf8CP schemaName, Utf8CP unitsystemName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription) const
     {
+    // UnitSystems were added in 4.0.0.2
+    if (GetDb().GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 2))
+        return;
+
     Utf8String assertMessage(schemaName);
     assertMessage.append(".").append(unitsystemName).append(" | ").append(GetDescription());
 
@@ -578,6 +679,10 @@ void TestDb::AssertUnitSystem(Utf8CP schemaName, Utf8CP unitsystemName, Utf8CP e
 //+---------------+---------------+---------------+---------------+---------------+------
 void TestDb::AssertPhenomenon(Utf8CP schemaName, Utf8CP phenName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedDefinition) const
     {
+    // Phenomena were added in 4.0.0.2
+    if (GetDb().GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 2))
+        return;
+
     Utf8String assertMessage(schemaName);
     assertMessage.append(".").append(phenName).append(" | ").append(GetDescription());
 
@@ -661,6 +766,34 @@ void TestDb::AssertLoadSchemas() const
             EXPECT_TRUE(cat->HasId()) << cat->GetFullName() << " | " << GetDescription();
             EXPECT_FALSE(cat->GetName().empty()) << cat->GetFullName() << " | " << GetDescription();
             }
+
+        if (GetDb().GetECDbProfileVersion() >= ProfileVersion(4, 0, 0, 2))
+            {
+            for (ECUnitCP unit : schema->GetUnits())
+                {
+                EXPECT_TRUE(unit->HasId()) << unit->GetFullName() << " | " << GetDescription();
+                EXPECT_FALSE(unit->GetName().empty()) << unit->GetFullName() << " | " << GetDescription();
+                }
+
+            for (ECFormatCP format : schema->GetFormats())
+                {
+                EXPECT_TRUE(format->HasId()) << format->GetFullName() << " | " << GetDescription();
+                EXPECT_FALSE(format->GetName().empty()) << format->GetFullName() << " | " << GetDescription();
+                }
+
+            for (UnitSystemCP unitSystem : schema->GetUnitSystems())
+                {
+                EXPECT_TRUE(unitSystem->HasId()) << unitSystem->GetFullName() << " | " << GetDescription();
+                EXPECT_FALSE(unitSystem->GetName().empty()) << unitSystem->GetFullName() << " | " << GetDescription();
+                }
+
+            for (PhenomenonCP phenomenon : schema->GetPhenomena())
+                {
+                EXPECT_TRUE(phenomenon->HasId()) << phenomenon->GetFullName() << " | " << GetDescription();
+                EXPECT_FALSE(phenomenon->GetName().empty()) << phenomenon->GetFullName() << " | " << GetDescription();
+                }
+            }
+
         }
 
     GetDb().ClearECDbCache();
@@ -673,6 +806,45 @@ void TestDb::AssertLoadSchemas() const
     // Not all test files contain KOQs or PropertyCategories, so just test that the result is a JSON array
     EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.KindOfQuantityDef").m_value.isArray()) << GetDescription();
     EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.PropertyCategoryDef").m_value.isArray()) << GetDescription();
+
+    if (GetDb().GetECDbProfileVersion() >= ProfileVersion(4, 0, 0, 2))
+        {
+        EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.UnitDef").m_value.isArray()) << GetDescription();
+        EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.FormatDef").m_value.isArray()) << GetDescription();
+        EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.UnitSystemDef").m_value.isArray()) << GetDescription();
+        EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.PhenomenonDef").m_value.isArray()) << GetDescription();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult TestDb::Open()
+    {
+    if (BeFileNameStatus::Success != m_testFile.CloneFromSeed())
+        return BE_SQLITE_ERROR;
+
+    return _Open();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TestDb::State TestDb::GetState() const
+    {
+    switch (GetTestFile().GetAge())
+        {
+            case ProfileState::Age::Older:
+                return GetOpenParams().GetProfileUpgradeOptions() == Db::ProfileUpgradeOptions::Upgrade ? State::Upgraded : State::Older;
+            case ProfileState::Age::UpToDate:
+                return State::UpToDate;
+            case ProfileState::Age::Newer:
+                return State::Newer;
+
+            default:
+                BeAssert(false && "Unhandled enum value");
+                return TestDb::State::UpToDate;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -691,40 +863,50 @@ Utf8String TestDb::GetDescription() const
             openModeStr = "read-write without upgrade";
         }
 
-    return Utf8PrintfString("Opened %s | %s", openModeStr, m_testFile.ToString().c_str());
+    return Utf8PrintfString("Opened %s | %s", openModeStr, GetTestFile().ToString().c_str());
     }
 
 //***************************** TestECDb ********************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+TestECDb::Iterable TestECDb::GetPermutationsFor(TestFile const& testFile)
+    {
+    std::vector<ECDb::OpenParams> testParams {ECDb::OpenParams(ECDb::OpenMode::Readonly), ECDb::OpenParams(ECDb::OpenMode::ReadWrite)};
+    if (testFile.GetAge() == ProfileState::Age::Older)
+        testParams.push_back(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade));
+
+    return Iterable(testFile, testParams);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 void TestECDb::AssertProfileVersion() const
     {
     ASSERT_TRUE(m_ecdb.IsDbOpen()) << "AssertProfileVersion must be called on open file";
-    switch (m_testFile.GetAge())
+    switch (GetState())
         {
-            case ProfileState::Age::UpToDate:
+            case State::UpToDate:
                 EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsUpToDate()) << GetDescription();
                 EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
                 break;
-            case ProfileState::Age::Newer:
+            case State::Newer:
                 EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsNewer()) << GetDescription();
                 EXPECT_LT(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
                 break;
-            case ProfileState::Age::Older:
-                if (m_openParams.GetProfileUpgradeOptions() == BeSQLite::Db::ProfileUpgradeOptions::None)
-                    {
-                    EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsOlder()) << GetDescription();
-                    EXPECT_GT(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
-                    }
-                else
-                    {
-                    EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsUpToDate()) << GetDescription();
-                    EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
-                    }
+            case State::Older:
+                EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsOlder()) << GetDescription();
+                EXPECT_GT(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
+                break;
+            case State::Upgraded:
+                EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsUpToDate()) << GetDescription();
+                EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
                 break;
             default:
-                FAIL() << "Unhandled ProfileState::Age enum value";
+                FAIL() << "Unhandled TestECDb::State enum value";
         }
     }
 
@@ -733,32 +915,45 @@ void TestECDb::AssertProfileVersion() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
+//static
+TestIModel::Iterable TestIModel::GetPermutationsFor(TestFile const& testFile)
+    {
+    std::vector<DgnDb::OpenParams> testParams {DgnDb::OpenParams(DgnDb::OpenMode::Readonly), DgnDb::OpenParams(ECDb::OpenMode::ReadWrite)};
+    if (testFile.GetAge() == ProfileState::Age::Older)
+        {
+        DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite);
+        params.SetProfileUpgradeOptions(DgnDb::ProfileUpgradeOptions::Upgrade);
+        testParams.push_back(params);
+        }
+
+    return Iterable(testFile, testParams);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
 void TestIModel::AssertProfileVersion() const
     {
     ASSERT_TRUE(m_dgndb != nullptr && m_dgndb->IsDbOpen()) << "AssertProfileVersion must be called on open file";
-    switch (m_testFile.GetAge())
+    switch (GetState())
         {
-            case ProfileState::Age::UpToDate:
+            case State::UpToDate:
                 EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsUpToDate()) << GetDescription();
                 EXPECT_EQ(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
                 break;
-            case ProfileState::Age::Newer:
+            case State::Newer:
                 EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsNewer()) << GetDescription();
                 EXPECT_LT(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
                 break;
-            case ProfileState::Age::Older:
-                if (m_openParams.GetProfileUpgradeOptions() == BeSQLite::Db::ProfileUpgradeOptions::None)
-                    {
-                    EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsOlder()) << GetDescription();
-                    EXPECT_GT(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
-                    }
-                else
-                    {
-                    EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsUpToDate()) << GetDescription();
-                    EXPECT_EQ(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
-                    }
+            case State::Older:
+                EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsOlder()) << GetDescription();
+                EXPECT_GT(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
+                break;
+            case State::Upgraded:
+                EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsUpToDate()) << GetDescription();
+                EXPECT_EQ(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
                 break;
             default:
-                FAIL() << "Unhandled ProfileState::Age enum value";
+                FAIL() << "Unhandled TestDb::State enum value";
         }
     }
