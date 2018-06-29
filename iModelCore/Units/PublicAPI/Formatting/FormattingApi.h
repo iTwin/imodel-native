@@ -436,6 +436,8 @@ public:
     BEU::UnitCP GetMinorUnit()  const {return GetUnit(indxMinor);}
     BEU::UnitCP GetSubUnit()    const {return GetUnit(indxSub);}
     
+    UNITS_EXPORT const bvector<BEU::UnitCP> GetUnits() const; 
+    
     bool HasMajorUnit()  const {return nullptr != GetUnit(indxMajor);} //!< Determine whether this composite value has a major unit.
     bool HasMiddleUnit() const {return nullptr != GetUnit(indxMiddle);} //!< Determine whether this composite value has a middle unit.
     bool HasMinorUnit()  const {return nullptr != GetUnit(indxMinor);} //!< Determine whether this composite value has a minor unit.

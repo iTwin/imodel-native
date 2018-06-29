@@ -332,6 +332,10 @@ bool CompositeValueSpec::CreateCompositeSpec(CompositeValueSpecR out, bvector<BE
             return false;
         }
     out = CompositeValueSpec(units);
+
+    if (out.IsProblem())
+        return false;
+
     return true;
     }
 
@@ -358,6 +362,24 @@ bool CompositeValueSpec::IsIdentical(CompositeValueSpecCR other) const
         && m_includeZero == other.m_includeZero
         && m_spacer.Equals(other.m_spacer)
         && compareProxies();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 06/2018
+//--------------------------------------------------------------------------------------
+const bvector<BEU::UnitCP> CompositeValueSpec::GetUnits() const
+    {
+    bvector<BEU::UnitCP> units;
+    units.reserve(GetUnitCount());
+    if (HasMajorUnit())
+        units.push_back(GetMajorUnit());
+    if (HasMiddleUnit())
+        units.push_back(GetMiddleUnit());
+    if (HasMinorUnit())
+        units.push_back(GetMinorUnit());
+    if (HasSubUnit())
+        units.push_back(GetSubUnit());
+    return units;
     }
 
 //--------------------------------------------------------------------------------------
