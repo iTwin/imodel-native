@@ -175,7 +175,7 @@ DgnDbPtr StructuralDomainTestFixture::OpenDgnDb()
 
     // Initialize parameters needed to create a DgnDb
     Dgn::DgnDb::OpenParams openParams(BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes,
-        Dgn::SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly);
+        SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
     // Create the DgnDb file. The BisCore domain schema is also imported. Note that a seed file is not required.
     BeSQLite::DbResult openStatus;
     Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&openStatus, m_workingBimFile, openParams);
