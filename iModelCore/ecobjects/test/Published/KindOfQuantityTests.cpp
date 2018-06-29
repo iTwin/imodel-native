@@ -214,28 +214,22 @@ TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationFormats)
 
     ECUnitCP meterUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("M");
     ECUnitCP centimeterUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("CM");
+    ECUnitCP arcDegUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("ARC_DEG");
     ECFormatCP angleDm = ECTestFixture::GetFormatsSchema()->GetFormatCP("AngleDMS");
     ECFormatCP amerFI = ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI");
     KindOfQuantityP koq;
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
-    EXPECT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*meterUnit));
+    EC_EXPECT_SUCCESS(koq->SetPersistenceUnit(*meterUnit));
+    EC_EXPECT_SUCCESS(koq->AddPresentationFormat(*amerFI));
     EXPECT_NE(ECObjectsStatus::Success, koq->AddPresentationFormat(*angleDm)) << "The input unit ARC_DEG is from a different phenomeonon than the Persistence Unit.";
+    EXPECT_NE(ECObjectsStatus::Success, koq->SetPersistenceUnit(*arcDegUnit)) << "The input unit ARC_DEG is from a different phenomeonon than the current presentation units";
 
     KindOfQuantityP koq2;
-    EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq2, "MyKindOfQuantity2"));
-    EC_EXPECT_SUCCESS(koq2->AddPresentationFormat(*angleDm)) << "The input unit ARC_DEG is from a different phenomeonon than the Persistence Unit.";
-    EXPECT_NE(ECObjectsStatus::Success, koq2->SetPersistenceUnit(*meterUnit)) << "Meter is from a different phenomenon than the presentation unit";
-
-    KindOfQuantityP koq3;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq3, "MyKindOfQuantity3"));
-    EC_EXPECT_SUCCESS(koq->AddPresentationFormat(*amerFI));
-    EXPECT_EQ(ECObjectsStatus::Success, koq3->SetPersistenceUnit(*centimeterUnit));
-    EXPECT_NE(ECObjectsStatus::Success, koq3->AddPresentationFormat(*angleDm)) << "The input unit ARC_DEG is from a different phenomeonon than the Persistence Unit and presentation unit.";
-
-    KindOfQuantityP koq4;
-    EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq4, "MyKindOfQuantity4"));
-    EC_EXPECT_SUCCESS(koq4->AddPresentationFormat(*angleDm));
-    EXPECT_NE(ECObjectsStatus::Success, koq4->AddPresentationFormat(*amerFI)) << "The input Unit FT is from the LENGTH Phenomenon which is different than the existing Presentation Unit.";
+    EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq2, "MyKindOfQuantity3"));
+    EC_EXPECT_SUCCESS(koq2->SetPersistenceUnit(*centimeterUnit));
+    EXPECT_NE(ECObjectsStatus::Success, koq2->AddPresentationFormat(*angleDm)) << "The input unit ARC_DEG is from a different phenomeonon than the Persistence Unit and presentation unit.";
+    EC_EXPECT_SUCCESS(koq2->SetPersistenceUnit(*arcDegUnit));
+    EC_EXPECT_SUCCESS(koq2->AddPresentationFormat(*angleDm));
     }
 
 //--------------------------------------------------------------------------------------
@@ -438,6 +432,14 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_STRCASEEQ("u:IN", persUnitName.c_str());
     EXPECT_EQ(1, presFormatStrings.size());
     EXPECT_STRCASEEQ("f:AmerFI", presFormatStrings[0].c_str());
+    }
+    {
+    persUnitName.clear();
+    presFormatStrings.clear();
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "IN", presFUSes, schema));
+    EXPECT_STRCASEEQ("u:IN", persUnitName.c_str());
+    EXPECT_EQ(0, presFormatStrings.size());
     }
     }
 
