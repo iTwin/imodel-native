@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeThread.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -245,6 +245,9 @@ struct  BeThreadUtilities
 
     //! see documentation for std::thread::hardware_concurrency()
     BENTLEYDLL_EXPORT static uint32_t GetHardwareConcurrency();
+
+    //! Get the identifier of the currently running process
+    BENTLEYDLL_EXPORT static uint64_t GetCurrentProcessId();
 };
 
 

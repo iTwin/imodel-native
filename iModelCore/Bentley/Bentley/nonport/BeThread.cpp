@@ -404,3 +404,15 @@ void BeThread::Start()
         }
     }
 #endif
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         06/2018
+//---------------------------------------------------------------------------------------
+uint64_t BeThreadUtilities::GetCurrentProcessId()
+    {
+#ifdef _WIN32
+    return (uint64_t) ::GetCurrentProcessId();
+#else
+    return (uint64_t) getpid();
+#endif
+    }
