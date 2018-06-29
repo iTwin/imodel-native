@@ -54,6 +54,7 @@ protected:
     JsonValue ExecuteECSqlSelect(Utf8CP ecsql) const;
     SchemaVersion GetSchemaVersion(Utf8CP schemaName) const;
     BeVersion GetOriginalECXmlVersion(Utf8CP schemaName) const;
+    ECN::ECVersion GetECVersion(Utf8CP schemaName) const;
     int GetSchemaCount() const;
     JsonValue GetSchemaItemCounts(Utf8CP schemaName) const;
     
