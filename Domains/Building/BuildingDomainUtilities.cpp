@@ -995,9 +995,7 @@ namespace BuildingDomain
         if (nullptr == propUnit)
             return nullptr;
 
-        Formatting::FormatUnitSetCR unit = propUnit->GetPersistenceUnit();
-
-        Units::UnitCP u = unit.GetUnit();
+        Units::UnitCP u = propUnit->GetPersistenceUnit();
 
         return u;
         }
@@ -1024,7 +1022,7 @@ namespace BuildingDomain
 
         unitSuffix = unitSuffix.Trim();
 
-        Units::UnitCP u1 = Units::UnitRegistry::Instance().LookupUnit(unitSuffix.c_str());
+        Units::UnitCP u1 = element.GetDgnDb().Schemas().GetUnit("Units", unitSuffix.c_str());
 
         double value = atof(valueString.c_str());
 
@@ -1058,7 +1056,7 @@ namespace BuildingDomain
         if (nullptr == u)
             return BentleyStatus::ERROR;
 
-        Units::UnitCP u1 = Units::UnitRegistry::Instance().LookupUnit(unitString.c_str());
+        Units::UnitCP u1 = element.GetDgnDb().Schemas().GetUnit("Units", unitString.c_str());
 
         ECN::ECValue propVal;
 
@@ -1087,7 +1085,7 @@ namespace BuildingDomain
         if (nullptr == u)
             return BentleyStatus::ERROR;
 
-        Units::UnitCP u1 = Units::UnitRegistry::Instance().LookupUnit(unitString.c_str());
+        Units::UnitCP u1 = element.GetDgnDb().Schemas().GetUnit("Units", unitString.c_str());
 
         double converted;
         Units::UnitsProblemCode code = u1->Convert(converted, value, u);
