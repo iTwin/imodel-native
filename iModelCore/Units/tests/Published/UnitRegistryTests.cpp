@@ -376,7 +376,7 @@ TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
     Utf8String path = UnitsTestFixture::GetConversionDataPath(L"All3_1Names.csv");
     std::ifstream ifs(path.begin(), std::ifstream::in);
     std::string line;
-    bvector<Utf8String> ignoredNames = {"CM/REVOLUTION", "FT/REVOLUTION", "IN/DEGREE", "IN/RAD", "IN/REVOLUTION", "M/DEGREE", "M/RAD", "M/REVOLUTION", "MM/RAD", "MM/REVOLUTION"};
+    bvector<Utf8String> ignoredNames = {"CM/REVOLUTION", "FT/REVOLUTION", "IN/DEGREE", "IN/RAD", "IN/REVOLUTION", "M/DEGREE", "MM/RAD", "MM/REVOLUTION"};
     
     bool ignore = false;
     while (std::getline(ifs, line))
