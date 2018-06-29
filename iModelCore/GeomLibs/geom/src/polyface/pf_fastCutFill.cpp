@@ -73,7 +73,7 @@ DPoint4d VerticalPlaneThroughIntersection (ZPlaneDescriptor const &other) const
     }
 ClipPlane  GetClipPlane () const
     {
-    return ClipPlane::ClipPlane (m_normal, m_xyz, false, false);
+    return ClipPlane (m_normal, m_xyz, false, false);
     }
 };
 
