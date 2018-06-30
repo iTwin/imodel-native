@@ -798,6 +798,14 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #endif
 
 
+    if (m_sourceCreationCompleteness == SCM_CREATION_COMPLETENESS_INDEX_ONLY)
+        {        
+        assert(dynamic_cast<SMSQLiteStore<PointIndexExtentType>*>(pDataIndex->GetDataStore().get()) != nullptr);
+
+        SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(pDataIndex->GetDataStore().get()));
+        pSqliteStore->SetRemoveTempGenerationFile(false);
+        }
+    else
     if (m_sourceCreationCompleteness == SCM_CREATION_COMPLETENESS_FULL)
         {
         pDataIndex->GatherCounts();

@@ -160,4 +160,10 @@ void ScalableMeshDb::CloseShared(bool& wasTransactionAbandoned)
 
     this->CloseDb();
 }
+
+void ScalableMeshDb::GetSharedDbFileName(BENTLEY_NAMESPACE_NAME::Utf8String& path)
+    {
+    path = m_path;
+    }
+
 #endif

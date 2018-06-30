@@ -105,6 +105,7 @@ class ScalableMeshDb : public BeSQLite::Db
     virtual DbResult _OnDbCreated(CreateParams const& params) override;
 
     public:
+
         ScalableMeshDb(SQLDatabaseType type, SMSQLiteFile* smFile) : m_type(type), m_smFile(smFile), m_currentSavepoint(nullptr){}
 
 #ifndef VANCOUVER_API   
@@ -114,8 +115,9 @@ class ScalableMeshDb : public BeSQLite::Db
         bool ReOpenShared(bool readonly, bool allowBusyRetry);
         bool StartTransaction();
         bool CommitTransaction();
-
         void CloseShared(bool& wasTransactionAbandoned);
+
+        void GetSharedDbFileName(BENTLEY_NAMESPACE_NAME::Utf8String& path);        
 #endif
 
         static const BESQL_VERSION_STRUCT CURRENT_VERSION;
