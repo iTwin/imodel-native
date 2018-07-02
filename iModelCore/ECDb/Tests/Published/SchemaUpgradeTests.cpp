@@ -9393,7 +9393,7 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub" >
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                    <ECProperty propertyName="SubProp" typeName="string" />
                                 </ECEntityClass>
                             </ECSchema>)xml")));
 
@@ -9424,7 +9424,7 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub" >
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                    <ECProperty propertyName="SubProp" typeName="string" />
                                 </ECEntityClass>
                             </ECSchema>)xml";
 
@@ -9478,7 +9478,7 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub" >
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                    <ECProperty propertyName="SubProp" typeName="string" />
                                 </ECEntityClass>
                             </ECSchema>)xml";
 
@@ -9500,14 +9500,46 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                     <ECProperty propertyName="Name" typeName="string" />
                                     <ECProperty propertyName="Code" typeName="int"/>
                                     <ECProperty propertyName="Val" typeName="int" />
+                                    <ECProperty propertyName="NewProp" typeName="string" >
+                                        <ECCustomAttributes>
+                                           <PropertyMap xmlns="ECDbMap.02.00">
+                                             <IsNullable>False</IsNullable>
+                                           </PropertyMap>
+                                        </ECCustomAttributes>
+                                    </ECProperty>
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub" >
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                    <ECProperty propertyName="SubProp" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "IsNullable on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "IsNullable on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "IsNullable on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "IsNullable on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="SubProp" typeName="string" />
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub2" >
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp2" typeName="string" >
+                                    <ECProperty propertyName="SubProp2" typeName="string" >
                                         <ECCustomAttributes>
                                            <PropertyMap xmlns="ECDbMap.02.00">
                                              <IsNullable>False</IsNullable>
@@ -9528,7 +9560,7 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECEntityClass typeName="Sub2" >
                                     <BaseClass>ts:Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp2" typeName="string" >
+                                    <ECProperty propertyName="SubProp2" typeName="string" >
                                         <ECCustomAttributes>
                                            <PropertyMap xmlns="ECDbMap.02.00">
                                              <IsNullable>False</IsNullable>
@@ -9565,7 +9597,7 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub" >
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                    <ECProperty propertyName="SubProp" typeName="string" />
                                 </ECEntityClass>
                             </ECSchema>)xml";
 
@@ -9587,14 +9619,46 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                     <ECProperty propertyName="Name" typeName="string" />
                                     <ECProperty propertyName="Code" typeName="int"/>
                                     <ECProperty propertyName="Val" typeName="int" />
+                                    <ECProperty propertyName="NewProp" typeName="string" >
+                                        <ECCustomAttributes>
+                                           <PropertyMap xmlns="ECDbMap.02.00">
+                                             <IsUnique>True</IsUnique>
+                                           </PropertyMap>
+                                        </ECCustomAttributes>
+                                    </ECProperty>
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub" >
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                    <ECProperty propertyName="SubProp" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "IsUnique on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "IsUnique on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "IsUnique on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "IsUnique on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="SubProp" typeName="string" />
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub2" >
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp2" typeName="string" >
+                                    <ECProperty propertyName="SubProp2" typeName="string" >
                                         <ECCustomAttributes>
                                            <PropertyMap xmlns="ECDbMap.02.00">
                                              <IsUnique>True</IsUnique>
@@ -9615,7 +9679,7 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECEntityClass typeName="Sub2" >
                                     <BaseClass>ts:Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp2" typeName="string" >
+                                    <ECProperty propertyName="SubProp2" typeName="string" >
                                         <ECCustomAttributes>
                                            <PropertyMap xmlns="ECDbMap.02.00">
                                              <IsUnique>True</IsUnique>
@@ -9660,7 +9724,7 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub" >
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                    <ECProperty propertyName="SubProp" typeName="string" />
                                 </ECEntityClass>
                             </ECSchema>)xml";
 
@@ -9678,6 +9742,43 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                            <MapStrategy>TablePerHierarchy</MapStrategy>
                                        </ClassMap>
                                        <ShareColumns xmlns="ECDbMap.02.00"/>
+                                       <DbIndexList xmlns="ECDbMap.02.00">
+                                            <Indexes>
+                                                <DbIndex>
+                                                    <Name>uix_Parent_NewProp</Name>
+                                                    <IsUnique>True</IsUnique>
+                                                    <Properties>
+                                                        <string>NewProp</string>
+                                                    </Properties>
+                                                </DbIndex>
+                                            </Indexes>
+                                       </DbIndexList>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                    <ECProperty propertyName="NewProp" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="SubProp" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
+
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
                                     </ECCustomAttributes>
                                     <ECProperty propertyName="Name" typeName="string" />
                                     <ECProperty propertyName="Code" typeName="int"/>
@@ -9685,24 +9786,24 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub" >
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                    <ECProperty propertyName="SubProp" typeName="string" />
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub2" >
                                    <ECCustomAttributes>
                                        <DbIndexList xmlns="ECDbMap.02.00">
                                             <Indexes>
                                                 <DbIndex>
-                                                    <Name>uix_Sub2_NewProp2</Name>
+                                                    <Name>uix_Sub2_SubProp2</Name>
                                                     <IsUnique>True</IsUnique>
                                                     <Properties>
-                                                        <string>NewProp2</string>
+                                                        <string>SubProp2</string>
                                                     </Properties>
                                                 </DbIndex>
                                             </Indexes>
                                        </DbIndexList>
                                     </ECCustomAttributes>
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp2" typeName="int" />
+                                    <ECProperty propertyName="SubProp2" typeName="int" />
                                 </ECEntityClass>
                             </ECSchema>)xml";
 
@@ -9720,17 +9821,17 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                        <DbIndexList xmlns="ECDbMap.02.00">
                                             <Indexes>
                                                 <DbIndex>
-                                                    <Name>uix_Sub2_NewProp2</Name>
+                                                    <Name>uix_Sub2_SubProp2</Name>
                                                     <IsUnique>True</IsUnique>
                                                     <Properties>
-                                                        <string>NewProp2</string>
+                                                        <string>SubProp2</string>
                                                     </Properties>
                                                 </DbIndex>
                                             </Indexes>
                                        </DbIndexList>
                                     </ECCustomAttributes>
                                     <BaseClass>ts:Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp2" typeName="int" />
+                                    <ECProperty propertyName="SubProp2" typeName="int" />
                                 </ECEntityClass>
                             </ECSchema>)xml";
 
@@ -9753,7 +9854,7 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub" >
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                    <ECProperty propertyName="SubProp" typeName="string" />
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub2" >
                                    <ECCustomAttributes>
@@ -9770,7 +9871,7 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                        </DbIndexList>
                                     </ECCustomAttributes>
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp2" typeName="int" />
+                                    <ECProperty propertyName="SubProp2" typeName="int" />
                                 </ECEntityClass>
                             </ECSchema>)xml";
 
@@ -9798,7 +9899,7 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                        </DbIndexList>
                                     </ECCustomAttributes>
                                     <BaseClass>ts:Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp2" typeName="int" />
+                                    <ECProperty propertyName="SubProp2" typeName="int" />
                                 </ECEntityClass>
                             </ECSchema>)xml";
 
@@ -9823,7 +9924,7 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub" >
                                     <BaseClass>Parent</BaseClass>
-                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                    <ECProperty propertyName="SubProp" typeName="string" />
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Child" >
                                     <ECCustomAttributes>
@@ -9848,10 +9949,57 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                  </ECRelationshipClass>
                             </ECSchema>)xml";
 
-    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Physical FK";
-    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Physical FK";
-    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Physical FK";
-    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Physical FK";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Physical FK on new class";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Physical FK on new class";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Physical FK on new class";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Physical FK on new class";
+
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                    <ECNavigationProperty propertyName="Sibling" relationshipName="GrandparentHasParent" direction="backward">
+                                        <ECCustomAttributes>
+                                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                                         </ECCustomAttributes>
+                                    </ECNavigationProperty>
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="SubProp" typeName="string" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Grandparent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                </ECEntityClass>
+                                <ECRelationshipClass typeName="GrandparentHasParent" modifier="Sealed" strength="embedding" strengthDirection="forward" >
+                                    <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                                        <Class class="Grandparent" />
+                                    </Source>
+                                    <Target multiplicity="(0..1)" polymorphic="True"  roleLabel="is contained by">
+                                        <Class class="Parent" />
+                                    </Target>
+                                 </ECRelationshipClass>
+                            </ECSchema>)xml";
+
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Physical FK on new nav prop in existing class";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Physical FK on new nav prop in existing class";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Physical FK on new nav prop in existing class";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Physical FK on new nav prop in existing class";
+
     }
     
 END_ECDBUNITTESTS_NAMESPACE

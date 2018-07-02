@@ -93,20 +93,20 @@ DbResult ProfileManager::UpgradeProfile() const
         }
 
     const ProfileVersion versionBeforeUpgrade(m_profileVersion);
-    //let upgraders incrementally upgrade the profile
-    //to the latest state
-    if (BE_SQLITE_OK != RunUpgraders())
-        {
-        m_ecdb.AbandonChanges();
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
 
-    //after upgrade procedure set new profile version in ECDb file
+    //set new profile version as otherwise schema imports run by upgraders would not be allowed
     if (BE_SQLITE_OK != AssignProfileVersion(false))
         {
         m_ecdb.AbandonChanges();
         LOG.errorv("Failed to upgrade " PROFILENAME " profile in file '%s'. Could not assign new profile version. %s",
                    m_ecdb.GetDbFileName(), m_ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    //let upgraders incrementally upgrade the profile to the latest state
+    if (BE_SQLITE_OK != RunUpgraders(versionBeforeUpgrade))
+        {
+        m_ecdb.AbandonChanges();
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
@@ -130,12 +130,12 @@ DbResult ProfileManager::UpgradeProfile() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle  06/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
-DbResult ProfileManager::RunUpgraders() const
+DbResult ProfileManager::RunUpgraders(ProfileVersion const& versionBeforeUpgrade) const
     {
     //IMPORTANT: order from low to high version
     //Note: If, for a version there is no upgrader it means just one of the profile ECSchemas needs to be reimported.
     std::vector<std::unique_ptr<ProfileUpgrader>> upgraders;
-    if (m_profileVersion < ProfileVersion(4, 0, 0, 1))
+    if (versionBeforeUpgrade < ProfileVersion(4, 0, 0, 1))
         upgraders.push_back(std::make_unique<ProfileUpgrader_4001>());
 
     for (std::unique_ptr<ProfileUpgrader> const& upgrader : upgraders)
