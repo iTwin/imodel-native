@@ -26,7 +26,11 @@ struct KindOfQuantityTest : ECTestFixture
         }
     };
 struct KindOfQuantityRoundTripTest : ECTestFixture {};
-struct KindOfQuantityUpgradeTest : ECTestFixture {};
+struct KindOfQuantityUpgradeTest : ECTestFixture
+    {
+    static void VerifySchemaReferencesUnitsSchema(ECSchemaPtr);
+    static void VerifySchemaReferencesFormatsSchema(ECSchemaPtr);
+    };
 struct KindOfQuantityCompatibilityTest : ECTestFixture {};
 struct KindOfQuantityDeserializationTest : ECTestFixture {};
 struct KindOfQuantitySerializationTest : ECTestFixture 
@@ -37,7 +41,7 @@ struct KindOfQuantitySerializationTest : ECTestFixture
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Basanta.Kharel   12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(KindOfQuantityTest, KindOfQuantityTestTest)
+TEST_F(KindOfQuantityTest, CreationTest)
     {
     ECSchemaPtr schema;
     ECEntityClassP entityClass;
@@ -161,49 +165,6 @@ TEST_F(KindOfQuantityTest, RemoveAllPresentationFormats)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityTest, GetReferencedFormats)
-    {
-    ECSchemaPtr schema;
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
-    ASSERT_TRUE(schema.IsValid());
-    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
-    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
-    
-    KindOfQuantityP kindOfQuantity;
-
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
-    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDescription("Kind of a Description here"));
-    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDisplayLabel("best quantity of all times"));
-    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
-    kindOfQuantity->SetRelativeError(10e-3);
-    
-    EXPECT_EQ(0, kindOfQuantity->GetReferencedFormats().size());
-    EXPECT_EQ(0, kindOfQuantity->GetPresentationFormats().size());
-
-    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU"), 11, ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), "banana"));
-    EXPECT_EQ(1, kindOfQuantity->GetPresentationFormats().size());
-    EXPECT_EQ(1, kindOfQuantity->GetReferencedFormats().size());
-    EXPECT_STRCASEEQ("f:DefaultRealU", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
-    kindOfQuantity->RemoveAllPresentationFormats();
-    EXPECT_EQ(0, kindOfQuantity->GetPresentationFormats().size());
-
-    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("AmerFI")));
-    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
-    EXPECT_EQ(2, kindOfQuantity->GetReferencedFormats().size());
-    EXPECT_STRCASEEQ("f:AmerFI", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
-    EXPECT_STRCASEEQ("f:DefaultRealU", kindOfQuantity->GetReferencedFormats().at(1)->GetQualifiedName(*schema).c_str());
-
-    //Should not return any duplicates if there are multiple overrides of the same ECFormat
-    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->LookupFormat("AmerFI"), 4));
-    EXPECT_EQ(3, kindOfQuantity->GetPresentationFormats().size());
-    EXPECT_EQ(2, kindOfQuantity->GetReferencedFormats().size());
-    EXPECT_STRCASEEQ("f:AmerFI", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
-    EXPECT_STRCASEEQ("f:DefaultRealU", kindOfQuantity->GetReferencedFormats().at(1)->GetQualifiedName(*schema).c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    06/2017
-//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationFormats)
     {
     ECSchemaPtr schema;
@@ -223,6 +184,7 @@ TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationFormats)
     EC_EXPECT_SUCCESS(koq->AddPresentationFormat(*amerFI));
     EXPECT_NE(ECObjectsStatus::Success, koq->AddPresentationFormat(*angleDm)) << "The input unit ARC_DEG is from a different phenomeonon than the Persistence Unit.";
     EXPECT_NE(ECObjectsStatus::Success, koq->SetPersistenceUnit(*arcDegUnit)) << "The input unit ARC_DEG is from a different phenomeonon than the current presentation units";
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
 
     KindOfQuantityP koq2;
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq2, "MyKindOfQuantity3"));
@@ -275,6 +237,19 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_EQ(ECObjectsStatus::InvalidUnitName, KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "badUnit", presFUSes, schema))
         << "Should fail if the persistenceFUS has an invalid Unit.";
     EXPECT_TRUE(persUnitName.empty());
+    EXPECT_TRUE(presFormatStrings.empty());
+    }
+    {
+    // old persistenceFUS: MM(SillyFormat)
+    // old presentationFUS': -
+    // new persistenceUnit: u:MM
+    // new presentationFormats: -
+    persUnitName.clear();
+    presFormatStrings.clear();
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(SillyFormat)", presFUSes, schema))
+        << "Should succeed if the persistenceFUS has a valid unit.";
+    EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
     EXPECT_TRUE(presFormatStrings.empty());
     }
     {
@@ -640,7 +615,7 @@ TEST_F(KindOfQuantityTest, LookupKindOfQuantityTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingName)
+TEST_F(KindOfQuantityDeserializationTest, Invalid_EmptyOrMissingName)
     {
     // Missing name
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -648,20 +623,20 @@ TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingName)
                                             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
                                             <KindOfQuantity description="Kind of a Description here"
                                                 displayLabel="best quantity of all times" persistenceUnit="u:CM" relativeError="10e-3"/>
-                                        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with a missing name");
+                                        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with a missing typeName");
     // Empty name
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
                                             <KindOfQuantity typeName="" description="Kind of a Description here"
                                                 displayLabel="best quantity of all times" persistenceUnit="u:CM" relativeError="10e-3"/>
-                                        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an empty name");
+                                        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an empty typeName");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingRelativeError)
+TEST_F(KindOfQuantityDeserializationTest, Invalid_EmptyOrMissingRelativeError)
     {
     // Missing relative error
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -682,7 +657,7 @@ TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingRelativeError)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingPersistenceUnit)
+TEST_F(KindOfQuantityDeserializationTest, Invalid_EmptyOrMissingPersistenceUnit)
     {
     // Missing persistence unit
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -701,20 +676,20 @@ TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingPersistenceUnit)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Kyle.Abramowitz      02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityDeserializationTest, TestConstantAsPersistanceUnit)
+TEST_F(KindOfQuantityDeserializationTest, Invalid_ConstantAsPersistanceUnit)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all times" persistenceUnit="u:PI" relativeError="10e-3"/>
-                                        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with a constant as a persistence unit");
+                                        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with a constant as a persistence unit.");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Kyle.Abramowitz      02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityDeserializationTest, TestUnitInSchemaAsPersistenceUnit)
+TEST_F(KindOfQuantityDeserializationTest, PersistenceUnitInSchema)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -737,7 +712,7 @@ TEST_F(KindOfQuantityDeserializationTest, TestUnitInSchemaAsPersistenceUnit)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Kyle.Abramowitz      02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityDeserializationTest, TestUnitInReferencedSchemaAsPersistenceUnit)
+TEST_F(KindOfQuantityDeserializationTest, PersistenceUnitInReferencedSchema)
     {
     Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="refSchema" version="01.00.00" alias="rs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -777,7 +752,8 @@ TEST_F(KindOfQuantityDeserializationTest, TestUnitInReferencedSchemaAsPersistenc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    08/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityDeserializationTest, TestIncompatiblePersistenceAndPresentationFormats)
+// TODO: Possibly a duplicate
+TEST_F(KindOfQuantityDeserializationTest, Invalid_IncompatiblePersistenceAndPresentationUnits)
     {
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -812,7 +788,8 @@ TEST_F(KindOfQuantityDeserializationTest, TestIncompatiblePersistenceAndPresenta
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenKindOfQuantityIsAppliedToStructAndStructArrayPropertes)
+// TODO: Possibly move to PropertyTests?
+TEST_F(KindOfQuantityDeserializationTest, KindOfQuantityIsAppliedToStructAndStructArrayPropertes)
     {
     Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -850,6 +827,7 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenKindOfQuantityIsAppli
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
+// TODO: Possibly move to PropertyTests?
 TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenKindOfQuantityInherited)
     {
     Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
@@ -900,6 +878,7 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenKindOfQuantityInherit
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Caleb.Shafer    09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
+// TODO: Possibly move to PropertyTests? Not really a need to test with a file.
 TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithKindOfQuantityInReferencedFile)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
@@ -928,93 +907,15 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenDeserializingSchemaWi
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                 Caleb.Shafer    09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuantityUsingString)
-    {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
-    ASSERT_TRUE(schema.IsValid());
-    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
-    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
-
-    KindOfQuantityP kindOfQuantity;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
-    kindOfQuantity->SetDescription("DESC");
-    kindOfQuantity->SetDisplayLabel("DL");
-    kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"));
-    kindOfQuantity->SetRelativeError(10e-3);
-    kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
-    kindOfQuantity->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
-    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
-
-    ECEntityClassP entityClass;
-    ASSERT_TRUE(schema->CreateEntityClass(entityClass, "EntityClass") == ECObjectsStatus::Success);
-    PrimitiveArrayECPropertyP property;
-    auto status = entityClass->CreatePrimitiveArrayProperty(property, "QuantifiedProperty", PrimitiveType::PRIMITIVETYPE_Double);
-    ASSERT_TRUE(status == ECObjectsStatus::Success);
-    ASSERT_TRUE(property != nullptr);
-    property->SetKindOfQuantity(kindOfQuantity);
-
-    Utf8String ecSchemaXmlString;
-    SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString, ECVersion::Latest);
-    EXPECT_EQ(SchemaWriteStatus::Success, status2);
-
-    ECSchemaPtr deserializedSchema;
-    auto schemaContext = ECSchemaReadContext::CreateContext();
-    auto status3 = ECSchema::ReadFromXmlString(deserializedSchema, ecSchemaXmlString.c_str(), *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status3);
-
-    EXPECT_EQ(1, deserializedSchema->GetKindOfQuantityCount());
-    KindOfQuantityCP deserializedKindOfQuantity;
-    deserializedKindOfQuantity = deserializedSchema->GetKindOfQuantityCP("MyKindOfQuantity");
-    ASSERT_TRUE(deserializedKindOfQuantity != nullptr);
-    EXPECT_STREQ("DL", deserializedKindOfQuantity->GetDisplayLabel().c_str());
-    EXPECT_STREQ("DESC", deserializedKindOfQuantity->GetDescription().c_str());
-    EXPECT_STREQ("CM", deserializedKindOfQuantity->GetPersistenceUnit()->GetName().c_str());
-    EXPECT_EQ(10e-3, deserializedKindOfQuantity->GetRelativeError());
-
-    EXPECT_STREQ("DefaultRealU[u:M]", deserializedKindOfQuantity->GetDefaultPresentationFormat()->GetName().c_str());
-    auto& resultAltUnits = deserializedKindOfQuantity->GetPresentationFormats();
-    EXPECT_EQ(3, resultAltUnits.size()); // Default presentation unit is included in list of presentation units
-    EXPECT_STREQ("DefaultReal[u:M]", resultAltUnits[1].GetName().c_str());
-    EXPECT_STREQ("AmerFI", resultAltUnits[2].GetName().c_str());
-
-    ECClassCP deserializedClass = deserializedSchema->GetClassCP("EntityClass");
-    ECPropertyP deserializedProperty = deserializedClass->GetPropertyP("QuantifiedProperty");
-    KindOfQuantityCP propertyKoq = deserializedProperty->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
-    ASSERT_TRUE(nullptr != propertyKoq);
-    EXPECT_EQ(propertyKoq, deserializedKindOfQuantity);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Colin.Kerr     10/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(KindOfQuantityDeserializationTest, Fail_UnknownPersistenceUnit)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-                                        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                                           <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
-                                               displayLabel="best quantity of all time" persistenceUnit="SILLYMETER" relativeError="10e-3" />
-                                        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an unknown persistence unit");
-    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                displayLabel="best quantity of all time" persistenceUnit="SILLYMETER" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an unknown persistence unit");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Colin.Kerr     10/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityDeserializationTest, Fail_UnknownPersistenceFormat)
-    {
-    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-                                            <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                                                <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                                <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
-                                                   displayLabel="best quantity of all time" persistenceUnit="M(SILLYFORMAT)" relativeError="10e-3" />
-                                            </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an unknown persistence format");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1023,18 +924,12 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_UnknownPersistenceFormat)
 TEST_F(KindOfQuantityDeserializationTest, Fail_UnknownPresentationUnit)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-                                        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
-                                               displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="SILLYMETER;ANOTHERSILLYMETER" relativeError="10e-3" />
-                                        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an known presentation Unit");
-    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
                                             <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:banana]" relativeError="10e-3" />
-                                        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an known presentation Format");
+                                        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an unknown unit as a unit override.");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1043,17 +938,9 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_UnknownPresentationUnit)
 TEST_F(KindOfQuantityDeserializationTest, Fail_UnknownPresentationFormat)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-                                        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
-                                                displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="MM;CM(SILLYFORMAT)" relativeError="10e-3" />
-                                        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an unknown presentation format");
-    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
-                                            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
-                                                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:banana" relativeError="10e-3" />
+                                            <KindOfQuantity typeName="MyKindOfQuantity" persistenceUnit="u:M" presentationUnits="banana" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an unknown presentation format");
     }
 
@@ -1496,6 +1383,62 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
 //! KindOfQuantityRoundTripTest
 //=======================================================================================
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityRoundTripTest, KindOfQuantityCreatedFromAPI)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ASSERT_TRUE(schema.IsValid());
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
+
+    KindOfQuantityP kindOfQuantity;
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
+    kindOfQuantity->SetDescription("DESC");
+    kindOfQuantity->SetDisplayLabel("DL");
+    kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"));
+    kindOfQuantity->SetRelativeError(10e-3);
+    kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    kindOfQuantity->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
+
+    // TODO: Remove the property aspect of this test.
+    ECEntityClassP entityClass;
+    ASSERT_TRUE(schema->CreateEntityClass(entityClass, "EntityClass") == ECObjectsStatus::Success);
+    PrimitiveArrayECPropertyP property;
+    auto status = entityClass->CreatePrimitiveArrayProperty(property, "QuantifiedProperty", PrimitiveType::PRIMITIVETYPE_Double);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    ASSERT_TRUE(property != nullptr);
+    property->SetKindOfQuantity(kindOfQuantity);
+
+    ECSchemaPtr deserializedSchema;
+    RoundTripSchema(deserializedSchema, schema.get(), ECVersion::Latest);
+
+    EXPECT_EQ(1, deserializedSchema->GetKindOfQuantityCount());
+    KindOfQuantityCP deserializedKindOfQuantity;
+    deserializedKindOfQuantity = deserializedSchema->GetKindOfQuantityCP("MyKindOfQuantity");
+    ASSERT_TRUE(deserializedKindOfQuantity != nullptr);
+    EXPECT_STREQ("DL", deserializedKindOfQuantity->GetDisplayLabel().c_str());
+    EXPECT_STREQ("DESC", deserializedKindOfQuantity->GetDescription().c_str());
+    EXPECT_STREQ("CM", deserializedKindOfQuantity->GetPersistenceUnit()->GetName().c_str());
+    EXPECT_EQ(10e-3, deserializedKindOfQuantity->GetRelativeError());
+
+    EXPECT_STREQ("DefaultRealU[u:M]", deserializedKindOfQuantity->GetDefaultPresentationFormat()->GetName().c_str());
+    auto& resultAltUnits = deserializedKindOfQuantity->GetPresentationFormats();
+    EXPECT_EQ(3, resultAltUnits.size()); // Default presentation unit is included in list of presentation units
+    EXPECT_STREQ("DefaultReal[u:M]", resultAltUnits[1].GetName().c_str());
+    EXPECT_STREQ("AmerFI", resultAltUnits[2].GetName().c_str());
+
+    // TODO: Remove the property aspect of this test.
+    ECClassCP deserializedClass = deserializedSchema->GetClassCP("EntityClass");
+    ECPropertyP deserializedProperty = deserializedClass->GetPropertyP("QuantifiedProperty");
+    KindOfQuantityCP propertyKoq = deserializedProperty->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+    ASSERT_TRUE(nullptr != propertyKoq);
+    EXPECT_EQ(propertyKoq, deserializedKindOfQuantity);
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Kyle.Abramowitz                    03/2018
 //--------------------------------------------------------------------------------------
@@ -1519,7 +1462,7 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec31_roundTrip)
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::InvalidECSchemaXml, SchemaWriteStatus::FailedToSaveXml, "Should fail to round trip a 3.1 schema with KoQ using EC3.2 unit defined in schema as persistence unit");
+    RoundTripSchema(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::InvalidECSchemaXml, SchemaWriteStatus::FailedToSaveXml, "Should fail to round trip a 3.1 schema with KoQ using EC3.2 unit defined in schema as persistence unit");
     ASSERT_FALSE(schema.IsValid());
     }
 
@@ -1546,7 +1489,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTripShouldDropUnknownPresentationF
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should succeed to round trip a 3.1 schema with KoQ using EC3.2 unit defined in schema as presentation unit");
+    RoundTripSchema(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should succeed to round trip a 3.1 schema with KoQ using EC3.2 unit defined in schema as presentation unit");
     ASSERT_TRUE(schema.IsValid());
     ASSERT_EQ(1, schema->GetKindOfQuantityCP("MyKindOfQuantity")->GetPresentationFormats().size());
     }
@@ -1574,7 +1517,7 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec30_roundTrip)
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_0, SchemaReadStatus::InvalidECSchemaXml, SchemaWriteStatus::FailedToSaveXml, "Should fail to round trip a 3.0 schema with KoQ using EC3.2 unit defined in schema as persistence unit");
+    RoundTripSchema(schema, schemaItem, ECVersion::V3_0, SchemaReadStatus::InvalidECSchemaXml, SchemaWriteStatus::FailedToSaveXml, "Should fail to round trip a 3.0 schema with KoQ using EC3.2 unit defined in schema as persistence unit");
     ASSERT_FALSE(schema.IsValid());
     }
 
@@ -1601,7 +1544,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTripShouldDropUnknownPresentationF
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should succeed to round trip a 3.0 schema with KoQ using EC3.2 unit defined in schema as presentation unit");
+    RoundTripSchema(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should succeed to round trip a 3.0 schema with KoQ using EC3.2 unit defined in schema as presentation unit");
     ASSERT_TRUE(schema.IsValid());
     ASSERT_EQ(1, schema->GetKindOfQuantityCP("MyKindOfQuantity")->GetPresentationFormats().size());
     }
@@ -1628,7 +1571,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTrip)
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should be able to round trip a schema from 3.2 -> 3.1 -> 3.2");
+    RoundTripSchema(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should be able to round trip a schema from 3.2 -> 3.1 -> 3.2");
     auto koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
     ASSERT_EQ(2, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("AmerFI", koq->GetPresentationFormats()[0].GetName().c_str());
@@ -1660,7 +1603,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTrip)
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_0,  SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should be able to round trip a schema from 3.2 -> 3.0 -> 3.2");
+    RoundTripSchema(schema, schemaItem, ECVersion::V3_0,  SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should be able to round trip a schema from 3.2 -> 3.0 -> 3.2");
     auto koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
     ASSERT_EQ(2, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("AmerFI", koq->GetPresentationFormats()[0].GetName().c_str());
@@ -1674,37 +1617,81 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTrip)
 //! KindOfQuantityUpgradeTest
 //=======================================================================================
 
+void KindOfQuantityUpgradeTest::VerifySchemaReferencesUnitsSchema(ECSchemaPtr schema)
+    {EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schema, *GetUnitsSchema()));}
+
+void KindOfQuantityUpgradeTest::VerifySchemaReferencesFormatsSchema(ECSchemaPtr schema)
+    {EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schema, *GetFormatsSchema()));}
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    06/2018
 //--------------------------------------------------------------------------------------
-TEST_F(KindOfQuantityUpgradeTest, ec31_FormatWithNoMapping)
+TEST_F(KindOfQuantityUpgradeTest, ec31_UnknownFormat)
     {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    {
+    // Unknown Persistence Format. The format should be dropped but the persistenceUnit should succeed.
+    // old persistenceFUS: MM(SillyFormat)
+    // old presentationFUS': -
+    // new persistenceUnit: u:MM
+    // new presentationFormats: -
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    DeserializeSchema(schema, *context, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="K1" persistenceUnit="M(SILLYFORMAT)" relativeError="10e-3" />
+        </ECSchema>)xml"), SchemaReadStatus::Success, "Schema should succeed even though the persistence FUS has an invalid format.");
 
-    ECSchemaPtr schemaP;
-    ECTestFixture::ExpectSchemaDeserializationFailure(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    VerifySchemaReferencesUnitsSchema(schema);
+
+    auto koq = schema->GetKindOfQuantityCP("K1");
+    ASSERT_NE(nullptr, koq);
+    EXPECT_NE(nullptr, koq->GetPersistenceUnit());
+    EXPECT_STREQ("Units:M", koq->GetPersistenceUnit()->GetFullName().c_str());
+    EXPECT_EQ(0, koq->GetPresentationFormats().size());
+    }
+    {
+    // Unknown Presentation Format. It should be dropped.
+    // old persistenceFUS: MM
+    // old presentationFUS': MM(KindOfFormat)
+    // new persistenceUnit: u:MM
+    // new presentationFormats: -
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    DeserializeSchema(schema, *context, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema1" alias="s1" version="1.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <KindOfQuantity typeName="K1" description="My KOQ 5" displayLabel="KOQ 5" persistenceUnit="M" presentationUnits="M(Stop100-2);FT(AmerMYFI4)" relativeError="5" />
-        </ECSchema>)xml"));
+            <KindOfQuantity typeName="K1" persistenceUnit="MM" presentationUnits="MM(UnknownFormat)" relativeError="5" />
+        </ECSchema>)xml"), SchemaReadStatus::Success, "Schema should succeed even though a format mapping is not available");
+
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    VerifySchemaReferencesUnitsSchema(schema);
+    VerifySchemaReferencesFormatsSchema(schema);
+
+    auto koq = schema->GetKindOfQuantityCP("K1");
+    ASSERT_NE(nullptr, koq);
+    EXPECT_NE(nullptr, koq->GetPersistenceUnit());
+    EXPECT_STREQ("MM", koq->GetPersistenceUnit()->GetName().c_str());
+    EXPECT_EQ(0, koq->GetPresentationFormats().size());
+    }
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 04/2018
 //--------------------------------------------------------------------------------------
-TEST_F(KindOfQuantityUpgradeTest, ec31_noPersistenceFormatIfPresentationFUSesDefined)
+TEST_F(KindOfQuantityUpgradeTest, ec31_NoPersistenceFormatIfPresentationFUSesDefined)
     {
-    SchemaItem schema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
-                        displayLabel="My KindOfQuantity" persistenceUnit="CM" relativeError=".5"
-                        presentationUnits="FT;IN" />
-        </ECSchema>)xml");
-
+    ECSchemaPtr schema;
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    DeserializeSchema(schema, *schemaContext, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKindOfQuantity" persistenceUnit="CM" presentationUnits="FT;IN" relativeError=".5" />
+        </ECSchema>)xml"));
 
-    ECSchemaPtr schemaP;
-    DeserializeSchema(schemaP, *schemaContext, schema);
-    auto koq = schemaP->GetKindOfQuantityCP("MyKindOfQuantity");
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    VerifySchemaReferencesUnitsSchema(schema);
+    VerifySchemaReferencesFormatsSchema(schema);
+
+    auto koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
     ASSERT_NE(nullptr, koq);
     EXPECT_EQ(2, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("DefaultReal[u:FT]", koq->GetDefaultPresentationFormat()->GetName().c_str());
@@ -1714,73 +1701,51 @@ TEST_F(KindOfQuantityUpgradeTest, ec31_noPersistenceFormatIfPresentationFUSesDef
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Kyle.Abramowitz                   04/2018
 //--------------------------------------------------------------------------------------
-TEST_F(KindOfQuantityUpgradeTest, ec31_persistenceFormatShouldBeDefaultIfNoPresentationFUSes)
+TEST_F(KindOfQuantityUpgradeTest, ec31_OnlyPersistenceUnit)
     {
-    SchemaItem schema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
-                        displayLabel="My KindOfQuantity" persistenceUnit="CM" relativeError=".5" />
-        </ECSchema>)xml");
-
+    { // Fail to upgrade if there is an invalid unit.
+    // old persistenceFUS: badUnit
+    // old presentationFUS': -
+    // new persistenceUnit: -
+    // new presentationFormats: -
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
+                displayLabel="best quantity of all time" persistenceUnit="SILLYMETER" relativeError="10e-3" />
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an unknown persistence unit");
+    }
+    {
+    // old persistenceFUS: MM
+    // old presentationFUS': -
+    // new persistenceUnit: u:MM
+    // new presentationFormats: -
+    ECSchemaPtr schema;
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    DeserializeSchema(schema, *schemaContext, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKindOfQuantity" persistenceUnit="MM" relativeError=".5" />
+        </ECSchema>)xml"));
 
-    ECSchemaPtr schemaP;
-    DeserializeSchema(schemaP, *schemaContext, schema);
-    auto koq = schemaP->GetKindOfQuantityCP("MyKindOfQuantity");
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    VerifySchemaReferencesUnitsSchema(schema);
+
+    auto koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
     ASSERT_NE(nullptr, koq);
-    EXPECT_EQ(1, koq->GetPresentationFormats().size());
-    EXPECT_STRCASEEQ("DefaultReal[u:CM]", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("Units:MM", koq->GetPersistenceUnit()->GetFullName().c_str());
+    EXPECT_EQ(0, koq->GetPresentationFormats().size());
+    }
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    02/2018
+// @bsimethod                                Kyle.Abramowitz                   04/2018
 //--------------------------------------------------------------------------------------
-TEST_F(KindOfQuantityUpgradeTest, ec31_ValidKindOfQuantityInReferencedSchema)
+TEST_F(KindOfQuantityUpgradeTest, ec31_InvalidPresentationUnit)
     {
-    SchemaItem refSchemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
-                        displayLabel="My KindOfQuantity" persistenceUnit="CM" relativeError=".5"
-                        presentationUnits="FT;IN" />
-        </ECSchema>)xml");
-
-    SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="Schema1" version="01.00.00" alias="s1" />
-            <ECEntityClass typeName="Foo" >
-                <ECProperty propertyName="Length" typeName="double" kindOfQuantity="s1:MyKindOfQuantity" />
-                <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
-                <ECArrayProperty propertyName="AlternativeLengths" typeName="double" minOccurs="0" maxOccurs="unbounded" kindOfQuantity="s1:MyKindOfQuantity"/>
-                <ECArrayProperty propertyName="Favorites" typeName="string" extendedTypeName="URL" minOccurs="0" maxOccurs="unbounded" />
-            </ECEntityClass>
-        </ECSchema>)xml");
-
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-
-    ECSchemaPtr refSchema;
-    DeserializeSchema(refSchema, *schemaContext, refSchemaItem);
-    ASSERT_TRUE(refSchema.IsValid());
-    ASSERT_TRUE(refSchema->Validate());
-    ECSchemaPtr schema;
-    DeserializeSchema(schema, *schemaContext, schemaItem);
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(schema->Validate());
-
-    auto koq = refSchema->GetKindOfQuantityCP("MyKindOfQuantity");
-    ASSERT_NE(nullptr, koq);
-    EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDescription().c_str());
-    EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDisplayLabel().c_str());
-    EXPECT_STRCASEEQ("CM", koq->GetPersistenceUnit()->GetName().c_str());
-    ASSERT_EQ(2, koq->GetPresentationFormats().size());
-    EXPECT_STRCASEEQ("DefaultReal[u:FT]", koq->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_STRCASEEQ("DefaultReal[u:IN]", koq->GetPresentationFormats()[1].GetName().c_str());
-    auto entityClass = schema->GetClassCP("Foo");
-    auto propWithKoq = entityClass->GetPropertyP("Length");
-    auto arrayPropWithKoq = entityClass->GetPropertyP("AlternativeLengths");
-    auto propKoq = propWithKoq->GetKindOfQuantity();
-    auto arrayPropKoq = arrayPropWithKoq->GetKindOfQuantity();
-    ASSERT_EQ(propKoq, koq);
-    ASSERT_EQ(propKoq, arrayPropKoq);
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
+                displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="SILLYMETER" relativeError="10e-3" />
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an unknown presentation Unit");
     }
 
 //--------------------------------------------------------------------------------------
@@ -1788,18 +1753,17 @@ TEST_F(KindOfQuantityUpgradeTest, ec31_ValidKindOfQuantityInReferencedSchema)
 //--------------------------------------------------------------------------------------
 TEST_F(KindOfQuantityUpgradeTest, ec31_IncompatibleFUSPresentationUnitAndFormat)
     {
-    SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="Short Length" persistenceUnit="M(DefaultReal)" presentationUnits="IN(fi8)"
-                    relativeError="0.01" />
-        </ECSchema>)xml");
-
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-
     ECSchemaPtr schema;
-    DeserializeSchema(schema, *schemaContext, schemaItem);
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(schema->Validate());
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    DeserializeSchema(schema, *schemaContext, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="LENGTH_SHORT" persistenceUnit="M(DefaultReal)" presentationUnits="IN(fi8)"
+                    relativeError="0.01" />
+        </ECSchema>)xml"));
+
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    VerifySchemaReferencesUnitsSchema(schema);
+    VerifySchemaReferencesFormatsSchema(schema);
 
     KindOfQuantityCP koq = schema->GetKindOfQuantityCP("LENGTH_SHORT");
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
@@ -1815,18 +1779,17 @@ TEST_F(KindOfQuantityUpgradeTest, ec31_IncompatibleFUSPresentationUnitAndFormat)
 //--------------------------------------------------------------------------------------
 TEST_F(KindOfQuantityUpgradeTest, ec31_formatWithMutipleUnitsButOnlyOneInputUnitShouldUpgradeProperly)
     {
-    SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    DeserializeSchema(schema, *schemaContext, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <KindOfQuantity typeName="Test"  persistenceUnit="FT(AmerFI8)" presentationUnits="IN(AmerFI8)" relativeError="0.6"/>
             <KindOfQuantity typeName="Test1"  persistenceUnit="FT(AmerFI8)" relativeError="0.6"/>
-        </ECSchema>)xml");
+        </ECSchema>)xml"));
 
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-
-    ECSchemaPtr schema;
-    DeserializeSchema(schema, *schemaContext, schemaItem);
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(schema->Validate());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    VerifySchemaReferencesUnitsSchema(schema);
+    VerifySchemaReferencesFormatsSchema(schema);
 
     KindOfQuantityCP koq = schema->GetKindOfQuantityCP("Test");
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
