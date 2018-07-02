@@ -34,23 +34,30 @@ void GeometryClipper::ProcessSegments(bvector<DSegment3d>& segsUnclippedOut, bve
         {
         bool isClipped = false;
 
-        for (ClipPrimitivePtr const& clipPrimitive : *m_clip)
+        if (seg.IsAlmostSinglePoint()) // avoid degenerate cases - don't even try to clip almost zero-length segments
             {
-            auto clipPlaneSet = clipPrimitive->GetClipPlanes();
-
-            clipIntervals.clear();
-            clipPlaneSet->AppendIntervals(seg, clipIntervals); // find intervals for current segment (intervals = resulting segments from clip)
-
-            // if fractional intervals sum to less than roughly 1, we know that the line has been made shorter (clipped).
-            if (SumIntervals(clipIntervals, 0, clipIntervals.size()) < TARGET_INTERVAL_SUM)
+            isClipped = true; // don't draw them either - they are almost zero-length, so this is a valid response.
+            }
+        else
+            {
+            for (ClipPrimitivePtr const& clipPrimitive : *m_clip)
                 {
-                for (auto clipInterval : clipIntervals)
+                auto clipPlaneSet = clipPrimitive->GetClipPlanes();
+
+                clipIntervals.clear();
+                clipPlaneSet->AppendIntervals(seg, clipIntervals); // find intervals for current segment (intervals = resulting segments from clip)
+
+                // if fractional intervals sum to less than roughly 1, we know that the line has been made shorter (clipped).
+                if (SumIntervals(clipIntervals, 0, clipIntervals.size()) < TARGET_INTERVAL_SUM)
                     {
-                    clipSeg = DSegment3d::FromFractionInterval(seg, clipInterval);
-                    segsClippedOut.push_back(clipSeg); // needs potential further clipping (against other planes)
+                    for (auto clipInterval : clipIntervals)
+                        {
+                        clipSeg = DSegment3d::FromFractionInterval(seg, clipInterval);
+                        segsClippedOut.push_back(clipSeg); // needs potential further clipping (against other planes)
+                        }
+                    isClipped = true;
+                    break;
                     }
-                isClipped = true;
-                break;
                 }
             }
 

@@ -275,11 +275,11 @@ void SpatialViewController::BuildCopyrightInfo()
         auto model = GetDgnDb().Models().Get<GeometricModel3d>(kvp.first);
         if (model.IsValid())
             {
-            Utf8String message = model->GetCopyrightMessage();
+            Utf8String message = model->GetCopyrightMessage(*this);
             if (!message.empty())
                 m_copyrightMsgs.insert(message);
 
-            Render::RgbaSpritePtr sprite = model->GetCopyrightSprite();
+            Render::RgbaSpritePtr sprite = model->GetCopyrightSprite(*this);
             if (sprite.IsValid())
                 m_copyrightSprites.insert(sprite);
             }

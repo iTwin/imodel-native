@@ -48,12 +48,6 @@ struct ImageryProvider : RefCountedBase
     // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
     virtual Utf8String _GetProviderName() const = 0;
 
-    // Gets the message to be displayed to credit provider(s).
-    virtual Utf8String _GetCreditMessage() const = 0;
-
-    // Gets an URL for the image to be displayed to credit the provider.
-    virtual Utf8String _GetCreditUrl() const = 0;
-
     // Gets the tile width (usually 256)
     virtual int _GetTileWidth() {return 256;}
 
@@ -86,19 +80,8 @@ struct ImageryProvider : RefCountedBase
 
     virtual bool _MatchesMissingTile (ByteStream& tileBytes) const {return false;}
 
-    // unions attribution copyright messages based on range, if necessary. If not necessary, add the lone copyright message and return false.
-    virtual bool _UnionAttributionCopyrightMessages (T_Utf8StringVectorR copyrightMessages, MapRootCR mapRoot, int viewIndex) 
-        {
-        // this is if the copyright message is static (doesn't depend on range).
-        copyrightMessages.push_back (_GetCreditMessage());
-        return false;
-        }
-
-    // unions attribution copyright messages based on range, if necessary. If not necessary, add the lone copyright message and return false.
-    virtual bool _HaveAttributionCopyrightMessages (MapRootCR mapRoot) 
-        {
-        return (0 < _GetCreditMessage().length());
-        }
+    // Gets the message to be displayed to credit provider(s).
+    virtual Utf8String _GetCopyrightMessage(ViewController& viewController) const = 0;
 
     virtual Render::RgbaSpriteP _GetCopyrightSprite () { return nullptr; }
 
@@ -108,6 +91,9 @@ struct ImageryProvider : RefCountedBase
     // if the provider wants to set a maximum duration for tiles, set it as a duration in milliseconds.
     // if not relevant, return 0. Bing Maps uses this to enforce a 3 day limit for tile life.
     virtual uint64_t _GetMaxValidDuration () const { return 0; }
+
+    // Some imagery providers (such as Bing) need to see the selected tiles so the copyright message can be computed.
+    virtual void _OnSelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const {}
 
 };
 
@@ -129,6 +115,7 @@ struct MapRoot : TileTree::QuadTree::Root
     DPoint3d ToWorldPoint(GeoPoint);
     Utf8String _ConstructTileResource(TileTree::TileCR tile) const override;
     Utf8CP _GetName() const override {return "WebMercator";}
+
     MapRoot(WebMercatorModelCR, TransformCR location, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, uint32_t maxSize);
     ~MapRoot() {ClearAllTiles();}
 };
@@ -156,6 +143,7 @@ struct MapTile : TileTree::QuadTree::Tile
     MapRoot& GetMapRoot() const {return (MapRoot&) m_root;}
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys = nullptr) override {return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);}
     double _GetMaximumSize() const override {return 0 == GetDepth() ? 0.0 : T_Super::_GetMaximumSize();}
+    TileTree::Tile::SelectParent _SelectTiles(bvector<TileTree::TileCPtr>&, TileTree::DrawArgsR) const override;
 };
 
 //=======================================================================================
@@ -211,8 +199,8 @@ public:
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
     double GetGroundBias() const {return m_groundBias;}
-    Utf8String _GetCopyrightMessage() const override;
-    Render::RgbaSpriteP _GetCopyrightSprite() const override;
+    Utf8String _GetCopyrightMessage(ViewController&) const override;
+    Render::RgbaSpriteP _GetCopyrightSprite(ViewController&) const override;
 };
 
 DEFINE_REF_COUNTED_PTR(WebMercatorModel)
@@ -247,10 +235,7 @@ public:
     Utf8String _GetProviderName() const override {return prop_MapBoxProvider();}
 
     // Gets the message to be displayed to credit provider(s). 
-    Utf8String _GetCreditMessage() const override;
-
-    // Gets an URL for the image to be displayed to credit the provider.
-    Utf8String _GetCreditUrl() const override;
+    Utf8String _GetCopyrightMessage(ViewController& viewController) const override;
 
     // Gets the maximum zoom level alllowed (provider dependent)
     uint8_t _GetMaximumZoomLevel(bool forPrinting) override {return 19;}
@@ -323,7 +308,7 @@ private:
     void                ReadAttributionsFromJson (Json::Value const& response);
 
     // constructor used prior to specifying from stored Json values.
-    BingImageryProvider () 
+    BingImageryProvider ()
         {
         m_templateUrlLoadStatus.store (TemplateUrlLoadStatus::NotFetched); 
         m_missingTileDataSize.store (0);
@@ -342,12 +327,6 @@ public:
 
     // returns the ProviderName. Saved to the model to select the right when the ImageryProvider is instantiated. Not translated.
     Utf8String _GetProviderName() const override {return prop_BingProvider();}
-
-    // Gets the message to be displayed to credit provider(s). 
-    Utf8String _GetCreditMessage() const override;
-
-    // Gets an URL for the image to be displayed to credit the provider.
-    Utf8String _GetCreditUrl() const override;
 
     // Gets the tile width (usually 256)
     int _GetTileWidth() override {return m_tileWidth;}
@@ -377,19 +356,16 @@ public:
 
     bool _MatchesMissingTile (ByteStream& tileBytes) const override;
 
-    bool _UnionAttributionCopyrightMessages (T_Utf8StringVectorR copyrightMessages, MapRootCR mapRoot, int viewIndex) override;
-
-    bool _HaveAttributionCopyrightMessages (MapRootCR mapRoot) override;
-
-    ByteStream* GetLogoByteStream ()  { return &m_logoByteStream; }
-
-    Utf8CP GetLogoContentType () { return m_logoContentType.c_str(); }
+    // Gets the message to be displayed to credit provider(s). 
+    Utf8String _GetCopyrightMessage(ViewController& viewController) const override;
 
     Render::RgbaSpriteP _GetCopyrightSprite () override;
 
     uint64_t _GetMaxValidDuration () const override;
 
     MapType _GetMapType () const override {return m_mapType; }
+
+    void _OnSelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override;
 
     static BingImageryProvider* Create (Json::Value const& providerDataValue);
     };
@@ -404,7 +380,6 @@ struct HereImageryProvider : ImageryProvider
 {
 private:
     Utf8String m_urlTemplate;
-    Utf8String m_creditUrl;
     Utf8String m_appId;
     Utf8String m_appCode;
     MapType m_mapType = MapType::Street;
@@ -422,10 +397,7 @@ public:
     Utf8String _GetProviderName() const override {return prop_HereProvider();}
 
     // Gets the message to be displayed to credit provider(s). 
-    Utf8String _GetCreditMessage() const override;
-
-    // Gets an URL for the image to be displayed to credit the provider.
-    Utf8String _GetCreditUrl() const override;
+    Utf8String _GetCopyrightMessage(ViewController& viewController) const override;
 
     // Gets the maximum zoom level alllowed (provider dependent)
     uint8_t _GetMaximumZoomLevel(bool forPrinting) override {return m_maximumZoomLevel;}
