@@ -9,7 +9,12 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/GenericDomain.h>
+#include <DgnPlatform/FunctionalDomain.h>
 #include <Logging/bentleylogging.h>
+#include <Planning/PlanningApi.h>
+#include <Raster/RasterApi.h>
+#include <PointCloud/PointCloudApi.h>
+#include <ThreeMx/ThreeMxApi.h>
 
 #include <BimFromDgnDb/BimFromJson.h>
 #include "BimFromJsonImpl.h"
@@ -18,6 +23,9 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_PLANNING
+USING_NAMESPACE_BENTLEY_RASTER
+USING_NAMESPACE_BENTLEY_POINTCLOUD
 
 BEGIN_BIM_FROM_DGNDB_NAMESPACE
 struct PCQueue
@@ -57,6 +65,13 @@ DgnDbPtrHolder::DgnDbPtrHolder(BeFileName outputPath)
 BimFromJson::BimFromJson(const wchar_t* bimPath) : m_outputPath(bimPath), m_importer(nullptr)
     {
     m_queue = new PCQueue();
+
+    DgnDomains::RegisterDomain(Planning::PlanningDomain::GetDomain());
+    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(Raster::RasterDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+
     }
 
 //---------------------------------------------------------------------------------------
