@@ -19,16 +19,8 @@ class MainWindow:
     def __init__(self):
         self.__root = Tk()
         self.__root.title('Publish ORD To iModel Hub')
+        self.__root.state('zoomed')
         self.__initialize_controls()
-        screen_width = self.__root.winfo_screenwidth()
-        screen_height = self.__root.winfo_screenheight()
-        win_width = self.__root.winfo_width()
-        win_height = self.__root.winfo_height()
-        desired_width = screen_width // 2
-        desired_height = screen_height // 2
-        desired_x = (desired_width - win_width) // 2
-        desired_y = (desired_height - win_height) // 2
-        self.__root.geometry('{}x{}+{}+{}'.format(desired_width, desired_height, desired_x, desired_y))
 
 
     def show_dialog(self):
@@ -37,7 +29,7 @@ class MainWindow:
 
     def __initialize_controls(self):
         self.__root.columnconfigure(0, weight=1)
-        self.__root.rowconfigure(0, weight=1)
+        self.__root.rowconfigure(0, weight=0)
         self.__root.rowconfigure(1, weight=1)
         self.__root.rowconfigure(2, weight=0)
 
@@ -48,7 +40,7 @@ class MainWindow:
 
     def __initialize_fwk_controls(self):
         self.__fwk_label_frame = LabelFrame(self.__root, text='Main Options')
-        self.__fwk_label_frame.grid(row=0, column=0, padx=5, pady=5, sticky=NSEW)
+        self.__fwk_label_frame.grid(row=0, column=0, padx=5, pady=5, sticky='new')
 
         self.__fwk_exe_label = Label(self.__fwk_label_frame, text='iModelBridgeFwk.exe Path:')
         self.__fwk_exe_label.grid(row=0, column=0, padx=5, pady=5, sticky=W)
@@ -131,12 +123,116 @@ class MainWindow:
         self.__skip_assignment_check_checkbutton.grid(row=10, column=0, columnspan=3, padx=5, pady=5, sticky=W)
         self.__skip_assignment_check_checkbutton_var.set(1)
 
+        self.__debug_cfg_checkbutton_var = IntVar()
+        self.__debug_cfg_checkbutton = Checkbutton(self.__fwk_label_frame, text='Debug Cfg?',
+                                                   variable=self.__debug_cfg_checkbutton_var)
+        self.__debug_cfg_checkbutton.grid(row=11, column=0, columnspan=3, padx=5, pady=5, sticky=W)
+        self.__debug_cfg_checkbutton_var.set(1)
+
         self.__fwk_label_frame.columnconfigure(1, weight=1)
 
 
     def __initialize_dms_controls(self):
+        self.__dms_controls = []
+        initial_state = 'disabled'
+
         self.__dms_label_frame = LabelFrame(self.__root, text='Managed Workspace Options')
-        self.__dms_label_frame.grid(row=1, column=0, padx=5, pady=5, sticky=NSEW)
+        self.__dms_label_frame.grid(row=1, column=0, padx=5, pady=5, sticky='new')
+
+        self.__has_managed_workspace_checkbutton_var = IntVar()
+        self.__has_managed_workspace_checkbutton = Checkbutton(self.__dms_label_frame, text='Has Managed Workspace?',
+                                                               variable=self.__has_managed_workspace_checkbutton_var,
+                                                               command=self.__has_managed_workspace_checkbutton_callback)
+        self.__has_managed_workspace_checkbutton.grid(row=0, column=0, columnspan=3, padx=5, pady=5, sticky=W)
+        self.__has_managed_workspace_checkbutton_var.set(0)
+
+        self.__dms_library_label = Label(self.__dms_label_frame, text='iModelDmsSupportB02.dll Path:',
+                                         state=initial_state)
+        self.__dms_library_label.grid(row=1, column=0, padx=5, pady=5, sticky=W)
+        self.__dms_library_entry_var = StringVar()
+        self.__dms_library_entry = Entry(self.__dms_label_frame, textvariable=self.__dms_library_entry_var,
+                                         state=initial_state)
+        self.__dms_library_entry.grid(row=1, column=1, padx=5, pady=5, sticky=NSEW)
+        self.__dms_library_browse_button = Button(self.__dms_label_frame, text='...',
+                                              command=self.__dms_library_browse_callback, state=initial_state)
+        self.__dms_library_browse_button.grid(row=1, column=2, padx=5, pady=5)
+        self.__dms_controls.append(self.__dms_library_label)
+        self.__dms_controls.append(self.__dms_library_entry)
+        self.__dms_controls.append(self.__dms_library_browse_button)
+
+        self.__dms_workspace_dir_label = Label(self.__dms_label_frame, text='Workspace Directory:', state=initial_state)
+        self.__dms_workspace_dir_label.grid(row=2, column=0, padx=5, pady=5, sticky=W)
+        self.__dms_workspace_dir_entry_var = StringVar()
+        self.__dms_workspace_dir_entry = Entry(self.__dms_label_frame, textvariable=self.__dms_workspace_dir_entry_var,
+                                               state=initial_state)
+        self.__dms_workspace_dir_entry.grid(row=2, column=1, padx=5, pady=5, sticky=NSEW)
+        self.__dms_workspace_dir_browse_button = Button(self.__dms_label_frame, text='...',
+                                                       command=self.__dms_workspace_dir_browse_callback,
+                                                       state=initial_state)
+        self.__dms_workspace_dir_browse_button.grid(row=2, column=2, padx=5, pady=5)
+        self.__dms_controls.append(self.__dms_workspace_dir_label)
+        self.__dms_controls.append(self.__dms_workspace_dir_entry)
+        self.__dms_controls.append(self.__dms_workspace_dir_browse_button)
+
+        self.__dms_user_label = Label(self.__dms_label_frame, text='DMS User Name:', state=initial_state)
+        self.__dms_user_label.grid(row=3, column=0, padx=5, pady=5, sticky=W)
+        self.__dms_user_entry_var = StringVar()
+        self.__dms_user_entry = Entry(self.__dms_label_frame, textvariable=self.__dms_user_entry_var,
+                                      state=initial_state)
+        self.__dms_user_entry.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky=NSEW)
+        self.__dms_controls.append(self.__dms_user_label)
+        self.__dms_controls.append(self.__dms_user_entry)
+
+        self.__dms_password_label = Label(self.__dms_label_frame, text='DMS Password:', state=initial_state)
+        self.__dms_password_label.grid(row=4, column=0, padx=5, pady=5, sticky=W)
+        self.__dms_password_entry_var = StringVar()
+        self.__dms_password_entry = Entry(self.__dms_label_frame, textvariable=self.__dms_password_entry_var, show='*',
+                                          state=initial_state)
+        self.__dms_password_entry.grid(row=4, column=1, columnspan=2, padx=5, pady=5, sticky=NSEW)
+        self.__dms_controls.append(self.__dms_password_label)
+        self.__dms_controls.append(self.__dms_password_entry)
+
+        self.__dms_datasource_label = Label(self.__dms_label_frame, text='Datasource:', state=initial_state)
+        self.__dms_datasource_label.grid(row=5, column=0, padx=5, pady=5, sticky=W)
+        self.__dms_datasource_entry_var = StringVar()
+        self.__dms_datasource_entry = Entry(self.__dms_label_frame, textvariable=self.__dms_datasource_entry_var,
+                                            state=initial_state)
+        self.__dms_datasource_entry.grid(row=5, column=1, columnspan=2, padx=5, pady=5, sticky=NSEW)
+        self.__dms_controls.append(self.__dms_datasource_label)
+        self.__dms_controls.append(self.__dms_datasource_entry)
+
+        self.__dms_folderid_label = Label(self.__dms_label_frame, text='Folder ID:', state=initial_state)
+        self.__dms_folderid_label.grid(row=6, column=0, padx=5, pady=5, sticky=W)
+        self.__dms_folderid_entry_var = StringVar()
+        self.__dms_folderid_entry = Entry(self.__dms_label_frame, textvariable=self.__dms_folderid_entry_var,
+                                          state=initial_state)
+        self.__dms_folderid_entry.grid(row=6, column=1, columnspan=2, padx=5, pady=5, sticky=NSEW)
+        self.__dms_controls.append(self.__dms_folderid_label)
+        self.__dms_controls.append(self.__dms_folderid_entry)
+
+        self.__dms_docid_label = Label(self.__dms_label_frame, text='Document ID:', state=initial_state)
+        self.__dms_docid_label.grid(row=6, column=0, padx=5, pady=5, sticky=W)
+        self.__dms_docid_entry_var = StringVar()
+        self.__dms_docid_entry = Entry(self.__dms_label_frame, textvariable=self.__dms_docid_entry_var,
+                                          state=initial_state)
+        self.__dms_docid_entry.grid(row=6, column=1, columnspan=2, padx=5, pady=5, sticky=NSEW)
+        self.__dms_controls.append(self.__dms_docid_label)
+        self.__dms_controls.append(self.__dms_docid_entry)
+
+        self.__dms_appworkspace_label = Label(self.__dms_label_frame, text='App Workspace:', state=initial_state)
+        self.__dms_appworkspace_label.grid(row=7, column=0, padx=5, pady=5, sticky=W)
+        self.__dms_appworkspace_entry_var = StringVar()
+        self.__dms_appworkspace_entry = Entry(self.__dms_label_frame, textvariable=self.__dms_appworkspace_entry_var,
+                                              state=initial_state)
+        self.__dms_appworkspace_entry.grid(row=7, column=1, padx=5, pady=5, sticky=NSEW)
+        self.__dms_appworkspace_browse_button = Button(self.__dms_label_frame, text='...', state=initial_state,
+                                                       command=self.__dms_appworkspace_browse_callback)
+        self.__dms_appworkspace_browse_button.grid(row=7, column=2, padx=5, pady=5, sticky=NSEW)
+        self.__dms_controls.append(self.__dms_appworkspace_label)
+        self.__dms_controls.append(self.__dms_appworkspace_entry)
+        self.__dms_controls.append(self.__dms_appworkspace_browse_button)
+
+        self.__dms_label_frame.columnconfigure(1, weight=1)
 
 
     def __initialize_misc_controls(self):
@@ -175,6 +271,34 @@ class MainWindow:
             self.__input_file_entry_var.set(path.replace('/', '\\'))
 
 
+    def __has_managed_workspace_checkbutton_callback(self):
+        if self.__has_managed_workspace_checkbutton_var.get():
+            new_state = 'normal'
+        else:
+            new_state = 'disabled'
+        for control in self.__dms_controls:
+            control.config(state=new_state)
+
+
+    def __dms_library_browse_callback(self):
+        path = tkFileDialog.askopenfilename(initialdir='.', title='Find iModelDmsSupportB02.dll...',
+                                            filetypes=[('Executable Files', '*.exe')])
+        if (path):
+            self.__dms_library_entry_var.set(path.replace('/', '\\'))
+
+
+    def __dms_workspace_dir_browse_callback(self):
+        path = tkFileDialog.askdirectory(initialdir='.', title='Select workspace directory...')
+        if path:
+            self.__dms_workspace_dir_entry_var.set(path.replace('/', '\\'))
+
+
+    def __dms_appworkspace_browse_callback(self):
+        path = tkFileDialog.askdirectory(initialdir='.', title='Select app workspace directory...')
+        if path:
+            self.__dms_workspace_dir_entry_var.set(path.replace('/', '\\'))
+
+
     def __publish_button_callback(self):
         command_string = self.__prepare_command_string()
         self.__execute_command_string(command_string)
@@ -197,6 +321,21 @@ class MainWindow:
             command_string += ' --fwk-create-repository-if-necessary'
         if self.__skip_assignment_check_checkbutton_var.get() == 1:
             command_string += ' --fwk-skip-assignment-check'
+        if self.__debug_cfg_checkbutton_var.get() == 1:
+            command_string += ' --DGN_DEBUGCFG'
+        if self.__has_managed_workspace_checkbutton_var.get() == 1:
+            command_string += ' --dms-library="{lib}" --dms-workspaceDir="{workspace_dir}" --dms-user="{user}" ' \
+                              '--dms-password="{password}" --dms-datasource="{datasource}" ' \
+                              '--dms-folderId={folder_id} --dms-documentId={doc_id} ' \
+                              '--dms-appWorkspace="{app_workspace}"'.format(
+                lib=self.__dms_library_entry_var.get(),
+                workspace_dir=self.__dms_workspace_dir_entry_var.get(),
+                user=self.__dms_user_entry_var.get(),
+                password=self.__dms_password_entry_var.get(),
+                datasource=self.__dms_datasource_entry_var.get(),
+                folder_id=self.__dms_folderid_entry_var.get(),
+                doc_id=self.__dms_docid_entry_var.get(),
+                app_workspace=self.__dms_appworkspace_entry_var.get())
         return command_string
 
 
