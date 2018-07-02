@@ -19,7 +19,7 @@
 #include <iModelBridge/iModelBridgeBimHost.h>
 #include <iModelBridge/iModelBridgeRegistry.h>
 #include "../iModelBridgeHelpers.h"
-#include "DgnDbServerClientUtils.h"
+#include "IModelClientForBridges.h"
 #include <BentleyLog4cxx/log4cxx.h>
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -180,7 +180,8 @@ void iModelBridgeFwk::PrintUsage(WCharCP programName)
     fwprintf (stderr, L"Usage: %ls\n", exeName.c_str());
 
     JobDefArgs::PrintUsage();
-    ServerArgs::PrintUsage();
+    IModelHubArgs::PrintUsage();
+    IModelBankArgs::PrintUsage();
     DmsServerArgs::PrintUsage();
     }
 
@@ -203,6 +204,7 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-jobrun-guid=          (optional)  A unique GUID that identifies this job run for correlation. This will be passed along to all dependant services and logs.\n"
         L"--fwk-assetsDir=            (optional)  Asset directory for the iModelBridgeFwk resources if default location is not suitable.\n"
         L"--fwk-bridgeAssetsDir=      (optional)  Asset directory for the iModelBridge resources if default location is not suitable.\n"
+        L"--fwk-imodelbank-url=       (optional)  The URL of the iModelBank server to use. If none is provided, then iModelHub will be used.\n"
         );
     }
 
@@ -551,10 +553,42 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
 
     m_bargptrs.push_back(argv[0]);
 
-    if ((BSISUCCESS != m_serverArgs.ParseCommandLine(m_bargptrs, (int) serverRawArgPtrs.size(), serverRawArgPtrs.data())) || (BSISUCCESS != m_serverArgs.Validate((int) serverRawArgPtrs.size(), serverRawArgPtrs.data())))
+    IModelBankArgs bankArgs;
+    if ((BSISUCCESS != bankArgs.ParseCommandLine(m_bargptrs, (int) serverRawArgPtrs.size(), serverRawArgPtrs.data())) || (BSISUCCESS != bankArgs.Validate((int) serverRawArgPtrs.size(), serverRawArgPtrs.data())))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
+        }
+
+    IModelHubArgs hubArgs;
+    if ((BSISUCCESS != hubArgs.ParseCommandLine(m_bargptrs, (int) serverRawArgPtrs.size(), serverRawArgPtrs.data())) || (BSISUCCESS != hubArgs.Validate((int) serverRawArgPtrs.size(), serverRawArgPtrs.data())))
+        {
+        PrintUsage(argv[0]);
+        return BSIERROR;
+        }
+
+    if (bankArgs.ParsedAny() && hubArgs.ParsedAny())
+        {
+        fwprintf (stderr, L"Specify either imodel-bank arguments or server arguments but not both\n");
+        return BSIERROR;
+        }
+
+    bool dmsCredentialsAreEncrypted = false;
+    if (bankArgs.ParsedAny())
+        {
+        m_useIModelHub = false;
+        m_iModelBankArgs = new IModelBankArgs(bankArgs);
+        m_briefcaseBasename = m_iModelBankArgs->GetBriefcaseBasename();
+        m_maxRetryCount = m_iModelBankArgs->m_maxRetryCount;
+        dmsCredentialsAreEncrypted = m_iModelBankArgs->m_dmsCredentialsEncrypted;
+        }
+    else
+        {
+        m_useIModelHub = true;
+        m_iModelHubArgs = new IModelHubArgs(hubArgs);
+        m_briefcaseBasename = m_iModelHubArgs->m_repositoryName;
+        m_maxRetryCount = m_iModelHubArgs->m_maxRetryCount;
+        dmsCredentialsAreEncrypted = m_iModelHubArgs->m_isEncrypted;
         }
 
     bvector<WCharCP> dmsRawArgPtrs;        // pare down the args once again, removing the dms server-specific args and leaving the rest for the bridge
@@ -562,7 +596,7 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
 
     m_bargptrs.push_back(argv[0]);
 
-    if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bargptrs, (int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data(), m_serverArgs.m_isEncrypted)) || (BSISUCCESS != m_serverArgs.Validate((int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data())))
+    if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bargptrs, (int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data(), dmsCredentialsAreEncrypted)) || (BSISUCCESS != m_dmsServerArgs.Validate((int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data())))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
@@ -775,7 +809,7 @@ BentleyStatus iModelBridgeFwk::DoInitial()
         }
 
     // Maybe we just need to acquire a briefcase for an existing repository.
-    GetLogger().infov("bridge:%s iModel:%s - acquiring briefcase.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+    GetLogger().infov("bridge:%s iModel:%s - acquiring briefcase.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
     if (BSISUCCESS == Briefcase_AcquireBriefcase())
         {
         SetState(BootstrappingState::HaveBriefcase);
@@ -794,7 +828,7 @@ BentleyStatus iModelBridgeFwk::DoInitial()
     if (!m_jobEnvArgs.m_createRepositoryIfNecessary)
         {
         ReportIssue("iModel not found"); // *** WIP translate
-        GetLogger().fatalv("%s - repository not found in project. Create option was not specified.\n", m_serverArgs.m_repositoryName.c_str());
+        GetLogger().fatalv("%s - repository not found in project. Create option was not specified.\n", m_briefcaseBasename.c_str());
         return BSIERROR;
         }
 
@@ -849,7 +883,7 @@ BentleyStatus iModelBridgeFwk::DoInitial()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::DoCreatedLocalDb()
+BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedLocalDb()
     {
     bool fileExists = m_briefcaseName.DoesPathExist();
     if (!fileExists)
@@ -866,7 +900,7 @@ BentleyStatus iModelBridgeFwk::DoCreatedLocalDb()
         return BSIERROR;
         }
 
-    if (BSISUCCESS != Briefcase_CreateRepository())
+    if (BSISUCCESS != Briefcase_IModelHub_CreateRepository())
         return BSIERROR;
 
     SetState(BootstrappingState::CreatedRepository);
@@ -876,7 +910,7 @@ BentleyStatus iModelBridgeFwk::DoCreatedLocalDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::DoCreatedRepository()
+BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedRepository()
     {
     bool fileExists = m_briefcaseName.DoesPathExist();
     if (fileExists)
@@ -900,7 +934,7 @@ BentleyStatus iModelBridgeFwk::DoCreatedRepository()
             }
         ReportIssue("iModel create failed"); // *** WIP translate
         GetLogger().fatalv("CreateRepository failed or acquireBriefcase failed for repositoryname=%s, stagingdir=%s",
-                            m_serverArgs.m_repositoryName.c_str(), Utf8String(m_jobEnvArgs.m_stagingDir).c_str());
+                            m_briefcaseBasename.c_str(), Utf8String(m_jobEnvArgs.m_stagingDir).c_str());
         return BSIERROR;
         }
 
@@ -911,7 +945,7 @@ BentleyStatus iModelBridgeFwk::DoCreatedRepository()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::DoNewBriefcaseNeedsLocks()
+BentleyStatus iModelBridgeFwk::IModelHub_DoNewBriefcaseNeedsLocks()
     {
     // I just created a repository and pulled a briefcase for it.
     // I must now manually get an exclusive lock on all of the models that I created
@@ -954,9 +988,9 @@ BentleyStatus iModelBridgeFwk::BootstrapBriefcase(bool& createdNewRepo)
         switch (state)
             {
             case BootstrappingState::Initial:                   status = DoInitial(); break;
-            case BootstrappingState::CreatedLocalDb:            status = DoCreatedLocalDb(); createdNewRepo = true; break;
-            case BootstrappingState::CreatedRepository:         status = DoCreatedRepository(); break;
-            case BootstrappingState::NewBriefcaseNeedsLocks:    status = DoNewBriefcaseNeedsLocks(); break;
+            case BootstrappingState::CreatedLocalDb:            status = IModelHub_DoCreatedLocalDb(); createdNewRepo = true; break;
+            case BootstrappingState::CreatedRepository:         status = IModelHub_DoCreatedRepository(); break;
+            case BootstrappingState::NewBriefcaseNeedsLocks:    status = IModelHub_DoNewBriefcaseNeedsLocks(); break;
             }
 
         if (BSISUCCESS != status)
@@ -1068,7 +1102,7 @@ BentleyStatus iModelBridgeFwk::ReleaseBridge()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::InitBridge()
     {
-    GetLogger().infov("bridge:%s iModel:%s - Initializing bridge.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+    GetLogger().infov("bridge:%s iModel:%s - Initializing bridge.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
     SetBridgeParams(m_bridge->_GetParams(), m_repoAdmin);
 
@@ -1314,7 +1348,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::ProcessSchemaChange()
     {
-    GetLogger().infov("bridge:%s iModel:%s - Processing schema change.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+    GetLogger().infov("bridge:%s iModel:%s - Processing schema change.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
     //  Push the pending schema change to iModelHub in its own changeset
     m_briefcaseDgnDb->SaveChanges();
@@ -1389,7 +1423,7 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
     DbResult dbres;
     m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
     uint8_t retryopenII = 0;
-    while (!m_briefcaseDgnDb.IsValid() && (DbResult::BE_SQLITE_ERROR_SchemaUpgradeFailed == dbres) && (++retryopenII < m_serverArgs.m_maxRetryCount) && DgnDbServerClientUtils::SleepBeforeRetry())
+    while (!m_briefcaseDgnDb.IsValid() && (DbResult::BE_SQLITE_ERROR_SchemaUpgradeFailed == dbres) && (++retryopenII < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
         {
         GetLogger().infov("SchemaUpgrade failed. Retrying.");
         m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
@@ -1436,7 +1470,7 @@ int iModelBridgeFwk::UpdateExistingBim()
     //                            *** Even in case of error, do not attempt to clean up m_briefcaseDgnDb. ***
     //                            *** The caller does all cleanup, including releasing all public locks. ***
 
-    GetLogger().infov("bridge:%s iModel:%s - Opening briefcase I.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+    GetLogger().infov("bridge:%s iModel:%s - Opening briefcase I.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
     // ***
     // *** TRICKY: Do not call InitBridge until we have done PullMergePush
@@ -1468,7 +1502,7 @@ int iModelBridgeFwk::UpdateExistingBim()
         {
         iModelBridgeCallTerminate callTerminate(*m_bridge);
 
-        GetLogger().infov("bridge:%s iModel:%s - Opening briefcase II.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+        GetLogger().infov("bridge:%s iModel:%s - Opening briefcase II.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
         // Open the briefcase in the normal way, allowing domain schema changes to be pulled in.
         bool madeSchemaChanges = false;
@@ -1503,13 +1537,13 @@ int iModelBridgeFwk::UpdateExistingBim()
         //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
         //  Let the bridge generate schema changes
-        GetLogger().infov("bridge:%s iModel:%s - MakeSchemaChanges.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+        GetLogger().infov("bridge:%s iModel:%s - MakeSchemaChanges.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
         int bridgeSchemaChangeStatus = m_bridge->_MakeSchemaChanges();
         if (BSISUCCESS != bridgeSchemaChangeStatus)
             {
             uint8_t retryAttempt = 0;
-            while ((BSISUCCESS != bridgeSchemaChangeStatus) && (++retryAttempt < m_serverArgs.m_maxRetryCount) && DgnDbServerClientUtils::SleepBeforeRetry())
+            while ((BSISUCCESS != bridgeSchemaChangeStatus) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
                 {
                 GetLogger().infov("_MakeSchemaChanges failed. Retrying.");
                 callCloseOnReturn.CallCloseFunctions(); // re-initialize the bridge, to clear out the side-effects of the previous failed attempt
@@ -1540,7 +1574,7 @@ int iModelBridgeFwk::UpdateExistingBim()
         BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
 
         //  Now, finally, we can convert data
-        GetLogger().infov("bridge:%s iModel:%s - Convert Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+        GetLogger().infov("bridge:%s iModel:%s - Convert Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
         BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, true);
     
@@ -1567,7 +1601,7 @@ int iModelBridgeFwk::UpdateExistingBim()
         {
         BeAssert(!m_briefcaseDgnDb->Txns().HasChanges());
 
-        GetLogger().infov("bridge:%s iModel:%s - Pushing Data Changeset.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+        GetLogger().infov("bridge:%s iModel:%s - Pushing Data Changeset.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
         if (BSISUCCESS != Briefcase_PullMergePush(GetRevisionComment().c_str()))
             return RETURN_STATUS_SERVER_ERROR;
@@ -1642,7 +1676,7 @@ void iModelBridgeFwk::LogStderr()
 iModelBridgeFwk::iModelBridgeFwk()
 :m_logProvider(NULL)
     {
-    m_clientUtils = nullptr;
+    m_client = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1812,11 +1846,11 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
         return *(m_registry = s_registryForTesting);
      
     BeSQLite::DbResult res;
-    m_registry = iModelBridgeRegistry::OpenForFwk(res, m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
+    m_registry = iModelBridgeRegistry::OpenForFwk(res, m_jobEnvArgs.m_stagingDir, m_briefcaseBasename);
 
     if (!m_registry.IsValid())
         {
-        std::string str (Utf8String(iModelBridgeRegistry::MakeDbName(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName)).c_str());
+        std::string str (Utf8String(iModelBridgeRegistry::MakeDbName(m_jobEnvArgs.m_stagingDir, m_briefcaseBasename)).c_str());
         str.append(": ");
         str.append(BeSQLite::Db::InterpretDbResult(res));
         throw str;

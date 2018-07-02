@@ -654,7 +654,7 @@ BentleyStatus FontReader::_Read(Json::Value& font)
         return ERROR;
         }
 
-    DgnFontId oldId = ECJsonUtilities::JsonToId<DgnFontId>(font["Id"]);
+    DgnFontId oldId = ECJsonUtilities::JsonToId<DgnFontId>(font["id"]);
     GetSyncInfo()->InsertFont(oldId, id);
     m_importer->RemapFont(oldId);
 
@@ -2399,6 +2399,21 @@ BentleyStatus PropertyDataReader::_Read(Json::Value& propData)
         PropertySpec prop = DgnViewProperty::DefaultView();
         GetDgnDb()->SaveProperty(prop, &mappedView, sizeof(mappedView));
         }
+
+    if (propData.isMember("GCS"))
+        {
+        bvector<Byte> blob;
+        if (SUCCESS == ECJsonUtilities::JsonToBinary(blob, propData["GCS"]))
+            {
+            PropertySpec prop = DgnProjectProperty::DgnGCS();
+            GetDgnDb()->SaveProperty(prop, blob.data(), blob.size());
+            if (propData.isMember("globalOrigin"))
+                {
+                GetDgnDb()->SavePropertyString(DgnProjectProperty::Units(), propData["globalOrigin"].ToString());
+                }
+            }
+        }
+
     return SUCCESS;
     }
 

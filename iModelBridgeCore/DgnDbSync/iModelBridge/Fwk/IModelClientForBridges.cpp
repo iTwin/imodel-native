@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelBridge/Fwk/DgnDbServerClientUtils.cpp $
+|     $Source: iModelBridge/Fwk/IModelClientForBridges.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnDbServerClientUtils.h"
+#include "IModelClientForBridges.h"
 #include <DgnPlatform/DgnProgressMeter.h>
 
 #include <WebServices/iModelHub/Client/Client.h>
@@ -59,45 +59,77 @@ struct ServiceLocalState : public IJsonLocalState
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ServiceLocalState* getLocalState()
     {
-    // MT Note: C++11 guarantees that the following line of code will be executed only once and in a thread-safe manner:
-    ServiceLocalState* s_localState = new ServiceLocalState;
+    BeSystemMutexHolder threadSafety;
+    static ServiceLocalState* s_localState;
+    if (s_localState == nullptr)
+        s_localState = new ServiceLocalState;
     return s_localState;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbServerClientUtils::DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment, uint8_t nretries, WebServices::ClientInfoPtr info)
-    :m_clientInfo(info)
+IModelClientBase::IModelClientBase(WebServices::ClientInfoPtr info, uint8_t maxRetryCount, WebServices::UrlProvider::Environment environment, int64_t cacheTimeOutMs) : 
+    m_clientInfo(info), m_maxRetryCount(maxRetryCount)
     {
-    m_maxRetryCount = nretries;
-    UrlProvider::Initialize(environment, UrlProvider::DefaultTimeout, getLocalState());
+    UrlProvider::Initialize(environment, cacheTimeOutMs, getLocalState());
     ClientHelper::Initialize(m_clientInfo, getLocalState());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDbServerClientUtils::SignIn(Tasks::AsyncError* errorOut, Credentials credentials)
+IModelBankClient::IModelBankClient(iModelBridgeFwk::IModelBankArgs const& args, WebServices::ClientInfoPtr info) : 
+    IModelClientBase(info, args.m_maxRetryCount, WebServices::UrlProvider::Environment::Release, INT64_MAX),
+    m_iModelId(args.m_iModelId)
     {
-    m_client = ClientHelper::GetInstance()->SignInWithCredentials(errorOut, credentials);
-    return (m_client == nullptr)? BSIERROR: BSISUCCESS;
-    }
+    ClientHelper::GetInstance()->SetUrl(args.m_url);
+	m_client = ClientHelper::GetInstance()->SignInWithStaticHeader(args.m_accessToken);
+    ClientHelper::GetInstance()->SetUrl("");
+	}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDbServerClientUtils::QueryProjectId(WebServices::WSError* errorOut, Utf8StringCR bcsProjectName)
+IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, WebServices::ClientInfoPtr info) : 
+    IModelClientBase(info, args.m_maxRetryCount, args.m_environment, UrlProvider::DefaultTimeout),
+    m_args(args)
     {
-    auto pid = ClientHelper::GetInstance()->QueryProjectId(errorOut, bcsProjectName);
-	m_projectId = pid;
-    return pid.empty()? BSIERROR: BSISUCCESS;
+    Tasks::AsyncError serror;
+    m_client = ClientHelper::GetInstance()->SignInWithCredentials(&serror, args.m_credentials);
+    if (m_client == nullptr)
+        {
+        GetLogger().fatalv("Connect sign-in failed: %s - %s", serror.GetMessage().c_str(), serror.GetDescription().c_str());
+        BeAssert(!IsConnected());
+        return;
+        }
+
+    if (args.m_haveProjectGuid)
+        {
+        m_projectId = args.m_bcsProjectId;
+        }
+    else
+        {
+        WebServices::WSError wserror;
+        m_projectId = ClientHelper::GetInstance()->QueryProjectId(&wserror, args.m_bcsProjectId);
+        if (m_projectId.empty())
+            {
+            GetLogger().fatalv("Cannot find iModelHub project: [%s]", args.m_bcsProjectId);
+            if (wserror.GetStatus() != WebServices::WSError::Status::None)
+                GetLogger().fatalv("%s - %s", wserror.GetDisplayMessage().c_str(), wserror.GetDisplayDescription().c_str());
+            m_client = nullptr;
+            BeAssert(!IsConnected());
+            return;
+            }
+        }
+
+    BeAssert(IsConnected());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IRepositoryManagerP DgnDbServerClientUtils::GetRepositoryManager(DgnDbR db)
+IRepositoryManagerP IModelClientBase::GetRepositoryManager(DgnDbR db)
     {
     return m_client->GetiModelAdmin()->_GetRepositoryManager(db);
     }
@@ -105,16 +137,30 @@ IRepositoryManagerP DgnDbServerClientUtils::GetRepositoryManager(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static iModelInfoPtr getRepositoryInfo(Error& err, Client& client, Utf8String projectId, Utf8StringCR repoId)
+iModel::Hub::iModelInfoPtr IModelBankClient::GetIModelInfo()
     {
-    auto result = client.GetiModelById(projectId, repoId)->GetResult();
+    auto result = m_client->GetiModelById(m_iModelId.c_str(), m_iModelId.c_str())->GetResult();
     if (result.IsSuccess())
         return result.GetValue();
     
-    result = client.GetiModelByName(projectId, repoId)->GetResult();
+    m_lastServerError = result.GetError();
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+iModel::Hub::iModelInfoPtr IModelHubClient::GetIModelInfo()
+    {
+    auto result = m_client->GetiModelById(m_projectId, m_args.m_repositoryName)->GetResult();
     if (result.IsSuccess())
         return result.GetValue();
     
+    result = m_client->GetiModelByName(m_projectId, m_args.m_repositoryName)->GetResult();
+    if (result.IsSuccess())
+        return result.GetValue();
+    
+    m_lastServerError = result.GetError();
     return nullptr;
     }
 
@@ -134,14 +180,11 @@ static Http::Request::ProgressCallback getHttpProgressMeter()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnDbServerClientUtils::AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repoId)
+StatusInt IModelClientBase::AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repoId)
     {
-    auto ri = getRepositoryInfo(m_lastServerError, *m_client, m_projectId, repoId);
-    if (ri.IsNull())
-        {
-        m_lastServerError = Error::Id::iModelDoesNotExist;
+    iModel::Hub::iModelInfoPtr ri = GetIModelInfo();
+    if (ri == nullptr)
         return BSIERROR;
-        }
 
     auto progress = getHttpProgressMeter();
     auto result = m_client->AcquireBriefcase(*ri, bcFileName, true, progress)->GetResult();
@@ -164,7 +207,7 @@ StatusInt DgnDbServerClientUtils::AcquireBriefcase(BeFileNameCR bcFileName, Utf8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnDbServerClientUtils::OpenBriefcase(Dgn::DgnDbR db)
+StatusInt IModelClientBase::OpenBriefcase(Dgn::DgnDbR db)
     {
     auto progress = getHttpProgressMeter();
     auto result = m_client->OpenBriefcase(&db, false, progress)->GetResult();
@@ -180,7 +223,7 @@ StatusInt DgnDbServerClientUtils::OpenBriefcase(Dgn::DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnDbServerClientUtils::CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb)
+StatusInt IModelHubClient::CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb)
     {
     DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, localDgnDb, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     if (!db.IsValid())
@@ -213,7 +256,7 @@ StatusInt DgnDbServerClientUtils::CreateRepository(Utf8CP repoName, BeFileNameCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnDbServerClientUtils::PullMergeAndPush(Utf8CP descr)
+StatusInt IModelClientBase::PullMergeAndPush(Utf8CP descr)
     {
     auto progress = getHttpProgressMeter();
     auto result = m_briefcase->PullMergeAndPush(descr, false, progress, progress, nullptr, m_maxRetryCount)->GetResult();
@@ -227,7 +270,7 @@ StatusInt DgnDbServerClientUtils::PullMergeAndPush(Utf8CP descr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnDbServerClientUtils::SleepBeforeRetry()
+bool IModelClientBase::SleepBeforeRetry()
     {
     int sleepTime = rand() % 5000;
     BeThreadUtilities::BeSleep(sleepTime);
@@ -253,7 +296,7 @@ static bool isTemporaryError(Error error)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnDbServerClientUtils::PullAndMerge()
+StatusInt IModelClientBase::PullAndMerge()
     {
     auto progress = getHttpProgressMeter();
     uint8_t attempt = 0;
@@ -304,7 +347,7 @@ static ChangeSetsResult tryPullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db, iModel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnDbServerClientUtils::PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db)
+StatusInt IModelClientBase::PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db)
     {
     uint8_t attempt = 0;
     do {
@@ -325,7 +368,7 @@ StatusInt DgnDbServerClientUtils::PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnDbServerClientUtils::AcquireLocks(LockRequest& req, DgnDbR db)
+StatusInt IModelClientBase::AcquireLocks(LockRequest& req, DgnDbR db)
     {
     IBriefcaseManager::Request breq;
     std::swap(breq.Locks(), req);
