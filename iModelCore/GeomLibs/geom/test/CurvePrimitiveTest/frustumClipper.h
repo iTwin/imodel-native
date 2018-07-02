@@ -51,12 +51,12 @@ DPlane3d GetLexicalFrustumFacePlane (DPoint3d* frustumCornerPoints, unsigned int
     faceIndex = faceIndex % 6;  // really shouldn't change it, but we'll be safe ..    
     DPlane3d plane;
     plane.origin = frustumCornerPoints[s_cornerIndexCCW[faceIndex][0]];
-    bsiDVec3d_crossProduct3DPoint3d (&plane.normal,
-                &frustumCornerPoints[s_cornerIndexCCW[faceIndex][0]],
-                &frustumCornerPoints[s_cornerIndexCCW[faceIndex][1]],
-                &frustumCornerPoints[s_cornerIndexCCW[faceIndex][2]]
+    plane.normal.CrossProductToPoints (
+                frustumCornerPoints[s_cornerIndexCCW[faceIndex][0]],
+                frustumCornerPoints[s_cornerIndexCCW[faceIndex][1]],
+                frustumCornerPoints[s_cornerIndexCCW[faceIndex][2]]
                 );
-    bsiDVec3d_normalizeInPlace (&plane.normal);
+    plane.normal.Normalize ();
     return plane;
     }
 
@@ -89,7 +89,7 @@ void ClipPolygonWithFrustum(DPoint3d* outPts, int* outCount, int maxOut, DPoint3
         bsiPolygon_clipToPlane(clipPts, &nClip, &numLoop, maxOut, currPts, nCurr, &plane);
         
         //don't include disconnect points at end 
-        while (nClip > 0 && bsiDPoint3d_isDisconnect(&clipPts[nClip-1]))
+        while (nClip > 0 && clipPts[nClip-1].IsDisconnect ())
             nClip--;
 
         //swap currPts and clipPts
@@ -171,7 +171,7 @@ DPoint3d frustumBCorners[8] //=> IN 2nd frustum corners in XYZ lexical order.
             bool found = false;
             for (int jj=ii+1; !found && jj < nPolygon; jj++)
                 {
-                if (bsiDVec3d_areParallel (&planes[ii].normal, &planes[jj].normal))
+                if (planes[ii].normal.IsParallelTo(*(&planes[jj].normal)))
                     found = true;
                 }
             copyToOutput = !found;

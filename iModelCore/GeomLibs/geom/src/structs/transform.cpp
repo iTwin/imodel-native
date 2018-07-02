@@ -265,7 +265,7 @@ int             numPoint
 
     if (!pWeight)
         {
-        bsiTransform_multiplyDPoint3dArray (pTransform, pOutPoint, pInPoint, numPoint);
+        pTransform->Multiply (pOutPoint, pInPoint, numPoint);
         }
     else
         {
@@ -446,7 +446,7 @@ double        d
     {
     Transform inverse;
 
-    if (bsiTransform_invertTransform (&inverse, pTransform))
+    if (inverse.InverseOf (*pTransform))
         {
         *paOut =      a * inverse.form3d[0][0]
                     + b * inverse.form3d[1][0]
@@ -1273,7 +1273,7 @@ TransformCP pTransform2
         }
     else
         {
-        bsiTransform_initIdentity (pProduct);
+        pProduct->InitIdentity ();
         }
     }
 
@@ -1301,8 +1301,8 @@ TransformCP pTransform3
 )
     {
     Transform AB;
-    bsiTransform_multiplyTransformTransform (&AB, pTransform1, pTransform2);
-    bsiTransform_multiplyTransformTransform (pProduct, &AB, pTransform3);
+    AB.InitProduct (*pTransform1, *pTransform2);
+    pProduct->InitProduct (AB, *pTransform3);
     }
 
 /* VBSUB(Transform3dFromMatrix3dTimesTransform3d) */
@@ -1372,7 +1372,7 @@ TransformCP pTransform
         }
     else
         {
-        bsiTransform_initIdentity (pProduct);
+        pProduct->InitIdentity ();
         }
     }
 /* VBSUB(Transform3dFromTransform3dTimesMatrix3d) */
@@ -1433,7 +1433,7 @@ RotMatrixCP pMatrix
         }
     else
         {
-        bsiTransform_initIdentity (pProduct);
+        pProduct->InitIdentity ();
         }
     }
 
@@ -1468,7 +1468,7 @@ DRange3dCP pInRange
         {
         pInRange->Get8Corners (corner);
 
-        bsiTransform_multiplyDPoint3dArrayInPlace (pTransform, corner, 8);
+        pTransform->Multiply (corner, 8);
         pOutRange->InitFrom(corner, 8);
         }
     }
@@ -1546,7 +1546,7 @@ DPoint3dCP pTranslation
         }
     else
         {
-        bsiTransform_initIdentity (pTransform);
+        pTransform->InitIdentity ();
         }
 
     if (pTranslation)
@@ -1579,7 +1579,7 @@ TransformP pTransform,
 DPoint3dCP pTranslation
 )
     {
-    bsiTransform_initIdentity (pTransform);
+    pTransform->InitIdentity ();
 
     if (pTranslation)
         {
@@ -1609,7 +1609,7 @@ double        y,
 double        z
 )
     {
-    bsiTransform_initIdentity (pTransform);
+    pTransform->InitIdentity ();
     pTransform->form3d[0][3] = x;
     pTransform->form3d[1][3] = y;
     pTransform->form3d[2][3] = z;
@@ -1691,12 +1691,12 @@ double         radians
     {
     DVec3d vector;
     RotMatrix matrix;
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector, pPoint1, pPoint0);
+    vector.DifferenceOf (*pPoint1, *pPoint0);
     bsiRotMatrix_initFromVectorAndRotationAngle (&matrix,
                                 &vector, radians);
     /* We count on the vector rotation returning a valid identity matrix even if
         the vector is null */
-    bsiTransform_initFromMatrixAndFixedPoint (pTransform, &matrix, pPoint0);
+    pTransform->InitFromMatrixAndFixedPoint (matrix, *pPoint0);
     }
 
 
@@ -1743,12 +1743,12 @@ double         z
         point.y = y;
         point.z = z;
         *pOut = *pIn;
-        bsiTransform_multiplyDPoint3dInPlace (pIn, &point);
-        bsiTransform_setTranslation (pOut, &point);
+        pIn->Multiply (point);
+        pOut->SetTranslation (point);
         }
     else
         {
-        bsiTransform_initFromTranslationXYZ (pOut, x, y, z);
+        pOut->InitFrom (x, y, z);
         }
     }
 
@@ -1952,7 +1952,7 @@ TransformCP pIn
                                             -A.form3d[2][3]
                                             );
 
-    bsiTransform_setTranslation (pOut, &point);
+    pOut->SetTranslation (point);
     }
 /* VBSUB(Transform3dInverse) */
 
@@ -1977,7 +1977,7 @@ TransformCP pIn
     RotMatrix M;
     DPoint3d point;
     bool    boolStat;
-    bsiTransform_getMatrix (pIn, &M);
+    pIn->GetMatrix (M);
     boolStat = bsiRotMatrix_invertRotMatrix(&M, &M);
     if  (boolStat)
         {
@@ -1986,11 +1986,11 @@ TransformCP pIn
                     -pIn->form3d[1][3],
                     -pIn->form3d[2][3]
                     );
-        bsiTransform_initFromMatrixAndTranslation (pOut, &M, &point);
+        pOut->InitFrom (M, point);
         }
     else
         {
-        bsiTransform_initIdentity (pOut);
+        pOut->InitIdentity ();
         }
     return boolStat;
     }
@@ -2010,7 +2010,7 @@ TransformCP pTransform
 )
     {
     Transform inverse;
-    return bsiTransform_invertTransform (&inverse, pTransform);
+    return inverse.InverseOf (*pTransform);
     }
 
 
@@ -2039,9 +2039,9 @@ DPoint3dCP pInPoint
     RotMatrix   M;
     DPoint3d    t;
 
-    bsiTransform_getMatrix (pTransform, &M);
-    bsiTransform_getTranslation (pTransform, &t);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (pOutPoint, pInPoint, &t);
+    pTransform->GetMatrix (M);
+    pTransform->GetTranslation (t);
+    pOutPoint->DifferenceOf (*pInPoint, t);
 
     if (!bsiRotMatrix_solveDPoint3d (&M, pOutPoint, pOutPoint))
         {
@@ -2084,8 +2084,8 @@ int           numPoints
     RotMatrix   M;
     DPoint3d    t;
 
-    bsiTransform_getMatrix (pTransform, &M);
-    bsiTransform_getTranslation (pTransform, &t);
+    pTransform->GetMatrix (M);
+    pTransform->GetTranslation (t);
     bsiDPoint3d_copyArray (pOutPoint, pInPoint, numPoints);
     bsiDPoint3d_subtractDPoint3dArray (pOutPoint, &t, numPoints);
 
@@ -2130,7 +2130,7 @@ double         zrot
     bsiRotMatrix_rotateByPrincipleAngles ( &rotation, NULL, xrot, yrot, zrot);
     if (pInTransform)
         {
-        bsiTransform_multiplyRotMatrixTransform (pOutTransform, &rotation, pInTransform);
+        pOutTransform->InitProduct (rotation, *pInTransform);
         }
     else
         {
@@ -2177,7 +2177,7 @@ double         zscale
         }
     else
         {
-        bsiTransform_initIdentity (pResult);
+        pResult->InitIdentity ();
         pResult->form3d[0][0] = xscale;
         pResult->form3d[1][1] = yscale;
         pResult->form3d[2][2] = zscale;
@@ -2223,7 +2223,7 @@ double         zscale
         }
     else
         {
-        bsiTransform_initIdentity (pResult);
+        pResult->InitIdentity ();
         pResult->form3d[0][0] = xscale;
         pResult->form3d[1][1] = yscale;
         pResult->form3d[2][2] = zscale;
@@ -2274,7 +2274,7 @@ double         zscale
         }
     else
         {
-        bsiTransform_initIdentity (pA);
+        pA->InitIdentity ();
         pA->form3d[0][0] = xscale;
         pA->form3d[1][1] = yscale;
         pA->form3d[2][2] = zscale;
@@ -2402,7 +2402,7 @@ DPoint3dP pPoint2,
 DPoint3dP pPoint3
 )
     {
-    bsiTransform_getTranslation (pTransform, pPoint0);
+    pTransform->GetTranslation (*pPoint0);
     if (pPoint1)
         bsiTransform_offsetPointByColumn (pTransform, pPoint1, pPoint0, 0);
 
@@ -2458,7 +2458,7 @@ DPoint3dP pVector2
 )
     {
     if (pOrigin)
-        bsiTransform_getTranslation (pTransform, pOrigin);
+        pTransform->GetTranslation (*pOrigin);
 
     if (pVector0)
         {
@@ -2521,14 +2521,14 @@ TransformCP pTransform
     DPoint3d  origin;
     RotMatrix M;
 
-    bsiTransform_getMatrix (pTransform, &M);
+    pTransform->GetMatrix (M);
 
-    if (!bsiRotMatrix_isIdentity(&M))
+    if (!M.IsIdentity ())
         return false;
 
 #define IS_ZERO(a) ((a < 1.0E-10) && (a > - 1.0E-10))
 
-    bsiTransform_getTranslation (pTransform, &origin);
+    pTransform->GetTranslation (origin);
     if (IS_ZERO(origin.x) &&
         IS_ZERO(origin.y) &&
         IS_ZERO(origin.z))
@@ -2556,7 +2556,7 @@ TransformCP pTransform
     {
     RotMatrix M;
 
-    bsiTransform_getMatrix (pTransform, &M);
+    pTransform->GetMatrix (M);
     return  bsiRotMatrix_isRigid (&M);;
     }
 /* VBSUB(Transform3dIsPlanar) */
@@ -2584,16 +2584,16 @@ DVec3dCP pNormal
     RotMatrix M;
     static double tolSquared = 1.0E-20;
 
-    bsiTransform_getTranslation (pTransform, &origin);
+    pTransform->GetTranslation (origin);
 
-    dot = bsiDPoint3d_dotProduct (pNormal, &origin);
+    dot = pNormal->DotProduct (origin);
 
-    tran2 = bsiDPoint3d_dotProduct (&origin, &origin);
-    norm2 = bsiDPoint3d_dotProduct (pNormal, pNormal);
+    tran2 = origin.DotProduct (origin);
+    norm2 = pNormal->DotProduct (*pNormal);
     if (tran2 > tolSquared * norm2 && dot * dot > tolSquared * norm2 * tran2)
         return false;
 
-    bsiTransform_getMatrix (pTransform, &M);
+    pTransform->GetMatrix (M);
     return bsiRotMatrix_isPlanar (&M, pNormal);
     }
 
@@ -2651,14 +2651,14 @@ double                  pointTolerance
     {
     RotMatrix matrix0, matrix1;
     DPoint3d  point0,  point1;
-    bsiTransform_getMatrix (pTransform1, &matrix0);
-    bsiTransform_getMatrix (pTransform2, &matrix1);
+    pTransform1->GetMatrix (matrix0);
+    pTransform2->GetMatrix (matrix1);
 
     if (!bsiRotMatrix_matrixEqualTolerance (&matrix0, &matrix1, matrixTolerance))
         return false;
-    bsiTransform_getTranslation (pTransform1, &point0);
-    bsiTransform_getTranslation (pTransform2, &point1);
-    return bsiDPoint3d_pointEqualTolerance (&point0, &point1, pointTolerance);
+    pTransform1->GetTranslation (point0);
+    pTransform2->GetTranslation (point1);
+    return point0.IsEqual (point1, pointTolerance);
     }
 
 
@@ -2734,9 +2734,9 @@ DPoint3dCP pZPoint
     {
     DPoint3d xVector, yVector, zVector;
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&xVector, pXPoint, pOrigin);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&yVector, pYPoint, pOrigin);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&zVector, pZPoint, pOrigin);
+    xVector.DifferenceOf (*pXPoint, *pOrigin);
+    yVector.DifferenceOf (*pYPoint, *pOrigin);
+    zVector.DifferenceOf (*pZPoint, *pOrigin);
     bsiTransform_initFromOriginAndVectors (pTransform,
                 pOrigin, &xVector, &yVector, &zVector);
     }
@@ -2767,9 +2767,9 @@ DPoint3dCP pYPoint
     {
     DPoint3d xVector, yVector, zVector;
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&xVector, pXPoint, pOrigin);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&yVector, pYPoint, pOrigin);
-    bsiDPoint3d_crossProduct (&zVector, &xVector, &yVector);
+    xVector.DifferenceOf (*pXPoint, *pOrigin);
+    yVector.DifferenceOf (*pYPoint, *pOrigin);
+    zVector.CrossProduct (xVector, yVector);
     bsiTransform_initFromOriginAndVectors (pTransform,
                 pOrigin, &xVector, &yVector, &zVector);
     }
@@ -2837,9 +2837,9 @@ bool           normalize
     {
     DVec3d vector;
     RotMatrix matrix;
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector, pXPoint, pOrigin);
+    vector.DifferenceOf (*pXPoint, *pOrigin);
     bsiRotMatrix_initFrom1Vector(&matrix, &vector, axisId, normalize);
-    bsiTransform_initFromMatrixAndTranslation (pTransform, &matrix, pOrigin);
+    pTransform->InitFrom (matrix, *pOrigin);
     }
 
 
@@ -2868,7 +2868,7 @@ DPoint3dCP pMax
     {
     DPoint3d diag;
     RotMatrix matrix;
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&diag, pMax, pMin);
+    diag.DifferenceOf (*pMax, *pMin);
 
     if (diag.x == 0.0)
         diag.x = 1.0;
@@ -2879,7 +2879,7 @@ DPoint3dCP pMax
     if (pNpcToGlobal)
         {
         matrix.InitFromScaleFactors (diag.x, diag.y, diag.z);
-        bsiTransform_initFromMatrixAndTranslation (pNpcToGlobal, &matrix, pMin);
+        pNpcToGlobal->InitFrom (matrix, *pMin);
 
         }
 
@@ -2892,7 +2892,7 @@ DPoint3dCP pMax
         origin.z = - pMin->z / diag.z;
 
         matrix.InitFromScaleFactors (1.0 / diag.x, 1.0 / diag.y, 1.0 /diag.z);
-        bsiTransform_initFromMatrixAndTranslation (pGlobalToNpc, &matrix, &origin);
+        pGlobalToNpc->InitFrom (matrix, origin);
         }
     }
 
@@ -2928,8 +2928,8 @@ DPoint3dCP pMax2
     DPoint3d diag1, diag2, diag;
     DPoint3d translate;
     RotMatrix matrix;
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&diag1, pMax1, pMin1);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&diag2, pMax2, pMin2);
+    diag1.DifferenceOf (*pMax1, *pMin1);
+    diag2.DifferenceOf (*pMax2, *pMin2);
 
     if (diag1.x == 0.0)
         diag1.x = 1.0;
@@ -2955,7 +2955,7 @@ DPoint3dCP pMax2
         translate.z = pMin2->z - diag.z * pMin1->z;
 
         matrix.InitFromScaleFactors (diag.x, diag.y, diag.z);
-        bsiTransform_initFromMatrixAndTranslation (pTransform12, &matrix, &translate);
+        pTransform12->InitFrom (matrix, translate);
         }
 
     if (pTransform21)
@@ -2968,7 +2968,7 @@ DPoint3dCP pMax2
         translate.y = pMin1->y - diag.y * pMin2->y;
         translate.z = pMin1->z - diag.z * pMin2->z;
         matrix.InitFromScaleFactors (diag.x, diag.y, diag.z);
-        bsiTransform_initFromMatrixAndTranslation (pTransform21, &matrix, &translate);
+        pTransform21->InitFrom (matrix, translate);
         }
     }
 
@@ -3002,7 +3002,7 @@ DMatrix4dCP pMatrix
     if (scale == 0.0)
         {
         boolStat = false;
-        bsiTransform_initIdentity (pTransform);
+        pTransform->InitIdentity ();
         }
     else
         {
@@ -3092,7 +3092,7 @@ TransformCP pSource
         if  (pSource)
             *pDest = *pSource;
         else
-            bsiTransform_initIdentity (pDest);
+            pDest->InitIdentity ();
     }
 
 /*-----------------------------------+
@@ -3560,7 +3560,7 @@ int             secondaryAxis
     bool    boolstat = false;
     double scale;
     bsiRotMatrix_initFromTransform(&matrixPart, pTransform);
-    bsiTransform_getTranslation (pTransform, &translation);
+    pTransform->GetTranslation (translation);
     if (bsiRotMatrix_rotateAndSkewFactors
                     (
                     &matrixPart,
@@ -3576,10 +3576,10 @@ int             secondaryAxis
         }
     else
         {
-        bsiRotMatrix_initIdentity (&matrixPart);
+        matrixPart.InitIdentity ();
         }
 
-    bsiTransform_initFromMatrixAndTranslation (pSquaredColumns, &rotationPart, &translation);
+    pSquaredColumns->InitFrom (rotationPart, translation);
     return boolstat;
     }
 
@@ -3604,19 +3604,19 @@ DPoint3dCP pNormal
     RotMatrix matrixPart;
     DPoint3d translationPart;
     bool    boolstat;
-    double magnitude = bsiDPoint3d_normalize (&unitNormal, pNormal);
+    double magnitude = unitNormal.Normalize (*(DVec3d*)pNormal);
 
     if (magnitude == 0.0)
         {
-        bsiTransform_initIdentity (pTransform);
+        pTransform->InitIdentity ();
         boolstat = false;
         }
     else
         {
-        bsiRotMatrix_initIdentity (&matrixPart);
+        matrixPart.InitIdentity ();
         bsiRotMatrix_addScaledOuterProductInPlace (&matrixPart, &unitNormal, &unitNormal, -2.0);
-        bsiDPoint3d_scale (&translationPart, &unitNormal, 2.0 * bsiDPoint3d_dotProduct (&unitNormal, pOrigin));
-        bsiTransform_initFromMatrixAndTranslation (pTransform, &matrixPart, &translationPart);
+        translationPart.Scale (unitNormal, 2.0 * bsiDPoint3d_dotProduct (&unitNormal,pOrigin));
+        pTransform->InitFrom (matrixPart, translationPart);
         boolstat = true;
         }
 
@@ -3639,18 +3639,18 @@ DPoint3dP pTranslation
 )
     {
     RotMatrix matrix;
-    bsiTransform_getMatrix (pTransform, &matrix);
+    pTransform->GetMatrix (matrix);
 
-    if (bsiRotMatrix_isIdentity(&matrix))
+    if (matrix.IsIdentity ())
         {
         if (pTranslation)
-            bsiTransform_getTranslation (pTransform, pTranslation);
+            pTransform->GetTranslation (*pTranslation);
         return true;
         }
     else
         {
         if (pTranslation)
-            bsiDPoint3d_zero (pTranslation);
+            pTranslation->Zero ();
         return false;
         }
     }
@@ -3680,13 +3680,13 @@ double          *pScale
     double a;
     bool    isUniformScale = false;
 
-    bsiTransform_getMatrix (pTransform, &matrix);
-    bsiDPoint3d_zero (&fixedPoint);
+    pTransform->GetMatrix (matrix);
+    fixedPoint.Zero ();
     scale = 1.0;
 
     if (bsiRotMatrix_isUniformScale (&matrix, &scale))
         {
-        bsiTransform_getTranslation (pTransform, &translation);
+        pTransform->GetTranslation (translation);
         a = 1.0 - scale;
         isUniformScale = bsiDPoint3d_safeDivide (&fixedPoint, &translation, a);
         }
@@ -3730,18 +3730,18 @@ double          *pRadians
     bool    result = false;
     DPoint3d errorVector;
 
-    bsiTransform_getMatrix (pTransform, &matrix);
-    bsiDPoint3d_setXYZ (&directionVector, 0.0, 0.0, 1.0);
-    bsiDPoint3d_zero (&fixedPoint);
+    pTransform->GetMatrix (matrix);
+    directionVector.Init ( 0.0, 0.0, 1.0);
+    fixedPoint.Zero ();
     radians = 0.0;
 
     if (    bsiRotMatrix_isRigid (&matrix)
-        && !bsiRotMatrix_isIdentity (&matrix)
+        && !matrix.IsIdentity ()
         && bsiTransform_invariantSpaceBasis (pTransform, &basis, &nullSpaceDimension,
                     NULL, NULL, &errorVector, 0.0)
         )
         {
-        bsiTransform_getTranslation (&basis, &fixedPoint);
+        basis.GetTranslation (fixedPoint);
         radians = bsiRotMatrix_getRotationAngleAndVector (&matrix, &directionVector);
         result = true;
         }
@@ -3786,12 +3786,12 @@ DPoint3dP pUnitNormal
 
     static double s_scaleTol = 1.0e-15;
 
-    bsiDPoint3d_zero (&refPoint);
-    bsiDPoint3d_zero (&planeOrigin);
-    bsiDPoint3d_zero (&planeNormal);
+    refPoint.Zero ();
+    planeOrigin.Zero ();
+    planeNormal.Zero ();
 
-    bsiTransform_getMatrix (pTransform, &matrix);
-    bsiTransform_getTranslation (pTransform, &translation);
+    pTransform->GetMatrix (matrix);
+    pTransform->GetTranslation (translation);
     bsiTransform_multiplyDPoint3d (pTransform, &imagePoint, &refPoint);
 
     if (bsiTransform_invariantSpaceBasis (pTransform, &invariantSpace, &invariantDimension,
@@ -3803,11 +3803,11 @@ DPoint3dP pUnitNormal
         double a;
         bsiRotMatrix_getColumn (&variantSpace, &mirrorVector, 0);
         bsiTransform_multiplyDPoint3dByMatrixPart (pTransform, &mirrorImage, &mirrorVector);
-        a = bsiDVec3d_dotProduct (&mirrorImage, &mirrorVector) ;
+        a = mirrorImage.DotProduct (mirrorVector) ;
         if (fabs (a + 1.0) <= s_scaleTol)
             {
             result = true;
-            bsiTransform_getTranslation (&invariantSpace, &planeOrigin);
+            invariantSpace.GetTranslation (planeOrigin);
             planeNormal = mirrorVector;
             }
         }
@@ -3853,18 +3853,18 @@ double          *pScale
     bool    result = false;
     DPoint3d errorVector;
 
-    bsiTransform_getMatrix (pTransform, &matrix);
-    bsiDPoint3d_setXYZ (&directionVector, 0.0, 0.0, 1.0);
-    bsiDPoint3d_zero (&fixedPoint);
+    pTransform->GetMatrix (matrix);
+    directionVector.Init ( 0.0, 0.0, 1.0);
+    fixedPoint.Zero ();
     radians = 0.0;
 
     if (    bsiRotMatrix_isRigidScale (&matrix, &rotationPart, &scale)
-        && !bsiRotMatrix_isIdentity (&matrix)
+        && !matrix.IsIdentity ()
         && bsiTransform_invariantSpaceBasis (pTransform, &basis, &nullSpaceDimension,
                     NULL, NULL, &errorVector, 0.0)
         )
         {
-        bsiTransform_getTranslation (&basis, &fixedPoint);
+        basis.GetTranslation (fixedPoint);
         radians = bsiRotMatrix_getRotationAngleAndVector (&rotationPart, &directionVector);
         result = true;
         }
@@ -3910,12 +3910,12 @@ DPoint3dP pFixedPoint
     if (!boolstat)
         {
         if (pFixedPoint)
-            bsiDPoint3d_zero (pFixedPoint);
+            pFixedPoint->Zero ();
         }
     else
         {
         if (pFixedPoint)
-            bsiTransform_getTranslation (&fixedSpace, pFixedPoint);
+            fixedSpace.GetTranslation (*pFixedPoint);
         }
     return boolstat;
     }
@@ -3951,16 +3951,16 @@ DPoint3dP pDirectionVector
     if (boolstat && nullSpaceDimension == 1)
         {
         if (pFixedPoint)
-            bsiTransform_getTranslation (&fixedSpace, pFixedPoint);
+            fixedSpace.GetTranslation (*pFixedPoint);
         if (pDirectionVector)
             bsiTransform_getMatrixColumn (&fixedSpace, pDirectionVector, 0);
         }
     else
         {
         if (pFixedPoint)
-            bsiDPoint3d_zero (pFixedPoint);
+            pFixedPoint->Zero ();
         if (pDirectionVector)
-            bsiDPoint3d_setXYZ (pDirectionVector, 1.0, 0.0, 0.0);
+            pDirectionVector->Init ( 1.0, 0.0, 0.0);
         }
     return boolstat;
     }
@@ -4000,7 +4000,7 @@ DPoint3dP pPlaneVectorY
     if (boolstat && nullSpaceDimension == 1)
         {
         if (pFixedPoint)
-            bsiTransform_getTranslation (&fixedSpace, pFixedPoint);
+            fixedSpace.GetTranslation (*pFixedPoint);
         if (pPlaneVectorX)
             bsiTransform_getMatrixColumn (&fixedSpace, pPlaneVectorX, 0);
         if (pPlaneVectorY)
@@ -4009,11 +4009,11 @@ DPoint3dP pPlaneVectorY
     else
         {
         if (pFixedPoint)
-            bsiDPoint3d_zero (pFixedPoint);
+            pFixedPoint->Zero ();
         if (pPlaneVectorX)
-            bsiDPoint3d_setXYZ (pPlaneVectorX, 1.0, 0.0, 0.0);
+            pPlaneVectorX->Init ( 1.0, 0.0, 0.0);
         if (pPlaneVectorY)
-            bsiDPoint3d_setXYZ (pPlaneVectorY, 1.0, 0.0, 0.0);
+            pPlaneVectorY->Init ( 1.0, 0.0, 0.0);
         }
 
     return boolstat;
@@ -4062,43 +4062,43 @@ DPoint3dP pPlaneNormal
     Transform residualTransform;
     double det;
 
-    bsiTransform_getMatrix (pTransform, &matrix);
+    pTransform->GetMatrix (matrix);
     det = matrix.Determinant ();
 
     if (det >= 0.0)
         {
-        bsiTransform_initIdentity (&mirrorTransform);
+        mirrorTransform.InitIdentity ();
         residualTransform = *pTransform;
-        bsiDPoint3d_zero (&planePoint);
-        bsiDPoint3d_zero (&planeNormal);
+        planePoint.Zero ();
+        planeNormal.Zero ();
         boolstat = false;
         }
     else if (bsiTransform_isMirrorAboutPlane (pTransform, &planePoint, &planeNormal))
         {
-        bsiTransform_initIdentity (&residualTransform);
+        residualTransform.InitIdentity ();
         mirrorTransform = *pTransform;
-        bsiDPoint3d_zero (&planePoint);
-        bsiDPoint3d_zero (&planeNormal);
+        planePoint.Zero ();
+        planeNormal.Zero ();
         boolstat = true;
         }
     else if (bsiTransform_getAnyFixedPoint (pTransform, &planePoint))
         {
-        bsiDPoint3d_setXYZ (&planeNormal, 0.0, 0.0, 1.0);
+        planeNormal.Init ( 0.0, 0.0, 1.0);
         bsiTransform_initFromMirrorPlane (&mirrorTransform, &planePoint, &planeNormal);
         // Mirror transform is its own inverse, so
         // T = T * M * M, and (T*M) has positive determinant and is the residual.
-        bsiTransform_multiplyTransformTransform (&residualTransform, pTransform, &mirrorTransform);
+        residualTransform.InitProduct (*pTransform, mirrorTransform);
         boolstat = true;
         }
     else
         {
         // No fixed point for the whole transform. (Is this even possible?)  Just mirror around origin.
-        bsiDPoint3d_zero (&planePoint);
-        bsiDPoint3d_setXYZ (&planeNormal, 0.0, 0.0, 1.0);
+        planePoint.Zero ();
+        planeNormal.Init ( 0.0, 0.0, 1.0);
         bsiTransform_initFromMirrorPlane (&mirrorTransform, &planePoint, &planeNormal);
         // Mirror transform is its own inverse, so
         // T = T * M * M, and (T*M) has positive determinant and is the residual.
-        bsiTransform_multiplyTransformTransform (&residualTransform, pTransform, &mirrorTransform);
+        residualTransform.InitProduct (*pTransform, mirrorTransform);
         boolstat = true;
         }
 
@@ -4157,16 +4157,16 @@ DPoint3dCP pPickupPoint
 
     /* Build incrementally from left to right. */
     if (pPutdownPoint)
-        bsiTransform_initFromTranslationXYZ (pResult, pPutdownPoint->x, pPutdownPoint->y, pPutdownPoint->z);
+        pResult->InitFrom (pPutdownPoint->x, pPutdownPoint->y, pPutdownPoint->z);
     else
-        bsiTransform_initIdentity (pResult);
+        pResult->InitIdentity ();
     if (pPutdownAxes)
-        bsiTransform_multiplyTransformRotMatrix (pResult, pResult, pPutdownAxes);
+        pResult->InitProduct (*pResult, *pPutdownAxes);
 
     if (pPickupAxes)
         {
         if (bsiRotMatrix_invertRotMatrix (&inversePickup, pPickupAxes))
-            bsiTransform_multiplyTransformRotMatrix (pResult, pResult, &inversePickup);
+            pResult->InitProduct (*pResult, inversePickup);
         else
             boolstat = false;
         }
@@ -4177,8 +4177,8 @@ DPoint3dCP pPickupPoint
     if (pPickupPoint)
         {
         Transform   toZero;
-        bsiTransform_initFromTranslationXYZ (&toZero, - pPickupPoint->x, - pPickupPoint->y, - pPickupPoint->z);
-        bsiTransform_multiplyTransformTransform (pResult, pResult, &toZero);
+        toZero.InitFrom (- pPickupPoint->x, - pPickupPoint->y, - pPickupPoint->z);
+        pResult->InitProduct (*pResult, toZero);
         }
 
     return boolstat;
@@ -4214,20 +4214,20 @@ DVec3dCP    pNormal
     // to punch the vector all the way through to the other side of the plane!
 
     DVec3d  unitNormal;
-    double  magnitude = bsiDVec3d_normalize (&unitNormal, pNormal);
+    double  magnitude = unitNormal.Normalize (*pNormal);
     if (magnitude <= 0.0)
         {
-        bsiTransform_initIdentity (pTransform);
+        pTransform->InitIdentity ();
         return false;
         }
 
     RotMatrix   matrixPart;
-    bsiRotMatrix_initIdentity (&matrixPart);
+    matrixPart.InitIdentity ();
     bsiRotMatrix_addScaledOuterProductInPlace (&matrixPart, &unitNormal, &unitNormal, -1.0);
 
     DPoint3d    translationPart;
-    bsiDPoint3d_scale (&translationPart, &unitNormal, bsiDVec3d_dotProductDVec3dDPoint3d (&unitNormal, pOrigin));
-    bsiTransform_initFromMatrixAndTranslation (pTransform, &matrixPart, &translationPart);
+    translationPart.Scale (unitNormal, unitNormal.DotProduct (*pOrigin));
+    pTransform->InitFrom (matrixPart, translationPart);
     return true;
     }
 

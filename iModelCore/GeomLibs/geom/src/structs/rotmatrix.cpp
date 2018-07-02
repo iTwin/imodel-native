@@ -391,8 +391,8 @@ RotMatrixCP pB
 )
     {
     RotMatrix BT;
-    bsiRotMatrix_transpose (&BT, pB);
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (pProduct, pA, &BT);
+    BT.TransposeOf (*pB);
+    pProduct->InitProduct (*pA, BT);
     }
 
 /* VBSUB(Matrix3dFromMatrix3dTimesMatrix3dTimesMatrix3d) */
@@ -417,8 +417,8 @@ RotMatrixCP pB,
 RotMatrixCP pC
 )
     {
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (pProduct, pA, pB);
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (pProduct, pProduct, pC);
+    pProduct->InitProduct (*pA, *pB);
+    pProduct->InitProduct (*pProduct, *pC);
     }
 
 
@@ -480,7 +480,7 @@ TransformCP pB
         }
     else
         {
-        bsiRotMatrix_initIdentity (pAB);
+        pAB->InitIdentity ();
         }
     }
 
@@ -543,7 +543,7 @@ RotMatrixCP pB
         }
     else
         {
-        bsiRotMatrix_initIdentity (pAB);
+        pAB->InitIdentity ();
         }
     }
 
@@ -612,7 +612,7 @@ DRange3dCP pInRange
     else
         {
         pInRange->Get8Corners (corner);
-        bsiRotMatrix_multiplyDPoint3dArray (pMatrix, corner, corner, 8);
+        pMatrix->Multiply (corner, corner, 8);
         pOutRange->InitFrom(corner, 8);
         }
     }
@@ -708,7 +708,7 @@ RotMatrixP pMatrix,
 double      scale
 )
     {
-    bsiRotMatrix_initFromScaleFactors (pMatrix, scale, scale, scale);
+    pMatrix->InitFromScaleFactors (scale, scale, scale);
     }
 
 
@@ -982,11 +982,11 @@ double         radians
     double v = 1.0 - c;
 
     DVec3d dirVec;
-    double mag = bsiDVec3d_normalize (&dirVec, pAxis);
+    double mag = dirVec.Normalize (*pAxis);
 
     if (mag == 0.0)
         {
-        bsiRotMatrix_initIdentity (pMatrix);
+        pMatrix->InitIdentity ();
         return;
         }
 
@@ -1025,10 +1025,10 @@ DVec3dCP pVector,
 double         scale
 )
     {
-    double denominator = bsiDVec3d_dotProduct (pVector, pVector);
+    double denominator = pVector->DotProduct (*pVector);
     if (denominator == 0.0)
         {
-        bsiRotMatrix_initIdentity (pMatrix);
+        pMatrix->InitIdentity ();
         }
     else
         {
@@ -1065,7 +1065,7 @@ double         radians
     {
     double c = cos(radians);
     double s = sin(radians);
-    bsiRotMatrix_initIdentity (pMatrix);
+    pMatrix->InitIdentity ();
 
     if (2 == axis)
        {
@@ -1148,7 +1148,7 @@ Public GEOMDLLIMPEXP void bsiRotMatrix_transposeInPlace
 RotMatrixP pMatrix
 )
     {
-    bsiRotMatrix_transpose (pMatrix, pMatrix);
+    pMatrix->TransposeOf (*pMatrix);
     }
 
 /* VBSUB(Matrix3dInverse) */
@@ -1192,27 +1192,27 @@ RotMatrixCP pForward
     if (mag == 0.0)
         {
         /* The matrix is singular.  Fill in the identity */
-        bsiRotMatrix_initIdentity (pInverse);
+        pInverse->InitIdentity ();
         return false;
         }
 
     scale = 1.0 / mag;
-    bsiDVec3d_scaleInPlace (&vectorU, scale);
-    bsiDVec3d_scaleInPlace (&vectorV, scale);
-    bsiDVec3d_scaleInPlace (&vectorW, scale);
+    vectorU.Scale (scale);
+    vectorV.Scale (scale);
+    vectorW.Scale (scale);
 
-    det = bsiDVec3d_tripleProduct( &vectorU, &vectorV, &vectorW);
+    det = vectorU.TripleProduct (vectorV, vectorW);
 
     /* Largest entry in matrix is now 1.
        Allow cramers rule if determinant is clearly nonzero
     */
     if (fabs (det) > s_relTol1)
         {
-        bsiDVec3d_crossProduct (&vector0, &vectorV, &vectorW);
-        bsiDVec3d_crossProduct (&vector1, &vectorW, &vectorU);
-        bsiDVec3d_crossProduct (&vector2, &vectorU, &vectorV);
+        vector0.CrossProduct (vectorV, vectorW);
+        vector1.CrossProduct (vectorW, vectorU);
+        vector2.CrossProduct (vectorU, vectorV);
         /* do the work of initFromColumnVectors and transpose all at once! */
-        bsiRotMatrix_initFromRowVectors (pInverse, &vector0, &vector1, &vector2);
+        pInverse->InitFromRowVectors (vector0, vector1, vector2);
         inverseDet = 1.0 / (mag * det);
 
         bsiRotMatrix_scaleColumns (pInverse, pInverse, inverseDet, inverseDet, inverseDet);
@@ -1233,7 +1233,7 @@ RotMatrixCP pForward
             }
         else
             {
-            bsiRotMatrix_initIdentity (pInverse);
+            pInverse->InitIdentity ();
             boolStat = false;
             }
         }
@@ -1321,7 +1321,7 @@ double         zScale
         }
     else
         {
-        bsiRotMatrix_initFromScaleFactors (pScaledMatrix, xScale, yScale, zScale);
+        pScaledMatrix->InitFromScaleFactors (xScale, yScale, zScale);
         }
 
     }
@@ -1402,7 +1402,7 @@ RotMatrixCP pRightMatrix
                     &intermediateMatrix,
                     pLeftMatrix,
                     xs, ys, zs);
-        bsiRotMatrix_multiplyRotMatrixRotMatrix (pScaledMatrix, &intermediateMatrix, pRightMatrix);
+        pScaledMatrix->InitProduct (intermediateMatrix, *pRightMatrix);
 
         }
     else if (pLeftMatrix)
@@ -1415,7 +1415,7 @@ RotMatrixCP pRightMatrix
         }
     else
         {
-        bsiRotMatrix_initFromScaleFactors (pScaledMatrix, xs, ys, zs);
+        pScaledMatrix->InitFromScaleFactors (xs, ys, zs);
         }
     }
 
@@ -1455,25 +1455,25 @@ double         zrot
         }
     else
         {
-        bsiRotMatrix_initIdentity (&product);
+        product.InitIdentity ();
         }
 
     if (yrot != 0.0)
         {
         bsiRotMatrix_initFromAxisAndRotationAngle ( &factor, 1, yrot);
-        bsiRotMatrix_multiplyRotMatrixRotMatrix (&product, &product, &factor);
+        product.InitProduct (product, factor);
         }
 
     if (zrot != 0.0)
         {
         bsiRotMatrix_initFromAxisAndRotationAngle ( &factor, 2, zrot);
-        bsiRotMatrix_multiplyRotMatrixRotMatrix (&product, &product, &factor);
+        product.InitProduct (product, factor);
         }
 
 
     if (pInMatrix)
         {
-        bsiRotMatrix_multiplyRotMatrixRotMatrix (pRotatedMatrix, &product, pInMatrix);
+        pRotatedMatrix->InitProduct (product, *pInMatrix);
         }
     else
         {
@@ -1793,11 +1793,11 @@ DVec3dP pScaleVector
     DVec3d xRow, yRow, zRow, mag;
 
     bsiRotMatrix_getRow (pInMatrix, &xRow, 0);
-    mag.x = bsiDVec3d_magnitude (&xRow);
+    mag.x = xRow.Magnitude ();
     bsiRotMatrix_getRow (pInMatrix, &yRow, 1);
-    mag.y = bsiDVec3d_magnitude (&yRow);
+    mag.y = yRow.Magnitude ();
     bsiRotMatrix_getRow (pInMatrix, &zRow, 2);
-    mag.z = bsiDVec3d_magnitude (&zRow);
+    mag.z = zRow.Magnitude ();
 
     if (pScaleVector)
         *pScaleVector = mag;
@@ -1805,13 +1805,13 @@ DVec3dP pScaleVector
     if (pMatrix)
         {
         if (mag.x > 0.0)
-            bsiDVec3d_scale (&xRow, &xRow, 1.0/mag.x);
+            xRow.Scale (xRow, 1.0/mag.x);
         if (mag.y > 0.0)
-            bsiDVec3d_scale (&yRow, &yRow, 1.0/mag.y);
+            yRow.Scale (yRow, 1.0/mag.y);
         if (mag.z > 0.0)
-            bsiDVec3d_scale (&zRow, &zRow, 1.0/mag.z);
+            zRow.Scale (zRow, 1.0/mag.z);
 
-        bsiRotMatrix_initFromRowVectors (pMatrix, &xRow, &yRow, &zRow);
+        pMatrix->InitFromRowVectors (xRow, yRow, zRow);
         }
     }
 
@@ -1839,11 +1839,11 @@ DVec3dP pScaleVector
     DVec3d    xCol, yCol, zCol, mag;
 
     bsiRotMatrix_getColumn (pInMatrix, &xCol, 0);
-    mag.x = bsiDVec3d_magnitude (&xCol);
+    mag.x = xCol.Magnitude ();
     bsiRotMatrix_getColumn (pInMatrix, &yCol, 1);
-    mag.y = bsiDVec3d_magnitude (&yCol);
+    mag.y = yCol.Magnitude ();
     bsiRotMatrix_getColumn (pInMatrix, &zCol, 2);
-    mag.z = bsiDVec3d_magnitude (&zCol);
+    mag.z = zCol.Magnitude ();
 
     if (pScaleVector)
         *pScaleVector = mag;
@@ -1851,13 +1851,13 @@ DVec3dP pScaleVector
     if (pMatrix)
         {
         if (mag.x > 0.0)
-            bsiDVec3d_scale (&xCol, &xCol, 1.0/mag.x);
+            xCol.Scale (xCol, 1.0/mag.x);
         if (mag.y > 0.0)
-            bsiDVec3d_scale (&yCol, &yCol, 1.0/mag.y);
+            yCol.Scale (yCol, 1.0/mag.y);
         if (mag.z > 0.0)
-            bsiDVec3d_scale (&zCol, &zCol, 1.0/mag.z);
+            zCol.Scale (zCol, 1.0/mag.z);
 
-        bsiRotMatrix_initFromColumnVectors (pMatrix, &xCol, &yCol, &zCol);
+        pMatrix->InitFromColumnVectors (xCol, yCol, zCol);
         }
     }
 
@@ -1928,7 +1928,7 @@ RotMatrixCP pMatrix
         aMax = a;
     if (a < aMin)
         aMin = a;
-    bsiTrig_safeDivide (&result, aMin, aMax, 0.0);
+    DoubleOps::SafeDivide (result, aMin, aMax, 0.0);
     return result;
     }
 
@@ -2258,10 +2258,10 @@ RotMatrixCP pMatrix
     {
     RotMatrix transpose;
     RotMatrix product;
-    bsiRotMatrix_transpose (&transpose, pMatrix);
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (&product, &transpose, pMatrix);
-    return      bsiRotMatrix_isIdentity (&product)
-            &&  (bsiRotMatrix_determinant (pMatrix) > 0.0);
+    transpose.TransposeOf (*pMatrix);
+    product.InitProduct (transpose, *pMatrix);
+    return      product.IsIdentity ()
+            &&  (pMatrix->Determinant () > 0.0);
     }
 
 /* VBSUB(Matrix3dIsOrthogonal) */
@@ -2284,9 +2284,9 @@ RotMatrixCP pMatrix
     {
     RotMatrix transpose;
     RotMatrix product;
-    bsiRotMatrix_transpose (&transpose, pMatrix);
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (&product, &transpose, pMatrix);
-    return      bsiRotMatrix_isIdentity (&product);
+    transpose.TransposeOf (*pMatrix);
+    product.InitProduct (transpose, *pMatrix);
+    return      product.IsIdentity ();
     }
 
 
@@ -2318,12 +2318,12 @@ double      *pAxisRatio
     double aMin, aMax;
 
     bsiRotMatrix_getColumns (pMatrix, &column[0], &column[1], &column[2]);
-    axisScales.x = bsiDVec3d_normalizeInPlace (&column[0]);
-    axisScales.y = bsiDVec3d_normalizeInPlace (&column[1]);
-    axisScales.z = bsiDVec3d_normalizeInPlace (&column[2]);
-    bsiRotMatrix_initFromColumnVectors (&matrixR, &column[0], &column[1], &column[2]);
-    bsiRotMatrix_transpose (&matrixRT, &matrixR);
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (&matrixRTR, &matrixRT, &matrixR);
+    axisScales.x = column[0].Normalize ();
+    axisScales.y = column[1].Normalize ();
+    axisScales.z = column[2].Normalize ();
+    matrixR.InitFromColumnVectors (column[0], column[1], column[2]);
+    matrixRT.TransposeOf (matrixR);
+    matrixRTR.InitProduct (matrixRT, matrixR);
 
     if (pColumns)
         *pColumns = matrixR;
@@ -2350,7 +2350,7 @@ double      *pAxisRatio
             *pAxisRatio = 0.0;
         }
 
-    return      bsiRotMatrix_isIdentity (&matrixRTR);
+    return      matrixRTR.IsIdentity ();
     }
 
 
@@ -2391,7 +2391,7 @@ double      *pScale
             *pScale = axisScales.z;
         }
 
-    return ortho && ratio > almostOne && bsiRotMatrix_determinant (pMatrix) > 0.0;
+    return ortho && ratio > almostOne && pMatrix->Determinant () > 0.0;
     }
 
 
@@ -2420,10 +2420,10 @@ DVec3dCP pNormal
     double norm2, vec2;
     double tolSquared = 1.0E-20;
     vector = *pNormal;
-    bsiRotMatrix_multiplyTransposeDPoint3d (pMatrix, &vector);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector, &vector, pNormal);
-    norm2 = bsiDVec3d_dotProduct (pNormal, pNormal);
-    vec2  = bsiDVec3d_dotProduct (&vector, &vector);
+    pMatrix->MultiplyTranspose (vector);
+    vector.DifferenceOf (vector, *pNormal);
+    norm2 = pNormal->DotProduct (*pNormal);
+    vec2  = vector.DotProduct (vector);
     return vec2 <= tolSquared * norm2;
     }
 
@@ -2468,15 +2468,13 @@ bool               normalize
 
     if (normalize)
         {
-        boolStat = bsiDVec3d_getNormalizedTriad(pDir,
-                        &vector[ix], &vector[iy], &vector[iz]);
+        boolStat = pDir->GetNormalizedTriad (vector[ix], vector[iy], vector[iz]);
         }
     else
         {
-        boolStat = bsiDVec3d_getTriad(pDir,
-                        &vector[ix], &vector[iy], &vector[iz]);
+        boolStat = pDir->GetTriad (vector[ix], vector[iy], vector[iz]);
         }
-    bsiRotMatrix_initFromColumnVectors (pMatrix, &vector[0], &vector[1], &vector[2]);
+    pMatrix->InitFromColumnVectors (vector[0], vector[1], vector[2]);
     return  boolStat;
     }
 
@@ -2504,8 +2502,8 @@ DVec3dCP pYVector
 )
     {
     DVec3d WVector;
-    bsiDVec3d_crossProduct (&WVector, pXVector, pYVector);
-    bsiRotMatrix_initFromColumnVectors (pMatrix, pXVector, pYVector, &WVector);
+    WVector.CrossProduct (*pXVector, *pYVector);
+    pMatrix->InitFromColumnVectors (*pXVector, *pYVector, WVector);
     }
 
 /* VBSUB(Matrix3dRotationFromPoint3dOriginXY) */
@@ -2535,19 +2533,19 @@ DPoint3dCP pYPoint
     DVec3d U, V, W;
     double a;
     double relTol = s_mediumRelTol;
-    bsiDVec3d_computeNormal (&U, pXPoint, pOrigin);
-    bsiDVec3d_computeNormal (&V, pYPoint, pOrigin);
-    a = bsiDVec3d_normalizedCrossProduct (&W, &U, &V);
+    U.NormalizedDifference(*pXPoint, *pOrigin);
+    V.NormalizedDifference(*pYPoint, *pOrigin);
+    a = W.NormalizedCrossProduct (U, V);
 
     if  (a <= relTol)
         {
-        bsiRotMatrix_initIdentity (pMatrix);
+        pMatrix->InitIdentity ();
         return  false;
         }
     else
         {
-        bsiDVec3d_normalizedCrossProduct (&V, &W, &U);
-        bsiRotMatrix_initFromColumnVectors (pMatrix, &U, &V,&W);
+        V.NormalizedCrossProduct (W, U);
+        pMatrix->InitFromColumnVectors (U, V, W);
         return  true;
         }
     }
@@ -2602,21 +2600,21 @@ int            secondaryAxis
 
     bsiRotMatrix_getColumns (pInMatrix, &vector[0], &vector[1], &vector[2]);
 
-    lx = bsiDVec3d_normalizeInPlace (&vector[ix]);
-    bsiDVec3d_normalizedCrossProduct (&vector[iz], &vector[ix], &vector[iy]);
-    ly = bsiDVec3d_normalizedCrossProduct (&vector[iy], &vector[iz], &vector[ix]);
+    lx = vector[ix].Normalize ();
+    vector[iz].NormalizedCrossProduct (vector[ix], vector[iy]);
+    ly = vector[iy].NormalizedCrossProduct (vector[iz], vector[ix]);
 
     if (ly == 0.0)
         {
         if (lx == 0.0)
             {
-            bsiRotMatrix_initIdentity (pMatrix);
+            pMatrix->InitIdentity ();
             boolStat = false;
             }
         else
             {
-            bsiDVec3d_getNormalizedTriad (&vector[ix], &vector[iy], &vector[iz], &vector[ix]);
-            bsiRotMatrix_initFromColumnVectors (pMatrix, &vector[0], &vector[1], &vector[2]);
+            vector[ix].GetNormalizedTriad (vector[iy], vector[iz], vector[ix]);
+            pMatrix->InitFromColumnVectors (vector[0], vector[1], vector[2]);
             boolStat = false;
             }
         }
@@ -2624,8 +2622,8 @@ int            secondaryAxis
         {
         /* negate z-axis if x follows y (this prevents negative determinant) */
         if ((iy + 1) % 3 == ix)
-            bsiDVec3d_negateInPlace (&vector[iz]);
-        bsiRotMatrix_initFromColumnVectors (pMatrix, &vector[0], &vector[1], &vector[2]);
+            vector[iz].Negate();
+        pMatrix->InitFromColumnVectors (vector[0], vector[1], vector[2]);
         boolStat = true;
         }
 
@@ -2664,9 +2662,7 @@ RotMatrixCP pInMatrix
     for (i = 0; i < 3 && !boolStat; i++)
         {
         j = (i + 1) % 3;
-        boolStat = bsiRotMatrix_squareAndNormalizeColumns(pMatrix,
-                        &tempMatrix,
-                        i, j);
+        boolStat = pMatrix->SquareAndNormalizeColumns (tempMatrix, i, j);
         }
     return boolStat;
     }
@@ -3157,7 +3153,7 @@ RotMatrixCP pIn
         if  (pIn)
             *pMatrix = *pIn;
         else
-            bsiRotMatrix_initIdentity (pMatrix);
+            pMatrix->InitIdentity ();
     }
 
 /* VBSUB(Matrix3dEqual) */
@@ -3511,7 +3507,7 @@ RotMatrixCP pMatrix
 
     for (i = 0, sum = 0.0; i < 3; i++)
         {
-        sigma[i] = bsiDVec3d_magnitude (&Bcol[i]);
+        sigma[i] = Bcol[i].Magnitude ();
         sum += sigma[i];
         }
 
@@ -3543,7 +3539,7 @@ RotMatrixCP pMatrix
             i0 = (lastZero + 1) % 3;
             i1 = (i0 + 1) % 3;
             *pFullRankMatrix = *pMatrix;
-            bsiDVec3d_geometricMeanCrossProduct (&perpVector, &Bcol[i0], &Bcol[i1]);
+            perpVector.GeometricMeanCrossProduct(Bcol[i0], Bcol[i1]);
             bsiRotMatrix_addScaledOuterProductInPlace (pFullRankMatrix, &perpVector, &Vcol[lastZero], 1.0);
             break;
             }
@@ -3551,7 +3547,7 @@ RotMatrixCP pMatrix
             {
             int i0, i1;
             /* Only 1 nonzero column */
-            bsiDVec3d_getTriad (&Ccol[0], &Ccol[1], &Ccol[2], &Bcol[lastNonZero]);
+            Ccol[0].GetTriad (Ccol[1], Ccol[2], Bcol[lastNonZero]);
             i0 = (lastNonZero + 1) % 3;
             i1 = (i0 + 1) % 3;
             *pFullRankMatrix = *pMatrix;
@@ -3562,7 +3558,7 @@ RotMatrixCP pMatrix
 
         case 3:
             /* Matrix is full of zeros */
-            bsiRotMatrix_initIdentity (pFullRankMatrix);
+            pFullRankMatrix->InitIdentity ();
             break;
         }
     return 3 - numZero;
@@ -3596,14 +3592,14 @@ int         secondaryAxis
     RotMatrix rotation, skewFactor;
     bool    boolstat = false;
 
-    if (bsiRotMatrix_squareAndNormalizeColumns (&rotation, pMatrixA, primaryAxis, secondaryAxis))
+    if (rotation.SquareAndNormalizeColumns (*pMatrixA, primaryAxis, secondaryAxis))
         {
         bsiRotMatrix_multiplyRotMatrixTransposeRotMatrix (&skewFactor, &rotation, pMatrixA);
         boolstat = true;
         }
     else
         {
-        bsiRotMatrix_initIdentity (&rotation);
+        rotation.InitIdentity ();
         skewFactor = *pMatrixA;
         boolstat = false;
         }
@@ -3676,9 +3672,9 @@ double  *pRadians
     {
     double radians = 0.0;
     bool    result = false;
-    if (   bsiRotMatrix_isOrthogonal (pMatrix)
+    if (   pMatrix->IsOrthogonal ()
        &&  1 == bsiRotMatrix_summaryZEffects (pMatrix)
-       &&   bsiRotMatrix_determinant (pMatrix) > 0.0
+       &&   pMatrix->Determinant () > 0.0
        )
         {
         radians = atan2 (pMatrix->form3d[1][0], pMatrix->form3d[0][0]);
@@ -3729,9 +3725,7 @@ double zScale
     double vx = -sin (yAxisAngle);
     double vy =  cos (yAxisAngle);
 
-    bsiRotMatrix_initFromRowValues
-                (
-                pMatrix,
+    pMatrix->InitFromRowValues (
                 ux * xScale, vx * yScale, 0.0,
                 uy * xScale, vy * yScale, 0.0,
                 0.0,         0.0,         zScale
@@ -3864,7 +3858,7 @@ double *pScale
     RotMatrix R, R1;
     double det;
     double maxDiff;
-    det = bsiRotMatrix_determinant (pMatrix);
+    det = pMatrix->Determinant ();
 
     if (fabs (det) > 0.0)
         {
@@ -3892,7 +3886,7 @@ double *pScale
             RotZInv.form3d[1][0] = -sz;
             RotZInv.form3d[0][2] = RotZInv.form3d[1][2] =0.0;
             RotZInv.form3d[2][0] = RotZInv.form3d[2][1] =0.0;
-            bsiRotMatrix_multiplyRotMatrixRotMatrix (&RotXRotY, &R, &RotZInv);
+            RotXRotY.InitProduct (R, RotZInv);
             thetaY = atan2 (RotXRotY.form3d[0][2], RotXRotY.form3d[0][0]);
             thetaX = atan2 (RotXRotY.form3d[2][1], RotXRotY.form3d[1][1]);
             }
@@ -3920,7 +3914,7 @@ double *pScale
         cx = cos (thetaX);
         sx = sin (thetaX);
 
-        bsiRotMatrix_initFromRowValues (&R1,
+        R1.InitFromRowValues (
                 cy * cz,                - cy * sz,                  sy,
                 sx * sy * cz +  cx * sz, -sx * sy * sz + cx * cz,  -sx * cy,
                 -cx * sy * cz + sx * sz,  cx * sy * sz + sx * cz,   cx * cy
@@ -3998,7 +3992,7 @@ RotMatrixP pV
     static double s_squareTol = 1.0e-30;
 
     matrixB = *pMatrixA;
-    bsiRotMatrix_initIdentity (&matrixV);
+    matrixV.InitIdentity ();
     /* Basic step: Form eigenvectors of BT*B.
        Replace (B,V) by (B*Q, V*Q).
     */
@@ -4016,10 +4010,8 @@ RotMatrixP pV
             }
         bsiRotMatrix_symmetricEigensystem
                         (&matrixQ, &lambda, &matrixBTB);
-        bsiRotMatrix_multiplyRotMatrixRotMatrix
-                        (&matrixB, &matrixB, &matrixQ);
-        bsiRotMatrix_multiplyRotMatrixRotMatrix
-                        (&matrixV, &matrixV, &matrixQ);
+        matrixB.InitProduct (matrixB, matrixQ);
+        matrixV.InitProduct (matrixV, matrixQ);
         }
 
     if (pB)

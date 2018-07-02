@@ -520,7 +520,7 @@ double              fraction
     jmdlRG_getVertexData (pRG, xyz, 1, NULL, nodeId, 0.0);
     pVSD->xyz0 = xyz[0];
     pVSD->xyz1 = xyz[1];
-    pVSD->theta = bsiTrig_atan2 (xyz[1].y, xyz[1].x);
+    pVSD->theta = Angle::Atan2 (xyz[1].y, xyz[1].x);
 
     jmdlRG_getEdgeData (pRG, &edgeData, nodeId);
     if (s_noisy)
@@ -533,12 +533,12 @@ double              fraction
         DPoint3d xyzA;
         jmdlRG_evaluateEdgeData (pRG, &xyzA, &edgeData, s_fractionA);
         DVec3d chordA = DVec3d::FromStartEnd (xyz[0], xyzA);
-        thetaA = bsiTrig_atan2 (chordA.y, chordA.x);
+        thetaA = Angle::Atan2 (chordA.y, chordA.x);
         pVSD->theta = thetaA;
         }
     if (pXYZ)
         *pXYZ = midEdgeXYZ;
-    return bsiDPoint3d_distanceXY (&midEdgeXYZ, &xyz[0]);
+    return midEdgeXYZ.DistanceXY (xyz[0]);
     }
 
 
@@ -574,8 +574,8 @@ bvector<double>   *pParamArray
         else
             {
             jmdlEmbeddedDPoint3dArray_getDPoint3d (pXYZArray, &xyzCurr, 0);
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&vector, &xyzCurr, &xyzCenter);
-            pSortData[i].theta = bsiTrig_atan2 (vector.y, vector.x);
+            vector.DifferenceOf (xyzCurr, xyzCenter);
+            pSortData[i].theta = Angle::Atan2 (vector.y, vector.x);
             }
         }
     qsort (pSortData, numSort, sizeof (VertexSortData), (VBArray_SortFunction)vsd_compare);
@@ -588,7 +588,7 @@ double theta1,
 double tol
 )
     {
-    return bsiTrig_angleInSweep (theta0, theta1 - tol, 2.0 * tol);
+    return Angle::InSweepAllowPeriodShift (theta0, theta1 - tol, 2.0 * tol);
     }
 
 
@@ -620,8 +620,8 @@ bvector<double>   *pParamArray
     double a0, a1, a, r;
     jmdlRG_getVertexData (pRG, xyz[0], 1, NULL, pSortData[i].nodeId, sOffsetFraction);
     jmdlRG_getVertexData (pRG, xyz[1], 1, NULL, pSortData[j].nodeId, sOffsetFraction);
-    a0 = bsiDPoint3d_magnitude (&xyz[0][1]);
-    a1 = bsiDPoint3d_magnitude (&xyz[1][1]);
+    a0 = xyz[0][1].Magnitude ();
+    a1 = xyz[1][1].Magnitude ();
     a = a0 < a1 ? a0 : a1;
     r = fraction * a;
     jmdlRG_edgeCircleXYIntersection (pRG, pParamArray, pXYZArray,
@@ -639,9 +639,9 @@ bvector<double>   *pParamArray
             double cp;
             param[1] = pParamArray->at (0);
             jmdlEmbeddedDPoint3dArray_getDPoint3d (pXYZArray, &xyzTarget[1], 0);
-            bsiDVec3d_subtractDPoint3dDPoint3d (&vector[0], &xyzTarget[0], &xyz[0][0]);
-            bsiDVec3d_subtractDPoint3dDPoint3d (&vector[1], &xyzTarget[1], &xyz[1][0]);
-            cp = bsiDVec3d_crossProductXY (&vector[0], &vector[1]);
+            vector[0].DifferenceOf (xyzTarget[0], *(&xyz[0][0]));
+            vector[1].DifferenceOf (xyzTarget[1], *(&xyz[1][0]));
+            cp = vector[0].CrossProductXY (vector[1]);
             if (cp < 0.0)
                 {
                 VertexSortData temp = pSortData[j];
@@ -741,7 +741,7 @@ double              angleTol
     int numDup = 0;
     for (i = 0, j = numSort - 1; i < numSort; j = i++)
         {
-        if (bsiTrig_angleInSweep (pSortData[i].theta,
+        if (Angle::InSweepAllowPeriodShift (pSortData[i].theta,
                     pSortData[j].theta - angleTol,
                     sweepAngle
                     ))

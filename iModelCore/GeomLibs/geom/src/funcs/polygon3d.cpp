@@ -505,7 +505,7 @@ double      tol               /* tolerance for ON case detection */
     *pParity = (numLeft & 0x01) ? 1 : -1;
     return  true;
     }
-
+#ifdef CompileSweptPolygonCrossingCounts
 /*---------------------------------------------------------------------------------**//**
 * @description Look for intersections of a ray with a swept polygon.
 * @remarks In most common usage, the caller expects the polygon to be planar, and passes the plane normal as the sweep direction.
@@ -549,7 +549,7 @@ DPoint3dCP pSweepDirection
     xDir.Normalize (*pRayDirection);
     yDir.NormalizedCrossProduct (*pRayDirection, *pSweepDirection);
 
-    bsiTransform_initFromOriginAndVectors (&localToWorld, pPoint, pRayDirection, &yDir, pSweepDirection);
+    localToWorld.InitFromOriginAndVectors(*pPoint, *pRayDirection, yDir, *pSweepDirection);
 
     numPositiveCrossing = numNegativeCrossing = 0;
     bExactOnEdge = false;
@@ -654,7 +654,7 @@ DPoint3dCP pSweepDirection
 
     return bStat;
     }
-
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @description Classify a point with respect to a polygon, ignoring z-coordinates.
 * @param pPoint => point to test
@@ -1607,7 +1607,7 @@ int numB
     tol = bsiTrig_smallAngle () * largeCoordinate;
     rangeAB_localA = DRange3d::FromUnion (rangeA_localA, rangeB_localA);
 
-    if (bsiDVec3d_areParallel (&zvecA, &zvecB))
+    if (zvecA.IsParallelTo(zvecB))
         {
         if (rangeAB_localA.high.z - rangeAB_localA.low.z < tol)
             {
@@ -1860,7 +1860,7 @@ double*     onTolerance
 
     *pNumClipPoints = 0;
 
-    if (!bsiDPoint3d_safeDivide (&scaledRay.direction, &rayVector, bsiDVec3d_magnitudeSquared (&rayVector)))
+    if (!bsiDPoint3d_safeDivide (&scaledRay.direction, &rayVector, rayVector.MagnitudeSquared ()))
         return false;
 
     rayPerp.CrossProduct (*pPolygonPerp, rayVector);
@@ -2010,8 +2010,7 @@ int         *pIndex
         *pIndex += 2;
 
     if (pSegmentArray)
-        bsiDSegment3d_initFromStartEndXYZXYZ (&pSegmentArray[*pNumSegment],
-                    u0, 0.0, 0.0, u1, 0.0, 0.0);
+        pSegmentArray[*pNumSegment].Init (u0, 0.0, 0.0, u1, 0.0, 0.0);
     *pNumSegment += 1;
     return true;
     }
@@ -2151,14 +2150,14 @@ DVec3dCP pNormal
 )
     {
     DVec3d unitX, unitY, unitZ;
-    if (!bsiDVec3d_getNormalizedTriad (pNormal, &unitX, &unitY, &unitZ))
+    if (!pNormal->GetNormalizedTriad (unitX, unitY, unitZ))
         {
         pWorldToLocal->InitIdentity ();
         pLocalToWorld->InitIdentity ();
         return false;
         }
 
-    bsiTransform_initFromOriginAndVectors (pLocalToWorld, pOrigin, &unitX, &unitY, &unitZ);
+    pLocalToWorld->InitFromOriginAndVectors(*pOrigin, unitX, unitY, unitZ);
     bsiTransform_invertAsRotation (pWorldToLocal, pLocalToWorld);
     return true;
     }

@@ -28,6 +28,7 @@ int DSPiral2dWeightedViennese::GetTransitionTypeCode () const { return Transitio
 int DSPiral2dViennese::GetTransitionTypeCode () const { return TransitionType_Viennese;}
 int DSpiral2dNewSouthWales::GetTransitionTypeCode () const { return TransitionType_NewSouthWales;}
 int DSpiral2dAustralian::GetTransitionTypeCode () const { return TransitionType_Australian;}
+int DSpiral2dDirectHalfCosine::GetTransitionTypeCode () const { return TransitionType_DirectHalfCosine;}
 
 int DSpiral2dMXCubic::GetTransitionTypeCode () const { return TransitionType_MXCubic;}
 int DSpiral2dItalian::GetTransitionTypeCode () const { return TransitionType_Italian;}

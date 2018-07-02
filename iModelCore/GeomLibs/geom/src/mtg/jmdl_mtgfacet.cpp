@@ -1598,9 +1598,9 @@ double  &iyzSum
     {
     DVec3d v12, v13;
 
-    bsiDVec3d_subtract (&v12, &u2, &u1);
-    bsiDVec3d_subtract (&v13, &u3, &u1);
-    double area = 0.5 * bsiDVec3d_tripleProduct (&v12, &v13, &referenceNormal);
+    v12.DifferenceOf (u2, u1);
+    v13.DifferenceOf (u3, u1);
+    double area = 0.5 * v12.TripleProduct (v13, referenceNormal);
 
     areaSum += area;
 
@@ -1641,7 +1641,7 @@ double  &yzSum
     double momentScale;
     double uuScale, uvScale;
 
-    volume = bsiDVec3d_tripleProduct (&u1, &u2, &u3) / 6.0;
+    volume = u1.TripleProduct (u2, u3) / 6.0;
     volumeSum += volume;
     momentScale = volume * 0.25;
 
@@ -1776,7 +1776,7 @@ typedef struct
         bOriginDefined = false;
         origin.Zero ();
         centroid.Zero ();
-        bsiDVec3d_zero (&balanceMoments);
+        balanceMoments.Zero ();
         ixx = iyy = izz = 0.0;
         ixy = ixz = iyz = 0.0;
         }
@@ -1872,7 +1872,7 @@ void *vpSums
     vectorB.DifferenceOf (pXYZ[1], pSums->origin);
     DVec3d summedNormal;
     DVec3d currNormal;
-    bsiDVec3d_zero (&summedNormal);
+    summedNormal.Zero ();
 
     for (int i = 2; i < numXYZ; i++, vectorB = vectorC)
         {
@@ -1884,11 +1884,11 @@ void *vpSums
                     pSums->ixx, pSums->iyy, pSums->izz,
                     pSums->ixy, pSums->ixz, pSums->iyz
                     );
-        bsiDVec3d_crossProduct3DPoint3d (&currNormal, pXYZ, pXYZ + i - 1, pXYZ + i);
+        currNormal.CrossProductToPoints (pXYZ[0], pXYZ[i - 1], pXYZ[i]);
         summedNormal.Add (currNormal);
         }
 
-    double currArea = 0.5 * bsiDVec3d_normalizeInPlace (&summedNormal);
+    double currArea = 0.5 * summedNormal.Normalize ();
 
     if (currArea > 0.0)
         {
@@ -2267,7 +2267,7 @@ void *vpSums
     //  other than the first, last.
     DVec3d summedNormal;
     DVec3d currNormal;
-    bsiDVec3d_zero (&summedNormal);
+    summedNormal.Zero ();
 
     // First triangle scan establishes normal vector..
     vectorA.DifferenceOf (pXYZ[0], pSums->origin);
@@ -2276,11 +2276,11 @@ void *vpSums
     for (i = 2; i < numXYZ; i++, vectorB = vectorC)
         {
         vectorC.DifferenceOf (pXYZ[i], pSums->origin);
-        bsiDVec3d_crossProduct3DPoint3d (&currNormal, pXYZ, pXYZ + i - 1, pXYZ + i);
+        currNormal.CrossProductToPoints (pXYZ[0], pXYZ[i - 1], pXYZ[i]);
         summedNormal.Add (currNormal);
         }
 
-    double currArea = 0.5 * bsiDVec3d_normalizeInPlace (&summedNormal);
+    double currArea = 0.5 * summedNormal.Normalize ();
 
     // Second triangle scan gathers signed contribution from each triangle.
     vectorA.DifferenceOf (pXYZ[0], pSums->origin);

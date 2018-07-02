@@ -1276,7 +1276,7 @@ const HConic    *hConicP,       /* => conic to evaluate */
                 if (isSegmentP)
                     *isSegmentP = true;
                 if (segmentP)
-                    bsiDSegment3d_initFromDPoint3d (segmentP, &pointList[0], &pointList[1]);
+                    segmentP->Init (pointList[0], pointList[1]);
                 }
             }
             break;

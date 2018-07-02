@@ -307,13 +307,13 @@ double   r2
     vec01.DifferenceOf (pCenterArrayIn[1], pCenterArrayIn[0]);
     vec02.DifferenceOf (pCenterArrayIn[2], pCenterArrayIn[0]);
     vec01.z = vec02.z = 0.0;
-    double x1 = bsiDVec3d_magnitudeXY (&vec01);
-    double x2 = bsiDVec3d_magnitudeXY (&vec02);
+    double x1 = vec01.MagnitudeXY ();
+    double x2 = vec02.MagnitudeXY ();
     if (vec01.DotProduct (vec02) < 0.0)
         x2 = - x2;
     DVec3d vectorU, vectorV;
     vectorU.Normalize (vec01);
-    bsiDVec3d_unitPerpendicularXY (&vectorV, &vectorU);
+    vectorV.UnitPerpendicularXY (vectorU);
 
     /*
     Measuring from center 0 in rotated system:
@@ -464,8 +464,8 @@ double   *pRadiusArrayIn
     vector01.DifferenceOf (pCenterArrayIn[1], pCenterArrayIn[0]);
     vector02.DifferenceOf (pCenterArrayIn[2], pCenterArrayIn[0]);
 
-    det = bsiDVec3d_crossProductXY (&vector01, &vector02);
-    dot = bsiDVec3d_dotProductXY (&vector01, &vector02);
+    det = vector01.CrossProductXY (vector02);
+    dot = vector01.DotProduct (vector02);
     double a;
     if (fabs (det) <= sDetTol * fabs (dot) || !DoubleOps::SafeDivide (a, 1.0, det, 0.0))
         {
@@ -706,7 +706,7 @@ Solve for two x values.  Substitute in with largest c0, c1.
     xVec = lineDirectionC;
     xVec.z = 0.0;
     xVec.Normalize ();
-    bsiDVec3d_unitPerpendicularXY (&yVec, &xVec);
+    yVec.UnitPerpendicularXY (xVec);
     xyGlobal[0].DifferenceOf (centerA, linePointC);
     xyGlobal[1].DifferenceOf (centerB, linePointC);
 

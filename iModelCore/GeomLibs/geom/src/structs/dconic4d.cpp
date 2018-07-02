@@ -1041,10 +1041,10 @@ DMatrix4dP pInverse
         DMatrix4d QR, QQT, Diff;
         double maxDiff0;
         bool    isIdentity;
-        bsiDMatrix4d_multiply (&QR, &Q, &R);
+        QR.InitProduct (Q, R);
         bsiDMatrix4d_subtractDMatrix4d (&Diff, &QR, &A);
         maxDiff0 = bsiDMatrix4d_maxAbs (&Diff);
-        bsiDMatrix4d_multiply (&QQT, &Q, &QT);
+        QQT.InitProduct (Q, QT);
         isIdentity = QQT.IsIdentity ();
         isIdentity = QQT.IsIdentity ();
         }
@@ -1090,7 +1090,7 @@ DMatrix4dP pInverse
         {
         DMatrix4d RAI, Diff;
         double maxDiff0;
-        bsiDMatrix4d_multiply (&RAI, &R, &AI);
+        RAI.InitProduct (R, AI);
         bsiDMatrix4d_subtractDMatrix4d (&Diff, &QT, &RAI);
         maxDiff0 = bsiDMatrix4d_maxAbs (&Diff);
         maxDiff0 = bsiDMatrix4d_maxAbs (&Diff);
@@ -1107,7 +1107,7 @@ DMatrix4dP pInverse
         {
         DMatrix4d AAI;
         bool    isIdentity;
-        bsiDMatrix4d_multiply (&AAI, &A, &AI);
+        AAI.InitProduct (A, AI);
         isIdentity = AAI.IsIdentity ();
         isIdentity = AAI.IsIdentity ();
         }
@@ -2704,8 +2704,8 @@ DPoint4dP plane
 )
     {
     DVec3d vector0, vector90;
-    bsiDVec3d_weightedDifference (&vector0, &conic->vector0, &conic->center);
-    bsiDVec3d_weightedDifference (&vector90, &conic->vector90, &conic->center);
+    vector0.WeightedDifferenceOf(conic->vector0, conic->center);
+    vector90.WeightedDifferenceOf(conic->vector90, conic->center);
     return bsiDPoint4d_planeFromDPoint4dAndDPoint3dVectors (plane, &conic->center, &vector0, &vector90);
     }
 

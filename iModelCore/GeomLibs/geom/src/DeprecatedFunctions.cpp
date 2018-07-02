@@ -927,13 +927,13 @@ DPoint3dP pUnboundedUVW
             }
         }
 
-    bsiDSegment3d_initFromDPoint3d (&testSeg[0], pVertex0, pVertex1);
-    bsiDSegment3d_initFromDPoint3d (&testSeg[1], pVertex1, pVertex2);
-    bsiDSegment3d_initFromDPoint3d (&testSeg[2], pVertex2, pVertex0);
+    testSeg[0].Init (*pVertex0, *pVertex1);
+    testSeg[1].Init (*pVertex1, *pVertex2);
+    testSeg[2].Init (*pVertex2, *pVertex0);
 
     for (i = 0; i < 3; i++)
         {
-        bsiDSegment3d_projectPointBounded (&testSeg[i], &testPoint[i], &testParam[i], pSpacePoint);
+        testSeg[i].ProjectPointBounded (testPoint[i], testParam[i], *pSpacePoint);
         testDistanceSquared[i] = testPoint[i].DistanceSquared (*pSpacePoint);
         }
     iMin = 0;
@@ -3407,7 +3407,7 @@ int numPoint
     DVec3d xVec, yVec, zVec;
     bool    boolstat = false;
     if (   !bsiGeom_planeThroughPoints (&normal, &origin, pPoints, numPoint)
-        || !bsiDVec3d_getNormalizedTriad (&normal, &xVec, &yVec, &zVec)
+        || !normal.GetNormalizedTriad(xVec, yVec, zVec)
        )
         {
         if (pWorldToPlane)
@@ -3421,7 +3421,7 @@ int numPoint
         }
     else
         {
-        bsiTransform_initFromOriginAndVectors (&planeToWorld, &origin, &xVec, &yVec, &zVec);
+        planeToWorld.InitFromOriginAndVectors(origin, xVec, yVec, zVec);
         bsiTransform_invertAsRotation (&worldToPlane, &planeToWorld);
 
         if (pWorldToPlane)

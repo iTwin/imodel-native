@@ -35,7 +35,7 @@ double  &yzSum
     double momentScale;
     double uuScale, uvScale;
 
-    volume = bsiDVec3d_tripleProduct (&u1, &u2, &u3) / 6.0;
+    volume = u1.TripleProduct (u2, u3) / 6.0;
     volumeSum += volume;
     momentScale = volume * 0.25;
 

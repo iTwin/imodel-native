@@ -58,7 +58,7 @@ $(OUT_DIR)PolygonOps$(OUT_EXT)     : $(geomSrcFuncs)PolygonOps.cpp        $(OTHE
 
 #$(OUT_DIR)dpoint3ddvec3d$(OUT_EXT)  : $(geomSrcStructs)dpoint3ddvec3d.cpp   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dvec3d$(OUT_EXT)          : $(geomSrcStructs)dvec3d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dvec3d$(OUT_EXT)          : $(geomSrcStructs)dvec3d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)dvec3drotmatrix$(OUT_EXT) : $(geomSrcStructs)dvec3drotmatrix.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -72,7 +72,7 @@ $(OUT_DIR)transform$(OUT_EXT)       : $(geomSrcStructs)transform.cpp        $(OT
 
 $(OUT_DIR)rotmatrix$(OUT_EXT)       : $(geomSrcStructs)rotmatrix.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dsegment3d$(OUT_EXT)      : $(geomSrcStructs)dsegment3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dsegment3d$(OUT_EXT)      : $(geomSrcStructs)dsegment3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)DBilinearPatch3d$(OUT_EXT)      : $(geomSrcStructs)DBilinearPatch3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 

@@ -2,7 +2,7 @@
 |
 |     $Source: vu/src/vupoly.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -507,7 +507,7 @@ int                     maxPerFace
         for (i = 0; i < numPoint; i++)
             {
             if (pBuffer[i].x != DISCONNECT && pBuffer[i].y != DISCONNECT)
-                bsiTransform_multiplyDPoint3dInPlace (pWorldToLocal, &pBuffer[i]);
+                pWorldToLocal->Multiply (pBuffer[i]);
             }
 
         status = vu_triangulateXYPolygonExt2 (pIndices, pExteriorLoopIndices, pXYZ, pBuffer, numPoint, xyTolerance, maxPerFace, bSignedOneBasedIndices, pXYZ != NULL);
@@ -520,7 +520,7 @@ int                     maxPerFace
 
             for (i = 0; i < nXYZ; i++)
                 if (pBuffer[i].x != DISCONNECT && pBuffer[i].y != DISCONNECT)
-                    bsiTransform_multiplyDPoint3dInPlace (pLocalToWorld, &pBuffer[i]);
+                    pLocalToWorld->Multiply (pBuffer[i]);
             }
         }
 
@@ -1165,13 +1165,13 @@ DPoint3d            *meshOrigin
     // Fixing the corner needs a way to make the "non-interfering grid" snuggle into the corners better.
     DPoint3d origin = NULL != meshOrigin ? *meshOrigin : range.low;
     double ax0, ay0, ax1, ay1;
-    bsiTrig_safeDivide (&ax0, range.low.x - origin.x, meshXLength, 0.0);
-    bsiTrig_safeDivide (&ay0, range.low.y - origin.y, meshYLength, 0.0);
+    DoubleOps::SafeDivide (ax0, range.low.x - origin.x, meshXLength, 0.0);
+    DoubleOps::SafeDivide (ay0, range.low.y - origin.y, meshYLength, 0.0);
     int ix0 = (int) floor (ax0);
     int iy0 = (int) floor (ay0);
     static double s_shiftA1 = 2.0;
-    bsiTrig_safeDivide (&ax1, range.high.x - origin.x, meshXLength, 0.0);
-    bsiTrig_safeDivide (&ay1, range.high.y - origin.y, meshYLength, 0.0);
+    DoubleOps::SafeDivide (ax1, range.high.x - origin.x, meshXLength, 0.0);
+    DoubleOps::SafeDivide (ay1, range.high.y - origin.y, meshYLength, 0.0);
     int ix1 = (int)ceil (ax1 + s_shiftA1);
     int iy1 = (int)ceil (ay1 + s_shiftA1);
 
@@ -1231,8 +1231,8 @@ DPoint3d            *meshOrigin
         static double s_gridScale = 1.60;
         numX = (int) (ceil (s_gridScale * numX));
         numY = (int) (ceil (s_gridScale * numY));
-        bsiTransform_setFixedPoint (&localToWorld, &range.low);
-        bsiTransform_invertTransform (&worldToLocal, &localToWorld);
+        localToWorld.SetFixedPoint(range.low);
+        worldToLocal.InverseOf (localToWorld);
         vu_transform (graphP, &worldToLocal);
         vu_buildNonInterferingGrid (graphP, numX, numY, 0, 0);
         vu_transform (graphP, &localToWorld);

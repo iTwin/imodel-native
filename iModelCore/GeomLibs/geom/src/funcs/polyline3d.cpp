@@ -719,9 +719,9 @@ double &segmentFraction
         vectorB.DifferenceOf (pXYZArray[iNext], pXYZArray[i]);
         vectorC.DifferenceOf (pXYZArray[i], point0);
 
-        double crossAB = bsiDVec3d_crossProductXY (&vectorA, &vectorB);
-        double crossCA = bsiDVec3d_crossProductXY (&vectorC, &vectorA);
-        double crossCB = bsiDVec3d_crossProductXY (&vectorC, &vectorB);
+        double crossAB = vectorA.CrossProductXY (vectorB);
+        double crossCA = vectorC.CrossProductXY (vectorA);
+        double crossCB = vectorC.CrossProductXY (vectorB);
 
         if (crossAB < 0.0)
             {
