@@ -35,7 +35,7 @@
     <Xml Include="..\..\..\DgnPlatform.PartFile.xml" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{7782F16A-217A-417A-BF3B-B7B8A137BE16}</ProjectGuid>
+    <ProjectGuid>{01CF7ED1-682B-4A35-9836-B812E68CB906}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

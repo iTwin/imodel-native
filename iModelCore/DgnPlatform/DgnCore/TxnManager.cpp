@@ -1132,6 +1132,7 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
          */
         m_dgndb.ClearECDbCache();
         m_dgndb.Schemas().RepopulateCacheTables();
+        m_dgndb.Schemas().UpgradeECInstances();
         m_dgndb.Domains().SyncWithSchemas();
         }
 
