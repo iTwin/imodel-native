@@ -608,7 +608,7 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  01/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumerationR ecEnum, Utf8CP jsonStr)
+BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumerationR ecEnum, ECDbCR ecdb, Utf8CP jsonStr)
     {
     rapidjson::Document enumValuesJson;
     if (enumValuesJson.Parse<0>(jsonStr).HasParseError())
@@ -619,36 +619,66 @@ BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumeratio
 
     BeAssert(enumValuesJson.IsArray());
 
+    const bool isIntEnum = ecEnum.GetType() == PRIMITIVETYPE_Integer;
+    BeAssert(isIntEnum || ecEnum.GetType() == PRIMITIVETYPE_String);
+    const bool supportsNamedEnumerators = FeatureManager::IsAvailable(ecdb, Feature::NamedEnumerators);
+
     for (rapidjson::Value const& enumValueJson : enumValuesJson.GetArray())
         {
         BeAssert(enumValueJson.IsObject());
-        BeAssert(enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_Name) && (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_IntValue) || enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_StringValue)));
+        BeAssert(enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_IntValue) || enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_StringValue));
+        BeAssert(!supportsNamedEnumerators || enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_Name));
 
         ECEnumeratorP enumValue = nullptr;
 
-        rapidjson::Value const& nameVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_Name];
-        BeAssert(nameVal.IsString());
-        Utf8CP name = nameVal.GetString();
-
+        int intVal = -1;
+        Utf8CP stringVal = nullptr;
         if (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_IntValue))
             {
-            rapidjson::Value const& intVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_IntValue];
-            BeAssert(intVal.IsInt());
-            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, name, intVal.GetInt()))
-                return ERROR;
+            BeAssert(isIntEnum);
+            rapidjson::Value const& intValJson = enumValueJson[ECDBMETA_PROP_ECEnumerator_IntValue];
+            BeAssert(intValJson.IsInt());
+            intVal = intValJson.GetInt();
             }
         else if (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_StringValue))
             {
-            rapidjson::Value const& stringVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_StringValue];
-            BeAssert(stringVal.IsString());
-            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, name, stringVal.GetString()))
-                return ERROR;
+            BeAssert(!isIntEnum);
+            rapidjson::Value const& stringValJson = enumValueJson[ECDBMETA_PROP_ECEnumerator_StringValue];
+            BeAssert(stringValJson.IsString());
+            stringVal = stringValJson.GetString();
             }
         else
             {
             BeAssert(false && "Unsupported underlying ECEnumeration type");
             return ERROR;
             }
+
+        Utf8CP name = nullptr;
+        Utf8String generatedName;
+        if (supportsNamedEnumerators)
+            {
+            rapidjson::Value const& nameVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_Name];
+            BeAssert(nameVal.IsString());
+            name = nameVal.GetString();
+            }
+        else
+            {
+            generatedName = ECEnumerator::DetermineName(ecEnum.GetName(), isIntEnum ? nullptr : stringVal, isIntEnum ? &intVal : nullptr);
+            name = generatedName.c_str();
+            }
+
+        BeAssert(!Utf8String::IsNullOrEmpty(name));
+        if (isIntEnum)
+            {
+            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, name, intVal))
+                return ERROR;
+            }
+        else
+            {
+            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, name, stringVal))
+                return ERROR;
+            }
+        
 
         if (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel))
             {

@@ -75,7 +75,7 @@ public:
     static bool TryGetSchemaKey(ECN::SchemaKey&, ECDbCR, DbTableSpace const&, Utf8CP schemaName);
 
     static BentleyStatus SerializeEnumerationValues(Utf8StringR jsonStr, ECN::ECEnumerationCR);
-    static BentleyStatus DeserializeEnumerationValues(ECN::ECEnumerationR, Utf8CP jsonStr);
+    static BentleyStatus DeserializeEnumerationValues(ECN::ECEnumerationR, ECDbCR, Utf8CP jsonStr);
 
     static BentleyStatus SerializeKoqPresentationFormats(Utf8StringR jsonStr, ECDbCR, ECN::KindOfQuantityCR);
     static BentleyStatus SerializeKoqPresentationFormats(Utf8StringR jsonStr, bvector<Utf8String> const& presFormats);

@@ -533,6 +533,12 @@ PropertyCategoryId SchemaReader::GetPropertyCategoryId(PropertyCategoryCR cat) c
 //+---------------+---------------+---------------+---------------+---------------+------
 UnitSystemCP SchemaReader::GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode schemaLookupMode) const
     {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
+        {
+        LOG.errorv("Cannot read UnitSystem '%s.%s'. This version of the file does not support UnitSystems yet.", schemaNameOrAlias.c_str(), systemName.c_str());
+        return nullptr;
+        }
+
     UnitSystemId id = SchemaPersistenceHelper::GetUnitSystemId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), systemName.c_str(), schemaLookupMode);
     if (!id.IsValid())
         return nullptr;
@@ -552,6 +558,12 @@ UnitSystemCP SchemaReader::GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8Str
 //---------------------------------------------------------------------------------------
 UnitSystemId SchemaReader::GetUnitSystemId(UnitSystemCR us) const
     {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
+        {
+        LOG.errorv("Cannot read UnitSystemId for UnitSystem '%s'. This version of the file does not support UnitSystems yet.", us.GetFullName().c_str());
+        return UnitSystemId();
+        }
+
     if (us.HasId()) //This is unsafe but since we do not delete UnitSystem any class that hasId does exist in db
         {
         BeAssert(us.GetId() == SchemaPersistenceHelper::GetUnitSystemId(GetECDb(), GetTableSpace(), us.GetSchema().GetName().c_str(), us.GetName().c_str(), SchemaLookupMode::ByName));
@@ -574,6 +586,12 @@ UnitSystemId SchemaReader::GetUnitSystemId(UnitSystemCR us) const
 //+---------------+---------------+---------------+---------------+---------------+------
 PhenomenonCP SchemaReader::GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode schemaLookupMode) const
     {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
+        {
+        LOG.errorv("Cannot read Phenomenon '%s.%s'. This version of the file does not support Phenomena yet.", schemaNameOrAlias.c_str(), phenName.c_str());
+        return nullptr;
+        }
+
     PhenomenonId id = SchemaPersistenceHelper::GetPhenomenonId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), phenName.c_str(), schemaLookupMode);
     if (!id.IsValid())
         return nullptr;
@@ -593,6 +611,12 @@ PhenomenonCP SchemaReader::GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8Str
 //---------------------------------------------------------------------------------------
 PhenomenonId SchemaReader::GetPhenomenonId(PhenomenonCR ph) const
     {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
+        {
+        LOG.errorv("Cannot read PhenomenonId for Phenomenon '%s'. This version of the file does not support Phenomena yet.", ph.GetFullName().c_str());
+        return PhenomenonId();
+        }
+
     if (ph.HasId()) //This is unsafe but since we do not delete Phenomenon any class that hasId does exist in db
         {
         BeAssert(ph.GetId() == SchemaPersistenceHelper::GetPhenomenonId(GetECDb(), GetTableSpace(), ph.GetSchema().GetName().c_str(), ph.GetName().c_str(), SchemaLookupMode::ByName));
@@ -615,6 +639,12 @@ PhenomenonId SchemaReader::GetPhenomenonId(PhenomenonCR ph) const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECUnitCP SchemaReader::GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unitName, SchemaLookupMode schemaLookupMode) const
     {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
+        {
+        LOG.errorv("Cannot read Unit '%s.%s'. This version of the file does not support Units yet.", schemaNameOrAlias.c_str(), unitName.c_str());
+        return nullptr;
+        }
+
     UnitId unitId = SchemaPersistenceHelper::GetUnitId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), unitName.c_str(), schemaLookupMode);
     if (!unitId.IsValid())
         return nullptr;
@@ -634,6 +664,12 @@ ECUnitCP SchemaReader::GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unit
 //---------------------------------------------------------------------------------------
 UnitId SchemaReader::GetUnitId(ECUnitCR unit) const
     {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
+        {
+        LOG.errorv("Cannot read UnitId for Unit '%s'. This version of the file does not support Units yet.", unit.GetFullName().c_str());
+        return UnitId();
+        }
+
     if (unit.HasId()) //This is unsafe but since we do not delete Unit any class that hasId does exist in db
         {
         BeAssert(unit.GetId() == SchemaPersistenceHelper::GetUnitId(GetECDb(), GetTableSpace(), unit.GetSchema().GetName().c_str(), unit.GetName().c_str(), SchemaLookupMode::ByName));
@@ -656,6 +692,12 @@ UnitId SchemaReader::GetUnitId(ECUnitCR unit) const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECFormatCP SchemaReader::GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR formatName, SchemaLookupMode schemaLookupMode) const
     {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
+        {
+        LOG.errorv("Cannot read Format '%s.%s'. This version of the file does not support Formats yet.", schemaNameOrAlias.c_str(), formatName.c_str());
+        return nullptr;
+        }
+
     FormatId formatId = SchemaPersistenceHelper::GetFormatId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), formatName.c_str(), schemaLookupMode);
     if (!formatId.IsValid())
         return nullptr;
@@ -677,6 +719,12 @@ ECFormatCP SchemaReader::GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR 
 //---------------------------------------------------------------------------------------
 FormatId SchemaReader::GetFormatId(ECFormatCR format) const
     {
+    if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
+        {
+        LOG.errorv("Cannot read FormatId for Format '%s'. This version of the file does not support Formats yet.", format.GetFullName().c_str());
+        return FormatId();
+        }
+
     if (format.HasId()) //This is unsafe but since we do not delete Format any class that hasId does exist in db
         {
         BeAssert(format.GetId() == SchemaPersistenceHelper::GetFormatId(GetECDb(), GetTableSpace(), format.GetSchema().GetName().c_str(), format.GetName().c_str(), SchemaLookupMode::ByName));
@@ -827,7 +875,7 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationCP& ecEnum, Context& ct
         return ERROR;
         }
 
-    if (SUCCESS != SchemaPersistenceHelper::DeserializeEnumerationValues(*newEnum, enumValuesJsonStr))
+    if (SUCCESS != SchemaPersistenceHelper::DeserializeEnumerationValues(*newEnum, GetECDb(), enumValuesJsonStr))
         return ERROR;
 
     //cache the enum
@@ -843,6 +891,8 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationCP& ecEnum, Context& ct
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadUnitSystems(Context& ctx) const
     {
+    BeAssert(FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats) && "Should have been checked before");
+
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description FROM [%s]." TABLE_UnitSystem, GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
@@ -877,6 +927,8 @@ BentleyStatus SchemaReader::ReadUnitSystems(Context& ctx) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadPhenomena(Context& ctx) const
     {
+    BeAssert(FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats) && "Should have been checked before");
+
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description,Definition FROM [%s]." TABLE_Phenomenon, GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
@@ -912,6 +964,8 @@ BentleyStatus SchemaReader::ReadPhenomena(Context& ctx) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
     {
+    BeAssert(FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats) && "Should have been checked before");
+
     //no mutex holder as it is expected that this method is always called from another ReadXX method that does hold a mutex already
     if (!m_cache.IsUnitCacheEmpty())
         return SUCCESS;
@@ -1072,6 +1126,8 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadFormat(ECN::ECFormatCP& format, Context& ctx, ECN::FormatId id) const
     {
+    BeAssert(FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats) && "Should have been checked before");
+
     BeMutexHolder ecdbLock(GetECDbMutex());
     format = m_cache.Find(id);
     if (format != nullptr)
@@ -1141,6 +1197,8 @@ BentleyStatus SchemaReader::ReadFormat(ECN::ECFormatCP& format, Context& ctx, EC
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, FormatId formatId, Utf8CP compositeSpecJsonWithoutUnits) const
     {
+    BeAssert(FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats) && "Should have been checked before");
+
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Label,UnitId FROM [%s]." TABLE_FormatCompositeUnit " WHERE FormatId=? ORDER BY Ordinal", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
@@ -1213,10 +1271,14 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
     if (koq != nullptr)
         return SUCCESS;
 
-    if (SUCCESS != LoadUnits(ctx))
-        return ERROR;
+    if (FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
+        {
+        if (SUCCESS != LoadUnits(ctx))
+            return ERROR;
 
-    BeAssert(!m_cache.IsUnitCacheEmpty());
+        BeAssert(!m_cache.IsUnitCacheEmpty());
+        }
+
 
     const int schemaIdIx = 0;
     const int nameIx = 1;
@@ -1547,50 +1609,54 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
 
     stmt = nullptr;
 
-    // Load Units (are loaded at once for unit conversion API)
-    if (m_cache.IsUnitCacheEmpty())
+    if (FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
         {
-        stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Unit " WHERE SchemaId=:schemaid UNION ALL "
-                                                   "SELECT Id FROM [%s]." TABLE_UnitSystem " WHERE SchemaId=:schemaid UNION ALL "
-                                                   "SELECT Id FROM [%s]." TABLE_Phenomenon " WHERE SchemaId=:schemaid", GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str()).c_str());
+        // Load Units (are loaded at once for unit conversion API)
+        if (m_cache.IsUnitCacheEmpty())
+            {
+            stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Unit " WHERE SchemaId=:schemaid UNION ALL "
+                                                       "SELECT Id FROM [%s]." TABLE_UnitSystem " WHERE SchemaId=:schemaid UNION ALL "
+                                                       "SELECT Id FROM [%s]." TABLE_Phenomenon " WHERE SchemaId=:schemaid", GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str()).c_str());
+            if (stmt == nullptr)
+                return ERROR;
+
+            if (BE_SQLITE_OK != stmt->BindId(stmt->GetParameterIndex(":schemaid"), ecSchemaKey->GetId()))
+                return ERROR;
+
+            const bool schemaHasUnits = BE_SQLITE_ROW == stmt->Step();
+            stmt = nullptr;
+
+            if (schemaHasUnits)
+                {
+                if (SUCCESS != LoadUnits(ctx))
+                    return ERROR;
+
+                if (ecSchemaKey->IsFullyLoaded())
+                    return SUCCESS;
+                }
+            }
+
+        // Load Formats
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Format " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
         if (stmt == nullptr)
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindId(stmt->GetParameterIndex(":schemaid"), ecSchemaKey->GetId()))
+        if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaKey->GetId()))
             return ERROR;
 
-        const bool schemaHasUnits = BE_SQLITE_ROW == stmt->Step();
-        stmt = nullptr;
-
-        if (schemaHasUnits)
+        while (BE_SQLITE_ROW == stmt->Step())
             {
-            if (SUCCESS != LoadUnits(ctx))
+            ECFormatCP format = nullptr;
+            if (SUCCESS != ReadFormat(format, ctx, stmt->GetValueId<FormatId>(0)))
                 return ERROR;
 
             if (ecSchemaKey->IsFullyLoaded())
                 return SUCCESS;
             }
+
+        stmt = nullptr;
         }
 
-    // Load Formats
-    stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Format " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
-    if (stmt == nullptr)
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaKey->GetId()))
-        return ERROR;
-
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
-        ECFormatCP format = nullptr;
-        if (SUCCESS != ReadFormat(format, ctx, stmt->GetValueId<FormatId>(0)))
-            return ERROR;
-
-        if (ecSchemaKey->IsFullyLoaded())
-            return SUCCESS;
-        }
-
-    stmt = nullptr;
     return SUCCESS;
     }
 
@@ -1600,16 +1666,31 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
 BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSchemaId ecSchemaId) const
     {
     Utf8CP tableSpace = GetTableSpace().GetName().c_str();
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT s.Name, s.DisplayLabel,s.Description,s.Alias,s.VersionDigit1,s.VersionDigit2,s.VersionDigit3,s.OriginalECXmlVersionMajor,s.OriginalECXmlVersionMinor,"
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Class "  c WHERE s.Id = c.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Enumeration " e WHERE s.Id = e.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_KindOfQuantity " koq WHERE s.Id = koq.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_PropertyCategory " cat WHERE s.Id = cat.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_UnitSystem " us WHERE s.Id = us.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Phenomenon " ph WHERE s.Id = ph.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Unit " u WHERE s.Id = u.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Format " f WHERE s.Id = f.SchemaId) "
-                                                         "FROM [%s]." TABLE_Schema " s WHERE s.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace).c_str());
+    CachedStatementPtr stmt = nullptr;
+    const bool hasECVersionsAndUnits = FeatureManager::IsAvailable(GetECDb(), {Feature::ECVersions, Feature::UnitsAndFormats});
+    if (hasECVersionsAndUnits)
+        {
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT s.Name, s.DisplayLabel,s.Description,s.Alias,s.VersionDigit1,s.VersionDigit2,s.VersionDigit3,s.ECVersion,s.OriginalECXmlVersionMajor,s.OriginalECXmlVersionMinor,"
+                                                   "(SELECT COUNT(*) FROM [%s]." TABLE_Class "  c WHERE s.Id = c.SchemaId) + "
+                                                   "(SELECT COUNT(*) FROM [%s]." TABLE_Enumeration " e WHERE s.Id = e.SchemaId) + "
+                                                   "(SELECT COUNT(*) FROM [%s]." TABLE_KindOfQuantity " koq WHERE s.Id = koq.SchemaId) + "
+                                                   "(SELECT COUNT(*) FROM [%s]." TABLE_PropertyCategory " cat WHERE s.Id = cat.SchemaId) + "
+                                                   "(SELECT COUNT(*) FROM [%s]." TABLE_UnitSystem " us WHERE s.Id = us.SchemaId) + "
+                                                   "(SELECT COUNT(*) FROM [%s]." TABLE_Phenomenon " ph WHERE s.Id = ph.SchemaId) + "
+                                                   "(SELECT COUNT(*) FROM [%s]." TABLE_Unit " u WHERE s.Id = u.SchemaId) + "
+                                                   "(SELECT COUNT(*) FROM [%s]." TABLE_Format " f WHERE s.Id = f.SchemaId) "
+                                                   "FROM [%s]." TABLE_Schema " s WHERE s.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace).c_str());
+        }
+    else
+        {
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT s.Name, s.DisplayLabel,s.Description,s.Alias,s.VersionDigit1,s.VersionDigit2,s.VersionDigit3,"
+                                                   "(SELECT COUNT(*) FROM [%s]." TABLE_Class "  c WHERE s.Id = c.SchemaId) + "
+                                                   "(SELECT COUNT(*) FROM [%s]." TABLE_Enumeration " e WHERE s.Id = e.SchemaId) + "
+                                                   "(SELECT COUNT(*) FROM [%s]." TABLE_KindOfQuantity " koq WHERE s.Id = koq.SchemaId) + "
+                                                   "(SELECT COUNT(*) FROM [%s]." TABLE_PropertyCategory " cat WHERE s.Id = cat.SchemaId) "
+                                                   "FROM [%s]." TABLE_Schema " s WHERE s.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, tableSpace).c_str());
+        }
+
     if (stmt == nullptr)
         return ERROR;
 
@@ -1619,30 +1700,56 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
     if (BE_SQLITE_ROW != stmt->Step())
         return ERROR;
 
-    Utf8CP schemaName = stmt->GetValueText(0);
-    Utf8CP displayLabel = stmt->IsColumnNull(1) ? nullptr : stmt->GetValueText(1);
-    Utf8CP description = stmt->IsColumnNull(2) ? nullptr : stmt->GetValueText(2);
-    Utf8CP alias = stmt->GetValueText(3);
+    int colIx = 0;
+    Utf8CP schemaName = stmt->GetValueText(colIx);
+
+    colIx++;
+    Utf8CP displayLabel = stmt->IsColumnNull(colIx) ? nullptr : stmt->GetValueText(colIx);
+
+    colIx++;
+    Utf8CP description = stmt->IsColumnNull(colIx) ? nullptr : stmt->GetValueText(colIx);
+
+    colIx++;
+    Utf8CP alias = stmt->GetValueText(colIx);
+
     //uint32_t is persisted as int64 to not lose unsigned-ness
-    uint32_t versionMajor = (uint32_t) stmt->GetValueInt64(4);
-    uint32_t versionWrite = (uint32_t) stmt->GetValueInt64(5);
-    uint32_t versionMinor = (uint32_t) stmt->GetValueInt64(6);
+    colIx++;
+    uint32_t versionMajor = (uint32_t) stmt->GetValueInt64(colIx);
 
+    colIx++;
+    uint32_t versionWrite = (uint32_t) stmt->GetValueInt64(colIx);
+
+    colIx++;
+    uint32_t versionMinor = (uint32_t) stmt->GetValueInt64(colIx);
+
+    ECVersion ecVersion = ECVersion::V3_1; // default for files that did not persist the ECVersion yet
     Nullable<uint32_t> originalECVersionMajor, originalECVersionMinor;
-    if (!stmt->IsColumnNull(7))
-        originalECVersionMajor = (uint32_t) stmt->GetValueInt64(7);
+    if (hasECVersionsAndUnits)
+        {
+        colIx++;
+        if (!stmt->IsColumnNull(colIx))
+            ecVersion = (ECVersion) stmt->GetValueInt(colIx);
 
-    if (!stmt->IsColumnNull(8))
-        originalECVersionMinor = (uint32_t) stmt->GetValueInt64(8);
+        colIx++;
+        if (!stmt->IsColumnNull(colIx))
+            originalECVersionMajor = (uint32_t) stmt->GetValueInt64(colIx);
 
-    const int typesInSchema = stmt->GetValueInt(9);
+        colIx++;
+        if (!stmt->IsColumnNull(colIx))
+            originalECVersionMinor = (uint32_t) stmt->GetValueInt64(colIx);
+        }
+
+    colIx++;
+    const int typesInSchema = stmt->GetValueInt(colIx);
 
     ECSchemaPtr schema = nullptr;
-    if (ECSchema::CreateSchema(schema, schemaName, alias, versionMajor, versionWrite, versionMinor) != ECObjectsStatus::Success)
+    if (ECSchema::CreateSchema(schema, schemaName, alias, versionMajor, versionWrite, versionMinor, ecVersion) != ECObjectsStatus::Success)
         return ERROR;
 
-    if (originalECVersionMajor != nullptr)
+    if (hasECVersionsAndUnits && originalECVersionMajor != nullptr)
         schema->SetOriginalECXmlVersion(originalECVersionMajor.Value(), originalECVersionMinor.IsNull() ? 0 : originalECVersionMinor.Value());
+    else
+        schema->SetOriginalECXmlVersion(0, 0); // ECObjects set by default ECVersion as the original version. ECDb must not do that, as profile upgrade logic is based on the original version in case it was not set
 
     schema->SetId(ecSchemaId);
 
@@ -2415,6 +2522,7 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintClassesFromDb(ECRelationsh
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::LoadUnits(Context& ctx) const
     {
+    BeAssert(FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats) && "Should have been checked before");
     BeMutexHolder ecdbLock(GetECDbMutex());
 
     if (!m_cache.IsUnitCacheEmpty())

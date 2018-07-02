@@ -34,7 +34,7 @@ private:
     //! called during profile upgrade
     DbResult AssignProfileVersion(bool onProfileCreation) const;
 
-    DbResult RunUpgraders() const;
+    DbResult RunUpgraders(ProfileVersion const& versionBeforeUpgrade) const;
 
     static PropertySpec GetProfileVersionPropertySpec() { return PropertySpec("SchemaVersion", ECDB_PROPSPEC_NAMESPACE); }
     static PropertySpec GetInitialProfileVersionPropertySpec() { return PropertySpec("InitialSchemaVersion", ECDB_PROPSPEC_NAMESPACE); }

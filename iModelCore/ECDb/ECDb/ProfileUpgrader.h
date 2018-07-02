@@ -114,7 +114,6 @@ private:
     DbResult _Upgrade(ECDbCR) const override;
 
     static DbResult UpgradeECEnums(ECDbCR);
-    static void UpgradeECDbEnum(bmap<int64_t, Utf8String>& enumMap, int64_t enumId, Utf8CP enumName);
     static DbResult UpgradeKoqs(ECDbCR);
     static BentleyStatus ConvertKoqFuses(KoqConversionContext&);
     static ECN::ECSchemaId InsertSchemaStub(ECDbCR, Utf8StringCR schemaName, Utf8StringCR alias);
