@@ -184,6 +184,7 @@ private:
     void InitParentChangeSetIds();
     void BackupParentChangeSetIds();
     BeSQLite::DbResult RestoreParentChangeSetIds();
+    BeSQLite::DbResult DeleteAllTxns();
 
 protected:
     friend struct Txns;
@@ -271,19 +272,21 @@ public:
     //! <pre>
     //! Sample schema compatibility validation results for an ECSchema in the BIM with Version 2.2.2 (Read.Write.Minor)
     //! -------------------------------------------------------------------------------------------------
-    //! Application   |  Validation result                       | Validation result
-    //! Version       |  (Readonly)                              | (ReadWrite)
+    //! Application   |  Validation result              | Validation result
+    //! Version       |  (Readonly)                     | (ReadWrite)
     //! -------------------------------------------------------------------------------------------------
-    //! 2.2.2 (same)  | BE_SQLITE_OK                             | BE_SQLITE_OK
+    //! 2.2.2 (same)  | BE_SQLITE_OK                    | BE_SQLITE_OK
     //! -------------------------------------------------------------------------------------------------
-    //! 1.2.2 (older) | BE_SQLITE_ERROR_SchemaTooNew             | BE_SQLITE_ERROR_SchemaTooNew
-    //! 2.1.2 (older) | BE_SQLITE_OK                             | BE_SQLITE_ERROR_SchemaTooNew
-    //! 2.2.1 (older) | BE_SQLITE_OK                             | BE_SQLITE_OK
+    //! 1.2.2 (older) | BE_SQLITE_ERROR_SchemaTooNew    | BE_SQLITE_ERROR_SchemaTooNew
+    //! 2.1.2 (older) | BE_SQLITE_OK                    | BE_SQLITE_ERROR_SchemaTooNew
+    //! 2.2.1 (older) | BE_SQLITE_OK                    | BE_SQLITE_OK
     //! -------------------------------------------------------------------------------------------------
-    //! 3.2.2 (newer) | BE_SQLITE_ERROR_SchemaTooOld             | BE_SQLITE_ERROR_SchemaTooOld
-    //! 2.3.2 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired    | BE_SQLITE_ERROR_SchemaUpgradeRequired
-    //! 2.2.3 (newer) | BE_SQLITE_OK by default, or BE_SQLITE_ERROR_SchemaUpgradeRecommended if 
-    //!               | SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades is passed in
+    //! 3.2.2 (newer) | BE_SQLITE_ERROR_SchemaTooOld    | BE_SQLITE_ERROR_SchemaTooOld
+    //! 2.3.2 (newer) | BE_SQLITE_OK by default*        | BE_SQLITE_ERROR_SchemaUpgradeRequired
+    //! 2.2.3 (newer) | BE_SQLITE_OK by default*        | BE_SQLITE_OK by default*
+    //!                                                                                       
+    //! * - BE_SQLITE_OK by default, or BE_SQLITE_ERROR_SchemaUpgradeRecommended if 
+    //! SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades is passed in
     //! -------------------------------------------------------------------------------------------------
     //! </pre>
     //! <li> If the domain schemas are setup to be upgraded, a schema lock is first obtained before the upgrade. 

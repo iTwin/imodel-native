@@ -508,7 +508,7 @@ SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SpatialLocationModel::_OnInsertElement(DgnElementR element)
     {
-    return dynamic_cast<SpatialLocationElement*>(&element) ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    return dynamic_cast<PhysicalElement*>(&element) ? DgnDbStatus::WrongModel : T_Super::_OnInsertElement(element);
     }
 
 /*---------------------------------------------------------------------------------**//**

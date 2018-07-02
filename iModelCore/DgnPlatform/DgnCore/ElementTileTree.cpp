@@ -1178,7 +1178,7 @@ BentleyStatus Loader::DoGetFromSource()
         // (it can be refined to higher zoom level - those tiles are not cached unless admin specifically requests so).
         BeAssert(!tile.HasZoomFactor() || 1.0 == tile.GetZoomFactor() || T_HOST.GetTileAdmin()._WantCachedHiResTiles(root.GetDgnDb()));
         bool isLeaf = tile.IsLeaf() || tile.HasZoomFactor();
-        if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter(), isLeaf))
+        if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), isLeaf))
             return ERROR;
 
 #if defined(DEBUG_TILE_CACHE_GEOMETRY)
@@ -3342,7 +3342,7 @@ bool Tile::_ToJson(Json::Value& json) const
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Tile::GetIdString() const
-    {
+    {                                                                                                                                                                       
     return Utf8PrintfString("%u/%u/%u/%u:%f", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, m_zoomFactor);
     }
 
@@ -3383,12 +3383,14 @@ TilePtr Tile::FindTile(TileTree::OctTree::TileId id, double zoomFactor)
         return nullptr;
         }
 
-    auto imod = id.m_i % 2, jmod = id.m_j % 2, kmod = id.m_k % 2;
+    uint32_t    shift = id.m_level - m_id.m_level - 1;
+
+    auto imod = id.m_i >> shift, jmod = id.m_j >> shift, kmod = id.m_k >> shift;
     for (auto const& child : *children)
         {
         auto elemChild = static_cast<TileP>(child.get());
         auto childId = elemChild->GetTileId();
-        if (childId.m_i % 2 == imod && childId.m_j % 2 == jmod && childId.m_k % 2 == kmod)
+        if (childId.m_i == imod && childId.m_j== jmod && childId.m_k == kmod)
             return elemChild->FindTile(id, zoomFactor);
         }
 
@@ -3401,7 +3403,6 @@ TilePtr Tile::FindTile(TileTree::OctTree::TileId id, double zoomFactor)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilePtr Tile::FindTile(double zoomFactor)
     {
-    BeAssert(HasZoomFactor() == m_zoomFactor > 0.0);
     if (zoomFactor == m_zoomFactor)
         return this;
 

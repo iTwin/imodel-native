@@ -649,8 +649,14 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
 
     if (appSchemaKey.GetVersionWrite() > bimSchemaKey.GetVersionWrite())
         {
-        LOG.debugv("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
-        return SchemaStatus::SchemaUpgradeRequired;
+        if (!isSchemaReadonly)
+            {
+            LOG.debugv("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+            return SchemaStatus::SchemaUpgradeRequired;
+            }
+
+        LOG.debugv("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s. However, this is not an issue since the application or domain is readonly.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+        return SchemaStatus::SchemaUpgradeRecommended;
         }
 
     if (appSchemaKey.GetVersionMinor() > bimSchemaKey.GetVersionMinor())
@@ -668,7 +674,7 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
         }
 
     LOG.debugv("Schema found in the BIM %s is newer and found to be write incompatible to that in the application %s. However, this is not an issue since the application or domain is readonly.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
-    return SchemaStatus::Success;
+    return SchemaStatus::SchemaUpgradeRecommended;
     }
 
 /*---------------------------------------------------------------------------------**//**

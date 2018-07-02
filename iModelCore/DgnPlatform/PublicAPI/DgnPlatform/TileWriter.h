@@ -47,7 +47,7 @@ struct Writer
 {
 public:
     Writer(StreamBufferR buffer, GeometricModelR model) : m_buffer(buffer), m_model(model) { }
-    BentleyStatus WriteGltf(DPoint3dCR centroid);
+    BentleyStatus WriteGltf();
 
 protected:
     Json::Value         m_json;
@@ -61,7 +61,7 @@ protected:
     void                AddBinaryData (void const* data, size_t size); 
     void                PadBinaryDataToBoundary(size_t boundarySize = 4);
     void                PadToBoundary(size_t boundarySize = 4);
-    void                AddExtensions(DPoint3dCR centroid);
+    void                AddExtensions();
     void                AddDefaultScene ();
     void                AddMeshUInt16Attributes(Json::Value& primitive, uint16_t const* attributes16, size_t nAttributes, Utf8StringCR idStr, Utf8CP name, Utf8CP semantic);
     void                AddBatchIds(Json::Value& primitive, Render::FeatureIndex const& featureIndex, size_t nVertices, Utf8StringCR idStr);

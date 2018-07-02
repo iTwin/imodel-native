@@ -149,6 +149,19 @@ AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) cons
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewController::_OnRenderFrame()
+    {
+    BeAssert(nullptr != m_vp);
+
+    // Barry added the concept of 'deferred' loading of TileTree::Roots for Bing map tile trees...
+    // We could solve this another way but it's going to be totally different in iModelJs so do what Sheet::ViewController does.
+    if (!m_allRootsLoaded)
+        m_vp->InvalidateScene();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
@@ -189,15 +202,8 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
                         }
                     else
                         {
-                        Utf8String message = model->GetCopyrightMessage();
-                        if (!message.empty()) // skip emptry strings.
-                            m_copyrightMsgs.insert(message);
-
-                        Render::RgbaSpritePtr sprite = model->GetCopyrightSprite();
-                        if (sprite.IsValid())
-                            m_copyrightSprites.push_back (sprite);
-
                         m_roots.Insert(modelId, modelRoot);
+                        InvalidateCopyrightInfo();
                         }
                     }
 
@@ -214,6 +220,8 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
         // if we either didn't have time to create all roots, or one of our models deferred root creation, go through this loop again later.
         m_allRootsLoaded = !timedOut && !rootCreationDeferred;
         }
+
+    BuildCopyrightInfo();
 
     // Always draw all the tile trees we currently have...
     // NB: We assert that m_roots will contain ONLY models that are in our viewed models list (it may not yet contain ALL of them though)
@@ -249,6 +257,35 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
     //DEBUG_PRINTF("CreateScene: %f", timer.GetCurrentSeconds());
 
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewController::BuildCopyrightInfo()
+    {
+    if (m_copyrightInfoValid)
+        return;
+
+    m_copyrightMsgs.clear();
+    m_copyrightSprites.clear();
+
+    for (auto const& kvp : m_roots)
+        {
+        auto model = GetDgnDb().Models().Get<GeometricModel3d>(kvp.first);
+        if (model.IsValid())
+            {
+            Utf8String message = model->GetCopyrightMessage();
+            if (!message.empty())
+                m_copyrightMsgs.insert(message);
+
+            Render::RgbaSpritePtr sprite = model->GetCopyrightSprite();
+            if (sprite.IsValid())
+                m_copyrightSprites.insert(sprite);
+            }
+        }
+
+    m_copyrightInfoValid = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -414,6 +451,8 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     auto& models = GetSpatialViewDefinition().GetModelSelector().GetModelsR();
     if (onOff == models.Contains(modelId))
         return;
+
+    InvalidateCopyrightInfo();
 
     if (onOff)
         {

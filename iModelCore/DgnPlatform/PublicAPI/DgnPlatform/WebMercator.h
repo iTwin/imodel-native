@@ -155,6 +155,7 @@ struct MapTile : TileTree::QuadTree::Tile
     TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new MapTile(GetMapRoot(), id, this);}
     MapRoot& GetMapRoot() const {return (MapRoot&) m_root;}
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys = nullptr) override {return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);}
+    double _GetMaximumSize() const override {return 0 == GetDepth() ? 0.0 : T_Super::_GetMaximumSize();}
 };
 
 //=======================================================================================

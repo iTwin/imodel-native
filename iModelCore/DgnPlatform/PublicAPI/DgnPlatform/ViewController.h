@@ -571,16 +571,20 @@ private:
     Utf8String m_viewSQL; // don't rely on this - it will soon be removed from the API!
 
 protected:
+    using SpritePtr = RefCountedPtr<Render::ISprite>;
+    using Sprites = bset<SpritePtr>;
+
     bool m_loading = false;
     bool m_defaultDeviceOrientationValid = false;
     bool m_allRootsLoaded = false;
+    bool m_copyrightInfoValid = false;
     bmap<DgnModelId, TileTree::RootPtr> m_roots;
     RotMatrix m_defaultDeviceOrientation;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
     mutable double m_queryElementPerSecond = 10000;
     bset<Utf8String> m_copyrightMsgs;  // from reality models. Only keep unique ones
-    bvector<RefCountedPtr<Render::ISprite>> m_copyrightSprites; // copyright images we must draw on the view (Bing Maps, for example) not owned by the view.
+    Sprites m_copyrightSprites; // copyright images we must draw on the view (Bing Maps, for example) not owned by the view.
 
     void QueryModelExtents(FitContextR);
 
@@ -598,6 +602,7 @@ protected:
     bool _Allow3dManipulations() const override {return true;}
     DGNPLATFORM_EXPORT void _AddModelLights(Render::SceneLightsR, Render::TargetR) const override;
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
+    DGNPLATFORM_EXPORT void _OnRenderFrame() override;
     BentleyStatus CreateThumbnailScene(SceneContextR context);
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
 
@@ -610,6 +615,7 @@ protected:
     AxisAlignedBox3d GetGroundExtents(DgnViewportCR) const;
     void DrawGroundPlane(DecorateContextR);
     DGNPLATFORM_EXPORT void DrawSkyBox(DecorateContextR);
+    void BuildCopyrightInfo();
 
 public:
     virtual double _ForceMinFrontDist() const {return 0.0;}
@@ -642,6 +648,8 @@ public:
     bool _AllTileTreesLoaded() const override { return m_allRootsLoaded; }
     DGNPLATFORM_EXPORT void _CancelAllTileLoads(bool wait) override;
     void _UnloadAllTileTrees() override { m_allRootsLoaded = false; m_roots.clear(); }
+
+    void InvalidateCopyrightInfo() { m_copyrightInfoValid = false; }
 };
 
 //=======================================================================================

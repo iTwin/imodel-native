@@ -18,6 +18,7 @@
 #define TESTIMODEL_EC32ENUMS "ec32enums.bim"
 #define TESTIMODEL_PREEC32KOQS "preec32koqs.bim"
 #define TESTIMODEL_EC32KOQS "ec32koqs.bim"
+#define TESTIMODEL_EC32UNITS "ec32units.bim"
 
 #define TESTIMODELCREATOR_LIST {std::make_shared<EmptyTestIModelCreator>(), \
                                 std::make_shared<PreEC32EnumsTestIModelCreator>(), \
