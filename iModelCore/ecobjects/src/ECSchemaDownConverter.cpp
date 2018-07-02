@@ -123,16 +123,20 @@ bool ECSchemaDownConverter::Convert(ECSchemaR schema)
             }
         }
 
-    if(schema.IsSchemaReferenced(schema, *StandardUnitsHelper::GetSchema()))
+    static SchemaKey unitsKey = SchemaKey("Units", 1, 0, 0);
+    auto unitsSchema = schema.FindSchema(unitsKey, SchemaMatchType::Latest);
+    static SchemaKey formatsKey = SchemaKey("Formats", 1, 0, 0);
+    auto formatsSchema = schema.FindSchema(formatsKey, SchemaMatchType::Latest);
+    if(schema.IsSchemaReferenced(schema, *unitsSchema))
         {
-        for (auto ref = schema.GetReferencedSchemas().rbegin(); ref != schema.GetReferencedSchemas().rend(); ++ref)
-            {
-            if(3 == ref->second->GetOriginalECXmlVersionMajor() && 2 == ref->second->GetOriginalECXmlVersionMinor())
-                {
-                LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", ref->first.GetFullSchemaName().c_str());
-                schema.m_refSchemaList.erase(schema.m_refSchemaList.find(ref->first));
-                }
-            }
+        LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", unitsSchema->GetFullSchemaName().c_str());
+        schema.m_refSchemaList.erase(schema.m_refSchemaList.find(unitsKey));
+        }
+
+    if(schema.IsSchemaReferenced(schema, *formatsSchema))
+        {
+        LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", formatsSchema->GetFullSchemaName().c_str());
+        schema.m_refSchemaList.erase(schema.m_refSchemaList.find(formatsKey));
         }
 
     schema.RemoveUnusedSchemaReferences();

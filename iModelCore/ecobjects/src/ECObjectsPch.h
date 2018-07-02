@@ -12,7 +12,6 @@
 #include <assert.h>
 #include <Bentley/BeStringUtilities.h>
 #include "../PrivateApi/ECObjects/SchemaParseUtils.h"
-#include "../PrivateApi/ECObjects/StandardUnitsHelper.h"
 #include "DateTimeInfoAccessor.h"
 #include "ECObjectsNativeLog.h"
 #include <Bentley/BeTimeUtilities.h>

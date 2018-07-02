@@ -2875,7 +2875,13 @@ struct  InstanceXmlReader
                     Utf8String unitName;
                     ECClass::ParseClassName(alias, unitName, ecName);
 
-                    ECUnitCP oldUnit = StandardUnitsHelper::GetUnit(unitName.c_str());
+                    ECUnitCP oldUnit = koq->GetSchema().LookupUnit(("u:" + unitName).c_str());
+                    if (nullptr == oldUnit)
+                        {
+                        LOG.warningv("Failed to lookup unit '%s' for property '%s'. Cannot convert value. Skipping.", ecName, propertyName.c_str());
+                        return InstanceReadStatus::Success;
+                        }
+
                     double convertedValue;
                     if (ecValue.GetPrimitiveType() == PrimitiveType::PRIMITIVETYPE_Double)
                         {

@@ -1273,7 +1273,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
                 {
                 if (!ECSchema::IsSchemaReferenced(schema, *unitSchema) && ECObjectsStatus::Success != schema.AddReferencedSchema(*unitSchema))
                     {
-                    LOG.errorv("Unable to add the %s schema as a reference to %s.", StandardUnitsHelper::GetSchema()->GetFullSchemaName().c_str(), schema.GetName().c_str());
+                    LOG.errorv("Unable to add the %s schema as a reference to %s.", unitSchema->GetFullSchemaName().c_str(), schema.GetName().c_str());
                     return ECObjectsStatus::SchemaNotFound;
                     }
                 }

@@ -62,7 +62,6 @@ ECObjectsHeaders =              $(baseDir)DateTimeInfoAccessor.h \
                                 $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
                                 $(ecobjectsPublicAPISrc)SupplementalSchema.h \
                                 $(ecobjectsPublicAPISrc)ECUnit.h \
-                                $(ecobjectsPrivateAPISrc)StandardUnitsHelper.h \
                                 $(ecobjectsPrivateAPISrc)SchemaParseUtils.h
 
 ECUnitsHeaders =                $(ecunitsPublicAPISrc)Units.h \
@@ -151,8 +150,6 @@ $(o)UnitSystem$(oext)                                      : $(baseDir)UnitSyste
 $(o)Phenomenon$(oext)                                      : $(baseDir)Phenomenon.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECUnit$(oext)                                          : $(baseDir)ECUnit.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)StandardUnitsHelper$(oext)                             : $(baseDir)StandardUnitsHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)Format$(oext)                                          : $(baseDir)Format.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
