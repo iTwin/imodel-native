@@ -127,30 +127,6 @@ ECObjectsStatus KindOfQuantity::SetPersistenceUnit(ECUnitCR unit)
     return ECObjectsStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                06/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-void KindOfQuantity::RemovePresentationFormat(NamedFormatCR presentationFormat)
-    {
-    m_presentationFormats.erase(std::remove_if(m_presentationFormats.begin(), m_presentationFormats.end(), [&](NamedFormatCR format) {return format.IsIdentical(presentationFormat);}));
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  04/2018
-//---------------+---------------+---------------+---------------+---------------+------
-bvector<ECFormatCP> const KindOfQuantity::GetReferencedFormats() const
-    {
-    bvector<ECFormatCP> formats;
-    formats.reserve(m_presentationFormats.size());
-    for (auto const& f : m_presentationFormats)
-        {
-        if (formats.end() == std::find(formats.begin(), formats.end(), f.GetParentFormat()))
-            formats.push_back(f.GetParentFormat());
-        }
-    
-    return formats;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -266,6 +242,374 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
 
     xmlWriter.WriteElementEnd();
     return SchemaWriteStatus::Success;;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPersistenceUnitByName(Utf8StringCR unitName, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper)
+    {
+    Utf8String alias;
+    Utf8String name;
+    ECClass::ParseClassName(alias, name, unitName);
+    if (alias.empty())
+        alias.assign(GetSchema().GetAlias());
+
+    auto unit = nameToUnitMapper(alias, name);
+    if (nullptr == unit)
+        {
+        LOG.errorv("Unable to add unit name '%s' ", unitName.c_str());
+        return ECObjectsStatus::InvalidUnitName;
+        }
+
+    if (nullptr == GetSchema().GetUnitsContext().LookupUnit(unitName.c_str()))
+        {
+        LOG.errorv("On KoQ '%s' persistence unit with name '%s' could not be located", GetFullName().c_str(), unitName.c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    SetPersistenceUnit(*unit);
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+NamedFormatCP KindOfQuantity::GetCachedPersistenceFormat() const
+    {
+    if (nullptr == m_persistenceUnit)
+        return nullptr;
+
+    if (m_persFormatCache.IsValid())
+        {
+        if (Units::Unit::AreEqual(m_persFormatCache.Value().GetCompositeMajorUnit(), m_persistenceUnit))
+            return &m_persFormatCache.Value();
+        }
+    Utf8String name = "DefaultRealU";
+    name += "[";
+    name += m_persistenceUnit->GetQualifiedName(GetSchema());
+    name += "]";
+    m_persFormatCache = NamedFormat(name);
+    m_persFormatCache.ValueR().SetNumericSpec(Formatting::NumericFormatSpec::DefaultFormat());
+    auto comp = Formatting::CompositeValueSpec(*m_persistenceUnit);
+    comp.SetMajorLabel(m_persistenceUnit->GetDisplayLabel().c_str());
+    m_persFormatCache.ValueR().SetCompositeSpec(comp);
+    return &m_persFormatCache.Value();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<int32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride, bool isDefault)
+    {
+    UnitAndLabelPairs units;
+    if (nullptr == inputUnitOverride && nullptr != labelOverride)
+        {
+        if (parent.HasCompositeMajorUnit())
+            inputUnitOverride = (ECUnitCP)parent.GetCompositeMajorUnit();
+        else
+            return ECObjectsStatus::Error;
+        }
+    if (nullptr != inputUnitOverride)
+        { 
+        units = UnitAndLabelPairs();
+        units.push_back(make_bpair(inputUnitOverride, labelOverride));
+        }
+
+    return AddPresentationFormat(parent, precisionOverride, &units, isDefault);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormatByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper)
+    {
+    Utf8String formatName;
+    Nullable<int32_t> prec;
+    bvector<Utf8String> unitNames;
+    bvector<Nullable<Utf8String>> unitLabels;
+    if (BentleyStatus::SUCCESS != Formatting::Format::ParseFormatString(formatName, prec, unitNames, unitLabels, formatString))
+        {
+        LOG.errorv("Failed to parse Presentation FormatString '%s' on KindOfQuantity '%s'", formatString.c_str(), GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    Utf8String alias;
+    Utf8String unqualifiedName;
+    ECClass::ParseClassName(alias, unqualifiedName, formatName);
+    if (alias.empty())
+        alias = GetSchema().GetAlias();
+
+    auto format = nameToFormatMapper(alias, unqualifiedName);
+
+    if (nullptr == format)
+        {
+        LOG.errorv("Format '%s' could not be looked up on KoQ '%s'", formatName.c_str(), GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    if (!unitNames.empty())
+        {
+        UnitAndLabelPairs units;
+        int i = 0;
+        for (const auto& u : unitNames)
+            {
+            ECClass::ParseClassName(alias, unqualifiedName, u);
+            if (alias.empty())
+                alias = GetSchema().GetAlias();
+
+            auto unit = nameToUnitMapper(alias, unqualifiedName);
+            if (nullptr == unit)
+                {
+                LOG.errorv("Presentation unit with name '%s' could not be looked up on KoQ '%s'", u.c_str(), GetFullName().c_str());
+                return ECObjectsStatus::Error;
+                }
+            units.push_back(make_bpair(unit, (i < unitLabels.size() && unitLabels[i].IsValid()) ? unitLabels[i].Value().c_str() : nullptr));
+            i++;
+            }
+
+        return AddPresentationFormat(*format, prec, &units);
+        }
+
+    return AddPresentationFormat(*format, prec); // no unit overrides
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullable<int32_t> precisionOverride, UnitAndLabelPairs const* unitsAndLabels, bool isDefault)
+    {
+    // Check for null persistence unit. Cannot add presentation units if there is no persistence unit
+    if (nullptr == m_persistenceUnit)
+        {
+        LOG.errorv("KOQ '%s' is missing a persistence unit. Cannot add presentation formats.", GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    if (parent.IsOverride())
+        {
+        LOG.errorv("KOQ '%s' cannot create an override using another override as a parent", GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    // Parent has no units and we don't provide any overrides
+    if (!parent.HasCompositeMajorUnit() && (nullptr == unitsAndLabels || unitsAndLabels->empty()))
+        {
+        LOG.errorv("KOQ '%s' cannot have a format without composite units and no unit overrides.", GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    // Parent has unit and verify they are compatible
+    if (parent.HasCompositeMajorUnit() && nullptr != m_persistenceUnit && !ECUnit::AreCompatible(parent.GetCompositeMajorUnit(), m_persistenceUnit))
+        {
+        LOG.errorv("KOQ '%s' cannot have a format with a major unit that is incompatible with KOQ's persistence unit", GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    Utf8String out;
+    CreateOverrideString(out, parent, precisionOverride, unitsAndLabels);
+    NamedFormat nfp = NamedFormat(out, &parent);
+
+    if (precisionOverride.IsValid())
+        {
+        if (Formatting::PresentationType::Fractional == nfp.GetPresentationType())
+            {
+            Formatting::FractionalPrecision prec;
+            if (!Formatting::Utils::FractionalPrecisionByDenominator(prec, precisionOverride.Value()))
+                {
+                LOG.errorv("On KOQ '%s' %d is not a valid fractional precision override value", GetFullName().c_str(), precisionOverride.Value());
+                return ECObjectsStatus::Error;
+                }
+            nfp.GetNumericSpecP()->SetPrecision(prec);
+            }
+        else
+            {
+            Formatting::DecimalPrecision prec;
+            if (!Formatting::Utils::GetDecimalPrecisionByInt(prec, precisionOverride.Value()))
+                {
+                LOG.errorv("On KOQ '%s' %d is not a valid decimal precision override value", GetFullName().c_str(), precisionOverride.Value());
+                return ECObjectsStatus::Error;
+                }
+            nfp.GetNumericSpecP()->SetPrecision(prec);
+            }
+        }
+
+    // If there are no unit overrides
+    if (nullptr == unitsAndLabels || 0 == unitsAndLabels->size())
+        {
+        if (isDefault)
+            m_presentationFormats.insert(m_presentationFormats.begin(), nfp);
+        else
+            m_presentationFormats.push_back(nfp);
+        return ECObjectsStatus::Success;
+        }
+
+    auto& overrides = *unitsAndLabels;
+    if(nfp.HasComposite() && 0 < nfp.GetCompositeSpec()->GetUnitCount())
+        {
+        auto composite = nfp.GetCompositeSpec();
+        if (composite->GetUnitCount() != overrides.size())
+            {
+            LOG.errorv("KOQ '%s' cannot override a different number of units than already exists on a format", GetFullName().c_str());
+            return ECObjectsStatus::Error;
+            }
+
+        auto compUnits = composite->GetUnits();
+        for (int i = 0; i < overrides.size(); ++i)
+            {
+            if (!Units::Unit::AreEqual(overrides[i].first, compUnits[i]))
+                {
+                LOG.errorv("KOQ '%s' cannot change UOM in an override when one is already defined by the format", GetFullName().c_str());
+                return ECObjectsStatus::Error;
+                }
+            }
+        }
+    else
+        {
+        bvector<Units::UnitCP> newUnits;
+        for (auto pair : overrides)
+            {
+            // Validate that unit is compatible with the KOQ.
+            if(nullptr == GetPersistenceUnit() || nullptr == pair.first || !Units::Unit::AreCompatible(GetPersistenceUnit(), pair.first))
+                {
+                LOG.errorv("KOQ '%s' all unit overrides must be compatible with each other and must exist", GetFullName().c_str());
+                return ECObjectsStatus::Error;
+                }
+
+            newUnits.push_back(pair.first);
+            }
+
+        Formatting::CompositeValueSpec localComp;
+        bool compStatus = Formatting::CompositeValueSpec::CreateCompositeSpec(localComp, newUnits);
+
+        if (!compStatus || !nfp.SetCompositeSpec(localComp)) // CompStatus will be false if: too many units, null units or the spec has a problem
+            {
+            LOG.errorv("KOQ '%s' failed to set composite spec", GetFullName().c_str());
+            if (localComp.IsProblem())
+                LOG.errorv("KOQ '%s' composite spec has problem '%s'", GetFullName().c_str(), localComp.GetProblemDescription().c_str());
+
+            return ECObjectsStatus::Error;
+            }
+
+        if (!overrides.empty())
+            {
+            // If we override a numeric spec then set spacer to match UomSeparator. If we don't there will always be a space
+            // between the value and its unit label since the default spacer is a blank character.
+            if (!nfp.GetCompositeSpecP()->HasSpacer())
+                {
+                Formatting::NumericFormatSpecCP nsP = parent.GetNumericSpec();
+                if (nsP && nsP->GetUomSeparator())
+                    nfp.GetCompositeSpecP()->SetSpacer(nsP->GetUomSeparator());
+                }
+            }
+        }
+
+    switch (overrides.size()) // Fallthroughs intentional to add all necessary labels
+        {
+        case 4:
+            if (nullptr != overrides[3].second)
+                nfp.GetCompositeSpecP()->SetSubLabel(overrides[3].second);
+        case 3:
+            if (nullptr != overrides[2].second)
+                nfp.GetCompositeSpecP()->SetMinorLabel(overrides[2].second);
+        case 2:
+            if (nullptr != overrides[1].second)
+                nfp.GetCompositeSpecP()->SetMiddleLabel(overrides[1].second);
+        case 1:
+            if (nullptr != overrides[0].second)
+                nfp.GetCompositeSpecP()->SetMajorLabel(overrides[0].second);
+        }
+
+    if (isDefault)
+        m_presentationFormats.insert(m_presentationFormats.begin(), nfp);
+    else
+        m_presentationFormats.push_back(nfp);
+
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormatInternal(NamedFormat format)
+    {
+    if (format.HasCompositeMajorUnit() && !Units::Unit::AreCompatible(format.GetCompositeMajorUnit(), GetPersistenceUnit()))
+        {
+        LOG.errorv("KOQ '%s' cannot add presentation format '%s' because its major unit is not compatible with this KoQ's persistence unit", GetFullName().c_str(), format.GetName().c_str());
+        return ECObjectsStatus::Error;
+        }
+    m_presentationFormats.emplace_back(format);
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<int32_t> precisionOverride,  UnitAndLabelPairs const* unitsAndLabels) const
+    {
+    if (parent.IsOverride())
+        {
+        LOG.errorv("KOQ '%s' cannot create an override using another override as a parent", GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    out += parent.GetName();
+    
+    if (precisionOverride.IsValid())
+        {
+        out += "(";
+        out += std::to_string(precisionOverride.Value()).c_str();
+        out += ")";
+        }
+
+    if (nullptr != unitsAndLabels)
+        {
+        auto& input = *unitsAndLabels;
+        if (input.size() > 4)
+            {
+            LOG.errorv("KOQ '%s' cannot have more than 4 override units specified on a presentation format", GetFullName().c_str());
+            return ECObjectsStatus::Error;
+            }
+
+        for(const auto& i : input)
+            { 
+            auto& unit = i.first;
+            if (nullptr == unit)
+                return ECObjectsStatus::Error;
+            out += "[";
+            out += unit->GetQualifiedName(GetSchema());
+
+            if (nullptr != i.second) // We want to override a label
+                {
+                out += "|";
+                out += i.second;
+                }
+
+            out += "]";
+            }
+        }
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  06/2017
+//---------------------------------------------------------------------------------------
+Json::Value KindOfQuantity::GetPresentationFormatsJson() const
+    {
+    Json::Value arrayObj(Json::arrayValue);
+
+    bvector<NamedFormat> const& presentationUnits = GetPresentationFormats();
+    if (presentationUnits.size() > 0)
+        {
+        for (NamedFormatCR format : presentationUnits)
+            {
+            if (format.IsProblem())
+                continue;
+
+            arrayObj.append(format.GetName());
+            }
+        }
+    return arrayObj;
     }
 
 //---------------------------------------------------------------------------------------
@@ -747,383 +1091,6 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
 
     unitName = "u:" + unqualifiedPers;
     return ECObjectsStatus::Success;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  04/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPersistenceUnitByName(Utf8StringCR unitName, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper)
-    {
-    Utf8String alias;
-    Utf8String name;
-    ECClass::ParseClassName(alias, name, unitName);
-    if (alias.empty())
-        alias.assign(GetSchema().GetAlias());
-
-    auto unit = nameToUnitMapper(alias, name);
-    if (nullptr == unit)
-        {
-        LOG.errorv("Unable to add unit name '%s' ", unitName.c_str());
-        return ECObjectsStatus::InvalidUnitName;
-        }
-
-    if (nullptr == GetSchema().GetUnitsContext().LookupUnit(unitName.c_str()))
-        {
-        LOG.errorv("On KoQ '%s' persistence unit with name '%s' could not be located", GetFullName().c_str(), unitName.c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    SetPersistenceUnit(*unit);
-    return ECObjectsStatus::Success;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  04/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPresentationFormatByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper)
-    {
-    Utf8String formatName;
-    Nullable<int32_t> prec;
-    bvector<Utf8String> unitNames;
-    bvector<Nullable<Utf8String>> unitLabels;
-    if (BentleyStatus::SUCCESS != Formatting::Format::ParseFormatString(formatName, prec, unitNames, unitLabels, formatString))
-        {
-        LOG.errorv("Failed to parse Presentation FormatString '%s' on KindOfQuantity '%s'", formatString.c_str(), GetFullName().c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    Utf8String alias;
-    Utf8String unqualifiedName;
-    ECClass::ParseClassName(alias, unqualifiedName, formatName);
-    if (alias.empty())
-        alias = GetSchema().GetAlias();
-
-    auto format = nameToFormatMapper(alias, unqualifiedName);
-
-    if (nullptr == format)
-        {
-        LOG.errorv("Format '%s' could not be looked up on KoQ '%s'", formatName.c_str(), GetFullName().c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    if (!unitNames.empty())
-        {
-        UnitAndLabelPairs units;
-        int i = 0;
-        for (const auto& u : unitNames)
-            {
-            ECClass::ParseClassName(alias, unqualifiedName, u);
-            if (alias.empty())
-                alias = GetSchema().GetAlias();
-
-            auto unit = nameToUnitMapper(alias, unqualifiedName);
-            if (nullptr == unit)
-                {
-                LOG.errorv("Presentation unit with name '%s' could not be looked up on KoQ '%s'", u.c_str(), GetFullName().c_str());
-                return ECObjectsStatus::Error;
-                }
-            units.push_back(make_bpair(unit, (i < unitLabels.size() && unitLabels[i].IsValid()) ? unitLabels[i].Value().c_str() : nullptr));
-            i++;
-            }
-
-        return AddPresentationFormat(*format, prec, &units);
-        }
-
-    return AddPresentationFormat(*format, prec); // no unit overrides
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  04/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<int32_t> precisionOverride,  UnitAndLabelPairs const* unitsAndLabels) const
-    {
-    if (parent.IsOverride())
-        {
-        LOG.errorv("KOQ '%s' cannot create an override using another override as a parent", GetFullName().c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    out += parent.GetName();
-    
-    if (precisionOverride.IsValid())
-        {
-        out += "(";
-        out += std::to_string(precisionOverride.Value()).c_str();
-        out += ")";
-        }
-
-    if (nullptr != unitsAndLabels)
-        {
-        auto& input = *unitsAndLabels;
-        if (input.size() > 4)
-            {
-            LOG.errorv("KOQ '%s' cannot have more than 4 override units specified on a presentation format", GetFullName().c_str());
-            return ECObjectsStatus::Error;
-            }
-
-        for(const auto& i : input)
-            { 
-            auto& unit = i.first;
-            if (nullptr == unit)
-                return ECObjectsStatus::Error;
-            out += "[";
-            out += unit->GetQualifiedName(GetSchema());
-
-            if (nullptr != i.second) // We want to override a label
-                {
-                out += "|";
-                out += i.second;
-                }
-
-            out += "]";
-            }
-        }
-    return ECObjectsStatus::Success;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  04/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPresentationFormatInternal(NamedFormat format)
-    {
-    if (format.HasCompositeMajorUnit() && !Units::Unit::AreCompatible(format.GetCompositeMajorUnit(), GetPersistenceUnit()))
-        {
-        LOG.errorv("KOQ '%s' cannot add presentation format '%s' because its major unit is not compatible with this KoQ's persistence unit", GetFullName().c_str(), format.GetName().c_str());
-        return ECObjectsStatus::Error;
-        }
-    m_presentationFormats.emplace_back(format);
-    return ECObjectsStatus::Success;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  04/2018
-//--------------------------------------------------------------------------------------
-NamedFormatCP KindOfQuantity::GetOrCreateCachedPersistenceFormat() const
-    {
-    if (nullptr == m_persistenceUnit)
-        return nullptr;
-
-    if (m_persFormatCache.IsValid())
-        {
-        if (Units::Unit::AreEqual(m_persFormatCache.Value().GetCompositeMajorUnit(), m_persistenceUnit))
-            return &m_persFormatCache.Value();
-        }
-    Utf8String name = "DefaultRealU";
-    name += "[";
-    name += m_persistenceUnit->GetQualifiedName(GetSchema());
-    name += "]";
-    m_persFormatCache = NamedFormat(name);
-    m_persFormatCache.ValueR().SetNumericSpec(Formatting::NumericFormatSpec::DefaultFormat());
-    auto comp = Formatting::CompositeValueSpec(*m_persistenceUnit);
-    comp.SetMajorLabel(m_persistenceUnit->GetDisplayLabel().c_str());
-    m_persFormatCache.ValueR().SetCompositeSpec(comp);
-    return &m_persFormatCache.Value();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  04/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullable<int32_t> precisionOverride, UnitAndLabelPairs const* unitsAndLabels, bool isDefault)
-    {
-    // Check for null persistence unit. Cannot add presentation units if there is no persistence unit
-    if (nullptr == m_persistenceUnit)
-        {
-        LOG.errorv("KOQ '%s' is missing a persistence unit. Cannot add presentation formats.", GetFullName().c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    if (parent.IsOverride())
-        {
-        LOG.errorv("KOQ '%s' cannot create an override using another override as a parent", GetFullName().c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    // Parent has no units and we don't provide any overrides
-    if (!parent.HasCompositeMajorUnit() && (nullptr == unitsAndLabels || unitsAndLabels->empty()))
-        {
-        LOG.errorv("KOQ '%s' cannot have a format without composite units and no unit overrides.", GetFullName().c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    // Parent has unit and verify they are compatible
-    if (parent.HasCompositeMajorUnit() && nullptr != m_persistenceUnit && !ECUnit::AreCompatible(parent.GetCompositeMajorUnit(), m_persistenceUnit))
-        {
-        LOG.errorv("KOQ '%s' cannot have a format with a major unit that is incompatible with KOQ's persistence unit", GetFullName().c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    Utf8String out;
-    CreateOverrideString(out, parent, precisionOverride, unitsAndLabels);
-    NamedFormat nfp = NamedFormat(out, &parent);
-
-    if (precisionOverride.IsValid())
-        {
-        if (Formatting::PresentationType::Fractional == nfp.GetPresentationType())
-            {
-            Formatting::FractionalPrecision prec;
-            if (!Formatting::Utils::FractionalPrecisionByDenominator(prec, precisionOverride.Value()))
-                {
-                LOG.errorv("On KOQ '%s' %d is not a valid fractional precision override value", GetFullName().c_str(), precisionOverride.Value());
-                return ECObjectsStatus::Error;
-                }
-            nfp.GetNumericSpecP()->SetPrecision(prec);
-            }
-        else
-            {
-            Formatting::DecimalPrecision prec;
-            if (!Formatting::Utils::GetDecimalPrecisionByInt(prec, precisionOverride.Value()))
-                {
-                LOG.errorv("On KOQ '%s' %d is not a valid decimal precision override value", GetFullName().c_str(), precisionOverride.Value());
-                return ECObjectsStatus::Error;
-                }
-            nfp.GetNumericSpecP()->SetPrecision(prec);
-            }
-        }
-
-    // If there are no unit overrides
-    if (nullptr == unitsAndLabels || 0 == unitsAndLabels->size())
-        {
-        if (isDefault)
-            m_presentationFormats.insert(m_presentationFormats.begin(), nfp);
-        else
-            m_presentationFormats.push_back(nfp);
-        return ECObjectsStatus::Success;
-        }
-
-    auto& overrides = *unitsAndLabels;
-    if(nfp.HasComposite() && 0 < nfp.GetCompositeSpec()->GetUnitCount())
-        {
-        auto composite = nfp.GetCompositeSpec();
-        if (composite->GetUnitCount() != overrides.size())
-            {
-            LOG.errorv("KOQ '%s' cannot override a different number of units than already exists on a format", GetFullName().c_str());
-            return ECObjectsStatus::Error;
-            }
-
-        auto compUnits = composite->GetUnits();
-        for (int i = 0; i < overrides.size(); ++i)
-            {
-            if (!Units::Unit::AreEqual(overrides[i].first, compUnits[i]))
-                {
-                LOG.errorv("KOQ '%s' cannot change UOM in an override when one is already defined by the format", GetFullName().c_str());
-                return ECObjectsStatus::Error;
-                }
-            }
-        }
-    else
-        {
-        bvector<Units::UnitCP> newUnits;
-        for (auto pair : overrides)
-            {
-            // Validate that unit is compatible with the KOQ.
-            if(nullptr == GetPersistenceUnit() || nullptr == pair.first || !Units::Unit::AreCompatible(GetPersistenceUnit(), pair.first))
-                {
-                LOG.errorv("KOQ '%s' all unit overrides must be compatible with each other and must exist", GetFullName().c_str());
-                return ECObjectsStatus::Error;
-                }
-
-            newUnits.push_back(pair.first);
-            }
-
-        Formatting::CompositeValueSpec localComp;
-        bool compStatus = Formatting::CompositeValueSpec::CreateCompositeSpec(localComp, newUnits);
-
-        if (!compStatus || !nfp.SetCompositeSpec(localComp)) // CompStatus will be false if: too many units, null units or the spec has a problem
-            {
-            LOG.errorv("KOQ '%s' failed to set composite spec", GetFullName().c_str());
-            if (localComp.IsProblem())
-                LOG.errorv("KOQ '%s' composite spec has problem '%s'", GetFullName().c_str(), localComp.GetProblemDescription().c_str());
-
-            return ECObjectsStatus::Error;
-            }
-
-        if (!overrides.empty())
-            {
-            // If we override a numeric spec then set spacer to match UomSeparator. If we don't there will always be a space
-            // between the value and its unit label since the default spacer is a blank character.
-            if (!nfp.GetCompositeSpecP()->HasSpacer())
-                {
-                Formatting::NumericFormatSpecCP nsP = parent.GetNumericSpec();
-                if (nsP && nsP->GetUomSeparator())
-                    nfp.GetCompositeSpecP()->SetSpacer(nsP->GetUomSeparator());
-                }
-            }
-        }
-
-    switch (overrides.size()) // Fallthroughs intentional to add all necessary labels
-        {
-        case 4:
-            if (nullptr != overrides[3].second)
-                nfp.GetCompositeSpecP()->SetSubLabel(overrides[3].second);
-        case 3:
-            if (nullptr != overrides[2].second)
-                nfp.GetCompositeSpecP()->SetMinorLabel(overrides[2].second);
-        case 2:
-            if (nullptr != overrides[1].second)
-                nfp.GetCompositeSpecP()->SetMiddleLabel(overrides[1].second);
-        case 1:
-            if (nullptr != overrides[0].second)
-                nfp.GetCompositeSpecP()->SetMajorLabel(overrides[0].second);
-        }
-
-    if (isDefault)
-        m_presentationFormats.insert(m_presentationFormats.begin(), nfp);
-    else
-        m_presentationFormats.push_back(nfp);
-
-    return ECObjectsStatus::Success;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  04/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<int32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride, bool isDefault)
-    {
-    UnitAndLabelPairs units;
-    if (nullptr == inputUnitOverride && nullptr != labelOverride)
-        {
-        if (parent.HasCompositeMajorUnit())
-            inputUnitOverride = (ECUnitCP)parent.GetCompositeMajorUnit();
-        else
-            return ECObjectsStatus::Error;
-        }
-    if (nullptr != inputUnitOverride)
-        { 
-        units = UnitAndLabelPairs();
-        units.push_back(make_bpair(inputUnitOverride, labelOverride));
-        }
-
-    return AddPresentationFormat(parent, precisionOverride, &units, isDefault);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Bill.Steinbock                  06/2017
-//---------------------------------------------------------------------------------------
-Json::Value KindOfQuantity::GetPresentationFormatsJson() const
-    {
-    Json::Value arrayObj(Json::arrayValue);
-
-    bvector<NamedFormat> const& presentationUnits = GetPresentationFormats();
-    if (presentationUnits.size() > 0)
-        {
-        for (NamedFormatCR format : presentationUnits)
-            {
-            if (format.IsProblem())
-                continue;
-
-            arrayObj.append(format.GetName());
-            }
-        }
-    return arrayObj;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                David.Fox-Rabinovitz      08/2017
-//---------------------------------------------------------------------------------------
-PhenomenonCP KindOfQuantity::GetPhenomenon() const
-    {
-    BEU::UnitCP un = GetPersistenceUnit();
-    return (nullptr == un) ? nullptr : static_cast<PhenomenonCP>(un->GetPhenomenon());
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

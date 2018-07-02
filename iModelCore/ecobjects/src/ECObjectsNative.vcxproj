@@ -90,7 +90,6 @@
     <ClCompile Include="StandaloneECInstance.cpp" />
     <ClCompile Include="StandaloneECRelationshipInstance.cpp" />
     <ClCompile Include="StandardCustomAttributeHelper.cpp" />
-    <ClCompile Include="StandardUnitsHelper.cpp" />
     <ClCompile Include="SupplementalSchema.cpp" />
     <ClCompile Include="SystemSymbolProvider.cpp" />
     <ClCompile Include="ECUnit.cpp" />
@@ -100,7 +99,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PrivateApi\ECObjects\SchemaParseUtils.h" />
-    <ClInclude Include="..\PrivateApi\ECObjects\StandardUnitsHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\AdHocJsonValue.h" />
     <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h" />
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />

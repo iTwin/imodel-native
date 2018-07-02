@@ -1433,7 +1433,7 @@ private:
     //! Private function for adding a copy of an existing named format. Currently used by CopySchema as a convenience method.
     ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatInternal(NamedFormat format);
     //! Gets the cached persistence format. Creates one based on Formatting::NumericFormatSpec::DefaultFormat() if it does not exist.
-    ECOBJECTS_EXPORT NamedFormatCP GetOrCreateCachedPersistenceFormat() const;
+    ECOBJECTS_EXPORT NamedFormatCP GetCachedPersistenceFormat() const;
     ECObjectsStatus ParsePresentationUnit(Utf8CP descriptor, ECSchemaReadContextR context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion, bool shouldBeDefault);
     ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, UnitAndLabelPairs const* unitsAndLabels = nullptr) const;
     ECObjectsStatus ParseDescriptorAndAddRefs(Utf8StringR unitName, Utf8StringR formatName, ECUnitCP& unit, Utf8CP descriptor, ECSchemaReadContextP context);
@@ -1496,10 +1496,9 @@ public:
     ECObjectsStatus SetDefaultPresentationFormat(ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, ECUnitCP inputUnitOverride = nullptr, Utf8CP labelOverride = nullptr)
         {return AddPresentationFormatSingleUnitOverride(parent, precisionOverride, inputUnitOverride, labelOverride, true);}
     //! Gets the default presentation format of this KindOfQuantity.
-    NamedFormatCP GetDefaultPresentationFormat() const {return HasPresentationFormats() ? &m_presentationFormats[0] : GetOrCreateCachedPersistenceFormat();}
-    bvector<NamedFormat> const& GetPresentationFormats() const { return m_presentationFormats; } //!< Gets a list of all presentation formats available for this KoQ.
-    ECOBJECTS_EXPORT bvector<ECFormatCP> const GetReferencedFormats() const;
-    bool HasPresentationFormats() const { return m_presentationFormats.size() > 0; } //!< Returns true if one or more presentation formats exist
+    NamedFormatCP GetDefaultPresentationFormat() const {return HasPresentationFormats() ? &m_presentationFormats[0] : GetCachedPersistenceFormat();}
+    bvector<NamedFormat> const& GetPresentationFormats() const {return m_presentationFormats;} //!< Gets a list of all presentation formats available for this KoQ.
+    bool HasPresentationFormats() const {return m_presentationFormats.size() > 0;} //!< Returns true if one or more presentation formats exist
 
     //! Adds a NamedFormat to this KoQ's list of presentation formats. If the format has any units,
     //! they must be compatible with the persistence unit and each other.
@@ -1530,13 +1529,15 @@ public:
     //! @return ECObjectsStatus::Success if successfully updates the presentation format. Otherwise error codes
     ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper);
 
-    ECOBJECTS_EXPORT void RemovePresentationFormat(NamedFormatCR fus); //!< Removes the specified presentation format.
+    //!< Removes the specified presentation format.
+    void RemovePresentationFormat(NamedFormatCR presentationFormat)
+        {m_presentationFormats.erase(std::remove_if(m_presentationFormats.begin(), m_presentationFormats.end(), [&](NamedFormatCR format) {return format.IsIdentical(presentationFormat);}));}
     void RemoveAllPresentationFormats() {m_presentationFormats.clear();} //!< Removes all presentation formats.
 
     //! Returns the Phenomenon supported by this KindOfQuantity.
     //!
     //! @remarks All Units within this KindOfQuantity must have the same Phenomenon.
-    ECOBJECTS_EXPORT PhenomenonCP GetPhenomenon() const;
+    PhenomenonCP GetPhenomenon() const {return (nullptr == GetPersistenceUnit()) ? nullptr : static_cast<PhenomenonCP>(GetPersistenceUnit()->GetPhenomenon());}
 
     //! Write the KindOfQuantity as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
@@ -1550,14 +1551,14 @@ public:
     //! formatString that is returned
     //!
     //! @param[out] persUnitName    The qualified name of the persistence unit mapped to a unit name in the standard units schema
-    //! @param[out] formatStrings   List of presentation format strings representing format overrides.
+    //! @param[out] presFormatStrings List of presentation format strings representing format overrides.
     //! @param[in] persFus          The descriptor for the persistence FUS that is of the format for the old FUS descriptor,
     //!                             format: {unitName}({formatName}), where the format part is optional.
     //! @param[in] presFuses        List of presentation FUS descriptors
     //! @param[in] formatSchema     Reference to standard formats schema use to locate formats and verify if they have a composite or not
     //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName
     //! if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
-    ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptors(Utf8StringR persUnitName, bvector<Utf8String>& formatStrings, Utf8CP persFus, bvector<Utf8CP> const& presFuses, ECSchemaCR formatSchema);
+    ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptors(Utf8StringR persUnitName, bvector<Utf8String>& presFormatStrings, Utf8CP persFus, bvector<Utf8CP> const& presFuses, ECSchemaCR formatSchema);
 };
 
 //=======================================================================================
