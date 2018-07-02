@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/BuildingDomainBaseFixture.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BuildingDomainBaseFixture.h"
@@ -256,7 +256,7 @@ DgnDbPtr BuildingDomainTestFixture::OpenDgnDb()
 	m_workingBimFile.AppendToPath(L"BuildingDomain.bim");
 
 	// Initialize parameters needed to create a DgnDb
-	Dgn::DgnDb::OpenParams openParams(BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, Dgn::SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly);
+	Dgn::DgnDb::OpenParams openParams(BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
 
 	// Create the DgnDb file. The BisCore domain schema is also imported. Note that a seed file is not required.
 	BeSQLite::DbResult openStatus;
