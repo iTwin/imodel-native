@@ -339,7 +339,11 @@ static ChangeSetsResult tryPullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db, iModel
 
     Dgn::SchemaUpgradeOptions options(changeSetVector);
     db = DgnDb::OpenDgnDb(&dbres, BeFileName(briefcasePath), Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, options));
-    BeAssert(db.IsValid());
+
+    if (!db.IsValid())
+        {
+        NativeLogging::LoggingManager::GetLogger("iModelBridge")->errorv("Failed to open after applying schema revision. Error = %x", dbres);
+        }
 
     return downloadChangeSetsResult;
     }
