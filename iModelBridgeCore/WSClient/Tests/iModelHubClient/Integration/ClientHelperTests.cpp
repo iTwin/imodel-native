@@ -16,11 +16,17 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 using namespace ::testing;
 using namespace ::std;
 
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                     Karolis.Dziedzelis              06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 struct ClientHelperTests : public Test
     {
     static ClientHelper* s_helper;
     static std::shared_ptr<MockHttpHandler> s_handler;
 
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Karolis.Dziedzelis              06/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
     static void SetUpTestCase()
         {
         s_handler = std::make_shared<MockHttpHandler>();
@@ -28,6 +34,9 @@ struct ClientHelperTests : public Test
         s_helper = ClientHelper::GetInstance();
         }
 
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Karolis.Dziedzelis              06/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
     static void TearDownTestCase()
         {
         s_helper->SetUrl("");
@@ -38,6 +47,9 @@ struct ClientHelperTests : public Test
 ClientHelper* ClientHelperTests::s_helper = nullptr;
 std::shared_ptr<MockHttpHandler> ClientHelperTests::s_handler = nullptr;
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientHelperTests, SetsUrl)
     {
     Utf8String testUrl = "TestUrl";
@@ -46,6 +58,9 @@ TEST_F(ClientHelperTests, SetsUrl)
     EXPECT_EQ(testUrl, client->GetServerUrl());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientHelperTests, SetsStaticAuthorizationHeader)
     {
     Utf8String testUrl = "TestUrl";

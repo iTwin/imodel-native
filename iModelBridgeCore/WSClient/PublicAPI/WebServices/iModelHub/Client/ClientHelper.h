@@ -42,6 +42,7 @@ private:
     ClientHelper(ClientInfoPtr clientInfo, IJsonLocalState* ls = nullptr, IHttpHandlerPtr customHandler = nullptr)
         : m_clientInfo(clientInfo), m_localState(ls), m_customHandler(customHandler) {}
 
+    //! Get the Url of iModelHub
     Utf8StringCR GetUrl();
 public:
     //! Create or update the singleton instance.

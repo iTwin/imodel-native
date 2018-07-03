@@ -16,6 +16,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 ClientHelper* ClientHelper::s_instance = nullptr;
 BeMutex ClientHelper::s_mutex{};
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ClientHelper::GetUrl()
     {
     if (Utf8String::IsNullOrEmpty(m_url.c_str()))
