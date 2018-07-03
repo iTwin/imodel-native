@@ -3000,7 +3000,7 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
         BeStringUtilities::Strncpy(first200Bytes, ecSchemaXml, 200);
         first200Bytes[200] = '\0';
         if (SchemaReadStatus::DuplicateSchema == status)
-            LOG.errorv(L"Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Bytes);
+            LOG.errorv(L"Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", WString(first200Bytes, true).c_str());
         else
             {
             LOG.errorv("Failed to read XML from string (1st 200 characters approx.): %s", first200Bytes);
@@ -3013,7 +3013,7 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
         {
         timer.Stop();
         LOG.infov (L"Read from string (in %.4f seconds) [%3" PRIx64 " ECClasses] %s", timer.GetElapsedSeconds(),
-            (uint64_t) schemaOut->m_classMap.size(), schemaOut->GetFullSchemaName().c_str());
+            (uint64_t) schemaOut->m_classMap.size(), WString(schemaOut->GetFullSchemaName().c_str(), true).c_str());
         }
 
     return status;
