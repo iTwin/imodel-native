@@ -2950,7 +2950,6 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         Napi::Function t = DefineClass(env, "NativeECPresentationManager", {
           InstanceMethod("setupRulesetDirectories", &NativeECPresentationManager::SetupRulesetDirectories),
           InstanceMethod("setupLocaleDirectories", &NativeECPresentationManager::SetupLocaleDirectories),
-          InstanceMethod("setActiveLocale", &NativeECPresentationManager::SetActiveLocale),
           InstanceMethod("setUserSetting", &NativeECPresentationManager::SetUserSetting),
           InstanceMethod("getUserSetting", &NativeECPresentationManager::GetUserSetting),
           InstanceMethod("addRuleSet", &NativeECPresentationManager::AddRuleSet),
@@ -3067,14 +3066,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         ECPresentationResult result = ECPresentationUtils::SetupLocaleDirectories(localeDirectories);
         return CreateReturnValue(result);
         }
-
-    Napi::Value SetActiveLocale(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, locale, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "locale")));
-        ECPresentationResult result = ECPresentationUtils::SetActiveLocale(locale);
-        return CreateReturnValue(result);
-        }
-
+    
     Napi::Value AddRuleSet(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetJsonString, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetJsonString")));

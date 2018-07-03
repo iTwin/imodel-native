@@ -986,8 +986,7 @@ struct IModelJsECPresentationLocalizationProvider : ILocalizationProvider
 {
 private:
     bvector<BeFileName> m_localeDirectories;
-    Utf8String m_activeLocale;
-    mutable bmap<Utf8String, rapidjson::Document*> m_cache;
+    mutable bmap<Utf8String, bmap<Utf8String, rapidjson::Document*>> m_cache;
 private:
     static bvector<Utf8String> GetLocaleVariants(Utf8StringCR activeLocale)
         {
@@ -1000,10 +999,10 @@ private:
             variants.push_back("en");
         return variants;
         }
-    bvector<BeFileName> GetLocalizationDirectoryPaths() const
+    bvector<BeFileName> GetLocalizationDirectoryPaths(Utf8StringCR locale) const
         {
         bvector<BeFileName> result;
-        bvector<Utf8String> localeVariants = GetLocaleVariants(m_activeLocale);
+        bvector<Utf8String> localeVariants = GetLocaleVariants(locale);
         for (Utf8StringCR locale : localeVariants)
             {
             for (BeFileName dir : m_localeDirectories)
@@ -1016,12 +1015,12 @@ private:
             }
         return result;
         }
-    bvector<BeFileName> GetLocalizationFilePaths(Utf8StringCR ns) const
+    bvector<BeFileName> GetLocalizationFilePaths(Utf8StringCR locale, Utf8StringCR ns) const
         {
         BeFileName nsFileName(ns);
         nsFileName.AppendExtension(L"json");
         bvector<BeFileName> result;
-        bvector<BeFileName> dirs = GetLocalizationDirectoryPaths();
+        bvector<BeFileName> dirs = GetLocalizationDirectoryPaths(locale);
         for (BeFileNameCR dir : dirs)
             {
             bvector<BeFileName> matches;
@@ -1077,36 +1076,44 @@ private:
             BeAssert(false);
             }
         }
-    rapidjson::Document* CreateNamespace(Utf8StringCR ns) const
+    rapidjson::Document* CreateNamespace(Utf8StringCR locale, Utf8StringCR ns) const
         {
-        if (m_localeDirectories.empty() || m_activeLocale.empty())
+        if (m_localeDirectories.empty() || locale.empty())
             return nullptr;
         
         rapidjson::Document* json = new rapidjson::Document();
         json->SetObject();
-        bvector<BeFileName> filePaths = GetLocalizationFilePaths(ns);
+        bvector<BeFileName> filePaths = GetLocalizationFilePaths(locale, ns);
         for (BeFileNameCR filePath : filePaths)
             MergeLocalizationData(*json, json->GetAllocator(), ReadLocalizationFile(filePath));
         return json;
         }
     void ClearCache()
         {
-        for (auto entry : m_cache)
-            DELETE_AND_CLEAR(entry.second);
+        for (auto localeEntry : m_cache)
+            {
+            for (auto namespaceEntry : localeEntry.second)
+                DELETE_AND_CLEAR(namespaceEntry.second);
+            }
         m_cache.clear();
         }
 protected:
-    bool _GetString(Utf8StringCR key, Utf8StringR localizedValue) const override
+    bool _GetString(Utf8StringCR locale, Utf8StringCR key, Utf8StringR localizedValue) const override
         {
         Utf8String ns;
         size_t pos;
         if (Utf8String::npos == (pos = key.GetNextToken(ns, ":", 0)))
             return false;
         
-        auto iter = m_cache.find(ns);
-        if (m_cache.end() == iter)
-            iter = m_cache.Insert(ns, CreateNamespace(ns)).first;
-        rapidjson::Value const* curr = iter->second;
+        auto localeIter = m_cache.find(locale);
+        if (m_cache.end() == localeIter)
+            localeIter = m_cache.Insert(locale, bmap<Utf8String, rapidjson::Document*>()).first;
+
+        auto namespaceIter = localeIter->second.find(ns);
+        if (localeIter->second.end() == namespaceIter)
+            namespaceIter = localeIter->second.Insert(ns, CreateNamespace(locale, ns)).first;
+
+        rapidjson::Value const* curr = namespaceIter->second;
         if (nullptr == curr)
             return false;
         
@@ -1128,7 +1135,6 @@ protected:
 public:
     ~IModelJsECPresentationLocalizationProvider() {ClearCache();}
     void SetLocaleDirectories(bvector<BeFileName> directories) {m_localeDirectories = directories; ClearCache();}
-    void SetActiveLocale(Utf8String locale) {m_activeLocale = locale; ClearCache();}
 };
 
 /*=================================================================================**//**
@@ -1157,7 +1163,6 @@ public:
 static IModelJsECPresentationStaticSetupHelper s_staticSetup;
 static LocalState s_localState;
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1166,15 +1171,13 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
     BeFileName assetsDir = locations.GetDgnPlatformAssetsDirectory();
     BeFileName tempDir = locations.GetLocalTempDirectoryBaseName();
     tempDir.AppendToPath(L"ecpresentation");
-    if (tempDir.DoesPathExist())
-        BeFileName::EmptyAndRemoveDirectory(tempDir.c_str());
-    BeFileName::CreateNewDirectory(tempDir.c_str());
+    if (!tempDir.DoesPathExist())
+        BeFileName::CreateNewDirectory(tempDir.c_str());
 
     RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
     RulesDrivenECPresentationManager* manager = new RulesDrivenECPresentationManager(connections, paths);
     manager->SetLocalState(&s_localState);
-
-
+    
     BeFileName supplementalsDirectory = BeFileName(assetsDir).AppendToPath(L"PresentationRules");
     manager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalsDirectory.GetNameUtf8().c_str())));
 
@@ -1200,15 +1203,6 @@ ECPresentationResult ECPresentationUtils::SetupLocaleDirectories(bvector<Utf8Str
     for (Utf8StringCR dir : directories)
         directoryPaths.push_back(BeFileName(dir).AppendSeparator());
     s_staticSetup.GetLocalizationProvider().SetLocaleDirectories(directoryPaths);
-    return ECPresentationResult();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::SetActiveLocale(Utf8String locale)
-    {
-    s_staticSetup.GetLocalizationProvider().SetActiveLocale(locale);
     return ECPresentationResult();
     }
 
@@ -1243,16 +1237,32 @@ ECPresentationResult ECPresentationUtils::ClearRuleSets(SimpleRuleSetLocater& lo
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/2015
+* @bsimethod                                    Grigas.Petraitis                06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static JsonValueCR GetManagerOptions(JsonValueCR params)
+static RulesDrivenECPresentationManager::NavigationOptions GetNavigationOptions(JsonValueCR params)
     {
-    if (!params.isMember("options") || !params["options"].isObject())
+    if (!params.isMember("rulesetId") || !params["rulesetId"].isString())
         {
-        static Json::Value s_default;
-        return s_default;
+        static Json::Value s_empty;
+        return RulesDrivenECPresentationManager::NavigationOptions(s_empty);
         }
-    return params["options"];
+    Utf8CP locale = (params.isMember("locale") && params["locale"].isString()) ? params["locale"].asCString() : "";
+    bool disableUpdates = params.isMember("disableUpdates") && params["disableUpdates"].asBool();
+    return RulesDrivenECPresentationManager::NavigationOptions(params["rulesetId"].asCString(), TargetTree_Both, disableUpdates, locale);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static RulesDrivenECPresentationManager::ContentOptions GetContentOptions(JsonValueCR params)
+    {
+    if (!params.isMember("rulesetId") || !params["rulesetId"].isString())
+        {
+        static Json::Value s_empty;
+        return RulesDrivenECPresentationManager::ContentOptions(s_empty);
+        }
+    Utf8CP locale = (params.isMember("locale") && params["locale"].isString()) ? params["locale"].asCString() : "";
+    return RulesDrivenECPresentationManager::ContentOptions(params["rulesetId"].asCString(), locale);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1261,12 +1271,12 @@ static JsonValueCR GetManagerOptions(JsonValueCR params)
 static PageOptions GetPageOptions(JsonValueCR params)
     {
     PageOptions pageOptions;
-    if (params.isMember("pageOptions"))
+    if (params.isMember("paging"))
         {
-        if (params["pageOptions"].isMember("pageStart"))
-            pageOptions.SetPageStart((size_t)params["pageOptions"]["pageStart"].asUInt64());
-        if (params["pageOptions"].isMember("pageSize"))
-            pageOptions.SetPageSize((size_t)params["pageOptions"]["pageSize"].asUInt64());
+        if (params["paging"].isMember("start"))
+            pageOptions.SetPageStart((size_t)params["paging"]["start"].asUInt64());
+        if (params["paging"].isMember("size"))
+            pageOptions.SetPageSize((size_t)params["paging"]["size"].asUInt64());
         }
     return pageOptions;
     }
@@ -1366,7 +1376,7 @@ static folly::Future<NavNodeCPtr> GetNode(IECPresentationManager& mgr, IConnecti
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
-    return manager.GetRootNodesCount(db, GetManagerOptions(params))
+    return manager.GetRootNodesCount(db, GetNavigationOptions(params).GetJson())
         .then([](size_t count)
             {
             return ECPresentationResult(rapidjson::Value((int64_t) count));
@@ -1378,7 +1388,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(IECPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
-    return manager.GetRootNodes(db, GetPageOptions(params), GetManagerOptions(params))
+    return manager.GetRootNodes(db, GetPageOptions(params), GetNavigationOptions(params).GetJson())
         .then([](DataContainer<NavNodeCPtr> nodes)
             {
             rapidjson::Document json;
@@ -1386,7 +1396,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(IECPresent
             for (NavNodeCPtr const& node : nodes)
                 json.PushBack(node->AsJson(&json.GetAllocator()), json.GetAllocator());
             return ECPresentationResult(std::move(json));
-            });
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1395,9 +1405,9 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(IECPresent
 folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
-    JsonValueCR managerOptions = GetManagerOptions(params);
+    Json::Value options = GetNavigationOptions(params).GetJson();
     return GetNode(manager, *connection, params)
-        .then([&manager, &db, managerOptions](NavNodeCPtr parentNode)
+        .then([&manager, &db, options](NavNodeCPtr parentNode)
             {
             if (parentNode.IsNull())
                 {
@@ -1405,7 +1415,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(IECPre
                 return folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");});
                 }
             
-            return manager.GetChildrenCount(db, *parentNode, managerOptions)
+            return manager.GetChildrenCount(db, *parentNode, options)
                 .then([](size_t count)
                     {
                     return ECPresentationResult(rapidjson::Value((int64_t) count));
@@ -1419,10 +1429,10 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(IECPre
 folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
-    JsonValueCR managerOptions = GetManagerOptions(params);
+    Json::Value options = GetNavigationOptions(params).GetJson();
     PageOptions pageOptions = GetPageOptions(params);
     return GetNode(manager, *connection, params)
-        .then([&manager, &db, managerOptions, pageOptions](NavNodeCPtr parentNode)
+        .then([&manager, &db, options, pageOptions](NavNodeCPtr parentNode)
             {
             if (parentNode.IsNull())
                 {
@@ -1430,7 +1440,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(IECPresenta
                 return folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");});
                 }
 
-            return manager.GetChildren(db, *parentNode, pageOptions, managerOptions)
+            return manager.GetChildren(db, *parentNode, pageOptions, options)
                 .then([](DataContainer<NavNodeCPtr> nodes)
                     {
                     rapidjson::Document json;
@@ -1439,6 +1449,76 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(IECPresenta
                         json.PushBack(node->AsJson(&json.GetAllocator()), json.GetAllocator());
                     return ECPresentationResult(std::move(json));
                     });
+            });
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<ECPresentationResult>  ECPresentationUtils::GetNodesPaths(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+    {
+    if (!params.isMember("markedIndex"))
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "markedIndex");
+
+    bvector<bvector<ECInstanceKey>> keys;
+    JsonValueCR keyArraysJson = params["paths"];
+    if (!keyArraysJson.isArray())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "paths");
+    
+    IConnectionCPtr connection = manager.Connections().GetConnection(db);
+    Json::Value options = GetNavigationOptions(params).GetJson();
+    for (Json::ArrayIndex x = 0; x < keyArraysJson.size(); x++)
+        {
+        JsonValueCR keysJson = keyArraysJson[x];
+
+        if (!keysJson.isArray())
+            return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString("paths[%" PRIu64 "]", (uint64_t)x));
+
+        keys.push_back(bvector<ECInstanceKey>());
+        for (Json::ArrayIndex i = 0; i < keysJson.size(); i++)
+            {
+            ECInstanceId id;
+            ECInstanceId::FromString(id, keysJson[i]["id"].asCString());
+            if (!id.IsValid())
+                return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString("paths[%" PRIu64 "][%" PRIu64 "].id", (uint64_t)x, (uint64_t)i));
+
+            ECClassCP ecClass = IModelJsECPresentationSerializer::GetClassFromFullName(*connection, keysJson[i]["className"].asCString());
+            if (ecClass == nullptr)
+                return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString("paths[%" PRIu64 "][%" PRIu64 "].className", (uint64_t)x, (uint64_t)i));
+
+            keys[x].push_back(ECInstanceKey(ecClass->GetId(), id));
+            }
+        }
+
+    return manager.GetNodesPath(db, keys, params["markedIndex"].asInt64(), options)
+        .then([](bvector<NodesPathElement> result)
+            {
+            rapidjson::Document response;
+            response.SetArray();
+            for (size_t i = 0; i < result.size(); i++)
+                response.PushBack(result[i].AsJson(&response.GetAllocator()), response.GetAllocator());
+            return ECPresentationResult(std::move(response));
+            });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kililnskas                06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<ECPresentationResult>  ECPresentationUtils::GetFilteredNodesPaths(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+    {
+    if (!params.isMember("filterText"))
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "filterText");
+
+    Json::Value options = GetNavigationOptions(params).GetJson();
+    return manager.GetFilteredNodesPaths(db, params["filterText"].asCString(), options)
+        .then([](bvector<NodesPathElement> result)
+            {
+            rapidjson::Document response;
+            response.SetArray();
+            for (size_t i = 0; i < result.size(); i++)
+                response.PushBack(result[i].AsJson(&response.GetAllocator()), response.GetAllocator());
+            return ECPresentationResult(std::move(response));
             });
     }
 
@@ -1508,7 +1588,8 @@ static KeySetPtr GetKeys(IConnectionCR connection, JsonValueCR params)
 folly::Future<ECPresentationResult> ECPresentationUtils::GetContentDescriptor(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
-    return manager.GetContentDescriptor(db, GetDisplayType(params), *GetKeys(*connection, params), nullptr, GetManagerOptions(params))
+    Json::Value options = GetContentOptions(params).GetJson();
+    return manager.GetContentDescriptor(db, GetDisplayType(params), *GetKeys(*connection, params), nullptr, options)
         .then([](ContentDescriptorCPtr descriptor)
             {
             if (descriptor.IsValid())
@@ -1525,18 +1606,18 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(IECPresentat
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
     PageOptions pageOptions = GetPageOptions(params);
-    return manager.GetContentDescriptor(db,  GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, GetManagerOptions(params))
+    Json::Value options = GetContentOptions(params).GetJson();
+    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options)
         .then([&manager, descriptorOverridesJson, pageOptions](ContentDescriptorCPtr descriptor)
             {
             if (descriptor.IsNull())
                 return folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor");});
 
             ContentDescriptorCPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
-            return manager.GetContent(*overridenDescriptor, pageOptions)
-                .then([](ContentCPtr content)
-                    {
-                    return ECPresentationResult(content->AsJson());
-                    });
+            return manager.GetContent(*overridenDescriptor, pageOptions).then([](ContentCPtr content)
+                {
+                return ECPresentationResult(content->AsJson());
+                });
             });
     }
 
@@ -1547,7 +1628,8 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(IECPr
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
-    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, GetManagerOptions(params))
+    Json::Value options = GetContentOptions(params).GetJson();
+    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options)
         .then([&manager, descriptorOverridesJson](ContentDescriptorCPtr descriptor)
             {
             if (descriptor.IsNull())
@@ -1571,120 +1653,46 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "fieldName");
     if (!params.isMember("maximumValueCount"))
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "maximumValueCount");
-
+    
     IConnectionCP connection = manager.Connections().GetConnection(db);
     JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
+    Json::Value options = GetContentOptions(params).GetJson();
     Utf8String fieldName = params["fieldName"].asString();
     int64_t maximumValueCount = params["maximumValueCount"].asInt64();
-    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, GetManagerOptions(params))
+    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options)
         .then([&manager, descriptorOverridesJson, fieldName, maximumValueCount] (ContentDescriptorCPtr descriptor)
-        {
-        if (descriptor.IsNull())
-            return folly::makeFutureWith([] () { return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor"); });
-
-        ContentDescriptorPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
-        bvector<ContentDescriptor::Field*> fieldsCopy = descriptor->GetAllFields();
-        for (ContentDescriptor::Field const* field : fieldsCopy)
             {
-            if (!field->GetName().Equals(fieldName))
-                overridenDescriptor->RemoveField(field->GetName().c_str());
-            }
-        overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
-        
-        PageOptions pageOptions;
-        return manager.GetContent(*overridenDescriptor, pageOptions)
-            .then([fieldName, maximumValueCount](ContentCPtr content)
-            {
-            DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+            if (descriptor.IsNull())
+                return folly::makeFutureWith([] () { return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor"); });
 
-            rapidjson::Document response;
-            response.SetArray();
-            for (size_t i = 0; i < contentSet.GetSize(); i++)
+            ContentDescriptorPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
+            bvector<ContentDescriptor::Field*> fieldsCopy = descriptor->GetAllFields();
+            for (ContentDescriptor::Field const* field : fieldsCopy)
                 {
-                if (maximumValueCount != 0 && response.Size() >= maximumValueCount)
-                    break;
-
-                RapidJsonValueCR value = contentSet.Get(i)->GetDisplayValues()[fieldName.c_str()];
-                if (value.IsNull() || (value.IsString() && 0 == value.GetStringLength()))
-                    continue;
-
-                response.PushBack(rapidjson::Value(value.GetString(), response.GetAllocator()), response.GetAllocator());
+                if (!field->GetName().Equals(fieldName))
+                    overridenDescriptor->RemoveField(field->GetName().c_str());
                 }
-            return ECPresentationResult(std::move(response));
-            });
-        });
-    }
+            overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
+        
+            return manager.GetContent(*overridenDescriptor, PageOptions())
+                .then([fieldName, maximumValueCount](ContentCPtr content)
+                {
+                DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
 
+                rapidjson::Document response;
+                response.SetArray();
+                for (size_t i = 0; i < contentSet.GetSize(); i++)
+                    {
+                    if (maximumValueCount != 0 && response.Size() >= maximumValueCount)
+                        break;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 06/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult>  ECPresentationUtils::GetNodesPaths(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
-    {
-    if (!params.isMember("markedIndex"))
-        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "markedIndex");
+                    RapidJsonValueCR value = contentSet.Get(i)->GetDisplayValues()[fieldName.c_str()];
+                    if (value.IsNull() || (value.IsString() && 0 == value.GetStringLength()))
+                        continue;
 
-    if (!params.isMember("options"))
-        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "options");
-
-    bvector<bvector<ECInstanceKey>> keys;
-    JsonValueCR keyArraysJson = params["paths"];
-    if (!keyArraysJson.isArray())
-        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "paths");
-    
-    IConnectionCPtr connection = manager.Connections().GetConnection(db);
-    for (Json::ArrayIndex x = 0; x < keyArraysJson.size(); x++)
-        {
-        JsonValueCR keysJson = keyArraysJson[x];
-
-        if (!keysJson.isArray())
-            return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString("paths[%" PRIu64 "]", (uint64_t)x));
-
-        keys.push_back(bvector<ECInstanceKey>());
-        for (Json::ArrayIndex i = 0; i < keysJson.size(); i++)
-            {
-            ECInstanceId id;
-            ECInstanceId::FromString(id, keysJson[i]["id"].asCString());
-            if (!id.IsValid())
-                return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString("paths[%" PRIu64 "][%" PRIu64 "].id", (uint64_t)x, (uint64_t)i));
-
-            ECClassCP ecClass = IModelJsECPresentationSerializer::GetClassFromFullName(*connection, keysJson[i]["className"].asCString());
-            if (ecClass == nullptr)
-                return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString("paths[%" PRIu64 "][%" PRIu64 "].className", (uint64_t)x, (uint64_t)i));
-
-            keys[x].push_back(ECInstanceKey(ecClass->GetId(), id));
-            }
-        }
-
-    return manager.GetNodesPath(db, keys, params["markedIndex"].asInt64(), params["options"])
-        .then([](bvector<NodesPathElement> result)
-            {
-            rapidjson::Document response;
-            response.SetArray();
-            for (size_t i = 0; i < result.size(); i++)
-                response.PushBack(result[i].AsJson(&response.GetAllocator()), response.GetAllocator());
-            return ECPresentationResult(std::move(response));
-            });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kililnskas                06/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult>  ECPresentationUtils::GetFilteredNodesPaths(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
-    {
-    if (!params.isMember("filterText"))
-        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "filterText");
-
-    if (!params.isMember("options"))
-        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "options");
-
-    return manager.GetFilteredNodesPaths(db, params["filterText"].asCString(), params["options"])
-        .then([](bvector<NodesPathElement> result)
-            {
-            rapidjson::Document response;
-            response.SetArray();
-            for (size_t i = 0; i < result.size(); i++)
-                response.PushBack(result[i].AsJson(&response.GetAllocator()), response.GetAllocator());
-            return ECPresentationResult(std::move(response));
+                    response.PushBack(rapidjson::Value(value.GetString(), response.GetAllocator()), response.GetAllocator());
+                    }
+                return ECPresentationResult(std::move(response));
+                });
             });
     }

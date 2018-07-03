@@ -64,7 +64,6 @@ struct ECPresentationUtils
 
     static ECPresentationResult SetupRulesetDirectories(RulesDrivenECPresentationManager&, bvector<Utf8String> const&);
     static ECPresentationResult SetupLocaleDirectories(bvector<Utf8String> const&);
-    static ECPresentationResult SetActiveLocale(Utf8String);
 
     static ECPresentationResult AddRuleSet(SimpleRuleSetLocater&, Utf8StringCR rulesetJsonString);
     static ECPresentationResult RemoveRuleSet(SimpleRuleSetLocater&, Utf8StringCR ruleSetId);
