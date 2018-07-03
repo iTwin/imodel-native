@@ -80,10 +80,10 @@ END_BENTLEY_ECPRESENTATION_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderContext::NavNodesProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, RuleTargetTree targetTree, uint64_t const* physicalParentId, 
+NavNodesProviderContext::NavNodesProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, RuleTargetTree targetTree, Utf8String locale, uint64_t const* physicalParentId, 
     IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
     JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache, INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState) 
-    : RulesDrivenProviderContext(ruleset, holdRuleset, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState), 
+    : RulesDrivenProviderContext(ruleset, holdRuleset, locale, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState), 
     m_targetTree(targetTree), m_nodesCache(&nodesCache), m_providerFactory(providerFactory)
     {
     Init();
@@ -286,17 +286,8 @@ void NavNodesProviderContext::SetChildNodeContext(NavNodesProviderContextCR othe
 void NavNodesProviderContext::SetQueryContext(IConnectionManagerCR connections, IConnectionCR connection, ECSqlStatementCache const& statementCache, CustomFunctionsInjector& customFunctions, IECDbUsedClassesListener* usedClassesListener)
     {
     RulesDrivenProviderContext::SetQueryContext(connections, connection, statementCache, customFunctions);
-    
-    NavigationQueryBuilderParameters params(GetSchemaHelper(), GetConnections(), GetConnection(), GetRuleset(), GetUserSettings(), &GetUsedSettingsListener(),
-        GetECExpressionsCache(), *m_nodesCache, GetLocalState());
-
     if (nullptr != usedClassesListener)
-        {
         m_usedClassesListener = new ECDbUsedClassesListenerWrapper(GetConnection(), *usedClassesListener);
-        params.SetUsedClassesListener(m_usedClassesListener);
-        }
-
-    m_queryBuilder = new NavigationQueryBuilder(params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -305,17 +296,26 @@ void NavNodesProviderContext::SetQueryContext(IConnectionManagerCR connections, 
 void NavNodesProviderContext::SetQueryContext(NavNodesProviderContextCR other)
     {
     RulesDrivenProviderContext::SetQueryContext(other);
-
-    NavigationQueryBuilderParameters params(GetSchemaHelper(), GetConnections(), GetConnection(), GetRuleset(), GetUserSettings(), &GetUsedSettingsListener(),
-        GetECExpressionsCache(), *m_nodesCache, GetLocalState());
-
     if (nullptr != other.m_usedClassesListener)
-        {
         m_usedClassesListener = new ECDbUsedClassesListenerWrapper(*other.m_usedClassesListener);
-        params.SetUsedClassesListener(m_usedClassesListener);
-        }
+    }
 
-    m_queryBuilder = new NavigationQueryBuilder(params);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+NavigationQueryBuilder& NavNodesProviderContext::GetQueryBuilder() const
+    {
+    if (nullptr == m_queryBuilder)
+        {
+        NavigationQueryBuilderParameters params(GetSchemaHelper(), GetConnections(), GetConnection(), GetRuleset(), GetLocale(),
+            GetUserSettings(), &GetUsedSettingsListener(), GetECExpressionsCache(), *m_nodesCache, GetLocalState());
+
+        if (nullptr != m_usedClassesListener)
+            params.SetUsedClassesListener(m_usedClassesListener);
+
+        m_queryBuilder = new NavigationQueryBuilder(params);
+        }
+    return *m_queryBuilder;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -372,11 +372,20 @@ bool NavNodesProviderContext::IsUpdatesDisabled(bool checkBase) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String GetLocale(RulesDrivenProviderContextCR context)
+    {
+    return context.IsLocalizationContext() ? context.GetLocale() : "";
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DataSourceInfo CreateDataSourceInfo(NavNodesProviderContextCR ctx)
     {
     return DataSourceInfo(ctx.GetConnection().GetId(), ctx.GetRuleset().GetRuleSetId(),
+        ctx.IsLocalizationContext() ? ctx.GetLocale() : "",
         ctx.GetPhysicalParentNodeId(), ctx.GetVirtualParentNodeId());
     }
 
@@ -595,7 +604,7 @@ void CustomNodesProvider::Initialize()
         Utf8String imageId(m_specification.GetImageId().c_str());
         Utf8String label(m_specification.GetLabel().c_str());
         Utf8String description(m_specification.GetDescription().c_str());
-        m_node = GetContext().GetNodesFactory().CreateCustomNode(connectionId, label.c_str(), description.c_str(), imageId.c_str(), type.c_str());
+        m_node = GetContext().GetNodesFactory().CreateCustomNode(connectionId, GetLocale(GetContext()), label.c_str(), description.c_str(), imageId.c_str(), type.c_str());
 
         NavNodeExtendedData extendedData(*m_node);
         extendedData.SetRulesetId(GetContext().GetRuleset().GetRuleSetId().c_str());
@@ -685,7 +694,7 @@ size_t CustomNodesProvider::_GetNodesCount() const
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 QueryBasedNodesProvider::QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds) 
-    : MultiNavNodesProvider(context), m_query(&query), m_executor(context.GetNodesFactory(), context.GetConnection(), context.GetStatementCache(), query), 
+    : MultiNavNodesProvider(context), m_query(&query), m_executor(context.GetNodesFactory(), context.GetConnection(), GetLocale(context), context.GetStatementCache(), query), 
     m_executorIndex(0), m_inProvidersRequest(false), m_usedClassIds(usedClassIds)
     { }
 
@@ -925,7 +934,7 @@ void QueryBasedNodesProvider::Initialize()
 
     // set up the custom functions context
     CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), 
-        GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), GetContext().GetECExpressionsCache(), 
+        GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), GetContext().GetECExpressionsCache(), 
         GetContext().GetNodesFactory(), GetContext().GetUsedClassesListener(), virtualParent.get(), &m_query->GetExtendedData());
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());

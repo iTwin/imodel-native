@@ -54,10 +54,10 @@ public:
 struct  INavNodeLocater
 {
 protected:
-    virtual JsonNavNodeCPtr _LocateNode(IConnectionCR, NavNodeKeyCR) const = 0;
+    virtual JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR) const = 0;
 public:
     virtual ~INavNodeLocater() {}
-    JsonNavNodeCPtr LocateNode(IConnectionCR connection, NavNodeKeyCR key) const {return _LocateNode(connection, key);}
+    JsonNavNodeCPtr LocateNode(IConnectionCR connection, Utf8StringCR locale, NavNodeKeyCR key) const {return _LocateNode(connection, locale, key);}
 };
 
 /*=================================================================================**//**
@@ -174,7 +174,7 @@ private:
     void CacheEmptyDataSource(DataSourceInfo&, DataSourceFilter const&, bool);
     void CacheRelatedClassIds(uint64_t datasourceId, bmap<ECClassId, bool> const&);
     void CacheRelatedSettings(uint64_t datasourceId, bvector<UserSettingEntry> const& settings);
-    DataSourceInfo GetDataSourceInfo(Utf8String const* connectionId, Utf8CP rulesetId, uint64_t const* parentNodeId, bool isVirtual) const;
+    DataSourceInfo GetDataSourceInfo(Utf8String const* connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId, bool isVirtual) const;
     DataSourceInfo GetDataSourceInfo(uint64_t nodeId) const;
     bool HasRelatedSettingsChanged(uint64_t datasourceId, Utf8StringCR rulesetId) const;
     void CacheNodeKey(NavNodeCR);
@@ -211,7 +211,7 @@ protected:
     ECPRESENTATION_EXPORT SavepointPtr _CreateSavepoint() override;
     
     // INavNodeLocater
-    ECPRESENTATION_EXPORT JsonNavNodeCPtr _LocateNode(IConnectionCR, NavNodeKeyCR) const override;
+    ECPRESENTATION_EXPORT JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR) const override;
 
     // IConnectionsListener
     ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
@@ -223,7 +223,7 @@ public:
     ECPRESENTATION_EXPORT void CacheHierarchyLevel(HierarchyLevelInfo const&, NavNodesProviderR);
     
     ECPRESENTATION_EXPORT bool IsNodeCached(uint64_t nodeId) const;
-    ECPRESENTATION_EXPORT bool IsDataSourceCached(Utf8StringCR connectionId, Utf8CP rulesetId) const;
+    ECPRESENTATION_EXPORT bool IsDataSourceCached(Utf8StringCR connectionId, Utf8CP rulesetId, Utf8CP locale) const;
     ECPRESENTATION_EXPORT bool IsDataSourceCached(uint64_t parentNodeId) const;
 
     ECPRESENTATION_EXPORT BeSQLite::BeGuid CreateRemovalId(HierarchyLevelInfo const&);
@@ -242,9 +242,9 @@ public:
     BeSQLite::Db const& GetDb() const {return m_db;}
     void SetCacheFileSizeLimit(uint64_t size) {m_sizeLimit = size;}
 
-    ECPRESENTATION_EXPORT bvector<NavNodeCPtr> GetFilteredNodes(IConnectionCR connection, Utf8CP rulesetId, Utf8CP filtertext) const;
+    ECPRESENTATION_EXPORT bvector<NavNodeCPtr> GetFilteredNodes(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, Utf8CP filtertext) const;
     ECPRESENTATION_EXPORT void ResetExpandedNodes(Utf8CP connectionId, Utf8CP rulesetId);
-    ECPRESENTATION_EXPORT NavNodesProviderPtr GetUndeterminedNodesProvider(IConnectionCR connection, Utf8CP ruleSetId, bool isUpdatesDisabled) const;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr GetUndeterminedNodesProvider(IConnectionCR connection, Utf8CP ruleSetId, Utf8CP locale, bool isUpdatesDisabled) const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

@@ -17,10 +17,11 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeKeysContainerCR inputKeys, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier, 
+ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String locale, Utf8String preferredDisplayType, 
+    INavNodeKeysContainerCR inputKeys, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier, 
     IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
     JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState) 
-    : RulesDrivenProviderContext(ruleset, holdRuleset, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState), 
+    : RulesDrivenProviderContext(ruleset, holdRuleset, locale, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState), 
     m_preferredDisplayType(preferredDisplayType), m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier), m_inputNodeKeys(&inputKeys)
     {
     Init();
@@ -222,12 +223,12 @@ static void MergePrimaryKeys(bvector<ContentSetItemPtr> const& targetSetItems, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String GetLocalizedVariesString(ILocalizationProvider const& localizationProvider)
+static Utf8String GetLocalizedVariesString(ILocalizationProvider const& localizationProvider, Utf8StringCR locale)
     {
     Utf8String localizationId = PRESENTATION_LOCALIZEDSTRING(RulesEngineL10N::GetNameSpace().m_namespace, RulesEngineL10N::LABEL_General_Varies().m_str);
     Utf8String prelocalizedLabel = Utf8PrintfString(CONTENTRECORD_MERGED_VALUE_FORMAT, localizationId.c_str());
     Utf8String localizedLabel = prelocalizedLabel;
-    LocalizationHelper(localizationProvider).LocalizeString(localizedLabel);
+    LocalizationHelper(localizationProvider, locale).LocalizeString(localizedLabel);
     return localizedLabel;
     }
 
@@ -235,10 +236,11 @@ static Utf8String GetLocalizedVariesString(ILocalizationProvider const& localiza
 * @bsimethod                                    Mantas.Kontrimas                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void MergeField (RapidJsonValueR targetValue, RapidJsonValueR targetDisplayValue,
-    rapidjson::Document::AllocatorType& targetDisplayValueAllocator, ILocalizationProvider const& localizationProvider)
+    rapidjson::Document::AllocatorType& targetDisplayValueAllocator, 
+    ILocalizationProvider const& localizationProvider, Utf8StringCR locale)
     {
     targetValue.SetNull();
-    targetDisplayValue.SetString(GetLocalizedVariesString(localizationProvider).c_str(), targetDisplayValueAllocator);
+    targetDisplayValue.SetString(GetLocalizedVariesString(localizationProvider, locale).c_str(), targetDisplayValueAllocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -246,12 +248,12 @@ static void MergeField (RapidJsonValueR targetValue, RapidJsonValueR targetDispl
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool MergeContent(RapidJsonValueR targetValues, RapidJsonValueR targetDisplayValues,
     rapidjson::Document::AllocatorType& targetDisplayValuesAllocator, RapidJsonValueCR source,
-    ILocalizationProvider const& localizationProvider)
+    ILocalizationProvider const& localizationProvider, Utf8StringCR locale)
     {
     if (targetValues != source)
         {
         // values are different - set the "varies" string
-        MergeField(targetValues, targetDisplayValues, targetDisplayValuesAllocator, localizationProvider);
+        MergeField(targetValues, targetDisplayValues, targetDisplayValuesAllocator, localizationProvider, locale);
         return true;
         }
 
@@ -262,15 +264,16 @@ static bool MergeContent(RapidJsonValueR targetValues, RapidJsonValueR targetDis
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool MergeContent(rapidjson::Document& targetValues, rapidjson::Document& targetDisplayValues, RapidJsonValueCR source,
-    ILocalizationProvider const& localizationProvider)
+    ILocalizationProvider const& localizationProvider, Utf8StringCR locale)
     {
-    return MergeContent(targetValues, targetDisplayValues, targetDisplayValues.GetAllocator(), source, localizationProvider);
+    return MergeContent(targetValues, targetDisplayValues, targetDisplayValues.GetAllocator(), source, localizationProvider, locale);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool MergeContentSetItems(bvector<ContentSetItemPtr> const& targetSetItems, bvector<ContentSetItemPtr> const& sourceSetItems, ILocalizationProvider const& localizationProvider)
+static bool MergeContentSetItems(bvector<ContentSetItemPtr> const& targetSetItems, bvector<ContentSetItemPtr> const& sourceSetItems, 
+    ILocalizationProvider const& localizationProvider, Utf8StringCR locale)
     {
     if (targetSetItems.size() != sourceSetItems.size())
         {
@@ -299,7 +302,7 @@ static bool MergeContentSetItems(bvector<ContentSetItemPtr> const& targetSetItem
                 if (!targetSetItems[i]->IsMerged(fieldName) && lhsValues[fieldName] != rhsValues[fieldName])
                     {
                     targetSetItems[i]->GetMergedFieldNames().push_back(fieldName);
-                    MergeField(lhsValues[fieldName], lhsDisplayValues[fieldName], lhsDisplayValues.GetAllocator(), localizationProvider);
+                    MergeField(lhsValues[fieldName], lhsDisplayValues[fieldName], lhsDisplayValues.GetAllocator(), localizationProvider, locale);
                     }
                 }
             }
@@ -364,7 +367,7 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
                     contentDisplayValues = std::move(instanceDisplayValues);
                     firstPass = false;
                     }
-                else if (MergeContent(contentValues, contentDisplayValues, instanceValues, GetContext().GetLocalizationProvider()))
+                else if (MergeContent(contentValues, contentDisplayValues, instanceValues, GetContext().GetLocalizationProvider(), GetContext().GetLocale()))
                     {
                     // if detected different values during merge, stop
                     item.GetMergedFieldNames().push_back(fieldName);
@@ -380,7 +383,7 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
                     targetSetitems = sourceSetItems;
                     firstPass = false;
                     }
-                else if (MergeContentSetItems(targetSetitems, sourceSetItems, GetContext().GetLocalizationProvider()))
+                else if (MergeContentSetItems(targetSetitems, sourceSetItems, GetContext().GetLocalizationProvider(), GetContext().GetLocale()))
                     {
                     // if detected different values during merge, stop
                     mergeAllField = true;
@@ -393,7 +396,10 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
         if (isRelatedContent)
             {
             if (mergeAllField)
-                MergeField(contentValues, contentDisplayValues, contentDisplayValues.GetAllocator(), GetContext().GetLocalizationProvider());
+                {
+                MergeField(contentValues, contentDisplayValues, contentDisplayValues.GetAllocator(), 
+                    GetContext().GetLocalizationProvider(), GetContext().GetLocale());
+                }
             else
                 {
                 int serializationFlags = GetSerializationFlags(isRelatedContent, true, GetContext().IsNestedContent(), ContentRequest::Values);
@@ -411,7 +417,7 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
             RapidJsonValueR values = item.GetValues()[fieldName];
             RapidJsonValueR displayValues = item.GetDisplayValues()[fieldName];
             bool areValuesDifferent = MergeContent(values, displayValues, item.GetDisplayValues().GetAllocator(), contentValues,
-                GetContext().GetLocalizationProvider());
+                GetContext().GetLocalizationProvider(), GetContext().GetLocale());
             if (areValuesDifferent)
                 item.GetMergedFieldNames().push_back(fieldName);
             }
@@ -634,7 +640,8 @@ public:
         IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
         ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
         m_context = new ContentDescriptorBuilder::Context(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(), context.GetRuleset(),
-            context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider, context.GetInputKeys(), context.GetSelectionInfo());
+            context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider, context.GetLocale(), 
+            context.GetInputKeys(), context.GetSelectionInfo());
         m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
         }
     
@@ -735,7 +742,7 @@ public:
         ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
 
         ContentQueryBuilderParameters params(context.GetSchemaHelper(), context.GetConnections(), context.GetNodesLocater(), context.GetConnection(), 
-            context.GetRuleset(), context.GetUserSettings(), context.GetECExpressionsCache(), 
+            context.GetRuleset(), context.GetLocale(), context.GetUserSettings(), context.GetECExpressionsCache(), 
             context.GetCategorySupplier(), formatter, context.GetLocalState(), localizationProvider);
         
         m_queryBuilder = new ContentQueryBuilder(params);
@@ -910,7 +917,7 @@ void ContentProvider::Initialize()
     m_executor->SetQuery(*_GetQuery());
         
     CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), 
-        GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
+        GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
         GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, 
         GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr);
     if (GetContext().IsLocalizationContext())
@@ -947,7 +954,7 @@ size_t ContentProvider::GetFullContentSetSize() const
         else if (GetContext().IsQueryContext())
             {
             CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), 
-                GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
+                GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
                 GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, 
                 GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr);
             if (GetContext().IsLocalizationContext())
@@ -1053,7 +1060,7 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
         {
         IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
         ContentQueryBuilderParameters params(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetNodesLocater(), 
-            GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetECExpressionsCache(),
+            GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetECExpressionsCache(),
             GetContext().GetCategorySupplier(), formatter, GetContext().GetLocalState());
         if (GetContext().IsLocalizationContext())
             params.SetLoacalizationProvider(&GetContext().GetLocalizationProvider());

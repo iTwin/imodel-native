@@ -635,13 +635,13 @@ typedef GroupedInstanceKeysList const& GroupedInstanceKeysListCR;
 struct INavNodesFactory
 {
 protected:
-    virtual NavNodePtr _CreateECInstanceNode(IConnectionCR, ECClassId, ECInstanceId, Utf8CP label) const = 0;
-    virtual NavNodePtr _CreateECInstanceNode(Utf8StringCR, IECInstanceCR, Utf8CP label) const = 0;
-    virtual NavNodePtr _CreateECClassGroupingNode(Utf8StringCR, ECClassCR, Utf8CP label, GroupedInstanceKeysListCR) const = 0;
-    virtual NavNodePtr _CreateECRelationshipGroupingNode(Utf8StringCR, ECRelationshipClassCR, Utf8CP label, GroupedInstanceKeysListCR) const = 0;
-    virtual NavNodePtr _CreateECPropertyGroupingNode(Utf8StringCR, ECClassCR, ECPropertyCR, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR) const = 0;
-    virtual NavNodePtr _CreateDisplayLabelGroupingNode(Utf8StringCR, Utf8CP label, GroupedInstanceKeysListCR) const = 0;
-    virtual NavNodePtr _CreateCustomNode(Utf8StringCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const = 0;
+    virtual NavNodePtr _CreateECInstanceNode(IConnectionCR, Utf8StringCR, ECClassId, ECInstanceId, Utf8CP label) const = 0;
+    virtual NavNodePtr _CreateECInstanceNode(Utf8StringCR, Utf8StringCR, IECInstanceCR, Utf8CP label) const = 0;
+    virtual NavNodePtr _CreateECClassGroupingNode(Utf8StringCR, Utf8StringCR, ECClassCR, Utf8CP label, GroupedInstanceKeysListCR) const = 0;
+    virtual NavNodePtr _CreateECRelationshipGroupingNode(Utf8StringCR, Utf8StringCR, ECRelationshipClassCR, Utf8CP label, GroupedInstanceKeysListCR) const = 0;
+    virtual NavNodePtr _CreateECPropertyGroupingNode(Utf8StringCR, Utf8StringCR, ECClassCR, ECPropertyCR, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR) const = 0;
+    virtual NavNodePtr _CreateDisplayLabelGroupingNode(Utf8StringCR, Utf8StringCR, Utf8CP label, GroupedInstanceKeysListCR) const = 0;
+    virtual NavNodePtr _CreateCustomNode(Utf8StringCR, Utf8StringCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const = 0;
 
 public:
     //! Virtual destructor.
@@ -649,46 +649,51 @@ public:
 
     //! Creates an ECInstance node.
     //! @param[in] connection The connection that the instance belongs to.
+    //! @param[in] locale The locale used to localize the node
     //! @param[in] classId The ID of the ECInstance class.
     //! @param[in] instanceId The ID of the ECInstance.
     //! @param[in] label The label of the node.
-    NavNodePtr CreateECInstanceNode(IConnectionCR connection, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
+    NavNodePtr CreateECInstanceNode(IConnectionCR connection, Utf8StringCR locale, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
         {
-        return _CreateECInstanceNode(connection, classId, instanceId, label);
+        return _CreateECInstanceNode(connection, locale, classId, instanceId, label);
         }
     
     //! Creates an ECInstance node.
     //! @param[in] connectionId Guid of the connection that the instance belongs to.
+    //! @param[in] locale The locale used to localize the node
     //! @param[in] instance The instance to create the node for.
     //! @param[in] label The label of the node.
-    NavNodePtr CreateECInstanceNode(Utf8StringCR connectionId, IECInstanceCR instance, Utf8CP label) const
+    NavNodePtr CreateECInstanceNode(Utf8StringCR connectionId, Utf8StringCR locale, IECInstanceCR instance, Utf8CP label) const
         {
-        return _CreateECInstanceNode(connectionId, instance, label);
+        return _CreateECInstanceNode(connectionId, locale, instance, label);
         }
 
     //! Creates an ECClass grouping node.
     //! @param[in] connectionId Guid of the connection that this ECClass is persisted in.
+    //! @param[in] locale The locale used to localize the node
     //! @param[in] ecClass The ECClass to create the node for.
     //! @param[in] label The label of the node.
     //! @param[in] groupedInstanceKeys A list of instance keys grouped by the grouping node.
-    NavNodePtr CreateECClassGroupingNode(Utf8StringCR connectionId, ECClassCR ecClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
+    NavNodePtr CreateECClassGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, ECClassCR ecClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
         {
-        return _CreateECClassGroupingNode(connectionId, ecClass, label, groupedInstanceKeys);
+        return _CreateECClassGroupingNode(connectionId, locale, ecClass, label, groupedInstanceKeys);
         }
 
     //! Creates an ECRelationship grouping node.
     //! @param[in] connectionId Guid of the connection that this ECRelationship is persisted in.
+    //! @param[in] locale The locale used to localize the node
     //! @param[in] relationshipClass The ECRelationship to create the node for.
     //! @param[in] label The label of the node.
     //! @param[in] groupedInstanceKeys A list of instance keys grouped by the grouping node.
-    NavNodePtr CreateECRelationshipGroupingNode(Utf8StringCR connectionId, ECRelationshipClassCR relationshipClass, 
+    NavNodePtr CreateECRelationshipGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, ECRelationshipClassCR relationshipClass, 
         Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
         {
-        return _CreateECRelationshipGroupingNode(connectionId, relationshipClass, label, groupedInstanceKeys);
+        return _CreateECRelationshipGroupingNode(connectionId, locale, relationshipClass, label, groupedInstanceKeys);
         }
 
     //! Creates an ECProperty grouping node.
     //! @param[in] connectionId Guid of the connection that this ECProperty is persisted in.
+    //! @param[in] locale The locale used to localize the node
     //! @param[in] ecClass The ECClass of the ECProperty. If the property belongs to a base class, but the grouped instances 
     //! are of derived class, this should be the derived class.
     //! @param[in] ecProperty The ECProperty to create the node for.
@@ -697,30 +702,32 @@ public:
     //! @param[in] groupingValue The grouping value or range index if creating a range grouping node.
     //! @param[in] isRangeGrouping Should a range grouping node be created.
     //! @param[in] groupedInstanceKeys A list of instance keys grouped by the grouping node.
-    NavNodePtr CreateECPropertyGroupingNode(Utf8StringCR connectionId, ECClassCR ecClass, ECPropertyCR ecProperty, 
+    NavNodePtr CreateECPropertyGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, ECClassCR ecClass, ECPropertyCR ecProperty, 
         Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR groupedInstanceKeys) const
         {
-        return _CreateECPropertyGroupingNode(connectionId, ecClass, ecProperty, label, imageId, groupingValue, isRangeGrouping, groupedInstanceKeys);
+        return _CreateECPropertyGroupingNode(connectionId, locale, ecClass, ecProperty, label, imageId, groupingValue, isRangeGrouping, groupedInstanceKeys);
         }
 
     //! Creates a display label grouping node.
     //! @param[in] connectionId Guid of the connection whose instances this node groups.
+    //! @param[in] locale The locale used to localize the node
     //! @param[in] label The label of the node.
     //! @param[in] groupedInstanceKeys A list of instance keys grouped by the grouping node.
-    NavNodePtr CreateDisplayLabelGroupingNode(Utf8StringCR connectionId, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
+    NavNodePtr CreateDisplayLabelGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
         {
-        return _CreateDisplayLabelGroupingNode(connectionId, label, groupedInstanceKeys);
+        return _CreateDisplayLabelGroupingNode(connectionId, locale, label, groupedInstanceKeys);
         }
 
     //! Creates a custom node.
     //! @param[in] connectionId Guid of the connection the node is based on.
+    //! @param[in] locale The locale used to localize the node
     //! @param[in] label The label of the node.
     //! @param[in] description The description of the node.
     //! @param[in] imageId The image ID to use for this node.
     //! @param[in] type The type identifier for this node.
-    NavNodePtr CreateCustomNode(Utf8StringCR connectionId, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const
+    NavNodePtr CreateCustomNode(Utf8StringCR connectionId, Utf8StringCR locale, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const
         {
-        return _CreateCustomNode(connectionId, label, description, imageId, type);
+        return _CreateCustomNode(connectionId, locale, label, description, imageId, type);
         }
 };
 

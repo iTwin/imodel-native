@@ -287,70 +287,70 @@ NavNodePtr JsonNavNode::_Clone() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonNavNodePtr JsonNavNodesFactory::CreateECInstanceNode(IConnectionCR connection, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
+JsonNavNodePtr JsonNavNodesFactory::CreateECInstanceNode(IConnectionCR connection, Utf8StringCR locale, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
     {
     JsonNavNodePtr node = JsonNavNode::Create();
-    InitECInstanceNode(*node, connection, classId, instanceId, label);
+    InitECInstanceNode(*node, connection, locale, classId, instanceId, label);
     return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonNavNodePtr JsonNavNodesFactory::CreateECInstanceNode(Utf8StringCR connectionId, IECInstanceCR instance, Utf8CP label) const
+JsonNavNodePtr JsonNavNodesFactory::CreateECInstanceNode(Utf8StringCR connectionId, Utf8StringCR locale, IECInstanceCR instance, Utf8CP label) const
     {
     JsonNavNodePtr node = JsonNavNode::Create();
-    InitECInstanceNode(*node, connectionId, instance, label);
+    InitECInstanceNode(*node, connectionId, locale, instance, label);
     return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonNavNodePtr JsonNavNodesFactory::CreateECClassGroupingNode(Utf8StringCR connectionId, ECClassCR ecClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
+JsonNavNodePtr JsonNavNodesFactory::CreateECClassGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, ECClassCR ecClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
     {
     JsonNavNodePtr node = JsonNavNode::Create();
-    InitECClassGroupingNode(*node, connectionId, ecClass, label, groupedInstanceKeys);
+    InitECClassGroupingNode(*node, connectionId, locale, ecClass, label, groupedInstanceKeys);
     return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonNavNodePtr JsonNavNodesFactory::CreateECRelationshipGroupingNode(Utf8StringCR connectionId, ECRelationshipClassCR relationshipClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
+JsonNavNodePtr JsonNavNodesFactory::CreateECRelationshipGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, ECRelationshipClassCR relationshipClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
     {
     JsonNavNodePtr node = JsonNavNode::Create();
-    InitECRelationshipGroupingNode(*node, connectionId, relationshipClass, label, groupedInstanceKeys);
+    InitECRelationshipGroupingNode(*node, connectionId, locale, relationshipClass, label, groupedInstanceKeys);
     return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonNavNodePtr JsonNavNodesFactory::CreateDisplayLabelGroupingNode(Utf8StringCR connectionId, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
+JsonNavNodePtr JsonNavNodesFactory::CreateDisplayLabelGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
     {
     JsonNavNodePtr node = JsonNavNode::Create();
-    InitDisplayLabelGroupingNode(*node, connectionId, label, groupedInstanceKeys);
+    InitDisplayLabelGroupingNode(*node, connectionId, locale, label, groupedInstanceKeys);
     return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonNavNodePtr JsonNavNodesFactory::CreateECPropertyGroupingNode(Utf8StringCR connectionId, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR groupedInstanceKeys) const
+JsonNavNodePtr JsonNavNodesFactory::CreateECPropertyGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR groupedInstanceKeys) const
     {
     JsonNavNodePtr node = JsonNavNode::Create();
-    InitECPropertyGroupingNode(*node, connectionId, ecClass, ecProperty, label, imageId, groupingValue, isRangeGrouping, groupedInstanceKeys);
+    InitECPropertyGroupingNode(*node, connectionId, locale, ecClass, ecProperty, label, imageId, groupingValue, isRangeGrouping, groupedInstanceKeys);
     return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonNavNodePtr JsonNavNodesFactory::CreateCustomNode(Utf8StringCR connectionId, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const
+JsonNavNodePtr JsonNavNodesFactory::CreateCustomNode(Utf8StringCR connectionId, Utf8StringCR locale, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const
     {
     JsonNavNodePtr node = JsonNavNode::Create();
-    InitCustomNode(*node, connectionId, label, description, imageId, type);
+    InitCustomNode(*node, connectionId, locale, label, description, imageId, type);
     return node;
     }
 
@@ -367,7 +367,7 @@ JsonNavNodePtr JsonNavNodesFactory::CreateFromJson(IConnectionCR connection, rap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, IConnectionCR connection, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
+void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, IConnectionCR connection, Utf8StringCR locale, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
     {
     ECClassCP ecClass = nullptr;
     if (nullptr == (ecClass = connection.GetECDb().Schemas().GetClass(classId)))
@@ -385,13 +385,14 @@ void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, IConnectionCR co
     NavNodeExtendedData extendedData(node);
     extendedData.SetGroupedInstanceKey(ECInstanceKey(classId, instanceId));
     extendedData.SetConnectionId(connection.GetId());
+    extendedData.SetLocale(locale.c_str());
     extendedData.SetECClassId(ecClass->GetId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, Utf8StringCR connectionId, IECInstanceCR instance, Utf8CP label) const
+void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, IECInstanceCR instance, Utf8CP label) const
     {
     ECInstanceId instanceId;
     ECInstanceId::FromString(instanceId, instance.GetInstanceId().c_str());
@@ -405,13 +406,14 @@ void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, Utf8StringCR con
     NavNodeExtendedData extendedData(node);
     extendedData.SetGroupedInstanceKey(ECInstanceKey(instance.GetClass().GetId(), instanceId));
     extendedData.SetConnectionId(connectionId);
+    extendedData.SetLocale(locale.c_str());
     extendedData.SetECClassId(instance.GetClass().GetId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNodesFactory::InitECClassGroupingNode(JsonNavNodeR node, Utf8StringCR connectionId, ECClassCR ecClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
+void JsonNavNodesFactory::InitECClassGroupingNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, ECClassCR ecClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
     {
     node.SetLabel(label);
     node.SetDescription(ecClass.GetDescription().c_str());
@@ -425,13 +427,14 @@ void JsonNavNodesFactory::InitECClassGroupingNode(JsonNavNodeR node, Utf8StringC
     extendedData.SetGroupingType((int)GroupingType::Class);
     extendedData.SetGroupedInstanceKeys(groupedInstanceKeys);
     extendedData.SetConnectionId(connectionId);
+    extendedData.SetLocale(locale.c_str());
     extendedData.SetECClassId(ecClass.GetId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNodesFactory::InitDisplayLabelGroupingNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
+void JsonNavNodesFactory::InitDisplayLabelGroupingNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
     {
     node.SetLabel(label);
     node.SetType(NAVNODE_TYPE_DisplayLabelGroupingNode);
@@ -444,12 +447,13 @@ void JsonNavNodesFactory::InitDisplayLabelGroupingNode(JsonNavNodeR node, Utf8St
     extendedData.SetGroupingType((int)GroupingType::DisplayLabel);
     extendedData.SetGroupedInstanceKeys(groupedInstanceKeys);
     extendedData.SetConnectionId(connectionId);
+    extendedData.SetLocale(locale.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNodesFactory::InitECPropertyGroupingNode(JsonNavNodeR node, Utf8StringCR connectionId, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR groupedInstanceKeys) const
+void JsonNavNodesFactory::InitECPropertyGroupingNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR groupedInstanceKeys) const
     {
     node.SetLabel(label);
     node.SetDescription(ecProperty.GetDescription().c_str());
@@ -464,6 +468,7 @@ void JsonNavNodesFactory::InitECPropertyGroupingNode(JsonNavNodeR node, Utf8Stri
     extendedData.SetGroupingType((int)GroupingType::Property);
     extendedData.SetGroupedInstanceKeys(groupedInstanceKeys);
     extendedData.SetConnectionId(connectionId);
+    extendedData.SetLocale(locale.c_str());
     extendedData.SetECClassId(ecClass.GetId());
 
     if (isRangeGrouping)
@@ -475,7 +480,7 @@ void JsonNavNodesFactory::InitECPropertyGroupingNode(JsonNavNodeR node, Utf8Stri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNodesFactory::InitECRelationshipGroupingNode(JsonNavNodeR node, Utf8StringCR connectionId, ECRelationshipClassCR ecRelationshipClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
+void JsonNavNodesFactory::InitECRelationshipGroupingNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, ECRelationshipClassCR ecRelationshipClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
     {
     node.SetLabel(label);
     node.SetDescription(ecRelationshipClass.GetDescription().c_str());
@@ -489,13 +494,14 @@ void JsonNavNodesFactory::InitECRelationshipGroupingNode(JsonNavNodeR node, Utf8
     extendedData.SetGroupingType((int)GroupingType::Relationship);
     extendedData.SetGroupedInstanceKeys(groupedInstanceKeys);
     extendedData.SetConnectionId(connectionId);
+    extendedData.SetLocale(locale.c_str());
     extendedData.SetECClassId(ecRelationshipClass.GetId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNodesFactory::InitCustomNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const
+void JsonNavNodesFactory::InitCustomNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const
     {
     node.SetLabel(label);
     node.SetDescription(description);
@@ -505,6 +511,7 @@ void JsonNavNodesFactory::InitCustomNode(JsonNavNodeR node, Utf8StringCR connect
     
     NavNodeExtendedData extendedData(node);
     extendedData.SetConnectionId(connectionId);
+    extendedData.SetLocale(locale.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

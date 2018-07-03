@@ -26,13 +26,15 @@ struct ECExpressionContextsProvider : NonCopyableClass
     {
     private:
         IConnectionCR m_connection;
+        Utf8String m_locale;
         IUserSettings const& m_userSettings;
         IUsedUserSettingsListener* m_usedSettingsListener;
     public:
-        ContextParametersBase(IConnectionCR connection, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
-            : m_connection(connection), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener)
+        ContextParametersBase(IConnectionCR connection, Utf8String locale, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
+            : m_connection(connection), m_locale(locale), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener)
             {}
         IConnectionCR GetConnection() const {return m_connection;}
+        Utf8StringCR GetLocale() const {return m_locale;}
         IUserSettings const& GetUserSettings() const {return m_userSettings;}
         IUsedUserSettingsListener* GetUsedSettingsListener() const {return m_usedSettingsListener;}
     };
@@ -45,9 +47,9 @@ struct ECExpressionContextsProvider : NonCopyableClass
     private:
         JsonNavNodeCP m_parentNode;
     public:
-        NodeRulesContextParameters(JsonNavNodeCP parentNode, IConnectionCR connection, 
+        NodeRulesContextParameters(JsonNavNodeCP parentNode, IConnectionCR connection, Utf8String locale, 
             IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
-            : ContextParametersBase(connection, userSettings, usedSettingsListener), m_parentNode(parentNode)
+            : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_parentNode(parentNode)
             {}
         JsonNavNodeCP GetParentNode() const {return m_parentNode;}
     };
@@ -64,9 +66,9 @@ struct ECExpressionContextsProvider : NonCopyableClass
         bool m_isSubSelection;
         NavNodeKeyCP m_selectedNodeKey;
     public:
-        ContentRulesContextParameters(Utf8CP contentDisplayType, Utf8CP selectionProviderName, bool isSubSelection, IConnectionCR connection, 
+        ContentRulesContextParameters(Utf8CP contentDisplayType, Utf8CP selectionProviderName, bool isSubSelection, IConnectionCR connection, Utf8String locale, 
             INavNodeLocaterCR nodeLocater, NavNodeKeyCP selectedNodeKey, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
-            : ContextParametersBase(connection, userSettings, usedSettingsListener), m_contentDisplayType(contentDisplayType), 
+            : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_contentDisplayType(contentDisplayType), 
             m_selectionProviderName(selectionProviderName), m_isSubSelection(isSubSelection), m_nodeLocater(nodeLocater), m_selectedNodeKey(selectedNodeKey)
             {}
         Utf8StringCR GetContentDisplayType() const {return m_contentDisplayType;}
@@ -85,9 +87,9 @@ struct ECExpressionContextsProvider : NonCopyableClass
         JsonNavNodeCR m_node;
         JsonNavNodeCPtr m_parentNode;
     public:
-        CustomizationRulesContextParameters(JsonNavNodeCR node, JsonNavNodeCP parentNode, IConnectionCR connection, 
+        CustomizationRulesContextParameters(JsonNavNodeCR node, JsonNavNodeCP parentNode, IConnectionCR connection, Utf8String locale, 
             IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
-            : ContextParametersBase(connection, userSettings, usedSettingsListener), m_node(node), m_parentNode(parentNode)
+            : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_node(node), m_parentNode(parentNode)
             {}
         JsonNavNodeCR GetNode() const {return m_node;}
         JsonNavNodeCP GetParentNode() const {return m_parentNode.get();}
@@ -101,9 +103,9 @@ struct ECExpressionContextsProvider : NonCopyableClass
     private:
         JsonNavNodeCR m_node;
     public:
-        CalculatedPropertyContextParameters(JsonNavNodeCR node, IConnectionCR connection, 
+        CalculatedPropertyContextParameters(JsonNavNodeCR node, IConnectionCR connection, Utf8String locale, 
             IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
-            : ContextParametersBase(connection, userSettings, usedSettingsListener), m_node(node)
+            : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_node(node)
             {}
         JsonNavNodeCR GetNode() const {return m_node;}
     };

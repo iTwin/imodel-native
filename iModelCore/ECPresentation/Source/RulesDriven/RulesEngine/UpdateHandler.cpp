@@ -583,7 +583,8 @@ void UpdateHandler::NotifyCategoriesChanged()
 NavNodesProviderPtr HierarchyUpdater::CreateProvider(IConnectionCR connection, HierarchyLevelInfo const& info) const
     {
     // create the nodes provider context
-    NavNodesProviderContextPtr context = m_contextFactory.Create(connection, info.GetRulesetId().c_str(), info.GetPhysicalParentNodeId());
+    NavNodesProviderContextPtr context = m_contextFactory.Create(connection, info.GetRulesetId().c_str(), 
+        info.GetLocale().c_str(), info.GetPhysicalParentNodeId());
     if (context.IsNull())
         return nullptr;
 
@@ -724,6 +725,7 @@ void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTask
         {
         NavNodesProviderContextCR parentProviderContext = parentProvider->GetContext();
         HierarchyLevelInfo parentInfo(parentProviderContext.GetConnection().GetId(), parentProviderContext.GetRuleset().GetRuleSetId(),
+            parentProviderContext.IsLocalizationContext() ? parentProviderContext.GetLocale() : "", 
             parentProviderContext.GetPhysicalParentNodeId());
         subTasks.push_back(m_tasksFactory.CreateRefreshHierarchyTask(*this, context, parentProviderContext.GetConnection(), parentInfo));
         }

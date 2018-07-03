@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentClassesLocater.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -23,9 +23,9 @@ struct ContentClassesLocater
         ECExpressionsCache& m_ecexpressionsCache;
         INavNodeLocater const& m_nodesLocater;
     public:
-        Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection,  PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType, 
-            IUserSettings const& settings, ECExpressionsCache& expressionsCache, INavNodeLocater const& nodesLocater)
-            : ContentSpecificationsHandler::Context(helper, connections, connection, ruleset, preferredDisplayType), m_settings(settings), m_nodesLocater(nodesLocater), m_ecexpressionsCache(expressionsCache)
+        Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection,  PresentationRuleSetCR ruleset, Utf8StringCR locale,
+            Utf8CP preferredDisplayType, IUserSettings const& settings, ECExpressionsCache& expressionsCache, INavNodeLocater const& nodesLocater)
+            : ContentSpecificationsHandler::Context(helper, connections, connection, ruleset, locale, preferredDisplayType), m_settings(settings), m_nodesLocater(nodesLocater), m_ecexpressionsCache(expressionsCache)
             {}
         IUserSettings const& GetUserSettings() const {return m_settings;}
         ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}

@@ -72,16 +72,18 @@ TEST_F (ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryW
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryWithCalculatedProperties)
     {
-    m_localizationProvider.SetHandler([](Utf8StringCR key, Utf8StringR localized)
+    m_localizationProvider.SetHandler([](Utf8StringCR, Utf8StringCR key, Utf8StringR localized)
         {
-        EXPECT_TRUE(key.Equals("Namespace:Id"));
-        localized = "Test";
+        if (key.Equals("Namespace:Id_1"))
+            localized = "Test_1";
+        else if (key.Equals("Namespace:Id_2"))
+            localized = "Test_2";
         return true;
         });
 
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic2:Class2", true);
-    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label@Namespace:Id@_1", 1200, "\"Value\" & 1"));
-    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label@Namespace:Id@_2", 1500, "this.Name & \"Test\""));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label@Namespace:Id_1@", 1200, "\"Value\" & 1"));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label@Namespace:Id_2@", 1500, "this.Name & \"Test\""));
     
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());

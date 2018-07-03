@@ -5608,7 +5608,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterCategoriesChange)
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
     for (ContentDescriptor::Field const* field : fields)
         {
-        EXPECT_TRUE(field->GetCategory() == supplier.GetUsedCategory());
+        EXPECT_STREQ(field->GetCategory().GetName().c_str(), supplier.GetUsedCategory().GetName().c_str());
         }
     
     // change supplied category
@@ -5620,7 +5620,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterCategoriesChange)
     fields = descriptor->GetVisibleFields();
     for (ContentDescriptor::Field const* field : fields)
         {
-        EXPECT_TRUE(field->GetCategory() == supplier.GetUsedCategory());
+        EXPECT_STREQ(field->GetCategory().GetName().c_str(), supplier.GetUsedCategory().GetName().c_str());
         }
 
     // expect one full update record

@@ -22,21 +22,23 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct ILocalizationProvider
 {
 protected:
-    virtual bool _GetString(Utf8StringCR key, Utf8StringR localizedValue) const = 0;
+    virtual bool _GetString(Utf8StringCR locale, Utf8StringCR key, Utf8StringR localizedValue) const = 0;
 public:
     virtual ~ILocalizationProvider() {}
-    ECPRESENTATION_EXPORT bool GetString(Utf8StringCR key, Utf8StringR localizedValue) const;
-    Utf8String GetString(Utf8StringCR key) const {Utf8String str; return GetString(key, str) ? str : key;}
-    template<typename TStr> Utf8String GetString(bvector<TStr> const& keyParts) const
+    ECPRESENTATION_EXPORT bool GetString(Utf8StringCR locale, Utf8StringCR key, Utf8StringR localizedValue) const;
+    Utf8String GetString(Utf8StringCR locale, Utf8StringCR key) const {Utf8String str; return GetString(locale, key, str) ? str : key;}
+    template<typename TStr> Utf8String GetString(Utf8StringCR locale, bvector<TStr> const& keyParts) const
         {
         Utf8String key = BeStringUtilities::Join(keyParts, ":");
         Utf8String str; 
-        return GetString(key, str) ? str : key;
+        return GetString(locale, key, str) ? str : key;
         }
 };
 
 /*=================================================================================**//**
 //! Gets localized strings using L10N API.
+//! Note: this localization provider doesn't handle different locales - it just uses
+//! whatever strings the active sqlang contains.
 * @bsiclass                                     Grigas.Petraitis                08/2015
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE SQLangLocalizationProvider : ILocalizationProvider
@@ -44,7 +46,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SQLangLocalizationProvider : ILocalizationProvide
 private:
     static StatusInt ParseKey(Utf8StringR ns, Utf8StringR id, Utf8StringCR key);
 protected:
-    ECPRESENTATION_EXPORT bool _GetString(Utf8StringCR key, Utf8StringR localizedValue) const override;
+    ECPRESENTATION_EXPORT bool _GetString(Utf8StringCR, Utf8StringCR key, Utf8StringR localizedValue) const override;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

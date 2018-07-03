@@ -144,6 +144,7 @@ struct RulesPreprocessor
         IConnectionManagerCR m_connections;
         IConnectionCR m_connection;
         PresentationRuleSetCR m_ruleset;
+        Utf8String m_locale;
         IUserSettings const& m_userSettings;
         IUsedUserSettingsListener* m_usedSettingsListener;
         ECExpressionsCache& m_ecexpressionsCache;
@@ -152,11 +153,12 @@ struct RulesPreprocessor
         //! @param[in] connections The connections manager.
         //! @param[in] connection The connection used for evaluating ECDb-based ECExpressions
         //! @param[in] ruleset The ruleset that contains the presentation rules.
+        //! @param[in] locale Locale to use for preprocessing
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        PreprocessorParameters(IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, 
+        PreprocessorParameters(IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8String locale, 
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
-            : m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_userSettings(settings), 
+            : m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_locale(locale), m_userSettings(settings), 
             m_usedSettingsListener(settingsListener), m_ecexpressionsCache(ecexpressionsCache)
             {}
         //! Get the connections manager.
@@ -165,6 +167,8 @@ struct RulesPreprocessor
         IConnectionCR GetConnection() const {return m_connection;}
         //! Get the ruleset.
         PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
+        //! Get locale
+        Utf8StringCR GetLocale() const {return m_locale;}
         //! Get the user settings.
         IUserSettings const& GetUserSettings() const {return m_userSettings;}
         //! Get used user settings listener.
@@ -187,11 +191,12 @@ struct RulesPreprocessor
         //! @param[in] connection The connection used for evaluating ECDb-based ECExpressions
         //! @param[in] ruleset The ruleset that contains the presentation rules.
         //! @param[in] tree The target tree to find the rules for.
+        //! @param[in] locale Locale to use for preprocessing
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
         RootNodeRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, RuleTargetTree tree, 
-            IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
-            : PreprocessorParameters(connections, connection, ruleset, settings, settingsListener, ecexpressionsCache), m_tree(tree)
+            Utf8String locale, IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
+            : PreprocessorParameters(connections, connection, ruleset, locale, settings, settingsListener, ecexpressionsCache), m_tree(tree)
             {}
         //! Get the target tree.
         RuleTargetTree GetTargetTree() const {return m_tree;}
@@ -212,11 +217,13 @@ struct RulesPreprocessor
         //! @param[in] parentNode The parent node to find the children rules for.
         //! @param[in] ruleset The ruleset that contains the presentation rules.
         //! @param[in] tree The target tree to find the rules for.
+        //! @param[in] locale Locale to use for preprocessing
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        ChildNodeRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, JsonNavNodeCR parentNode, PresentationRuleSetCR ruleset, RuleTargetTree tree, 
+        ChildNodeRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, JsonNavNodeCR parentNode, 
+            PresentationRuleSetCR ruleset, RuleTargetTree tree, Utf8String locale, 
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
-            : RootNodeRuleParameters(connections, connection, ruleset, tree, settings, settingsListener, ecexpressionsCache), m_parentNode(parentNode)
+            : RootNodeRuleParameters(connections, connection, ruleset, tree, locale, settings, settingsListener, ecexpressionsCache), m_parentNode(parentNode)
             {}
         //! Get the parent node.
         JsonNavNodeCR GetParentNode() const {return m_parentNode;}
@@ -238,11 +245,13 @@ struct RulesPreprocessor
         //! @param[in] node The node to find the rules for.
         //! @param[in] parentNode The parent node of the @p node.
         //! @param[in] ruleset The ruleset that contains the presentation rules.
+        //! @param[in] locale Locale to use for preprocessing
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        CustomizationRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, JsonNavNodeCR node, JsonNavNodeCP parentNode, PresentationRuleSetCR ruleset, 
+        CustomizationRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, JsonNavNodeCR node, JsonNavNodeCP parentNode, 
+            PresentationRuleSetCR ruleset, Utf8String locale, 
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
-            : PreprocessorParameters(connections, connection, ruleset, settings, settingsListener, ecexpressionsCache), m_node(node), m_parentNode(parentNode)
+            : PreprocessorParameters(connections, connection, ruleset, locale, settings, settingsListener, ecexpressionsCache), m_node(node), m_parentNode(parentNode)
             {}
         //! Get the node.
         JsonNavNodeCR GetNode() const {return m_node;}
@@ -266,12 +275,13 @@ struct RulesPreprocessor
         //! @param[in] connections The connections manager.
         //! @param[in] connection The connection used for evaluating ECDb-based ECExpressions
         //! @param[in] ruleset The ruleset that contains the presentation rules.
+        //! @param[in] locale Locale to use for preprocessing
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
         AggregateCustomizationRuleParameters(JsonNavNodeCP parentNode, Utf8StringCR specificationHash, IConnectionManagerCR connections, 
-            IConnectionCR connection, PresentationRuleSetCR ruleset, IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, 
-            ECExpressionsCache& ecexpressionsCache)
-            : PreprocessorParameters(connections, connection, ruleset, settings, settingsListener, ecexpressionsCache), 
+            IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8String locale, 
+            IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
+            : PreprocessorParameters(connections, connection, ruleset, locale, settings, settingsListener, ecexpressionsCache), 
             m_parentNode(parentNode), m_specificationHash(specificationHash)
             {}
         //! Get the parent node.
@@ -299,13 +309,14 @@ struct RulesPreprocessor
         //! @param[in] preferredContentDisplayType Type of content display that the content is going to be displayed in.
         //! @param[in] selectionInfo Info about last selection.
         //! @param[in] ruleset The ruleset that contains the presentation rules.
+        //! @param[in] locale Locale to use for preprocessing
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
         //! @param[in] nodeLocater Nodes locater.
         ContentRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, INavNodeKeysContainerCR inputNodeKeys, Utf8StringCR preferredContentDisplayType,
-            SelectionInfo const* selectionInfo, PresentationRuleSetCR ruleset, IUserSettings const& settings, IUsedUserSettingsListener* settingsListener,
+            SelectionInfo const* selectionInfo, PresentationRuleSetCR ruleset, Utf8String locale, IUserSettings const& settings, IUsedUserSettingsListener* settingsListener,
             ECExpressionsCache& ecexpressionsCache, INavNodeLocaterCR nodeLocater)
-            : PreprocessorParameters(connections, connection, ruleset, settings, settingsListener, ecexpressionsCache), m_inputNodeKeys(&inputNodeKeys), 
+            : PreprocessorParameters(connections, connection, ruleset, locale, settings, settingsListener, ecexpressionsCache), m_inputNodeKeys(&inputNodeKeys), 
             m_preferredContentDisplayType(preferredContentDisplayType), m_selectionInfo(selectionInfo), m_nodeLocater(nodeLocater)
             {
             }

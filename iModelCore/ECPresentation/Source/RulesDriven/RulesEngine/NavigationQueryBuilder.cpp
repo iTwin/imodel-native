@@ -1121,7 +1121,7 @@ private:
 
         GroupingSpecificationsVisitor visitor(m_groupingHandlers, m_schemaHelper, m_specification.GetDoNotSort());
         RulesPreprocessor::AggregateCustomizationRuleParameters params(m_parentInstanceNode.get(), m_specificationHash, m_queryBuilderParams.GetConnections(), 
-            m_queryBuilderParams.GetConnection(), GetQueryBuilderParams().GetRuleset(), GetQueryBuilderParams().GetUserSettings(), 
+            m_queryBuilderParams.GetConnection(), GetQueryBuilderParams().GetRuleset(), GetQueryBuilderParams().GetLocale(), GetQueryBuilderParams().GetUserSettings(), 
             GetQueryBuilderParams().GetUsedSettingsListener(), GetQueryBuilderParams().GetECExpressionsCache());
         bvector<GroupingRuleCP> groupingRules = RulesPreprocessor::GetGroupingRules(params);
         for (GroupingRuleCP rule : groupingRules)
@@ -1461,15 +1461,19 @@ private:
     IConnectionManagerCP m_connections;
     IConnectionCP m_connection;
     PresentationRuleSetCP m_ruleset;
+    Utf8StringCP m_locale;
     JsonNavNodeCP m_parentNode;
     JsonNavNodeCP m_parentInstanceNode;
 
 protected:
-    IQueryContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode) 
-        : m_schemaHelper(&schemaHelper), m_connections(&connections), m_connection(&connection), m_ruleset(&ruleset), m_parentNode(parentNode), m_parentInstanceNode(parentInstanceNode)
+    IQueryContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, 
+        PresentationRuleSetCR ruleset, Utf8StringCR locale, JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode) 
+        : m_schemaHelper(&schemaHelper), m_connections(&connections), m_connection(&connection), m_ruleset(&ruleset),
+        m_locale(&locale), m_parentNode(parentNode), m_parentInstanceNode(parentInstanceNode)
         {}
     IQueryContext(IQueryContext& base) 
-        : m_base(&base), m_connections(nullptr), m_connection(nullptr), m_schemaHelper(nullptr), m_ruleset(nullptr), m_parentNode(nullptr), m_parentInstanceNode(nullptr)
+        : m_base(&base), m_connections(nullptr), m_connection(nullptr), m_schemaHelper(nullptr), m_ruleset(nullptr), 
+        m_locale(nullptr), m_parentNode(nullptr), m_parentInstanceNode(nullptr)
         {}
     IQueryContextPtr GetBaseContext() const {return m_base;}
 
@@ -1486,6 +1490,7 @@ public:
     IConnectionManagerCR GetConnections() const {return m_base.IsValid() ? m_base->GetConnections() : *m_connections;}
     IConnectionCR GetConnection() const {return m_base.IsValid() ? m_base->GetConnection() : *m_connection;}
     PresentationRuleSetCR GetRuleset() const {return m_base.IsValid() ? m_base->GetRuleset() : *m_ruleset;}
+    Utf8StringCR GetLocale() const {return m_base.IsValid() ? m_base->GetLocale() : *m_locale;}
     JsonNavNodeCP GetParentNode() const {return m_base.IsValid() ? m_base->GetParentNode() : m_parentNode;}
     JsonNavNodeCP GetParentInstanceNode() const {return m_base.IsValid() ? m_base->GetParentInstanceNode() : m_parentInstanceNode;}
     NavigationQueryContractPtr GetContract(SelectQueryInfo const& selectInfo) const {return _GetContract(selectInfo);}
@@ -1502,8 +1507,9 @@ private:
 
 protected:
     BaseQueryContext(IQueryContext& base) : IQueryContext(base) {}
-    BaseQueryContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode) 
-        : IQueryContext(schemaHelper, connections, connection, ruleset, parentNode, parentInstanceNode) 
+    BaseQueryContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset,
+        Utf8StringCR locale, JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode) 
+        : IQueryContext(schemaHelper, connections, connection, ruleset, locale, parentNode, parentInstanceNode) 
         {}
     bvector<NavigationQueryPtr> const& GetIncludedQueries() const {return m_queriesIncluded;}
     bvector<NavigationQueryPtr> const& GetExcludedQueries() const {return m_queriesExcluded;}
@@ -1543,8 +1549,9 @@ protected:
 struct ECInstanceQueryContext : BaseQueryContext
 {
 protected:
-    ECInstanceQueryContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode) 
-        : BaseQueryContext(schemaHelper, connections, connection, ruleset, parentNode, parentInstanceNode)
+    ECInstanceQueryContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, 
+        Utf8StringCR locale, JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode) 
+        : BaseQueryContext(schemaHelper, connections, connection, ruleset, locale, parentNode, parentInstanceNode)
         {}
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const& selectInfo) const override
         {
@@ -1587,7 +1594,7 @@ private:
         if (nullptr == m_sortingRules)
             {
             RulesPreprocessor::AggregateCustomizationRuleParameters params(GetParentInstanceNode(), m_specificationHash, 
-                GetConnections(), GetConnection(), GetRuleset(), m_userSettings, m_usedSettingsListener, m_ecexpressionsCache);
+                GetConnections(), GetConnection(), GetRuleset(), GetLocale(), m_userSettings, m_usedSettingsListener, m_ecexpressionsCache);
             m_sortingRules = new bvector<SortingRuleCP>(RulesPreprocessor::GetSortingRules(params));
             }
         return *m_sortingRules;
@@ -1645,9 +1652,9 @@ private:
     
 protected:
     ECInstanceSortingQueryContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, 
-        IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache, 
+        Utf8StringCR locale, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache, 
         JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode, bool doNotSort, Utf8StringCR specicificationHash) 
-        : ECInstanceQueryContext(schemaHelper, connections, connection, ruleset, parentNode, parentInstanceNode), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener), 
+        : ECInstanceQueryContext(schemaHelper, connections, connection, ruleset, locale, parentNode, parentInstanceNode), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener), 
         m_ecexpressionsCache(ecexpressionsCache), m_sortingRules(nullptr), m_doNotSort(doNotSort), m_specificationHash(specicificationHash)
         {}
     ~ECInstanceSortingQueryContext() {DELETE_AND_CLEAR(m_sortingRules);}
@@ -1815,11 +1822,11 @@ protected:
         }
 
 public:
-    static IQueryContextPtr Create(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, IUserSettings const& userSettings, 
-        IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache, JsonNavNodeCP parentNode, 
-        JsonNavNodeCP parentInstanceNode, bool doNotSort, Utf8StringCR specicificationHash)
+    static IQueryContextPtr Create(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset,
+        Utf8StringCR locale, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache, 
+        JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode, bool doNotSort, Utf8StringCR specicificationHash)
         {
-        return new ECInstanceSortingQueryContext(schemaHelper, connections, connection, ruleset, userSettings, usedSettingsListener, 
+        return new ECInstanceSortingQueryContext(schemaHelper, connections, connection, ruleset, locale, userSettings, usedSettingsListener, 
             ecexpressionsCache, parentNode, parentInstanceNode, doNotSort, specicificationHash);
         }
 };
@@ -2155,7 +2162,7 @@ public:
 static MultiQueryContextPtr CreateQueryContext(GroupingResolver const& resolver, bool isSearchContext = false)
     {
     IQueryContextPtr context = ECInstanceSortingQueryContext::Create(resolver.GetSchemaHelper(), resolver.GetQueryBuilderParams().GetConnections(),
-        resolver.GetQueryBuilderParams().GetConnection(), resolver.GetQueryBuilderParams().GetRuleset(), 
+        resolver.GetQueryBuilderParams().GetConnection(), resolver.GetQueryBuilderParams().GetRuleset(), resolver.GetQueryBuilderParams().GetLocale(),
         resolver.GetQueryBuilderParams().GetUserSettings(), resolver.GetQueryBuilderParams().GetUsedSettingsListener(), 
         resolver.GetQueryBuilderParams().GetECExpressionsCache(), resolver.GetParentNode(), resolver.GetParentInstanceNode(), 
         resolver.GetSpecification().GetDoNotSort(), resolver.GetSpecificationHash());
@@ -2358,7 +2365,7 @@ static void ProcessQueryClassesBasedOnCustomizationRules(bvector<SelectQueryInfo
         }
 
     RulesPreprocessor::AggregateCustomizationRuleParameters preprocessorParams(parentNode, resolver.GetSpecificationHash(),
-        params.GetConnections(), params.GetConnection(), params.GetRuleset(), params.GetUserSettings(), 
+        params.GetConnections(), params.GetConnection(), params.GetRuleset(), params.GetLocale(), params.GetUserSettings(), 
         params.GetUsedSettingsListener(), params.GetECExpressionsCache());
     CallbackOnRuleClasses<SortingRule>(RulesPreprocessor::GetSortingRules(preprocessorParams), params.GetSchemaHelper(), 
         [&customizationRuleInfos](SortingRuleCR rule, ECEntityClassCR ecClass)

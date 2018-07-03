@@ -142,7 +142,7 @@ bvector<ECClassCP> ExpectedQueries::GetECClasses(Utf8CP schemaName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptorPtr ExpectedQueries::GetEmptyContentDescriptor(Utf8CP displayType = ContentDisplayType::Undefined) const
     {
-    RulesDrivenECPresentationManager::ContentOptions options("");
+    RulesDrivenECPresentationManager::ContentOptions options("", "test locale");
     return ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create(), displayType);
     }
 
@@ -3448,7 +3448,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -3467,7 +3467,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -3487,7 +3487,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, false));
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         field = &AddField(*descriptor, b2_Class2, ContentDescriptor::Property("this", b2_Class2, *b2_Class2.GetPropertyP("Name")));
 
@@ -3518,7 +3518,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(b4_ClassC, b4_ClassB, b4_ClassBHasClassC, false, "nav_b4_ClassB_0", "nav_b4_ClassBHasClassC_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, b4_ClassB, ContentDescriptor::Property("this", b4_ClassB, *b4_ClassB.GetPropertyP("SomeProperty")));
         descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", b4_ClassC, *b4_ClassC.GetPropertyP("SomeProperty")));
         descriptor->GetAllFields().back()->SetName("ClassB_ClassC_SomeProperty");
@@ -3557,7 +3557,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, sc_Class3, ContentDescriptor::Property("this", sc_Class3, *sc_Class3.GetPropertyP("PropertyD")));
         field = &AddField(*descriptor, sc_Class3, ContentDescriptor::Property("nav_sc_Class1_0", sc_Class3, *sc_Class3.GetPropertyP("C1")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -3581,7 +3581,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(*selectClass, false));
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, selectClass, *query), "this");
@@ -3600,7 +3600,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(*selectClass, false));
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         AddField(*descriptor, *selectClass, ContentDescriptor::Property("this", *selectClass , *selectClass->GetPropertyP("PhysicalProperty")));
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -3620,7 +3620,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(*selectClass, false));
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, selectClass, *query), "this");
@@ -3640,7 +3640,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, sc_Class3, ContentDescriptor::Property("nav_sc_Class1_0", sc_Class3, *sc_Class3.GetPropertyP("C1")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
 
@@ -3667,7 +3667,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_1", "nav_sc_Class1HasClass2And3_1")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category::GetDefaultCategory(), "Class2_Class3_C1", "C1");
         field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("nav_sc_Class1_0", sc_Class2, *sc_Class2.GetPropertyP("C1")));
         field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("nav_sc_Class1_1", sc_Class3, *sc_Class3.GetPropertyP("C1")));
@@ -3704,7 +3704,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         
@@ -3742,7 +3742,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         
@@ -3787,7 +3787,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         
@@ -3843,7 +3843,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, sc_Class2, ContentDescriptor::Property("this", sc_Class2, *sc_Class2.GetPropertyP("PropertyB")));
         field = &AddField(*descriptor, sc_Class2, ContentDescriptor::Property("nav_sc_Class1_0", sc_Class2, *sc_Class2.GetPropertyP("C1")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -3882,7 +3882,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
 
@@ -3940,7 +3940,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         
@@ -3999,7 +3999,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         
@@ -4050,7 +4050,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         
@@ -4102,7 +4102,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         
@@ -4148,7 +4148,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->AddContentFlag(ContentFlags::DistinctValues);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_ClassH, false));
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         AddField(*descriptor, ret_ClassH, ContentDescriptor::Property("this", ret_ClassH, *ret_ClassH.GetPropertyP("PointProperty")));
 
         ComplexContentQueryPtr nestedQuery = ComplexContentQuery::Create();
@@ -4170,7 +4170,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
-        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
         bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
         labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")});
         displayLabelField->SetPropertiesMap(labelOverrideMap);
@@ -4194,7 +4194,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
-        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
         bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
         labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("MyID")});
         displayLabelField->SetPropertiesMap(labelOverrideMap);
@@ -4227,7 +4227,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
-        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
         bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
         labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("MyID")});
         displayLabelField->SetPropertiesMap(labelOverrideMap);
@@ -4265,7 +4265,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
         descriptor->GetSelectClasses().back().SetRelatedInstanceClasses({relatedInstanceClass});
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
@@ -4286,7 +4286,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         descriptor->SetContentFlags((int)ContentFlags::ShowImages);
 
@@ -4306,7 +4306,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
         
@@ -4331,7 +4331,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Graphics);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->SetContentFlags((int)ContentFlags::KeysOnly | (int)ContentFlags::NoFields);
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
@@ -4346,7 +4346,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::List);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->SetContentFlags((int)ContentFlags::ShowLabels | (int)ContentFlags::NoFields);
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         
         ComplexContentQueryPtr nested = ComplexContentQuery::Create();
         nested->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *nested), "this");
@@ -4374,7 +4374,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
         descriptor->GetSelectClasses().back().SetRelatedInstanceClasses({relatedInstanceClass1, relatedInstanceClass2});
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
@@ -4396,7 +4396,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -4414,7 +4414,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, true));
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -4432,7 +4432,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, true));
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, b2_Class2, ContentDescriptor::Property("this", b2_Class2, *b2_Class2.GetPropertyP("Name")));
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -4450,7 +4450,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, true));
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, b2_Class2, ContentDescriptor::Property("this", b2_Class2, *b2_Class2.GetPropertyP("Name")));
         descriptor->AddField(new ContentDescriptor::CalculatedPropertyField("LabelTest_1", "CalculatedProperty_0", "\"Value\" & 1", nullptr, 1200));
         descriptor->AddField(new ContentDescriptor::CalculatedPropertyField("LabelTest_2", "CalculatedProperty_1", "this.Name & \"Test\"", nullptr, 1500));
@@ -4471,7 +4471,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1B, false));
  
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));       
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));       
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         field = &AddField(*descriptor, b1_Class1B, ContentDescriptor::Property("this", b1_Class1B, *b1_Class1B.GetPropertyP("DisplayLabel")));
         
@@ -4497,7 +4497,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, false));
   
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));      
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));      
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         field = &AddField(*descriptor, b2_Class2, ContentDescriptor::Property("this", b2_Class2, *b2_Class2.GetPropertyP("Name")));
         
@@ -4522,7 +4522,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -4545,7 +4545,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
         descriptor->GetSelectClasses().back().SetRelatedInstanceClasses({relatedInstanceClass});
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
@@ -4571,7 +4571,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         
         descriptor->AddContentFlag(ContentFlags::MergeResults);
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -4585,7 +4585,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr innerDescriptor = GetEmptyContentDescriptor(ContentDisplayType::PropertyPane);
         
-        innerDescriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        innerDescriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*innerDescriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         field = &AddField(*innerDescriptor, b3_Class3, ContentDescriptor::Property("this", b3_Class3, *b3_Class3.GetPropertyP("SomeProperty")));
     
@@ -4620,7 +4620,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->AddContentFlag(ContentFlags::DistinctValues);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_ClassH, false));
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         AddField(*descriptor, ret_ClassH, ContentDescriptor::Property("this", ret_ClassH, *ret_ClassH.GetPropertyP("PointProperty")));
 
         ComplexContentQueryPtr nestedQuery = ComplexContentQuery::Create();
@@ -4641,7 +4641,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
-        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
         bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
         labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")});
         displayLabelField->SetPropertiesMap(labelOverrideMap);
@@ -4663,7 +4663,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
-        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
         bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
         labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("MyID")});
         displayLabelField->SetPropertiesMap(labelOverrideMap);
@@ -4691,7 +4691,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
 
-        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
         bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
         labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("MyID")});
         displayLabelField->SetPropertiesMap(labelOverrideMap);
@@ -4728,7 +4728,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -4776,7 +4776,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", false)
             });
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));        
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
@@ -4851,7 +4851,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category::GetDefaultCategory(), "Widget_Sprocket_Description", "Description");
         field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
@@ -4932,7 +4932,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -4978,7 +4978,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
             });
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
@@ -5024,7 +5024,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -5068,7 +5068,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             });
         descriptor->GetSelectClasses().back().SetRelatedInstanceClasses({relatedInstanceClass});
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
@@ -5166,7 +5166,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -5252,7 +5252,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass(relationshipPath2);
      
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));   
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));   
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
@@ -5295,7 +5295,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
             });
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property("this", class_Element, *class_Element.GetPropertyP("ElementProperty")));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property(TABLE_ALIAS("nav", class_Element, 0), class_Element, *class_Element.GetPropertyP("Parent")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -5344,7 +5344,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
             });
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property("this", class_Element, *class_Element.GetPropertyP("ElementProperty")));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property(TABLE_ALIAS("nav", class_Element, 0), class_Element, *class_Element.GetPropertyP("Parent")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -5391,7 +5391,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property("this", class_Element, *class_Element.GetPropertyP("ElementProperty")));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property(TABLE_ALIAS("nav", class_Element, 0), class_Element, *class_Element.GetPropertyP("Parent")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -5431,7 +5431,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             RelatedClass(class_Element, class_Element, class_ElementRefersToElements, false, "related", TABLE_ALIAS("rel", class_ElementRefersToElements, 0), false)
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         
         bvector<ECInstanceId> selectedIds = {ECInstanceId((uint64_t)123)};
         
@@ -5454,7 +5454,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_ClassH, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", false)
             });
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         AddField(*descriptor, ret_ClassH, ContentDescriptor::Property("this", ret_ClassH, *ret_ClassH.GetPropertyP("PointProperty")));
 
         ComplexContentQueryPtr nestedQuery = ComplexContentQuery::Create();
@@ -5484,7 +5484,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false)
             });
         
-        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
         bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
         labelOverrideMap.Insert(&ret_Sprocket, {ret_Sprocket.GetPropertyP("Description"), ret_Sprocket.GetPropertyP("MyID")});
         displayLabelField->SetPropertiesMap(labelOverrideMap);
@@ -5527,7 +5527,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
 
-        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
         bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
         labelOverrideMap.Insert(&ret_Gadget, {ret_Gadget.GetPropertyP("MyID")});
         displayLabelField->SetPropertiesMap(labelOverrideMap);
@@ -5558,7 +5558,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         
@@ -5574,7 +5574,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         
@@ -5597,7 +5597,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, true));
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("gadget", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("gadget", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         descriptor->AddField(new ContentDescriptor::NestedContentField(category, "sprocket_field_name", "sprocket_field_label", ret_Sprocket, "sprocket",
@@ -5625,7 +5625,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
         descriptor->GetAllFields().back()->SetName("Gadget_Widget_MyID");
@@ -5671,7 +5671,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_1", "nav_RET_GadgetHasSprockets_0")}
             });
 
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));        
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         descriptor->GetAllFields().back()->SetName("Widget_Sprocket_Description");
@@ -5730,7 +5730,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0)); 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0)); 
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -5767,7 +5767,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0)); 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0)); 
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -5804,7 +5804,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0)); 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0)); 
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -5841,7 +5841,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
             });
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0)); 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0)); 
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
 
@@ -5874,7 +5874,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0)); 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0)); 
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
@@ -5913,7 +5913,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->SetFilterExpression("Widget_MyID = \"WidgetId\"");
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
         
-        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0)); 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0)); 
         AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
         AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
@@ -5980,8 +5980,8 @@ static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConne
 
         JsonNavNodesFactory nodesFactory;
         ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
-        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, userSettings, nullptr, schemaHelper.GetECExpressionsCache(), 
-            nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, "locale", userSettings,
+            nullptr, schemaHelper.GetECExpressionsCache(), nodesFactory, nullptr, nullptr, &query->GetExtendedData());
         
         Utf8String queryStr = query->ToString();
         ECSqlStatement statement;
@@ -6009,8 +6009,8 @@ static void ExecuteQueries(bmap<Utf8String, ContentQueryCPtr> queries, IConnecti
         
         JsonNavNodesFactory nodesFactory;
         ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
-        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, userSettings, nullptr, schemaHelper.GetECExpressionsCache(), 
-            nodesFactory, nullptr, nullptr, nullptr);
+        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, "locale", userSettings,
+            nullptr, schemaHelper.GetECExpressionsCache(), nodesFactory, nullptr, nullptr, nullptr);
         
         Utf8String queryStr = query->ToString();
         ECSqlStatement statement;

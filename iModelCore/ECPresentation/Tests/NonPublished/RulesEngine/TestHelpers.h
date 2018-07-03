@@ -171,7 +171,7 @@ private:
     bmap<NavNodeKeyCP, JsonNavNodeCPtr, NavNodeKeyPtrComparer> m_nodes;
 
 protected:
-    JsonNavNodeCPtr _LocateNode(IConnectionCR, NavNodeKeyCR key) const override
+    JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR key) const override
         {
         auto iter = m_nodes.find(&key);
         if (m_nodes.end() != iter)
@@ -200,7 +200,7 @@ struct TestNodesCache : IHierarchyCache, INavNodeLocater
     typedef std::function<void(JsonNavNodeCR)> MakeVirtualHandler;
     typedef std::function<void(uint64_t, JsonNavNodeCR)> UpdateNodeHandler;
     typedef std::function<void(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<UserSettingEntry> const*)> UpdateDataSourceHandler;
-    typedef std::function<JsonNavNodeCPtr(IConnectionCR, NavNodeKeyCR)> LocateNodeHandler;
+    typedef std::function<JsonNavNodeCPtr(IConnectionCR, Utf8StringCR, NavNodeKeyCR)> LocateNodeHandler;
 
     /*=================================================================================**//**
     * @bsiclass                                     Grigas.Petraitis                11/2017
@@ -252,14 +252,14 @@ private:
     HierarchyLevelInfo GetHierarchyLevelInfo(JsonNavNodeCR node) const
         {
         NavNodeExtendedData ex(node);
-        return HierarchyLevelInfo(ex.GetConnectionId(), ex.GetRulesetId(), node.GetParentNodeId());
+        return HierarchyLevelInfo(ex.GetConnectionId(), ex.GetRulesetId(), ex.GetLocale(), node.GetParentNodeId());
         }
     DataSourceInfo GetDataSourceInfo(JsonNavNodeCR node) const
         {
         NavNodeExtendedData ex(node);
         uint64_t physicalParentId = node.GetParentNodeId();
         uint64_t virtualParentId = ex.GetVirtualParentId();
-        return DataSourceInfo(ex.GetConnectionId(), ex.GetRulesetId(), &physicalParentId, &virtualParentId);
+        return DataSourceInfo(ex.GetConnectionId(), ex.GetRulesetId(), ex.GetLocale(), &physicalParentId, &virtualParentId);
         }
 
 protected:
@@ -286,7 +286,8 @@ protected:
             return nullptr;
             }
 
-        NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(*connection, info.GetRulesetId().c_str(), info.GetPhysicalParentNodeId());
+        NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(*connection, info.GetRulesetId().c_str(),
+            info.GetLocale().c_str(), info.GetPhysicalParentNodeId());
         auto iter = m_physicalHierarchy.find(info);
         return (m_physicalHierarchy.end() != iter) ? BVectorNodesProvider::Create(*context, iter->second) : nullptr;
         }
@@ -305,7 +306,8 @@ protected:
             return nullptr;
             }
 
-        NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(*connection, info.GetRulesetId().c_str(), info.GetVirtualParentNodeId());
+        NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(*connection, info.GetRulesetId().c_str(),
+            info.GetLocale().c_str(), info.GetVirtualParentNodeId());
         auto iter = m_virtualHierarchy.find(info);
         return (m_virtualHierarchy.end() != iter) ? BVectorNodesProvider::Create(*context, iter->second) : nullptr;
         }
@@ -368,10 +370,10 @@ protected:
             return m_updateDataSourceHandler(info, filter, relatedClassIds, relatedSettings);
         }
 
-    JsonNavNodeCPtr _LocateNode(IConnectionCR connection, NavNodeKeyCR key) const override
+    JsonNavNodeCPtr _LocateNode(IConnectionCR connection, Utf8StringCR locale, NavNodeKeyCR key) const override
         {
         if (m_locateNodeHandler)
-            return m_locateNodeHandler(connection, key);
+            return m_locateNodeHandler(connection, locale, key);
         return nullptr;
         }
     IHierarchyCache::SavepointPtr _CreateSavepoint() override {return new Savepoint(*this);}
@@ -515,14 +517,14 @@ private:
         if (nullptr == parent)
             {
             RulesPreprocessor::RootNodeRuleParameters params(context.GetConnections(), context.GetConnection(), context.GetRuleset(), TargetTree_MainTree,
-                context.GetUserSettings(), nullptr, context.GetECExpressionsCache());
+                context.GetLocale(), context.GetUserSettings(), nullptr, context.GetECExpressionsCache());
             RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
             provider = MultiSpecificationNodesProvider::Create(context, specs);
             }
         else
             {
             RulesPreprocessor::ChildNodeRuleParameters params(context.GetConnections(), context.GetConnection(), *parent, context.GetRuleset(), TargetTree_MainTree, 
-                context.GetUserSettings(), nullptr, context.GetECExpressionsCache());
+                context.GetLocale(), context.GetUserSettings(), nullptr, context.GetECExpressionsCache());
             ChildNodeRuleSpecificationsList specs = RulesPreprocessor::GetChildNodeSpecifications(params);
             provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
             }
@@ -567,14 +569,15 @@ private:
     IHierarchyCacheR GetNodesCache() const {return (nullptr != m_nodesCache) ? *m_nodesCache : m_testNodesCache;}
 
 protected:
-    NavNodesProviderContextPtr _Create(IConnectionCR connection, Utf8CP rulesetId, uint64_t const* parentNodeId, ICancelationTokenCP cancelationToken, bool disableUpdates) const override
+    NavNodesProviderContextPtr _Create(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, 
+        uint64_t const* parentNodeId, ICancelationTokenCP cancelationToken, bool disableUpdates) const override
         {
         m_customFunctions.OnConnection(connection);
 
         PresentationRuleSetCPtr ruleset = m_ruleset;
         if (ruleset.IsNull())
             ruleset = PresentationRuleSet::CreateInstance(rulesetId, 1, 0, false, "", "", "", false);
-        NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, true, TargetTree_MainTree, parentNodeId, 
+        NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, true, TargetTree_MainTree, locale, parentNodeId, 
             m_settings, m_ecexpressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, m_nodesFactory, 
             GetNodesCache(), m_providerFactory, nullptr);
         context->SetQueryContext(m_connections, connection, m_statementsCache, m_customFunctions, m_usedClassesListener);

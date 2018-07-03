@@ -17,8 +17,8 @@
 #include "SingleThreadQueueExecutor.h"
 #endif
 
-const Utf8CP RulesDrivenECPresentationManager::ContentOptions::OPTION_NAME_RulesetId = "RulesetId";
-const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_RulesetId = "RulesetId";
+const Utf8CP RulesDrivenECPresentationManager::CommonOptions::OPTION_NAME_RulesetId = "RulesetId";
+const Utf8CP RulesDrivenECPresentationManager::CommonOptions::OPTION_NAME_Locale = "Locale";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_RuleTargetTree = "RuleTargetTree";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_DisableUpdates = "DisableUpdates";
 

@@ -28,7 +28,7 @@ private:
         }
     
 protected:
-    Json::Value _GetPresentationInfo() const override {return Json::Value();}
+    Json::Value _GetPresentationInfo(Utf8StringCR) const override {return Json::Value();}
 
     bool _HasSetting(Utf8CP id) const override {return m_values.isMember(id);}
 

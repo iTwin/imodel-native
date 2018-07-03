@@ -23,11 +23,12 @@ private:
     Utf8String m_connectionId;
     Utf8String m_rulesetId;
     Utf8String m_preferredDisplayType; 
+    Utf8String m_locale;
     INavNodeKeysContainerCPtr m_inputNodeKeys;
     SelectionInfoCPtr m_selectionInfo;
 public:
     ContentProviderKey() {}
-    ECPRESENTATION_EXPORT ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, INavNodeKeysContainerCR inputNodeKeys, SelectionInfo const* selectionInfo);
+    ECPRESENTATION_EXPORT ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, Utf8String locale, INavNodeKeysContainerCR inputNodeKeys, SelectionInfo const* selectionInfo);
     ECPRESENTATION_EXPORT ContentProviderKey(ContentProviderKey const& other);
     ECPRESENTATION_EXPORT ContentProviderKey(ContentProviderKey&& other);
     ECPRESENTATION_EXPORT ContentProviderKey& operator=(ContentProviderKey const& other);
@@ -37,6 +38,7 @@ public:
     Utf8StringCR GetPreferredDisplayType() const {return m_preferredDisplayType;}
     Utf8StringCR GetRulesetId() const {return m_rulesetId;}
     Utf8StringCR GetConnectionId() const {return m_connectionId;}
+    Utf8StringCR GetLocale() const {return m_locale;}
     SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo.get();}
 };
 

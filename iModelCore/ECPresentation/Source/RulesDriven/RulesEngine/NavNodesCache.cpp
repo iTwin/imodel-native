@@ -18,7 +18,7 @@
 USING_NAMESPACE_BENTLEY_LOGGING
 
 #define NAVNODES_CACHE_DB_NAME          L"HierarchyCache.db"
-#define NAVNODES_CACHE_DB_VERSION_MAJOR 8
+#define NAVNODES_CACHE_DB_VERSION_MAJOR 9
 #define NAVNODES_CACHE_DB_VERSION_MINOR 0
 //#define NAVNODES_CACHE_DEBUG
 
@@ -300,13 +300,14 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
                      "[VirtualParentNodeId] INTEGER REFERENCES " NODESCACHE_TABLENAME_Nodes "([Id]) ON DELETE CASCADE ON UPDATE CASCADE, "
                      "[ConnectionId] TEXT NOT NULL REFERENCES " NODESCACHE_TABLENAME_Connections "([ConnectionId]) ON DELETE CASCADE ON UPDATE CASCADE, "
                      "[RulesetId] TEXT NOT NULL REFERENCES " NODESCACHE_TABLENAME_Rulesets "([RulesetId]) ON DELETE CASCADE ON UPDATE CASCADE, "
+                     "[Locale] TEXT, "
                      "[Filter] TEXT, "
                      "[RemovalId] GUID, "
                      "[IsUpdatesDisabled] BOOLEAN NOT NULL DEFAULT FALSE ";
         m_db.CreateTable(NODESCACHE_TABLENAME_DataSources, ddl);
-        m_db.ExecuteSql("CREATE UNIQUE INDEX [UX_DataSources_Virtual] ON [" NODESCACHE_TABLENAME_DataSources "](COALESCE([VirtualParentNodeId], 0),[ConnectionId],[RulesetId],COALESCE([RemovalId], 0))");
-        m_db.ExecuteSql("CREATE INDEX [IX_DataSources_Physical] ON [" NODESCACHE_TABLENAME_DataSources "]([PhysicalParentNodeId],[ConnectionId],[RulesetId])");
-        m_db.ExecuteSql("CREATE INDEX [IX_DataSources_Virtual] ON [" NODESCACHE_TABLENAME_DataSources "]([VirtualParentNodeId],[ConnectionId],[RulesetId])");
+        m_db.ExecuteSql("CREATE UNIQUE INDEX [UX_DataSources_Virtual] ON [" NODESCACHE_TABLENAME_DataSources "](COALESCE([VirtualParentNodeId], 0),[ConnectionId],[RulesetId],[Locale],COALESCE([RemovalId], 0))");
+        m_db.ExecuteSql("CREATE INDEX [IX_DataSources_Physical] ON [" NODESCACHE_TABLENAME_DataSources "]([PhysicalParentNodeId],[ConnectionId],[RulesetId],[Locale])");
+        m_db.ExecuteSql("CREATE INDEX [IX_DataSources_Virtual] ON [" NODESCACHE_TABLENAME_DataSources "]([VirtualParentNodeId],[ConnectionId],[RulesetId],[Locale])");
         m_db.ExecuteSql("CREATE INDEX [IX_DataSources_RemovalId] ON [" NODESCACHE_TABLENAME_DataSources "]([RemovalId])");
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_DataSourceClasses))
@@ -626,11 +627,11 @@ bool NodesCache::IsNodeCached(uint64_t nodeId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodesCache::IsDataSourceCached(Utf8StringCR connectionId, Utf8CP rulesetId) const
+bool NodesCache::IsDataSourceCached(Utf8StringCR connectionId, Utf8CP rulesetId, Utf8CP locale) const
     {
     Utf8String query = "SELECT 1 "
                        "  FROM [" NODESCACHE_TABLENAME_DataSources "] "
-                       " WHERE [ConnectionId] = ? AND [RulesetId] = ?";
+                       " WHERE [ConnectionId] = ? AND [RulesetId] = ? AND [Locale] = ?";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -641,6 +642,7 @@ bool NodesCache::IsDataSourceCached(Utf8StringCR connectionId, Utf8CP rulesetId)
 
     stmt->BindText(1, connectionId.c_str(), Statement::MakeCopy::No);
     stmt->BindText(2, rulesetId, Statement::MakeCopy::No);
+    stmt->BindText(3, locale, Statement::MakeCopy::No);
         
     return (BE_SQLITE_ROW == stmt->Step());
     }
@@ -974,8 +976,8 @@ static void BindNullableId(StatementR stmt, int index, uint64_t const* id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void NodesCache::CacheEmptyDataSource(DataSourceInfo& info, DataSourceFilter const& filter, bool disableUpdates)
     {
-    Utf8String query = "INSERT INTO [" NODESCACHE_TABLENAME_DataSources "] ([ConnectionId], [RulesetId], [PhysicalParentNodeId], [VirtualParentNodeId], [Filter], [IsUpdatesDisabled]) "
-                       "VALUES (?, ?, ?, ?, ?, ?)";
+    Utf8String query = "INSERT INTO [" NODESCACHE_TABLENAME_DataSources "] ([ConnectionId], [RulesetId], [Locale], [PhysicalParentNodeId], [VirtualParentNodeId], [Filter], [IsUpdatesDisabled]) "
+                       "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -988,10 +990,11 @@ void NodesCache::CacheEmptyDataSource(DataSourceInfo& info, DataSourceFilter con
 
     stmt->BindText(1, info.GetConnectionId().c_str(), Statement::MakeCopy::No);
     stmt->BindText(2, info.GetRulesetId().c_str(), Statement::MakeCopy::No);
-    BindNullableId(*stmt, 3, info.GetPhysicalParentNodeId());
-    BindNullableId(*stmt, 4, info.GetVirtualParentNodeId());
-    stmt->BindText(5, filterStr.c_str(), Statement::MakeCopy::No);
-    stmt->BindBoolean(6, disableUpdates);
+    stmt->BindText(3, info.GetLocale().c_str(), Statement::MakeCopy::No);
+    BindNullableId(*stmt, 4, info.GetPhysicalParentNodeId());
+    BindNullableId(*stmt, 5, info.GetVirtualParentNodeId());
+    stmt->BindText(6, filterStr.c_str(), Statement::MakeCopy::No);
+    stmt->BindBoolean(7, disableUpdates);
 
     DbResult result = stmt->Step();
     if (BE_SQLITE_DONE == result)
@@ -1002,7 +1005,8 @@ void NodesCache::CacheEmptyDataSource(DataSourceInfo& info, DataSourceFilter con
         }
 
     LoggingHelper::LogMessage(Log::NavigationCache, GetDataSourceDebugString("Already cached", info).c_str());
-    DataSourceInfo existing = GetDataSourceInfo(&info.GetConnectionId(), info.GetRulesetId().c_str(), info.GetVirtualParentNodeId(), true);
+    DataSourceInfo existing = GetDataSourceInfo(&info.GetConnectionId(), info.GetRulesetId().c_str(), 
+        info.GetLocale().c_str(), info.GetVirtualParentNodeId(), true);
     BeAssert(existing.IsValid());
     info.SetDataSourceId(existing.GetDataSourceId());
     }
@@ -1059,9 +1063,9 @@ void NodesCache::CacheRelatedSettings(uint64_t datasourceId, bvector<UserSetting
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceInfo NodesCache::GetDataSourceInfo(Utf8StringCP connectionId, Utf8CP rulesetId, uint64_t const* parentNodeId, bool isVirtual) const
+DataSourceInfo NodesCache::GetDataSourceInfo(Utf8StringCP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId, bool isVirtual) const
     {
-    Utf8String query = "SELECT [ds].[Id], [ds].[ConnectionId], [ds].[RulesetId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId] "
+    Utf8String query = "SELECT [ds].[Id], [ds].[ConnectionId], [ds].[RulesetId], [ds].[Locale], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                        " WHERE [ds].[RemovalId] IS NULL AND ";
     query.append(isVirtual ? "[ds].[VirtualParentNodeId]" : "[ds].[PhysicalParentNodeId]");
@@ -1073,6 +1077,8 @@ DataSourceInfo NodesCache::GetDataSourceInfo(Utf8StringCP connectionId, Utf8CP r
         query.append(" AND [ds].[ConnectionId] = ?");
     if (nullptr != rulesetId)
         query.append(" AND [ds].[RulesetId] = ?");
+    if (nullptr != locale)
+        query.append(" AND [ds].[Locale] = ?");
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -1091,15 +1097,18 @@ DataSourceInfo NodesCache::GetDataSourceInfo(Utf8StringCP connectionId, Utf8CP r
         
     if (nullptr != rulesetId)
         stmt->BindText(bindingIndex++, rulesetId, Statement::MakeCopy::No);
+    
+    if (nullptr != locale)
+        stmt->BindText(bindingIndex++, locale, Statement::MakeCopy::No);
             
     if (BE_SQLITE_ROW != stmt->Step())
         return DataSourceInfo();
 
     uint64_t physicalParentNodeId = stmt->GetValueUInt64(3);
     uint64_t virtualParentNodeId = stmt->GetValueUInt64(4);
-    return DataSourceInfo(stmt->GetValueUInt64(0), stmt->GetValueText(1), stmt->GetValueText(2), 
-        stmt->IsColumnNull(3) ? nullptr : &physicalParentNodeId, 
-        stmt->IsColumnNull(4) ? nullptr : &virtualParentNodeId);
+    return DataSourceInfo(stmt->GetValueUInt64(0), stmt->GetValueText(1), stmt->GetValueText(2), stmt->GetValueText(3), 
+        stmt->IsColumnNull(4) ? nullptr : &physicalParentNodeId, 
+        stmt->IsColumnNull(5) ? nullptr : &virtualParentNodeId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1107,7 +1116,7 @@ DataSourceInfo NodesCache::GetDataSourceInfo(Utf8StringCP connectionId, Utf8CP r
 +---------------+---------------+---------------+---------------+---------------+------*/
 DataSourceInfo NodesCache::GetDataSourceInfo(uint64_t nodeId) const
     {
-    Utf8CP query = "SELECT [ds].[Id], [ds].[ConnectionId], [ds].[RulesetId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId] "
+    Utf8CP query = "SELECT [ds].[Id], [ds].[ConnectionId], [ds].[RulesetId], [ds].[Locale], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId] "
                    "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                    "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id] "
                    " WHERE [ds].[RemovalId] IS NULL AND [n].[Id] = ?";
@@ -1126,9 +1135,9 @@ DataSourceInfo NodesCache::GetDataSourceInfo(uint64_t nodeId) const
 
     uint64_t physicalParentNodeId = stmt->GetValueUInt64(3);
     uint64_t virtualParentNodeId = stmt->GetValueUInt64(4);
-    return DataSourceInfo(stmt->GetValueUInt64(0), stmt->GetValueText(1), stmt->GetValueText(2), 
-        stmt->IsColumnNull(3) ? nullptr : &physicalParentNodeId, 
-        stmt->IsColumnNull(4) ? nullptr : &virtualParentNodeId);
+    return DataSourceInfo(stmt->GetValueUInt64(0), stmt->GetValueText(1), stmt->GetValueText(2), stmt->GetValueText(3), 
+        stmt->IsColumnNull(4) ? nullptr : &physicalParentNodeId, 
+        stmt->IsColumnNull(5) ? nullptr : &virtualParentNodeId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1175,7 +1184,7 @@ bool NodesCache::IsUpdatesDisabled(HierarchyLevelInfo const& info) const
     {
     Utf8String query = "SELECT [ds].[IsUpdatesDisabled] "
                        "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
-                       " WHERE [ds].[RemovalId] IS NULL AND [ds].[ConnectionId] = ? AND [ds].[RulesetId] = ? AND [ds].[PhysicalParentNodeId] "; 
+                       " WHERE [ds].[RemovalId] IS NULL AND [ds].[ConnectionId] = ? AND [ds].[RulesetId] = ? AND [Locale] = ? AND [ds].[PhysicalParentNodeId] "; 
     if (nullptr != info.GetPhysicalParentNodeId())
         query.append("= ?");
     else
@@ -1190,8 +1199,9 @@ bool NodesCache::IsUpdatesDisabled(HierarchyLevelInfo const& info) const
 
     stmt->BindText(1, info.GetConnectionId().c_str(), Statement::MakeCopy::No);
     stmt->BindText(2, info.GetRulesetId().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(3, info.GetLocale().c_str(), Statement::MakeCopy::No);
     if (nullptr != info.GetPhysicalParentNodeId())
-        stmt->BindInt64(3, *info.GetPhysicalParentNodeId());
+        stmt->BindInt64(4, *info.GetPhysicalParentNodeId());
             
     if (BE_SQLITE_ROW != stmt->Step())
         return false;
@@ -1238,7 +1248,7 @@ NavNodesProviderPtr NodesCache::_GetDataSource(HierarchyLevelInfo const& info, b
         return source;
     
     // Check if datasource exists
-    DataSourceInfo dsInfo = GetDataSourceInfo(&info.GetConnectionId(), info.GetRulesetId().c_str(), info.GetPhysicalParentNodeId(), true);
+    DataSourceInfo dsInfo = GetDataSourceInfo(&info.GetConnectionId(), info.GetRulesetId().c_str(), info.GetLocale().c_str(), info.GetPhysicalParentNodeId(), true);
     if (!dsInfo.IsValid())
         return nullptr;
 
@@ -1255,8 +1265,8 @@ NavNodesProviderPtr NodesCache::_GetDataSource(HierarchyLevelInfo const& info, b
         return nullptr;
         }
 
-    NavNodesProviderContextPtr context = m_contextFactory.Create(*connection, info.GetRulesetId().c_str(), info.GetPhysicalParentNodeId(),
-        nullptr, IsUpdatesDisabled(info));
+    NavNodesProviderContextPtr context = m_contextFactory.Create(*connection, info.GetRulesetId().c_str(), info.GetLocale().c_str(),
+        info.GetPhysicalParentNodeId(), nullptr, IsUpdatesDisabled(info));
     return context.IsValid() ? CachedHierarchyLevelProvider::Create(*context, m_db, m_statements, info.GetPhysicalParentNodeId()) : nullptr;
     }
 
@@ -1266,7 +1276,7 @@ NavNodesProviderPtr NodesCache::_GetDataSource(HierarchyLevelInfo const& info, b
 NavNodesProviderPtr NodesCache::_GetDataSource(DataSourceInfo const& info, bool removeIfInvalid) const
     {
     // Check if datasource exists
-    DataSourceInfo dsInfo = GetDataSourceInfo(&info.GetConnectionId(), info.GetRulesetId().c_str(), info.GetVirtualParentNodeId(), true);
+    DataSourceInfo dsInfo = GetDataSourceInfo(&info.GetConnectionId(), info.GetRulesetId().c_str(), info.GetLocale().c_str(), info.GetVirtualParentNodeId(), true);
     if (!dsInfo.IsValid())
         return nullptr;
 
@@ -1283,8 +1293,8 @@ NavNodesProviderPtr NodesCache::_GetDataSource(DataSourceInfo const& info, bool 
         return nullptr;
         }
 
-    NavNodesProviderContextPtr context = m_contextFactory.Create(*connection, info.GetRulesetId().c_str(), info.GetVirtualParentNodeId(), 
-        nullptr, IsUpdatesDisabled(info));
+    NavNodesProviderContextPtr context = m_contextFactory.Create(*connection, info.GetRulesetId().c_str(), info.GetLocale().c_str(),
+        info.GetVirtualParentNodeId(), nullptr, IsUpdatesDisabled(info));
     return context.IsValid() ? CachedVirtualNodeChildrenProvider::Create(*context, m_db, m_statements) : nullptr;
     }
 
@@ -1310,8 +1320,8 @@ NavNodesProviderPtr NodesCache::_GetDataSource(uint64_t nodeId, bool removeIfInv
         return nullptr;
         }
     
-    NavNodesProviderContextPtr context = m_contextFactory.Create(*connection, info.GetRulesetId().c_str(), info.GetPhysicalParentNodeId(), 
-        nullptr, IsUpdatesDisabled(info));
+    NavNodesProviderContextPtr context = m_contextFactory.Create(*connection, info.GetRulesetId().c_str(), info.GetLocale().c_str(),
+        info.GetPhysicalParentNodeId(), nullptr, IsUpdatesDisabled(info));
     return context.IsValid() ? CachedHierarchyLevelProvider::Create(*context, m_db, m_statements, info.GetPhysicalParentNodeId()) : nullptr;
     }
     
@@ -1321,12 +1331,12 @@ NavNodesProviderPtr NodesCache::_GetDataSource(uint64_t nodeId, bool removeIfInv
 void NodesCache::_Cache(JsonNavNodeR node, bool isVirtual)
     {
     NavNodeExtendedData extendedData(node);
-    BeAssert(extendedData.HasConnectionId() && extendedData.HasRulesetId());
+    BeAssert(extendedData.HasConnectionId() && extendedData.HasRulesetId() && extendedData.HasLocale());
     Utf8String connectionId = extendedData.GetConnectionId();
     uint64_t virtualParentId = extendedData.GetVirtualParentId();
     uint64_t const* virtualParentIdP = (extendedData.HasVirtualParentId() && 0 != virtualParentId) ? &virtualParentId : nullptr;
     
-    DataSourceInfo info = GetDataSourceInfo(&connectionId, extendedData.GetRulesetId(), virtualParentIdP, true);
+    DataSourceInfo info = GetDataSourceInfo(&connectionId, extendedData.GetRulesetId(), extendedData.GetLocale(), virtualParentIdP, true);
     if (!info.IsValid())
         {
         BeAssert(false);
@@ -1490,7 +1500,7 @@ BeGuid NodesCache::CreateRemovalId(HierarchyLevelInfo const& info)
     BeGuid removalId(true);
     Utf8String query = "UPDATE [" NODESCACHE_TABLENAME_DataSources "] "
                        "   SET [RemovalId] = ? "
-                       " WHERE [ConnectionId] = ? AND [RulesetId] = ? AND [PhysicalParentNodeId] ";
+                       " WHERE [ConnectionId] = ? AND [RulesetId] = ? AND [Locale] = ? AND [PhysicalParentNodeId] ";
     if (nullptr != info.GetPhysicalParentNodeId())
         query.append("= ?");
     else
@@ -1505,8 +1515,9 @@ BeGuid NodesCache::CreateRemovalId(HierarchyLevelInfo const& info)
     stmt->BindGuid(1, removalId);
     stmt->BindText(2, info.GetConnectionId().c_str(), Statement::MakeCopy::No);
     stmt->BindText(3, info.GetRulesetId().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(4, info.GetLocale().c_str(), Statement::MakeCopy::No);
     if (nullptr != info.GetPhysicalParentNodeId())
-        stmt->BindUInt64(4, *info.GetPhysicalParentNodeId());
+        stmt->BindUInt64(5, *info.GetPhysicalParentNodeId());
     stmt->Step();
 
     RemoveQuick(info);
@@ -1872,7 +1883,7 @@ bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(Utf8StringCR c
 
     bvector<HierarchyLevelInfo> infos;
 
-    Utf8CP query = "SELECT [ConnectionId], [RulesetId], [PhysicalParentNodeId], [Filter], 1 AS Priority "
+    Utf8CP query = "SELECT [ConnectionId], [RulesetId], [Locale], [PhysicalParentNodeId], [Filter], 1 AS Priority "
                    "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                    "  JOIN [" NODESCACHE_TABLENAME_DataSourceClasses "] dsc ON [dsc].[DataSourceId] = [ds].[Id] "
                    " WHERE [ds].[ConnectionId] = ? "
@@ -1880,7 +1891,7 @@ bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(Utf8StringCR c
                    "       AND (InVirtualSet(?, [dsc].[ECClassId]) AND [Polymorphic] "
                    "            OR InVirtualSet(?, [dsc].[ECClassId]) AND NOT [Polymorphic]) "
                    "UNION ALL "
-                   "SELECT [ConnectionId], [RulesetId], [PhysicalParentNodeId], [Filter], 2 AS Priority "
+                   "SELECT [ConnectionId], [RulesetId], [Locale], [PhysicalParentNodeId], [Filter], 2 AS Priority "
                    "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                    "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id] "
                    "  JOIN [" NODESCACHE_TABLENAME_AffectingInstances "] ai ON [ai].[NodeId] = [n].[Id] "
@@ -1915,15 +1926,16 @@ bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(Utf8StringCR c
     ECSqlStatementCache& ecsqlStatements = m_ecsqlStamementCache.GetECSqlStatementCache(*connection);
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        int priority = stmt->GetValueInt(4);
-        Utf8CP filter = stmt->GetValueText(3);
+        int priority = stmt->GetValueInt(5);
+        Utf8CP filter = stmt->GetValueText(4);
         if (priority < 2 && nullptr != filter && 0 != *filter && !AnyKeyMatchesFilter(*connection, filter, keys, ecsqlStatements))
             continue;
 
         Utf8CP connectionId = stmt->GetValueText(0);
         Utf8CP rulesetId = stmt->GetValueText(1);
-        uint64_t physicalParentNodeId = stmt->GetValueUInt64(2);
-        infos.push_back(HierarchyLevelInfo(connectionId, rulesetId, stmt->IsColumnNull(2) ? nullptr : &physicalParentNodeId));
+        Utf8CP locale = stmt->GetValueText(2);
+        uint64_t physicalParentNodeId = stmt->GetValueUInt64(3);
+        infos.push_back(HierarchyLevelInfo(connectionId, rulesetId, locale, stmt->IsColumnNull(3) ? nullptr : &physicalParentNodeId));
         }
 
     return infos;
@@ -1935,7 +1947,7 @@ bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(Utf8StringCR c
 bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(Utf8CP rulesetId, Utf8CP settingId) const
     {
     bvector<HierarchyLevelInfo> infos;
-    Utf8CP query = "SELECT DISTINCT [ConnectionId], [PhysicalParentNodeId] "
+    Utf8CP query = "SELECT DISTINCT [ConnectionId], [Locale], [PhysicalParentNodeId] "
                    "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                    "  JOIN [" NODESCACHE_TABLENAME_DataSourceSettings "] dss ON [dss].[DataSourceId] = [ds].[Id] "
                    " WHERE [ds].[RulesetId] = ? AND [dss].[SettingId] = ? AND NOT [ds].[IsUpdatesDisabled] ";
@@ -1953,8 +1965,9 @@ bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(Utf8CP ruleset
     while (BE_SQLITE_ROW == stmt->Step())
         {
         Utf8CP connectionId = stmt->GetValueText(0);
-        uint64_t physicalParentNodeId = stmt->GetValueUInt64(1);
-        infos.push_back(HierarchyLevelInfo(connectionId, rulesetId, stmt->IsColumnNull(1) ? nullptr : &physicalParentNodeId));
+        Utf8CP locale = stmt->GetValueText(1);
+        uint64_t physicalParentNodeId = stmt->GetValueUInt64(2);
+        infos.push_back(HierarchyLevelInfo(connectionId, rulesetId, locale, stmt->IsColumnNull(1) ? nullptr : &physicalParentNodeId));
         }
 
     return infos;
@@ -1995,14 +2008,14 @@ bool NodesCache::HasParentNode(uint64_t nodeId, bset<uint64_t> const& parentNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonNavNodeCPtr NodesCache::_LocateNode(IConnectionCR connection, NavNodeKeyCR nodeKey) const
+JsonNavNodeCPtr NodesCache::_LocateNode(IConnectionCR connection, Utf8StringCR locale, NavNodeKeyCR nodeKey) const
     {
     Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [n].[Id], [ex].[NodeId], [k].[PathFromRoot] "
         "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
         "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
         "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
-        " WHERE [n].[UniqueHash] = ? AND [ds].[ConnectionId] = ?";
+        " WHERE [n].[UniqueHash] = ? AND [ds].[ConnectionId] = ?";// AND[ds].[Locale] = ? ";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -2013,6 +2026,7 @@ JsonNavNodeCPtr NodesCache::_LocateNode(IConnectionCR connection, NavNodeKeyCR n
 
     stmt->BindText(1, nodeKey.GetNodeHash(), Statement::MakeCopy::Yes);
     stmt->BindText(2, connection.GetId().c_str(), Statement::MakeCopy::No);
+    // stmt->BindText(3, locale.c_str(), Statement::MakeCopy::No);
 
     if (BE_SQLITE_ROW != stmt->Step())
         return nullptr;
@@ -2121,14 +2135,14 @@ void NodesCache::Persist() {m_db.SaveChanges();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavNodeCPtr> NodesCache::GetFilteredNodes(IConnectionCR connection, Utf8CP rulesetId, Utf8CP filtertext) const
+bvector<NavNodeCPtr> NodesCache::GetFilteredNodes(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, Utf8CP filtertext) const
     {
     Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [n].[Id], [ex].[NodeId], [k].[PathFromRoot] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id] "
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
-                       " WHERE [ds].[ConnectionId] = ? AND [ds].[RulesetId] = ? AND [n].[Label] LIKE ? "
+                       " WHERE [ds].[ConnectionId] = ? AND [ds].[RulesetId] = ? AND [ds].[Locale] = ? AND [n].[Label] LIKE ? "
                        " ORDER BY [n].[Id]";
 
     bvector<NavNodeCPtr> nodeList;
@@ -2144,7 +2158,8 @@ bvector<NavNodeCPtr> NodesCache::GetFilteredNodes(IConnectionCR connection, Utf8
     filter.append("%");
     stmt->BindText(1, connection.GetId().c_str(), Statement::MakeCopy::No);
     stmt->BindText(2, rulesetId, Statement::MakeCopy::No);
-    stmt->BindText(3, filter.c_str(), Statement::MakeCopy::No);
+    stmt->BindText(3, locale, Statement::MakeCopy::No);
+    stmt->BindText(4, filter.c_str(), Statement::MakeCopy::No);
 
     while (BE_SQLITE_ROW == stmt->Step())
         nodeList.push_back(CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections));
@@ -2206,9 +2221,9 @@ void NodesCache::SetIsExpanded(uint64_t nodeId, bool isExpanded) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NodesCache::GetUndeterminedNodesProvider(IConnectionCR connection, Utf8CP rulesetId, bool isUpdatesDisabled) const
+NavNodesProviderPtr NodesCache::GetUndeterminedNodesProvider(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, bool isUpdatesDisabled) const
     {    
-    NavNodesProviderContextPtr context = m_contextFactory.Create(connection, rulesetId, nullptr, nullptr, isUpdatesDisabled);
+    NavNodesProviderContextPtr context = m_contextFactory.Create(connection, rulesetId, locale, nullptr, nullptr, isUpdatesDisabled);
     return context.IsValid() ? NodesWithUndeterminedChildrenProvider::Create(*context, m_db, m_statements) : nullptr;
     }
 

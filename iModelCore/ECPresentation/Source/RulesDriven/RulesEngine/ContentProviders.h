@@ -36,16 +36,17 @@ private:
 
 private:
     void Init();
-    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, bool, Utf8String, INavNodeKeysContainerCR, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, 
+    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, bool, Utf8String, Utf8String, INavNodeKeysContainerCR, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, 
         ECExpressionsCache&, RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT ContentProviderContext(ContentProviderContextCR other);
     
 public:
-    static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeKeysContainerCR inputKeys, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier,
-        IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
+    static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String locale, Utf8String preferredDisplayType, INavNodeKeysContainerCR inputKeys, 
+        INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier, IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, 
+        RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
         JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
         {
-        return new ContentProviderContext(ruleset, holdRuleset, preferredDisplayType, inputKeys, nodesLocater, categorySupplier, settings, ecexpressionsCache, 
+        return new ContentProviderContext(ruleset, holdRuleset, locale, preferredDisplayType, inputKeys, nodesLocater, categorySupplier, settings, ecexpressionsCache, 
             relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState);
         }
     static ContentProviderContextPtr Create(ContentProviderContextCR other) {return new ContentProviderContext(other);}

@@ -23,10 +23,11 @@ END_BENTLEY_ECPRESENTATION_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, 
+RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String locale, IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, 
     RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
-    : m_ruleset(ruleset), m_holdsRuleset(holdRuleset), m_userSettings(settings), m_relatedPathsCache(relatedPathsCache), m_polymorphicallyRelatedClassesCache(polymorphicallyRelatedClassesCache),
-    m_ecexpressionsCache(ecexpressionsCache), m_nodesFactory(nodesFactory), m_localState(localState)
+    : m_ruleset(ruleset), m_holdsRuleset(holdRuleset), m_locale(locale), m_userSettings(settings), m_relatedPathsCache(relatedPathsCache), 
+    m_polymorphicallyRelatedClassesCache(polymorphicallyRelatedClassesCache), m_ecexpressionsCache(ecexpressionsCache), m_nodesFactory(nodesFactory), 
+    m_localState(localState)
     {
     if (holdRuleset)
         m_ruleset.AddRef();
@@ -38,7 +39,7 @@ RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR rul
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenProviderContext::RulesDrivenProviderContext(RulesDrivenProviderContextCR other)
-    : m_ruleset(other.m_ruleset), m_holdsRuleset(false), m_userSettings(other.m_userSettings), m_relatedPathsCache(other.m_relatedPathsCache), 
+    : m_ruleset(other.m_ruleset), m_holdsRuleset(false), m_locale(other.m_locale), m_userSettings(other.m_userSettings), m_relatedPathsCache(other.m_relatedPathsCache), 
     m_polymorphicallyRelatedClassesCache(other.m_polymorphicallyRelatedClassesCache), m_ecexpressionsCache(other.m_ecexpressionsCache), 
     m_nodesFactory(other.m_nodesFactory), m_localState(other.m_localState), m_cancelationToken(other.m_cancelationToken)
     {
@@ -139,7 +140,7 @@ IUsedUserSettingsListener& RulesDrivenProviderContext::GetUsedSettingsListener()
 bvector<Utf8String> RulesDrivenProviderContext::GetRelatedSettingIds() const
     {
     if (nullptr == m_usedSettingsListener)
-        bvector<Utf8String>();
+        return bvector<Utf8String>();
     return m_usedSettingsListener->GetSettingIds();
     }
 

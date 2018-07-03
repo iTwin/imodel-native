@@ -16,8 +16,8 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String GetErrorMessage(L10N::NameSpace const& ns, L10N::StringId const& stringId)
     {
-    Utf8String msg = IECPresentationManager::GetLocalizationProvider().GetString(bvector<Utf8CP>{RulesEngineL10N::GetNameSpace(), RulesEngineL10N::ERROR_ECInstanceChangeResult_CantChangeECInstance()});
-    msg.append(" - ").append(IECPresentationManager::GetLocalizationProvider().GetString(bvector<Utf8CP>{ns, stringId}));
+    Utf8String msg = IECPresentationManager::GetLocalizationProvider().GetString("", bvector<Utf8CP>{RulesEngineL10N::GetNameSpace(), RulesEngineL10N::ERROR_ECInstanceChangeResult_CantChangeECInstance()});
+    msg.append(" - ").append(IECPresentationManager::GetLocalizationProvider().GetString("", bvector<Utf8CP>{ns, stringId}));
     return msg;
     }
 

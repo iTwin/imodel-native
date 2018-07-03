@@ -71,33 +71,70 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
 
     //===================================================================================
     //! A helper class to help create the extended options JSON object for rules-driven
-    //! presentation manager's navigation-related request functions.
-    // @bsiclass                                    Grigas.Petraitis            03/2015
+    //! presentation manager's request functions.
+    // @bsiclass                                    Grigas.Petraitis            07/2018
     //===================================================================================
-    struct NavigationOptions : JsonCppAccessor
-        {
-        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RulesetId;
-        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RuleTargetTree;
-        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_DisableUpdates;
+    struct CommonOptions : JsonCppAccessor
+    {
+    ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RulesetId;
+    ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_Locale;
 
+    protected:
         //! Constructor. Creates a read-only accessor.
-        NavigationOptions(JsonValueCR data) : JsonCppAccessor(data) {}
+        CommonOptions(JsonValueCR data) : JsonCppAccessor(data) {}
         //! Constructor. Creates a read-write accessor.
-        NavigationOptions(JsonValueR data) : JsonCppAccessor(data) {}
+        CommonOptions(JsonValueR data) : JsonCppAccessor(data) {}
         //! Copy constructor.
-        NavigationOptions(NavigationOptions const& other) : JsonCppAccessor(other) {}
+        CommonOptions(CommonOptions const& other) : JsonCppAccessor(other) {}
         //! Constructor.
-        //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
-        //! @param[in] ruleTargetTree The target tree.
-        //! @param[in] disableUpdates True if hierarchy should not be auto-updating. (User knows that hierarchy won't change)
-        NavigationOptions(Utf8CP rulesetId, RuleTargetTree ruleTargetTree, bool disableUpdates = false) : JsonCppAccessor() {SetRulesetId(rulesetId); SetRuleTargetTree(ruleTargetTree); SetDisableUpdates(disableUpdates);}
+        //! @param[in] rulesetId The ID of the ruleset.
+        //! @param[in] locale Locale identifier
+        CommonOptions(Utf8CP rulesetId, Utf8CP locale = nullptr) : JsonCppAccessor() {SetRulesetId(rulesetId); SetLocale(locale);}
 
+    public:
         //! Is ruleset ID defined.
         bool HasRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId);}
         //! Get the ruleset ID.
         Utf8CP GetRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId) ? GetJson()[OPTION_NAME_RulesetId].asCString() : "";}
         //! Set the ruleset ID.
         void SetRulesetId(Utf8CP rulesetId) {AddMember(OPTION_NAME_RulesetId, rulesetId);}
+
+        //! Get locale identifier.
+        Utf8CP GetLocale() const {return GetJson().isMember(OPTION_NAME_Locale) ? GetJson()[OPTION_NAME_Locale].asCString() : "";}
+        //! Set locale identifier.
+        void SetLocale(Utf8CP locale) {AddMember(OPTION_NAME_Locale, locale);}
+    };
+
+    //===================================================================================
+    //! A helper class to help create the extended options JSON object for rules-driven
+    //! presentation manager's navigation-related request functions.
+    // @bsiclass                                    Grigas.Petraitis            03/2015
+    //===================================================================================
+    struct NavigationOptions : CommonOptions
+        {
+        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RuleTargetTree;
+        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_DisableUpdates;
+
+        //! Constructor. Creates a read-only accessor.
+        NavigationOptions(JsonValueCR data) : CommonOptions(data) {}
+        //! Constructor. Creates a read-write accessor.
+        NavigationOptions(JsonValueR data) : CommonOptions(data) {}
+        //! Copy constructor.
+        NavigationOptions(NavigationOptions const& other) : CommonOptions(other) {}
+        //! Constructor.
+        //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
+        //! @param[in] ruleTargetTree The target tree.
+        //! @param[in] disableUpdates True if hierarchy should not be auto-updating. (User knows that hierarchy won't change)
+        //! @param[in] locale Locale identifier
+        NavigationOptions(Utf8CP rulesetId, RuleTargetTree ruleTargetTree = TargetTree_Both, bool disableUpdates = false, Utf8CP locale = nullptr) 
+            : CommonOptions(rulesetId, locale) {SetRuleTargetTree(ruleTargetTree); SetDisableUpdates(disableUpdates);}
+        //! Constructor.
+        //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
+        //! @param[in] ruleTargetTree The target tree.
+        //! @param[in] disableUpdates True if hierarchy should not be auto-updating. (User knows that hierarchy won't change)
+        //! @param[in] locale Locale identifier
+        NavigationOptions(Utf8StringCR rulesetId, RuleTargetTree ruleTargetTree = TargetTree_Both, bool disableUpdates = false, Utf8CP locale = nullptr) 
+            : NavigationOptions(rulesetId.c_str(), ruleTargetTree, disableUpdates, locale) {}
 
         //! Get disable updates.
         bool GetDisableUpdates() const {return GetJson().isMember(OPTION_NAME_DisableUpdates) ? GetJson()[OPTION_NAME_DisableUpdates].asBool() : false;}
@@ -117,29 +154,22 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
     //! presentation manager's content-related request functions.
     // @bsiclass                                    Grigas.Petraitis            03/2015
     //===================================================================================
-    struct ContentOptions : JsonCppAccessor
+    struct ContentOptions : CommonOptions
         {
-        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RulesetId;
-
         //! Constructor. Creates a read-only accessor.
-        ContentOptions(JsonValueCR data) : JsonCppAccessor(data) {}
+        ContentOptions(JsonValueCR data) : CommonOptions(data) {}
         //! Constructor. Creates a read-write accessor.
-        ContentOptions(JsonValueR data) : JsonCppAccessor(data) {}
+        ContentOptions(JsonValueR data) : CommonOptions(data) {}
         //! Copy constructor.
-        ContentOptions(ContentOptions const& other) : JsonCppAccessor(other) {}
+        ContentOptions(ContentOptions const& other) : CommonOptions(other) {}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
-        ContentOptions(Utf8CP rulesetId) : JsonCppAccessor() {SetRulesetId(rulesetId);}
+        //! @param[in] locale Locale identifier
+        ContentOptions(Utf8CP rulesetId, Utf8CP locale = nullptr) : CommonOptions(rulesetId, locale) {}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
-        ContentOptions(Utf8StringCR rulesetId) : ContentOptions(rulesetId.c_str()) {}
-
-        //! Is ruleset ID defined.
-        bool HasRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId);}
-        //! Get the ruleset ID.
-        Utf8CP GetRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId) ? GetJson()[OPTION_NAME_RulesetId].asCString() : "";}
-        //! Set the ruleset ID.
-        void SetRulesetId(Utf8CP rulesetId) {AddMember(OPTION_NAME_RulesetId, rulesetId);}
+        //! @param[in] locale Locale identifier
+        ContentOptions(Utf8StringCR rulesetId, Utf8StringCR locale = "") : CommonOptions(rulesetId.c_str(), locale.empty() ? nullptr : locale.c_str()) {}
         };
 
 private:

@@ -40,7 +40,7 @@ struct NavNodesDataSourceTests : ECPresentationTest, IECExpressionsCacheProvider
         {
         ECPresentationTest::SetUp();
         m_ruleset = PresentationRuleSet::CreateInstance("NavNodesDataSourceTests", 1, 0, false, "", "", "", false);
-        m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, 0, 
+        m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, "locale", 0, 
             m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, 
             s_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
         m_provider = TestNodesProvider::Create(*m_context);
@@ -74,7 +74,7 @@ TEST_F(NavNodesDataSourceTests, ReturnsNodesFromProvider)
     {
     m_provider->SetGetNodeHandler([](JsonNavNodePtr& node, size_t index)
         {
-        node = s_nodesFactory.CreateCustomNode("some connection id", "label", "description", "imageId", "type");
+        node = s_nodesFactory.CreateCustomNode("some connection id", "locale", "label", "description", "imageId", "type");
         return true;
         });
     ASSERT_TRUE(m_source->Get(0).IsValid());

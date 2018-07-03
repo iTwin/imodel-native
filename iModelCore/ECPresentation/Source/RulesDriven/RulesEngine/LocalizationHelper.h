@@ -24,9 +24,12 @@ struct LocalizationHelper
 private:
     PresentationRuleSetCP m_ruleset;
     ILocalizationProvider const& m_provider;
+    Utf8StringCR m_locale;
 
 public:
-    LocalizationHelper(ILocalizationProvider const& provider, PresentationRuleSetCP ruleset = nullptr) : m_ruleset(ruleset), m_provider(provider) {}
+    LocalizationHelper(ILocalizationProvider const& provider, Utf8StringCR locale, PresentationRuleSetCP ruleset = nullptr) 
+        : m_ruleset(ruleset), m_locale(locale), m_provider(provider)
+        {}
     ECPRESENTATION_EXPORT bool LocalizeString(Utf8StringR str) const;
 };
 
