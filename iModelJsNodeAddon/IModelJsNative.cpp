@@ -2994,13 +2994,6 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
                 }
             else
                 THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires an ArrayBuffer arg", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
-
-            Utf8String base64Str(blobVal.ToString().Utf8Value().c_str());
-            ByteStream blob;
-            Base64Utilities::Decode(blob, base64Str);
-
-            const DbResult stat = m_stmt->BindBlob(paramIndex, blob.data(), (int) blob.size(), Statement::MakeCopy::Yes);
-            return Napi::Number::New(Env(), (int) stat);
             }
 
         Napi::Value BindDouble(Napi::CallbackInfo const& info)
