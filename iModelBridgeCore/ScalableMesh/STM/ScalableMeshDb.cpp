@@ -108,7 +108,7 @@ int InfiniteRetries::_OnBusy(int count) const
 DbResult ScalableMeshDb::OpenShared(BENTLEY_NAMESPACE_NAME::Utf8CP path, bool readonly,bool allowBusyRetry)
 {
     m_path = path;
-    DbResult result = this->OpenBeSQLiteDb(path, BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::No, allowBusyRetry? new InfiniteRetries(): nullptr));
+    DbResult result = this->OpenBeSQLiteDb(path, BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite, readonly ? BeSQLite::DefaultTxn::No : BeSQLite::DefaultTxn::Immediate, allowBusyRetry? new InfiniteRetries(): nullptr));
     this->SetAllowImplictTransactions(true);
     return result;
 }
@@ -118,7 +118,7 @@ bool ScalableMeshDb::ReOpenShared(bool readonly, bool allowBusyRetry)
     if (m_path.empty())
         return false;
 
-    this->OpenBeSQLiteDb(m_path.c_str(), BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::No, allowBusyRetry ? new InfiniteRetries() : nullptr));
+    this->OpenBeSQLiteDb(m_path.c_str(), BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite, readonly ? BeSQLite::DefaultTxn::No : BeSQLite::DefaultTxn::Immediate, allowBusyRetry ? new InfiniteRetries() : nullptr));
     this->SetAllowImplictTransactions(true);
     return true;
 }
