@@ -2820,7 +2820,7 @@ struct SnapRequest : Napi::ObjectWrap<SnapRequest>
         DgnDbPtr m_db;
         SnapContext::Request m_input;
         SnapContext::Response m_output;
-        CheckStop m_aborted;
+        CheckStop m_checkStop;
         Napi::ObjectReference m_snapRequest;
 
         void OnComplete() 
@@ -2833,8 +2833,8 @@ struct SnapRequest : Napi::ObjectWrap<SnapRequest>
         // This is invoked by node/uv in the BACKGROUND THREAD. DO NOT CALL N-API OR JS METHODS IN HERE.
         void Execute() override
             {
-            m_output = SnapContext::DoSnap(m_input, *m_db, m_aborted);
-            if (m_aborted.WasAborted())
+            m_output = SnapContext::DoSnap(m_input, *m_db, m_checkStop);
+            if (m_checkStop.WasAborted())
                 SetError("aborted");  // You MUST call SetError with a string. That tells N-API to invoke OnError
             }
 
@@ -2880,12 +2880,11 @@ struct SnapRequest : Napi::ObjectWrap<SnapRequest>
     void CancelSnap(Napi::CallbackInfo const& info)
         {
         BeMutexHolder holder(m_mutex);
-        if (nullptr == m_pending)
-            return;
-
-        m_pending->m_aborted.SetAborted();
-        m_pending->Cancel();
-        m_pending = nullptr;
+        if (nullptr != m_pending)
+            {
+            m_pending->m_checkStop.SetAborted();
+            m_pending = nullptr;
+            }
         }
 
     SnapRequest(Napi::CallbackInfo const& info) : Napi::ObjectWrap<SnapRequest>(info) {}
