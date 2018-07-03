@@ -798,6 +798,7 @@ enum class SnapStatus
     Success              = SUCCESS,
     Aborted              = 1,
     NoElements           = 2,
+    BadArg               = 3,
     Disabled             = 100,
     NoSnapPossible       = 200,
     NotSnappable         = 300,
