@@ -234,6 +234,58 @@ struct NapiUtils
         return env.Undefined();
         }
 
+        static Json::Value Convert(Napi::Value jsValue)
+            {
+            switch (jsValue.Type())
+                {
+                case napi_valuetype::napi_boolean:
+                    return Json::Value(jsValue.ToBoolean().Value());
+                case napi_valuetype::napi_undefined:
+                case napi_valuetype::napi_null:
+                    return Json::Value();
+                case napi_valuetype::napi_number:
+                    return Json::Value(jsValue.ToNumber().DoubleValue());
+                case napi_valuetype::napi_object:
+                    {
+                    Napi::Object obj = jsValue.ToObject();
+                    if (obj.IsArray())
+                        {
+                        Json::Value jsonArray(Json::ValueType::arrayValue);
+                        for (uint32_t i = 0; i < obj.As<Napi::Array>().Length(); i++)
+                            {
+                            Napi::Value arrayValue = obj.Get(i);
+                            jsonArray.append(Convert(obj.Get(arrayValue)));
+                            }
+
+                        return jsonArray;
+                        }
+
+                    if (obj.IsObject())
+                        {
+                        Json::Value jsonObject(Json::ValueType::objectValue);
+                        Napi::Array propertyNames = obj.GetPropertyNames();
+                        for (uint32_t i = 0; i < propertyNames.Length(); i++)
+                            {
+                            Napi::Value propertyName = propertyNames.Get(i);                        
+                            jsonObject[propertyName.ToString().Utf8Value().c_str()] = Convert(obj.Get(propertyName));
+                            }
+
+                        return jsonObject;
+                        }
+
+                    }
+                case napi_valuetype::napi_string:
+                    return Json::Value(jsValue.ToString().Utf8Value().c_str());
+                case napi_valuetype::napi_symbol:
+                case napi_valuetype::napi_external:
+                case napi_valuetype::napi_function:
+                    break;
+                }
+
+            BeAssert(false);
+            return Json::Value();;
+            }
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                05/18
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3187,131 +3239,98 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
     };
 
 //=======================================================================================
-// Projects ElementLocateManager into JS
 //! @bsiclass
 //=======================================================================================
-struct NativeElementLocateManager : Napi::ObjectWrap<NativeElementLocateManager>
+struct SnapRequest : Napi::ObjectWrap<SnapRequest>
 {
     //=======================================================================================
-    // Async Worker which does a locate on another thread.
+    // Async Worker that does a snap on another thread.
     //! @bsiclass
     //=======================================================================================
-    struct Locater : Napi::AsyncWorker
+    struct Snapper : Napi::AsyncWorker
     {
-    private:
-        // Inputs:
-        DgnDbPtr m_db;      // ?? Viewport ??
-        DPoint3d m_point;
-        Napi::ObjectReference m_locateManager;
+        DgnDbPtr m_db;
+        SnapContext::Request m_input;
+        SnapContext::Response m_output;
+        CheckStop m_aborted;
+        Napi::ObjectReference m_snapRequest;
 
-        // Outputs:
-        DgnDbStatus m_status;
-        // Store the results that we obtain when doing the locate in the background thread
-        // HitListCP    m_result;       ?
-        Utf8String m_result;   // *** NEEDS WORK: Replace this with the real result of DoLocate
-
-        void OnComplete()
+        void OnComplete() 
             {
-            NativeElementLocateManager::Unwrap(m_locateManager.Value())->m_pendingLocate = nullptr;
+            auto* request = SnapRequest::Unwrap(m_snapRequest.Value());
+            BeMutexHolder holder(request->m_mutex);
+            request->m_pending = nullptr;
             }
 
-    protected:
         // This is invoked by node/uv in the BACKGROUND THREAD. DO NOT CALL N-API OR JS METHODS IN HERE.
         void Execute() override
             {
-            // TODO: Call DoLocate
-            //       Store the results that we obtain when doing the locate in the background thread
-            //      Utf8StringP cantAcceptExplanation;
-            //      m_result = ElementLocateManager::DoLocate( ... m_point ... )
-#define NATIVE_ELEMENT_LOCATE_MANAGER_TEST_SUCCESS
-#ifdef NATIVE_ELEMENT_LOCATE_MANAGER_TEST_SUCCESS
-            m_result.Sprintf("TBD locate near %lf,%lf,%lf", m_point.x, m_point.y, m_point.z);
-            m_status = DgnDbStatus::Success;
-#else
-            // If you want to return an ERROR, do this:
-            m_status = DgnDbStatus::BadRequest;     // Set to the appropriate error status
-            SetError("some error message");         // You MUST call SetError with a string. That tells N-API to invoke OnError
-#endif
+            m_output = SnapContext::DoSnap(m_input, *m_db, m_aborted);
+            if (m_aborted.WasAborted())
+                SetError("aborted");  // You MUST call SetError with a string. That tells N-API to invoke OnError
             }
 
         // This is invoked by node/uv in the main JS thread when the operation is completed successfully
         void OnOK() override
             {
             OnComplete();
-            auto locateResult = Napi::String::New(Env(), m_result.c_str());  // *** NEEDS WORK: Replace this with logic to convert the real return value to JS
-            auto retval = NapiUtils::CreateBentleyReturnSuccessObject(locateResult, Env());
+            auto retval = NapiUtils::CreateBentleyReturnSuccessObject(NapiUtils::Convert(Env(), m_output), Env());
             Callback().MakeCallback(Receiver().Value(), {retval});
             }
 
         // This is invoked by node/uv in the main JS thread when the operation is completed with an error
-        void OnError(const Napi::Error& e) override
+        void OnError(Napi::Error const& e) override
             {
             OnComplete();
-            auto retval = NapiUtils::CreateBentleyReturnErrorObject(m_status, e.Message().c_str(), Env());
+            auto retval = NapiUtils::CreateBentleyReturnErrorObject(1, e.Message().c_str(), Env());
             Callback().MakeCallback(Receiver().Value(), {retval});
             }
 
-    public:
-        Locater(Napi::Function& callback, NativeElementLocateManager const& locateManager, DgnDbR db, DPoint3dCR pt) : Napi::AsyncWorker(callback), m_db(&db), m_point(pt)
-            {
-            m_locateManager.Reset(locateManager.Value(), 1);
-            }
-        ~Locater()
-            {
-            m_locateManager.Reset();
-            }
+        Snapper(Napi::Function& callback, SnapRequest const& request, DgnDbR db, SnapContext::Request const& input) : Napi::AsyncWorker(callback), m_db(&db), m_input(input) {m_snapRequest.Reset(request.Value(), 1);}
+        ~Snapper() {m_snapRequest.Reset();}
     };
 
     static Napi::FunctionReference s_constructor;
-    Locater* m_pendingLocate;
+    mutable BeMutex m_mutex;
+    Snapper* m_pending = nullptr;
 
-    void DoLocate(Napi::CallbackInfo const& info)
+    void DoSnap(Napi::CallbackInfo const& info)
         {
-        if (m_pendingLocate != nullptr)
-            CancelLocate(info);
+        BeMutexHolder holder(m_mutex);
+        if (m_pending != nullptr)
+            CancelSnap(info);
 
-        BeAssert(m_pendingLocate == nullptr);
-
-        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db, );     // *** NEEDS WORK: Viewport?
-        REQUIRE_ARGUMENT_ANY_OBJ(1, ptobj, );
+        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db, ); 
+        REQUIRE_ARGUMENT_ANY_OBJ(1, snapObj, );
         REQUIRE_ARGUMENT_FUNCTION(2, callback, );
-        if (!db->IsOpen())
-            {
-            callback.Call({NapiUtils::CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen, "", Env())});
-            return;
-            }
 
-        DPoint3d pt;
-        pt.x = ptobj.Get("x").ToNumber().FloatValue();
-        pt.y = ptobj.Get("y").ToNumber().FloatValue();
-        pt.z = ptobj.Get("z").ToNumber().FloatValue();
-
-        m_pendingLocate = new Locater(callback, *this, db->GetDgnDb(), pt);
-        m_pendingLocate->Queue();                       // Run the locate in another thread
+        Json::Value request(NapiUtils::Convert(snapObj));
+        m_pending = new Snapper(callback, *this, db->GetDgnDb(), (SnapContext::Request const&) request); // freed in caller of OnOK and OnError see AsyncWorker::OnWorkComplete
+        m_pending->Queue();  // Snap happens in another thread
         }
 
-    void CancelLocate(Napi::CallbackInfo const& info)
+    void CancelSnap(Napi::CallbackInfo const& info)
         {
-        if (nullptr == m_pendingLocate)
+        BeMutexHolder holder(m_mutex);
+        if (nullptr == m_pending)
             return;
-        m_pendingLocate->Cancel();
-        m_pendingLocate = nullptr;
+
+        m_pending->m_aborted.SetAborted();
+        m_pending->Cancel();
+        m_pending = nullptr;
         }
 
-    NativeElementLocateManager(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeElementLocateManager>(info)
-        {
-        m_pendingLocate = nullptr;
-        }
+    SnapRequest(Napi::CallbackInfo const& info) : Napi::ObjectWrap<SnapRequest>(info) {}
 
     static void Init(Napi::Env& env, Napi::Object exports)
         {
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "NativeElementLocateManager", {
-          InstanceMethod("doLocate", &NativeElementLocateManager::DoLocate),
-          InstanceMethod("cancelLocate", &NativeElementLocateManager::CancelLocate)
+        Napi::Function t = DefineClass(env, "SnapRequest", {
+          InstanceMethod("doSnap", &SnapRequest::DoSnap),
+          InstanceMethod("cancelSnap", &SnapRequest::CancelSnap)
         });
 
-        exports.Set("NativeElementLocateManager", t);
+        exports.Set("SnapRequest", t);
 
         s_constructor = Napi::Persistent(t);
         s_constructor.SuppressDestruct();
@@ -3339,7 +3358,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             {
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), m_result, true)});
             }
-        void OnError(const Napi::Error& e) override
+        void OnError(Napi::Error const& e) override
             {
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), ECPresentationResult(ECPresentationStatus::Error, "callback error"))});
             }
@@ -3753,7 +3772,7 @@ static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exp
     IModelJsNative::NativeBriefcaseManagerResourcesRequest::Init(env, exports);
     IModelJsNative::NativeECPresentationManager::Init(env, exports);
     IModelJsNative::NativeECSchemaXmlContext::Init(env, exports);
-    IModelJsNative::NativeElementLocateManager::Init(env, exports);
+    IModelJsNative::SnapRequest::Init(env, exports);
 
     exports.DefineProperties(
         {
@@ -3770,11 +3789,11 @@ Napi::FunctionReference IModelJsNative::NativeECSqlBinder::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECSqlValue::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECSqlColumnInfo::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECSqlValueIterator::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeSqliteStatement::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeDgnDb::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECPresentationManager::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECDb::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECSchemaXmlContext::s_constructor;
-Napi::FunctionReference IModelJsNative::NativeElementLocateManager::s_constructor;
-Napi::FunctionReference IModelJsNative::NativeSqliteStatement::s_constructor;
+Napi::FunctionReference IModelJsNative::SnapRequest::s_constructor;
 
 NODE_API_MODULE(at_bentley_imodeljs_nodeaddon, iModelJsNativeRegisterModule)
