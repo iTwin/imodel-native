@@ -51,6 +51,37 @@ Json::Value& elementData
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aurimas.Laureckis               07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassificationSystem::GetClassificationDataVerbose
+(
+Dgn::DgnDbR db,
+Json::Value& elementData
+) const
+    {
+    elementData["name"] = GetName();
+    elementData["value"] = Json::Value(Json::arrayValue);
+    for (auto element : GetSubModel()->MakeIterator())
+        {
+            Json::Value elementValue;
+            Json::Value code;
+            element.GetCode().ToJson(code);
+            auto id = element.GetElementId();
+            elementValue["id"] = id.GetValueUnchecked();
+            elementValue["label"] = code["Name"];
+
+            auto classification = db.Elements().Get<ClassificationSystems::Classification>(id);
+            if (classification.IsValid()) 
+                {
+                elementValue["groupId"] = classification->GetGroupId().GetValueUnchecked();
+                elementValue["specializationId"] = classification->GetSpecializationId().GetValueUnchecked();
+                }
+
+            elementData["value"].append(elementValue);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aurimas.Laureckis               06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClassificationSystem::_FormatSerializedProperties
