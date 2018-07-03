@@ -42,7 +42,7 @@ struct TileContext;
 // #define DISABLE_EDGE_GENERATION
 
 // For debugging tile generation code - disables use of cached tiles.
-//#define DISABLE_TILE_CACHE
+// #define DISABLE_TILE_CACHE
 
 // We used to cache GeometryLists for elements occupying a significant (25%) fraction of the total model range.
 // That can't work for BReps because they are associated with a specific thread's partition.
@@ -878,7 +878,6 @@ bool Loader::IsCacheable() const
     {
     return GetElementTile().IsCacheable();
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1074,7 +1073,7 @@ BentleyStatus Loader::_LoadTile()
             {
             if (geometry.IsEmpty() || !geometry.ContainsCurves())
                 tile.SetIsLeaf();
-            else if (isLeafInCache)
+            else if (isLeafInCache && !T_HOST.GetTileAdmin()._WantCachedHiResTiles(root.GetDgnDb()))
                 tile.SetZoomFactor(1.0);
             }
         }
