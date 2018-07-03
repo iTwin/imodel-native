@@ -74,8 +74,9 @@ bool IsUrl(WCharCP filename)
 // @bsimethod                                                 Mathieu.St-Pierre    06/2018
 //----------------------------------------------------------------------------------------
 BentleyStatus ResolveFileName(BeFileNameR fileName, Utf8StringCR fileId, DgnDbCR db)
-    {       
-    BeFileName fileIdWStr(fileId.c_str(), true);
+    {
+    WString fileNameW(fileId.c_str(), true);
+    BeFileName fileIdWStr(fileNameW);
 
     if (BeFileName::DoesPathExist(fileIdWStr.c_str()) || IsUrl(fileIdWStr.c_str()))
         {               
