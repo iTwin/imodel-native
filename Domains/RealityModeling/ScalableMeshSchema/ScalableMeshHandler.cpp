@@ -534,7 +534,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
 
             DMatrix4d smToUOR = DMatrix4d::From(m_3smModel->m_smToModelUorTransform);
 
-            bsiDMatrix4d_multiply(&localToView, &localToView, &smToUOR);
+            localToView.InitProduct (localToView, smToUOR);
             
             viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
 
