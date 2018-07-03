@@ -84,8 +84,6 @@ $(OUT_DIR)dsegment4d$(OUT_EXT)      : $(geomSrcStructs)dsegment4d.cpp       $(OT
 
 $(OUT_DIR)graphicspoint$(OUT_EXT)   : $(geomSrcStructs)graphicspoint.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dray3d$(OUT_EXT)          : $(geomSrcStructs)dray3d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
 $(OUT_DIR)dconic4d$(OUT_EXT)        : $(geomSrcStructs)dconic4d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)frange3d$(OUT_EXT)        : $(geomSrcStructs)frange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 

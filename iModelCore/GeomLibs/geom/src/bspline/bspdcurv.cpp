@@ -2350,7 +2350,7 @@ double          tolerance
     double      p0, p1;
     bool        bIntersect = false;
 
-    if (bsiDRay3d_closestApproach (&p0, &p1, &pt0, &pt1, pTan0, pTan1))
+    if (DRay3d::ClosestApproachUnboundedRayUnboundedRay (p0, p1, pt0, pt1, *pTan0, *pTan1))
         {
         double size0 = fabs(p0);
         double size1 = fabs(p1);

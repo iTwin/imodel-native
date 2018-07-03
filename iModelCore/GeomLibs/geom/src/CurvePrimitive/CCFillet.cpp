@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/CCFillet.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -144,11 +144,11 @@ bool bReverseOrder
             double paramA, paramB;
             DPoint3d centerPointA, centerPointB;
             DPoint3d tangentPointA, tangentPointB;
-            if (bsiDRay3d_closestApproach
+            if (DRay3d::ClosestApproachUnboundedRayUnboundedRay
                                 (
-                                &paramA, &paramB,
-                                &centerPointA, &centerPointB,
-                                &offsetA, &offsetB
+                                paramA, paramB,
+                                centerPointA, centerPointB,
+                                offsetA, offsetB
                                 )
                 && validFraction (detailA0, paramA)
                 && validFraction (detailB0, paramB)

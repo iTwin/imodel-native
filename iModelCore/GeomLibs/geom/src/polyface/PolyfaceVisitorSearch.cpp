@@ -28,7 +28,7 @@ bool PolyfaceVisitor::TryFindFacetRayIntersection (DRay3dCR ray, double toleranc
                     &m_point[0], (int)m_point.size (),
                     NULL, &ray.origin, &ray.direction,
                     tolerance * tolerance);
-    bsiDRay3d_projectPoint (&ray, &rayPoint, &rayFraction, &facetPoint);
+    ray.ProjectPointUnbounded (rayPoint, rayFraction, facetPoint);
     return code >= 0;
 #endif
     }
@@ -487,13 +487,10 @@ size_t i2
     bvector<DPoint3d>&point = visitor.Point ();
     bvector<DPoint2d>&param = visitor.Param ();
     DPoint3d xyzHit;
-    DPoint3d xyz[3];
-    xyz[0] = point[i0];
-    xyz[1] = point[i1];
-    xyz[2] = point[i2];
     DPoint3d U;   // local barycentrics, not the params of the mesh.
     double rayFraction;
-    if (bsiDRay3d_intersectTriangle (&ray, &xyzHit, &U, &rayFraction, xyz))
+    DTriangle3d triangle (point[i0], point[i1], point[i2]);
+    if (triangle.TransverseIntersection (ray, xyzHit, U, rayFraction))
         {
         detail.Zero ();
         visitor.AccumulateScaledData (detail, i0, U.x);
@@ -505,7 +502,7 @@ size_t i2
         detail.a = rayFraction;
         DVec3d normal;
         if (!detail.TryGetNormal (normal))
-            detail.SetNormal (DVec3d::FromNormalizedCrossProductToPoints (xyz[0], xyz[1], xyz[2]));
+            detail.SetNormal (DVec3d::FromNormalizedCrossProductToPoints (triangle.point[0], triangle.point[1], triangle.point[2]));
 
         DPoint2d uvParam;
         DPoint3d U1;    // should match U when recomputed relative to facet's parameterization.
@@ -520,8 +517,8 @@ size_t i2
                     uvParam,
                     param[i0], param[i1], param[i2]))
             {
-            ddx.SumOf (xyz[0], dUdx.x, xyz[1], dUdx.y, xyz[1], dUdx.z);
-            ddy.SumOf (xyz[0], dUdy.x, xyz[1], dUdy.y, xyz[1], dUdy.z);
+            ddx = triangle.EvaluateBarycentric (dUdx);
+            ddy = triangle.EvaluateBarycentric (dUdy);
             detail.dXdu = DVec3d::From (ddx);
             detail.dXdv = DVec3d::From (ddy);
             }
@@ -529,8 +526,8 @@ size_t i2
             {
             // visitor does not have parameters.  Put the directions along 
             // the edges
-            detail.dXdu = DVec3d::FromStartEnd (xyz[0], xyz[1]);
-            detail.dXdv = DVec3d::FromStartEnd (xyz[0], xyz[2]);
+            detail.dXdu = DVec3d::FromStartEnd (triangle.point[0], triangle.point[1]);
+            detail.dXdv = DVec3d::FromStartEnd (triangle.point[0], triangle.point[2]);
             }
         return true;
         }

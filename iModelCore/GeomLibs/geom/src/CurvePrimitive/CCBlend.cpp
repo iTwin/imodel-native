@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/CCBlend.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -130,11 +130,11 @@ bool bReverseOrder
     DRay3d rayA = DRay3d::From (segmentA);
     DRay3d rayB = DRay3d::From (segmentB);
 
-    if (bsiDRay3d_closestApproach
+    if (DRay3d::ClosestApproachUnboundedRayUnboundedRay
                         (
-                        &paramA, &paramB,
-                        &approachPointA, &approachPointB,
-                        &rayA, &rayB
+                        paramA, paramB,
+                        approachPointA, approachPointB,
+                        rayA, rayB
                         ))
         {
         for (double signA = -1.0; signA < 3.0; signA += 2.0)

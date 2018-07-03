@@ -2129,7 +2129,7 @@ int             numXYZB
         for (i = 0; i < numSegment; i++)
             {
             for (j = 0; j < 2; j++)
-                bsiDRay3d_evaluateDPoint3d (&ray, &pSegmentArray[i].point[j], pSegmentArray[i].point[j].x);
+                pSegmentArray[i].point[j] = ray.FractionParameterToPoint (pSegmentArray[i].point[j].x);
             }
         }
     if (pNumSegment)

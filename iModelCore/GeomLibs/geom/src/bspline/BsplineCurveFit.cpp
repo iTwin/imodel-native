@@ -3083,14 +3083,14 @@ double                  ptol            /* => point equal tolerance, recommand s
         Pw = cur3->poles;
         
         DRay3d line;
-        bsiDRay3d_initFromDPoint3dTangent (&line, &R2[0], &Vs);
+        line.InitFromOriginAndVector (R2[0], Vs);
         Q = Pw[1];
-        if (bsiDRay3d_projectPoint (&line, &Q, &d1, &Q))
+        if (line.ProjectPointUnbounded (Q, d1, Q))
             Pw[1] = Q;
 
-        bsiDRay3d_initFromDPoint3dTangent (&line, &R2[mm], &Ve);
+        line.InitFromOriginAndVector (R2[mm], Ve);
         Q = Pw[nn-1];
-        if (bsiDRay3d_projectPoint (&line, &Q, &d1, &Q))
+        if (line.ProjectPointUnbounded (Q, d1, Q))
             Pw[nn-1] = Q;
         }
     
