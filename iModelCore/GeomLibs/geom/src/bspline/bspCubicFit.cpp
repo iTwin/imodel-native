@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspCubicFit.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -84,7 +84,7 @@ bool            returnAtLeastTwo
         outParams[0] = inParams[0];
     for (i = numCompressed = 1; i < numIn; i++)
         {
-        if (bsiDPoint3d_distanceSquared (&outPts[numCompressed - 1], &inPts[i]) >= tol2)
+        if (outPts[numCompressed - 1].DistanceSquared (inPts[i]) >= tol2)
             {
             outPts[numCompressed] = inPts[i];
             if (outParams)
@@ -174,13 +174,13 @@ double          tolerance           /* => max dist betw coincide pts or closed c
             memmove (outParams, inParams, newNumPts * sizeof (double));
         }
 
-    endGap = bsiDPoint3d_distance (&outPts[0], &outPts[newNumPts - 1]);
+    endGap = outPts[0].Distance (outPts[newNumPts - 1]);
 
     /* if only 2 unique points, then must create open interpolant */
     if (newNumPts == 3 && endGap <= tolerance)
         {
         newNumPts--;
-        endGap = bsiDPoint3d_distance (&outPts[0], &outPts[newNumPts - 1]);
+        endGap = outPts[0].Distance (outPts[newNumPts - 1]);
         }
     if (newNumPts <= 2)
         {
@@ -269,7 +269,7 @@ int             numPoints   /* => count last point which is the same as 1st poin
         tmp = -1.0 * alphaP[i] / betaP[i-1];
         betaP[i] = betaP[i] + tmp * gammaP[i-1];
         alphaP[i] = tmp * alphaP[i-1];
-        bsiDPoint3d_addScaledDPoint3d (leftPtsP+i, leftPtsP+i, leftPtsP+i-1, tmp);
+        leftPtsP[i].SumOf (leftPtsP[i], leftPtsP[i-1], tmp);
         if (dataWtsP && outWtsP)
             leftWtsP[i] = leftWtsP[i] + tmp * leftWtsP[i-1];
         }
@@ -277,14 +277,14 @@ int             numPoints   /* => count last point which is the same as 1st poin
     /* First backward substitution */
     tmp = 1.0 / (betaP[num-1] + alphaP[num-1]);
     gammaP[num-1] *= tmp;
-    bsiDPoint3d_scale (leftPtsP+num-1, leftPtsP+num-1, tmp);
+    leftPtsP[num-1].Scale (leftPtsP[num-1], tmp);
     if (dataWtsP && outWtsP)
         leftWtsP[num-1] *= tmp;
     for (i = num - 2; i >= 0; i--)
         {
-        bsiDPoint3d_addScaledDPoint3d (leftPtsP+i, leftPtsP+i, leftPtsP+i+1, -gammaP[i]);
-        bsiDPoint3d_addScaledDPoint3d (leftPtsP+i, leftPtsP+i, leftPtsP+num-1, -alphaP[i]);
-        bsiDPoint3d_scale (leftPtsP+i, leftPtsP+i, 1.0 / betaP[i]);
+        leftPtsP[i].SumOf (leftPtsP[i], leftPtsP[i+1], -gammaP[i]);
+        leftPtsP[i].SumOf (leftPtsP[i], leftPtsP[num-1], -alphaP[i]);
+        leftPtsP[i].Scale (leftPtsP[i], 1.0 / betaP[i]);
         if (dataWtsP && outWtsP)
             leftWtsP[i] = (leftWtsP[i] - gammaP[i] * leftWtsP[i+1] - alphaP[i] *
                            leftWtsP[num-1]) / betaP[i];
@@ -293,12 +293,12 @@ int             numPoints   /* => count last point which is the same as 1st poin
 
     /* Second forward substitution */
     tmp = 1.0 / (1.0 + gammaP[0]);
-    bsiDPoint3d_scale (outPtsP, leftPtsP, tmp);
+    outPtsP->Scale (*leftPtsP, tmp);
     if (dataWtsP && outWtsP)
         outWtsP[0] = leftWtsP[0] * tmp;
     for (i = 1; i < num; i++)
         {
-        bsiDPoint3d_addScaledDPoint3d (outPtsP+i, leftPtsP+i, outPtsP, -gammaP[i]);
+        outPtsP[i].SumOf (leftPtsP[i], *outPtsP, -gammaP[i]);
         if (dataWtsP && outWtsP)
             outWtsP[i] = leftWtsP[i] - gammaP[i] * outWtsP[0];
         }
@@ -347,21 +347,21 @@ int             numIntval
         auxWtP[0] = dataWts[1];
     for (i=1; i<=numIntval; i++)
         {
-        bsiDPoint3d_addScaledDPoint3d (auxPtP+i, dataPts+i+1, auxPtP+i-1, -1.0*triLow[i]);
+        auxPtP[i].SumOf (dataPts[i+1], auxPtP[i-1], -1.0*triLow[i]);
         if (outWts)
             auxWtP[i] = dataWts[i+1] - triLow[i] * auxWtP[i-1];
         }
 
     /* Backward substitution */
-    bsiDPoint3d_scale (outPts+numIntval+1, auxPtP+numIntval, 1.0/triUp[numIntval]);
+    outPts[numIntval+1].Scale (auxPtP[numIntval], 1.0/triUp[numIntval]);
     if (outWts)
         outWts[numIntval+1] = auxWtP[numIntval]/triUp[numIntval];
 
     /* With natural end cnd, outPts[1] != dataPts[1], so find it here */
     for (i=numIntval-1; i>=0; i--)
         {
-        bsiDPoint3d_addScaledDPoint3d (outPts+i+1, auxPtP+i, outPts+i+2, -1.0*gamma[i]);
-        bsiDPoint3d_scale (outPts+i+1, outPts+i+1, 1.0/triUp[i]);
+        outPts[i+1].SumOf (auxPtP[i], outPts[i+2], -1.0*gamma[i]);
+        outPts[i+1].Scale (outPts[i+1], 1.0/triUp[i]);
         if (outWts)
             outWts[i+1]=(auxWtP[i]-gamma[i]*outWts[i+2])/triUp[i];
         }
@@ -401,15 +401,15 @@ bool            beginning   /* => true/false = set dataPts[1]/[L+1] */
         /* collinear pts make a linear Bezier curve */
         if (beginning)
             {
-            bsiDPoint3d_addScaledDPoint3d (dataPts+1, dataPts+3, dataPts, 2.0);
-            bsiDPoint3d_scale (dataPts+1, dataPts+1, deno);
+            dataPts[1].SumOf (dataPts[3], *dataPts, 2.0);
+            dataPts[1].Scale (dataPts[1], deno);
             if (dataWts)
                 dataWts[1] = (2.0 * dataWts[0] + dataWts[3]) * deno;
             }
         else    /* end */
             {
-            bsiDPoint3d_addScaledDPoint3d (dataPts+2, dataPts, dataPts+3, 2.0);
-            bsiDPoint3d_scale (dataPts+2, dataPts+2, deno);
+            dataPts[2].SumOf (*dataPts, dataPts[3], 2.0);
+            dataPts[2].Scale (dataPts[2], deno);
             if (dataWts)
                 dataWts[2] = (2.0 * dataWts[3] + dataWts[0]) * deno;
             }
@@ -422,12 +422,12 @@ bool            beginning   /* => true/false = set dataPts[1]/[L+1] */
             beta = 1.0 - alpha;
             alpSqrt = -1.0 * alpha * alpha;
             betSqrt = -1.0 * beta * beta;
-            bsiDPoint3d_addScaledDPoint3d (dataPts+1, dataPts+2, dataPts, alpSqrt);
-            bsiDPoint3d_addScaledDPoint3d (dataPts+1, dataPts+1, dataPts+4, betSqrt);
-            bsiDPoint3d_scale (dataPts+1, dataPts+1, 1.0/(2.0*alpha));
-            bsiDPoint3d_addScaledDPoint3d (dataPts+1, dataPts+1, dataPts, alpha);
-            bsiDPoint3d_addScaledDPoint3d (dataPts+1, dataPts, dataPts+1, 2.0);
-            bsiDPoint3d_scale (dataPts+1, dataPts+1, deno);
+            dataPts[1].SumOf (dataPts[2], *dataPts, alpSqrt);
+            dataPts[1].SumOf (dataPts[1], dataPts[4], betSqrt);
+            dataPts[1].Scale (dataPts[1], 1.0/(2.0*alpha));
+            dataPts[1].SumOf (dataPts[1], *dataPts, alpha);
+            dataPts[1].SumOf (*dataPts, dataPts[1], 2.0);
+            dataPts[1].Scale (dataPts[1], deno);
             if (dataWts)
                 {
                 dataWts[1]=(dataWts[2]+alpSqrt*dataWts[0]+betSqrt*dataWts[4])
@@ -441,12 +441,12 @@ bool            beginning   /* => true/false = set dataPts[1]/[L+1] */
             beta = 1.0 - alpha;
             alpSqrt = -1.0 * alpha * alpha;
             betSqrt = -1.0 * beta * beta;
-            bsiDPoint3d_addScaledDPoint3d (dataPts+3, dataPts+2, dataPts, alpSqrt);
-            bsiDPoint3d_addScaledDPoint3d (dataPts+3, dataPts+3, dataPts+4, betSqrt);
-            bsiDPoint3d_scale (dataPts+3, dataPts+3, 1.0/(2.0*beta));
-            bsiDPoint3d_addScaledDPoint3d (dataPts+3, dataPts+3, dataPts+4, beta);
-            bsiDPoint3d_addScaledDPoint3d (dataPts+3, dataPts+4, dataPts+3, 2.0);
-            bsiDPoint3d_scale (dataPts+3, dataPts+3, deno);
+            dataPts[3].SumOf (dataPts[2], *dataPts, alpSqrt);
+            dataPts[3].SumOf (dataPts[3], dataPts[4], betSqrt);
+            dataPts[3].Scale (dataPts[3], 1.0/(2.0*beta));
+            dataPts[3].SumOf (dataPts[3], dataPts[4], beta);
+            dataPts[3].SumOf (dataPts[4], dataPts[3], 2.0);
+            dataPts[3].Scale (dataPts[3], deno);
             if (dataWts)
                 {
                 dataWts[3]=(dataWts[2]+alpSqrt*dataWts[0]+betSqrt*dataWts[4])
@@ -463,12 +463,12 @@ bool            beginning   /* => true/false = set dataPts[1]/[L+1] */
             beta = 1.0 - alpha;
             alpSqrt = -1.0 * alpha * alpha;
             betSqrt = -1.0 * beta * beta;
-            bsiDPoint3d_addScaledDPoint3d (dataPts+1, dataPts+2, dataPts, alpSqrt);
-            bsiDPoint3d_addScaledDPoint3d (dataPts+1, dataPts+1, dataPts+3, betSqrt);
-            bsiDPoint3d_scale (dataPts+1, dataPts+1, 1.0/(2.0*alpha));
-            bsiDPoint3d_addScaledDPoint3d (dataPts+1, dataPts+1, dataPts, alpha);
-            bsiDPoint3d_addScaledDPoint3d (dataPts+1, dataPts, dataPts+1, 2.0);
-            bsiDPoint3d_scale (dataPts+1, dataPts+1, deno);
+            dataPts[1].SumOf (dataPts[2], *dataPts, alpSqrt);
+            dataPts[1].SumOf (dataPts[1], dataPts[3], betSqrt);
+            dataPts[1].Scale (dataPts[1], 1.0/(2.0*alpha));
+            dataPts[1].SumOf (dataPts[1], *dataPts, alpha);
+            dataPts[1].SumOf (*dataPts, dataPts[1], 2.0);
+            dataPts[1].Scale (dataPts[1], deno);
             if (dataWts)
                 {
                 dataWts[1]=(dataWts[2]+alpSqrt*dataWts[0]+betSqrt*dataWts[3])
@@ -483,17 +483,12 @@ bool            beginning   /* => true/false = set dataPts[1]/[L+1] */
             beta = 1.0 - alpha;
             alpSqrt = -1.0 * alpha * alpha;
             betSqrt = -1.0 * beta * beta;
-            bsiDPoint3d_addScaledDPoint3d (dataPts+numIntval+1, dataPts+numIntval,
-                         dataPts+numIntval-1, alpSqrt);
-            bsiDPoint3d_addScaledDPoint3d (dataPts+numIntval+1, dataPts+numIntval+1,
-                         dataPts+numIntval+2, betSqrt);
-            bsiDPoint3d_scale (dataPts+numIntval+1, dataPts+numIntval+1,
-                          1.0/(2.0*beta));
-            bsiDPoint3d_addScaledDPoint3d (dataPts+numIntval+1, dataPts+numIntval+1,
-                         dataPts+numIntval+2, beta);
-            bsiDPoint3d_addScaledDPoint3d (dataPts+numIntval+1, dataPts+numIntval+2,
-                         dataPts+numIntval+1, 2.0);
-            bsiDPoint3d_scale (dataPts+numIntval+1, dataPts+numIntval+1, deno);
+            dataPts[numIntval+1].SumOf (dataPts[numIntval], dataPts[numIntval-1], alpSqrt);
+            dataPts[numIntval+1].SumOf (dataPts[numIntval+1], dataPts[numIntval+2], betSqrt);
+            dataPts[numIntval+1].Scale (dataPts[numIntval+1], 1.0/(2.0*beta));
+            dataPts[numIntval+1].SumOf (dataPts[numIntval+1], dataPts[numIntval+2], beta);
+            dataPts[numIntval+1].SumOf (dataPts[numIntval+2], dataPts[numIntval+1], 2.0);
+            dataPts[numIntval+1].Scale (dataPts[numIntval+1], deno);
             if (dataWts)
                 {
                 dataWts[numIntval+1] = (dataWts[numIntval] +
@@ -559,7 +554,7 @@ bool            beginning       /* => true/false = set dataPts[1]/[L+1] */
         }
 
     /* scale beg/end tangent by one third of dist betw 1st/last fit pt pair */
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&delta, &dataPts[iInt], &dataPts[iExt]);
+    delta.DifferenceOf (dataPts[iInt], dataPts[iExt]);
     mag2  = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
     if (dataWts)
         {
@@ -568,7 +563,7 @@ bool            beginning       /* => true/false = set dataPts[1]/[L+1] */
         mag2 += dist * dist;
         }
     scale = sqrt (mag2) / 3.0;
-    bsiDPoint3d_addScaledDPoint3d (&dataPts[iSet], &dataPts[iExt], endTangent, scale);
+    dataPts[iSet].SumOf (dataPts[iExt], *endTangent, scale);
     if (dataWts)
         {
         /* I'm guessing here! */
@@ -597,15 +592,15 @@ bool            beginning       /* => true/false = set dataPts[1]/[L+1] */
         // same as bessel case for L=1
         if (beginning)
             {
-            bsiDPoint3d_addScaledDPoint3d (dataPts+1, dataPts+3, dataPts, 2.0);
-            bsiDPoint3d_scale (dataPts+1, dataPts+1, deno);
+            dataPts[1].SumOf (dataPts[3], *dataPts, 2.0);
+            dataPts[1].Scale (dataPts[1], deno);
             if (dataWts)
                 dataWts[1] = (2.0 * dataWts[0] + dataWts[3]) * deno;
             }
         else
             {
-            bsiDPoint3d_addScaledDPoint3d (dataPts+2, dataPts, dataPts+3, 2.0);
-            bsiDPoint3d_scale (dataPts+2, dataPts+2, deno);
+            dataPts[2].SumOf (*dataPts, dataPts[3], 2.0);
+            dataPts[2].Scale (dataPts[2], deno);
             if (dataWts)
                 dataWts[2] = (2.0 * dataWts[3] + dataWts[0]) * deno;
             }
@@ -664,7 +659,7 @@ int             num              /*  => number of dataPts */
     knots[0] = 0.0;
     for (i = 1; i < num; i++)
         {
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, dataPts+i, dataPts+i-1);
+        diff.DifferenceOf (dataPts[i], dataPts[i-1]);
         delta  = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
 
         if (dataWts)
@@ -745,9 +740,7 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
                 {
                 /* scale by length of bessel tangent */
                 besselEnd (dataPts, dataWts, knots, numIntval, true);
-                bsiDPoint3d_addScaledDPoint3d
-                    (dataPts+1, dataPts, endTangents,
-                        bsiDPoint3d_distance (dataPts, dataPts+1));
+                dataPts[1].SumOf (*dataPts, *endTangents, bsiDPoint3d_distance (dataPts,dataPts+1));
                 }
             }
 
@@ -770,9 +763,7 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
                 {
                 /* scale by length of bessel tangent */
                 besselEnd (dataPts, dataWts, knots, numIntval, false);
-                bsiDPoint3d_addScaledDPoint3d
-                    (dataPts+numIntval+1, dataPts+numIntval+2, endTangents+1,
-                        bsiDPoint3d_distance (dataPts+numIntval+1, dataPts+numIntval+2));
+                dataPts[numIntval+1].SumOf (dataPts[numIntval+2], endTangents[1], bsiDPoint3d_distance (dataPts+numIntval+1,dataPts+numIntval+2));
                 }
             }
         }
@@ -785,37 +776,33 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
         numIntval > 2 &&
         (noTangent0 || noTangent1) &&
         !naturalTangents &&
-        bsiDPoint3d_distance (dataPts, dataPts+numIntval+2) < fc_epsilon)
+        dataPts->Distance (dataPts[numIntval+2]) < fc_epsilon)
         {
         DPoint3d coTangent;
 
         /* pivot computed end tangent colinear to given beginning tangent */
         if (!noTangent0)
             {
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&coTangent, dataPts, dataPts+1);
-            bsiDPoint3d_normalizeInPlace (&coTangent);
-            bsiDPoint3d_addScaledDPoint3d (dataPts+numIntval+1, dataPts+numIntval+2, &coTangent,
-                            bsiDPoint3d_distance (dataPts+numIntval+2, dataPts+numIntval+1));
+            coTangent.DifferenceOf (*dataPts, dataPts[1]);
+            coTangent.Normalize ();
+            dataPts[numIntval+1].SumOf (dataPts[numIntval+2], coTangent, bsiDPoint3d_distance (dataPts+numIntval+2,dataPts+numIntval+1));
             }
 
         /* pivot computed beginning tangent colinear to given end tangent */
         else if (!noTangent1)
             {
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&coTangent, dataPts, dataPts+numIntval+1);
-            bsiDPoint3d_normalizeInPlace (&coTangent);
-            bsiDPoint3d_addScaledDPoint3d (dataPts+1, dataPts, &coTangent,
-                            bsiDPoint3d_distance (dataPts, dataPts+1));
+            coTangent.DifferenceOf (*dataPts, dataPts[numIntval+1]);
+            coTangent.Normalize ();
+            dataPts[1].SumOf (*dataPts, coTangent, bsiDPoint3d_distance (dataPts,dataPts+1));
             }
 
         /* pivot both computed tangents parallel to their difference vector */
         else
             {
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&coTangent, dataPts+1, dataPts+numIntval+1);
-            bsiDPoint3d_normalizeInPlace (&coTangent);
-            bsiDPoint3d_addScaledDPoint3d (dataPts+1, dataPts, &coTangent,
-                            bsiDPoint3d_distance (dataPts, dataPts+1));
-            bsiDPoint3d_addScaledDPoint3d (dataPts+numIntval+1, dataPts+numIntval+2, &coTangent,
-                            -1.0*bsiDPoint3d_distance (dataPts+numIntval+2, dataPts+numIntval+1));
+            coTangent.DifferenceOf (dataPts[1], dataPts[numIntval+1]);
+            coTangent.Normalize ();
+            dataPts[1].SumOf (*dataPts, coTangent, bsiDPoint3d_distance (dataPts,dataPts+1));
+            dataPts[numIntval+1].SumOf (dataPts[numIntval+2], coTangent, -1.0*bsiDPoint3d_distance (dataPts+numIntval+2,dataPts+numIntval+1));
             }
         }
     }
@@ -1100,9 +1087,9 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
     if (endTangents)
         {
         if (!isNearZero (&endTangents[0], fc_nearZero))
-            bsiDPoint3d_normalizeInPlace (&endTangents[0]);
+            endTangents[0].Normalize ();
         if (!isNearZero (&endTangents[1], fc_nearZero))
-            bsiDPoint3d_normalizeInPlace (&endTangents[1]);
+            endTangents[1].Normalize ();
         }
 
     /* Malloc memory for temp variables */

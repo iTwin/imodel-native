@@ -375,7 +375,7 @@ bool ComputeNormalFromDerivatives (size_t i, MSBsplineSurfaceCP surface, bool re
         bspsurf_evaluateSurfacePoint (NULL, NULL, &dXdu[i], NULL,
                             uv[i].x, NearbyCoordinate (uv[i].y, fc_epsilon), surface);
 
-    if (bsiDPoint3d_magnitude (&dXdv[i]) < fc_epsilon)
+    if (dXdv[i].Magnitude () < fc_epsilon)
         bspsurf_evaluateSurfacePoint (NULL, NULL, NULL, &dXdv[i],
                             NearbyCoordinate (uv[i].x, fc_epsilon), uv[i].y, surface);
     

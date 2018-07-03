@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspprof.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -70,7 +70,7 @@ double          u               /* value to evaluate at */
     nChoosei = 1;
     u1 = 1.0 - u;
     factor = 1.0;
-    bsiDPoint3d_scale (&sumPole, polesP, u1);
+    sumPole.Scale (*polesP, u1);
     if (wgtOut)
         {
         wPtr = weightsP+1;
@@ -87,11 +87,11 @@ double          u               /* value to evaluate at */
             sumWgt = (sumWgt + factor * nChoosei * *wPtr) * u1;
             wPtr++;
             }
-        bsiDPoint3d_addScaledDPoint3d (&sumPole, &sumPole, pPtr, factor*nChoosei);
-        bsiDPoint3d_scale (&sumPole, &sumPole, u1);
+        sumPole.SumOf (sumPole, *pPtr, factor*nChoosei);
+        sumPole.Scale (sumPole, u1);
         }
 
-    bsiDPoint3d_addScaledDPoint3d (ptOut, &sumPole, polesP+degree, factor*u);
+    ptOut->SumOf (sumPole, polesP[degree], factor*u);
     if (wgtOut)
         *wgtOut = sumWgt + factor * u * *(weightsP+degree);
     }
@@ -159,7 +159,7 @@ MSBsplineSurface    *patchBezP
         }
     bspprof_hornerSchemeBezier(pointP, rational ? &tmpWgt : NULL,
                            rPoles, rational ? rWgts : NULL, vOrder, v);
-    if (rational) bsiDPoint3d_scale (pointP, pointP, 1.0/tmpWgt);
+    if (rational) pointP->Scale (*pointP, 1.0/tmpWgt);
 
     /* Compute u partial derivative */
     if (dPdU)
@@ -181,7 +181,7 @@ MSBsplineSurface    *patchBezP
             for (j=0, pUDtr=poleP, rUPDtr=rUPoDiff;
                  j<uDegree; j++, pUDtr++, rUPDtr++)
                 {
-                bsiDPoint3d_subtractDPoint3dDPoint3d (rUPDtr, pUDtr+1, pUDtr);
+                rUPDtr->DifferenceOf (pUDtr[1], *pUDtr);
                 if (rational)
                     {
                     *rUWDtr = *(wUDtr+1) - *wUDtr;
@@ -224,7 +224,7 @@ MSBsplineSurface    *patchBezP
             for (j=0, pVDtr=poleP, rVPDtr=rVPoDiff;
                 j<vDegree; j++, pVDtr += uOrder, rVPDtr++)
                 {
-                bsiDPoint3d_subtractDPoint3dDPoint3d (rVPDtr, pVDtr+uOrder, pVDtr);
+                rVPDtr->DifferenceOf (pVDtr[uOrder], *pVDtr);
                 if (rational)
                     {
                     *rVWDtr = *(wVDtr+uOrder) - *wVDtr;
@@ -269,9 +269,9 @@ MSBsplineSurface    *patchBezP
             for (j=0, pUUDtr=poleP, rUUPDtr=rUUPoDiff;
                  j<uIndex; j++, pUUDtr++, rUUPDtr++)
                 {
-                bsiDPoint3d_subtractDPoint3dDPoint3d (rUUPDtr, pUUDtr+2, pUUDtr+1);
-                bsiDPoint3d_subtractDPoint3dDPoint3d (rUUPDtr, rUUPDtr, pUUDtr+1);
-                bsiDPoint3d_addDPoint3dDPoint3d (rUUPDtr, rUUPDtr, pUUDtr);
+                rUUPDtr->DifferenceOf (pUUDtr[2], pUUDtr[1]);
+                rUUPDtr->DifferenceOf (*rUUPDtr, pUUDtr[1]);
+                rUUPDtr->SumOf (*rUUPDtr, *pUUDtr);
                 if (rational)
                     {
                     *rUUWDtr = *(wUUDtr+2) - 2.0 * *(wUUDtr+1) + *wUUDtr;
@@ -315,9 +315,9 @@ MSBsplineSurface    *patchBezP
             for (j=0, pVVDtr=poleP, rVVPDtr=rVVPoDiff;
                 j<vIndex; j++, pVVDtr += uOrder, rVVPDtr++)
                 {
-                bsiDPoint3d_subtractDPoint3dDPoint3d (rVVPDtr, pVVDtr+2*uOrder, pVVDtr+uOrder);
-                bsiDPoint3d_subtractDPoint3dDPoint3d (rVVPDtr, rVVPDtr, pVVDtr+uOrder);
-                bsiDPoint3d_addDPoint3dDPoint3d (rVVPDtr, rVVPDtr, pVVDtr);
+                rVVPDtr->DifferenceOf (pVVDtr[2*uOrder], pVVDtr[uOrder]);
+                rVVPDtr->DifferenceOf (*rVVPDtr, pVVDtr[uOrder]);
+                rVVPDtr->SumOf (*rVVPDtr, *pVVDtr);
                 if (rational)
                     {
                     *rVVWDtr = *(wVVDtr+2*uOrder) - 2.0 * *(wVVDtr+uOrder) +
@@ -363,9 +363,9 @@ MSBsplineSurface    *patchBezP
             for (j=0, pUVDtr=poleP, rUVPDtr=rUVPoDiff;
                  j<uDegree; j++, pUVDtr++, rUVPDtr++)
                 {
-                bsiDPoint3d_subtractDPoint3dDPoint3d (rUVPDtr, pUVDtr+uOrder+1, pUVDtr+uOrder);
-                bsiDPoint3d_subtractDPoint3dDPoint3d (rUVPDtr, rUVPDtr, pUVDtr+1);
-                bsiDPoint3d_addDPoint3dDPoint3d (rUVPDtr, rUVPDtr, pUVDtr);
+                rUVPDtr->DifferenceOf (pUVDtr[uOrder+1], pUVDtr[uOrder]);
+                rUVPDtr->DifferenceOf (*rUVPDtr, pUVDtr[1]);
+                rUVPDtr->SumOf (*rUVPDtr, *pUVDtr);
                 if (rational)
                     {
                     *rUVWDtr = *(wUVDtr+uOrder+1) - *(wUVDtr+uOrder) -
@@ -401,12 +401,12 @@ MSBsplineSurface    *patchBezP
                 }
             else
                 {
-                bsiDPoint3d_addScaledDPoint3d (dPdUU, dPdUU, pointP, -1.0 *tmpUUWgt);
-                bsiDPoint3d_scale (dPdUU, dPdUU, tmpWgt*uIndex);
+                dPdUU->SumOf (*dPdUU, *pointP, -1.0 *tmpUUWgt);
+                dPdUU->Scale (*dPdUU, tmpWgt*uIndex);
                 }
-            bsiDPoint3d_addScaledDPoint3d (dPdUU, dPdUU, pointP, 2.0*uDegree*tmpUWgt*tmpUWgt);
-            bsiDPoint3d_addScaledDPoint3d (dPdUU, dPdUU, dPdU, -2.0*uDegree*tmpUWgt);
-            bsiDPoint3d_scale (dPdUU, dPdUU, (double)uDegree/(tmpWgt*tmpWgt));
+            dPdUU->SumOf (*dPdUU, *pointP, 2.0*uDegree*tmpUWgt*tmpUWgt);
+            dPdUU->SumOf (*dPdUU, *dPdU, -2.0*uDegree*tmpUWgt);
+            dPdUU->Scale (*dPdUU, (double)uDegree/(tmpWgt*tmpWgt));
             }
         else
             {
@@ -415,7 +415,7 @@ MSBsplineSurface    *patchBezP
                 dPdUU->x=dPdUU->y=dPdUU->z=0.0;
                 }
             else
-                bsiDPoint3d_scale (dPdUU, dPdUU, (double)uDegree * (double)uIndex);
+                dPdUU->Scale (*dPdUU, (double)uDegree * (double)uIndex);
             }
         }
 
@@ -429,12 +429,12 @@ MSBsplineSurface    *patchBezP
                 }
             else
                 {
-                bsiDPoint3d_addScaledDPoint3d (dPdVV, dPdVV, pointP, -1.0 *tmpVVWgt);
-                bsiDPoint3d_scale (dPdVV, dPdVV, tmpWgt*vIndex);
+                dPdVV->SumOf (*dPdVV, *pointP, -1.0 *tmpVVWgt);
+                dPdVV->Scale (*dPdVV, tmpWgt*vIndex);
                 }
-            bsiDPoint3d_addScaledDPoint3d (dPdVV, dPdVV, pointP, 2.0*vDegree*tmpVWgt*tmpVWgt);
-            bsiDPoint3d_addScaledDPoint3d (dPdVV, dPdVV, dPdV, -2.0*vDegree*tmpVWgt);
-            bsiDPoint3d_scale (dPdVV, dPdVV, (double)vDegree/(tmpWgt*tmpWgt));
+            dPdVV->SumOf (*dPdVV, *pointP, 2.0*vDegree*tmpVWgt*tmpVWgt);
+            dPdVV->SumOf (*dPdVV, *dPdV, -2.0*vDegree*tmpVWgt);
+            dPdVV->Scale (*dPdVV, (double)vDegree/(tmpWgt*tmpWgt));
             }
         else
             {
@@ -443,7 +443,7 @@ MSBsplineSurface    *patchBezP
                 dPdVV->x=dPdVV->y=dPdVV->z=0.0;
                 }
             else
-                bsiDPoint3d_scale (dPdVV, dPdVV, (double)vDegree * (double)vIndex);
+                dPdVV->Scale (*dPdVV, (double)vDegree * (double)vIndex);
             }
         }
 
@@ -451,31 +451,30 @@ MSBsplineSurface    *patchBezP
         {
         if (rational)
             {
-            bsiDPoint3d_addScaledDPoint3d (dPdUV, dPdUV, pointP, -1.0 *tmpUVWgt);
-            bsiDPoint3d_scale (dPdUV, dPdUV, tmpWgt);
-            bsiDPoint3d_addScaledDPoint3d (dPdUV, dPdUV, pointP, 2.0*tmpUWgt*tmpVWgt);
-            bsiDPoint3d_addScaledDPoint3d (dPdUV, dPdUV, dPdU, -1.0 *tmpVWgt);
-            bsiDPoint3d_addScaledDPoint3d (dPdUV, dPdUV, dPdV, -1.0 *tmpUWgt);
-            bsiDPoint3d_scale (dPdUV, dPdUV,
-                          (double)uDegree*(double)vDegree/(tmpWgt*tmpWgt));
+            dPdUV->SumOf (*dPdUV, *pointP, -1.0 *tmpUVWgt);
+            dPdUV->Scale (*dPdUV, tmpWgt);
+            dPdUV->SumOf (*dPdUV, *pointP, 2.0*tmpUWgt*tmpVWgt);
+            dPdUV->SumOf (*dPdUV, *dPdU, -1.0 *tmpVWgt);
+            dPdUV->SumOf (*dPdUV, *dPdV, -1.0 *tmpUWgt);
+            dPdUV->Scale (*dPdUV, (double)uDegree*(double)vDegree/(tmpWgt*tmpWgt));
             }
         else
-            bsiDPoint3d_scale (dPdUV, dPdUV, (double)uDegree * (double)vDegree);
+            dPdUV->Scale (*dPdUV, (double)uDegree * (double)vDegree);
         }
 
     if (dPdU)
         {
         if (rational)
-            bsiDPoint3d_addScaledDPoint3d (dPdU, dPdU, pointP, -1.0 *tmpUWgt);
-        bsiDPoint3d_scale (dPdU, dPdU, rational ?
+            dPdU->SumOf (*dPdU, *pointP, -1.0 *tmpUWgt);
+        dPdU->Scale (*dPdU, rational ?
                                   (double)uDegree/tmpWgt : (double)uDegree);
         }
 
     if (dPdV)
         {
         if (rational)
-            bsiDPoint3d_addScaledDPoint3d (dPdV, dPdV, pointP, -1.0 *tmpVWgt);
-        bsiDPoint3d_scale (dPdV, dPdV, rational ?
+            dPdV->SumOf (*dPdV, *pointP, -1.0 *tmpVWgt);
+        dPdV->Scale (*dPdV, rational ?
                                   (double)vDegree/tmpWgt : (double)vDegree);
         }
     }
@@ -588,8 +587,8 @@ bool                vertical
                             vertical?NULL:&duu, vertical?&dvv:NULL,
                             &duv, *u1, *v1, patch);
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d        (&diff, cameraGP, pt);
-    if (bsiDPoint3d_normalizeInPlace (&diff) < fc_tinyVal)
+    diff.DifferenceOf (*cameraGP, *pt);
+    if (diff.Normalize () < fc_tinyVal)
         return (status);
 
     numer1 = du.y * dv.z - du.z * dv.y;
@@ -624,8 +623,8 @@ bool                vertical
                                 vertical?NULL:&duu, vertical?&dvv:NULL,
                                 &duv, *u1, *v1, patch);
 
-        bsiDPoint3d_subtractDPoint3dDPoint3d    (&diff, cameraGP, pt);
-        if (bsiDPoint3d_normalizeInPlace (&diff) < fc_tinyVal)
+        diff.DifferenceOf (*cameraGP, *pt);
+        if (diff.Normalize () < fc_tinyVal)
             return (status);
 
         numer1 = du.y * dv.z - du.z * dv.y;
@@ -651,8 +650,8 @@ bool                vertical
 
         if (fabs(deno) > fc_tinyVal && fabs(numerator/deno) < fc_newtonTol)
             {
-            bsiDPoint3d_crossProduct (&cross, &du, &dv);
-            if (bsiDPoint3d_magnitude (&cross) > fc_p001)
+            cross.CrossProduct (du, dv);
+            if (cross.Magnitude () > fc_p001)
                 {
                 status = true;
                 break;
@@ -889,9 +888,8 @@ MSBsplineSurface    *surfP
                     {
                     biP->distance = distance0 / segmentDistance;
 
-                    bsiDPoint3d_scale (&biP->point, &xyzSegmentP->point[0], 1.0 - biP->distance);
-                    bsiDPoint3d_addScaledDPoint3d (&biP->point, &biP->point,
-                                 &xyzSegmentP->point[1], biP->distance);
+                    biP->point.Scale (*(&xyzSegmentP->point[0]), 1.0 - biP->distance);
+                    biP->point.SumOf (biP->point, *(&xyzSegmentP->point[1]), biP->distance);
                     }
                 biP++;
                 }
@@ -989,11 +987,11 @@ double      tol
     double      d0, d1;
     DPoint3d    mid, diff;
 
-    bsiDPoint3d_addDPoint3dDPoint3d (&mid, p0, p2);
-    bsiDPoint3d_scale (&mid, &mid, 0.5);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, &mid, p1);
+    mid.SumOf (*p0, *p2);
+    mid.Scale (mid, 0.5);
+    diff.DifferenceOf (mid, *p1);
     d1 = magnitudeSquared (&diff);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, p0, p2);
+    diff.DifferenceOf (*p0, *p2);
     d0 = magnitudeSquared (&diff);
     return (d1 > d0 * tol * 0.25) ? false : true;
     }
@@ -1014,15 +1012,15 @@ double      tol
     double          d, d0, d1;
     DPoint3d        mid0, mid1, diff;
 
-    bsiDPoint3d_addDPoint3dDPoint3d (&mid0, p0, p3);
-    bsiDPoint3d_scale (&mid0, &mid0, 0.5);
-    bsiDPoint3d_addDPoint3dDPoint3d (&mid1, p1, p2);
-    bsiDPoint3d_scale (&mid1, &mid1, 0.5);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, &mid0, &mid1);
+    mid0.SumOf (*p0, *p3);
+    mid0.Scale (mid0, 0.5);
+    mid1.SumOf (*p1, *p2);
+    mid1.Scale (mid1, 0.5);
+    diff.DifferenceOf (mid0, mid1);
     d = magnitudeSquared (&diff);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, p0, p3);
+    diff.DifferenceOf (*p0, *p3);
     d0 = magnitudeSquared (&diff);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, p1, p2);
+    diff.DifferenceOf (*p1, *p2);
     d1 = magnitudeSquared (&diff);
     if (d1 < d0)
         d0 = d1;
@@ -1230,7 +1228,7 @@ double          radius
     {
     DPoint3d        dist;
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&dist, tstPt, center);
+    dist.DifferenceOf (*tstPt, *center);
 
     ptMin->x = dist.x - radius;
     ptMin->y = dist.y - radius;
@@ -1717,13 +1715,13 @@ double          closureTol
     numIn = inList->numPoints-1;
     numOut = outList->numPoints-1;
 
-    if (bsiDPoint3d_distance (outList->points, inList->points) < closureTol)
+    if (outList->points->Distance (*(inList->points)) < closureTol)
         appendCode = APPEND_ORG_ORG;
-    else if (bsiDPoint3d_distance (outList->points, inList->points+numIn) < closureTol)
+    else if (outList->points->Distance (*(inList->points+numIn)) < closureTol)
         appendCode = APPEND_ORG_END;
-    else if (bsiDPoint3d_distance (outList->points+numOut, inList->points) < closureTol)
+    else if ((outList->points+numOut)->Distance (*(inList->points)) < closureTol)
         appendCode = APPEND_END_ORG;
-    else if (bsiDPoint3d_distance (outList->points+numOut, inList->points+numIn) < closureTol)
+    else if ((outList->points+numOut)->Distance (*(inList->points+numIn)) < closureTol)
         appendCode = APPEND_END_END;
 
     if (!appendCode)
@@ -1779,9 +1777,9 @@ MSBsplineCurve  *curveP
                 bspcurv_evaluateCurvePoint (NULL, &leftTangent, curveP, leftValue);
                 bspcurv_evaluateCurvePoint (NULL, &rightTangent, curveP, rightValue);
 
-                if (bsiDPoint3d_normalizeInPlace (&leftTangent) < TOLERANCE_TangentMagnitude ||
-                    bsiDPoint3d_normalizeInPlace (&rightTangent) < TOLERANCE_TangentMagnitude ||
-                    bsiDPoint3d_dotProduct (&leftTangent, &rightTangent) < COSINE_TOLERANCE)
+                if (leftTangent.Normalize () < TOLERANCE_TangentMagnitude ||
+                    rightTangent.Normalize () < TOLERANCE_TangentMagnitude ||
+                    leftTangent.DotProduct (rightTangent) < COSINE_TOLERANCE)
                     smooth = false;
                 }
             }
@@ -1854,11 +1852,11 @@ const   DPoint3d    *cameraPosP
     if (cameraPosP)
         {
         DPoint3d unit0, unit1, unit2;
-        bsiDPoint3d_computeNormal (&unit0, point0P, cameraPosP);
-        bsiDPoint3d_computeNormal (&unit1, point1P, cameraPosP);
-        bsiDPoint3d_computeNormal (&unit2, point2P, cameraPosP);
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&U, &unit1, &unit0);
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&V, &unit2, &unit1);
+        unit0.NormalizedDifference (*point0P, *cameraPosP);
+        unit1.NormalizedDifference (*point1P, *cameraPosP);
+        unit2.NormalizedDifference (*point2P, *cameraPosP);
+        U.DifferenceOf (unit1, unit0);
+        V.DifferenceOf (unit2, unit1);
         angle = bsiDPoint3d_angleBetweenVectors (&U, &V);
         if (fabs (angle) >= s_perspectiveAngleTol)
             {
@@ -1867,8 +1865,8 @@ const   DPoint3d    *cameraPosP
         }
     else
         {
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&U, point1P, point0P);
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&V, point2P, point1P);
+        U.DifferenceOf (*point1P, *point0P);
+        V.DifferenceOf (*point2P, *point1P);
         angle = bsiDPoint3d_angleBetweenVectorsXY (&U, &V);
 
         if (fabs (angle) >= s_parallelAngleTol)
@@ -1946,7 +1944,7 @@ DPoint3d                *cameraPos          /* => camera position or NULL */
     curves.clear ();
 
     /* If tolerance is 1/3 the size of bound box, no silhouette returned */
-    if ((mag  = bsiDPoint3d_magnitude (&box.extent)) <= tolerance * fc_3)
+    if ((mag  = box.extent.Magnitude ()) <= tolerance * fc_3)
         return (true);
 
     memset (&silhCurve, 0, sizeof(silhCurve));

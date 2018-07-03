@@ -162,23 +162,23 @@ MSBsplineSurface    *pSurf
     TrimCurve           *trimLoopP = NULL;
     memset (&bCurve, 0, sizeof(bCurve));
 
-    bsiDPoint3d_setXY (&pnts[0], 0.0, 0.0);
-    bsiDPoint3d_setXY (&pnts[1], 1.0, 0.0);
+    pnts[0].Init ( 0.0, 0.0);
+    pnts[1].Init ( 1.0, 0.0);
     mdlBspline_createBsplineFromPointsAndOrder (&bCurve[0], pnts, 2, 2);
     bspTrimCurve_allocateAndInsertCyclic (&trimLoopP, &bCurve[0]);
 
-    bsiDPoint3d_setXY (&pnts[0], 1.0, 0.0);
-    bsiDPoint3d_setXY (&pnts[1], 1.0, 1.0);
+    pnts[0].Init ( 1.0, 0.0);
+    pnts[1].Init ( 1.0, 1.0);
     mdlBspline_createBsplineFromPointsAndOrder (&bCurve[1], pnts, 2, 2);
     bspTrimCurve_allocateAndInsertCyclic (&trimLoopP, &bCurve[1]);
 
-    bsiDPoint3d_setXY (&pnts[0], 1.0, 1.0);
-    bsiDPoint3d_setXY (&pnts[1], 0.0, 1.0);
+    pnts[0].Init ( 1.0, 1.0);
+    pnts[1].Init ( 0.0, 1.0);
     mdlBspline_createBsplineFromPointsAndOrder (&bCurve[2], pnts, 2, 2);
     bspTrimCurve_allocateAndInsertCyclic (&trimLoopP, &bCurve[2]);
 
-    bsiDPoint3d_setXY (&pnts[0], 0.0, 1.0);
-    bsiDPoint3d_setXY (&pnts[1], 0.0, 0.0);
+    pnts[0].Init ( 0.0, 1.0);
+    pnts[1].Init ( 0.0, 0.0);
     mdlBspline_createBsplineFromPointsAndOrder (&bCurve[3], pnts, 2, 2);
     bspTrimCurve_allocateAndInsertCyclic (&trimLoopP, &bCurve[3]);
 
@@ -224,13 +224,13 @@ int                 edge
               asp->avgKnots[asp->midKnot] / output->uParams.numPoles;
 
     if (edge == BSSURF_U)
-        bsiTransform_initFromRowValues (&transform1,
+        transform1.InitFromRowValues (
                         a1,  0.0,  0.0, 0.0,
                        0.0,  1.0,  0.0, 0.0,
                        0.0,  0.0,  1.0, 0.0
                        );
     else
-        bsiTransform_initFromRowValues (&transform1,
+        transform1.InitFromRowValues (
                        1.0, 0.0, 0.0, 0.0,
                        0.0, a1,  0.0, 0.0,
                        0.0, 0.0, 1.0, 0.0
@@ -241,13 +241,13 @@ int                 edge
     a2 = 1.0 - a1;
 
     if (edge == BSSURF_U)
-        bsiTransform_initFromRowValues (&transform2,
+        transform2.InitFromRowValues (
                        a2,  0.0,  0.0, a1,
                        0.0, 1.0,  0.0, 0.0,
                        0.0, 0.0,  1.0, 0.0
                        );
     else
-        bsiTransform_initFromRowValues (&transform2,
+        transform2.InitFromRowValues (
                        1.0, 0.0,  0.0, 0.0,
                        0.0, a2,   0.0, a1,
                        0.0, 0.0,  1.0, 0.0
@@ -354,8 +354,8 @@ int                 edge
         {
         weights1i = surf1->rational ? surf1->weights[index1] : 1.0;
         weights2i = surf2->rational ? surf2->weights[index2] : 1.0;
-        bsiDPoint3d_scale (&tmp1, surf1->poles+index1, 1.0/weights1i);
-        bsiDPoint3d_scale (&tmp2, surf2->poles+index2, 1.0/weights2i);
+        tmp1.Scale (*(surf1->poles+index1), 1.0/weights1i);
+        tmp2.Scale (*(surf2->poles+index2), 1.0/weights2i);
         if (false == (*contiguous = bsputil_isSamePoint (&tmp1, &tmp2)))
             break;
         }
@@ -797,9 +797,9 @@ DPoint3d        *pt3
     double      deno;
     DPoint3d    tmp1, tmp2, tmp3, left;
 
-    left.x = bsiDPoint3d_dotProduct (norm1, pt1);
-    left.y = bsiDPoint3d_dotProduct (norm2, pt2);
-    left.z = bsiDPoint3d_dotProduct (norm3, pt3);
+    left.x = norm1->DotProduct (*pt1);
+    left.y = norm2->DotProduct (*pt2);
+    left.z = norm3->DotProduct (*pt3);
 
     deno = bsprsurf_determinant (norm1, norm2, norm3);
     if (fabs(deno) < 1.0e-15)
@@ -835,11 +835,11 @@ DPoint3d        *pt2
     {
     DPoint3d        tmp, plus, minus;
 
-    bsiDPoint3d_addDPoint3dDPoint3d (&plus, pt1, in);
-    bsiDPoint3d_scale (&tmp, in, -1.0 );
-    bsiDPoint3d_addDPoint3dDPoint3d (&minus, pt1, &tmp);
+    plus.SumOf (*pt1, *in);
+    tmp.Scale (*in, -1.0);
+    minus.SumOf (*pt1, tmp);
 
-    if (bsiDPoint3d_distance (&plus, pt2) <= bsiDPoint3d_distance (&minus, pt2))
+    if (plus.Distance (*pt2) <= minus.Distance (*pt2))
         *out = *in;
     else
         *out = tmp;
@@ -941,8 +941,8 @@ bool                continuity
     ElementUnion u1;
     ElementUnion u2;
 
-    bsiDPoint3d_addDPoint3dDPoint3d (&tmp1, &norm1, pt1);
-    bsiDPoint3d_addDPoint3dDPoint3d (&tmp2, &norm2, pt2);
+    tmp1.SumOf (norm1, *pt1);
+    tmp2.SumOf (norm2, *pt2);
     line1[0] = tmp1;
     line1[1] = *pt1;
     line2[0] = tmp2;
@@ -958,13 +958,13 @@ bool                continuity
     }
 #endif
 
-            bsiDPoint3d_addDPoint3dDPoint3d (&normFst, &norm1, &norm2);
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, pt1, pt2);
-            bsiDPoint3d_crossProduct (&normFst, &normFst, &diff);
-            bsiDPoint3d_normalizeInPlace (&norm1);
-            bsiDPoint3d_normalizeInPlace (&norm2);
-            bsiDPoint3d_normalizeInPlace (&normFst);
-            bsiDPoint3d_interpolate (&ptMid,  pt1, 0.5,  pt2);
+            normFst.SumOf (norm1, norm2);
+            diff.DifferenceOf (*pt1, *pt2);
+            normFst.CrossProduct (normFst, diff);
+            norm1.Normalize ();
+            norm2.Normalize ();
+            normFst.Normalize ();
+            ptMid.Interpolate (*pt1, 0.5, *pt2);
             bsprsurf_intersectOfThreePlanes (&intPt, &norm1, pt1,
                                             &norm2, pt2, &normFst, &ptMid);
 
@@ -1070,11 +1070,11 @@ bool            *shift          /* if true, the coincident points are shifted */
 
     shiftDist = fc_p0001;
     for (pP = endP = points, endP += numPts-1; pP < endP; pP++)
-        if (bsiDPoint3d_distance (pP, pP+1) > fc_epsilon)
+        if (pP->Distance (pP[1]) > fc_epsilon)
             {
             if (*shift)
                 for (pP = endP = points, endP += numPts-1; pP < endP; pP++)
-                    if (bsiDPoint3d_distance (pP, pP+1) < fc_epsilon)
+                    if (pP->Distance (pP[1]) < fc_epsilon)
                         {
                         pP->x -= shiftDist;
                         shiftDist /= 2.0;
@@ -1347,27 +1347,27 @@ bool                    rigidSweep
 
     /* Scale the input curve */
     bspcurv_extractEndPoints (&start, &end, curveP);
-    if (bsiDPoint3d_distance (&start, &end) < fc_epsilon)
+    if (start.Distance (end) < fc_epsilon)
         {
         ;
         }
-    scale = bsiDPoint3d_distance (&points[0], &points[1]) / bsiDPoint3d_distance (&start, &end);
+    scale = points[0].Distance (points[1]) / start.Distance (end);
     bspcurv_copyCurve (scaledCurveP, curveP);
     if (0 != scaledCurveP->rational)
         bsputil_unWeightPoles (scaledCurveP->poles, scaledCurveP->poles,
             scaledCurveP->weights, scaledCurveP->params.numPoles);
     bsiDPoint3d_subtractDPoint3dArray (scaledCurveP->poles, &start, scaledCurveP->params.numPoles);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&xAxis, &end, &start);
+    xAxis.DifferenceOf (end, start);
     bspcurv_extractNormal (&zAxis, &center, &diff, curveP);
-    if (bsiDPoint3d_dotProduct (&zAxis, sweepDirection) < 0.0)
-        bsiDPoint3d_negate (&zAxis, &zAxis);
-    bsiDPoint3d_crossProduct (&yAxis, &zAxis, &xAxis);
-    bsiDPoint3d_crossProduct (&zAxis, &xAxis, &yAxis);
-    bsiDPoint3d_normalizeInPlace (&xAxis);
-    bsiDPoint3d_normalizeInPlace (&yAxis);
-    bsiDPoint3d_normalizeInPlace (&zAxis);
-    bsiRotMatrix_initFromRowVectors (&rotMatrix, &xAxis, &yAxis, &zAxis);
-    bsiRotMatrix_multiplyDPoint3dArray ( &rotMatrix, scaledCurveP->poles, scaledCurveP->poles,  scaledCurveP->params.numPoles);
+    if (zAxis.DotProduct (*sweepDirection) < 0.0)
+        zAxis.Negate (zAxis);
+    yAxis.CrossProduct (zAxis, xAxis);
+    zAxis.CrossProduct (xAxis, yAxis);
+    xAxis.Normalize ();
+    yAxis.Normalize ();
+    zAxis.Normalize ();
+    rotMatrix.InitFromRowVectors (xAxis, yAxis, zAxis);
+    rotMatrix.Multiply (scaledCurveP->poles, scaledCurveP->poles, scaledCurveP->params.numPoles);
 
     for (pP = endP = scaledCurveP->poles, endP += scaledCurveP->params.numPoles; pP < endP; pP++)
         {
@@ -1376,17 +1376,20 @@ bool                    rigidSweep
         }
 
     /* Transform the scaled curve to the section plane */
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&xAxis, &points[1], &points[0]);
-    if (rigidSweep == false)
-        bsiDPoint3d_addDPoint3dDPoint3d (&zAxis, &tangents[0], &tangents[1]);
-    bsiDPoint3d_crossProduct (&yAxis, &zAxis, &xAxis);
-    bsiDPoint3d_crossProduct (&zAxis, &xAxis, &yAxis);
-    bsiDPoint3d_normalizeInPlace (&xAxis);
-    bsiDPoint3d_normalizeInPlace (&yAxis);
-    bsiDPoint3d_normalizeInPlace (&zAxis);
-    bsiRotMatrix_initFromRowVectors (&rotMatrix, &xAxis, &yAxis, &zAxis);
-    bsiRotMatrix_multiplyTransposeDPoint3dArray ( &rotMatrix, scaledCurveP->poles, scaledCurveP->poles,  scaledCurveP->params.numPoles);
-    bsiDPoint3d_addDPoint3dArray (scaledCurveP->poles, &points[0], scaledCurveP->params.numPoles);
+    xAxis.DifferenceOf (points[1], points[0]);
+    // point vector confusion .. do a copy to clarify
+    DVec3d tangentVector0 = DVec3d::From (tangents[0]);
+    DVec3d tangentVector1 = DVec3d::From (tangents[1]);
+    if (!rigidSweep)
+        zAxis.SumOf (tangentVector0, tangentVector1);
+    yAxis.CrossProduct (zAxis, xAxis);
+    zAxis.CrossProduct (xAxis, yAxis);
+    xAxis.Normalize ();
+    yAxis.Normalize ();
+    zAxis.Normalize ();
+    rotMatrix.InitFromRowVectors (xAxis, yAxis, zAxis);
+    rotMatrix.MultiplyTranspose (scaledCurveP->poles, scaledCurveP->poles, scaledCurveP->params.numPoles);
+    DPoint3d::AddToArray (scaledCurveP->poles, scaledCurveP->params.numPoles, points[0]);
 
 #if defined (debug_sweepAlong)
         {
@@ -1434,23 +1437,23 @@ bool                    checkGaps
         bspcurv_extractEndPoints (&start[0], &end[0], sectionP);
         bspcurv_extractEndPoints (&start[1], &end[1], trace0P);
 
-        if (bsiDPoint3d_distance (&start[0], &end[1]) < gapTolerance)
+        if (start[0].Distance (end[1]) < gapTolerance)
             bspcurv_reverseCurve (trace0P, trace0P);
-        else if (bsiDPoint3d_distance (&end[0], &start[1]) < gapTolerance)
+        else if (end[0].Distance (start[1]) < gapTolerance)
             bspcurv_reverseCurve (sectionP, sectionP);
-        else if (bsiDPoint3d_distance (&end[0], &end[1]) < gapTolerance)
+        else if (end[0].Distance (end[1]) < gapTolerance)
             {
             bspcurv_reverseCurve (trace0P, trace0P);
             bspcurv_reverseCurve (sectionP, sectionP);
             }
-        else if (bsiDPoint3d_distance (&start[0], &start[1]) > gapTolerance)
+        else if (start[0].Distance (start[1]) > gapTolerance)
             return ERROR;
 
         bspcurv_extractEndPoints (&start[0], &end[0], sectionP);
         bspcurv_extractEndPoints (&start[1], &end[1], trace1P);
-        if (bsiDPoint3d_distance (&end[0], &end[1]) < gapTolerance)
+        if (end[0].Distance (end[1]) < gapTolerance)
             bspcurv_reverseCurve (trace1P, trace1P);
-        else if (bsiDPoint3d_distance (&end[0], &start[1]) > gapTolerance)
+        else if (end[0].Distance (start[1]) > gapTolerance)
             return ERROR;
         }
 
@@ -1476,7 +1479,7 @@ bool                    checkGaps
         bspcurv_evaluateCurvePoint (&start[0], &end[0], trace0P, param0);
         bspcurv_evaluateCurvePoint (&start[1], &end[1], trace1P, param1);
         if (i == 0)
-            bsiDPoint3d_addDPoint3dDPoint3d (&sweepDirection, &end[0], &end[1]);
+            sweepDirection.SumOf (end[0], end[1]);
         bsprsurf_scaleCurveToPlane (&tmpCurveP[i], sectionP, start, end,
             &sweepDirection, rigidSweep);
         }

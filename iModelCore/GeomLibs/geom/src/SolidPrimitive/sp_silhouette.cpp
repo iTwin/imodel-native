@@ -17,6 +17,19 @@ static const DRange2d s_defaultParameterRange =
             };
 
 
+Public bool               bsiDToroid3d_getRotatedConic
+(
+DToroid3dCP pInstance,
+RotatedConic      *pConic
+);
+Public StatusInt    bsiRotatedConic_torusGeneralSilhouette
+(
+const RotatedConic  *pSurface,      /* => the rotated conic surface */
+DPoint4dCP pEyePoint,     /* => eyepoint (nonzero weight) or view vector (zero weight) */
+SilhouetteArrayHandler handlerFunc, /* => callback for points */
+double              tolerance,      /* => distance from surface */
+void                *pUserData      /* => arbitrary pointer */
+);
 
 /*---------------------------------------------------------------------------------**//**
 * Set the parameter range of the toroid.
@@ -1778,7 +1791,7 @@ void                    *pOutputData
 *  for c=cos(phi), s=sin(phi), C=cos(theta), S=sin(theta)
 *  within the limits of the surface.
 +----------------------------------------------------------------------*/
-Public GEOMDLLIMPEXP StatusInt    bsiRotatedConic_toroidalForm
+Public StatusInt    bsiRotatedConic_toroidalForm
 
 (
 const RotatedConic  *pSurface,      /* => the rotated conic surface */
@@ -1857,7 +1870,7 @@ void                *pUserData      /* => arbitrary pointer */
 *
 *  Compute general silhouette curve of a torus.
 +----------------------------------------------------------------------*/
-Public GEOMDLLIMPEXP StatusInt    bsiRotatedConic_torusGeneralSilhouette
+Public StatusInt    bsiRotatedConic_torusGeneralSilhouette
 
 (
 const RotatedConic  *pSurface,      /* => the rotated conic surface */
@@ -1893,7 +1906,7 @@ void                *pUserData      /* => arbitrary pointer */
 *
 *  Initialize with specified surface type and parameter range.
 +----------------------------------------------------------------------*/
-Public GEOMDLLIMPEXP StatusInt bsiRotatedConic_initFrameAndSweep
+Public StatusInt bsiRotatedConic_initFrameAndSweep
 
 (
 RotatedConic        *pSurface,      /* <= intitialized surface */
@@ -1929,8 +1942,7 @@ double      dAlpha
 * @indexVerb rotatedConic
 * @bsihdr                                                       EarlinLutz      10/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool               bsiDToroid3d_getRotatedConic
-
+Public bool               bsiDToroid3d_getRotatedConic
 (
 DToroid3dCP pInstance,
 RotatedConic      *pConic

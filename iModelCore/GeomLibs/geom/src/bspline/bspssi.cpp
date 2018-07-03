@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspssi.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -80,10 +80,10 @@ DPoint3d        *end2
     {
     DPoint3d    diff1, diff2;
 
-    bsiDPoint3d_computeNormal (&diff1, end1, org1);
-    bsiDPoint3d_computeNormal (&diff2, end2, org2);
+    diff1.NormalizedDifference (*end1, *org1);
+    diff2.NormalizedDifference (*end2, *org2);
 
-    return (fabs(bsiDPoint3d_dotProduct (&diff1, &diff2)));
+    return (fabs(diff1.DotProduct (diff2)));
     }
 
 
@@ -101,8 +101,8 @@ DPoint3d        *normalP               /* => plane normal */
 )
     {
     DPoint3d diff;
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, pointP, originP);
-    return bsiDPoint3d_dotProduct (&diff, normalP);
+    diff.DifferenceOf (*pointP, *originP);
+    return diff.DotProduct (*normalP);
     }
 #endif
 
@@ -126,9 +126,9 @@ DPoint3d        *norm1                 /* => normal of surf1 @ near1 */
     unitN0 = *norm0;
     unitN1 = *norm1;
 
-    bsiDPoint3d_normalizeInPlace (&unitN0);
-    bsiDPoint3d_normalizeInPlace (&unitN1);
-    n0n1 = bsiDPoint3d_dotProduct (&unitN0, &unitN1);
+    unitN0.Normalize ();
+    unitN1.Normalize ();
+    n0n1 = unitN0.DotProduct (unitN1);
 
     U.x = 0.5 * (near1->x - near0->x);
     U.y = 0.5 * (near1->y - near0->y);
@@ -143,12 +143,12 @@ DPoint3d        *norm1                 /* => normal of surf1 @ near1 */
     */
     det = 1.0 - n0n1 * n0n1;
 
-    bsiDPoint3d_addDPoint3dDPoint3d (newPt, near0, &U);
+    newPt->SumOf (*near0, U);
     if (det < detTol)
         return ERROR;
 
-    b0 = -bsiDPoint3d_dotProduct (&U, &unitN0);
-    b1 = bsiDPoint3d_dotProduct (&U, &unitN1);
+    b0 = -U.DotProduct (unitN0);
+    b1 = U.DotProduct (unitN1);
 
     inverseDet = 1.0 / det;
     alpha0 = (b0 - n0n1 * b1) * inverseDet;
@@ -177,31 +177,31 @@ DPoint3d        *norm1                 /* => normal of surf1 @ near1 */
 
     n0 = *norm0;
     n1 = *norm1;
-    bsiDPoint3d_normalizeInPlace (&n0);
-    bsiDPoint3d_normalizeInPlace (&n1);
-    bsiDPoint3d_crossProduct (&n2, &n0, &n1);     /* normal of plane perp to first two */
+    n0.Normalize ();
+    n1.Normalize ();
+    n2.CrossProduct (n0, n1);     /* normal of plane perp to first two */
 
-    if ((mag = bsiDPoint3d_normalizeInPlace (&n2)) < fc_epsilon)
+    if ((mag = n2.Normalize ()) < fc_epsilon)
         return ERROR;
 
-    bsiDPoint3d_crossProduct (&c0, &n1, &n2);
-    denom = bsiDPoint3d_dotProduct (&n0, &c0);
+    c0.CrossProduct (n1, n2);
+    denom = n0.DotProduct (c0);
 
-    bsiDPoint3d_crossProduct (&c1, &n2, &n0);
-    bsiDPoint3d_crossProduct (&c2, &n0, &n1);
+    c1.CrossProduct (n2, n0);
+    c2.CrossProduct (n0, n1);
 
-    bsiDPoint3d_interpolate (&midPt,  near0, 0.5,  near1);
+    midPt.Interpolate (*near0, 0.5, *near1);
 
-    b0 = bsiDPoint3d_dotProduct (&n0, near0);
-    b1 = bsiDPoint3d_dotProduct (&n1, near1);
-    b2 = bsiDPoint3d_dotProduct (&n2, &midPt);
+    b0 = n0.DotProduct (*near0);
+    b1 = n1.DotProduct (*near1);
+    b2 = n2.DotProduct (midPt);
 
-    bsiDPoint3d_scale (newPt, &c0, b0);
-    bsiDPoint3d_scale (&tmp, &c1, b1);
-    bsiDPoint3d_addDPoint3dDPoint3d (newPt, newPt, &tmp);
-    bsiDPoint3d_scale (&tmp, &c2, b2);
-    bsiDPoint3d_addDPoint3dDPoint3d (newPt, newPt, &tmp);
-    bsiDPoint3d_scale (newPt, newPt, 1.0/denom);
+    newPt->Scale (c0, b0);
+    tmp.Scale (c1, b1);
+    newPt->SumOf (*newPt, tmp);
+    tmp.Scale (c2, b2);
+    newPt->SumOf (*newPt, tmp);
+    newPt->Scale (*newPt, 1.0/denom);
 #if defined (debug)
     if (debugReconcile)
         {
@@ -241,16 +241,16 @@ double              shortVecTol         /* => tolerance to consider short vector
     static double relTol = 1.0e-10;
     StatusInt status;
     double tol2 = shortVecTol * shortVecTol;
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorW, pointP, originP);
+    vectorW.DifferenceOf (*pointP, *originP);
 
-    a00 = *duduP = bsiDPoint3d_dotProduct (vectorUP, vectorUP);
-    a01 = a10    = bsiDPoint3d_dotProduct (vectorUP, vectorVP);
-    a11 = *dvdvP = bsiDPoint3d_dotProduct (vectorVP, vectorVP);
+    a00 = *duduP = vectorUP->DotProduct (*vectorUP);
+    a01 = a10    = vectorUP->DotProduct (*vectorVP);
+    a11 = *dvdvP = vectorVP->DotProduct (*vectorVP);
     if (a00 <= tol2 || a11 <= tol2)
         return ERROR;
 
-    b0  = bsiDPoint3d_dotProduct (vectorUP, &vectorW);
-    b1  = bsiDPoint3d_dotProduct (vectorVP, &vectorW);
+    b0  = vectorUP->DotProduct (vectorW);
+    b1  = vectorVP->DotProduct (vectorW);
 
     p0 = a00 * a11; /* Must be positive */
     p1 = a01 * a10; /* Also must be positive !! */
@@ -351,43 +351,42 @@ double              convTol            /* => convergence tolerance in UV space *
             /*-----------------------------------------------------------
             Must correct the partials, see Farouki, R.T. in CAGD vol 3, pp. 15-45.
             -----------------------------------------------------------*/
-            bsiDPoint3d_addScaledDPoint3d (nearPt, nearPt, &safeNormal,
-                         eval->distance / bsiDPoint3d_magnitude (&safeNormal));
+            nearPt->SumOf (*nearPt, safeNormal, eval->distance / bsiDPoint3d_magnitude (&safeNormal));
 
-            bsiDPoint3d_crossProduct (&cross, &du, &dv);
-            bsiDPoint3d_crossProduct (&tmp0, &duu, &dv);
-            bsiDPoint3d_crossProduct (&tmp1, &du, &duv);
-            bsiDPoint3d_addDPoint3dDPoint3d (&dCrossDu, &tmp0, &tmp1);
-            bsiDPoint3d_crossProduct (&tmp0, &duv, &dv);
-            bsiDPoint3d_crossProduct (&tmp1, &du, &dvv);
-            bsiDPoint3d_addDPoint3dDPoint3d (&dCrossDv, &tmp0, &tmp1);
+            cross.CrossProduct (du, dv);
+            tmp0.CrossProduct (duu, dv);
+            tmp1.CrossProduct (du, duv);
+            dCrossDu.SumOf (tmp0, tmp1);
+            tmp0.CrossProduct (duv, dv);
+            tmp1.CrossProduct (du, dvv);
+            dCrossDv.SumOf (tmp0, tmp1);
 
-            mag_cross    = bsiDPoint3d_magnitude (&cross);
+            mag_cross    = cross.Magnitude ();
             mag_cross2   = mag_cross * mag_cross;
-            mag_dCrossDu = bsiDPoint3d_dotProduct (&cross, &dCrossDu) / mag_cross;
-            mag_dCrossDv = bsiDPoint3d_dotProduct (&cross, &dCrossDv) / mag_cross;
+            mag_dCrossDu = cross.DotProduct (dCrossDu) / mag_cross;
+            mag_dCrossDv = cross.DotProduct (dCrossDv) / mag_cross;
 
-            bsiDPoint3d_scale (&dNormDu, &dCrossDu, mag_cross);
-            bsiDPoint3d_addScaledDPoint3d (&dNormDu, &dNormDu, &cross, - mag_dCrossDu);
-            bsiDPoint3d_scale (&dNormDu, &dNormDu, 1.0 / mag_cross2);
-            bsiDPoint3d_scale (&dNormDv, &dCrossDv, mag_cross);
-            bsiDPoint3d_addScaledDPoint3d (&dNormDv, &dNormDv, &cross, - mag_dCrossDv);
-            bsiDPoint3d_scale (&dNormDv, &dNormDv, 1.0 / mag_cross2);
+            dNormDu.Scale (dCrossDu, mag_cross);
+            dNormDu.SumOf (dNormDu, cross, - mag_dCrossDu);
+            dNormDu.Scale (dNormDu, 1.0 / mag_cross2);
+            dNormDv.Scale (dCrossDv, mag_cross);
+            dNormDv.SumOf (dNormDv, cross, - mag_dCrossDv);
+            dNormDv.Scale (dNormDv, 1.0 / mag_cross2);
 
-            bsiDPoint3d_addScaledDPoint3d (&du, &du, &dNormDu, eval->distance);
-            bsiDPoint3d_addScaledDPoint3d (&dv, &dv, &dNormDv, eval->distance);
+            du.SumOf (du, dNormDu, eval->distance);
+            dv.SumOf (dv, dNormDv, eval->distance);
             }
         else
             {
             bspsurf_evaluateSurfacePoint (nearPt, NULL, &du, &dv,
                                  uv->x, uv->y, eval->surf);
             }
-        mag_dPdu = bsiDPoint3d_magnitude (&du);
-        mag_dPdv = bsiDPoint3d_magnitude (&dv);
+        mag_dPdu = du.Magnitude ();
+        mag_dPdv = dv.Magnitude ();
         bad_dPdu = mag_dPdu < fc_epsilon;
         bad_dPdv = mag_dPdv < fc_epsilon;
-        bsiDPoint3d_crossProduct (&cross, &du, &dv);
-        mag_cross = bsiDPoint3d_magnitude (&cross);
+        cross.CrossProduct (du, dv);
+        mag_cross = cross.Magnitude ();
 
         if (bad_dPdu || bad_dPdv)
             {
@@ -399,7 +398,7 @@ double              convTol            /* => convergence tolerance in UV space *
 
             *degeneracy = 0.0;
             *normal = safeNormal;
-            mag_cross = bsiDPoint3d_magnitude (&safeNormal);
+            mag_cross = safeNormal.Magnitude ();
 
             if (mag_cross < fc_epsilon)
                 return STATUS_NONCONVERGED;
@@ -407,23 +406,23 @@ double              convTol            /* => convergence tolerance in UV space *
             /* Fix the bad partials so the Jacobian doesn't go wild. */
             if (bad_dPdu && ! bad_dPdv)
                 {
-                bsiDPoint3d_crossProduct (&du, &dv, normal);
-                bsiDPoint3d_normalizeInPlace (&du);
-                bsiDPoint3d_scale (&du, &du, mag_cross / mag_dPdv);
+                du.CrossProduct (dv, *normal);
+                du.Normalize ();
+                du.Scale (du, mag_cross / mag_dPdv);
                 }
             else if (bad_dPdv && ! bad_dPdu)
                 {
-                bsiDPoint3d_crossProduct (&dv, normal, &du);
-                bsiDPoint3d_normalizeInPlace (&dv);
-                bsiDPoint3d_scale (&dv, &dv, mag_cross / mag_dPdu);
+                dv.CrossProduct (*normal, du);
+                dv.Normalize ();
+                dv.Scale (dv, mag_cross / mag_dPdu);
                 }
             else
                 {
                 rotMatrix_orthogonalFromZRow (&tmp, (DVec3d*)normal);
                 bsiRotMatrix_getRow ( &tmp, &du,  0);
                 bsiRotMatrix_getRow ( &tmp, &dv,  1);
-                bsiDPoint3d_scale (&du, &du, sqrt (mag_cross));
-                bsiDPoint3d_scale (&dv, &dv, sqrt (mag_cross));
+                du.Scale (du, sqrt (mag_cross));
+                dv.Scale (dv, sqrt (mag_cross));
                 }
             }
         else
@@ -431,7 +430,7 @@ double              convTol            /* => convergence tolerance in UV space *
             prod = 1.0 / (mag_dPdu * mag_dPdv);
             mag_cross *= prod;
             *degeneracy = mag_cross;     /* sine of angle between dPdu & dPdv */
-            bsiDPoint3d_scale (normal, &cross, prod);    /* scaled by sine angle btw partials */
+            normal->Scale (cross, prod);    /* scaled by sine angle btw partials */
             }
 
 #if defined (debug_relax)
@@ -440,7 +439,7 @@ double              convTol            /* => convergence tolerance in UV space *
     ElementUnion    u;
 
     line[0] = *nearPt;
-    bsiDPoint3d_addScaledDPoint3d (line+1, line, normal, fc_1000);
+    line[1].SumOf (*line, *normal, fc_1000);
     mdlLine_directCreate (&u, NULL, line, NULL);
     u.line_3d.dhdr.symb.b.style = 3;
     mdlElement_display (&u, 2);
@@ -556,18 +555,18 @@ double              convTol            /* => convergence tolerance in UV space *
             {
             if (normal || degeneracy)
                 {
-                bsiDPoint3d_crossProduct (&cross, &du, &dv);
+                cross.CrossProduct (du, dv);
                 prod = 1.0 / sqrt (dudu * dvdv);
 
                 if (degeneracy)
                     {
                     double dwdw;
-                    dwdw = bsiDPoint3d_dotProduct (&cross, &cross);
+                    dwdw = cross.DotProduct (cross);
                     *degeneracy = sqrt (dwdw) * prod;   /* sine of angle btw partials */
                     }
 
                 if (normal)
-                    bsiDPoint3d_scale (normal, &cross, prod);   /* scaled by sine angle btw partials */
+                    normal->Scale (cross, prod);   /* scaled by sine angle btw partials */
                 }
             }
 
@@ -681,13 +680,13 @@ int                 revLimit
                                eval0, 2, ssiTolP->uvSame);
         bspssi_relaxToSurface (&near1, &iPt->norm1, partialDegen1P, &iPt->uv1, &iPt->xyz,
                                eval1, 2, ssiTolP->uvSame);
-        if ((dist = bsiDPoint3d_distance (&near0, &near1)) < ssiTolP->xyzSame)
+        if ((dist = near0.Distance (near1)) < ssiTolP->xyzSame)
             {
-            bsiDPoint3d_interpolate (&iPt->xyz,  &near0, 0.5,  &near1);
-            bsiDPoint3d_crossProduct (tangent, &iPt->norm0, &iPt->norm1);
+            iPt->xyz.Interpolate (near0, 0.5, near1);
+            tangent->CrossProduct (iPt->norm0, iPt->norm1);
             if (degeneracy)
                 {
-                *degeneracy = bsiDPoint3d_normalizeInPlace (tangent);
+                *degeneracy = tangent->Normalize ();
                 *degeneracy *= partialDegen0;
                 *degeneracy *= partialDegen1;
                 }
@@ -699,8 +698,8 @@ int                 revLimit
                 ElementUnion    u;
 
                 line[0] = near0;
-                bsiDPoint3d_addDPoint3dDPoint3d (line+1, line, tangent);
-                bsiDPoint3d_addScaledDPoint3d (line+1, line, tangent, fc_10000);
+                line[1].SumOf (*line, *tangent);
+                line[1].SumOf (*line, *tangent, fc_10000);
                 mdlLine_directCreate (&u, NULL, line, NULL);
                 u.line_3d.dhdr.symb.b.color=1;
                 mdlElement_display (&u, 2);
@@ -731,9 +730,9 @@ int                 revLimit
         mdlElement_display (&u, 2);
         }
 #endif
-    bsiDPoint3d_crossProduct (tangent, &iPt->norm0, &iPt->norm1);
+    tangent->CrossProduct (iPt->norm0, iPt->norm1);
     if (degeneracy)
-        *degeneracy = bsiDPoint3d_normalizeInPlace (tangent) * partialDegen0 * partialDegen1;
+        *degeneracy = tangent->Normalize () * partialDegen0 * partialDegen1;
     return STATUS_NONCONVERGED;
     }
 
@@ -1192,9 +1191,9 @@ bool            adjustData
         /* correct ptB data for normP */
         bspsurf_computePartials (&tmp0, NULL, &dPdu, &dPdv, NULL, NULL, NULL,
                                  normP, BuvP->x, BuvP->y, evalP->surf);
-        bsiDPoint3d_normalizeInPlace (normP);
+        normP->Normalize ();
         if (evalP->offset)
-            bsiDPoint3d_addScaledDPoint3d (&tmp0, &tmp0, normP, evalP->distance);
+            tmp0.SumOf (tmp0, *normP, evalP->distance);
 
         /* correct ptB data for BotherUvP, otherNormP */
         bspssi_relaxToSurface (&tmp1, otherNormP, NULL, BotherUvP, &tmp0, otherEvalP,
@@ -1203,7 +1202,7 @@ bool            adjustData
                        eval0, eval1, false);
 
         /* correct ptB data for xyz. MAYBE I SHOULD LEAVE AS tmp0?? */
-        bsiDPoint3d_interpolate (&ptB->xyz,  &tmp0, 0.5,  &tmp1);
+        ptB->xyz.Interpolate (tmp0, 0.5, tmp1);
         }
 
     return stopAtEdge;
@@ -1241,7 +1240,7 @@ Evaluator       *eval1
     DPoint3d    step;
 
     /* Check for zingers */
-    if ((dist = bsiDPoint3d_distance (&p0->xyz, &p1->xyz)) > zingerSize)
+    if ((dist = p0->xyz.Distance (p1->xyz)) > zingerSize)
         {
 #if defined (debug)
         if (debugStop)
@@ -1287,7 +1286,7 @@ Evaluator       *eval1
 
     /* Check current link for closure */
     if (curr->number)
-        if ((dist = bsiDPoint3d_distance (&p1->xyz, curr->xyz)) < length)
+        if ((dist = p1->xyz.Distance (*(curr->xyz))) < length)
             {
 #if defined (debug)
             if (debugStop)
@@ -1299,8 +1298,8 @@ Evaluator       *eval1
             }
 
     /* Check for reversal of marching */
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&step, &p1->xyz, &p0->xyz);
-    if ((dot = bsiDPoint3d_dotProduct (&step, lastStep)) < 0.0)
+    step.DifferenceOf (p1->xyz, p0->xyz);
+    if ((dot = step.DotProduct (*lastStep)) < 0.0)
         {
 #if defined (debug)
         if (debugStop)
@@ -1332,9 +1331,9 @@ SsiTolerance    *ssiTolP
     double      dist, theta, twiceRadius, step, dot;
     DPoint3d    diff;
 
-    dist = bsiDPoint3d_computeNormal (&diff, &thisPt->xyz, &lastPt->xyz);
+    dist = diff.NormalizedDifference (thisPt->xyz, lastPt->xyz);
 
-    if ((dot = fabs (bsiDPoint3d_dotProduct (&diff, thisTan))) > 1.0)
+    if ((dot = fabs (diff.DotProduct (*thisTan))) > 1.0)
         theta = 0.0;
     else
         theta = acos (dot);
@@ -1400,7 +1399,7 @@ int                 showMarch
 #endif
         lastTan = tangent;
         approxPt = currPt;
-        bsiDPoint3d_addScaledDPoint3d (&approxPt.xyz, &currPt.xyz, &tangent, direction * stepLength);
+        approxPt.xyz.SumOf (currPt.xyz, tangent, direction * stepLength);
 
         if (STATUS_BADNORMAL ==
             (status = bspssi_getNextPt (&nextPt, &tangent, &degeneracy, &approxPt,
@@ -1560,7 +1559,7 @@ SsiTolerance    *ssiTolP
             bsiDSegment3d_initFromDPoint3d (&segment, pP, pP + 1);
             if (bsiDSegment3d_projectPointBounded (&segment, &xyz0, NULL, &pt->xyz))
                 {
-                dist2 = bsiDPoint3d_distanceSquared (&xyz0, &pt->xyz);
+                dist2 = xyz0.DistanceSquared (pt->xyz);
                 if (dist2 < tol2)
                     return true;
                 }
@@ -1778,16 +1777,16 @@ MSBsplineSurface    *bez1
             }
 #endif
         tmp = infoP->ssi.b0.extent;
-        bsiRotMatrix_multiplyTransposeDPoint3d ( ((RotMatrix *) &infoP->ssi.b0.system), &tmp);
-        bsiDPoint3d_addScaledDPoint3d (&center0, &infoP->ssi.b0.origin, &tmp, 0.5);
+        (((RotMatrix *) &infoP->ssi.b0.system))->MultiplyTranspose (tmp);
+        center0.SumOf (*(&infoP->ssi.b0.origin), tmp, 0.5);
         tmp = infoP->ssi.b1.extent;
-        bsiRotMatrix_multiplyTransposeDPoint3d ( ((RotMatrix *) &infoP->ssi.b1.system), &tmp);
-        bsiDPoint3d_addScaledDPoint3d (&center1, &infoP->ssi.b1.origin, &tmp, 0.5);
+        (((RotMatrix *) &infoP->ssi.b1.system))->MultiplyTranspose (tmp);
+        center1.SumOf (*(&infoP->ssi.b1.origin), tmp, 0.5);
 
         eval0 = *infoP->ssi.eval0;   eval0.surf = bez0;
         eval1 = *infoP->ssi.eval1;   eval1.surf = bez1;
 
-        bsiDPoint3d_interpolate (&stPt.xyz,  &center0, 0.5,  &center1);
+        stPt.xyz.Interpolate (center0, 0.5, center1);
 
         /* Relax the start point to these Bezier patches. This helps in case the full surface
             has some sort of degeneracy; the patches are not degenerate in these cases. */
@@ -1796,7 +1795,7 @@ MSBsplineSurface    *bez1
                                &stPt.xyz, &eval0, 10, infoP->ssi.tol->uvSame);
         bspssi_relaxToSurface (&center1, &stPt.norm1, NULL, &stPt.uv1,
                                &stPt.xyz, &eval1, 10, infoP->ssi.tol->uvSame);
-        bsiDPoint3d_interpolate (&stPt.xyz,  &center0, 0.5,  &center1);
+        stPt.xyz.Interpolate (center0, 0.5, center1);
 
 #if defined (BEZIER_ONLY_MARCH)
         globalBezierRange0.high.x = globalBezierRange0.high.x - globalBezierRange0.low.x;
@@ -1930,13 +1929,13 @@ MSBsplineSurface    *surfP
     DPoint3d    delta[4], yVector;
 
     /* Compute vector perp to line and parallel to surface */
-    bsiDPoint3d_crossProduct (&yVector, normal, surfaceNormal);
-    bsiDPoint3d_normalizeInPlace (&yVector);
+    yVector.CrossProduct (*normal, *surfaceNormal);
+    yVector.Normalize ();
 
     for (i=0; i<4; i++)
         {
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&delta[i], &surfP->poles[i], linePoint);
-        y[i] = bsiDPoint3d_dotProduct (&delta[i], &yVector);
+        delta[i].DifferenceOf (*(&surfP->poles[i]), *linePoint);
+        y[i] = delta[i].DotProduct (yVector);
         }
 
     for (i=0; i<4; i++)
@@ -1954,8 +1953,8 @@ MSBsplineSurface    *surfP
             }
         if (yMin < -INTERSECTION_TOLERANCE && yMax > INTERSECTION_TOLERANCE)
             {
-            x     =  bsiDPoint3d_dotProduct (&delta[i], normal);
-            xNext =  bsiDPoint3d_dotProduct (&delta[iNext], normal);
+            x     =  delta[i].DotProduct (*normal);
+            xNext =  delta[iNext].DotProduct (*normal);
             u     = (double) (i & 0x01);
             uNext = (double) (iNext & 0x01);
             v     = (double) (i >> 1);
@@ -2074,7 +2073,7 @@ int                 vStart1         /* => knot offset of bez1 in V */
                                                      uStart1, vStart1,
                                                      infoP->ssi.uKts1, infoP->ssi.vKts1);
 
-                bsiDPoint3d_addScaledDPoint3d (&ssiPts[0].xyz, &intPoint, &intNormal, d0[0]);
+                ssiPts[0].xyz.SumOf (intPoint, intNormal, d0[0]);
                 }
             else
                 {
@@ -2087,7 +2086,7 @@ int                 vStart1         /* => knot offset of bez1 in V */
                                                      &uv0Delta, d0Delta,
                                                      uStart0, vStart0,
                                                      infoP->ssi.uKts0, infoP->ssi.vKts0);
-                bsiDPoint3d_addScaledDPoint3d (&ssiPts[0].xyz, &intPoint, &intNormal, d1[0]);
+                ssiPts[0].xyz.SumOf (intPoint, intNormal, d1[0]);
                 }
             if (d0[1] < d1[1])
                 {
@@ -2102,7 +2101,7 @@ int                 vStart1         /* => knot offset of bez1 in V */
                                                      infoP->ssi.uKts1, infoP->ssi.vKts1);
 
 
-                bsiDPoint3d_addScaledDPoint3d (&ssiPts[1].xyz, &intPoint, &intNormal, d0[1]);
+                ssiPts[1].xyz.SumOf (intPoint, intNormal, d0[1]);
                 }
             else
                 {
@@ -2115,7 +2114,7 @@ int                 vStart1         /* => knot offset of bez1 in V */
                                                      &uv0Delta, d0Delta,
                                                      uStart0, vStart0,
                                                      infoP->ssi.uKts0, infoP->ssi.vKts0);
-                bsiDPoint3d_addScaledDPoint3d (&ssiPts[1].xyz, &intPoint, &intNormal, d1[1]);
+                ssiPts[1].xyz.SumOf (intPoint, intNormal, d1[1]);
                 }
             bspssi_flushPts (ssiPts, 2, &link.xyz, &link.norm0, &link.norm1,
                              &link.uv0, &link.uv1, &link.number);
@@ -2270,7 +2269,7 @@ SsiTolerance    *ssiTolP
             if (bsputil_onEdge (link->uv0, ssiTolP->uvTol) &&
                 bsputil_onEdge (link->uv0 + last, ssiTolP->uvTol))
                 return CLOSED_ON_EDGE;
-            else if (bsiDPoint2d_distance (link->uv0, link->uv0 + last) < ssiTolP->uvTol)
+            else if (link->uv0->Distance (*(link->uv0 + last)) < ssiTolP->uvTol)
                 return CLOSED_TRUE_CLOSURE;
             else
                 return false;
@@ -2278,12 +2277,12 @@ SsiTolerance    *ssiTolP
             if (bsputil_onEdge (link->uv1, ssiTolP->uvTol) &&
                 bsputil_onEdge (link->uv1 + last, ssiTolP->uvTol))
                 return CLOSED_ON_EDGE;
-            else if (bsiDPoint2d_distance (link->uv1, link->uv1 + last) < ssiTolP->uvTol)
+            else if (link->uv1->Distance (*(link->uv1 + last)) < ssiTolP->uvTol)
                 return CLOSED_TRUE_CLOSURE;
             else
                 return false;
         case CODE_XYZ:
-            if (bsiDPoint3d_distance (link->xyz, link->xyz + last) < ssiTolP->xyzSame)
+            if (link->xyz->Distance (*(link->xyz + last)) < ssiTolP->xyzSame)
                 return CLOSED_TRUE_CLOSURE;
             else
                 return false;
@@ -2687,7 +2686,7 @@ SsiTolerance    *ssiTolP
 
     /* Do not allow links to attach to each other at the ends that are on the edges! */
 
-    if (bsiDPoint3d_distance (&a, &e) < dist &&
+    if (a.Distance (e) < dist &&
         !(code < CODE_XYZ &&
                 (bsputil_onEdge ((DPoint2d *) &a, dist) ||
                  bsputil_onEdge ((DPoint2d *) &e, dist))))
@@ -2695,7 +2694,7 @@ SsiTolerance    *ssiTolP
         *angle = AbsCosineBetweenSegments (&a, &b, &e, &f);
         return APPEND_ORG_ORG;
         }
-    else if (bsiDPoint3d_distance (&d, &e) < dist &&
+    else if (d.Distance (e) < dist &&
         !(code < CODE_XYZ &&
                 (bsputil_onEdge ((DPoint2d *) &d, dist) ||
                  bsputil_onEdge ((DPoint2d *) &e, dist))))
@@ -2703,7 +2702,7 @@ SsiTolerance    *ssiTolP
         *angle = AbsCosineBetweenSegments  (&d, &c, &e, &f);
         return APPEND_END_ORG;
         }
-    else if (bsiDPoint3d_distance (&a, &h) < dist &&
+    else if (a.Distance (h) < dist &&
         !(code < CODE_XYZ &&
                 (bsputil_onEdge ((DPoint2d *) &a, dist) ||
                  bsputil_onEdge ((DPoint2d *) &h, dist))))
@@ -2711,7 +2710,7 @@ SsiTolerance    *ssiTolP
         *angle = AbsCosineBetweenSegments (&a, &b, &h, &g);
         return APPEND_ORG_END;
         }
-    else if (bsiDPoint3d_distance (&d, &h) < dist &&
+    else if (d.Distance (h) < dist &&
         !(code < CODE_XYZ &&
                 (bsputil_onEdge ((DPoint2d *) &d, dist) ||
                  bsputil_onEdge ((DPoint2d *) &h, dist))))
@@ -3072,37 +3071,36 @@ double              *offsetP
         /*-----------------------------------------------------------
         Must correct the partials, see Farouki, R.T. in CAGD vol 3, pp. 15-45.
         -----------------------------------------------------------*/
-        bsiDPoint3d_addScaledDPoint3d (&nearPoint, &nearPoint, &safeNormal,
-                     *offsetP / bsiDPoint3d_magnitude (&safeNormal));
+        nearPoint.SumOf (nearPoint, safeNormal, *offsetP / bsiDPoint3d_magnitude (&safeNormal));
 
-        bsiDPoint3d_crossProduct (&cross, &du, &dv);
-        bsiDPoint3d_crossProduct (&tmp0, &duu, &dv);
-        bsiDPoint3d_crossProduct (&tmp1, &du, &duv);
-        bsiDPoint3d_addDPoint3dDPoint3d (&dCrossDu, &tmp0, &tmp1);
-        bsiDPoint3d_crossProduct (&tmp0, &duv, &dv);
-        bsiDPoint3d_crossProduct (&tmp1, &du, &dvv);
-        bsiDPoint3d_addDPoint3dDPoint3d (&dCrossDv, &tmp0, &tmp1);
+        cross.CrossProduct (du, dv);
+        tmp0.CrossProduct (duu, dv);
+        tmp1.CrossProduct (du, duv);
+        dCrossDu.SumOf (tmp0, tmp1);
+        tmp0.CrossProduct (duv, dv);
+        tmp1.CrossProduct (du, dvv);
+        dCrossDv.SumOf (tmp0, tmp1);
 
-        mag_cross    = bsiDPoint3d_magnitude (&cross);
+        mag_cross    = cross.Magnitude ();
         mag_cross2   = mag_cross * mag_cross;
-        mag_dCrossDu = bsiDPoint3d_dotProduct (&cross, &dCrossDu) / mag_cross;
-        mag_dCrossDv = bsiDPoint3d_dotProduct (&cross, &dCrossDv) / mag_cross;
+        mag_dCrossDu = cross.DotProduct (dCrossDu) / mag_cross;
+        mag_dCrossDv = cross.DotProduct (dCrossDv) / mag_cross;
 
-        bsiDPoint3d_scale (&dNormDu, &dCrossDu, mag_cross);
-        bsiDPoint3d_addScaledDPoint3d (&dNormDu, &dNormDu, &cross, - mag_dCrossDu);
-        bsiDPoint3d_scale (&dNormDu, &dNormDu, 1.0 / mag_cross2);
-        bsiDPoint3d_scale (&dNormDv, &dCrossDv, mag_cross);
-        bsiDPoint3d_addScaledDPoint3d (&dNormDv, &dNormDv, &cross, - mag_dCrossDv);
-        bsiDPoint3d_scale (&dNormDv, &dNormDv, 1.0 / mag_cross2);
+        dNormDu.Scale (dCrossDu, mag_cross);
+        dNormDu.SumOf (dNormDu, cross, - mag_dCrossDu);
+        dNormDu.Scale (dNormDu, 1.0 / mag_cross2);
+        dNormDv.Scale (dCrossDv, mag_cross);
+        dNormDv.SumOf (dNormDv, cross, - mag_dCrossDv);
+        dNormDv.Scale (dNormDv, 1.0 / mag_cross2);
 
-        bsiDPoint3d_addScaledDPoint3d (&du, &du, &dNormDu, *offsetP);
-        bsiDPoint3d_addScaledDPoint3d (&dv, &dv, &dNormDv, *offsetP);
+        du.SumOf (du, dNormDu, *offsetP);
+        dv.SumOf (dv, dNormDv, *offsetP);
         }
 
-    mag_dPdu = bsiDPoint3d_magnitude (&du);
-    mag_dPdv = bsiDPoint3d_magnitude (&dv);
-    bsiDPoint3d_crossProduct (&cross, &du, &dv);
-    mag_cross = bsiDPoint3d_magnitude (&cross);
+    mag_dPdu = du.Magnitude ();
+    mag_dPdv = dv.Magnitude ();
+    cross.CrossProduct (du, dv);
+    mag_cross = cross.Magnitude ();
 
     if (mag_dPdu < fc_epsilon || mag_dPdv < fc_epsilon)
         {
@@ -3111,7 +3109,7 @@ double              *offsetP
     else
         {
         prod = 1.0 / (mag_dPdu * mag_dPdv);
-        bsiDPoint3d_scale (normalP, &cross, prod);    /* scaled by sine angle btw partials */
+        normalP->Scale (cross, prod);    /* scaled by sine angle btw partials */
         }
     }
 
@@ -3158,10 +3156,7 @@ bool                surface0
                     {
                     biP->distance = distance0 / segmentDistance;
 
-                    bsiDPoint3d_interpolate (&biP->point,
-                                &xyzSegmentP->low,
-                                biP->distance, 
-                                &xyzSegmentP->high);
+                    biP->point.Interpolate (xyzSegmentP->low, biP->distance, xyzSegmentP->high);
 
                     if ((biP->surface0 = surface0) != false)
                         {
@@ -3458,7 +3453,7 @@ int                 tightTolerance
     /* Check surface intersection */
     bound_boxFromEval (&b0, &eval0);
     bound_boxFromEval (&b1, &eval1);
-    boxSize = bsiDPoint3d_magnitude (&b0.extent) + bsiDPoint3d_magnitude (&b1.extent);
+    boxSize = b0.extent.Magnitude () + b1.extent.Magnitude ();
     boxTol = s_minToleranceFraction * boxSize;
     if (tolerance < boxTol)
         tolerance = boxTol;
@@ -3472,8 +3467,8 @@ int                 tightTolerance
     if (!bound_boxesIntersect (&b0, &b1))
         goto wrapup;
 
-    mag0  = bsiDPoint3d_magnitude (&b0.extent);
-    mag1  = bsiDPoint3d_magnitude (&b1.extent);
+    mag0  = b0.extent.Magnitude ();
+    mag1  = b1.extent.Magnitude ();
     if (mag0 < mag1)
         {
         min = mag0;

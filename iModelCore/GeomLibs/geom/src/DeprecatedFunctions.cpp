@@ -17,6 +17,49 @@ typedef VArrayWrapper<DPoint3d>   DPoint3dArrayWrapper;
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 /*-----------------------------------------------------------------*//**
+Return a crude 5-case summary of the z-direction components of a matrix.
+@param pMatrix => matrix to analyze.
+@return
+<ul>
+<li>  1 if complete effect of z entries is identity.</li>
+<li>  -1 if complete effect of z entries is to negate z</li>
+<li>  2 if complete effect of z entries is non-unit positive scale on z (zeros off diagonal)</li>
+<li>  -2 if complete efect of z entries is non-unit negative scale on z (zeros off diagonal)</li>
+<li>  0 if there are any off-diagonal nonzeros, so the matrix has z effects other than simple scaling.</li>
+</ul>
+@group "RotMatrix Queries"
+ @bsimethod                                     EarlinLutz      02/02
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int bsiRotMatrix_summaryZEffects
+
+
+(
+RotMatrixCP pMatrix
+)
+    {
+    double tol = bsiTrig_smallAngle ();
+    double zz = pMatrix->form3d[2][2];
+    if (    fabs (pMatrix->form3d[2][0]) > tol
+       ||   fabs (pMatrix->form3d[2][1]) > tol
+       ||   fabs (pMatrix->form3d[0][2]) > tol
+       ||   fabs (pMatrix->form3d[1][2]) > tol
+       ||   fabs (zz) < tol
+       )
+        {
+        return 0;
+        }
+    if (fabs (zz - 1.0) < tol)
+        return 1;
+    if (fabs (zz + 1.0) < tol)
+        return -1;
+    if (zz > 0.0)
+        return 2;
+    if (zz < 0.0)
+        return -2;
+    return 0;   /* Can't get here. */
+    }
+
+/*-----------------------------------------------------------------*//**
 * @description Store origin and unnormalized vector.
 * @param pPlane <= initialized plane.
 * @param pOrigin => origin point
@@ -180,7 +223,7 @@ DPoint4dCP pEyePoint
         /* invert the eye as needed: */
         if (pMap)
             bsiDMatrix4d_multiply4dPoints (&pMap->M1, &cylinderEye, &cylinderEye, 1);
-        bsiTransform_multiplyDPoint4dArray (&Tinverse, &cylinderEye, &cylinderEye, 1);
+        Tinverse.Multiply (&cylinderEye, &cylinderEye, 1);
 
         /* Homogeneous transform to put cone apex at infinity */
         coneEye.x = cylinderEye.x;
@@ -927,13 +970,13 @@ DPoint3dP pUnboundedUVW
             }
         }
 
-    bsiDSegment3d_initFromDPoint3d (&testSeg[0], pVertex0, pVertex1);
-    bsiDSegment3d_initFromDPoint3d (&testSeg[1], pVertex1, pVertex2);
-    bsiDSegment3d_initFromDPoint3d (&testSeg[2], pVertex2, pVertex0);
+    testSeg[0].Init (*pVertex0, *pVertex1);
+    testSeg[1].Init (*pVertex1, *pVertex2);
+    testSeg[2].Init (*pVertex2, *pVertex0);
 
     for (i = 0; i < 3; i++)
         {
-        bsiDSegment3d_projectPointBounded (&testSeg[i], &testPoint[i], &testParam[i], pSpacePoint);
+        testSeg[i].ProjectPointBounded (testPoint[i], testParam[i], *pSpacePoint);
         testDistanceSquared[i] = testPoint[i].DistanceSquared (*pSpacePoint);
         }
     iMin = 0;
@@ -1391,7 +1434,7 @@ double          wCenter
         pMatrix->SetColumn (2, - centerScale * w0, - centerScale * w90, 1.0);
         if (pInverse)
             {
-            bsiRotMatrix_invertRotMatrix (pInverse, pMatrix);
+            pInverse->InverseOf (*pMatrix);
             }
         }
     return boolStat;
@@ -1428,7 +1471,7 @@ double          beta
     double sinTheta = sin(theta);
     double wF       = 1.0 + alpha * cosTheta + beta * sinTheta;
     double phi;
-    bsiRotMatrix_multiplyComponents (pMatrix, &G, cosTheta, sinTheta, wF);
+    pMatrix->MultiplyComponents(G, cosTheta, sinTheta, wF);
     phi = atan2 (G.y, G.x);
     return phi;
     }
@@ -1637,11 +1680,7 @@ DPoint4dCP pEyePoint
             to give the full transformation of the 'ellipsoid' (which may go to infinity
             if the weight vanishes)
         */
-        bsiTransform_initFrom4Points (&axisTransform,
-                        &pEllipsoidPoint[0],
-                        &pEllipsoidPoint[1],
-                        &pEllipsoidPoint[2],
-                        &pEllipsoidPoint[3]);
+        axisTransform.InitFrom4Points(pEllipsoidPoint[0], pEllipsoidPoint[1], pEllipsoidPoint[2], pEllipsoidPoint[3]);
         result = bsiDMap4d_initFromTransform (&axisMap, &axisTransform, false);
 
         if (pHMap)
@@ -3407,7 +3446,7 @@ int numPoint
     DVec3d xVec, yVec, zVec;
     bool    boolstat = false;
     if (   !bsiGeom_planeThroughPoints (&normal, &origin, pPoints, numPoint)
-        || !bsiDVec3d_getNormalizedTriad (&normal, &xVec, &yVec, &zVec)
+        || !normal.GetNormalizedTriad(xVec, yVec, zVec)
        )
         {
         if (pWorldToPlane)
@@ -3421,8 +3460,8 @@ int numPoint
         }
     else
         {
-        bsiTransform_initFromOriginAndVectors (&planeToWorld, &origin, &xVec, &yVec, &zVec);
-        bsiTransform_invertAsRotation (&worldToPlane, &planeToWorld);
+        planeToWorld.InitFromOriginAndVectors(origin, xVec, yVec, zVec);
+        worldToPlane.InvertRigidBodyTransformation (planeToWorld);
 
         if (pWorldToPlane)
             *pWorldToPlane = worldToPlane;
@@ -3446,7 +3485,7 @@ int numPoint
                 pRange->Init ();
                 for (i = 0; i < numPoint; i++)
                     {
-                    bsiTransform_multiplyDPoint3d (&worldToPlane, &xyz, &pPoints[i]);
+                    worldToPlane.Multiply (xyz, pPoints[i]);
                     pRange->Extend (xyz);
                     }
                 }
@@ -3674,5 +3713,90 @@ DPoint3dCP pTranslation
     pA->SetRow ( 1, pCol0->y, pCol1->y, pCol2->y, pTranslation->y );
     pA->SetRow ( 2, pCol0->z, pCol1->z, pCol2->z, pTranslation->z );
     pA->SetRow ( 3, 0.0, 0.0, 0.0, 1.0 );
+    }
+/*-----------------------------------------------------------------*//**
+* @param pEigenvectors <= matrix of eigenvectors.
+* @param pEigenvalues  => eigenvalues corresponding to columns of the eigenvector matrix.
+* @param pInstance      => matrix whose eigenvectors and eigenvalues are computed.
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiRotMatrix_symmetricEigensystem
+(
+RotMatrixP pEigenvectors,
+DPoint3dP pEigenvalues,
+RotMatrixCP pInstance
+)
+    {
+    RotMatrix workMatrix = *pInstance;
+    int numIteration;
+    bsiGeom_jacobi3X3 (
+              (double*)pEigenvalues,
+              (double (*)[3])pEigenvectors,
+              &numIteration,
+              (double (*)[3])&workMatrix
+              );
+        }
+/*-----------------------------------------------------------------*//**
+Test if a matrix is "just" a rotation around z (i.e. in the xy plane)
+@param pMatrix => matrix to analyze.
+@param pRadians <= angle in radians.  This angle is the direction of column 0
+of the matrix.
+@return false if there are any non-rotational effects, or rotation is around any other axis.
+@group "RotMatrix Rotations"
+ @bsimethod                                     EarlinLutz      02/02
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    bsiRotMatrix_isXYRotation
+
+
+(
+RotMatrixCP pMatrix,
+double  *pRadians
+)
+    {
+    double radians = 0.0;
+    bool    result = false;
+    if (   pMatrix->IsOrthogonal ()
+       &&  1 == bsiRotMatrix_summaryZEffects (pMatrix)
+       &&   pMatrix->Determinant () > 0.0
+       )
+        {
+        radians = atan2 (pMatrix->form3d[1][0], pMatrix->form3d[0][0]);
+        result = true;
+        }
+    if (pRadians)
+        *pRadians = radians;
+    return result;
+    }
+/*-----------------------------------------------------------------*//**
+ Approximate a coordinate frame through a set of points.
+ The xy plane is determined by planeThroughPoints.
+ The xy axes are arbitrary within that plane, and z is perpendicular.
+ @param pTransform <= transformation
+ @param pPoint => The point array
+ @param numPoint => The number of points
+
+ @return true if the points define a clear plane.
+ @group "Transform Initialization"
+ @bsimethod                                                       DavidAssaf      12/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     bsiTransform_initFromPlaneOfDPoint3dArray
+
+(
+TransformP pTransform,
+DPoint3dCP pPoint,
+int             numPoint
+)
+    {
+    DVec3d normal;
+    DPoint3d origin;
+    DVec3d vector0, vector1, vector2;
+    bool    boolstat = false;
+    if (bsiGeom_planeThroughPoints (&normal, &origin, pPoint, numPoint))
+        {
+        boolstat = bsiDPoint3d_getNormalizedTriad (&normal,
+                    &vector0, &vector1, &vector2);
+        pTransform->InitFromOriginAndVectors(origin, vector0, vector1, vector2);
+        }
+    return boolstat;
     }
 END_BENTLEY_GEOMETRY_NAMESPACE

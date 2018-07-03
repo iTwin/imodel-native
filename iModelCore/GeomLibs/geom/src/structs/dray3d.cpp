@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/dray3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -40,7 +40,7 @@ DPoint3dCP pPoint1
 )
     {
     pInstance->origin = *pPoint0;
-    bsiDVec3d_subtractDPoint3dDPoint3d (&pInstance->direction, pPoint1, pPoint0);
+    pInstance->direction.DifferenceOf (*pPoint1, *pPoint0);
     }
 
 
@@ -58,7 +58,7 @@ DSegment3dCP pSegment
 )
     {
     pInstance->origin = pSegment->point[0];
-    bsiDVec3d_subtractDPoint3dDPoint3d (&pInstance->direction, &pSegment->point[1], &pSegment->point[0]);
+    pInstance->direction.DifferenceOf (*(&pSegment->point[1]), *(&pSegment->point[0]));
     }
 
 
@@ -121,7 +121,7 @@ DPoint3dP pPoint,
 double            param
 )
     {
-    bsiDPoint3d_addScaledDPoint3d (pPoint, &pInstance->origin, &pInstance->direction, param);
+    pPoint->SumOf (pInstance->origin, pInstance->direction, param);
     }
 
 
@@ -140,7 +140,7 @@ DPoint3dP pPoint1
 )
     {
     *pPoint0 = pInstance->origin;
-    bsiDPoint3d_addDPoint3dDPoint3d (pPoint1, &pInstance->origin, &pInstance->direction);
+    pPoint1->SumOf (pInstance->origin, pInstance->direction);
     }
 
 
@@ -174,7 +174,7 @@ Public GEOMDLLIMPEXP double          bsiDRay3d_lengthSquared
 DRay3dCP pInstance
 )
     {
-    return bsiDVec3d_magnitudeSquared (&pInstance->direction);
+    return pInstance->direction.MagnitudeSquared ();
     }
 
 
@@ -199,17 +199,17 @@ DPoint3dCP pPoint
     bool    result;
 
     vectorU = pInstance->direction;
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vectorV, pPoint, &pInstance->origin);
-    UdotU = bsiDPoint3d_dotProduct (&vectorU, &vectorU);
-    UdotV = bsiDPoint3d_dotProduct (&vectorU, &vectorV);
+    vectorV.DifferenceOf (*pPoint, pInstance->origin);
+    UdotU = vectorU.DotProduct (vectorU);
+    UdotV = vectorU.DotProduct (vectorV);
 
-    result = bsiTrig_safeDivide (&param, UdotV, UdotU, 0.0);
+    result = DoubleOps::SafeDivide (param, UdotV, UdotU, 0.0);
 
     if (pClosestParam)
         *pClosestParam = param;
 
     if (pClosestPoint)
-        bsiDPoint3d_addScaledDPoint3d (pClosestPoint, &pInstance->origin, &vectorU, param);
+        pClosestPoint->SumOf (pInstance->origin, vectorU, param);
     return result;
     }
 
@@ -235,11 +235,11 @@ DPoint3dCP pPoint
     bool    result;
 
     vectorU = pInstance->direction;
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vectorV, pPoint, &pInstance->origin);
-    UdotU = bsiDPoint3d_dotProduct (&vectorU, &vectorU);
-    UdotV = bsiDPoint3d_dotProduct (&vectorU, &vectorV);
+    vectorV.DifferenceOf (*pPoint, pInstance->origin);
+    UdotU = vectorU.DotProduct (vectorU);
+    UdotV = vectorU.DotProduct (vectorV);
 
-    result = bsiTrig_safeDivide (&param, UdotV, UdotU, 0.0);
+    result = DoubleOps::SafeDivide (param, UdotV, UdotU, 0.0);
 
     if (param < 0.0)
         param = 0.0;
@@ -254,7 +254,7 @@ DPoint3dCP pPoint
         if (param <= 0.0)
             *pClosestPoint = pInstance->origin;
         else
-            bsiDPoint3d_addScaledDPoint3d (pClosestPoint, &pInstance->origin, &vectorU, param);
+            pClosestPoint->SumOf (pInstance->origin, vectorU, param);
         }
     return result;
     }
@@ -276,8 +276,8 @@ TransformCP pTransform,
 DRay3dCP pSource
 )
     {
-    bsiTransform_multiplyDPoint3dArray (pTransform, &pDest->origin, &pSource->origin, 1);
-    bsiTransform_multiplyDPoint3dByMatrixPart (pTransform, &pDest->direction, &pSource->direction);
+    pTransform->Multiply (&pDest->origin, &pSource->origin, 1);
+    pTransform->MultiplyMatrixOnly (pDest->direction, pSource->direction);
     return true;
     }
 
@@ -340,23 +340,17 @@ DPlane3dCP pPlane
     double UdotN, AdotN, param;
     bool    result;
 
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vectorA, &pInstance->origin, &pPlane->origin);
+    vectorA.DifferenceOf (pInstance->origin, pPlane->origin);
 
-    UdotN = bsiDPoint3d_dotProduct (&pInstance->direction,     &pPlane->normal);
-    AdotN = bsiDPoint3d_dotProduct (&vectorA,                   &pPlane->normal);
-    result = bsiTrig_safeDivide (&param, -AdotN, UdotN, 0.0);
+    UdotN = pInstance->direction.DotProduct (pPlane->normal);
+    AdotN = vectorA.DotProduct (pPlane->normal);
+    result = DoubleOps::SafeDivide (param, -AdotN, UdotN, 0.0);
 
     if (pIntParam)
         *pIntParam = param;
 
     if (pIntPoint)
-        bsiDPoint3d_addScaledDPoint3d
-                        (
-                        pIntPoint,
-                        &pInstance->origin,
-                        &pInstance->direction,
-                        param
-                        );
+        pIntPoint->SumOf (pInstance->origin, pInstance->direction, param);
 
     return result;
     }
@@ -390,10 +384,10 @@ double          radius
     double param[2];
     int i;
 
-    bsiDVec3d_subtractDPoint3dDPoint3d (&V, &pRay->origin, pCenter);
-    a = bsiDPoint3d_dotProductXY (&pRay->direction, &pRay->direction);
-    b = 2.0 * bsiDPoint3d_dotProductXY (&pRay->direction, &V);
-    c = bsiDPoint3d_dotProductXY (&V, &V) - radius * radius;
+    V.DifferenceOf (pRay->origin, *pCenter);
+    a = pRay->direction.DotProductXY (pRay->direction);
+    b = 2.0 * pRay->direction.DotProductXY (V);
+    c = V.DotProductXY (V) - radius * radius;
 
     numSolution = bsiMath_solveQuadratic (param, a, b, c);
     for (i = 0; i < numSolution; i++)
@@ -401,10 +395,7 @@ double          radius
         if (pIntParam)
             pIntParam[i] = param[i];
         if (pIntPoint)
-            bsiDPoint3d_addScaledDPoint3d (&pIntPoint[i],
-                                    &pRay->origin,
-                                    &pRay->direction,
-                                    param[i]);
+            pIntPoint[i].SumOf (pRay->origin, pRay->direction, param[i]);
         }
     return numSolution;
     }
@@ -442,15 +433,15 @@ DPoint3dCP    pTriangleXYZ
     DVec3d    vectorC, solution;
     bool        result = false;
 
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vectorU, &pTriangleXYZ[1], &pTriangleXYZ[0]);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vectorV, &pTriangleXYZ[2], &pTriangleXYZ[0]);
+    vectorU.DifferenceOf (pTriangleXYZ[1], pTriangleXYZ[0]);
+    vectorV.DifferenceOf (pTriangleXYZ[2], pTriangleXYZ[0]);
     vectorW = pRay->direction;
-    bsiRotMatrix_initFromColumnVectors (&matrix, &vectorU, &vectorV, &vectorW);
+    matrix.InitFromColumnVectors (vectorU, vectorV, vectorW);
 
-    if (bsiRotMatrix_invertRotMatrix (&inverse, &matrix))
+    if (inverse.InverseOf (matrix))
         {
-        bsiDVec3d_subtractDPoint3dDPoint3d (&vectorC, &pRay->origin, &pTriangleXYZ[0]);
-        bsiRotMatrix_multiplyRotMatrixDPoint3d (&inverse, &solution, &vectorC);
+        vectorC.DifferenceOf (pRay->origin, pTriangleXYZ[0]);
+        inverse.Multiply (solution, vectorC);
 
         if (pBarycentric)
             {
@@ -463,7 +454,7 @@ DPoint3dCP    pTriangleXYZ
             *pRayParameter = -solution.z;
 
         if (pXYZ)
-            bsiDPoint3d_addScaledDPoint3d (pXYZ, &pRay->origin, &pRay->direction, -solution.z);
+            pXYZ->SumOf (pRay->origin, pRay->direction, -solution.z);
 
         result = true;
         }

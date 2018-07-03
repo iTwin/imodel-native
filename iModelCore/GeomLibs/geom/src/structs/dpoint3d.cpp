@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/dpoint3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -864,7 +864,7 @@ double      z
     pPoint->y = distanceXY * sin (angleRadians);
     pPoint->z = z;
     }
-
+#ifdef CompileSweepToPlane
 /*-----------------------------------------------------------------*//**
 @description Sweep a point along a specified direction until it is on a plane.
 @instance pPoint IN start point.
@@ -894,7 +894,7 @@ DPlane3dCP  pPlane
     if (pSweepMultiplier)
         *pSweepMultiplier = f;
     if (pResult)
-        bsiDPoint3d_addScaledDVec3d (pResult, pPoint, &sweepDirection, f);
+        pResult->SumOf (*pPoint, sweepDirection, f);
     return boolstat;
     }
 /*-----------------------------------------------------------------*//**
@@ -931,9 +931,9 @@ DPlane3dCP  pPlane
     if (pSweepMultiplier)
         *pSweepMultiplier = f;
     if (pResult)
-        bsiDPoint3d_addScaledDVec3d (pResult, pPoint, &sweepDirection, f);
+        pResult->SumOf (*pPoint, sweepDirection, f);
     return boolstat;
     }
-
+#endif
 
 END_BENTLEY_NAMESPACE

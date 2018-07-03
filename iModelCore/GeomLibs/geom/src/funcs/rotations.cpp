@@ -162,7 +162,7 @@ DPoint3dCP pB      /* => right hand side*/
         rankDeficiency = 1;
         /* Just project onto the original A vector.*/
         *pS1 = 0.0;
-        *pS0 = bsiDPoint3d_dotProduct (pB, pA0) / bsiDPoint3d_dotProduct (pA0, pA0);
+        *pS0 = pB->DotProduct (*pA0) / pA0->DotProduct (*pA0);
         }
     else
         {
@@ -198,17 +198,17 @@ double    theta
     double c = cos (theta);
     double s = sin (theta);
     DPoint3d    F;
-    bsiRotMatrix_multiplyComponents (pMatrix, &F, c, s, 1.0);
+    pMatrix->MultiplyComponents(F, c, s, 1.0);
 
     if (pMappedTrigFuncs)
         *pMappedTrigFuncs = F;
     if (pPhi)
-        *pPhi = bsiTrig_atan2 (F.y, F.x);
+        *pPhi = Angle::Atan2 (F.y, F.x);
 
     if (pDerivNumerator || pDerivDenominator)
         {
         DPoint3d dF;
-        bsiRotMatrix_multiplyComponents (pMatrix, &dF, -s, c, 0.0);
+        pMatrix->MultiplyComponents(dF, -s, c, 0.0);
 
         if (pDerivNumerator)
             *pDerivNumerator = dF.y * F.x - dF.x * F.y;
@@ -239,7 +239,7 @@ double    theta1
 
     bsiTrig_mapAngle (NULL, &phi0, &orientation, NULL, pMatrix, theta0);
 
-    if (bsiTrig_isAngleFullCircle (dTheta))
+    if (Angle::IsFullCircle (dTheta))
         {
         /* Should be easy to map a full circle.  Tis not so -- "identical"
             start and end angles frustrate direction tests.  Work with an artificial
@@ -293,8 +293,8 @@ DPoint3dCP pB
     double mag0, mag1;
     int rankDeficiency = 0;
 
-    mag0 = bsiDPoint3d_dotProduct (pA0, pA0);
-    mag1 = bsiDPoint3d_dotProduct (pA1, pA1);
+    mag0 = pA0->DotProduct (*pA0);
+    mag1 = pA1->DotProduct (*pA1);
 
     if (mag0 == 0.0 && mag1 == 0.0)
         {
@@ -465,13 +465,13 @@ double      w1
 
                 bsiTrig_getStandardParabola (pC, &Cinverse);
                 B = *pB;
-                bsiRotMatrix_multiplyRotMatrixRotMatrix (&B, &B, &Cinverse);
+                B.InitProduct (B, Cinverse);
 
                 if (pB)
                     *pB = B;
 
-                bsiDPoint3d_setXYZ (&WT, wc, 0.0, w1);
-                bsiRotMatrix_multiplyTransposeDPoint3d (&B, &WT);
+                WT.Init ( wc, 0.0, w1);
+                B.MultiplyTranspose (WT);
                 rw = 1.0 / WT.z;
                 if (pw)
                     *pw = WT.z;
@@ -486,9 +486,9 @@ double      w1
                 bsiTrig_constructHyperbolicWeights (&secant, &tangent, w1, wc);
                 bsiTrig_applyHyperbolicWeights (&w1, &wc, w1, wc, secant, tangent);
                 if (pQ)
-                    bsiRotMatrix_hyperbolicRowOp (pQ, secant, -tangent, 2, 0, pQ);
+                    pQ->HyperbolicRowOp (secant, -tangent, 2, 0);
                 if (pB)
-                    bsiRotMatrix_hyperbolicColumnOp (pB, pB, secant, tangent, 2, 0);
+                    pB->HyperbolicColumnOp (secant, tangent, 2, 0);
 
                 rw = 1.0 / w1;
                 if (pw)
@@ -507,13 +507,13 @@ double      w1
                 bsiTrig_constructHyperbolicWeights (&secant, &tangent, wc, w1);
                 bsiTrig_applyHyperbolicWeights (&wc, &w1, wc, w1, secant, tangent);
                 if (pQ)
-                    bsiRotMatrix_hyperbolicRowOp (pQ, secant, -tangent, 2, 0, pQ);
+                    pQ->HyperbolicRowOp (secant, -tangent, 2, 0);
                 if (pB)
-                    bsiRotMatrix_hyperbolicColumnOp (pB, pB, secant, tangent, 2, 0);
+                    pB->HyperbolicColumnOp (secant, tangent, 2, 0);
 
                 bsiTrig_getStandardHyperbola (pC, &Cinverse);
                 if (pB)
-                    bsiRotMatrix_multiplyRotMatrixRotMatrix (pB, pB, &Cinverse);
+                    pB->InitProduct (*pB, Cinverse);
 
                 rw = 1.0 / wc;
                 if (pw)
@@ -533,9 +533,9 @@ double      w1
     RotMatrix BT;
     double d;
     Sigma.InitFromScaleFactors (1.0, 1.0, -1.0);
-    bsiRotMatrix_transpose (&BT, pB);
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (&BTSigmaB, &BT, &Sigma);
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (&BTSigmaB, &BTSigmaB, pB);
+    BT.TransposeOf (*pB);
+    BTSigmaB.InitProduct (BT, Sigma);
+    BTSigmaB.InitProduct (BTSigmaB, *pB);
     d = bsiRotMatrix_maxDiff (&Sigma, &BTSigmaB);
 
     }
@@ -546,11 +546,11 @@ double      w1
     RotMatrix Sigma;
     RotMatrix MT;
     double d;
-    bsiRotMatrix_invert (&M, pB);
+    M.InverseOf (*pB);
     Sigma.InitFromScaleFactors (1.0, 1.0, -1.0);
-    bsiRotMatrix_transpose (&MT, &M);
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (&MTSigmaM, &MT, &Sigma);
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (&MTSigmaM, &MTSigmaM, &M);
+    MT.TransposeOf (M);
+    MTSigmaM.InitProduct (MT, Sigma);
+    MTSigmaM.InitProduct (MTSigmaM, M);
     d = bsiRotMatrix_maxDiff (&Sigma, &MTSigmaM);
 
     }

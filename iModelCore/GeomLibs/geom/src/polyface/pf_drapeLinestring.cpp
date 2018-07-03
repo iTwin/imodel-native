@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/pf_drapeLinestring.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -442,7 +442,7 @@ void AdvanceTailToFraction (double f)
     else if (f > m_parameter[0])
         {
         double g;
-        bsiTrig_safeDivide (&g, f - m_parameter[0], m_parameter[1] - m_parameter[0], 0.0);
+        DoubleOps::SafeDivide (g, f - m_parameter[0], m_parameter[1] - m_parameter[0], 0.0);
         m_parameter[0] = (1.0 - g) * m_parameter[0] + g * m_parameter[1];
         m_pointA.Interpolate (m_pointA, g, m_pointB);
         }
@@ -638,10 +638,10 @@ PolyfaceQueryCR mesh
     DPoint3d pointA;
 
     RotMatrix matrix;
-    bsiRotMatrix_initFrom1Vector(&matrix, &sweepDirection, 2, true);
+    matrix.InitFrom1Vector (sweepDirection, 2, true);
     pointA = linestringPoints[0];
     
-    bsiTransform_initFromMatrixAndTranslation (&viewTransforms.viewToWorld, &matrix, &pointA);
+    viewTransforms.viewToWorld.InitFrom (matrix, pointA);
     viewTransforms.worldToView.InverseOf(*(&viewTransforms.viewToWorld));
 
     LocalSearchTable rangeFilter (viewTransforms.worldToView);

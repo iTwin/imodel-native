@@ -1047,7 +1047,7 @@ double          fractionTol
         segment.FractionToPoint (point, tangent, fraction, false);
         if (nullptr != worldToLocal)
             worldToLocal->Multiply (tangent);
-        double a = bsiDVec3d_magnitude (&tangent);
+        double a = tangent.Magnitude ();
         double du;
         double signedLengthError = targetLength - newLength;
         absLengthError = fabs (signedLengthError);
@@ -1928,8 +1928,8 @@ MSBsplineStatus MSBsplineCurve::ComputeInflectionPoints (bvector<DPoint3d>& poin
     bvector<GraphicsPoint> inflections;
     bvector<DPoint4d> segmentPoles;
     BCurveSegment segment;
-    bsiDPoint3d_zero (&derivA1);
-    bsiDPoint3d_zero (&derivA2);
+    derivA1.Zero ();
+    derivA2.Zero ();
     size_t numRealSpan = 0;
     for (size_t spanIndex = 0; GetBezier (segment, spanIndex); spanIndex++)
         {
@@ -1946,10 +1946,10 @@ MSBsplineStatus MSBsplineCurve::ComputeInflectionPoints (bvector<DPoint3d>& poin
                 DPoint3d normalA, normalB;
                 bsiBezierDPoint4d_evaluateDPoint3dArrayExt (NULL, &derivB1, &derivB2,
                                     segment.GetPoleP (), params.order, &u0, 1);
-                bsiDPoint3d_crossProduct (&normalA, &derivA1, &derivA2);
-                bsiDPoint3d_crossProduct (&normalB, &derivB1, &derivB2);
+                normalA.CrossProduct (derivA1, derivA2);
+                normalB.CrossProduct (derivB1, derivB2);
                 double zero = -1.0E-8;
-                if (bsiDPoint3d_dotProduct (&normalA, &normalB) < zero)
+                if (normalA.DotProduct (normalB) < zero)
                     {
                     inflectionParams.push_back (segment.UMin ());
                     }
@@ -1995,8 +1995,8 @@ MSBsplineStatus MSBsplineCurve::ComputeInflectionPointsXY (bvector<DPoint3d>& po
     bool derivAValid = false;
     DPoint4d inflections[MAX_ORDER];
     BCurveSegment segment;
-    bsiDPoint3d_zero (&derivA1);
-    bsiDPoint3d_zero (&derivA2);
+    derivA1.Zero ();
+    derivA2.Zero ();
 
     for (size_t spanIndex = 0; GetBezier (segment, spanIndex); spanIndex++)
         {
@@ -2006,7 +2006,7 @@ MSBsplineStatus MSBsplineCurve::ComputeInflectionPointsXY (bvector<DPoint3d>& po
         if (!segment.IsNullU ())
             {
             if (transform)
-                bsiRotMatrix_multiplyDPoint4dArray (transform, segment.GetPoleP (), segment.GetPoleP (), (int)segment.GetOrder ());
+                transform->Multiply (segment.GetPoleP (), segment.GetPoleP (), (int)segment.GetOrder ());
             if (derivAValid)
                 {
                 //bool    bBreakAtStart = false;
@@ -2014,9 +2014,9 @@ MSBsplineStatus MSBsplineCurve::ComputeInflectionPointsXY (bvector<DPoint3d>& po
                 DPoint3d normalA, normalB;
                 bsiBezierDPoint4d_evaluateDPoint3dArrayExt (NULL, &derivB1, &derivB2,
                                     segment.GetPoleP (), params.order, &u0, 1);
-                bsiDPoint3d_crossProduct (&normalA, &derivA1, &derivA2);
-                bsiDPoint3d_crossProduct (&normalB, &derivB1, &derivB2);
-                if (bsiDPoint3d_dotProduct (&normalA, &normalB) <=0.0)
+                normalA.CrossProduct (derivA1, derivA2);
+                normalB.CrossProduct (derivB1, derivB2);
+                if (normalA.DotProduct (normalB) <=0.0)
                     {
                     inflectionParams.push_back (segment.UMin ());
                     }

@@ -61,7 +61,7 @@ int     n
     max1 = DoubleOps::MaxAbs (term1, productOrder);
     maxD = DoubleOps::MaxAbs (pD, productOrder);
     max01 = max0 > max1 ? max0 : max1;
-    bsiTrig_safeDivide (pRatio, maxD, max01, 0.0);
+    DoubleOps::SafeDivide (*pRatio, maxD, max01, 0.0);
     return true;
     }
 
@@ -132,7 +132,7 @@ int     n
     termMaxAbs[2] = DoubleOps::MaxAbs (term, productOrder);
     tMax = DoubleOps::MaxAbs (termMaxAbs, 3);
     dMax = DoubleOps::MaxAbs (pD, productOrder);
-    bsiTrig_safeDivide (pRatio, dMax, tMax, 0.0);
+    DoubleOps::SafeDivide (*pRatio, dMax, tMax, 0.0);
     return true;
     }
 
@@ -225,7 +225,7 @@ int     n
                 dMax = dMaxCurr;
             }
         dMaxCurr = DoubleOps::MaxAbs (pD, *pOrderD);
-        bsiTrig_safeDivide (pRatioD, dMaxCurr, dMax, 0.0);
+        DoubleOps::SafeDivide (*pRatioD, dMaxCurr, dMax, 0.0);
 #ifdef debugRecursiveDeterminant
         /* To enable this, set the define and disable branches into 2,3 cases above. */
         if (m == 3 || m == 2)
@@ -288,7 +288,7 @@ const DPoint4d      *pPointB,
     int k;
     for (k = 0; k < orderB; k++)
         {
-        pIJ[k] = pJI[k] = bsiDPoint4d_dotProduct (pH, &pPointB[k]);
+        pIJ[k] = pJI[k] = pH->DotProduct (pPointB[k]);
         }
     }
 
@@ -549,7 +549,7 @@ const DPoint4d  *pB,
             */
             for (i = 0; i < numRoot; i++)
                 {
-                if (   bsiDPoint4d_normalize (&intersectB[i], &normalizedIntersection)
+                if (   intersectB[i].GetProjectedXYZ (normalizedIntersection)
                     && bsiBezierDPoint4d_closestXYPoint (&closePoint, &closeParam, &closeDist2,
                                         pA, orderA,
                                         normalizedIntersection.x, normalizedIntersection.y,
@@ -1094,8 +1094,8 @@ if (s_favorB)
         /* Form poles in the local coordinate system of the xyw projection of the conic: */
         for (i = 0; i < orderA; i++)
             {
-            bsiRotMatrix_multiplyComponents (&inverseOriginTransform, &xyw, pA[i].x, pA[i].y, pA[i].w);
-            bsiRotMatrix_multiplyComponents (&Binv, &xywPole[i], xyw.x, xyw.y, xyw.z);
+            inverseOriginTransform.MultiplyComponents(xyw, pA[i].x, pA[i].y, pA[i].w);
+            Binv.MultiplyComponents(xywPole[i], xyw.x, xyw.y, xyw.z);
             }
         /* In the local coordinates the equation of the conic is x^2 + y^2 - w^2 = 0. */
         bsiBezier_univariateProduct (ff, 0, 1,
@@ -1118,7 +1118,7 @@ if (s_favorB)
             /* Find the root back in the trignometric world */
             double curveParam = roots[i];
             bsiBezier_evaluate ((double*)&xyw, (double *)xywPole, orderA, 3, curveParam);
-            theta = bsiTrig_atan2 (xyw.y, xyw.x);
+            theta = Angle::Atan2 (xyw.y, xyw.x);
             if (extendConic || bsiDConic4d_angleInSweep (pConic, theta))
                 {
                 if (pPointA)

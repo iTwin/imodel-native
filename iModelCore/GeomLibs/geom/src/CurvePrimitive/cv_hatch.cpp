@@ -235,8 +235,8 @@ DPlane3dCP                              pPlane
 
     //cvHatch_appendWithArcsAsBezier (pBoundary, pBoundary);
     //cvHatch_forceBezierAndLinestringEndsToNeighbors (pBoundary, maxGapTol);
-    bsiDVec3d_getNormalizedTriad (&pPlane->normal, &uVec, &vVec, &wVec);
-    bsiTransform_initFromOriginAndVectors (&transform, &pPlane->origin, &uVec, &vVec, &wVec);
+    pPlane->normal.GetNormalizedTriad (uVec, vVec, wVec);
+    transform.InitFromOriginAndVectors(pPlane->origin, uVec, vVec, wVec);
     boolstat = inverse.InverseOf (transform);
 
     bsiDPoint4d_setComponents
@@ -296,8 +296,8 @@ double                          daMin
         */
         for (i = 0; i < numClipPlanes; i++)
             {
-            h0 = bsiDPoint4d_dotProduct (&gp0.point, &pClipPlaneBuffer[i].point);
-            h1 = bsiDPoint4d_dotProduct (&gp1.point, &pClipPlaneBuffer[i].point);
+            h0 = gp0.point.DotProduct (*(&pClipPlaneBuffer[i].point));
+            h1 = gp1.point.DotProduct (*(&pClipPlaneBuffer[i].point));
             if (h1 >= h0)
                 {
                 if (h0 > 0.0)
@@ -755,7 +755,7 @@ int         numPole
         k0 = k1 = 0;    // Will be overwritten on first pass.
         for (i = 0; i < numPole; i++)
             {
-            if (bsiTrig_safeDivide (&a, -pF[i], pG[i], 0.0))
+            if (DoubleOps::SafeDivide (a, -pF[i], pG[i], 0.0))
                 {
                 m0 = jmdlGPA_roundDownInt (a);
                 m1 = jmdlGPA_roundUpInt   (a);
@@ -797,7 +797,7 @@ const   DPoint4d                *pIn,
 int                             numPoint
 )
     {
-    bsiTransform_multiplyDPoint4dArray (&pContext->inverse, pOut, pIn, numPoint);
+    pContext->inverse.Multiply (pOut, pIn, numPoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -874,8 +874,8 @@ const   DPoint4d            *pLocalEnd,
     double hTol = pContext->altitudeTolerance;
 
     GraphicsPoint gPoint;
-    h0 = bsiDPoint4d_dotProduct (pPlane, pLineStart);
-    h1 = bsiDPoint4d_dotProduct (pPlane, pLineEnd);
+    h0 = pPlane->DotProduct (*pLineStart);
+    h1 = pPlane->DotProduct (*pLineEnd);
 
     a0 = fabs (h0);
     a1 = fabs (h1);
@@ -1083,7 +1083,7 @@ static void        jmdlGPA_TCH_cutDEllipse3d
         // library code has x,y flipped in atan call. Recompute it ...
         cc = trigPoint[i].x;
         ss = trigPoint[i].y;
-        theta = bsiTrig_atan2 (ss, cc);
+        theta = Angle::Atan2 (ss, cc);
         trigPoint[i].z = theta;
 #endif
         auto derivVector = DVec3d::FromSumOf (ellipse.vector0, -ss, ellipse.vector90, cc);
@@ -1113,7 +1113,7 @@ static void        jmdlGPA_TCH_cutDEllipse3d
                 bAccept = true;
                 }
             }
-        else if (bsiTrig_angleInSweep (trigPoint[i].z, ellipse.start, ellipse.sweep))
+        else if (Angle::InSweepAllowPeriodShift (trigPoint[i].z, ellipse.start, ellipse.sweep))
             {
             // Only accept simple crossings.
             if (fabs (dHdTheta) > hTol)
@@ -1202,9 +1202,9 @@ DEllipse3dCR ellipse
         for (i = 0; i < numPoint; i++)
             {
             ellipse.Evaluate (currPoint, ellipse.start + i * df * ellipse.sweep);
-            if (bsiTrig_safeDivide (&a,
-                                -bsiDPoint4d_dotProduct (&H0, &currPoint),
-                                bsiDPoint4d_dotProduct (&H1, &currPoint),
+            if (DoubleOps::SafeDivide (a,
+                                -H0.DotProduct (currPoint),
+                                H1.DotProduct (currPoint),
                                 0.0))
                 {
                 if (numOK == 0)
@@ -1246,7 +1246,7 @@ DEllipse3dCR ellipse
             alpha = alpha0 + a * alpha1;
             beta  = beta0  + a * beta1;
             gamma = gamma0 + a * gamma1;
-            theta = bsiTrig_atan2 (gamma, beta);
+            theta = Angle::Atan2 (gamma, beta);
             /* HACK .. a little confused on signs here. Only one of these
                 angles matters, but really cheap to test both. */
             if (ellipse.IsAngleInSweep (theta))
@@ -1257,21 +1257,21 @@ DEllipse3dCR ellipse
             }
         DPoint3d point0, point1;
         ellipse.EvaluateEndPoints (point0, point1);
-        if (bsiTrig_safeDivide (&a,
+        if (DoubleOps::SafeDivide (a,
                             -H0.DotProduct (point0, 1.0),
-//                            -bsiDPoint4d_dotProduct (&H0, pStartPoint),
+//                            -H0.DotProduct (*pStartPoint),
                             H1.DotProduct (point0, 1.0),
-//                            bsiDPoint4d_dotProduct (&H1, pStartPoint),
+//                            H1.DotProduct (*pStartPoint),
                             0.0))
             {
             appendDouble (clippedSortDist, &numClippedSort, MAX_CLIPPED_SORT_DIST, a);
             }
 
-        if (bsiTrig_safeDivide (&a,
+        if (DoubleOps::SafeDivide (a,
                             -H0.DotProduct (point1, 1.0),
-//                            -bsiDPoint4d_dotProduct (&H0, pEndPoint),
+//                            -H0.DotProduct (*pEndPoint),
                             H1.DotProduct (point1, 1.0),
-//                            bsiDPoint4d_dotProduct (&H1, pEndPoint),
+//                            H1.DotProduct (*pEndPoint),
                             0.0))
             {
             appendDouble (clippedSortDist, &numClippedSort, MAX_CLIPPED_SORT_DIST, a);
@@ -1455,8 +1455,8 @@ BCurveSegment segment
     auto numPole = (int)segment.GetOrder ();
     for (int i = 0; i <  numPole; i++)
         {
-        poleArray0[i] = bsiDPoint4d_dotProduct (&H0, &poles[i]);
-        poleArray1[i] = bsiDPoint4d_dotProduct (&H1, &poles[i]);
+        poleArray0[i] = H0.DotProduct (poles[i]);
+        poleArray1[i] = H1.DotProduct (poles[i]);
         }
     if (jmdlGPA_crossingExtrema (&plane0, &plane1, poleArray0, poleArray1, numPole))
         {
@@ -1654,7 +1654,7 @@ int                             maxLines
     if (worldRange.IsNull ())
         return ValidatedDouble (1.0, false);
 
-    bsiTransform_multiplyRange (&inverse, &localRange, &worldRange);
+    inverse.Multiply (localRange, worldRange);
 
     /* Converted V7 files sometimes ask for 1 UOR spacing.
     Just blow these off

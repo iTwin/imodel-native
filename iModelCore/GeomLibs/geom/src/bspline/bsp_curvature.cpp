@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bsp_curvature.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -37,8 +37,8 @@ double dist1
     if (bSaveAll || (dist0 > 0.0 && dist1 > 0.0))
         {
         pPoles[i0] = *pXYZ0;
-        bsiDPoint3d_addScaledDVec3d (&pPoles[i0 + 1], pXYZ0, pDir0, dist0);
-        bsiDPoint3d_addScaledDVec3d (&pPoles[i0 + 2], pXYZ1, pDir1, dist1);
+        pPoles[i0 + 1].SumOf (*pXYZ0, *pDir0, dist0);
+        pPoles[i0 + 2].SumOf (*pXYZ1, *pDir1, dist1);
         pPoles[i0 + 3] = *pXYZ1;
 
         pDist0[numCurve] = dist0;
@@ -94,25 +94,25 @@ double r1
     int numRoot;
     int numCurve = 0;
     double a0, a1, a2;
-    bsiDPoint3d_setXYZ (&zVec, 0.0 ,0.0 ,1.0);
+    zVec.Init ( 0.0 ,0.0 ,1.0);
 
-    bsiDVec3d_normalize (&dir0, pDir0);
-    bsiDVec3d_normalize (&dir1, pDir1);
+    dir0.Normalize (*pDir0);
+    dir1.Normalize (*pDir1);
 
-    bsiDVec3d_crossProduct (&perp0, &zVec, &dir0);
-    bsiDVec3d_crossProduct (&perp1, &zVec, &dir1);
+    perp0.CrossProduct (zVec, dir0);
+    perp1.CrossProduct (zVec, dir1);
 
-    bsiTransform_initFromOriginAndVectors (&T0ToWorld, pXYZ0, &dir0, &perp0, &zVec);
-    bsiTransform_initFromOriginAndVectors (&T1ToWorld, pXYZ1, &dir1, &perp1, &zVec);
+    T0ToWorld.InitFromOriginAndVectors(*pXYZ0, dir0, perp0, zVec);
+    T1ToWorld.InitFromOriginAndVectors(*pXYZ1, dir1, perp1, zVec);
 
-    bsiTransform_invertTransform (&TWorldTo0, &T0ToWorld);
-    bsiTransform_invertTransform (&TWorldTo1, &T1ToWorld);
+    TWorldTo0.InverseOf (T0ToWorld);
+    TWorldTo1.InverseOf (T1ToWorld);
 
-    bsiTransform_multiplyDPoint3d (&TWorldTo1, &uv0, pXYZ0);
-    bsiTransform_multiplyDPoint3d (&TWorldTo0, &xy3, pXYZ1);
+    TWorldTo1.Multiply (uv0, *pXYZ0);
+    TWorldTo0.Multiply (xy3, *pXYZ1);
 
-    idotv = bsiDVec3d_dotProduct (&dir0, &perp1);
-    udotj = bsiDVec3d_dotProduct (&dir1, &perp0);
+    idotv = dir0.DotProduct (perp1);
+    udotj = dir1.DotProduct (perp0);
 
     q0 = a * r0;
     q1 = a * r1;
@@ -233,15 +233,15 @@ double   r1
     double e0, e1;
     dir0 = *pTangent0;
     dir1 = *pTangent1;
-    b0 = bsiDVec3d_normalizeInPlace (&dir0);
-    b1 = bsiDVec3d_normalizeInPlace (&dir1);
+    b0 = dir0.Normalize ();
+    b1 = dir1.Normalize ();
     bsum = b0 + b1;
-    bsiDVec3d_setXYZ (&zVec, 0,0,1);
-    bsiDVec3d_crossProduct (&perp0, &zVec, &dir0);
-    bsiDVec3d_crossProduct (&perp1, &zVec, &dir1);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector01, pXYZ1, pXYZ0);
-    h1 = bsiDVec3d_dotProduct (&perp0, &vector01);
-    h0 = -bsiDVec3d_dotProduct (&perp1, &vector01);
+    zVec.Init ( 0,0,1);
+    perp0.CrossProduct (zVec, dir0);
+    perp1.CrossProduct (zVec, dir1);
+    vector01.DifferenceOf (*pXYZ1, *pXYZ0);
+    h1 = perp0.DotProduct (vector01);
+    h0 = -perp1.DotProduct (vector01);
 
     q0 = a * r0;
     if (h0 < 0.0)
@@ -251,17 +251,17 @@ double   r1
     if (h1 < 0.0)
         q1 = -q1;
 
-    bsiTrig_safeDivide (&e0, b0 * b0, q0, 0.0);
-    bsiTrig_safeDivide (&e1, b1 * b1, q1, 0.0);
+    DoubleOps::SafeDivide (e0, b0 * b0, q0, 0.0);
+    DoubleOps::SafeDivide (e1, b1 * b1, q1, 0.0);
 
     // Shift each endpoint perpendicular by its offset.
-    bsiDPoint3d_addScaledDVec3d (&offsetRay0.origin, pXYZ0, &perp0, -e0);
-    bsiDPoint3d_addScaledDVec3d (&offsetRay1.origin, pXYZ1, &perp1, -e1);
+    offsetRay0.origin.SumOf (*pXYZ0, perp0, -e0);
+    offsetRay1.origin.SumOf (*pXYZ1, perp1, -e1);
     offsetRay0.direction = dir0;
     offsetRay1.direction = dir1;
     if (bsiDRay3d_closestApproach (NULL, NULL, &cp0, &cp1, &offsetRay0, &offsetRay1))
         {
-        bsiDPoint3d_interpolate (&cp, &cp0, b1 / bsum, &cp1);
+        cp.Interpolate (cp0, b1 / bsum, cp1);
         pBezierXYZ[0] = *pXYZ0;
         bsiDPoint3d_addDPoint3dDVec3d (&pBezierXYZ[1], pXYZ0, pTangent0);
         pBezierXYZ[2] = cp;
@@ -312,16 +312,16 @@ DPoint3d const *pControlPoint   // middle control point.
     double e0, e1;  // Computed tangent magnitude.
     dir0 = *pTangent0;
     dir1 = *pTangent1;
-    b0 = bsiDVec3d_normalizeInPlace (&dir0);
-    b1 = bsiDVec3d_normalizeInPlace (&dir1);
+    b0 = dir0.Normalize ();
+    b1 = dir1.Normalize ();
 
-    bsiDVec3d_setXYZ (&zVec, 0,0,1);
-    bsiDVec3d_crossProduct (&perp0, &zVec, &dir0);
-    bsiDVec3d_crossProduct (&perp1, &zVec, &dir1);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector0CP, pControlPoint, pXYZ0);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector1CP, pControlPoint, pXYZ1);
-    h0 = bsiDVec3d_dotProduct (&perp0, &vector0CP);
-    h1 = bsiDVec3d_dotProduct (&perp1, &vector1CP);
+    zVec.Init ( 0,0,1);
+    perp0.CrossProduct (zVec, dir0);
+    perp1.CrossProduct (zVec, dir1);
+    vector0CP.DifferenceOf (*pControlPoint, *pXYZ0);
+    vector1CP.DifferenceOf (*pControlPoint, *pXYZ1);
+    h0 = perp0.DotProduct (vector0CP);
+    h1 = perp1.DotProduct (vector1CP);
 
     if (r0 == 0.0 || r1 == 0.0)
         return ERROR;   // We're not dealing with the degnerate cases...
@@ -329,9 +329,9 @@ DPoint3d const *pControlPoint   // middle control point.
     e1 = sqrt (fabs (a * r1 * h1));
 
     pBezierXYZ[0] = *pXYZ0;
-    bsiDPoint3d_addScaledDVec3d (&pBezierXYZ[1], pXYZ0, &dir0, e0);
+    pBezierXYZ[1].SumOf (*pXYZ0, dir0, e0);
     pBezierXYZ[2] = *pControlPoint;
-    bsiDPoint3d_addScaledDVec3d (&pBezierXYZ[3], pXYZ1, &dir1, e1);
+    pBezierXYZ[3].SumOf (*pXYZ1, dir1, e1);
     pBezierXYZ[4] = *pXYZ1;
 
     status = SUCCESS;
@@ -364,10 +364,10 @@ double  fperp
     // Fractional coordinate of pXYZ1 projected to ray (pOrigin, pDir0)
     double s;
     DVec3d dir2;
-    bsiDVec3d_subtractDPoint3dDPoint3d (&dir2, pXYZ2, pXYZ0);
-    bool    boolstat = bsiTrig_safeDivide (&s,
-                        bsiDVec3d_dotProduct (&dir2, pDir01),
-                        bsiDVec3d_dotProduct (pDir01, pDir01), 0.0);
+    dir2.DifferenceOf (*pXYZ2, *pXYZ0);
+    bool    boolstat = DoubleOps::SafeDivide (s,
+                        dir2.DotProduct (*pDir01),
+                        pDir01->DotProduct (*pDir01), 0.0);
     bsiDPoint3d_add2ScaledDVec3d (pResult, pXYZ0, pDir01, f0 * (1.0 - fperp) * s, &dir2, f0 * fperp);
     return boolstat;
     }
@@ -434,10 +434,10 @@ public:
         mTangentB = *pTangentB;
         memset (&mCurve, 0, sizeof (MSBsplineCurve));
         DVec3d chordA, chordB;
-        bsiDVec3d_subtractDPoint3dDPoint3d (&chordA, &pPrimaryXYZ[1], &pPrimaryXYZ[0]);
-        bsiDVec3d_subtractDPoint3dDPoint3d (&chordB, &pPrimaryXYZ[numXYZ-2], &pPrimaryXYZ[numXYZ-1]);
-        bsiDVec3d_crossProduct (&mCross[0], pTangentA, &chordA);
-        bsiDVec3d_crossProduct (&mCross[1], pTangentB, &chordB);
+        chordA.DifferenceOf (pPrimaryXYZ[1], pPrimaryXYZ[0]);
+        chordB.DifferenceOf (pPrimaryXYZ[numXYZ-2], pPrimaryXYZ[numXYZ-1]);
+        mCross[0].CrossProduct (*pTangentA, chordA);
+        mCross[1].CrossProduct (*pTangentB, chordB);
         }
 
     ~CurvatureIterationManager ()
@@ -552,7 +552,7 @@ public:
                     param[iEnd], NULL)
                     )
                 return false;
-            double dot = bsiDVec3d_dotProduct (&mCross[iEnd], (DVec3dCP) &tnbVectors[iEnd][2]);
+            double dot = mCross[iEnd].DotProduct (*((DVec3dCP) &tnbVectors[iEnd][2]));
             if (iEnd == 1)
                 dot = -dot;
             if (dot < 0.0)
@@ -601,8 +601,8 @@ public:
         init (rTarget, r0, r1);
 
         // r==0 means no curvature -- the divide by zero case is fine.
-        bsiTrig_safeDivide (&kTarget[0], 1.0, rTarget[0], 0.0);
-        bsiTrig_safeDivide (&kTarget[1], 1.0, rTarget[1], 0.0);
+        DoubleOps::SafeDivide (kTarget[0], 1.0, rTarget[0], 0.0);
+        DoubleOps::SafeDivide (kTarget[1], 1.0, rTarget[1], 0.0);
 
         if (  !ComputeCurve (tangentFraction, transverseFraction[0], tangentFraction, transverseFraction[1]))
             return false;

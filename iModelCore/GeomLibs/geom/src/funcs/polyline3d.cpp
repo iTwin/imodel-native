@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/polyline3d.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -94,16 +94,16 @@ double           param
             *pPoint = pPointArray[0];
 
         if (pTangent)
-            bsiDPoint3d_zero (pTangent);
+            pTangent->Zero ();
 
         result = true;
         }
     else
         {
         if (pPoint)
-            bsiDPoint3d_zero (pPoint);
+            pPoint->Zero ();
         if (pTangent)
-            bsiDPoint3d_zero (pTangent);
+            pTangent->Zero ();
         result = true;
         }
 
@@ -231,7 +231,7 @@ int              n
     int numEdge = n - 1;
     for (i = 0; i < numEdge; i++)
         {
-        sum += bsiDPoint3d_distance (pPointArray + i, pPointArray + i + 1);
+        sum += pPointArray[ i].Distance (pPointArray[ i + 1]);
         }
     return sum;
     }
@@ -277,13 +277,13 @@ int              n
     if (pWeights[0] < sAbsTol)
         return false;
 
-    bsiDPoint3d_scale (&xyz0, &pPointArray[0], 1.0 / pWeights[0]);
+    xyz0.Scale (pPointArray[0], 1.0 / pWeights[0]);
     for (i = 1; i < n; i++, xyz0 = xyz1)
         {
         if (pWeights[i] < sAbsTol)
             return false;
-        bsiDPoint3d_scale (&xyz1, &pPointArray[i], 1.0 / pWeights[i]);
-        sum += bsiDPoint3d_distance (&xyz0, &xyz1);
+        xyz1.Scale (pPointArray[i], 1.0 / pWeights[i]);
+        sum += xyz0.Distance (xyz1);
         }
     if (pLength)
         *pLength = sum;
@@ -327,8 +327,8 @@ double           dist
         /* Dist < 0 will trigger backwards extrapolation from first non-null segment*/
         for (i = 0; i < numSeg; i++)
             {
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&tangent, pPointArray + i + 1, pPointArray + i);
-            segmentLength = bsiDPoint3d_magnitude (&tangent);
+            tangent.DifferenceOf (pPointArray[ i + 1], pPointArray[ i]);
+            segmentLength = tangent.Magnitude ();
             if (segmentLength > 0.0)
                 {
                 newSum = sum + segmentLength;
@@ -336,9 +336,9 @@ double           dist
                     {
                     fraction = (dist - sum) / segmentLength;
                     if (pPoint)
-                        bsiDPoint3d_addScaledDPoint3d (pPoint, pPointArray + i, &tangent, fraction);
+                        pPoint->SumOf (pPointArray[ i], tangent, fraction);
                     if (pTangent)
-                        bsiDPoint3d_scale (pTangent, &tangent, 1.0 / segmentLength);
+                        pTangent->Scale (tangent, 1.0 / segmentLength);
                     return true;
                     }
                 sum = newSum;
@@ -350,18 +350,18 @@ double           dist
             {
             fraction = (dist - sum) / segmentLength;
             if (pPoint)
-                bsiDPoint3d_addScaledDPoint3d (pPoint, pPointArray + n - 1, &tangent, fraction);
+                pPoint->SumOf (pPointArray[ n - 1], tangent, fraction);
             if (pTangent)
-                bsiDPoint3d_scale (pTangent, &tangent, 1.0 / segmentLength);
+                pTangent->Scale (tangent, 1.0 / segmentLength);
             return  true;
             }
         }
 
     /* Fall out if point never found.*/
     if (pPoint)
-        bsiDPoint3d_zero (pPoint);
+        pPoint->Zero ();
     if (pTangent)
-        bsiDPoint3d_zero (pTangent);
+        pTangent->Zero ();
     return false;
     }
 
@@ -408,15 +408,15 @@ double           dist
         for (i = 0; i < numSeg && count < maxCount; i++)
             {
             basePoint = pPointArray[i];
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&tangent, pPointArray + i + 1, &basePoint);
-            segmentLength = bsiDPoint3d_magnitude (&tangent);
+            tangent.DifferenceOf (pPointArray[ i + 1], basePoint);
+            segmentLength = tangent.Magnitude ();
             if (segmentLength > 0.0)
                 {
                 newSum = sum + segmentLength;
                 while (nextDist < newSum && count < maxCount)
                     {
                     fraction = (nextDist - sum) / segmentLength;
-                    bsiDPoint3d_addScaledDPoint3d (pNewPoint + count, &basePoint, &tangent, fraction);
+                    pNewPoint[ count].SumOf (basePoint, tangent, fraction);
                     count++;
                     nextDist = count * dist;
                     }
@@ -467,8 +467,8 @@ DPoint3dCP pTestPoint
         double dotUV, dotUU;
         int endPointIndex;
         scaledTangent.Zero ();
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorV, pTestPoint, pPointArray);
-        d2Min = bsiDPoint3d_dotProduct (&vectorV, &vectorV);
+        vectorV.DifferenceOf (*pTestPoint, *pPointArray);
+        d2Min = vectorV.DotProduct (vectorV);
         nearParam = 0.0;
         endPointIndex = 0;
         point0 = nearPoint = pPointArray[0];
@@ -477,9 +477,9 @@ DPoint3dCP pTestPoint
         /* For n==1, the loop setup gives the final result also.*/
         for (i = 1; i < n; i++)
             {
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorU, pPointArray + i, &point0);
-            dotUV = bsiDPoint3d_dotProduct (&vectorU, &vectorV);
-            dotUU = bsiDPoint3d_dotProduct (&vectorU, &vectorU);
+            vectorU.DifferenceOf (pPointArray[ i], point0);
+            dotUV = vectorU.DotProduct (vectorV);
+            dotUU = vectorU.DotProduct (vectorU);
 
             /* Does the point project strictly interior to the segment?*/
             /* Strict less than tests protect against dividing by zero on a */
@@ -487,22 +487,22 @@ DPoint3dCP pTestPoint
             if (   0.0 < dotUV && dotUV < dotUU)
                 {
                 double localParam = dotUV / dotUU;
-                bsiDPoint3d_addScaledDPoint3d (&vectorW, &vectorV, &vectorU, -localParam);
-                d2 = bsiDPoint3d_dotProduct (&vectorW, &vectorW);
+                vectorW.SumOf (vectorV, vectorU, -localParam);
+                d2 = vectorW.DotProduct (vectorW);
                 if (d2 < d2Min)
                     {
                     d2Min = d2;
                     nearParam = (i - 1) * paramStep + localParam * paramStep;
                     endPointIndex = -1;
-                    bsiDPoint3d_scale (&scaledTangent, &vectorU, (double)(n - 1));
-                    bsiDPoint3d_addScaledDPoint3d (&nearPoint, &point0, &vectorU, localParam);
+                    scaledTangent.Scale (vectorU, (double)(n - 1));
+                    nearPoint.SumOf (point0, vectorU, localParam);
                     }
                 }
 
             /* Move point0 and vectorV up to the next point, and test direct distance.*/
             point0 = pPointArray[i];
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorV, pTestPoint, &point0);
-            d2 = bsiDPoint3d_dotProduct (&vectorV, &vectorV);
+            vectorV.DifferenceOf (*pTestPoint, point0);
+            d2 = vectorV.DotProduct (vectorV);
             if (d2 < d2Min)
                 {
                 d2Min = d2;
@@ -520,7 +520,7 @@ DPoint3dCP pTestPoint
             if (n <= 1)
                 {
                 // Not enough points for a tangent
-                bsiDPoint3d_zero (&scaledTangent);
+                scaledTangent.Zero ();
                 }
             else if (endPointIndex == -1)
                 {
@@ -529,14 +529,14 @@ DPoint3dCP pTestPoint
             else if (endPointIndex == 0)
                 {
                 // First segment gives tangent.
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorU, &pPointArray[1], &pPointArray[0]);
-                bsiDPoint3d_scale (&scaledTangent, &vectorU, (double)(n - 1));
+                vectorU.DifferenceOf (pPointArray[1], pPointArray[0]);
+                scaledTangent.Scale (vectorU, (double)(n - 1));
                 }
             else if (endPointIndex == n - 1)
                 {
                 // Last segment gives tangent.
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorU, &pPointArray[n - 1], &pPointArray[n - 2]);
-                bsiDPoint3d_scale (&scaledTangent, &vectorU, (double)(n - 1));
+                vectorU.DifferenceOf (pPointArray[n - 1], pPointArray[n - 2]);
+                scaledTangent.Scale (vectorU, (double)(n - 1));
                 }
             else
                 {
@@ -545,23 +545,19 @@ DPoint3dCP pTestPoint
                 DPoint3d leftUnit, rightUnit;
 
                 // Setup up the forward segement and unit vectors on both incoming and outgoing edges.
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&leftSegment,
-                            &pPointArray[endPointIndex],
-                            &pPointArray[endPointIndex - 1]);
-                bsiDPoint3d_normalize (&leftUnit, &leftSegment);
+                leftSegment.DifferenceOf (pPointArray[endPointIndex], pPointArray[endPointIndex - 1]);
+                leftUnit.Normalize (leftSegment);
 
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&rightSegment,
-                            &pPointArray[endPointIndex + 1],
-                            &pPointArray[endPointIndex]);
-                bsiDPoint3d_normalize (&rightUnit, &rightSegment);
+                rightSegment.DifferenceOf (pPointArray[endPointIndex + 1], pPointArray[endPointIndex]);
+                rightUnit.Normalize (rightSegment);
 
-                bsiDPoint3d_addDPoint3dDPoint3d (&planeNormal, &rightUnit, &leftUnit);
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorV, pTestPoint, &pPointArray[endPointIndex]);
-                if (bsiDPoint3d_dotProduct (&vectorV, &planeNormal) <= 0.0)
+                planeNormal.SumOf (rightUnit, leftUnit);
+                vectorV.DifferenceOf (*pTestPoint, pPointArray[endPointIndex]);
+                if (vectorV.DotProduct (planeNormal) <= 0.0)
                     vectorU = leftSegment;
                 else
                     vectorU = rightSegment;
-                bsiDPoint3d_scale (&scaledTangent, &vectorU, (double)(n - 1));
+                scaledTangent.Scale (vectorU, (double)(n - 1));
                 }
             *pTangent = scaledTangent;
             }
@@ -574,9 +570,9 @@ DPoint3dCP pTestPoint
     else
         {
         if (pPoint)
-            bsiDPoint3d_zero (pPoint);
+            pPoint->Zero ();
         if (pTangent)
-            bsiDPoint3d_zero (pTangent);
+            pTangent->Zero ();
 
         if (pParam)
             *pParam = 0.0;
@@ -673,12 +669,12 @@ int         numPoint
 
     seedPoint = pPointArray[0];
     bsiDPoint3dArray_sortToChainFromSeed (pPointArray, numPoint, &seedPoint);
-    maxDist = bsiDPoint3d_distance (&pPointArray[0], &pPointArray[numPoint - 1]);
+    maxDist = pPointArray[0].Distance (pPointArray[numPoint - 1]);
     maxHead = 0;
 
     for (currHead = 1; currHead < numPoint; currHead++)
         {
-        currDist = bsiDPoint3d_distance (&pPointArray[currHead - 1], &pPointArray[currHead]);
+        currDist = pPointArray[currHead - 1].Distance (pPointArray[currHead]);
         if (currDist > maxDist)
             {
             maxDist = currDist;
@@ -723,9 +719,9 @@ double &segmentFraction
         vectorB.DifferenceOf (pXYZArray[iNext], pXYZArray[i]);
         vectorC.DifferenceOf (pXYZArray[i], point0);
 
-        double crossAB = bsiDVec3d_crossProductXY (&vectorA, &vectorB);
-        double crossCA = bsiDVec3d_crossProductXY (&vectorC, &vectorA);
-        double crossCB = bsiDVec3d_crossProductXY (&vectorC, &vectorB);
+        double crossAB = vectorA.CrossProductXY (vectorB);
+        double crossCA = vectorC.CrossProductXY (vectorA);
+        double crossCB = vectorC.CrossProductXY (vectorB);
 
         if (crossAB < 0.0)
             {

@@ -314,7 +314,7 @@ double b
     GetKnotRange (start, end);
     double s;
     double tol = 1.0e-10;
-    if (!bsiTrig_safeDivide (&s, b - a, end - start, 0.0))
+    if (!DoubleOps::SafeDivide (s, b - a, end - start, 0.0))
         return false;
     int         numKnots = params.NumberAllocatedKnots ();
     for (int i = 0; i < numKnots; i++)

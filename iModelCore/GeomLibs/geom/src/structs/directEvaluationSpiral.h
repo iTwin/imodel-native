@@ -590,4 +590,69 @@ double ClothoidCosineApproximation::Evaluate40R2L2Map (double alpha, double R, d
     d3fdu3 = 60.0 * gamma * u2;
     return u * (1.0 + gamma * u4);
     }
+
+// Specialize spiral for DIRECTHALFCOSINE ....
+
+
+
+DSpiral2dDirectHalfCosine::DSpiral2dDirectHalfCosine () : DSpiral2dDirectEvaluation () {}
+// STATIC method ...
+bool DSpiral2dDirectHalfCosine::EvaluateAtAxisDistanceInStandardOrientation
+    (
+    double x,           //!< [in] distance along x axis
+    double length,      //! [in] strictly nonzero length along spiral.
+    double radius1,  //! [in] strictly nonzero exit radius
+    DPoint2dR xy,      //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt fractional position
+    DVec2dP d2XY,   //!< [out] second derivative wrt fractional position
+    DVec2dP d3XY   //!< [out] third derivative wrt fractional position
+    )
+    {
+    double u = x / length;
+    double c = length * length / radius1;
+    double pi = Angle::Pi ();
+    double c1 = 1.0 / (2.0 * pi * pi);
+    double upi = u * pi;
+    double y = c * (u * u + c1 * (1.0 - cos (upi)));
+    double dydu = c * (2.0 * u + c1 * pi * sin (upi));
+    double d2ydu2 = c * (2.0 + c1 * pi * pi * cos (upi));
+    double d3ydu3 = - c * c1 * pi * pi * pi * sin (upi);
+
+    xy.Init (x,y);
+    if (d1XY)
+        d1XY->Init (1.0, dydu);
+    if (d2XY)
+        d2XY->Init (0.0, d2ydu2);
+    if (d3XY)
+        d3XY->Init (0.0, d3ydu3);
+        
+    return true;
+    }
+
+bool DSpiral2dDirectHalfCosine::EvaluateAtDistance
+    (
+    double s, //!< [in] distance for evaluation
+    DPoint2dR xy,          //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt distance
+    DVec2dP d2XY,   //!< [out] second derivative wrt distance
+    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    ) const
+    {
+    if (mCurvature0 == 0.0)
+        {
+        bool stat = EvaluateAtAxisDistanceInStandardOrientation (s, mLength, mCurvature1, xy, d1XY, d2XY, d3XY);
+        if (stat)
+            ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
+        return stat;
+        }       
+    return false;
+    }
+DSpiral2dBaseP DSpiral2dDirectHalfCosine::Clone () const
+    {
+    DSpiral2dDirectHalfCosine *pClone = new DSpiral2dDirectHalfCosine ();
+    pClone->CopyBaseParameters (this);
+    return pClone;
+    }
+
+
 END_BENTLEY_GEOMETRY_NAMESPACE

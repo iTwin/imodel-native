@@ -1320,4 +1320,49 @@ DPoint3dCP pCol1,
 DPoint3dCP pCol2,
 DPoint3dCP pTranslation
 );
+/*-----------------------------------------------------------------*//**
+* @param pEigenvectors <= matrix of eigenvectors.
+* @param pEigenvalues  => eigenvalues corresponding to columns of the eigenvector matrix.
+* @param pInstance      => matrix whose eigenvectors and eigenvalues are computed.
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiRotMatrix_symmetricEigensystem
+(
+RotMatrixP pEigenvectors,
+DPoint3dP pEigenvalues,
+RotMatrixCP pInstance
+);
+/*-----------------------------------------------------------------*//**
+Test if a matrix is "just" a rotation around z (i.e. in the xy plane)
+@param pMatrix => matrix to analyze.
+@param pRadians <= angle in radians.  This angle is the direction of column 0
+of the matrix.
+@return false if there are any non-rotational effects, or rotation is around any other axis.
+@group "RotMatrix Rotations"
+ @bsimethod                                     EarlinLutz      02/02
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    bsiRotMatrix_isXYRotation
+(
+RotMatrixCP pMatrix,
+double  *pRadians
+);
+/*-----------------------------------------------------------------*//**
+ Approximate a coordinate frame through a set of points.
+ The xy plane is determined by planeThroughPoints.
+ The xy axes are arbitrary within that plane, and z is perpendicular.
+ @param pTransform <= transformation
+ @param pPoint => The point array
+ @param numPoint => The number of points
+
+ @return true if the points define a clear plane.
+ @group "Transform Initialization"
+ @bsimethod                                                       DavidAssaf      12/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     bsiTransform_initFromPlaneOfDPoint3dArray
+
+(
+TransformP pTransform,
+DPoint3dCP pPoint,
+int             numPoint
+);
 END_BENTLEY_GEOMETRY_NAMESPACE

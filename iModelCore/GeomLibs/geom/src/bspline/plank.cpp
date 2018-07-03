@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/plank.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -99,12 +99,12 @@ int     numDerivative
     {
     int i;
     DPoint3d term0, term1;
-    bsiDPoint3d_crossProduct (pCross, pU, pV);
+    pCross->CrossProduct (*pU, *pV);
     for (i = 0; i < numDerivative; i++)
         {
-        bsiDPoint3d_crossProduct (&term0, pU, &pdVdQi[i]);
-        bsiDPoint3d_crossProduct (&term1, &pdUdQi[i], pV);
-        bsiDPoint3d_addDPoint3dDPoint3d (&pdCrossdQi[i], &term0, &term1);
+        term0.CrossProduct (*pU, pdVdQi[i]);
+        term1.CrossProduct (pdUdQi[i], *pV);
+        pdCrossdQi[i].SumOf (term0, term1);
         }
     }
 
@@ -132,11 +132,11 @@ int     numDerivative
     {
     int i;
     double term0, term1;
-    *pDot = bsiDPoint3d_dotProduct (pU, pV);
+    *pDot = pU->DotProduct (*pV);
     for (i = 0; i < numDerivative; i++)
         {
-        term0 = bsiDPoint3d_dotProduct (pU, &pdVdQi[i]);
-        term1 = bsiDPoint3d_dotProduct (&pdUdQi[i], pV);
+        term0 = pU->DotProduct (pdVdQi[i]);
+        term1 = pdUdQi[i].DotProduct (*pV);
         pdDotdQi[i] = term0 + term1;
         }
     }
@@ -181,38 +181,38 @@ PlankDerivatives *pDk
     DPoint3d dUj[6];
     DPoint3d dVj[6];
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&Rij, pXj, pXi);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&Rjk, pXk, pXj);
+    Rij.DifferenceOf (*pXj, *pXi);
+    Rjk.DifferenceOf (*pXk, *pXj);
 
-    bsiDPoint3d_negate (&dRij[0], &pDi->dXYZdu);
-    bsiDPoint3d_negate (&dRij[1], &pDi->dXYZdv);
+    dRij[0].Negate (pDi->dXYZdu);
+    dRij[1].Negate (pDi->dXYZdv);
     dRij[2] = pDj->dXYZdu;
     dRij[3] = pDj->dXYZdv;
-    bsiDPoint3d_zero (&dRij[4]);
-    bsiDPoint3d_zero (&dRij[5]);
+    dRij[4].Zero ();
+    dRij[5].Zero ();
 
-    bsiDPoint3d_zero (&dRjk[0]);
-    bsiDPoint3d_zero (&dRjk[1]);
-    bsiDPoint3d_negate (&dRjk[2], &pDj->dXYZdu);
-    bsiDPoint3d_negate (&dRjk[3], &pDj->dXYZdv);
+    dRjk[0].Zero ();
+    dRjk[1].Zero ();
+    dRjk[2].Negate (pDj->dXYZdu);
+    dRjk[3].Negate (pDj->dXYZdv);
     dRjk[4] = pDk->dXYZdu;
     dRjk[5] = pDk->dXYZdv;
 
     Uj = pDj->dXYZdu;
     Vj = pDj->dXYZdv;
-    bsiDPoint3d_zero (&dUj[0]);
-    bsiDPoint3d_zero (&dUj[1]);
+    dUj[0].Zero ();
+    dUj[1].Zero ();
     dUj[2] = pDj->d2XYZdudu;
     dUj[3] = pDj->d2XYZdudv;
-    bsiDPoint3d_zero (&dUj[4]);
-    bsiDPoint3d_zero (&dUj[5]);
+    dUj[4].Zero ();
+    dUj[5].Zero ();
 
-    bsiDPoint3d_zero (&dVj[0]);
-    bsiDPoint3d_zero (&dVj[1]);
+    dVj[0].Zero ();
+    dVj[1].Zero ();
     dVj[2] = pDj->d2XYZdudv;
     dVj[3] = pDj->d2XYZdvdv;
-    bsiDPoint3d_zero (&dVj[4]);
-    bsiDPoint3d_zero (&dVj[5]);
+    dVj[4].Zero ();
+    dVj[5].Zero ();
 
     /* f0 = Rij dot Rij - Rjk dot Rjk */
     differentiateDotProduct (&g0, dg0, &Rij, dRij, &Rij, dRij, 6);
@@ -410,7 +410,7 @@ double yPeriod
     {
     double r0   = periodicDistance (pUV0, pUV1, xPeriod, yPeriod);
     double r1   = periodicDistance (pUV1, pUV2, xPeriod, yPeriod);
-    double r2   = bsiDPoint2d_magnitude (pDelta);
+    double r2   = pDelta->Magnitude ();
     double rMin = localFraction * (r0 < r1 ? r0 : r1);
     double a;
 
@@ -421,8 +421,8 @@ double yPeriod
         }
     else
         {
-        bsiTrig_safeDivide (&a, rMin, r2, 1.0e-4);
-        bsiDPoint2d_scale (pDeltaOut, pDelta, a);
+        DoubleOps::SafeDivide (a, rMin, r2, 1.0e-4);
+        pDeltaOut->Scale (*pDelta, a);
         }
     return a;
     }

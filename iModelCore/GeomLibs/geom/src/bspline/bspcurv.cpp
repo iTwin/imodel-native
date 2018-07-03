@@ -47,7 +47,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 /*----------------------------------------------------------------------+
 |                                                                       |
-|   Major Public GEOMDLLIMPEXP Code Section                                           |
+|   MajorPublic GEOMDLLIMPEXP Code Section                                           |
 |                                                                       |
 +----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------+
@@ -284,8 +284,8 @@ double              tolerance       /* => tolerance used to check dist in 3d spa
     index = pCurve->params.numPoles - 1;
     if (pCurve->rational)
         {
-        bsiDPoint3d_scale (&sPole, &pCurve->poles[0], 1.0 / pCurve->weights[0]);
-        bsiDPoint3d_scale (&ePole, &pCurve->poles[index], 1.0 / pCurve->weights[index]);
+        sPole.Scale (*(&pCurve->poles[0]), 1.0 / pCurve->weights[0]);
+        ePole.Scale (*(&pCurve->poles[index]), 1.0 / pCurve->weights[index]);
         }
     else
         {
@@ -669,7 +669,7 @@ int             nvertices
 
         prev = current;
         }
-    if (bsiDPoint3d_normalizeInPlace (normal) < fc_epsilon)
+    if (normal->Normalize () < fc_epsilon)
         return ERROR;
     return SUCCESS;
     }
@@ -713,14 +713,14 @@ DPoint3d        *defaultM              /* => normal for linear, or NULL */
 
     /* Calculate Frenet frame from derivatives */
     t = derivatives[1];
-    bsiDPoint3d_normalizeInPlace (&t);
-    if (bsiDPoint3d_magnitude (derivatives + 2) < fc_epsilon)
+    t.Normalize ();
+    if (derivatives[ 2].Magnitude () < fc_epsilon)
         linear = true;
     else
         {
-        bsiDPoint3d_crossProduct (&b, &derivatives[1], &derivatives[2]);
-        linear = (bsiDPoint3d_normalizeInPlace (&b) < fc_epsilon);
-        bsiDPoint3d_crossProduct (&m, &b, &t);
+        b.CrossProduct (derivatives[1], derivatives[2]);
+        linear = (b.Normalize () < fc_epsilon);
+        m.CrossProduct (b, t);
         }
 
     /* Calculate curvature */
@@ -728,9 +728,9 @@ DPoint3d        *defaultM              /* => normal for linear, or NULL */
         crvt = 0.0;
     else
         {
-        tMag = bsiDPoint3d_magnitude (derivatives+1);
-        bsiDPoint3d_crossProduct (&tmp, derivatives+1, derivatives+2);
-        dotMag = bsiDPoint3d_magnitude (&tmp);
+        tMag = derivatives[1].Magnitude ();
+        tmp.CrossProduct (derivatives[1], derivatives[2]);
+        dotMag = tmp.Magnitude ();
 
         crvt = dotMag / tMag / tMag / tMag;
         }
@@ -743,9 +743,9 @@ DPoint3d        *defaultM              /* => normal for linear, or NULL */
         if (defaultM)
             {
             m = *defaultM;
-            bsiDPoint3d_crossProduct (&b, &t, &m);
-            bsiDPoint3d_normalizeInPlace (&b);
-            bsiDPoint3d_crossProduct (&m, &b, &t);
+            b.CrossProduct (t, m);
+            b.Normalize ();
+            m.CrossProduct (b, t);
             }
         else
             {
@@ -760,15 +760,15 @@ DPoint3d        *defaultM              /* => normal for linear, or NULL */
                     tmp.y = 1.0;
                 else
                     tmp.z = 1.0;
-                bsiDPoint3d_crossProduct (&m, &tmp, &t);
-                bsiDPoint3d_normalizeInPlace (&m);
-                bsiDPoint3d_crossProduct (&b, &t, &m);
+                m.CrossProduct (tmp, t);
+                m.Normalize ();
+                b.CrossProduct (t, m);
                 }
             else
                 {
-                bsiDPoint3d_crossProduct (&m, &b, &t);
-                bsiDPoint3d_normalizeInPlace (&m);
-                bsiDPoint3d_crossProduct (&b, &t, &m);
+                m.CrossProduct (b, t);
+                m.Normalize ();
+                b.CrossProduct (t, m);
                 }
 
             if (curve->rational)
@@ -788,10 +788,10 @@ DPoint3d        *defaultM              /* => normal for linear, or NULL */
             }
         else
             {
-            bsiDPoint3d_crossProduct (&tmp, derivatives+1, derivatives+2);
-            tMag = bsiDPoint3d_magnitude (&tmp);
-            bsiDPoint3d_crossProduct (&tmp, derivatives+2, derivatives+3);
-            det = bsiDPoint3d_dotProduct (derivatives, &tmp);
+            tmp.CrossProduct (derivatives[1], derivatives[2]);
+            tMag = tmp.Magnitude ();
+            tmp.CrossProduct (derivatives[2], derivatives[3]);
+            det = derivatives->DotProduct (tmp);
 
             *torsion = det / tMag / tMag;
             }
@@ -901,21 +901,21 @@ MSBsplineCurve  *curve
          endP += curve->params.numPoles;
          p2 < endP; p0++, p1++, p2++)
         {
-        if (!(   bsiDPoint3d_pointEqualTolerance (p0,p2, tol)
-              || bsiDPoint3d_pointEqualTolerance (p0,p1, tol)
-              || bsiDPoint3d_pointEqualTolerance (p1,p2, tol)
+        if (!(   p0->IsEqual (*p2, tol)
+              || p0->IsEqual (*p1, tol)
+              || p1->IsEqual (*p2, tol)
               || calculateCenter3pts (&center, p0))
              )
             {
-            if (bsiDPoint3d_distance (&center, p0) < 1.0 / LINEAR_CURVATURE)
+            if (center.Distance (*p0) < 1.0 / LINEAR_CURVATURE)
                 {
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&dif1, p1, p0);
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&dif2, p2, p1);
-                bsiDPoint3d_crossProduct (&thisB, &dif1, &dif2);
-                bsiDPoint3d_normalizeInPlace (&thisB);
+                dif1.DifferenceOf (*p1, *p0);
+                dif2.DifferenceOf (*p2, *p1);
+                thisB.CrossProduct (dif1, dif2);
+                thisB.Normalize ();
                 if (previous)
                     {
-                    if ((bsiDPoint3d_dotProduct (&thisB, &lastB) < -0.7071))
+                    if ((thisB.DotProduct (lastB) < -0.7071))
                         *numPoints += 1;
                     lastB = thisB;
                     }
@@ -1121,8 +1121,8 @@ MSBsplineCurve  *inCurve
 
             b = 1.0/(1.0-a);
             a *= -b;
-            bsiDPoint3d_scale (P+j, P+j, b);
-            bsiDPoint3d_addScaledDPoint3d (P+j, P+j, P+j+1, a);
+            P[j].Scale (P[j], b);
+            P[j].SumOf (P[j], P[j+1], a);
             if (r)
                 w[j] = b*w[j] + a*w[j+1];
             }
@@ -1148,8 +1148,8 @@ MSBsplineCurve  *inCurve
 
             b = 1.0/a;
             a = (a-1)*b;
-            bsiDPoint3d_scale (P+n-j, P+n-j, b);
-            bsiDPoint3d_addScaledDPoint3d (P+n-j, P+n-j, P+n-j-1, a);
+            P[n-j].Scale (P[n-j], b);
+            P[n-j].SumOf (P[n-j], P[n-j-1], a);
             if (r)
                 w[n-j] = b*w[n-j] + a*w[n-j-1];
             }
@@ -1173,7 +1173,7 @@ MSBsplineCurve  *inCurve
     /* leave "open" if resulting formulation doesn't wrap around, i.e., have
     homogeneous p-1 continuity */
     for (i = 0; i < p; i++)
-        if (bsiDPoint3d_distance (P+i, P+n-p+1+i) > max || (r && (w[i]-w[n-p+1+i] > absMax)))
+        if (P[i].Distance (P[n-p+1+i]) > max || (r && (w[i]-w[n-p+1+i] > absMax)))
             {
             bspcurv_freeCurve (&curve);
             return ERROR;
@@ -2223,14 +2223,14 @@ bool            reparam
         {
         last = curve1->params.numPoles - 1;
         if (curve1->rational)
-            bsiDPoint3d_scale (&tmp1, curve1->poles + last, 1.0 / curve1->weights[last]);
+            tmp1.Scale (*(curve1->poles + last), 1.0 / curve1->weights[last]);
         else
             tmp1 = curve1->poles[last];
         if (curve1->rational)
-            bsiDPoint3d_scale (&tmp1, curve1->poles + last, 1.0 / curve1->weights[last]);
+            tmp1.Scale (*(curve1->poles + last), 1.0 / curve1->weights[last]);
         else
             tmp1 = curve1->poles[last];
-        bsiDPoint3d_interpolate (outCurve->poles + midPole,  &tmp1, 0.5,  &tmp2);
+        (outCurve->poles + midPole)->Interpolate (tmp1, 0.5, tmp2);
         if (outCurve->rational)
             outCurve->weights[midPole] = 1.0;
         }
@@ -2502,7 +2502,7 @@ RotMatrixCP             rMatrixP           /* => rotation matrix */
             bsputil_unWeightPoles (outCurveP->poles, outCurveP->poles,
                                    outCurveP->weights, outCurveP->params.numPoles);
 
-        bsiRotMatrix_multiplyDPoint3dArray ( rMatrixP, outCurveP->poles, outCurveP->poles,  outCurveP->params.numPoles);
+        rMatrixP->Multiply (outCurveP->poles, outCurveP->poles, outCurveP->params.numPoles);
         if (outCurveP->rational)
             bsputil_weightPoles (outCurveP->poles, outCurveP->poles,
                                  outCurveP->weights, outCurveP->params.numPoles);
@@ -2534,23 +2534,11 @@ Transform const         *transformP         /* => transform */
         {
         if (outCurveP->rational)
             {
-            bsiTransform_multiplyWeightedDPoint3dArray
-                            (
-                            transformP,
-                            outCurveP->poles,
-                            outCurveP->poles,
-                            outCurveP->weights,
-                            outCurveP->params.numPoles
-                            );
+            transformP->MultiplyWeighted (outCurveP->poles, outCurveP->poles, outCurveP->weights, outCurveP->params.numPoles);
             }
         else
             {
-            bsiTransform_multiplyDPoint3dArrayInPlace
-                            (
-                            transformP,
-                            outCurveP->poles,
-                            outCurveP->params.numPoles
-                            );
+            transformP->Multiply (outCurveP->poles, outCurveP->params.numPoles);
             }
         }
     return SUCCESS;
@@ -2580,7 +2568,7 @@ DMatrix4dCP             transform4dP         /* => transform */
 
     // If the DMatrix4d has no perspective effects, just apply as a
     // regular transform.
-    if (bsiTransform_initFromDMatrix4d (&transform, transform4dP))
+    if (transform.InitFrom (*transform4dP))
         return bspcurv_transformCurve (outCurveP, inCurveP, &transform);
 
     if (outCurveP != inCurveP)
@@ -2673,9 +2661,9 @@ MSBsplineCurveCP inCurveP
                 bspcurv_getTangent (&leftTangent,  leftValue, curveP, false);
                 bspcurv_getTangent (&rightTangent, rightValue, curveP, true);
 
-                if (bsiDPoint3d_normalizeInPlace (&leftTangent) < 1.0 ||
-                    bsiDPoint3d_normalizeInPlace (&rightTangent) < 1.0 ||
-                    bsiDPoint3d_dotProduct (&leftTangent, &rightTangent) < COSINE_TOLERANCE)
+                if (leftTangent.Normalize () < 1.0 ||
+                    rightTangent.Normalize () < 1.0 ||
+                    leftTangent.DotProduct (rightTangent) < COSINE_TOLERANCE)
                     params.push_back (distinctKnotP[i]);
                 }
             }

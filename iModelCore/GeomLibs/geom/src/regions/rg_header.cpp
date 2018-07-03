@@ -8,6 +8,7 @@
 #include <bsibasegeomPCH.h>
 #include "Regions/rg_intern.h"
 #include "Mtg/mtgprint.fdf"
+#include "../DeprecatedFunctions.h"
 #include <stdio.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
@@ -374,7 +375,7 @@ DRange3d    *pRange
     static double s_planeRelTol = 1.0e-6;
     int count;
     EmbeddedDPoint3dArray *pXYZArray = jmdlEmbeddedDPoint3dArray_grab ();
-    bsiTransform_initIdentity (&planeToWorld);
+    planeToWorld.InitIdentity ();
     range.Init ();
 
 
@@ -398,10 +399,10 @@ DRange3d    *pRange
 
     if (bsiTransform_initFromPlaneOfDPoint3dArray
                     (&planeToWorld, pBuffer, count)
-        && bsiTransform_invertTransform (&worldToPlane, &planeToWorld))
+        && worldToPlane.InverseOf (planeToWorld))
         {
         double bigSize;
-        bsiTransform_multiplyDPoint3dArrayInPlace (&worldToPlane, pBuffer, count);
+        worldToPlane.Multiply (pBuffer, count);
         range.Extend (pBuffer, count);
         bigSize = range.LargestCoordinate ();
         if (fabs (range.high.z - range.low.z) < bigSize * s_planeRelTol)
@@ -429,14 +430,9 @@ RG_Header   *pRG,
 Transform   *pTransform
 )
     {
-    bsiTransform_multiplyDPoint3dArrayInPlace
-                (
-                pTransform,
-                jmdlEmbeddedDPoint3dArray_getPtr (pRG->pVertexArray, 0),
-                jmdlEmbeddedDPoint3dArray_getCount (pRG->pVertexArray)
-                );
+    pTransform->Multiply (jmdlEmbeddedDPoint3dArray_getPtr (pRG->pVertexArray,0), jmdlEmbeddedDPoint3dArray_getCount (pRG->pVertexArray));
 
-    bsiTransform_multiplyRange (pTransform, &pRG->graphRange, &pRG->graphRange);
+    pTransform->Multiply (pRG->graphRange, pRG->graphRange);
 
     if (pRG->funcs.transformAllCurves)
         pRG->funcs.transformAllCurves (pRG->funcs.pContext, pTransform);
@@ -611,14 +607,14 @@ MTGMask         rightMask
             vertexId = jmdlEmbeddedDPoint3dArray_getCount (pRG->pVertexArray);
             jmdlEmbeddedDPoint3dArray_insertDPoint3d(pRG->pVertexArray, &pPointArray[i], vertexId);
             // At disconnect, reset baseNodeId to trigger new chain.
-            if (bsiDPoint3d_isDisconnect (&pPointArray[i]))
+            if (pPointArray[i].IsDisconnect ())
                 {
                 baseNodeId = MTG_NULL_NODEID;
                 }
             else if  (baseNodeId == MTG_NULL_NODEID)
                 {
                 if (   i < numPoint - 1
-                    && !bsiDPoint3d_isDisconnect (&pPointArray[i+1]))
+                    && !pPointArray[i+1].IsDisconnect ())
                     {
                     /* First edge.  Create the first edge and label its start vertex. */
                     jmdlMTGGraph_createEdge (pRG->pGraph, &nodeId0, &nodeId1);
@@ -930,7 +926,7 @@ double              param
         {
         if  (pEdgeData->curveIndex == RG_NULL_CURVEID)
             {
-            bsiDPoint3d_interpolate (pPoint, &pEdgeData->xyz[0], param,  &pEdgeData->xyz[1]);
+            pPoint->Interpolate (*(&pEdgeData->xyz[0]), param, *(&pEdgeData->xyz[1]));
             myStat = true;
             }
         else
@@ -972,7 +968,7 @@ int                 numChord
 
         if  (edgeData.curveIndex == RG_NULL_CURVEID)
             {
-            chordLength = bsiDPoint3d_distance (&edgeData.xyz[0], &edgeData.xyz[1]);
+            chordLength = edgeData.xyz[0].Distance (*(&edgeData.xyz[1]));
             }
         else
             {
@@ -994,7 +990,7 @@ int                 numChord
                     ))
                     return 0.0;
                 if (i > 0)
-                    chordLength += bsiDPoint3d_distance (&point0, &point1);
+                    chordLength += point0.Distance (point1);
 
                 }
             }
@@ -1037,7 +1033,7 @@ const   RG_EdgeData *pEdgeData,
         {
         if  (pEdgeData->curveIndex == RG_NULL_CURVEID)
             {
-            bsiDPoint3d_interpolate (pPoint, &pEdgeData->xyz[0], s,  &pEdgeData->xyz[1]);
+            pPoint->Interpolate (*(&pEdgeData->xyz[0]), s, *(&pEdgeData->xyz[1]));
             }
         else
             {
@@ -1317,9 +1313,9 @@ double              offset
                     {
                     if  (edgeData.curveIndex == RG_NULL_CURVEID)
                         {
-                        bsiDPoint3d_subtractDPoint3dDPoint3d (&pX[1], &edgeData.xyz[1], &edgeData.xyz[0]);
+                        pX[1].DifferenceOf (*(&edgeData.xyz[1]), *(&edgeData.xyz[0]));
                         for (i = 2; i <= numDerivative ; i++)
-                            bsiDPoint3d_zero (&pX[i]);
+                            pX[i].Zero ();
                         }
                     else
                         {
@@ -1363,11 +1359,11 @@ double              offset
                                     checkParam,
                                     2
                                     );
-                            bsiDPoint3d_subtractDPoint3dDPoint3d (&checkTangent, &checkPoint[1], &checkPoint[0]);
-                            bsiDPoint3d_scale (&checkTangent, &checkTangent, 1.0 / fabs(checkParam[1] - checkParam[0]));
-                            checkMagnitude = sqrt (bsiDPoint3d_dotProductXY (&checkTangent, &checkTangent));
-                            tangentMagnitude = sqrt (bsiDPoint3d_dotProduct (&pX[1], &pX[1]));
-                            checkDot = bsiDPoint3d_dotProduct (&checkTangent, &pX[1]);
+                            checkTangent.DifferenceOf (checkPoint[1], checkPoint[0]);
+                            checkTangent.Scale (checkTangent, 1.0 / fabs(checkParam[1] - checkParam[0]));
+                            checkMagnitude = sqrt (checkTangent.DotProductXY (checkTangent));
+                            tangentMagnitude = sqrt (pX[1].DotProduct (pX[1]));
+                            checkDot = checkTangent.DotProduct (pX[1]);
                             if (checkDot < 1.0001 * checkMagnitude * tangentMagnitude)
                                 checkDot = checkDot / (checkMagnitude * tangentMagnitude);
                             else
@@ -1379,7 +1375,7 @@ double              offset
                                 }
                             if (checkDot < 0.0)
                                 bsiDPoint3d_negateInPlace (&pX[1]);
-                            dist = bsiDPoint3d_distance (&pX[1], &checkTangent);
+                            dist = pX[1].Distance (checkTangent);
 
                             if (dist >= 0.01 * tangentMagnitude && tangentMagnitude != 0.0)
                                 GEOMAPI_PRINTF ("\n    ****   Tangent error / tangent magnitude = %lf / %lf \n",
@@ -1436,7 +1432,7 @@ MTGNodeId           nodeId1
         && jmdlRG_getVertexData (pRG, &point1, 0, NULL, nodeId1, 0.0)
         )
         {
-        double d2 = bsiDPoint3d_distanceSquaredXY (&point0, &point1);
+        double d2 = point0.DistanceSquaredXY (point1);
 
         if (d2 <= pRG->tolerance * pRG->tolerance)
             result = true;
@@ -2355,7 +2351,7 @@ double                          minEdgeLength
             && edgeData.curveIndex == RG_NULL_CURVEID
             )
             {
-            double edgeLength = sqrt(bsiDPoint3d_distanceSquaredXY (&edgeData.xyz[0], &edgeData.xyz[1]));
+            double edgeLength = sqrt(edgeData.xyz[0].DistanceSquaredXY (*(&edgeData.xyz[1])));
             if (edgeLength < minEdgeLength)
                 {
                 jmdlRG_dropEdge (pRG, nodeId);
@@ -2415,7 +2411,7 @@ double      size
     DRange3d range;
     double maxSize;
     jmdlRG_getRange (pRG, &range);
-    maxSize = fraction * bsiDPoint3d_distance (&range.low, &range.high);
+    maxSize = fraction * range.low.Distance (range.high);
     return size > maxSize ? maxSize : size;
     }
 
@@ -2541,9 +2537,9 @@ double                          vertexEdgeTolerance
     bool     status = false;
     if (jmdlRG_getRange (pRG, &range))
         {
-        bsiDPoint3d_interpolate (&origin, &range.low, 0.5, &range.high);
-        bsiTransform_initFromTranslationXYZ (&worldToLocal, -origin.x, -origin.y, -origin.z);
-        bsiTransform_initFromTranslationXYZ (&localToWorld,  origin.x,  origin.y,  origin.z);
+        origin.Interpolate (range.low, 0.5, range.high);
+        worldToLocal.InitFrom (-origin.x, -origin.y, -origin.z);
+        localToWorld.InitFrom (origin.x, origin.y, origin.z);
         jmdlRG_multiplyByTransform (pRG, &worldToLocal);
         status = jmdlRG_mergeWithGapTolerance_go (pRG, vertexVertexTolerance, vertexEdgeTolerance);
         jmdlRG_multiplyByTransform (pRG, &localToWorld);
@@ -3293,7 +3289,7 @@ const   DRange3d                *pFaceRange
 
     for (theta = 0.0; count-- > 0; theta += dTheta)
         {
-        bsiDPoint3d_setXYZ (&dir, cos (theta), sin(theta), 0.0);
+        dir.Init ( cos (theta), sin(theta), 0.0);
         if (fabs (dir.x) > fabs (dir.y))
             {
             scaleFactor = 2.0 * fabs (dx / fabs (dir.x));
@@ -3303,12 +3299,7 @@ const   DRange3d                *pFaceRange
             scaleFactor = 2.0 * fabs (dy / fabs (dir.y));
             }
         rayPoint[0] = *pTestPoint;
-        bsiDPoint3d_addScaledDPoint3d (
-                    &rayPoint[1],
-                    &rayPoint[0],
-                    &dir,
-                    scaleFactor
-                    );
+        rayPoint[1].SumOf (rayPoint[0], dir, scaleFactor);
 
         jmdlRGIL_findPolylineIntersectionsFromFace
                     (
@@ -3687,8 +3678,8 @@ MTGNodeId                       edgeNodeId
 
         if (!computed)
             {
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&vector0, &edgeData.xyz[0], pPoint);
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&vector1, &edgeData.xyz[1], pPoint);
+            vector0.DifferenceOf (*(&edgeData.xyz[0]), *pPoint);
+            vector1.DifferenceOf (*(&edgeData.xyz[1]), *pPoint);
             crossXY = vector0.x * vector1.y - vector0.y * vector1.x;
             dotXY   = vector0.x * vector1.x + vector0.y * vector1.y;
 
@@ -3774,11 +3765,11 @@ MTGNodeId                       edgeNodeId
         if (!computed)
             {
             /* Compute closet point to the chord of the edge */
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorU, &edgeData.xyz[1], &edgeData.xyz[0]);
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorV, pPoint , &edgeData.xyz[0]);
+            vectorU.DifferenceOf (*(&edgeData.xyz[1]), *(&edgeData.xyz[0]));
+            vectorV.DifferenceOf (*pPoint, *(&edgeData.xyz[0]));
 
-            dotUU = bsiDPoint3d_dotProductXY (&vectorU, &vectorU);
-            dotUV = bsiDPoint3d_dotProductXY (&vectorU, &vectorV);
+            dotUU = vectorU.DotProductXY (vectorU);
+            dotUV = vectorU.DotProductXY (vectorV);
 
             if (dotUV <= 0)
                 {
@@ -3793,13 +3784,13 @@ MTGNodeId                       edgeNodeId
                 param = dotUV / dotUU;
                 }
 
-            bsiDPoint3d_addScaledDPoint3d (&minPoint, &edgeData.xyz[0], &vectorU, param);
+            minPoint.SumOf (*(&edgeData.xyz[0]), vectorU, param);
 
             if (pMinParam)
                 *pMinParam = param;
 
             if (pMinDistSquared)
-                *pMinDistSquared = bsiDPoint3d_distanceSquaredXY (pPoint, &minPoint);
+                *pMinDistSquared = pPoint->DistanceSquaredXY (minPoint);
 
             if (pMinPoint)
                 *pMinPoint = minPoint;
@@ -3868,20 +3859,20 @@ DPoint3d                        *pMinTangent
             }
 
         jmdlRG_getVertexData (pRG, &xyzVertex, 0, NULL, forwardNodeId, 0.0);
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&vertexToPoint, pPoint, &xyzVertex);
+        vertexToPoint.DifferenceOf (*pPoint, xyzVertex);
 
         jmdlRG_getVertexData (pRG, XForward, 1, NULL, forwardNodeId, s_offset);
         jmdlRG_getVertexData (pRG, XBack, 1, NULL, backNodeId, s_offset);
-        cross = bsiDPoint3d_crossProductXY (&XForward[1], &XBack[1]);
+        cross = XForward[1].CrossProductXY (XBack[1]);
         ccw = cross < 0.0
-            || (   bsiDPoint3d_crossProductXY (&XForward[1], &vertexToPoint) >= 0.0
-               &&  bsiDPoint3d_crossProductXY (&vertexToPoint, &XBack[1]) >= 0.0
+            || (   XForward[1].CrossProductXY (vertexToPoint) >= 0.0
+               &&  vertexToPoint.CrossProductXY (XBack[1]) >= 0.0
                );
         }
     else
         {
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&edgeToPoint, pPoint, pMinPoint);
-        cross = bsiDPoint3d_crossProductXY (pMinTangent, &edgeToPoint);
+        edgeToPoint.DifferenceOf (*pPoint, *pMinPoint);
+        cross = pMinTangent->CrossProductXY (edgeToPoint);
         ccw = cross >= 0.0;
         }
 

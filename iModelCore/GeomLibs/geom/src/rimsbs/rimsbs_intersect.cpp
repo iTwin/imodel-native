@@ -167,7 +167,7 @@ MTGNodeId           nodeA,
 double              tol2
 )
     {
-    double d2 = bsiDPoint3d_distanceSquaredXY (pStartEnd, pStartEnd + 1);
+    double d2 = pStartEnd->DistanceSquaredXY (pStartEnd[ 1]);
 
     if (d2 < tol2)
         jmdlRGIL_declareVertexOnVertex (pRG, pRGIL, nodeA, 0, nodeA, 1);
@@ -214,16 +214,8 @@ double              tol2
         end-on-interior case (which will get caught by the tolerance checks).
     */
 
-    d2A = bsiDPoint3d_distanceSquaredXY
-                    (
-                    pIntersection,
-                    &pEndA[endIndexA]
-                    );
-    d2B = bsiDPoint3d_distanceSquaredXY
-                    (
-                    pIntersection,
-                    &pEndB[endIndexB]
-                    );
+    d2A = pIntersection->DistanceSquaredXY (pEndA[endIndexA]);
+    d2B = pIntersection->DistanceSquaredXY (pEndB[endIndexB]);
 
     if (   d2A > tol2
         && d2B > tol2
@@ -484,7 +476,7 @@ MSBsplineCurve      *pCurve                 /* => curve data from second edge */
     RotMatrix z0Matrix;
 
     /* Sputter and gag.... no way to force z=0 in standard rmatrix package */
-    bsiRotMatrix_initFromScaleFactors (&z0Matrix, 1.0, 1.0, 0.0);
+    z0Matrix.InitFromScaleFactors (1.0, 1.0, 0.0);
 
     jmdlRGEdge_getXYZ (pEdgeData0, &linePoint[0], 0);
     jmdlRGEdge_getXYZ (pEdgeData0, &linePoint[1], 1);
@@ -517,7 +509,7 @@ MSBsplineCurve      *pCurve                 /* => curve data from second edge */
             {
             /* interior test with no tolerance.   If near end, it should show up
                 in raw distance tests from endpoint */
-            bsiDPoint3d_interpolate (&intersectionPoint, &linePoint[0], pSegmentParam[i], &linePoint[1]);
+            intersectionPoint.Interpolate (linePoint[0], pSegmentParam[i], linePoint[1]);
             jmdlRIMSBS_declareInteriorIntersections
                             (
                             pRG, pRGIL,
@@ -683,7 +675,7 @@ MSBsplineCurve      *pCurve1                /* => curve data from second edge */
     RotMatrix z0Matrix;
 
     /* Sputter and gag.... no way to force z=0 in standard rmatrix package */
-    bsiRotMatrix_initFromScaleFactors (&z0Matrix, 1.0, 1.0, 0.0);
+    z0Matrix.InitFromScaleFactors (1.0, 1.0, 0.0);
 
     jmdlRGEdge_getXYZ (pEdgeData0, &curve0End[0], 0);
     jmdlRGEdge_getXYZ (pEdgeData0, &curve0End[1], 1);
@@ -788,7 +780,7 @@ MSBsplineCurve      *pCurve1                /* => optional curve rep of ellipse.
     RotMatrix z0Matrix;
 
     /* Sputter and gag.... no way to force z=0 in standard rmatrix package */
-    bsiRotMatrix_initFromScaleFactors (&z0Matrix, 1.0, 1.0, 0.0);
+    z0Matrix.InitFromScaleFactors (1.0, 1.0, 0.0);
 
     jmdlRGEdge_getXYZ (pEdgeData0, &curve0End[0], 0);
     jmdlRGEdge_getXYZ (pEdgeData0, &curve0End[1], 1);
@@ -830,14 +822,14 @@ MSBsplineCurve      *pCurve1                /* => optional curve rep of ellipse.
                             (&ellipsePoint, &ellipseTangent, NULL, theta);
                     bspcurv_evaluateCurvePoint (
                                     &curvePoint, &curveTangent, pCurve1, s);
-                    bsiDPoint3d_subtractDPoint3dDPoint3d (&dX, &ellipsePoint, &curvePoint);
-                    dot = bsiDPoint3d_dotProductXY (&ellipseTangent, &curveTangent);
-                    cross = bsiDPoint3d_crossProductXY (&ellipseTangent, &curveTangent);
+                    dX.DifferenceOf (ellipsePoint, curvePoint);
+                    dot = ellipseTangent.DotProductXY (curveTangent);
+                    cross = ellipseTangent.CrossProductXY (curveTangent);
                     printf(" s = %lf theta = %lf dx = %lf, %lf, %lf   (%lf, %lf)\n",
                                         s, theta,
                                         dX.x, dX.y, dX.z,
-                                        bsiTrig_atan2 (ellipseTangent.y, ellipseTangent.x),
-                                        bsiTrig_atan2 (curveTangent.y, curveTangent.x)
+                                        Angle::Atan2 (ellipseTangent.y, ellipseTangent.x),
+                                        Angle::Atan2 (curveTangent.y, curveTangent.x)
                                         );
                     }
                 }
@@ -859,13 +851,8 @@ MSBsplineCurve      *pCurve1                /* => optional curve rep of ellipse.
             f0 = pParam0[i];
             s1 = pParam1[i];
 
-            bsiTransform_multiplyDPoint3dArray
-                            (
-                            &inverseFrame,
-                            &ellipseCoffs,
-                            &pIntersectionPoint[i],
-                            1);
-            theta1 = bsiTrig_atan2 (ellipseCoffs.y, ellipseCoffs.x);
+            inverseFrame.Multiply (&ellipseCoffs, &pIntersectionPoint[i], 1);
+            theta1 = Angle::Atan2 (ellipseCoffs.y, ellipseCoffs.x);
             f1 = pEllipse1->AngleToFraction (theta1);
 
             jmdlRIMSBS_declareInteriorIntersections

@@ -988,8 +988,7 @@ double      fraction
         pWorldToNpcMap = &worldToNpcMap;
 
         /* slab-world transformation */
-    bsiTransform_initFrom4Points (&slabToWorldTransform,
-                        pOrigin, pUPoint, pVPoint, pWPoint);
+    slabToWorldTransform.InitFrom4Points(*pOrigin, *pUPoint, *pVPoint, *pWPoint);
     if (    fabs (fraction) < frustumFractionLimit
         ||  !bsiDMap4d_initFromTransform (&worldToSlabMap,
                         &slabToWorldTransform, true)
@@ -1112,8 +1111,7 @@ double      fraction
         fraction = s_frustumFractionLimit;
 
         /* slab-world transformation */
-    bsiTransform_initFromOriginAndVectors (&slabToWorldTransform,
-                        pOrigin, pUVector, pVVector, pWVector);
+    slabToWorldTransform.InitFromOriginAndVectors(*pOrigin, *(DVec3d*)pUVector, *(DVec3d*)pVVector, *(DVec3d*)pWVector);
     if (!bsiDMap4d_initFromTransform (&worldToSlabMap,
                         &slabToWorldTransform, true)
         )

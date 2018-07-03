@@ -78,16 +78,16 @@ DPoint3dP       pEndTangentPoint
     {
     if (pStartTangent)
         {
-        bsiDPoint3d_subtractDPoint3dDPoint3d  (pStartTangent, pStartTangentPoint, pStartPoint);
-        if (!bsiDPoint3d_pointEqualTolerance (pStartTangent, NULL, fc_nearZero))
-            bsiDPoint3d_normalizeInPlace (pStartTangent);
+        pStartTangent->DifferenceOf (*pStartTangentPoint, *pStartPoint);
+        if (!pStartTangent->IsEqual (DPoint3d::FromZero (), fc_nearZero))
+            pStartTangent->Normalize ();
         }
 
     if (pEndTangent)
         {
-        bsiDPoint3d_subtractDPoint3dDPoint3d  (pEndTangent, pEndTangentPoint, pEndPoint);
-        if (!bsiDPoint3d_pointEqualTolerance (pEndTangent, NULL, fc_nearZero))
-            bsiDPoint3d_normalizeInPlace (pEndTangent);
+        pEndTangent->DifferenceOf (*pEndTangentPoint, *pEndPoint);
+        if (!pEndTangent->IsEqual (DPoint3d::FromZero (), fc_nearZero))
+            pEndTangent->Normalize ();
         }
 
     return  SUCCESS;
@@ -1899,13 +1899,13 @@ int                     horizontal
             }
         if (horizontal)
             {
-            bsiDPoint3d_setXYZ (&origin, 0.0, scanHeight, 0.0);
-            bsiDPoint3d_setXYZ (&normal, 0.0, 1.0, 0.0);
+            origin.Init ( 0.0, scanHeight, 0.0);
+            normal.Init ( 0.0, 1.0, 0.0);
             }
         else
             {
-            bsiDPoint3d_setXYZ (&origin, scanHeight,  0.0, 0.0);
-            bsiDVec3d_setXYZ   ((DVec3d *) &normal, 1.0,       0.0, 0.0);
+            origin.Init ( scanHeight,  0.0, 0.0);
+            ((DVec3d *) &normal)->Init ( 1.0,       0.0, 0.0);
             }
 
         for (int i = 0; i < pSurface->numBounds; i++)
@@ -1980,7 +1980,7 @@ int                     horizontal
                             {
                             double f;
                             double g;
-                            if (bsiTrig_safeDivide (&f, p[i].x - p[i-1].x, p[i].y - p[i-1].y, 0.0))
+                            if (DoubleOps::SafeDivide (f, p[i].x - p[i-1].x, p[i].y - p[i-1].y, 0.0))
                                 {
                                 g = p[i-1].x + (scanHeight - p[i-1].y) * f;
                                 //jmdlEmbeddedDoubleArray_addDouble (pFractionArray, g);
@@ -2017,7 +2017,7 @@ int                     horizontal
                         if (curr*prev < 0)
                             {
                             double f;
-                            bsiTrig_safeDivide (&f, p[i].y - p[i-1].y, p[i].x - p[i-1].x, 0.0);
+                            DoubleOps::SafeDivide (f, p[i].y - p[i-1].y, p[i].x - p[i-1].x, 0.0);
                             double g = p[i-1].y + (scanHeight - p[i-1].x) * f;
                             //jmdlEmbeddedDoubleArray_addDouble (pFractionArray, g);
                             pFractionArray.push_back (g);
@@ -2359,7 +2359,7 @@ double              yy              /* => fixed point y */
         if (pCloseFraction)
             *pCloseFraction = mdlBspline_naturalParameterToFractionParameter (curveP, minKnot);
         if (pClosePoint)
-            bsiDPoint4d_normalize (&minPoint, pClosePoint);
+            minPoint.GetProjectedXYZ (*pClosePoint);
 
         }
 
@@ -2707,11 +2707,11 @@ double                  tolerance
     DPoint3d unitNormal = *pNormal;
     DPoint4d planeCoffs;
 
-    if (0.0 == bsiDPoint3d_normalize (&unitNormal, pNormal))
+    if (0.0 == unitNormal.Normalize (*pNormal))
         return ERROR;
 
     bsiDPoint4d_setComponents (&planeCoffs, unitNormal.x, unitNormal.y, unitNormal.z,
-                                    -bsiDPoint3d_dotProduct (&unitNormal, pOrigin));
+                                    -unitNormal.DotProduct (*pOrigin));
     bspcurv_intersectPlaneExt (pCurve, 0.0, 1.0, &planeCoffs, tolerance,
                 (MSBsplineCurve_AnnounceParameter*)cb_collectParameterExt, &pParamArray[0], NULL);
     return SUCCESS;
@@ -2845,7 +2845,7 @@ double              tolerance
     deltaSpaceSurf.y = box.high.y - box.low.y;
     deltaSpaceSurf.z = box.high.z - box.low.z;
 
-    diagonal = /*bsiDPoint3d_magnitude (&deltaSpaceSurf);*/
+    diagonal = /*deltaSpaceSurf.Magnitude ();*/
         sqrt( deltaSpaceSurf.x * deltaSpaceSurf.x +
               deltaSpaceSurf.y * deltaSpaceSurf.y +
               deltaSpaceSurf.z * deltaSpaceSurf.z);

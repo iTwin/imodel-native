@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include <Geom/MstnOnly/GeomPrivateApi.h>
+#include "../DeprecatedFunctions.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 
@@ -100,7 +101,7 @@ double *pRadiansOut
         if (fabs (pMatrixRV->form3d[pivotRow][j] - pMatrixV->form3d[pivotRow][j]) > tol)
             return false;
 
-    bsiRotMatrix_multiplyRotMatrixRotMatrixTranspose (&matrixR, pMatrixRV, pMatrixV);
+    matrixR.InitProductRotMatrixRotMatrixTranspose (*pMatrixRV, *pMatrixV);
 
     // We have an easy test for xy rotation.
     // Do diagonal swap of other cases to xy for testing ...
@@ -203,8 +204,8 @@ int viewIndex
     RotMatrix matrixR, matrixV;
     if (bsiRotMatrix_getStandardRotation (&matrixV, viewIndex))
         {
-        bsiRotMatrix_initFromAxisAndRotationAngle (&matrixR, rotationAxis, radians);
-        bsiRotMatrix_multiplyRotMatrixRotMatrix (pMatrix, &matrixR, &matrixV);
+        matrixR.InitFromAxisAndRotationAngle (rotationAxis, radians);
+        pMatrix->InitProduct (matrixR, matrixV);
         return true;
         }
     pMatrix->InitIdentity ();

@@ -1639,8 +1639,8 @@ void                *args
 
             bspsurf_evaluateSurfacePoint (&ur, NULL, &dPdU, &dPdV, uMax, scanMax, surfP);
 
-            bsiDPoint3d_scale (&dPdU, &dPdU, -1.0 );
-            bsiDPoint3d_scale (&dPdV, &dPdV, -1.0 );
+            dPdU.Scale (dPdU, -1.0);
+            dPdV.Scale (dPdV, -1.0);
             if ((iTmp = bspline_spansReqd (&dPdU, &ur, &ul, strokeTolerance)) >
                  uInsertNum) uInsertNum = iTmp;
             if ((iTmp = bspline_spansReqd (&dPdV, &ur, &lr, strokeTolerance)) >
@@ -1666,8 +1666,8 @@ void                *args
                     bspsurf_evaluateSurfacePoint (verts2 + l, NULL, &dPdU, &dPdV,
                                                   u, v, surfP);
 
-                    bsiDPoint3d_crossProduct (norms2+l, &dPdU, &dPdV);
-                    bsiDPoint3d_normalizeInPlace (norms2+l);
+                    norms2[l].CrossProduct (dPdU, dPdV);
+                    norms2[l].Normalize ();
                     if (k && l)
                         {
                         points[0] = points[4] = *(verts1 + l - 1);

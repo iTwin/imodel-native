@@ -952,7 +952,7 @@ void _ProcessBsplineCurve (ICurvePrimitiveCR curve, MSBsplineCurveCR bcurve, DSe
         DPoint4dP workPoles = segment.GetWorkPoleP (0);
         int segmentOrder = (int)segment.GetOrder ();
         int productOrder;
-        bsiTransform_multiplyDPoint4dArray (&m_worldToLocal, workPoles, segment.GetPoleP (), segmentOrder);
+        m_worldToLocal.Multiply (workPoles, segment.GetPoleP (), segmentOrder);
         double bigNum = 0.0;
         for (int i = 0; i < segmentOrder; i++)
             bigNum = DoubleOps::MaxAbs (bigNum, workPoles[i].MaxAbs ());

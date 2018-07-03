@@ -45,22 +45,22 @@ DPoint3d *pXYZ2
     double s;
     static double sMin = 0.00001;
     static double sMax = 0.99999;
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector01, pXYZ1, pXYZ0);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector02, pXYZ2, pXYZ0);
-    if (bsiTrig_safeDivide (&s,
-                bsiDVec3d_dotProduct (&vector01, &vector02),
-                bsiDVec3d_dotProduct (&vector02, &vector02), 0.0)
+    vector01.DifferenceOf (*pXYZ1, *pXYZ0);
+    vector02.DifferenceOf (*pXYZ2, *pXYZ0);
+    if (DoubleOps::SafeDivide (s,
+                vector01.DotProduct (vector02),
+                vector02.DotProduct (vector02), 0.0)
         && s >= sMin
         && s <= sMax
         )
         {
-        bsiDPoint3d_interpolate (&xyzMid, pXYZ0, s, pXYZ2);
+        xyzMid.Interpolate (*pXYZ0, s, *pXYZ2);
         }
     else
         {
-        bsiDPoint3d_interpolate (&xyzMid, pXYZ0, 0.5, pXYZ2);
+        xyzMid.Interpolate (*pXYZ0, 0.5, *pXYZ2);
         }
-    return bsiDPoint3d_distance (&xyzMid, pXYZ1);
+    return xyzMid.Distance (*pXYZ1);
     }
 
 /*----------------------------------------------------------------------+
@@ -162,8 +162,8 @@ double param1                           // => end parameter on curve
         {
         curvePoint0 = curvePoints.at (baseCount - 1);
         surfacePoint0 = surfacePoints.at (baseCount - 1);
-        if (   bsiDPoint3d_distance (&curvePoint0, &curvePoint1) <= startTolCurve
-            || bsiDPoint3d_distance (&surfacePoint0, &surfacePoint1) <= startTolSurface)
+        if (   curvePoint0.Distance (curvePoint1) <= startTolCurve
+            || surfacePoint0.Distance (surfacePoint1) <= startTolSurface)
             {
             bAddBasePoint = false;
             }
@@ -208,8 +208,8 @@ double param1                           // => end parameter on curve
             surfaceError = maxChordDeviationInArrayTail (&surfacePoints, (int) baseCount);
             if (countFactor != 1.0)
                 {
-                bsiTrig_safeDivide (&curveFactor, curveError0, curveError, 0.0);
-                bsiTrig_safeDivide (&surfaceFactor, surfaceError0, surfaceError, 0.0);
+                DoubleOps::SafeDivide (curveFactor, curveError0, curveError, 0.0);
+                DoubleOps::SafeDivide (surfaceFactor, surfaceError0, surfaceError, 0.0);
                 }
             if (curveError <= curveTol && surfaceError <= surfaceTol)
                 {
@@ -311,8 +311,8 @@ const MSBsplineSurface *surface
         {
         jmdlEmbeddedDPoint3dArray_getDPoint3d (pCurvePoints, &curvePoint0, baseCount - 1);
         jmdlEmbeddedDPoint3dArray_getDPoint3d (pSurfacePoints, &surfacePoint0, baseCount - 1);
-        if (   bsiDPoint3d_distance (&curvePoint0, &curvePoint1) <= startTolCurve
-            || bsiDPoint3d_distance (&surfacePoint0, &surfacePoint1) <= startTolSurface)
+        if (   curvePoint0.Distance (curvePoint1) <= startTolCurve
+            || surfacePoint0.Distance (surfacePoint1) <= startTolSurface)
             {
             bAddBasePoint = false;
             }
@@ -345,7 +345,7 @@ const MSBsplineSurface *surface
             for (j = 1; j <= numJ; j++)
                 {
                 double u = u0 + j * localStep;
-                bsiDPoint3d_interpolate (&curvePoint1, &xyzA, u, &xyzB);
+                curvePoint1.Interpolate (xyzA, u, xyzB);
                 bspsurf_evaluateSurfacePoint (&surfacePoint1, NULL, NULL, NULL,
                         curvePoint1.x, curvePoint1.y,
                         const_cast <MSBsplineSurface*>(surface));
@@ -355,7 +355,7 @@ const MSBsplineSurface *surface
             surfaceError = maxChordDeviationInArrayTail (pSurfacePoints, baseCount);
             if (countFactor != 1.0)
                 {
-                bsiTrig_safeDivide (&surfaceFactor, surfaceError0, surfaceError, 0.0);
+                DoubleOps::SafeDivide (surfaceFactor, surfaceError0, surfaceError, 0.0);
                 }
             if (surfaceError <= surfaceTol)
                 {
@@ -731,7 +731,7 @@ double     surfaceTol
         curveTol = sCurveTol;
         DRange3d range;
         pSurface->GetPoleRange (range);
-        surfaceTol = sSurfaceRelTol * bsiDPoint3d_distance (&range.low, &range.high);
+        surfaceTol = sSurfaceRelTol * range.low.Distance (range.high);
         }
 
     for (boundaryIndex = 0; boundaryIndex < pSurface->numBounds; boundaryIndex++)
@@ -1091,7 +1091,7 @@ Transform const *pTransform
         outBndP->numPoints = inBndP->numPoints;
         memcpy (outBndP->points, inBndP->points, allocSize);
         if (pTransform)
-            bsiTransform_multiplyDPoint2dArray (pTransform, outBndP->points, outBndP->points, outBndP->numPoints);
+            pTransform->Multiply (outBndP->points, outBndP->points, outBndP->numPoints);
 
         // Copy trim boundaries.
         for (inTrimP = inBndP->pFirst; NULL != inTrimP; inTrimP = inTrimP->pNext)
@@ -1139,8 +1139,7 @@ Transform const *pTransform
         return;
 
     if (pBoundary->numPoints > 0 && NULL != pBoundary->points)
-        bsiTransform_multiplyDPoint2dArray (pTransform,
-                pBoundary->points, pBoundary->points, pBoundary->numPoints);
+        pTransform->Multiply (pBoundary->points, pBoundary->points, pBoundary->numPoints);
 
     if (NULL != pBoundary->pFirst)
         {
@@ -1541,7 +1540,7 @@ int                         horizontal
                             {
                             double f;
                             double g;
-                            if (bsiTrig_safeDivide (&f, p[i].x - p[i-1].x, p[i].y - p[i-1].y, 0.0))
+                            if (DoubleOps::SafeDivide (f, p[i].x - p[i-1].x, p[i].y - p[i-1].y, 0.0))
                                 {
                                 g = p[i-1].x + (scanHeight - p[i-1].y) * f;
                                 pFractionArray->push_back ( g);
@@ -1576,7 +1575,7 @@ int                         horizontal
                         if (curr*prev < 0)
                             {
                             double f;
-                            bsiTrig_safeDivide (&f, p[i].y - p[i-1].y, p[i].x - p[i-1].x, 0.0);
+                            DoubleOps::SafeDivide (f, p[i].y - p[i-1].y, p[i].x - p[i-1].x, 0.0);
                             double g = p[i-1].y + (scanHeight - p[i-1].x) * f;
                             pFractionArray->push_back ( g);
                             }

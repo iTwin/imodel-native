@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspLocal.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -21,18 +21,18 @@ Public void     rotMatrix_orthogonalFromZRow (RotMatrixP rotMatrixP, DVec3dCP no
 
     world.x = world.y = world.z = 0.0;
     zNormal = *normalP;
-    bsiDVec3d_normalizeInPlace ((DVec3dP) &zNormal);
+    ((DVec3dP) &zNormal)->Normalize ();
 
     if ((fabs (zNormal.x) < 0.01) && (fabs (zNormal.y) < 0.01))
         world.y = 1.0;
     else
         world.z = 1.0;
 
-    bsiDVec3d_crossProduct ((DVec3dP)&xNormal, (DVec3dP)&world, (DVec3dCP)&zNormal);
-    bsiDVec3d_normalizeInPlace ((DVec3dP)&xNormal);
-    bsiDVec3d_crossProduct ((DVec3dP)&yNormal, (DVec3dP)&zNormal, (DVec3dCP)&xNormal);
-    bsiDVec3d_normalizeInPlace ((DVec3dP)&yNormal);
-    bsiRotMatrix_initFromRowVectors (rotMatrixP, &xNormal, &yNormal, &zNormal);
+    ((DVec3dP)&xNormal)->CrossProduct (*((DVec3dP)&world), *((DVec3dCP)&zNormal));
+    ((DVec3dP)&xNormal)->Normalize ();
+    ((DVec3dP)&yNormal)->CrossProduct (*((DVec3dP)&zNormal), *((DVec3dCP)&xNormal));
+    ((DVec3dP)&yNormal)->Normalize ();
+    rotMatrixP->InitFromRowVectors (xNormal, yNormal, zNormal);
     }
 
 

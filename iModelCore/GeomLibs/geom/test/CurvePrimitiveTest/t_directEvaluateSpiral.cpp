@@ -496,3 +496,62 @@ TEST(Spiral,AustralianReversal)
         }
     Check::ClearGeometry ("Spiral.AustralianReversal");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Spiral,SpiralStartEndMatch)
+    {
+    double tol = 1e-4;
+
+    DPoint3d startPoint = DPoint3d::From(1000, 1000, 1000);
+    double  length = 50.7574;
+    double startAngle = Angle::Pi ();
+    double endRadius = 720.0;
+    double startRadius = 0.0;
+    ICurvePrimitivePtr curvePrimiP = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius(DSpiral2dBase::TransitionType_NewSouthWales,
+        startPoint, startAngle, startRadius, length, endRadius);
+    double spiralLength = curvePrimiP->GetSpiralPlacementCP()->SpiralLength01();
+    double position;
+    curvePrimiP->SignedDistanceBetweenFractions(0.0, 1.0, position);
+    Check::True (fabs (spiralLength - position) <= tol);
+
+    startRadius = 720.0;
+    endRadius = 0.0;
+    curvePrimiP = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius(DSpiral2dBase::TransitionType_NewSouthWales,
+        startPoint, startAngle, startRadius, length, endRadius);
+    spiralLength = curvePrimiP->GetSpiralPlacementCP()->SpiralLength01();
+    curvePrimiP->SignedDistanceBetweenFractions(0.0, 1.0, position);
+    Check::True (fabs (spiralLength - position) <= tol);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Spiral,HalfCosineEvaluation)
+    {
+    bvector<DPoint3d> stroke, strokeD1, strokeD2, strokeD3;
+    double tangentLength = 100.0;
+    double r1 = 800.0;
+    DPoint2d xy;
+    DVec2d d1xy, d2xy, d3xy;
+    for (double x = 0.0; x <= tangentLength; x += 4.0)
+        {
+        DSpiral2dDirectHalfCosine::EvaluateAtAxisDistanceInStandardOrientation (
+            x, tangentLength, r1,
+            xy, &d1xy, &d2xy, &d3xy);
+        stroke.push_back (DPoint3d::From (x, xy.y));
+        strokeD1.push_back (DPoint3d::From (x, d1xy.y));
+        strokeD2.push_back (DPoint3d::From (x, d2xy.y));
+        strokeD3.push_back (DPoint3d::From (x, d3xy.y));
+        }
+    double dy = 10.0;
+    Check::SaveTransformed (stroke);
+    Check::Shift (0,dy,0);
+    Check::SaveTransformed (strokeD1);
+    Check::Shift (0,dy,0);
+    Check::SaveTransformed (strokeD2);
+    Check::Shift (0,dy,0);
+    Check::SaveTransformed (strokeD3);
+    Check::ClearGeometry ("Spiral.HalfCosineEvaluation");
+    }

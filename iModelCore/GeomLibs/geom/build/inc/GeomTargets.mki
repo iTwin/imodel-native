@@ -56,9 +56,9 @@ $(OUT_DIR)PolylineOffset$(OUT_EXT)     : $(geomSrcFuncs)PolylineOffset.cpp      
 
 $(OUT_DIR)PolygonOps$(OUT_EXT)     : $(geomSrcFuncs)PolygonOps.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dpoint3ddvec3d$(OUT_EXT)  : $(geomSrcStructs)dpoint3ddvec3d.cpp   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dpoint3ddvec3d$(OUT_EXT)  : $(geomSrcStructs)dpoint3ddvec3d.cpp   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dvec3d$(OUT_EXT)          : $(geomSrcStructs)dvec3d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dvec3d$(OUT_EXT)          : $(geomSrcStructs)dvec3d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)dvec3drotmatrix$(OUT_EXT) : $(geomSrcStructs)dvec3drotmatrix.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -68,11 +68,11 @@ $(OUT_DIR)dpoint4d$(OUT_EXT)        : $(geomSrcStructs)dpoint4d.cpp         $(OT
 
 #$(OUT_DIR)drange3d$(OUT_EXT)        : $(geomSrcStructs)drange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)transform$(OUT_EXT)       : $(geomSrcStructs)transform.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)transform$(OUT_EXT)       : $(geomSrcStructs)transform.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)rotmatrix$(OUT_EXT)       : $(geomSrcStructs)rotmatrix.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)rotmatrix$(OUT_EXT)       : $(geomSrcStructs)rotmatrix.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dsegment3d$(OUT_EXT)      : $(geomSrcStructs)dsegment3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dsegment3d$(OUT_EXT)      : $(geomSrcStructs)dsegment3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)DBilinearPatch3d$(OUT_EXT)      : $(geomSrcStructs)DBilinearPatch3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -384,9 +384,10 @@ $(OUT_DIR)cluster$(OUT_EXT)          : $(geomSrcFuncs)cluster.cpp          $(OTH
 
 # (begin interfac_sources_pubinc.mki)
 
+# LOTS of use of these  . . .
 $(OUT_DIR)dpoint3dconvertedtodvec3d$(OUT_EXT)   : $(geomSrcInterfac)dpoint3dconvertedtodvec3d.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)rotmatrix_dep$(OUT_EXT)               : $(geomSrcInterfac)rotmatrix_dep.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)rotmatrix_dep$(OUT_EXT)               : $(geomSrcInterfac)rotmatrix_dep.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 
 

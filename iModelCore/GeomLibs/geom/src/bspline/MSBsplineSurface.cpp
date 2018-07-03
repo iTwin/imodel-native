@@ -15,7 +15,6 @@ static void (*sFreeSurface)(MSBsplineSurface *) = 0;
 static int (*sAllocateSurface)(MSBsplineSurface *) = 0;
 
 #include "msbsplinemaster.h"
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Earlin.Lutz             03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1034,37 +1033,6 @@ MSBsplineStatus MSBsplineSurface::CleanKnots ()
     return mdlBspline_cleanSurfaceKnots (this, this);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    peter.yu                        03/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void surfaceMinWeightAndMaxLength
-(
-double              &wMin,
-double              &pMax,
-MSBsplineSurfaceCP  pSurf
-)
-    {
-    int i, num = pSurf->uParams.numPoles * pSurf->vParams.numPoles;
-    double length;
-    wMin = pSurf->weights[0];
-    DVec3d vec;
-    DPoint3d pt;
-    bsiDPoint3d_scale (&pt, &pSurf->poles[0], 1.0 / pSurf->weights[0]);
-    bsiDVec3d_fromDPoint3d (&vec, &pt);
-    pMax = bsiDVec3d_magnitude (&vec);
-    
-    for (i=1; i<num; i++)
-        {
-        if (wMin > pSurf->weights[i])
-            wMin = pSurf->weights[i];
-
-        bsiDPoint3d_scale (&pt, &pSurf->poles[i], 1.0 / pSurf->weights[i]);
-        bsiDVec3d_fromDPoint3d (&vec, &pt);
-        length = bsiDVec3d_magnitude (&vec);
-        if (pMax < length)
-            pMax = length;
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    peter.yu                        03/2009
@@ -1139,9 +1107,9 @@ int                 dir // direction of knots to remove: 1=u, 2=v, 3=both.
     for (int k=0; k<num; k++)
         {
         if (pSurf->rational)
-            bsiDPoint4d_initFromDPoint3dAndWeight (&polesWeighted[k], &pSurf->poles[k], pSurf->weights[k]);
+            polesWeighted[k].InitFrom (*(&pSurf->poles[k]), pSurf->weights[k]);
         else
-            bsiDPoint4d_initFromDPoint3dAndWeight (&polesWeighted[k], &pSurf->poles[k], 1.0);
+            polesWeighted[k].InitFrom (*(&pSurf->poles[k]), 1.0);
         }
 
     /* Remove knot in the requested direction */
@@ -1313,14 +1281,14 @@ double              tol
     for (k=0; k<num; k++)
         {
         if (pSurf->rational)
-            bsiDPoint4d_initFromDPoint3dAndWeight (&polesWeighted[k], &pSurf->poles[k], pSurf->weights[k]);
+            polesWeighted[k].InitFrom (*(&pSurf->poles[k]), pSurf->weights[k]);
         else
-            bsiDPoint4d_initFromDPoint3dAndWeight (&polesWeighted[k], &pSurf->poles[k], 1.0);
+            polesWeighted[k].InitFrom (*(&pSurf->poles[k]), 1.0);
         }
     
     if( pSurf->rational )
         {
-        surfaceMinWeightAndMaxLength(wmin, pmax, pSurf);
+        surfaceMinWeightAndMaxMagnitude(wmin, pmax, pSurf);
         tol = (tol * wmin) / (1.0 + pmax);
         rat = true;
         }
