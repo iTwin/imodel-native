@@ -67,9 +67,9 @@ static void InitPlane (DPlane3d & plane, DPoint3d const & xyz0, DPoint3d const &
     {
     DVec3d normal;
     DVec3d   vector01, vector02;
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector01, &xyz1, &xyz0);
-    bsiDVec3d_subtractDPoint3dDPoint3d (&vector02, &xyz2, &xyz0);
-    bsiDVec3d_normalizedCrossProduct (&normal, &vector01, &vector02);
+    vector01.DifferenceOf (xyz1, xyz0);
+    vector02.DifferenceOf (xyz2, xyz0);
+    normal.NormalizedCrossProduct (vector01, vector02);
     plane.InitFromOriginAndNormal (xyz0, normal);
     }
 
@@ -134,8 +134,7 @@ static void ClipConvexPolygonToPlane (DPoint3d *polygonPoints, int &n, DPlane3d 
             if (h0 * h1 < 0.0)
                 {
                 double s = -h0 / (h1 - h0);
-                bsiDPoint3d_interpolate (&clippedPoints[m++],
-                    &polygonPoints[i-1], s, &polygonPoints[i]);
+                clippedPoints[m++].Interpolate (polygonPoints[i-1], s, polygonPoints[i]);
                 }
             if (h1 <= 0.0)
                 clippedPoints[m++] = polygonPoints[i];
