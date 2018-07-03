@@ -184,7 +184,7 @@
     </Product>
 
     <ProductDirectoryList ListName="DgnV8ConverterNugetDirsOverride">
-        <ProductDirectory Name="applicationroot" Path="content/DgnV8Converter"/>
+        <ProductDirectory Name="applicationroot" Path="DgnV8Converter"/>
     </ProductDirectoryList>
 
     <NuGetProduct Name="DgnV8ConverterNuget" OnlyPlatforms="x64" Description="DgnV8ConverterNuget">
