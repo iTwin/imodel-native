@@ -702,34 +702,26 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         BeStringUtilities::Split(value.c_str(), ";", presentationFormats);
     bvector<Utf8String> formatStrings;
 
-    SchemaKey key("Units", 1, 0, 0);
-    auto unitsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
-    if (!ECSchema::IsSchemaReferenced(GetSchema(), *unitsSchema))
-        { 
-        LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve old units.",
-            unitsSchema->GetName().c_str(), GetSchema().GetName().c_str());
-        if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*unitsSchema))
-            {
-            LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", unitsSchema->GetName().c_str(), GetSchema().GetName().c_str());
-            return SchemaReadStatus::ReferencedSchemaNotFound;
-            }
-        }
-
-    key = SchemaKey("Formats", 1, 0, 0);
-    auto formatsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
-    if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
-        { 
-        LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve old formats.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
-        if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*formatsSchema))
-            {
-            LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
-            return SchemaReadStatus::ReferencedSchemaNotFound;
-            }
-        }
-
     // If version < 3.2. We have to upgrade our desriptors before we parse them.
-    if ((3 == GetSchema().GetOriginalECXmlVersionMajor() && 2 > GetSchema().GetOriginalECXmlVersionMinor()))
+    if (GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_2))
         {
+        // Add schema references. Always need units for the persistence unit.
+        SchemaKey key("Units", 1, 0, 0);
+        auto unitsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
+        if (!ECSchema::IsSchemaReferenced(GetSchema(), *unitsSchema))
+            { 
+            LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve old units.",
+                unitsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+            if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*unitsSchema))
+                {
+                LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", unitsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+                return SchemaReadStatus::ReferencedSchemaNotFound;
+                }
+            }
+
+        key = SchemaKey("Formats", 1, 0, 0);
+        auto formatsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
+
         Utf8String upgradedPersUnit;
         bvector<Utf8CP> fusDescriptors;
         formatStrings.reserve(presentationFormats.size());
@@ -739,6 +731,19 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 
         if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptors(upgradedPersUnit, formatStrings, persUnit.c_str(), fusDescriptors, *formatsSchema))
             return SchemaReadStatus::InvalidECSchemaXml;
+
+        if (!formatStrings.empty())
+            {
+            if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
+                { 
+                LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve old formats.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+                if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*formatsSchema))
+                    {
+                    LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+                    return SchemaReadStatus::ReferencedSchemaNotFound;
+                    }
+                }
+            }
 
         persUnit = upgradedPersUnit;
         }
