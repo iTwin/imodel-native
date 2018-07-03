@@ -24,7 +24,7 @@ struct GeometryUtilsTests : public BuildingSharedTestFixtureBase
 
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas Butkus                08/2017
+// @betest                                       Mindaugas Butkus                08/2017
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(GeometryUtilsTests, GetXYCrossSection_LowestCrossSectionParallelToXYPlane)
     {
@@ -44,7 +44,7 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_LowestCrossSectionParallelToXYPlane
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas Butkus                08/2017
+// @betest                                       Mindaugas Butkus                08/2017
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(GeometryUtilsTests, GetXYCrossSection_TopmostCrossSectionParallelToXYPlane)
     {
@@ -64,7 +64,7 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_TopmostCrossSectionParallelToXYPlan
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas Butkus                08/2017
+// @betest                                       Mindaugas Butkus                08/2017
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(GeometryUtilsTests, GetXYCrossSection_TryGetCrossSectionBelowSolid)
     {
@@ -79,7 +79,7 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_TryGetCrossSectionBelowSolid)
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas Butkus                08/2017
+// @betest                                       Mindaugas Butkus                08/2017
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(GeometryUtilsTests, GetXYCrossSection_TryGetCrossSectionAboveSolid)
     {
@@ -94,7 +94,7 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_TryGetCrossSectionAboveSolid)
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas Butkus                08/2017
+// @betest                                       Mindaugas Butkus                08/2017
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(GeometryUtilsTests, GetXYCrossSection_ReturnsPointStringWhenSinglePointOnPlane)
     {
@@ -113,7 +113,7 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_ReturnsPointStringWhenSinglePointOn
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas Butkus                08/2017
+// @betest                                       Mindaugas Butkus                08/2017
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(GeometryUtilsTests, GetXYCrossSection_GetLowestPointOfSolidWithRoundNotXYOrientedBase)
     {
@@ -132,7 +132,7 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_GetLowestPointOfSolidWithRoundNotXY
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas Butkus                08/2017
+// @betest                                       Mindaugas Butkus                08/2017
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(GeometryUtilsTests, GetXYCrossSection_BoxUnionTouchesAndIntersects)
     {
@@ -161,7 +161,7 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_BoxUnionTouchesAndIntersects)
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas Butkus                09/2017
+// @betest                                       Mindaugas Butkus                09/2017
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(GeometryUtilsTests, AddVertex_LinearCurveVector)
     {
@@ -174,7 +174,7 @@ TEST_F(GeometryUtilsTests, AddVertex_LinearCurveVector)
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas Butkus                09/2017
+// @betest                                       Mindaugas Butkus                09/2017
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(GeometryUtilsTests, AddVertex_LinearCurveVector_VertexAlreadyExists)
     {
@@ -430,4 +430,65 @@ TEST_F(GeometryUtilsTests, IsSameSingleLoopGeometry_DifferentGeometry)
     cv2->Add(curve3);
 
     ASSERT_FALSE(GeometryUtils::IsSameSingleLoopGeometry(*cv1, *cv2));
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryUtilsTests, GetBodySlice)
+    {
+    DgnBoxDetail boxDetail = DgnBoxDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, 100), DVec3d::UnitX(), DVec3d::UnitY(),
+                                           200, 200, 200, 200, true);
+    ISolidPrimitivePtr boxSolidPrimitive = ISolidPrimitive::CreateDgnBox(boxDetail);
+    ASSERT_TRUE(boxSolidPrimitive.IsValid());
+    GeometricPrimitivePtr boxGeomPrimitive = GeometricPrimitive::Create(boxSolidPrimitive);
+    ASSERT_TRUE(boxGeomPrimitive.IsValid());
+    IBRepEntityPtr boxSolid;
+    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(boxSolid, boxGeomPrimitive, true);
+    ASSERT_TRUE(boxSolid.IsValid());
+
+    if (true)
+        {
+        IBRepEntityPtr slice = DgnGeometryUtils::GetBodySlice(*boxSolid, 10, 20);
+        ASSERT_TRUE(slice.IsValid());
+        DRange3d sliceRange = slice->GetEntityRange();
+        ASSERT_DOUBLE_EQ(sliceRange.low.z, 10);
+        ASSERT_DOUBLE_EQ(sliceRange.high.z, 20);
+        }
+
+    if (true)
+        {
+        IBRepEntityPtr slice = DgnGeometryUtils::GetBodySlice(*boxSolid, -5, 10);
+        ASSERT_TRUE(slice.IsValid());
+        DRange3d sliceRange = slice->GetEntityRange();
+        ASSERT_DOUBLE_EQ(sliceRange.low.z, 0);
+        ASSERT_DOUBLE_EQ(sliceRange.high.z, 10);
+        }
+
+    if (true)
+        {
+        IBRepEntityPtr slice = DgnGeometryUtils::GetBodySlice(*boxSolid, 90, 110);
+        ASSERT_TRUE(slice.IsValid());
+        DRange3d sliceRange = slice->GetEntityRange();
+        ASSERT_DOUBLE_EQ(sliceRange.low.z, 90);
+        ASSERT_DOUBLE_EQ(sliceRange.high.z, 100);
+        }
+
+    if (true)
+        {
+        IBRepEntityPtr slice = DgnGeometryUtils::GetBodySlice(*boxSolid, -5, 105);
+        ASSERT_TRUE(slice.IsValid());
+        DRange3d sliceRange = slice->GetEntityRange();
+        ASSERT_DOUBLE_EQ(sliceRange.low.z, 0);
+        ASSERT_DOUBLE_EQ(sliceRange.high.z, 100);
+        }
+
+    if (true)
+        {
+        IBRepEntityPtr slice = DgnGeometryUtils::GetBodySlice(*boxSolid, 50, 50);
+        ASSERT_TRUE(slice.IsValid());
+        DRange3d sliceRange = slice->GetEntityRange();
+        ASSERT_DOUBLE_EQ(sliceRange.low.z, 50);
+        ASSERT_DOUBLE_EQ(sliceRange.high.z, 50);
+        }
     }

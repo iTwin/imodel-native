@@ -70,6 +70,14 @@ struct DgnGeometryUtils
         //! @return                         solid slices paired with corresponding bottom planes of the cuts
         BUILDINGSHAREDDGNUTILS_EXPORT static BentleyStatus SliceBodyByZElevations(bvector<bpair<Dgn::IBRepEntityPtr, double>>& slicedGeometry, Dgn::IBRepEntityCR geometryToSlice, bvector<double>& zElevationVector);
 
+        //! Get slice of body limited by Z elevations
+        //! @param[in]  geometryToSlice     geometry to slice
+        //! @param[in]  bottomElevation     bottom elevation of slice. The result slice can have higher bottom elevation if the given elevation is not in range.
+        //! @param[in]  topElevation        top elevation of slice. The result slice can have lower top elevation if the given elevation is not in range.
+        //! @return                         solid slice of the geometryToSlice between given bottom and top elevations.
+        //!                                 Returns sheet body when bottomElevation matches topElevation.
+        BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::IBRepEntityPtr GetBodySlice(Dgn::IBRepEntityCR geometryToSlice, double bottomElevation, double topElevation);
+
         //! Gets extrusion's extrusion detail
         //! @param[out] extDetail   extrusion detail of this extrusion
         //! @return                 true if there was no error in getting extrusion detail
