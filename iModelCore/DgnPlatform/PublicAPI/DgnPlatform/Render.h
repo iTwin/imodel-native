@@ -3038,6 +3038,7 @@ struct Plan
     HiddenLineParams    m_hline;
     ClipVectorPtr       m_activeVolume;
     SceneLightsCPtr     m_lights;   //! if not valid, render with default lighting
+    DgnDbR              m_db;
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
 

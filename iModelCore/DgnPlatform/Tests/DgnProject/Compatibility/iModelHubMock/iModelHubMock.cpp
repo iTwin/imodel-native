@@ -38,6 +38,7 @@ bool IModelHubMock::AcquireBriefcase(BeGuid iModelId, BeFileName briefcaseDownlo
     m_currentId = m_currentId.GetNextBriefcaseId(); // Update briefcaseID
     if (db->IsBriefcase()) // Can't set briefcaseID if already a briefcase. Hacky workaround. This comes up when pulling multiple briefcases for 1 model
         db->SetAsMaster(iModelId);
+
     db->SetAsBriefcase(m_currentId);
     db->Txns().EnableTracking(true);
     db->SaveChanges();
