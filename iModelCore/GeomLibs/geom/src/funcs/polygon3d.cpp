@@ -2158,7 +2158,7 @@ DVec3dCP pNormal
         }
 
     pLocalToWorld->InitFromOriginAndVectors(*pOrigin, unitX, unitY, unitZ);
-    bsiTransform_invertAsRotation (pWorldToLocal, pLocalToWorld);
+    pWorldToLocal->InvertRigidBodyTransformation (*pLocalToWorld);
     return true;
     }
 
@@ -2218,7 +2218,7 @@ int numB
                 *pMinDistSquared = z * z;
                 *pPointB = pPolygonB[iB];
                 planePoint.z = 0.0;
-                bsiTransform_multiplyDPoint3d (&localToWorldA, pPointA, &planePoint);
+                localToWorldA.Multiply (*pPointA, planePoint);
                 }
             }
         }

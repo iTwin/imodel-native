@@ -277,7 +277,7 @@ DRay3dCP pSource
 )
     {
     pTransform->Multiply (&pDest->origin, &pSource->origin, 1);
-    bsiTransform_multiplyDPoint3dByMatrixPart (pTransform, &pDest->direction, &pSource->direction);
+    pTransform->MultiplyMatrixOnly (pDest->direction, pSource->direction);
     return true;
     }
 
@@ -438,10 +438,10 @@ DPoint3dCP    pTriangleXYZ
     vectorW = pRay->direction;
     matrix.InitFromColumnVectors (vectorU, vectorV, vectorW);
 
-    if (bsiRotMatrix_invertRotMatrix (&inverse, &matrix))
+    if (inverse.InverseOf (matrix))
         {
         vectorC.DifferenceOf (pRay->origin, pTriangleXYZ[0]);
-        bsiRotMatrix_multiplyRotMatrixDPoint3d (&inverse, &solution, &vectorC);
+        inverse.Multiply (solution, vectorC);
 
         if (pBarycentric)
             {

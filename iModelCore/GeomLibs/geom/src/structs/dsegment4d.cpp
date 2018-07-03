@@ -174,7 +174,7 @@ DPoint3dCP pTangent
 )
     {
     DPoint3d point1;
-    bsiDPoint3d_addDPoint3dDPoint3d (&point1, pPoint0, pTangent);
+    point1.SumOf (*pPoint0, *pTangent);
     bsiDSegment4d_initFromDPoint3d (pInstance, pPoint0, &point1);
     }
 
@@ -193,7 +193,7 @@ DRay3dCP pRay
 )
     {
     DPoint3d point1;
-    bsiDPoint3d_addDPoint3dDPoint3d (&point1, &pRay->origin, &pRay->direction);
+    point1.SumOf (pRay->origin, pRay->direction);
     bsiDSegment4d_initFromDPoint3d (pInstance, &pRay->origin, &point1);
     }
 
@@ -240,8 +240,8 @@ DSegment4dCP pInstance,
 DSegment3dP pSegment
 )
     {
-    bool    b0 = bsiDPoint4d_normalize (&pInstance->point[0], &pSegment->point[0]);
-    bool    b1 = bsiDPoint4d_normalize (&pInstance->point[1], &pSegment->point[1]);
+    bool    b0 = pInstance->point[0].GetProjectedXYZ (*(&pSegment->point[0]));
+    bool    b1 = pInstance->point[1].GetProjectedXYZ (*(&pSegment->point[1]));
     return b0 && b1;
     }
 
@@ -261,8 +261,8 @@ DSegment4dCP pInstance,
 DSegment3dP pSegment
 )
     {
-    bsiDPoint4d_getXYW (&pInstance->point[0], &pSegment->point[0]);
-    bsiDPoint4d_getXYW (&pInstance->point[1], &pSegment->point[1]);
+    pInstance->point[0].GetXYW (*(&pSegment->point[0]));
+    pInstance->point[1].GetXYW (*(&pSegment->point[1]));
     }
 
 
@@ -288,10 +288,10 @@ DPoint4dCP pPoint
 
     bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorU, &pInstance->point[1], &pInstance->point[0]);
     bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorV, pPoint, &pInstance->point[0]);
-    UdotU = bsiDPoint4d_dotProduct (&vectorU, &vectorU);
-    UdotV = bsiDPoint4d_dotProduct (&vectorU, &vectorV);
+    UdotU = vectorU.DotProduct (vectorU);
+    UdotV = vectorU.DotProduct (vectorV);
 
-    result = bsiTrig_safeDivide (&param, UdotV, UdotU, 0.0);
+    result = DoubleOps::SafeDivide (param, UdotV, UdotU, 0.0);
 
     if (pClosestParam)
         *pClosestParam = param;
@@ -328,9 +328,9 @@ DPoint4dCP pPointP
     bsiDPoint3d_weightedDifference (&diffPA, pPointP, &pInstance->point[0]);
     bsiDPoint3d_weightedDifference (&diffUP, &vectorU, pPointP);
 
-    dot0 = bsiDPoint3d_dotProductXY (&diffPA, &vectorUBar);
-    dot1 = bsiDPoint3d_dotProductXY (&diffUP, &vectorUBar);
-    result = bsiTrig_safeDivide (&param, dot0, dot1, 0.0);
+    dot0 = diffPA.DotProductXY (vectorUBar);
+    dot1 = diffUP.DotProductXY (vectorUBar);
+    result = DoubleOps::SafeDivide (param, dot0, dot1, 0.0);
 
     if (pClosestParam)
         *pClosestParam = param;
@@ -363,10 +363,10 @@ DPoint4dCP pPoint
 
     bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorU, &pInstance->point[1], &pInstance->point[0]);
     bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorV, pPoint, &pInstance->point[0]);
-    UdotU = bsiDPoint4d_dotProduct (&vectorU, &vectorU);
-    UdotV = bsiDPoint4d_dotProduct (&vectorU, &vectorV);
+    UdotU = vectorU.DotProduct (vectorU);
+    UdotV = vectorU.DotProduct (vectorV);
 
-    result = bsiTrig_safeDivide (&param, UdotV, UdotU, 0.0);
+    result = DoubleOps::SafeDivide (param, UdotV, UdotU, 0.0);
 
     if (param < 0.0)
         param = 0.0;
@@ -411,10 +411,10 @@ DPoint4dCP pPlaneCoffs
     {
     double h0, h1, lambda;
     bool    boolstat;
-    h0 = bsiDPoint4d_dotProduct (pPlaneCoffs, &pInstance->point[0]);
-    h1 = bsiDPoint4d_dotProduct (pPlaneCoffs, &pInstance->point[1]);
+    h0 = pPlaneCoffs->DotProduct (*(&pInstance->point[0]));
+    h1 = pPlaneCoffs->DotProduct (*(&pInstance->point[1]));
 
-    boolstat = bsiTrig_safeDivide (&lambda, -h0, h1 - h0, 0.0);
+    boolstat = DoubleOps::SafeDivide (lambda, -h0, h1 - h0, 0.0);
 
 
     if (pIntPoint)
@@ -454,7 +454,7 @@ TransformCP pTransform,
 DSegment4dCP pSource
 )
     {
-    bsiTransform_multiplyDPoint4dArray (pTransform, pDest->point, pSource->point, 2);
+    pTransform->Multiply (pDest->point, pSource->point, 2);
     return true;
     }
 
@@ -580,11 +580,11 @@ DSegment4dCP pSegment23
     bsiDSegment4d_getXYWImplicitDPoint4dPlane (&segment01, &plane01);
     bsiDSegment4d_getXYWImplicitDPoint4dPlane (&segment23, &plane23);
 
-    h0 = bsiDPoint4d_dotProduct (&segment01.point[0], &plane23);
-    h1 = bsiDPoint4d_dotProduct (&segment01.point[1], &plane23);
+    h0 = segment01.point[0].DotProduct (plane23);
+    h1 = segment01.point[1].DotProduct (plane23);
 
-    h2 = bsiDPoint4d_dotProduct (&segment23.point[0], &plane01);
-    h3 = bsiDPoint4d_dotProduct (&segment23.point[1], &plane01);
+    h2 = segment23.point[0].DotProduct (plane01);
+    h3 = segment23.point[1].DotProduct (plane01);
 
     // h0,h1,h2,h3 are (scaled) heights of endpoints above planes.
     // To get a sense of what is a "big" number at this scale, recompute
@@ -599,11 +599,11 @@ DSegment4dCP pSegment23
     d01 = h1 - h0;
     d23 = h3 - h2;
 
-    b0 =  bsiTrig_safeDivide (&param01, - h0, d01, 0.0)
-       && bsiTrig_safeDivide (&dummy0, a01, d01, 0.0);
+    b0 =  DoubleOps::SafeDivide (param01, - h0, d01, 0.0)
+       && DoubleOps::SafeDivide (dummy0, a01, d01, 0.0);
 
-    b1 =  bsiTrig_safeDivide (&param23, - h2, d23, 0.0)
-       && bsiTrig_safeDivide (&dummy1, a23, d23, 0.0);
+    b1 =  DoubleOps::SafeDivide (param23, - h2, d23, 0.0)
+       && DoubleOps::SafeDivide (dummy1, a23, d23, 0.0);
 
     /* Use original (untransformed) segments for coordinate calculations. */
     if (pPoint01)
@@ -677,17 +677,17 @@ DSegment4dCP pSegment23
     bsiDSegment4d_getXYWImplicitDPoint4dPlane (pSegment01, &plane01);
     bsiDSegment4d_getXYWImplicitDPoint4dPlane (pSegment23, &plane23);
 
-    h0 = bsiDPoint4d_dotProduct (&pSegment01->point[0], &plane23);
-    h1 = bsiDPoint4d_dotProduct (&pSegment01->point[1], &plane23);
+    h0 = pSegment01->point[0].DotProduct (plane23);
+    h1 = pSegment01->point[1].DotProduct (plane23);
 
     if (h0 * h1 <= 0.0)
         {
-        h2 = bsiDPoint4d_dotProduct (&pSegment23->point[0], &plane01);
-        h3 = bsiDPoint4d_dotProduct (&pSegment23->point[1], &plane01);
+        h2 = pSegment23->point[0].DotProduct (plane01);
+        h3 = pSegment23->point[1].DotProduct (plane01);
 
         if (h2 * h3 <= 0.0
-            && bsiTrig_safeDivide (&param01, - h0, h1 - h0, 0.0)
-            && bsiTrig_safeDivide (&param23, - h2, h3 - h2, 0.0))
+            && DoubleOps::SafeDivide (param01, - h0, h1 - h0, 0.0)
+            && DoubleOps::SafeDivide (param23, - h2, h3 - h2, 0.0))
             {
             if (pPoint01)
                 bsiDPoint4d_interpolate
@@ -825,7 +825,7 @@ double  param
     {
     DPoint4d point;
     bsiDPoint4d_interpolate (&point, &pInstance->point[0], param, &pInstance->point[1]);
-    return bsiDPoint4d_normalize (&point, pPoint);
+    return point.GetProjectedXYZ (*pPoint);
     }
 
 

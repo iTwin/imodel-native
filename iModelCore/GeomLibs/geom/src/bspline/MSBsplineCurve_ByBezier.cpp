@@ -2006,7 +2006,7 @@ MSBsplineStatus MSBsplineCurve::ComputeInflectionPointsXY (bvector<DPoint3d>& po
         if (!segment.IsNullU ())
             {
             if (transform)
-                bsiRotMatrix_multiplyDPoint4dArray (transform, segment.GetPoleP (), segment.GetPoleP (), (int)segment.GetOrder ());
+                transform->Multiply (segment.GetPoleP (), segment.GetPoleP (), (int)segment.GetOrder ());
             if (derivAValid)
                 {
                 //bool    bBreakAtStart = false;

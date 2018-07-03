@@ -2534,14 +2534,7 @@ Transform const         *transformP         /* => transform */
         {
         if (outCurveP->rational)
             {
-            bsiTransform_multiplyWeightedDPoint3dArray
-                            (
-                            transformP,
-                            outCurveP->poles,
-                            outCurveP->poles,
-                            outCurveP->weights,
-                            outCurveP->params.numPoles
-                            );
+            transformP->MultiplyWeighted (outCurveP->poles, outCurveP->poles, outCurveP->weights, outCurveP->params.numPoles);
             }
         else
             {
@@ -2575,7 +2568,7 @@ DMatrix4dCP             transform4dP         /* => transform */
 
     // If the DMatrix4d has no perspective effects, just apply as a
     // regular transform.
-    if (bsiTransform_initFromDMatrix4d (&transform, transform4dP))
+    if (transform.InitFrom (*transform4dP))
         return bspcurv_transformCurve (outCurveP, inCurveP, &transform);
 
     if (outCurveP != inCurveP)

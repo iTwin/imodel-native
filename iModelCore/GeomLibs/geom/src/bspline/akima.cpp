@@ -183,7 +183,7 @@ double          relTol
 
     // test the Bezier-spanning chord
     if (pAkimaPts3d)
-        bsiDSegment3d_initFromDPoint3d (&akimaChord, &pAkimaPts3d[bezierIndex + 2], &pAkimaPts3d[bezierIndex + 3]);
+        akimaChord.Init (pAkimaPts3d[bezierIndex + 2], pAkimaPts3d[bezierIndex + 3]);
     else
         bsiDSegment3d_initFromDPoint2d (&akimaChord, &pAkimaPts2d[bezierIndex + 2], &pAkimaPts2d[bezierIndex + 3]);
 

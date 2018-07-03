@@ -249,7 +249,7 @@ DPoint3d        *centerP
     Transform       tMatrix;
 
     tMatrix.InitIdentity ();
-    bsiTransform_translateInLocalCoordinates (&tMatrix, &tMatrix, centerP->x, centerP->y, centerP->z);
+    tMatrix.TranslateInLocalCoordinates(tMatrix, centerP->x, centerP->y, centerP->z);
     tMatrix.InitProduct (tMatrix, *rotMatrixP);
 
     bspconv_computeCurveFromArc (tPoles, tKnots, tWeights, &tParams,
@@ -1080,7 +1080,7 @@ DEllipse3dP     ellipseP,
         {
         double ds = s1 - s0;
         vector2.CrossProduct (vector0, vector1);
-        mdlRMatrix_fromColumnVectors (&rotMatrix, &vector0, &vector1, &vector2);
+        rotMatrix.InitFromColumnVectors (vector0, vector1, vector2);
         if (isEllipseP)
             *isEllipseP = true;
         status = bspconv_arcToCurveStruct (curveP, s0, ds, rad0, rad1, &rotMatrix, &center);

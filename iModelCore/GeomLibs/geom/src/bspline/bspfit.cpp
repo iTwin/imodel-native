@@ -737,18 +737,18 @@ Transform const         *transformP         /* => transform */
     if (!transformP || transformP->IsIdentity ())
         return SUCCESS;
 
-    mdlRMatrix_fromTMatrix (&matrix, transformP);
-
+    matrix = RotMatrix::From (*transformP);
+    RotMatrix inverseMatrix;
     // Special cases where tangents can be transformed (or where they don't need to be transformed)
-    if (outCurveP->params.isPeriodic || bsiRotMatrix_hasInverse (&matrix))
+    if (outCurveP->params.isPeriodic || inverseMatrix.InverseOf (matrix))
         {
-        mdlTMatrix_transformPointArray (outCurveP->fitPoints, transformP, outCurveP->params.numPoints);
+        transformP->Multiply (outCurveP->fitPoints, outCurveP->params.numPoints);
 
         // we can handle tangents explicitly
         if (!outCurveP->params.isPeriodic)
             {
-            mdlRMatrix_multiplyPoint (&outCurveP->startTangent, &matrix);
-            mdlRMatrix_multiplyPoint (&outCurveP->endTangent, &matrix);
+            matrix.Multiply (outCurveP->startTangent);
+            matrix.Multiply (outCurveP->endTangent);
             outCurveP->startTangent.Normalize ();
             outCurveP->endTangent.Normalize ();
             }
@@ -794,7 +794,7 @@ Transform const         *transformP         /* => transform */
         }
 
     // new interpolation curve will have transformed fitpoints and tangents gleaned from the transformed pole-based equivalent
-    mdlTMatrix_transformPointArray (outCurveP->fitPoints, transformP, outCurveP->params.numPoints);
+    transformP->Multiply (outCurveP->fitPoints, outCurveP->params.numPoints);
 
     bspcurv_freeCurve (&curve);
     return SUCCESS;
@@ -875,7 +875,7 @@ DPoint3d        *directionPt
         return status;
 
     /* Get rotation matrix to rotate unit poles for each section */
-    bsiRotMatrix_initFromAxisAndRotationAngle (&rotMatrix1, 2,  sectionSweep);
+    rotMatrix1.InitFromAxisAndRotationAngle (2, sectionSweep);
 
     /* Get poles of unit circle arc */
     /* This routine assumes that poles, wts, knots are allocated for

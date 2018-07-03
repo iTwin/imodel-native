@@ -1461,14 +1461,14 @@ DPoint3d        *defaultNormalP
             {
             if (normal.IsParallelTo (direction))
                 {
-                bsiRotMatrix_initFrom1Vector (&matrix, &direction, 0, true);
-                bsiRotMatrix_getColumn (&matrix, &normal, 2);
+                matrix.InitFrom1Vector (direction, 0, true);
+                matrix.GetColumn (normal, 2);
                 }
             else
                 {
-                bsiRotMatrix_initFrom2Vectors (&matrix, &direction, &normal);
+                matrix.InitFrom2Vectors (direction, normal);
                 matrix.SquareAndNormalizeColumns (matrix, 0, 1);
-                bsiRotMatrix_getColumn (&matrix, &normal, 1);
+                matrix.GetColumn (normal, 1);
                 }
             }
 

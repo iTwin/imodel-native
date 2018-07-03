@@ -1135,7 +1135,7 @@ BuilderParams          *mpP                /* => mesh parameters */
         memcpy (poles, patchBezP->poles, numPoles * sizeof(DPoint3d));
 
     if (mpP->toleranceTransformP)
-        mdlTMatrix_transformPointArray (poles, mpP->toleranceTransformP, numPoles);
+        mpP->toleranceTransformP->Multiply (poles, numPoles);
 
     if (mpP->toleranceMode & STROKETOL_Perspective && mpP->toleranceCameraP != NULL)
         {

@@ -626,7 +626,7 @@ const   DPoint4d                *pInPoint
     {
     DPoint3d point;
     return pHeader != NULL
-        && bsiDPoint4d_normalize (pInPoint, &point)
+        && pInPoint->GetProjectedXYZ (point)
         && jmdlEmbeddedDPoint3dArray_insertDPoint3d (pHeader, &point, -1);
     }
 
@@ -964,7 +964,7 @@ const   Transform               *pTransform
         {
         pBuffer = jmdlEmbeddedDPoint3dArray_getPtr (pHeader, 0);
         count = jmdlEmbeddedDPoint3dArray_getCount (pHeader);
-        bsiTransform_multiplyDPoint3dArrayInPlace (pTransform, pBuffer, count);
+        pTransform->Multiply (pBuffer, count);
         }
     }
 
@@ -1004,7 +1004,7 @@ int                     numXYZ
     bool    bPreviousPointIsDisconnect = true;
     for (i = 0; i < numXYZ; i++)
         {
-        if (bsiDPoint3d_isDisconnect (&pXYZ[i]))
+        if (pXYZ[i].IsDisconnect ())
             {
             bPreviousPointIsDisconnect = true;
             }
@@ -1070,7 +1070,7 @@ int                     index0
     int n = jmdlEmbeddedDPoint3dArray_getCount (pHeader);
     DPoint3dCP pBuffer = jmdlEmbeddedDPoint3dArray_getConstPtr (pHeader, 0);
     int i;
-    for (i = index0; i < n && !bsiDPoint3d_isDisconnect (&pBuffer[i]); i++)
+    for (i = index0; i < n && !pBuffer[i].IsDisconnect (); i++)
         {
         nout++;
         }

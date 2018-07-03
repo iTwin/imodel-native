@@ -75,7 +75,7 @@ int                 dimension
 
     if (NULL != rotMatrixP)
         for (i=0; i<3; i++)
-            bsiRotMatrix_getRow ( rotMatrixP, &rows[i],  i);
+            rotMatrixP->GetRow (rows[i], i);
 
     for ( ; poleP < endP; poleP+=3, weightP++)
         {
@@ -563,13 +563,13 @@ double              tolerance
         {
         /* ASSUME ... direction is in xy plane */
         direction = *(DVec3d*)directionP;
-        bsiRotMatrix_getRow ( rotMatrixP, &zDir,  2);
+        rotMatrixP->GetRow (zDir, 2);
         normal.CrossProduct (zDir, *directionP);
         }
     else
         {
-        bsiRotMatrix_getRow ( rotMatrixP, &direction,  0);
-        bsiRotMatrix_getRow ( rotMatrixP, &normal,  1);
+        rotMatrixP->GetRow (direction, 0);
+        rotMatrixP->GetRow (normal, 1);
         }
 
     normal.Normalize ();
@@ -740,7 +740,7 @@ double              tolerance
     double maxRetryAngle   = 10.0;
     int numInt, numRepeat, numStart;
     DVec3d xDir, yDir, newDir;
-    bsiRotMatrix_getRow ( rotMatrixP, &xDir,  0);
+    rotMatrixP->GetRow (xDir, 0);
 
     bspcurv_countRayIntersectionsExt (&numInt, &numRepeat, &numStart, originP, &xDir, curveP, rotMatrixP, tolerance);
     if (numStart > 0)
@@ -755,7 +755,7 @@ double              tolerance
         {
         double theta;
         double c, s;
-        bsiRotMatrix_getRow ( rotMatrixP, &yDir,  1);
+        rotMatrixP->GetRow (yDir, 1);
         for (theta = firstRetryAngle; theta <= maxRetryAngle; theta *= retryFactor)
             {
             c = cos (theta);

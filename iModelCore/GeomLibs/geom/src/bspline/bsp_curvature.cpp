@@ -102,14 +102,14 @@ double r1
     perp0.CrossProduct (zVec, dir0);
     perp1.CrossProduct (zVec, dir1);
 
-    bsiTransform_initFromOriginAndVectors (&T0ToWorld, pXYZ0, &dir0, &perp0, &zVec);
-    bsiTransform_initFromOriginAndVectors (&T1ToWorld, pXYZ1, &dir1, &perp1, &zVec);
+    T0ToWorld.InitFromOriginAndVectors(*pXYZ0, dir0, perp0, zVec);
+    T1ToWorld.InitFromOriginAndVectors(*pXYZ1, dir1, perp1, zVec);
 
     TWorldTo0.InverseOf (T0ToWorld);
     TWorldTo1.InverseOf (T1ToWorld);
 
-    bsiTransform_multiplyDPoint3d (&TWorldTo1, &uv0, pXYZ0);
-    bsiTransform_multiplyDPoint3d (&TWorldTo0, &xy3, pXYZ1);
+    TWorldTo1.Multiply (uv0, *pXYZ0);
+    TWorldTo0.Multiply (xy3, *pXYZ1);
 
     idotv = dir0.DotProduct (perp1);
     udotj = dir1.DotProduct (perp0);

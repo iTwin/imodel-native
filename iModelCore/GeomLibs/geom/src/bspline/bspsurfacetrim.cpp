@@ -1091,7 +1091,7 @@ Transform const *pTransform
         outBndP->numPoints = inBndP->numPoints;
         memcpy (outBndP->points, inBndP->points, allocSize);
         if (pTransform)
-            bsiTransform_multiplyDPoint2dArray (pTransform, outBndP->points, outBndP->points, outBndP->numPoints);
+            pTransform->Multiply (outBndP->points, outBndP->points, outBndP->numPoints);
 
         // Copy trim boundaries.
         for (inTrimP = inBndP->pFirst; NULL != inTrimP; inTrimP = inTrimP->pNext)
@@ -1139,8 +1139,7 @@ Transform const *pTransform
         return;
 
     if (pBoundary->numPoints > 0 && NULL != pBoundary->points)
-        bsiTransform_multiplyDPoint2dArray (pTransform,
-                pBoundary->points, pBoundary->points, pBoundary->numPoints);
+        pTransform->Multiply (pBoundary->points, pBoundary->points, pBoundary->numPoints);
 
     if (NULL != pBoundary->pFirst)
         {

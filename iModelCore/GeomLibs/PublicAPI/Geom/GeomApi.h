@@ -792,7 +792,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "dray3d.fdf"
 
 //#include "internal/dtoroid3d.fdf"
-#include "dvec3d.fdf"
 #include "dvec3drotmatrix.fdf"
 #include "ellipsefillet.fdf"
 #include "eigensys3d.fdf"
@@ -815,10 +814,8 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "quadeqn.fdf"
 #include "quadric.fdf"
 #include "rotations.fdf"
-#include "rotmatrix.fdf"
 #include "simpson.fdf"
 #include "svd.fdf"
-#include "transform.fdf"
 
 
 /*__PUBLISH_SECTION_START__*/

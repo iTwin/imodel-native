@@ -365,7 +365,7 @@ bool                laplacianSmoothing
                     1, s, 0, 0,
                     0, c, 0, 0,
                     0, 0, 1, 0);
-        bsiTransform_setFixedPoint (&localToWorld, &range.low);
+        localToWorld.SetFixedPoint(range.low);
         worldToLocal.InverseOf (localToWorld);
         vu_transform (graph, &worldToLocal);
         int numX = ix1 - ix0;

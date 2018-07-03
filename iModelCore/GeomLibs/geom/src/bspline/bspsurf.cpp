@@ -3037,14 +3037,7 @@ Transform const         *transformP         /* => transform */
         totalPoles = outSurfP->uParams.numPoles * outSurfP->vParams.numPoles;
         if (outSurfP->rational)
             {
-            bsiTransform_multiplyWeightedDPoint3dArray
-                            (
-                            transformP,
-                            outSurfP->poles,
-                            outSurfP->poles,
-                            outSurfP->weights,
-                            totalPoles
-                            );
+            transformP->MultiplyWeighted (outSurfP->poles, outSurfP->poles, outSurfP->weights, totalPoles);
             }
         else
             {
@@ -4390,7 +4383,7 @@ double              convTol            /* => convergence tolerance in UV space *
             /*-----------------------------------------------------------
             Must correct the partials, see Farouki, R.T. in CAGD vol 3, pp. 15-45.
             -----------------------------------------------------------*/
-            nearPt->SumOf (*nearPt, safeNormal, eval->distance / bsiDPoint3d_magnitude (&safeNormal));
+            nearPt->SumOf (*nearPt, safeNormal, eval->distance / safeNormal.Magnitude ());
 
             cross.CrossProduct (du, dv);
             tmp0.CrossProduct (duu, dv);
@@ -4458,8 +4451,8 @@ double              convTol            /* => convergence tolerance in UV space *
             else
                 {
                 rotMatrix_orthogonalFromZRow (&tmp, (DVec3d*)normal);
-                bsiRotMatrix_getRow ( &tmp, &du,  0);
-                bsiRotMatrix_getRow ( &tmp, &dv,  1);
+                tmp.GetRow (du, 0);
+                tmp.GetRow (dv, 1);
                 du.Scale (du, sqrt (mag_cross));
                 dv.Scale (dv, sqrt (mag_cross));
                 }

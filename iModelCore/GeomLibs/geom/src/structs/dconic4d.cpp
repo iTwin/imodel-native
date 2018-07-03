@@ -2651,7 +2651,7 @@ RotMatrixCP pB1
     /* Get the angles and trig values on conic0 */
     for (i = 0; i < numRoot; i++)
         {
-        bsiRotMatrix_multiplyComponents (&C, &F, c1[i], s1[i], 1.0);
+        C.MultiplyComponents(F, c1[i], s1[i], 1.0);
         /* Back out the angles.  Just evaluate the trigs rather than worry
             about whether there is a divide by zero if you normalize from the
             nominal solution vector */
@@ -2750,8 +2750,8 @@ DConic4dCP pConic1
     condition0 = B0.ConditionNumber ();
     condition1 = B1.ConditionNumber ();
 
-    bool0 = bsiRotMatrix_invertRotMatrix (&B0inv, &B0);
-    bool1 = bsiRotMatrix_invertRotMatrix (&B1inv, &B1);
+    bool0 = B0inv.InverseOf (B0);
+    bool1 = B1inv.InverseOf (B1);
 
     // If one conic is really large, bezier roots come out bad.
     //   In obvious cases look for the smaller ellipse to implicitize...
@@ -3889,9 +3889,9 @@ TransformCP pTransform,
 DConic4dCP pSource
 )
     {
-    bsiTransform_multiplyDPoint4dArray (pTransform, &pDest->center  , &pSource->center, 1);
-    bsiTransform_multiplyDPoint4dArray (pTransform, &pDest->vector0 , &pSource->vector0, 1);
-    bsiTransform_multiplyDPoint4dArray (pTransform, &pDest->vector90, &pSource->vector90, 1);
+    pTransform->Multiply (&pDest->center, &pSource->center, 1);
+    pTransform->Multiply (&pDest->vector0, &pSource->vector0, 1);
+    pTransform->Multiply (&pDest->vector90, &pSource->vector90, 1);
     pDest->start = pSource->start;
     pDest->sweep = pSource->sweep;
     }

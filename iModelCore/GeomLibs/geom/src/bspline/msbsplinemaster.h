@@ -30,7 +30,6 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 #define mdlRMatrix_fromColumnVectors bsiRotMatrix_initFromColumnVectors
 #define mdlRMatrix_fromTMatrix bsiRotMatrix_initFromTransform
 
-#define mdlTMatrix_transformPointArray(_points,_transform,_count) bsiTransform_multiplyDPoint3dArrayInPlace(_transform, _points, _count)
 #define mdlRMatrix_multiplyPoint(_point,_transform) bsiRotMatrix_multiplyDPoint3d (_transform, _point);
 
 
