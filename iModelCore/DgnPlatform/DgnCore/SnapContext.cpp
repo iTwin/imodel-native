@@ -1846,7 +1846,8 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
     SnapContext::Response output;
     output.SetStatus(SnapStatus::BadArg);
 
-    if (!input.IsValid())
+    // may have been aborted while it was in the queue. If so, don't even start
+    if (checkstop.WasAborted() || !input.IsValid())
         return output;
 
     output.SetStatus(SnapStatus::NoElements);
