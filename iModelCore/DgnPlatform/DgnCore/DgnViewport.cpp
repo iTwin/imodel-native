@@ -82,7 +82,7 @@ void DgnViewport::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) co
     {
     DRange3d corners = GetViewCorners();
     Transform scrToNpcTran;
-    bsiTransform_initFromRange(nullptr, &scrToNpcTran, &corners.low, &corners.high);
+    LegacyMath::TMatrix::InitTransformsFromRange(nullptr, &scrToNpcTran, &corners.low, &corners.high);
     scrToNpcTran.Multiply(npcVec, screenVec, nPts);
     }
 
@@ -93,7 +93,7 @@ void DgnViewport::NpcToView(DPoint3dP screenVec, DPoint3dCP npcVec, int nPts) co
     {
     DRange3d corners = GetViewCorners();
     Transform    npcToScrTran;
-    bsiTransform_initFromRange(&npcToScrTran, nullptr, &corners.low, &corners.high);
+    LegacyMath::TMatrix::InitTransformsFromRange(&npcToScrTran, nullptr, &corners.low, &corners.high);
     npcToScrTran.Multiply(screenVec, npcVec, nPts);
     }
 
