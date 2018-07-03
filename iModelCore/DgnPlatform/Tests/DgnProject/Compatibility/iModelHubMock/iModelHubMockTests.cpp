@@ -4,14 +4,16 @@
 #include "iModelHubMock.h"
 #include "../CompatibilityTestFixture.h"
 
-struct IModelHubMockTestFixture : public ::testing::Test, DgnPlatformLib::Host::RepositoryAdmin {
+struct IModelHubMockTestFixture : public ::testing::Test, DgnPlatformLib::Host::RepositoryAdmin 
+{
 private:
-    static bool s_isInitialized;
-    static ScopedDgnHost* s_host;
-    mutable TestRepositoryManager m_server;
-    BeFileName m_tempPath;
-    BeFileName m_outputRoot;
-    IModelHubMock* m_mock;
+    static bool                     s_isInitialized;
+    static ScopedDgnHost*           s_host;
+    mutable TestRepositoryManager   m_server;
+    BeFileName                      m_tempPath;
+    BeFileName                      m_outputRoot;
+    IModelHubMock*                  m_mock;
+
     void Initialize() 
         {
         BeFileName assets;
@@ -41,7 +43,6 @@ public:
         delete m_mock;
         delete s_host;
         }
-
 };
 ScopedDgnHost* IModelHubMockTestFixture::s_host;
 bool IModelHubMockTestFixture::s_isInitialized = false;
@@ -125,7 +126,7 @@ TEST_F(IModelHubMockTestFixture, CreateAndPushChangeset)
     auto status = GetMock()->AcquireBriefcase(id, briefcasePath);
 
     DbResult stat;
-    auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
     auto res = db->BriefcaseManager().LockDb(LockLevel::Exclusive);
 
     SubjectCPtr rootSubject = db->Elements().GetRootSubject();
@@ -141,7 +142,7 @@ TEST_F(IModelHubMockTestFixture, CreateAndPushChangeset)
     EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
     auto modelId = model->GetModelId();
 
-    DgnElement::CreateParams cp =  DgnElement::CreateParams::CreateParams(*db, modelId, DgnClassId(db->Schemas().GetClass("BisCore", "AnnotationElement2d")->GetId()));
+    DgnElement::CreateParams cp = DgnElement::CreateParams::CreateParams(*db, modelId, DgnClassId(db->Schemas().GetClass("BisCore", "AnnotationElement2d")->GetId()));
     auto element = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(cp));
     element->Insert();
 
@@ -185,6 +186,30 @@ TEST_F(IModelHubMockTestFixture, MergeChangesets)
 
     db->SaveChanges("test");
     auto rev = db->Revisions().StartCreateRevision();
+    ASSERT_TRUE(rev.IsValid());
+    ASSERT_EQ(RevisionStatus::Success, db->Revisions().FinishCreateRevision());
+    ASSERT_FALSE(GetMock()->PushChangeset(rev, id).empty());
+
+    ASSERT_TRUE(GetMock()->ManualMergeAllChangesets(id)) << "Merging a changeset with correct iModelId and parent should succeed";
+    GetMock()->ClearStoredRevisions(id);
+    ASSERT_TRUE(GetMock()->ManualMergeAllChangesets(id)) << "Merging 0 changesets should succeed always";
+
+    partition = PhysicalPartition::Create(*rootSubject, "myPartition2");
+    resStatus = db->BriefcaseManager().ReserveCode(PhysicalPartition::CreateCode(*rootSubject, "myPartition2"));
+    partition->Insert(&insStatus);
+
+    ASSERT_TRUE(partition.IsValid());
+    model = PhysicalModel::CreateAndInsert(*partition);
+    ASSERT_TRUE(model.IsValid());
+    EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
+    modelId = model->GetModelId();
+
+    DgnElement::CreateParams cp2 =  DgnElement::CreateParams::CreateParams(*db, modelId, DgnClassId(db->Schemas().GetClass("BisCore", "AnnotationElement2d")->GetId()));
+    auto element2 = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(cp2));
+    element2->Insert();
+    db->SaveChanges("test2");
+    RevisionStatus revStatus;
+    rev = db->Revisions().StartCreateRevision(&revStatus);
     ASSERT_TRUE(rev.IsValid());
     ASSERT_EQ(RevisionStatus::Success, db->Revisions().FinishCreateRevision());
     ASSERT_FALSE(GetMock()->PushChangeset(rev, id).empty());
@@ -248,38 +273,38 @@ TEST_F(IModelHubMockTestFixture, OverflowIssue)
                         <BaseClass>bis:PhysicalElement</BaseClass>
 
                         <!-- bis_GeometricElement3d -->
-		                <ECProperty propertyName="p01" typeName="int"/>
-		                <ECProperty propertyName="p02" typeName="int"/>
-		                <ECProperty propertyName="p03" typeName="int"/>
-		                <ECProperty propertyName="p04" typeName="int"/>
-		                <ECProperty propertyName="p05" typeName="int"/>
-		                <ECProperty propertyName="p06" typeName="int"/>
-		                <ECProperty propertyName="p07" typeName="int"/>
-		                <ECProperty propertyName="p08" typeName="int"/>
-		                <ECProperty propertyName="p09" typeName="int"/>
-		                <ECProperty propertyName="p10" typeName="int"/>
-		                <ECProperty propertyName="p11" typeName="int"/>
-		                <ECProperty propertyName="p12" typeName="int"/>
-		                <ECProperty propertyName="p13" typeName="int"/>
-		                <ECProperty propertyName="p14" typeName="int"/>
-		                <ECProperty propertyName="p15" typeName="int"/>
-		                <ECProperty propertyName="p16" typeName="int"/>
-		                <ECProperty propertyName="p17" typeName="int"/>
-		                <ECProperty propertyName="p18" typeName="int"/>
-		                <ECProperty propertyName="p19" typeName="int"/>
-		                <ECProperty propertyName="p20" typeName="int"/>
-		                <ECProperty propertyName="p21" typeName="int"/>
-		                <ECProperty propertyName="p22" typeName="int"/>
-		                <ECProperty propertyName="p23" typeName="int"/>
-		                <ECProperty propertyName="p24" typeName="int"/>
-		                <ECProperty propertyName="p25" typeName="int"/>
-		                <ECProperty propertyName="p26" typeName="int"/>
-		                <ECProperty propertyName="p27" typeName="int"/>
-		                <ECProperty propertyName="p28" typeName="int"/>
-		                <ECProperty propertyName="p29" typeName="int"/>
-		                <ECProperty propertyName="p30" typeName="int"/>
-		                <ECProperty propertyName="p31" typeName="int"/>
-		                <ECProperty propertyName="p32" typeName="int"/>		
+                        <ECProperty propertyName="p01" typeName="int"/>
+                        <ECProperty propertyName="p02" typeName="int"/>
+                        <ECProperty propertyName="p03" typeName="int"/>
+                        <ECProperty propertyName="p04" typeName="int"/>
+                        <ECProperty propertyName="p05" typeName="int"/>
+                        <ECProperty propertyName="p06" typeName="int"/>
+                        <ECProperty propertyName="p07" typeName="int"/>
+                        <ECProperty propertyName="p08" typeName="int"/>
+                        <ECProperty propertyName="p09" typeName="int"/>
+                        <ECProperty propertyName="p10" typeName="int"/>
+                        <ECProperty propertyName="p11" typeName="int"/>
+                        <ECProperty propertyName="p12" typeName="int"/>
+                        <ECProperty propertyName="p13" typeName="int"/>
+                        <ECProperty propertyName="p14" typeName="int"/>
+                        <ECProperty propertyName="p15" typeName="int"/>
+                        <ECProperty propertyName="p16" typeName="int"/>
+                        <ECProperty propertyName="p17" typeName="int"/>
+                        <ECProperty propertyName="p18" typeName="int"/>
+                        <ECProperty propertyName="p19" typeName="int"/>
+                        <ECProperty propertyName="p20" typeName="int"/>
+                        <ECProperty propertyName="p21" typeName="int"/>
+                        <ECProperty propertyName="p22" typeName="int"/>
+                        <ECProperty propertyName="p23" typeName="int"/>
+                        <ECProperty propertyName="p24" typeName="int"/>
+                        <ECProperty propertyName="p25" typeName="int"/>
+                        <ECProperty propertyName="p26" typeName="int"/>
+                        <ECProperty propertyName="p27" typeName="int"/>
+                        <ECProperty propertyName="p28" typeName="int"/>
+                        <ECProperty propertyName="p29" typeName="int"/>
+                        <ECProperty propertyName="p30" typeName="int"/>
+                        <ECProperty propertyName="p31" typeName="int"/>
+                        <ECProperty propertyName="p32" typeName="int"/>		
                     </ECEntityClass>
                 </ECSchema>)xml";
 
@@ -365,38 +390,38 @@ TEST_F(IModelHubMockTestFixture, OverflowIssue)
                         <BaseClass>bis:PhysicalElement</BaseClass>
 
                         <!-- bis_GeometricElement3d -->
-		                <ECProperty propertyName="p01" typeName="int"/>
-		                <ECProperty propertyName="p02" typeName="int"/>
-		                <ECProperty propertyName="p03" typeName="int"/>
-		                <ECProperty propertyName="p04" typeName="int"/>
-		                <ECProperty propertyName="p05" typeName="int"/>
-		                <ECProperty propertyName="p06" typeName="int"/>
-		                <ECProperty propertyName="p07" typeName="int"/>
-		                <ECProperty propertyName="p08" typeName="int"/>
-		                <ECProperty propertyName="p09" typeName="int"/>
-		                <ECProperty propertyName="p10" typeName="int"/>
-		                <ECProperty propertyName="p11" typeName="int"/>
-		                <ECProperty propertyName="p12" typeName="int"/>
-		                <ECProperty propertyName="p13" typeName="int"/>
-		                <ECProperty propertyName="p14" typeName="int"/>
-		                <ECProperty propertyName="p15" typeName="int"/>
-		                <ECProperty propertyName="p16" typeName="int"/>
-		                <ECProperty propertyName="p17" typeName="int"/>
-		                <ECProperty propertyName="p18" typeName="int"/>
-		                <ECProperty propertyName="p19" typeName="int"/>
-		                <ECProperty propertyName="p20" typeName="int"/>
-		                <ECProperty propertyName="p21" typeName="int"/>
-		                <ECProperty propertyName="p22" typeName="int"/>
-		                <ECProperty propertyName="p23" typeName="int"/>
-		                <ECProperty propertyName="p24" typeName="int"/>
-		                <ECProperty propertyName="p25" typeName="int"/>
-		                <ECProperty propertyName="p26" typeName="int"/>
-		                <ECProperty propertyName="p27" typeName="int"/>
-		                <ECProperty propertyName="p28" typeName="int"/>
-		                <ECProperty propertyName="p29" typeName="int"/>
-		                <ECProperty propertyName="p30" typeName="int"/>
-		                <ECProperty propertyName="p31" typeName="int"/>
-		                <ECProperty propertyName="p32" typeName="int"/>		
+                        <ECProperty propertyName="p01" typeName="int"/>
+                        <ECProperty propertyName="p02" typeName="int"/>
+                        <ECProperty propertyName="p03" typeName="int"/>
+                        <ECProperty propertyName="p04" typeName="int"/>
+                        <ECProperty propertyName="p05" typeName="int"/>
+                        <ECProperty propertyName="p06" typeName="int"/>
+                        <ECProperty propertyName="p07" typeName="int"/>
+                        <ECProperty propertyName="p08" typeName="int"/>
+                        <ECProperty propertyName="p09" typeName="int"/>
+                        <ECProperty propertyName="p10" typeName="int"/>
+                        <ECProperty propertyName="p11" typeName="int"/>
+                        <ECProperty propertyName="p12" typeName="int"/>
+                        <ECProperty propertyName="p13" typeName="int"/>
+                        <ECProperty propertyName="p14" typeName="int"/>
+                        <ECProperty propertyName="p15" typeName="int"/>
+                        <ECProperty propertyName="p16" typeName="int"/>
+                        <ECProperty propertyName="p17" typeName="int"/>
+                        <ECProperty propertyName="p18" typeName="int"/>
+                        <ECProperty propertyName="p19" typeName="int"/>
+                        <ECProperty propertyName="p20" typeName="int"/>
+                        <ECProperty propertyName="p21" typeName="int"/>
+                        <ECProperty propertyName="p22" typeName="int"/>
+                        <ECProperty propertyName="p23" typeName="int"/>
+                        <ECProperty propertyName="p24" typeName="int"/>
+                        <ECProperty propertyName="p25" typeName="int"/>
+                        <ECProperty propertyName="p26" typeName="int"/>
+                        <ECProperty propertyName="p27" typeName="int"/>
+                        <ECProperty propertyName="p28" typeName="int"/>
+                        <ECProperty propertyName="p29" typeName="int"/>
+                        <ECProperty propertyName="p30" typeName="int"/>
+                        <ECProperty propertyName="p31" typeName="int"/>
+                        <ECProperty propertyName="p32" typeName="int"/>		
 
                         <!-- bis_GeometricElement3d_overflow -->
                         <ECProperty propertyName="o33" typeName="int"/>		
@@ -489,7 +514,6 @@ TEST_F(IModelHubMockTestFixture, OverflowIssue)
     dbB = nullptr;
     ASSERT_TRUE(GetMock()->ManualMergeAllChangesets(id));
 
-    //========================================================================================================================
     auto briefcasePathC = BeFileName(GetTempPath()).AppendToPath(L"client.bim");
     status = GetMock()->AcquireBriefcase(id, briefcasePathC);
     auto dbC = DgnDb::OpenDgnDb(&stat, briefcasePathC, DgnDb::OpenParams(Db::OpenMode::Readonly));
@@ -502,3 +526,76 @@ TEST_F(IModelHubMockTestFixture, OverflowIssue)
     dbC = nullptr;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                            Kyle.Abramowitz       06/2018
+//-------------------------------------------------------------------------------------
+TEST_F(IModelHubMockTestFixture, MergeChangesetsFromMultipleClients)
+    {
+    auto id = GetMock()->CreateiModel("test");
+    ASSERT_TRUE(id.IsValid());
+    auto briefcasePath = BeFileName(GetTempPath()).AppendToPath(L"briefcase.bim");
+    ASSERT_TRUE(GetMock()->AcquireBriefcase(id, briefcasePath));
+    DbResult stat;
+    DgnDbStatus insStatus;
+    {
+    auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_EQ(RepositoryStatus::Success, db->BriefcaseManager().LockDb(LockLevel::Exclusive).Result());
+
+    // First briefcase changes
+    PhysicalPartitionPtr partition = PhysicalPartition::Create(*db->Elements().GetRootSubject(), "myPartition");
+    ASSERT_EQ(RepositoryStatus::Success, db->BriefcaseManager().ReserveCode(PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), "myPartition")));
+    partition->Insert(&insStatus);
+
+    ASSERT_TRUE(partition.IsValid());
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*partition);
+    ASSERT_TRUE(model.IsValid());
+    EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
+
+    auto cp = DgnElement::CreateParams(*db, model->GetModelId(), DgnClassId(db->Schemas().GetClass("BisCore", "AnnotationElement2d")->GetId()));
+    auto element = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(cp));
+    element->Insert();
+    db->SaveChanges("test");
+    auto rev = db->Revisions().StartCreateRevision();
+    ASSERT_TRUE(rev.IsValid());
+    ASSERT_EQ(RevisionStatus::Success, db->Revisions().FinishCreateRevision());
+    ASSERT_FALSE(GetMock()->PushChangeset(rev, id).empty());
+    db->BriefcaseManager().RelinquishLocks();
+    db->CloseDb();
+    }
+    // Merging changesets
+    ASSERT_TRUE(GetMock()->ManualMergeAllChangesets(id)) << "Merging a changeset with correct iModelId and parent should succeed";
+    GetMock()->ClearStoredRevisions(id);
+
+    // Second briefcase changes
+    {
+    auto briefcasePath2 = BeFileName(GetTempPath()).AppendToPath(L"briefcase2.bim");
+    ASSERT_TRUE(GetMock()->AcquireBriefcase(id, briefcasePath2));
+    auto db2 = DgnDb::OpenDgnDb(&stat, briefcasePath2, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_EQ(RepositoryStatus::Success, db2->BriefcaseManager().LockDb(LockLevel::Exclusive).Result());
+    auto partition = PhysicalPartition::Create(*db2->Elements().GetRootSubject(), "myPartition2");
+    ASSERT_EQ(RepositoryStatus::Success, db2->BriefcaseManager().ReserveCode(PhysicalPartition::CreateCode(*db2->Elements().GetRootSubject(), "myPartition2")));
+    partition->Insert(&insStatus);
+
+    ASSERT_TRUE(partition.IsValid());
+    auto model = PhysicalModel::CreateAndInsert(*partition);
+    ASSERT_TRUE(model.IsValid());
+    EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
+
+    auto cp2 = DgnElement::CreateParams(*db2, model->GetModelId(), DgnClassId(db2->Schemas().GetClass("BisCore", "AnnotationElement2d")->GetId()));
+    auto element = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(cp2));
+    element->Insert();
+
+    db2->SaveChanges("test2");
+    auto rev = db2->Revisions().StartCreateRevision();
+    ASSERT_TRUE(rev.IsValid());
+    ASSERT_EQ(RevisionStatus::Success, db2->Revisions().FinishCreateRevision());
+    ASSERT_FALSE(GetMock()->PushChangeset(rev, id).empty());
+    db2->BriefcaseManager().RelinquishLocks();
+
+    // Merging changesets
+    ASSERT_TRUE(GetMock()->ManualMergeAllChangesets(id)) << "Merging a changeset with correct iModelId and parent should succeed";
+    GetMock()->ClearStoredRevisions(id);
+    ASSERT_TRUE(GetMock()->ManualMergeAllChangesets(id)) << "Merging 0 changesets should succeed always";
+    db2->CloseDb();
+    }
+    }
