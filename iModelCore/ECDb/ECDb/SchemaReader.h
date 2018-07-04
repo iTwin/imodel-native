@@ -82,6 +82,24 @@ struct SchemaReader final
 
     private:
         TableSpaceSchemaManager const& m_schemaManager;
+
+        struct LegacyKindOfQuantityHelper final
+            {
+            private:
+                ECDbCR m_ecdb;
+                mutable ECN::ECSchemaPtr m_formatsSchema = nullptr;
+                mutable ECN::ECSchemaPtr m_unitsSchema = nullptr;
+
+                BentleyStatus Initialize() const;
+                BentleyStatus AddReferences(ECN::ECSchemaCR koqSchema) const;
+
+            public:
+                explicit LegacyKindOfQuantityHelper(ECDbCR ecdb) : m_ecdb(ecdb) {}
+                BentleyStatus AssignPersistenceUnitAndPresentationFormats(ECN::KindOfQuantityR koq, Utf8CP legacyPersUnit, bvector<Utf8CP> const& legacyPresUnits) const;
+
+                void ClearCache() const { m_formatsSchema = nullptr; m_unitsSchema = nullptr; }
+            };
+
         struct ReaderCache final
             {
             private:
@@ -96,8 +114,11 @@ struct SchemaReader final
                 mutable std::map<ECN::UnitId, ECN::ECUnitCP> m_unitCache;
                 mutable std::map<ECN::FormatId, ECN::ECFormatCP> m_formatCache;
                 mutable bmap<Utf8String, bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>, CompareIUtf8Ascii> m_classIdCache;
+
+                LegacyKindOfQuantityHelper m_legacyKoqHelper;
+
             public:
-                explicit ReaderCache(ECDb const& ecdb) : m_ecdb(ecdb) {}
+                explicit ReaderCache(ECDb const& ecdb) : m_ecdb(ecdb), m_legacyKoqHelper(ecdb) {}
                 void Clear() const;
                 SchemaDbEntry* Find(ECN::ECSchemaId) const;
                 ClassDbEntry* Find(ECN::ECClassId) const;
@@ -123,6 +144,8 @@ struct SchemaReader final
                 void Insert(ECN::PhenomenonCR ph) const { m_phenomenonCache.insert(std::make_pair(ph.GetId(), &ph)); }
                 void Insert(ECN::ECUnitCR unit) const { m_unitCache.insert(std::make_pair(unit.GetId(), &unit)); }
                 void Insert(ECN::ECFormatCR format) const { m_formatCache.insert(std::make_pair(format.GetId(), &format)); }
+
+                LegacyKindOfQuantityHelper const& GetLegacyKoqHelper() const { return m_legacyKoqHelper; }
             };
 
         ReaderCache m_cache;

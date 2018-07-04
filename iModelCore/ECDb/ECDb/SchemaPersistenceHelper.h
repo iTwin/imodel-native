@@ -79,7 +79,6 @@ public:
 
     static BentleyStatus SerializeKoqPresentationFormats(Utf8StringR jsonStr, ECDbCR, ECN::KindOfQuantityCR);
     static BentleyStatus SerializeKoqPresentationFormats(Utf8StringR jsonStr, bvector<Utf8String> const& presFormats);
-    static BentleyStatus DeserializeKoqPresentationFormats(ECN::KindOfQuantityR, TableSpaceSchemaManager const&, Utf8CP jsonStr);
 
     static Utf8String SerializeNumericSpec(Formatting::NumericFormatSpecCR);
     static Utf8String SerializeCompositeSpecWithoutUnits(Formatting::CompositeValueSpecCR);

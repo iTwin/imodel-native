@@ -110,7 +110,8 @@ static_assert(2 == (int) ECN::ECClassType::Struct, "Persisted enum ECN::ECClassT
 #define SQLVAL_ECClassType_CustomAttribute "3"
 static_assert(3 == (int) ECN::ECClassType::CustomAttribute, "Persisted enum ECN::ECClassType has changed");
 
-//** Enum ECVersion
+/* WIP_PERSIST_ECVERSION
+// Enum ECVersion
 #define SQLVAL_ECVersion_V2_0 "131072"
 static_assert(131072 == (int) ECN::ECVersion::V2_0, "Persisted enum ECN::ECVersion has changed");
 #define SQLVAL_ECVersion_V3_0 "196608"
@@ -120,6 +121,7 @@ static_assert(196609 == (int) ECN::ECVersion::V3_1, "Persisted enum ECN::ECVersi
 #define SQLVAL_ECVersion_V3_2 "196610"
 static_assert(196610 == (int) ECN::ECVersion::V3_2, "Persisted enum ECN::ECVersion has changed");
 static_assert(ECN::ECVersion::Latest == ECN::ECVersion::V3_2, "Persisted enum ECN::ECVersion has changed");
+*/
 
 //** Enum JoinedTableInfo
 #define SQLVAL_JoinedTableInfo_None "0"

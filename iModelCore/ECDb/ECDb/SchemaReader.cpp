@@ -1279,7 +1279,6 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
         BeAssert(!m_cache.IsUnitCacheEmpty());
         }
 
-
     const int schemaIdIx = 0;
     const int nameIx = 1;
     const int displayLabelColIx = 2;
@@ -1308,7 +1307,7 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
     Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
     BeAssert(!stmt->IsColumnNull(persUnitColIx));
     const double relError = stmt->GetValueDouble(relErrorColIx);
-    Utf8CP persUnitFullName = stmt->GetValueText(persUnitColIx);
+    Utf8CP persUnitStr = stmt->GetValueText(persUnitColIx);
     Utf8CP presFormatsStr = stmt->IsColumnNull(presFormatsColIx) ? nullptr : stmt->GetValueText(presFormatsColIx);
 
     KindOfQuantityP newKoq = nullptr;
@@ -1323,30 +1322,64 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
     newKoq->SetDescription(description);
     newKoq->SetRelativeError(relError);
 
-    // PersistenceUnit
-    // The persistence unit is persisted as fully qualified name to preserve backwards compatibility
-    BeAssert(!Utf8String::IsNullOrEmpty(persUnitFullName));
-    auto lookupUnit = [this] (Utf8StringCR unitAlias, Utf8StringCR unitName)
-        {
-        BeAssert(!unitAlias.empty());
-        return m_schemaManager.GetUnit(unitAlias, unitName, SchemaLookupMode::ByAlias);
-        };
-
-    if (ECObjectsStatus::Success != newKoq->AddPersistenceUnitByName(persUnitFullName, lookupUnit))
-        {
-        LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit '%s' could not be parsed.", newKoq->GetFullName().c_str(), persUnitFullName);
-        return ERROR;
-        }
-
-    //PresentationFormats
-
+    // Persistence Unit and Presentation Formats
+    bvector<Utf8CP> presFormats; //can use Utf8CP as the string is owned by the rapidjson::Document
+    rapidjson::Document presFormatsJson;
     if (!Utf8String::IsNullOrEmpty(presFormatsStr))
         {
-        if (SUCCESS != SchemaPersistenceHelper::DeserializeKoqPresentationFormats(*newKoq, m_schemaManager, presFormatsStr))
+        if (presFormatsJson.Parse<0>(presFormatsStr).HasParseError())
             {
-            LOG.errorv("Failed to read KindOfQuantity '%s'. One of its presentation formats could not be parsed: %s.", newKoq->GetFullName().c_str(), presFormatsStr);
+            BeAssert(false && "Could not parse KindOfQuantity Presentation Formats values JSON string.");
             return ERROR;
             }
+
+        BeAssert(presFormatsJson.IsArray());
+        for (rapidjson::Value const& presFormatJson : presFormatsJson.GetArray())
+            {
+            BeAssert(presFormatJson.IsString() && presFormatJson.GetStringLength() > 0);
+            presFormats.push_back(presFormatJson.GetString());
+            }
+        }
+
+    if (FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
+        {
+        // The persistence unit is persisted as fully qualified name to preserve backwards compatibility
+        BeAssert(!Utf8String::IsNullOrEmpty(persUnitStr));
+        auto lookupUnit = [this] (Utf8StringCR unitAlias, Utf8StringCR unitName)
+            {
+            BeAssert(!unitAlias.empty());
+            return m_schemaManager.GetUnit(unitAlias, unitName, SchemaLookupMode::ByAlias);
+            };
+
+        if (ECObjectsStatus::Success != newKoq->AddPersistenceUnitByName(persUnitStr, lookupUnit))
+            {
+            LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit '%s' could not be parsed.", newKoq->GetFullName().c_str(), persUnitStr);
+            return ERROR;
+            }
+
+        //PresentationFormats
+        if (!presFormats.empty())
+            {
+            auto lookupFormat = [this] (Utf8String alias, Utf8StringCR formatName)
+                {
+                return m_schemaManager.GetFormat(alias, formatName, SchemaLookupMode::ByAlias);
+                };
+
+            for (Utf8CP presFormat : presFormats)
+                {
+                if (ECObjectsStatus::Success != newKoq->AddPresentationFormatByString(presFormat, lookupFormat, lookupUnit))
+                    {
+                    LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation format '%s' could not be parsed.", newKoq->GetFullName().c_str(), presFormat);
+                    return ERROR;
+                    }
+                }
+            }
+        }
+    else
+        {
+        //Handle legacy KOQs
+        if (SUCCESS != m_cache.GetLegacyKoqHelper().AssignPersistenceUnitAndPresentationFormats(*newKoq, persUnitStr, presFormats))
+            return ERROR;
         }
 
     //cache the koq
@@ -1670,7 +1703,8 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
     const bool hasECVersionsAndUnits = FeatureManager::IsAvailable(GetECDb(), {Feature::ECVersions, Feature::UnitsAndFormats});
     if (hasECVersionsAndUnits)
         {
-        stmt = GetCachedStatement(Utf8PrintfString("SELECT s.Name, s.DisplayLabel,s.Description,s.Alias,s.VersionDigit1,s.VersionDigit2,s.VersionDigit3,s.ECVersion,s.OriginalECXmlVersionMajor,s.OriginalECXmlVersionMinor,"
+        // WIP_PERSIST_ECVERSION stmt = GetCachedStatement(Utf8PrintfString("SELECT s.Name,s.DisplayLabel,s.Description,s.Alias,s.VersionDigit1,s.VersionDigit2,s.VersionDigit3,s.ECVersion,s.OriginalECXmlVersionMajor,s.OriginalECXmlVersionMinor,"
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT s.Name,s.DisplayLabel,s.Description,s.Alias,s.VersionDigit1,s.VersionDigit2,s.VersionDigit3,s.OriginalECXmlVersionMajor,s.OriginalECXmlVersionMinor,"
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Class "  c WHERE s.Id = c.SchemaId) + "
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Enumeration " e WHERE s.Id = e.SchemaId) + "
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_KindOfQuantity " koq WHERE s.Id = koq.SchemaId) + "
@@ -1722,13 +1756,15 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
     colIx++;
     uint32_t versionMinor = (uint32_t) stmt->GetValueInt64(colIx);
 
-    ECVersion ecVersion = ECVersion::V3_1; // default for files that did not persist the ECVersion yet
+    // WIP_PERSIST_ECVERSION ECVersion ecVersion = ECVersion::V3_1; // default for files that did not persist the ECVersion yet
     Nullable<uint32_t> originalECVersionMajor, originalECVersionMinor;
     if (hasECVersionsAndUnits)
         {
+        /* WIP_PERSIST_ECVERSION
         colIx++;
         if (!stmt->IsColumnNull(colIx))
             ecVersion = (ECVersion) stmt->GetValueInt(colIx);
+        */
 
         colIx++;
         if (!stmt->IsColumnNull(colIx))
@@ -1743,7 +1779,7 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
     const int typesInSchema = stmt->GetValueInt(colIx);
 
     ECSchemaPtr schema = nullptr;
-    if (ECSchema::CreateSchema(schema, schemaName, alias, versionMajor, versionWrite, versionMinor, ecVersion) != ECObjectsStatus::Success)
+    if (ECSchema::CreateSchema(schema, schemaName, alias, versionMajor, versionWrite, versionMinor) != ECObjectsStatus::Success)
         return ERROR;
 
     if (hasECVersionsAndUnits && originalECVersionMajor != nullptr)
@@ -2617,6 +2653,8 @@ void SchemaReader::ReaderCache::Clear() const
     m_phenomenonCache.clear();
     m_unitCache.clear();
     m_formatCache.clear();
+
+    m_legacyKoqHelper.ClearCache();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -2715,4 +2753,98 @@ void SchemaReader::ReaderCache::SetClassEntryToNull(ECN::ECClassId id) const
     m_classCache[id] = nullptr;
     
     }
+
+//***********************************************************************************
+// SchemaReader::LegacyKindOfQuantityHelper
+//***********************************************************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      07/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus SchemaReader::LegacyKindOfQuantityHelper::AssignPersistenceUnitAndPresentationFormats(ECN::KindOfQuantityR koq, Utf8CP legacyPersUnit, bvector<Utf8CP> const& legacyPresUnits) const
+    {
+    if (SUCCESS != Initialize())
+        {
+        LOG.errorv("Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
+                   "The Units and Formats schemas could not be deserialized.", koq.GetFullName().c_str());
+        return ERROR;
+        }
+
+    BeAssert(m_unitsSchema != nullptr && m_formatsSchema != nullptr);
+
+    if (SUCCESS != AddReferences(koq.GetSchema()))
+        {
+        LOG.errorv("Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
+                   "Could not add Units and Formats schemas references to the KindOfQuantity's schema.", koq.GetFullName().c_str());
+        return ERROR;
+        }
+
+    Utf8String persUnitName;
+    bvector<Utf8String> presFormatNames;
+    if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatNames, legacyPersUnit, legacyPresUnits, *m_formatsSchema))
+        {
+        LOG.errorv("Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
+                   "Could not convert the legacy persistence and presentation units.", koq.GetFullName().c_str());
+        return ERROR;
+        }
+
+    auto lookupUnit = [this] (Utf8StringCR unitAlias, Utf8StringCR unitName) { return m_unitsSchema->GetUnitCP(unitName.c_str()); };
+
+    if (ECObjectsStatus::Success != koq.AddPersistenceUnitByName(persUnitName, lookupUnit))
+        {
+        LOG.errorv("Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
+                   "Could not assign the converted persistence unit '%s'.", koq.GetFullName().c_str(), persUnitName.c_str());
+        return ERROR;
+        }
+
+    //PresentationFormats
+    if (!presFormatNames.empty())
+        {
+        auto lookupFormat = [this] (Utf8String alias, Utf8StringCR formatName) { return m_formatsSchema->GetFormatCP(formatName.c_str()); };
+
+        for (Utf8StringCR presFormatName : presFormatNames)
+            {
+            if (ECObjectsStatus::Success != koq.AddPresentationFormatByString(presFormatName, lookupFormat, lookupUnit))
+                {
+                LOG.errorv("Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
+                           "Could not assign the converted persistence format '%s'.", koq.GetFullName().c_str(), presFormatName.c_str());
+                return ERROR;
+                }
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      07/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus SchemaReader::LegacyKindOfQuantityHelper::Initialize() const
+    {
+    if (m_formatsSchema == nullptr)
+        {
+        ECSchemaReadContextPtr schemaReadCtx = ECSchemaReadContext::CreateContext();
+        schemaReadCtx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
+        SchemaKey formatsSchemaKey("Formats", 1, 0, 0);
+        m_formatsSchema = ECSchema::LocateSchema(formatsSchemaKey, *schemaReadCtx);
+        SchemaKey unitsSchemaKey("Units", 1, 0, 0);
+        m_unitsSchema = ECSchema::LocateSchema(unitsSchemaKey, *schemaReadCtx);
+        return m_formatsSchema != nullptr && m_unitsSchema != nullptr ? SUCCESS : ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      07/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus SchemaReader::LegacyKindOfQuantityHelper::AddReferences(ECN::ECSchemaCR koqSchema) const
+    {
+    BeAssert(m_unitsSchema != nullptr && m_formatsSchema != nullptr);
+    ECSchemaR koqSchemaR = const_cast<ECSchemaR>(koqSchema);
+    if (ECN::ECObjectsStatus::Success != koqSchemaR.AddReferencedSchema(*m_unitsSchema))
+        return ERROR;
+
+    return (ECN::ECObjectsStatus::Success == koqSchemaR.AddReferencedSchema(*m_formatsSchema)) ? SUCCESS : ERROR;
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

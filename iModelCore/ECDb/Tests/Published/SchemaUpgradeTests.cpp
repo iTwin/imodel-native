@@ -256,34 +256,33 @@ TEST_F(SchemaUpgradeTestFixture, ModifySchemaVersion)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, ECVersions)
     {
-    auto verifySchemaVersion = [] (ECDbCR ecdb, Utf8CP schemaName, ECVersion expectedECVersion, uint32_t expectedOriginalXmlVersionMajor, uint32_t expectedOriginalXmlVersionMinor)
+    auto verifySchemaVersion = [] (ECDbCR ecdb, Utf8CP schemaName, uint32_t expectedOriginalXmlVersionMajor, uint32_t expectedOriginalXmlVersionMinor)
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECVersion, OriginalECXmlVersionMajor, OriginalECXmlVersionMinor FROM meta.ECSchemaDef WHERE Name=?"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT OriginalECXmlVersionMajor, OriginalECXmlVersionMinor FROM meta.ECSchemaDef WHERE Name=?"));
         stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(expectedECVersion, (ECVersion) stmt.GetValueInt(0));
-        ASSERT_EQ(expectedOriginalXmlVersionMajor, (uint32_t) stmt.GetValueInt(1));
-        ASSERT_EQ(expectedOriginalXmlVersionMinor, (uint32_t) stmt.GetValueInt(2));
+        ASSERT_EQ(expectedOriginalXmlVersionMajor, (uint32_t) stmt.GetValueInt(0));
+        ASSERT_EQ(expectedOriginalXmlVersionMinor, (uint32_t) stmt.GetValueInt(1));
         };
 
     ASSERT_EQ(SUCCESS, SetupECDb("SchemaOriginalECXmlVersion.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>")));
-    verifySchemaVersion(m_ecdb, "TestSchema", ECVersion::Latest, 3, 0);
+    verifySchemaVersion(m_ecdb, "TestSchema", 3, 0);
 
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "</ECSchema>")));
-    verifySchemaVersion(m_ecdb, "TestSchema", ECVersion::Latest, 3, 1);
+    verifySchemaVersion(m_ecdb, "TestSchema", 3, 1);
 
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         "</ECSchema>")));
-    verifySchemaVersion(m_ecdb, "TestSchema", ECVersion::Latest, 3, 2);
+    verifySchemaVersion(m_ecdb, "TestSchema", 3, 2);
 
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7693,7 +7692,7 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
     ASSERT_TRUE(schema != nullptr);
 
-    assertKoq(*schema, "K1", "KOQ 1", "My KOQ 1", "u:CM", "f:DefaultReal[u:CM]", 1);
+    assertKoq(*schema, "K1", "KOQ 1", "My KOQ 1", "u:CM", "", 1);
     assertKoq(*schema, "K2", "KOQ 2", "My KOQ 2", "u:M", "f:DefaultReal[u:FT];f:DefaultReal[u:IN]", 2);
     assertKoq(*schema, "K3", "KOQ 3", "My KOQ 3", "u:KG", "f:DefaultReal[u:G]", 3);
     assertKoq(*schema, "K4", "KOQ 4", "My KOQ 4", "u:G", "f:DefaultReal[u:MG]", 4);
@@ -7736,7 +7735,7 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
     ASSERT_TRUE(schema != nullptr);
 
-    assertKoq(*schema, "K1", "KOQ 1", "My KOQ 1", "u:CM", "f:DefaultReal[u:CM]", 1);
+    assertKoq(*schema, "K1", "KOQ 1", "My KOQ 1", "u:CM", "", 1);
     assertKoq(*schema, "K2", "KOQ 2", "My KOQ 2", "u:M", "f:DefaultReal[u:FT];f:DefaultReal[u:IN]", 2);
     assertKoq(*schema, "K3", "KOQ 3", "My KOQ 3", "u:KG", "f:DefaultReal[u:G]", 3);
     assertKoq(*schema, "K4", "KOQ 4", "My KOQ 4", "u:G", "f:DefaultReal[u:MG]", 4);

@@ -168,6 +168,7 @@ DbResult TestHelper::ExecuteInsertECSql(ECInstanceKey& key, Utf8CP ecsql) const
     return stmt.Step(key);
     }
 
+/* WIP_PERSIST_ECVERSION  
 //---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     03/18
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -186,6 +187,7 @@ Nullable<ECVersion> TestHelper::GetECVersion(Utf8CP schemaName) const
 
     return (ECVersion) stmt.GetValueInt(0);
     }
+    */
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     03/18

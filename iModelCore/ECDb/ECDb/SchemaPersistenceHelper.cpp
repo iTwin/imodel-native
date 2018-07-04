@@ -752,43 +752,6 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8Strin
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  06/2016
-//---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationFormats(KindOfQuantityR koq, TableSpaceSchemaManager const& schemaManager, Utf8CP jsonStr)
-    {
-    rapidjson::Document presFormatsJson;
-    if (presFormatsJson.Parse<0>(jsonStr).HasParseError())
-        {
-        BeAssert(false && "Could not parse KindOfQuantity Presentation Formats values JSON string.");
-        return ERROR;
-        }
-
-    BeAssert(presFormatsJson.IsArray());
-
-    auto lookupFormat = [&schemaManager] (Utf8String alias, Utf8StringCR formatName)
-        {
-        return schemaManager.GetFormat(alias, formatName, SchemaLookupMode::ByAlias);
-        };
-
-    auto lookupUnit = [&schemaManager] (Utf8String alias, Utf8StringCR unitName)
-        {
-        return schemaManager.GetUnit(alias, unitName, SchemaLookupMode::ByAlias);
-        };
-
-    for (rapidjson::Value const& presFormatJson : presFormatsJson.GetArray())
-        {
-        BeAssert(presFormatJson.IsString() && presFormatJson.GetStringLength() > 0);
-        if (ECObjectsStatus::Success != koq.AddPresentationFormatByString(presFormatJson.GetString(), lookupFormat, lookupUnit))
-            {
-            LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation format '%s' could not be parsed.", koq.GetFullName().c_str(), presFormatJson.GetString());
-            return ERROR;
-            }
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  05/2018
 //---------------------------------------------------------------------------------------
 Utf8String SchemaPersistenceHelper::SerializeNumericSpec(Formatting::NumericFormatSpecCR spec)

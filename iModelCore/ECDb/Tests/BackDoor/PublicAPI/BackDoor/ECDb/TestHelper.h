@@ -60,7 +60,7 @@ struct TestHelper final
         JsonValue ExecuteSelectECSql(Utf8CP ecsql) const;
         DbResult ExecuteInsertECSql(ECInstanceKey&, Utf8CP ecsql) const;
 
-        Nullable<ECN::ECVersion> GetECVersion(Utf8CP schemaName) const;
+        // WIP_PERSIST_ECVERSION  Nullable<ECN::ECVersion> GetECVersion(Utf8CP schemaName) const;
         BeVersion GetOriginalECXmlVersion(Utf8CP schemaName) const;
 
         MapStrategyInfo GetMapStrategy(ECN::ECClassId) const;
