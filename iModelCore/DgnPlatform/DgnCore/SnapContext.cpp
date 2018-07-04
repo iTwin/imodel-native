@@ -1841,92 +1841,82 @@ END_BENTLEY_DGN_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value SnapContext::DoSnap(JsonValueCR input, DgnDbR db)
+SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, DgnDbR db, struct CheckStop& checkstop)
     {
-    Json::Value output;
+    SnapContext::Response output;
+    output.SetStatus(SnapStatus::BadArg);
 
-    if (input["elementId"].isNull() || input["closePoint"].isNull() || input["worldToView"].isNull())
+    // may have been aborted while it was in the queue. If so, don't even start
+    if (checkstop.WasAborted() || !input.IsValid())
         return output;
 
-    DgnElementId elementId;
-    elementId.FromJson(input["elementId"]);
-
+    output.SetStatus(SnapStatus::NoElements);
+    DgnElementId elementId = input.GetElementId();
     if (!elementId.IsValid())
-        return output; // NOTE: Maybe to support snappable decorations the GeometryStream/Placement can be supplied in lieu of an element id?
+        return output; // NOTE: Maybe to support snapable decorations the GeometryStream/Placement can be supplied in lieu of an element id?
 
     DgnElementCPtr element = db.Elements().GetElement(elementId);
-    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
+    GeometrySourceCP source = element.IsValid() ? element->ToGeometrySource() : nullptr;
 
     if (nullptr == source)
         return output;
 
-    DPoint3d closePoint;
-    JsonUtils::DPoint3dFromJson(closePoint, input["closePoint"]); // World coordinate point of mesh tile geometry...
+    DPoint3d closePoint = input.GetClosePoint();
 
-    DMatrix4d worldToView, viewToWorld;
-    DMap4d worldToViewMap;
-    JsonUtils::DMatrix4dFromJson(worldToView, input["worldToView"]); // World to view DMatrix4d...
+    DMatrix4d worldToView = input.GetWorldToView();
+    DMatrix4d viewToWorld;
     viewToWorld.QrInverseOf(worldToView);
+    DMap4d worldToViewMap;
     worldToViewMap.InitFrom(worldToView, viewToWorld);
 
-    ViewFlags viewFlags;
-    if (!input["viewFlags"].isNull())
-        viewFlags.FromJson(input["viewFlags"]);
+    ViewFlags viewFlags = input.GetViewFlags();
+    SnapMode snapMode = input.GetSnapMode();
 
-    SnapMode snapMode = SnapMode::NearestKeypoint;
-    if (!input["snapMode"].isNull())
-        snapMode = (SnapMode) input["snapMode"].asUInt();
+    // Hot distance in view coordinates (pixels). Locate aperture * hot distance factor...
+    double snapAperture = input.GetSnapAperture();
+    int snapDivisor = input.GetSnapDivisor();
+    
+    output.SetStatus(SnapStatus::Success);
 
-    double snapAperture = 12.0; // Hot distance in view coordinates (pixels). Locate aperture * hot distance factor...
-    if (!input["snapAperture"].isNull())
-        snapAperture = input["snapAperture"].asDouble();
-
-    int snapDivisor = 2;
-    if (!input["snapDivisor"].isNull())
-        snapDivisor = input["snapDivisor"].asUInt();
-
-    if (SnapMode::Origin != GetSnapMode())
+    if (SnapMode::Origin != snapMode)
         {
         DgnElementIdSet offSubCategories;
+        auto& subcat = input.GetOffSubCategories();
 
-        if (!input["offSubCategories"].isNull() && input["offSubCategories"].isArray())
+        if (!subcat.isNull() && subcat.isArray())
             {
-            uint32_t nEntries = (uint32_t) input["offSubCategories"].size();
+            uint32_t nEntries = (uint32_t) subcat.size();
             for (uint32_t i=0; i < nEntries; i++)
                 {
                 DgnSubCategoryId subCategoryId;
-                subCategoryId.FromJson(input["offSubCategories"][i]);
+                subCategoryId.FromJson(subcat[i]);
                 offSubCategories.insert(subCategoryId);
                 }
             }
 
         SnapGeometryHelper helper(snapMode, snapDivisor, snapAperture, closePoint, worldToViewMap);
 
-        SnapStatus status = helper.GetClosestCurve(*source, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, nullptr); // NEEDSWORK: stop tester...
-
+        SnapStatus status = helper.GetClosestCurve(*source, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, &checkstop);
         if (SnapStatus::Aborted == status)
             {
-            output["status"] = (uint32_t) SnapStatus::Aborted;
+            output.SetStatus(SnapStatus::Aborted);
             return output;
             }
 
         if (SnapStatus::Success == status && helper.ComputeSnapLocation())
             {
-            DPoint3d snapPoint = helper.GetHitPointWorld();
-
-            output["status"] = (uint32_t) status;
-            JsonUtils::DPoint3dToJson(output["snapPoint"], snapPoint);
-            output["heat"] = (uint32_t) SnapGeometryHelper::GetHeat(snapPoint, closePoint, worldToViewMap.M0, snapAperture, SnapMode::Center == snapMode);
-
-            output["geomType"] = (uint32_t) helper.GetHitGeomType();
-            output["parentGeomType"] = (uint32_t) helper.GetHitParentGeomType();
-            output["subCategory"] = helper.GetHitGeometryParams().GetSubCategoryId().ToHexStr();
+            DPoint3d snapPoint = helper.GetHitPointWorld(); 
+            output.SetSnapPoint(snapPoint);
+            output.SetHeat(SnapGeometryHelper::GetHeat(snapPoint, closePoint, worldToViewMap.M0, snapAperture, SnapMode::Center == snapMode));
+            output.SetGeomType(helper.GetHitGeomType());
+            output.SetParentGeomType(helper.GetHitParentGeomType());
+            output.SetSubCategory(helper.GetHitGeometryParams().GetSubCategoryId().ToHexStr());
 
             if (!helper.GetHitGeometryParams().IsWeightFromSubCategoryAppearance())
-                output["weight"] = helper.GetHitGeometryParams().GetWeight();
+                output.SetWeight(helper.GetHitGeometryParams().GetWeight());
 
             if (0.0 != helper.GetHitNormalWorld().Magnitude())
-                JsonUtils::DVec3dToJson(output["normal"], helper.GetHitNormalWorld());
+                output.SetNormal(helper.GetHitNormalWorld());
 
             if (nullptr != helper.GetHitCurveDetail().curve)
                 {
@@ -1935,10 +1925,10 @@ Json::Value SnapContext::DoSnap(JsonValueCR input, DgnDbR db)
 
                 if (geomPtr.IsValid() && IModelJson::TryGeometryToIModelJsonValue(geomValue, *geomPtr))
                     {
-                    output["curve"] = geomValue;
+                    output.SetCurve(geomValue);
 
                     if (!helper.GetHitLocalToWorld().IsIdentity())
-                        JsonUtils::TransformToJson(output["localToWorld"], helper.GetHitLocalToWorld());
+                        output.SetLocalToWorld(helper.GetHitLocalToWorld());
                     }
                 }
 
@@ -1948,9 +1938,8 @@ Json::Value SnapContext::DoSnap(JsonValueCR input, DgnDbR db)
 
     DPoint3d snapPoint;
     source->GetPlacementTransform().GetTranslation(snapPoint);
-    output["status"] = (uint32_t) SnapStatus::Success;
-    JsonUtils::DPoint3dToJson(output["snapPoint"], snapPoint);
-    output["heat"] = (uint32_t) SnapGeometryHelper::GetHeat(snapPoint, closePoint, worldToViewMap.M0, snapAperture, SnapMode::Center == snapMode);
+    output.SetSnapPoint(snapPoint);
+    output.SetHeat(SnapGeometryHelper::GetHeat(snapPoint, closePoint, worldToViewMap.M0, snapAperture, SnapMode::Center == snapMode));
 
     return output;
     }
