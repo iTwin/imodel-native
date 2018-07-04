@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/DataSourceCache.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -83,6 +83,8 @@ struct DataSourceCache : public IDataSourceCache
         WSCACHE_EXPORT ObservableECDb& GetECDb() override;
         WSCACHE_EXPORT IChangeManagerR GetChangeManager() override;
         WSCACHE_EXPORT ObjectId ObjectIdFromJsonInstance(JsonValueCR instance) const override;
+
+        WSCACHE_EXPORT BentleyStatus InvalidateCachedInstance(ObjectId objectId) override;
 
         //--------------------------------------------------------------------------------------------------------------------------------+
         //  Saving data to cache
