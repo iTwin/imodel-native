@@ -120,6 +120,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         virtual AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct = nullptr) = 0;
 
         //! Get read/write transaction for local data cache storage. Must be called in cache access thread.
+        //! CAUTION:
+        //!     Do not mix transactions by passing them to different APIs that might cache references when using multiple ICachingDataSource objects.
+        //!     TODO: possible redesign to use transaction object for getting cache, instead of it deliverting cache to protect against mixups.
         //! READ/WRITE:
         //!     CacheTransaction will automatically Rollback() when destructor is called, that is especially helpful when dealing with errors.
         //!     Any sucessful write operation should call CacheTransaction::Commit() to save changes to disk.
