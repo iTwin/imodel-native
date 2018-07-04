@@ -245,53 +245,47 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32Enums)
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
-            switch (testDb.GetState())
+            if (!testDb.SupportsFeature(Feature::NamedEnumerators))
                 {
-                    case TestDb::State::Older:
-                    {
-                    testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
-                    {{"Unspecified", ECValue("Unspecified"), nullptr},
-                    {"Utc", ECValue("Utc"), nullptr},
-                    {"Local", ECValue("Local"), nullptr}});
+                testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
+                {{"Unspecified", ECValue("Unspecified"), nullptr},
+                {"Utc", ECValue("Utc"), nullptr},
+                {"Local", ECValue("Local"), nullptr}});
 
-                    testDb.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-                    {{"ECClassModifier0", ECValue(0), "None"},
-                    {"ECClassModifier1", ECValue(1), "Abstract"},
-                    {"ECClassModifier2", ECValue(2), "Sealed"}});
+                testDb.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
+                {{"ECClassModifier0", ECValue(0), "None"},
+                {"ECClassModifier1", ECValue(1), "Abstract"},
+                {"ECClassModifier2", ECValue(2), "Sealed"}});
 
-                    testDb.AssertEnum("PreEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                    {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
-                    {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
-                    {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
+                testDb.AssertEnum("PreEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
 
-                    testDb.AssertEnum("PreEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-                    {{"On", ECValue("On"), "Turned On"},
-                    {"Off", ECValue("Off"), "Turned Off"}});
-                    break;
-                    }
+                testDb.AssertEnum("PreEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
+                {{"On", ECValue("On"), "Turned On"},
+                {"Off", ECValue("Off"), "Turned Off"}});
+                }
+            else
+                {
+                testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
+                {{"Unspecified", ECValue("Unspecified"), nullptr},
+                {"Utc", ECValue("Utc"), nullptr},
+                {"Local", ECValue("Local"), nullptr}});
 
-                    default:
-                    {
-                    testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
-                    {{"Unspecified", ECValue("Unspecified"), nullptr},
-                    {"Utc", ECValue("Utc"), nullptr},
-                    {"Local", ECValue("Local"), nullptr}});
+                testDb.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
+                {{"None", ECValue(0), "None"},
+                {"Abstract", ECValue(1), "Abstract"},
+                {"Sealed", ECValue(2), "Sealed"}});
 
-                    testDb.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-                    {{"None", ECValue(0), "None"},
-                    {"Abstract", ECValue(1), "Abstract"},
-                    {"Sealed", ECValue(2), "Sealed"}});
+                testDb.AssertEnum("PreEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
 
-                    testDb.AssertEnum("PreEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                    {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
-                    {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
-                    {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
-
-                    testDb.AssertEnum("PreEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-                    {{"On", ECValue("On"), "Turned On"},
-                    {"Off", ECValue("Off"), "Turned Off"}});
-                    break;
-                    }
+                testDb.AssertEnum("PreEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
+                {{"On", ECValue("On"), "Turned On"},
+                {"Off", ECValue("Off"), "Turned Off"}});
                 }
             }
         }
@@ -310,6 +304,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32Enums)
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
+            ASSERT_TRUE(testDb.SupportsFeature(Feature::NamedEnumerators)) << testDb.GetDescription();
 
             testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
             {{"Unspecified", ECValue("Unspecified"), nullptr},
@@ -353,6 +348,40 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32KindOfQuantities)
             testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_NoPresUnit", nullptr, nullptr, "u:W_PER_M_K", JsonValue(), 0.4);
             testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormat_NoPresUnit", nullptr, nullptr, "u:W_PER_M_K", JsonValue(R"json(["f:DefaultReal[u:W_PER_M_K]"])json"), 0.5);
             testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormatWithUnit_NoPresUnit", nullptr, nullptr, "u:FT", JsonValue(R"json(["f:AmerFI"])json"), 0.6);
+
+            if (!testDb.SupportsFeature(Feature::UnitsAndFormats))
+                {
+                EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units", false) == nullptr) << testDb.GetDescription();
+                EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats", false) == nullptr) << testDb.GetDescription();
+                EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "COULOMB") == nullptr) << testDb.GetDescription();
+                EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") == nullptr) << testDb.GetDescription();
+                EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "LUMINOSITY") == nullptr) << testDb.GetDescription();
+                EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("Formats", "AmerFI") == nullptr) << testDb.GetDescription();
+
+                ECSqlStatement stmt;
+                EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(testDb.GetDb(), "SELECT * FROM meta.UnitDef")) << testDb.GetDescription();
+                stmt.Finalize();
+                EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(testDb.GetDb(), "SELECT * FROM meta.UnitSystemDef")) << testDb.GetDescription();
+                stmt.Finalize();
+                EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(testDb.GetDb(), "SELECT * FROM meta.PhenomenonDef")) << testDb.GetDescription();
+                stmt.Finalize();
+                EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(testDb.GetDb(), "SELECT * FROM meta.FormatDef")) << testDb.GetDescription();
+                stmt.Finalize();
+                EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(testDb.GetDb(), "SELECT * FROM meta.FormatCompositeUnitDef")) << testDb.GetDescription();
+                stmt.Finalize();
+                }
+            else
+                {
+                EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units", false) != nullptr) << testDb.GetDescription();
+                EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats", false) != nullptr) << testDb.GetDescription();
+
+                testDb.AssertUnit("Units", "COULOMB", "C", nullptr, "A*S", nullptr, nullptr, nullptr, QualifiedName("Units", "SI"), QualifiedName("Units", "ELECTRIC_CHARGE"), false, QualifiedName());
+                testDb.AssertUnitSystem("Units", "SI", nullptr, nullptr);
+                testDb.AssertPhenomenon("Units", "LUMINOSITY", "Luminosity", nullptr, "LUMINOSITY");
+                testDb.AssertFormat("Formats", "AmerFI", "FeetInches", nullptr, JsonValue(R"json({"type": "Fractional", "formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"], "precision": 8, "uomSeparator":""})json"),
+                                    JsonValue(R"json({"includeZero":true, "spacer":"", "units": [{"name":"FT", "label":"'"}, {"name":"IN", "label":"\""}]})json"));
+
+                }
             }
         }
     }
@@ -370,6 +399,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32KindOfQuantities)
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
+            ASSERT_TRUE(testDb.SupportsFeature(Feature::UnitsAndFormats)) << testDb.GetDescription();
 
             testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithMandatoryComposite", "My first test KOQ", nullptr, "u:CM", JsonValue(R"js(["f:DefaultRealU(4)[u:M]"])js"), 0.1);
             testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithOptionalComposite", nullptr, "My second test KOQ", "u:CM", JsonValue(R"js(["f:AmerFI[u:FT|feet][u:IN|inches]"])js"), 0.2);
@@ -392,6 +422,8 @@ TEST_F(IModelCompatibilityTestFixture, EC32Units)
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
+            ASSERT_TRUE(testDb.SupportsFeature(Feature::UnitsAndFormats)) << testDb.GetDescription();
+
             testDb.AssertKindOfQuantity("EC32Units", "KoqWithCustomFormat", nullptr, nullptr, "u:M", JsonValue(R"js(["MyFormat[u:M]"])js"), 0.1);
             testDb.AssertKindOfQuantity("EC32Units", "KoqWithCustomUnit", nullptr, nullptr, "MySquareM", JsonValue(R"js(["f:DefaultRealU(4)[MySquareM]"])js"), 0.2);
             testDb.AssertKindOfQuantity("EC32Units", "KoqWithCustomUnitAndFormat", nullptr, nullptr, "MySquareFt", JsonValue(R"js(["MyFormat[MySquareFt]"])js"), 0.3);
