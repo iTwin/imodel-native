@@ -886,7 +886,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     private:
 
-		bool ClipIntersectsBox(uint64_t clipId, EXTENT ext, Transform tr = Transform::FromIdentity());
+		bool ClipIntersectsBox(uint64_t clipId, EXTENT ext, Transform tr = Transform::FromIdentity(), bool skirtIntersects = false);
 
         mutable std::mutex m_graphInflateMutex;
         mutable std::mutex m_graphMutex;
