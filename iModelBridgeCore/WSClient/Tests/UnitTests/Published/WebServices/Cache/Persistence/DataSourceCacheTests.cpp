@@ -1751,13 +1751,24 @@ TEST_F(DataSourceCacheTests, ReadInstance_ExistingInstanceKey_ReturnsECInstanceW
     EXPECT_THAT(value.GetString(), StrEq(L"TestValue"));
     }
 
-TEST_F(DataSourceCacheTests, ReadInstances_ExistingObjectIds_ReturnsInstances)
+TEST_F(DataSourceCacheTests, ReadInstances_NotExistingClass_ReturnsError)
+    {
+    auto cache = GetTestCache();
+
+    bset<ObjectId> objectIds;
+    objectIds.insert({"TestSchema.NotExistingClass", "Foo"});
+
+    Json::Value instancesArray;
+    ASSERT_EQ(ERROR, cache->ReadInstances(objectIds, instancesArray));
+    }
+
+TEST_F(DataSourceCacheTests, ReadInstances_ExistingObjectIdsFromDifferentClasses_ReturnsInstancesInDefinedOrder)
     {
     auto cache = GetTestCache();
 
     StubInstances instances;
-    instances.Add({"TestSchema.TestClass", "Foo"});
-    instances.Add({"TestSchema.TestClass2", "Boo"});
+    instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}});
+    instances.Add({"TestSchema.TestClass2", "Boo"}, {{"TestProperty", "B"}});
     ASSERT_EQ(SUCCESS, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "root"));
 
     bset<ObjectId> objectIds;
@@ -1767,7 +1778,9 @@ TEST_F(DataSourceCacheTests, ReadInstances_ExistingObjectIds_ReturnsInstances)
     Json::Value instancesArray;
     ASSERT_EQ(SUCCESS, cache->ReadInstances(objectIds, instancesArray));
 
-    EXPECT_EQ(2, instancesArray.size());
+    ASSERT_EQ(2, instancesArray.size());
+    EXPECT_EQ("A", instancesArray[0]["TestProperty"].asString());
+    EXPECT_EQ("B", instancesArray[1]["TestProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_NonExistingParent_ReturnsError)

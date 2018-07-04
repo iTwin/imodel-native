@@ -1020,7 +1020,7 @@ JsonValueR instancesArrayOut,
 ISelectProviderCR selectProvider
 )
     {
-    bmap<ECClassCP, bvector<Utf8CP>> ecClassToRemoteIdsMap;
+    bmap<ECClassId, bvector<Utf8CP>> ecClassToRemoteIdsMap;
 
     for (ObjectIdCR objectId : ids)
         {
@@ -1029,13 +1029,15 @@ ISelectProviderCR selectProvider
             return ERROR;
             }
         ECClassCP ecClass = GetState().GetECDbAdapter().GetECClass(objectId);
-        ecClassToRemoteIdsMap[ecClass].push_back(objectId.remoteId.c_str());
+        if (nullptr == ecClass)
+            return ERROR;
+        ecClassToRemoteIdsMap[ecClass->GetId()].push_back(objectId.remoteId.c_str());
         }
 
     bvector<ECClassP> classesToSelect;
     for (auto iter : ecClassToRemoteIdsMap)
         {
-        classesToSelect.push_back((ECClassP) iter.first);
+        classesToSelect.push_back((ECClassP) GetState().GetECDbAdapter().GetECClass(iter.first));
         }
 
     CacheQueryHelper helper(selectProvider);
@@ -1043,7 +1045,7 @@ ISelectProviderCR selectProvider
 
     for (CacheQueryHelper::ClassReadInfo& info : readInfos)
         {
-        Utf8String remoteIdList = CreateCommaSeperatedStringList(ecClassToRemoteIdsMap[&info.GetECClass()]);
+        Utf8String remoteIdList = CreateCommaSeperatedStringList(ecClassToRemoteIdsMap[info.GetECClass().GetId()]);
         Utf8String ecSql = CacheQueryHelper::ECSql::SelectPropertiesByRemoteIds(info, remoteIdList);
 
         ECSqlStatement statement;
