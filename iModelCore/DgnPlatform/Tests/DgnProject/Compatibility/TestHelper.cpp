@@ -82,7 +82,12 @@ BeVersion TestDb::GetOriginalECXmlVersion(Utf8CP schemaName) const
 
     // older files where Original ECXml Version was not persisted yet
     ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
-    EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
+    if (schema == nullptr)
+        {
+        EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
+        return BeVersion();
+        }
+
     return BeVersion((uint16_t) schema->GetOriginalECXmlVersionMajor(), (uint16_t) schema->GetOriginalECXmlVersionMinor());
     }
 
@@ -91,6 +96,7 @@ BeVersion TestDb::GetOriginalECXmlVersion(Utf8CP schemaName) const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECVersion TestDb::GetECVersion(Utf8CP schemaName) const
     {
+    /* WIP_PERSIST_ECVERSION
     if (GetDb().GetECDbProfileVersion() >= ProfileVersion(4, 0, 0, 2))
         {
         JsonValue rows = ExecuteECSqlSelect(Utf8PrintfString("SELECT ECVersion ver FROM meta.ECSchemaDef WHERE Name='%s'", schemaName).c_str());
@@ -105,7 +111,6 @@ ECVersion TestDb::GetECVersion(Utf8CP schemaName) const
             }
 
         const ECVersion ver = (ECVersion) versionJson["ver"].asInt();
-
         //verify that version is the same if fetched via ECObjects
         ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
         EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
@@ -118,8 +123,14 @@ ECVersion TestDb::GetECVersion(Utf8CP schemaName) const
         }
 
     // older files where ECVersion was not persisted yet
+    */
     ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
-    EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
+    if (schema == nullptr)
+        {
+        EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
+        return ECVersion::V2_0;
+        }
+
     return schema->GetECVersion();
     }
 
