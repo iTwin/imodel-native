@@ -2841,10 +2841,17 @@ BentleyStatus SchemaReader::LegacyKindOfQuantityHelper::AddReferences(ECN::ECSch
     {
     BeAssert(m_unitsSchema != nullptr && m_formatsSchema != nullptr);
     ECSchemaR koqSchemaR = const_cast<ECSchemaR>(koqSchema);
-    if (ECN::ECObjectsStatus::Success != koqSchemaR.AddReferencedSchema(*m_unitsSchema))
+    ECObjectsStatus stat = koqSchemaR.AddReferencedSchema(*m_unitsSchema);
+    //if it is referenced already, don't treat as error
+    if (ECObjectsStatus::Success != stat && ECObjectsStatus::NamedItemAlreadyExists != stat)
         return ERROR;
 
-    return (ECN::ECObjectsStatus::Success == koqSchemaR.AddReferencedSchema(*m_formatsSchema)) ? SUCCESS : ERROR;
+    stat = koqSchemaR.AddReferencedSchema(*m_formatsSchema);
+    //if it is referenced already, don't treat as error
+    if (ECObjectsStatus::Success != stat && ECObjectsStatus::NamedItemAlreadyExists != stat)
+        return ERROR;
+
+    return SUCCESS;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
