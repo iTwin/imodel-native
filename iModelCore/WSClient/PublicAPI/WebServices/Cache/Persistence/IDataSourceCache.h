@@ -117,6 +117,10 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! Extract ObjectId from JSON instance
         virtual ObjectId ObjectIdFromJsonInstance(JsonValueCR instance) const = 0;
 
+        //! Deletes cached instances ETag
+        //! @param objectId
+        virtual BentleyStatus InvalidateCachedInstance(ObjectId objectId) = 0;
+
         //--------------------------------------------------------------------------------------------------------------------------------+
         //  Saving data to cache
         //--------------------------------------------------------------------------------------------------------------------------------+

@@ -457,6 +457,17 @@ ObjectId DataSourceCache::ObjectIdFromJsonInstance(JsonValueCR instance) const
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                  Daumantas.Kojelis 06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DataSourceCache::InvalidateCachedInstance(ObjectId objectId)
+    {
+    FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
+    info.SetFileCacheTag(nullptr);
+
+    return m_state->GetFileInfoManager().SaveInfo(info);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DataSourceCache::ReadInstanceCacheTag(ObjectIdCR objectId)
