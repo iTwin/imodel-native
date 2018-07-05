@@ -27,8 +27,15 @@ Profile::Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name) : m_type(type)
     BeTest::GetHost().GetOutputRoot(m_profileOutFolder);
     m_profileOutFolder.AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
 
-    BeTest::GetHost().GetOutputRoot(m_profileSeedFolder);
-    m_profileSeedFolder.PopDir().AppendSeparator().AppendToPath(L"SeedData").AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
+    BeFileName baseFolder;
+    BeTest::GetHost().GetOutputRoot(baseFolder);
+    baseFolder.PopDir();
+
+    m_profileOldDataFolder = baseFolder;
+    m_profileOldDataFolder.AppendSeparator().AppendToPath(L"OldData").AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
+
+    m_profileNewDataFolder = baseFolder;
+    m_profileNewDataFolder.AppendSeparator().AppendToPath(L"NewData").AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
     }
 
 
@@ -47,9 +54,9 @@ BentleyStatus Profile::Init() const
             }
         }
 
-    if (!m_profileSeedFolder.DoesPathExist())
+    if (!m_profileNewDataFolder.DoesPathExist())
         {
-        BeFileNameStatus status = BeFileName::CreateNewDirectory(m_profileSeedFolder.GetName());
+        BeFileNameStatus status = BeFileName::CreateNewDirectory(m_profileNewDataFolder.GetName());
         if (status != BeFileNameStatus::Success)
             {
             BeAssert(status == BeFileNameStatus::Success);
@@ -60,23 +67,37 @@ BentleyStatus Profile::Init() const
     return _Init();
     }
 
+// -------------------------------------------------------------------------------------- -
+// @bsimethod                                    Krischan.Eberle                  06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles) const
+    {
+    std::vector<TestFile> testFiles = GetAllVersionsOfTestFile(m_profileNewDataFolder, testFileName, logFoundFiles);
+    std::vector<TestFile> oldDataTestFiles = GetAllVersionsOfTestFileFromOldData(testFileName, logFoundFiles);
+    testFiles.insert(testFiles.end(), oldDataTestFiles.begin(), oldDataTestFiles.end());
+    return testFiles;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileNameUtf8, bool logFoundFiles) const
+std::vector<TestFile> Profile::GetAllVersionsOfTestFile(BeFileNameCR rootFolder, Utf8CP testFileNameUtf8, bool logFoundFiles) const
     {
+    if (!rootFolder.DoesPathExist())
+        return std::vector<TestFile>();
+
     BeFileName testFileName(testFileNameUtf8);
     WString extension = testFileName.GetExtension();
     WString fileNameWithoutExt = testFileName.GetFileNameWithoutExtension();
     WString fileNamePattern(fileNameWithoutExt);
     fileNamePattern.append(L"*.").append(extension);
 
-    bvector<BeFileName> seedFileMatches;
-    BeDirectoryIterator::WalkDirsAndMatch(seedFileMatches, GetSeedFolder(), fileNamePattern.c_str(), true);
+    bvector<BeFileName> fileMatches;
+    BeDirectoryIterator::WalkDirsAndMatch(fileMatches, rootFolder, fileNamePattern.c_str(), true);
     std::vector<TestFile> testFiles;
-    for (BeFileNameCR seedFilePath : seedFileMatches)
+    for (BeFileNameCR filePath : fileMatches)
         {
-        BeFileName profileVersionFolderName = seedFilePath.GetDirectoryName();
+        BeFileName profileVersionFolderName = filePath.GetDirectoryName();
         //just get folder name without path
         if (profileVersionFolderName.EndsWith(L"/") || profileVersionFolderName.EndsWith(L"\\"))
             profileVersionFolderName.erase(profileVersionFolderName.size() - 1, 1);
@@ -100,26 +121,27 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileNameUtf8,
 
         // parse file name to find its original profile versions (in case it is an upgraded test file)
         ProfileVersion initialBeDbVersion(bedbVersion), initialECDbVersion(ecdbVersion), initialDgnDbVersion(dgndbVersion);
-        bvector<WString> seedFileNameTokens;
-        BeStringUtilities::Split(seedFilePath.GetFileNameWithoutExtension().c_str(), L".", seedFileNameTokens);
-        if (seedFileNameTokens.size() > 1)
+        bvector<WString> fileNameTokens;
+        BeStringUtilities::Split(filePath.GetFileNameWithoutExtension().c_str(), L".", fileNameTokens);
+        if (fileNameTokens.size() > 1)
             {
+            constexpr Utf8CP versionStringTemplate = "%d-%d-%d-%d";
             bvector<Utf8String> initialProfileVersions;
-            BeStringUtilities::Split(Utf8String(seedFileNameTokens.back()).c_str(), PROFILEVERSIONFOLDER_VERSIONSEPARATOR, initialProfileVersions);
+            BeStringUtilities::Split(Utf8String(fileNameTokens.back()).c_str(), PROFILEVERSIONFOLDER_VERSIONSEPARATOR, initialProfileVersions);
             BeAssert(!initialProfileVersions.empty());
-            initialBeDbVersion.FromString(initialProfileVersions.back().c_str());
+            initialBeDbVersion.FromString(initialProfileVersions.back().c_str(), versionStringTemplate);
             if (initialProfileVersions.size() == 3)
                 {
-                initialDgnDbVersion.FromString(initialProfileVersions[0].c_str());
-                initialECDbVersion.FromString(initialProfileVersions[1].c_str());
+                initialDgnDbVersion.FromString(initialProfileVersions[0].c_str(), versionStringTemplate);
+                initialECDbVersion.FromString(initialProfileVersions[1].c_str(), versionStringTemplate);
                 }
             else if (initialProfileVersions.size() == 2)
-                initialECDbVersion.FromString(initialProfileVersions[0].c_str());
+                initialECDbVersion.FromString(initialProfileVersions[0].c_str(), versionStringTemplate);
             }
 
         BeFileName testFilePath(GetOutFolder());
-        testFilePath.AppendToPath(profileVersionFolderName).AppendToPath(seedFilePath.GetFileNameAndExtension().c_str());
-        testFiles.push_back(TestFile(testFileNameUtf8, testFilePath, seedFilePath, bedbVersion, ecdbVersion, dgndbVersion, initialBeDbVersion, initialECDbVersion, initialDgnDbVersion));
+        testFilePath.AppendToPath(profileVersionFolderName).AppendToPath(filePath.GetFileNameAndExtension().c_str());
+        testFiles.push_back(TestFile(testFileNameUtf8, testFilePath, filePath, bedbVersion, ecdbVersion, dgndbVersion, initialBeDbVersion, initialECDbVersion, initialDgnDbVersion));
         }
 
     if (logFoundFiles && LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
@@ -158,17 +180,18 @@ BeFileName Profile::GetPathForNewUpgradedTestFile(TestFile const& oldSeedFile) c
     if (oldSeedFile.IsUpgraded())
         return filePath.AppendToPath(BeFileName(oldSeedFile.GetPath().GetFileNameAndExtension()));
 
+    constexpr Utf8CP versionStringTemplate = "%" PRIu16 "-%" PRIu16 "-%" PRIu16 "-%" PRIu16;
     BeFileName fileName(oldSeedFile.GetPath().GetFileNameWithoutExtension());
     fileName.append(L".");
     if (!oldSeedFile.GetInitialDgnDbVersion().IsEmpty())
-        fileName.AppendUtf8(oldSeedFile.GetInitialDgnDbVersion().ToString().c_str()).append(PROFILEVERSIONFOLDER_VERSIONSEPARATOR_W);
+        fileName.AppendUtf8(oldSeedFile.GetInitialDgnDbVersion().ToString(versionStringTemplate).c_str()).append(PROFILEVERSIONFOLDER_VERSIONSEPARATOR_W);
 
     if (!oldSeedFile.GetInitialECDbVersion().IsEmpty())
-        fileName.AppendUtf8(oldSeedFile.GetInitialECDbVersion().ToString().c_str()).append(PROFILEVERSIONFOLDER_VERSIONSEPARATOR_W);
+        fileName.AppendUtf8(oldSeedFile.GetInitialECDbVersion().ToString(versionStringTemplate).c_str()).append(PROFILEVERSIONFOLDER_VERSIONSEPARATOR_W);
 
-    fileName.AppendUtf8(oldSeedFile.GetInitialBeDbVersion().ToString().c_str());
+    fileName.AppendUtf8(oldSeedFile.GetInitialBeDbVersion().ToString(versionStringTemplate).c_str());
     fileName.AppendExtension(oldSeedFile.GetPath().GetExtension().c_str());
-    return fileName;
+    return filePath.AppendToPath(fileName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -176,7 +199,7 @@ BeFileName Profile::GetPathForNewUpgradedTestFile(TestFile const& oldSeedFile) c
 //+---------------+---------------+---------------+---------------+---------------+------
 BeFileName Profile::GetFolderForNewTestFile() const
     {
-    BeFileName path(GetSeedFolder());
+    BeFileName path(m_profileNewDataFolder);
     path.AppendToPath(BeFileName(GetExpectedVersion().ToString()));
 
     switch (m_type)

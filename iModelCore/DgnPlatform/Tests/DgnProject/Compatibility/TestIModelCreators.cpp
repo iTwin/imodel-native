@@ -94,7 +94,7 @@ BentleyStatus TestIModelCreator::ImportSchemas(DgnDbR dgndb, std::vector<SchemaI
 BentleyStatus TestIModelCreator::_UpgradeOldFiles() const
     {
     Profile const& profile = DgnDbProfile::Get();
-    std::vector<TestFile> testFiles = profile.GetAllVersionsOfTestFile(m_fileName.c_str(), false);
+    std::vector<TestFile> testFiles = profile.GetAllVersionsOfTestFileFromOldData(m_fileName.c_str(), false);
     for (TestFile const& testFile : testFiles)
         {
         if (testFile.GetAge() != ProfileState::Age::Older)
