@@ -55,10 +55,10 @@ Json::Value& elementData
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClassificationSystem::GetClassificationDataVerbose
 (
-Dgn::DgnDbR db,
 Json::Value& elementData
 ) const
     {
+    Dgn::DgnDbR db = GetDgnDb();
     elementData["name"] = GetName();
     elementData["value"] = Json::Value(Json::arrayValue);
     for (auto element : GetSubModel()->MakeIterator())
