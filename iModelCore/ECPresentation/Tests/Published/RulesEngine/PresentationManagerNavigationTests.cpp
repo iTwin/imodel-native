@@ -40,7 +40,6 @@ struct RulesDrivenECPresentationManagerNavigationTests : RulesDrivenECPresentati
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS) && !defined(BENTLEYCONFIG_OS_LINUX)
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, NavigationOptions_GetRuleSetId)
     {
     RulesDrivenECPresentationManager::NavigationOptions options("test id", RuleTargetTree::TargetTree_Both);
@@ -4110,36 +4109,6 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     EXPECT_STREQ("1 - 5", childNodes[0]->GetLabel().c_str());
     }
 
-#ifdef wip
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Pranciskus.Ambrazas               02/2016   RenameNodeRule       
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RenameNodeRule)
-    {
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-
-    RootNodeRule* rule = new RootNodeRule();
-
-    CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "customType", "label", "description", "imageId");
-    
-    rule->AddSpecification(customNodeSpecification);
-    rules->AddPresentationRule(*rule);
-    
-    RenameNodeRuleP renameNodeRule = new RenameNodeRule("ThisNode.Type=\"customType\"", 1);
-    rules->AddPresentationRule(*renameNodeRule);
-
-    // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RenameNodeRule", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
-
-    // make sure we have 1 node
-    ASSERT_EQ(1, nodes.GetSize());
-    ASSERT_STREQ("overridedLabel", nodes[0]->GetCollapsedImageId().c_str());
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas               02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -5603,4 +5572,3 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
     EXPECT_STREQ("1_Instance_C", rootNodes[0]->GetLabel().c_str());
     EXPECT_STREQ("2_Instance_A", rootNodes[1]->GetLabel().c_str());
     }
-#endif
