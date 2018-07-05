@@ -144,7 +144,6 @@ private:
     ECSchemaCR m_schema;
     UnitId m_unitId;
 
-    bool m_isDisplayLabelExplicitlyDefined = false;
     bool m_isNumeratorExplicitlyDefined = false;
     bool m_isDenominatorExplicitlyDefined = false;
     bool m_isOffsetExplicitlyDefined = false;
@@ -152,7 +151,6 @@ private:
     Utf8String m_description;
     mutable Utf8String m_fullName;
 
-    ECObjectsStatus SetDisplayLabel(Utf8StringCR value) {Units::Unit::SetLabel(value.c_str()); m_isDisplayLabelExplicitlyDefined = true; return ECObjectsStatus::Success;}
     ECObjectsStatus SetDescription(Utf8StringCR value) {m_description = value; return ECObjectsStatus::Success;}
     BentleyStatus SetNumerator(double value) override {m_isNumeratorExplicitlyDefined = true; return Units::Unit::SetNumerator(value);}
     BentleyStatus SetDenominator(double value) override {m_isDenominatorExplicitlyDefined = true; return Units::Unit::SetDenominator(value);}
@@ -176,7 +174,7 @@ private:
     ECUnit(ECSchemaCR schema, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, Nullable<double> denominator); //!< Creates a constant.
 
     ECSchemaR GetSchemaR() const {return const_cast<ECSchemaR>(m_schema);}
-
+    
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this Unit is defined in.
 
@@ -193,9 +191,7 @@ public:
     bool GetIsDescriptionDefined() const {return m_description.length() > 0;} //!< Returns true if description length is 0
 
     //! Gets the display label of this ECUnit.  If no display label has been set explicitly, it will return the name of the ECUnit.
-    ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
-    ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const; //!< Gets the invariant display label for this ECUnit.
-    bool GetIsDisplayLabelDefined() const {return m_isDisplayLabelExplicitlyDefined;} //!< Whether the display label is explicitly defined or not.
+    ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const override;
 
     bool HasNumerator() const override {return m_isNumeratorExplicitlyDefined;} //!< Returns true if the numerator has been explicitly set
     bool HasDenominator() const override {return m_isDenominatorExplicitlyDefined;} //!< Returns true if the denominator has been explicitly set

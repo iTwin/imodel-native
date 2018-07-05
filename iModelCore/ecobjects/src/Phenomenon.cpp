@@ -59,7 +59,7 @@ Utf8StringCR Phenomenon::GetDisplayLabel() const
 Utf8StringCR Phenomenon::GetInvariantDisplayLabel() const 
     {
     if(GetIsDisplayLabelDefined())
-        return Units::Phenomenon::GetInvariantLabel();
+        return Units::Phenomenon::GetInvariantDisplayLabel();
     else
         return GetName();
     }

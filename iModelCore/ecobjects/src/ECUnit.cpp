@@ -68,17 +68,6 @@ Utf8StringCR ECUnit::GetDisplayLabel() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-Utf8StringCR ECUnit::GetInvariantDisplayLabel() const 
-    {
-    if(GetIsDisplayLabelDefined())
-        return Units::Unit::GetInvariantLabel();
-    else
-        return GetName();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
 Utf8StringCR ECUnit::GetDescription() const 
     {
     return GetSchema().GetLocalizedStrings().GetUnitDescription(*this, m_description);
@@ -199,7 +188,9 @@ SchemaReadStatus ECUnit::ReadXml(BeXmlNodeR unitNode, ECSchemaReadContextR conte
     // Read optional properties
     Utf8String value;
     READ_OPTIONAL_XML_ATTRIBUTE(unitNode, DESCRIPTION_ATTRIBUTE, this, Description)
-    READ_OPTIONAL_XML_ATTRIBUTE(unitNode, ECXML_DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
+    Utf8String displayLabel;
+    if(BEXML_Success == unitNode.GetAttributeStringValue(displayLabel, ECXML_DISPLAY_LABEL_ATTRIBUTE) || Utf8String::IsNullOrEmpty(displayLabel.c_str()))
+        Units::Unit::SetDisplayLabel(displayLabel.c_str());
 
     // Read the specific properties
     switch(unitType)

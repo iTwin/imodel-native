@@ -1133,7 +1133,7 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
     if (offset.IsValid())
         unit->SetOffset(offset.Value());
 
-    ECObjectsStatus status;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto)
         {
         if (ECObjectsStatus::Success != status)
@@ -1145,9 +1145,8 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
     
     if(nullptr != label)
         {
-        status = unit->SetDisplayLabel(label);
+        unit->SetDisplayLabel(label);
         cleanupIfNecessary();
-        if(status != ECObjectsStatus::Success) return status;
         } 
     if(nullptr != label)
         { 
@@ -1170,7 +1169,7 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    ECObjectsStatus status;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto)
         {
         if (ECObjectsStatus::Success != status)
@@ -1198,9 +1197,8 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
 
     if (nullptr != label)
         { 
-        status = unit->SetDisplayLabel(label);
+        unit->SetDisplayLabel(label);
         cleanupIfNecessary();
-        if(status != ECObjectsStatus::Success) return status;
         }
     
     if (nullptr != description)
@@ -1224,7 +1222,7 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    ECObjectsStatus status;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     const auto cleanupIfNecessary = [&constant, &status]() -> decltype(auto)
         {
         if (ECObjectsStatus::Success != status)
@@ -1245,9 +1243,8 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
 
     if (nullptr != label)
         { 
-        status = constant->SetDisplayLabel(label);
+        constant->SetDisplayLabel(label);
         cleanupIfNecessary();
-        if(status != ECObjectsStatus::Success) return status;
         }
 
     if (nullptr != description)
