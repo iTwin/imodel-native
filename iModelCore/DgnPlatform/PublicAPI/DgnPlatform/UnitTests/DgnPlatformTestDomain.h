@@ -411,6 +411,14 @@ private:
 
     Utf8String m_testUniqueAspectProperty;
     double m_length;
+    double test1;
+    Utf8String test2;
+    double test3;
+    Utf8String test4;
+    double test5;
+    Utf8String test6;
+    double test7;
+    Utf8String test8;
 
     explicit TestUniqueAspect(Utf8CP prop) : m_testUniqueAspectProperty(prop) {;}
 
