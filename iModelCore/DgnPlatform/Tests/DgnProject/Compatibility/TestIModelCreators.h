@@ -47,15 +47,18 @@ public:
 //======================================================================================
 struct TestIModelCreator : TestFileCreator
     {
+private:
+    BentleyStatus _UpgradeOldFiles() const override;
+
 protected:
-    TestIModelCreator() : TestFileCreator() {}
+    explicit TestIModelCreator(Utf8CP fileName) : TestFileCreator(fileName) {}
+
+    static DgnDbPtr CreateNewTestFile(Utf8StringCR fileName);
+    BentleyStatus ImportSchema(DgnDbR dgndb, SchemaItem const& schema) { return ImportSchemas(dgndb, {schema}); }
+    static BentleyStatus ImportSchemas(DgnDbR dgndb, std::vector<SchemaItem> const& schemas);
 
 public:
     virtual ~TestIModelCreator() {}
-
-    static DgnDbPtr CreateNewTestFile(Utf8CP fileName);
-    BentleyStatus ImportSchema(DgnDbR dgndb, SchemaItem const& schema) { return ImportSchemas(dgndb, {schema}); }
-    static BentleyStatus ImportSchemas(DgnDbR dgndb, std::vector<SchemaItem> const& schemas);
     };
 
 //======================================================================================
@@ -64,9 +67,10 @@ public:
 struct EmptyTestIModelCreator final : TestIModelCreator
     {
     private:
-        BentleyStatus _Create() override { return CreateNewTestFile(TESTIMODEL_EMPTY) != nullptr ? SUCCESS : ERROR;  }
+        BentleyStatus _Create() override { return CreateNewTestFile(m_fileName) != nullptr ? SUCCESS : ERROR;  }
 
     public:
+        EmptyTestIModelCreator() : TestIModelCreator(TESTIMODEL_EMPTY) {}
         ~EmptyTestIModelCreator() {}
     };
 
@@ -78,7 +82,7 @@ struct PreEC32EnumsTestIModelCreator final : TestIModelCreator
     private:
         BentleyStatus _Create() override
             {
-            DgnDbPtr bim = CreateNewTestFile(TESTIMODEL_PREEC32ENUMS);
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
             if (bim == nullptr)
                 return ERROR;
 
@@ -97,6 +101,7 @@ struct PreEC32EnumsTestIModelCreator final : TestIModelCreator
                                                      </ECSchema>)xml"));
             }
     public:
+        PreEC32EnumsTestIModelCreator() : TestIModelCreator(TESTIMODEL_PREEC32ENUMS) {}
         ~PreEC32EnumsTestIModelCreator() {}
     };
 
@@ -138,7 +143,7 @@ struct PreEC32KoqsTestIModelCreator final : TestIModelCreator
     private:
         BentleyStatus _Create() override
             {
-            DgnDbPtr bim = CreateNewTestFile(TESTIMODEL_PREEC32KOQS);
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
             if (bim == nullptr)
                 return ERROR;
 
@@ -201,6 +206,7 @@ struct PreEC32KoqsTestIModelCreator final : TestIModelCreator
 </ECSchema>)xml"));
             }
     public:
+        PreEC32KoqsTestIModelCreator() : TestIModelCreator(TESTIMODEL_PREEC32KOQS) {}
         ~PreEC32KoqsTestIModelCreator() {}
     };
 
