@@ -283,6 +283,19 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_STRCASEEQ("f:DefaultReal[u:MM]", presFormatStrings[0].c_str()) << "A presentation format should have been created from the persistenceFUS' format.";
     }
     {
+    // old persistenceFUS: W/(M*K)
+    // old presentationFUS': -
+    // new persistenceUnit: u:W_PER_M_K
+    // new presentationFormats: -
+    persUnitName.clear();
+    presFormatStrings.clear();
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "W/(M*K)", presFUSes, schema))
+        << "Should succeed if persistenceFUS has a valid unit and format";
+    EXPECT_STRCASEEQ("u:W_PER_M_K", persUnitName.c_str());
+    EXPECT_TRUE(presFormatStrings.empty());
+    }
+    {
     // old persistenceFUS: MM
     // old presentationFUS': badUnit
     // new persistenceUnit: -
