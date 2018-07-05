@@ -879,7 +879,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
         BeStringUtilities::Split(unqualifiedPresFormat.c_str(), "(", split);
         Utf8String qualifiedPres = "u:" + unqualifiedPres;
         auto format = formatSchema.GetFormatCP(split[0].c_str());
-        if (nullptr == format || !format->HasComposite())
+        if (nullptr != format && !format->HasComposite() && !unqualifiedPresFormat.Contains("["))
             {
             formatString
                 .append("[")
@@ -903,7 +903,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
         bvector<Utf8String> split;
         BeStringUtilities::Split(unqualifiedPersFormat.c_str(), "(", split);
         auto format = formatSchema.GetFormatCP(split[0].c_str());
-        if (nullptr == format || !format->HasComposite())
+        if (nullptr != format && !format->HasComposite() && !unqualifiedPersFormat.Contains("["))
             {
             formatString
                 .append("[")

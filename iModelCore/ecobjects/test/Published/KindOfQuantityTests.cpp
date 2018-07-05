@@ -255,6 +255,20 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_TRUE(presFormatStrings.empty());
     }
     {
+    // old persistenceFUS: DM(fi8)
+    // old presentationFUS': -
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:AmerFI
+    persUnitName.clear();
+    presFormatStrings.clear();
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "DM(fi8)", presFUSes, schema))
+        << "Should succeed if the persistenceFUS has a valid unit.";
+    EXPECT_STRCASEEQ("u:DM", persUnitName.c_str());
+    EXPECT_EQ(1, presFormatStrings.size());
+    EXPECT_STRCASEEQ("f:AmerFI", presFormatStrings[0].c_str());
+    }
+    {
     // old persistenceFUS: MM(real)
     // old presentationFUS': -
     // new persistenceUnit: u:MM
@@ -395,6 +409,33 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
     EXPECT_EQ(1, presFormatStrings.size());
     EXPECT_STRCASEEQ("f:AmerFI", presFormatStrings[0].c_str());
+    }
+    {
+    // old persistenceFUS: M(meters4u)
+    // old presentationFUS': IN(inches4u)
+    // new persistenceUnit: u:M
+    // new presentationFormats: f:DefaultRealUNS(4)[u:M|m]
+    persUnitName.clear();
+    presFormatStrings.clear();
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "M(meters4u)", presFUSes, schema));
+    EXPECT_STRCASEEQ("u:M", persUnitName.c_str());
+    EXPECT_EQ(1, presFormatStrings.size());
+    EXPECT_STRCASEEQ("f:DefaultRealUNS(4)[u:M|m]", presFormatStrings[0].c_str());
+    }
+    {
+    // old persistenceFUS: M(meters4u)
+    // old presentationFUS': IN(inches4u)
+    // new persistenceUnit: u:M
+    // new presentationFormats: f:DefaultRealUNS(4)[u:IN|&quot;]
+    persUnitName.clear();
+    presFormatStrings.clear();
+    presFUSes.clear();
+    presFUSes.push_back("IN(inches4u)");
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "M(meters4u)", presFUSes, schema));
+    EXPECT_STRCASEEQ("u:M", persUnitName.c_str());
+    EXPECT_EQ(1, presFormatStrings.size());
+    EXPECT_STRCASEEQ("f:DefaultRealUNS(4)[u:IN|&quot;]", presFormatStrings[0].c_str());
     }
     {
     // old persistenceFUS: IN
