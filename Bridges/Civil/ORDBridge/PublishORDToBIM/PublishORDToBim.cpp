@@ -50,7 +50,7 @@ static int runBridge(int argc, WCharCP argv[])
 
     if (affinityLevel != iModelBridgeAffinityLevel::ExactMatch)
         {
-        fprintf(stderr, "Affinity-check failed\n");
+        fprintf(stderr, "No Civil data found.\n");
         if (iModelBridgeAffinityLevel::Low == affinityLevel)
             return RESULT_AFFINITY_CHECK_LOW;
         else if (iModelBridgeAffinityLevel::Medium == affinityLevel)
