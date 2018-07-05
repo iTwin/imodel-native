@@ -48,8 +48,8 @@ struct TestFile final
                  BeSQLite::ProfileVersion const& bedbVersion, BeSQLite::ProfileVersion const& ecdbVersion, BeSQLite::ProfileVersion const& dgndbVersion, 
                  BeSQLite::ProfileVersion const& initialBeDbVersion, BeSQLite::ProfileVersion const& initialECDbVersion, BeSQLite::ProfileVersion const& initialDgnDbVersion);
 
-        TestFile(TestFile const&) = delete;
-        TestFile& operator=(TestFile const&) = delete;
+        TestFile(TestFile const&) = default;
+        TestFile& operator=(TestFile const&) = default;
         TestFile(TestFile&&) = default;
         TestFile& operator=(TestFile&&) = default;
 
@@ -89,11 +89,13 @@ struct Profile : NonCopyableClass
         static constexpr WCharCP PROFILEVERSIONFOLDER_VERSIONSEPARATOR_W = L"_";
 
         Utf8CP m_name = nullptr;
+        BeFileName m_profileNewDataFolder;
+        BeFileName m_profileOldDataFolder;
         BeFileName m_profileOutFolder;
-        BeFileName m_profileSeedFolder;
 
         virtual BentleyStatus _Init() const = 0;
         BeFileName GetFolderForNewTestFile() const;
+        std::vector<TestFile> GetAllVersionsOfTestFile(BeFileNameCR rootFolder, Utf8CP testFileName, bool logFoundFiles) const;
 
     protected:
         Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name);
@@ -108,8 +110,8 @@ struct Profile : NonCopyableClass
         BeSQLite::ProfileVersion const& GetExpectedVersion() const { return m_expectedVersion; }
 
         std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles = true) const;
+        std::vector<TestFile> GetAllVersionsOfTestFileFromOldData(Utf8CP testFileName, bool logFoundFiles = true) const { return GetAllVersionsOfTestFile(m_profileOldDataFolder, testFileName, logFoundFiles); }
         BeFileNameCR GetOutFolder() const { return m_profileOutFolder; }
-        BeFileNameCR GetSeedFolder() const { return m_profileSeedFolder; }
         BeFileName GetPathForNewTestFile(Utf8StringCR testFileName) const { return GetFolderForNewTestFile().AppendToPath(BeFileName(testFileName)); }
         BeFileName GetPathForNewUpgradedTestFile(TestFile const& oldSeedFile) const;
     };
