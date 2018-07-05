@@ -74,13 +74,31 @@ void CachingDataSource::Initialize (BeFileNameCR hostAssetsDirectory)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachingDataSource::~CachingDataSource()
     {
-    // Prevent from hanging when destroyed after failed open/create
-    if (m_isOpen)
-        {
-        CancelAllTasks()->Wait();
-        }
+    Close();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CachingDataSource::Close()
+    {
+    // Prevent from hanging when destroyed after failed open/create
+    if (!m_isOpen)
+        return;
+
+    m_isOpen = false;
+
+    CancelAllTasks()->Wait();
+
+    m_cacheAccessThread->ExecuteAsync([=]
+        {
+        auto txn = StartCacheTransaction();
+        IDataSourceCache& cache = txn.GetCache();
+        txn.Rollback();
+        cache.Close();
+        })->Wait();
+    }
+    
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 Arturas.Januska    04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -89,7 +107,7 @@ BeFileNameCR CachingDataSource::GetHostAssetsDirectory ()
     BeAssert(!s_assetDirectory.empty() && "Call CachingDataSource::Initialize() first.");
     return s_assetDirectory;
     }
-
+    
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -825,7 +843,7 @@ ICancellationTokenPtr ct
             txn.Commit();
             result->SetSuccess({cachedData, returningDataOrigin});
             return isObjectNotFound;
-            })->Then(m_cacheAccessThread, [=](bool isObjectNotFound)
+            })->Then(m_cacheAccessThread, [=] (bool isObjectNotFound)
                 {
                 if (isObjectNotFound)
                     {
@@ -853,7 +871,7 @@ ICancellationTokenPtr ct
     {
     ct = CreateCancellationToken(ct);
 
-    return GetObjectInternal(objectId, retrieveOptions.GetOrigin(), ct)->Then<CachingDataSource::ObjectsResult>([=](CachingDataSource::ObjectsResult& result)
+    return GetObjectInternal(objectId, retrieveOptions.GetOrigin(), ct)->Then<CachingDataSource::ObjectsResult>([=] (CachingDataSource::ObjectsResult& result)
         {
         if (!result.IsSuccess())
             return result;
@@ -894,7 +912,7 @@ ICancellationTokenPtr ct
             }
 
         GetObjectInternal(objectId, DataOrigin::RemoteData, ct)
-            ->Then(m_cacheAccessThread, [=](CachingDataSource::ObjectsResult& result)
+            ->Then(m_cacheAccessThread, [=] (CachingDataSource::ObjectsResult& result)
             {
             if (!result.IsSuccess() && result.GetError().GetWSError().IsInstanceNotAvailableError())
                 finalBackgroundSyncResult->SetSuccess(SyncStatus::Synced);
@@ -1072,7 +1090,7 @@ ICancellationTokenPtr ct
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                              
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CachingDataSource::CacheObjectsInBackgroundIfNeeded
 (

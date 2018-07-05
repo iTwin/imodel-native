@@ -300,6 +300,105 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_ServerRetursUserAndDeprecatedSchemas
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CachingDataSourceTests, Close_Opened_SucceedsAndTransactionsCannotBeStarted)
+    {
+    auto client = MockWSRepositoryClient::Create();
+
+    StubInstances schemas;
+    schemas.Add({"MetaSchema.ECSchemaDef", "SchemaId"}, {{"Name", "UserSchema"}});
+
+    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
+
+    EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
+
+    EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "SchemaId"), objectId);
+        Utf8String schemaXml(
+            R"(<ECSchema schemaName="UserSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+               </ECSchema>)");
+        SimpleWriteToFile(schemaXml, filePath);
+        return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, "")));
+        }));
+
+    auto ds = CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->GetResult().GetValue();
+    ASSERT_NE(nullptr, ds);
+
+    ASSERT_TRUE(ds->StartCacheTransaction().IsActive());
+
+    ds->Close();
+
+    BeTest::SetFailOnAssert(false);
+    ASSERT_FALSE(ds->StartCacheTransaction().IsActive());
+    BeTest::SetFailOnAssert(true);
+
+    ds->Close();
+    ds->Close();
+    ds->Close();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CachingDataSourceTests, Close_Opened_CancelsServerRequest)
+    {
+    auto client = MockWSRepositoryClient::Create();
+
+    StubInstances schemas;
+    schemas.Add({"MetaSchema.ECSchemaDef", "SchemaId"}, {{"Name", "UserSchema"}});
+
+    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
+
+    EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
+
+    EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "SchemaId"), objectId);
+        Utf8String schemaXml(
+            R"(<ECSchema schemaName="UserSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                    <ECClass typeName="TestClass"/>
+               </ECSchema>)");
+        SimpleWriteToFile(schemaXml, filePath);
+        return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, "")));
+        }));
+
+    auto ds = CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->GetResult().GetValue();
+    ASSERT_NE(nullptr, ds);
+
+    ICancellationTokenPtr token;
+    AsyncTestCheckpoint cp;
+    EXPECT_CALL(*client, SendGetObjectRequest(_, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, Utf8String, ICancellationTokenPtr ct)
+        {
+        token = ct;
+        cp.CheckinAndWait();
+        return CreateCompletedAsyncTask(WSObjectsResult::Error({}));
+        }));
+
+    auto task = ds->GetObject({"UserSchema.TestClass", "Foo"}, ICachingDataSource::DataOrigin::RemoteData);
+    cp.WaitUntilReached();
+    cp.Continue();
+
+    ds->GetCacheAccessThread()->ExecuteAsync([] { BeThreadUtilities::BeSleep(100); });
+    ds->GetCacheAccessThread()->ExecuteAsync([] { BeThreadUtilities::BeSleep(100); });
+    ds->GetCacheAccessThread()->ExecuteAsync([] { BeThreadUtilities::BeSleep(100); });
+
+    ds->Close();
+
+    task->Wait();
+    ASSERT_EQ(0, ds->GetCacheAccessThread()->GetQueueTaskCount());
+    EXPECT_TRUE(token->IsCanceled());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, FailedObjects_AppendFailures_ItemsAddedAtTheEnd)
     {
     ICachingDataSource::FailedObjects failedObjects;
