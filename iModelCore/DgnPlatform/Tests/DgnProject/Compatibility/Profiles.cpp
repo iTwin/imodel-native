@@ -104,17 +104,18 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileNameUtf8,
         BeStringUtilities::Split(seedFilePath.GetFileNameWithoutExtension().c_str(), L".", seedFileNameTokens);
         if (seedFileNameTokens.size() > 1)
             {
+            constexpr Utf8CP versionStringTemplate = "%d_%d_%d_%d";
             bvector<Utf8String> initialProfileVersions;
             BeStringUtilities::Split(Utf8String(seedFileNameTokens.back()).c_str(), PROFILEVERSIONFOLDER_VERSIONSEPARATOR, initialProfileVersions);
             BeAssert(!initialProfileVersions.empty());
-            initialBeDbVersion.FromString(initialProfileVersions.back().c_str());
+            initialBeDbVersion.FromString(initialProfileVersions.back().c_str(), versionStringTemplate);
             if (initialProfileVersions.size() == 3)
                 {
-                initialDgnDbVersion.FromString(initialProfileVersions[0].c_str());
-                initialECDbVersion.FromString(initialProfileVersions[1].c_str());
+                initialDgnDbVersion.FromString(initialProfileVersions[0].c_str(), versionStringTemplate);
+                initialECDbVersion.FromString(initialProfileVersions[1].c_str(), versionStringTemplate);
                 }
             else if (initialProfileVersions.size() == 2)
-                initialECDbVersion.FromString(initialProfileVersions[0].c_str());
+                initialECDbVersion.FromString(initialProfileVersions[0].c_str(), versionStringTemplate);
             }
 
         BeFileName testFilePath(GetOutFolder());
@@ -158,15 +159,16 @@ BeFileName Profile::GetPathForNewUpgradedTestFile(TestFile const& oldSeedFile) c
     if (oldSeedFile.IsUpgraded())
         return filePath.AppendToPath(BeFileName(oldSeedFile.GetPath().GetFileNameAndExtension()));
 
+    constexpr Utf8CP versionStringTemplate = "%" PRIu16 "_%" PRIu16 "_%" PRIu16 "_%" PRIu16;
     BeFileName fileName(oldSeedFile.GetPath().GetFileNameWithoutExtension());
     fileName.append(L".");
     if (!oldSeedFile.GetInitialDgnDbVersion().IsEmpty())
-        fileName.AppendUtf8(oldSeedFile.GetInitialDgnDbVersion().ToString().c_str()).append(PROFILEVERSIONFOLDER_VERSIONSEPARATOR_W);
+        fileName.AppendUtf8(oldSeedFile.GetInitialDgnDbVersion().ToString(versionStringTemplate).c_str()).append(PROFILEVERSIONFOLDER_VERSIONSEPARATOR_W);
 
     if (!oldSeedFile.GetInitialECDbVersion().IsEmpty())
-        fileName.AppendUtf8(oldSeedFile.GetInitialECDbVersion().ToString().c_str()).append(PROFILEVERSIONFOLDER_VERSIONSEPARATOR_W);
+        fileName.AppendUtf8(oldSeedFile.GetInitialECDbVersion().ToString(versionStringTemplate).c_str()).append(PROFILEVERSIONFOLDER_VERSIONSEPARATOR_W);
 
-    fileName.AppendUtf8(oldSeedFile.GetInitialBeDbVersion().ToString().c_str());
+    fileName.AppendUtf8(oldSeedFile.GetInitialBeDbVersion().ToString(versionStringTemplate).c_str());
     fileName.AppendExtension(oldSeedFile.GetPath().GetExtension().c_str());
     return fileName;
     }
