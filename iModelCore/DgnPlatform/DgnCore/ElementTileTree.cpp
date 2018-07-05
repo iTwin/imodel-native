@@ -42,7 +42,7 @@ struct TileContext;
 // #define DISABLE_EDGE_GENERATION
 
 // For debugging tile generation code - disables use of cached tiles.
-//#define DISABLE_TILE_CACHE
+// #define DISABLE_TILE_CACHE
 
 // We used to cache GeometryLists for elements occupying a significant (25%) fraction of the total model range.
 // That can't work for BReps because they are associated with a specific thread's partition.
@@ -878,7 +878,6 @@ bool Loader::IsCacheable() const
     {
     return GetElementTile().IsCacheable();
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1074,7 +1073,7 @@ BentleyStatus Loader::_LoadTile()
             {
             if (geometry.IsEmpty() || !geometry.ContainsCurves())
                 tile.SetIsLeaf();
-            else if (isLeafInCache)
+            else if (isLeafInCache && !T_HOST.GetTileAdmin()._WantCachedHiResTiles(root.GetDgnDb()))
                 tile.SetZoomFactor(1.0);
             }
         }
@@ -3342,7 +3341,7 @@ bool Tile::_ToJson(Json::Value& json) const
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Tile::GetIdString() const
-    {
+    {                                                                                                                                                                       
     return Utf8PrintfString("%u/%u/%u/%u:%f", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, m_zoomFactor);
     }
 
@@ -3383,12 +3382,14 @@ TilePtr Tile::FindTile(TileTree::OctTree::TileId id, double zoomFactor)
         return nullptr;
         }
 
-    auto imod = id.m_i % 2, jmod = id.m_j % 2, kmod = id.m_k % 2;
+    uint32_t    shift = id.m_level - m_id.m_level - 1;
+
+    auto imod = id.m_i >> shift, jmod = id.m_j >> shift, kmod = id.m_k >> shift;
     for (auto const& child : *children)
         {
         auto elemChild = static_cast<TileP>(child.get());
         auto childId = elemChild->GetTileId();
-        if (childId.m_i % 2 == imod && childId.m_j % 2 == jmod && childId.m_k % 2 == kmod)
+        if (childId.m_i == imod && childId.m_j== jmod && childId.m_k == kmod)
             return elemChild->FindTile(id, zoomFactor);
         }
 
@@ -3401,7 +3402,6 @@ TilePtr Tile::FindTile(TileTree::OctTree::TileId id, double zoomFactor)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilePtr Tile::FindTile(double zoomFactor)
     {
-    BeAssert(HasZoomFactor() == m_zoomFactor > 0.0);
     if (zoomFactor == m_zoomFactor)
         return this;
 

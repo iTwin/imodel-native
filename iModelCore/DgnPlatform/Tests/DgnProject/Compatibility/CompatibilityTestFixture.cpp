@@ -34,6 +34,19 @@ ECN::ECSchemaReadContextPtr TestFileCreator::DeserializeSchemas(ECDbCR ecdb, std
     return context;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus TestFileCreator::Run()
+    {
+    if (SUCCESS != _Create())
+        return ERROR;
+
+    LOG.infov("Created new test file '%s'.", m_fileName.c_str());
+
+    return _UpgradeOldFiles();
+    }
+
 //**************************************************************************************
 // JsonValue
 //**************************************************************************************
