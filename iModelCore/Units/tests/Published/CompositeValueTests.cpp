@@ -84,7 +84,7 @@ TEST_F(CompositeValueSpecTest, Constructors)
     CompositeValueSpec cvs1unit(*s_mile);
     ASSERT_EQ(1, cvs1unit.GetUnitCount());
     ASSERT_FALSE(cvs1unit.IsProblem());
-    EXPECT_STREQ("MILE", cvs1unit.GetMajorUnit()->GetLabel().c_str());
+    EXPECT_STREQ("MILE", cvs1unit.GetMajorUnit()->GetDisplayLabel().c_str());
     EXPECT_EQ(nullptr, cvs1unit.GetMiddleUnit());
     EXPECT_EQ(nullptr, cvs1unit.GetMinorUnit());
     EXPECT_EQ(nullptr, cvs1unit.GetSubUnit());
@@ -93,8 +93,8 @@ TEST_F(CompositeValueSpecTest, Constructors)
     CompositeValueSpec cvs2unit(*s_mile, *s_yrd);
     ASSERT_EQ(2, cvs2unit.GetUnitCount());
     ASSERT_FALSE(cvs2unit.IsProblem());
-    EXPECT_STREQ("MILE", cvs2unit.GetMajorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("YRD", cvs2unit.GetMiddleUnit()->GetLabel().c_str());
+    EXPECT_STREQ("MILE", cvs2unit.GetMajorUnit()->GetDisplayLabel().c_str());
+    EXPECT_STREQ("YRD", cvs2unit.GetMiddleUnit()->GetDisplayLabel().c_str());
     EXPECT_EQ(nullptr, cvs2unit.GetMinorUnit());
     EXPECT_EQ(nullptr, cvs2unit.GetSubUnit());
     EXPECT_DOUBLE_EQ(1760.0, cvs2unit.GetMajorToMiddleRatio());
@@ -103,9 +103,9 @@ TEST_F(CompositeValueSpecTest, Constructors)
     CompositeValueSpec cvs3unit(*s_mile, *s_yrd, *s_ft);
     ASSERT_EQ(3, cvs3unit.GetUnitCount());
     ASSERT_FALSE(cvs3unit.IsProblem());
-    EXPECT_STREQ("MILE", cvs3unit.GetMajorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("YRD", cvs3unit.GetMiddleUnit()->GetLabel().c_str());
-    EXPECT_STREQ("FT", cvs3unit.GetMinorUnit()->GetLabel().c_str());
+    EXPECT_STREQ("MILE", cvs3unit.GetMajorUnit()->GetDisplayLabel().c_str());
+    EXPECT_STREQ("YRD", cvs3unit.GetMiddleUnit()->GetDisplayLabel().c_str());
+    EXPECT_STREQ("FT", cvs3unit.GetMinorUnit()->GetDisplayLabel().c_str());
     EXPECT_EQ(nullptr, cvs3unit.GetSubUnit());
     EXPECT_DOUBLE_EQ(1760.0, cvs3unit.GetMajorToMiddleRatio());
     EXPECT_DOUBLE_EQ(3.0, cvs3unit.GetMiddleToMinorRatio());
@@ -114,10 +114,10 @@ TEST_F(CompositeValueSpecTest, Constructors)
     CompositeValueSpec cvs4unit(*s_mile, *s_yrd, *s_ft, *s_inch);
     ASSERT_EQ(4, cvs4unit.GetUnitCount());
     ASSERT_FALSE(cvs4unit.IsProblem());
-    EXPECT_STREQ("MILE", cvs4unit.GetMajorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("YRD", cvs4unit.GetMiddleUnit()->GetLabel().c_str());
-    EXPECT_STREQ("FT", cvs4unit.GetMinorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("IN", cvs4unit.GetSubUnit()->GetLabel().c_str());
+    EXPECT_STREQ("MILE", cvs4unit.GetMajorUnit()->GetDisplayLabel().c_str());
+    EXPECT_STREQ("YRD", cvs4unit.GetMiddleUnit()->GetDisplayLabel().c_str());
+    EXPECT_STREQ("FT", cvs4unit.GetMinorUnit()->GetDisplayLabel().c_str());
+    EXPECT_STREQ("IN", cvs4unit.GetSubUnit()->GetDisplayLabel().c_str());
     EXPECT_DOUBLE_EQ(1760.0, cvs4unit.GetMajorToMiddleRatio());
     EXPECT_DOUBLE_EQ(3.0, cvs4unit.GetMiddleToMinorRatio());
     EXPECT_DOUBLE_EQ(12.0, cvs4unit.GetMinorToSubRatio());
@@ -131,8 +131,8 @@ TEST_F(CompositeValueSpecTest, NonIntegerRatios)
     CompositeValueSpec cvs1unit(*s_mile, *s_meter);
     ASSERT_EQ(2, cvs1unit.GetUnitCount());
     ASSERT_FALSE(cvs1unit.IsProblem());
-    EXPECT_STREQ("MILE", cvs1unit.GetMajorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("M", cvs1unit.GetMiddleUnit()->GetLabel().c_str());
+    EXPECT_STREQ("MILE", cvs1unit.GetMajorUnit()->GetDisplayLabel().c_str());
+    EXPECT_STREQ("M", cvs1unit.GetMiddleUnit()->GetDisplayLabel().c_str());
     EXPECT_EQ(nullptr, cvs1unit.GetMinorUnit());
     EXPECT_EQ(nullptr, cvs1unit.GetSubUnit());
     EXPECT_DOUBLE_EQ(1609.344, cvs1unit.GetMajorToMiddleRatio());
@@ -159,7 +159,7 @@ TEST_F(CompositeValueSpecTest, Single_SetUnitLabels)
     { // Set labels on none of the units
     CompositeValueSpec cvs1Unit(*s_mile);
     cvs1Unit.SetUnitLabels(nullptr, nullptr, nullptr, nullptr);
-    EXPECT_STREQ("MILE", cvs1Unit.GetMajorLabel().c_str()) << "Expected the display label that is set on the unit: " << s_mile->GetLabel().c_str();
+    EXPECT_STREQ("MILE", cvs1Unit.GetMajorLabel().c_str()) << "Expected the display label that is set on the unit: " << s_mile->GetDisplayLabel().c_str();
     EXPECT_STREQ("", cvs1Unit.GetMiddleLabel().c_str());
     EXPECT_STREQ("", cvs1Unit.GetMinorLabel().c_str());
     EXPECT_STREQ("", cvs1Unit.GetSubLabel().c_str());
@@ -182,8 +182,8 @@ TEST_F(CompositeValueSpecTest, Double_SetUnitLabels)
     { // Set labels on none of the units
     CompositeValueSpec cvs1Unit(*s_mile, *s_yrd);
     cvs1Unit.SetUnitLabels(nullptr, nullptr, nullptr, nullptr);
-    EXPECT_STREQ("MILE", cvs1Unit.GetMajorLabel().c_str()) << "Expected the display label that is set on the unit: " << s_mile->GetLabel().c_str();
-    EXPECT_STREQ("YRD", cvs1Unit.GetMiddleLabel().c_str()) << "Expected the display label that is set on the unit: " << s_yrd->GetLabel().c_str();
+    EXPECT_STREQ("MILE", cvs1Unit.GetMajorLabel().c_str()) << "Expected the display label that is set on the unit: " << s_mile->GetDisplayLabel().c_str();
+    EXPECT_STREQ("YRD", cvs1Unit.GetMiddleLabel().c_str()) << "Expected the display label that is set on the unit: " << s_yrd->GetDisplayLabel().c_str();
     EXPECT_STREQ("", cvs1Unit.GetMinorLabel().c_str());
     EXPECT_STREQ("", cvs1Unit.GetSubLabel().c_str());
     }
@@ -213,9 +213,9 @@ TEST_F(CompositeValueSpecTest, Triple_SetUnitLabels)
     { // Set labels on none of the units
     CompositeValueSpec cvs1Unit(*s_mile, *s_yrd, *s_ft);
     cvs1Unit.SetUnitLabels(nullptr, nullptr, nullptr, nullptr);
-    EXPECT_STREQ("MILE", cvs1Unit.GetMajorLabel().c_str()) << "Expected the display label that is set on the unit: " << s_mile->GetLabel().c_str();
-    EXPECT_STREQ("YRD", cvs1Unit.GetMiddleLabel().c_str()) << "Expected the display label that is set on the unit: " << s_yrd->GetLabel().c_str();
-    EXPECT_STREQ("FT", cvs1Unit.GetMinorLabel().c_str()) << "Expected the display label that is set on the unit: " << s_ft->GetLabel().c_str();
+    EXPECT_STREQ("MILE", cvs1Unit.GetMajorLabel().c_str()) << "Expected the display label that is set on the unit: " << s_mile->GetDisplayLabel().c_str();
+    EXPECT_STREQ("YRD", cvs1Unit.GetMiddleLabel().c_str()) << "Expected the display label that is set on the unit: " << s_yrd->GetDisplayLabel().c_str();
+    EXPECT_STREQ("FT", cvs1Unit.GetMinorLabel().c_str()) << "Expected the display label that is set on the unit: " << s_ft->GetDisplayLabel().c_str();
     EXPECT_STREQ("", cvs1Unit.GetSubLabel().c_str());
     }
     { // Set labels on all Units

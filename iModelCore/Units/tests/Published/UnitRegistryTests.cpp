@@ -24,8 +24,7 @@ TEST_F(UnitRegistryTests, AddAndRetrieveConstant)
     ASSERT_NE(nullptr, phen) << "The Phenomenon 'Length' does not exist in the registry";
     UnitCP createdConstant = registry->AddConstant(phen->GetName().c_str(), "SI", "TestConstant", "NUMBER", 42.0);
     ASSERT_NE(nullptr, createdConstant);
-    EXPECT_STRCASEEQ("TestConstant", createdConstant->GetInvariantLabel().c_str());
-    EXPECT_STRCASEEQ("", createdConstant->GetDescription());
+    EXPECT_STRCASEEQ("TestConstant", createdConstant->GetInvariantDisplayLabel().c_str());
     EXPECT_TRUE(registry->HasUnit("TestConstant"));
 
     UnitCP retreivedConstant = registry->LookupConstant("TestConstant");

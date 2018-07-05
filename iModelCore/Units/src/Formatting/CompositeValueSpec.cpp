@@ -196,7 +196,7 @@ Utf8CP CompositeValueSpec::GetUnitLabel(size_t index, Utf8CP substitute) const
     if (nullptr == proxy)
         return substitute;
 
-    return proxy->HasLabel() ? proxy->GetLabel().c_str() : substitute;
+    return proxy->HasLabel() ? proxy->GetLabel().c_str() : proxy->GetUnit()->GetDisplayLabel().c_str();
     }
 
 //---------------------------------------------------------------------------------------
@@ -208,14 +208,6 @@ void CompositeValueSpec::SetUnitLabels(Utf8CP majorLabel, Utf8CP middleLabel, Ut
     SetUnitLabel(indxMiddle, middleLabel);
     SetUnitLabel(indxMinor, minorLabel);
     SetUnitLabel(indxSub, subLabel);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
-Utf8String CompositeValueSpec::GetEffectiveLabel(size_t indx) const
-    {
-    return GetUnitLabel(indx, GetUnitName(indx));
     }
 
 //---------------------------------------------------------------------------------------
@@ -245,6 +237,37 @@ Utf8CP CompositeValueSpec::GetUnitName(size_t indx, Utf8CP substitute) const
 
     Utf8CP name = proxy->GetName();
     return Utf8String::IsNullOrEmpty(name) ? substitute : name;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                    06/2018
+//--------------------------------------------------------------------------------------
+Utf8String CompositeValueSpec::GetMajorLabel() const 
+    {
+    return GetUnitLabel(indxMajor);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                    06/2018
+//--------------------------------------------------------------------------------------
+Utf8String CompositeValueSpec::GetMiddleLabel() const 
+    {   
+    return GetUnitLabel(indxMiddle);
+    }
+//--------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                    06/2018
+//--------------------------------------------------------------------------------------
+Utf8String CompositeValueSpec::GetMinorLabel() const 
+    {
+    return GetUnitLabel(indxMinor);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                    06/2018
+//--------------------------------------------------------------------------------------
+Utf8String CompositeValueSpec::GetSubLabel() const 
+    {
+    return GetUnitLabel(indxSub);
     }
 
 //---------------------------------------------------------------------------------------
@@ -497,7 +520,7 @@ bool CompositeValueSpec::UnitProxy::ToJson(Json::Value& jUP, bool verbose) const
     if (!m_unitLabel.empty())
         val[json_label()] = m_unitLabel.c_str();
     else if (verbose)
-        val[json_label()] = m_unit->GetLabel().c_str();
+        val[json_label()] = m_unit->GetDisplayLabel().c_str();
     return true;
     }
 

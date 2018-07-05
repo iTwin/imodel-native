@@ -396,9 +396,8 @@ private:
     //! Calculate/set all unit ratios within this CVS.
     void CalculateUnitRatios();
 
-    Utf8CP GetUnitName(size_t indx, Utf8CP substitute = nullptr) const;
-    Utf8CP GetUnitLabel(size_t index, Utf8CP substitute = nullptr) const;
-    UNITS_EXPORT Utf8String GetEffectiveLabel(size_t indx) const;
+    UNITS_EXPORT Utf8CP GetUnitName(size_t indx, Utf8CP substitute = nullptr) const;
+    UNITS_EXPORT Utf8CP GetUnitLabel(size_t index, Utf8CP substitute = nullptr) const;
     BEU::UnitCP GetSmallestUnit() const;
 
     UnitProxyP GetProxyP(size_t indx) const {return IsIndexValid(indx) ? &m_proxys[indx] : nullptr;}
@@ -444,10 +443,10 @@ public:
     bool HasSubUnit()    const {return nullptr != GetUnit(indxSub);} //!< Determine whether this composite value has a sub unit.
 
     UNITS_EXPORT void SetUnitLabels(Utf8CP majorLabel, Utf8CP middleLabel = nullptr, Utf8CP minorLabel = nullptr, Utf8CP subLabel = nullptr);
-    Utf8String GetMajorLabel()  const {return GetEffectiveLabel(indxMajor);}
-    Utf8String GetMiddleLabel() const {return GetEffectiveLabel(indxMiddle);}
-    Utf8String GetMinorLabel()  const {return GetEffectiveLabel(indxMinor);}
-    Utf8String GetSubLabel()    const {return GetEffectiveLabel(indxSub);}
+    UNITS_EXPORT Utf8String GetMajorLabel() const;
+    UNITS_EXPORT Utf8String GetMiddleLabel() const;
+    UNITS_EXPORT Utf8String GetMinorLabel() const;
+    UNITS_EXPORT Utf8String GetSubLabel() const;
 
     void SetMajorLabel(Utf8StringCR label) {SetUnitLabel(indxMajor, label.c_str());}
     void SetMiddleLabel(Utf8StringCR label) {SetUnitLabel(indxMiddle, label.c_str());}

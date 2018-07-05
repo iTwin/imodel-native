@@ -191,8 +191,8 @@ private:
     UnitCP          m_parent = nullptr; // for an inverted Unit only.
     bool            m_isConstant = false;
     bool            m_dummyUnit = false;
-    mutable Utf8String m_displayLabel;
-    mutable Utf8String m_displayDescription;
+    bool            m_explicitlyDefinedDisplayLabel = false;
+    Utf8String      m_displayLabel;
 
     Unit() :UnitsSymbol(), m_isConstant(true) {}
 
@@ -217,17 +217,14 @@ protected:
         : UnitsSymbol(name, definition, numerator, denominator, 0) {SetPhenomenon(phenomenon); SetConstant(true);}
     //! Creates an inverted Unit.
     Unit(UnitCR parentUnit, UnitSystemCR system, Utf8CP name)
-        : Unit(system, *(parentUnit.GetPhenomenon()), name, "", 0, 0, 0, false)
-        {
-        m_parent = &parentUnit;
-        }
+        : Unit(system, *(parentUnit.GetPhenomenon()), name, "", 0, 0, 0, false) {m_parent = &parentUnit;}
+
     UNITS_EXPORT virtual ~Unit();
 
     //! @return Pointer to the parent of this Inverted Unit, if this is an Inverted Unit; otherwise, nullptr.
     UnitCP GetParent() const {return m_parent;}
-    
-    void SetLabel(Utf8CP label) {m_displayLabel = label;} //!< Sets the display label.
 
+    void SetDisplayLabel(Utf8CP label) {m_explicitlyDefinedDisplayLabel = true; m_displayLabel = label;} //!< Sets the display label.
     void SetConstant(bool isConstant) {m_isConstant = isConstant;}
 
     //! Sets the UnitSystem of this Unit if it does not already have one.
@@ -242,10 +239,9 @@ public:
     UNITS_EXPORT Utf8String GetUnitSignature() const;
     UNITS_EXPORT Utf8String GetParsedUnitExpression() const;
     UNITS_EXPORT UnitsProblemCode Convert(double& converted, double value, UnitCP toUnit) const;
-    UNITS_EXPORT Utf8StringCR GetLabel() const;
-    UNITS_EXPORT Utf8StringCR GetInvariantLabel() const;
-    UNITS_EXPORT Utf8CP GetDescription() const;
-
+    virtual Utf8StringCR GetDisplayLabel() const {return GetInvariantDisplayLabel();}
+    UNITS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
+    bool GetIsDisplayLabelDefined() const {return m_explicitlyDefinedDisplayLabel;}
     bool IsSI() const {return 0 == strcmp(m_system->GetName().c_str(), "SI");} // TODO: Replace with something better ... SI is a known system
 
     bool IsInvertedUnit() const {return nullptr != m_parent;} //!< Indicates if this unit is an InverseUnit or not
@@ -337,8 +333,8 @@ public:
     UNITS_EXPORT bool IsTime() const;
     UNITS_EXPORT bool IsAngle() const;
     UNITS_EXPORT UnitCP LookupUnit(Utf8CP unitName) const;
-    UNITS_EXPORT Utf8StringCR GetLabel() const;
-    UNITS_EXPORT Utf8StringCR GetInvariantLabel() const;
+    UNITS_EXPORT Utf8StringCR GetDisplayLabel() const;
+    UNITS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
 
     // Conversion caching currently not supported
     // bool TryGetConversion(Conversion& conversion, Utf8CP fromUnit, Utf8CP toUnit) const;

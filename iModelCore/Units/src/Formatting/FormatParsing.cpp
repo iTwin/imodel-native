@@ -579,7 +579,7 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
 
                 auto const& units = ph->GetUnits();
                 auto matchingUnit = std::find_if(units.begin(), units.end(), 
-                    [&](BEU::UnitCP unit) {return ((unit->GetName().EqualsI(m_name)) || (unit->GetLabel() == m_name));});
+                    [&](BEU::UnitCP unit) {return ((unit->GetName().EqualsI(m_name)) || (unit->GetDisplayLabel() == m_name));});
                 if (matchingUnit != units.end())
                     m_unit = *matchingUnit;
                 else

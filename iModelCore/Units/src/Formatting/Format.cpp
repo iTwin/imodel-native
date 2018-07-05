@@ -159,7 +159,7 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
     // there are two major options here: the format is a pure Numeric or it has a composite specification
     NumericFormatSpecCP fmtP = GetNumericSpec();
     BEU::Quantity temp = qty.ConvertTo(useUnit);
-    Utf8CP uomLabel = Utf8String::IsNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetLabel().c_str()) : useLabel;
+    Utf8CP uomLabel = Utf8String::IsNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetDisplayLabel().c_str()) : useLabel;
     Utf8String majT, midT, minT, subT;
 
     if (HasComposite())  // procesing composite parts

@@ -165,35 +165,13 @@ ExpressionCR Unit::Evaluate() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Bill.Steinbock                  11/2017
-//---------------------------------------------------------------------------------------
-Utf8StringCR Unit::GetLabel() const
-    {
-    if (m_displayLabel.empty())
-        m_displayLabel = GetName();
-
-    return m_displayLabel;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //---------------------------------------------------------------------------------------
-Utf8StringCR Unit::GetInvariantLabel() const
+Utf8StringCR Unit::GetInvariantDisplayLabel() const
     {
     if (m_displayLabel.empty())
         return m_name;
     return m_displayLabel;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bill.Steinbock                  11/2017
-//---------------------------------------------------------------------------------------
-Utf8CP Unit::GetDescription() const
-    {
-    if (m_displayDescription.empty())
-        m_displayLabel = GetName();
-
-    return m_displayDescription.c_str();
     }
 
 //---------------------------------------------------------------------------------------
@@ -514,7 +492,7 @@ bool Phenomenon::IsAngle() const { return m_name.Equals(ANGLE); }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  11/2017
 //---------------------------------------------------------------------------------------
-Utf8StringCR Phenomenon::GetLabel() const
+Utf8StringCR Phenomenon::GetDisplayLabel() const
     {
     if (m_displayLabel.empty())
         {
@@ -529,7 +507,7 @@ Utf8StringCR Phenomenon::GetLabel() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //---------------------------------------------------------------------------------------
-Utf8StringCR Phenomenon::GetInvariantLabel() const
+Utf8StringCR Phenomenon::GetInvariantDisplayLabel() const
     {
     if (m_displayLabel.empty())
         return m_name;
