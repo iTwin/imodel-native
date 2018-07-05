@@ -125,7 +125,7 @@ struct EC32EnumsTestECDbCreator final : TestECDbCreator
         BentleyStatus _Create() override
             {
             ECDb ecdb;
-            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, TESTECDB_EC32ENUMS))
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
                 return ERROR;
 
             // add types of enums which don't exist in the schemas already in the test file
@@ -143,6 +143,7 @@ struct EC32EnumsTestECDbCreator final : TestECDbCreator
                                                      </ECSchema>)xml"));
             }
     public:
+        explicit EC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32ENUMS) {}
         ~EC32EnumsTestECDbCreator() {}
     };
 
@@ -230,7 +231,7 @@ struct EC32KoqsTestECDbCreator final : TestECDbCreator
         BentleyStatus _Create() override
             {
             ECDb ecdb;
-            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, TESTECDB_EC32KOQS))
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
                 return ERROR;
 
             return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -244,6 +245,7 @@ struct EC32KoqsTestECDbCreator final : TestECDbCreator
                 </ECSchema>)xml"));
             }
     public:
+        explicit EC32KoqsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32KOQS) {}
         ~EC32KoqsTestECDbCreator() {}
     };
 
@@ -256,7 +258,7 @@ struct EC32UnitsTestECDbCreator final : TestECDbCreator
         BentleyStatus _Create() override
             {
             ECDb ecdb;
-            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, TESTECDB_EC32UNITS))
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
                 return ERROR;
 
             return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -282,6 +284,7 @@ struct EC32UnitsTestECDbCreator final : TestECDbCreator
                     <KindOfQuantity typeName="KoqWithCustomUnitAndFormat" persistenceUnit="MySquareFt" presentationUnits="MyFormat[MySquareFt]" relativeError="0.3"/>
                 </ECSchema>)xml"));
             }
-    public:
+    public:        
+        explicit EC32UnitsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32UNITS) {}
         ~EC32UnitsTestECDbCreator() {}
     };

@@ -113,7 +113,7 @@ struct EC32EnumsTestIModelCreator final : TestIModelCreator
     private:
         BentleyStatus _Create() override
             {
-            DgnDbPtr bim = CreateNewTestFile(TESTIMODEL_EC32ENUMS);
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
             if (bim == nullptr)
                 return ERROR;
 
@@ -132,6 +132,7 @@ struct EC32EnumsTestIModelCreator final : TestIModelCreator
                                                      </ECSchema>)xml"));
             }
     public:
+        EC32EnumsTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC32ENUMS) {}
         ~EC32EnumsTestIModelCreator() {}
     };
 
@@ -218,7 +219,7 @@ struct EC32KoqsTestIModelCreator final : TestIModelCreator
     private:
         BentleyStatus _Create() override
             {
-            DgnDbPtr bim = CreateNewTestFile(TESTIMODEL_EC32KOQS);
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
             if (bim == nullptr)
                 return ERROR;
 
@@ -233,6 +234,7 @@ struct EC32KoqsTestIModelCreator final : TestIModelCreator
                 </ECSchema>)xml"));
             }
     public:
+        EC32KoqsTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC32KOQS) {}
         ~EC32KoqsTestIModelCreator() {}
     };
 
@@ -244,7 +246,7 @@ struct EC32UnitsTestIModelCreator final : TestIModelCreator
     private:
         BentleyStatus _Create() override
             {
-            DgnDbPtr bim = CreateNewTestFile(TESTIMODEL_EC32UNITS);
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
             if (bim == nullptr)
                 return ERROR;
 
@@ -272,5 +274,6 @@ struct EC32UnitsTestIModelCreator final : TestIModelCreator
                 </ECSchema>)xml"));
             }
     public:
+        EC32UnitsTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC32UNITS) {}
         ~EC32UnitsTestIModelCreator() {}
     };
