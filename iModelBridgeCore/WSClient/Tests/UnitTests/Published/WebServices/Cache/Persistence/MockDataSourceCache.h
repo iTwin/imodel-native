@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/MockDataSourceCache.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -201,6 +201,8 @@ struct MockDataSourceCache : public IDataSourceCache
             BentleyStatus(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR));
         MOCK_METHOD2 (GetFileCacheLocation,
             FileCache(ObjectIdCR objectId, FileCache cacheLocation));
+        MOCK_METHOD1 (InvalidateCachedInstance,
+            BentleyStatus(ObjectId objectId));
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
