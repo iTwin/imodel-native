@@ -687,7 +687,7 @@ void TestDb::AssertLoadSchemas() const
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult TestDb::Open()
     {
-    if (BeFileNameStatus::Success != m_testFile.CloneFromSeed())
+    if (BeFileNameStatus::Success != m_testFile.CloneSeedToOutput())
         return BE_SQLITE_ERROR;
 
     return _Open();
