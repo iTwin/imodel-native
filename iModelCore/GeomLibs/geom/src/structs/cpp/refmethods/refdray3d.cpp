@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdray3d.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -93,7 +93,7 @@ DPoint3dCP pNormalB
     double b = 1.0 + pNormalA->MaxAbs () + pNormalB->MaxAbs ();
 
     inPlaneA.CrossProduct (intersectionDirection, *pNormalA);//    bsiDPoint3d_crossProduct (&inPlaneA, &intersectionDirection, pNormalA);
-    sine = bsiDPoint3d_magnitude (&intersectionDirection);
+    sine = intersectionDirection.Magnitude ();
     cosine = fabs (pNormalA->DotProduct (*pNormalB));//bsiDPoint3d_dotProduct (pNormalA, pNormalB));
     double relTol = Angle::SmallAngle ();
     boolStat = ( sine > relTol * cosine

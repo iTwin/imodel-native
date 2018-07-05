@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/rimsbs/rimsbs_context.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1124,7 +1124,7 @@ double tol
            || (fabs (dx90 - dy0) < tol &&  fabs (dy90 + dx0) < tol)
            )
             {
-            bsiDPoint3d_setXYZ (pXYR, pEllipse->center.x, pEllipse->center.y, r0);
+            pXYR->Init ( pEllipse->center.x, pEllipse->center.y, r0);
             return true;
             }
         }
@@ -1145,7 +1145,7 @@ static void forceEllipseToExactCircular
 DEllipse3d  *pEllipse
 )
     {
-    if (bsiDPoint3d_crossProductXY (&pEllipse->vector0, &pEllipse->vector90) >= 0.0)
+    if (pEllipse->vector0.CrossProductXY (pEllipse->vector90) >= 0.0)
         {
         pEllipse->vector90.x = -pEllipse->vector0.y;
         pEllipse->vector90.y =  pEllipse->vector0.x;
@@ -1188,7 +1188,7 @@ double tol
         radialScale = pXYR0->z / xyr1.z;
         /* Scale to the right length.  Might be off by a bit, but we preserve the
             old direction. */
-        bsiDPoint3d_scaleInPlace (&pEllipse1->vector0, radialScale);
+        pEllipse1->vector0.Scale (radialScale);
         forceEllipseToExactCircular (pEllipse1);
         myResult = true;
         }

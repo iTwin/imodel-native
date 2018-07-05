@@ -205,10 +205,7 @@ const DPoint3d      *pPoint11
                     {
                     for (j0 = 0; j0 < 2; j0++)
                         {
-                        if (bsiDPoint3d_distanceSquaredXY
-                                        (
-                                        &point[iLong][i0],
-                                        &point[iShort][j0])
+                        if (point[iLong][i0].DistanceSquaredXY (*(&point[iShort][j0]))
                                     <= tol2 )
                             {
                             if (s_bAnnounceVertexOnVertex)
@@ -264,10 +261,7 @@ const DPoint3d      *pPoint11
                             iLong, t, i0, i1, iShort, s, j0, j1);
 #endif
 
-            if (bsiDPoint3d_distanceSquaredXY
-                            (
-                            &point[iLong][i0],
-                            &point[iShort][j0])
+            if (point[iLong][i0].DistanceSquaredXY (*(&point[iShort][j0]))
                         <= tol2 )
                 {
 #ifdef DEBUG_MERGE
@@ -368,8 +362,8 @@ RG_EdgeData         *pEdge1
         {
         if (dsq <= tolsq)
             {
-            d0 = bsiDPoint3d_distanceSquaredXY (&xyz, &pEdge1->xyz[0]);
-            d1 = bsiDPoint3d_distanceSquaredXY (&xyz, &pEdge1->xyz[1]);
+            d0 = xyz.DistanceSquaredXY (*(&pEdge1->xyz[0]));
+            d1 = xyz.DistanceSquaredXY (*(&pEdge1->xyz[1]));
 
             if (d0 > tolsq && d1 > tolsq)
                 {
@@ -598,7 +592,7 @@ MTGNodeId               nodeId
     double tol2 = tol * tol;
 
     if  (   jmdlRG_getEdgeData (pContext->pRG, &edgeData, nodeId)
-        &&  bsiDPoint3d_distanceSquared (&edgeData.xyz[0], &edgeData.xyz[1])
+        &&  edgeData.xyz[0].DistanceSquared (*(&edgeData.xyz[1]))
                     < tol2)
         {
         jmdlRGIL_declareVertexOnVertex  (
@@ -1091,7 +1085,7 @@ double                          minGeomStep
         RGI_CLEARMASK (pA->type, RGI_MASK_ALL_PROCESSED_BITS);
         if (i > i0)
             {
-            dist = bsiDPoint3d_distanceXY (&currPoint, &prevPoint);
+            dist = currPoint.DistanceXY (prevPoint);
             /* If the current point AND THE PARAMETRIC MIDPOINT
                     are close to previous point,
                     force it to look like a match in parameter space.
@@ -1102,14 +1096,14 @@ double                          minGeomStep
                 double d0, d1;
                 DPoint3d midPoint;
                 jmdlRG_evaluateEdgeData (pRG, &midPoint, &edgeData, 0.5 * (param + breakParam));
-                d0 = bsiDPoint3d_distanceXY (&midPoint, &prevPoint);
-                d1 = bsiDPoint3d_distanceXY (&midPoint, &currPoint);
+                d0 = midPoint.DistanceXY (prevPoint);
+                d1 = midPoint.DistanceXY (currPoint);
                 if (d0 < minGeomStep && d1 < minGeomStep)
                     breakParam = param + minParamStep;
                 }
             }
         if  (param < break0
-            || (param < break0g && (dist = bsiDPoint3d_distanceXY (&startPoint, &currPoint)) < minGeomStep)
+            || (param < break0g && (dist = startPoint.DistanceXY (currPoint)) < minGeomStep)
             )
             {
 
@@ -1121,7 +1115,7 @@ double                          minGeomStep
             RGI_SETMASK (pA->type, RGI_MASK_PROCESSED_START);
             }
         else if  (param >= break1
-            || (param > break1g && (dist = bsiDPoint3d_distanceXY (&endPoint, &currPoint)) < minGeomStep)
+            || (param > break1g && (dist = endPoint.DistanceXY (currPoint)) < minGeomStep)
             )
             {
 
@@ -1420,12 +1414,12 @@ double      step
 )
     {
     DPoint3d approxDeriv, derivError;
-    double mag = bsiDPoint3d_magnitude (pDeriv);
+    double mag = pDeriv->Magnitude ();
     double err;
     double relerr;
-    bsiDPoint3d_scale (&approxDeriv, pDiff, 1.0 / step);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&derivError, &approxDeriv, pDeriv);
-    err = bsiDPoint3d_magnitude (&derivError);
+    approxDeriv.Scale (*pDiff, 1.0 / step);
+    derivError.DifferenceOf (approxDeriv, *pDeriv);
+    err = derivError.Magnitude ();
     if (err >= mag)
         relerr = 1.0;
     else
@@ -1450,7 +1444,7 @@ double    epsilon
     for (i = 1; i <= numDeriv; i++)
         {
         j = i - 1;
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&delta, pD1 + j, pD0 + j);
+        delta.DifferenceOf (pD1[ j], pD0[ j]);
         checkThisDerivative (i, pD0 + i, &delta,  epsilon);
         }
     }
@@ -1520,18 +1514,18 @@ double                  paramOffset
     if (   jmdlRG_getVertexData (pRG, dVec, 3, pVertexIndex, nodeId, paramOffset)
         && jmdlRG_getEdgeData (pRG, &edgeData, nodeId))
         {
-        pSortData->f[0] = bsiTrig_atan2 (dVec[1].y, dVec[1].x);
-        magT2 = bsiDPoint3d_dotProductXY (&dVec[1], &dVec[1]);
+        pSortData->f[0] = Angle::Atan2 (dVec[1].y, dVec[1].x);
+        magT2 = dVec[1].DotProductXY (dVec[1]);
         if (magT2 > tangentTol * tangentTol)
             {
             magT  = sqrt (magT2);
             magT3 = magT2 * magT;
-            f = bsiDPoint3d_crossProductXY (&dVec[1], &dVec[2]);
+            f = dVec[1].CrossProductXY (dVec[2]);
 
             pSortData->f[1] = f / magT3;
-            df = bsiDPoint3d_crossProductXY (&dVec[1], &dVec[3]);
+            df = dVec[1].CrossProductXY (dVec[3]);
             g  = magT3;
-            dg = 3.0 * magT * bsiDPoint3d_dotProductXY (&dVec[1], &dVec[2]);
+            dg = 3.0 * magT * dVec[1].DotProductXY (dVec[2]);
 
             pSortData->f[2] = (df * g - f * dg) / ( g * g * magT);
 
@@ -1576,8 +1570,8 @@ double                  paramOffset
         if (jmdlRG_getVertexData (pRG, eVec, 3, NULL, nodeId, s_epsilon))
             {
             checkDerivatives (dVec, eVec, 3, s_epsilon);
-            theta = bsiTrig_atan2 (eVec[1].y, eVec[1].x);
-            rho = sqrt (bsiDPoint3d_dotProductXY (&dVec[1], &dVec[1]));
+            theta = Angle::Atan2 (eVec[1].y, eVec[1].x);
+            rho = sqrt (dVec[1].DotProductXY (dVec[1]));
             dThetaDS = (theta - pSortData->f[0]) / ( rho * s_epsilon);
             relErr = fabs (dThetaDS - pSortData->f[1])
                     / ( fabs (dThetaDS) + fabs (pSortData->f[1]));
@@ -2176,7 +2170,7 @@ EmbeddedDPoint3dArray   *pPointArray
                 continue;
 
             jmdlRG_getVertexData (pRG, &xyz1, 0, &vertexId, currNodeId, 0.0);
-            rr01 = bsiDPoint3d_distanceSquaredXY (&xyz0, &xyz1);
+            rr01 = xyz0.DistanceSquaredXY (xyz1);
             if (rr01 < rr)
                 {
                 double targetParam;
@@ -2204,8 +2198,8 @@ EmbeddedDPoint3dArray   *pPointArray
                     {
                     targetPoint = pPointArray->front ();
                     targetParam = pParamArray->front ();
-                    bsiDPoint3d_subtractDPoint3dDPoint3d (&targetVector, &targetPoint, &xyz0);
-                    angle = bsiTrig_atan2 (targetVector.y, targetVector.x);
+                    targetVector.DifferenceOf (targetPoint, xyz0);
+                    angle = Angle::Atan2 (targetVector.y, targetVector.x);
 
                     if (fabs(fabs (angle) - msGeomConst_pi) < angleTol)
                         angle = msGeomConst_pi;
@@ -2357,7 +2351,7 @@ const DPoint3d  *pXYZ
         {
         tangent0 = derivatives[1];
         refPoint = derivatives[0];
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&testVector, pXYZ, &refPoint);
+        testVector.DifferenceOf (*pXYZ, refPoint);
         /* NEEDS WORK: consider curvature case */
         MTGARRAY_VERTEX_LOOP (currNodeId, pRG->pGraph, seedNodeId)
             {
@@ -2366,7 +2360,7 @@ const DPoint3d  *pXYZ
                 break;
                 }
             tangent1 = derivatives[1];
-            if (bsiDPoint3d_isVectorInCCWSector (&testVector, &tangent0, &tangent1, &upVector))
+            if (testVector.IsVectorInCCWSector (tangent0, tangent1, upVector))
                 {
                 *pVisibleSectorNodeId = previousNodeId;
                 return true;
@@ -2455,7 +2449,7 @@ int             noisy
     if (   jmdlRG_getEdgeData (pRG, &edgeData0, nodeId0)
         && jmdlRG_getEdgeData (pRG, &edgeData1, nodeId1))
         {
-        double distance = bsiDPoint3d_distanceXY (&edgeData0.xyz[0], &edgeData1.xyz[0]);
+        double distance = edgeData0.xyz[0].DistanceXY (*(&edgeData1.xyz[0]));
         double tolerance        = jmdlRG_getTolerance (pRG);
         if (noisy)
             GEOMAPI_PRINTF ("  distance = %lf\n", distance);

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/dpoint4d.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -18,6 +18,7 @@
 * @bsistruct                                        EarlinLutz      09/00
 +----------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
+#include "../DeprecatedFunctions.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 
@@ -224,7 +225,7 @@ Public GEOMDLLIMPEXP double bsiDPoint4d_magnitudeXYZW
 DPoint4dCP pInstance
 )
     {
-    return sqrt (bsiDPoint4d_dotProduct (pInstance, pInstance));
+    return sqrt (pInstance->DotProduct (*pInstance));
     }
 
 
@@ -680,7 +681,7 @@ DPoint4dCP    pQuaternion1
 
     q0  = *pQuaternion0;
     q1  = *pQuaternion1;
-    dot = bsiDPoint4d_dotProduct (&q0, &q1);
+    dot = q0.DotProduct (q1);
 
     // prevent interpolation through the longer great arc
     if (dot < 0.0)
@@ -944,9 +945,9 @@ DPoint3dCP pNormal
     double d;
 
     unitNormal = *pNormal;
-    if (bsiDPoint3d_normalizeInPlace(&unitNormal) > 0.0)
+    if (unitNormal.Normalize () > 0.0)
         {
-        d = bsiDPoint3d_dotProduct (&unitNormal, pOrigin);
+        d = unitNormal.DotProduct (*pOrigin);
         bsiDPoint4d_copyAndWeight( pInstance, &unitNormal, -d );
         result = true;
         }
@@ -1022,9 +1023,9 @@ DPoint3dCP pPoint2
 
     {
     DPoint3d normal, vector1, vector2;
-    bsiDPoint3d_subtractDPoint3dDPoint3d ( &vector1, pPoint1, pOrigin );
-    bsiDPoint3d_subtractDPoint3dDPoint3d ( &vector2, pPoint2, pOrigin );
-    bsiDPoint3d_crossProduct ( &normal, &vector1, &vector2 );
+    vector1.DifferenceOf (*pPoint1, *pOrigin);
+    vector2.DifferenceOf (*pPoint2, *pOrigin);
+    normal.CrossProduct (vector1, vector2);
     return bsiDPoint4d_planeFromOriginAndNormal ( pInstance, pOrigin, &normal );
     }
 
@@ -1061,7 +1062,7 @@ DPoint3dCP pVector1
         DPoint3d W;
         double a, b;
         a = pOrigin->w;
-        bsiDPoint3d_crossProduct (&W, pVector0, pVector1);
+        W.CrossProduct (*pVector0, *pVector1);
         b = bsiDPoint4d_dotWeightedPoint (pOrigin, &W, 0.0);
         bsiDPoint4d_setComponents (pInstance, a * W.x, a * W.y, a * W.z, -b);
         }
@@ -1088,9 +1089,9 @@ DPoint3dP pNormal
 )
     {
     bsiDPoint4d_cartesianFromHomogeneous (pInstance, pNormal);
-    bsiDPoint3d_scale (pOrigin, pNormal, pInstance->w);
+    pOrigin->Scale (*pNormal, pInstance->w);
 
-    return  bsiDPoint3d_normalizeInPlace (pNormal) > 0.0;
+    return  pNormal->Normalize () > 0.0;
     }
 
 
@@ -1529,7 +1530,7 @@ double          tolerance
     parallel = bsiDPoint3d_areParallelTolerance (&tangent1, &tangent2, tolerance);
 
     if (pDot)
-        *pDot = bsiDPoint3d_dotProduct (&tangent1, &tangent2);
+        *pDot = tangent1.DotProduct (tangent2);
 
     return parallel;
     }
@@ -2146,10 +2147,10 @@ DPoint3dP    pAxis
     axis.y = pQuaternion->y;
     axis.z = pQuaternion->z;
 
-    sinHalfAngle = bsiDPoint3d_normalizeInPlace (&axis);
+    sinHalfAngle = axis.Normalize ();
 
     /* pQuat->w = cosHalfAngle */
-    angle = 2.0 * bsiTrig_atan2 (sinHalfAngle, pQuaternion->w); /* range [0,2PI] */
+    angle = 2.0 * Angle::Atan2 (sinHalfAngle, pQuaternion->w); /* range [0,2PI] */
 
     /* shift angle range to [0,Pi] by flipping axis and using smaller angle */
     if (angle > msGeomConst_pi)

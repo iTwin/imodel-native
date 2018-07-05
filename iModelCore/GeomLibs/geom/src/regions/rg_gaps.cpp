@@ -109,8 +109,8 @@ double maxVertexVertex
     jmdlRGEdge_getXYZ (&edgeData, &xyzVertex[0], 0);
     jmdlRGEdge_getXYZ (&edgeData, &xyzVertex[1], 1);
     /* Don't bother if close to an endpoint ... */
-    if (  bsiDPoint3d_distanceXY (pXYZ, &xyzVertex[0]) <= maxVertexVertex
-       || bsiDPoint3d_distanceXY (pXYZ, &xyzVertex[1]) <= maxVertexVertex
+    if (  pXYZ->DistanceXY (xyzVertex[0]) <= maxVertexVertex
+       || pXYZ->DistanceXY (xyzVertex[1]) <= maxVertexVertex
        )
         {
         }
@@ -191,7 +191,7 @@ double          maxDiagBoxFraction
                 );
 
     jmdlRG_getRange (pRG, &geometryRange);
-    diagonalSize = bsiDPoint3d_distance (&geometryRange.low, &geometryRange.high);
+    diagonalSize = geometryRange.low.Distance (geometryRange.high);
     maxBoxSize = maxDiagBoxFraction * diagonalSize;
 
     if (vertexEdgeMax > 0)
@@ -218,7 +218,7 @@ double          maxDiagBoxFraction
                 jmdlEmbeddedDPoint3dArray_getDPoint3d (pRG->pVertexArray, &xyz, vertexIndex);
                 searchRange.Extend (xyz);
                 }
-            bsiDPoint3d_interpolate (&xyz, &searchRange.low, 0.5, &searchRange.high);
+            xyz.Interpolate (searchRange.low, 0.5, searchRange.high);
             searchRange.Extend (vertexEdgeRangeExtension);
 
             jmdlRG_collectXYEdgeRangeHits
@@ -330,7 +330,7 @@ double          maxDiagBoxFraction
                             }
                         for (j = 1; j < num1; j++)
                             {
-                            dCurr = bsiDPoint3d_distanceXY (&xyz1[j-1], &xyz1[j]);
+                            dCurr = xyz1[j-1].DistanceXY (xyz1[j]);
                             if (dCurr > vertexSize)
                                 {
                                 jmdlEmbeddedDPoint3dArray_addDPoint3d (pSegmentXYZArray, &xyz1[j-1]);
@@ -349,7 +349,7 @@ double          maxDiagBoxFraction
                                 {
                                 jmdlEmbeddedIntArray_getInt (pBlockIndexArray, &jIndex, j);
                                 jmdlEmbeddedDPoint3dArray_getDPoint3d (pNodeXYZArray, &xyzSegment[1], jIndex);
-                                dCurr = bsiDPoint3d_distanceXY (&xyzSegment[0], &xyzSegment[1]);
+                                dCurr = xyzSegment[0].DistanceXY (xyzSegment[1]);
                                 if (dCurr > vertexSize)
                                     {
                                     jmdlEmbeddedDPoint3dArray_addDPoint3d (pSegmentXYZArray, &xyzSegment[0]);
@@ -370,7 +370,7 @@ double          maxDiagBoxFraction
             i += 2
             )
             {
-            dCurr = bsiDPoint3d_distanceXY (&xyzSegment[0], &xyzSegment[1]);
+            dCurr = xyzSegment[0].DistanceXY (xyzSegment[1]);
             jmdlRG_addMaskedLinear (pRG, NULL, xyzSegment, 2, -1, mask, mask);
             jmdlRG_debugSegment (pRG,
                                 &xyzSegment[0],

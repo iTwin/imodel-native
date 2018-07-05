@@ -241,123 +241,6 @@ DPoint4dCP pArray,
 int             nPoint
 );
 
-/*----------------------------------------------------------------------------+
-| BARYCENTRIC COORDINATE FUNCTIONS:
-|
-| For a given triangle T with vertices v0, v1, v2, every point q in the plane
-| of T is uniquely represented by its barycentric coordinates (b0, b1, b2)
-| relative to T:
-|
-| q = b0 * v0 + b1 * v1 + b2 * v2,
-| 1 = b0 + b1 + b2.
-|
-+----------------------------------------------------------------------------*/
-
-/*-----------------------------------------------------------------*//**
-* @description Sets this instance to the barycentric coordinates of pPoint
-* relative to the triangle (pVertex0, pVertex1, pVertex2) in the xy-plane.
-*
-* @instance pInstance   <= barycentric coordinates of pPoint relative to T
-* @param pPoint         => point in plane
-* @param pVertex0       => vertex 0 of triangle T
-* @param pVertex1       => vertex 1 of triangle T
-* @param pVertex2       => vertex 2 of triangle T
-* @see bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-* @see bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
-* @group "DPoint3d Barycentric"
-* @return true if and only if the area of T is sufficiently large.
-* @bsihdr                                                                       DavidAssaf      10/98
-+---------------+---------------+---------------+---------------+------*/
-Public  bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
-
-(
-DPoint3dP pInstance,
-DPoint2dCP pPoint,
-DPoint2dCP pVertex0,
-DPoint2dCP pVertex1,
-DPoint2dCP pVertex2
-);
-
-
-
-/*-----------------------------------------------------------------*//**
-* Given a space point spacePontP, finds the closest point on the plane
-* containing the 3 points in pPlanePoint.  Stores the closest point
-* coordinates in pClosePoint, and the s and t coordinates (as defined
-* in bsiGeom_evaluateSkewedPlane) in sP and tP.
-*
-* @param pClosePoint <= point on plane.  May be null pointer
-* @param sP <= parametric coordinate on s axis
-* @param tP <= parametric coordinate on t axis
-* @param pPlanePoint => origin, s=1, and t=1 points
-* @param pSpacePoint => point to be projected
-* @return true unless the plane points are collinear
-* @bsihdr                                       EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public  bool     bsiGeom_closestPointOnSkewedPlane
-
-(
-DPoint3dP pClosePoint,
-double          *sP,
-double          *tP,
-DPoint3dCP pPlanePoint,
-DPoint3dCP pSpacePoint
-);
-
-/*-----------------------------------------------------------------*//**
-* @description Compute the minimum distance from a point to a triangle.
-* @instance pSpacePoint   <= point in space
-* @param pVertex0       => vertex of T
-* @param pVertex1       => vertex of T
-* @param pVertex2       => vertex of T
-* @param pClosePoint    <= projection of space point onto plane of triangle
-* @param pBCoords       <= barycentric coordinates of closest point
-* @return minimum distance
-* @group "DPoint3d Barycentric"
-* @bsihdr                                       EarlinLutz      10/04
-+---------------+---------------+---------------+---------------+------*/
-Public  double bsiDPoint3d_minDistToTriangle
-
-(
-DPoint3dCP pSpacePoint,
-DPoint3dCP pVertex0,
-DPoint3dCP pVertex1,
-DPoint3dCP pVertex2,
-DPoint3dP pClosePoint,
-DPoint3dP pBoundedUVW,
-DPoint3dP pUnboundedUVW
-);
-
-
-/*-----------------------------------------------------------------*//**
-* @description Sets this instance to the barycentric coordinates of pPoint
-* relative to the triangle (pOrigin, pVector1-pOrigin, pVector2-pOrigin)
-* in the xy-plane.
-*
-* @instance pInstance   <= barycentric coordinates of pPoint relative to T
-* @param pArea          <= area of triangle.
-* @param pPoint         => point in plane
-* @param pOrigin        => vertex of triangle T (may be null for origin)
-* @param pVector1       => side vector of T (emanating from pOrigin)
-* @param pVector2       => side vector of T (emanating from pOrigin)
-* @see bsiDPoint3d_barycentricFromDPoint2dTriangle
-* @see bsiDPoint2d_fromBarycentricAndDPoint2dTriangleVectors
-* @group "DPoint3d Barycentric"
-* @return true if and only if the area of T is sufficiently large.
-* @bsihdr                                      DavidAssaf      10/98
-+---------------+---------------+---------------+---------------+------*/
-Public  bool    bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-
-(
-DPoint3dP pInstance,
-DPoint2dCP pPoint,
-DPoint2dCP pOrigin,
-DPoint2dCP pVector1,
-DPoint2dCP pVector2
-);
-
-
-
 /*-----------------------------------------------------------------*//**
 * @description Dot the plane normal with the vector from the plane origin to the point.
 * @remarks If the plane normal is a unit vector, this is the true distance from the
@@ -1364,5 +1247,21 @@ Public GEOMDLLIMPEXP bool     bsiTransform_initFromPlaneOfDPoint3dArray
 TransformP pTransform,
 DPoint3dCP pPoint,
 int             numPoint
+);
+/*---------------------------------------------------------------------------------**//**
+* @description Tests if two vectors are parallel.
+* @remarks Use bsiTrig_smallAngle() for tolerance corresponding to bsiDPoint3d_areParallel.
+*
+* @param pVector1   IN      the first vector
+* @param pVector2   IN      the second vector
+* @param tolerance  IN      radian tolerance for angle between vectors
+* @return true if the vectors are parallel within tolerance
+* @bsimethod                                                    DavidAssaf      05/06
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     bsiDPoint3d_areParallelTolerance
+(
+DPoint3dCP  pVector1,
+DPoint3dCP  pVector2,
+double      tolerance
 );
 END_BENTLEY_GEOMETRY_NAMESPACE

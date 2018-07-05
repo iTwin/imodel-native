@@ -6,7 +6,7 @@
 |       $Date: 2009/12/21 15:31:01 $
 |     $Author: Earlin.Lutz $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -33,7 +33,7 @@ VuScalarFunction *pFaceWeightFunction
     int negativeAreaCount = 0;
     bool    boolstat = false;
     count = 0;
-    bsiDPoint3d_zero (&sumUVDelta);
+    sumUVDelta.Zero ();
     currUVDelta.z = 0.0;
     minEdgeLength = maxEdgeLength = vu_edgeLengthXY (pNode);
     VU_VERTEX_LOOP (pCurr, pNode)
@@ -65,7 +65,7 @@ VuScalarFunction *pFaceWeightFunction
 
     if (count > 1 && negativeAreaCount == 0 && totalArea > 0.0)
         {
-        bsiDPoint3d_scale (&averageDelta, &sumUVDelta, 1.0 / totalArea);
+        averageDelta.Scale (sumUVDelta, 1.0 / totalArea);
         if (pDelta)
             {
             *pDelta = averageDelta;

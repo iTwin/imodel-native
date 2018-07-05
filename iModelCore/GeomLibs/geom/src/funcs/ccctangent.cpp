@@ -507,8 +507,8 @@ double   *pRadiusArrayIn
                 0.0);
 
             DVec3d a, b;
-            bsiDVec3d_multiplyRotMatrixDVec3d (&a, &Minverse, &vectorA);
-            bsiDVec3d_multiplyRotMatrixDVec3d (&b, &Minverse, &vectorB);
+            a = Minverse * vectorA;
+            b = Minverse * vectorB;
 
             // quadratic equation coefficients ...
             double qa = SQUARE (b.x) + SQUARE(b.y) - 1.0;

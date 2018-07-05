@@ -425,14 +425,14 @@ DPoint3d *point2P
     double perim;       /* sum of SQUARED edge lengths */
     bool    boolstat;
     /* Compute vectors along each edge */
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&U, point1P, point0P);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&V, point2P, point1P);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&W, point0P, point2P);
+    U.DifferenceOf (*point1P, *point0P);
+    V.DifferenceOf (*point2P, *point1P);
+    W.DifferenceOf (*point0P, *point2P);
 
-    bsiDPoint3d_crossProduct (&UcrossV, &U, &V);
-    area = 0.5 * bsiDPoint3d_magnitude (&UcrossV);
+    UcrossV.CrossProduct (U, V);
+    area = 0.5 * UcrossV.Magnitude ();
 
-    perim  = (bsiDPoint3d_magnitude(&U) + bsiDPoint3d_magnitude(&V) + bsiDPoint3d_magnitude (&W));
+    perim  = (U.Magnitude () + V.Magnitude () + W.Magnitude ());
 
     if (perim > 0.0)
         {
@@ -525,11 +525,11 @@ const DPoint3d *pWingPoint1
 )
     {
     DPoint3d normal0, normal1;
-    bsiDPoint3d_crossProduct3DPoint3d (&normal0, pFoldPoint0, pFoldPoint1, pWingPoint0);
-    bsiDPoint3d_crossProduct3DPoint3d (&normal1, pFoldPoint1, pFoldPoint0, pWingPoint1);
-    bsiDPoint3d_normalizeInPlace (&normal0);
-    bsiDPoint3d_normalizeInPlace (&normal1);
-    return fabs (bsiDPoint3d_dotProduct (&normal0, &normal1));
+    normal0.CrossProductToPoints (*pFoldPoint0, *pFoldPoint1, *pWingPoint0);
+    normal1.CrossProductToPoints (*pFoldPoint1, *pFoldPoint0, *pWingPoint1);
+    normal0.Normalize ();
+    normal1.Normalize ();
+    return fabs (normal0.DotProduct (normal1));
     }
 
 /*----------------------------------------------------------------------+
@@ -582,21 +582,21 @@ MTGNodeId       nodeAId
             double mag00, mag01, mag10, mag11;
             double mu0, mu1;
             /* Compute Area (times 2) in each configuration */
-            bsiDPoint3d_crossProduct3DPoint3d (&cross00, &xyzAE, &xyzBD, &xyzC);
-            bsiDPoint3d_crossProduct3DPoint3d (&cross01, &xyzAE, &xyzBD, &xyzF);
-            bsiDPoint3d_crossProduct3DPoint3d (&cross10, &xyzC, &xyzF, &xyzAE);
-            bsiDPoint3d_crossProduct3DPoint3d (&cross11, &xyzC, &xyzF, &xyzBD);
-            mag00 = bsiDPoint3d_magnitude (&cross00);
-            mag01 = bsiDPoint3d_magnitude (&cross01);
-            mag10 = bsiDPoint3d_magnitude (&cross10);
-            mag11 = bsiDPoint3d_magnitude (&cross11);
+            cross00.CrossProductToPoints (xyzAE, xyzBD, xyzC);
+            cross01.CrossProductToPoints (xyzAE, xyzBD, xyzF);
+            cross10.CrossProductToPoints (xyzC, xyzF, xyzAE);
+            cross11.CrossProductToPoints (xyzC, xyzF, xyzBD);
+            mag00 = cross00.Magnitude ();
+            mag01 = cross01.Magnitude ();
+            mag10 = cross10.Magnitude ();
+            mag11 = cross11.Magnitude ();
             mu0 = mag00 + mag01;
             mu1 = mag10 + mag11;
             /* Multiply by length to penalize long diagonals */
             if (s_penalizeLength)
                 {
-                mu0 *= bsiDPoint3d_distance (&xyzAE, &xyzBD);
-                mu1 *= bsiDPoint3d_distance (&xyzC, &xyzF);
+                mu0 *= xyzAE.Distance (xyzBD);
+                mu1 *= xyzC.Distance (xyzF);
                 }
             swap_required = mu1 < mu0;
             }
@@ -795,7 +795,7 @@ MTGNodeId       nodeAId
 
 /*======================================================================+
 |                                                                       |
-|   Major Public Code Section                                           |
+|   MajorPublic Code Section                                           |
 |                                                                       |
 +======================================================================*/
 /*---------------------------------------------------------------------------------**//**

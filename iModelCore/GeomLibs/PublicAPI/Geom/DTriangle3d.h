@@ -170,4 +170,195 @@ ValidatedTransform LocalToWorldTransform () const;
 //! Return a the inverse of the LocalToWorldTransform.
 ValidatedTransform WorldToLocalTransform () const;
 };
+
+/*----------------------------------------------------------------------------+
+| BARYCENTRIC COORDINATE FUNCTIONS:
+|
+| For a given triangle T with vertices v0, v1, v2, every point q in the plane
+| of T is uniquely represented by its barycentric coordinates (b0, b1, b2)
+| relative to T:
+|
+| q = b0 * v0 + b1 * v1 + b2 * v2,
+| 1 = b0 + b1 + b2.
+|
++----------------------------------------------------------------------------*/
+
+/*-----------------------------------------------------------------*//**
+* @description Sets this instance to the barycentric coordinates of pPoint
+* relative to the triangle (pVertex0, pVertex1, pVertex2) in the xy-plane.
+*
+* @instance pInstance   <= barycentric coordinates of pPoint relative to T
+* @param pPoint         => point in plane
+* @param pVertex0       => vertex 0 of triangle T
+* @param pVertex1       => vertex 1 of triangle T
+* @param pVertex2       => vertex 2 of triangle T
+* @see bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
+* @see bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
+* @group "DPoint3d Barycentric"
+* @return true if and only if the area of T is sufficiently large.
+* @bsihdr                                                                       DavidAssaf      10/98
++---------------+---------------+---------------+---------------+------*/
+Public  bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
+
+(
+DPoint3dP pInstance,
+DPoint2dCP pPoint,
+DPoint2dCP pVertex0,
+DPoint2dCP pVertex1,
+DPoint2dCP pVertex2
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Sets this instance to the barycentric coordinates of pPoint
+* relative to the triangle (pVertex0, pVertex1, pVertex2) in the xy-plane.
+*
+* @instance pInstance   <= barycentric coordinates of pPoint relative to T
+* @param pPoint         => point in plane
+* @param pVertex0       => vertex 0 of triangle T
+* @param pVertex1       => vertex 1 of triangle T
+* @param pVertex2       => vertex 2 of triangle T
+* @see bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
+* @see bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
+* @group "DPoint3d Barycentric"
+* @return true if and only if the area of T is sufficiently large.
+* @bsihdr                                                                       DavidAssaf      10/98
++---------------+---------------+---------------+---------------+------*/
+Public  GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
+(
+DPoint3dR uvw,
+DPoint3dR dUVWdX,
+DPoint3dR dUVWdY,
+double   &area,
+DPoint2dCR point,
+DPoint2dCR vertex0,
+DPoint2dCR vertex1,
+DPoint2dCR vertex2
+);
+
+/*-----------------------------------------------------------------*//**
+* Given a space point spacePontP, finds the closest point on the plane
+* containing the 3 points in pPlanePoint.  Stores the closest point
+* coordinates in pClosePoint, and the s and t coordinates (as defined
+* in bsiGeom_evaluateSkewedPlane) in sP and tP.
+*
+* @param pClosePoint <= point on plane.  May be null pointer
+* @param sP <= parametric coordinate on s axis
+* @param tP <= parametric coordinate on t axis
+* @param pPlanePoint => origin, s=1, and t=1 points
+* @param pSpacePoint => point to be projected
+* @return true unless the plane points are collinear
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public  GEOMDLLIMPEXP bool     bsiGeom_closestPointOnSkewedPlane
+
+(
+DPoint3dP pClosePoint,
+double          *sP,
+double          *tP,
+DPoint3dCP pPlanePoint,
+DPoint3dCP pSpacePoint
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Compute the minimum distance from a point to a triangle.
+* @instance pSpacePoint   <= point in space
+* @param pVertex0       => vertex of T
+* @param pVertex1       => vertex of T
+* @param pVertex2       => vertex of T
+* @param pClosePoint    <= projection of space point onto plane of triangle
+* @param pBCoords       <= barycentric coordinates of closest point
+* @return minimum distance
+* @group "DPoint3d Barycentric"
+* @bsihdr                                       EarlinLutz      10/04
++---------------+---------------+---------------+---------------+------*/
+Public  GEOMDLLIMPEXP double bsiDPoint3d_minDistToTriangle
+
+(
+DPoint3dCP pSpacePoint,
+DPoint3dCP pVertex0,
+DPoint3dCP pVertex1,
+DPoint3dCP pVertex2,
+DPoint3dP pClosePoint,
+DPoint3dP pBoundedUVW,
+DPoint3dP pUnboundedUVW
+);
+
+
+/*-----------------------------------------------------------------*//**
+* @description Sets this instance to the barycentric coordinates of pPoint
+* relative to the triangle (pOrigin, pVector1-pOrigin, pVector2-pOrigin)
+* in the xy-plane.
+*
+* @instance pInstance   <= barycentric coordinates of pPoint relative to T
+* @param pArea          <= area of triangle.
+* @param pPoint         => point in plane
+* @param pOrigin        => vertex of triangle T (may be null for origin)
+* @param pVector1       => side vector of T (emanating from pOrigin)
+* @param pVector2       => side vector of T (emanating from pOrigin)
+* @see bsiDPoint3d_barycentricFromDPoint2dTriangle
+* @see bsiDPoint2d_fromBarycentricAndDPoint2dTriangleVectors
+* @group "DPoint3d Barycentric"
+* @return true if and only if the area of T is sufficiently large.
+* @bsihdr                                      DavidAssaf      10/98
++---------------+---------------+---------------+---------------+------*/
+Public  GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
+
+(
+DPoint3dP pInstance,
+DPoint2dCP pPoint,
+DPoint2dCP pOrigin,
+DPoint2dCP pVector1,
+DPoint2dCP pVector2
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Sets this instance to the barycentric coordinates of pPoint
+* relative to the triangle (pVertex0, pVertex1, pVertex2) in space.
+* Points p and r in space have the same barycentric coordinates relative to
+* T if and only if they project to the same point q in the plane of T;
+* then their barycentric coordinates relative to T are those of q.
+*
+* @instance pInstance   <= barycentric coordinates of pPoint relative to T
+* @param pPoint         => point in space
+* @param pVertex0       => vertex of triangle T
+* @param pVertex1       => vertex of triangle T
+* @param pVertex2       => vertex of triangle T
+* @see bsiDPoint3d_barycentricFromDPoint2dTriangle
+* @see bsiDPoint3d_fromBarycentricAndDPoint3dTriangle
+* @return true if and only if the area of T is sufficiently large.
+* @group "DPoint3d Barycentric"
+* @bsihdr                                                                       DavidAssaf      10/98
++---------------+---------------+---------------+---------------+------*/
+Public  GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint3dTriangle
+
+(
+DPoint3dP pInstance,
+DPoint3dCP pPoint,
+DPoint3dCP pVertex0,
+DPoint3dCP pVertex1,
+DPoint3dCP pVertex2
+);
+/*-----------------------------------------------------------------*//**
+* @description Sets this instance to the point in the plane with the given barycentric
+* coordinates relative to triangle T (pVertex0, pVertex1, pVertex2).
+*
+* @instance pInstance   <= point with given barycoords relative to T
+* @param pBaryCoords    => barycentric coordinates relative to T
+* @param pVertex0       => vertex 0 of triangle T
+* @param pVertex1       => vertex 1 of triangle T
+* @param pVertex2       => vertex 2 of triangle T
+* @see bsiDPoint3d_barycentricFromDPoint2dTriangle
+* @group "DPoint2d Barycentric"
+* @bsihdr                                                               DavidAssaf      10/98
++---------------+---------------+---------------+---------------+------*/
+Public  GEOMDLLIMPEXP void bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
+
+(
+DPoint2dP pInstance,
+DPoint3dCP pBaryCoords,
+DPoint2dCP pVertex0,
+DPoint2dCP pVertex1,
+DPoint2dCP pVertex2
+);
+
 END_BENTLEY_GEOMETRY_NAMESPACE

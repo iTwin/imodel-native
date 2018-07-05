@@ -123,9 +123,9 @@ DConic4dCP pSource
        )
         {
         funcStat = true;
-        bsiDPoint3d_getXYZ (&pEllipse->center,   &normalizedSource.center  );
-        bsiDPoint3d_getXYZ (&pEllipse->vector0,  &normalizedSource.vector0 );
-        bsiDPoint3d_getXYZ (&pEllipse->vector90, &normalizedSource.vector90);
+        pEllipse->center.XyzOf (normalizedSource.center);
+        pEllipse->vector0.XyzOf (normalizedSource.vector0);
+        pEllipse->vector90.XyzOf (normalizedSource.vector90);
         pEllipse->start = normalizedSource.start;
         pEllipse->sweep = normalizedSource.sweep;
         }
@@ -498,16 +498,16 @@ Public GEOMDLLIMPEXP void bsiDConic4d_initFromCenterNormalRadius
 (
 DConic4dP pConic,
 DPoint3dCP pCenter,
-DPoint3dCP pNormal,
+DVec3dCP pNormal,
 double          radius
 )
 
     {
-    DPoint3d uVector, vVector, wVector;
+    DVec3d uVector, vVector, wVector;
 
     if (pNormal)
         {
-        bsiDPoint3d_getNormalizedTriad(pNormal, &uVector, &vVector, &wVector);
+        pNormal->GetNormalizedTriad (uVector, vVector, wVector);
         uVector.Scale (uVector, radius);
         vVector.Scale (vVector, radius);
         }
@@ -834,13 +834,13 @@ double      theta
         bsiDPoint4d_weightedDifference (&D2, &ddX, &X);
         bsiDPoint4d_weightedDifference (&D1, &dX, &X);
         bsiDPoint4d_add2ScaledDPoint4d (&Z, NULL, &D2, w2, &D1, -2.0 * wdw);
-        bsiDPoint3d_getScaledXYZ (pddX, &Z, divw4);
+        *pddX = Z. GetScaledXYZ (divw4);
 
         if (pdX)
-            bsiDPoint3d_getScaledXYZ (pdX, &D1, divw2);
+            *pdX = D1. GetScaledXYZ (divw2);
 
         if (pX)
-            bsiDPoint3d_getScaledXYZ (pX, &X, divw);
+            *pX = X. GetScaledXYZ (divw);
         }
     else if (pdX)
         {
@@ -851,10 +851,10 @@ double      theta
 
         bsiDPoint4d_weightedDifference (&D1, &dX, &X);
 
-        bsiDPoint3d_getScaledXYZ (pdX, &D1, divw2);
+        *pdX = D1. GetScaledXYZ (divw2);
 
         if (pX)
-            bsiDPoint3d_getScaledXYZ (pX, &X, divw);
+            *pX = X. GetScaledXYZ (divw);
 
         }
     else if (pX)
@@ -2076,12 +2076,9 @@ DConic4dCP pConic,
 DEllipse3dP pTangentEllipse
 )
     {
-    bsiDPoint3d_weightedDifference (&pTangentEllipse->center,
-                                     &pConic->vector90, &pConic->vector0);
-    bsiDPoint3d_weightedDifference (&pTangentEllipse->vector0,
-                                     &pConic->vector90, &pConic->center);
-    bsiDPoint3d_weightedDifference (&pTangentEllipse->vector90,
-                                     &pConic->center, &pConic->vector0);
+    pTangentEllipse->center.WeightedDifferenceOf(pConic->vector90, pConic->vector0);
+    pTangentEllipse->vector0.WeightedDifferenceOf(pConic->vector90, pConic->center);
+    pTangentEllipse->vector90.WeightedDifferenceOf(pConic->center, pConic->vector0);
     pTangentEllipse->start = pConic->start;
     pTangentEllipse->sweep = pConic->sweep;
     }
@@ -2109,9 +2106,9 @@ DEllipse3dP pVectorEllipse,
 DPoint4dCP pEyePoint
 )
     {
-    bsiDPoint3d_weightedDifference (&pVectorEllipse->center, &pConic->center, pEyePoint);
-    bsiDPoint3d_weightedDifference (&pVectorEllipse->vector0, &pConic->vector0, pEyePoint);
-    bsiDPoint3d_weightedDifference (&pVectorEllipse->vector90, &pConic->vector90, pEyePoint);
+    pVectorEllipse->center.WeightedDifferenceOf(pConic->center, *pEyePoint);
+    pVectorEllipse->vector0.WeightedDifferenceOf(pConic->vector0, *pEyePoint);
+    pVectorEllipse->vector90.WeightedDifferenceOf(pConic->vector90, *pEyePoint);
     pVectorEllipse->start = pConic->start;
     pVectorEllipse->sweep = pConic->sweep;
     }
@@ -2656,7 +2653,7 @@ RotMatrixCP pB1
             about whether there is a divide by zero if you normalize from the
             nominal solution vector */
         if (F.z < 0.0)
-            bsiDPoint3d_negateInPlace (&F);
+            F.Negate();
         angle0[i] = Angle::Atan2 (F.y, F.x);
         c0[i] = cos (angle0[i]);
         s0[i] = sin (angle0[i]);
@@ -4206,7 +4203,7 @@ double aww
                 0.5 * axw, 0.5 * ayw, aww);
     bsiRotMatrix_symmetricEigensystem (&matrixQ, &lambda, &matrixA);
     absLambda.Init ( fabs (lambda.x), fabs (lambda.y), fabs(lambda.z));
-    lambdaScale = bsiDPoint3d_maxAbs (&absLambda);
+    lambdaScale = absLambda.MaxAbs ();
     tol = s_relTol * lambdaScale;
 
     pLambda = (double*)&lambda;

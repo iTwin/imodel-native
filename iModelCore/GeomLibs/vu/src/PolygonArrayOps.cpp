@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |     $Source: vu/src/PolygonArrayOps.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 
@@ -51,7 +51,7 @@ void PolygonVectorOps::ReverseEachPolygon (TaggedPolygonVectorR loops)
     {
     size_t n = loops.size ();
     for (size_t i = 0; i < n; i++)
-        bsiDPoint3d_reverseArrayInPlace (loops[i].GetDataP (), (int)loops[i].GetPointSize ());
+        DPoint3dOps::Reverse (loops[i].GetPointsR ());
     }
 // On return, polygons are sorted into outer/inner blocks.
 void PolygonVectorOps::SortAndMarkContainment (TaggedPolygonVectorR loops, DVec3dCR planeNormal, bvector<size_t>&lastIndexInBlock)

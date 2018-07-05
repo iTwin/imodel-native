@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/interfac/dpoint3dconvertedtodvec3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -118,8 +118,8 @@ DPoint3dCP pVector1,
 DPoint3dCP pVector2
 )
     {
-    bsiDPoint3d_crossProduct( pCrossProduct, pVector1, pVector2 );
-    return bsiDPoint3d_normalizeInPlace( pCrossProduct );
+    pCrossProduct->CrossProduct (*pVector1, *pVector2);
+    return pCrossProduct->Normalize ();
     }
 
 
@@ -145,11 +145,11 @@ double      productLength
 )
     {
     double length;
-    bsiDPoint3d_crossProduct( pProduct, pVector1, pVector2 );
-    length = bsiDPoint3d_magnitude (pProduct);
+    pProduct->CrossProduct (*pVector1, *pVector2);
+    length = pProduct->Magnitude ();
     if (length != 0)
         {
-        bsiDPoint3d_scale (pProduct, pProduct, productLength / length);
+        pProduct->Scale (*pProduct, productLength / length);
         }
     return length;
     }
@@ -177,14 +177,14 @@ DPoint3dCP pVector2
     {
     double length;
     double aa, bb, c;
-    bsiDPoint3d_crossProduct( pProduct, pVector1, pVector2 );
-    length = bsiDPoint3d_magnitude (pProduct);
-    aa = bsiDPoint3d_magnitudeSquared (pVector1);
-    bb = bsiDPoint3d_magnitudeSquared (pVector2);
+    pProduct->CrossProduct (*pVector1, *pVector2);
+    length = pProduct->Magnitude ();
+    aa = pVector1->MagnitudeSquared ();
+    bb = pVector2->MagnitudeSquared ();
     if (length != 0)
         {
         c = sqrt (sqrt (aa * bb));
-        bsiDPoint3d_scale (pProduct, pProduct, c / length);
+        pProduct->Scale (*pProduct, c / length);
         }
     return length;
     }
@@ -283,7 +283,7 @@ DPoint3dP pZAxis
 )
     {
     DPoint3d      vector;
-    double      length = bsiDPoint3d_magnitude (pGivenAxis);
+    double      length = pGivenAxis->Magnitude ();
     double      zTest = length / 64.0;
     bool      boolStat = true;
     *pZAxis = *pGivenAxis;
@@ -308,14 +308,14 @@ DPoint3dP pZAxis
         vector.z = 1.0;
         }
 
-    bsiDPoint3d_crossProduct (pXAxis, &vector, pZAxis);
-    bsiDPoint3d_crossProduct (pYAxis, pZAxis, pXAxis);
-    bsiDPoint3d_normalizeInPlace (pXAxis);
-    bsiDPoint3d_normalizeInPlace (pYAxis);
-    bsiDPoint3d_normalizeInPlace (pZAxis);
-    bsiDPoint3d_scale (pXAxis, pXAxis, length);
-    bsiDPoint3d_scale (pYAxis, pYAxis, length);
-    bsiDPoint3d_scale (pZAxis, pZAxis, length);
+    pXAxis->CrossProduct (vector, *pZAxis);
+    pYAxis->CrossProduct (*pZAxis, *pXAxis);
+    pXAxis->Normalize ();
+    pYAxis->Normalize ();
+    pZAxis->Normalize ();
+    pXAxis->Scale (*pXAxis, length);
+    pYAxis->Scale (*pYAxis, length);
+    pZAxis->Scale (*pZAxis, length);
 
     return  boolStat;
     }
@@ -344,7 +344,7 @@ DPoint3dP pZAxis
 )
     {
     DPoint3d      vector;
-    double      length = bsiDPoint3d_magnitude( pGivenAxis );
+    double      length = pGivenAxis->Magnitude ();
     double      zTest = length / 64.0;
     bool      boolStat = true;
     *pZAxis = *pGivenAxis;
@@ -369,11 +369,11 @@ DPoint3dP pZAxis
         vector.z = 1.0;
         }
 
-    bsiDPoint3d_crossProduct (pXAxis, &vector, pZAxis);
-    bsiDPoint3d_crossProduct (pYAxis, pZAxis, pXAxis);
-    bsiDPoint3d_normalizeInPlace (pXAxis);
-    bsiDPoint3d_normalizeInPlace (pYAxis);
-    bsiDPoint3d_normalizeInPlace (pZAxis);
+    pXAxis->CrossProduct (vector, *pZAxis);
+    pYAxis->CrossProduct (*pZAxis, *pXAxis);
+    pXAxis->Normalize ();
+    pYAxis->Normalize ();
+    pZAxis->Normalize ();
 
     return  boolStat;
     }
@@ -479,8 +479,8 @@ DPoint3dCP pTarget,
 DPoint3dCP pOrigin
 )
     {
-    bsiDPoint3d_subtractDPoint3dDPoint3d (pVector, pTarget, pOrigin);
-    return bsiDPoint3d_normalizeInPlace (pVector);
+    pVector->DifferenceOf (*pTarget, *pOrigin);
+    return pVector->Normalize ();
     }
 
 /* VBSUB(Point3dAngleBetweenVectors) */
@@ -504,10 +504,10 @@ DPoint3dCP pVector2
     {
     DPoint3d   crossProd;
     double cross, dot;
-    bsiDPoint3d_crossProduct (&crossProd, pVector1, pVector2);
-    cross   = bsiDPoint3d_magnitude (&crossProd);
-    dot     = bsiDPoint3d_dotProduct (pVector1, pVector2);
-    return  bsiTrig_atan2 (cross, dot);
+    crossProd.CrossProduct (*pVector1, *pVector2);
+    cross   = crossProd.Magnitude ();
+    dot     = pVector1->DotProduct (*pVector2);
+    return  Angle::Atan2 (cross, dot);
     }
 
 /* VBSUB(Point3dSmallerAngleBetweenUnorientedVectors) */
@@ -531,10 +531,10 @@ DPoint3dCP pVector2
     {
     DPoint3d   crossProd;
     double cross, dot;
-    bsiDPoint3d_crossProduct (&crossProd, pVector1, pVector2);
-    cross   = bsiDPoint3d_magnitude (&crossProd);
-    dot     = bsiDPoint3d_dotProduct (pVector1, pVector2);
-    return  bsiTrig_atan2 (cross, fabs (dot));
+    crossProd.CrossProduct (*pVector1, *pVector2);
+    cross   = crossProd.Magnitude ();
+    dot     = pVector1->DotProduct (*pVector2);
+    return  Angle::Atan2 (cross, fabs (dot));
     }
 
 /* VBSUB(Point3dIsVectorInSmallerSector) */
@@ -570,7 +570,7 @@ DPoint3dCP pVector1
 )
     {
     DPoint3d   cross01;
-    bsiDPoint3d_crossProduct (&cross01, pVector0, pVector1);
+    cross01.CrossProduct (*pVector0, *pVector1);
     return      bsiDPoint3d_tripleProduct (pVector0, pTestVector, &cross01) > 0.0
             &&  bsiDPoint3d_tripleProduct (pTestVector, pVector1, &cross01) > 0.0;
     }
@@ -601,17 +601,17 @@ DPoint3dCP pUpVector
     DPoint3d    cross01;
     double      dot;
 
-    bsiDPoint3d_crossProduct (&cross01, pVector0, pVector1);
+    cross01.CrossProduct (*pVector0, *pVector1);
 
-    if (bsiDPoint3d_pointEqual (NULL, &cross01))
+    if (cross01.Magnitude () < DoubleOps::SmallMetricDistance ())
         {
-        dot = bsiDPoint3d_dotProduct (pVector0, pVector1);
+        dot = pVector0->DotProduct (*pVector1);
         if (dot > 0.0)
             return false;
         }
 
     if (pUpVector)
-        dot = bsiDPoint3d_dotProduct (&cross01, pUpVector);
+        dot = cross01.DotProduct (*pUpVector);
     else
         dot = cross01.z;
 
@@ -639,21 +639,21 @@ DPoint3dCP pVector0,
 DPoint3dCP pVector1
 )
     {
-    double cross = bsiDPoint3d_crossProductXY (pVector0, pVector1);
+    double cross = pVector0->CrossProductXY (*pVector1);
 
     if (cross == 0.0)
         {
-        double dot   = bsiDPoint3d_dotProductXY (pVector0, pVector1);
+        double dot   = pVector0->DotProductXY (*pVector1);
         if (dot > 0.0)
             return false;
         }
 
     if (cross > 0.0)
-        return  bsiDPoint3d_crossProductXY (pVector0, pTestVector) > 0.0
-            &&  bsiDPoint3d_crossProductXY (pTestVector, pVector1) > 0.0;
+        return  pVector0->CrossProductXY (*pTestVector) > 0.0
+            &&  pTestVector->CrossProductXY (*pVector1) > 0.0;
     else
-        return  bsiDPoint3d_crossProductXY (pVector0, pTestVector) > 0.0
-            ||  bsiDPoint3d_crossProductXY (pTestVector, pVector1) > 0.0;
+        return  pVector0->CrossProductXY (*pTestVector) > 0.0
+            ||  pTestVector->CrossProductXY (*pVector1) > 0.0;
     }
 
 /* VBSUB(Point3dAngleBetweenVectorsXY) */
@@ -675,9 +675,9 @@ DPoint3dCP pVector2
 )
     {
     double cross, dot;
-    cross = bsiDPoint3d_crossProductXY (pVector1, pVector2);
-    dot     = bsiDPoint3d_dotProductXY (pVector1, pVector2);
-    return  bsiTrig_atan2 (cross, dot);
+    cross = pVector1->CrossProductXY (*pVector2);
+    dot     = pVector1->DotProductXY (*pVector2);
+    return  Angle::Atan2 (cross, dot);
     }
 
 /* VBSUB(Point3dSmallerAngleBetweenUnorientedVectorsXY) */
@@ -700,9 +700,9 @@ DPoint3dCP pVector2
 )
     {
     double cross, dot;
-    cross = bsiDPoint3d_crossProductXY (pVector1, pVector2);
-    dot     = bsiDPoint3d_dotProductXY (pVector1, pVector2);
-    return  bsiTrig_atan2 (fabs (cross), fabs(dot));
+    cross = pVector1->CrossProductXY (*pVector2);
+    dot     = pVector1->DotProductXY (*pVector2);
+    return  Angle::Atan2 (fabs (cross), fabs(dot));
     }
 
 
@@ -785,12 +785,12 @@ DPoint3dCP pOrientationVector
     {
     DPoint3d   crossProd;
     double cross, dot, theta;
-    bsiDPoint3d_crossProduct (&crossProd, pVector1, pVector2);
-    cross   = bsiDPoint3d_magnitude (&crossProd);
-    dot     = bsiDPoint3d_dotProduct (pVector1, pVector2);
-    theta   = bsiTrig_atan2 (cross, dot);
+    crossProd.CrossProduct (*pVector1, *pVector2);
+    cross   = crossProd.Magnitude ();
+    dot     = pVector1->DotProduct (*pVector2);
+    theta   = Angle::Atan2 (cross, dot);
 
-    if (bsiDPoint3d_dotProduct (&crossProd, pOrientationVector) < 0.0)
+    if (crossProd.DotProduct (*pOrientationVector) < 0.0)
         return  -theta;
     else
         return  theta;
@@ -817,7 +817,7 @@ DPoint3dCP pPlaneNormal
 )
     {
     DPoint3d      projection1, projection2;
-    double      square = bsiDPoint3d_dotProduct (pPlaneNormal, pPlaneNormal);
+    double      square = pPlaneNormal->DotProduct (*pPlaneNormal);
     double      projectionFactor1, projectionFactor2;
     double      factor;
 
@@ -826,11 +826,11 @@ DPoint3dCP pPlaneNormal
 
     factor = 1.0 / square;
 
-    projectionFactor1 = - bsiDPoint3d_dotProduct (pVector1, pPlaneNormal) * factor;
-    projectionFactor2 = - bsiDPoint3d_dotProduct (pVector2,  pPlaneNormal) * factor;
+    projectionFactor1 = - pVector1->DotProduct (*pPlaneNormal) * factor;
+    projectionFactor2 = - pVector2->DotProduct (*pPlaneNormal) * factor;
 
-    bsiDPoint3d_addScaledDPoint3d (&projection1, pVector1, pPlaneNormal, projectionFactor1);
-    bsiDPoint3d_addScaledDPoint3d (&projection2, pVector2, pPlaneNormal, projectionFactor2);
+    projection1.SumOf (*pVector1, *pPlaneNormal, projectionFactor1);
+    projection2.SumOf (*pVector2, *pPlaneNormal, projectionFactor2);
 
     return  bsiDPoint3d_signedAngleBetweenVectors (&projection1, &projection2, pPlaneNormal);
     }
@@ -880,7 +880,7 @@ DPoint4dCP  pTarget2
     DPoint3d   U, V;
     bsiDPoint3d_weightedDifference (&U, pTarget1, pBasePoint);
     bsiDPoint3d_weightedDifference (&V, pTarget2, pBasePoint);
-    bsiDPoint3d_crossProduct (pProduct, &U, &V);
+    pProduct->CrossProduct (U, V);
     }
 
 /* VBSUB(Point3dMagnitudeSquared) */
@@ -1031,16 +1031,16 @@ double      eps2
     double mag2, dot;
 
     if (dot0 <= 0.0)
-        dot0 = bsiDPoint3d_magnitudeSquared (pNormal0);
+        dot0 = pNormal0->MagnitudeSquared ();
     if (dot1 <= 0.0)
-        dot1 = bsiDPoint3d_magnitudeSquared (pNormal1);
+        dot1 = pNormal1->MagnitudeSquared ();
 
     if (0.0 == dot0 && 0.0 == dot1)
         return true;
 
-    bsiDPoint3d_crossProduct (&cross, pNormal0, pNormal1);
-    mag2 = bsiDPoint3d_magnitudeSquared (&cross);
-    dot = bsiDPoint3d_dotProduct (pNormal0, pNormal1);
+    cross.CrossProduct (*pNormal0, *pNormal1);
+    mag2 = cross.MagnitudeSquared ();
+    dot = pNormal0->DotProduct (*pNormal1);
 
     return ((mag2 <= eps2 * dot0 * dot1) && (dot > 0.0)) ? true : false;
     }
@@ -1282,7 +1282,7 @@ DPoint3dP pUnitVector,
 DPoint3dCP pVector
 )
     {
-    bsiDPoint3d_normalize (pUnitVector, pVector);
+    pUnitVector->Normalize (*pVector);
     }
 
 
@@ -1304,12 +1304,12 @@ DPoint3dCP pVector2
 )
     {
     DPoint3d      vecC;
-    double      a2 = bsiDPoint3d_dotProduct (pVector1, pVector1);
-    double      b2 = bsiDPoint3d_dotProduct (pVector2, pVector2);
+    double      a2 = pVector1->DotProduct (*pVector1);
+    double      b2 = pVector2->DotProduct (*pVector2);
     double      cross;
     double      eps = bsiTrig_smallAngle(); /* small angle tolerance (in radians) */
-    bsiDPoint3d_crossProduct (&vecC, pVector1, pVector2);
-    cross = bsiDPoint3d_magnitudeSquared (&vecC);
+    vecC.CrossProduct (*pVector1, *pVector2);
+    cross = vecC.MagnitudeSquared ();
 
     /* a2,b2,c2 are squared lengths of respective vectors */
     /* c2 = sin^2(theta) * a2 * b2 */
@@ -1336,9 +1336,9 @@ DPoint3dCP pVector1,
 DPoint3dCP pVector2
 )
     {
-    double      aa = bsiDPoint3d_dotProduct (pVector1, pVector1);
-    double      bb = bsiDPoint3d_dotProduct (pVector2, pVector2);
-    double      ab = bsiDPoint3d_dotProduct (pVector1, pVector2);
+    double      aa = pVector1->DotProduct (*pVector1);
+    double      bb = pVector2->DotProduct (*pVector2);
+    double      ab = pVector1->DotProduct (*pVector2);
     double      eps = bsiTrig_smallAngle();
 
     return  ab * ab <= eps * eps * aa * bb;
@@ -1362,13 +1362,13 @@ double      tolerance
 )
     {
     DPoint3d    cross;
-    double      a2 = bsiDPoint3d_dotProduct (pVector1, pVector1);
-    double      b2 = bsiDPoint3d_dotProduct (pVector2, pVector2);
+    double      a2 = pVector1->DotProduct (*pVector1);
+    double      b2 = pVector2->DotProduct (*pVector2);
     double      c2;
 
-    bsiDPoint3d_crossProduct (&cross, pVector1, pVector2);
+    cross.CrossProduct (*pVector1, *pVector2);
 
-    c2 = bsiDPoint3d_dotProduct (&cross, &cross);
+    c2 = cross.DotProduct (cross);
 
     /* a2,b2,c2 are squared lengths of respective vectors */
     /* c2 = sin^2(theta) * a2 * b2 */
@@ -1395,9 +1395,9 @@ DPoint3dCP  pVector2,
 double      tolerance
 )
     {
-    double  aa = bsiDPoint3d_dotProduct (pVector1, pVector1);
-    double  bb = bsiDPoint3d_dotProduct (pVector2, pVector2);
-    double  ab = bsiDPoint3d_dotProduct (pVector1, pVector2);
+    double  aa = pVector1->DotProduct (*pVector1);
+    double  bb = pVector2->DotProduct (*pVector2);
+    double  ab = pVector1->DotProduct (*pVector2);
 
     return  ab * ab <= tolerance * tolerance * aa * bb;
     }
@@ -1422,7 +1422,7 @@ double      denominator
     {
     static double s_relTol = 1.0e-12;
     double absD = fabs (denominator);
-    double tol = s_relTol * bsiDPoint3d_maxAbs (pVector);
+    double tol = s_relTol * pVector->MaxAbs ();
 
     if (absD <= tol)
         {

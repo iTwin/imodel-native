@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdpoint4d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1174,6 +1174,14 @@ bool DPoint4d::GetProjectedXYZ (DPoint3dR rPoint) const
         rPoint.z = this->z * a;
         }
     return result;
+    }
+
+/*-----------------------------------------------------------------*//**
+* return scaled x,y,z
++----------------------------------------------------------------------*/
+DPoint3d DPoint4d::GetScaledXYZ (double scale) const
+    {
+    return DPoint3d::From (scale * x, scale * y, scale * z);
     }
 
 

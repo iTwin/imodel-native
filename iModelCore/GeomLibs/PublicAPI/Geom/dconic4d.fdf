@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/dconic4d.fdf $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -261,7 +261,7 @@ Public GEOMDLLIMPEXP void bsiDConic4d_initFromCenterNormalRadius
 (
 DConic4dP pConic,
 DPoint3dCP pCenter,
-DPoint3dCP pNormal,
+DVec3dCP pNormal,
 double          radius
 );
 

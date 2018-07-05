@@ -2,7 +2,7 @@
 |
 |     $Source: vu/src/vugrid.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -372,7 +372,7 @@ VuP         pNode0
     //VuP pNode1 = vu_fsucc (pNode0);
     vu_getDPoint3d (&uv0, pNode0);
     vu_getPeriodicDPoint3dDXYZ (&delta, pGC->pGraph, pNode0);
-    bsiDPoint3d_addDPoint3dDPoint3d (&uv1, &uv0, &delta);
+    uv1.SumOf (uv0, delta);
 
     /* slope components normalized to grid size */
     dx = fabs (delta.x) / pGC->strideData[0].m_da;

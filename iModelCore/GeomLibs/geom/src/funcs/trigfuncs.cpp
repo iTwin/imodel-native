@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/trigfuncs.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -128,7 +128,7 @@ double  defaultRatio
     {
     double numerator   =  a - a0;
     double denominator = a1 - a0;
-    return bsiTrig_safeDivide (pRatio, numerator, denominator, defaultRatio);
+    return DoubleOps::SafeDivide (*pRatio, numerator, denominator, defaultRatio);
     }
 
 
@@ -232,12 +232,12 @@ DPoint3dP pXYZ
 )
 
     {
-    double r = bsiDPoint3d_magnitude (pXYZ);
+    double r = pXYZ->Magnitude ();
     double rho;
     double theta, phi;
     if (r == 0.0)
         {
-        bsiDPoint3d_zero (pSphericalPoint);
+        pSphericalPoint->Zero ();
         }
     else
         {
@@ -251,7 +251,7 @@ DPoint3dP pXYZ
             theta = atan2 (pXYZ->y, pXYZ->x);
             }
         phi = atan2 (pXYZ->z, rho);
-        bsiDPoint3d_setXYZ (pSphericalPoint, theta, phi, r);
+        pSphericalPoint->Init ( theta, phi, r);
         }
     return true;
     }
@@ -392,7 +392,7 @@ double b,
 DPoint3dCP pPoint
 )
     {
-    double c = bsiDPoint3d_maxAbs (pPoint);
+    double c = pPoint->MaxAbs ();
     return bsiTrig_tolerancedComparisonWithReferenceDouble (a, b, c);
     }
 
@@ -487,7 +487,7 @@ DPoint3dCP pPoint,
 double b
 )
     {
-    double abs0 = bsiDPoint3d_maxAbs (pPoint);
+    double abs0 = pPoint->MaxAbs ();
     double abs1 = fabs (b);
     return (abs0 > abs1) ? abs0 : abs1;
     }
@@ -504,8 +504,8 @@ DPoint3dCP pPoint0,
 DPoint3dCP pPoint1
 )
     {
-    double abs0 = bsiDPoint3d_maxAbs (pPoint0);
-    double abs1 = bsiDPoint3d_maxAbs (pPoint1);
+    double abs0 = pPoint0->MaxAbs ();
+    double abs1 = pPoint1->MaxAbs ();
     return (abs0 > abs1) ? abs0 : abs1;
     }
 
@@ -522,8 +522,8 @@ DPoint3dCP pPoint1,
 double b
 )
     {
-    double abs0 = bsiDPoint3d_maxAbs (pPoint0);
-    double abs1 = bsiDPoint3d_maxAbs (pPoint1);
+    double abs0 = pPoint0->MaxAbs ();
+    double abs1 = pPoint1->MaxAbs ();
     double abs2 = fabs (b);
 
     if (abs0 >= abs1)
@@ -825,7 +825,7 @@ double startAngle,
 double endAngle
 )
     {
-    return bsiTrig_angleInSweep (testAngle, startAngle, endAngle - startAngle);
+    return Angle::InSweepAllowPeriodShift (testAngle, startAngle, endAngle - startAngle);
     }
 
 static double s_relTol = 1.0e-12;
@@ -1103,9 +1103,9 @@ double sweep
         }
 
 /*---------------------------------------------------------------------------------**//**
-* Deprecated function -- use bsiTrig_angleInSweep.
+* Deprecated function -- use Angle::InSweepAllowPeriodShift.
 * WARNING-- this function is incorrectly typed as a double.  The original bsiRange1d_angleInSweep,
-*  and the current bsiTrig_angleInSweep, are bool.  It's here so your old code can be
+*  and the current Angle::InSweepAllowPeriodShift, are bool.  It's here so your old code can be
 *  compiled, but please change over.
 * @param    theta => angle to test
 * @param    start => start of sweep range
@@ -1120,7 +1120,7 @@ double start,
 double sweep
 )
         {
-        return bsiTrig_angleInSweep (theta, start, sweep);
+        return Angle::InSweepAllowPeriodShift (theta, start, sweep);
         }
 
 /*----------------------------------------------------------------------+
@@ -1176,8 +1176,8 @@ bool            applySweep      /* => false to suppress use of angle range. */
         {
         for (i = 0; i < numPole; i++)
             {
-            angle = bsiTrig_atan2 (sine[i], cosine[i]);
-            if (!applySweep || bsiTrig_angleInSweep (angle, theta0, sweep))
+            angle = Angle::Atan2 (sine[i], cosine[i]);
+            if (!applySweep || Angle::InSweepAllowPeriodShift (angle, theta0, sweep))
                 {
                 numerator   = x0 + x1 * cosine[i] + x2 * sine[i];
                 denominator = w0 + w1 * cosine[i] + w2 * sine[i];

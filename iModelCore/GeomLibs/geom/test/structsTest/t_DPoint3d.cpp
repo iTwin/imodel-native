@@ -1394,7 +1394,7 @@ TEST(DPoint3d, SetToZero)
     {
     DPoint3d point;
     point = DPoint3d::From(2.3, 4.2, 4.4);
-    bsiDPoint3d_zero(&point);
+    point.Zero ();
     Check::ExactDouble(0, point.x);
     Check::ExactDouble(0, point.y);
     Check::ExactDouble(0, point.z);

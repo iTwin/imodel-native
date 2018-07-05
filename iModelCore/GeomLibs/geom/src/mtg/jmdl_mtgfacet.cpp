@@ -452,7 +452,7 @@ int             numXYZ
     double tol = s_relTol * faceSize;
     DPoint3d delta;
     delta.DifferenceOf (pXYZArray[0], pXYZArray[numXYZ - 1]);
-    edgeSize = bsiDPoint3d_maxAbs (&delta);
+    edgeSize = delta.MaxAbs ();
     /* Filter out doubled up final point. */
     if (   numXYZ > 1
         && edgeSize < tol)
@@ -1076,13 +1076,7 @@ MTGNodeId           nodeId
                 )
         && numVertex == 3)
         {
-        bsiDPoint3d_crossProduct3DPoint3d
-                    (
-                    pNormal,
-                    &xyz[0],
-                    &xyz[1],
-                    &xyz[2]
-                    );
+        pNormal->CrossProductToPoints (xyz[0], xyz[1], xyz[2]);
         return true;
         }
     pNormal->Zero ();
@@ -1516,7 +1510,7 @@ const MTGFacets *               pFacetHeader
                     }
                 else
                     {
-                    bsiDPoint3d_crossProduct3DPoint3d (&cross, &coords[0], &coords[1], &coords[2]);
+                    cross.CrossProductToPoints (coords[0], coords[1], coords[2]);
                     }
                 double dot = cross.DotProduct (storedNormal);
                 if (dot < 0.0)
@@ -2438,7 +2432,7 @@ double              *pVolume
                                         &point2, node2Id))
                 goto wrapup;
             vector2.DifferenceOf (point2, origin);
-            volume += bsiDPoint3d_tripleProduct (&vector0, &vector1, &vector2);
+            volume += vector0.TripleProduct (vector1, vector2);
             }
         }
     boolstat = true;
@@ -2806,7 +2800,7 @@ const DPoint3d  *pNormal
 
         if (pNormal)
             {
-            angle = bsiDPoint3d_signedAngleBetweenVectors (&rightEdge, &leftEdge, pNormal);
+            angle = rightEdge.SignedAngleTo (leftEdge, *pNormal);
             if (angle < 0.0)
                 {
                 angle = msGeomConst_pi - angle;
@@ -2814,7 +2808,7 @@ const DPoint3d  *pNormal
             }
         else
             {
-            angle = bsiDPoint3d_angleBetweenVectors (&rightEdge, &leftEdge);
+            angle = rightEdge.AngleTo (leftEdge);
             }
         }
     return angle;

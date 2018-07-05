@@ -87,8 +87,8 @@ double              relTol
 
     pGraph = &pFacetHeader->graphHdr;
 
-    bsiDPoint3d_setXYZ (&randomVector, 0.133333333334, 1.414213562373, 1.666666666667);
-    bsiDPoint3d_normalizeInPlace (&randomVector);
+    randomVector.Init ( 0.133333333334, 1.414213562373, 1.666666666667);
+    randomVector.Normalize ();
 
     // compute tolerances
     if (absTol <= 0.0)
@@ -117,7 +117,7 @@ double              relTol
 
         sortInfo.nodeId = currNodeId;
         sortInfo.pointIndex = currVertexId;
-        sortInfo.sortCoordinate = bsiDPoint3d_dotProduct (&testPoint, &randomVector);
+        sortInfo.sortCoordinate = testPoint.DotProduct (randomVector);
         dotArray.push_back (sortInfo);
         nodeCount++;
         }
@@ -429,7 +429,7 @@ double AngleBetweenEdgeNeighborhoods (MTGMerge_EdgeKeyCR keyA, MTGMerge_EdgeKeyC
         && TryGetFaceNormalAtNode (keyB.nodeId, normalB)
         )
         {
-        return bsiDPoint3d_signedAngleBetweenVectors (&normalA, &normalB, &edgeVector);
+        return normalA.SignedAngleTo (normalB, edgeVector);
         }
     BeAssert (false);
     return 0.0;

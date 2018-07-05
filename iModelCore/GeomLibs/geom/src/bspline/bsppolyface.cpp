@@ -994,11 +994,11 @@ BuilderParams          *mpP                /* => mesh parameters */
             // How's your trig?  Got a quick formula for this without redoing the products?
             if (mpP->toleranceMode & STROKETOL_XYProjection)
                 {
-                theta = bsiDPoint3d_angleBetweenVectorsXY (&vec01, &vec02);
+                theta = vec01.AngleToXY (vec02);
                 }
             else
                 {
-                theta = bsiDPoint3d_angleBetweenVectors (&vec01, &vec02);
+                theta = vec01.AngleTo (vec02);
                 }
 
             if (theta > *pAngle)

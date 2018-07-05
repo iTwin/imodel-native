@@ -324,9 +324,9 @@ DPoint4dCP pPointP
     bool    result;
 
     bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorU, &pInstance->point[1], &pInstance->point[0]);
-    bsiDPoint3d_weightedDifference (&vectorUBar,  &pInstance->point[1], &pInstance->point[0]);
-    bsiDPoint3d_weightedDifference (&diffPA, pPointP, &pInstance->point[0]);
-    bsiDPoint3d_weightedDifference (&diffUP, &vectorU, pPointP);
+    vectorUBar.WeightedDifferenceOf(*(&pInstance->point[1]), *(&pInstance->point[0]));
+    diffPA.WeightedDifferenceOf(*pPointP, *(&pInstance->point[0]));
+    diffUP.WeightedDifferenceOf(vectorU, *pPointP);
 
     dot0 = diffPA.DotProductXY (vectorUBar);
     dot1 = diffUP.DotProductXY (vectorUBar);
@@ -891,7 +891,7 @@ DSegment4dCP pSegment,
 DPoint3dP pTangent
 )
     {
-    bsiDPoint3d_weightedDifference (pTangent, &pSegment->point[1], &pSegment->point[0]);
+    pTangent->WeightedDifferenceOf(*(&pSegment->point[1]), *(&pSegment->point[0]));
     }
 
 
@@ -965,10 +965,10 @@ DPoint3dCP pT
         Dot with the tangent vector to get perpendicular condition
             (b + beta v) (A.T + alpha U.T) - (a + alpha u) (B.T + beta V.T) = 0
     */
-    double AdotT = bsiDPoint3d_dotXYZ (pT, pA->x, pA->y, pA->z);
-    double BdotT = bsiDPoint3d_dotXYZ (pT, pB->x, pB->y, pB->z);
-    double UdotT = bsiDPoint3d_dotXYZ (pT, pU->x, pU->y, pU->z);
-    double VdotT = bsiDPoint3d_dotXYZ (pT, pV->x, pV->y, pV->z);
+    double AdotT = pT->DotProduct (pA->x, pA->y, pA->z);
+    double BdotT = pT->DotProduct (pB->x, pB->y, pB->z);
+    double UdotT = pT->DotProduct (pU->x, pU->y, pU->z);
+    double VdotT = pT->DotProduct (pV->x, pV->y, pV->z);
 
     *pa   = pB->w * AdotT - pA->w * BdotT;
     *pax  = pB->w * UdotT - pU->w * BdotT;
@@ -1009,10 +1009,10 @@ DSegment4dCP pSegmentB
 
     /* Pseudo tangent is a single vector along the direction of each line */
     bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorA, &pSegmentA->point[1], &pSegmentA->point[0]);
-    bsiDPoint3d_weightedDifference (&pseudoTangentA, &vectorA, &pSegmentA->point[0]);
+    pseudoTangentA.WeightedDifferenceOf(vectorA, *(&pSegmentA->point[0]));
 
     bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorB, &pSegmentB->point[1], &pSegmentB->point[0]);
-    bsiDPoint3d_weightedDifference (&pseudoTangentB, &vectorB, &pSegmentB->point[0]);
+    pseudoTangentB.WeightedDifferenceOf(vectorB, *(&pSegmentB->point[0]));
 
     jmdlDSegment4d_closeApproachEquation (&axy, &ax, &ay, &a,
                     &pSegmentA->point[0], &vectorA, &pSegmentB->point[0], &vectorB,

@@ -1333,7 +1333,7 @@ double              offset
                             {
                             for (i = 1; i <= numDerivative; i += 2)
                                 {
-                                bsiDPoint3d_negateInPlace (&pX[i]);
+                                pX[i].Negate();
                                 }
                             }
 #define TANGENT_CHECKS_not
@@ -1374,7 +1374,7 @@ double              offset
                                 GEOMAPI_PRINTF("\n Tangent comparison dot product == %lf  edge dir = %d", checkDot, edgeData.isReversed);
                                 }
                             if (checkDot < 0.0)
-                                bsiDPoint3d_negateInPlace (&pX[1]);
+                                pX[1].Negate();
                             dist = pX[1].Distance (checkTangent);
 
                             if (dist >= 0.01 * tangentMagnitude && tangentMagnitude != 0.0)
@@ -3754,7 +3754,7 @@ MTGNodeId                       edgeNodeId
                 if (edgeData.isReversed)
                     {
                     if (pMinTangent)
-                        bsiDPoint3d_negateInPlace (pMinTangent);
+                        pMinTangent->Negate();
                     if (pMinParam)
                         *pMinParam = 1.0 - *pMinParam;
                     }

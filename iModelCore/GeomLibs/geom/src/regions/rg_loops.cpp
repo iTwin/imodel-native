@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/regions/rg_loops.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1485,7 +1485,7 @@ MTG_MarkSet *pMarkSet
     DRange3d range;
     jmdlRG_getRange (pRG, &range);
     // A face with width distanceTol and length of diagonal is near zero ...
-    areaTol = bsiDPoint3d_distance (&range.low, &range.high) * distanceTol;
+    areaTol = range.low.Distance (range.high) * distanceTol;
     MTGARRAY_SET_LOOP (nodeIdA, pGraph)
         {
         regularizeFace (pRG, nodeIdA, pMarkSet, areaTol);
@@ -1553,7 +1553,7 @@ RG_Header   *pRG
         &&  jmdlRG_getVertexDPoint3d (pRG, &xyz1, jmdlMTGGraph_getFSucc (pGraph, nodeId))
        )
         {
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&delta, &xyz1, &xyz0);
+        delta.DifferenceOf (xyz1, xyz0);
         double degrees = Angle::RadiansToDegrees(Angle::Atan2 (delta.y, delta.x));
         double length = delta.MagnitudeXY ();
         if (jmdlRG_getGroupId (pRG, &groupId, nodeId))

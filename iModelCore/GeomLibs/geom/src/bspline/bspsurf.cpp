@@ -3571,6 +3571,25 @@ DPoint3d        *normal2P
 
 /*----------------------------------------------------------------------+
 |                                                                       |
+| name          bsputil_nIsoParamsFromAngle                             |
+|                                                                       |
+| author        RayBentley                              05/98           |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int     bsputil_nIsoParamsFromAngle
+(
+double          angle,
+int             nIsoParams
+)
+    {
+    int         n = (int)floor (0.5 + (double) nIsoParams * (fabs (angle) - fc_epsilon) / msGeomConst_2pi );
+
+    return n > 0 ?  (n + 1) : 2;
+    }
+
+
+/*----------------------------------------------------------------------+
+|                                                                       |
 | name          bsputil_calculateNumRules                               |
 |                                                                       |
 | author        RayBentley                              05/98           |

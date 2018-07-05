@@ -737,11 +737,11 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #endif
 #include "Angle.h"
 #include "DPoint3dOps.h"
+#include "DTriangle3d.h"
 
 /*__PUBLISH_SECTION_END__*/
 #include "CurveConstraint.h"
 #include "DBilinearPatch3d.h"
-#include "DTriangle3d.h"
 #include "GeometryNode.h"
 
 
@@ -783,16 +783,12 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 //#include "internal/dellipsoid3d.fdf"
 #include "dmap4d.fdf"
 #include "doublefuncs.fdf"
-#include "dpoint3d.fdf"
 #include "dpoint3darray.fdf"
-#include "dpoint3dconvertedtodvec3d.fdf"
 #include "dpoint3ddvec3d.fdf"
 #include "dpoint4d.fdf"
 #include "drange3d.fdf"
-#include "dray3d.fdf"
 
 //#include "internal/dtoroid3d.fdf"
-#include "dvec3drotmatrix.fdf"
 #include "ellipsefillet.fdf"
 #include "eigensys3d.fdf"
 #include "ellipticintegrals.fdf"

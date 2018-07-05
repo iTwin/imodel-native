@@ -740,7 +740,7 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
                 {
                 /* scale by length of bessel tangent */
                 besselEnd (dataPts, dataWts, knots, numIntval, true);
-                dataPts[1].SumOf (*dataPts, *endTangents, bsiDPoint3d_distance (dataPts,dataPts+1));
+                dataPts[1].SumOf (*dataPts, *endTangents, dataPts->Distance (dataPts[1]));
                 }
             }
 
@@ -763,7 +763,7 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
                 {
                 /* scale by length of bessel tangent */
                 besselEnd (dataPts, dataWts, knots, numIntval, false);
-                dataPts[numIntval+1].SumOf (dataPts[numIntval+2], endTangents[1], bsiDPoint3d_distance (dataPts+numIntval+1,dataPts+numIntval+2));
+                dataPts[numIntval+1].SumOf (dataPts[numIntval+2], endTangents[1], dataPts[numIntval+1].Distance (dataPts[numIntval+2]));
                 }
             }
         }
@@ -785,7 +785,7 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
             {
             coTangent.DifferenceOf (*dataPts, dataPts[1]);
             coTangent.Normalize ();
-            dataPts[numIntval+1].SumOf (dataPts[numIntval+2], coTangent, bsiDPoint3d_distance (dataPts+numIntval+2,dataPts+numIntval+1));
+            dataPts[numIntval+1].SumOf (dataPts[numIntval+2], coTangent, dataPts[numIntval+2].Distance (dataPts[numIntval+1]));
             }
 
         /* pivot computed beginning tangent colinear to given end tangent */
@@ -793,7 +793,7 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
             {
             coTangent.DifferenceOf (*dataPts, dataPts[numIntval+1]);
             coTangent.Normalize ();
-            dataPts[1].SumOf (*dataPts, coTangent, bsiDPoint3d_distance (dataPts,dataPts+1));
+            dataPts[1].SumOf (*dataPts, coTangent, dataPts->Distance (dataPts[1]));
             }
 
         /* pivot both computed tangents parallel to their difference vector */
@@ -801,8 +801,8 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
             {
             coTangent.DifferenceOf (dataPts[1], dataPts[numIntval+1]);
             coTangent.Normalize ();
-            dataPts[1].SumOf (*dataPts, coTangent, bsiDPoint3d_distance (dataPts,dataPts+1));
-            dataPts[numIntval+1].SumOf (dataPts[numIntval+2], coTangent, -1.0*bsiDPoint3d_distance (dataPts+numIntval+2,dataPts+numIntval+1));
+            dataPts[1].SumOf (*dataPts, coTangent, dataPts->Distance (dataPts[1]));
+            dataPts[numIntval+1].SumOf (dataPts[numIntval+2], coTangent, -1.0*dataPts[numIntval+2].Distance (dataPts[numIntval+1]));
             }
         }
     }

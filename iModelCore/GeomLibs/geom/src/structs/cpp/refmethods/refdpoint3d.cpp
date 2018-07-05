@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdpoint3d.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -10,58 +10,6 @@ BEGIN_BENTLEY_NAMESPACE
 
 /* VBSUB(Point3dDistanceSquared) */
 /* CSVFUNC(distanceSquared) */
-
-/*-----------------------------------------------------------------*//**
- @description Computes the squared distance between two points.
- @param pPoint1 => first point
- @param pPoint2 => second point
- @return squared distance between the points
-@group "DPoint3d Distance"
- @bsimethod                                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDPoint3d_distanceSquared
-
-
-(
-DPoint3dCP pPoint1,
-DPoint3dCP pPoint2
-)
-    {
-    double      xdist, ydist, zdist;
-
-    xdist = (pPoint2->x - pPoint1->x);
-    ydist = (pPoint2->y - pPoint1->y);
-    zdist = (pPoint2->z - pPoint1->z);
-
-    return (xdist*xdist + ydist*ydist + zdist*zdist);
-    }
-
-/* VBSUB(Point3dDistanceSquaredXY) */
-/* CSVFUNC(distanceSquaredXY) */
-
-/*-----------------------------------------------------------------*//**
- @description Computes the squared distance between two points, using only the xy parts.
- @param pPoint1 => first point
- @param pPoint2 => second point
- @return squared distance between the XY projections of the two points (i.e. any z difference is ignored)
-@group "DPoint3d Distance"
- @bsimethod                                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDPoint3d_distanceSquaredXY
-
-
-(
-DPoint3dCP pPoint1,
-DPoint3dCP pPoint2
-)
-    {
-    double      xdist, ydist;
-
-    xdist = pPoint2->x - pPoint1->x;
-    ydist = pPoint2->y - pPoint1->y;
-
-    return (xdist*xdist + ydist*ydist);
-    }
 
 /*-----------------------------------------------------------------*//**
  @description Sets all components of a point or vector to zero.

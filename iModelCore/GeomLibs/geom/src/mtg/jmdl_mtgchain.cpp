@@ -285,7 +285,7 @@ double      relTol
             jmdlMTGGraph_getLabel ((jmdlMTGFacets_getGraph (pFacetHeader)), &currIndex, currNodeId, pFacetHeader->vertexLabelOffset);
             sortInfo.pointIndex = currIndex;
             pCurrPoint = pFacetHeader->vertexArrayHdr.data () + (size_t)currIndex;
-            sortInfo.dotValue = bsiDPoint3d_dotProduct (pCurrPoint, &randomVector);
+            sortInfo.dotValue = pCurrPoint->DotProduct (randomVector);
             dotArray.push_back (sortInfo);
             }
 
@@ -493,7 +493,7 @@ double       tolerance
                         continue;
                     MTGNodeId nodeIdC1 = jmdlMTGGraph_getEdgeMate (pGraph, nodeIdC0);
                     jmdlMTGFacets_getNodeCoordinates (pFacets, &xyzC1, nodeIdC1);
-                    if (bsiDPoint3d_distance (&xyzB1, &xyzC1) <= tolerance)
+                    if (xyzB1.Distance (xyzC1) <= tolerance)
                         {
                         jmdlMTGGraph_dropEdge (pGraph, nodeIdC0);
                         pBaseIndex[iC] = MTG_NULL_NODEID;
@@ -729,8 +729,8 @@ bvector<DVec3d>         &vertexNormalArray
         && TryGet<DPoint3d>  (pFacetHeader->vertexArrayHdr, &endPoint, endVertex)
         )
         {
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&tangent, &endPoint, &basePoint);
-        return bsiDPoint3d_signedAngleBetweenVectors (&normal0, &normal1, &tangent);
+        tangent.DifferenceOf (endPoint, basePoint);
+        return normal0.SignedAngleTo (normal1, tangent);
         }
     return 0.0;
     }

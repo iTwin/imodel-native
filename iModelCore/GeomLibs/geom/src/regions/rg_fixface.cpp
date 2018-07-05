@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/regions/rg_fixface.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -135,7 +135,7 @@ MTGNodeId           nodeId
     DPoint3d xyz[2];
     double theta;
     jmdlRG_getVertexData (pRG, xyz, 1, NULL, nodeId, 0.0);
-    theta = bsiTrig_atan2 (xyz[1].y, xyz[1].x);
+    theta = Angle::Atan2 (xyz[1].y, xyz[1].x);
     return theta;
     }
 
@@ -148,7 +148,7 @@ MTGNodeId           nodeId
     RG_EdgeData edgeData;
     double length;
     jmdlRG_getEdgeData (pRG, &edgeData, nodeId);
-    length = bsiDPoint3d_distance(&edgeData.xyz[0], &edgeData.xyz[1]);
+    length = edgeData.xyz[0].Distance (*(&edgeData.xyz[1]));
     return length;
     }
 
@@ -222,7 +222,7 @@ MTG_MarkSet &nodesOnActiveFace
 
                 if (   nodesOnActiveFace.IsNodeInSet (currNodeId)
                     && nodesOnActiveFace.IsNodeInSet (currNodeId)
-                    && bsiTrig_angleInSweep (nextTheta, currTheta - s_halfAngle, sweep))
+                    && Angle::InSweepAllowPeriodShift (nextTheta, currTheta - s_halfAngle, sweep))
                     {
                     MTGNodeId backNodeId = jmdlMTGGraph_getVPred (pGraph, currNodeId);
                     jmdlMTGGraph_vertexTwist (pGraph, backNodeId, currNodeId);

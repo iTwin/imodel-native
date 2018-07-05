@@ -22,7 +22,7 @@ $(OUT_DIR)embeddeddpoint3darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint3
 
 $(OUT_DIR)dmap4d$(OUT_EXT)          : $(geomSrcStructs)dmap4d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dpoint3d$(OUT_EXT)        : $(geomSrcStructs)dpoint3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dpoint3d$(OUT_EXT)        : $(geomSrcStructs)dpoint3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)XYZRangeTree$(OUT_EXT)    :$(geomSrcFuncs)XYZRangeTree.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
@@ -57,12 +57,6 @@ $(OUT_DIR)PolylineOffset$(OUT_EXT)     : $(geomSrcFuncs)PolylineOffset.cpp      
 $(OUT_DIR)PolygonOps$(OUT_EXT)     : $(geomSrcFuncs)PolygonOps.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)dpoint3ddvec3d$(OUT_EXT)  : $(geomSrcStructs)dpoint3ddvec3d.cpp   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)dvec3d$(OUT_EXT)          : $(geomSrcStructs)dvec3d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-$(OUT_DIR)dvec3drotmatrix$(OUT_EXT) : $(geomSrcStructs)dvec3drotmatrix.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)dvec3dtransform$(OUT_EXT) : $(geomSrcStructs)dvec3dtransform.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)dpoint4d$(OUT_EXT)        : $(geomSrcStructs)dpoint4d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -175,6 +169,8 @@ $(OUT_DIR)refdray3d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdray3d.c
 
 # (begin funcs_sources_pubinc.mki)
 
+#$(OUT_DIR)barycentric$(OUT_EXT)     : $(geomSrcFuncs)barycentric.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
 $(OUT_DIR)ccctangent$(OUT_EXT)      : $(geomSrcFuncs)ccctangent.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)biarc$(OUT_EXT)           : $(geomSrcStructsCpp)refmethods/biarc.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
@@ -218,8 +214,6 @@ $(OUT_DIR)polyline3d$(OUT_EXT)      : $(geomSrcFuncs)polyline3d.cpp     $(OTHER_
 #$(OUT_DIR)polyplane4d$(OUT_EXT)     : $(geomSrcFuncs)polyplane4d.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)simpson$(OUT_EXT)         : $(geomSrcFuncs)simpson.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)polygondecomp$(OUT_EXT)   : $(geomSrcFuncs)polygondecomp.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)ellipticintegrals$(OUT_EXT)   : $(geomSrcFuncs)ellipticintegrals.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -383,7 +377,7 @@ $(OUT_DIR)cluster$(OUT_EXT)          : $(geomSrcFuncs)cluster.cpp          $(OTH
 # (begin interfac_sources_pubinc.mki)
 
 # LOTS of use of these  . . .
-$(OUT_DIR)dpoint3dconvertedtodvec3d$(OUT_EXT)   : $(geomSrcInterfac)dpoint3dconvertedtodvec3d.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dpoint3dconvertedtodvec3d$(OUT_EXT)   : $(geomSrcInterfac)dpoint3dconvertedtodvec3d.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)rotmatrix_dep$(OUT_EXT)               : $(geomSrcInterfac)rotmatrix_dep.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 

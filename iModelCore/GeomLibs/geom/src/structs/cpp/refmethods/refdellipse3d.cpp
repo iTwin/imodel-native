@@ -13,6 +13,56 @@ static double s_lineUnitCircleIntersectionTolerance = 1.0e-8;
 #define FIX_MIN(value, min)          if (value < min) min = value
 #define FIX_MAX(value, max)          if (value > max) max = value
 
+// distanceSquared needed as plain functions in arg lists . . .
+/*-----------------------------------------------------------------*//**
+ @description Computes the squared distance between two points.
+ @param pPoint1 => first point
+ @param pPoint2 => second point
+ @return squared distance between the points
+@group "DPoint3d Distance"
+ @bsimethod                                                                     EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double bsiDPoint3d_distanceSquared
+
+
+(
+DPoint3dCP pPoint1,
+DPoint3dCP pPoint2
+)
+    {
+    double      xdist, ydist, zdist;
+
+    xdist = (pPoint2->x - pPoint1->x);
+    ydist = (pPoint2->y - pPoint1->y);
+    zdist = (pPoint2->z - pPoint1->z);
+
+    return (xdist*xdist + ydist*ydist + zdist*zdist);
+    }
+
+/*-----------------------------------------------------------------*//**
+ @description Computes the squared distance between two points, using only the xy parts.
+ @param pPoint1 => first point
+ @param pPoint2 => second point
+ @return squared distance between the XY projections of the two points (i.e. any z difference is ignored)
+@group "DPoint3d Distance"
+ @bsimethod                                                                     EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double bsiDPoint3d_distanceSquaredXY
+
+
+(
+DPoint3dCP pPoint1,
+DPoint3dCP pPoint2
+)
+    {
+    double      xdist, ydist;
+
+    xdist = pPoint2->x - pPoint1->x;
+    ydist = pPoint2->y - pPoint1->y;
+
+    return (xdist*xdist + ydist*ydist);
+    }
+
 /*----------------------------------------------------------------------+
 |FUNC           bsiEllipse_componentRange       RK      06/96           |
 | Conditional update range of one component of an ellipse.              |

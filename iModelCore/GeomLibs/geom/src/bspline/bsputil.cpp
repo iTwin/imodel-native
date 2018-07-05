@@ -393,7 +393,7 @@ double     tolerance
     {
     if (tolerance <= 0.0)
         return DPoint3dOps::AlmostEqual (*pPointA, *pPointB);
-    double maxDiff = bsiDPoint3d_maxAbsDifference (pPointA, pPointB);
+    double maxDiff = pPointA->MaxDiff(*pPointB);
     return maxDiff < tolerance;
     }
 
@@ -409,7 +409,7 @@ DPoint3dCP pPointA,
 DPoint3dCP pPointB
 )
     {
-    double maxDiff = bsiDPoint3d_maxAbsDifference (pPointA, pPointB);
+    double maxDiff = pPointA->MaxDiff(*pPointB);
     if (maxDiff < sAbsTol)
         return true;
     double maxAbs = bsiTrig_maxAbsDPoint3dDPoint3d (pPointA, pPointB);
@@ -1542,7 +1542,7 @@ double          relativeTolerance
         {
         *pOrigin = pPoles ? pPoles[0] : defaultOrigin;
         if (pPoles && pWeights)
-            bsiDPoint3d_scaleInPlace (pOrigin, 1.0 / pWeights[0]);
+            pOrigin->Scale (1.0 / pWeights[0]);
         }
     if (pIsPlanar)
         *pIsPlanar = false;
@@ -1580,7 +1580,7 @@ double          relativeTolerance
             for (i = 0; i < numPts; i++)
                 averageUnweightedPole.Add (pPoles[i]);
 
-            bsiDPoint3d_scaleInPlace (&averageUnweightedPole, 1.0 / numPts);
+            averageUnweightedPole.Scale (1.0 / numPts);
 
             bsiDPoint3d_distancePointToPlane (pOrigin, &averageUnweightedPole, &normal, &origin);
             }
@@ -3280,24 +3280,6 @@ BsplineParam    *paramP
         if (maxP)
             *maxP = 1;
         }
-    }
-
-/*----------------------------------------------------------------------+
-|                                                                       |
-| name          bsputil_nIsoParamsFromAngle                             |
-|                                                                       |
-| author        RayBentley                              05/98           |
-|                                                                       |
-+----------------------------------------------------------------------*/
-Public GEOMDLLIMPEXP int     bsputil_nIsoParamsFromAngle
-(
-double          angle,
-int             nIsoParams
-)
-    {
-    int         n = (int)floor (0.5 + (double) nIsoParams * (fabs (angle) - fc_epsilon) / msGeomConst_2pi );
-
-    return n > 0 ?  (n + 1) : 2;
     }
 
 

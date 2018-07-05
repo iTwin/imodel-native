@@ -1783,9 +1783,9 @@ int           sector
     if (bsiDEllipse4d_normalizeWeights (&normalizedSource, pSource))
         {
         funcStat = true;
-        bsiDPoint3d_getXYZ (&pEllipse->center,   &normalizedSource.center  );
-        bsiDPoint3d_getXYZ (&pEllipse->vector0,  &normalizedSource.vector0 );
-        bsiDPoint3d_getXYZ (&pEllipse->vector90, &normalizedSource.vector90);
+        pEllipse->center.XyzOf (normalizedSource.center);
+        pEllipse->vector0.XyzOf (normalizedSource.vector0);
+        pEllipse->vector90.XyzOf (normalizedSource.vector90);
 
         if (bsiDEllipse4d_getSector (&normalizedSource, &theta0, &theta1, sector))
             {
@@ -2743,7 +2743,7 @@ int         numPoint
         DPoint3d diagonal;
         tmpRange.InitFrom(pPointArray, numPoint);
         diagonal.DifferenceOf (tmpRange.high, tmpRange.low);
-        return bsiDPoint3d_maxAbs (&diagonal);
+        return diagonal.MaxAbs ();
         }
     else
         {
@@ -2789,7 +2789,7 @@ int         numPoint
                 tmpRange.Extend (pPointArray[i].x * wRecip, pPointArray[i].y * wRecip, pPointArray[i].z * wRecip);
 
         diagonal.DifferenceOf (tmpRange.high, tmpRange.low);
-        return bsiDPoint3d_maxAbs (&diagonal);
+        return diagonal.MaxAbs ();
         }
     else
         {
@@ -3793,10 +3793,43 @@ int             numPoint
     bool    boolstat = false;
     if (bsiGeom_planeThroughPoints (&normal, &origin, pPoint, numPoint))
         {
-        boolstat = bsiDPoint3d_getNormalizedTriad (&normal,
-                    &vector0, &vector1, &vector2);
+        boolstat = normal.GetNormalizedTriad (vector0, vector1, vector2);
         pTransform->InitFromOriginAndVectors(origin, vector0, vector1, vector2);
         }
     return boolstat;
     }
+/*---------------------------------------------------------------------------------**//**
+* @description Tests if two vectors are parallel.
+* @remarks Use bsiTrig_smallAngle() for tolerance corresponding to bsiDPoint3d_areParallel.
+*
+* @param pVector1   IN      the first vector
+* @param pVector2   IN      the second vector
+* @param tolerance  IN      radian tolerance for angle between vectors
+* @return true if the vectors are parallel within tolerance
+* @bsimethod                                                    DavidAssaf      05/06
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     bsiDPoint3d_areParallelTolerance
+(
+DPoint3dCP  pVector1,
+DPoint3dCP  pVector2,
+double      tolerance
+)
+    {
+    DPoint3d    cross;
+    double      a2 = pVector1->DotProduct (*pVector1);
+    double      b2 = pVector2->DotProduct (*pVector2);
+    double      c2;
+
+    cross.CrossProduct (*pVector1, *pVector2);
+
+    c2 = cross.DotProduct (cross);
+
+    /* a2,b2,c2 are squared lengths of respective vectors */
+    /* c2 = sin^2(theta) * a2 * b2 */
+    /* For small theta, sin^2(theta)~~theta^2 */
+    /* Zero-length vector case falls through as equality */
+
+    return c2 <= tolerance * tolerance * a2 * b2;
+    }
+
 END_BENTLEY_GEOMETRY_NAMESPACE

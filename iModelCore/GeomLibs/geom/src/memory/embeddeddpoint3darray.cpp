@@ -659,7 +659,7 @@ const   EmbeddedDPoint3dArray   *pHeader,
             && jmdlEmbeddedDPoint3dArray_getDPoint3d (pHeader, &point2, index2)
        )
         {
-        bsiDPoint3d_crossProduct3DPoint3d (pProduct, &point0, &point1, &point2);
+        pProduct->CrossProductToPoints (point0, point1, point2);
         return true;
         }
     else

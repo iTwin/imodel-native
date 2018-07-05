@@ -599,21 +599,18 @@ const   DPoint4d    *pPoleArray,
         w = X.w;
         dw = dX.w;
         ddw = ddX.w;
-        bsiTrig_safeDivide (&divW, 1.0, w, 0.0);
+        DoubleOps::SafeDivide (divW, 1.0, w, 0.0);
         divW2 = divW * divW;
         if (pX)
-            bsiDPoint3d_scale (pX + i, (DPoint3d *)&X, divW);
+            pX[ i].Scale (*((DPoint3d *)&X), divW);
         if (pdX)
-            bsiDPoint3d_add2ScaledDPoint3d (pdX + i, NULL,
-                            (DPoint3d *)&dX, divW, (DPoint3d*)&X, - dw * divW2);
+            pdX[ i].SumOf(*((DPoint3d *)&dX), divW, *((DPoint3d*)&X), - dw * divW2);
         if (pddX)
             {
             divW4 = divW2 * divW2;
             a = -2.0 * w * dw * divW4;
-            bsiDPoint3d_add2ScaledDPoint3d (&tempX, NULL,
-                            (DPoint3d *) &ddX, w * divW2,   (DPoint3d *)&X, - ddw * divW2);
-            bsiDPoint3d_add2ScaledDPoint3d (pddX + i, &tempX,
-                            (DPoint3d *) &dX, w * a,        (DPoint3d *)&X, -dw * a);
+            tempX.SumOf(*((DPoint3d *) &ddX), w * divW2, *((DPoint3d *)&X), - ddw * divW2);
+            pddX[ i].SumOf(tempX, *((DPoint3d *) &dX), w * a, *((DPoint3d *)&X), -dw * a);
             }
         }
     }
@@ -642,7 +639,7 @@ const   DPoint4d    *pPoleArray,
     DPoint4d X, dX, ddX;
     DPoint3d Y;
     DVec3d dY, ddY;
-    DPoint3d tempX;
+    DVec3d tempX;
     double divW;
     double divW2;
     double divW4;
@@ -661,27 +658,24 @@ const   DPoint4d    *pPoleArray,
         w = X.w;
         dw = dX.w;
         ddw = ddX.w;
-        bsiTrig_safeDivide (&divW, 1.0, w, 0.0);
+        DoubleOps::SafeDivide (divW, 1.0, w, 0.0);
         divW2 = divW * divW;
         if (pX)
             {
-            bsiDPoint3d_scale (&Y, (DPoint3d *)&X, divW);
+            Y.Scale (*((DVec3d *)&X), divW);
             pX->push_back (Y);
             }
         if (pdX)
             {
-            bsiDPoint3d_add2ScaledDPoint3d (&dY, NULL,
-                            (DPoint3d *)&dX, divW, (DPoint3d*)&X, - dw * divW2);
+            dY.SumOf(*((DVec3d *)&dX), divW, *((DVec3d*)&X), - dw * divW2);
             pdX->push_back (dY);
             }
         if (pddX)
             {
             divW4 = divW2 * divW2;
             a = -2.0 * w * dw * divW4;
-            bsiDPoint3d_add2ScaledDPoint3d (&tempX, NULL,
-                            (DPoint3d *) &ddX, w * divW2,   (DPoint3d *)&X, - ddw * divW2);
-            bsiDPoint3d_add2ScaledDPoint3d (&ddY, &tempX,
-                            (DPoint3d *) &dX, w * a,        (DPoint3d *)&X, -dw * a);
+            tempX.SumOf(*((DVec3d *) &ddX), w * divW2, *((DVec3d *)&X), - ddw * divW2);
+            ddY.SumOf(tempX, *((DVec3d *) &dX), w * a, *((DVec3d *)&X), -dw * a);
             pddX->push_back (ddY);
             }
         }
@@ -1170,7 +1164,7 @@ const   DPoint4d    *pPlaneCoffs,
     int i;
 
     for (i = 0; i < order; i++)
-        fPoles[i] = bsiDPoint4d_dotProduct (pPoleArray+i, pPlaneCoffs);
+        fPoles[i] = pPoleArray[i].DotProduct (*pPlaneCoffs);
 
     if (extend)
         bsiBezier_univariateRootsExt (root, &numRoot, fPoles, order);
@@ -1610,7 +1604,7 @@ const   double      *pWeightArray,
     if (boolstat)
         {
         if (pClosePoint)
-            boolstat = bsiDPoint4d_normalize (&closePoint, pClosePoint);
+            boolstat = closePoint.GetProjectedXYZ (*pClosePoint);
         }
     return boolstat;
     }
@@ -1672,7 +1666,7 @@ const   double      *pWeightArray,
     if (boolstat)
         {
         if (pClosePoint)
-            boolstat = bsiDPoint4d_normalize (&closePoint, pClosePoint);
+            boolstat = closePoint.GetProjectedXYZ (*pClosePoint);
         }
     return boolstat;
     }
@@ -2172,7 +2166,7 @@ const   DPoint4d    *pPlane
     allOn = false;
 
     for (i = 0; i < order; i++)
-        altitudeArray[i] = bsiDPoint4d_dotProduct (&pPoleArray[i], pPlane);
+        altitudeArray[i] = pPoleArray[i].DotProduct (*pPlane);
 
     if (bsiBezier_univariateRoots (rootArray, &numRoot, altitudeArray, order))
         {
@@ -2400,7 +2394,7 @@ DPoint4dCR pointB
 
         if (NULL == derivatives)
             {
-            bsiDPoint4d_normalize (&point, &xyz);
+            point.GetProjectedXYZ (xyz);
             points.push_back (xyz);
             }
         else

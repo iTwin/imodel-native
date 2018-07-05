@@ -1146,7 +1146,7 @@ double              eps2
     DPoint3d    normal;
     double      mag2;
 
-    bsiDPoint3d_crossProduct3DPoint3d (&normal, pXYZ, pXYZ+1, pXYZ+2);
+    normal.CrossProductToPoints (*pXYZ, pXYZ[1], pXYZ[2]);
     mag2 = normal.MagnitudeSquared ();
 
     /*
@@ -1160,10 +1160,10 @@ double              eps2
 
         v.Interpolate (pXYZ[1], 0.5, pXYZ[2]);
 
-        bsiDPoint3d_crossProduct3DPoint3d (&n1, pXYZ, pXYZ+1, &v);
+        n1.CrossProductToPoints (*pXYZ, pXYZ[1], v);
         m1 = n1.MagnitudeSquared ();
 
-        bsiDPoint3d_crossProduct3DPoint3d (&n2, pXYZ, &v, pXYZ+2);
+        n2.CrossProductToPoints (*pXYZ, v, pXYZ[2]);
         m2 = n2.MagnitudeSquared ();
 
         // compare sin^2 of subangles
@@ -1432,7 +1432,7 @@ double tol
     DPoint3d xyz;
     bool    bAddClosureB;
 
-    bAddClosureB = !bsiDPoint3d_pointEqual (&pXYZB[0], &pXYZB[numB-1]);
+    bAddClosureB = !pXYZB[0].IsEqual (pXYZB[numB-1]);
 
     if (bAddClosureA)
         {
@@ -1860,7 +1860,7 @@ double*     onTolerance
 
     *pNumClipPoints = 0;
 
-    if (!bsiDPoint3d_safeDivide (&scaledRay.direction, &rayVector, rayVector.MagnitudeSquared ()))
+    if (!scaledRay.direction.SafeDivide (rayVector, rayVector.MagnitudeSquared ()))
         return false;
 
     rayPerp.CrossProduct (*pPolygonPerp, rayVector);
@@ -2288,7 +2288,7 @@ bool closedB
 
             segmentB.point[1] = pPolygonB[iB];
             DPoint3d pointAA, pointBB;
-            if (bsiDSegment3d_closestApproach (&paramA, &paramB, &pointAA, &pointBB, &segmentA, &segmentB))
+            if (DSegment3d::ClosestApproachUnbounded (paramA, paramB, pointAA, pointBB, segmentA, segmentB))
                 {
                 double currDistSquared;
 
@@ -2403,10 +2403,10 @@ int numB
         return true;
         }
 
-    if (numA > 1 && bsiDPoint3d_pointEqual (&pPolygonA[0], &pPolygonA[numA-1]))
+    if (numA > 1 && pPolygonA[0].IsEqual (pPolygonA[numA-1]))
         numA -= 1;
 
-    if (numB > 1 && bsiDPoint3d_pointEqual (&pPolygonB[0], &pPolygonB[numB-1]))
+    if (numB > 1 && pPolygonB[0].IsEqual (pPolygonB[numB-1]))
         numB -= 1;
 
     minDistSquared = pPointA->DistanceSquared (*pPointB);
@@ -2477,7 +2477,7 @@ int numB
         return true;
         }
 #endif
-    if (numA > 1 && bsiDPoint3d_pointEqual (&pPolygonA[0], &pPolygonA[numA-1]))
+    if (numA > 1 && pPolygonA[0].IsEqual (pPolygonA[numA-1]))
         numA -= 1;
 
 
@@ -2818,7 +2818,7 @@ int count
 )
     {
     // strip trailing duplicates ...
-    for (;count > 1 && bsiDPoint3d_pointEqual (&pXYZ[0], &pXYZ[count-1]); count--)
+    for (;count > 1 && pXYZ[0].IsEqual (pXYZ[count-1]); count--)
         {
         }
     if (count < 2)
@@ -2967,7 +2967,7 @@ bool SortCrossings ()
     int iMax = bsiDVec3d_dominantComponentIndex (&diagonal);
     for (int i = 0; i < mNumCrossing; i++)
         {
-        mCrossing[i].sortKey = bsiDPoint3d_getComponent (&mCrossing[i].xyz, iMax);
+        mCrossing[i].sortKey = mCrossing[i].xyz.GetComponent (iMax);
         }
     qsort (mCrossing, mNumCrossing, sizeof (ClipCrossing), cb_compareCrossings);
     // Let id be a pre-sort position.

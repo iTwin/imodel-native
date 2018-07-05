@@ -40,12 +40,12 @@ bool        bounded
     int numRoot;
     int numOut = 0;
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vector0, pStart, pCenter);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vector1, pEnd  , pCenter);
+    vector0.DifferenceOf (*pStart, *pCenter);
+    vector1.DifferenceOf (*pEnd, *pCenter);
 
-    a0 = bsiDPoint3d_dotProductXY (&vector0, &vector0) - rr;
-    a1 = bsiDPoint3d_dotProductXY (&vector0, &vector1) - rr;
-    a2 = bsiDPoint3d_dotProductXY (&vector1, &vector1) - rr;
+    a0 = vector0.DotProductXY (vector0) - rr;
+    a1 = vector0.DotProductXY (vector1) - rr;
+    a2 = vector1.DotProductXY (vector1) - rr;
 
     numRoot = bsiMath_solveConvexQuadratic (vv, uu, a0, 2.0 * a1, a2);
     if (pParamArray)
@@ -63,8 +63,7 @@ bool        bounded
                 pParamArray->push_back (uu[i]);
             if (pPointArray)
                 {
-                bsiDPoint3d_add2ScaledDPoint3d (&point, NULL,
-                                pStart, vv[i], pEnd, uu[i]);
+                point.SumOf(*pStart, vv[i], *pEnd, uu[i]);
                 jmdlEmbeddedDPoint3dArray_addDPoint3d (pPointArray, &point);
                 }
             }

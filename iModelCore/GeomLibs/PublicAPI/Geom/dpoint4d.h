@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/dpoint4d.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -607,6 +607,11 @@ double          scale1
 //! @return true if normalization succeeded
 //!
 bool GetProjectedXYZ (DPoint3dR rPoint) const;
+
+//!
+//! Return the x,y,z parts scaled.   w part is not used.
+//!
+DPoint3d GetScaledXYZ (double scale) const;
 
 //!
 //! Initializes the instance by normalizing the weight of the source.

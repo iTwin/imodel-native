@@ -222,7 +222,7 @@ double          scale
     a = scale;
     for (i = 1; i <= numDerivatives; i++)
         {
-        bsiDPoint3d_scaleInPlace (pXYZ + i, a);
+        pXYZ[ i].Scale (a);
         a *= scale;
         }
     }
@@ -243,7 +243,7 @@ double          scale
     int i;
     for (i = 0; i < n; i++)
         {
-        bsiDPoint3d_scaleInPlace (pXYZ + i, scale);
+        pXYZ[ i].Scale (scale);
         }
     }
 
@@ -1520,7 +1520,7 @@ double    s1                /* => end param for active interval */
                         DVec3d angularTangent;
                         partialEllipse.Evaluate (
                                             pointA, angularTangent, vectorA2, theta);
-                        bsiDPoint3d_scale (pMinTangent, &angularTangent, partialEllipse.sweep);
+                        pMinTangent->Scale (angularTangent, partialEllipse.sweep);
                         }
                     myResult = true;
                     }
@@ -1566,7 +1566,7 @@ double    s1                /* => end param for active interval */
                     {
                     jmdlRIMSBS_evaluateDerivatives (this, xyz, 1, param, curveId);
                     *pMinTangent = xyz[1];
-                    bsiDPoint3d_scale (pMinTangent, pMinTangent, ds);
+                    pMinTangent->Scale (*pMinTangent, ds);
                     }
                 break;
                 }
@@ -1641,7 +1641,7 @@ RG_CurveId  curveId         /* => curve identifier */
                         {
                         DVec3d angularTangent;
                         arc.Evaluate (xyzA, angularTangent, vectorA2, theta);
-                        bsiDPoint3d_scale (pMinTangent, &angularTangent, arc.sweep);
+                        pMinTangent->Scale (angularTangent, arc.sweep);
                         }
                     }
                 myResult = true;
