@@ -1226,7 +1226,7 @@ void Frustum::ScaleAboutCenter(double scale)
     m_pts[NPC_000].Interpolate(orig.GetCorner(NPC_111), f, orig.GetCorner(NPC_000));
     m_pts[NPC_100].Interpolate(orig.GetCorner(NPC_011), f, orig.GetCorner(NPC_100));
     m_pts[NPC_010].Interpolate(orig.GetCorner(NPC_101), f, orig.GetCorner(NPC_010));
-    m_pts[NPC_110].Interpolate(orig.GetCorner(NPC_001), f, orig.GetCorner(NPC_110));
+    m_pts[NPC_110].Interpolate(orig.GetCorner(NPC_001), f, orig.GetCorner(NPC_110));    
     m_pts[NPC_001].Interpolate(orig.GetCorner(NPC_110), f, orig.GetCorner(NPC_001));
     m_pts[NPC_101].Interpolate(orig.GetCorner(NPC_010), f, orig.GetCorner(NPC_101));
     m_pts[NPC_011].Interpolate(orig.GetCorner(NPC_100), f, orig.GetCorner(NPC_011));

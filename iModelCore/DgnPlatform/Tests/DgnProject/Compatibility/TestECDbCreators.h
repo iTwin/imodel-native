@@ -49,15 +49,20 @@ public:
 //======================================================================================
 struct TestECDbCreator : TestFileCreator
     {
+    private:
+        BentleyStatus _UpgradeOldFiles() const override;
+
     protected:
-        TestECDbCreator() : TestFileCreator() {}
+        explicit TestECDbCreator(Utf8CP fileName) : TestFileCreator(fileName) {}
+
+        static DbResult CreateNewTestFile(ECDbR, Utf8StringCR fileName);
+        static BentleyStatus ImportSchema(ECDbCR ecdb, SchemaItem const& schema) { return ImportSchemas(ecdb, {schema}); }
+        static BentleyStatus ImportSchemas(ECDbCR, std::vector<SchemaItem> const&);
+
 
     public:
         virtual ~TestECDbCreator() {}
 
-        static DbResult CreateNewTestFile(ECDbR, Utf8CP fileName);
-        static BentleyStatus ImportSchema(ECDbCR ecdb, SchemaItem const& schema) { return ImportSchemas(ecdb, {schema}); }
-        static BentleyStatus ImportSchemas(ECDbCR, std::vector<SchemaItem> const&);
     };
 
 //======================================================================================
@@ -69,9 +74,11 @@ struct EmptyTestECDbCreator final : TestECDbCreator
         BentleyStatus _Create() override
             {
             ECDb ecdb;
-            return BE_SQLITE_OK == CreateNewTestFile(ecdb, TESTECDB_EMPTY) ? SUCCESS : ERROR;
+            return CreateNewTestFile(ecdb, m_fileName) == BE_SQLITE_OK ? SUCCESS : ERROR;
             }
+
     public:
+        explicit EmptyTestECDbCreator() : TestECDbCreator(TESTECDB_EMPTY) {}
         ~EmptyTestECDbCreator() {}
     };
 
@@ -84,7 +91,7 @@ struct PreEC32EnumsTestECDbCreator final : TestECDbCreator
         BentleyStatus _Create() override
             {
             ECDb ecdb;
-            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, TESTECDB_PREEC32ENUMS))
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
                 return ERROR;
 
             // add types of enums which don't exist in the schemas already in the test file
@@ -102,6 +109,7 @@ struct PreEC32EnumsTestECDbCreator final : TestECDbCreator
                                                      </ECSchema>)xml"));
             }
     public:
+        explicit PreEC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_PREEC32ENUMS) {}
         ~PreEC32EnumsTestECDbCreator() {}
     };
 
@@ -114,7 +122,7 @@ struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
         BentleyStatus _Create() override
             {
             ECDb ecdb;
-            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, TESTECDB_PREEC32KOQS))
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
                 return ERROR;
 
             //test schema for KOQs originates from AECUnits ECSchemas
@@ -176,6 +184,7 @@ struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
 </ECSchema>)xml"));
             }
     public:
+        explicit PreEC32KoqsTestECDbCreator() : TestECDbCreator(TESTECDB_PREEC32KOQS) {}
         ~PreEC32KoqsTestECDbCreator() {}
     };
 

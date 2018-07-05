@@ -10,6 +10,18 @@
 #include "Profiles.h"
 
 //=======================================================================================
+// Features that were added later. Use TestDb::SupportsFeature to check whether a certain file supports a 
+// feature or not.
+// @bsiclass                                                 Krischan.Eberle     07/2018
+//=======================================================================================    
+enum class Feature
+    {
+    PersistedECVersions,
+    NamedEnumerators,
+    UnitsAndFormats
+    };
+
+//=======================================================================================
 //! Provides helper methods for testing certain areas of a DgnDb or ECDb file in the compatibility tests
 // @bsiclass                                                 Krischan.Eberle     06/2018
 //=======================================================================================    
@@ -49,11 +61,14 @@ protected:
     ECDb::OpenParams const& GetOpenParams() const { return _GetOpenParams(); }
     Utf8String GetDescription() const;
 
+    bool SupportsFeature(Feature) const;
+
     DbResult Open();
     void Close() { _Close(); }
     JsonValue ExecuteECSqlSelect(Utf8CP ecsql) const;
     SchemaVersion GetSchemaVersion(Utf8CP schemaName) const;
     BeVersion GetOriginalECXmlVersion(Utf8CP schemaName) const;
+    ECN::ECVersion GetECVersion(Utf8CP schemaName) const;
     int GetSchemaCount() const;
     JsonValue GetSchemaItemCounts(Utf8CP schemaName) const;
     

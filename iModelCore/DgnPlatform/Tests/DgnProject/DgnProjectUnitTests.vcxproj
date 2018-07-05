@@ -56,6 +56,7 @@
     <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp" />
     <ClCompile Include="Performance\ComponentModel_PerfTest.cpp" />
     <ClCompile Include="Performance\DgnECPerformanceTests.cpp" />
+    <ClCompile Include="Performance\ElementAspectPerformance.cpp" />
     <ClCompile Include="Performance\ElementDependencyGraphPerformance.cpp" />
     <ClCompile Include="Performance\ElementInsertPerformance.cpp" />
     <ClCompile Include="Performance\PerformanceBriefcaseManagerTests.cpp" />

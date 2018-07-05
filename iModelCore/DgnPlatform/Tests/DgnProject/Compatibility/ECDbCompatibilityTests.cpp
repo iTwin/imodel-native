@@ -42,27 +42,32 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                     case TestDb::State::UpToDate:
                     {
                     EXPECT_EQ(5, testDb.GetSchemaCount()) << testDb.GetDescription();
-                    for (ECSchemaCP schema : testDb.GetDb().Schemas().GetSchemas(false))
-                        {
-                        //ECVersion not persisted by ECDb, so ECObjects defaults to 3.1
-                        EXPECT_EQ((int) ECVersion::V3_1, (int) schema->GetECVersion()) << schema->GetFullSchemaName() << " | " << testDb.GetDescription();
-                        //OriginalECXML version not persisted in ECDb pre 4.0.0.2, so ECObjects defaults to 3.1
-                        EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor()) << schema->GetFullSchemaName() << " | " << testDb.GetDescription();
-                        EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor()) << schema->GetFullSchemaName() << " | " << testDb.GetDescription();
-                        }
 
                     //ECDb built-in schema versions
                     EXPECT_EQ(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
+                    EXPECT_EQ((int) ECVersion::V3_1, (int) testDb.GetECVersion("ECDbFileInfo")) << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
                     EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
+
                     EXPECT_EQ(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
+                    EXPECT_EQ((int) ECVersion::V3_1, (int) testDb.GetECVersion("ECDbMap")) << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
                     EXPECT_EQ(JsonValue(R"js({"classcount":9})js"), testDb.GetSchemaItemCounts("ECDbMap")) << testDb.GetDescription();
+
                     EXPECT_EQ(SchemaVersion(4, 0, 0), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
+                    EXPECT_EQ((int) ECVersion::V3_1, (int) testDb.GetECVersion("ECDbMeta")) << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
                     EXPECT_EQ(JsonValue(R"js({"classcount":24, "enumcount": 8})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
+
                     EXPECT_EQ(SchemaVersion(5, 0, 0), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
+                    EXPECT_EQ((int) ECVersion::V3_1, (int) testDb.GetECVersion("ECDbSystem")) << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
                     EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), testDb.GetSchemaItemCounts("ECDbSystem")) << testDb.GetDescription();
 
                     //Standard schema versions
                     EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
+                    EXPECT_EQ((int) ECVersion::V3_1, (int) testDb.GetECVersion("CoreCustomAttributes")) << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
                     EXPECT_EQ(JsonValue(R"js({"classcount":14, "enumcount": 2})js"), testDb.GetSchemaItemCounts("CoreCustomAttributes")) << testDb.GetDescription();
                     break;
                     }
@@ -71,29 +76,34 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                     {
                     EXPECT_LE(5, testDb.GetSchemaCount()) << testDb.GetDescription();
 
-                    for (ECSchemaCP schema : testDb.GetDb().Schemas().GetSchemas(false))
-                        {
-                        //ECVersion not read by ECDb, so ECObjects defaults to 3.1
-                        EXPECT_EQ((int) ECVersion::V3_1, (int) schema->GetECVersion()) << schema->GetFullSchemaName() << " | " << testDb.GetDescription();
-                        //OriginalECXML version not read by ECDb, so ECObjects defaults to 3.1
-                        EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor()) << schema->GetFullSchemaName() << " | " << testDb.GetDescription();
-                        EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor()) << schema->GetFullSchemaName() << " | " << testDb.GetDescription();
-                        }
-
                     //ECDb built-in schema versions
                     //ECDbFileInfo version was incremented in next profile, so must be higher in newer file
                     EXPECT_LT(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
+                    EXPECT_LE((int) ECVersion::V3_1, (int) testDb.GetECVersion("ECDbFileInfo")) << testDb.GetDescription();
+                    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
+
                     EXPECT_LE(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
+                    EXPECT_LE((int) ECVersion::V3_1, (int) testDb.GetECVersion("ECDbMap")) << testDb.GetDescription();
+                    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+
                     //ECDbMeta version was incremented in next profile, so must be higher in newer file
                     EXPECT_LT(SchemaVersion(4, 0, 0), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
+                    EXPECT_LE((int) ECVersion::V3_1, (int) testDb.GetECVersion("ECDbMeta")) << testDb.GetDescription();
+                    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
+
                     //ECDbSystem version was incremented in next profile, so must be higher in newer file
                     EXPECT_LT(SchemaVersion(5, 0, 0), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
+                    EXPECT_LE((int) ECVersion::V3_1, (int) testDb.GetECVersion("ECDbSystem")) << testDb.GetDescription();
+                    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
+
                     //Standard schema versions
                     EXPECT_LE(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
+                    EXPECT_LE((int) ECVersion::V3_1, (int) testDb.GetECVersion("CoreCustomAttributes")) << testDb.GetDescription();
+                    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
                     break;
                     }
                     default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testFile.ToString();
+                        FAIL() << "Unhandled TestDb::State enum value | " << testDb.GetDescription();
                         break;
                 }
             }
@@ -150,6 +160,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32Enums)
 
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
+            ASSERT_TRUE(testDb.SupportsFeature(Feature::NamedEnumerators)) << testDb.GetDescription();
 
             testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
             {{ECValue("Unspecified"), nullptr},
@@ -184,7 +195,6 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
             {
             TestECDb& testDb = *testDbPtr;
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
-
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
             testDb.AssertKindOfQuantity("PreEC32Koqs", "ANGLE", "Angle", nullptr, "RAD(DefaultReal)", JsonValue(R"json(["ARC_DEG(Real2U)", "ARC_DEG(AngleDMS)"])json"), 0.0001);
@@ -211,6 +221,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
 
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
+            ASSERT_TRUE(testDb.SupportsFeature(Feature::UnitsAndFormats)) << testDb.GetDescription();
 
             testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithMandatoryComposite", "My first test KOQ", nullptr, "u:CM", JsonValue(R"js(["f:DefaultRealU(4)[u:M]"])js"), 0.1);
             testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithOptionalComposite", nullptr, "My second test KOQ", "u:CM", JsonValue(R"js(["f:AmerFI[u:FT|feet][u:IN|inches]"])js"), 0.2);
