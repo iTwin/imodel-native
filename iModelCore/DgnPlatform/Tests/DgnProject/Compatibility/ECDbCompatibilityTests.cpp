@@ -103,7 +103,7 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                     break;
                     }
                     default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testFile.ToString();
+                        FAIL() << "Unhandled TestDb::State enum value | " << testDb.GetDescription();
                         break;
                 }
             }
@@ -160,6 +160,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32Enums)
 
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
+            ASSERT_TRUE(testDb.SupportsFeature(Feature::NamedEnumerators)) << testDb.GetDescription();
 
             testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
             {{ECValue("Unspecified"), nullptr},
@@ -220,6 +221,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
 
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
+            ASSERT_TRUE(testDb.SupportsFeature(Feature::UnitsAndFormats)) << testDb.GetDescription();
 
             testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithMandatoryComposite", "My first test KOQ", nullptr, "u:CM", JsonValue(R"js(["f:DefaultRealU(4)[u:M]"])js"), 0.1);
             testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithOptionalComposite", nullptr, "My second test KOQ", "u:CM", JsonValue(R"js(["f:AmerFI[u:FT|feet][u:IN|inches]"])js"), 0.2);
