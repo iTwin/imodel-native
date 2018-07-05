@@ -24,8 +24,7 @@ class BaseCachingDataSourceTest : public BaseCacheTest
     {
     private:
         static std::shared_ptr<MockWSRepositoryClient> s_mockClient;
-        static ICachingDataSourcePtr s_lastCachingDataSource;
-        static IDataSourceCache* s_lastDataSourceCache;
+        static CachingDataSourcePtr s_lastCachingDataSource;
         static BeFileName s_seedCacheFolderPath;
         static BeFileName s_targetCacheFolderPath;
 

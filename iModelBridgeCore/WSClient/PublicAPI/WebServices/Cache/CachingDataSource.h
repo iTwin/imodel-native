@@ -200,6 +200,9 @@ struct CachingDataSource :
             BeFileNameCR temporaryDir
             );
 
+        //! Force close connection to server and local database. Makes object unusable after this.
+        WSCACHE_EXPORT void Close();
+        
         //! Gets the host assets directory to where the application deploys assets that come with the API, e.g. standard ECSchemas.
         //! Must have been set via CachingDataSource::Initialize.
         //! @return Host assets directory

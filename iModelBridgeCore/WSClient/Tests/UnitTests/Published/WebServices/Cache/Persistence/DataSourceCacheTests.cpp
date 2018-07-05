@@ -99,6 +99,108 @@ TEST_F(DataSourceCacheTests, Open_ExistingDbWithNoDefaultTransaction_Success)
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, Close_NotOpened_DoesNothing)
+    {
+    DataSourceCache cache;
+    cache.Close();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, Close_MultipleTimes_Succeeds)
+    {
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Create(StubFilePath(), StubCacheEnvironemnt()));
+
+    cache.Close();
+    cache.Close();
+    cache.Close();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, Close_CreatedDb_ClosesAndQueriesFailWithException)
+    {
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Create(StubFilePath(), StubCacheEnvironemnt()));
+
+    cache.Close();
+
+    bool failed = false;
+    try
+        {
+        cache.FindOrCreateRoot("Foo");
+        }
+    catch (...)
+        {
+        failed = true;
+        }
+    EXPECT_TRUE(failed);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, Close_OpenedDb_ClosesAndQueriesFailWithException)
+    {
+    auto path = StubFilePath();
+    auto env = StubCacheEnvironemnt();
+    DataSourceCache cache1;
+    ASSERT_EQ(SUCCESS, cache1.Create(path, env));
+    ASSERT_EQ(BE_SQLITE_OK, cache1.GetAdapter().GetECDb().AbandonChanges()); // Remove all uncommited changes from default txn
+    cache1.Close();
+
+    DataSourceCache cache;
+    EXPECT_EQ(SUCCESS, cache.Open(path, env));
+
+    cache.Close();
+    bool failed = false;
+    try
+        {
+        cache.FindOrCreateRoot("Foo");
+        }
+    catch (...)
+        {
+        failed = true;
+        }
+    EXPECT_TRUE(failed);
+    }
+    
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, Close_RegisteredSchemaChangeListener_CallsListenerAndCloses)
+    {
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Create(StubFilePath(), StubCacheEnvironemnt()));
+
+    MockECDbSchemaChangeListener listener;
+    cache.RegisterSchemaChangeListener(&listener);
+
+    EXPECT_CALL(listener, OnSchemaChanged()).Times(1);
+    cache.Close();
+    }
+    
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, Close_CachedStatementsExist_ClearsCachesAndCloses)
+    {
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Create(StubFilePath(), StubCacheEnvironemnt()));
+
+    cache.FindOrCreateRoot("Foo");
+    cache.FindOrCreateRoot("Foo");
+
+    cache.Close();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+
 TEST_F(DataSourceCacheTests, GetEnvironment_CreatedWithEmptyEnvironment_Empty)
     {
     DataSourceCache cache;
