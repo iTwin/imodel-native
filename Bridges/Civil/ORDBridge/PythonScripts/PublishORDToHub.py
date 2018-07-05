@@ -13,7 +13,7 @@ import win32security
 
 
 class MainWindow:
-    __server_env_values = ['QA', 'PROD']
+    __server_env_values = ['QA', 'RELEASE']
 
 
     def __init__(self):
