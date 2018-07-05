@@ -104,7 +104,7 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileNameUtf8,
         BeStringUtilities::Split(seedFilePath.GetFileNameWithoutExtension().c_str(), L".", seedFileNameTokens);
         if (seedFileNameTokens.size() > 1)
             {
-            constexpr Utf8CP versionStringTemplate = "%d_%d_%d_%d";
+            constexpr Utf8CP versionStringTemplate = "%d-%d-%d-%d";
             bvector<Utf8String> initialProfileVersions;
             BeStringUtilities::Split(Utf8String(seedFileNameTokens.back()).c_str(), PROFILEVERSIONFOLDER_VERSIONSEPARATOR, initialProfileVersions);
             BeAssert(!initialProfileVersions.empty());
@@ -159,7 +159,7 @@ BeFileName Profile::GetPathForNewUpgradedTestFile(TestFile const& oldSeedFile) c
     if (oldSeedFile.IsUpgraded())
         return filePath.AppendToPath(BeFileName(oldSeedFile.GetPath().GetFileNameAndExtension()));
 
-    constexpr Utf8CP versionStringTemplate = "%" PRIu16 "_%" PRIu16 "_%" PRIu16 "_%" PRIu16;
+    constexpr Utf8CP versionStringTemplate = "%" PRIu16 "-%" PRIu16 "-%" PRIu16 "-%" PRIu16;
     BeFileName fileName(oldSeedFile.GetPath().GetFileNameWithoutExtension());
     fileName.append(L".");
     if (!oldSeedFile.GetInitialDgnDbVersion().IsEmpty())
