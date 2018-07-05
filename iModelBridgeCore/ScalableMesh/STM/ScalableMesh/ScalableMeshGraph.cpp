@@ -1095,7 +1095,7 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
         if (segment != NULL)
             {
             ray = DRay3d::FromOriginAndVector(linePts[*segment + 1], DVec3d::From(0, 0, -1));
-            bsiDRay3d_closestApproach(&paray1, &paray2, &proj1, &proj2, &toEdgeRay, &ray);
+            DRay3d::ClosestApproachUnboundedRayUnboundedRay (paray1, paray2, proj1, proj2, toEdgeRay, ray);
             }
         MTGNodeId extEdge = -1;
         MTGMask visitedMask = -1;
@@ -1159,13 +1159,14 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
                     DRay3d triEdgeRay = DRay3d::From(DSegment3d::From(pts[i], pts[(i + 1) % 3]));
                     triEdgeRay.direction.z = 0;
                     toEdgeRay.direction.z = 0;
-                    if (bsiDRay3d_closestApproach(&param, &param2, &pt, &pt2, &toEdgeRay, &triEdgeRay) && param > -1e-8 && param2 >= 0 && param2 <= 1)
+                    if (DRay3d::ClosestApproachUnboundedRayUnboundedRay (param, param2, pt, pt2, toEdgeRay, triEdgeRay) && param > -1e-8 && param2 >= 0 && param2 <= 1)
                         {
                         DRay3d drapeRay = DRay3d::FromOriginAndVector(pt, DVec3d::From(0, 0, -1));
                         DPoint3d pt1;
                         triEdgeRay.direction.z = pts[(i + 1) % 3].z - pts[i].z;
+                        double param1;
                         //there is a closest approach, now find out whether there is an intersection along the projection(drape) direction
-                        if (bsiDRay3d_closestApproach(NULL, &param2, &pt1, &pt2, &drapeRay, &triEdgeRay) && param2 >= 0 && param2 <= 1 && DVec3d::FromStartEnd(pt1, pt2).MagnitudeSquared() < 0.01)
+                        if (DRay3d::ClosestApproachUnboundedRayUnboundedRay (param1, param2, pt1, pt2, drapeRay, triEdgeRay) && param2 >= 0 && param2 <= 1 && DVec3d::FromStartEnd(pt1, pt2).MagnitudeSquared() < 0.01)
                             {
                             intersectsTri = true;
                             nIntersects++;
@@ -1225,11 +1226,12 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
         graphP->TryGetLabel(currentTriangle, 0, triangle[0]);
         graphP->TryGetLabel(graphP->FSucc(currentTriangle), 0, triangle[1]);
         graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(currentTriangle)), 0, triangle[2]);
+        DTriangle3d trianglePoints (points[triangle[0]-1], points[triangle[1]-1], points[triangle[2]-1]);
         DPoint3d pts[3] = { points[triangle[0]-1], points[triangle[1]-1], points[triangle[2]-1] };
         DRay3d ray = DRay3d::FromOriginAndVector(startPt, drapeDirection); 
         DPoint3d bary, projectedPt;
         double param;
-        bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts);
+        trianglePoints.TransverseIntersection (ray, projectedPt, bary, param);
         DPoint3d currentVertex = projectedPt;
         if (*segment >= nLinePts - 1) return true;
         projectedPoints[*segment].push_back(currentVertex);
@@ -1244,7 +1246,7 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
             DPoint3d pt2;
             pt2.SumOf(currentVertex, currentLineSegmentDirection);
             DRay3d toTriPlane = DRay3d::FromOriginAndVector(pt2, drapeDirection);
-            bsiDRay3d_intersectTriangle(&toTriPlane, &pt2, &bary, &p, pts);
+            trianglePoints.TransverseIntersection (toTriPlane, pt2, bary, p);
             DVec3d projDirection = DVec3d::FromStartEnd(currentVertex, pt2);
 
             DRay3d toNextPoint = DRay3d::FromOriginAndVector(currentVertex, projDirection);
@@ -1261,7 +1263,7 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
                 DRay3d edgeRay = DRay3d::From(triEdge);
                 double param2;
                 DPoint3d intersectPt2;
-                if (bsiDRay3d_closestApproach(&param, &param2, &intersectPt2, &intersectPt, &toNextPoint, &edgeRay))
+                if (DRay3d::ClosestApproachUnboundedRayUnboundedRay (param, param2, intersectPt2, intersectPt, toNextPoint, edgeRay))
                     {
                     if ((lastVtx1 == triangle[i] || lastVtx1 == triangle[(i + 1) % 3]) && (lastVtx2 == triangle[i] || lastVtx2 == triangle[(i + 1) % 3])) continue;
                     if (param2 < 0 || param2 > 1 || param < 1.0e-8) continue;
@@ -1294,7 +1296,7 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
                 {
                 for (size_t j = 0; j < 3; ++j)
                     {
-                    if (bsiDPoint3d_pointEqualTolerance(&currentVertex, &pts[j], 1.0e-8))
+                    if (currentVertex.IsEqual (pts[j], 1.0e-8))
                         {
                         intersectFound = true;
                         //compare the two edges to pick the one that is in direction of ray
@@ -1307,13 +1309,13 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
                         if (lastVtx1 == triangle[(i + 2) % 3] || lastVtx2 == triangle[(i + 2) % 3] || (lastVtx1 != triangle[(i + 1) % 3] && lastVtx2 != triangle[(i + 1) % 3] && paramA > paramB))
                             {
                             i = j + 1;
-                            if (bsiDPoint3d_pointEqualTolerance(&pt, &pts[(j + 1) % 3], 1.0e-8)) //second point also on ray
+                            if (pt.IsEqual (pts[(j + 1) % 3], 1.0e-8)) //second point also on ray
                                 if (paramA > 0) intersectPt = pt;
                             }
                         else
                             {
                             i = ((j + 2) % 3) + 1;
-                            if (bsiDPoint3d_pointEqualTolerance(&pt3, &pts[(j + 2) % 3], 1.0e-8)) //second point also on ray
+                            if (pt3.IsEqual (pts[(j + 2) % 3], 1.0e-8)) //second point also on ray
                                 if (paramB > 0) intersectPt = pt3;
                             }
                         break;
@@ -1326,7 +1328,7 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
                     DRay3d edgeRay = DRay3d::From(triEdge);
                     double param2;
                     DPoint3d intersectPt2;
-                    if (bsiDRay3d_closestApproach(&param, &param2, &intersectPt2, &intersectPt, &toNextPoint, &edgeRay))
+                    if (DRay3d::ClosestApproachUnboundedRayUnboundedRay (param, param2, intersectPt2, intersectPt, toNextPoint, edgeRay))
                         {
                         if ((lastVtx1 == triangle[i] || lastVtx1 == triangle[(i + 1) % 3]) && (lastVtx2 == triangle[i] || lastVtx2 == triangle[(i + 1) % 3])) continue;
                         if (param2 < 0 || param2 > 1 || param < -1.0e-8) continue;
@@ -1371,7 +1373,7 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
                 double paramray;
                 DPoint3d projectedEnd, projectedEnd2;
           
-                if (bsiDRay3d_closestApproach(&param, &paramray, &projectedEnd, &projectedEnd2, &toEdgeRay, &ray) && param >= 1.0e-8 && param <= 1+1.0e-8 /*&& paramray > 0*/) //segment ends before triangle edge is reached
+                if (DRay3d::ClosestApproachUnboundedRayUnboundedRay (param, paramray, projectedEnd, projectedEnd2, toEdgeRay, ray) && param >= 1.0e-8 && param <= 1+1.0e-8 /*&& paramray > 0*/) //segment ends before triangle edge is reached
                     {
 
                     currentVertex = projectedEnd;
@@ -1399,7 +1401,7 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
                 toEdgeRay = DRay3d::FromOriginAndVector(currentVertex, projDirection);
                 double paramray;
                 DPoint3d projectedEnd;
-                if (ray.ProjectPointUnbounded(projectedEnd, paramray, currentVertex) && bsiDPoint3d_pointEqualTolerance(&projectedEnd, &currentVertex, 1.0e-7))
+                if (ray.ProjectPointUnbounded(projectedEnd, paramray, currentVertex) && projectedEnd.IsEqual (currentVertex, 1.0e-7))
                     {
                     projectedPoints[*segment].push_back(currentVertex);
                     ++(*segment);

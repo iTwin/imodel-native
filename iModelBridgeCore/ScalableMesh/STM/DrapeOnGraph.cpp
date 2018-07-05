@@ -6,7 +6,7 @@
 |       $Date: 2015/08/07 12:30:58 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -52,7 +52,7 @@ bool ScalableMeshGraphDraping::FollowPolylineOnGraph(bvector<bvector<DPoint3d>>&
                     DRay3d edgeRay = DRay3d::From(triEdge);
                     double param2;
                     DPoint3d intersectPt2;
-                    if (bsiDRay3d_closestApproach(&param, &param2, &intersectPt2, &intersectPt, &toNextPoint, &edgeRay))
+                    if (DRay3d::ClosestApproachUnboundedRayUnboundedRay (param, param2, intersectPt2, intersectPt, toNextPoint, edgeRay))
                         {
                         if ((m_lastVtx1 == triangleVertexIds[i] || m_lastVtx1 == triangleVertexIds[(i + 1) % 3]) && (m_lastVtx2 == triangleVertexIds[i] || m_lastVtx2 == triangleVertexIds[(i + 1) % 3])) continue;
                         if (param2 < 0 || param2 > 1 || param < -POINT_TOLERANCE) continue;
@@ -149,7 +149,8 @@ DPoint3d ScalableMeshGraphDraping::ProjectPointOnTrianglePlane(const DPoint3d& p
     {
     DRay3d ray = DRay3d::FromOriginAndVector(pt, m_drapeDirection);
     DPoint3d projectedPt;
-    bsiDRay3d_intersectTriangle(&ray, &projectedPt, barycentric, NULL, triangle);
+    double rayParameter;
+    DTriangle3d (triangle[0], triangle[1], triangle[2]).TransverseIntersection (ray, projectedPt, *barycentric, rayParameter);
     return projectedPt;
     }
 
@@ -183,7 +184,9 @@ DRay3d ScalableMeshGraphDraping::GetDirectionInTrianglePlane(const DPoint3d& sta
     DPoint3d pt2;
     pt2.SumOf(startPoint, direction);
     DRay3d toTriPlane = DRay3d::FromOriginAndVector(pt2, m_drapeDirection);
-    bsiDRay3d_intersectTriangle(&toTriPlane, &pt2, NULL, NULL, triangle);
+    double rayParam;
+    DPoint3d triangleParam;
+    DTriangle3d (triangle[0], triangle[1], triangle[2]).TransverseIntersection (toTriPlane, pt2, triangleParam, rayParam);
     DVec3d projDirection = DVec3d::FromStartEnd(startPoint, pt2);
    return DRay3d::FromOriginAndVector(startPoint, projDirection);
     }
@@ -199,7 +202,7 @@ bool ScalableMeshGraphDraping::FindIntersectionOfRayAndTriangleEdges(int& inters
         DRay3d edgeRay = DRay3d::From(triEdge);
         double param2;
         DPoint3d intersectPt2;
-        if (bsiDRay3d_closestApproach(&param, &param2, &intersectPt2, &intersectPt, &toNextPoint, &edgeRay))
+        if (DRay3d::ClosestApproachUnboundedRayUnboundedRay (param, param2, intersectPt2, intersectPt, toNextPoint, edgeRay))
             {
             if ((m_lastVtx1 == indices[i] || m_lastVtx1 == indices[(i + 1) % 3]) && (m_lastVtx2 == indices[i] || m_lastVtx2 == indices[(i + 1) % 3])) continue;
             if (param2 < 0 || param2 > 1 || param < POINT_TOLERANCE) continue;
@@ -235,7 +238,7 @@ bool ScalableMeshGraphDraping::FindIntersectionOfRayAndTriangleVertices(int& int
     bool intersectFound = false;
     for (size_t i = 0; i < 3; ++i)
         {
-        if (bsiDPoint3d_pointEqualTolerance(&toNextPoint.origin, &triangle[i], POINT_TOLERANCE))
+        if (toNextPoint.origin.IsEqual (triangle[i], POINT_TOLERANCE))
             {
             intersectFound = true;
             //compare the two edges to pick the one that is in direction of ray
@@ -248,13 +251,13 @@ bool ScalableMeshGraphDraping::FindIntersectionOfRayAndTriangleVertices(int& int
             if (m_lastVtx1 == indices[(i + 2) % 3] || m_lastVtx2 == indices[(i + 2) % 3] || (m_lastVtx1 != indices[(i + 1) % 3] && m_lastVtx2 != indices[(i + 1) % 3] && (intersectType == INTERSECTION_LAST && paramA > paramB) || (intersectType == INTERSECTION_FIRST && paramA < paramB)))
                 {
                 intersectedEdge = (int)i;
-                if (bsiDPoint3d_pointEqualTolerance(&pt, &triangle[(i + 1) % 3], POINT_TOLERANCE)) //second point also on ray
+                if (pt.IsEqual (triangle[(i + 1) % 3], POINT_TOLERANCE)) //second point also on ray
                     if (paramA > 0) intersectPt = pt;
                 }
             else
                 {
                 intersectedEdge = (int)(i + 2) % 3;
-                if (bsiDPoint3d_pointEqualTolerance(&pt2, &triangle[(i + 2) % 3], POINT_TOLERANCE)) //second point also on ray
+                if (pt2.IsEqual (triangle[(i + 2) % 3], POINT_TOLERANCE)) //second point also on ray
                     if (paramB > 0) intersectPt = pt2;
                 }
             break;
@@ -268,9 +271,9 @@ bool ScalableMeshGraphDrapingProcess::EndOfSegmentReached(DPoint3d& projectedEnd
     {
     DSegment3d toTriEdge = DSegment3d::From(m_currentVertex, intersectPt);
     DRay3d toEdgeRay = DRay3d::From(toTriEdge);
-    double param;
+    double param, param2;
     DPoint3d projectedEnd2;
-    bool endOfSegment = (bsiDRay3d_closestApproach(&param, NULL, &projectedEnd, &projectedEnd2, &toEdgeRay, &m_endOfCurrentSegment) && param >= ScalableMeshGraphDraping::POINT_TOLERANCE && param <= 1 + ScalableMeshGraphDraping::POINT_TOLERANCE);
+    bool endOfSegment = (DRay3d::ClosestApproachUnboundedRayUnboundedRay (param, param2, projectedEnd, projectedEnd2, toEdgeRay, m_endOfCurrentSegment) && param >= ScalableMeshGraphDraping::POINT_TOLERANCE && param <= 1 + ScalableMeshGraphDraping::POINT_TOLERANCE);
     if (endOfSegment) SetCurrentVertex(projectedEnd);
     return endOfSegment;
     }
@@ -312,7 +315,7 @@ bool ScalableMeshGraphDrapingProcess::SegmentEndsOnCurrentVertex()
     {
     DPoint3d projectedEnd;
     double param;
-    return (m_endOfCurrentSegment.ProjectPointUnbounded(projectedEnd, param, m_currentVertex) && bsiDPoint3d_pointEqualTolerance(&projectedEnd, &m_currentVertex, 10 * ScalableMeshGraphDraping::POINT_TOLERANCE));
+    return (m_endOfCurrentSegment.ProjectPointUnbounded(projectedEnd, param, m_currentVertex) && projectedEnd.IsEqual (m_currentVertex, 10 * ScalableMeshGraphDraping::POINT_TOLERANCE));
     }
 
 int ScalableMeshGraphDrapingProcess::FindNextTriangleEdgeInDirection(const DPoint3d* vertices, size_t nVertices)
