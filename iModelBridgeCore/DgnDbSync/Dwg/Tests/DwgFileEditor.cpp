@@ -259,6 +259,9 @@ void    DwgFileEditor::AttachXrefInDefaultModel (BeFileNameCR infile, DPoint3dCR
     // use base file name as block name
     DwgString blockName (infile.GetFileNameWithoutExtension().c_str());
 
+    // ensure VISRETAIN is on, such that layers from the xRef file will be added into the master file
+    ASSERT_DWGDBSUCCESS (m_dwgdb->SetVISRETAIN(true));
+
     // create an xref block
     DwgDbObjectId   xrefId = m_dwgdb->CreateXrefBlock (infile.c_str(), blockName);
     ASSERT_TRUE (xrefId.IsValid()) << "Given DWG cannot be attached as an xRef!";

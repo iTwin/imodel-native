@@ -57,6 +57,7 @@ double              DwgDbDatabase::GetTEXTSIZE () const { return DWGDB_CALLSDKME
 DwgDbObjectId       DwgDbDatabase::GetTEXTSTYLE () const { return DWGDB_CALLSDKMETHOD(T_Super::getTEXTSTYLE, T_Super::textstyle)(); }
 bool                DwgDbDatabase::GetTILEMODE () const { return DWGDB_CALLSDKMETHOD(T_Super::getTILEMODE, T_Super::tilemode)(); }
 bool                DwgDbDatabase::GetVISRETAIN () const { return DWGDB_CALLSDKMETHOD(T_Super::getVISRETAIN, T_Super::visretain)(); }
+DwgDbStatus         DwgDbDatabase::SetVISRETAIN (bool on) { DWGDB_CALLSDKMETHOD(T_Super::setVISRETAIN(on); return DwgDbStatus::Success, return ToDwgDbStatus(T_Super::setVisretain(on))); }
 bool                DwgDbDatabase::GetLineweightDisplay () const { return DWGDB_CALLSDKMETHOD(T_Super::getLWDISPLAY, T_Super::lineWeightDisplay)(); }
 DwgDbObjectId       DwgDbDatabase::GetLinetypeByBlockId () const { return DWGDB_CALLSDKMETHOD(T_Super::getLinetypeByBlockId(), T_Super::byBlockLinetype()); }
 DwgDbObjectId       DwgDbDatabase::GetLinetypeByLayerId () const { return DWGDB_CALLSDKMETHOD(T_Super::getLinetypeByLayerId(), T_Super::byLayerLinetype()); }
