@@ -19,6 +19,7 @@ public:
 template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>, public SMSQLiteSisterFile
     {        
     private:
+
         SMSQLiteFilePtr m_smSQLiteFile;
         DRange3d m_totalExtent;
         GeoCoordinates::BaseGCSCPtr m_cs;
@@ -28,14 +29,14 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         SMIndexMasterHeader<EXTENT> m_masterHeader;
         std::mutex                  m_preloadMutex;
 
-		IClipDefinitionDataProviderPtr m_clipProvider;
+        IClipDefinitionDataProviderPtr m_clipProvider;
 
 
     public : 
     
         SMSQLiteStore(SMSQLiteFilePtr database);
             
-        virtual ~SMSQLiteStore();
+        virtual ~SMSQLiteStore();       
                     
         virtual uint64_t GetNextID() const override;
             

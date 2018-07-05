@@ -123,7 +123,6 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::~SMSQLiteStore()
     {
     // We didn't want to close it. It's ScalableMesh which did this stuff now (and if SMSQLiteFilePtr is destroy, close is automatically called)
     //m_smSQLiteFile->Close();    
-
     }
 
 template <class EXTENT> uint64_t SMSQLiteStore<EXTENT>::GetNextID() const

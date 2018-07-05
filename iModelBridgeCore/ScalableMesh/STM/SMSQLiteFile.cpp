@@ -43,7 +43,7 @@ void SMSQLiteFile::Save()
 
 bool SMSQLiteFile::Close()
     {
-    m_database->SaveChanges();
+    Save();    
     m_database->CloseDb();
     return true;
     }
@@ -287,9 +287,20 @@ bool SMSQLiteFile::GetFileName(Utf8String& fileName) const
         return false;
         }
 
-    fileName = Utf8String(m_database->GetDbFileName());
+    Utf8CP dbFileName = m_database->GetDbFileName();
 
+    if (dbFileName != nullptr)
+        {
+        fileName = Utf8String(m_database->GetDbFileName());
+        return true;        
+        }
+
+#ifndef VANCOUVER_API   
+    m_database->GetSharedDbFileName(fileName);
     return true;
+#else
+    return false;
+#endif       
     }        
 
 DbResult SMSQLiteFile::CreateTables()
@@ -427,9 +438,7 @@ DbResult SMSQLiteFile::CreateTables()
     assert(result == BE_SQLITE_OK);
 
     result = CreateTables();
-
-                            
-
+                                
     m_database->SaveChanges();
 
     return result == BE_SQLITE_OK;
@@ -855,6 +864,7 @@ void SMSQLiteFile::StorePoints(int64_t& nodeID, const bvector<uint8_t>& pts, siz
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMPoint SET PointData=?, SizePts=? WHERE NodeId=?");
         stmt->BindBlob(1, &pts[0], (int)pts.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
@@ -910,6 +920,7 @@ void SMSQLiteFile::StoreIndices(int64_t& nodeID, const bvector<uint8_t>& indices
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMPoint SET IndexData=?, SizeIndices=? WHERE NodeId=?");
         stmt->BindBlob(1, &indices[0], (int)indices.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
@@ -948,6 +959,7 @@ void SMSQLiteFile::StoreUVIndices(int64_t& nodeID, const bvector<uint8_t>& uvCoo
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMUVs SET UVIndexData=?, SizeUVIndex=? WHERE NodeId=?");
         stmt->BindBlob(1, &uvCoords[0], (int)uvCoords.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
@@ -984,6 +996,7 @@ void SMSQLiteFile::StoreTexture(int64_t& nodeID, const bvector<uint8_t>& texture
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMTexture SET TexData=?, SizeTexture=? WHERE NodeId=?");
         stmt->BindBlob(1, &texture[0], (int)texture.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
@@ -1018,6 +1031,7 @@ void SMSQLiteFile::StoreUVs(int64_t& nodeID, const bvector<uint8_t>& uvCoords, s
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMUVs SET UvData=?, SizeUVs=? WHERE NodeId=?");
         stmt->BindBlob(1, &uvCoords[0], (int)uvCoords.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
@@ -1075,6 +1089,7 @@ void SMSQLiteFile::StoreMeshParts(int64_t& nodeID, const bvector<uint8_t>& data,
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMMeshParts SET Data=?, Size=? WHERE NodeId=?");
         stmt->BindBlob(1, &data[0], (int)data.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
@@ -1126,6 +1141,7 @@ void SMSQLiteFile::StoreMetadata(int64_t& nodeID, const bvector<uint8_t>& metada
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMMeshMetadata SET Data=?, Size=? WHERE NodeId=?");
         stmt->BindBlob(1, &metadata[0], (int)metadata.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);

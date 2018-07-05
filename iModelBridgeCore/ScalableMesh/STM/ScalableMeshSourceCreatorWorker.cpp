@@ -165,7 +165,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateMeshTasks()
     wchar_t stringBuffer[100000];
 
     pDataIndex->Mesh(&nodesToMesh);
-
+    
     for (auto& nodeId : nodesToMesh)
         { 
         BeFileName meshTaskFile(taskDirectory);
