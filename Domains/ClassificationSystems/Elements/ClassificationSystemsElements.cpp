@@ -50,6 +50,15 @@ Json::Value& elementData
     elementData["name"] = GetName();
     }
 
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Aurimas.Laureckis              06/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::ElementIterator ClassificationSystem::MakeIterator(Dgn::DgnDbR dgnDbR)
+    {
+    return dgnDbR.Elements().MakeIterator(CLASSIFICATIONSYSTEMS_SCHEMA(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aurimas.Laureckis               07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/

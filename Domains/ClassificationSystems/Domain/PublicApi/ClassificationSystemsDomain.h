@@ -57,9 +57,6 @@ private:
 public:
     ClassificationSystemsDomain ();
     ~ClassificationSystemsDomain ();
-
-    CLASSIFICATIONSYSTEMSDOMAIN_EXPORT static Dgn::ElementIterator MakeClassificationIterator(Dgn::DgnDbR dgnDbR);
-
 };
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
