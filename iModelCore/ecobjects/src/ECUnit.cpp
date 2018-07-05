@@ -189,7 +189,7 @@ SchemaReadStatus ECUnit::ReadXml(BeXmlNodeR unitNode, ECSchemaReadContextR conte
     Utf8String value;
     READ_OPTIONAL_XML_ATTRIBUTE(unitNode, DESCRIPTION_ATTRIBUTE, this, Description)
     Utf8String displayLabel;
-    if(BEXML_Success == unitNode.GetAttributeStringValue(displayLabel, ECXML_DISPLAY_LABEL_ATTRIBUTE) || Utf8String::IsNullOrEmpty(displayLabel.c_str()))
+    if(BEXML_Success == unitNode.GetAttributeStringValue(displayLabel, ECXML_DISPLAY_LABEL_ATTRIBUTE))
         Units::Unit::SetDisplayLabel(displayLabel.c_str());
 
     // Read the specific properties
