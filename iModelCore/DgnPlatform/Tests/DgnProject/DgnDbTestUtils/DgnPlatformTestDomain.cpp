@@ -432,6 +432,54 @@ DgnDbStatus TestUniqueAspect::_GetPropertyValue(ECN::ECValueR value, Utf8CP prop
         return DgnDbStatus::Success;
         }
 
+    if (0 == strcmp (propertyName, "test1"))
+    {
+        value.SetDouble (test1);
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test2"))
+    {
+        value.SetUtf8CP (test2.c_str ());
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test3"))
+    {
+        value.SetDouble (test3);
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test4"))
+    {
+        value.SetUtf8CP (test4.c_str ());
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test5"))
+    {
+        value.SetDouble (test5);
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test6"))
+    {
+        value.SetUtf8CP (test6.c_str ());
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test7"))
+    {
+        value.SetDouble (test7);
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test8"))
+    {
+        value.SetUtf8CP (test8.c_str ());
+        return DgnDbStatus::Success;
+    }
+
     return DgnDbStatus::BadArg;
     }
 
@@ -451,6 +499,54 @@ DgnDbStatus TestUniqueAspect::_SetPropertyValue(Utf8CP propertyName, ECN::ECValu
         m_length = value.GetDouble();
         return DgnDbStatus::Success;
         }
+
+    if (0 == strcmp (propertyName, "test1"))
+    {
+        test1 = value.GetDouble ();
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test2"))
+    {
+        test2 = value.ToString ();
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test3"))
+    {
+        test3 = value.GetDouble ();
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test4"))
+    {
+        test4 = value.ToString ();
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test5"))
+    {
+        test5 = value.GetDouble ();
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test6"))
+    {
+        test6 = value.ToString ();
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test7"))
+    {
+        test7 = value.GetDouble ();
+        return DgnDbStatus::Success;
+    }
+
+    if (0 == strcmp (propertyName, "test8"))
+    {
+        test8 = value.ToString ();
+        return DgnDbStatus::Success;
+    }
 
     return DgnDbStatus::BadArg;
     }
