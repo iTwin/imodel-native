@@ -1091,6 +1091,18 @@ static bool isDisjointCurvePrimitive(ICurvePrimitiveCR prim)
     }
 
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool _IsViewDependent () const override
+    {
+    CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
+    
+    // Line codes are view dependent (and therefore cannot be instanced).
+    return curveVector.IsValid() && curveVector->IsOpenPath() && GetDisplayParams().GetLinePixels() != 0;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2654,9 +2666,13 @@ bool TileGeomPart::IsWorthInstancing (double chordTolerance) const
         return false;
 
     auto            facetOptions = TileGenerator::CreateTileFacetOptions(chordTolerance);
+    for (auto& geometry : m_geometries)
+        if (geometry->_IsViewDependent())
+            return false;
+
     FacetCounter    counter(*facetOptions);
     size_t          facetCount = GetFacetCount(counter);
-
+                                                                                                                                                             
     return (m_instanceCount - 1) * facetCount > s_minFacetCompression;
     }
 
@@ -2664,7 +2680,7 @@ bool TileGeomPart::IsWorthInstancing (double chordTolerance) const
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeomPart::IsCurved() const
-    {
+    {                                                                                                                                                                                                  
     for (auto& geometry : m_geometries)
         if (geometry->IsCurved())
             return true;
