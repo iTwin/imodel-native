@@ -386,13 +386,13 @@ BentleyStatus DataSourceCache::Reset()
                 }
 
             Utf8PrintfString key("DataSourceCache::Reset:%" PRIu64, ecClass->GetId().GetValue());
-            auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
+            auto statement = GetState().GetStatementCache().GetPreparedStatement(key, [&]
                 {
                 return Utf8PrintfString("SELECT %" PRIu64 ", ECInstanceId FROM ONLY %s", ecClass->GetId().GetValue(),
                                         ecClass->GetECSqlName().c_str());
                 });
 
-            if (SUCCESS != m_state->GetHierarchyManager().DeleteInstances(*statement))
+            if (SUCCESS != GetState().GetHierarchyManager().DeleteInstances(*statement))
                 {
                 BeAssert(false);
                 return ERROR;
@@ -400,7 +400,7 @@ BentleyStatus DataSourceCache::Reset()
             }
         }
 
-    m_state = std::make_shared<WSCacheState>(m_db, m_state->GetFileCacheEnvironment());
+    m_state = std::make_shared<WSCacheState>(m_db, GetState().GetFileCacheEnvironment());
     return SUCCESS;
     }
 
@@ -471,10 +471,10 @@ ObjectId DataSourceCache::ObjectIdFromJsonInstance(JsonValueCR instance) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DataSourceCache::InvalidateCachedInstance(ObjectId objectId)
     {
-    FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
+    FileInfo info = GetState().GetFileInfoManager().ReadInfo(objectId);
     info.SetFileCacheTag(nullptr);
 
-    return m_state->GetFileInfoManager().SaveInfo(info);
+    return GetState().GetFileInfoManager().SaveInfo(info);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -506,14 +506,14 @@ DateTime DataSourceCache::ReadInstanceCachedDate(ObjectIdCR objectId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DataSourceCache::SetResponseAccessDate(CachedResponseKeyCR key, DateTimeCR utcDateTime)
     {
-    ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
-    CachedResponseInfo info = m_state->GetCachedResponseManager().ReadInfo(responseKey);
+    ResponseKey responseKey = GetState().GetCachedResponseManager().ConvertResponseKey(key);
+    CachedResponseInfo info = GetState().GetCachedResponseManager().ReadInfo(responseKey);
     if (!info.IsCached())
         {
         return ERROR;
         }
     info.SetAccessDate(utcDateTime);
-    return m_state->GetCachedResponseManager().SaveInfo(info);
+    return GetState().GetCachedResponseManager().SaveInfo(info);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -521,8 +521,8 @@ BentleyStatus DataSourceCache::SetResponseAccessDate(CachedResponseKeyCR key, Da
 +---------------+---------------+---------------+---------------+---------------+------*/
 DateTime DataSourceCache::ReadResponseAccessDate(CachedResponseKeyCR key)
     {
-    ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
-    return m_state->GetCachedResponseManager().ReadInfo(responseKey).GetAccessDate();
+    ResponseKey responseKey = GetState().GetCachedResponseManager().ConvertResponseKey(key);
+    return GetState().GetCachedResponseManager().ReadInfo(responseKey).GetAccessDate();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -532,11 +532,11 @@ bset<CachedResponseKey> DataSourceCache::GetResponsesContainingInstance(ECInstan
     {
     bset<CachedResponseKey> keys;
 
-    auto cachedInfoKey = m_state->GetObjectInfoManager().ReadInfoKey(instance);
+    auto cachedInfoKey = GetState().GetObjectInfoManager().ReadInfoKey(instance);
     if (!cachedInfoKey.IsValid())
         return keys;
 
-    if (SUCCESS != m_state->GetCachedResponseManager().GetResponsesContainingInstance(cachedInfoKey, keys, responseName))
+    if (SUCCESS != GetState().GetCachedResponseManager().GetResponsesContainingInstance(cachedInfoKey, keys, responseName))
         BeAssert(false);
 
     return keys;
@@ -661,8 +661,8 @@ Utf8StringCR rootName
         key = info.GetCachedInstanceKey();
         }
 
-    CacheRootKey rootKey = m_state->GetRootManager().FindOrCreateRoot(rootName);
-    if (SUCCESS != m_state->GetRootManager().LinkExistingNodeToRoot(rootKey, key.GetInfoKey()))
+    CacheRootKey rootKey = GetState().GetRootManager().FindOrCreateRoot(rootName);
+    if (SUCCESS != GetState().GetRootManager().LinkExistingNodeToRoot(rootKey, key.GetInfoKey()))
         {
         return ERROR;
         }
@@ -688,8 +688,8 @@ Utf8StringCR rootName
     info.SetObjectCacheDate(DateTime::GetCurrentTimeUtc());
     info.SetObjectState(CachedInstanceState::Full);
 
-    CacheRootKey rootKey = m_state->GetRootManager().FindOrCreateRoot(rootName);
-    if (SUCCESS != m_state->GetRootManager().LinkNewInstanceToRoot(rootKey, objectId, info, &instancePropertiesJson))
+    CacheRootKey rootKey = GetState().GetRootManager().FindOrCreateRoot(rootName);
+    if (SUCCESS != GetState().GetRootManager().LinkNewInstanceToRoot(rootKey, objectId, info, &instancePropertiesJson))
         {
         return ERROR;
         }
@@ -724,10 +724,10 @@ ICancellationTokenPtr ct
         return ERROR;
         }
 
-    CacheRootKey rootKey = m_state->GetRootManager().FindOrCreateRoot(rootName);
+    CacheRootKey rootKey = GetState().GetRootManager().FindOrCreateRoot(rootName);
     for (CachedInstanceKeyCR key : cachedInstances.GetCachedInstances())
         {
-        if (SUCCESS != m_state->GetRootManager().LinkExistingNodeToRoot(rootKey, key.GetInfoKey(), !weakLinkToRoot))
+        if (SUCCESS != GetState().GetRootManager().LinkExistingNodeToRoot(rootKey, key.GetInfoKey(), !weakLinkToRoot))
             {
             return ERROR;
             }
@@ -901,7 +901,7 @@ IECInstancePtr DataSourceCache::ReadInstance(ObjectIdCR objectId)
 std::shared_ptr<ECSqlStatement> DataSourceCache::GetReadInstanceStatement(ECClassCR ecClass, Utf8CP remoteId)
     {
     Utf8PrintfString key("DataSourceCache::GetReadInstanceStatement:RemoteId:%llu", ecClass.GetId().GetValue());
-    auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
+    auto statement = GetState().GetStatementCache().GetPreparedStatement(key, [&]
         {
         return CacheQueryHelper::ECSql::SelectAllPropertiesByRemoteId(ecClass);
         });
@@ -915,7 +915,7 @@ std::shared_ptr<ECSqlStatement> DataSourceCache::GetReadInstanceStatement(ECClas
 std::shared_ptr<ECSqlStatement> DataSourceCache::GetReadInstanceStatement(ECClassCR ecClass, ECInstanceId ecInstanceId)
     {
     Utf8PrintfString key("DataSourceCache::GetReadInstanceStatement:ECInstanceId:%llu", ecClass.GetId().GetValue());
-    auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
+    auto statement = GetState().GetStatementCache().GetPreparedStatement(key, [&]
         {
         return CacheQueryHelper::ECSql::SelectAllPropertiesAndRemoteIdByECInstanceId(ecClass);
         });
@@ -958,26 +958,26 @@ CacheStatus DataSourceCache::RemoveInstance(ObjectIdCR objectId)
     LogCacheDataForMethod();
     if (objectId.IsEmpty())
         {
-        CacheNodeKey key = m_state->GetNavigationBaseManager().FindNavigationBase();
+        CacheNodeKey key = GetState().GetNavigationBaseManager().FindNavigationBase();
         if (!key.IsValid())
             {
             return CacheStatus::DataNotCached;
             }
-        if (SUCCESS != m_state->GetHierarchyManager().DeleteInstance(key))
+        if (SUCCESS != GetState().GetHierarchyManager().DeleteInstance(key))
             {
             return CacheStatus::Error;
             }
         return CacheStatus::OK;
         }
 
-    CachedInstanceKey cachedKey = m_state->GetObjectInfoManager().ReadCachedInstanceKey(objectId);
+    CachedInstanceKey cachedKey = GetState().GetObjectInfoManager().ReadCachedInstanceKey(objectId);
     if (!cachedKey.IsValid())
         {
         return CacheStatus::DataNotCached;
         }
 
-    if (SUCCESS != m_state->GetCachedResponseManager().InvalidateResponsePagesContainingInstance(cachedKey) ||
-        SUCCESS != m_state->GetHierarchyManager().DeleteInstance(cachedKey.GetInfoKey()))
+    if (SUCCESS != GetState().GetCachedResponseManager().InvalidateResponsePagesContainingInstance(cachedKey) ||
+        SUCCESS != GetState().GetHierarchyManager().DeleteInstance(cachedKey.GetInfoKey()))
         {
         return CacheStatus::Error;
         }
@@ -1095,14 +1095,14 @@ BentleyStatus DataSourceCache::SetupRoot(Utf8StringCR rootName, CacheRootPersist
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DataSourceCache::IsInstanceFullyPersisted(ObjectIdCR objectId)
     {
-    CachedInstanceKey key = m_state->GetObjectInfoManager().ReadCachedInstanceKey(objectId);
+    CachedInstanceKey key = GetState().GetObjectInfoManager().ReadCachedInstanceKey(objectId);
     if (!key.IsValid())
         {
         return false;
         }
 
     ECInstanceKeyMultiMap persistedNodes;
-    m_state->GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, persistedNodes);
+    GetState().GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, persistedNodes);
 
     return ECDbHelper::IsInstanceInMultiMap(key.GetInfoKey(), persistedNodes);
     }
@@ -1112,14 +1112,14 @@ bool DataSourceCache::IsInstanceFullyPersisted(ObjectIdCR objectId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DataSourceCache::IsInstanceFullyPersisted(ECInstanceKeyCR instanceKey)
     {
-    CacheNodeKey infoKey = m_state->GetObjectInfoManager().ReadInfoKey(instanceKey);
+    CacheNodeKey infoKey = GetState().GetObjectInfoManager().ReadInfoKey(instanceKey);
     if (!infoKey.IsValid())
         {
         return false;
         }
 
     ECInstanceKeyMultiMap persistedNodes;
-    m_state->GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, persistedNodes);
+    GetState().GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, persistedNodes);
 
     return ECDbHelper::IsInstanceInMultiMap(infoKey, persistedNodes);
     }
@@ -1130,8 +1130,8 @@ bool DataSourceCache::IsInstanceFullyPersisted(ECInstanceKeyCR instanceKey)
 BentleyStatus DataSourceCache::ReadFullyPersistedInstanceKeys(ECInstanceKeyMultiMap& instancesOut)
     {
     ECInstanceKeyMultiMap persistedNodes;
-    if (SUCCESS != m_state->GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, persistedNodes) ||
-        SUCCESS != m_state->GetObjectInfoManager().ReadCachedInstanceKeys(persistedNodes, instancesOut))
+    if (SUCCESS != GetState().GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, persistedNodes) ||
+        SUCCESS != GetState().GetObjectInfoManager().ReadCachedInstanceKeys(persistedNodes, instancesOut))
         {
         return ERROR;
         }
@@ -1145,15 +1145,15 @@ BentleyStatus DataSourceCache::LinkInstanceToRoot(Utf8StringCR rootName, ObjectI
     {
     LogCacheDataForMethod();
 
-    CacheRootKey rootKey = m_state->GetRootManager().FindOrCreateRoot(rootName);
+    CacheRootKey rootKey = GetState().GetRootManager().FindOrCreateRoot(rootName);
 
     if (objectId.IsEmpty())
         {
-        CacheNodeKey baseKey = m_state->GetNavigationBaseManager().FindOrCreateNavigationBase();
-        return m_state->GetRootManager().LinkExistingNodeToRoot(rootKey, baseKey);
+        CacheNodeKey baseKey = GetState().GetNavigationBaseManager().FindOrCreateNavigationBase();
+        return GetState().GetRootManager().LinkExistingNodeToRoot(rootKey, baseKey);
         }
 
-    return m_state->GetRootManager().LinkInstanceToRoot(rootKey, objectId);
+    return GetState().GetRootManager().LinkInstanceToRoot(rootKey, objectId);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1161,9 +1161,9 @@ BentleyStatus DataSourceCache::LinkInstanceToRoot(Utf8StringCR rootName, ObjectI
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DataSourceCache::IsInstanceInRoot(Utf8StringCR rootName, ECInstanceKeyCR instance)
     {
-    CacheRootKey rootKey = m_state->GetRootManager().FindRoot(rootName);
-    CacheNodeKey infoKey = m_state->GetObjectInfoManager().ReadInfoKey(instance);
-    return m_state->GetRootManager().IsNodeInRoot(rootKey, infoKey);
+    CacheRootKey rootKey = GetState().GetRootManager().FindRoot(rootName);
+    CacheNodeKey infoKey = GetState().GetObjectInfoManager().ReadInfoKey(instance);
+    return GetState().GetRootManager().IsNodeInRoot(rootKey, infoKey);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1176,7 +1176,7 @@ bool DataSourceCache::IsInstanceConnectedToRoot(Utf8StringCR rootName, ECInstanc
         return false;
         }
 
-    CacheRootKey rootKey = m_state->GetRootManager().FindRoot(rootName);
+    CacheRootKey rootKey = GetState().GetRootManager().FindRoot(rootName);
     if (!rootKey.IsValid())
         {
         return false;
@@ -1185,9 +1185,9 @@ bool DataSourceCache::IsInstanceConnectedToRoot(Utf8StringCR rootName, ECInstanc
     bset<CacheRootKey> rootKeys;
     rootKeys.insert(rootKey);
 
-    CacheNodeKey infoKey = m_state->GetObjectInfoManager().ReadInfoKey(instance);
+    CacheNodeKey infoKey = GetState().GetObjectInfoManager().ReadInfoKey(instance);
 
-    return m_state->GetRootManager().IsNodeConnectedToAnyOfRoots(rootKeys, infoKey);
+    return GetState().GetRootManager().IsNodeConnectedToAnyOfRoots(rootKeys, infoKey);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1206,14 +1206,14 @@ ISelectProviderCR selectProvider
         }
 
     ECInstanceKeyMultiMap nodeKeys, instanceKeys;
-    if (SUCCESS != m_state->GetRootManager().GetNodesLinkedToRoot(rootName, nodeKeys) ||
-        SUCCESS != m_state->GetObjectInfoManager().ReadCachedInstanceKeys(nodeKeys, instanceKeys))
+    if (SUCCESS != GetState().GetRootManager().GetNodesLinkedToRoot(rootName, nodeKeys) ||
+        SUCCESS != GetState().GetObjectInfoManager().ReadCachedInstanceKeys(nodeKeys, instanceKeys))
         {
         return ERROR;
         }
 
     CacheQueryHelper helper(selectProvider);
-    if (SUCCESS != helper.ReadInstances(m_state->GetECDbAdapter(), instanceKeys,
+    if (SUCCESS != helper.ReadInstances(GetState().GetECDbAdapter(), instanceKeys,
         [&] (const CacheQueryHelper::ClassReadInfo& info, ECSqlStatement& statement)
         {
         return CacheQueryHelper::ReadJsonInstances(info, statement, instancesOut);
@@ -1235,8 +1235,8 @@ ECInstanceKeyMultiMap& instanceKeys
 )
     {
     ECInstanceKeyMultiMap nodeKeys;
-    if (SUCCESS != m_state->GetRootManager().GetNodesLinkedToRoot(rootName, nodeKeys) ||
-        SUCCESS != m_state->GetObjectInfoManager().ReadCachedInstanceKeys(nodeKeys, instanceKeys))
+    if (SUCCESS != GetState().GetRootManager().GetNodesLinkedToRoot(rootName, nodeKeys) ||
+        SUCCESS != GetState().GetObjectInfoManager().ReadCachedInstanceKeys(nodeKeys, instanceKeys))
         {
         return ERROR;
         }
@@ -1248,7 +1248,7 @@ ECInstanceKeyMultiMap& instanceKeys
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DataSourceCache::ReadInstancesConnectedToRootMap(Utf8StringCR rootName, ECInstanceKeyMultiMap& instancesOut, uint8_t depth)
     {
-    CacheRootKey rootKey = m_state->GetRootManager().FindRoot(rootName);
+    CacheRootKey rootKey = GetState().GetRootManager().FindRoot(rootName);
     if (!rootKey.IsValid())
         {
         return SUCCESS;
@@ -1258,8 +1258,8 @@ BentleyStatus DataSourceCache::ReadInstancesConnectedToRootMap(Utf8StringCR root
     rootKeys.insert(rootKey);
 
     ECInstanceKeyMultiMap nodeKeys;
-    if (SUCCESS != m_state->GetRootManager().GetNodesConnectedToRoots(rootKeys, nodeKeys, depth) ||
-        SUCCESS != m_state->GetObjectInfoManager().ReadCachedInstanceKeys(nodeKeys, instancesOut))
+    if (SUCCESS != GetState().GetRootManager().GetNodesConnectedToRoots(rootKeys, nodeKeys, depth) ||
+        SUCCESS != GetState().GetObjectInfoManager().ReadCachedInstanceKeys(nodeKeys, instancesOut))
         {
         return ERROR;
         }
@@ -1273,10 +1273,10 @@ BentleyStatus DataSourceCache::ReadInstancesConnectedToRootMap(Utf8StringCR root
 BentleyStatus DataSourceCache::ReadInstanceHierarchy(ECInstanceKeyCR instance, ECInstanceKeyMultiMap& instancesOut)
     {
     CacheNodeKey nodeKey;
-    if (m_state->GetRootManager().IsRootNode(instance))
+    if (GetState().GetRootManager().IsRootNode(instance))
         nodeKey = CacheNodeKey(instance);
     else
-        nodeKey = m_state->GetObjectInfoManager().ReadCachedInstanceKey(instance).GetInfoKey();
+        nodeKey = GetState().GetObjectInfoManager().ReadCachedInstanceKey(instance).GetInfoKey();
 
     if (!nodeKey.IsValid())
         return ERROR;
@@ -1286,13 +1286,13 @@ BentleyStatus DataSourceCache::ReadInstanceHierarchy(ECInstanceKeyCR instance, E
     ansestorNodes.insert(ECDbHelper::ToPair(nodeKey));
     ECInstanceFinder::FindOptions findOptions(ECInstanceFinder::RelatedDirection::RelatedDirection_HeldChildren, UINT8_MAX);
 
-    if (SUCCESS != m_state->GetECDbAdapter().GetECInstanceFinder().FindInstances(nodeKeys, ansestorNodes, findOptions))
+    if (SUCCESS != GetState().GetECDbAdapter().GetECInstanceFinder().FindInstances(nodeKeys, ansestorNodes, findOptions))
         return ERROR;
 
     // TODO: ECDb ECInstanceFinder::FindInstances() also returns seed instances, neeed to remove them
     ECDbHelper::Erase(nodeKeys, nodeKey);
 
-    if (SUCCESS != m_state->GetObjectInfoManager().ReadCachedInstanceKeys(nodeKeys, instancesOut))
+    if (SUCCESS != GetState().GetObjectInfoManager().ReadCachedInstanceKeys(nodeKeys, instancesOut))
         return ERROR;
 
     return SUCCESS;
@@ -1307,20 +1307,20 @@ BentleyStatus DataSourceCache::UnlinkInstanceFromRoot(Utf8StringCR rootName, Obj
     CacheNodeKey nodeKey;
     if (objectId.IsEmpty())
         {
-        nodeKey = m_state->GetNavigationBaseManager().FindNavigationBase();
+        nodeKey = GetState().GetNavigationBaseManager().FindNavigationBase();
         }
     else
         {
-        nodeKey = m_state->GetObjectInfoManager().ReadCachedInstanceKey(objectId).GetInfoKey();
+        nodeKey = GetState().GetObjectInfoManager().ReadCachedInstanceKey(objectId).GetInfoKey();
         }
 
-    CacheRootKey rootKey = m_state->GetRootManager().FindRoot(rootName);
+    CacheRootKey rootKey = GetState().GetRootManager().FindRoot(rootName);
     if (!rootKey.IsValid())
         {
         return SUCCESS;
         }
 
-    if (SUCCESS != m_state->GetRootManager().UnlinkNodeFromRoot(rootKey, nodeKey))
+    if (SUCCESS != GetState().GetRootManager().UnlinkNodeFromRoot(rootKey, nodeKey))
         {
         return ERROR;
         }
@@ -1333,12 +1333,12 @@ BentleyStatus DataSourceCache::UnlinkInstanceFromRoot(Utf8StringCR rootName, Obj
 BentleyStatus DataSourceCache::UnlinkAllInstancesFromRoot(Utf8StringCR rootName)
     {
     LogCacheDataForMethod();
-    CacheRootKey rootKey = m_state->GetRootManager().FindRoot(rootName);
+    CacheRootKey rootKey = GetState().GetRootManager().FindRoot(rootName);
     if (!rootKey.IsValid())
         {
         return SUCCESS;
         }
-    if (SUCCESS != m_state->GetRootManager().UnlinkAllInstancesFromRoot(rootKey))
+    if (SUCCESS != GetState().GetRootManager().UnlinkAllInstancesFromRoot(rootKey))
         {
         return ERROR;
         }
@@ -1351,7 +1351,7 @@ BentleyStatus DataSourceCache::UnlinkAllInstancesFromRoot(Utf8StringCR rootName)
 BentleyStatus DataSourceCache::RemoveRoot(Utf8StringCR rootName)
     {
     LogCacheDataForMethod();
-    if (SUCCESS != m_state->GetRootManager().RemoveRoot(rootName))
+    if (SUCCESS != GetState().GetRootManager().RemoveRoot(rootName))
         {
         return ERROR;
         }
@@ -1408,7 +1408,7 @@ FileCache cacheLocation
     {
     LogCacheDataForMethod();
 
-    FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
+    FileInfo info = GetState().GetFileInfoManager().ReadInfo(objectId);
     if (!info.IsValid())
         return ERROR;
 
@@ -1438,8 +1438,8 @@ FileCache cacheLocation
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName DataSourceCache::ReadFilePath(ObjectIdCR objectId)
     {
-    CachedInstanceKey cachedKey = m_state->GetObjectInfoManager().ReadCachedInstanceKey(objectId);
-    return m_state->GetFileInfoManager().ReadFilePath(cachedKey);
+    CachedInstanceKey cachedKey = GetState().GetObjectInfoManager().ReadCachedInstanceKey(objectId);
+    return GetState().GetFileInfoManager().ReadFilePath(cachedKey);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1447,8 +1447,8 @@ BeFileName DataSourceCache::ReadFilePath(ObjectIdCR objectId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName DataSourceCache::ReadFilePath(ECInstanceKeyCR instanceKey)
     {
-    CachedObjectInfoKey infoKey = m_state->GetObjectInfoManager().ReadInfoKey(instanceKey);
-    return m_state->GetFileInfoManager().ReadFilePath({infoKey, instanceKey});
+    CachedObjectInfoKey infoKey = GetState().GetObjectInfoManager().ReadInfoKey(instanceKey);
+    return GetState().GetFileInfoManager().ReadFilePath({infoKey, instanceKey});
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1459,8 +1459,8 @@ CacheStatus DataSourceCache::RemoveFilesInTemporaryPersistence(DateTimeCP maxLas
     LogCacheDataForMethod();
 
     ECInstanceKeyMultiMap fullyPersistedNodes;
-    if (SUCCESS != m_state->GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
-        CacheStatus::OK != m_state->GetFileInfoManager().DeleteFilesNotHeldByNodes(fullyPersistedNodes, maxLastAccessDate, errorOut))
+    if (SUCCESS != GetState().GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
+        CacheStatus::OK != GetState().GetFileInfoManager().DeleteFilesNotHeldByNodes(fullyPersistedNodes, maxLastAccessDate, errorOut))
         {
         return CacheStatus::Error;
         }
@@ -1523,7 +1523,7 @@ ICancellationTokenPtr ct
     {
     LogCacheDataForMethod();
 
-    ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
+    ResponseKey responseKey = GetState().GetCachedResponseManager().ConvertResponseKey(key);
     if (!responseKey.IsValid())
         return CacheStatus::DataNotCached;
 
@@ -1547,8 +1547,8 @@ ICancellationTokenPtr ct
             partialCachingState = std::make_shared<InstanceCacheHelper::PartialCachingState>
                 (
                 analyzer,
-                m_state->GetRootManager(),
-                m_state->GetObjectInfoManager(),
+                GetState().GetRootManager(),
+                GetState().GetObjectInfoManager(),
                 *rejectedOut
                 );
             }
@@ -1602,7 +1602,7 @@ BentleyStatus DataSourceCache::MarkTemporaryInstancesAsPartial(const std::vector
         }
 
     ECInstanceKeyMultiMap fullyPersistedNodes;
-    if (SUCCESS != m_state->GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes))
+    if (SUCCESS != GetState().GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes))
         {
         return ERROR;
         }
@@ -1610,8 +1610,8 @@ BentleyStatus DataSourceCache::MarkTemporaryInstancesAsPartial(const std::vector
     bset<ECInstanceId> temporaryInfos;
     for (CachedResponseKeyCR key : responseKeys)
         {
-        ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
-        CacheNodeKey infoKey = m_state->GetCachedResponseManager().FindInfo(responseKey);
+        ResponseKey responseKey = GetState().GetCachedResponseManager().ConvertResponseKey(key);
+        CacheNodeKey infoKey = GetState().GetCachedResponseManager().FindInfo(responseKey);
         if (!infoKey.IsValid())
             {
             continue;
@@ -1622,7 +1622,7 @@ BentleyStatus DataSourceCache::MarkTemporaryInstancesAsPartial(const std::vector
             }
         }
 
-    if (SUCCESS != m_state->GetCachedResponseManager().MarkTemporaryInstancesAsPartial(temporaryInfos, fullyPersistedNodes))
+    if (SUCCESS != GetState().GetCachedResponseManager().MarkTemporaryInstancesAsPartial(temporaryInfos, fullyPersistedNodes))
         {
         return ERROR;
         }
@@ -1636,7 +1636,7 @@ BentleyStatus DataSourceCache::MarkTemporaryInstancesAsPartial(const std::vector
 BentleyStatus DataSourceCache::RemoveResponse(CachedResponseKeyCR key)
     {
     LogCacheDataForMethod();
-    ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
+    ResponseKey responseKey = GetState().GetCachedResponseManager().ConvertResponseKey(key);
     return GetState().GetCachedResponseManager().DeleteInfo(responseKey);
     }
 
@@ -1648,8 +1648,8 @@ BentleyStatus DataSourceCache::RemoveTemporaryResponses(Utf8StringCR name, DateT
     LogCacheDataForMethod();
 
     ECInstanceKeyMultiMap fullyPersistedNodes;
-    if (SUCCESS != m_state->GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
-        SUCCESS != m_state->GetCachedResponseManager().DeleteResponses(name, accessedBeforeDateUtc, fullyPersistedNodes))
+    if (SUCCESS != GetState().GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
+        SUCCESS != GetState().GetCachedResponseManager().DeleteResponses(name, accessedBeforeDateUtc, fullyPersistedNodes))
         {
         return ERROR;
         }
@@ -1681,7 +1681,7 @@ ISelectProviderCR selectProvider
         instancesOut = Json::arrayValue;
         }
 
-    ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
+    ResponseKey responseKey = GetState().GetCachedResponseManager().ConvertResponseKey(key);
     CachedResponseInfo queryInfo = GetState().GetCachedResponseManager().ReadInfo(responseKey);
     if (!queryInfo.IsCached())
         {
@@ -1705,14 +1705,14 @@ ISelectProviderCR selectProvider
 +---------------+---------------+---------------+---------------+---------------+------*/
 CacheStatus DataSourceCache::ReadResponseInstanceKeys(CachedResponseKeyCR key, ECInstanceKeyMultiMap& instanceKeysOut)
     {
-    ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
-    CachedResponseInfo queryInfo = m_state->GetCachedResponseManager().ReadInfo(responseKey);
+    ResponseKey responseKey = GetState().GetCachedResponseManager().ConvertResponseKey(key);
+    CachedResponseInfo queryInfo = GetState().GetCachedResponseManager().ReadInfo(responseKey);
     if (!queryInfo.IsCached())
         {
         return CacheStatus::DataNotCached;
         }
 
-    if (SUCCESS != m_state->GetCachedResponseManager().ReadResponseInstanceKeys(queryInfo.GetInfoKey(), instanceKeysOut))
+    if (SUCCESS != GetState().GetCachedResponseManager().ReadResponseInstanceKeys(queryInfo.GetInfoKey(), instanceKeysOut))
         {
         return CacheStatus::Error;
         }
@@ -1729,8 +1729,8 @@ CachedResponseKeyCR key,
 bset<ObjectId>& instanceObjectIdsOut
 )
     {
-    ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
-    CacheNodeKey infoKey = m_state->GetCachedResponseManager().FindInfo(responseKey);
+    ResponseKey responseKey = GetState().GetCachedResponseManager().ConvertResponseKey(key);
+    CacheNodeKey infoKey = GetState().GetCachedResponseManager().FindInfo(responseKey);
     if (!infoKey.IsValid())
         {
         return CacheStatus::DataNotCached;
@@ -1749,8 +1749,8 @@ bset<ObjectId>& instanceObjectIdsOut
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DataSourceCache::ReadResponseCacheTag(CachedResponseKeyCR key, uint64_t page)
     {
-    ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
-    return m_state->GetCachedResponseManager().ReadResponsePageCacheTag(responseKey, page);
+    ResponseKey responseKey = GetState().GetCachedResponseManager().ConvertResponseKey(key);
+    return GetState().GetCachedResponseManager().ReadResponsePageCacheTag(responseKey, page);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1758,8 +1758,8 @@ Utf8String DataSourceCache::ReadResponseCacheTag(CachedResponseKeyCR key, uint64
 +---------------+---------------+---------------+---------------+---------------+------*/
 DateTime DataSourceCache::ReadResponseCachedDate(CachedResponseKeyCR key, uint64_t page)
     {
-    ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
-    return m_state->GetCachedResponseManager().ReadResponsePageCachedDate(responseKey, page);
+    ResponseKey responseKey = GetState().GetCachedResponseManager().ConvertResponseKey(key);
+    return GetState().GetCachedResponseManager().ReadResponsePageCachedDate(responseKey, page);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1767,8 +1767,8 @@ DateTime DataSourceCache::ReadResponseCachedDate(CachedResponseKeyCR key, uint64
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DataSourceCache::IsResponseCached(CachedResponseKeyCR key)
     {
-    ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
-    return m_state->GetCachedResponseManager().IsResponseCompleted(responseKey);
+    ResponseKey responseKey = GetState().GetCachedResponseManager().ConvertResponseKey(key);
+    return GetState().GetCachedResponseManager().IsResponseCompleted(responseKey);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1776,7 +1776,7 @@ bool DataSourceCache::IsResponseCached(CachedResponseKeyCR key)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DataSourceCache::ReadInstanceLabel(ObjectIdCR objectId)
     {
-    ECClassCP objectClass = m_state->GetECDbAdapter().GetECClass(objectId);
+    ECClassCP objectClass = GetState().GetECDbAdapter().GetECClass(objectId);
     if (nullptr == objectClass)
         {
         return "";
@@ -1789,7 +1789,7 @@ Utf8String DataSourceCache::ReadInstanceLabel(ObjectIdCR objectId)
         }
 
     Utf8PrintfString key("DataSourceCache::ReadInstanceLabel:%llu", objectClass->GetId().GetValue());
-    auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
+    auto statement = GetState().GetStatementCache().GetPreparedStatement(key, [&]
         {
         Utf8String classKey = ECDbHelper::ECClassKeyFromClass(*objectClass);
 
