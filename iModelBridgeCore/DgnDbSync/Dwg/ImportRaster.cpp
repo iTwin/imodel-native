@@ -159,7 +159,14 @@ bool    DwgRasterImageExt::GetUrlCacheFile (DwgStringR checkPath)
         {
         WString localPath;
         if (DwgImportHost::GetHost().GetCachedLocalFile(localPath, WString(checkPath.c_str())))
+            {
             checkPath.Assign (localPath.c_str());
+            return  true;
+            }
+        else
+            {
+            m_importer->ReportError (DwgImporter::IssueCategory::DiskIO(), DwgImporter::Issue::Message(), "Failed downloading a raster file from URL or could not find its cached local path!");
+            }
         }
 #endif 
     return  false;
@@ -225,7 +232,9 @@ BentleyStatus   DwgRasterImageExt::CreateRasterModel (BeFileNameCR rasterFilenam
     // the default raster admin expects raster file to be located on the DgnDb folder:
     if (!this->CopyRasterToDgnDbFolder(rasterFilename, m_importer->GetDgnDb().GetFileName(), BeFileName(activePath.c_str())))
         {
-        m_importer->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::CantCreateRaster(), Utf8PrintfString("<%s (%I64d)>", fileId.c_str(), rasterId.ToUInt64()).c_str());
+        auto from = rasterFilename.DoesPathExist() ? rasterFilename.c_str() : activePath.c_str();
+        auto to = m_importer->GetDgnDb().GetFileName().GetDirectoryName().c_str ();
+        m_importer->ReportError (DwgImporter::IssueCategory::DiskIO(), DwgImporter::Issue::CantCreateRaster(), Utf8PrintfString("failed copying file %ls to %ls", from, to).c_str());
         return BSIERROR;
         }
 
@@ -266,7 +275,7 @@ BentleyStatus   DwgRasterImageExt::CreateRasterModel (BeFileNameCR rasterFilenam
     DgnModelP   model = m_importer->GetDgnDb().Models().GetModel(modelId).get ();
     if (nullptr == model)
         {
-        m_importer->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::CantCreateRaster(), Utf8PrintfString("<%s (%I64d)>", fileId.c_str(), rasterId.ToUInt64()).c_str());
+        m_importer->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::CantCreateRaster(), Utf8PrintfString("%s (%I64d)", fileId.c_str(), rasterId.ToUInt64()).c_str());
         return BSIERROR;
         }
 
