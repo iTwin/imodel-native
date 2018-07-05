@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Regions/rimsbsAPI.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,7 @@
 
 /*__BENTLEY_INTERNAL_ONLY__*/
 #include <Mtg/MtgApi.h>
-#include "Regions/regionsAPI.h"
+#include "regionsAPI.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 #define RIMSBS_NULL_CURVE_ID (-1)
 
