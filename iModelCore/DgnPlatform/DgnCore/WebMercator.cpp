@@ -178,6 +178,24 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::SelectParent MapTile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const
+    {
+    Tile::SelectParent result = T_Super::_SelectTiles(selected, args);
+
+    // only process the root tile.
+    if (0 != GetDepth())
+        return result;
+    
+    // Allow the imageryProvider to see the tiles in case it needs them for its copyright message (Bing does).
+    GetMapRoot().m_imageryProvider->_OnSelectTiles (selected, args);
+
+    return result;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * Construct a new MapTile by TileId. First convert tileid -> LatLong, and then LatLong -> BIM world.
 * If the projection fails, the tile will not be displayable (but we still need an approximate range for
 * frustum testing).
@@ -351,15 +369,15 @@ void WebMercatorModel::_OnLoadedJsonProperties()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String WebMercatorModel::_GetCopyrightMessage() const
+Utf8String WebMercatorModel::_GetCopyrightMessage(ViewController& viewController) const
     {
-    return m_provider.IsValid() ? m_provider->_GetCreditMessage() : "";
+    return m_provider.IsValid() ? m_provider->_GetCopyrightMessage(viewController) : "";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::RgbaSpriteP WebMercatorModel::_GetCopyrightSprite() const
+Render::RgbaSpriteP WebMercatorModel::_GetCopyrightSprite(ViewController& viewController) const
     { 
     // make sure we have a root.
     MapRoot* root = dynamic_cast<MapRoot*> (m_root.get());
@@ -449,7 +467,7 @@ Utf8String MapBoxImageryProvider::_ConstructUrl(TileTree::QuadTree::Tile const& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String MapBoxImageryProvider::_GetCreditMessage() const
+Utf8String MapBoxImageryProvider::_GetCopyrightMessage(ViewController&) const
     {
     return "(c) Mapbox, (c) OpenStreetMap contributors";
     }
@@ -510,16 +528,6 @@ void MapBoxImageryProvider::_ToJson(Json::Value& value) const
     value[WebMercatorModel::json_mapType()] = (int)m_mapType;
     }
 
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String MapBoxImageryProvider::_GetCreditUrl() const
-    {
-    // NEEDSWORK_MapBox
-    return nullptr;
-    }
-   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -613,14 +621,6 @@ Utf8String BingImageryProvider::_ConstructUrl(TileTree::QuadTree::Tile const& ti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BingImageryProvider::_GetCreditMessage() const
-    {
-    return "";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BingImageryProvider::_GetCacheFileName() const
     {
     switch (m_mapType)
@@ -654,15 +654,6 @@ void    BingImageryProvider::_ToJson(Json::Value& value) const
     {
     // the only thing currently stored in the BingImageryProvider Json is the MapType.
     value[WebMercatorModel::json_mapType()] = (int)m_mapType;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String  BingImageryProvider::_GetCreditUrl() const
-    {
-    // NEEDSWORK_MapBox
-    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -705,32 +696,138 @@ void BingImageryProvider::ReadAttributionsFromJson (Json::Value const& response)
 
     }
 
-#if defined (NEEDSWORK_BING_EXTENT)
+struct Extent
+    {
+    GeoPoint    m_lowerLeft;
+    GeoPoint    m_upperRight;
+    uint8_t     m_lowestZoomLevel;
+    uint8_t     m_highestZoomLevel;
+
+    Extent() 
+        { 
+        Init();
+        }
+
+    void Init ()
+        {
+        m_lowerLeft.longitude = 180.0;
+        m_lowerLeft.latitude = 90.0;
+        m_lowerLeft.elevation = 0;
+
+        m_upperRight.longitude = -180.0;
+        m_upperRight.latitude = -90.0;
+        m_upperRight.elevation = 0;
+
+        m_lowestZoomLevel = 255;
+        m_highestZoomLevel = 0;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnionTileExtent (Extent& extent, MapTileCR tile)
+    {
+    // first get the lat/long range from the tile.
+    QuadTree::TileId id = tile.GetTileId();
+    double nTiles = (1 << id.m_level);
+    double west  = columnToLongitude(id.m_column, nTiles);
+    double east  = columnToLongitude(id.m_column+1, nTiles);
+    double north = rowToLatitude(id.m_row, nTiles);
+    double south = rowToLatitude(id.m_row+1, nTiles);
+
+    if (west < extent.m_lowerLeft.longitude)
+        extent.m_lowerLeft.longitude = west;
+    if (south < extent.m_lowerLeft.latitude)
+        extent.m_lowerLeft.latitude = south;
+
+    if (east > extent.m_upperRight.longitude)
+        extent.m_upperRight.longitude = east;
+    if (north > extent.m_upperRight.latitude)
+        extent.m_upperRight.latitude = north;
+
+    if (id.m_level < extent.m_lowestZoomLevel)
+        extent.m_lowestZoomLevel = id.m_level;
+
+    if (id.m_level > extent.m_highestZoomLevel)
+        extent.m_highestZoomLevel = id.m_level;
+    }
+
+
+struct AttributionAppData : ViewController::AppData 
+    {
+    StopWatch   m_stopWatch;
+    Extent      m_extent;
+
+    AttributionAppData() : m_stopWatch(true) 
+        {
+
+        }
+    };
+
+static AttributionAppData::Key    s_attributionAppDataKey;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void BingImageryProvider::_OnSelectTiles (bvector<TileCPtr>& selected, DrawArgsR args) const
+    {
+    ViewController& viewController = args.m_context.GetViewportR().GetViewControllerR();
+
+    // get our AppData from the viewController.
+    bool                newView = false;
+    AttributionAppData* attributionAppData;
+    if (nullptr == (attributionAppData = dynamic_cast <AttributionAppData*>(viewController.FindAppData(s_attributionAppDataKey))))
+        {
+        attributionAppData = new AttributionAppData ();
+        viewController.AddAppData (s_attributionAppDataKey, attributionAppData);
+        newView = true;
+        }
+
+    // There is no point in doing this every frame. So we set up a timer and do it every second.
+    if (newView || (attributionAppData->m_stopWatch.GetCurrentSeconds() > 1.0))
+        {
+        attributionAppData->m_extent.Init();
+
+        // calculate the extent of all the tiles and store it.
+        for (auto tile : selected)
+            {
+            if (!tile.IsValid())
+                continue;
+
+            UnionTileExtent (attributionAppData->m_extent, *(static_cast<MapTileCP>(tile.get())));
+            }
+
+        // reset stopwatch.
+        attributionAppData->m_stopWatch.Start();
+        SpatialViewController* svc;
+        if (nullptr != (svc = dynamic_cast<SpatialViewController*>(&viewController)))
+            svc->InvalidateCopyrightInfo();
+        }
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void     AddUniqueString (T_Utf8StringVectorR messages, Utf8StringCR thisMessage)
     {
-    for each (Utf8StringCR message in messages)
+    for (auto message : messages)
         {
         if (0 == thisMessage.CompareTo (message))
             return;
         }
     messages.push_back (thisMessage);
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BingImageryProvider::_UnionAttributionCopyrightMessages (T_Utf8StringVectorR copyrightMessages, MapRootCR mapRoot, int viewIndex)
+void AttributionCopyrightMessagesFromExtent (std::vector<BingImageryProvider::Attribution>const & allAttributions, T_Utf8StringVectorR copyrightMessages, Extent& extent)
     {
-#if defined (NEEDSWORK_BING_EXTENT)
-    Extent const& extent = mapRoot.m_extent[viewIndex];
-
-    for each (Attribution const& attribution in m_attributions)
+    for (auto attribution : allAttributions)
         {
-        for each (Coverage const& coverage in attribution.m_coverageList)
+        for (auto coverage : attribution.m_coverageList)
             {
             // does the range overlap with the mapRoots range?
             if (coverage.m_minimumZoomLevel > extent.m_lowestZoomLevel)
@@ -755,18 +852,33 @@ bool BingImageryProvider::_UnionAttributionCopyrightMessages (T_Utf8StringVector
             break;
             }
         }
-#endif
-
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   06/17
+* @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BingImageryProvider::_HaveAttributionCopyrightMessages (MapRootCR mapRoot)
+Utf8String BingImageryProvider::_GetCopyrightMessage(ViewController& viewController) const
     {
-    return !m_attributions.empty();
+    // get our AppData from the viewController.
+    Utf8String          copyrightMsg;
+
+    AttributionAppData* attributionAppData;
+    if (nullptr != (attributionAppData = dynamic_cast <AttributionAppData*>(viewController.FindAppData(s_attributionAppDataKey))))
+        {
+        T_Utf8StringVector  copyrightMessages;
+
+        AttributionCopyrightMessagesFromExtent (m_attributions, copyrightMessages, attributionAppData->m_extent);
+        // concatentate copyright messages.
+
+        for (auto thisString: copyrightMessages)
+            {
+            copyrightMsg.append (thisString);
+            copyrightMsg.append (" ");
+            }
+        }
+    return copyrightMsg;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
@@ -979,14 +1091,11 @@ Render::RgbaSpriteP   BingImageryProvider::_GetCopyrightSprite ()
     if (m_copyrightSprite.IsValid())
         return m_copyrightSprite.get();
 
-    ByteStream* logoByteStream = GetLogoByteStream();
-
     // we have a byte stream, create the logo image
     Render::ImageSource::Format format;
-    Utf8String contentType (GetLogoContentType());
-    if (0 == contentType.CompareTo ("image/png"))
+    if (0 == m_logoContentType.CompareTo ("image/png"))
         format = Render::ImageSource::Format::Png;
-    else if (0 == contentType.CompareTo ("image/jpeg"))
+    else if (0 == m_logoContentType.CompareTo ("image/jpeg"))
         format = Render::ImageSource::Format::Jpeg;
     else
         {
@@ -994,7 +1103,7 @@ Render::RgbaSpriteP   BingImageryProvider::_GetCopyrightSprite ()
         return nullptr;
         }
 
-    Render::ImageSource source (format, std::move(*logoByteStream));
+    Render::ImageSource source (format, std::move(m_logoByteStream));
     m_copyrightSprite = Render::RgbaSprite::CreateFrom(source);
 
     return m_copyrightSprite.get();
@@ -1066,7 +1175,7 @@ Utf8String HereImageryProvider::_ConstructUrl(TileTree::QuadTree::Tile const& ti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String HereImageryProvider::_GetCreditMessage() const
+Utf8String HereImageryProvider::_GetCopyrightMessage(ViewController&) const
     {
     return "(c) HERE";
     }
@@ -1125,15 +1234,6 @@ void    HereImageryProvider::_ToJson(Json::Value& value) const
     {
     // the only thing currently stored in the HereImageryProvider Json is the MapType.
     value[WebMercatorModel::json_mapType()] = (int)m_mapType;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String  HereImageryProvider::_GetCreditUrl() const
-    {
-    // NEEDSWORK_MapBox
-    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -37,17 +37,21 @@ struct SchemaItem final
 //=======================================================================================    
 struct TestFileCreator
     {
+    protected:
+        Utf8String m_fileName;
+
     private:
         virtual BentleyStatus _Create() = 0;
+        virtual BentleyStatus _UpgradeOldFiles() const = 0;
     protected:
-        TestFileCreator() {}
+        explicit TestFileCreator(Utf8CP fileName) : m_fileName(fileName) {}
 
         static ECN::ECSchemaReadContextPtr DeserializeSchemas(ECDbCR, std::vector<SchemaItem> const&);
         static ECN::ECSchemaReadContextPtr DeserializeSchema(ECDbCR ecdb, SchemaItem const& schema) { return DeserializeSchemas(ecdb, {schema}); }
-
+  
     public:
         virtual ~TestFileCreator() {}
-        BentleyStatus Create() { return _Create(); }
+        BentleyStatus Run();
     };
 
 //=======================================================================================
@@ -65,7 +69,7 @@ public:
         {
         for (std::shared_ptr<TestFileCreator> const& creator : creators)
             {
-            if (SUCCESS != creator->Create())
+            if (SUCCESS != creator->Run())
                 return ERROR;
             }
 

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/CodeSpec_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -127,6 +127,7 @@ TEST_F(CodeSpecTests, CRUD)
         ASSERT_EQ(codeSpec->GetScope().GetType(), CodeScopeSpec::Type::Repository);
         ASSERT_TRUE(codeSpec->IsRepositoryScope());
         ASSERT_TRUE(codeSpec->GetRegistrySuffix().empty());
+        ASSERT_TRUE(codeSpec->IsManagedWithDgnDb());
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromElementTypeCode("Enter class name"));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromFixedString("-"));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromPropertyValue("UserLabel", "Enter UserLabel value", false));
@@ -140,9 +141,11 @@ TEST_F(CodeSpecTests, CRUD)
         CodeSpecPtr codeSpec = CodeSpec::Create(*m_db, DPTEST_SCHEMA(DPTEST_TEST_ELEMENT_CLASS_NAME), CodeScopeSpec::CreateModelScope());
         ASSERT_TRUE(codeSpec.IsValid());
         codeSpec->SetRegistrySuffix("RegistrySuffix");
+        codeSpec->SetIsManagedWithDgnDb(false);
         ASSERT_EQ(codeSpec->GetScope().GetType(), CodeScopeSpec::Type::Model);
         ASSERT_TRUE(codeSpec->IsModelScope());
         ASSERT_STREQ(codeSpec->GetRegistrySuffix().c_str(), "RegistrySuffix");
+        ASSERT_FALSE(codeSpec->IsManagedWithDgnDb());
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromElementTypeCode("Enter class name"));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromFixedString(":"));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromPropertyValue("i", "Enter integer value"));

@@ -271,7 +271,7 @@ uint32_t DgnViewport::SetMinimumTargetFrameRate(uint32_t frameRate)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::Plan::Plan(DgnViewportCR vp)
+Render::Plan::Plan(DgnViewportCR vp) : m_db(vp.GetViewController().GetDgnDb())
     {
     m_is3d      = vp.Is3dView();
     m_frustum   = vp.GetFrustum();

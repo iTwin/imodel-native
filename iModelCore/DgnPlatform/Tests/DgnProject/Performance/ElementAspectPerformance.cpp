@@ -370,3 +370,170 @@ TEST_F (ElementAspectTests1, MultiAspectPerformance_Delete)
     timer1.Stop ();
     LogTiming (timer1, "Delete an Element With Multi Aspects", "TestElement", false, EleCount-1, EleCount-1);
 }
+
+/*=================================================================================**//**
+* @bsiclass                                                     Taslim.Murad      07/18
+ +===============+===============+===============+===============+===============+======*/
+TEST_F (ElementAspectTests1, SimpleElementPerformanceProperties_Insert)
+{
+    SetupSeedProject ();
+    double doubleVal = 1.61803398874;
+    int const count = 101;
+    DgnElementCPtr persistentEl[count];
+
+    StopWatch timer1 (true);
+    for (int i = 1; i < count; i++)
+    {
+        DgnClassId classId (m_db->Schemas ().GetClassId (DPTEST_SCHEMA_NAME, "TestElement"));
+        TestElement::CreateParams params (*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d (), DgnCode ());
+        TestElement el (params);
+
+        // Set properties
+        EXPECT_EQ (DgnDbStatus::Success, el.SetPropertyValue ("DoubleProperty1", doubleVal));
+        EXPECT_EQ (DgnDbStatus::Success, el.SetPropertyValue ("DoubleProperty2", doubleVal));
+        EXPECT_EQ (DgnDbStatus::Success, el.SetPropertyValue ("DoubleProperty3", doubleVal));
+        EXPECT_EQ (DgnDbStatus::Success, el.SetPropertyValue ("DoubleProperty4", doubleVal));
+        EXPECT_EQ (DgnDbStatus::Success, el.SetPropertyValue ("PointProperty1", DPoint3d::From (0, 9, 9)));
+        EXPECT_EQ (DgnDbStatus::Success, el.SetPropertyValue ("PointProperty2", DPoint3d::From (0, 9, 9)));
+        EXPECT_EQ (DgnDbStatus::Success, el.SetPropertyValue ("PointProperty3", DPoint3d::From (0, 9, 9)));
+        EXPECT_EQ (DgnDbStatus::Success, el.SetPropertyValue ("PointProperty4", DPoint3d::From (0, 9, 9)));
+        EXPECT_EQ (DgnDbStatus::Success, el.SetPropertyValue ("b", false));
+        EXPECT_EQ (DgnDbStatus::Success, el.SetPropertyValue ("p2d", DPoint2d::From (0, 9)));
+
+        // Insert the element
+        persistentEl[i] = el.Insert ();
+        ASSERT_TRUE (persistentEl[i].IsValid ());
+    }
+    timer1.Stop ();
+    LogTiming (timer1, "Insert Simple Elemenet With 10 Properties", "TestElement", false, 0, count-1);
+
+    m_db->SaveChanges ();
+}
+
+/*=================================================================================**//**
+* @bsiclass                                                     Taslim.Murad      07/18
++===============+===============+===============+===============+===============+======*/
+TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Insert1)
+{
+    USING_NAMESPACE_BENTLEY_EC;
+    SetupSeedProject ();
+    int const count = 101;
+
+    StopWatch timer1 (true);
+    for (int i = 1; i < count; i++)
+    {
+        TestElementPtr element = TestElement::Create (*m_db, m_defaultModelId, m_defaultCategoryId, ("TestElement"));
+        ASSERT_TRUE (element.IsValid ());
+
+        ECClassCP aspectClassUnique = TestUniqueAspect::GetECClass (*m_db);
+        ASSERT_NE (aspectClassUnique, nullptr);
+
+        RefCountedPtr<DgnElement::UniqueAspect> aspect = DgnElement::UniqueAspect::CreateAspect (*m_db, *aspectClassUnique);
+        ASSERT_TRUE (aspect.IsValid ());
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue (DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty, ECValue ("Aspect2")));
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue (DPTEST_TEST_UNIQUE_ASPECT_LengthProperty, ECValue (2.0)));
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue ("test1", ECValue (2.0)));
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue ("test2", ECValue ("Aspect2t2")));
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue ("test3", ECValue (2.0)));
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue ("test4", ECValue ("Aspect2t4")));
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue ("test5", ECValue (2.0)));
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue ("test6", ECValue ("Aspect2t6")));
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue ("test7", ECValue (2.0)));
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue ("test8", ECValue ("Aspect2t8")));
+
+        DgnElement::UniqueAspect::SetAspect (*element, *aspect);
+        ASSERT_TRUE (element->Insert ().IsValid ());
+    }
+    timer1.Stop ();
+    LogTiming (timer1, "Insert Unique Aspect Element With Aspect Having 10 Properties", "TestElement", false, 0, count-1);
+
+    m_db->SaveChanges ();
+}
+
+
+
+
+/*=================================================================================**//**
+* @bsiclass                                                     Taslim.Murad      07/18
+ +===============+===============+===============+===============+===============+======*/
+TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Insert2)
+{
+    USING_NAMESPACE_BENTLEY_EC;
+    SetupSeedProject ();
+    int const count = 101;
+
+    StopWatch timer1 (true);
+    for (int i = 1; i < count; i++)
+    {
+        DgnClassId classId (m_db->Schemas ().GetClassId (DPTEST_SCHEMA_NAME, "TestElement"));
+        TestElement::CreateParams params (*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d (), DgnCode ());
+        TestElement element (params);
+
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("PointProperty2", DPoint3d::From (0, 9, 9)));
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("PointProperty3", DPoint3d::From (0, 9, 9)));
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("PointProperty4", DPoint3d::From (0, 9, 9)));
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("b", false));
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("p2d", DPoint2d::From (0, 9)));
+
+        ECClassCP aspectClassUnique = TestUniqueAspect::GetECClass (*m_db);
+        ASSERT_NE (aspectClassUnique, nullptr);
+
+        RefCountedPtr<DgnElement::UniqueAspect> aspect = DgnElement::UniqueAspect::CreateAspect (*m_db, *aspectClassUnique);
+        ASSERT_TRUE (aspect.IsValid ());
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue (DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty, ECValue ("Aspect2")));
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue (DPTEST_TEST_UNIQUE_ASPECT_LengthProperty, ECValue (2.0)));
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue ("test1", ECValue (2.0)));
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue ("test2", ECValue ("Aspect2t2")));
+        ASSERT_EQ (DgnDbStatus::Success, aspect->SetPropertyValue ("test3", ECValue (2.0)));
+
+        DgnElement::UniqueAspect::SetAspect (element, *aspect);
+        ASSERT_TRUE (element.Insert ().IsValid ());
+    }
+    timer1.Stop ();
+    LogTiming (timer1, "Insert Unique Aspect Element With Aspect Having 5 Properties and Element Having 5 Properties", "TestElement", false, 0, count-1);
+
+    m_db->SaveChanges ();
+}
+
+/*=================================================================================**//**
+* @bsiclass                                                     Taslim.Murad      07/18
+ +===============+===============+===============+===============+===============+======*/
+TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Insert3)
+{
+    USING_NAMESPACE_BENTLEY_EC;
+    SetupSeedProject ();
+    double doubleVal = 1.61803398874;
+    int const count = 101;
+
+    StopWatch timer1 (true);
+    for (int i = 1; i < count; i++)
+    {
+        DgnClassId classId (m_db->Schemas ().GetClassId (DPTEST_SCHEMA_NAME, "TestElement"));
+        TestElement::CreateParams params (*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d (), DgnCode ());
+        TestElement element (params);
+
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("DoubleProperty1", doubleVal));
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("DoubleProperty2", doubleVal));
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("DoubleProperty3", doubleVal));
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("DoubleProperty4", doubleVal));
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("PointProperty1", DPoint3d::From (0, 9, 9)));
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("PointProperty2", DPoint3d::From (0, 9, 9)));
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("PointProperty3", DPoint3d::From (0, 9, 9)));
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("PointProperty4", DPoint3d::From (0, 9, 9)));
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("b", false));
+        EXPECT_EQ (DgnDbStatus::Success, element.SetPropertyValue ("p2d", DPoint2d::From (0, 9)));
+
+        ECClassCP aspectClassUnique = TestUniqueAspect::GetECClass (*m_db);
+        ASSERT_NE (aspectClassUnique, nullptr);
+
+        RefCountedPtr<DgnElement::UniqueAspect> aspect = DgnElement::UniqueAspect::CreateAspect (*m_db, *aspectClassUnique);
+        ASSERT_TRUE (aspect.IsValid ());
+
+        DgnElement::UniqueAspect::SetAspect (element, *aspect);
+        ASSERT_TRUE (element.Insert ().IsValid ());
+    }
+    timer1.Stop ();
+    LogTiming (timer1, "Insert Unique Aspect Element With Aspect Having 0 Properties and Element Having 10 Properties", "TestElement", false, 0, count-1);
+
+    m_db->SaveChanges ();
+}

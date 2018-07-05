@@ -293,6 +293,9 @@
     <ClCompile Include="Published\SchemaVersion_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\ElementAspectPerformance.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">

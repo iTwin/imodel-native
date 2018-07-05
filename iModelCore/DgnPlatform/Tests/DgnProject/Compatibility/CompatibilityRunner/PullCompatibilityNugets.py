@@ -28,20 +28,26 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir):
         return
     # Lower before we do the replace
     pkgGetUrl = '{0}/package/{1}/{2}'.format(pkgAddress, pkgName, version)
-    nugetpkg.GetPackage(pkgGetUrl, pkgName, pkgPathName, version, localDir)
+    try:
+        nugetpkg.GetPackage(pkgGetUrl, pkgName, pkgPathName, version, localDir)
+        return pkgPathName
+    except utils.BuildError as err:
+        print >> sys.stderr, err
+        sys.exit(1)
 
-    return pkgPathName
 
  #------------------------------------------------------------------------
  # bsimethod                         Kyle.Abramowitz             05/2018
  #------------------------------------------------------------------------
 def pullAllNugets(path, pathToNugetPuller, name):
     import nugetpkg
+    from distutils.version import LooseVersion
+
     address = "http://nuget.bentley.com/nuget/default/"
     versions = nugetpkg.SearchVersionsFromServer(address, name)
-    excludeVersions = ["2018.6.7.2", "2018.6.7.1", "2018.6.5.2", "2018.6.5.1","2018.5.31.19","2018.6.1.4","2018.6.22.6","2018.6.22.7"]
     for v in versions:
-        if v in excludeVersions:
+        # ignore stale versions until they have been deleted fromthe nuget server
+        if LooseVersion(v) < LooseVersion("2018.6.28.2"):
             continue
         # Dowload and save all versions
         localDir = path

@@ -178,6 +178,7 @@ static void DVec2dToJson(JsonValueR outValue, DVec2dCR vec)
     }
 
 static void DVec3dFromJson(DVec3dR vec, JsonValueCR inValue)  {DPoint3dFromJson((DPoint3dR)vec, inValue);}
+static Json::Value DVec3dToJson(DVec3dCR vec) {return DPoint3dToJson((DPoint3dCR)vec);}
 static DVec3d ToDVec3d(JsonValueCR inValue) 
     {
     DVec3d vec;
@@ -321,28 +322,35 @@ static void TransformFromJson(TransformR trans, JsonValueCR inValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson     02/14
 //---------------------------------------------------------------------------------------
-static void TransformToJson(JsonValueR outValue, TransformCR trans)
+static Json::Value FromTransform(TransformCR trans)
     {
+    Json::Value  out;
     for (int x = 0; x < 3; ++x)
-        TransformRowToJson(outValue[x], trans.form3d[x]);
+        TransformRowToJson(out[x], trans.form3d[x]);
+    return out;
     }
+static void TransformToJson(JsonValueR outValue, TransformCR trans) { outValue = FromTransform(trans);}
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Brien.Bastring  06/18
+// @bsimethod                                                   Brien.Bastings  06/18
 //---------------------------------------------------------------------------------------
-static void DMatrix4dFromJson(DMatrix4dR matrix, JsonValueCR inValue)
+static DMatrix4d ToDMatrix4d(JsonValueCR inValue)
     {
+    DMatrix4d matrix;
     for (int x = 0; x < 4; ++x)
         TransformRowFromJson(matrix.coff[x], inValue[x]);
+    return matrix;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Brien.Bastring  06/18
+// @bsimethod                                                   Brien.Bastings  06/18
 //---------------------------------------------------------------------------------------
-static void DMatrix4dToJson(JsonValueR outValue, DMatrix4dCR matrix)
+static Json::Value FromDMatrix4d(DMatrix4dCR matrix)
     {
+    Json::Value val;
     for (int x = 0; x < 4; ++x)
-        TransformRowToJson(outValue[x], matrix.coff[x]);
+        TransformRowToJson(val[x], matrix.coff[x]);
+    return val;
     }
 
 //---------------------------------------------------------------------------------------
