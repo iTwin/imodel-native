@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandardCustomAttributeHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -186,6 +186,7 @@ CoreCustomAttributesSchemaHolderPtr CoreCustomAttributesSchemaHolder::s_schemaHo
 
 static Utf8CP s_supplementalAccessor = "SupplementalSchema";
 static Utf8CP s_isMixinAccessor = "IsMixin";
+static Utf8CP s_dynamicSchema = "DynamicSchema";
 static const uint32_t s_coreCAVersionRead = 1;
 static const uint32_t s_coreCAVersionWrite = 0;
 static const uint32_t s_coreCAVersionMinor = 0;
@@ -219,6 +220,13 @@ CoreCustomAttributesSchemaHolder::CoreCustomAttributesSchemaHolder()
         mixinEnabler = mixinClass->GetDefaultStandaloneEnabler();
     m_enablers.Insert(s_isMixinAccessor, mixinEnabler);
 
+    ECClassP dynamicClass = m_schema->GetClassP(s_dynamicSchema);
+    if (nullptr != dynamicClass)
+        {
+        StandaloneECEnablerPtr dynamicEnabler;
+        dynamicEnabler = dynamicClass->GetDefaultStandaloneEnabler();
+        m_enablers.Insert(s_dynamicSchema, dynamicEnabler);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
