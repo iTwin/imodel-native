@@ -141,7 +141,7 @@ Render::TextureMapping::Trans2x3 RenderingAsset::TextureMap::GetTransform() cons
         scale.Scale(GetUnitScale(units));
 
     if (fabs(scale.x) < s_minScale)
-        s_minScale = s_minScale;
+        scale.x = s_minScale;
 
     if (fabs(scale.y) < s_minScale)
         scale.y = s_minScale;

@@ -35,9 +35,9 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
 
-            switch (testDb.GetState())
+            switch (testDb.GetAge())
                 {
-                    case TestDb::State::Older:
+                    case ProfileState::Age::Older:
                     {
                     EXPECT_EQ(5, testDb.GetSchemaCount()) << testDb.GetDescription();
 
@@ -69,39 +69,7 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                     EXPECT_EQ(JsonValue(R"js({"classcount":14, "enumcount": 2})js"), testDb.GetSchemaItemCounts("CoreCustomAttributes")) << testDb.GetDescription();
                     break;
                     }
-                    case TestDb::State::Upgraded:
-                    {
-                    EXPECT_EQ(5, testDb.GetSchemaCount()) << testDb.GetDescription();
-
-                    //ECDb built-in schema versions
-                    EXPECT_EQ(SchemaVersion(2, 0, 1), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
-                    EXPECT_EQ((int) ECVersion::V3_2, (int) testDb.GetECVersion("ECDbFileInfo")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
-                    
-                    EXPECT_EQ(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
-                    EXPECT_EQ((int) ECVersion::V3_2, (int) testDb.GetECVersion("ECDbMap")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":9})js"), testDb.GetSchemaItemCounts("ECDbMap")) << testDb.GetDescription();
-                    
-                    EXPECT_EQ(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
-                    EXPECT_EQ((int) ECVersion::V3_2, (int) testDb.GetECVersion("ECDbMeta")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":38, "enumcount": 8})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
-                    
-                    EXPECT_EQ(SchemaVersion(5, 0, 1), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
-                    EXPECT_EQ((int) ECVersion::V3_2, (int) testDb.GetECVersion("ECDbSystem")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), testDb.GetSchemaItemCounts("ECDbSystem")) << testDb.GetDescription();
-
-                    //Standard schema versions
-                    EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
-                    EXPECT_EQ((int) ECVersion::V3_2, (int) testDb.GetECVersion("CoreCustomAttributes")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":14, "enumcount": 2})js"), testDb.GetSchemaItemCounts("CoreCustomAttributes")) << testDb.GetDescription();
-                    break;
-                    }
-                    case TestDb::State::UpToDate:
+                    case ProfileState::Age::UpToDate:
                     {
                     EXPECT_EQ(5, testDb.GetSchemaCount()) << testDb.GetDescription();
                     //ECDb built-in schema versions
@@ -133,7 +101,7 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                     break;
                     }
 
-                    case TestDb::State::Newer:
+                    case ProfileState::Age::Newer:
                     {
                     EXPECT_LE(5, testDb.GetSchemaCount()) << testDb.GetDescription();
 
@@ -160,7 +128,7 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                     break;
                     }
                     default:
-                        FAIL() << "Unhandled TestDb::State enum value | " << testDb.GetDescription();
+                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
                         break;
                 }
             }
