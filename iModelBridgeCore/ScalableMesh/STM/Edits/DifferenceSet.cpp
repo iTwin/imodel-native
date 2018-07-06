@@ -234,7 +234,7 @@ void AddFacesFromIntersectingSets(DifferenceSet& outSet, vector<vector<int32_t>>
             ++n;
             for (auto& pt : facePoints)
                 {
-                if (bsiDPoint3d_pointEqualTolerance(&pt, &vertices[vtxId], 1e-5)) outSet.addedFaces.push_back(vtxId + 1);
+                if (pt.IsEqual (vertices[vtxId], 1e-5)) outSet.addedFaces.push_back(vtxId + 1);
                 else
                     {
                     outSet.addedFaces.push_back(outSet.firstIndex + (int)outSet.addedVertices.size());
@@ -332,7 +332,7 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
             if (facePoints.size() != 3) continue;
             for (auto& pt : facePoints)
             {
-            if (bsiDPoint3d_pointEqualTolerance(&pt, &vertices[&vtx - &faces[0]], 1e-5)) newDiff.addedFaces.push_back(&vtx - &faces[0] + 1);
+            if (pt.IsEqual (vertices[&vtx - &faces[0]], 1e-5)) newDiff.addedFaces.push_back(&vtx - &faces[0] + 1);
             else
             {
             newDiff.addedFaces.push_back(newDiff.firstIndex + (int)newDiff.addedVertices.size());

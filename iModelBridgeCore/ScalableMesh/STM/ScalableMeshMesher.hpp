@@ -1699,7 +1699,7 @@ if (stitchedPoints.size() != 0 &&!isColinear)// return false; //nothing to stitc
     for (auto& bound : boundary)
         if (bound.size() > 2)
             {
-            if (!bsiDPoint3d_pointEqualTolerance(&bound.front(), &bound.back(), 1e-8)) bound.push_back(bound.front());
+            if (!bound.front().IsEqual (*(&bound.back()), 1e-8)) bound.push_back(bound.front());
 #if 0//SM_OUTPUT_MESHES_STITCHING
             WString namePoly = LOG_PATH_STR_W+L"poly_";
             namePoly.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
@@ -1836,7 +1836,7 @@ if (stitchedPoints.size() != 0 &&!isColinear)// return false; //nothing to stitc
                                     {
                                     current = xyz;
  
-                                    if (!bsiDPoint3d_pointEqualTolerance(&current.front(), &current.back(), 1e-8)) current.push_back(current.front());
+                                    if (!current.front().IsEqual (*(&current.back()), 1e-8)) current.push_back(current.front());
                                     /* {
                                      WString namePoly = L"E:\\output\\scmesh\\2016-01-14\\poly_before_untie_";
                                      namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());

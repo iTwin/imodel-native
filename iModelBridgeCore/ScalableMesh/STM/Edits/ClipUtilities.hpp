@@ -145,7 +145,7 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
             {
             int idx = -1;
             for (size_t k = 0; k < 3 && idx == -1; ++k)
-                if (bsiDPoint3d_pointEqualTolerance(&polygonArray[j], &triangle[k], 1.0e-8))
+                if (polygonArray[j].IsEqual (triangle[k], 1.0e-8))
                     idx = meshP->GetFaceIndexes()[i + k];
             if (idx == -1 && polygonArray[j].x < DBL_MAX)
                 {
@@ -168,8 +168,8 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
             newTri[0] = pts[polyIndexes[0] - 1];
             newTri[1] = pts[polyIndexes[j] - 1];
             newTri[2] = pts[polyIndexes[j+1] - 1];
-            if (bsiDPoint3d_pointEqualTolerance(&newTri[0], &newTri[1], 1.0e-8) || bsiDPoint3d_pointEqualTolerance(&newTri[0], &newTri[2], 1.0e-8) ||
-                bsiDPoint3d_pointEqualTolerance(&newTri[2], &newTri[1], 1.0e-8)) continue;
+            if (newTri[0].IsEqual (newTri[1], 1.0e-8) || newTri[0].IsEqual (newTri[2], 1.0e-8) ||
+                newTri[2].IsEqual (newTri[1], 1.0e-8)) continue;
             double signedArea = bsiGeom_getXYPolygonArea(newTri, 3); //make sure new triangles are oriented the same as the original ones
             if ((signedArea < 0 && area > 0) || (signedArea > 0 && area < 0))
                 {
@@ -321,7 +321,7 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
                 {
                 int idx = -1;
                 for (size_t k = 0; k < 3 && idx == -1; ++k)
-                    if (bsiDPoint3d_pointEqualTolerance(&polygonArray[j], &triangle[k], 1.0e-8))
+                    if (polygonArray[j].IsEqual (triangle[k], 1.0e-8))
                         idx = meshP->GetFaceIndexes()[i + k];
                 if (idx == -1 && polygonArray[j].x < DBL_MAX)
                     {
@@ -344,8 +344,8 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
                 newTri[0] = pts[polyIndexes[0] - 1];
                 newTri[1] = pts[polyIndexes[1] - 1];
                 newTri[2] = pts[polyIndexes[2] - 1];
-                if (bsiDPoint3d_pointEqualTolerance(&newTri[0], &newTri[1], 1.0e-8) || bsiDPoint3d_pointEqualTolerance(&newTri[0], &newTri[2], 1.0e-8) ||
-                    bsiDPoint3d_pointEqualTolerance(&newTri[2], &newTri[1], 1.0e-8)) continue;
+                if (newTri[0].IsEqual (newTri[1], 1.0e-8) || newTri[0].IsEqual (newTri[2], 1.0e-8) ||
+                    newTri[2].IsEqual (newTri[1], 1.0e-8)) continue;
                 double signedArea = bsiGeom_getXYPolygonArea(newTri, 3); //make sure new triangles are oriented the same as the original ones
                 if ((signedArea < 0 && area > 0) || (signedArea > 0 && area < 0))
                     {

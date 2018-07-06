@@ -143,7 +143,7 @@ static void ClipConvexPolygonToPlane (DPoint3d *polygonPoints, int &n, DPlane3d 
         }
     if (m > 0)
         {
-        if (!bsiDPoint3d_pointEqual (&clippedPoints[0], &clippedPoints[m-1]))
+        if (!clippedPoints[0].IsEqual (clippedPoints[m-1]))
             clippedPoints[m++] = clippedPoints[0];
         memcpy (polygonPoints, clippedPoints, m * sizeof (DPoint3d));
         }

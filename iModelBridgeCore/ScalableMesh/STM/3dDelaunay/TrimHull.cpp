@@ -606,20 +606,20 @@ double max_edge_length = std::numeric_limits<double>::max()
     double perim;       /* sum of SQUARED edge lengths */
     bool    boolstat;
     /* Compute vectors along each edge */
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&U, point1P, point0P);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&V, point2P, point1P);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&W, point0P, point2P);
+    U.DifferenceOf (*point1P, *point0P);
+    V.DifferenceOf (*point2P, *point1P);
+    W.DifferenceOf (*point0P, *point2P);
     const double magU = U.DotProduct(U);
     const double magV = V.DotProduct(V);
     const double magW = W.DotProduct(W);
     perim = magU + magV + magW;
-    double perim2 = (bsiDPoint3d_magnitude (&U) + bsiDPoint3d_magnitude (&V) + bsiDPoint3d_magnitude (&W));
+    double perim2 = (U.Magnitude () + V.Magnitude () + W.Magnitude ());
 
     if (perim > 0 && magU < max_edge_length && magV < max_edge_length && magW < max_edge_length)
         {
-        bsiDPoint3d_crossProduct (&UcrossV, &U, &V);
+        UcrossV.CrossProduct (U, V);
         area = UcrossV.DotProduct (UcrossV);
-        double area2 = 0.5 * bsiDPoint3d_magnitude (&UcrossV);
+        double area2 = 0.5 * UcrossV.Magnitude ();
         boolstat = true;
         *ratioP = area2 / perim;
         //        *ratioP = area / perim;
@@ -5663,7 +5663,7 @@ void TrimHull::UmbrellaFiltering()
         for (auto point : edgePoints)
             {
             DPoint3d U;
-            bsiDPoint3d_subtractDPoint3dDPoint3d(&U, &m_points[point], &m_points[pt]);
+            U.DifferenceOf (m_points[point], m_points[pt]);
             double length = sqrt(U.DotProduct(U));
             pa += length;
             }
@@ -5728,11 +5728,11 @@ void TrimHull::UmbrellaFiltering()
                 auto& pae0 = pointToAverageEdgeLength[edge[0]];
                 auto& pae1 = pointToAverageEdgeLength[edge[1]];
                 DPoint3d U;
-                bsiDPoint3d_subtractDPoint3dDPoint3d(&U, &m_points[edge[0]], &m_points[pt]);
+                U.DifferenceOf (m_points[edge[0]], m_points[pt]);
                 double length = sqrt(U.DotProduct(U));
                 //if (length > (pa+pae0)) face->keep = false;
                 if (length > 2.0 * pae0 || length > 2.0 * pae1) face->keep = false;
-                bsiDPoint3d_subtractDPoint3dDPoint3d(&U, &m_points[edge[1]], &m_points[pt]);
+                U.DifferenceOf (m_points[edge[1]], m_points[pt]);
                 length = sqrt(U.DotProduct(U));
                 //if (length > (pa + pae1)) face->keep = false;
                 if (length > 2.0 * pae0 || length > 2.0 * pae1) face->keep = false;
@@ -6020,7 +6020,7 @@ void TrimHull::UmbrellaFiltering()
             for (auto point : ptToUmbrella[pt])
                 {
                 DPoint3d U;
-                bsiDPoint3d_subtractDPoint3dDPoint3d(&U, &m_points[point], &m_points[pt]);
+                U.DifferenceOf (m_points[point], m_points[pt]);
                 double length = sqrt(U.DotProduct(U));
                 pa += length;
                 }
@@ -6080,11 +6080,11 @@ void TrimHull::UmbrellaFiltering()
                 auto& pae0 = pointToAverageEdgeLength[edge[0]];
                 auto& pae1 = pointToAverageEdgeLength[edge[1]];
                 DPoint3d U;
-                bsiDPoint3d_subtractDPoint3dDPoint3d(&U, &m_points[edge[0]], &m_points[pt]);
+                U.DifferenceOf (m_points[edge[0]], m_points[pt]);
                 double length = sqrt(U.DotProduct(U));
                 //if (length > (pa+pae0)) face->keep = false;
                 if (length > 2.0 * pae0 || length > 2.0 * pae1) face->keep = false;
-                bsiDPoint3d_subtractDPoint3dDPoint3d(&U, &m_points[edge[1]], &m_points[pt]);
+                U.DifferenceOf (m_points[edge[1]], m_points[pt]);
                 length = sqrt(U.DotProduct(U));
                 //if (length > (pa + pae1)) face->keep = false;
                 if (length > 2.0 * pae0 || length > 2.0 * pae1) face->keep = false;
