@@ -190,19 +190,21 @@ struct NapiUtils
                 return Napi::Boolean::New(env, jsonValue.asBool());
             case Json::ValueType::intValue:
                 {
+                int64_t val = jsonValue.asInt64();
                 napi_value v;
-                if (napi_create_int32(env, jsonValue.asInt(), &v) != napi_ok)
-                    return env.Undefined();
+                if ((val < std::numeric_limits<std::int32_t>::max()) && napi_create_int32(env, val, &v) == napi_ok)
+                    return Napi::Number(env, v);
 
-                return Napi::Number(env, v);
+                return Napi::Number::New (env, val);
                 }
             case Json::ValueType::uintValue:
                 {
+                uint64_t val = jsonValue.asUInt64();
                 napi_value v;
-                if (napi_create_uint32(env, jsonValue.asUInt(), &v) != napi_ok)
-                    return env.Undefined();
+                if ((val < std::numeric_limits<std::uint32_t>::max()) && napi_create_uint32(env, val, &v) == napi_ok)
+                    return Napi::Number(env, v);
 
-                return Napi::Number(env, v);
+                return Napi::Number::New(env, val);
                 }
             case Json::ValueType::realValue:
                 return Napi::Number::New(env, jsonValue.asDouble());
@@ -252,10 +254,7 @@ struct NapiUtils
                         {
                         Json::Value jsonArray(Json::ValueType::arrayValue);
                         for (uint32_t i = 0; i < obj.As<Napi::Array>().Length(); i++)
-                            {
-                            Napi::Value arrayValue = obj.Get(i);
-                            jsonArray.append(Convert(obj.Get(arrayValue)));
-                            }
+                            jsonArray.append(Convert(obj.Get(i)));
 
                         return jsonArray;
                         }
