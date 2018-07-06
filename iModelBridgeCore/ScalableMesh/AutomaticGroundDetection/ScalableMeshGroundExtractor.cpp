@@ -136,6 +136,7 @@ void IScalableMeshGroundExtractor::GetTempDataLocation(BeFileName& textureSubFol
     }        
 
 
+bool s_shouldStopContinueEarly = false;
 
 /*----------------------------------------------------------------------------+
 |IScalableMeshGroundExtractor Method Definition Section - End
@@ -220,6 +221,9 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
 
         virtual bool _ShouldContinue() const override
             {
+            if (s_shouldStopContinueEarly)
+                return false;
+
             if (m_groundPreviewer.IsValid())
                 return !m_groundPreviewer->IsCurrentPreviewEnough();
 

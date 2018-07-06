@@ -64,8 +64,8 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
 #endif
-		//LOG_SET_PATH("e:\\Elenie\\mesh\\")
-		//LOG_SET_PATH_W("e:\\Elenie\\mesh\\")
+   // LOG_SET_PATH("e:\\Elenie\\mesh\\")
+   // LOG_SET_PATH_W("e:\\Elenie\\mesh\\")
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
 
