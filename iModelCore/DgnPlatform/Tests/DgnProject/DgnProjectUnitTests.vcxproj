@@ -78,6 +78,7 @@
     <ClCompile Include="Published\BriefcaseManager_Test.cpp" />
     <ClCompile Include="Published\ChangeSummary_Test.cpp" />
     <ClCompile Include="Published\ChangeTestFixture.cpp" />
+    <ClCompile Include="Published\Compatibility_Test.cpp" />
     <ClCompile Include="Published\ComponentModelBasicTest.cpp" />
     <ClCompile Include="Published\ComponentModelTest.cpp" />
     <ClCompile Include="Published\CreateFromInstance_Test.cpp" />
@@ -101,6 +102,7 @@
     <ClCompile Include="Published\MemoryManager_Test.cpp" />
     <ClCompile Include="Published\NotificationManager_Test.cpp" />
     <ClCompile Include="Published\Revision_Test.cpp" />
+    <ClCompile Include="Published\SchemaVersion_Test.cpp" />
     <ClCompile Include="Published\Tag_Test.cpp" />
     <ClCompile Include="Published\TextAnnotationElement_Test.cpp" />
     <ClCompile Include="Published\TextAnnotationSeed_Test.cpp" />
