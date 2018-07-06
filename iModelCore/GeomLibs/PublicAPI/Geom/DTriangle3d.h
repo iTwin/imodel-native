@@ -187,18 +187,14 @@ ValidatedTransform WorldToLocalTransform () const;
 * @description Sets this instance to the barycentric coordinates of pPoint
 * relative to the triangle (pVertex0, pVertex1, pVertex2) in the xy-plane.
 *
-* @instance pInstance   <= barycentric coordinates of pPoint relative to T
-* @param pPoint         => point in plane
-* @param pVertex0       => vertex 0 of triangle T
-* @param pVertex1       => vertex 1 of triangle T
-* @param pVertex2       => vertex 2 of triangle T
-* @see bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-* @see bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
-* @group "DPoint3d Barycentric"
+* @param pInstance   [out] barycentric coordinates of pPoint relative to T
+* @param pPoint         [in] point in plane
+* @param pVertex0       [in] vertex 0 of triangle T
+* @param pVertex1       [in] vertex 1 of triangle T
+* @param pVertex2       [in] vertex 2 of triangle T
 * @return true if and only if the area of T is sufficiently large.
-* @bsihdr                                                                       DavidAssaf      10/98
 +---------------+---------------+---------------+---------------+------*/
-Public  bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
+Public  GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
 
 (
 DPoint3dP pInstance,
@@ -212,16 +208,15 @@ DPoint2dCP pVertex2
 * @description Sets this instance to the barycentric coordinates of pPoint
 * relative to the triangle (pVertex0, pVertex1, pVertex2) in the xy-plane.
 *
-* @instance pInstance   <= barycentric coordinates of pPoint relative to T
-* @param pPoint         => point in plane
-* @param pVertex0       => vertex 0 of triangle T
-* @param pVertex1       => vertex 1 of triangle T
-* @param pVertex2       => vertex 2 of triangle T
-* @see bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-* @see bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
-* @group "DPoint3d Barycentric"
+* @param uvw   [out] barycentric coordinates of pPoint relative to T
+* @param dUVWdX   [out] derivatives wrt point.x
+* @param dUVWdY   [out] derivatives wrt point.y
+* @param area  [out] triangle area
+* @param point         [in] point in plane
+* @param vertex0       [in] vertex 0 of triangle T
+* @param vertex1       [in] vertex 1 of triangle T
+* @param vertex2       [in] vertex 2 of triangle T
 * @return true if and only if the area of T is sufficiently large.
-* @bsihdr                                                                       DavidAssaf      10/98
 +---------------+---------------+---------------+---------------+------*/
 Public  GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
 (
@@ -241,13 +236,12 @@ DPoint2dCR vertex2
 * coordinates in pClosePoint, and the s and t coordinates (as defined
 * in bsiGeom_evaluateSkewedPlane) in sP and tP.
 *
-* @param pClosePoint <= point on plane.  May be null pointer
-* @param sP <= parametric coordinate on s axis
-* @param tP <= parametric coordinate on t axis
-* @param pPlanePoint => origin, s=1, and t=1 points
-* @param pSpacePoint => point to be projected
+* @param pClosePoint [out] point on plane.  May be null pointer
+* @param sP [out] parametric coordinate on s axis
+* @param tP [out] parametric coordinate on t axis
+* @param pPlanePoint [in] origin, s=1, and t=1 points
+* @param pSpacePoint [in] point to be projected
 * @return true unless the plane points are collinear
-* @bsihdr                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
 Public  GEOMDLLIMPEXP bool     bsiGeom_closestPointOnSkewedPlane
 
@@ -261,15 +255,14 @@ DPoint3dCP pSpacePoint
 
 /*-----------------------------------------------------------------*//**
 * @description Compute the minimum distance from a point to a triangle.
-* @instance pSpacePoint   <= point in space
-* @param pVertex0       => vertex of T
-* @param pVertex1       => vertex of T
-* @param pVertex2       => vertex of T
-* @param pClosePoint    <= projection of space point onto plane of triangle
-* @param pBCoords       <= barycentric coordinates of closest point
+* @param pSpacePoint   [out] point in space
+* @param pVertex0       [in] vertex of T
+* @param pVertex1       [in] vertex of T
+* @param pVertex2       [in] vertex of T
+* @param pClosePoint    [out] projection of space point onto plane of triangle
+* @param pBoundedUVW       [out] barycentric coordinates of closest point restricted to triangle
+* @param pUnboundedUVW       [out] barycentric coordinates of closest point on plane
 * @return minimum distance
-* @group "DPoint3d Barycentric"
-* @bsihdr                                       EarlinLutz      10/04
 +---------------+---------------+---------------+---------------+------*/
 Public  GEOMDLLIMPEXP double bsiDPoint3d_minDistToTriangle
 
@@ -289,17 +282,12 @@ DPoint3dP pUnboundedUVW
 * relative to the triangle (pOrigin, pVector1-pOrigin, pVector2-pOrigin)
 * in the xy-plane.
 *
-* @instance pInstance   <= barycentric coordinates of pPoint relative to T
-* @param pArea          <= area of triangle.
-* @param pPoint         => point in plane
-* @param pOrigin        => vertex of triangle T (may be null for origin)
-* @param pVector1       => side vector of T (emanating from pOrigin)
-* @param pVector2       => side vector of T (emanating from pOrigin)
-* @see bsiDPoint3d_barycentricFromDPoint2dTriangle
-* @see bsiDPoint2d_fromBarycentricAndDPoint2dTriangleVectors
-* @group "DPoint3d Barycentric"
+* @param pInstance   [out] barycentric coordinates of pPoint relative to T
+* @param pPoint         [in] point in plane
+* @param pOrigin        [in] vertex of triangle T (may be null for origin)
+* @param pVector1       [in] side vector of T (emanating from pOrigin)
+* @param pVector2       [in] side vector of T (emanating from pOrigin)
 * @return true if and only if the area of T is sufficiently large.
-* @bsihdr                                      DavidAssaf      10/98
 +---------------+---------------+---------------+---------------+------*/
 Public  GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
 
@@ -318,16 +306,12 @@ DPoint2dCP pVector2
 * T if and only if they project to the same point q in the plane of T;
 * then their barycentric coordinates relative to T are those of q.
 *
-* @instance pInstance   <= barycentric coordinates of pPoint relative to T
-* @param pPoint         => point in space
-* @param pVertex0       => vertex of triangle T
-* @param pVertex1       => vertex of triangle T
-* @param pVertex2       => vertex of triangle T
-* @see bsiDPoint3d_barycentricFromDPoint2dTriangle
-* @see bsiDPoint3d_fromBarycentricAndDPoint3dTriangle
+* @param pInstance   [out] barycentric coordinates of pPoint relative to T
+* @param pPoint         [in] point in space
+* @param pVertex0       [in] vertex of triangle T
+* @param pVertex1       [in] vertex of triangle T
+* @param pVertex2       [in] vertex of triangle T
 * @return true if and only if the area of T is sufficiently large.
-* @group "DPoint3d Barycentric"
-* @bsihdr                                                                       DavidAssaf      10/98
 +---------------+---------------+---------------+---------------+------*/
 Public  GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint3dTriangle
 
@@ -342,14 +326,11 @@ DPoint3dCP pVertex2
 * @description Sets this instance to the point in the plane with the given barycentric
 * coordinates relative to triangle T (pVertex0, pVertex1, pVertex2).
 *
-* @instance pInstance   <= point with given barycoords relative to T
-* @param pBaryCoords    => barycentric coordinates relative to T
-* @param pVertex0       => vertex 0 of triangle T
-* @param pVertex1       => vertex 1 of triangle T
-* @param pVertex2       => vertex 2 of triangle T
-* @see bsiDPoint3d_barycentricFromDPoint2dTriangle
-* @group "DPoint2d Barycentric"
-* @bsihdr                                                               DavidAssaf      10/98
+* @param pInstance   [out] point with given barycoords relative to T
+* @param pBaryCoords    [in] barycentric coordinates relative to T
+* @param pVertex0       [in] vertex 0 of triangle T
+* @param pVertex1       [in] vertex 1 of triangle T
+* @param pVertex2       [in] vertex 2 of triangle T
 +---------------+---------------+---------------+---------------+------*/
 Public  GEOMDLLIMPEXP void bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
 
