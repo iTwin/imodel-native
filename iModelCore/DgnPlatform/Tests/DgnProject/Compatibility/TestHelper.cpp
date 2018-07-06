@@ -726,7 +726,7 @@ Utf8String TestDb::GetDescription() const
                 return Utf8String("Error: Unhandled ProfileState::Age enum value");
         }
 
-    return Utf8PrintfString("Open mode: %s | Age: %s | %s", openModeStr, GetTestFile().ToString().c_str());
+    return Utf8PrintfString("Open mode: %s | Age: %s | %s", openModeStr, ageStr, GetTestFile().ToString().c_str());
     }
 
 //***************************** TestECDb ********************************************
