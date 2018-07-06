@@ -7739,8 +7739,8 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
     assertKoq(*schema, "K2", "KOQ 2", "My KOQ 2", "u:M", "f:DefaultReal[u:FT];f:DefaultReal[u:IN]", 2);
     assertKoq(*schema, "K3", "KOQ 3", "My KOQ 3", "u:KG", "f:DefaultReal[u:G]", 3);
     assertKoq(*schema, "K4", "KOQ 4", "My KOQ 4", "u:G", "f:DefaultReal[u:MG]", 4);
-    assertKoq(*schema, "K5", "KOQ 5", "My KOQ 5", "u:M", "f:DefaultRealUNS(4)[u:M];f:DefaultRealUNS(4)[u:IN];f:AmerFI;f:DefaultRealUNS(4)[u:FT]", 5);
-    assertKoq(*schema, "K6", "KOQ 6", "My KOQ 6", "u:M", "f:DefaultRealUNS(4)[u:M];f:DefaultRealUNS(4)[u:IN];f:AmerFI;f:DefaultRealUNS(4)[u:FT]", 6);
+    assertKoq(*schema, "K5", "KOQ 5", "My KOQ 5", "u:M", "f:DefaultRealUNS(4)[u:M|m];f:DefaultRealUNS(4)[u:IN|&quot;];f:AmerFI;f:DefaultRealUNS(4)[u:FT|']", 5);
+    assertKoq(*schema, "K6", "KOQ 6", "My KOQ 6", "u:M", "f:DefaultRealUNS(4)[u:M|m];f:DefaultRealUNS(4)[u:IN|&quot;];f:AmerFI;f:DefaultRealUNS(4)[u:FT|']", 6);
     }
 
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -7763,8 +7763,8 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
     assertKoq(*schema, "K3", "KOQ 3", "My Nice KOQ 3", "u:KG", "f:DefaultReal[u:G]", 3);
     //changing the order of pres units and adding a pres unit is supported
     assertKoq(*schema, "K4", "Nice KOQ 4", "My KOQ 4", "u:G", "f:DefaultReal[u:KG];f:DefaultReal[u:MG]", 40);
-    assertKoq(*schema, "K5", "KOQ 5", "My KOQ 5", "u:M", "f:DefaultRealUNS(4)[u:M];f:AmerFI;f:DefaultRealUNS(4)[u:FT]", 5);
-    assertKoq(*schema, "K6", "KOQ 6", "My KOQ 6", "u:M", "f:DefaultReal[u:M]", 6);
+    assertKoq(*schema, "K5", "KOQ 5", "My KOQ 5", "u:M", "f:DefaultRealUNS(4)[u:M|m];f:AmerFI;f:DefaultRealUNS(4)[u:FT|']", 5);
+    assertKoq(*schema, "K6", "KOQ 6", "My KOQ 6", "u:M", "", 6);
     }
 
     }

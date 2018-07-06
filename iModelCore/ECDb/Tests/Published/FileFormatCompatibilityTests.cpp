@@ -1464,8 +1464,8 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
                 else
                     FAIL();
 
-                EXPECT_EQ(benchmarkEnumValueJson.isMember("DisplayLabel"), upgradedEnumValueJson.isMember("DisplayLabel"));
-                EXPECT_STREQ(benchmarkEnumValueJson["DisplayLabel"].asCString(), upgradedEnumValueJson["DisplayLabel"].asCString()) << enumName << " (Schema: " << schemaId.ToString();
+                EXPECT_EQ(benchmarkEnumValueJson.isMember("DisplayLabel"), upgradedEnumValueJson.isMember("DisplayLabel")) << enumName << " (Schema: " << schemaId.ToString() << ") Benchmark: " << benchmarkEnumValueJson.ToString() << " Upgraded: " << upgradedEnumValueJson.ToString();
+                EXPECT_STREQ(benchmarkEnumValueJson["DisplayLabel"].asCString(), upgradedEnumValueJson["DisplayLabel"].asCString()) << enumName << " (Schema: " << schemaId.ToString() << ") Benchmark: " << benchmarkEnumValueJson.ToString() << " Upgraded: " << upgradedEnumValueJson.ToString();
                 }
             }
         }

@@ -524,7 +524,8 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     {
     PERFLOG_START("ECDb", "Profile schema import");
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    context->AddSchemaLocater(ecdb.GetSchemaLocater());
+    // Don't add ecdb as schema locater so that referenced schemas of the profile schemas
+    // get a chance to be upgraded as well (in case there are newer versions of them in the assets folder)
 
     BeFileName ecdbStandardSchemasFolder(context->GetHostAssetsDirectory());
     ecdbStandardSchemasFolder.AppendToPath(L"ECSchemas");
