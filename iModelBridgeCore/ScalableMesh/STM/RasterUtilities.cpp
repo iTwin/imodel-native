@@ -126,7 +126,7 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path)
         HFCPtr<HRARASTER> pVoidRaster;
         return pVoidRaster;
         }
-
+    
     pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
     pObjectStore = new HRSObjectStore(s_rasterMemPool,
                                       pRasterFile,
@@ -139,16 +139,15 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path)
     }
 
 
-HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DRange2d extentInTargetCS)
+HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DRange2d extentInTargetCS, GCSCPTR replacementGcsPtr)
     {
     HFCPtr<HRFRasterFile> rasterFile;
 
-    return LoadRaster(rasterFile, path, targetCS, extentInTargetCS);
+    return LoadRaster(rasterFile, path, targetCS, extentInTargetCS, false, replacementGcsPtr);
     }
 
-HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile, WString path, GCSCPTR targetCS, DRange2d extentInTargetCS, bool forceProjective)
+HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile, WString path, GCSCPTR targetCS, DRange2d extentInTargetCS, bool forceProjective, GCSCPTR replacementGcsPtr)
     {
-
     if (s_rasterMemPool == nullptr)
         s_rasterMemPool = new HPMPool(300000, HPMPool::None);
     auto cluster = GetWorldCluster();
@@ -162,7 +161,13 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
         return pVoidRaster;
         }
 
-	GCSCP pRasterGcs = nullptr;
+    if (replacementGcsPtr != nullptr)
+        {
+        IRasterBaseGcsPtr rasterBaseGcsPtr = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(replacementGcsPtr.get());
+        pRasterFile->GetPageDescriptor(0)->SetGeocoding(rasterBaseGcsPtr.get());
+        }
+
+    GCSCP pRasterGcs = nullptr;
 
 #ifndef VANCOUVER_API
      pRasterGcs = pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();

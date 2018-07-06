@@ -1175,9 +1175,32 @@ StatusInt IScalableMeshSourceCreator::Impl::GetLocalSourceTextureProvider(ITextu
 
         // Get the raster from the store
         pRaster = pObjectStore->LoadRaster();*/
-        pRaster = RasterUtilities::LoadRaster(path);
 
-        HASSERT(pRaster != NULL);
+
+        GCSCPTR replacementGcsPtr;
+        const GCS& gcs(const_cast<SourceImportConfig*>(&source->GetConfig())->GetReplacementGCS());
+        
+
+        if (gcs.HasGeoRef())
+            {
+            replacementGcsPtr = gcs.GetGeoRef().GetBasePtr();                            
+            }
+
+        GCSCPTR destinationGcsPtr;
+
+        if (m_gcs.HasGeoRef())
+            {
+            destinationGcsPtr = m_gcs.GetGeoRef().GetBasePtr();
+            }        
+        
+        HASSERT(m_dataIndex != nullptr);
+          
+        DRange2d extentInTargetCS(DRange2d::From(m_dataIndex->GetContentExtent()));
+
+        pRaster = RasterUtilities::LoadRaster(path, destinationGcsPtr, extentInTargetCS, replacementGcsPtr);
+
+        HASSERT(pRaster != NULL);        
+    
         //NEEDS_WORK_SM: do not do this if raster does not intersect sm extent
         rasterList.push_back(pRaster.GetPtr());
         pRaster = 0;
