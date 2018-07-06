@@ -107,7 +107,7 @@ void NumericFormatSpecJsonTest::ValidateJson_DefaultCommonAttributes(JsonValueCR
 
     // MinWidth
     JsonValueCR minWidth = jval[json_minWidth()];
-    EXPECT_EQ(Json::intValue, minWidth.type());
+    EXPECT_EQ(Json::uintValue, minWidth.type());
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), minWidth.asInt());
 
     // Decimal Separator

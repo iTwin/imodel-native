@@ -630,7 +630,7 @@ int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
     char sign = '+';
     char buf[64];
     int n1;
-    int ind = 0;
+    uint32_t ind = 0;
 
     if (bufLen < 2)  // if output buffer is too short make it empty and return
         {
@@ -657,7 +657,7 @@ int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
         buf[--ind] = ')';
 
     int digs = 0;
-    int numberLength = 0; // The number of digits + separators
+    uint32_t numberLength = 0; // The number of digits + separators
     do {
         n1 = n / 10;
         buf[--ind] = (char)(n - 10 * n1) + '0';
@@ -810,7 +810,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
             return ((c >= '0' && c <= '9') || c == ',' || c == '.');
             };
 
-        int curWidth = 0;
+        uint32_t curWidth = 0;
         for (int i = 0; i < ind; i++)
             {
             if(charCountsTowardsMinWidth(locBuf[i]))

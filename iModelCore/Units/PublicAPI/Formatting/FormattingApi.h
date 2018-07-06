@@ -100,7 +100,7 @@ private:
     Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
     Utf8String          m_uomSeparator;          // Default separator between the number and UOM.
     Utf8Char            m_statSeparator;         // Default separator between parts of the stopping format.
-    int                 m_minWidth;              // The minimum width of the field. It will be taken into account
+    uint32_t            m_minWidth;              // The minimum width of the field. It will be taken into account
                                                  // only if the overall length (width) of the text representing integer
                                                  // a number of or integer part of a real is shorter and needs to be augmented by
                                                  // insignificant zeroes. Blanks are not considered because aligning text
@@ -210,8 +210,8 @@ public:
     Utf8CP GetUomSeparator(Utf8CP def = nullptr) const { return (nullptr == def)?  m_uomSeparator.c_str() : def; }
     bool HasUomSeparator() const {return m_explicitlyDefinedUOMSeparator;}
 
-    void SetMinWidth(int wid) {m_explicitlyDefinedMinWidth = true; m_minWidth = wid;}
-    int GetMinWidth() const {return m_minWidth;}
+    void SetMinWidth(uint32_t wid) {m_explicitlyDefinedMinWidth = true; m_minWidth = wid;}
+    uint32_t GetMinWidth() const {return m_minWidth;}
     bool HasMinWidth() const {return m_explicitlyDefinedMinWidth;}
 
     void SetStationSeparator(Utf8Char sep) {m_explicitlyDefinedStatSeparator = true; m_statSeparator = sep;}
