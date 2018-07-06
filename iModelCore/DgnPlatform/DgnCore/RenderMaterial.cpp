@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RenderMaterial.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -140,8 +140,11 @@ Render::TextureMapping::Trans2x3 RenderingAsset::TextureMap::GetTransform() cons
     if (Units::Relative != units)
         scale.Scale(GetUnitScale(units));
 
-    scale.x = std::max(scale.x, s_minScale);
-    scale.y = std::max(scale.y, s_minScale);
+    if (fabs(scale.x) < s_minScale)
+        scale.x = s_minScale;
+
+    if (fabs(scale.y) < s_minScale)
+        scale.y = s_minScale;
 
     if (xFlip)
         scale.x = -scale.x;
