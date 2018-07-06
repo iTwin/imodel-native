@@ -2,5 +2,5 @@
 # ImporterAppTests.createIBIMandIModelFromDxf     # Assertion
 
 # Broken with DgnClientSdk 2.0.2.93, ignoring to get a build through until Don gets back.
-BasicTests.UpdateElements_AddDelete
-ImporterAppTests.BudweiserBenchmarks
+# BasicTests.UpdateElements_AddDelete
+# ImporterAppTests.BudweiserBenchmarks
