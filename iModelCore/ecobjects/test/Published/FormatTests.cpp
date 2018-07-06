@@ -608,6 +608,10 @@ TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyMinWidth)
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" minWidth="bananas" precision="4"/>
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid minwidth");
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Format typeName="AmerMYFI4" type="decimal" minWidth="-1" precision="4"/>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid minwidth");
     {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">

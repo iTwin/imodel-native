@@ -264,9 +264,9 @@ SchemaReadStatus ECFormat::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContex
         spec.SetPrecision(unitsDecimalPrecision);
         }
 
-    uint32_t minWidth;
-    status = unitFormatNode.GetAttributeUInt32Value(minWidth, FORMAT_MIN_WIDTH_ATTRIBUTE);
-    if (BeXmlStatus::BEXML_Success == status)
+    int32_t minWidth;
+    status = unitFormatNode.GetAttributeInt32Value(minWidth, FORMAT_MIN_WIDTH_ATTRIBUTE);
+    if (BeXmlStatus::BEXML_Success == status && minWidth > 0)
         spec.SetMinWidth(minWidth);
     else if (BeXmlStatus::BEXML_AttributeNotFound != status)
         {
