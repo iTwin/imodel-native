@@ -4434,6 +4434,8 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
         if (poly.empty()) continue;
 
         UntieLoopsFromPolygon(poly);
+        if (poly.size() < 3)
+            continue;
         HArrayAutoPtr<double> tempBuffer(new double[poly.size() * 2]);
 
         int bufferInd = 0;
