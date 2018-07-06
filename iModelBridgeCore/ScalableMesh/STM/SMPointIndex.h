@@ -22,13 +22,15 @@
 #include "SMMemoryPool.h"
 #include <ImagePP/all/h/HVEShape.h>
 
-#include <ScalableMesh\IScalableMeshQuery.h>
+#include <ScalableMesh/IScalableMeshQuery.h>
 
-#include "Stores\SMSQLiteStore.h"
+#include "Stores/SMSQLiteStore.h"
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
+#endif
 #include "SMNodeGroup.h"
 
-#include <ScalableMesh\IScalableMeshCreator.h>
+#include <ScalableMesh/IScalableMeshCreator.h>
 
 class DataSourceAccount;
 class SMNodeGroup;
@@ -145,7 +147,7 @@ public:
             HFCPtr<SMPointIndexNode<POINT, EXTENT>> m_indexNode;
         };
 
-    typedef std::map<__int64, HFCPtr<SMPointIndexNode<POINT, EXTENT>>> CreatedNodeMap;
+    typedef std::map<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>> CreatedNodeMap;
 
    
     SMPointIndexNode(uint64_t nodeInd, 
@@ -284,7 +286,12 @@ public:
     Changes an unbalanced index to a balanced index. If the index is already balanced
     nothing will occur otherwise the balancing will immediately be performed.
     -----------------------------------------------------------------------------*/
-    void Balance(size_t depth);
+    void Balance(size_t depth, bool splitNode);
+
+    /**----------------------------------------------------------------------------
+    Set up neighbor nodes
+    -----------------------------------------------------------------------------*/
+    void SetupNeighborNodes();
 
     /**----------------------------------------------------------------------------
     Pull up sub node.
@@ -547,7 +554,7 @@ public:
      Initiates the filtering of the node.
      The filtering is recursive and will call sub-nodes filtering.
     -----------------------------------------------------------------------------*/
-    virtual void Filter(int pi_levelToFilter = -1);    
+    virtual void Filter(int pi_levelToFilter = -1, bvector<SMPointIndexNode<POINT, EXTENT>*>* pNodesToFilter = nullptr);
 
     /**----------------------------------------------------------------------------
      Initiates a post-filtering of the node. This is called after calling the
@@ -804,6 +811,7 @@ public:
     mutable bool m_wasBalanced;
     bool m_needsBalancing;
     bool m_isGrid;
+    bool m_needsNeighborSetting = true;
     //NEEDS_WORK_SM : Need to be set even if SMMeshIndexNode are not used (point cloud)
     SMPointIndex<POINT, EXTENT>* m_SMIndex;
 
@@ -1229,17 +1237,15 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
     public:
         SMIndexNodeVirtual(const NODE* rParentNode) : NODE(rParentNode->GetSplitTreshold(), rParentNode->GetNodeExtent(), const_cast<NODE*>(rParentNode))
             {
-            m_nodeHeader.m_contentExtent = rParentNode->m_nodeHeader.m_contentExtent;
-            m_nodeHeader.m_nodeExtent = rParentNode->m_nodeHeader.m_nodeExtent;
-            m_nodeHeader.m_numberOfSubNodesOnSplit = rParentNode->m_nodeHeader.m_numberOfSubNodesOnSplit;
-            m_nodeHeader.m_totalCount = rParentNode->m_nodeHeader.m_totalCount;
-            m_nodeHeader.m_IsLeaf = true;
-            m_nodeHeader.m_IsBranched = false;
+            this->m_nodeHeader.m_contentExtent = rParentNode->m_nodeHeader.m_contentExtent;
+            this->m_nodeHeader.m_nodeExtent = rParentNode->m_nodeHeader.m_nodeExtent;
+            this->m_nodeHeader.m_numberOfSubNodesOnSplit = rParentNode->m_nodeHeader.m_numberOfSubNodesOnSplit;
+            this->m_nodeHeader.m_totalCount = rParentNode->m_nodeHeader.m_totalCount;
+            this->m_nodeHeader.m_IsLeaf = true;
+            this->m_nodeHeader.m_IsBranched = false;
             }
         virtual bool IsVirtualNode() const override
             {
-            volatile bool a = 1;
-            a = a;
             return true;
            }      
 
@@ -1330,7 +1336,7 @@ public:
      Push the data in leaf and balance the octree
     -----------------------------------------------------------------------------*/
     //NEEDS_WORK_SM : Maybe should be virtual.
-    BENTLEY_SM_EXPORT void BalanceDown(size_t depthBeforePartialUpdate, bool keepUnbalanced = false);
+    BENTLEY_SM_EXPORT void BalanceDown(size_t depthBeforePartialUpdate, bool keepUnbalanced = false, bool splitNode = false, bool propagateDownImmediately = true);
 
     /**----------------------------------------------------------------------------
      Remove useless root
@@ -1359,7 +1365,7 @@ public:
      node post-filtering then global post-filtering.
 
     -----------------------------------------------------------------------------*/
-    BENTLEY_SM_EXPORT virtual void        Filter(int pi_levelToFilter);
+    BENTLEY_SM_EXPORT virtual void        Filter(int pi_levelToFilter, bvector<SMPointIndexNode<POINT, EXTENT>*>* nodesToFilter = nullptr);
 
 
     /**----------------------------------------------------------------------------
@@ -1409,7 +1415,7 @@ public:
 #endif
 
 #ifdef SCALABLE_MESH_ATP
-    unsigned __int64    m_nbInputPoints;
+    uint64_t    m_nbInputPoints;
 #endif    
 
     void SetNextID(const uint64_t& id);
@@ -1489,7 +1495,13 @@ public:
     Changes an unbalanced index to a balanced index. If the index is already balanced
     nothing will occur otherwise the balancing will immediately be performed.
     -----------------------------------------------------------------------------*/
-    void                Balance();
+    void                Balance(bool splitNode);
+
+
+    /**----------------------------------------------------------------------------
+    Setup the neighbor nodes
+    -----------------------------------------------------------------------------*/
+    void                SetupNeighborNodes();
 
     /**----------------------------------------------------------------------------
     Returns the number of subnodes on split. This number can be 4 or 8
@@ -2068,7 +2080,7 @@ template<class POINT, class EXTENT> class ISMPointIndexSpatialLimitWrapQuery : p
     {
 private:
     HFCPtr<HVE2DShape> m_limit;
-    ISMPointIndexQuery* m_wrappedQuery;
+    ISMPointIndexQuery<POINT, EXTENT>* m_wrappedQuery;
 
     bool IsNodeDisjointFromLimit(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node)
         {
@@ -2086,7 +2098,7 @@ private:
 
 
 public:
-    ISMPointIndexSpatialLimitWrapQuery(HFCPtr<HVE2DShape> pi_Limit, ISMPointIndexQuery* pi_Query)
+    ISMPointIndexSpatialLimitWrapQuery(HFCPtr<HVE2DShape> pi_Limit, ISMPointIndexQuery<POINT, EXTENT>* pi_Query)
         {
         m_limit = pi_Limit;
         m_wrappedQuery = pi_Query;
@@ -2100,7 +2112,7 @@ public:
     /*======================================================================================================
     ** @return Returns the wrapped query
     **====================================================================================================*/
-    ISMPointIndexQuery* GetWrappedQuery() const {
+    ISMPointIndexQuery<POINT, EXTENT>* GetWrappedQuery() const {
         return m_wrappedQuery;
         }
 
@@ -2493,7 +2505,7 @@ private:
 public:
 
     HGFAutoLevelPointIndexQuery(const EXTENT* exent, size_t levelBias = 0)
-        : HGFLevelPointIndexQuery (extent, 0)
+        : HGFLevelPointIndexQuery<POINT, EXTENT> (extent, 0)
         {
         m_levelBias = levelBias;
         m_levelSet = false;

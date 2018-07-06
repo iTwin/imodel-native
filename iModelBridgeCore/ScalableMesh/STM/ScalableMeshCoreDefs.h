@@ -6,7 +6,7 @@
 |       $Date: 2011/08/02 14:59:51 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -96,7 +96,7 @@ typedef struct
  long     tileNumber ;
  long     resolutionLevel ;
  long     numPoints ;
- __int64  fileOffset ;
+ int64_t  fileOffset ;
  double   xMin ;
  double   yMin ;
  double   zMin ;
@@ -118,14 +118,14 @@ typedef struct
  double   xMax ;
  double   yMax ;
  double   zMax ; 
- __int64  spatialIndexOffset ;
- __int64  tileIndexOffset ;
+ int64_t  spatialIndexOffset ;
+ int64_t  tileIndexOffset ;
 } BC_MRES2_DTM ;
 
 typedef struct
 {
  long     tileNumber ;
- __int64  fileOffset ;
+ int64_t  fileOffset ;
  long     numPoints ;
  long     resolutionPoints[20] ;
  double   xMin ;

@@ -11,25 +11,28 @@
 
 #include "SMStreamingDataStore.h"
 #include "SMSQLiteStore.h"
-#include "..\Threading\LightThreadPool.h"
+#include "../Threading/LightThreadPool.h"
 #include <condition_variable>
-#include <TilePublisher\TilePublisher.h>
-#include <CloudDataSource\DataSourceAccount.h>
-#include <CloudDataSource\DataSourceAccountWSG.h>
-#include <CloudDataSource\DataSourceBuffered.h>
+#include <TilePublisher/TilePublisher.h>
+#ifndef LINUX_SCALABLEMESH_BUILD
+#include <CloudDataSource/DataSourceAccount.h>
+#include <CloudDataSource/DataSourceAccountWSG.h>
+#include <CloudDataSource/DataSourceBuffered.h>
+#endif
 
-#include <ImagePP\all\h\HCDCodecZlib.h>
-#include <ImagePP\all\h\HCDException.h>
-#include <ImagePP\all\h\HFCAccessMode.h>
-#include "ScalableMesh\ScalableMeshLib.h"
+#include <ImagePP/all/h/HCDCodecZlib.h>
+#include <ImagePP/all/h/HCDException.h>
+#include <ImagePP/all/h/HFCAccessMode.h>
+#include "ScalableMesh/ScalableMeshLib.h"
 #include "SMExternalProviderDataStore.h"
+#include "../InternalUtilityFunctions.h"
 
 USING_NAMESPACE_IMAGEPP
 
 template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamingSettings(WString url)
     {
     BeFileName filename(url.c_str());
-    if (!filename.IsUrl())
+    if (!IsUrl(filename.c_str()))
         {
         // Local file, is it local 3dtiles or local stub file?
         if (BeFileName::GetExtension(url.c_str()).CompareToI(L"s3sm") == 0)
@@ -56,8 +59,8 @@ template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamin
                 if (config.isMember("version") && config["version"].asDouble() == 1.0)
                     {
                     // Reset url
-                    url = config.isMember("url") ? WString(config["url"].asCString()) : L"";
-                    if (!BeFileName::IsUrl(url.c_str()))
+                    config.isMember("url") ? url.AssignUtf8(config["url"].asCString()) : url = L"";
+                    if (!IsUrl(url.c_str()))
                         {
                         m_isValid = false;
                         return;
@@ -154,15 +157,19 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
 
 template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const WString& path, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path, FormatType formatType)
     : SMSQLiteSisterFile(nullptr),
+#ifndef LINUX_SCALABLEMESH_BUILD
      m_pathToHeaders(headers_path.c_str()),
+#endif
      m_use_node_header_grouping(areNodeHeadersGrouped),
      m_use_virtual_grouping(isVirtualGrouping),
-     m_formatType(formatType),
-     m_dataSourceAccount(nullptr)
+     m_formatType(formatType)
+#ifndef LINUX_SCALABLEMESH_BUILD
+     ,m_dataSourceAccount(nullptr)
+#endif
     {
     assert(!"Must not use this constructor");
     //InitializeDataSourceAccount(dataSourceManager, path);
-
+#ifndef LINUX_SCALABLEMESH_BUILD
     if (m_pathToHeaders.empty())
         {
         // Set default path to headers relative to root directory
@@ -174,9 +181,10 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const WString
             SMNodeGroup::SetWorkTo(*m_NodeHeaderFetchDistributor);
             }
         }
-
+#endif
+#ifndef LINUX_SCALABLEMESH_BUILD
     m_pathToHeaders.setSeparator(GetDataSourceAccount()->getPrefixPath().getSeparator());
-
+#endif
     m_transform.InitIdentity();
 
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
@@ -194,13 +202,15 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const WString
 template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const SMStreamingSettingsPtr& settings, IScalableMeshRDSProviderPtr smRDSProvider)
     : SMSQLiteSisterFile(nullptr),
       m_settings(settings),
-      m_smRDSProvider(smRDSProvider),
-      m_dataSourceAccount(nullptr)
+      m_smRDSProvider(smRDSProvider)
+#ifndef LINUX_SCALABLEMESH_BUILD
+      ,m_dataSourceAccount(nullptr)
+#endif
     {
     m_transform.InitIdentity();
 
 	m_clipProvider = nullptr;
-
+#ifndef LINUX_SCALABLEMESH_BUILD
     if (m_pathToHeaders.empty())
         {
         // Set default path to headers relative to root directory
@@ -212,7 +222,7 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const SMStrea
             SMNodeGroup::SetWorkTo(*m_NodeHeaderFetchDistributor);
             }
         }
-
+#endif
     //m_pathToHeaders.setSeparator(GetDataSourceAccount()->getPrefixPath().getSeparator());
 
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
@@ -230,7 +240,7 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const SMStrea
 template <class EXTENT> SMStreamingStore<EXTENT>::~SMStreamingStore()
     {
     }
-
+#ifndef LINUX_SCALABLEMESH_BUILD
 template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const SMStreamingSettingsPtr& settings)
     {
     DataSourceStatus                            status;
@@ -362,7 +372,11 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
             return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
         BeFileName tempPath;
+#ifndef VANCOUVER_API
+		if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempPath(tempPath))
+#else
         if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
+#endif
             BeAssert(false); // Temp path couldn't be extracted
 
         tempPath.AppendToPath(L"RealityDataCache");
@@ -376,6 +390,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
     return DataSourceStatus();
     }
+#endif
 
 template <class EXTENT> uint64_t SMStreamingStore<EXTENT>::GetNextID() const
     {
@@ -402,7 +417,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
 
         auto buffer = Json::StyledWriter().write(masterHeader);
         uint64_t buffer_size = buffer.size();
-
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceURL    dataSourceURL(L"MasterHeader.sscm");
 
         DataSource *dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*m_dataSourceAccount, GetDataSourceSessionName());
@@ -425,7 +440,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
             {
             assert(false);
             }
-
+#endif
         DataSourceManager::Get()->destroyDataSource(dataSource);
 
         return status.isOK();
@@ -506,6 +521,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         auto tilesetDir = BEFILENAME(GetDirectoryName, baseUrl);
         auto tilesetName = BEFILENAME(GetFileNameAndExtension, baseUrl);
 
+#ifndef LINUX_SCALABLEMESH_BUILD
         SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(groupMode, this->GetDataSourceAccount(), GetDataSourceSessionName());
         SMGroupCache::Ptr groupCache = SMGroupCache::Create(&m_nodeHeaderCache);
         m_CesiumGroup = SMNodeGroup::Create(groupParameters, groupCache, rootNodeBlockID);
@@ -533,13 +549,14 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                 m_settings->SetGCSString(wktString);
                 }
             }
-
+#endif
         //Utf8String wkt;
         //m_CesiumGroup->GetWKTString(wkt);
         //m_settings->SetGCSString(wkt);
         }
     else
         {
+#ifndef LINUX_SCALABLEMESH_BUILD
         std::unique_ptr<DataSource::Buffer[]>            dest;
         DataSource                                *      dataSource;
         DataSource::DataSize                             readSize;
@@ -749,7 +766,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             */
             }
         }
-
+#endif
     return headerSize;
     }
 
@@ -1100,7 +1117,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
         default:
             assert(false); // unknown format type for streaming
         }
-
+#ifndef LINUX_SCALABLEMESH_BUILD
     DataSourceURL dataSourceURL = m_pathToHeaders;
     dataSourceURL.append(DataSourceURL(L"n_" + std::to_wstring(blockID.m_integerID) + extension));
 
@@ -1142,7 +1159,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
         DataSourceManager::Get()->destroyDataSource(dataSource);
 		return 0;
         }
-
+#endif
     DataSourceManager::Get()->destroyDataSource(dataSource);
 
     //{
@@ -1323,11 +1340,14 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::WriteClipDataToProjectFil
 template<class EXTENT> void SMStreamingStore<EXTENT>::Register(const uint64_t & smID)
     {
     m_settings->SetSMID(smID);
+#ifndef LINUX_SCALABLEMESH_BUILD
     InitializeDataSourceAccount(*DataSourceManager::Get(), m_settings);
+#endif
     }
 
 template<class EXTENT> void SMStreamingStore<EXTENT>::Unregister(const uint64_t & smID)
     {
+#ifndef LINUX_SCALABLEMESH_BUILD
     auto const& account = GetDataSourceAccount();
     if (account)
         {
@@ -1335,6 +1355,7 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::Unregister(const uint64_t 
         DataSourceManager::Get()->getService(account->getServiceName())->releaseAccount(account->getAccountName());
         SetDataSourceAccount(nullptr);
         }
+#endif
 
     }
 
@@ -1513,6 +1534,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
         {
         return;
         }
+#ifndef LINUX_SCALABLEMESH_BUILD
     uint64_t nbDataSizes;
     memcpy(&nbDataSizes, headerData + dataIndex, sizeof(nbDataSizes));
     dataIndex += sizeof(nbDataSizes);
@@ -1520,7 +1542,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
     header->m_blockSizes.resize(nbDataSizes);
     memcpy(header->m_blockSizes.data(), headerData + dataIndex, nbDataSizes* sizeof(SMIndexNodeHeader<EXTENT>::BlockSize));
     dataIndex += nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::BlockSize);
-
+#endif
     assert(dataIndex == maxCountData);
     }
 
@@ -1813,6 +1835,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, size_t& po_pDataSize)
     {
+#ifndef LINUX_SCALABLEMESH_BUILD
     //NEEDS_WORK_SM_STREAMING : are we loading node headers multiple times?
     std::unique_ptr<DataSource::Buffer[]>          dest;
     DataSource                                *    dataSource;
@@ -1866,7 +1889,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
         }  
 
 //  this->GetDataSourceAccount()->destroyDataSource(dataSource);
-
+#endif
     }
 
 
@@ -1887,8 +1910,14 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {        
-    assert(!"Should not be called");
-    return false;    
+    SMSQLiteFilePtr sqliteFilePtr;
+
+    sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::Graph, true, true);
+    assert(sqliteFilePtr.IsValid() == true);
+
+    dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, sqliteFilePtr);
+
+    return true;
     }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
@@ -1898,8 +1927,10 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtD
     auto nodeGroup = this->GetGroup(nodeHeader->m_id);
     // NEEDS_WORK_SM_STREAMING: validate node group if node headers are grouped
     //assert(nodeGroup.IsValid());
+
+#ifndef LINUX_SCALABLEMESH_BUILD
         dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(GetDataSourceAccount(), GetDataSourceSessionName(), m_settings->GetURL(), dataType, nodeHeader, m_settings->IsPublishing(), nodeGroup);
-    
+#endif  
     return true;    
     }
 
@@ -1947,9 +1978,9 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                
     assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices);
-        
+#ifndef LINUX_SCALABLEMESH_BUILD        
     dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, GetDataSourceSessionName(), m_settings->GetURL(), dataType, nodeHeader);
-                    
+#endif                    
     return true;    
     }
 
@@ -1961,17 +1992,18 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTextu
 
     assert(false);
 #endif
-
+#ifndef LINUX_SCALABLEMESH_BUILD
     dataStore = new StreamingNodeTextureStore<Byte, EXTENT>(m_dataSourceAccount, GetDataSourceSessionName(), m_settings->GetURL(), nodeHeader);
-    
+#endif 
     return true;    
     }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {
     assert(dataType == SMStoreDataType::UvCoords);
+#ifndef LINUX_SCALABLEMESH_BUILD
     dataStore = new SMStreamingNodeDataStore<DPoint2d, EXTENT>(m_dataSourceAccount, GetDataSourceSessionName(), m_settings->GetURL(), dataType, nodeHeader);
-
+#endif
     return true;    
     }
 
@@ -1988,7 +2020,9 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPoint
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
+#ifndef LINUX_SCALABLEMESH_BUILD
     dataStore = new SMStreamingNodeDataStore<bvector<Byte>, EXTENT>(this->GetDataSourceAccount(), GetDataSourceSessionName(), m_settings->GetURL(), SMStoreDataType::Cesium3DTiles, nodeHeader, m_settings->IsPublishing());
+#endif
     return true;
     }
 
@@ -1996,10 +2030,13 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMCesiu
     {
     assert(m_nodeHeaderCache.count(nodeHeader->m_id.m_integerID) == 1);
     auto group = m_CesiumGroup->GetCache()->GetGroupForNodeIDFromCache(nodeHeader->m_id.m_integerID);
+#ifndef LINUX_SCALABLEMESH_BUILD
     dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), GetDataSourceSessionName(), m_settings->GetURL(), SMStoreDataType::Cesium3DTiles, nodeHeader, *m_nodeHeaderCache[nodeHeader->m_id.m_integerID], m_transform, group, m_settings->IsPublishing());
+#endif
     return true;
     }
 
+#ifndef LINUX_SCALABLEMESH_BUILD
 template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
     {
     if (this->GetDataSourceAccount() == nullptr)
@@ -2015,7 +2052,8 @@ template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSour
                                                     // Return the DataSource
     return dataSource;
     }
-
+#endif
+#ifndef LINUX_SCALABLEMESH_BUILD
 template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(DataSourceAccount *dataSourceAccount)
     {
     m_dataSourceAccount = dataSourceAccount;
@@ -2035,6 +2073,7 @@ template <class EXTENT> const DataSource::SessionName &SMStreamingStore<EXTENT>:
     {
     return m_dataSourceSessionName;
     }
+#endif
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataFormatType(FormatType formatType)
     {
@@ -2042,7 +2081,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataFormatType(FormatT
     }
 
 
-
+#ifndef LINUX_SCALABLEMESH_BUILD
 //------------------SMStreamingNodeDataStore--------------------------------------------
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing, SMNodeGroupPtr nodeGroup, bool compress = true)
     : m_dataSourceAccount(dataSourceAccount),
@@ -2123,6 +2162,16 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
         }
     m_dataSourceURL.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
     }
+#else
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup, bool isPublishing, bool compress)
+:    m_nodeHeader(nodeHeader),
+    m_jsonHeader(&header),
+    m_dataType(type),
+    m_transform(transform),
+    m_nodeGroup(nodeGroup)
+{
+}
+#endif
 
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::~SMStreamingNodeDataStore()
     {            
@@ -2179,7 +2228,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
                 m_nodeHeader->m_blockSizes.push_back(SMIndexNodeHeader<EXTENT>::BlockSize{ compressedPacket.GetDataSize() + sizeof(uint32_t), (short)m_dataType });
                 }
             }
-
+#ifndef LINUX_SCALABLEMESH_BUILD
 
         DataSourceURL url (m_dataSourceURL);
         url.append(L"p_" + std::to_wstring(blockID.m_integerID) + extension);
@@ -2207,7 +2256,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
             }
 
         DataSourceManager::Get()->destroyDataSource(dataSource);
-
+#endif
         if (mustCleanup)
             {
             delete[] dataToWrite;
@@ -2341,12 +2390,14 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
         if (m_jsonHeader->isMember("content") && (*m_jsonHeader)["content"].isMember("url"))
             {
             auto dataURL = WString((*m_jsonHeader)["content"]["url"].asCString(), BentleyCharEncoding::Utf8);
+#ifndef LINUX_SCALABLEMESH_BUILD
             block->SetURL(DataSourceURL(dataURL.c_str()));
             block->SetDataSourceURL(m_dataSourceURL);
             block->SetDataSourceExtension(s_stream_using_cesium_3d_tiles_format ? L".b3dm" : L".bin");
             block->SetTransform(m_transform);
             block->SetGltfUpAxis(m_nodeGroup->GetGltfUpAxis());
             block->Load(m_dataSourceAccount, m_dataSourceSessionName, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));
+#endif
             }
         }
     //assert(block->GetID() == blockID.m_integerID);
@@ -2385,7 +2436,7 @@ void StreamingDataBlock::SetLoading()
     { 
     m_pIsLoading = true; 
     }
-
+#ifndef LINUX_SCALABLEMESH_BUILD
 DataSource* StreamingDataBlock::initializeDataSource(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize)
     {
     if (dataSourceAccount == nullptr)
@@ -2456,6 +2507,7 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, const DataSo
             }
         }
     }
+#endif
     
 void StreamingDataBlock::UnLoad()
     {
@@ -2480,7 +2532,7 @@ uint64_t StreamingDataBlock::GetID()
     { 
     return m_pID; 
     }
-
+#ifndef LINUX_SCALABLEMESH_BUILD
 void StreamingDataBlock::SetURL(const DataSourceURL & url)
     {
     m_url = url;
@@ -2500,6 +2552,7 @@ inline void StreamingDataBlock::SetDataSourceExtension(const std::wstring & exte
     {
     m_extension = extension;
     }
+#endif
 
 inline void StreamingDataBlock::SetTransform(const Transform& transform)
     {
@@ -2566,6 +2619,7 @@ inline uint32_t StreamingDataBlock::GetTextureSize()
     return m_tileData.textureSize;
     }
 
+#ifndef LINUX_SCALABLEMESH_BUILD
 inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, std::unique_ptr<DataSource::Buffer[]>& destination, uint64_t dataSizeKnown)
     {
     DataSource                                *  dataSource;
@@ -2609,6 +2663,7 @@ inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount 
 
     return readSize;
     }
+#endif
 
 inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, const size_t& cesiumDataSize)
     {
@@ -2927,20 +2982,23 @@ template <class DATATYPE, class EXTENT> StreamingTextureBlock& StreamingNodeText
     assert((texture->GetID() != uint64_t(-1) ? texture->GetID() == blockID.m_integerID : true));
     if (!texture->IsLoaded())
         {
+#ifndef LINUX_SCALABLEMESH_BUILD
             auto blockSize = m_nodeHeader->GetBlockSize(5);
             texture->SetID(blockID.m_integerID);
             texture->SetDataSourceURL(m_dataSourceURL);
             texture->Load(this->GetDataSourceAccount(), GetDataSourceSessionName(), blockSize);
+#endif
         }
     assert(texture->IsLoaded() && !texture->empty());
     return *texture;
     }
 
-
+#ifndef LINUX_SCALABLEMESH_BUILD
 template <class DATATYPE, class EXTENT> StreamingNodeTextureStore<DATATYPE, EXTENT>::StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMIndexNodeHeader<EXTENT>* nodeHeader)
     : Super(dataSourceAccount, session, url, SMStoreDataType::Texture, nodeHeader)
     {
     }
+#endif
 
 template <class DATATYPE, class EXTENT> bool StreamingNodeTextureStore<DATATYPE, EXTENT>::DestroyBlock(HPMBlockID blockID)
     {
@@ -2950,19 +3008,19 @@ template <class DATATYPE, class EXTENT> bool StreamingNodeTextureStore<DATATYPE,
 template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {
     assert(blockID.IsValid());
-
+#ifndef LINUX_SCALABLEMESH_BUILD
     // The data block starts with 12 bytes of metadata (texture header), followed by pixel data
     StreamingTextureBlock texture(((int*)DataTypeArray)[0], ((int*)DataTypeArray)[1], ((int*)DataTypeArray)[2]);
     texture.SetDataSourceURL(m_dataSourceURL);
     texture.Store(GetDataSourceAccount(), GetDataSourceSessionName(), DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int), blockID);
-
+#endif
     return blockID;
     }
 
 template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DATATYPE, EXTENT>::StoreCompressedBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {
     assert(blockID.IsValid());
-
+#ifndef LINUX_SCALABLEMESH_BUILD
     DataSourceURL    url(m_dataSourceURL);
     url.append(L"t_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
@@ -3000,7 +3058,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
     //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
     //}
 //  this->GetDataSourceAccount()->destroyDataSource(dataSource);
-
+#endif
     return HPMBlockID(blockID.m_integerID);
     }
 
@@ -3042,6 +3100,7 @@ template <class DATATYPE, class EXTENT> size_t StreamingNodeTextureStore<DATATYP
     return std::min(textureSize + 3 * sizeof(int), maxCountData);
     }
 
+#ifndef LINUX_SCALABLEMESH_BUILD
 template <class DATATYPE, class EXTENT> void StreamingNodeTextureStore<DATATYPE, EXTENT>::SetDataSourceAccount(DataSourceAccount *dataSourceAccount)  
     {
     m_dataSourceAccount = dataSourceAccount;
@@ -3151,6 +3210,7 @@ inline void StreamingTextureBlock::Load(DataSourceAccount * dataSourceAccount, c
 
     m_pIsLoaded = true;
     }
+#endif
 
 inline void StreamingTextureBlock::DecompressTexture(uint8_t * pi_CompressedTextureData, uint32_t pi_CompressedTextureSize, uint32_t pi_TextureSize)
     {

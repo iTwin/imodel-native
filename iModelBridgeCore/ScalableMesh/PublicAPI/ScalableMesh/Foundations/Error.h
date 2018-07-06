@@ -6,7 +6,7 @@
 |       $Date: 2011/09/07 14:20:55 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -74,7 +74,7 @@ protected:
                                                                             StatusInt               errorCode = 0)
         :   Error(msg, errorCode) {}
 
-    virtual                             ~ErrorMixinBase                    () = 0 {};
+    virtual                             ~ErrorMixinBase                    () {};
 
     };
 
@@ -85,7 +85,7 @@ protected:
 struct CustomError : public ErrorMixinBase<CustomError>
     {
     explicit                            CustomError                        (const WChar*          msg, 
-                                                                            StatusInt               code = 0) : super_class(msg, code) {}
+                                                                            StatusInt               code = 0) : ErrorMixinBase<CustomError>(msg, code) {}
     };
 
 END_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE

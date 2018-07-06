@@ -6,7 +6,7 @@
 |       $Date: 2011/09/07 14:20:42 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,10 +23,14 @@
 //    #error "Export name conflict with another definition of the same name"
 #endif
 
+#if _WIN32
 #ifdef __BENTLEYSTM_BUILD__ //BENTLEY_SCALABLEMESH_GEOCOODINATES_EXPORTS
     #define GEOCOORDS_DLLE __declspec(dllexport)
 #else
     #define GEOCOORDS_DLLE __declspec(dllimport)
+#endif
+#else
+    #define GEOCOORDS_DLLE
 #endif
 
 

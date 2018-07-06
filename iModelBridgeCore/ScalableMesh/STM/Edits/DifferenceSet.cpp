@@ -2,7 +2,7 @@
 #include "../ImagePPHeaders.h"
 #include "DifferenceSet.h"
 #include <Vu/VuApi.h>
-#include <TerrainModel\TerrainModel.h>
+#include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/DTMIterators.h>
 #include <array>
 USING_NAMESPACE_BENTLEY_TERRAINMODEL

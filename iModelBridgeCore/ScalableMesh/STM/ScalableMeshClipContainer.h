@@ -6,12 +6,12 @@
 |       $Date: 2013/07/22 13:57:39 $
 |     $Author: Richard.Bois $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ScalableMesh\IScalableMeshClipContainer.h>
+#include <ScalableMesh/IScalableMeshClipContainer.h>
 
 typedef vector<DPoint3d> ScalableMeshClipPointContainer;
 

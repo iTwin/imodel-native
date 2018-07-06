@@ -13,16 +13,24 @@
 
 
 #include <ImagePP/all/h/HFCPtr.h>
-#include <TilePublisher\TilePublisher.h>
-#include "Threading\LightThreadPool.h"
+#include <TilePublisher/TilePublisher.h>
+#include "Threading/LightThreadPool.h"
 #include "SMSQLiteFile.h"
 #include "Stores/SMStoreUtils.h"
 #include <condition_variable>
 #include <json/json.h>
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
+#define SESSION_NAME DataSource::SessionName
+#else
+class DataSourceSessionName;
+#define SESSION_NAME DataSourceSessionName
+#endif
 #include <queue>
 #include <map>
 #include <iomanip>
+#include <unordered_map>
+#include <wchar.h>
 
 #ifdef VANCOUVER_API
 #define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
@@ -69,27 +77,33 @@ public:
     typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMGroupGlobalParameters> Ptr;
 
 public:
-
+#ifndef LINUX_SCALABLEMESH_BUILD
     DataSourceAccount*                  GetDataSourceAccount();
     const DataSource::SessionName &     GetDataSourceSessionName();
+#endif
     StrategyType                        GetStrategyType() { return m_strategyType; }
     uint32_t                            GetNextNodeID() { return m_nextNodeID++; }
     WString                             GetWellKnownText() { return m_wktStr; }
     void                                SetWellKnownText(const WString& wkt) { m_wktStr = wkt; }
 
-    BENTLEY_SM_EXPORT static Ptr        Create(StrategyType strategy, DataSourceAccount* account, const DataSource::SessionName &session);
+    BENTLEY_SM_EXPORT static Ptr        Create(StrategyType strategy, DataSourceAccount* account, const SESSION_NAME &session);
 
 private:
 
     //SMGroupGlobalParameters() = delete;
-    SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account, const DataSource::SessionName &session);
+    SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account, const SESSION_NAME &session);
+
+SMGroupGlobalParameters(const SMGroupGlobalParameters&) = delete;
+SMGroupGlobalParameters& operator=(const SMGroupGlobalParameters&) = delete;
 
 private:
 
     StrategyType                m_strategyType = NORMAL;
     DataSourceAccount*          m_dataSourceAccount = nullptr;
+#ifndef LINUX_SCALABLEMESH_BUILD
     DataSource::SessionName     m_dataSourceSessionName;
-    std::atomic<uint32_t>       m_nextNodeID = 0;
+#endif
+    std::atomic<uint32_t>       m_nextNodeID = {0};
     WString                     m_wktStr;
     };
 
@@ -250,7 +264,7 @@ SMNodeDistributor(Function function
         std::unique_lock<std::mutex> lock(*this);
         if (Queue::size() == capacity)
             {
-            static std::atomic<uint64_t> lastNumberOfItems = Queue::size();
+            static std::atomic<uint64_t> lastNumberOfItems = {Queue::size()};
             while (!wait_for(lock, 1000ms, [this]
                 {
                 return Queue::size() < capacity / 2;
@@ -476,9 +490,11 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         SMGroupGlobalParameters::Ptr m_parametersPtr;
         SMGroupCache::Ptr            m_groupCachePtr;
         bool m_isRoot = false;
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceURL m_url;
+#endif
         bvector<uint8_t> m_rawHeaders;
-        unordered_map<uint64_t, Json::Value*> m_tileTreeMap;
+        std::unordered_map<uint64_t, Json::Value*> m_tileTreeMap;
         SMNodeGroupPtr m_ParentGroup;
         Json::Value m_tilesetRootNode;
         WString m_outputDirPath;
@@ -554,11 +570,13 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bvector<Byte>::pointer GetRawHeaders(const size_t& offset) { return m_rawHeaders.data() + offset; }
 
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceURL GetDataURLForNode(HPMBlockID blockID);
 
         DataSourceURL GetURL();
 
         void SetURL(DataSourceURL url);
+#endif
 
         Json::Value GetJsonHeader(const uint64_t& id) 
             {
@@ -647,8 +665,10 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bool IsRoot() { return m_isRoot; }
 
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceAccount   *           GetDataSourceAccount(void);
         const DataSource::SessionName & GetDataSourceSessionName(void);
+#endif
 
         template<class EXTENT> SMGroupingStrategy<EXTENT>* GetStrategy()
             {
@@ -683,7 +703,9 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             assert(!"Please use a strategy to save a group!");
             }
 
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSource *InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize);
+#endif
 
         StatusInt Load();
 
@@ -772,6 +794,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             m_isRoot = m_ParentGroup == nullptr;
             }
 
+#ifndef LINUX_SCALABLEMESH_BUILD
         bool DownloadFromID(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize &readSize)
             {
             wchar_t buffer[10000];
@@ -783,6 +806,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         bool DownloadCesiumTileset(const DataSourceURL& url, Json::Value& tileset);
 
         bool DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize &readSize, const DataSourceURL& url);
+#endif
 
         uint64_t GetSingleNodeFromStore(const uint64_t& pi_pNodeID, bvector<uint8_t>& pi_pData);
 
@@ -1099,6 +1123,7 @@ void SMBentleyGroupingStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) 
     if (m_Mode == SMGroupGlobalParameters::StrategyType::VIRTUAL) return; // Don't need to save virtual groups, they will use normal headers to retrieve node header data
     if (pi_Group->IsEmpty()) return;
 
+#ifndef LINUX_SCALABLEMESH_BUILD
     WString path(pi_Group->m_outputDirPath + L"\\g_");
     wchar_t buffer[10000];
     swprintf(buffer, L"%s%lu.bin", path.c_str(), pi_Group->GetID());
@@ -1128,6 +1153,7 @@ void SMBentleyGroupingStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) 
         }
 
     file.Close();
+#endif
     }
 
 /**---------------------------------------------------------------------------------------------
@@ -1297,13 +1323,17 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         auto wktString = pi_Group->GetParameters()->GetWellKnownText();
         if (!wktString.empty())
             SMMasterHeader["GCS"] = Utf8String(wktString.c_str());
+#ifndef VANCOUVER_API
+		SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
+#else
         SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToUtf8String();
+#endif
         }
 
     //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;
 
     auto utf8TileTree = Json::FastWriter().write(tileSet);
-
+#ifndef LINUX_SCALABLEMESH_BUILD
     WString path(pi_Group->m_outputDirPath + L"\\n_");
     wchar_t buffer[10000];
     swprintf(buffer, L"%s%lu.json", path.c_str(), pi_Group->GetID());
@@ -1314,4 +1344,5 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         {
         file.Write(nullptr, utf8TileTree.c_str(), (uint32_t)utf8TileTree.size());
         }
+#endif
     }

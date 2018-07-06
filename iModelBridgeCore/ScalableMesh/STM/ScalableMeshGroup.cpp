@@ -21,8 +21,9 @@
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshSources.h>
 
-
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
+#endif
 
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshVolume.h"
@@ -44,16 +45,16 @@
 
 
 using namespace ISMStore;
-
+USING_NAMESPACE_IMAGEPP
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-__int64          ScalableMeshGroup::_GetPointCount()
+int64_t          ScalableMeshGroup::_GetPointCount()
     {
-    _int64 ptCount = 0;
+    int64_t ptCount = 0;
 
     for (auto& member : m_members)
         ptCount += member->GetPointCount();
@@ -141,14 +142,14 @@ StatusInt         ScalableMeshGroup::_GetBoundary(bvector<DPoint3d>& boundary)
 
 
 // Inherited from IMRDTM                   
-Count                  ScalableMeshGroup::_GetCountInRange(const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const
+Count                  ScalableMeshGroup::_GetCountInRange(const DRange2d& range, const CountType& type, const uint64_t& maxNumberCountedPoints) const
     {
     if (m_members.empty()) return Count(0, 0);
 
     return m_members.front()->GetCountInRange(range, type, maxNumberCountedPoints);
     }
 
-__int64                ScalableMeshGroup::_GetBreaklineCount() const
+int64_t                ScalableMeshGroup::_GetBreaklineCount() const
     {
     return 0;
     }

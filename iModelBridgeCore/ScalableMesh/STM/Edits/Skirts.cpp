@@ -4,7 +4,7 @@
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <Vu/VuApi.h>
-#include <TerrainModel\TerrainModel.h>
+#include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/DTMIterators.h>
 
 
@@ -71,7 +71,7 @@ void FindSegmentHoleBoundaries(bvector<HoleBoundary>&            holeBoundaries,
                     {
                     isInHole = true;
 
-                    if (sampleInd - 1 >= 0)
+                    if ((int)sampleInd - 1 >= 0)
                         {
                         DPoint3d lastValidDrapedPt;
                         DTMStatusInt statusDrape = GET_POINT_AT_INDEX(drapedLinePtr,lastValidDrapedPt, 0, 0, (int)(sampleInd - 1));

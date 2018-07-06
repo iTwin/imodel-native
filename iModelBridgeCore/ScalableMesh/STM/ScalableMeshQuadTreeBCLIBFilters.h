@@ -6,7 +6,7 @@
 //:>       $Date: 2010/12/15 18:23:19 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIBFilter1 : pub
         virtual bool        Filter (HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode, 
                                     std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& subNodes,
                                     size_t numSubNodes) const;
-        virtual ISMPointIndexFilter* Clone() override
+        virtual ISMPointIndexFilter<POINT, EXTENT>* Clone() override
             {
             return new ScalableMeshQuadTreeBCLIBFilter1();
             }
@@ -81,7 +81,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIBMeshFilter1 :
         
         virtual bool        IsProgressiveFilter() const { return false; }       
 
-        virtual ISMPointIndexFilter* Clone() override
+        virtual ISMPointIndexFilter<POINT, EXTENT>* Clone() override
             {
             return new ScalableMeshQuadTreeBCLIBMeshFilter1();
             }
@@ -102,7 +102,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIB_CGALMeshFilt
                                    size_t numSubNodes) const;       
         
         virtual bool        IsProgressiveFilter() const { return false; }       
-        virtual ISMPointIndexFilter* Clone() override
+        virtual ISMPointIndexFilter<POINT, EXTENT>* Clone() override
             {
             return new ScalableMeshQuadTreeBCLIB_CGALMeshFilter();
             }

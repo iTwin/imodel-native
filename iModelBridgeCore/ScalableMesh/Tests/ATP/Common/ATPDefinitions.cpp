@@ -84,7 +84,6 @@ using namespace std;
 
 
 
-
 #pragma warning( disable : 4456 ) 
 
 //#define ABORT(ERROR + 1)
@@ -662,7 +661,8 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : stmFileName attribute not found\r\n");
         }
     else
-        {
+        {                                
+        ScalableMeshCreationMethod creationMethod = SCM_CREATION_METHOD_ONE_SPLIT;
         int64_t useCpuVal = 0;
         WString accelerator;
         status = pTestNode->GetAttributeStringValue(accelerator, "accelerator");
@@ -688,6 +688,26 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             assert(defineStatus == SUCCESS);
             }
 
+        WString creationMethodStr;
+        status = pTestNode->GetAttributeStringValue(creationMethodStr, "creationMethod");
+        if (status == BEXML_Success )
+            {
+            if (0 == BeStringUtilities::Wcsicmp(creationMethodStr.c_str(), L"BIG_SPLIT_CUT"))
+                {
+                creationMethod = SCM_CREATION_METHOD_BIG_SPLIT_CUT;
+                }
+            else
+            if (0 == BeStringUtilities::Wcsicmp(creationMethodStr.c_str(), L"ONE_SPLIT"))
+                {
+                creationMethod = SCM_CREATION_METHOD_ONE_SPLIT;
+                }
+            else
+                {
+                assert(!"Unknown source creation method");
+                }            
+            }
+
+                    
         WString isSingleFileString;
         bool isSingleFile;
 
@@ -746,6 +766,8 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             }
         else
             {
+            creatorPtr->SetCreationMethod(creationMethod);
+
             IScalableMeshATP::StoreDouble(WString(L"nTimeToCreateSeeds"), 0.0);
             IScalableMeshATP::StoreDouble(WString(L"nTimeToEstimateParams"), 0.0);
             IScalableMeshATP::StoreDouble(WString(L"nTimeToFilterGround"), 0.0);
@@ -921,7 +943,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     IScalableMeshATP::GetInt(L"chosenAccelerator", acceleratorUseCpu);                                        
 
                     fwprintf(pResultFile,
-                             L"%s,%s,%s,%s,%I64d,%I64d,%.5f%%,%.5f,%s,%.5f,%.5f,%.5f,%.5f,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%s\n",
+                             L"%s,%s,%s,%s,%I64d,%I64d,%.5f%%,%.5f,%s,%.5f,%.5f,%.5f,%.5f,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%s\n",
                              stmFileName.c_str(), mesher.c_str(), filter.c_str(), trimming.c_str(), IScalableMeshSourceCreator::GetNbImportedPoints(), pointCount,
                              (double)pointCount / IScalableMeshSourceCreator::GetNbImportedPoints() * 100.0, (double)fileSize / 1024.0 / 1024.0,
                              acceleratorUseCpu == ACCELERATOR_CPU ? L"CPU" : L"GPU",
@@ -931,17 +953,23 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                              GetGroundDetectionDuration(),                             
                              GetGroundDetectionDuration() / minutes * 100,
                              (IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration()) / minutes * 100, //Import points duration includes ground detection duration.
-                             IScalableMeshSourceCreator::GetLastBalancingDuration() / minutes * 100,
-                             IScalableMeshSourceCreator::GetLastMeshingDuration() / minutes * 100,
+                             IScalableMeshSourceCreator::GetLastPointBalancingDuration() / minutes * 100,
+                             IScalableMeshSourceCreator::GetLastMeshingDuration() / minutes * 100,                             
+                             IScalableMeshSourceCreator::GetLastClippingDuration() / minutes * 100,
+                             IScalableMeshSourceCreator::GetLastMeshBalancingDuration() / minutes * 100,
                              IScalableMeshSourceCreator::GetLastFilteringDuration() / minutes * 100,
                              IScalableMeshSourceCreator::GetLastStitchingDuration() / minutes * 100,
-                             minutes, hours,
+                             IScalableMeshSourceCreator::GetLastFinalStoreDuration() / minutes * 100,                        
+                             minutes, hours, 
                              GetGroundDetectionDuration(),
                              IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration(),
-                             IScalableMeshSourceCreator::GetLastBalancingDuration(),
+                             IScalableMeshSourceCreator::GetLastPointBalancingDuration(),
                              IScalableMeshSourceCreator::GetLastMeshingDuration(),
+                             IScalableMeshSourceCreator::GetLastClippingDuration(),
+                             IScalableMeshSourceCreator::GetLastMeshBalancingDuration(),
                              IScalableMeshSourceCreator::GetLastFilteringDuration(),
                              IScalableMeshSourceCreator::GetLastStitchingDuration(),
+                             IScalableMeshSourceCreator::GetLastFinalStoreDuration(),                        
                              result.c_str());
                     }
                 else
@@ -4569,11 +4597,22 @@ void PerformDrapeBaselineTest(BeXmlNodeP pTestNode, FILE* pResultFile, BeXmlNode
     }
 
 bool TriangleWithinClosedFeature(const DPoint3d* triangle, const std::vector<DPoint3d>& feature)
-    {
+    {    
+    
     if (bsiGeom_testXYPolygonConvex(&feature[0], (int)feature.size()))
         {
+        std::vector<DPoint2d> feature2d(feature.size());
+
+        for (int i = 0; i < feature.size(); i++)
+            {
+            feature2d[i] = DPoint2d::From(feature[i]);            
+            }
+                
         for (size_t i = 0; i < 3; ++i)
-            if (!bsiGeom_isXYPointInConvexPolygon(&triangle[i], &feature[0], (int)feature.size(), 0)) return false;
+            {
+            DPoint2d triPt2d(DPoint2d::From(triangle[i]));            
+            if (!PolygonOps::IsPointInConvexPolygon(triPt2d, &feature2d[0], feature2d.size(), 0)) return false;
+            }        
         }
     else
         {
@@ -4598,8 +4637,18 @@ bool TriangleWithinClosedFeature(const DPoint3d* triangle, const std::vector<DPo
         bool trianglePts[3] = { false, false, false };
         for (auto& polygon : convexPolys)
             {
+            std::vector<DPoint2d> polygon2d(polygon.size());
+
+            for (int i = 0; i < polygon.size(); i++)
+                {
+                polygon2d[i] = DPoint2d::From(polygon[i]);
+                }
+
             for (size_t i = 0; i < 3; ++i)
-                if (bsiGeom_isXYPointInConvexPolygon(&triangle[i], &polygon[0], (int)polygon.size(), 0)) trianglePts[i] = true;
+                { 
+                DPoint2d triPt2d(DPoint2d::From(triangle[i]));
+                if (PolygonOps::IsPointInConvexPolygon(triPt2d, &polygon2d[0], polygon2d.size(), 0)) trianglePts[i] = true;                
+                }
             }
         return (trianglePts[0] && trianglePts[1] && trianglePts[2]);
         }

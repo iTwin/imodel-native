@@ -229,7 +229,7 @@
     <SubPart PartName="ScalableMeshSDKexe"/>
     <SubPart PartName="ScalableMesh-Tested" PartFile="ScalableMeshCoreUnitTests" Repository="ScalableMesh"/>
     <SubPart PartName="HeaderFiles"   PartFile="geomlibs"    Repository="GeomLibs"/>
-    <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+    <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform" Repository="DgnPlatform"/>
     <SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
     <SubPart PartName="RasterCore" PartFile="DgnDisplay" Repository="DgnDisplay"/>
     <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />
@@ -340,7 +340,7 @@
 
   <Product Name="ScalableMeshATP" SaveProduct="true" >
     <SubPart PartName="ScalableMeshATPexe" />
-    <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+    <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform" Repository="DgnPlatform"/>
     <!--<SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="RasterCore" PartFile="DgnDisplay" Repository="DgnDisplay"/>
         <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />

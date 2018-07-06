@@ -838,10 +838,12 @@ void populateTriangleList(std::vector<FPoint3d>& allTri, BcDTMPtr& bcDtmObjPtr, 
         pt1.DifferenceOf(pt1, minPt);
         pt2.DifferenceOf(pt2, minPt);
         pt3.DifferenceOf(pt3, minPt);
-        FPoint3d fpt1, fpt2, fpt3;
-        bsiFPoint3d_initFromDPoint3d(&fpt1, &pt1);
-        bsiFPoint3d_initFromDPoint3d(&fpt2, &pt2);
-        bsiFPoint3d_initFromDPoint3d(&fpt3, &pt3);
+        FPoint3d fpt1 = FPoint3d::From (pt1);
+        FPoint3d fpt2 = FPoint3d::From (pt2);
+        FPoint3d fpt3 = FPoint3d::From (pt3);
+        //bsiFPoint3d_initFromDPoint3d(&fpt1, &pt1);
+        //bsiFPoint3d_initFromDPoint3d(&fpt2, &pt2);
+        //bsiFPoint3d_initFromDPoint3d(&fpt3, &pt3);
         allTri.push_back(fpt1);
         allTri.push_back(fpt2);
         allTri.push_back(fpt3);
@@ -992,7 +994,7 @@ void GroundDetection::filterGroundForTile(QuadSeedPtr currentTile, BcDTMPtr dtmO
             dpt.x -= minPt.x;
             dpt.y -= minPt.y;
             dpt.z -= minPt.z;
-            bsiFPoint3d_initFromDPoint3d(&fpt, &dpt);
+            fpt = FPoint3d::From (dpt);
             pointData.push_back(fpt);
             }
         std::vector<int>::iterator isPointProcessedItr = isPointProcessedVector.begin();

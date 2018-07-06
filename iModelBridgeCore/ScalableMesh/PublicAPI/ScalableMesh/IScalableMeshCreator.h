@@ -55,9 +55,11 @@ typedef RefCountedPtr<IScalableMeshCreator>            IScalableMeshCreatorPtr;
 struct IScalableMeshCreator : public RefCountedBase                       
     {
 private:
-/*__PUBLISH_SECTION_END__*/
+/*__PUBLISH_SECTION_END__*/        
     friend struct                       IScalableMeshSourceCreator;
-    friend struct                       IScalableMeshNodeCreator;
+    friend struct                       IScalableMeshSourceCreatorWorker;
+    friend struct                       IScalableMeshNodeCreator;    
+
         struct                              Impl;
         std::auto_ptr<Impl>                 m_implP;               
                 
@@ -136,20 +138,29 @@ public:
 
 #ifdef SCALABLE_MESH_ATP
 
-        BENTLEY_SM_EXPORT static unsigned __int64 GetNbImportedPoints();    
+        BENTLEY_SM_EXPORT static uint64_t GetNbImportedPoints();    
 
         BENTLEY_SM_EXPORT static double GetImportPointsDuration();
 
-        BENTLEY_SM_EXPORT static double GetLastBalancingDuration();
+        BENTLEY_SM_EXPORT static double GetLastPointBalancingDuration();
+
+        BENTLEY_SM_EXPORT static double GetLastMeshBalancingDuration();
 
         BENTLEY_SM_EXPORT static double GetLastMeshingDuration();
 
         BENTLEY_SM_EXPORT static double GetLastFilteringDuration();
 
         BENTLEY_SM_EXPORT static double GetLastStitchingDuration();
+
+        BENTLEY_SM_EXPORT static double GetLastClippingDuration();
+
+        BENTLEY_SM_EXPORT static double GetLastFinalStoreDuration();
+        
 #endif                           
     };
 
 BENTLEY_SM_EXPORT Import::SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString& stmPath);
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+
+

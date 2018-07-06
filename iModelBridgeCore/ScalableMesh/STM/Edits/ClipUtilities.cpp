@@ -36,7 +36,7 @@ void FaceToUVMap::ReadFrom(const int32_t* indices, const int32_t* uvIndices, con
 
 void FaceToUVMap::AddFacetOnEdge(const int32_t* indices, const DPoint2d* uvCoords, const int32_t* edge)
     {
-    std::array<int32_t, 2> idx = { 0, 1};
+    std::array<int32_t, 2> idx = {{ 0, 1}};
     std::sort(idx.begin(), idx.end(), [&edge] (const int32_t& a, const int32_t&b) { return edge[a] < edge[b]; });
     std::array<DPoint2d, 3> sortedUvs = std::array<DPoint2d,3>();
     int32_t lastIdx = -1;
@@ -57,7 +57,7 @@ void FaceToUVMap::AddFacetOnEdge(const int32_t* indices, const DPoint2d* uvCoord
         }
     else
         {
-        std::array<bpair<int32_t, std::array<DPoint2d, 3>>, 2> values = { make_bpair(lastIdx, sortedUvs), make_bpair(-1, sortedUvs) };
+        std::array<bpair<int32_t, std::array<DPoint2d, 3>>, 2> values = {{ make_bpair(lastIdx, sortedUvs), make_bpair(-1, sortedUvs) }};
         map[edge[idx[0]]][edge[idx[1]]] = values;
         }
     }
@@ -127,7 +127,7 @@ void FaceToUVMap::RemoveFacet(const int32_t* indices)
 
 bool FaceToUVMap::GetFacet(const int32_t* indices, DPoint2d* uvCoords) 
     {
-    std::array<int32_t, 3> idx = { 0, 1, 2 };
+    std::array<int32_t, 3> idx = {{ 0, 1, 2 }};
     std::sort(idx.begin(), idx.end(), [&indices] (const int32_t& a, const int32_t&b) { return indices[a] < indices[b]; });
     if (map.count(indices[idx[0]]) > 0 && map[indices[idx[0]]].count(indices[idx[1]]) > 0)
         {
@@ -186,7 +186,7 @@ bool FaceToUVMap::GetFacet(const int32_t* indices, DPoint2d* uvCoords)
 bool FaceToUVMap::SplitFacetOrEdge(DPoint2d& newUv, const int32_t newPt, const int32_t* indices, std::function<DPoint2d(std::array<DPoint2d, 3>, const int32_t*, int32_t)> interpolateCallback, bool onEdge)
     {
     std::array<DPoint2d, 3> uvCoords;
-    std::array<int32_t, 3> idx = { 0, 1, 2 };
+    std::array<int32_t, 3> idx = {{ 0, 1, 2 }};
     std::sort(idx.begin(), idx.end(), [&indices] (const int32_t& a, const int32_t&b) { return indices[a] < indices[b]; });
 #if SM_TRACE_CLIPS_GETMESH
     Utf8String nameBeforeClips = Utf8String(s_path) + "faceTrace_";
@@ -261,7 +261,7 @@ bool FaceToUVMap::SplitFacet(DPoint2d& newUv, const int32_t newPt, const int32_t
 
 bool FaceToUVMap::SplitEdge(DPoint2d* newUvs, const int32_t newPt, const int32_t* indices, const int32_t* pts, std::function<DPoint2d(std::array<DPoint2d, 3>, const int32_t*, int32_t)> interpolateCallback)
     {
-    std::array<int32_t, 2> idx = { 0, 1};
+    std::array<int32_t, 2> idx = {{ 0, 1}};
     std::sort(idx.begin(), idx.end(), [&indices] (const int32_t& a, const int32_t&b) { return indices[a] < indices[b]; });
     if (map.count(indices[idx[0]]) > 0 && map[indices[idx[0]]].count(indices[idx[1]]) > 0)
         {
@@ -275,7 +275,7 @@ bool FaceToUVMap::SplitEdge(DPoint2d* newUvs, const int32_t newPt, const int32_t
             SplitFacetOrEdge(newUvs[i], ptIdx, facetIndices, interpolateCallback, true);
             ++i;
             }
-        if (bsiDPoint2d_pointEqualTolerance(&newUvs[0], &newUvs[1], 1e-3)) newUvs[1] = DPoint2d::From(DBL_MAX, DBL_MAX);
+        if (newUvs[0].Distance (newUvs[1]) <= 1e-3) newUvs[1] = DPoint2d::From(DBL_MAX, DBL_MAX);
         return true;
         }
 #if SM_TRACE_CLIPS_GETMESH
@@ -620,6 +620,7 @@ void Clipper::MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&
     bcdtmObject_triangulateStmTrianglesDtmObject(dtmPtr->GetBcDTM()->GetTinHandle());
     if (s_printDTM)
         {
+#if _WIN32
         WString dtmFileName(L"d:\\clipping\\outputTM");
         WString triangleF = dtmFileName;
         dtmFileName.append(L".dtm");
@@ -641,6 +642,7 @@ void Clipper::MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&
             fwrite(triangle, sizeof(DPoint3d), 4, triFile);
             }
         fclose(triFile);
+#endif
         }
     }
 
@@ -857,6 +859,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
     volatile bool dbg = false;
     if (dbg)
         {
+#if _WIN32
         WString nameBefore = WString(s_path)+L"fpreclipmeshregion2d_";
         nameBefore.append(to_wstring(s_nclip).c_str());
         nameBefore.append(L"_");
@@ -887,6 +890,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             fwrite(&polygons[j][0], sizeof(DPoint3d), polySize, polyCliPFile);
             fclose(polyCliPFile);
             }
+#endif
         }
 //#endif
     DTMUserTag    userTag = 0;
@@ -977,6 +981,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
         vec->CopyFrom(*pf);
         if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap, updatedIndices);
 //#ifndef NDEBUG
+#if _WIN32
         if (dbg)
             {
             WString name = WString(s_path) + L"fpostclipmeshnoutsideregion2d_";
@@ -997,6 +1002,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             fwrite(vec->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
             fclose(meshAfterClip);
             }
+#endif
 //#endif
         polyfaces[0].push_back(vec);
         }
@@ -1012,6 +1018,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             vec->CopyFrom(*pf);
             if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap, updatedIndices);
 //#ifndef NDEBUG
+#if _WIN32
             if (dbg)
                 {
                 WString name = WString(s_path) + L"fpostclipmeshregion2d_";
@@ -1034,6 +1041,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
                 fwrite(vec->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
                 fclose(meshAfterClip);
                 }
+#endif
 //#endif
             ++n2;
             polyfaces[n + 1].push_back(vec);
@@ -1817,8 +1825,9 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
     s_nclip++;
     int clipVal = (int)s_nclip;
 
-#ifndef NDEBUG
     bool dbg = false;
+#ifndef NDEBUG
+#if _WIN32
     if (dbg)
         {
         WString nameBefore = WString(L"C:\\work\\tmp\\") + L"fpreclipmeshregion_";
@@ -1846,6 +1855,7 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
             fclose(polyCliPFile);
             }
         }
+#endif
 #endif
 
     PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*clippedMesh);

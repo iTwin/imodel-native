@@ -1,6 +1,6 @@
 #include "../mki/StaticAnalysisWarningsPush.h"
 #include <ImagePP/h/ExportMacros.h>
-#include <ImagePP\all\h\HFCAccessMode.h>
+#include <ImagePP/all/h/HFCAccessMode.h>
 #include <ImagePP/h/ImageppAPI.h>
 
 #ifdef VANCOUVER_API
@@ -37,7 +37,7 @@
 
 #include <ImagePP/all/h/HGF2DProjective.h>
 #include <ImagePP/all/h/HPMPool.h>
-#include <Imagepp/all/h/HCPGCoordModel.h>
+#include <ImagePP/all/h/HCPGCoordModel.h>
 
 #ifdef VANCOUVER_API
 #include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
@@ -46,15 +46,29 @@
 #include <ImagePP/all/h/HPUArray.h>
 #endif
 
-#include <ImagePP\all\h\HFCURLFile.h>
-#include <ImagePP\all\h\HRFRasterFileFactory.h>
-#include <ImagePP\all\h\HRFPngFile.h>
-#include <ImagePP\all\h\HVEClipShape.h>
-#include <ImagePP\all\h\HUTDEMRasterXYZPointsExtractor.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HRFPngFile.h>
+#include <ImagePP/all/h/HVEClipShape.h>
+#include <ImagePP/all/h/HUTDEMRasterXYZPointsExtractor.h>
 
 #ifdef VANCOUVER_API
-#include <RasterCore\DgnRaster.h>
-#include <RasterCore\RasterDEMFilters.h>
-#include <RasterCore\msrastercore.h>
+#include <RasterCore/DgnRaster.h>
+#include <RasterCore/RasterDEMFilters.h>
+#include <RasterCore/msrastercore.h>
 #endif
 #include "../mki/StaticAnalysisWarningsPop.h"
+
+#ifndef VANCOUVER_API
+#define HVE2DSHAPE ImagePP::HVE2DShape
+#define HVESHAPE ImagePP::HVEShape
+#define HFCPTR ImagePP::HFCPtr
+#define HGF2DCOORDSYS ImagePP::HGF2DCoordSys
+#define HGF3DCOORD ImagePP::HGF3DCoord
+#else
+#define HFCPTR HFCPtr
+#define HVE2DSHAPE HVE2DShape
+#define HGF2DCOORDSYS HGF2DCoordSys
+#define HVESHAPE HVEShape
+#define HGF3DCOORD HGF3DCoord
+#endif

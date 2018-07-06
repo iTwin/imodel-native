@@ -26,12 +26,12 @@ BENTLEY_SM_EXPORT struct ScalableMeshProgress : public IScalableMeshProgress
     private:
 
         const IScalableMeshProgressListener* m_listener = nullptr;
-        std::atomic<bool> m_canceled = 0;
-        std::atomic<ScalableMeshStep> m_currentStep = ScalableMeshStep::STEP_NOT_STARTED;
-        std::atomic<float> m_progressInStep = 0;
-        std::atomic<int> m_progressStepIndex = 0;
-        std::atomic<ScalableMeshStepProcess> m_progressStepProcess = ScalableMeshStepProcess::PROCESS_INACTIVE;
-        int m_totalNSteps = 0;
+        std::atomic<bool> m_canceled = {0};
+        std::atomic<ScalableMeshStep> m_currentStep = {ScalableMeshStep::STEP_NOT_STARTED};
+        std::atomic<float> m_progressInStep = {0};
+        std::atomic<int> m_progressStepIndex = {0};
+        std::atomic<ScalableMeshStepProcess> m_progressStepProcess = {ScalableMeshStepProcess::PROCESS_INACTIVE};
+        int m_totalNSteps = {0};
         bmap<int, int> m_totalNIterationsPerStep;
 
     protected:

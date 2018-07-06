@@ -3,6 +3,7 @@
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshQuadTreeQueries.h"
 #include <queue>
+#include <future>
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 bool s_civilDraping = true;
 struct SMDrapedLine;
@@ -228,7 +229,7 @@ void MeshTraversalQueue::CollectAll()
 			step.linkedNode = node;
 			if (m_nodesToLoad.count(step.linkedNode->GetNodeId()) == 0)
 			    {
-				m_nodesToLoad.insert(std::make_pair(step.linkedNode->GetNodeId(), std::async([](MeshTraversalStep& step)
+				m_nodesToLoad.insert(std::make_pair(step.linkedNode->GetNodeId(), std::async([](MeshTraversalStep step)
 				    {
 					if (step.linkedNode->ArePoints3d() || step.linkedNode->GetBcDTM() != nullptr)
 						return DTM_SUCCESS;
@@ -273,9 +274,10 @@ bool MeshTraversalQueue::TryStartTraversal(bool& needProjectionToFindFirstTriang
         DRange2d nodeRange2d = DRange2d::From(DPoint2d::From(nodeRange.low.x, nodeRange.low.y), DPoint2d::From(nodeRange.high.x, nodeRange.high.y));
         DPoint2d pt1 = DPoint2d::From(m_polylineToDrape[segment].x, m_polylineToDrape[segment].y);
         DPoint2d pt2 = DPoint2d::From(m_polylineToDrape[segment+1].x - m_polylineToDrape[segment].x, m_polylineToDrape[segment+1].y - m_polylineToDrape[segment].y);
-        DPoint2d intersect;
-
-        if (!bsiDRange2d_intersectRay(&nodeRange2d, NULL, NULL, &intersect, NULL, &pt1, &pt2)) return false;
+        DPoint2d intersect, intersect1;
+        double param0, param1;
+        // replacement for bsiDRange2d_intersectRay .. ELutz 05/2018
+        if (!nodeRange2d.IntersectRay (param0, param1, intersect, intersect1, pt1, pt2)) return false;
         firstStep.startPoint.x = intersect.x;
         firstStep.startPoint.y = intersect.y;
         firstStep.startPoint.z = nodeRange.high.z;
@@ -688,7 +690,7 @@ bool IntersectRay3D(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoi
     {
     DRay3d ray = DRay3d::FromOriginAndVector(testPoint, direction);
     IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-    flags->SetSaveToCache(true);
+       flags->SetSaveToCache(true);
     flags->SetPrecomputeBoxes(true);
     auto meshP = target->GetMesh(flags);
     if (meshP != nullptr) return meshP->IntersectRay(pointOnDTM, ray);
@@ -1194,11 +1196,46 @@ DTMStatusInt ScalableMeshDraping::DrapePoint(double* elevationP, double* slopeP,
         targetedMesh->GetCurrentlyViewedNodes(m_nodeSelection);
         }
 
-    DVec3d direction = DVec3d::From(0, 0, -11);
+    DVec3d direction = DVec3d::From(0, 0, -1);
     bvector<IScalableMeshNodePtr> nodes;
+    DVec3d origDirection = direction;
+
+    if (m_scmPtr->IsCesium3DTiles())
+    {
+        if (s_tryDoublePts)
+        {
+            DPoint3d origin = DPoint3d::From(0, 0, 0);
+            DPoint3d endPts = DPoint3d::From(direction.x, direction.y, direction.z);
+
+            Transform dirTransformD(m_UorsToStorage);
+
+            dirTransformD.Multiply(origin);
+            dirTransformD.Multiply(endPts);
+
+            DVec3d vecDir2(DVec3d::FromStartEnd(origin, endPts));
+            vecDir2.Normalize();
+            vecDir2 = vecDir2;
+        }
+
+        Transform dirTransform(m_UorsToStorage);
+
+        if (s_zeroTranslation)
+        {
+            dirTransform.form3d[0][3] = 0;
+            dirTransform.form3d[1][3] = 0;
+            dirTransform.form3d[2][3] = 0;
+        }
+
+        dirTransform.Multiply(direction);
+        direction.Normalize();
+
+
+    }
+
     params->SetDirection(direction);
     DPoint3d transformedPt = point;
     m_UorsToStorage.Multiply(transformedPt);
+    params->SetUseUnboundedRay(true);
     QueryNodesBasedOnParams(nodes, transformedPt, params, targetedMesh);
 
 
@@ -1214,7 +1251,7 @@ DTMStatusInt ScalableMeshDraping::DrapePoint(double* elevationP, double* slopeP,
         }
     IScalableMeshNodePtr node = nodes.front();
     DTMStatusInt result;
-    if (!node->ArePoints3d())
+    if (!node->ArePoints3d() && !m_scmPtr->IsCesium3DTiles())
         {
         BcDTMPtr bcdtm = node->GetBcDTM();
         if (bcdtm == nullptr)
@@ -1237,9 +1274,12 @@ DTMStatusInt ScalableMeshDraping::DrapePoint(double* elevationP, double* slopeP,
     else
         {
         DPoint3d pointOnDTM;
-        if (IntersectRay3D(pointOnDTM, direction, transformedPt, node))
+        DVec3d otherDirection = direction;
+        otherDirection.Negate();
+        if (IntersectRay3D(pointOnDTM, direction, transformedPt, node)
+            || IntersectRay3D(pointOnDTM, otherDirection, transformedPt, node))
             {
-            transformedPt.z = pointOnDTM.z;
+            transformedPt = pointOnDTM;
             m_transform.Multiply(transformedPt);
             *elevationP = transformedPt.z;
             result = DTM_SUCCESS;

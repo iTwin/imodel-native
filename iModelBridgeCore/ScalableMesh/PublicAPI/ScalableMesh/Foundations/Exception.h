@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:46:12 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,7 +42,7 @@ protected:
                                                                             StatusInt               errorCode = 0)
         :   Exception(msg, errorCode) {}
 
-    virtual                             ~ExceptionMixinBase                () = 0 {};
+    virtual                             ~ExceptionMixinBase                () {};
 
     };
 

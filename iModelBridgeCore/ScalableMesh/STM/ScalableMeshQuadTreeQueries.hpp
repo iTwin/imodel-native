@@ -298,7 +298,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
             {         
             if (node->m_nodeHeader.m_nbFaceIndexes > 0 || m_ignoreFaceIndexes)
                 {
-                meshNodes.push_back(SMPointIndexNode<POINT, EXTENT>::QueriedNode(node));
+                meshNodes.push_back(typename SMPointIndexNode<POINT, EXTENT>::QueriedNode(node));
                 }
             else
                 {
@@ -725,7 +725,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
                 //NEEDS_WORK_SM - In progress, can miss triangle when considering only vertices 
                 static bool s_clipMesh = true;
                 if (shouldAddNode)
-                meshNodes.push_back(SMPointIndexNode<POINT, EXTENT>::QueriedNode(node));
+                meshNodes.push_back(typename SMPointIndexNode<POINT, EXTENT>::QueriedNode(node));
                 /*
                 if (s_clipMesh == true)
                     { 
@@ -788,7 +788,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
                 dataPoints[pointInd] = converter.operator()(pointsPtr->operator[](pointInd));                                            
                 }
                          
-            meshNodes.push_back(SMPointIndexNode<POINT, EXTENT>::QueriedNode(node));            
+            meshNodes.push_back(typename SMPointIndexNode<POINT, EXTENT>::QueriedNode(node));            
             }
      
         if (finalNode && m_gatherTileBreaklines && node->GetNbPoints() > 0)
@@ -1382,10 +1382,10 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
                                       DPoint2d::From(ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext)));
     DPoint2d origin2d = DPoint2d::From(m_target.origin.x, m_target.origin.y);
     double par=0,par2=0;
-    DPoint2d intersect2d;
+    DPoint2d intersect2d, intersect2d1;
     DPoint2d dest2d = DPoint2d::From(m_target.direction.x, m_target.direction.y);
 
-    if (!m_is2d ? m_target.ClipToRange(range, segment, fraction) : (bsiDRange2d_intersectRay(&range2d, &par, &par2, &intersect2d, NULL, &origin2d, &dest2d) && (par2 > 0 || par > 0))) //ray intersects the node
+    if (!m_is2d ? m_target.ClipToRange(range, segment, fraction) : (range2d.IntersectRay (par, par2, intersect2d, intersect2d1, origin2d, dest2d) && (par2 > 0 || par > 0))) //ray intersects the node
         {
         if (m_is2d && m_depth != -1 && (m_depth<par)) return false;
         if (node->m_nodeHeader.m_totalCountDefined && node->m_nodeHeader.m_totalCount == 0) return false;
@@ -1423,10 +1423,10 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
 
     DPoint2d origin2d = DPoint2d::From(m_target.origin.x, m_target.origin.y);
     double par=0, par2=0;
-    DPoint2d intersect2d;
+    DPoint2d intersect2d, intersect2dA;
     DPoint2d dest2d = DPoint2d::From(m_target.direction.x, m_target.direction.y);
 
-    if (!m_is2d ? m_target.ClipToRange(range, segment, fraction) : (bsiDRange2d_intersectRay(&range2d, &par, &par2, &intersect2d, NULL, &origin2d, &dest2d) && (par2 > 0 || par > 0))) //ray intersects the node
+    if (!m_is2d ? m_target.ClipToRange(range, segment, fraction) : (range2d.IntersectRay (par, par2, intersect2d, intersect2dA, origin2d, dest2d) && (par2 > 0 || par > 0))) //ray intersects the node
         {
         if (m_is2d && m_depth != -1 && (m_depth < par)) return false;
         if (!m_is2d && m_depth != -1 && ((m_depth < fraction.low) || (fraction.high < 0 && m_depth < fabs(fraction.high)))) return false;
@@ -1513,7 +1513,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPlaneIntersect
             //if (isnan(m_bestHitScore) || (m_intersect == RaycastOptions::LAST_INTERSECT && m_bestHitScore < (!m_is2d ? fraction.high : par))
             //    || (m_intersect == RaycastOptions::FIRST_INTERSECT && m_bestHitScore >(!m_is2d ? fraction.low : par)))
                 {
-                meshNodes.push_back(SMPointIndexNode<POINT, EXTENT>::QueriedNode(node));
+                meshNodes.push_back(typename SMPointIndexNode<POINT, EXTENT>::QueriedNode(node));
                 }
 				return false;
             }

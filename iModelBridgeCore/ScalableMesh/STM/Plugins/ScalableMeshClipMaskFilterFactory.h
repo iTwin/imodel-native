@@ -18,6 +18,7 @@
 #include <ImagePP/all/h/HVEClipShape.h>
 #include <ScalableMesh/Import/CustomFilterFactory.h>
 
+USING_NAMESPACE_IMAGEPP
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**

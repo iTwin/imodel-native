@@ -17,16 +17,16 @@
 #include <ScalableMesh\Memory\PacketAccess.h>
 #include <ScalableMesh\Type\IScalableMeshPoint.h>
 
+#include "..\InternalUtilityFunctions.h"
+
 #include "PluginUtils.h"
 
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
-USING_NAMESPACE_RASTER
 USING_NAMESPACE_IMAGEPP
 
-using Bentley::GeoCoordinates::DgnGCS;
 
 namespace { //BEGIN UNAMED NAMESPACE
 
@@ -98,7 +98,7 @@ const HFCPtr<HPMPool>&              GetPoolInstance                        ()
     return POOL_INSTANCE_PTR;
     }
 
-
+#ifdef VANCOUVER_API
 bool                                ExtractUnitFromGeoTiffKeys             (Unit&                 unit,
                                                                             const IRasterBaseGcs& geoCoding)
     {    
@@ -130,12 +130,61 @@ bool                                ExtractUnitFromGeoTiffKeys             (Unit
     return true;
     }
 
+#else
+
+bool                                ExtractUnitFromGeoTiffKeys(Unit&                 unit,
+                                                               const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& geoCoding)
+    {
+        const unsigned int unitId = geoCoding->GetEPSGUnitCode();
+
+        if (0 == unitId)
+        {
+            unit = Unit::GetMeter();
+            return false;
+        }
+
+        if (geoCoding == 0)
+        {
+            unit = Unit::GetMeter();
+            return false;
+        }
+
+        WString unitName;
+
+        geoCoding->GetUnits(unitName);
+
+        WString trimedUnitName(unitName.c_str());
+
+        trimedUnitName.Trim();
+
+        double unitFromMeter = 1.0;
+        T_WStringVector* pAllUnitName = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::GetUnitNames();
+        for (T_WStringVector::const_iterator itr = pAllUnitName->begin(); itr != pAllUnitName->end(); ++itr)
+        {
+            WString name = *itr;
+            name.Trim();
+            if (BeStringUtilities::Wcsicmp(trimedUnitName.c_str(), name.c_str()) == 0)
+            {
+                BENTLEY_NAMESPACE_NAME::GeoCoordinates::UnitCP pUnit(BENTLEY_NAMESPACE_NAME::GeoCoordinates::Unit::FindUnit(itr->c_str()));
+                unitFromMeter = 1.0 / pUnit->GetConversionFactor();
+                break;
+            }
+        }
+
+        const double ratioToMeter = 1 / unitFromMeter;
+
+        unit = Unit::CreateLinearFrom(trimedUnitName.c_str(), ratioToMeter);
+        return true;
+    }
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Mathieu.St-Pierre   11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS                                 GetTextureFileGCS                          (HFCPtr<HRFRasterFile>& pRasterFile)
     {
+#ifdef VANCOUVER_API
     const IRasterBaseGcsCP geoCodingP = pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
         
     if (0 == geoCodingP)
@@ -146,6 +195,18 @@ GCS                                 GetTextureFileGCS                          (
 
     if (0 == coordSysPtr.get() && !ExtractUnitFromGeoTiffKeys(gcsUnit, *geoCodingP))
         return GCS::GetNull();
+#else
+    GeoCoordinates::BaseGCSCP geoCodingP = pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
+
+    if (0 == geoCodingP)
+        return GCS::GetNull();
+
+    const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr coordSysPtr(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(*geoCodingP));
+    Unit gcsUnit((0 == coordSysPtr.get()) ? Unit::GetMeter() : GetUnitFor(*coordSysPtr));
+
+    if (0 == coordSysPtr.get() && !ExtractUnitFromGeoTiffKeys(gcsUnit, geoCodingP))
+        return GCS::GetNull();
+#endif
 
     // Take into account that units have been rectified to meter (which is the base of linear units) or
     // degree (which is the base of angular units).
@@ -249,6 +310,27 @@ DRange3d                            GetTextureFileRange                        (
     return range;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Mathieu.St-Pierre   05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConstructUrl(HFCPtr<HFCURL>& urlPtr, const LocalFileSourceRef&   pi_rSourceRef)
+    {
+
+#ifdef VANCOUVER_API
+    if (!IsUrl(pi_rSourceRef.GetPathCStr()))
+        urlPtr = HFCURL::Instanciate(WString(L"file://") + pi_rSourceRef.GetPathCStr());
+    else
+        urlPtr = HFCURL::Instanciate(pi_rSourceRef.GetPathCStr());
+#else
+    if (!IsUrl(pi_rSourceRef.GetPathCStr()))
+        urlPtr = HFCURL::Instanciate(Utf8String(WString(L"file://") + pi_rSourceRef.GetPathCStr()));
+    else
+        urlPtr = HFCURL::Instanciate(Utf8String(pi_rSourceRef.GetPathCStr()));
+#endif
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsiclass                                                  Mathieu.St-Pierre   01/2011
@@ -266,10 +348,8 @@ class TextureFileSourceCreator : public LocalFileSourceCreatorBase
 
         try
             {            
-            if (!BeFileName::IsUrl(pi_rSourceRef.GetPathCStr()))                
-                urlPtr = HFCURL::Instanciate(WString(L"file://") + pi_rSourceRef.GetPathCStr());
-            else
-                urlPtr = HFCURL::Instanciate(pi_rSourceRef.GetPathCStr());
+            ConstructUrl(urlPtr, pi_rSourceRef);
+
 
             const HRFRasterFileCreator* foundCreatorP = HRFRasterFileFactory::GetInstance()->FindCreator(urlPtr, HFC_READ_ONLY);
 
@@ -300,10 +380,7 @@ class TextureFileSourceCreator : public LocalFileSourceCreatorBase
         {
         HFCPtr<HFCURL> urlPtr;
 
-        if (!BeFileName::IsUrl(sourceRef.GetPathCStr()))
-            urlPtr = HFCURL::Instanciate(WString(L"file://") + sourceRef.GetPathCStr());
-        else
-            urlPtr = HFCURL::Instanciate(sourceRef.GetPathCStr());
+        ConstructUrl(urlPtr, sourceRef);
 
         const HFCPtr<HRFRasterFile> rasterFile(HRFRasterFileFactory::GetInstance()->OpenFile(urlPtr, HFC_READ_ONLY | HFC_SHARE_READ_WRITE));
                         

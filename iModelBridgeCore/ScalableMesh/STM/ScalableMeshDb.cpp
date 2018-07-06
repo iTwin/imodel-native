@@ -15,7 +15,7 @@ This is consistent with other BeSQLite profiles.
 const BESQL_VERSION_STRUCT ScalableMeshDb::CURRENT_VERSION = BESQL_VERSION_STRUCT(1, 1, 0, 1);
 static bool s_checkShemaVersion = true;
 
-BESQL_VERSION_STRUCT ScalableMeshDb::GetCurrentVersion()
+BESQL_VERSION_STRUCT ScalableMeshDb::GetCurrentVersion() const
     {
     switch (m_type)
         {
@@ -36,25 +36,25 @@ BESQL_VERSION_STRUCT ScalableMeshDb::GetCurrentVersion()
     }
 
 #ifndef VANCOUVER_API
-DbResult ScalableMeshDb::_VerifyProfileVersion(OpenParams const& params)
+ProfileState ScalableMeshDb::_CheckProfileVersion() const
     {
-
     CachedStatementPtr stmtTest;
     GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
     assert(stmtTest != nullptr);
     DbResult status = stmtTest->Step();
 
     assert(status == BE_SQLITE_ROW);
-       
+
     Utf8String schemaVs(stmtTest->GetValueText(0));
 
     BESQL_VERSION_STRUCT databaseSchema(schemaVs.c_str());
-   
+
     BESQL_VERSION_STRUCT currentVersion = GetCurrentVersion();
     if (s_checkShemaVersion && (databaseSchema.CompareTo(currentVersion, BESQL_VERSION_STRUCT::VERSION_All) < 0 || databaseSchema.CompareTo(currentVersion, BESQL_VERSION_STRUCT::VERSION_MajorMinor) != 0))
-        return BE_SQLITE_SCHEMA;
+        return ProfileState::Older(ProfileState::CanOpen::No, false);
 
-    return BE_SQLITE_OK;
+    return ProfileState::UpToDate();
+
     }
 #else
 static Utf8CP s_versionfmt = "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}";
@@ -74,8 +74,7 @@ DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
     Utf8String versonJson(currentVersion.ToJson());
     stmt->BindText(1, versonJson.c_str(), Statement::MakeCopy::Yes);
     stmt->BindText(2, "", Statement::MakeCopy::Yes);
-    DbResult status = stmt->Step();
-    status = status;
+    stmt->Step();
         
     return BeSQLite::Db::_OnDbCreated(params);
     }

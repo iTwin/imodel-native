@@ -6,7 +6,7 @@
 |       $Date: 2012/03/21 18:37:07 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,9 +32,10 @@ enum ScalableMeshStep
     STEP_GENERATE_3DTILES_HEADERS,
     STEP_SAVEAS_3SM,
     STEP_DETECT_GROUND,
-    STEP_GENERATE_TEXTURE,
+    STEP_GENERATE_TEXTURE,    
+    STEP_CREATE_FROM_3MX,
+    STEP_CLIPPING,
     STEP_QTY,
-    STEP_CREATE_FROM_3MX
     };
 
 enum ScalableMeshStepProcess

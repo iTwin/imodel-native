@@ -503,7 +503,7 @@ SMStatus ContentDescriptor::Configure(const ContentConfig&            config,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypeDescriptor::TypeDescriptor     (const DataType& type)
+TypeDescriptor::TypeDescriptor     (DataType type)
     :   m_type(type),
         m_implP(0)
     {

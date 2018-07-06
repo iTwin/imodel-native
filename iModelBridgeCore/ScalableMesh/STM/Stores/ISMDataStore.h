@@ -19,13 +19,13 @@ need be.
 
 ////MST_TS
 #ifdef VANCOUVER_API
-#include "..\ImagePPHeaders.h"
+#include "../ImagePPHeaders.h"
 #endif
 
-#include <ImagePP\all\h\HFCPtr.h>
-#include <ImagePP\all\h\HPMDataStore.h>
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HPMDataStore.h>
 
-#include "..\Edits\DifferenceSet.h"
+#include "../Edits/DifferenceSet.h"
 
 #include <ScalableMesh/IClipDefinitionDataProvider.h>
 

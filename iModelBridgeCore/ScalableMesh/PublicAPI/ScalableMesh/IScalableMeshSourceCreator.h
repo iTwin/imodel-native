@@ -31,6 +31,7 @@ struct IScalableMeshSourceCreator : public IScalableMeshCreator
     {
     private:
         /*__PUBLISH_SECTION_END__*/
+        friend struct                       IScalableMeshSourceCreatorWorker;
         friend struct                       IScalableMeshCreator;
         struct                              Impl;
         //std::auto_ptr<Impl>                 m_implP;
@@ -68,19 +69,31 @@ struct IScalableMeshSourceCreator : public IScalableMeshCreator
 
         BENTLEY_SM_IMPORT_EXPORT void                    SetSourceImportPolygon(const DPoint3d* polygon, size_t nPts);
 
+        BENTLEY_SM_IMPORT_EXPORT void                    SetCreationMethod(ScalableMeshCreationMethod creationMethod);
+
+        BENTLEY_SM_IMPORT_EXPORT void                    SetCreationCompleteness(ScalableMeshCreationCompleteness creationCompleteness);
+
+        
+
 #ifdef SCALABLE_MESH_ATP
 
-        BENTLEY_SM_IMPORT_EXPORT static unsigned __int64 GetNbImportedPoints();
+        BENTLEY_SM_IMPORT_EXPORT static uint64_t GetNbImportedPoints();
 
         BENTLEY_SM_IMPORT_EXPORT static double GetImportPointsDuration();
 
-        BENTLEY_SM_IMPORT_EXPORT static double GetLastBalancingDuration();
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastPointBalancingDuration();
+
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastMeshBalancingDuration();
 
         BENTLEY_SM_IMPORT_EXPORT static double GetLastMeshingDuration();
 
         BENTLEY_SM_IMPORT_EXPORT static double GetLastFilteringDuration();
 
         BENTLEY_SM_IMPORT_EXPORT static double GetLastStitchingDuration();
+
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastClippingDuration();        
+
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastFinalStoreDuration();
 
         BENTLEY_SM_IMPORT_EXPORT        void   ImportRastersTo(const IScalableMeshPtr& scmPtr);
 #endif   

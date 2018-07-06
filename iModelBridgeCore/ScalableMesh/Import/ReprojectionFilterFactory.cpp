@@ -84,7 +84,7 @@ BEGIN_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_NAMESPACE
 struct ReprojectionFilterCreatorPlugin
     {
 private:
-    friend struct                           ReprojectionFilterCreator;
+    friend struct                            BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::ReprojectionFilterCreator;
 
     typedef Plugin::V0::ReprojectionFilterCreatorBase   
                                             Base;

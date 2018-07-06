@@ -5,7 +5,15 @@
 #include <Bentley/RefCounted.h>
 #include <Bentley/BeFile.h>
 #include <queue>
-
+#ifdef VANCOUVER_API
+#define OPEN_FILE_WITH_SHARING(beFile, pathStr, accessMode, sharing)  beFile.Open(pathStr, accessMode, sharing)
+#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
+#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
+#else
+#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
+#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
+#define OPEN_FILE_WITH_SHARING(beFile, pathStr, accessMode, sharing)  beFile.Open(pathStr, accessMode)
+#endif
 
 struct CacheWriter : public RefCountedBase, std::mutex, std::condition_variable
     {
@@ -94,7 +102,9 @@ struct CacheWriter : public RefCountedBase, std::mutex, std::condition_variable
         {
         DataSourceStatus        statusErrorWrite(DataSourceStatus::Status_Error_Write);
         BeFileAccess streamMode = BeFileAccess::Write;
+#ifdef VANCOUVER_API
         BeFileSharing streamSharing = BeFileSharing::None;
+#endif
         DataSourceStatus            status;
         BeFile stream;
 
@@ -118,13 +128,13 @@ struct CacheWriter : public RefCountedBase, std::mutex, std::condition_variable
                 }
             }
 
-        if (!stream.IsOpen() && BeFileStatus::Success != stream.Open(data->m_url.c_str(), streamMode, streamSharing))
+        if (!stream.IsOpen() && BeFileStatus::Success != OPEN_FILE_WITH_SHARING(stream,data->m_url.c_str(), streamMode, streamSharing))
             {
             return DataSourceStatus(DataSourceStatus::Status_Error);
             }
 
-        UInt32 bytesWritten = 0;
-        if (BeFileStatus::Success != stream.Write(&bytesWritten, reinterpret_cast<const char *>(data->m_dest), data->m_size))
+        uint32_t bytesWritten = 0;
+        if (BeFileStatus::Success != stream.Write(&bytesWritten, reinterpret_cast<const char *>(data->m_dest), (uint32_t)data->m_size))
             {
             return DataSourceStatus(DataSourceStatus::Status_Error);
             }

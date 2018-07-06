@@ -6,7 +6,7 @@
 |       $Date: 2011/11/21 17:01:01 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -49,7 +49,7 @@ struct FormatVersions
 /*
  * Driver current format versions
  */
-const FormatVersions                CURRENT_FORMAT_VERSIONS = 
+FormatVersions                CURRENT_FORMAT_VERSIONS = 
     {
     SourceSerializer::FORMAT_VERSION, // Serialized sources
     ContentConfigSerializer::FORMAT_VERSION, // Content config
@@ -245,7 +245,7 @@ bool SourcesSaver::Save(const IDTMSource& source,
     {
         m_serializationStream.str(bstring());
 
-        static const ContentConfigSerializer SERIALIZER;
+        static ContentConfigSerializer SERIALIZER;
         if (SERIALIZER.Serialize(source.GetConfig().GetContentConfig(), m_sourceData))
         {
             m_serializedContentConfig = m_serializationStream.str();
@@ -392,7 +392,7 @@ bool SourcesSaver::Save (const IDTMSource& source, IScalableMeshSourceImporterSt
         m_serializationStream.str(bstring());
         assert(m_serializationStream.good());
 
-        static const SourceSerializer SERIALIZER;
+        static SourceSerializer SERIALIZER;
 
         if (!SERIALIZER.Serialize(source, m_sourceEnv, m_sourceData))
 
@@ -409,7 +409,7 @@ bool SourcesSaver::Save (const IDTMSource& source, IScalableMeshSourceImporterSt
         {
         m_serializationStream.str(bstring());
 
-        static const ContentConfigSerializer SERIALIZER;
+        static ContentConfigSerializer SERIALIZER;
 
         if (SERIALIZER.Serialize(source.GetConfig().GetContentConfig(), m_sourceData))
 
@@ -623,14 +623,16 @@ IDTMSourcePtr SourcesLoader::CreateSource(SourceDataSQLite& sourceData)
         copy(m_serializedSourcePacket.Begin(), m_serializedSourcePacket.End(),
             ostreambuf_iterator<byte>(m_serializationStream));*/
 
-        static const SourceSerializer DESERIALIZER;
+        static SourceSerializer DESERIALIZER;
         dataSourcePtr = DESERIALIZER.Deserialize(sourceData, m_sourceEnv, m_fileFormatVersions.serializedSource);
 
         if (0 == dataSourcePtr.get())
             throw runtime_error("Error creating data source!");
 
+#ifndef LINUX_SCALABLEMESH_BUILD
         Time lastModified = CreateTimeFrom(sourceData.GetTimeLastModified());
         dataSourcePtr->SetLastModified(lastModified);
+#endif
     }
 
     // Deserialize content config
@@ -643,7 +645,7 @@ IDTMSourcePtr SourcesLoader::CreateSource(SourceDataSQLite& sourceData)
 
         ContentConfig config;
 
-        static const ContentConfigSerializer DESERIALIZER;
+        static ContentConfigSerializer DESERIALIZER;
         if (!DESERIALIZER.Deserialize(sourceData, config, m_fileFormatVersions.contentConfig))
             throw runtime_error("Error creating content config!");
 
@@ -660,7 +662,7 @@ IDTMSourcePtr SourcesLoader::CreateSource(SourceDataSQLite& sourceData)
 
         ImportSequence sequence;
 
-        static const ImportSequenceSerializer DESERIALIZER;
+        static ImportSequenceSerializer DESERIALIZER;
         if (!DESERIALIZER.Deserialize(sourceData, sequence, m_fileFormatVersions.importSequence))
             throw runtime_error("Error creating import sequence!");
 
@@ -699,7 +701,7 @@ IDTMSourcePtr SourcesLoader::CreateSource (IScalableMeshSourceImporterStoragePtr
         m_serializedData = m_serializationStream.str();
         #endif
 
-        static const SourceSerializer DESERIALIZER;
+        static SourceSerializer DESERIALIZER;
 
 //        dataSourcePtr = DESERIALIZER.Deserialize(sourceData, m_sourceEnv, m_fileFormatVersions.serializedSource);
         assert(false);
@@ -707,9 +709,10 @@ IDTMSourcePtr SourcesLoader::CreateSource (IScalableMeshSourceImporterStoragePtr
 
         if (0 == dataSourcePtr.get())
             throw runtime_error("Error creating data source!");
-
+#ifndef LINUX_SCALABLEMESH_BUILD
         Time lastModified = CreateTimeFrom(sourceLastModifiedTime);
         dataSourcePtr->SetLastModified(lastModified);
+#endif
         }
 
     // Deserialize content config
@@ -726,7 +729,7 @@ IDTMSourcePtr SourcesLoader::CreateSource (IScalableMeshSourceImporterStoragePtr
 
         ContentConfig config;
 
-        static const ContentConfigSerializer DESERIALIZER;
+        static ContentConfigSerializer DESERIALIZER;
 
             throw runtime_error("Error creating content config!");
 
@@ -747,7 +750,7 @@ IDTMSourcePtr SourcesLoader::CreateSource (IScalableMeshSourceImporterStoragePtr
 
         ImportSequence sequence;
 
-        static const ImportSequenceSerializer DESERIALIZER;
+        static ImportSequenceSerializer DESERIALIZER;
 
             throw runtime_error("Error creating import sequence!");
 

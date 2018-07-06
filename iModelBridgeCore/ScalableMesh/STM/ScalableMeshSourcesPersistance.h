@@ -12,7 +12,7 @@
 #pragma once
 
 #include <TerrainModel/TerrainModel.h>
-#include <ScalableMesh\IScalableMeshSourceImporter.h>
+#include <ScalableMesh/IScalableMeshSourceImporter.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
 #include <ScalableMesh/Import/DataSQLite.h>
 

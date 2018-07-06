@@ -6,7 +6,7 @@
 |       $Date: 2011/12/20 16:23:45 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,7 +16,9 @@
 #include <Bentley/RefCounted.h>
 #include <Bentley/Bentley.h>
 #include <utility>
-
+#ifdef LINUX_SCALABLEMESH_BUILD 
+using namespace std;
+#endif
 // NTERAY: See if Bentley.h's forward declaration may suffice.
 #include <Bentley/WString.h> 
 #include <ImagePP/h/HmrMacro.h>
@@ -26,10 +28,14 @@
 //    #error "Export name conflict with another definition of the same name"
 #endif
 
+#if _WIN32
 #ifdef __BENTLEYSTM_BUILD__ //BENTLEY_SCALABLEMESH_FOUNDATIONS_EXPORTS
     #define FOUNDATIONS_DLLE __declspec(dllexport)
 #else
     #define FOUNDATIONS_DLLE __declspec(dllimport)
+#endif
+#else
+ #define FOUNDATIONS_DLLE
 #endif
 
 
@@ -58,11 +64,11 @@
 * TDORAY: Replace with standard C++0x static assert
 * @bsimacro                                                  Raymond.Gauthier   02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifndef static_assert
+/*#ifndef static_assert
 #define _static_assertln_exp(expr, line) static const int static_assert_ln##line [(expr)? 1 : -1];
 #define _static_assertln(expr, line) _static_assertln_exp((expr), line)
 #define static_assert(expr, msg) _static_assertln((expr), __LINE__)
-#endif //!static_assert
+#endif //!static_assert*/
 
 
 BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE
@@ -179,7 +185,7 @@ class Uncopyable
 
 
 
-
+#ifndef LINUX_SCALABLEMESH_BUILD 
 /*---------------------------------------------------------------------------------**//**
 * @description  This is a trait class that returns whether a specified type is
 *               plain old data (POD).
@@ -199,13 +205,15 @@ template <> struct is_pod<short> {enum {value = 1};};
 template <> struct is_pod<unsigned short> {enum {value = 1};};
 template <> struct is_pod<int> {enum {value = 1};};
 template <> struct is_pod<unsigned int> {enum {value = 1};};
-template <> struct is_pod<__int64> {enum {value = 1};};
-template <> struct is_pod<unsigned __int64> {enum {value = 1};};
+#ifndef _WIN32
+template <> struct is_pod<int64_t> {enum {value = 1};};
+template <> struct is_pod<unsigned int64_t> {enum {value = 1};};
+#endif
 template <> struct is_pod<long> {enum {value = 1};};
 template <> struct is_pod<unsigned long> {enum {value = 1};};
 template <> struct is_pod<float> {enum {value = 1};};
 template <> struct is_pod<double> {enum {value = 1};};
-
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @description  Help setting specified bits to a boolean value

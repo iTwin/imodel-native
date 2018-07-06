@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -20,7 +20,7 @@ typedef RefCountedPtr<IScalableMeshClippingOptions> IScalableMeshClippingOptions
 /*=================================================================================**//**
  * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IScalableMeshClippingOptions abstract : virtual public RefCountedBase
+struct IScalableMeshClippingOptions: virtual public RefCountedBase
 {
 private:
 

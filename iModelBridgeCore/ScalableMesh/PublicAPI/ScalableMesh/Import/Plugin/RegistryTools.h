@@ -6,7 +6,7 @@
 |       $Date: 2011/08/04 19:28:38 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -54,7 +54,7 @@ protected:
     typedef RegistryT                           registry_type;
 
     // May be hidden by RAIIRegisterT in order to customize creation phase
-    static typename const PluginCreatorT&       GetCreator                             () 
+    static const PluginCreatorT&       GetCreator                             () 
         { 
         static const PluginCreatorT SINGLETON;
         return SINGLETON;
@@ -62,12 +62,12 @@ protected:
 
     explicit                                    RAIIAutoRegisterMixin                  ()   
         :   m_registry(RegistryT::GetInstance()),
-            m_pluginID (m_registry.Register(typename RAIIRegisterT::GetCreator())) 
+            m_pluginID (m_registry.Register(RAIIRegisterT::GetCreator())) 
         {}
 
     explicit                                    RAIIAutoRegisterMixin                  (RegistryT&      registry)   
         :   m_registry(registry),
-            m_pluginID (m_registry.Register(typename RAIIRegisterT::GetCreator())) 
+            m_pluginID (m_registry.Register(RAIIRegisterT::GetCreator())) 
         {}
 
 
@@ -108,7 +108,7 @@ protected:
     typedef RegistryT                           registry_type;
 
     // May be hidden by RAIIRegisterT in order to customize creation phase
-    static typename const PluginCreatorT&       GetCreator                             () 
+    static const PluginCreatorT&       GetCreator                             () 
         { 
         static const PluginCreatorT SINGLETON;
         return SINGLETON;

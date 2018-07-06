@@ -37,12 +37,17 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
         case SMStoreDataType::LinearFeature:
         case SMStoreDataType::Graph:
             {
-            assert(m_smSQLiteFile.IsValid()); // Must have a valid SQLite database 
-            Utf8String dbFileName;
-            bool result = m_smSQLiteFile->GetFileName(dbFileName);
-            assert(result == true);
-
-            sqlFileName.AssignUtf8(dbFileName.c_str());
+            if (m_smSQLiteFile.IsValid())
+                {                 
+                Utf8String dbFileName;
+                bool result = m_smSQLiteFile->GetFileName(dbFileName);
+                assert(result == true);
+                sqlFileName.AssignUtf8(dbFileName.c_str());            
+                }
+            else //For PWContextShare there is not local path, so used temp path.
+                {
+                sqlFileName = useTempPath ? GetTempPathFromProjectPath(m_projectFilesPath) : m_projectFilesPath;                
+                }
 
             sqlFileName.append(L"_feature"); //temporary file, deleted after generation
             }
@@ -90,9 +95,7 @@ SMSQLiteSisterFile::~SMSQLiteSisterFile()
         assert(m_smFeatureSQLiteFile->GetRefCount() == 1);
         m_smFeatureSQLiteFile->Close();
         m_smFeatureSQLiteFile = 0;
-        WString dbFileNameW;
-        dbFileNameW.AssignUtf8(dbFileName.c_str());
-        _wremove(dbFileNameW.c_str());
+        remove(dbFileName.c_str());
         }
     }
 
@@ -121,7 +124,8 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 WString sqlFileName;
                 GetSisterSQLiteFileName(sqlFileName, dataType);
 
-                _wremove(sqlFileName.c_str());
+                Utf8String sqlNameUtf8(sqlFileName.c_str());
+                remove(sqlNameUtf8.c_str());
                 StatusInt status;
                 m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_GENERATION_FILE);
                 m_smFeatureSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_GENERATION_FILE);

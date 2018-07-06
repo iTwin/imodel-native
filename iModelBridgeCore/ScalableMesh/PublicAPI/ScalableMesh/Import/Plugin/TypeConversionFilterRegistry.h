@@ -6,7 +6,7 @@
 |       $Date: 2011/08/02 14:58:43 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,7 +36,7 @@ struct TypeConversionFilterRegistryImpl;
 struct TypeConversionFilterRegistry : private Uncopyable
     {
 private:
-    friend struct                           TypeConversionFilterFactory;
+    friend struct                           BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::TypeConversionFilterFactory;
 
     typedef V0::TypeConversionFilterCreatorBase       
                                             V0Creator;
@@ -55,8 +55,9 @@ public:
     struct AutoRegister 
         : public RAIIAutoRegisterMixin<AutoRegister<CreatorT>, CreatorT, TypeConversionFilterRegistry, typename CreatorT::ID> 
         {
+typedef  RAIIAutoRegisterMixin<AutoRegister<CreatorT>, CreatorT, TypeConversionFilterRegistry, typename CreatorT::ID>  super_class;
         explicit                                AutoRegister                       () {}
-        explicit                                AutoRegister                       (registry_type&                      registry) 
+        explicit                                AutoRegister                       (typename super_class::registry_type&                      registry) 
             : super_class(registry) {}
         };
 

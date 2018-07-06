@@ -4207,7 +4207,7 @@ bool TrimHull::AddFixFaceWithEdges (int tn, int f)
     return true;
     }
 
-__forceinline  bool MarkTheEdge (std::map<uint64_t, uint64_t>& hasEdge, int a, int b)
+inline  bool MarkTheEdge (std::map<uint64_t, uint64_t>& hasEdge, int a, int b)
     {
     auto mk = hasEdge.find (MarkEdge::MakeIndex (a, b));
     if (mk != hasEdge.end ())
@@ -6529,7 +6529,7 @@ struct compare3D
 
 #endif
 
-__forceinline  double checkNormal (DVec3dCR viewNormal, DVec3dCR normal)
+inline  double checkNormal (DVec3dCR viewNormal, DVec3dCR normal)
     {
     return (viewNormal.x*normal.x + viewNormal.y*normal.y + viewNormal.z*normal.z);
     }
@@ -7108,14 +7108,14 @@ struct QuickPointFinder
 
 
 
-    __forceinline  void NewTrim::MarkFace (int a, int b, int c)
+    inline  void NewTrim::MarkFace (int a, int b, int c)
     {
     //cout << "MF" << a << " " << b << " " << c << endl;
     uint64_t index = MarkFace::MakeIndex (a, b, c);
     m_markedfaces[index] = true;
     }
 
-    __forceinline  bool NewTrim::IsFaceMarked (int a, int b, int c) const
+    inline  bool NewTrim::IsFaceMarked (int a, int b, int c) const
     {
     uint64_t index = MarkFace::MakeIndex (a, b, c);
     auto it = m_markedfaces.find (index);
@@ -7124,7 +7124,7 @@ struct QuickPointFinder
     return it->second;
     }
 
-    __forceinline  MarkEdge& NewTrim::GetMarkedEdge (int a, int b)
+    inline  MarkEdge& NewTrim::GetMarkedEdge (int a, int b)
     {
     auto mk = m_markEdges.find (MarkEdge::MakeIndex (a, b));
     if (mk != m_markEdges.end ())
@@ -7133,7 +7133,7 @@ struct QuickPointFinder
     return me;
     }
 
-    __forceinline  int NewTrim::GetMarkedEdgeCount (int a, int b)
+    inline  int NewTrim::GetMarkedEdgeCount (int a, int b)
     {
     auto mk = m_markEdges.find (MarkEdge::MakeIndex (a, b));
     if (mk != m_markEdges.end ())
@@ -7142,7 +7142,7 @@ struct QuickPointFinder
     }
 
 
-    __forceinline  int NewTrim::IncrementMarkedEdgeCount (int a, int b)
+    inline  int NewTrim::IncrementMarkedEdgeCount (int a, int b)
     {
     uint64_t index = MarkEdge::MakeIndex (a, b);
     auto mk = m_markEdges.find (index);
@@ -7154,7 +7154,7 @@ struct QuickPointFinder
     return 1;
     }
 
-    __forceinline  int NewTrim::DecrementMarkedEdgeCount (int a, int b)
+    inline  int NewTrim::DecrementMarkedEdgeCount (int a, int b)
     {
     uint64_t index = MarkEdge::MakeIndex (a, b);
     auto mk = m_markEdges.find (index);
@@ -7167,14 +7167,14 @@ struct QuickPointFinder
 
 
 
-    __forceinline  void NewTrim::AddFixedFace (int a, int b, int c)
+    inline  void NewTrim::AddFixedFace (int a, int b, int c)
     {
     faces.push_back (a);
     faces.push_back (b);
     faces.push_back (c);
     }
 
-    __forceinline  bool NewTrim::AddFixFaceWithEdges (int a, int b, int c)
+    inline  bool NewTrim::AddFixFaceWithEdges (int a, int b, int c)
     {
     if (IncrementMarkedEdgeCount (a, b) > 2)
         {

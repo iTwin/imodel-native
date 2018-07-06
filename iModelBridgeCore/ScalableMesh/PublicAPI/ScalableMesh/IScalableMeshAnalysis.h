@@ -11,8 +11,8 @@
 
 /*__PUBLISH_SECTION_START__*/
 #include <ScalableMesh/ScalableMeshDefs.h>
-#include <Geom\Polyface.h>
-#include <Bentley\RefCounted.h>
+#include <Geom/Polyface.h>
+#include <Bentley/RefCounted.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/ClipVector.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
@@ -87,7 +87,7 @@ class ISMGridVolume
         bool m_bInitialised;
     };
 
-class IScalableMeshAnalysis abstract : public RefCountedBase
+class IScalableMeshAnalysis  : public RefCountedBase
     {
     protected:
         virtual DTMStatusInt _ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener) = 0;

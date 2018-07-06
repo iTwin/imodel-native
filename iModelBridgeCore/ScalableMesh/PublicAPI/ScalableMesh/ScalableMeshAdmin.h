@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <DgnPlatform/DgnPlatform.h>
-#include <ScalableMesh\IScalableMeshTextureGenerator.h>
+#include <ScalableMesh/IScalableMeshTextureGenerator.h>
 
 /*--------------------------------------------------------------------------------------+
 |   Header File Dependencies

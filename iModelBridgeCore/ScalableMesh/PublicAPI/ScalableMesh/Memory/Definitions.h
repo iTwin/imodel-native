@@ -6,7 +6,7 @@
 |       $Date: 2011/08/19 13:51:11 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,10 +19,14 @@
  //   #error "Export name conflict with another definition of the same name"
 #endif
 
+#if _WIN32
 #ifdef __BENTLEYSTM_BUILD__ //BENTLEY_SCALABLEMESH_MEMORY_EXPORTS
     #define MEMORY_DLLE __declspec(dllexport)
 #else
     #define MEMORY_DLLE __declspec(dllimport)
+#endif
+#else
+    #define MEMORY_DLLE
 #endif
 
 

@@ -22,9 +22,10 @@
 
 #include "ScalableMeshQuery.h"
 //#include "InternalUtilityFunctions.h"
-#include "Edits\\ClipUtilities.h"
+#include "Edits/ClipUtilities.h"
 #include <json/json.h>
 
+USING_NAMESPACE_IMAGEPP
 // This define does not work when it is set to 10000 and a dataset of 120000 is used
 #define MAX_POINTS_PER_DTM 10000
 #define MAX_FEATURES_PER_DTM 10000
@@ -408,7 +409,7 @@ template <class POINT> int ScalableMeshFixResolutionViewPointQuery<POINT>::_Quer
                                                             
         if (m_scmIndexPtr->IsEmpty() == false)
             {                    
-            __int64 nbObjectsForLevel;            
+            int64_t nbObjectsForLevel;            
             int     resolutionIndex = 0;
             
             size_t  nbResolution = m_scmIndexPtr->GetDepth();        
@@ -779,7 +780,7 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
 |ScalableMeshContextMeshQuery::ScalableMeshContextMeshQuery
 +----------------------------------------------------------------------------*/
     template <class POINT> ScalableMeshContextMeshQuery<POINT>::ScalableMeshContextMeshQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr)
-        : ScalableMeshViewDependentMeshQuery(pointIndexPtr)
+        : ScalableMeshViewDependentMeshQuery<POINT>(pointIndexPtr)
     {          
     }       
 
@@ -1253,21 +1254,37 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(m_meshNode->GetPtsIndicePtr());
 
         ScalableMeshMeshWithGraphPtr meshPtr;
+        ScalableMeshMeshPtr myMeshPtr;
+        if (m_meshNode->IsFromCesium())
+        {
+            myMeshPtr = ScalableMeshMesh::Create();
+            myMeshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
+            myMeshPtr->RemoveDuplicates();
+        }
         if (graphPtr->GetSize() > 1)
            meshPtr = ScalableMeshMeshWithGraph::Create(graphPtr->EditData(), ArePoints3d());
         else
             {
             MTGGraph * graph = new MTGGraph();
             bvector<int> componentPointsId;
-            CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
+
+
+            if (m_meshNode->IsFromCesium())
+            {
+                CreateGraphFromIndexBuffer(graph, (const long*)myMeshPtr->GetFaceIndexes(), (int)myMeshPtr->GetNbFaceIndexes(), (int)myMeshPtr->GetNbPoints(), componentPointsId, myMeshPtr->GetPoints());
+            }
+            else
+                CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
 
             meshPtr = ScalableMeshMeshWithGraph::Create(graph, ArePoints3d());
             }
 
 
         
-        int status = meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
-        assert(status == SUCCESS);
+        int status = m_meshNode->IsFromCesium() ?
+            meshPtr->AppendMesh(myMeshPtr->GetNbPoints(), myMeshPtr->EditPoints(), myMeshPtr->GetNbFaceIndexes(), myMeshPtr->GetFaceIndexes(), 0, 0, 0, 0, 0, 0) :
+            meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);;
+        assert(status == SUCCESS); 
         meshP = meshPtr.get();
         }
     else
@@ -1329,7 +1346,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
 
                         if (anythingToApply)
                             {
-                            clipDiffSet.ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
+                            clipDiffSet.template ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
                                                                                     toLoadUv, toLoadUvIndex, toLoadUvCount,
                                                                                     dataPoints.data(), dataPoints.size(),
                                                                                     dataFaceIndexes.data(), dataFaceIndexes.size(),
@@ -1349,7 +1366,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
                             {
                             if (diffSet.clientID == clipId)
                                 {
-                                diffSet.ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes, 
+                                diffSet.template ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes, 
                                                                toLoadUv, toLoadUvIndex, toLoadUvCount, 
                                                                dataPoints.data(), dataPoints.size(),
                                                                dataFaceIndexes.data(), dataFaceIndexes.size(),
@@ -1462,22 +1479,38 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(m_meshNode->GetPtsIndicePtr());
 
         ScalableMeshMeshWithGraphPtr meshPtr;
+        ScalableMeshMeshPtr myMeshPtr;
+        if (m_meshNode->IsFromCesium())
+        {
+            myMeshPtr = ScalableMeshMesh::Create();
+            myMeshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
+            myMeshPtr->RemoveDuplicates();
+        }
         if (graphPtr->GetSize() > 1)
             meshPtr = ScalableMeshMeshWithGraph::Create(graphPtr->EditData(), ArePoints3d());
         else
             {
             MTGGraph * graph = new MTGGraph();
             bvector<int> componentPointsId;
-            CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
+            if (m_meshNode->IsFromCesium())
+            {
+                CreateGraphFromIndexBuffer(graph, (const long*)myMeshPtr->GetFaceIndexes(), (int)myMeshPtr->GetNbFaceIndexes(), (int)myMeshPtr->GetNbPoints(), componentPointsId, myMeshPtr->GetPoints());
+            }
+            else
+                CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
 
             meshPtr = ScalableMeshMeshWithGraph::Create(graph, ArePoints3d());
             }
 
 
 
-        int status = meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
+        int status = m_meshNode->IsFromCesium() ? 
+            meshPtr->AppendMesh(myMeshPtr->GetNbPoints(), myMeshPtr->EditPoints(), myMeshPtr->GetNbFaceIndexes(), myMeshPtr->GetFaceIndexes(), 0, 0, 0, 0, 0, 0) :
+            meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);;
         assert(status == SUCCESS);
         meshP = meshPtr.get();
+        myMeshPtr = nullptr;
+
         }
     else
         {
@@ -2051,7 +2084,7 @@ template <class POINT> void ScalableMeshCachedMeshNode<POINT>::LoadMesh(bool loa
 
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
-    : ScalableMeshNode(nodePtr), m_invertClips(false), m_loadTexture(false)
+    : ScalableMeshNode<POINT>(nodePtr), m_invertClips(false), m_loadTexture(false)
 {
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     m_cachedDisplayMeshData = meshNode->GetDisplayMeshes(true);
@@ -2066,7 +2099,7 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
     }
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, Transform reprojectionTransform)
-    : ScalableMeshNode(nodePtr), m_invertClips(false), m_loadTexture(false)
+    : ScalableMeshNode<POINT>(nodePtr), m_invertClips(false), m_loadTexture(false)
     {
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);    
     m_cachedDisplayMeshData = meshNode->GetDisplayMeshes(true);
@@ -2082,7 +2115,7 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
     }
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, const IScalableMesh* scalableMesh)
-    : ScalableMeshNode(nodePtr), m_scalableMeshP(scalableMesh), m_invertClips(false), m_loadTexture(false)
+    : ScalableMeshNode<POINT>(nodePtr), m_scalableMeshP(scalableMesh), m_invertClips(false), m_loadTexture(false)
 {
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     m_cachedDisplayMeshData = meshNode->GetDisplayMeshes(true);
@@ -2524,7 +2557,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                                            indicesP, nbFaceIndices,
                                            uvPtr, uvIndicesP, nbUvs,
                                            centroid);
-
+#ifndef LINUX_SCALABLEMESH_BUILD
 #ifndef NDEBUG
                     bool dbg = false;
 
@@ -2550,6 +2583,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                         fwrite(toLoadFaceIndexes, sizeof(int32_t), faceCount, meshAfterClip);
                         fclose(meshAfterClip);
                         }
+#endif
 #endif
 
                     for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
@@ -2954,7 +2988,7 @@ template <class POINT> DRange3d ScalableMeshNode<POINT>::_GetContentExtent() con
     return range;
     }
 
-template <class POINT> __int64 ScalableMeshNode<POINT>::_GetNodeId() const
+template <class POINT> int64_t ScalableMeshNode<POINT>::_GetNodeId() const
     {
     LOAD_NODE
 
@@ -3530,8 +3564,8 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
         PtToPtConverter::Transform(points, &(*pointsPtr)[0], pointsPtr->size());
         RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
         meshP = ScalableMeshMeshWithGraph::Create(pointsPtr->size(), points, m_node->m_nodeHeader.m_nbFaceIndexes, (int32_t*)(&pts[0] + pointsPtr->size()), 0, nullptr, nullptr, graphPtr->EditData(), ArePoints3d(), 0, 0, 0);
-        delete pts;
-        delete points;
+        delete[] pts;
+        delete[] points;
         }
     else
         {

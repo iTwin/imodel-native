@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/XYZAsciiSource.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -58,11 +58,11 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 template <>
 struct FileAnalysisStreamTrait<XYZAsciiStream>
     {
-    typedef __int64                     SizeType;
-    typedef __int64                     OffsetType;
+    typedef int64_t                     SizeType;
+    typedef int64_t                     OffsetType;
     typedef streampos                   PositionType;
     typedef size_t                      ReadCountType;
-    typedef __int64                     ReadSizeType;
+    typedef int64_t                     ReadSizeType;
 
     static const OffsetType             ZERO_OFFSET = 0;
 

@@ -25,19 +25,30 @@
 #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Import;
 #endif //!BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE
 
+#if _WIN32
 #ifdef __BENTLEYSTM_BUILD__ 
     #define BENTLEY_SM_EXPORT __declspec(dllexport)
 #else
     #define BENTLEY_SM_EXPORT __declspec(dllimport)
 #endif
+#else
+    #define BENTLEY_SM_EXPORT
+#endif
     
 
+#if _WIN32
 #ifdef __BENTLEYSTMIMPORT_BUILD__ 
 #define BENTLEY_SM_IMPORT_EXPORT __declspec(dllexport)
 #else
 #define BENTLEY_SM_IMPORT_EXPORT __declspec(dllimport)
 #endif
+#else
+    #define BENTLEY_SM_IMPORT_EXPORT
+#endif
 
+#if !defined(_WIN32)
+typedef uint8_t byte;
+#endif
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -63,6 +74,20 @@ enum ScalableMeshMesherType
     SCM_MESHER_3D_DELAUNAY = 2,
     SCM_MESHER_TETGEN = 3,
     SCM_MESHER_QTY,
+    };
+
+enum ScalableMeshCreationMethod
+    {
+    SCM_CREATION_METHOD_ONE_SPLIT = 0,     //Old method indexing the data with the final split threshold (e.g. : 10000)
+    SCM_CREATION_METHOD_BIG_SPLIT_CUT, //New method which uses bigger split during the indexing phase.
+    SCM_CREATION_METHOD_QTY,
+    };
+
+enum ScalableMeshCreationCompleteness
+    {
+    SCM_CREATION_COMPLETENESS_INDEX_ONLY = 0,  //Only create the index without any meshing operations.
+    SCM_CREATION_COMPLETENESS_FULL,            //Do complete creation.
+    SCM_CREATION_COMPLETENESS_QTY,
     };
 
 enum ScalableMeshSaveType
@@ -190,6 +215,18 @@ struct SMRasterTile
     uint64_t m_resolutionInd;
     };
     
+
+enum class SMGenerateOperation
+    {
+    SCM_FILTER_DUMB = 0,
+    SCM_FILTER_PROGRESSIVE_DUMB = 1,
+    SCM_FILTER_DUMB_MESH = 2,
+    SCM_FILTER_CGAL_SIMPLIFIER = 3,
+    SCM_FILTER_QTY,
+    };
+
+
+
 #define MEAN_SCREEN_PIXELS_PER_POINT 100
 
 

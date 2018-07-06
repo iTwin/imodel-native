@@ -6,7 +6,7 @@
 |       $Date: 2011/11/07 14:27:01 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,7 +55,7 @@ private:
     virtual TransfoModelBase*           _CreateInverse                 () const = 0;
 
 public:
-    virtual                             ~TransfoModelBase              () = 0 {}
+    virtual                             ~TransfoModelBase              () {}
     };
 
 

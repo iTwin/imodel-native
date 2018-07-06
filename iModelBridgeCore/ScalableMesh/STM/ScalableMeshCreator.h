@@ -25,12 +25,14 @@
 // NTERAY: A whole lot of dependencies for a single header... This is bad. Reduce these to strict minimum.
 
 #include <ctime> //benchmarking
+#if _WIN32
 #include <windows.h> //for showing info.
-
+#endif
 
 #include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/IScalableMeshCreator.h>
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
+#include <ScalableMesh/IScalableMeshSourceCreatorWorker.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include "ScalableMeshProgress.h"
 
@@ -56,7 +58,7 @@
 
 #include "ScalableMeshEditListener.h"
 #include "ScalableMeshStorage.h"
-#include "Stores\SMSQLiteStore.h"
+#include "Stores/SMSQLiteStore.h"
 
 //#include <HGF3DExtent.h>
 
@@ -91,7 +93,12 @@ typedef SMMeshIndex <PointType, PointIndexExtentType> MeshIndexType;
 BENTLEY_SM_EXPORT void RegisterDelayedImporters();
 inline bool fileExist(const WChar* fileName)
     {
+#if _WIN32
     ifstream file(fileName, ios::in | ios::binary);
+#else
+    Utf8String fileUtf8(fileName);
+    ifstream file(fileUtf8.c_str(), ios::in | ios::binary);
+#endif
     return file.good() && (char_traits<char>::eof() != file.peek());
     }
 
@@ -105,6 +112,7 @@ struct IScalableMeshCreator::Impl
     private :
         
         friend struct                       IScalableMeshCreator;
+        friend struct                       IScalableMeshSourceCreatorWorker::Impl;
         friend struct                       IScalableMeshSourceCreator::Impl;
         friend struct                       IScalableMeshNodeCreator::Impl;
 
@@ -125,13 +133,15 @@ struct IScalableMeshCreator::Impl
 
 
         //CREATOR2
-
+#ifndef LINUX_SCALABLEMESH_BUILD
         static DataSourceManager            s_dataSourceManager;
+#endif
 
         BENTLEY_SM_EXPORT StatusInt                           GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, const WString& url);
 
-        BENTLEY_SM_EXPORT StatusInt                           CreateDataIndex(HFCPtr<MeshIndexType>&                                    pDataIndex,
-                                                            bool needBalancing = false);
+        BENTLEY_SM_EXPORT StatusInt                           CreateDataIndex(HFCPtr<MeshIndexType>& pDataIndex,
+                                                                              bool                   needBalancing = false, 
+                                                                              uint32_t               splitThreshold = 10000);
 
 
 
@@ -165,7 +175,9 @@ struct IScalableMeshCreator::Impl
 
         template <typename PointIndex>
          StatusInt                    BalanceDown(PointIndex& pointIndex,
-                                                 size_t      depthBeforePartialUpdate);
+                                                  size_t      depthBeforePartialUpdate, 
+                                                  bool        splitNode = false,
+                                                  bool        propagateDownImmediately = true);
 
         template <typename PointIndex>
           StatusInt                    Mesh(PointIndex&                             pointIndex);
@@ -187,7 +199,7 @@ struct IScalableMeshCreator::Impl
         BENTLEY_SM_EXPORT explicit                            Impl                           (const WChar*                          scmFileName);
         BENTLEY_SM_EXPORT explicit                            Impl                           (const IScalableMeshPtr&                        iDTMFilePtr);
 
-        BENTLEY_SM_EXPORT                                    ~Impl                          ();
+        BENTLEY_SM_EXPORT                                     ~Impl                          ();
 
         BENTLEY_SM_EXPORT const GeoCoords::GCS&               GetGCS                         () const;
 
@@ -237,9 +249,9 @@ StatusInt IScalableMeshCreator::Impl::Filter  (PointIndex&     pointIndex,
 * @bsimethod                                                  Mathieu.St-Pierre   08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename PointIndex>
-StatusInt IScalableMeshCreator::Impl::BalanceDown  (PointIndex& pointIndex, size_t depthBeforePartialUpdate)
+StatusInt IScalableMeshCreator::Impl::BalanceDown  (PointIndex& pointIndex, size_t depthBeforePartialUpdate, bool splitNode, bool propagateDownImmediately)
     {
-    pointIndex.BalanceDown(depthBeforePartialUpdate);
+    pointIndex.BalanceDown(depthBeforePartialUpdate, false, splitNode, propagateDownImmediately);
     return BSISUCCESS;
     }
 

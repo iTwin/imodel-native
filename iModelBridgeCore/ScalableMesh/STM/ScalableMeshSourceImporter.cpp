@@ -1017,6 +1017,7 @@ int IScalableMeshSourceImporter::Impl::TraverseSourceCollection  (SourcesImporte
 
 void IScalableMeshSourceImporter::Impl::ShowMessageBoxWithTimes(double meshingDuration, double filteringDuration, double stitchingDuration)
     {
+#if _WIN32
     string meshing = to_string(meshingDuration);
     string filtering = to_string(filteringDuration);
     string stitching = to_string(stitchingDuration);
@@ -1026,6 +1027,7 @@ void IScalableMeshSourceImporter::Impl::ShowMessageBoxWithTimes(double meshingDu
     msg += "Stitching: "; msg += stitching; msg += " min.\n";
 
     MessageBoxA(NULL, msg.c_str(), "Information", MB_ICONINFORMATION | MB_OK);
+#endif
     }
 
 

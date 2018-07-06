@@ -1,6 +1,7 @@
 #include "ScalableMeshPCH.h"
 
 #include "ScalableMeshScheduler.h"
+#if _WIN32
 #include <windows.h>
 #ifndef NDEBUG
 const DWORD MS_VC_EXCEPTION = 0x406D1388;
@@ -30,6 +31,7 @@ void SetThreadName(DWORD dwThreadID, char* threadName)
     __except (EXCEPTION_EXECUTE_HANDLER)
         {}
     }
+#endif
 #endif
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -91,8 +93,10 @@ void ScalableMeshThreadPool::_StartWatcherThread()
     {
     watcherThread = std::thread(std::bind(&ScalableMeshThreadPool::_Watch, this));
 #ifndef NDEBUG
+#if _WIN32
     DWORD ThreadId = ::GetThreadId(static_cast<HANDLE>(watcherThread.native_handle()));
     SetThreadName(ThreadId, "SM Watcher Thread");
+#endif
 #endif
     hasWatcherThread = true;
     }
@@ -102,9 +106,11 @@ void ScalableMeshThreadPool::_StartWork(uint8_t thread)
     auto it = std::find(freeWorkers.begin(), freeWorkers.end(), thread);
     if (it != freeWorkers.end()) freeWorkers.erase(it);
     workerThreads[thread] = std::thread(std::bind(&SMTask::Execute, &assignedTasks[thread]));
+#if _WIN32
 #ifndef NDEBUG
     DWORD ThreadId = ::GetThreadId(static_cast<HANDLE>(workerThreads[thread].native_handle()));
     SetThreadName(ThreadId, "SM Worker Thread");
+#endif
 #endif
     }
 

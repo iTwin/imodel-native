@@ -1,5 +1,6 @@
 #include "ScalableMeshPCH.h"
 #include "ScalableMeshGraph.h"
+#include <set>
 //#define ENABLE_EXTRA_ASSERTS
 
 #ifndef NDEBUG
@@ -577,8 +578,7 @@ void CreateGraphFromIndexBuffer(MTGGraph* graphP, const long* meshFaces, int cou
     {
     std::ofstream log;
     int nFrem = 0;
-    int vertexLabel = graphP->DefineLabel(0, MTG_LabelMask_VertexProperty, -1);
-    vertexLabel = vertexLabel;
+    graphP->DefineLabel(0, MTG_LabelMask_VertexProperty, -1);
     std::vector<std::pair<long, MTGNodeId>>** edgeLabels = new std::vector<std::pair<long, MTGNodeId>>*[pointCount]();
     std::fill_n(edgeLabels, pointCount, nullptr);
     std::vector<int> componentLabels;

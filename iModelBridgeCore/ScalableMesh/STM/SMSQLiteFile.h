@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Bentley/RefCounted.h>
-#include <BeSQLite\BeSQLite.h>
-#include <ScalableMesh/import/DataSQLite.h>
+#include <BeSQLite/BeSQLite.h>
+#include <ScalableMesh/Import/DataSQLite.h>
 #include "ScalableMeshDb.h"
 #include <json/json.h>
 

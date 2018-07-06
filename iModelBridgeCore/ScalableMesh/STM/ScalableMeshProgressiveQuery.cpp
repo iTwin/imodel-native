@@ -12,7 +12,11 @@
 
 #include <ScalableMeshPCH.h>
 #undef static_assert
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <DgnPlatform/DgnPlatformLib.h>
+#else
+#include <DgnPlatform/ClipVector.h>
+#endif
 #include "ImagePPHeaders.h"
 //#define GPU
 USING_NAMESPACE_IMAGEPP;
@@ -456,8 +460,10 @@ private:
     atomic<bool>                  m_run;
 
     int                           m_numWorkingThreads;
-    std::thread*                  m_workingThreads;           
+    std::thread*                  m_workingThreads;   
+#ifndef LINUX_SCALABLEMESH_BUILD        
     DgnPlatformLib::Host*         m_host; 
+#endif
                
     struct InLoadingNode;
 
@@ -559,7 +565,11 @@ private:
             }
         }
 
-    void QueryThread(DgnPlatformLib::Host* hostToAdopt, int threadId)
+    void QueryThread(
+#ifndef LINUX_SCALABLEMESH_BUILD
+DgnPlatformLib::Host* hostToAdopt, 
+#endif
+int threadId)
         {        
 #ifdef VANCOUVER_API
         DgnPlatformLib::AdoptHost(*hostToAdopt);
@@ -752,7 +762,9 @@ public:
         m_run = false;
         m_processingQueryIndexes.resize(m_numWorkingThreads);
 
-        m_host = nullptr;        
+#ifndef LINUX_SCALABLEMESH_BUILD
+        m_host = nullptr; 
+#endif       
         }
 
     virtual ~QueryProcessor()
@@ -890,8 +902,8 @@ public:
 
             //m_processingQueriesMutex.lock();                    
 
-            auto& queryIter(m_processingQueries.begin());     
-            auto& queryIterEnd(m_processingQueries.end());     
+            auto queryIter(m_processingQueries.begin());     
+            const auto& queryIterEnd(m_processingQueries.end());     
 
             while (queryIter != queryIterEnd)
                 {
@@ -914,8 +926,10 @@ public:
             
         void Start()
             { 
+#ifndef LINUX_SCALABLEMESH_BUILD
             if (m_host == nullptr)
                 m_host = DgnPlatformLib::QueryHost();
+#endif
 
             if (m_run == false)
                 {
@@ -926,14 +940,22 @@ public:
                     {                                                        
                     if (!s_delayJoinThread)
                         {                
-                        m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, m_host, threadId);
+                        m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this,
+#ifndef LINUX_SCALABLEMESH_BUILD
+ m_host,
+#endif
+ threadId);
                         }
                     else
                         {                                              
                         if (m_workingThreads[threadId].joinable())                            
                             m_workingThreads[threadId].join();
 
-                        m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, m_host, threadId);
+                        m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this,
+#ifndef LINUX_SCALABLEMESH_BUILD
+ m_host, 
+#endif
+threadId);
                         }
                     }
                 }
@@ -1234,8 +1256,9 @@ class NewQueryStartingNodeProcessor
         bvector<bvector<IScalableMeshCachedDisplayNodePtr>>                m_lowerResOverviewNodes;
         bvector<bvector<IScalableMeshCachedDisplayNodePtr>>                m_requiredMeshNodes;    
         bvector<bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>> m_toLoadNodes;
-
+#ifndef LINUX_SCALABLEMESH_BUILD
         DgnPlatformLib::Host* m_host;
+#endif
                         
         int          m_numWorkingThreads;
         std::thread* m_workingThreads;    
@@ -1255,8 +1278,9 @@ class NewQueryStartingNodeProcessor
             m_requiredMeshNodes.resize(m_numWorkingThreads);        
             m_toLoadNodes.resize(m_numWorkingThreads);
             m_workingThreads = new std::thread[m_numWorkingThreads];
-
+#ifndef LINUX_SCALABLEMESH_BUILD
             m_host = nullptr;
+#endif
             }
 
         virtual ~NewQueryStartingNodeProcessor()
@@ -1274,7 +1298,11 @@ class NewQueryStartingNodeProcessor
                 }
             }
 
-        void QueryThread(DgnPlatformLib::Host* hostToAdopt, size_t threadId, IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
+        void QueryThread(
+#ifndef LINUX_SCALABLEMESH_BUILD
+DgnPlatformLib::Host* hostToAdopt, 
+#endif
+size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr* displayCacheManagerPtr)
             {  
 #ifdef VANCOUVER_API
             DgnPlatformLib::AdoptHost(*hostToAdopt);
@@ -1293,15 +1321,16 @@ class NewQueryStartingNodeProcessor
                     {
                     DRange3d range3d(DRange3d::NullRange());
 
-                    FindOverview(m_lowerResOverviewNodes[threadId], range3d, m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, scalableMeshPtr, displayCacheManagerPtr);
+                    FindOverview(m_lowerResOverviewNodes[threadId], range3d, m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
                     }
                 else
                     {                
-                    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd], scalableMeshPtr.get()));
+                    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd], scalableMeshPtr->get()));
               
-                    if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr.get(), m_newQuery->m_loadTexture) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
-                        {            
-                        FindOverview(m_lowerResOverviewNodes[threadId], meshNodePtr->GetNodeExtent(), m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, scalableMeshPtr, displayCacheManagerPtr);
+                    if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr->get(), m_newQuery->m_loadTexture) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
+                        {  
+                        DRange3d range3d = meshNodePtr->GetNodeExtent();          
+                        FindOverview(m_lowerResOverviewNodes[threadId], range3d, m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
                         }
                     else
                         {
@@ -1314,11 +1343,12 @@ class NewQueryStartingNodeProcessor
                 {                      
                 if (nodeInd % m_numWorkingThreads != threadId) continue;
                 
-                ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_foundNodes->GetNodes()[nodeInd], scalableMeshPtr.get()));
+                ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_foundNodes->GetNodes()[nodeInd], scalableMeshPtr->get()));
                               
-                if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr.get(), m_newQuery->m_loadTexture) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
-                    {                
-                    FindOverview(m_lowerResOverviewNodes[threadId], meshNodePtr->GetNodeExtent(), m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, scalableMeshPtr, displayCacheManagerPtr);
+                if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr->get(), m_newQuery->m_loadTexture) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
+                    {        
+                    DRange3d range3d = meshNodePtr->GetNodeExtent();          
+                    FindOverview(m_lowerResOverviewNodes[threadId], range3d, m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
                                         
                     m_toLoadNodes[threadId].push_back(m_foundNodes->GetNodes()[nodeInd]);
                     }
@@ -1352,11 +1382,12 @@ class NewQueryStartingNodeProcessor
                      IScalableMeshPtr&                                          scalableMeshPtr, 
                      IScalableMeshDisplayCacheManagerPtr&                       displayCacheManagerPtr)
             {       
-
+#ifndef LINUX_SCALABLEMESH_BUILD
             if (m_host == nullptr)
                 {
                 m_host = DgnPlatformLib::QueryHost();
                 }
+#endif
             
             m_nodesToSearch = &nodesToSearch;
             m_nodeToSearchCurrentInd = nodeToSearchCurrentInd;
@@ -1365,8 +1396,12 @@ class NewQueryStartingNodeProcessor
             m_activeClips = &activeClips;
 
             for (size_t threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
-                {                                                                                
-                m_workingThreads[threadId] = std::thread(&NewQueryStartingNodeProcessor::QueryThread, this, m_host, threadId, scalableMeshPtr, displayCacheManagerPtr);
+                {                                                                               
+                m_workingThreads[threadId] = std::thread(&NewQueryStartingNodeProcessor::QueryThread, this,
+#ifndef LINUX_SCALABLEMESH_BUILD
+ m_host, 
+#endif
+threadId, &scalableMeshPtr, &displayCacheManagerPtr);  
                 }
 
             for (size_t threadInd = 0; threadInd < m_numWorkingThreads; threadInd++)

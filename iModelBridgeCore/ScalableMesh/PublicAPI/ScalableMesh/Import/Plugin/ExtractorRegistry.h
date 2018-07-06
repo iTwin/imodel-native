@@ -6,7 +6,7 @@
 |       $Date: 2011/08/02 14:59:04 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,8 +56,9 @@ public:
     struct AutoRegister 
         : public RAIIAutoRegisterMixin<AutoRegister<CreatorT>, CreatorT, ExtractorRegistry, typename CreatorT::ID> 
         {
+        typedef RAIIAutoRegisterMixin<AutoRegister<CreatorT>, CreatorT, ExtractorRegistry, typename CreatorT::ID>  super_class;
         explicit                                AutoRegister                       () {}
-        explicit                                AutoRegister                       (registry_type&                      registry) 
+        explicit                                AutoRegister                       (typename super_class::registry_type&                      registry) 
             : super_class(registry) {}
         };
 

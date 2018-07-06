@@ -6,7 +6,7 @@
 |       $Date: 2011/11/07 14:26:56 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,7 +30,7 @@ private:
         return s_GetClassID();
         }
 public:
-    virtual                             ~TransfoModelMixinBase         () = 0 {}
+    virtual                             ~TransfoModelMixinBase         () {}
 
     static ClassID                      s_GetClassID                   () 
         {

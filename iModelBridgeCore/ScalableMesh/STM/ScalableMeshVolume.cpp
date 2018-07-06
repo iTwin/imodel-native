@@ -148,8 +148,9 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
 
     bvector<bvector<DPoint3d>> coverages;
     IScalableMeshPtr targetedMesh = m_scmPtr;
-    m_scmPtr->GetAllCoverages(coverages);
-    if (!coverages.empty()) targetedMesh = m_scmPtr->GetTerrainSM();
+
+   // m_scmPtr->GetAllCoverages(coverages);
+    //if (!coverages.empty()) targetedMesh = m_scmPtr->GetTerrainSM();
 
     IScalableMeshMeshQueryPtr meshQueryInterface = (targetedMesh)->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
     bvector<IScalableMeshNodePtr> returnedNodes;
@@ -648,7 +649,6 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
                 ptCP[visitor.ClientPointIndex()[1]].x, ptCP[visitor.ClientPointIndex()[1]].y, ptCP[visitor.ClientPointIndex()[1]].z,
                 ptCP[visitor.ClientPointIndex()[2]].x, ptCP[visitor.ClientPointIndex()[2]].y, ptCP[visitor.ClientPointIndex()[2]].z);
             size_t NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pOutputFileStream);
-            NbWrittenChars = NbWrittenChars;
             HASSERT(NbWrittenChars == NbChars);
             }
 
@@ -916,7 +916,7 @@ double ScalableMeshVolume::_ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr 
                     triangle2[2] = drapeSegments2[j].m_segment.point[1];
                     builder2->AddTriStrip(triangle2, NULL, NULL, 3, true);
 
-                    DSegment3dSizeSize segmentTerrain(drapeSegments2[j].m_segment, drapeSegments2[j].m_facetReadIndex, NULL);
+                    DSegment3dSizeSize segmentTerrain(drapeSegments2[j].m_segment, drapeSegments2[j].m_facetReadIndex, 0);
                     segmentsTerrain.push_back(segmentTerrain);
                     areTriangle = true;
                     }
@@ -1020,7 +1020,7 @@ double ScalableMeshVolume::_ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr 
 
                 //triangle[0]
                 //builder->AddTriStrip(triangle, NULL, NULL, 3, true);
-                DSegment3dSizeSize segmentTerrain(drapeSegments23[j].m_segment, drapeSegments23[j].m_facetReadIndex, NULL);
+                DSegment3dSizeSize segmentTerrain(drapeSegments23[j].m_segment, drapeSegments23[j].m_facetReadIndex, 0);
                 segmentsTerrain.push_back(segmentTerrain);
                 areTriangle=true;
                 //points.push_back(drapeSegments[j].m_segment.point[0]);

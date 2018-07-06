@@ -41,8 +41,9 @@ using namespace BENTLEY_NAMESPACE_NAME::TerrainModel;
 
 template class ScalableMesh2DDelaunayMesher<DPoint3d, DRange3d>;
 
-void ProcessFeatureDefinitions(bvector<bvector<DPoint3d>>& voidFeatures, bvector<DTMFeatureType>& types, bvector<bvector<DPoint3d>>& islandFeatures, const std::vector<DPoint3d>& nodePoints, BC_DTM_OBJ* dtmObjP, bvector<bvector<int32_t>>& featureDefs)
+void ProcessFeatureDefinitions(bvector<bvector<DPoint3d>>& voidFeatures, bvector<DTMFeatureType>& types, bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<int>>& idsOfVoidIslandFeatures, const std::vector<DPoint3d>& nodePoints, BC_DTM_OBJ* dtmObjP, bvector<bvector<int32_t>>& featureDefs)
     {
+    idsOfVoidIslandFeatures.resize(2);
     for (size_t i = 0; i < featureDefs.size(); ++i)
         {
         bvector<DPoint3d> feature;
@@ -59,6 +60,7 @@ void ProcessFeatureDefinitions(bvector<bvector<DPoint3d>>& voidFeatures, bvector
                 {
                 if (!feature.back().AlmostEqual(feature.front())) feature.push_back(feature.front());
                 voidFeatures.push_back(feature);
+                idsOfVoidIslandFeatures[0].push_back((int)i);
                 }
             types.push_back((DTMFeatureType)featureDefs[i][0]);
             }
@@ -66,13 +68,14 @@ void ProcessFeatureDefinitions(bvector<bvector<DPoint3d>>& voidFeatures, bvector
             {
             if (!feature.back().AlmostEqual(feature.front())) feature.push_back(feature.front());
             islandFeatures.push_back(feature);
+            idsOfVoidIslandFeatures[1].push_back((int)i);
             }
-		else
-		    {
-			DTMFeatureType type = (DTMFeatureType)featureDefs[i][0];
-			bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, type, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
-		    }
-		}
+        else
+            {
+            DTMFeatureType type = (DTMFeatureType)featureDefs[i][0];
+            bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, type, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
+            }
+        }
     }
 
 int AddPolygonsToDTMObject(bvector<bvector<DPoint3d>>& polygons, DTMFeatureType type, BC_DTM_OBJ* dtmObjP)
@@ -96,102 +99,107 @@ int AddPolygonsToDTMObject(bvector<bvector<DPoint3d>>& polygons, DTMFeatureType 
     }
 
 //Limited case. If a void and an island exactly overlap, remove them both.
-void PruneFeatures(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<DPoint3d>>& voidFeatures, bvector<DTMFeatureType> types)
+void PruneFeatures(bvector<bvector<int>>& idsOfPrunedVoidIslandFeatures, bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<DPoint3d>>& voidFeatures, bvector<DTMFeatureType> types, bvector<bvector<int>>& idsOfVoidIslandFeatures)
     {
+    idsOfPrunedVoidIslandFeatures.resize(2);
+    bvector<bool> deleteIslands(islandFeatures.size());
+    bvector<bool> deleteVoids(voidFeatures.size());
+    for (auto& island : islandFeatures)
+    {
+        ICurvePrimitivePtr curvePtr;
+        CurveVectorPtr curveVectorPtr;
 
-	bvector<bool> deleteIslands(islandFeatures.size());
-	bvector<bool> deleteVoids(voidFeatures.size());
-	for (auto& island : islandFeatures)
-	{
-		ICurvePrimitivePtr curvePtr;
-		CurveVectorPtr curveVectorPtr;
+        curvePtr = ICurvePrimitive::CreateLineString(island);
+        curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
 
-		curvePtr = ICurvePrimitive::CreateLineString(island);
-		curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+        for (auto& hole : voidFeatures)
+        {
 
-		for (auto& hole : voidFeatures)
-	    {
+            bool allInsidePolygon = true;
+            for (size_t i = 0; i < hole.size() && allInsidePolygon; ++i)
+            {
+                auto classif = curveVectorPtr->PointInOnOutXY(hole[i]);
+                if (classif == CurveVector::InOutClassification::INOUT_Out) allInsidePolygon = false;
+            }
 
-			bool allInsidePolygon = true;
-			for (size_t i = 0; i < hole.size() && allInsidePolygon; ++i)
-			{
-				auto classif = curveVectorPtr->PointInOnOutXY(hole[i]);
-				if (classif == CurveVector::InOutClassification::INOUT_Out) allInsidePolygon = false;
-			}
+            if (allInsidePolygon)
+            {
 
-			if (allInsidePolygon)
-			{
+                bool allInsideVoid= true;
+                ICurvePrimitivePtr curvePtrVoid;
+                CurveVectorPtr curveVectorPtrVoid;
 
-				bool allInsideVoid= true;
-				ICurvePrimitivePtr curvePtrVoid;
-				CurveVectorPtr curveVectorPtrVoid;
-
-				curvePtrVoid = ICurvePrimitive::CreateLineString(hole);
-				curveVectorPtrVoid = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtrVoid);
-				for (size_t i = 0; i < island.size() && allInsidePolygon; ++i)
-				{
-					auto classif = curveVectorPtrVoid->PointInOnOutXY(island[i]);
-					if (classif == CurveVector::InOutClassification::INOUT_Out) allInsideVoid = false;
-				}
-				deleteIslands[&island - &islandFeatures[0]] = true;
-				deleteVoids[&hole - &voidFeatures[0]] = true;
-			}
-				
+                curvePtrVoid = ICurvePrimitive::CreateLineString(hole);
+                curveVectorPtrVoid = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtrVoid);
+                for (size_t i = 0; i < island.size() && allInsideVoid; ++i)
+                {
+                    auto classif = curveVectorPtrVoid->PointInOnOutXY(island[i]);
+                    if (classif == CurveVector::InOutClassification::INOUT_Out) allInsideVoid = false;
+                }
+                if (allInsideVoid)
+                {
+                    deleteIslands[&island - &islandFeatures[0]] = true;
+                    deleteVoids[&hole - &voidFeatures[0]] = true;
+                    idsOfPrunedVoidIslandFeatures[0].push_back(idsOfVoidIslandFeatures[0][&hole - &voidFeatures[0]]);
+                    idsOfPrunedVoidIslandFeatures[1].push_back(idsOfVoidIslandFeatures[1][&island - &islandFeatures[0]]);
+                }
+            }
+                
         }
 
-		}
+        }
 
 
-	bvector<bvector<DPoint3d>> newIslands;
-	bvector<bvector<DPoint3d>> newVoids;
-	bvector<DTMFeatureType> newTypes;
-	for (auto& island : islandFeatures)
-	{
-		if (!deleteIslands[&island - &islandFeatures[0]])
-			newIslands.push_back(island);
-	}
+    bvector<bvector<DPoint3d>> newIslands;
+    bvector<bvector<DPoint3d>> newVoids;
+    bvector<DTMFeatureType> newTypes;
+    for (auto& island : islandFeatures)
+    {
+        if (!deleteIslands[&island - &islandFeatures[0]])
+            newIslands.push_back(island);
+    }
 
-	for (auto& hole : voidFeatures)
-	{
-		if (!deleteVoids[&hole - &voidFeatures[0]])
-		{
-			newVoids.push_back(hole);
-			newTypes.push_back(types[&hole - &voidFeatures[0]]);
-		}
-	}
+    for (auto& hole : voidFeatures)
+    {
+        if (!deleteVoids[&hole - &voidFeatures[0]])
+        {
+            newVoids.push_back(hole);
+            newTypes.push_back(types[&hole - &voidFeatures[0]]);
+        }
+    }
 
-	islandFeatures.swap(newIslands);
-	voidFeatures.swap(newVoids);
-	types.swap(newTypes);
+    islandFeatures.swap(newIslands);
+    voidFeatures.swap(newVoids);
+    types.swap(newTypes);
     }
 
 int AddIslandsToDTMObject(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<DPoint3d>>& voidFeatures, bvector<bvector<DPoint3d>>& boundary, BC_DTM_OBJ* dtmObjP)
     {
     VuPolygonClassifier vu(1e-8, 0);
     int status = DTM_SUCCESS;
-	ICurvePrimitivePtr curvePtr;
-	CurveVectorPtr curveVectorPtr;
-	if (!boundary.empty())
-	{
-		curvePtr = ICurvePrimitive::CreateLineString(boundary.front());
-		curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
-	}
+    ICurvePrimitivePtr curvePtr;
+    CurveVectorPtr curveVectorPtr;
+    if (!boundary.empty())
+    {
+        curvePtr = ICurvePrimitive::CreateLineString(boundary.front());
+        curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+    }
 
     for (auto& island : islandFeatures)
         {
         bool intersect = false;
-		if (!boundary.empty())
-		{
-			bool allInsidePolygon = true;
-			for (size_t i = 0; i < island.size() && allInsidePolygon; ++i)
-			{
-				auto classif = curveVectorPtr->PointInOnOutXY(island[i]);
-				if (classif == CurveVector::InOutClassification::INOUT_Out) allInsidePolygon = false;
-			}
+        if (!boundary.empty())
+        {
+            bool allInsidePolygon = true;
+            for (size_t i = 0; i < island.size() && allInsidePolygon; ++i)
+            {
+                auto classif = curveVectorPtr->PointInOnOutXY(island[i]);
+                if (classif == CurveVector::InOutClassification::INOUT_Out) allInsidePolygon = false;
+            }
 
-			if (allInsidePolygon)
-				continue;
-		}
+            if (allInsidePolygon)
+                continue;
+        }
         for (auto& hole : voidFeatures)
             {
             vu.ClassifyAIntersectB(island, hole);
@@ -199,18 +207,18 @@ int AddIslandsToDTMObject(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bv
             for (; vu.GetFace(xyz);)
                 {
                 intersect = true;
-				if (!boundary.empty())
-				{
-					bool allInsidePolygon = true;
-					for (size_t i = 0; i < xyz.size() && allInsidePolygon; ++i)
-					{
-						auto classif = curveVectorPtr->PointInOnOutXY(xyz[i]);
-						if (classif == CurveVector::InOutClassification::INOUT_Out) allInsidePolygon = false;
-					}
+                if (!boundary.empty())
+                {
+                    bool allInsidePolygon = true;
+                    for (size_t i = 0; i < xyz.size() && allInsidePolygon; ++i)
+                    {
+                        auto classif = curveVectorPtr->PointInOnOutXY(xyz[i]);
+                        if (classif == CurveVector::InOutClassification::INOUT_Out) allInsidePolygon = false;
+                    }
 
-					if (allInsidePolygon)
-						continue;
-				}
+                    if (allInsidePolygon)
+                        continue;
+                }
                 status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::Island, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, (DPoint3d*)&(xyz[0]), (long)xyz.size());
                 assert(status == SUCCESS);
                 }

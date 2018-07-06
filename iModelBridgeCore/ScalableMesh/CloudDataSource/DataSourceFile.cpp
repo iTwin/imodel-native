@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "DataSourceFile.h"
 #include "DataSourceAccount.h"
+#include "DataSourceCached.h"
 
 
 DataSourceFile::DataSourceFile(DataSourceAccount *sourceAccount, const SessionName &session) : DataSource(sourceAccount, session)
@@ -20,7 +21,9 @@ DataSourceStatus DataSourceFile::open(const DataSourceURL & sourceURL, DataSourc
     std::wstring                filePath;
     //std::ios_base::open_mode    streamMode = std::ios_base::binary;
     BeFileAccess streamMode = BeFileAccess::ReadWrite;
+#ifdef VANCOUVER_API
     BeFileSharing streamSharing = BeFileSharing::None;
+#endif
     DataSourceStatus            status;
 
     status = Super::open(sourceURL, sourceMode);
@@ -41,7 +44,9 @@ DataSourceStatus DataSourceFile::open(const DataSourceURL & sourceURL, DataSourc
         {
         //streamMode |= std::ios_base::out;
         streamMode = BeFileAccess::Write;
+#ifdef VANCOUVER_API
         streamSharing = BeFileSharing::None;
+#endif
 
         // strip filename from path
         auto directoryPath = BeFileName::GetDirectoryName(filePath.c_str());
@@ -69,12 +74,14 @@ DataSourceStatus DataSourceFile::open(const DataSourceURL & sourceURL, DataSourc
         {
         //streamMode |= std::ios_base::in;
         streamMode = BeFileAccess::Read;
+#ifdef VANCOUVER_API
         streamSharing = BeFileSharing::Read;
+#endif
         break;
         }
     }
 
-    if (stream.IsOpen() || BeFileStatus::Success == stream.Open(filePath.c_str(), streamMode, streamSharing))
+    if (stream.IsOpen() || BeFileStatus::Success == OPEN_FILE_WITH_SHARING(stream,filePath.c_str(), streamMode, streamSharing))
         {
         return DataSourceStatus();
         }
@@ -146,11 +153,11 @@ DataSourceStatus DataSourceFile::read(Buffer *dest, DataSize destSize, DataSize 
     if (inputSize > destSize)
         return DataSourceStatus(DataSourceStatus::Status_Error_Dest_Buffer_Too_Small);
 
-    UInt32 outputSize = 0;
+    uint32_t outputSize = 0;
     if (inputSize > 0)
     {
         //getStream().read(reinterpret_cast<char *>(dest), inputSize);
-        if (BeFileStatus::Success == getStream().Read(reinterpret_cast<char *>(dest), &outputSize, inputSize))
+        if (BeFileStatus::Success == getStream().Read(reinterpret_cast<char *>(dest), &outputSize, (uint32_t)inputSize))
             {
             return DataSourceStatus(DataSourceStatus::Status_Error_EOF);
             }
@@ -171,7 +178,7 @@ DataSourceStatus DataSourceFile::read(Buffer *dest, DataSize destSize, DataSize 
             return DataSourceStatus(DataSourceStatus::Status_Error_Dest_Buffer_Too_Small);
 
         //getStream().read(reinterpret_cast<char *>(dest), sizeToRead);
-        if (BeFileStatus::Success != getStream().Read(reinterpret_cast<char *>(dest), &outputSize, sizeToRead))
+        if (BeFileStatus::Success != getStream().Read(reinterpret_cast<char *>(dest), &outputSize, (uint32_t)sizeToRead))
             {
             return DataSourceStatus(DataSourceStatus::Status_Error_EOF);
             }
@@ -188,8 +195,8 @@ DataSourceStatus DataSourceFile::read(Buffer *dest, DataSize destSize, DataSize 
 
 DataSourceStatus DataSourceFile::write(const Buffer * source, DataSize inputSize)
 {
-    UInt32 bytesWritten = 0;
-    if (BeFileStatus::Success == getStream().Write(&bytesWritten, reinterpret_cast<const char *>(source), inputSize))
+    uint32_t bytesWritten = 0;
+    if (BeFileStatus::Success == getStream().Write(&bytesWritten, reinterpret_cast<const char *>(source), (uint32_t)inputSize))
     {
         return DataSourceStatus();
     }

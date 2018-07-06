@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 16:26:59 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,8 +61,8 @@ struct SourceBase;
 struct InputExtractorBase : private Uncopyable
     {
 private:
-    friend struct                               InputExtractor;
-    friend struct                               InputExtractorCreator;
+    friend struct                               BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::InputExtractor;
+    friend struct                               BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::InputExtractorCreator;
     friend struct                               InputExtractorCreatorBase;
 
     struct                                      Impl;   
@@ -119,7 +119,7 @@ struct InputExtractorCreatorBase : private Uncopyable
 protected:
     typedef const void*                         SourceClassID;
 private:
-    friend struct                               InputExtractorCreator;
+    friend struct                               BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::InputExtractorCreator;
 
     struct                                      Impl; 
     std::auto_ptr<Impl>                         m_pImpl;

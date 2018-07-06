@@ -6,7 +6,7 @@
 |       $Date: 2011/10/21 17:32:09 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -134,7 +134,7 @@ IMPORT_DLLE const FieldDoubleArray&     AsDoubleArray                          (
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IMetadataVisitor
     {
-    virtual                             ~IMetadataVisitor                      () = 0 {}
+    virtual                             ~IMetadataVisitor                      () {}
 
 
     virtual void                        _Visit                                 (const WChar*             name,
@@ -157,7 +157,7 @@ struct IMetadataVisitor
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IFieldVisitor
     {
-    virtual                             ~IFieldVisitor                         () = 0 {}
+    virtual                             ~IFieldVisitor                         (){}
 
     virtual void                        _Visit                                 (const FieldBase&            field) { /* Do nothing */ }
 
@@ -237,13 +237,13 @@ private:
     struct                              Impl;
     std::auto_ptr<Impl>                 m_implP;
 
-                                        FieldComposed                          (const FieldComposed&        rhs);
 
 public:
     typedef const Field*                const_iterator;
 
     IMPORT_DLLE explicit                FieldComposed                          ();
     IMPORT_DLLE virtual                 ~FieldComposed                         ();
+                                        FieldComposed                          (const FieldComposed&        rhs);
     
     IMPORT_DLLE uint32_t                    GetSize                                () const;
 
@@ -267,10 +267,11 @@ private:
     struct                              Impl;
     std::auto_ptr<Impl>                 m_implP;
 
-                                        FieldString                            (const FieldString&          rhs);
 
 public:
     IMPORT_DLLE explicit                FieldString                            (const WChar*              value);
+
+                                       FieldString                            (const FieldString&          rhs);
 
     IMPORT_DLLE virtual                 ~FieldString                           ();
     
@@ -289,9 +290,9 @@ private:
 
     double                              m_value;
 
-                                        FieldDouble                            (const FieldDouble&          rhs);
 public:
     IMPORT_DLLE explicit                FieldDouble                            (double                      value);
+                                        FieldDouble                            (const FieldDouble&          rhs);
     
     // Use default copy constructor
 
@@ -313,12 +314,13 @@ private:
     struct                              Impl;
     std::auto_ptr<Impl>                 m_implP;
 
-                                        FieldDoubleArray                       (const FieldDoubleArray&     rhs);
 
 public:
     typedef const double*               const_iterator;
 
     IMPORT_DLLE explicit                FieldDoubleArray                       ();
+
+                                        FieldDoubleArray                       (const FieldDoubleArray&     rhs);
     IMPORT_DLLE explicit                FieldDoubleArray                       (const_iterator              begin,
                                                                                 const_iterator              end);
 

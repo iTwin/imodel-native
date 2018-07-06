@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-#include "TilePublisher\TilePublisher.h"
+#include "TilePublisher/TilePublisher.h"
 #include "Constants.h"
 
 //#include "..\STM\ScalableMeshQuery.h"

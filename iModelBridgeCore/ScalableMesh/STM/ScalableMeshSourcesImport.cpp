@@ -30,7 +30,9 @@
 
 #include <ScalableMesh/IScalableMeshPolicy.h>
 #undef static_assert
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <DgnPlatform/DgnPlatformLib.h>
+#endif
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
      
@@ -324,6 +326,7 @@ void SourcesImporter::Impl::ParseFeatureOrPointBuffer(unsigned char* buffer, siz
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SourcesImporter::Impl::ImportFromSDK(Utf8CP inputFileName)
     {
+#ifndef LINUX_SCALABLEMESH_BUILD
 #ifndef VANCOUVER_API
     STARTUPINFOA info = { sizeof(info) };
 
@@ -396,6 +399,7 @@ void SourcesImporter::Impl::ImportFromSDK(Utf8CP inputFileName)
 
         delete[] buffer;
 #endif
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -406,6 +410,7 @@ SMStatus SourcesImporter::Impl::ImportSDKSources()
     {
     if (m_sdkSources.empty()) return S_SUCCESS;
 #ifndef VANCOUVER_API
+#ifndef LINUX_SCALABLEMESH_BUILD
     BeFileName tempDir(T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName());
     BeFileName tempSourcesToImportFile = tempDir;
     tempSourcesToImportFile.AppendUtf8("tempTerrainSourceImport.xml");
@@ -519,6 +524,7 @@ SMStatus SourcesImporter::Impl::ImportSDKSources()
     ImportFromSDK(tempSourcesToImportFile.GetNameUtf8().c_str());
 #else
 assert(!"Not available on this platform");
+#endif
 #endif
     return S_SUCCESS;
     }

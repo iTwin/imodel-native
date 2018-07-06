@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:06:52 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -40,6 +40,11 @@ namespace Internal {
 +---------------+---------------+---------------+---------------+---------------+------*/
     class Config : public ImportConfig
     {
+#ifndef VANCOUVER_API
+		typedef HVE2DShape ImagePP::HVE2DShape;
+		typedef HFCPtr ImagePP::HFCPtr;
+		typedef HGF2DCoordSys ImagePP::HGF2DCoordSys;
+#endif
     friend struct BENTLEY_NAMESPACE_NAME::ScalableMesh::SourceImportConfig::Impl;
     CustomFilteringSequence         m_sourceFilters;
     CustomFilteringSequence         m_targetFilters;
@@ -129,7 +134,7 @@ public:
         : m_sourceFilters(config.m_sourceFilters), m_filteringConfigP(config.m_filteringConfigP), m_extractionConfigP(config.m_extractionConfigP),
         m_defaultSourceGCSP(config.m_defaultSourceGCSP), m_defaultTargetSMDataP(config.m_defaultTargetSMDataP), m_defaultTargetTypeP(config.m_defaultTargetTypeP),
         m_defaultTargetLayer(config.m_defaultTargetLayer), m_hasDefaultTargetLayer(config.m_hasDefaultTargetLayer), m_defaultTargetGCSP(config.m_defaultTargetGCSP),
-        m_targetFilters(config.m_targetFilters), m_clipShapeP(m_clipShapeP.GetPtr())
+        m_targetFilters(config.m_targetFilters), m_clipShapeP(config.m_clipShapeP.GetPtr())
         {
         }
 
@@ -145,7 +150,7 @@ public:
         m_hasDefaultTargetLayer = config.m_hasDefaultTargetLayer;
         m_defaultTargetGCSP = config.m_defaultTargetGCSP;
         m_targetFilters = config.m_targetFilters;
-        const_cast<HFCPtr<HVEClipShape>&>(m_clipShapeP) = m_clipShapeP.GetPtr();
+        const_cast<HFCPtr<HVEClipShape>&>(m_clipShapeP) = config.m_clipShapeP.GetPtr();
         return *this;
         }
     

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Bentley/RefCounted.h>
-#include <BeSQLite\BeSQLite.h>
+#include <BeSQLite/BeSQLite.h>
 #include <ScalableMesh/Import/DataSQLite.h>
 #include "ScalableMeshDb.h"
 #include "SMSQLiteFile.h"

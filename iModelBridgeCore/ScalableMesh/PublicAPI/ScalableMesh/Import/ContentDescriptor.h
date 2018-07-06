@@ -125,7 +125,7 @@ private:
     const void*                                 m_implP; // Reserve some space for further use
 public:
     // Implicitly convert from DataType
-    IMPORT_DLLE                                 TypeDescriptor                     (const DataType&                     type);
+    IMPORT_DLLE                                 TypeDescriptor                     (DataType                     type);
 
 
     IMPORT_DLLE                                 ~TypeDescriptor                    ();

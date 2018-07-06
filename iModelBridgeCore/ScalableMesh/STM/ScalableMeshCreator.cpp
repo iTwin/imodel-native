@@ -79,7 +79,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #define SCALABLE_MESH_TIMINGS
 
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
-extern bool s_inEditing = false; 
+bool s_inEditing = false; 
 bool s_useThreadsInStitching = false;
 bool s_useThreadsInMeshing = false;
 bool s_useThreadsInFiltering = false;
@@ -236,14 +236,17 @@ const GeoCoords::GCS& IScalableMeshCreator::GetGCS () const
 
 #ifdef SCALABLE_MESH_ATP
 
-static unsigned __int64 s_getNbImportedPoints = 0;
+static uint64_t s_getNbImportedPoints = 0;
 static double s_getImportPointsDuration = -1; 
-static double s_getLastBalancingDuration = -1;
+static double s_getLastPointBalancingDuration = -1;
+static double s_getLastMeshBalancingDuration = -1;
 static double s_getLastMeshingDuration = -1;
 static double s_getLastFilteringDuration = -1;
 static double s_getLastStitchingDuration = -1;
+static double s_getLastClippingDuration = -1;
+static double s_getLastFinalStoreDuration = -1;
 
-unsigned __int64 IScalableMeshCreator::GetNbImportedPoints()
+uint64_t IScalableMeshCreator::GetNbImportedPoints()
     {
     return s_getNbImportedPoints;
     }
@@ -253,9 +256,14 @@ double IScalableMeshCreator::GetImportPointsDuration()
     return s_getImportPointsDuration;
     }
 
-double IScalableMeshCreator::GetLastBalancingDuration()
+double IScalableMeshCreator::GetLastPointBalancingDuration()
     {
-    return s_getLastBalancingDuration;
+    return s_getLastPointBalancingDuration;
+    }
+
+double IScalableMeshCreator::GetLastMeshBalancingDuration()
+    {
+    return s_getLastMeshBalancingDuration;
     }
 
 double IScalableMeshCreator::GetLastMeshingDuration()
@@ -272,6 +280,17 @@ double IScalableMeshCreator::GetLastStitchingDuration()
     {
     return s_getLastStitchingDuration;
     }
+
+double IScalableMeshCreator::GetLastClippingDuration()
+    {
+    return s_getLastClippingDuration;
+    }
+
+double IScalableMeshCreator::GetLastFinalStoreDuration()
+    {
+    return s_getLastFinalStoreDuration;
+    }
+
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -469,10 +488,10 @@ StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProvide
     unitTransform.form3d[0][0] = ratioToMeterH;
     unitTransform.form3d[1][1] = ratioToMeterH;
     unitTransform.form3d[2][2] = ratioToMeterV;
-#else
+#else  
     unitTransform.InitFromScaleFactors(ratioToMeterH, ratioToMeterH, ratioToMeterV);
 #endif
-
+   
     unitTransform.Multiply(range.low, range.low);
     unitTransform.Multiply(range.high, range.high);    
 
@@ -582,8 +601,12 @@ SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString&
             const WChar* path = source.GetPath(status);
             if (BSISUCCESS != status)
                 throw SourceNotFoundException();
-
+#ifndef LINUX_SCALABLEMESH_BUILD
             if (0 == wcsicmp(path, m_stmPath.c_str()))
+#else
+            //Not case-insensitive here because as a rule paths aren't on Linux. Willing to reconsider if sufficient benefit.
+            if (0 == wcscmp(path, m_stmPath.c_str()))
+#endif
                 throw CustomException(L"STM and source are the same");
 
             LocalFileSourceRef localSourceRef(path);
@@ -654,8 +677,9 @@ void IScalableMeshCreator::Impl::ConfigureMesherFilter(ISMPointIndexFilter<Point
 * @description
 * @bsimethod                                                  Raymond.Gauthier   12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&                                    pDataIndex, 
-                                                       bool needBalancing) 
+StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pDataIndex, 
+                                                       bool                   needBalancing, 
+                                                       uint32_t               splitThreshold) 
     {                                    
     HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> pGraphTileStore;
     bool isSingleFile = true;
@@ -706,7 +730,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
         
         pDataIndex = new MeshIndexType(dataStore, 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         
-                                       10000,
+                                       splitThreshold,
                                        pFilter,
                                        needBalancing, false, false, true,
                                        pMesher2_5d,
@@ -736,7 +760,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
 
         pDataIndex = new MeshIndexType(dataStore,
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
-                                       10000,
+                                       splitThreshold,
                                        pFilter,
                                        needBalancing, false, false, true,
                                        pMesher2_5d,
@@ -788,7 +812,7 @@ SMSQLiteFilePtr IScalableMeshCreator::Impl::GetFile(bool fileExists)
         //m_smSQLitePtr = new SMSQLiteFile();
 
         // Create the storage object and databases
-        if (m_scmPtr == 0)
+        if (m_scmPtr == 0) 
         {
             assert(!m_scmFileName.empty());
             m_smSQLitePtr = new SMSQLiteFile();
@@ -969,6 +993,7 @@ int IScalableMeshCreator::Impl::SaveToFile()
 
 void IScalableMeshCreator::Impl::ShowMessageBoxWithTimes(double meshingDuration, double filteringDuration, double stitchingDuration)
     {
+#if _WIN32
     string meshing = to_string(meshingDuration);
     string filtering = to_string(filteringDuration);
     string stitching = to_string(stitchingDuration);
@@ -978,6 +1003,7 @@ void IScalableMeshCreator::Impl::ShowMessageBoxWithTimes(double meshingDuration,
     msg += "Stitching: "; msg += stitching; msg += " min.\n";
 
     MessageBoxA(NULL, msg.c_str(), "Information", MB_ICONINFORMATION | MB_OK);
+#endif
     }
 
 /*==================================================================*/
