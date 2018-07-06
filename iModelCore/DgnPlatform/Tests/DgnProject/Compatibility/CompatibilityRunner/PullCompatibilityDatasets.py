@@ -79,7 +79,7 @@ def main():
         zip_ref.extractall(os.path.splitext(path)[0])
         zip_ref.close()
     # Extract datasets out of nugets and put into seeddata folder. Only 1 file per version for now. #TODO
-    extractedDataDir = os.path.join(nugetPath, "SeedData")
+    extractedDataDir = os.path.join(nugetPath, "TestData")
     if not os.path.exists(extractedDataDir):
         os.makedirs(extractedDataDir)
     for subdir in os.listdir(nugetPath):

@@ -8,3 +8,6 @@
 
 IMS_DIR = $(OutputRootDir)iModelSchemaEvolution
 DATA_DIR = $(IMS_DIR)/Data
+NUGET_DATASETS_DIR = $(OutputRootDir)iModelSchemaEvolution/Data/TestData
+IMS_NUGETS_DIR = $(IMS_DIR)/Nugets
+CURRENT_DATASET_DIR = $(OutputRootDir)Product/iModelSchemaEvolutionGTest/run/NewData

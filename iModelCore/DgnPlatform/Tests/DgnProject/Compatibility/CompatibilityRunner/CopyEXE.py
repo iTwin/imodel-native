@@ -30,8 +30,8 @@ def main():
             dst = os.path.join(nugetDstPath, name, "iModelSchemaEvolution.exe")
             os.remove(dst)
             copyfile(os.path.join(split, "iModelSchemaEvolution.exe"), dst)
-            rmtree(os.path.join(nugetDstPath, name, "run", "SeedData"), ignore_errors=True)
+            rmtree(os.path.join(nugetDstPath, name, "run", "NewData"), ignore_errors=True)
             if os.path.exists(dataDir):
-                copytree(dataDir, os.path.join(nugetDstPath, name, "run", "SeedData"))
+                copytree(dataDir, os.path.join(nugetDstPath, name, "run", "NewData"))
 if __name__ == "__main__":
     main()
