@@ -93,7 +93,7 @@ DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #ifndef VANCOUVER_API 
-bool s_enableSharedDatabase = true;
+bool s_enableSharedDatabase = false;
 #else
 bool s_enableSharedDatabase = false;
 #endif
