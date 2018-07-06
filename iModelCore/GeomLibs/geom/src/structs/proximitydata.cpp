@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/proximitydata.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -47,7 +47,7 @@ int       newIndex
 )
     {
     double newDistanceSquared;
-    if (pProx && bsiDPoint4d_realDistanceSquaredXY (pNewPoint, &newDistanceSquared, &pProx->testPoint))
+    if (pProx && pNewPoint->RealDistanceSquaredXY (&newDistanceSquared, pProx->testPoint))
         {
         if (!pProx->dataValid || newDistanceSquared < pProx->closeDistanceSquared)
             {
@@ -152,7 +152,7 @@ double    *pMinDistSquared
             *pClosePoint = pProx->closePoint;
 
         if (pClosePoint3d)
-            bsiDPoint4d_normalize (&pProx->closePoint, pClosePoint3d);
+            pProx->closePoint.GetProjectedXYZ (*pClosePoint3d);
 
         if (pMinDistSquared)
             *pMinDistSquared = pProx->closeDistanceSquared;

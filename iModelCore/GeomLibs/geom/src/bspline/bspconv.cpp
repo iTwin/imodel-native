@@ -1065,9 +1065,9 @@ DEllipse3dP     ellipseP,
     double dot;
     StatusInt status = ERROR;
 
-    bsiDPoint4d_cartesianFromHomogeneous (centerP, &center);
-    bsiDPoint4d_cartesianFromHomogeneous (vector0P, &vector0);
-    bsiDPoint4d_cartesianFromHomogeneous (vector90P, &vector1);
+    centerP->GetXYZ (center);
+    vector0P->GetXYZ (vector0);
+    vector90P->GetXYZ (vector1);
 
     rad0 = vector0.Normalize ();
     rad1 = vector1.Normalize ();
@@ -1114,11 +1114,7 @@ DEllipse3dP     ellipseP,
             for (i = 0; i < curveP->params.numPoles; i++)
                 {
                 /* All the poles have z=0 !!! */
-                bsiDPoint4d_add3ScaledDPoint4d (&hPoint, NULL,
-                                            vector0P,  curveP->poles[i].x,
-                                            vector90P, curveP->poles[i].y,
-                                            centerP,   curveP->weights[i]
-                                            );
+                hPoint.SumOf(*vector0P, curveP->poles[i].x, *vector90P, curveP->poles[i].y, *centerP, curveP->weights[i]);
                 curveP->poles[i].x = hPoint.x;
                 curveP->poles[i].y = hPoint.y;
                 curveP->poles[i].z = hPoint.z;
@@ -1250,23 +1246,9 @@ const HConic    *hConicP,       /* => conic to evaluate */
             DPoint4d hStart, hEnd;
             DPoint3d pointList[2];
 
-            bsiDPoint4d_add2ScaledDPoint4d (
-                                    &hStart,
-                                    NULL,
-                                    &hConicP->coordinates.vector0,
-                                    1.0 - s0,
-                                    &hConicP->coordinates.vector90,
-                                    s0
-                                    );
+            hStart.SumOf(*(&hConicP->coordinates.vector0), 1.0 - s0, *(&hConicP->coordinates.vector90), s0);
 
-            bsiDPoint4d_add2ScaledDPoint4d (
-                                    &hEnd,
-                                    NULL,
-                                    &hConicP->coordinates.vector0,
-                                    1.0 - s1,
-                                    &hConicP->coordinates.vector90,
-                                    s1
-                                    );
+            hEnd.SumOf(*(&hConicP->coordinates.vector0), 1.0 - s1, *(&hConicP->coordinates.vector90), s1);
 
             if (   hStart.GetProjectedXYZ (pointList[0])
                 && hEnd.GetProjectedXYZ (pointList[1])

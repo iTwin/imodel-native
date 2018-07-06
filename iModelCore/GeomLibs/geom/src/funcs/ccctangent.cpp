@@ -155,9 +155,9 @@ double rB   // SIGNED
         // The hyperbola is
         //  X = origin + xAxis * ax * sec (theta) + yAxis * ay * tan (theta)
         // X cos (theta) = origin * cos(theta) + xAxis * ay  + yAxis * ay * sin(theta)
-        bsiDPoint4d_setComponents (&hvec1,   origin.x, origin.y, origin.z, 1.0);
-        bsiDPoint4d_setComponents (&hvecSec, ax * xAxis.x, ax * xAxis.y,  ax * xAxis.z, 0.0);
-        bsiDPoint4d_setComponents (&hvecTan, ay * yAxis.x, ay * yAxis.y,  ay * yAxis.z, 0.0);
+        hvec1.Init(   origin.x, origin.y, origin.z, 1.0);
+        hvecSec.Init( ax * xAxis.x, ax * xAxis.y,  ax * xAxis.z, 0.0);
+        hvecTan.Init( ay * yAxis.x, ay * yAxis.y,  ay * yAxis.z, 0.0);
         bsiDConic4d_initFrom4dVectors (pConic, &hvecSec, &hvecTan, &hvec1, 0.0, msGeomConst_2pi);
         boolstat = true;
         }
@@ -166,9 +166,9 @@ double rB   // SIGNED
         DPoint4d hvec1, hvecCos, hvecSin;
         // The ellipse is
         //  X = origin + xAxis * ax * cos (theta) + yAxis * ay * sin (theta)
-        bsiDPoint4d_setComponents (&hvec1,   origin.x, origin.y, origin.z, 1.0);
-        bsiDPoint4d_setComponents (&hvecCos, ax * xAxis.x, ax * xAxis.y,  ax * xAxis.z, 0.0);
-        bsiDPoint4d_setComponents (&hvecSin, ay * yAxis.x, ay * yAxis.y,  ay * yAxis.z, 0.0);
+        hvec1.Init(   origin.x, origin.y, origin.z, 1.0);
+        hvecCos.Init( ax * xAxis.x, ax * xAxis.y,  ax * xAxis.z, 0.0);
+        hvecSin.Init( ay * yAxis.x, ay * yAxis.y,  ay * yAxis.z, 0.0);
         bsiDConic4d_initFrom4dVectors (pConic, &hvec1, &hvecCos, &hvecSin, 0.0, msGeomConst_2pi);
         boolstat = true;
         }

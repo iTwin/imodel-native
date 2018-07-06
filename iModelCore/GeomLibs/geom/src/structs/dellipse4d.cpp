@@ -36,7 +36,7 @@ static double s_defaultSingularCutAngle = 1.0e-3;
 
 /*----------------------------------------------------------------------+
 |                                                                       |
-|   Public Global variables                                             |
+|Public Global variables                                             |
 |                                                                       |
 +----------------------------------------------------------------------*/
 /*----------------------------------------------------------------------+
@@ -53,7 +53,7 @@ static double s_defaultSingularCutAngle = 1.0e-3;
 
 /*======================================================================+
 |                                                                       |
-|   Major Public Code Section                                           |
+|   MajorPublic Code Section                                           |
 |                                                                       |
 +======================================================================*/
 
@@ -293,8 +293,8 @@ double        delta
 )
     {
     DPoint3d vectorU, vectorV;
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorU, &pPointArray[1], &pPointArray[0]);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorV, &pPointArray[2], &pPointArray[0]);
+    vectorU.DifferenceOf (pPointArray[1], pPointArray[0]);
+    vectorV.DifferenceOf (pPointArray[2], pPointArray[0]);
 
     bsiDPoint4d_copyAndWeight( &ellipseP->center,   &pPointArray[0], pWeightArray[0]);
     bsiDPoint4d_copyAndWeight( &ellipseP->vector0,  &vectorU,        pWeightArray[1] - pWeightArray[0]);
@@ -329,8 +329,8 @@ double          delta
 
     {
     DPoint3d vector0, vector90;
-    bsiDPoint3d_subtractDPoint3dDPoint3d( &vector0 , &arrayP[1], &arrayP[0]);
-    bsiDPoint3d_subtractDPoint3dDPoint3d( &vector90, &arrayP[2], &arrayP[0]);
+    vector0.DifferenceOf (arrayP[1], arrayP[0]);
+    vector90.DifferenceOf (arrayP[2], arrayP[0]);
     bsiDPoint4d_copyAndWeight( &ellipseP->center, &arrayP[0], 1.0);
     bsiDPoint4d_copyAndWeight( &ellipseP->vector0, &vector0, 0.0);
     bsiDPoint4d_copyAndWeight( &ellipseP->vector90, &vector90, 0.0);
@@ -362,9 +362,9 @@ double          radius
     {
     DPoint3d uVector, vVector, wVector;
 
-    bsiDPoint3d_getNormalizedTriad(normalP, &uVector, &vVector, &wVector);
-    bsiDPoint3d_scale (&uVector, &uVector, radius);
-    bsiDPoint3d_scale (&vVector, &vVector, radius);
+    normalP->GetNormalizedTriad (uVector, vVector, wVector);
+    uVector.Scale (uVector, radius);
+    vVector.Scale (vVector, radius);
 
     bsiDPoint4d_copyAndWeight( &ellipseP->center, centerP, 1.0);
     bsiDPoint4d_copyAndWeight( &ellipseP->vector0, &uVector, 0.0);
@@ -418,12 +418,7 @@ double      theta
     double cosTheta, sinTheta;
     cosTheta = cos(theta);
     sinTheta = sin(theta);
-    bsiDPoint4d_add2ScaledDPoint4d (
-            pPoint,
-            &pHEllipse->center,
-            &pHEllipse->vector0, cosTheta,
-            &pHEllipse->vector90, sinTheta
-            );
+    pPoint->SumOf(pHEllipse->center, pHEllipse->vector0, cosTheta, pHEllipse->vector90, sinTheta);
     }
 
 
@@ -484,18 +479,18 @@ DPoint4dCP pPoint
     double UdotW, VdotW;
     double cosTheta, sinTheta, theta;
     bsiDPoint4d_addScaledDPoint4d (&W, pPoint, &pEllipse->center, -1.0);
-    UdotU = bsiDPoint4d_dotProduct (&pEllipse->vector0, &pEllipse->vector0);
-    UdotV = bsiDPoint4d_dotProduct (&pEllipse->vector0, &pEllipse->vector90);
-    VdotV = bsiDPoint4d_dotProduct (&pEllipse->vector90, &pEllipse->vector90);
-    UdotW = bsiDPoint4d_dotProduct (&pEllipse->vector0, &W);
-    VdotW = bsiDPoint4d_dotProduct (&pEllipse->vector90, &W);
+    UdotU = pEllipse->vector0.DotProduct (pEllipse->vector0);
+    UdotV = pEllipse->vector0.DotProduct (pEllipse->vector90);
+    VdotV = pEllipse->vector90.DotProduct (pEllipse->vector90);
+    UdotW = pEllipse->vector0.DotProduct (W);
+    VdotW = pEllipse->vector90.DotProduct (W);
 
     if (bsiSVD_solve2x2 (&cosTheta, &sinTheta,
                         UdotU, UdotV,
                         UdotV, VdotV,
                         UdotW, VdotW))
         {
-        theta = bsiTrig_atan2 (sinTheta, cosTheta);
+        theta = Angle::Atan2 (sinTheta, cosTheta);
         }
     else
         {
@@ -574,13 +569,13 @@ DPoint3dCP pXYZ
     DPoint3d point3d[3];
     DPoint4d point4d;
 
-    bsiDPoint4d_normalize (&pHEllipse->center, point3d);
+    pHEllipse->center.GetProjectedXYZ (*point3d);
 
-    bsiDPoint4d_addDPoint4dDPoint4d (&point4d, &pHEllipse->center, &pHEllipse->vector0);
-    bsiDPoint4d_normalize (&point4d, point3d + 1);
+    point4d.SumOf (pHEllipse->center, pHEllipse->vector0);
+    point4d.GetProjectedXYZ (point3d[ 1]);
 
-    bsiDPoint4d_addDPoint4dDPoint4d (&point4d, &pHEllipse->center, &pHEllipse->vector90);
-    bsiDPoint4d_normalize (&point4d, point3d + 2);
+    point4d.SumOf (pHEllipse->center, pHEllipse->vector90);
+    point4d.GetProjectedXYZ (point3d[ 2]);
 
     return bsiGeom_closestPointOnSkewedPlane (pXYZNear, pCoff0, pCoff90, point3d, pXYZ);
     }
@@ -615,11 +610,11 @@ double          tol
 
     if (tol > 0.0)
         {
-        bsiDPoint4d_addDPoint4dDPoint4d (&hPoint0, &ellipseP->center, &ellipseP->vector0);
-        bsiDPoint4d_addDPoint4dDPoint4d (&hPoint90, &ellipseP->center, &ellipseP->vector90);
-        if (   bsiDPoint4d_normalize (&hPoint0, &point0)
-            && bsiDPoint4d_normalize (&hPoint90, &point90)
-            && bsiDPoint4d_normalize (&ellipseP->center, &center)
+        hPoint0.SumOf (ellipseP->center, ellipseP->vector0);
+        hPoint90.SumOf (ellipseP->center, ellipseP->vector90);
+        if (   hPoint0.GetProjectedXYZ (point0)
+            && hPoint90.GetProjectedXYZ (point90)
+            && ellipseP->center.GetProjectedXYZ (center)
             )
             {
             dx = hPoint0.x - center.x;
@@ -687,7 +682,7 @@ double  theta
         {
         for (i = 0; i < pHEllipse->sectors.n; i++)
             {
-            if (bsiTrig_angleInSweep
+            if (Angle::InSweepAllowPeriodShift
                         (
                         theta,
                         pHEllipse->sectors.interval[i].minValue,
@@ -730,9 +725,7 @@ int       numPoint
     n = 0;
     for (i = 0; i < numPoint; i++)
         {
-        bsiDPoint4d_add2ScaledDPoint4d (&hPoint, &pEllipse->center,
-                                &pEllipse->vector0, pTrig[i].x,
-                                &pEllipse->vector90, pTrig[i].y);
+        hPoint.SumOf(pEllipse->center, pEllipse->vector0, pTrig[i].x, pEllipse->vector90, pTrig[i].y);
         if (hPoint.w != 0.0)
             {
             pPoint[n].x = hPoint.x / hPoint.w;
@@ -772,7 +765,7 @@ int       numPoint
 
     for (i = 0; i < numPoint; i++)
         {
-        double theta = bsiTrig_atan2 (pTrig[i].y, pTrig[i].x);
+        double theta = Angle::Atan2 (pTrig[i].y, pTrig[i].x);
         if (bsiRange1d_pointIsIn (&pEllipse->sectors, theta))
             {
             bsiDEllipse4d_evaluateTrigPairs (pEllipse, &pPoint[n], &pTrig[i], 1);
@@ -1001,7 +994,7 @@ int     numAsymptote
 
     for (i = 0; i < numPlaneIntersection; i++)
         {
-        angles[numAngle++] = bsiTrig_atan2 (pPlaneTrigPoint[i].y, pPlaneTrigPoint[i].x);
+        angles[numAngle++] = Angle::Atan2 (pPlaneTrigPoint[i].y, pPlaneTrigPoint[i].x);
         }
 
     numAngle = jmdlDEllipse4d_sortAndAugmentAngles (angles, numAngle);
@@ -1013,12 +1006,8 @@ int     numAsymptote
         thetaMid = 0.5 * (theta0 + theta1);
         c = cos (thetaMid);
         s = sin (thetaMid);
-        bsiDPoint4d_add2ScaledDPoint4d (&curvePoint,
-                            &pEllipse->center,
-                            &pEllipse->vector0, c,
-                            &pEllipse->vector90, s
-                            );
-        f = bsiDPoint4d_dotProduct (&curvePoint, pPlaneVector) * curvePoint.w;
+        curvePoint.SumOf(pEllipse->center, pEllipse->vector0, c, pEllipse->vector90, s);
+        f = curvePoint.DotProduct (*pPlaneVector) * curvePoint.w;
         if (f < 0.0)
             {
             /* This sector is IN!!!*/
@@ -1076,7 +1065,7 @@ DEllipse4dCP pEllipse
         if (numRoot < 0)
             numRoot = 0;
         for (i = 0; i < numRoot; i++)
-            pTrigPoint[i].z = bsiTrig_atan2 (pTrigPoint[i].y, pTrigPoint[i].x);
+            pTrigPoint[i].z = Angle::Atan2 (pTrigPoint[i].y, pTrigPoint[i].x);
         }
 
     return numRoot;
@@ -1110,8 +1099,8 @@ DPoint4dCP planeP
     SmallSetRange1d clipSectors;
     SmallSetRange1d priorSectors;
     double delta;
-    double dFdTheta = -s0 * bsiDPoint4d_dotProduct ( &ellipseP->vector0 , planeP )
-                      +c0 * bsiDPoint4d_dotProduct ( &ellipseP->vector90, planeP );
+    double dFdTheta = -s0 * ellipseP->vector0.DotProduct (*planeP)
+                      +c0 * ellipseP->vector90.DotProduct (*planeP);
 
     /* Swap points if needed so that point 0 is the downward crossing under a positive-direction
        sweep through the angular range */
@@ -1218,7 +1207,7 @@ int        clipType
                 if ( nIntersection != 2 )
                     {
                     /* No intersections.  Any point classifies it all */
-                    h = bsiDPoint4d_dotProduct ( currentPlaneP, &ellipseP->center );
+                    h = currentPlaneP->DotProduct (ellipseP->center);
                     hRef = s_lineUnitCircleIntersectionTolerance * bsiDPoint4d_maxAbs (currentPlaneP);
                     if ( h > hRef)
                        {
@@ -1287,9 +1276,9 @@ DEllipse4dCP pEllipse
     DPoint4d vector0, vector90;
     int i;
 
-    dotUV = bsiDPoint4d_dotProduct(&pEllipse->vector0,  &pEllipse->vector90);
-    dotUU = bsiDPoint4d_dotProduct(&pEllipse->vector0,  &pEllipse->vector0 );
-    dotVV = bsiDPoint4d_dotProduct(&pEllipse->vector90, &pEllipse->vector90);
+    dotUV = pEllipse->vector0.DotProduct (pEllipse->vector90);
+    dotUU = pEllipse->vector0.DotProduct (pEllipse->vector0);
+    dotVV = pEllipse->vector90.DotProduct (pEllipse->vector90);
 
     ay = dotUU - dotVV;
     ax = 2.0 * dotUV;
@@ -1305,13 +1294,9 @@ DEllipse4dCP pEllipse
         *pNormalizedEllipse = *pEllipse;
         vector0 = pEllipse->vector0;
         vector90 = pEllipse->vector90;
-        bsiDPoint4d_add2ScaledDPoint4d (&pNormalizedEllipse->vector0, NULL,
-                                    &vector0,   c,
-                                    &vector90,  s);
-        bsiDPoint4d_add2ScaledDPoint4d (&pNormalizedEllipse->vector90, NULL,
-                                    &vector0,  -s,
-                                    &vector90,  c);
-        theta = bsiTrig_atan2 (s,c);
+        pNormalizedEllipse->vector0.SumOf(vector0, c, vector90, s);
+        pNormalizedEllipse->vector90.SumOf(vector0, -s, vector90, c);
+        theta = Angle::Atan2 (s,c);
         for (i = 0; i < pNormalizedEllipse->sectors.n; i++)
             {
             pNormalizedEllipse->sectors.interval[i].minValue -= theta;
@@ -1350,7 +1335,7 @@ double        theta1
         }
     else
         {
-        bsiDPoint4d_negate (&pInstance->vector90, &pInstance->vector90);
+        pInstance->vector90.Negate(pInstance->vector90);
         bsiRange1d_setUncheckedArcSweep (&pInstance->sectors, -theta0, -sweep);
         }
     }
@@ -1382,15 +1367,9 @@ double      theta
     s =  sin(theta);
     c =  cos(theta);
 
-    bsiDPoint4d_add2ScaledDPoint4d (&hPoint,
-                &pHEllipse->center,
-                &pHEllipse->vector0, c,
-                &pHEllipse->vector90, s);
+    hPoint.SumOf(pHEllipse->center, pHEllipse->vector0, c, pHEllipse->vector90, s);
 
-    bsiDPoint4d_add2ScaledDPoint4d (&hTangent,
-                NULL,
-                &pHEllipse->vector0, -s,
-                &pHEllipse->vector90, c);
+    hTangent.SumOf(pHEllipse->vector0, -s, pHEllipse->vector90, c);
 
     dw = hTangent.w;
     w  = hPoint.w;
@@ -1467,7 +1446,7 @@ double      *pAngleArray
 
     for (i = 0; i < n; i++)
         {
-        pAngleArray[i] = bsiTrig_atan2 (sinValue[i], cosValue[i]);
+        pAngleArray[i] = Angle::Atan2 (sinValue[i], cosValue[i]);
         }
     return n;
     }
@@ -1553,18 +1532,18 @@ double          wCenter
     if ( mu <= relTol * wc2)
         {
         /* It's a hyperbola or parabola*/
-        bsiRotMatrix_initIdentity (pMatrix);
+        pMatrix->InitIdentity ();
         if (pInverse)
-            bsiRotMatrix_initIdentity (pInverse);
+            pInverse->InitIdentity ();
         return false;
         }
     else if (mu == wc2)     /* Yes, exact equality test -- if wc2 is small the squaring will */
                             /* wipe force its bits so far to the right they have no effect on the subtraction*/
         {
         /* It's already practically a circle.*/
-        bsiRotMatrix_initIdentity (pMatrix);
+        pMatrix->InitIdentity ();
         if (pInverse)
-            bsiRotMatrix_initIdentity (pInverse);
+            pInverse->InitIdentity ();
         }
     else
         {
@@ -1580,7 +1559,7 @@ double          wCenter
         pMatrix->SetColumn (2, - centerScale * w0, - centerScale * w90, 1.0);
         if (pInverse)
             {
-            bsiRotMatrix_invertRotMatrix (pInverse, pMatrix);
+            pInverse->InverseOf (*pMatrix);
             }
         }
     return boolStat;
@@ -1618,7 +1597,7 @@ double          beta
     double sinTheta = sin(theta);
     double wF       = 1.0 + alpha * cosTheta + beta * sinTheta;
     double phi;
-    bsiRotMatrix_multiplyComponents (pMatrix, &G, cosTheta, sinTheta, wF);
+    pMatrix->MultiplyComponents(G, cosTheta, sinTheta, wF);
     phi = atan2 (G.y, G.x);
     return phi;
     }
@@ -1659,7 +1638,7 @@ double          beta
         {
         theta0 = sectors.interval[i].minValue;
         theta1 = sectors.interval[i].maxValue;
-        if (bsiTrig_isAngleFullCircle (theta1 - theta0))
+        if (Angle::IsFullCircle (theta1 - theta0))
             {
             bsiRange1d_setArcSweep (&pDest->sectors, 0.0, msGeomConst_2pi);
             return true;
@@ -1732,26 +1711,17 @@ DEllipse4dCP pWeighted
         double alpha = w0 * recip;
         double beta  = w90 * recip;
 
-        bsiDPoint4d_add2ScaledDPoint4d (&vector0,  NULL, &pWeighted->vector0,  recip, &pWeighted->center, - alpha * recip);
-        bsiDPoint4d_add2ScaledDPoint4d (&vector90, NULL, &pWeighted->vector90, recip, &pWeighted->center, - beta * recip);
-        bsiDPoint4d_scale               (&center,   &pWeighted->center,   recip);
+        vector0.SumOf(pWeighted->vector0, recip, pWeighted->center, - alpha * recip);
+        vector90.SumOf(pWeighted->vector90, recip, pWeighted->center, - beta * recip);
+        center.Scale (pWeighted->center, recip);
 
         /* The transfer matrix is of the form*/
         /*          [ rxx  rxy  cx]*/
         /*          [ ryx  ryy  cy]*/
         /*          [  0    0    1]*/
-        bsiDPoint4d_add2ScaledDPoint4d (&pNormalized->vector0,
-                                            NULL,
-                                            &vector0, transferMatrix.form3d[0][0],
-                                            &vector90, transferMatrix.form3d[1][0]);
-        bsiDPoint4d_add2ScaledDPoint4d (&pNormalized->vector90,
-                                            NULL,
-                                            &vector0, transferMatrix.form3d[0][1],
-                                            &vector90, transferMatrix.form3d[1][1]);
-        bsiDPoint4d_add2ScaledDPoint4d (&pNormalized->center,
-                                            &center,
-                                            &vector0, transferMatrix.form3d[0][2],
-                                            &vector90, transferMatrix.form3d[1][2]);
+        pNormalized->vector0.SumOf(vector0, transferMatrix.form3d[0][0], vector90, transferMatrix.form3d[1][0]);
+        pNormalized->vector90.SumOf(vector0, transferMatrix.form3d[0][1], vector90, transferMatrix.form3d[1][1]);
+        pNormalized->center.SumOf(center, vector0, transferMatrix.form3d[0][2], vector90, transferMatrix.form3d[1][2]);
         bsiDEllipse4d_transferAngles( pNormalized, pWeighted, &inverseTransferMatrix, w0 / wCenter, w90 / wCenter);
         }
     else
@@ -1788,9 +1758,9 @@ DEllipse4dCP pWeighted
 
     if (pNormalized->center.w < 0.0)
         {
-        bsiDPoint4d_negate (&pNormalized->center,   &pNormalized->center);
-        bsiDPoint4d_negate (&pNormalized->vector0,  &pNormalized->vector0);
-        bsiDPoint4d_negate (&pNormalized->vector90, &pNormalized->vector90);
+        pNormalized->center.Negate(pNormalized->center);
+        pNormalized->vector0.Negate(pNormalized->vector0);
+        pNormalized->vector90.Negate(pNormalized->vector90);
         }
     else if (pNormalized->center.w == 0.0)
         {
@@ -1904,7 +1874,7 @@ double          a
     double lambdaA[3];
     RotMatrix A;
 
-    bsiRotMatrix_initFromRowValues (&A,
+    A.InitFromRowValues (
                 axx, axy * 0.5, ax * 0.5,
                 axy * 0.5, ayy, ay * 0.5,
                 ax * 0.5, ay * 0.5,  a);
@@ -1918,13 +1888,13 @@ double          a
                             1.0 / sqrt (fabs (lambda.y)),
                             1.0 / sqrt (fabs (lambda.z)));
 
-        bsiDPoint4d_setComponents (&pInstance->center,
+        pInstance->center.Init(
                         B.form3d[0][2], B.form3d[1][2], 0.0, B.form3d[2][2]);
 
-        bsiDPoint4d_setComponents (&pInstance->vector0,
+        pInstance->vector0.Init(
                         B.form3d[0][0], B.form3d[1][0], 0.0, B.form3d[2][0]);
 
-        bsiDPoint4d_setComponents (&pInstance->vector90,
+        pInstance->vector90.Init(
                         B.form3d[0][1], B.form3d[1][1], 0.0, B.form3d[2][1]);
 
         bsiDEllipse4d_setFullCircleSweep (pInstance);
@@ -2170,7 +2140,7 @@ DEllipse4dCP pEllipse
     DPoint4d    nearPoint[4];
     bool        boolStat = false;
 
-    bsiDPoint3d_setXYZ (&xywPoint, pPoint->x, pPoint->y, 1.0);
+    xywPoint.Init ( pPoint->x, pPoint->y, 1.0);
 
     bsiQCoff_xyEllipseRotMatrix (&matrixB, pEllipse);
 
@@ -2263,7 +2233,7 @@ SmallSetRange1dP pRangeSet    /* => range set with 'in' intervals. */
         {
         for (i = 0; i < numPole; i++)
             {
-            angle = bsiTrig_atan2 (sine[i], cosine[i]);
+            angle = Angle::Atan2 (sine[i], cosine[i]);
             if (!pRangeSet || bsiRange1d_pointIsIn (pRangeSet, angle))
                 {
                 numerator   = x0 + x1 * cosine[i] + x2 * sine[i];
@@ -2324,11 +2294,7 @@ DPoint4dCP pEyePoint
             to give the full transformation of the 'ellipsoid' (which may go to infinity
             if the weight vanishes)
         */
-        bsiTransform_initFrom4Points (&axisTransform,
-                        &pEllipsoidPoint[0],
-                        &pEllipsoidPoint[1],
-                        &pEllipsoidPoint[2],
-                        &pEllipsoidPoint[3]);
+        axisTransform.InitFrom4Points(pEllipsoidPoint[0], pEllipsoidPoint[1], pEllipsoidPoint[2], pEllipsoidPoint[3]);
         result = bsiDMap4d_initFromTransform (&axisMap, &axisTransform, false);
 
         if (pHMap)
@@ -2373,15 +2339,15 @@ DPoint4dCP pEyePoint
             double sineThetaHat   = - localEye.w / mag;
             double cosineThetaHat = sqrt (1.0 - sineThetaHat * sineThetaHat);
 
-            bsiDMatrix4d_transpose (&QT, &Q);
-            bsiDMatrix4d_multiply (&BQT, &BMap.M0, &QT);
+            QT.TransposeOf (Q);
+            BQT.InitProduct (BMap.M0, QT);
 
-            bsiDMatrix4d_getColumnDPoint4d (&BQT, &pHEllipse->vector0 , 0);
-            bsiDMatrix4d_getColumnDPoint4d (&BQT, &pHEllipse->vector90, 1);
-            bsiDMatrix4d_getColumnDPoint4d (&BQT, &vectorW , 2);
-            bsiDMatrix4d_getColumnDPoint4d (&BQT, &pHEllipse->center  , 3);
-            bsiDPoint4d_scale (&pHEllipse->vector0 , &pHEllipse->vector0 , cosineThetaHat);
-            bsiDPoint4d_scale (&pHEllipse->vector90, &pHEllipse->vector90, cosineThetaHat);
+            BQT.GetColumn (pHEllipse->vector0, 0);
+            BQT.GetColumn (pHEllipse->vector90, 1);
+            BQT.GetColumn (vectorW, 2);
+            BQT.GetColumn (pHEllipse->center, 3);
+            pHEllipse->vector0.Scale (pHEllipse->vector0, cosineThetaHat);
+            pHEllipse->vector90.Scale (pHEllipse->vector90, cosineThetaHat);
             bsiDPoint4d_addScaledDPoint4d (&pHEllipse->center, &pHEllipse->center,
                                             &vectorW, sineThetaHat);
             bsiRange1d_setArcSweep( &pHEllipse->sectors, 0.0, msGeomConst_2pi );
@@ -2431,16 +2397,16 @@ DPoint4dCP pEyePoint
         localEyePoint = *pEyePoint;
         }
 
-    bsiDPoint4d_setComponents (&H,
+    H.Init(
                             localEyePoint.x,
                             localEyePoint.y,
                             -localEyePoint.z,
                             -localEyePoint.w
                             );
 
-    bsiDPoint4d_setComponents (&pHEllipse->vector0,   H.z, -H.w, -H.x,  H.y);
-    bsiDPoint4d_setComponents (&pHEllipse->vector90,  H.w,  H.z, -H.y, -H.x);
-    bsiDPoint4d_setComponents (&pHEllipse->center,    H.y, -H.x, -H.w,  H.z);
+    pHEllipse->vector0.Init(   H.z, -H.w, -H.x,  H.y);
+    pHEllipse->vector90.Init(  H.w,  H.z, -H.y, -H.x);
+    pHEllipse->center.Init(    H.y, -H.x, -H.w,  H.z);
 
     /* This should fill in the whole ellipse */
     bsiRange1d_clear ( &pHEllipse->sectors ); bsiRange1d_addArcSweep( &pHEllipse->sectors, 0.0, msGeomConst_2pi) ; /* THISWAS a bool thrown away as a statement */
@@ -2531,9 +2497,9 @@ DEllipse4dCP pInEllipse
     {
     if (pOutEllipse != pInEllipse)
         *pOutEllipse = *pInEllipse;
-    bsiTransform_multiplyDPoint4dArray (pTransform, &pOutEllipse->center  , &pOutEllipse->center, 1);
-    bsiTransform_multiplyDPoint4dArray (pTransform, &pOutEllipse->vector0 , &pOutEllipse->vector0, 1);
-    bsiTransform_multiplyDPoint4dArray (pTransform, &pOutEllipse->vector90, &pOutEllipse->vector90, 1);
+    pTransform->Multiply (&pOutEllipse->center, &pOutEllipse->center, 1);
+    pTransform->Multiply (&pOutEllipse->vector0, &pOutEllipse->vector0, 1);
+    pTransform->Multiply (&pOutEllipse->vector90, &pOutEllipse->vector90, 1);
     }
 
 
@@ -2575,9 +2541,9 @@ int           sector
     if (bsiDEllipse4d_normalizeWeights (&normalizedSource, pSource))
         {
         funcStat = true;
-        bsiDPoint3d_getXYZ (&pEllipse->center,   &normalizedSource.center  );
-        bsiDPoint3d_getXYZ (&pEllipse->vector0,  &normalizedSource.vector0 );
-        bsiDPoint3d_getXYZ (&pEllipse->vector90, &normalizedSource.vector90);
+        pEllipse->center.XyzOf (normalizedSource.center);
+        pEllipse->vector0.XyzOf (normalizedSource.vector0);
+        pEllipse->vector90.XyzOf (normalizedSource.vector90);
 
         if (bsiDEllipse4d_getSector (&normalizedSource, &theta0, &theta1, sector))
             {

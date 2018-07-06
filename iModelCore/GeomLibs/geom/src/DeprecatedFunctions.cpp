@@ -663,7 +663,7 @@ int             nPoint
     dMin = DBL_MAX;
     for (iCurr = 0; iCurr < nPoint; iCurr++)
         {
-        if (bsiDPoint4d_realDistanceSquaredXY (&pArray[iCurr], &dCurr, pPoint)
+        if (pArray[iCurr].RealDistanceSquaredXY (&dCurr, *pPoint)
             && (iMin == -1 || dCurr < dMin))
             {
             dMin = dCurr;
@@ -1620,26 +1620,17 @@ DEllipse4dCP pWeighted
         double alpha = w0 * recip;
         double beta  = w90 * recip;
 
-        bsiDPoint4d_add2ScaledDPoint4d (&vector0,  NULL, &pWeighted->vector0,  recip, &pWeighted->center, - alpha * recip);
-        bsiDPoint4d_add2ScaledDPoint4d (&vector90, NULL, &pWeighted->vector90, recip, &pWeighted->center, - beta * recip);
-        bsiDPoint4d_scale               (&center,   &pWeighted->center,   recip);
+        vector0.SumOf(pWeighted->vector0, recip, pWeighted->center, - alpha * recip);
+        vector90.SumOf(pWeighted->vector90, recip, pWeighted->center, - beta * recip);
+        center.Scale (pWeighted->center, recip);
 
         /* The transfer matrix is of the form*/
         /*          [ rxx  rxy  cx]*/
         /*          [ ryx  ryy  cy]*/
         /*          [  0    0    1]*/
-        bsiDPoint4d_add2ScaledDPoint4d (&pNormalized->vector0,
-                                            NULL,
-                                            &vector0, transferMatrix.form3d[0][0],
-                                            &vector90, transferMatrix.form3d[1][0]);
-        bsiDPoint4d_add2ScaledDPoint4d (&pNormalized->vector90,
-                                            NULL,
-                                            &vector0, transferMatrix.form3d[0][1],
-                                            &vector90, transferMatrix.form3d[1][1]);
-        bsiDPoint4d_add2ScaledDPoint4d (&pNormalized->center,
-                                            &center,
-                                            &vector0, transferMatrix.form3d[0][2],
-                                            &vector90, transferMatrix.form3d[1][2]);
+        pNormalized->vector0.SumOf(vector0, transferMatrix.form3d[0][0], vector90, transferMatrix.form3d[1][0]);
+        pNormalized->vector90.SumOf(vector0, transferMatrix.form3d[0][1], vector90, transferMatrix.form3d[1][1]);
+        pNormalized->center.SumOf(center, vector0, transferMatrix.form3d[0][2], vector90, transferMatrix.form3d[1][2]);
         bsiDEllipse4d_transferAngles( pNormalized, pWeighted, &inverseTransferMatrix, w0 / wCenter, w90 / wCenter);
         }
     else
@@ -1732,10 +1723,9 @@ DPoint4dCP pEyePoint
             BQT.GetColumn (pHEllipse->vector90, 1);
             BQT.GetColumn (vectorW, 2);
             BQT.GetColumn (pHEllipse->center, 3);
-            bsiDPoint4d_scale (&pHEllipse->vector0 , &pHEllipse->vector0 , cosineThetaHat);
-            bsiDPoint4d_scale (&pHEllipse->vector90, &pHEllipse->vector90, cosineThetaHat);
-            bsiDPoint4d_addScaledDPoint4d (&pHEllipse->center, &pHEllipse->center,
-                                            &vectorW, sineThetaHat);
+            pHEllipse->vector0.Scale (pHEllipse->vector0, cosineThetaHat);
+            pHEllipse->vector90.Scale (pHEllipse->vector90, cosineThetaHat);
+            pHEllipse->center.SumOf(pHEllipse->center, vectorW, sineThetaHat);
             bsiRange1d_setArcSweep( &pHEllipse->sectors, 0.0, msGeomConst_2pi );
 
             result = true;

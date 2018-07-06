@@ -253,7 +253,7 @@ int             numDim
         if (1 > maxOrderOut)
             return false;
         *pOrderOut = 1;
-        bsiDPoint4d_cartesianFromHomogeneous (pPointA, pPoleOut);
+        pPointA->GetXYZ (*pPoleOut);
         }
     else if (bsiBezierDPoint4d_isUnitWeight (pPoleIn, order, s_unitWeightRelTol))
         {
@@ -885,7 +885,7 @@ const   DPoint4d    *pPoleArray,
 
     bool    firstPoint;
 
-    bsiDPoint4d_setComponents (&fixedPoint, xx, yy, 0.0, 1.0);
+    fixedPoint.Init( xx, yy, 0.0, 1.0);
     bsiBezierDPoint4d_allPerpendicularsFromDPoint4d
                 (rootArray, NULL, &numRoot, MAX_BEZIER_ORDER, pPoleArray, order, &fixedPoint, 2);
     firstPoint = true;
@@ -965,7 +965,7 @@ const   DPoint4d    *pPoleArray,
 
     bool    firstPoint;
 
-    bsiDPoint4d_setComponents (&fixedPoint, xx, yy, zz, 1.0);
+    fixedPoint.Init( xx, yy, zz, 1.0);
     bsiBezierDPoint4d_allPerpendicularsFromDPoint4d
                 (rootArray, NULL, &numRoot, MAX_BEZIER_ORDER, pPoleArray, order, &fixedPoint, 3);
     firstPoint = true;
@@ -2385,7 +2385,6 @@ DPoint4dCR pointB
 )
     {
     DPoint3d xyz;
-    DVec3d dxyz;
     if (point.w != 0.0)
         {
 
@@ -2399,12 +2398,14 @@ DPoint4dCR pointB
             }
         else
             {
-            DPoint4d dX;
+            DPoint4d dX, ddX;
+            
             dX.DifferenceOf (pointB, pointA);
             dX.Scale (derivativeScale);
-            bsiDPoint4d_normalizePointAndDerivatives (&xyz, &dxyz, NULL, &point, &dX, NULL);
-            points.push_back (xyz);
-            derivatives->push_back (dxyz);
+            ddX.Zero ();
+            auto tangents = DPoint4d::TryNormalizePointAndDerivatives (point, dX, ddX);
+            points.push_back (tangents.Value ().origin);
+            derivatives->push_back (tangents.Value ().vectorU);
             }
         }
     }
@@ -2655,7 +2656,7 @@ DPoint4d    *pPoleArray,
             }
         else if (u0 == 1.0 && u1 == 0.0)
             {
-            bsiDPoint4d_reverseArrayInPlace (pPoleArray, order);
+            VectorOps<DPoint4d>::ReverseArrayInPlace (pPoleArray, order);
             }
         else if (u0 == u1)
             {
@@ -2667,7 +2668,7 @@ DPoint4d    *pPoleArray,
         else if (u0 > u1)
             {
             bsiBezierDPoint4d_subdivideToIntervalInPlace (pPoleArray, order, u1, u0);
-            bsiDPoint4d_reverseArrayInPlace (pPoleArray, order);
+            VectorOps<DPoint4d>::ReverseArrayInPlace (pPoleArray, order);
             }
         else
             {

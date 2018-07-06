@@ -792,7 +792,22 @@ DPoint4dCR homogeneousPoint,        //!< [in] weighted point
 DPoint4dCR homogeneousDerivative1,  //!< [in] weighted first derivative 
 DPoint4dCR homogeneousDerivative2   //!< [in] weighted second derivative
 );
+//! Initialize as coefficient of a plane with origin and 2 in-plane vectors.
+//! @param [in] origin homogeneous origin
+//! @param [in] vector0 first in-plane vector
+//! @param [in] vector1 second in-plane vector
+bool    InitPlaneFromDPoint4dDVec3dDVec3d
+(
+DPoint4dCR origin,
+DVec3dCR vector0,
+DVec3dCR vector1
+);
+
+//! Normalize weights, return as array of DPoint3d.
+//! @return true if normalization succeeded for all points.
+static bool NormalizeArrayWeights (DPoint3dP xyz, DPoint4dCP xyzw, int n);
 };
+
 #endif
 
 END_BENTLEY_GEOMETRY_NAMESPACE

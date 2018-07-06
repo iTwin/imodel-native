@@ -165,10 +165,10 @@ Public bool bsiDToroid3d_addExactSilhouettes (DToroid3dCR instance, CurveVectorP
         auto centerC = origin + radiusC;
         auto centerD = origin - radiusC;
         auto vector90 = instance.minorAxisRatio * zVec;
-        if (bsiTrig_angleInSweep (theta, startRadians, sweepRadians))
+        if (Angle::InSweepAllowPeriodShift (theta, startRadians, sweepRadians))
             curves->Add (ICurvePrimitive::CreateArc (
                 DEllipse3d::FromVectors (centerC, radiusC * instance.minorAxisRatio, vector90, startPhi, sweepPhi)));
-        if (bsiTrig_angleInSweep (theta + Angle::Pi (), startRadians, sweepRadians))
+        if (Angle::InSweepAllowPeriodShift (theta + Angle::Pi (), startRadians, sweepRadians))
             curves->Add (ICurvePrimitive::CreateArc (
                 DEllipse3d::FromVectors (centerD, radiusC * instance.minorAxisRatio, vector90, startPhi, sweepPhi)));
         return true;
@@ -403,7 +403,7 @@ double          theta1
 )
     {
     double sweep = theta1 - theta0;
-    if (bsiTrig_isAngleFullCircle (sweep))
+    if (Angle::IsFullCircle (sweep))
         {
         pParam->type = PR_FullCircle;
         pParam->start = theta0;
@@ -454,7 +454,7 @@ double          value
         case PR_FullCircle:
             return true;
         case PR_SweepAngle:
-            return bsiTrig_angleInSweep (value, pParam->start, pParam->delta);
+            return Angle::InSweepAllowPeriodShift (value, pParam->start, pParam->delta);
         case PR_EmptyAngle:
             return false;
         }
@@ -600,7 +600,7 @@ void                *pUserData      /* => arbitrary pointer */
         {
         savedPoint = pLocalBuffer[numPoint-1];
         bsiDMatrix4d_multiply4dPoints (&pSurface->rotationMap.M0, pLocalBuffer, pLocalBuffer, *pNumPoint);
-        bsiDPoint4d_normalizeArray (pWorldBuffer, pLocalBuffer, numPoint);
+        DPoint4d::NormalizeArrayWeights (pWorldBuffer, pLocalBuffer, numPoint);
         status = handlerFunc (NULL, pWorldBuffer, numPoint, RC_CURVEMASK_SMOOTH, pSurface, pUserData);
 
         if (recycleLastPoint)
@@ -675,7 +675,7 @@ double                  phiMid
         phi   = pArray->pointPair[i].phiPoint.z;
 
         pArray->pointPair[i].sortCoordinate =
-                    bsiTrig_atan2 (phi - phiMid, theta - thetaMid);
+                    Angle::Atan2 (phi - phiMid, theta - thetaMid);
         }
     qsort (pArray->pointPair, numPoint, sizeof (ToroidalPoint),
         (int (*)(const void *, const void *))tp_compareSortCoordinate);
@@ -1092,7 +1092,7 @@ double          theta
     *pNumPoint = 0;
     for (i = 0; i < numRoot; i++)
         {
-        phi = bsiTrig_atan2 (sinPhi[i], cosPhi[i]);
+        phi = Angle::Atan2 (sinPhi[i], cosPhi[i]);
         phiPoint.x = cosPhi[i];
         phiPoint.y = sinPhi[i];
         phiPoint.z = phi;
@@ -1135,7 +1135,7 @@ double          phi
     *pNumPoint = 0;
     for (i = 0; i < numRoot; i++)
         {
-        theta = bsiTrig_atan2 (sinTheta[i], cosTheta[i]);
+        theta = Angle::Atan2 (sinTheta[i], cosTheta[i]);
         thetaPoint.x = cosTheta[i];
         thetaPoint.y = sinTheta[i];
         thetaPoint.z = theta;
@@ -1427,14 +1427,14 @@ void        *pOutputData
         for (i = 0; i < numBreakA; i++)
             {
             theta = breakPointA[i].thetaPoint.z;
-            if (bsiTrig_angleInSweep (theta, theta0, thetaSweep))
+            if (Angle::InSweepAllowPeriodShift (theta, theta0, thetaSweep))
                 thetaBreak[numBreak++] = bsiTrig_adjustAngleToSweep (theta, theta0, thetaSweep);
             }
 
         for (i = 0; i < numBreakB; i++)
             {
             theta = breakPointB[i].thetaPoint.z;
-            if (bsiTrig_angleInSweep (theta, theta0, thetaSweep))
+            if (Angle::InSweepAllowPeriodShift (theta, theta0, thetaSweep))
                 thetaBreak[numBreak++] = bsiTrig_adjustAngleToSweep (theta, theta0, thetaSweep);
             }
 
@@ -1453,8 +1453,8 @@ void        *pOutputData
                 {
                 phiM0 = breakPointM[0].phiPoint.z;
                 phiM1 = breakPointM[1].phiPoint.z;
-                if  (  bsiTrig_angleInSweep (phiM0, phiA, phiAB)
-                    || bsiTrig_angleInSweep (phiM1, phiA, phiAB)
+                if  (  Angle::InSweepAllowPeriodShift (phiM0, phiA, phiAB)
+                    || Angle::InSweepAllowPeriodShift (phiM1, phiA, phiAB)
                     )
                     jmdlRotatedConic_toroidalBlock (
                             pMatrix,
@@ -1507,14 +1507,14 @@ void                    *pOutputParams
     phiSweep    = phi1 - phi0;
 
     /* Two complete theta loops, each with restricted phi range */
-    if (!bsiTrig_isAngleFullCircle (phiSweep))
+    if (!Angle::IsFullCircle (phiSweep))
         {
         /* Only the internal band breaks matter */
         int k = 0;
         for (band = 0; band < numPhiLimit; band++)
             {
             double phiBand = bsiTrig_adjustAngleToSweep (pPhiLimit[band].z, phi0, phiSweep);
-            if (bsiTrig_angleInSweep (phiBand, phi0, phiSweep))
+            if (Angle::InSweepAllowPeriodShift (phiBand, phi0, phiSweep))
                 pPhiLimit[k++].z = bsiTrig_adjustAngleToSweep (pPhiLimit[band].z, phi0, phiSweep);
             }
 
@@ -1537,7 +1537,7 @@ void                    *pOutputParams
         phiA = pPhiLimit[band-1].z;
         phiB = pPhiLimit[band].z;
         phiMid = 0.5 * (phiA + phiB);
-        if (bsiTrig_angleInSweep (phiMid, phi0, phiSweep))
+        if (Angle::InSweepAllowPeriodShift (phiMid, phi0, phiSweep))
             bandStatus = jmdlRotatedConic_toroidalBand
                             (
                             pMatrix,
@@ -1582,7 +1582,7 @@ double      angle1          /* => patch limit */
         pAngle[numAngle++] = angle1;
 
         }
-    else if (bsiTrig_isAngleFullCircle (sweep))
+    else if (Angle::IsFullCircle (sweep))
         {
         /* Sort all limit angles, and add a wraparound */
 
@@ -1600,7 +1600,7 @@ double      angle1          /* => patch limit */
 
         for (i = 0; i < numPoint; i++)
             {
-            if (bsiTrig_angleInSweep (pPoint[i].z, angle0, sweep))
+            if (Angle::InSweepAllowPeriodShift (pPoint[i].z, angle0, sweep))
                 pAngle[numAngle++] = pPoint[i].z;
             }
 
@@ -1663,7 +1663,7 @@ int                 numLimit            /* => one more than number of bands */
         for (i = 0; i < numPoint && allInBand; i++)
             {
             theta = pPointArray->pointPair[i].thetaPoint.z;
-            if (!bsiTrig_angleInSweep (theta, thetaStart, thetaSweep))
+            if (!Angle::InSweepAllowPeriodShift (theta, thetaStart, thetaSweep))
                 {
                 allInBand = false;
                 }
@@ -1750,14 +1750,14 @@ void                    *pOutputData
                                     maxDPhi,
                                     0);
 
-                if (bsiTrig_angleInSweep (theta0, thetaStart, thetaBandSweep))
+                if (Angle::InSweepAllowPeriodShift (theta0, thetaStart, thetaBandSweep))
                     tpa_addSliceAtTheta (&tPoints, pMatrix, theta0, NULL, NULL, TP_BOUNDARY_POINT);
-                if (bsiTrig_angleInSweep (theta1, thetaStart, thetaBandSweep))
+                if (Angle::InSweepAllowPeriodShift (theta1, thetaStart, thetaBandSweep))
                     tpa_addSliceAtTheta (&tPoints, pMatrix, theta1, NULL, NULL, TP_BOUNDARY_POINT);
 
-                if (bsiTrig_angleInSweep (phi0, phiStart, phiBandSweep))
+                if (Angle::InSweepAllowPeriodShift (phi0, phiStart, phiBandSweep))
                     tpa_addSliceAtPhi (&tPoints, pMatrix, phi0, NULL, NULL, TP_BOUNDARY_POINT);
-                if (bsiTrig_angleInSweep (phi1, phiStart, phiBandSweep))
+                if (Angle::InSweepAllowPeriodShift (phi1, phiStart, phiBandSweep))
                     tpa_addSliceAtPhi (&tPoints, pMatrix, phi1, NULL, NULL, TP_BOUNDARY_POINT);
 
                 tpa_normalizeToAngleLimits (&tPoints, thetaStart, thetaEnd, phiStart, phiEnd);

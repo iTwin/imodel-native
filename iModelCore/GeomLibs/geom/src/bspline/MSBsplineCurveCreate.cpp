@@ -874,9 +874,7 @@ MSBsplineCurvePtr MSBsplineCurve::CreateFromDConic4d (DConic4dCR conic)
         DPoint4d    hPoint;
         DPoint3d xyz = result.poles[i];    // that's the circle point.
         // All the poles have z=0 !!!
-        bsiDPoint4d_add3ScaledDPoint4d (&hPoint, NULL, &conic.vector0,  xyz.x,
-                                                       &conic.vector90, xyz.y,
-                                                       &conic.center, result.weights[i]);
+        hPoint.SumOf(conic.vector0, xyz.x, conic.vector90, xyz.y, conic.center, result.weights[i]);
         result.poles[i]   = DPoint3d::From (hPoint.x, hPoint.y, hPoint.z);
         result.weights[i] = hPoint.w;
         }

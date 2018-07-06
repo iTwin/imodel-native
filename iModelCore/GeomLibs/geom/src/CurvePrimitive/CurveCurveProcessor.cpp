@@ -231,7 +231,7 @@ double   w
         bsiDMatrix4d_multiplyWeightedDPoint3dArray (m_pWorldToLocal, &hPoint, &cPoint, &w, 1);
         }
     else
-        bsiDPoint4d_initFromDPoint3dAndWeight (&hPoint, &cPoint, w);
+        hPoint.InitFrom (cPoint, w);
     }
 
 // Apply the worldToLocal transform to a segment.

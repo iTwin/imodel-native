@@ -239,17 +239,13 @@ DPlane3dCP                              pPlane
     transform.InitFromOriginAndVectors(pPlane->origin, uVec, vVec, wVec);
     boolstat = inverse.InverseOf (transform);
 
-    bsiDPoint4d_setComponents
-                    (
-                    &fixedPlane,
+    fixedPlane.Init(
                     inverse.form3d[2][0],
                     inverse.form3d[2][1],
                     inverse.form3d[2][2],
                     inverse.form3d[2][3]
                     );
-    bsiDPoint4d_setComponents
-                    (
-                    &incrementalPlane,
+    incrementalPlane.Init(
                     0.0,
                     0.0,
                     0.0,
@@ -330,13 +326,13 @@ double                          daMin
 
         if (sMin > 0.0)
             {
-            bsiDPoint4d_interpolate (&gp0.point, &pGP0->point, sMin, &pGP1->point);
+            gp0.point.Interpolate (pGP0->point, sMin, pGP1->point);
             gp0.a = (1.0 - sMin) * pGP0->a  + sMin * pGP1->a;
             }
 
         if (sMax < 1.0)
             {
-            bsiDPoint4d_interpolate (&gp1.point, &pGP0->point, sMax, &pGP1->point);
+            gp1.point.Interpolate (pGP0->point, sMax, pGP1->point);
             gp1.a = (1.0 - sMax) * pGP0->a  + sMax * pGP1->a;
             }
 
@@ -349,9 +345,9 @@ double                          daMin
     if (normalizeOutput)
         {
         if (gp0.point.w != 1.0)
-            bsiDPoint4d_initWithNormalizedWeight (&gp0.point, &gp0.point);
+            gp0.point.InitWithNormalizedWeight (gp0.point);
         if (gp1.point.w != 1.0)
-            bsiDPoint4d_initWithNormalizedWeight (&gp1.point, &gp1.point);
+            gp1.point.InitWithNormalizedWeight (gp1.point);
         }
     dest.Add (gp0);
     dest.Add (gp1);
@@ -513,15 +509,9 @@ bvector<DSegment3d> &segments,
         xyzA.SumOf (xyz0, (a1 - b0) * divDeltaA, xyz1, (b0 - a0) * divDeltaA);
         xyzB.SumOf (xyz0, (a1 - b1) * divDeltaA, xyz1, (b1 - a0) * divDeltaA);
 /*
-        bsiDPoint4d_add2ScaledDPoint4d (&point0, NULL,
-                                &pGP0->point, (a1 - b0) * divDeltaA,
-                                &pGP1->point, (b0 - a0) * divDeltaA
-                                );
+        point0.SumOf(pGP0->point, (a1 - b0) * divDeltaA, pGP1->point, (b0 - a0) * divDeltaA);
 
-        bsiDPoint4d_add2ScaledDPoint4d (&point1, NULL,
-                                &pGP0->point, (a1 - b1) * divDeltaA,
-                                &pGP1->point, (b1 - a0) * divDeltaA
-                                );
+        point1.SumOf(pGP0->point, (a1 - b1) * divDeltaA, pGP1->point, (b1 - a0) * divDeltaA);
 */
         segments.push_back (DSegment3d::From (xyzA, xyzB));
         }
@@ -903,8 +893,8 @@ const   DPoint4d            *pLocalEnd,
     ah = 1.0 / (h1 - h0);
     f0 = h1 * ah;
     f1 = - h0 * ah;
-    bsiDPoint4d_add2ScaledDPoint4d (&hPoint, NULL, pLineStart, f0, pLineEnd, f1);
-    bsiDPoint4d_add2ScaledDPoint4d (&hLocalPoint, NULL, pLocalStart, f0, pLocalEnd, f1);
+    hPoint.SumOf(*pLineStart, f0, *pLineEnd, f1);
+    hLocalPoint.SumOf(*pLocalStart, f0, *pLocalEnd, f1);
 
     gPoint.point    = hPoint;
     gPoint.a        = hLocalPoint.x / hLocalPoint.w;
@@ -1319,7 +1309,7 @@ DEllipse3dCR ellipse
         for (plane = plane0; plane <= plane1; plane++)
             {
             //printf ("              -------------------------------------------- PLANE %d\n", plane);
-            bsiDPoint4d_addScaledDPoint4d (&H, &H0, &H1, (double)plane);
+            H.SumOf(H0, H1, (double)plane);
             jmdlGPA_TCH_cutDEllipse3d (pContext, ellipse, H, plane);
             }
         }
@@ -1426,7 +1416,7 @@ static void        jmdlGPA_TCH_cutCombinationBezier
             if (bAccept)
                 {
                 gPoint.point = rootPointArray[i];
-                bsiDPoint4d_cartesianFromHomogeneous (&gPoint.point, &cPoint);
+                gPoint.point.GetXYZ (cPoint);
                 gPoint.a     = jmdlGPA_TCH_pointToSortCoordinate (pContext, &gPoint.point);
                 gPoint.userData = index;
                 gPoint.mask     = 0;

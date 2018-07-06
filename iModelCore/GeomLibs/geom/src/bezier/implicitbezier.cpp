@@ -468,7 +468,7 @@ const DPoint4d  *pB,
         bsiBezierDPoint4d_lineProductXYW (&lineCoffs, &pA[0], &pA[3], 0, 3, orderA);
         bsiBezierDPoint4d_lineProductXYW (&tempCoffs, &pA[1], &pA[2], 1, 2, orderA);
 
-        bsiDPoint4d_addDPoint4dDPoint4d (&lineCoffs, &lineCoffs, &tempCoffs);
+        lineCoffs.SumOf (lineCoffs, tempCoffs);
 
         insertLineCoffs (Mijk, 1, 1, numI, &lineCoffs, pB, orderB);
 
@@ -489,7 +489,7 @@ const DPoint4d  *pB,
             {
             for (j = i; j < orderA - 1; j++)
                 {
-                bsiDPoint4d_setComponents (&sum, 0.0, 0.0, 0.0, 0.0);
+                sum.Init( 0.0, 0.0, 0.0, 0.0);
                 k = i + j + 1 - orderA - 1;
                 if (k < 0)
                     k = 0;
@@ -499,7 +499,7 @@ const DPoint4d  *pB,
                     if (0 <= m && m < orderA)
                         {
                         bsiBezierDPoint4d_lineProductXYW (&term, &pA[k], &pA[m], k, m, orderA);
-                        bsiDPoint4d_addDPoint4dDPoint4d (&sum, &sum, &term);
+                        sum.SumOf (sum, term);
                         }
                     }
                 insertLineCoffs (Mijk, i, j, numI, &sum, pB, orderB);

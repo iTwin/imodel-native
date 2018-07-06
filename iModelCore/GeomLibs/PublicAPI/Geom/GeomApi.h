@@ -785,7 +785,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "doublefuncs.fdf"
 #include "dpoint3darray.fdf"
 #include "dpoint3ddvec3d.fdf"
-#include "dpoint4d.fdf"
 #include "drange3d.fdf"
 
 //#include "internal/dtoroid3d.fdf"

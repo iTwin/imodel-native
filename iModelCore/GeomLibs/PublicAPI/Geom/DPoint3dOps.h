@@ -158,6 +158,12 @@ public: static size_t GEOMDLLIMPEXP MostDistantIndex (bvector<T>const &data, T c
 //! Find the index of the value most distance from baseValue. Return SIZE_MAX if empty array.
 public: static size_t GEOMDLLIMPEXP MostDistantIndex (T const *data, size_t n, T const &baseValue);
 
+
+public: static void ReverseArrayInPlace (T *data, int n)
+    {
+    for (int i = 0, j = n - 1; i < j; i++, j--)
+        std::swap (data[i], data[j]);
+    }
 };
 
 //! @ingroup BentleyGeom_Operations

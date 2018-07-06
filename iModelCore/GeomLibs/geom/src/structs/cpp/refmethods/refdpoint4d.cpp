@@ -1227,6 +1227,18 @@ bool DPoint4d::NormalizeWeightInPlace ()
     return InitWithNormalizedWeight (*this);
     }
 
+/*-----------------------------------------------------------------*//**
+* Normalize weights, return as array of DPoint3d.
+* @return true if normalization succeeded for all points.
++----------------------------------------------------------------------*/
+bool DPoint4d::NormalizeArrayWeights (DPoint3dP xyz, DPoint4dCP xyzw, int n)
+    {
+    bool allOK = true;
+    for (int i = 0; i < n; i++)
+        if (!xyzw[i].GetProjectedXYZ (xyz[i]))
+            allOK = false;
+    return allOK;
+    }
 
 /*-----------------------------------------------------------------*//**
 * Normalizes a homogeneous plane (by dividing through by the vector
@@ -1635,4 +1647,39 @@ DPoint4dCR homogeneousDerivative2
         }
     }
 
+/*-----------------------------------------------------------------*//**
+* Computes the homogeneous coordinate vector for a plane defined by
+* a DPoint4d origin and a pair of 3D vectors.
+*
+* @instance pInstance => homogeneous vector for plane
+* @param pOrigin <= a point on the plane.
+* @param pVector1 <= a vector in the plane.
+* @param pVector2 <= another vector in the plane.
+* @return false if origin, vectors are not independent.
+* @indexVerb init
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+bool    DPoint4d::InitPlaneFromDPoint4dDVec3dDVec3d
+(
+DPoint4dCR origin,
+DVec3dCR vector0,
+DVec3dCR vector1
+)
+    {
+    if (origin.w == 0.0)
+        {
+        this->Init (0,0,0,1);
+        }
+    else
+        {
+        DPoint3d W;
+        double a, b;
+        a = origin.w;
+        W.CrossProduct (vector0, vector1);
+        b = origin.DotProduct (W, 0.0);
+        this->Init (a * W.x, a * W.y, a * W.z, -b);
+        }
+    /* UGH -- need to test zero.  No good tolerance around. */
+    return this->x != 0.0 || this->y != 0.0 || this->z != 0.0;
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE

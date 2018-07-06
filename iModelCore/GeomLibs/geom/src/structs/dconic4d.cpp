@@ -181,9 +181,9 @@ double        theta0,
 double        sweep
 )
     {
-    bsiDPoint4d_setComponents (&pConic->center, cx, cy, cz, 1.0);
-    bsiDPoint4d_setComponents (&pConic->vector0, ux, uy, uz, 0.0);
-    bsiDPoint4d_setComponents (&pConic->vector90, vx, vy, vz, 0.0);
+    pConic->center.Init( cx, cy, cz, 1.0);
+    pConic->vector0.Init( ux, uy, uz, 0.0);
+    pConic->vector90.Init( vx, vy, vz, 0.0);
 
     pConic->start        = theta0;
     pConic->sweep        = sweep;
@@ -223,9 +223,9 @@ double          sweep
     double ux = cos (thetaX);
     double uy = sin (thetaX);
 
-    bsiDPoint4d_setComponents (&pConic->center, cx, cy, cz, 1.0);
-    bsiDPoint4d_setComponents (&pConic->center,  rx * ux, rx * uy, 0.0, 0.0);
-    bsiDPoint4d_setComponents (&pConic->center, -ry * uy, ry * ux, 0.0, 0.0);
+    pConic->center.Init( cx, cy, cz, 1.0);
+    pConic->center.Init(  rx * ux, rx * uy, 0.0, 0.0);
+    pConic->center.Init( -ry * uy, ry * ux, 0.0, 0.0);
 
     pConic->start        = theta0;
     pConic->sweep        = sweep;
@@ -602,12 +602,7 @@ double      theta
     DPoint4d homogeneousPoint;
     cosTheta = cos(theta);
     sinTheta = sin(theta);
-    bsiDPoint4d_add2ScaledDPoint4d (
-            &homogeneousPoint,
-            &pConic->center,
-            &pConic->vector0, cosTheta,
-            &pConic->vector90, sinTheta
-            );
+    homogeneousPoint.SumOf(pConic->center, pConic->vector0, cosTheta, pConic->vector90, sinTheta);
     return homogeneousPoint.GetProjectedXYZ (*pPoint);
     }
 
@@ -631,12 +626,7 @@ double      theta
     double cosTheta, sinTheta;
     cosTheta = cos(theta);
     sinTheta = sin(theta);
-    bsiDPoint4d_add2ScaledDPoint4d (
-            pPoint,
-            &pConic->center,
-            &pConic->vector0, cosTheta,
-            &pConic->vector90, sinTheta
-            );
+    pPoint->SumOf(pConic->center, pConic->vector0, cosTheta, pConic->vector90, sinTheta);
     }
 
 
@@ -658,12 +648,7 @@ double      xx,
 double      yy
 )
     {
-    bsiDPoint4d_add2ScaledDPoint4d (
-            pPoint,
-            &pConic->center,
-            &pConic->vector0, xx,
-            &pConic->vector90, yy
-            );
+    pPoint->SumOf(pConic->center, pConic->vector0, xx, pConic->vector90, yy);
     }
 
 
@@ -737,27 +722,16 @@ double      theta
 
     if (pX || pddX)
         {
-        bsiDPoint4d_add2ScaledDPoint4d (
-                &vector,
-                NULL,
-                &pConic->vector0, cosTheta,
-                &pConic->vector90, sinTheta
-                );
+        vector.SumOf(pConic->vector0, cosTheta, pConic->vector90, sinTheta);
         if (pX)
-            bsiDPoint4d_addDPoint4dDPoint4d (pX, &pConic->center, &vector);
+            pX->SumOf (pConic->center, vector);
 
         if (pddX)
-            bsiDPoint4d_negate (pddX, &vector);
+            pddX->Negate(vector);
         }
 
     if (pdX)
-        bsiDPoint4d_add2ScaledDPoint4d
-                (
-                pdX,
-                NULL,
-                &pConic->vector0,  -sinTheta,
-                &pConic->vector90,  cosTheta
-                );
+        pdX->SumOf(pConic->vector0, -sinTheta, pConic->vector90, cosTheta);
     }
 
 
@@ -786,9 +760,9 @@ double      fraction
 
     bsiDConic4d_angleParameterToDPoint4dDerivatives (pConic, pX, pdX, pddX, theta);
     if (pdX)
-        bsiDPoint4d_scale (pdX, pdX, a);
+        pdX->Scale (*pdX, a);
     if (pddX)
-        bsiDPoint4d_scale (pddX, pddX, a * a);
+        pddX->Scale (*pddX, a * a);
     }
 
 
@@ -831,9 +805,9 @@ double      theta
         divw2 = divw * divw;
         divw4 = divw2 * divw2;
 
-        bsiDPoint4d_weightedDifference (&D2, &ddX, &X);
-        bsiDPoint4d_weightedDifference (&D1, &dX, &X);
-        bsiDPoint4d_add2ScaledDPoint4d (&Z, NULL, &D2, w2, &D1, -2.0 * wdw);
+        D2.WeightedDifferenceOf(ddX, X);
+        D1.WeightedDifferenceOf(dX, X);
+        Z.SumOf(D2, w2, D1, -2.0 * wdw);
         *pddX = Z. GetScaledXYZ (divw4);
 
         if (pdX)
@@ -849,7 +823,7 @@ double      theta
         boolstat = DoubleOps::SafeDivide (divw, 1.0, w, 1.0);
         divw2 = divw * divw;
 
-        bsiDPoint4d_weightedDifference (&D1, &dX, &X);
+        D1.WeightedDifferenceOf(dX, X);
 
         *pdX = D1. GetScaledXYZ (divw2);
 
@@ -892,37 +866,26 @@ double      theta
 
     if (pX || numDerivative >= 2)
         {
-        bsiDPoint4d_add2ScaledDPoint4d (
-                &vector,
-                NULL,
-                &pConic->vector0, cosTheta,
-                &pConic->vector90, sinTheta
-                );
+        vector.SumOf(pConic->vector0, cosTheta, pConic->vector90, sinTheta);
 
         if (pX)
-            bsiDPoint4d_addDPoint4dDPoint4d (pX, &pConic->center, &vector);
+            pX->SumOf (pConic->center, vector);
 
         for (i = 2; i <= numDerivative ; i += 2)
             {
-            bsiDPoint4d_negateInPlace (&vector);
+            vector.Negate();
             pX[i] = vector;
             }
         }
 
     if (numDerivative >= 1)
         {
-        bsiDPoint4d_add2ScaledDPoint4d
-                (
-                &vector,
-                NULL,
-                &pConic->vector0,  -sinTheta,
-                &pConic->vector90,  cosTheta
-                );
+        vector.SumOf(pConic->vector0, -sinTheta, pConic->vector90, cosTheta);
         pX[1] = vector;
 
         for (i = 3; i <= numDerivative ; i += 2 )
             {
-            bsiDPoint4d_negateInPlace (&vector);
+            vector.Negate();
             pX[i] = vector;
             }
         }
@@ -1124,10 +1087,10 @@ DMatrix4dP pInverse
     DMatrix4d A, AI;
     /* This is an explicit scheme that works GREAT except.... when center.w=0 it
         failes.  GRRRRRRRRRRRR. */
-    bsiDPoint4d_weightedDifference (&diff0, &pConic->vector0, &pConic->center);
-    bsiDPoint4d_weightedDifference (&diff90, &pConic->vector90, &pConic->center);
-    bsiDPoint4d_cartesianFromHomogeneous (&diff0, &vec0);
-    bsiDPoint4d_cartesianFromHomogeneous (&diff90, &vec90);
+    diff0.WeightedDifferenceOf(pConic->vector0, pConic->center);
+    diff90.WeightedDifferenceOf(pConic->vector90, pConic->center);
+    diff0.GetXYZ (vec0);
+    diff90.GetXYZ (vec90);
     vecZ.NormalizedCrossProduct (vec0, vec90);
     A.SetColumn (0, pConic->vector0);
     A.SetColumn (1, pConic->vector90);
@@ -1561,9 +1524,7 @@ int       numPoint
     int i;
     for (i = 0; i < numPoint; i++)
         {
-        bsiDPoint4d_add2ScaledDPoint4d (&pPoint[i], &pConic->center,
-                                &pConic->vector0, pTrig[i].x,
-                                &pConic->vector90, pTrig[i].y);
+        pPoint[i].SumOf(pConic->center, pConic->vector0, pTrig[i].x, pConic->vector90, pTrig[i].y);
         }
     return;
     }
@@ -1878,9 +1839,9 @@ DConic4dCP pWeighted
 
     if (pNormalized->center.w < 0.0)
         {
-        bsiDPoint4d_negate (&pNormalized->center,   &pNormalized->center);
-        bsiDPoint4d_negate (&pNormalized->vector0,  &pNormalized->vector0);
-        bsiDPoint4d_negate (&pNormalized->vector90, &pNormalized->vector90);
+        pNormalized->center.Negate(pNormalized->center);
+        pNormalized->vector0.Negate(pNormalized->vector0);
+        pNormalized->vector90.Negate(pNormalized->vector90);
         }
     else if (pNormalized->center.w == 0.0)
         {
@@ -2459,13 +2420,7 @@ bool          clipZ
                             {
                             /* Clip against the other directons */
                             goodPoint = true;
-                            bsiDPoint4d_add2ScaledDPoint4d
-                                                (
-                                                &hPoint,
-                                                &pConic->center,
-                                                &pConic->vector0,  trigPoints[root].x,
-                                                &pConic->vector90, trigPoints[root].y
-                                                );
+                            hPoint.SumOf(pConic->center, pConic->vector0, trigPoints[root].x, pConic->vector90, trigPoints[root].y);
 
                             if (hPoint.GetProjectedXYZ (point))
                                 {
@@ -2566,10 +2521,7 @@ DSegment4dCP pSegment
         if (pConicAngles)
             pConicAngles[i] = trigPoints[i].z;
 
-        bsiDPoint4d_add2ScaledDPoint4d (&globalConicPoint,
-                            &pConic->center,
-                            &pConic->vector0,  trigPoints[i].x,
-                            &pConic->vector90, trigPoints[i].y);
+        globalConicPoint.SumOf(pConic->center, pConic->vector0, trigPoints[i].x, pConic->vector90, trigPoints[i].y);
 
         if (pConicPoints)
             pConicPoints[i] = globalConicPoint;
@@ -2577,10 +2529,7 @@ DSegment4dCP pSegment
         if (pLinePoints || pLineParams)
             {
             double segmentParam;
-            bsiDPoint4d_add2ScaledDPoint4d (&localConicPoint,
-                            &localConic.center,
-                            &localConic.vector0,  trigPoints[i].x,
-                            &localConic.vector90, trigPoints[i].y);
+            localConicPoint.SumOf(localConic.center, localConic.vector0, trigPoints[i].x, localConic.vector90, trigPoints[i].y);
 
             bsiDSegment4d_projectDPoint4dCartesianXYW
                     (
@@ -2659,18 +2608,12 @@ RotMatrixCP pB1
         s0[i] = sin (angle0[i]);
 
         if (pConic0Points)
-            bsiDPoint4d_add2ScaledDPoint4d (&pConic0Points[i],
-                            &pConic0->center,
-                            &pConic0->vector0,  c0[i],
-                            &pConic0->vector90, s0[i]);
+            pConic0Points[i].SumOf(pConic0->center, pConic0->vector0, c0[i], pConic0->vector90, s0[i]);
         if (pConic0Angles)
             pConic0Angles[i] = angle0[i];
 
         if (pConic1Points)
-            bsiDPoint4d_add2ScaledDPoint4d (&pConic1Points[i],
-                            &pConic1->center,
-                            &pConic1->vector0, c1[i],
-                            &pConic1->vector90, s1[i]);
+            pConic1Points[i].SumOf(pConic1->center, pConic1->vector0, c1[i], pConic1->vector90, s1[i]);
         if (pConic1Angles)
             pConic1Angles[i] = angle1[i];
 
@@ -2703,7 +2646,7 @@ DPoint4dP plane
     DVec3d vector0, vector90;
     vector0.WeightedDifferenceOf(conic->vector0, conic->center);
     vector90.WeightedDifferenceOf(conic->vector90, conic->center);
-    return bsiDPoint4d_planeFromDPoint4dAndDPoint3dVectors (plane, &conic->center, &vector0, &vector90);
+    return plane->InitPlaneFromDPoint4dDVec3dDVec3d (conic->center, vector0, vector90);
     }
 
 
@@ -2875,9 +2818,9 @@ DConic4dCP pConic
         &&  fabs (pConic->vector90.w) < wTol
         )
         {
-        dotUV = bsiDPoint4d_dotProductXYZ (&pConic->vector0, &pConic->vector90);
-        magU = sqrt (bsiDPoint4d_dotProductXYZ (&pConic->vector0, &pConic->vector0));
-        magV = sqrt (bsiDPoint4d_dotProductXYZ (&pConic->vector90, &pConic->vector90));
+        dotUV = pConic->vector0.DotProductXYZ (pConic->vector90);
+        magU = sqrt (pConic->vector0.DotProductXYZ (pConic->vector0));
+        magV = sqrt (pConic->vector90.DotProductXYZ (pConic->vector90));
 
         /* Circular if the axes have the same magnitude and are perpendicular */
         if (fabs(magU - magV) < (magU + magV) * relTol)
@@ -3945,14 +3888,7 @@ RotMatrixCP pAxisTransform
 
     for (i = 0; i < 3; i++)
         {
-        bsiDPoint4d_add3ScaledDPoint4d
-                        (
-                        &outPoint[i],
-                        NULL,
-                        &vector0, pAxisTransform->form3d[0][i],
-                        &vector90, pAxisTransform->form3d[1][i],
-                        &center, pAxisTransform->form3d[2][i]
-                        );
+        outPoint[i].SumOf(vector0, pAxisTransform->form3d[0][i], vector90, pAxisTransform->form3d[1][i], center, pAxisTransform->form3d[2][i]);
         }
 
     pConic->vector0  = outPoint[0];
@@ -4064,18 +4000,8 @@ int  *pCurveType
                             );
             vector0 = axes.vector0;
             vector90 = axes.vector90;
-            bsiDPoint4d_add2ScaledDPoint4d
-                    (
-                    &axes.vector0,
-                    NULL,
-                    &vector0,  c,
-                    &vector90, s);
-            bsiDPoint4d_add2ScaledDPoint4d
-                    (
-                    &axes.vector90,
-                    NULL,
-                    &vector0,  -s,
-                    &vector90, c);
+            axes.vector0.SumOf(vector0, c, vector90, s);
+            axes.vector90.SumOf(vector0, -s, vector90, c);
             D.GivensRowOp (c, s, 0, 1);
             theta = Angle::Atan2 (s,c);
             axes.start -= theta;
@@ -4123,20 +4049,14 @@ DConic4dCP pConicIn
         {
         double c0 = cos (conic.start);
         double s0 = sin (conic.start);
-        bsiDPoint4d_add2ScaledDPoint4d (&conic.vector0, NULL,
-                                        &conic.vector0, c0,
-                                        &conic.vector90, s0);
+        conic.vector0.SumOf(conic.vector0, c0, conic.vector90, s0);
         if (conic.sweep > 0.0)
             {
-            bsiDPoint4d_add2ScaledDPoint4d (&conic.vector90, NULL,
-                                        &conic.vector0, -s0,
-                                        &conic.vector90, c0);
+            conic.vector90.SumOf(conic.vector0, -s0, conic.vector90, c0);
             }
         else
             {
-            bsiDPoint4d_add2ScaledDPoint4d (&conic.vector90, NULL,
-                                        &conic.vector0,   s0,
-                                        &conic.vector90, -c0);
+            conic.vector90.SumOf(conic.vector0, s0, conic.vector90, -c0);
             conic.sweep = - conic.sweep;
             }
         }
@@ -4264,11 +4184,11 @@ double aww
         iVector0  = (iCenter  + 1) % 3;
         iVector90 = (iVector0 + 1) % 3;
 
-        bsiDPoint4d_setComponents (&pConic->center,
+        pConic->center.Init(
                         matrixB.form3d[0][iCenter],   matrixB.form3d[1][iCenter],   0.0, matrixB.form3d[2][iCenter]);
-        bsiDPoint4d_setComponents (&pConic->vector0,
+        pConic->vector0.Init(
                         matrixB.form3d[0][iVector0],  matrixB.form3d[1][iVector0],  0.0, matrixB.form3d[2][iVector0]);
-        bsiDPoint4d_setComponents (&pConic->vector90,
+        pConic->vector90.Init(
                         matrixB.form3d[0][iVector90], matrixB.form3d[1][iVector90], 0.0, matrixB.form3d[2][iVector90]);
 
         pConic->start = 0.0;
@@ -4278,7 +4198,7 @@ double aww
     else if (numPositive == 2 && numNegative == 0)
         {
         iCenter = lastZero;
-        bsiDPoint4d_setComponents (&pConic->center,
+        pConic->center.Init(
                         matrixB.form3d[0][iCenter],   matrixB.form3d[1][iCenter],   0.0, matrixB.form3d[2][iCenter]);
         typeCode = 3;
         }
@@ -4290,14 +4210,14 @@ double aww
         iCenter = lastZero;
         i0  = (iCenter  + 1) % 3;
         i1  = (i0 + 1) % 3;
-        bsiDPoint4d_setComponents (&pConic->center,
+        pConic->center.Init(
                         matrixB.form3d[0][iCenter],  matrixB.form3d[1][iCenter],  0.0, matrixB.form3d[2][iCenter]);
-        bsiDPoint4d_setComponents (&B0,
+        B0.Init(
                         matrixB.form3d[0][i0],       matrixB.form3d[1][i0],       0.0, matrixB.form3d[2][i0]);
-        bsiDPoint4d_setComponents (&B1,
+        B1.Init(
                         matrixB.form3d[0][i1],       matrixB.form3d[1][i1],       0.0, matrixB.form3d[2][i1]);
-        bsiDPoint4d_addScaledDPoint4d (&pConic->vector0,  &B0, &B1, 1.0);
-        bsiDPoint4d_addScaledDPoint4d (&pConic->vector90, &B0, &B1, -1.0);
+        pConic->vector0.SumOf(B0, B1, 1.0);
+        pConic->vector90.SumOf(B0, B1, -1.0);
         typeCode = 1;
         }
     else if (numPositive == 1 && numNegative == 0)
@@ -4307,9 +4227,9 @@ double aww
         i0 = lastPositive;
         i1  = (i0 + 1) % 3;
         i2  = (i1 + 1) % 3;
-        bsiDPoint4d_setComponents (&pConic->center,
+        pConic->center.Init(
                         matrixB.form3d[0][i1],  matrixB.form3d[1][i1],  0.0, matrixB.form3d[2][i1]);
-        bsiDPoint4d_setComponents (&pConic->vector0,
+        pConic->vector0.Init(
                         matrixB.form3d[0][i2],  matrixB.form3d[1][i2],  0.0, matrixB.form3d[2][i2]);
         typeCode = 2;
         }
@@ -4414,13 +4334,7 @@ DPoint3dP pCirclePoleArray
         {
         for (i = 0; i < 5; i++)
             {
-            bsiDPoint4d_add3ScaledDPoint4d
-                (
-                &pPoleArray[i], NULL,
-                &pConic->center,   circlePoleArray[i].z,
-                &pConic->vector0,  circlePoleArray[i].x,
-                &pConic->vector90, circlePoleArray[i].y
-                );
+            pPoleArray[i].SumOf(pConic->center, circlePoleArray[i].z, pConic->vector0, circlePoleArray[i].x, pConic->vector90, circlePoleArray[i].y);
             }
         }
 

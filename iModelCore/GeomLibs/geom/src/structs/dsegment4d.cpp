@@ -286,8 +286,8 @@ DPoint4dCP pPoint
     double UdotU, UdotV, param;
     bool    result;
 
-    bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorU, &pInstance->point[1], &pInstance->point[0]);
-    bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorV, pPoint, &pInstance->point[0]);
+    vectorU.DifferenceOf (*(&pInstance->point[1]), *(&pInstance->point[0]));
+    vectorV.DifferenceOf (*pPoint, *(&pInstance->point[0]));
     UdotU = vectorU.DotProduct (vectorU);
     UdotV = vectorU.DotProduct (vectorV);
 
@@ -297,7 +297,7 @@ DPoint4dCP pPoint
         *pClosestParam = param;
 
     if (pClosestPoint)
-        bsiDPoint4d_addScaledDPoint4d (pClosestPoint, &pInstance->point[0], &vectorU, param);
+        pClosestPoint->SumOf(*(&pInstance->point[0]), vectorU, param);
     return result;
     }
 
@@ -323,7 +323,7 @@ DPoint4dCP pPointP
     double dot0, dot1, param;
     bool    result;
 
-    bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorU, &pInstance->point[1], &pInstance->point[0]);
+    vectorU.DifferenceOf (*(&pInstance->point[1]), *(&pInstance->point[0]));
     vectorUBar.WeightedDifferenceOf(*(&pInstance->point[1]), *(&pInstance->point[0]));
     diffPA.WeightedDifferenceOf(*pPointP, *(&pInstance->point[0]));
     diffUP.WeightedDifferenceOf(vectorU, *pPointP);
@@ -336,7 +336,7 @@ DPoint4dCP pPointP
         *pClosestParam = param;
 
     if (pClosestPoint)
-        bsiDPoint4d_addScaledDPoint4d (pClosestPoint, &pInstance->point[0], &vectorU, param);
+        pClosestPoint->SumOf(*(&pInstance->point[0]), vectorU, param);
     return result;
     }
 
@@ -361,8 +361,8 @@ DPoint4dCP pPoint
     double UdotU, UdotV, param;
     bool    result;
 
-    bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorU, &pInstance->point[1], &pInstance->point[0]);
-    bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorV, pPoint, &pInstance->point[0]);
+    vectorU.DifferenceOf (*(&pInstance->point[1]), *(&pInstance->point[0]));
+    vectorV.DifferenceOf (*pPoint, *(&pInstance->point[0]));
     UdotU = vectorU.DotProduct (vectorU);
     UdotV = vectorU.DotProduct (vectorV);
 
@@ -383,7 +383,7 @@ DPoint4dCP pPoint
         else if (param >= 1.0)
             *pClosestPoint = pInstance->point[1];
         else
-            bsiDPoint4d_addScaledDPoint4d (pClosestPoint, &pInstance->point[0], &vectorU, param);
+            pClosestPoint->SumOf(*(&pInstance->point[0]), vectorU, param);
         }
     return result;
     }
@@ -421,13 +421,11 @@ DPoint4dCP pPlaneCoffs
         {
         if (boolstat)
             {
-            bsiDPoint4d_interpolate (pIntPoint,
-                                    &pInstance->point[0], lambda, &pInstance->point[1]);
+            pIntPoint->Interpolate (*(&pInstance->point[0]), lambda, *(&pInstance->point[1]));
             }
         else
             {
-            bsiDPoint4d_weightedDifference (pIntPoint,
-                                    &pInstance->point[1], &pInstance->point[0]);
+            pIntPoint->WeightedDifferenceOf(*(&pInstance->point[1]), *(&pInstance->point[0]));
             }
         }
 
@@ -607,22 +605,10 @@ DSegment4dCP pSegment23
 
     /* Use original (untransformed) segments for coordinate calculations. */
     if (pPoint01)
-        bsiDPoint4d_interpolate
-                    (
-                    pPoint01,
-                    &pSegment01->point[0],
-                    param01,
-                    &pSegment01->point[1]
-                    );
+        pPoint01->Interpolate (*(&pSegment01->point[0]), param01, *(&pSegment01->point[1]));
 
     if (pPoint23)
-        bsiDPoint4d_interpolate
-                    (
-                    pPoint23,
-                    &pSegment23->point[0],
-                    param23,
-                    &pSegment23->point[1]
-                    );
+        pPoint23->Interpolate (*(&pSegment23->point[0]), param23, *(&pSegment23->point[1]));
 
     if (pParam01)
         *pParam01 = param01;
@@ -690,22 +676,10 @@ DSegment4dCP pSegment23
             && DoubleOps::SafeDivide (param23, - h2, h3 - h2, 0.0))
             {
             if (pPoint01)
-                bsiDPoint4d_interpolate
-                            (
-                            pPoint01,
-                            &pSegment01->point[0],
-                            param01,
-                            &pSegment01->point[1]
-                            );
+                pPoint01->Interpolate (*(&pSegment01->point[0]), param01, *(&pSegment01->point[1]));
 
             if (pPoint23)
-                bsiDPoint4d_interpolate
-                            (
-                            pPoint23,
-                            &pSegment23->point[0],
-                            param23,
-                            &pSegment23->point[1]
-                            );
+                pPoint23->Interpolate (*(&pSegment23->point[0]), param23, *(&pSegment23->point[1]));
 
             if (pParam01)
                 *pParam01 = param01;
@@ -804,7 +778,7 @@ DPoint4dP pPoint,
 double  param
 )
     {
-    bsiDPoint4d_interpolate (pPoint, &pInstance->point[0], param, &pInstance->point[1]);
+    pPoint->Interpolate (*(&pInstance->point[0]), param, *(&pInstance->point[1]));
     return true;
     }
 
@@ -824,7 +798,7 @@ double  param
 )
     {
     DPoint4d point;
-    bsiDPoint4d_interpolate (&point, &pInstance->point[0], param, &pInstance->point[1]);
+    point.Interpolate (*(&pInstance->point[0]), param, *(&pInstance->point[1]));
     return point.GetProjectedXYZ (*pPoint);
     }
 
@@ -867,10 +841,10 @@ double      param
     {
 
     if (pPoint)
-        bsiDPoint4d_interpolate (pPoint, &pInstance->point[0], param, &pInstance->point[1]);
+        pPoint->Interpolate (*(&pInstance->point[0]), param, *(&pInstance->point[1]));
 
     if (pTangent)
-        bsiDPoint4d_subtractDPoint4dDPoint4d (pTangent, &pInstance->point[1], &pInstance->point[0]);
+        pTangent->DifferenceOf (*(&pInstance->point[1]), *(&pInstance->point[0]));
 
     return true;
     }
@@ -1008,10 +982,10 @@ DSegment4dCP pSegmentB
     bool    boolstat = false;
 
     /* Pseudo tangent is a single vector along the direction of each line */
-    bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorA, &pSegmentA->point[1], &pSegmentA->point[0]);
+    vectorA.DifferenceOf (*(&pSegmentA->point[1]), *(&pSegmentA->point[0]));
     pseudoTangentA.WeightedDifferenceOf(vectorA, *(&pSegmentA->point[0]));
 
-    bsiDPoint4d_subtractDPoint4dDPoint4d (&vectorB, &pSegmentB->point[1], &pSegmentB->point[0]);
+    vectorB.DifferenceOf (*(&pSegmentB->point[1]), *(&pSegmentB->point[0]));
     pseudoTangentB.WeightedDifferenceOf(vectorB, *(&pSegmentB->point[0]));
 
     jmdlDSegment4d_closeApproachEquation (&axy, &ax, &ay, &a,
@@ -1036,8 +1010,8 @@ DSegment4dCP pSegmentB
         */
         for (i = 0; i < 2; i++)
             {
-            bsiDPoint4d_addScaledDPoint4d (&pointA[i], &pSegmentA->point[0], &vectorA, xx[i]);
-            bsiDPoint4d_addScaledDPoint4d (&pointB[i], &pSegmentB->point[0], &vectorB, yy[i]);
+            pointA[i].SumOf(*(&pSegmentA->point[0]), vectorA, xx[i]);
+            pointB[i].SumOf(*(&pSegmentB->point[0]), vectorB, yy[i]);
             }
         w0 = fabs (pointA[0].w) + fabs (pointB[0].w);
         w1 = fabs (pointA[1].w) + fabs (pointB[1].w);
@@ -1067,9 +1041,9 @@ DSegment4dCP pSegmentB
         *pParamB = yy[i];
 
     if (pPointA)
-        bsiDPoint4d_addScaledDPoint4d (pPointA, &pSegmentA->point[0], &vectorA, xx[i]);
+        pPointA->SumOf(*(&pSegmentA->point[0]), vectorA, xx[i]);
     if (pPointB)
-        bsiDPoint4d_addScaledDPoint4d (pPointB, &pSegmentB->point[0], &vectorB, yy[i]);
+        pPointB->SumOf(*(&pSegmentB->point[0]), vectorB, yy[i]);
 
     return boolstat;
     }

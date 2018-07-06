@@ -58,7 +58,7 @@ $(OUT_DIR)PolygonOps$(OUT_EXT)     : $(geomSrcFuncs)PolygonOps.cpp        $(OTHE
 
 #$(OUT_DIR)dpoint3ddvec3d$(OUT_EXT)  : $(geomSrcStructs)dpoint3ddvec3d.cpp   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dpoint4d$(OUT_EXT)        : $(geomSrcStructs)dpoint4d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dpoint4d$(OUT_EXT)        : $(geomSrcStructs)dpoint4d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)drange3d$(OUT_EXT)        : $(geomSrcStructs)drange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 

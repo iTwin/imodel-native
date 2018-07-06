@@ -2175,10 +2175,10 @@ double              tol
             {
             alfi = (u-pIn->knots[i])/(pIn->knots[i+ord+t]-pIn->knots[i]);
             alfj = (u-pIn->knots[j-t])/(pIn->knots[j+ord]-pIn->knots[j-t]);
-            bsiDPoint4d_addScaledDPoint4d (&pt, ctrlpt+i, temp+ii-1, -(1.0-alfi));
-            bsiDPoint4d_scale (temp+ii, &pt, 1.0/alfi);
-            bsiDPoint4d_addScaledDPoint4d (&pt, ctrlpt+j, temp+jj+1, -alfj);
-            bsiDPoint4d_scale (temp+jj, &pt, 1.0/(1.0-alfj));
+            pt.SumOf(ctrlpt[i], temp[ii-1], -(1.0-alfi));
+            temp[ii].Scale (pt, 1.0/alfi);
+            pt.SumOf(ctrlpt[j], temp[jj+1], -alfj);
+            temp[jj].Scale (pt, 1.0/(1.0-alfj));
 
             i = i+1;
             j = j-1;
@@ -2194,7 +2194,7 @@ double              tol
         else
             {
             alfi = (u-pIn->knots[i])/(pIn->knots[i+ord+t]-pIn->knots[i]);
-            bsiDPoint4d_interpolate (&pt, temp+ii+t+1, 1.0-alfi, temp+ii-1);
+            pt.Interpolate (temp[ii+t+1], 1.0-alfi, temp[ii-1]);
             if( ctrlpt[i].RealDistance (pt) < tol )
                     remflag = true;
             }
