@@ -684,7 +684,18 @@ bool SyncInfo::HasLastSaveTimeChanged(DgnV8FileCR v8File)
     if (!previous.FindByName(true))
         return true;
 
-    return ((DgnV8FileR) v8File).GetLastSaveTime() != previous.m_lastSaveTime;
+    auto lastSaveTime = ((DgnV8FileR) v8File).GetLastSaveTime ();
+
+    // a non-DGN FileIO may not set the last saved time in the file header - resort to the last modified time in such a case:
+    if (0.0 == lastSaveTime)
+        {
+        BeFileName  filename(v8File.GetFileName().c_str());
+        SyncInfo::DiskFileInfo diskfile;
+        diskfile.GetInfo (filename);
+        return diskfile.m_lastModifiedTime != previous.m_lastModifiedTime;
+        }
+
+    return lastSaveTime != previous.m_lastSaveTime;
     }
 
 SyncInfo::V8FileSyncInfoId SyncInfo::FileIterator::Entry::GetV8FileSyncInfoId() { return SyncInfo::V8FileSyncInfoId(m_sql->GetValueInt(0)); }
