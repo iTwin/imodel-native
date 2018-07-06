@@ -696,26 +696,6 @@ DbResult TestDb::Open()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-TestDb::State TestDb::GetState() const
-    {
-    switch (GetTestFile().GetAge())
-        {
-            case ProfileState::Age::Older:
-                return GetOpenParams().GetProfileUpgradeOptions() == Db::ProfileUpgradeOptions::Upgrade ? State::Upgraded : State::Older;
-            case ProfileState::Age::UpToDate:
-                return State::UpToDate;
-            case ProfileState::Age::Newer:
-                return State::Newer;
-
-            default:
-                BeAssert(false && "Unhandled enum value");
-                return TestDb::State::UpToDate;
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                    06/18
-//+---------------+---------------+---------------+---------------+---------------+------
 Utf8String TestDb::GetDescription() const
     {
     Utf8CP openModeStr = nullptr;
@@ -726,13 +706,50 @@ Utf8String TestDb::GetDescription() const
         if (GetOpenParams().m_profileUpgradeOptions == Db::ProfileUpgradeOptions::Upgrade)
             openModeStr = "read-write with upgrade";
         else
-            openModeStr = "read-write without upgrade";
+            openModeStr = "read-write w/o upgrade";
         }
 
-    return Utf8PrintfString("Opened %s | %s", openModeStr, GetTestFile().ToString().c_str());
+    Utf8CP ageStr = nullptr;
+    switch (m_age)
+        {
+            case ProfileState::Age::Older:
+                ageStr = "older";
+                break;
+            case ProfileState::Age::UpToDate:
+                ageStr = "up-to-date";
+                break;
+            case ProfileState::Age::Newer:
+                ageStr = "newer";
+                break;
+            default:
+                BeAssert(false && "Unhandled ProfileState::Age enum value");
+                return Utf8String("Error: Unhandled ProfileState::Age enum value");
+        }
+
+    return Utf8PrintfString("Open mode: %s | Age: %s | %s", openModeStr, GetTestFile().ToString().c_str());
     }
 
 //***************************** TestECDb ********************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult TestECDb::_Open()
+    {
+    DbResult stat = m_ecdb.OpenBeSQLiteDb(m_testFile.GetPath(), m_openParams);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    const int compareVersions = m_ecdb.GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion());
+    if (compareVersions == 0)
+        m_age = ProfileState::Age::UpToDate;
+    else if (compareVersions < 0)
+        m_age = ProfileState::Age::Older;
+    else
+        m_age = ProfileState::Age::Newer;
+
+    return BE_SQLITE_OK;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
@@ -753,31 +770,49 @@ TestECDb::Iterable TestECDb::GetPermutationsFor(TestFile const& testFile)
 void TestECDb::AssertProfileVersion() const
     {
     ASSERT_TRUE(m_ecdb.IsDbOpen()) << "AssertProfileVersion must be called on open file";
-    switch (GetState())
+    switch (m_age)
         {
-            case State::UpToDate:
+            case ProfileState::Age::UpToDate:
                 EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsUpToDate()) << GetDescription();
                 EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
                 break;
-            case State::Newer:
+            case ProfileState::Age::Newer:
                 EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsNewer()) << GetDescription();
                 EXPECT_LT(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
                 break;
-            case State::Older:
+            case ProfileState::Age::Older:
                 EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsOlder()) << GetDescription();
                 EXPECT_GT(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
                 break;
-            case State::Upgraded:
-                EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsUpToDate()) << GetDescription();
-                EXPECT_EQ(ECDbProfile::Get().GetExpectedVersion(), m_ecdb.GetECDbProfileVersion()) << GetDescription();
-                break;
             default:
-                FAIL() << "Unhandled TestECDb::State enum value";
+                FAIL() << "Unhandled ProfileState::Age enum value";
         }
     }
 
 
 //***************************** TestIModel ********************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult TestIModel::_Open()
+    {
+    DbResult stat = BE_SQLITE_OK;
+    m_dgndb = DgnDb::OpenDgnDb(&stat, m_testFile.GetPath(), m_openParams);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    const int compareVersions = m_dgndb->GetProfileVersion().CompareTo(ProfileVersion(DgnDbProfileValues::DGNDB_CURRENT_VERSION_Major, DgnDbProfileValues::DGNDB_CURRENT_VERSION_Minor, DgnDbProfileValues::DGNDB_CURRENT_VERSION_Sub1, DgnDbProfileValues::DGNDB_CURRENT_VERSION_Sub2));
+    if (compareVersions == 0)
+        m_age = ProfileState::Age::UpToDate;
+    else if (compareVersions < 0)
+        m_age = ProfileState::Age::Older;
+    else
+        m_age = ProfileState::Age::Newer;
+
+    return stat;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -801,25 +836,21 @@ TestIModel::Iterable TestIModel::GetPermutationsFor(TestFile const& testFile)
 void TestIModel::AssertProfileVersion() const
     {
     ASSERT_TRUE(m_dgndb != nullptr && m_dgndb->IsDbOpen()) << "AssertProfileVersion must be called on open file";
-    switch (GetState())
+    switch (m_age)
         {
-            case State::UpToDate:
+            case ProfileState::Age::UpToDate:
                 EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsUpToDate()) << GetDescription();
                 EXPECT_EQ(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
                 break;
-            case State::Newer:
+            case ProfileState::Age::Newer:
                 EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsNewer()) << GetDescription();
                 EXPECT_LT(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
                 break;
-            case State::Older:
+            case ProfileState::Age::Older:
                 EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsOlder()) << GetDescription();
                 EXPECT_GT(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
                 break;
-            case State::Upgraded:
-                EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsUpToDate()) << GetDescription();
-                EXPECT_EQ(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
-                break;
             default:
-                FAIL() << "Unhandled TestDb::State enum value";
+                FAIL() << "Unhandled ProfileState::Age enum value";
         }
     }

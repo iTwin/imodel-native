@@ -380,11 +380,11 @@ Utf8String TestFile::ToString() const
     {
     Utf8String versionString;
     if (!m_dgndbVersion.IsEmpty())
-        versionString.Sprintf(PROFILE_NAME_DGNDB " %s | " PROFILE_NAME_ECDB " %s | " PROFILE_NAME_BEDB " %s", m_dgndbVersion.ToString().c_str(), m_ecdbVersion.ToString().c_str(), m_bedbVersion.ToString().c_str());
+        versionString.Sprintf(PROFILE_NAME_DGNDB " %s, " PROFILE_NAME_ECDB " %s, " PROFILE_NAME_BEDB " %s", m_dgndbVersion.ToString().c_str(), m_ecdbVersion.ToString().c_str(), m_bedbVersion.ToString().c_str());
     else if (!m_ecdbVersion.IsEmpty())
-        versionString.Sprintf(PROFILE_NAME_ECDB " %s | " PROFILE_NAME_BEDB " %s", m_ecdbVersion.ToString().c_str(), m_bedbVersion.ToString().c_str());
+        versionString.Sprintf(PROFILE_NAME_ECDB " %s, " PROFILE_NAME_BEDB " %s", m_ecdbVersion.ToString().c_str(), m_bedbVersion.ToString().c_str());
     else
         versionString.Sprintf(PROFILE_NAME_BEDB " %s", m_bedbVersion.ToString().c_str());
 
-    return Utf8PrintfString("%s | %s | Upgraded: %s | %s | Seed: %s ", m_name.c_str(), versionString.c_str(), IsUpgraded() ? "yes" : "no", m_path.GetNameUtf8().c_str(), m_seedPath.GetNameUtf8().c_str());
+    return Utf8PrintfString("%s | Pre-Test Version: %s, upgraded: %s | %s | Seed: %s ", m_name.c_str(), versionString.c_str(), IsUpgraded() ? "yes" : "no", m_path.GetNameUtf8().c_str(), m_seedPath.GetNameUtf8().c_str());
     }
