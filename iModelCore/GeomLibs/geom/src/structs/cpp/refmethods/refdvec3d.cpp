@@ -1886,6 +1886,33 @@ DVec3dCR vector2
 
     return  cross <= eps * eps * a2 * b2;
     }
+/*-----------------------------------------------------------------*//**
+* @description Tests if two vectors are parallel.
+*
+* @param [in] vector2 The second vector
+* @return true if the vectors are parallel within tolerance
+* @bsimethod                            EarlinLutz      03/03
++----------------------------------------------------------------------*/
+bool DVec3d::IsParallelTo
+(
+DVec3dCR vector2,
+double radians
+) const
+    {
+    DVec3d      vecC;
+    double      a2 = this->DotProduct (*this);
+    double      b2 = vector2.DotProduct (vector2);
+    double      cross;
+    vecC.CrossProduct (*this, vector2);
+    cross = vecC.MagnitudeSquared ();
+
+    /* a2,b2,c2 are squared lengths of respective vectors */
+    /* c2 = sin^2(theta) * a2 * b2 */
+    /* For small theta, sin^2(theta)~~theta^2 */
+    /* Zero-length vector case falls through as equality */
+
+    return  cross <= radians * radians * a2 * b2;
+    }
 
 /*-----------------------------------------------------------------*//**
 * @description Tests if two vectors are parallel and positive dot product

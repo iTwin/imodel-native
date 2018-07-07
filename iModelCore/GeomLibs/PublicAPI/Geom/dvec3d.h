@@ -1169,6 +1169,13 @@ DVec3dCR        vector1
 //! @return true if the vectors are parallel within tolerance
 bool IsParallelTo (DVec3dCR vector2) const;
 
+//! @description Tests if two vectors are parallel (opposites are considered parallel!)
+//! @param [in] vector2 The second vector
+//! @param [in] radians tolerance in radians.
+//! @return true if the vectors are parallel within tolerance
+bool IsParallelTo (DVec3dCR vector2, double radians) const;
+
+
 //! @description Tests if two vectors are parallel and have positive dot product (opposites are NOT considered parallel)
 //! @param [in] vector2 The second vector
 //! @return true if the vectors are parallel within tolerance
