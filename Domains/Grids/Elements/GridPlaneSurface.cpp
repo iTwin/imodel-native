@@ -101,7 +101,8 @@ DPlane3d                        GridPlanarSurface::_GetPlane
         DRange3d range;
         curveVector->IsPlanar(localToWorld, worldToLocal, range);
         DPlane3d retPlane;
-        bsiTransform_getOriginAndVectors(&localToWorld, &retPlane.origin, NULL, NULL, &retPlane.normal);
+        retPlane.origin = localToWorld.Origin();
+        retPlane.normal = localToWorld.ColumnZ();
         return retPlane;
         }
 
@@ -139,7 +140,8 @@ CurveVectorR newShape
     DRange3d range;
     newShape.IsPlanar (localToWorld, worldToLocal, range);
     DPlane3d retPlane;
-    bsiTransform_getOriginAndVectors (&localToWorld, &retPlane.origin, NULL, NULL, &retPlane.normal);
+    retPlane.origin = localToWorld.Origin();
+    retPlane.normal = localToWorld.ColumnZ();
 
     Placement3d newPlacement (retPlane.origin, GetPlacement ().GetAngles ());
     SetPlacement (newPlacement);
@@ -610,10 +612,11 @@ Placement3dCR placement
     Transform currTransInv, thatTrans, diffTrans;
     currTransInv.InverseOf(currPlacement.GetTransform ());
     thatTrans = placement.GetTransform ();
-    bsiTransform_multiplyTransformTransform (&diffTrans, &currTransInv, &thatTrans);
+    diffTrans.InitProduct (currTransInv, thatTrans);
 
     DPlane3d diffPlane;
-    bsiTransform_getOriginAndVectors (&diffTrans, &diffPlane.origin, NULL, NULL, &diffPlane.normal);
+    diffPlane.origin = diffTrans.Origin();
+    diffPlane.normal = diffTrans.ColumnZ();
 
     if (!DoubleOps::AlmostEqualFraction(abs(diffPlane.normal.z), 1.0))
         return Dgn::DgnDbStatus::ValidationFailed;   //if the elevationsurface is rotated from Z axis, fail
@@ -711,7 +714,8 @@ CurveVectorPtr surface
         DRange3d range;
         surface->IsPlanar(localToWorld, worldToLocal, range);
         DPlane3d surfacePlane;
-        bsiTransform_getOriginAndVectors(&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
+        surfacePlane.origin = localToWorld.Origin();
+        surfacePlane.normal = localToWorld.ColumnZ();
 
         if (!DoubleOps::AlmostEqualFraction(surfacePlane.origin.z, 0.0) ||
             !DoubleOps::AlmostEqualFraction(abs(surfacePlane.normal.z), 1.0)) //must be a zero Z plane

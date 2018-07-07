@@ -240,10 +240,12 @@ bvector<CurveVectorPtr> const& surfaces
         if (!gridPlaneGeom->IsPlanar (localToWorld, worldToLocal, range))
             return ERROR;
 
-        bsiTransform_getOriginAndVectors (&localToWorld, &planeThis.origin, NULL, NULL, &planeThis.normal);
+        planeThis.origin = localToWorld.Origin();
+
+        planeThis.normal = localToWorld.ColumnZ();
 
         //if planes are not parallel to Z, then fail
-        if (!bsiDVec3d_areParallelTolerance (&planeThis.normal, &zPlane.normal, BUILDING_TOLERANCE))
+        if (!planeThis.normal.IsParallelTo(zPlane.normal, BUILDING_TOLERANCE))
             {
             return ERROR;
             }
@@ -276,7 +278,8 @@ GridAxisCR gridAxis
             DRange3d range;
             gridPlaneGeom->IsPlanar (localToWorld, worldToLocal, range);
             DPlane3d geomPlane;
-            bsiTransform_getOriginAndVectors (&localToWorld, &geomPlane.origin, NULL, NULL, &geomPlane.normal);
+            geomPlane.origin = localToWorld.Origin();
+            geomPlane.normal = localToWorld.ColumnZ();
 
             if (!DoubleOps::AlmostEqualFraction (abs (geomPlane.normal.z), 1.0))
                 return BentleyStatus::ERROR;   //if the Z direction is not 1, fail
@@ -352,7 +355,8 @@ CurveVectorPtr surface
     DRange3d range;
     surface->IsPlanar (localToWorld, worldToLocal, range);
     DPlane3d surfacePlane;
-    bsiTransform_getOriginAndVectors (&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
+    surfacePlane.origin = localToWorld.Origin();
+    surfacePlane.normal = localToWorld.ColumnZ();
 
     if (!DoubleOps::AlmostEqualFraction (surfacePlane.origin.z, 0.0) ||
         !DoubleOps::AlmostEqualFraction (abs (surfacePlane.normal.z), 1.0)) //must be a zero Z plane
