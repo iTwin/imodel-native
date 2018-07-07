@@ -496,14 +496,16 @@ void OBBox<T>::merge( const OBBox<T>& box1 )
 	T invLength = Wm5::Math<T>::InvSqrt(q.Dot(q));
     q = invLength*q;
     q.ToRotationMatrix(&m_axis[0].x);
+
+    }
 #else
     // &&RB TODO: the following geomlibs function calls must be tested
     // &&RB TODO: Must check that matrix should be initialized using Row major or column major ordering
     RotMatrix rm1 = RotMatrix::FromRowVectors(reinterpret_cast<DVec3dCR>(m_axis[0]), reinterpret_cast<DVec3dCR>(m_axis[1]), reinterpret_cast<DVec3dCR>(m_axis[2]));
     RotMatrix rm2 = RotMatrix::FromRowVectors(reinterpret_cast<DVec3dCR>(box1.m_axis[0]), reinterpret_cast<DVec3dCR>(box1.m_axis[1]), reinterpret_cast<DVec3dCR>(box1.m_axis[2]));
     DPoint4d q0, q1;
-    bsiRotMatrix_toQuaternion(&rm1, &q0, false); // &&RB TODO: third parameter --> should we transpose or not?
-    bsiRotMatrix_toQuaternion(&rm2, &q1, false); // &&RB TODO: third parameter --> should we transpose or not?
+    rm1.GetQuaternion (q0, false); // &&RB TODO: third parameter --> should we transpose or not?
+    rm2.GetQuaternion (q1, false); // &&RB TODO: third parameter --> should we transpose or not?
 
     if (q0.DotProduct(q1) < (T)0)
     {
