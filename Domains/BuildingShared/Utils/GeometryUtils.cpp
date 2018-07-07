@@ -70,7 +70,8 @@ CurveVectorCR profile
     DRange3d range;
     profile.IsPlanar(localToWorld, worldToLocal, range);
     DPlane3d surfacePlane;
-    bsiTransform_getOriginAndVectors(&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
+    DVec3d xVector, yVector;
+    localToWorld.GetOriginAndVectors (surfacePlane.origin, xVector, yVector, surfacePlane.normal);
     Transform transToZeroPlane = Transform::From(0.0, 0.0, -surfacePlane.origin.z);
     return CloneTransformed(profile, transToZeroPlane);
     }
