@@ -496,7 +496,6 @@ void OBBox<T>::merge( const OBBox<T>& box1 )
 	T invLength = Wm5::Math<T>::InvSqrt(q.Dot(q));
     q = invLength*q;
     q.ToRotationMatrix(&m_axis[0].x);
-
     }
 #else
     // &&RB TODO: the following geomlibs function calls must be tested
@@ -516,7 +515,7 @@ void OBBox<T>::merge( const OBBox<T>& box1 )
     assert(q.MagnitudeXYZW() != 0);
     T invLength = (T)1.0 / q.MagnitudeXYZW();
     q.Scale(q, invLength);
-    bsiRotMatrix_fromQuaternion(reinterpret_cast<RotMatrixP>(&m_axis[0].x), &q);
+    (reinterpret_cast<RotMatrixP>(&m_axis[0].x))->InitFromQuaternion (q);
 
 #endif
 
