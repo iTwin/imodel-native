@@ -55,7 +55,7 @@ bool RegionsApiWrapper::ImprintPoly
         for (size_t i = 0; i < pointArrayCount; i++)
             {
             pPointArray[i].z = 0.0;
-            bsiDPoint3d_scaleInPlace(&pPointArray[i], 1.0 / m_uorToMeter);
+            pPointArray[i].Scale (1.0 / m_uorToMeter);
             pPointArray[i].z = 0.0;
             }
 
@@ -143,13 +143,13 @@ bool RegionsApiWrapper::GetEndPoints
 
     if (pStartPoint)
         {
-        bsiDPoint3d_scaleInPlace(pStartPoint, m_uorToMeter);
+        pStartPoint->Scale (m_uorToMeter);
         m_localToWorldTransform.Multiply(*pStartPoint);
         }
 
     if (pEndPoint)
         {
-        bsiDPoint3d_scaleInPlace(pEndPoint, m_uorToMeter);
+        pEndPoint->Scale (m_uorToMeter);
         m_localToWorldTransform.Multiply(*pEndPoint);
         }
 
