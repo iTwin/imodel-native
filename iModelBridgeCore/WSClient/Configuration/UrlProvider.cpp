@@ -318,7 +318,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ProjectSharedFederatedUIURL(
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas   11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-const bset<UrlProvider::UrlDescriptor*> UrlProvider::GerUrlRegistry()
+const bset<UrlProvider::UrlDescriptor*> UrlProvider::GetUrlRegistry()
     {
     return s_urlRegistry;
     }

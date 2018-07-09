@@ -67,7 +67,7 @@ TEST_F(UrlProviderTests, Get_WithCustomDefaultSheduler_DoesNotUseDefaultSheduler
 INSTANTIATE_TEST_CASE_P(,UrlProviderParamTests,
     ::testing::Combine(
         ::testing::Values(UrlProvider::Environment::Dev, UrlProvider::Environment::Qa, UrlProvider::Environment::Release, UrlProvider::Environment::Perf),
-        ::testing::ValuesIn(UrlProvider::GerUrlRegistry())
+        ::testing::ValuesIn(UrlProvider::GetUrlRegistry())
     ),
     UrlProviderParamTests::PrintToStringParamName());
 
