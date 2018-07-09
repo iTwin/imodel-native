@@ -76,6 +76,7 @@ private:
     TileR GetElementTile();
 
     uint64_t _GetCreateTime() const override { return m_createTime; }
+    bool _WantWaitOnSave() const override;
 public:
     static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) { return new Loader(tile, loads, renderSys); }
 };

@@ -100,11 +100,19 @@ folly::Future<BentleyStatus> TileLoader::Perform()
             auto saveToDb = me->_SaveToDb();
 
             // don't wait on the save unless caller wants to immediately extract data from cache.
-            if (T_HOST.GetTileAdmin()._WantWaitOnSave(tile.GetRoot().GetDgnDb()))
+            if (me->_WantWaitOnSave())
                 saveToDb.get();
 
             return SUCCESS;
             });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileLoader::_WantWaitOnSave() const
+    {
+    return T_HOST.GetTileAdmin()._WantWaitOnSave(m_tile->GetRoot().GetDgnDb());
     }
 
 //----------------------------------------------------------------------------------------
