@@ -261,7 +261,7 @@ bool EventManager::IsSubscribedToEvents(EventServiceClientPtr) const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Karolis.Uzkuraitis            05/2018
 //---------------------------------------------------------------------------------------
-Json::Value EventManager::GenerateEventSASJson()
+Json::Value EventManager::GenerateEventSASJson() const
     {
     return BaseEventManager::GenerateEventSASJson(ServerSchema::Schema::iModel, ServerSchema::Class::EventSAS);
     }

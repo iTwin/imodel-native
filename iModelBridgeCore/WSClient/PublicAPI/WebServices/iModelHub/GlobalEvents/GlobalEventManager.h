@@ -26,6 +26,8 @@ DEFINE_TASK_TYPEDEFS(Http::Response, GlobalEventReponse);
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GlobalEventManager);
 
+typedef RefCountedPtr<struct GlobalEventManager> GlobalEventManagerPtr;
+
 //=======================================================================================
 //! Manager for Global Events
 //@bsiclass                                      Karolis.Uzkuraitis             04/2018
@@ -41,9 +43,11 @@ private:
 
     GlobalEventManager() : BaseEventManager() {}
 
+    GlobalEventManager(const GlobalEventManager&) = delete;
+
     GlobalEventSubscriptionTaskPtr SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    void UpdateSASTokenForSubscription(Utf8StringCR instanceId);
+    void UpdateSASTokenForSubscription(Utf8StringCR instanceId, const ICancellationTokenPtr cancellationToken = nullptr);
 
     static GlobalEventSubscriptionPtr CreateEventSubscriptionFromResponse(Utf8StringCR response);
 
@@ -64,7 +68,7 @@ private:
     //! Update the EventSubscription to the given EventTypes
     GlobalEventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(Utf8String intanceId, GlobalEventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    IMODELHUBCLIENT_EXPORT Json::Value GenerateEventSASJson() override;
+    IMODELHUBCLIENT_EXPORT Json::Value GenerateEventSASJson() const override;
     
     IMODELHUBCLIENT_EXPORT bool IsSubscribedToEvents(EventServiceClientPtr eventServiceClient) const override;
 
@@ -97,7 +101,7 @@ public:
     //! Delete subscription.
     //! @param[in] instanceId IntanceId of subscription.
     //! @return Asynchronous task that has the status of subscription deletion as result.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr UnsubscribeEvents(const GlobalEventSubscriptionId instanceId);
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr UnsubscribeEvents(const GlobalEventSubscriptionId instanceId) const;
     };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

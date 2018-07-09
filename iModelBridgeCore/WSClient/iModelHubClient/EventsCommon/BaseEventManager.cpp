@@ -59,7 +59,7 @@ AzureServiceBusSASDTOPtr BaseEventManager::CreateEventSASFromResponse(JsonValueC
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-AzureServiceBusSASDTOTaskPtr BaseEventManager::GetEventServiceSASToken(const ICancellationTokenPtr cancellationToken)
+AzureServiceBusSASDTOTaskPtr BaseEventManager::GetEventServiceSASToken(const ICancellationTokenPtr cancellationToken) const
     {
     //POST to https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventSAS
     std::shared_ptr<AzureServiceBusSASDTOResult> finalResult = std::make_shared<AzureServiceBusSASDTOResult>();
@@ -135,7 +135,7 @@ AsyncTaskPtr<WSChangesetResult> BaseEventManager::SendChangesetRequest(const std
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Uzkuraitis             05/2018
 //---------------------------------------------------------------------------------------
-StatusTaskPtr BaseEventManager::SendDeleteObjectRequest(const ObjectId eventSubscriptionObject)
+StatusTaskPtr BaseEventManager::SendDeleteObjectRequest(const ObjectId eventSubscriptionObject) const
     {
     return m_wsRepositoryClient->SendDeleteObjectRequestWithOptions(eventSubscriptionObject)->Then<StatusResult>([=] (WSVoidResult const& deleteResult)
         {
