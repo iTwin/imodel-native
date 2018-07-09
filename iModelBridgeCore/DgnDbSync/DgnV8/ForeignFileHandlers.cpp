@@ -191,8 +191,8 @@ void Converter::RegisterForeignFileTypes (BentleyApi::BeFileNameCR v8dir, Bentle
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::OBJ, "obj", "objfileioImp.dll", v8dir));
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::SKP, "skp", "skpfileioImp.dll", v8dir));
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::OpenNurbs, "3dm", "rhinolib.dll", v8dir));
-    DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::OpenNurbs, "fbx", "fbxfileioImp.dll", v8dir));
-    DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::OpenNurbs, "ifc", "IfcFileIO.dll", v8dir));
+    DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::FBX, "fbx", "fbxfileioImp.dll", v8dir));
+    DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::IFC, "ifc", "IfcFileIO.dll", v8dir));
 
     // Add the wildcard DWG as the last entry to give other FileIO's a chance, before unnecessarily loading lots of RealDWG DLL's.
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::DWG, "*", s_dwgdgnIO, v8dir, &realdwgDir));

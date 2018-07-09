@@ -363,11 +363,9 @@ void V8AttachmentTests::CheckForeignReferenceOutput (int expectedElements)
 TEST_F(V8AttachmentTests, Attach3dm)
     {
     LineUpFiles(L"rhino.ibim", L"Test3d.dgn", false);
-    if (true)
-        AttachForeignReferenceFile (L"HumanHead.3dm");
+    AttachForeignReferenceFile (L"HumanHead.3dm");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    if (true)
-        CheckForeignReferenceOutput (81);
+    CheckForeignReferenceOutput (81);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -377,11 +375,9 @@ TEST_F(V8AttachmentTests, Attach3ds)
     {
     LineUpFiles(L"3ds.ibim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
-    if (true)
-        AttachForeignReferenceFile (L"bed.3ds");
+    AttachForeignReferenceFile (L"bed.3ds");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    if (true)
-        CheckForeignReferenceOutput (13);
+    CheckForeignReferenceOutput (13);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -391,11 +387,9 @@ TEST_F(V8AttachmentTests, AttachFbx)
     {
     LineUpFiles(L"fbx.ibim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
-    if (true)
-        AttachForeignReferenceFile (L"candles.fbx");
+    AttachForeignReferenceFile (L"candles.fbx");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    if (true)
-        CheckForeignReferenceOutput (103);
+    CheckForeignReferenceOutput (103);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -405,11 +399,9 @@ TEST_F(V8AttachmentTests, AttachIfc)
     {
     LineUpFiles(L"ifc.ibim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
-    if (true)
-        AttachForeignReferenceFile (L"roof.ifc");
+    AttachForeignReferenceFile (L"roof.ifc");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    if (true)
-        CheckForeignReferenceOutput (1097);
+    CheckForeignReferenceOutput (1097);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -419,12 +411,10 @@ TEST_F(V8AttachmentTests, AttachObj)
     {
     LineUpFiles(L"obj.ibim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
-    if (true)
-        AttachForeignReferenceFile (L"bottle.obj");
+    AttachForeignReferenceFile (L"bottle.obj");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
     // a mesh in a cell counts as 2 elements
-    if (true)
-        CheckForeignReferenceOutput (2);
+    CheckForeignReferenceOutput (2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -434,10 +424,8 @@ TEST_F(V8AttachmentTests, AttachSkp)
     {
     LineUpFiles(L"sketchup.ibim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
-    if (true)
-        AttachForeignReferenceFile (L"Kubelis.skp");
+    AttachForeignReferenceFile (L"Kubelis.skp");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    if (true)
-        CheckForeignReferenceOutput (2);
+    CheckForeignReferenceOutput (2);
     }
 
