@@ -1232,6 +1232,17 @@ bool Loader::_IsValidData()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Loader::_WantWaitOnSave() const
+    {
+    // BuildingConceptStation's tools invalidate tiles on every single mouse motion.
+    // If we don't wait on the save to cache, then a subsequent tile invalidation may cause cache row to be updated/deleted
+    // before a pending save completes, producing errors in sqlite.
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::_IsCompleteData()
@@ -1776,6 +1787,9 @@ void Tile::_Invalidate()
         m_generator.reset();
 
         m_contentRange = ElementAlignedBox3d();
+
+        if (m_hasZoomFactor)
+            _UnloadChildren(BeTimePoint::Now());
 
         m_isLeaf = false;
         m_hasZoomFactor = false;
