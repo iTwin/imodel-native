@@ -253,34 +253,70 @@
         </Bindings>
     </Part>
 
-    <Part Name="iModelSchemaEvolutionPullDatasets" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PullCompatibilityDatasets.mke">
-    </Part>
- 
-    <Part Name="iModelSchemaEvolutionPullTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PullCompatibilityNugets.mke">
-        <SubPart PartName="iModelSchemaEvolutionRunGTest"/>
-    </Part>
 
     <Product Name="iModelSchemaEvolutionGTest">
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="iModelSchemaEvolutionGTest"/>
     </Product>
 
+    <!-- Runs all compatibility tests:
+         Preparation:
+         * Downloads all existing test runners and test files
+         
+         Run:
+         1) Runs current test runner (from current software) against
+            * files it creates itself (-> get saved as nuget afterwards)
+            * all downloaded test files.
+         2) Runs all downloaded test runners against 
+            * all downloaded test files
+            * files created by the current test runner
+    -->
+    <Part Name="iModelSchemaEvolutionRunAllTestRunners" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunPulledTestRunners.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubPart PartName="iModelSchemaEvolutionPrepareAllTestRunners"/>
+    </Part>
+
+    <!-- Runs the current compatibility test runner (from current software):
+         Preparation:
+         * Downloads all existing test files
+         
+         Run:
+         1) Runs current test runner (from current software) against
+            * files it creates itself (-> get saved as nuget afterwards)
+            * all downloaded test files.
+    -->
+    <Part Name="iModelSchemaEvolutionRunCurrentTestRunner" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelSchemaEvolutionGTest -dGTEST_NAME=iModelSchemaEvolution -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/iModelSchemaEvolution" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubPart PartName="iModelSchemaEvolutionPullNugets"/>
+        <SubPart PartName="iModelSchemaEvolutionCopyCurrentEXE"/>
+    </Part>
+
+    <Part Name="iModelSchemaEvolutionPrepareAllTestRunners" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PreparePulledTestRunners.mke">
+        <SubPart PartName="iModelSchemaEvolutionRunCurrentTestRunner"/>
+    </Part>
+
     <Part Name="iModelSchemaEvolutionCopyCurrentEXE" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\CopyCurrentEXE.mke">
         <SubProduct ProductName="iModelSchemaEvolutionGTest"/>
-    </Part>  
- 
+    </Part>
+
+    <Part Name="iModelSchemaEvolutionPullNugets" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PullNugets.mke">
+    </Part>
+
+
+
+    <!-- deprecated 
+
     <Part Name="iModelSchemaEvolutionRunGTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelSchemaEvolutionGTest -dGTEST_NAME=iModelSchemaEvolution -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/iModelSchemaEvolution" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubPart PartName="iModelSchemaEvolutionPullDatasets"/>
         <SubPart PartName="iModelSchemaEvolutionCopyCurrentEXE"/>
     </Part>
+    -->
+    
 
-    <Part Name="iModelSchemaEvolutionTestsCopyDatasets" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\CopyDatasets.mke">
-        <SubPart PartName="iModelSchemaEvolutionRunGTest"/>
-    </Part>
-
+    <!-- deprecated 
     <Part Name="iModelSchemaEvolutionRunGTestForwards" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunCompatibilityTests.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubPart PartName="iModelSchemaEvolutionPullTests"/> 
     </Part>
+    -->
+
 
     <NuGetProduct Name="iModelSchemaEvolutionTestNuget" Description="Awesome description here">
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
@@ -303,14 +339,14 @@
 
     <Part Name="SaveSchemaEvolutionTestFiles" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\SaveDatasets.mke">
         <!-- Must run after the tests are complete -->
-        <SubPart PartName="iModelSchemaEvolutionRunGTest" />
+        <SubPart PartName="iModelSchemaEvolutionRunAllTestRunners" />
         <Bindings>
             <Directory ProductDirectoryName="Datasets" SourceName="iModelSchemaEvolutionDatasets" />
         </Bindings>
     </Part>
 
     <Part Name="RuniModelSchemaEvolutionTests" PrgOutputDir="iModelSchemaEvolutionTests">
-        <SubPart PartName="iModelSchemaEvolutionRunGTestForwards"/>
+        <SubPart PartName="iModelSchemaEvolutionRunAllTestRunners"/>
         <SubNuGetProduct NuGetProductName="iModelSchemaEvolutionTestNuget"/>
         <SubNuGetProduct NuGetProductName="iModelSchemaEvolutionTestFilesNuget"/>
     </Part>

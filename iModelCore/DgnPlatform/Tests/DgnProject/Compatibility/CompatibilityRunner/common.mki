@@ -7,7 +7,9 @@
 #----------------------------------------------------------------------
 
 IMS_DIR = $(OutputRootDir)iModelSchemaEvolution
-DATA_DIR = $(IMS_DIR)/Data
-NUGET_DATASETS_DIR = $(OutputRootDir)iModelSchemaEvolution/Data/TestData
-IMS_NUGETS_DIR = $(IMS_DIR)/Nugets
-CURRENT_DATASET_DIR = $(OutputRootDir)Product/iModelSchemaEvolutionGTest/run/NewData
+IMS_NUGET_DIR = $(IMS_DIR)/Nugets
+TESTFILES_NUGET_DIR = $(IMS_NUGET_DIR)/testfiles
+TESTRUNNERS_NUGET_DIR = $(IMS_NUGET_DIR)/testrunners
+TESTFILES_DIR = $(OutputRootDir)iModelSchemaEvolution/TestFiles
+NEWFILES_DIR = $(OutputRootDir)Product/iModelSchemaEvolutionGTest/run/NewFiles
+TESTRUNNERS_SANDBOXDIR = $(OutputRootDir)Product/iModelSchemaEvolutionGTest/run/pulledtestrunners

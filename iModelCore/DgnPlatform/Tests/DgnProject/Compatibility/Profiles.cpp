@@ -32,10 +32,10 @@ Profile::Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name) : m_type(type)
     baseFolder.PopDir();
 
     m_profilePulledTestDataFolder = baseFolder;
-    m_profilePulledTestDataFolder.AppendSeparator().AppendToPath(L"TestData").AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
+    m_profilePulledTestDataFolder.AppendSeparator().AppendToPath(L"TestFiles").AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
 
     m_profileCreatedDataFolder = baseFolder;
-    m_profileCreatedDataFolder.AppendSeparator().AppendToPath(L"NewData").AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
+    m_profileCreatedDataFolder.AppendSeparator().AppendToPath(L"NewFiles").AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
     }
 
 
