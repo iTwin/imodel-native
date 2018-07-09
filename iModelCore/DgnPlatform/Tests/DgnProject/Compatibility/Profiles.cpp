@@ -31,11 +31,11 @@ Profile::Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name) : m_type(type)
     BeTest::GetHost().GetOutputRoot(baseFolder);
     baseFolder.PopDir();
 
-    m_profileOldDataFolder = baseFolder;
-    m_profileOldDataFolder.AppendSeparator().AppendToPath(L"OldData").AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
+    m_profilePulledTestDataFolder = baseFolder;
+    m_profilePulledTestDataFolder.AppendSeparator().AppendToPath(L"TestData").AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
 
-    m_profileNewDataFolder = baseFolder;
-    m_profileNewDataFolder.AppendSeparator().AppendToPath(L"NewData").AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
+    m_profileCreatedDataFolder = baseFolder;
+    m_profileCreatedDataFolder.AppendSeparator().AppendToPath(L"NewData").AppendToPath(WString(m_name, BentleyCharEncoding::Utf8).c_str());
     }
 
 
@@ -54,9 +54,9 @@ BentleyStatus Profile::Init() const
             }
         }
 
-    if (!m_profileNewDataFolder.DoesPathExist())
+    if (!m_profileCreatedDataFolder.DoesPathExist())
         {
-        BeFileNameStatus status = BeFileName::CreateNewDirectory(m_profileNewDataFolder.GetName());
+        BeFileNameStatus status = BeFileName::CreateNewDirectory(m_profileCreatedDataFolder.GetName());
         if (status != BeFileNameStatus::Success)
             {
             BeAssert(status == BeFileNameStatus::Success);
@@ -72,9 +72,9 @@ BentleyStatus Profile::Init() const
 //+---------------+---------------+---------------+---------------+---------------+------
 std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles) const
     {
-    std::vector<TestFile> testFiles = GetAllVersionsOfTestFile(m_profileNewDataFolder, testFileName, logFoundFiles);
-    std::vector<TestFile> oldDataTestFiles = GetAllVersionsOfTestFileFromOldData(testFileName, logFoundFiles);
-    testFiles.insert(testFiles.end(), oldDataTestFiles.begin(), oldDataTestFiles.end());
+    std::vector<TestFile> testFiles = GetAllVersionsOfTestFile(m_profileCreatedDataFolder, testFileName, logFoundFiles);
+    std::vector<TestFile> pulledDataTestFiles = GetAllVersionsOfTestFile(m_profilePulledTestDataFolder, testFileName, logFoundFiles);
+    testFiles.insert(testFiles.end(), pulledDataTestFiles.begin(), pulledDataTestFiles.end());
     return testFiles;
     }
 
@@ -199,7 +199,7 @@ BeFileName Profile::GetPathForNewUpgradedTestFile(TestFile const& oldSeedFile) c
 //+---------------+---------------+---------------+---------------+---------------+------
 BeFileName Profile::GetFolderForNewTestFile() const
     {
-    BeFileName path(m_profileNewDataFolder);
+    BeFileName path(m_profileCreatedDataFolder);
     path.AppendToPath(BeFileName(GetExpectedVersion().ToString()));
 
     switch (m_type)
