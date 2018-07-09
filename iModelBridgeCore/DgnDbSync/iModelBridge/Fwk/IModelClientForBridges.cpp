@@ -338,6 +338,7 @@ static ChangeSetsResult tryPullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db, iModel
         changeSetVector.push_back(rev.get());
 
     Dgn::SchemaUpgradeOptions options(changeSetVector);
+    options.SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck); // We only want to merge schema revisions. We don't also want to import or upgrade required revisions.
     db = DgnDb::OpenDgnDb(&dbres, BeFileName(briefcasePath), Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, options));
 
     if (!db.IsValid())
