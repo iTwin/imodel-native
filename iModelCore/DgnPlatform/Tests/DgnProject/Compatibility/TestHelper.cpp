@@ -90,12 +90,11 @@ BeVersion TestDb::GetOriginalECXmlVersion(Utf8CP schemaName) const
 
         const BeVersion originalXmlVersion = versionJson.isMember("minor") ? BeVersion(versionJson["major"].asInt(), versionJson["minor"].asInt()) : BeVersion(versionJson["major"].asInt(), 0);
 
-        //cannot verify that version is the same if fetched via ECObjects, because ECDb in this version, does not set the original version.
-        //So ECObjects defaults to the current ECVersion
+        //verify that version is the same if fetched via ECObjects
         ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
         EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
-        EXPECT_EQ(3, (int) schema->GetOriginalECXmlVersionMajor()) << "Original ECXml Major Version of " << schemaName << " retrieved from ECObjects" << " | " << GetDescription();
-        EXPECT_EQ(1, (int) schema->GetOriginalECXmlVersionMinor()) << "Original ECXml Minor Version of " << schemaName << " retrieved from ECObjects" << " | " << GetDescription();
+        EXPECT_EQ((int) originalXmlVersion.GetMajor(), (int) schema->GetOriginalECXmlVersionMajor()) << "Original ECXml Major Version of " << schemaName << " retrieved from ECObjects differs from when retrieved with ECSQL" << " | " << GetDescription();
+        EXPECT_EQ((int) originalXmlVersion.GetMinor(), (int) schema->GetOriginalECXmlVersionMinor()) << "Original ECXml Minor Version of " << schemaName << " retrieved from ECObjects differs from when retrieved with ECSQL" << " | " << GetDescription();
         return originalXmlVersion;
         }
 
