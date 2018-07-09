@@ -1,0 +1,27 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/PullNugets.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------
+# Set up all the standard stuff.
+#----------------------------------------------------------
+%include  mdl.mki
+%include $(SrcRoot)DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
+
+#----------------------------------------------------------
+# Pull the test runner and test file nugets from server and copy them to IMS_NUGETS_DIR (out/iModelSchemaEvolution)
+#----------------------------------------------------------
+
+NUGET_DIR = $(SrcRoot)/nuget/iModelCompatibility/
+
+always:
+    ~mkdir $(NUGET_DIR)
+    ~mkdir $(TESTFILES_NUGET_DIR)
+    ~mkdir $(TESTRUNNERS_NUGET_DIR)
+    ~mkdir $(TESTFILES_DIR)
+    python Tests/DgnProject/Compatibility/CompatibilityRunner/PullNugets.py $(NUGET_DIR) $(IMS_DIR) $(IMS_NUGET_DIR) $(SrcRoot)BentleyBuild/bentleybuild
+    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(NUGET_DIR) $(TESTRUNNERS_NUGET_DIR)
