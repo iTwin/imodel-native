@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
 #include <GeoCoord\BaseGeoCoord.h>
-#include <Geom/transform.fdf>
+
 
 // Via RequiredRepository entry in the DgnV8ConverterDLL Part. The way this piece was designed was that is was so small, every library gets and builds as source.
 #include "../../V8IModelExtraFiles/V8IModelExtraFiles.h"
@@ -2642,6 +2642,11 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
         }
 
     RecordConversionResultsInSyncInfo(conversionResults, v8eh, v8mm, csearch);
+
+    if (BSISUCCESS != iModelBridge::SaveChangesToConserveMemory(GetDgnDb()))
+        {
+        OnFatalError(IssueCategory::DiskIO(), Issue::Error(), "SavePoint failed");
+        }
     }
 
 //---------------------------------------------------------------------------------------

@@ -2539,6 +2539,18 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
             ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
             return BentleyApi::BSIERROR;
             }
+        Bentley::WString schemaName(schema->GetName().c_str());
+        if (DgnV8Api::ItemTypeLibrary::IsItemTypeSchema(schemaName) && !schema->IsDynamicSchema())
+            {
+            ECN::IECInstancePtr dynamicInstance = ECN::CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
+            if (!ECN::ECSchema::IsSchemaReferenced(*schema, dynamicInstance->GetClass().GetSchema()))
+                {
+                ECN::ECClassCR dynClass = dynamicInstance->GetClass();
+                ECN::ECClassP nonConst = const_cast<ECN::ECClassP>(&dynClass);
+                schema->AddReferencedSchema(nonConst->GetSchemaR());
+                }
+            schema->SetCustomAttribute(*dynamicInstance);
+            }
         }
 
     return BentleyApi::SUCCESS;

@@ -10,13 +10,9 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/GenericDomain.h>
-#include <DgnPlatform/FunctionalDomain.h>
 #include <Logging/bentleylogging.h>
-#include <Planning/PlanningApi.h>
-#include <Raster/RasterApi.h>
-#include <PointCloud/PointCloudApi.h>
-#include <ThreeMx/ThreeMxApi.h>
 #include <DgnView/DgnViewLib.h>
+#include <Planning/PlanningApi.h>
 
 #include <BimFromDgnDb/BimFromDgnDb.h>
 #include "BimFromJsonImpl.h"
@@ -27,9 +23,6 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_PLANNING
-USING_NAMESPACE_BENTLEY_RASTER
-USING_NAMESPACE_BENTLEY_POINTCLOUD
 
 BEGIN_BIM_FROM_DGNDB_NAMESPACE
 
@@ -46,11 +39,6 @@ static void justLogAssertionFailures(WCharCP message, WCharCP file, uint32_t lin
 BimFromJsonImpl::BimFromJsonImpl(DgnDb* dgndb, bool setQuietAssertions) : m_dgndb(dgndb), DgnImportContext(*dgndb, *dgndb), m_isDone(false)
     {
     m_syncInfo = nullptr;
-    DgnDomains::RegisterDomain(Planning::PlanningDomain::GetDomain());
-    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
-    DgnDomains::RegisterDomain(Raster::RasterDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
-    DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
-    DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
 
     //BeFileName db = m_dgndb->GetFileName();
     //BeFileName jsonPath(db.GetDirectoryName());
@@ -320,6 +308,12 @@ void BimFromJsonImpl::FinalizeImport()
     m_dgndb->SaveChanges();
     m_dgndb->SaveSettings();
 
+    //BeFileName filename(m_dgndb->GetDbFileName());
+    //m_dgndb->CloseDb();
+    //DbResult status;
+    //m_dgndb = DgnDb::OpenDgnDb(&status, filename, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    //m_dgndb->GeoLocation().GetDgnGCS();
+    //m_dgndb->GeoLocation().GetEcefLocation();
     delete m_syncInfo;
     }
 

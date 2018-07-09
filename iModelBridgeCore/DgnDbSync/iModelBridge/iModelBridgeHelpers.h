@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/iModelBridgeHelpers.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridge.h>
@@ -65,37 +65,5 @@ struct iModelBridgeCallTerminate
     ~iModelBridgeCallTerminate() {m_bridge._Terminate(m_status);}
     };
 
-/*=================================================================================**//**
-* Put an instance of this class on the stack to flag down calls to DgnDb::SaveChanges or undo/redo.
-* @bsiclass                                                     Sam.Wilson      10/17
-+===============+===============+===============+===============+===============+======*/
-struct iModelBridgeLockOutTxnMonitor : TxnMonitor
-    {
-    DgnDbR m_dgndb;
-
-    iModelBridgeLockOutTxnMonitor(DgnDbR db) : m_dgndb(db)
-        {
-        DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor(*this);
-        m_dgndb.Domains().DisableSchemaImport();
-        }
-    ~iModelBridgeLockOutTxnMonitor()
-        {
-        DgnPlatformLib::GetHost().GetTxnAdmin().DropTxnMonitor(*this);
-        m_dgndb.Domains().EnableSchemaImport();
-        }
-    void _OnCommit(TxnManager& txnMgr) override
-        {
-        BeAssert(false);
-        TxnManager::ValidationError err(TxnManager::ValidationError::Severity::Fatal, "SaveChanges not permitted");
-        txnMgr.ReportError(err);
-        }
-    void _OnAppliedChanges(TxnManager& txnMgr) override
-        {
-        BeAssert(false);
-        TxnManager::ValidationError err(TxnManager::ValidationError::Severity::Fatal, "Undo/redo and change-merging not permitted");
-        txnMgr.ReportError(err);
-        }
-
-    };
 
 END_BENTLEY_DGN_NAMESPACE
