@@ -7,7 +7,7 @@
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-TestOutputDir = $(OutputRootDir)Product/iModelSchemaEvolutionGTest/run/SeedData/
+TestOutputDir = $(OutputRootDir)Product/iModelSchemaEvolutionGTest/run/NewData/
 CacheDir = $(OutBuildDir)iModelSchemaEvolutionDatasets/
 ContextDir = $(BuildContext)iModelSchemaEvolutionDatasets/
 

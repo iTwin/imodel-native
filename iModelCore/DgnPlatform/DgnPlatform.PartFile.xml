@@ -257,30 +257,29 @@
     </Part>
  
     <Part Name="iModelSchemaEvolutionPullTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PullCompatibilityNugets.mke">
-         <SubPart PartName="iModelSchemaEvolutionRunGTest" />    
+        <SubPart PartName="iModelSchemaEvolutionRunGTest"/>
     </Part>
 
     <Product Name="iModelSchemaEvolutionGTest">
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="iModelSchemaEvolutionGTest"/>
     </Product>
+
+    <Part Name="iModelSchemaEvolutionCopyCurrentEXE" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\CopyCurrentEXE.mke">
+        <SubProduct ProductName="iModelSchemaEvolutionGTest"/>
+    </Part>  
  
     <Part Name="iModelSchemaEvolutionRunGTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelSchemaEvolutionGTest -dGTEST_NAME=iModelSchemaEvolution -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/iModelSchemaEvolution" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubProduct ProductName="iModelSchemaEvolutionGTest" />
+        <SubPart PartName="iModelSchemaEvolutionPullDatasets"/>
+        <SubPart PartName="iModelSchemaEvolutionCopyCurrentEXE"/>
     </Part>
 
     <Part Name="iModelSchemaEvolutionTestsCopyDatasets" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\CopyDatasets.mke">
-        <SubPart PartName="iModelSchemaEvolutionPullDatasets"/>
         <SubPart PartName="iModelSchemaEvolutionRunGTest"/>
     </Part>
 
-    <Part Name="iModelSchemaEvolutionRunGTestBackwards" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunBackwardsCompatibilityTest.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubPart PartName="iModelSchemaEvolutionTestsCopyDatasets"/>
-    </Part>
- 
     <Part Name="iModelSchemaEvolutionRunGTestForwards" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunCompatibilityTests.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubPart PartName="iModelSchemaEvolutionRunGTestBackwards"/>
-        <SubPart PartName="iModelSchemaEvolutionPullTests"/>
+        <SubPart PartName="iModelSchemaEvolutionPullTests"/> 
     </Part>
 
     <NuGetProduct Name="iModelSchemaEvolutionTestNuget" Description="Awesome description here">

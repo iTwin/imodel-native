@@ -49,7 +49,7 @@ def pullAllNugets(path, pathToNugetPuller, name):
     versions = nugetpkg.SearchVersionsFromServer(address, name)
     for v in versions:
         # ignore stale versions until they have been deleted fromthe nuget server
-        if LooseVersion(v) < LooseVersion("2018.6.28.2"):
+        if LooseVersion(v) < LooseVersion("2018.7.9.1"):
             continue
         localDir = path
         DownloadPackage(address, name, v, localDir)
@@ -79,7 +79,7 @@ def main():
         zip_ref.extractall(os.path.splitext(path)[0])
         zip_ref.close()
     # Extract datasets out of nugets and put into seeddata folder. Only 1 file per version for now. #TODO
-    extractedDataDir = os.path.join(nugetPath, "SeedData")
+    extractedDataDir = os.path.join(nugetPath, "TestData")
     if not os.path.exists(extractedDataDir):
         os.makedirs(extractedDataDir)
     for subdir in os.listdir(nugetPath):

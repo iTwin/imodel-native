@@ -1,0 +1,18 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/CopyCurrentEXE.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+TestOutputDir = $(OutputRootDir)Product/iModelSchemaEvolutionGTest/iModelSchemaEvolution.exe
+SourceDir = $(OutBuildDir)iModelSchemaEvolution/iModelSchemaEvolution.exe
+
+
+COPYDIR_INPUT= $(SourceDir)
+COPYDIR_OUTPUT = $(TestOutputDir)
+
+always:
+	python Tests/DgnProject/Compatibility/CompatibilityRunner/CopyFile.py $(COPYDIR_INPUT) $(COPYDIR_OUTPUT)
