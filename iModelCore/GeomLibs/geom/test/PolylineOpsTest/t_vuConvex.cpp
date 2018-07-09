@@ -1,6 +1,6 @@
 #include "testHarness.h"
 #include <Vu/vuprint.fdf>
-static int s_noisy = 0;
+// unused - static int s_noisy = 0;
 
 
 /*---------------------------------------------------------------------------------**//**
