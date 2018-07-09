@@ -147,10 +147,10 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(BeFileNameCR rootFolder,
     if (logFoundFiles && LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         if (testFiles.empty())
-            LOG.info("Found test files: none.");
+            LOG.infov("Found test files in %s: none.", rootFolder.GetNameUtf8().c_str());
         else
             {
-            Utf8String msg("Found test files:\r\n");
+            Utf8PrintfString msg("Found test files in %s:\r\n", rootFolder.GetNameUtf8().c_str());
             for (TestFile const& testFile : testFiles)
                 {
                 msg.append(testFile.ToString()).append("\r\n");
