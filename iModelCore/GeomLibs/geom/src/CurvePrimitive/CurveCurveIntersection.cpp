@@ -307,12 +307,7 @@ void ProcessLineLine(
                         );
             }
         }
-    else  if (bsiDSegment4d_intersectXYDSegment4dDSegment4d
-                (
-                &hPointA, &fractionA,
-                &hPointB, &fractionB,
-                &hSegA, &hSegB
-                )
+    else  if (DSegment4d::IntersectXY(hPointA, fractionA, hPointB, fractionB, hSegA, hSegB)
         && validEdgeFractionWithinLinestring (fractionA, indexA, numA)
         && validEdgeFractionWithinLinestring (fractionB, indexB, numB)
         )

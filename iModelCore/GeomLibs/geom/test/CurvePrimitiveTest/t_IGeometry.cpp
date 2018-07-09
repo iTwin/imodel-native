@@ -669,6 +669,23 @@ TransformCR transform)
             Check::Near (range1a, range2, "Range in geometry tree transforms");
             }
         }
+    DRange3d rootRange;
+    DRange3d flattenedRange;
+
+    if (Check::True (rootNode->TryGetRange (rootRange), "recursive range")
+        && Check::True (flattened->TryGetRange (flattenedRange), "flattened range"))
+        {
+        Check::Near (rootRange, flattenedRange, "Recursive tree range versus flattened range");
+        }
+    if (Check::True (rootNode->TryGetRange (rootRange, transform), "recursive range")
+        && Check::True (flattened->TryGetRange (flattenedRange, transform), "flattened range"))
+        {
+        Check::Near (rootRange, flattenedRange, "Recursive tree range versus flattened range");
+        }
+    auto rootB = rootNode->Clone ();
+    auto rootC = rootNode->Clone (transform);
+    Check::True (rootNode->IsSameStructureAndGeometry (*rootB));
+    Check::Bool (!transform.IsIdentity (), rootNode->IsSameStructureAndGeometry (*rootB));
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17

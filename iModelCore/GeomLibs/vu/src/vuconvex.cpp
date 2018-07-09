@@ -14,98 +14,107 @@ static double s_graphRelTol = 1.0e-10;
 
 /*---------------------------------------------------------------------------------**//**
 * @description Split a polygon into smaller convex polygons.
-* @remarks Polygon may have disconnects (points with coordinate values = DISCONNECT) to separate multiple loops (e.g., holes).
-* @param pLoopPoints    IN  polygon points, with optional disconnects
-* @param numLoopPoints  IN  number of polygon points
-* @param userDataP      IN  user data pointer passed into callback
-* @param polygonFunc    IN  callback function to announce convex polygons
-* @return SUCCESS unless graph allocation failed
-* @group "VU Meshing"
-* @bsimethod                                                    EarlinLutz      02/06
+* (With multiple input args -- called with one-or-the-other)
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP StatusInt vu_splitToConvexParts
+static void vu_splitToConvexParts
 (
-DPoint3d                            *pLoopPoints,
-int                                 numLoopPoints,
-void                                *userDataP,
-VuTaggedDPoint3dArrayFunction       polygonFunc
+bvector<DPoint3d>  const *singleLoop,
+bvector<bvector<DPoint3d>>  const *loops,
+uint32_t numWrap,
+bvector<bvector<DPoint3d>>  &convexFaces,
+bvector<bvector<bool>> *isBoundary
 )
     {
-    StatusInt status = SUCCESS;
     VuSetP      graphP;
     VuArrayP    faceArrayP;
     VuP         faceP;
-    int         i0, i1;
-    int         trapMask = 1;
 
     static double s_relTol = 1.0e-13;
-
-    bvector<DPoint3d> facePoints;
-    bvector<int> faceFlag;
-    facePoints.reserve (10);
-    faceFlag.reserve (10);
+    convexFaces.clear ();
+    if (nullptr != isBoundary)
+        isBoundary->clear ();
 
     graphP = vu_newVuSet (0);
 
     vu_setTol (graphP, s_graphAbsTol, s_graphRelTol);
-
-    for ( i0 = 0 ; i0 < numLoopPoints ;)
-        {
-        for (i1 = i0; i1 < numLoopPoints && pLoopPoints[i1].x != DISCONNECT;)
+    if (nullptr != loops)
+        for (auto &loop : *loops)
             {
-            i1++;
+            vu_loopFromDPoint3dArrayXYTol (graphP, loop.data (), (int)loop. size (), 0.0, s_relTol);
             }
-        int numThisLoop = i1 - i0;
-        if (numThisLoop > 2)
-            vu_loopFromDPoint3dArrayXYTol (graphP, pLoopPoints + i0, numThisLoop, 0.0, s_relTol);
-        i0 = i1 + 1;
-        }
-
-    vu_postGraphToTrapFunc (graphP, "polyfill", numLoopPoints, (trapMask = trapMask << 1));
+    if (nullptr != singleLoop)
+        vu_loopFromDPoint3dArrayXYTol (graphP, singleLoop->data (), (int)singleLoop->size (), 0.0, s_relTol);
 
     vu_mergeOrUnionLoops (graphP, VUUNION_PARITY);
 
     vu_regularizeGraph (graphP);
-    vu_postGraphToTrapFunc (graphP, "vu_regularizeGraph", numLoopPoints, (trapMask = trapMask << 1));
     //vu_markAlternatingExteriorBoundaries(graphP,true);
     vu_parityFloodFromNegativeAreaFaces (graphP, VU_BOUNDARY_EDGE, VU_EXTERIOR_EDGE);
-    vu_postGraphToTrapFunc (graphP, "vu_parityFloodFromNegativeAreaFaces", numLoopPoints, (trapMask = trapMask << 1));
 
     faceArrayP = vu_grabArray (graphP);
 
     vu_triangulateMonotoneInteriorFaces (graphP, false);
-    vu_postGraphToTrapFunc (graphP, "vu_triangulateMonotoneInteriorFaces", numLoopPoints, (trapMask = trapMask << 1));
     vu_flipTrianglesToImproveQuadraticAspectRatio (graphP);
-    vu_postGraphToTrapFunc (graphP, "vu_flipTrianglesToImproveQuadraticAspectRatio", numLoopPoints, (trapMask = trapMask << 1));
     vu_removeEdgesToExpandConvexInteriorFaces (graphP);
-    vu_postGraphToTrapFunc (graphP, "vu_removeEdgesToExpandConvexInteriorFaces", numLoopPoints, (trapMask = trapMask << 1));
     vu_collectInteriorFaceLoops (faceArrayP, graphP);
 
     vu_arrayOpen (faceArrayP);
 
     for (;vu_arrayRead (faceArrayP, &faceP);)
         {
-        facePoints.clear ();
-        faceFlag.clear ();
+        convexFaces.push_back (bvector<DPoint3d>());
+        if (nullptr != isBoundary)
+            isBoundary->push_back (bvector<bool>());
         VU_FACE_LOOP (P, faceP)
             {
             DPoint3d xyz;
             vu_getDPoint3d (&xyz, P);
-            facePoints.push_back (xyz);
-            faceFlag.push_back (vu_getMask (P, VU_BOUNDARY_EDGE) ? 1 : 0);
+            convexFaces.back ().push_back (xyz);
+            if (nullptr != isBoundary)
+                isBoundary->back ().push_back (
+                        vu_getMask (P, VU_BOUNDARY_EDGE) ? true : false
+                        );
             }
         END_VU_FACE_LOOP (P, faceP)
-        DPoint3d xyz0 = facePoints[0];
-        int flag0 = faceFlag[0];
-        facePoints.push_back (xyz0);
-        faceFlag.push_back (flag0);
-        polygonFunc (facePoints.data (), faceFlag.data (), (int)facePoints.size (), userDataP);
+
+        for (uint32_t i = 0; i < numWrap; i++)
+            {
+            DPoint3d xyz = convexFaces.back ()[i];
+            convexFaces.back ().push_back (xyz);
+            if (nullptr != isBoundary)
+                {
+                bool value = isBoundary->back ()[i];
+                isBoundary->back ().push_back (value);
+                }
+            }
         }
 
     if (faceArrayP)
         vu_returnArray (graphP, faceArrayP);
     vu_freeVuSet (graphP);
 
-    return status;
     }
+
+Public GEOMDLLIMPEXP void vu_splitToConvexParts
+(
+bvector<bvector<DPoint3d>>  const &loops,
+uint32_t numWrap,
+bvector<bvector<DPoint3d>>  &convexFaces,
+bvector<bvector<bool>> *isBoundary
+)
+    {
+    return vu_splitToConvexParts (nullptr, &loops, numWrap, convexFaces, isBoundary);
+    }
+Public GEOMDLLIMPEXP void vu_splitToConvexParts
+(
+bvector<DPoint3d>  const &loop,
+uint32_t numWrap,
+bvector<bvector<DPoint3d>>  &convexFaces,
+bvector<bvector<bool>> *isBoundary
+)
+    {
+    return vu_splitToConvexParts (&loop, nullptr, numWrap, convexFaces, isBoundary);
+    }
+
+
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -84,6 +84,7 @@ TEST(BsplineSurface,SegmentDisjoint)
     freeSurfaces (split3, num3);
     }    
 
+#ifdef CompileBoresite
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -121,7 +122,7 @@ TEST(BsplineSurface,ImposeBoundary)
 
     bsputil_free (imposedPoints);    
     }
-
+#endif
 void PrintMinMaxRatio(int order, int numPoles, UsageSums &sums, char const *name)
     {
     Check::PrintHeading (name);

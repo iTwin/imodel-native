@@ -1529,7 +1529,7 @@ void Check::SaveTransformedMarker (DPoint3dCR &xyz, double markerSize)
 void Check::SaveTransformedMarkers (bvector<DPoint3d> const &data, double markerSize)
     {
     for (auto &xyz : data)
-        SaveTransformedMarker (xyz);
+        SaveTransformedMarker (xyz, markerSize);
     }
 
 

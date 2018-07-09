@@ -477,7 +477,13 @@ MSBsplineSurface    *surf
     if (surf->rational)
         bsputil_weightPoles (surf->poles, surf->poles, surf->weights, totalPoles);
     }
-
+// What is this used for.
+// What it does  ..
+// along one edge (u=0, u=1, v=0, or v=1) compute each quad.  Compute vectors "along the edge itself" and "along the first inboard polygon line.
+// Sum the cross products of the vectors, divide by number of quads.
+//  This is zero if (a) the edge is degenerate, (b) the edge and inbound polygon line are always parallel.
+// So it is a curviness measure for the boundary quads.
+// called by _computePartials if the normal vanishes.
 /*----------------------------------------------------------------------+
 |                                                                       |
 | name          bspsurf_computeZeroSurfNorm                             |
@@ -1640,6 +1646,7 @@ wrapup:
 |   Impose Boundary Routines                                            |
 |                                                                       |
 +----------------------------------------------------------------------*/
+#ifdef CompileBoresite
 /*----------------------------------------------------------------------+
 |                                                                       |
 | name          bspsurf_addBndPoint                                     |
@@ -2261,7 +2268,6 @@ int                 shortPath          /* => true means get shortest path */
     *holeOrigin = ! *holeOrigin;
     return SUCCESS;
     }
-
 /*----------------------------------------------------------------------+
 |                                                                       |
 | name          bspsurf_imposeBoundary                                  |
@@ -2551,7 +2557,7 @@ wrapup:
 
     return status;
     }
-
+#endif
 
 
 /*----------------------------------------------------------------------+

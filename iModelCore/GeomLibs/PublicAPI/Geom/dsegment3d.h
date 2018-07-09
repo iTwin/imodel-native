@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/dsegment3d.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -603,6 +603,8 @@ bool ClosestPointBoundedXY (DPoint3d &closePoint, double &closeParam, double &di
 bool ClosestPointBoundedXY (DPoint3d &closePoint, double &closeParam, double &distanceXY, DPoint3d spacePoint, DMatrix4dCP worldToLocal) const;
 bool ProjectPoint (DPoint3d &closestPoint, double &closestParam, DPoint3d spacePoint) const;
 bool ProjectPointBounded (DPoint3dR closestPoint, double &closestParam, DPoint3d spacePoint) const;
+// project spacePoint onto the unbounded line, measuring in projected x/w and y/w.
+bool ProjectPointUnboundedCartesianXYW (DPoint4dR closestPoint, double &closeParam, DPoint4dCR spacePoint) const;
 bool GetRange (DRange3dR range3d) const;
 
 //bool GetRange (DRange4d range4d) const;

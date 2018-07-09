@@ -58,23 +58,9 @@ $(OUT_DIR)PolygonOps$(OUT_EXT)     : $(geomSrcFuncs)PolygonOps.cpp        $(OTHE
 
 #$(OUT_DIR)dpoint3ddvec3d$(OUT_EXT)  : $(geomSrcStructs)dpoint3ddvec3d.cpp   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-#$(OUT_DIR)dpoint4d$(OUT_EXT)        : $(geomSrcStructs)dpoint4d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)drange3d$(OUT_EXT)        : $(geomSrcStructs)drange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)transform$(OUT_EXT)       : $(geomSrcStructs)transform.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)rotmatrix$(OUT_EXT)       : $(geomSrcStructs)rotmatrix.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)dsegment3d$(OUT_EXT)      : $(geomSrcStructs)dsegment3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
 $(OUT_DIR)DBilinearPatch3d$(OUT_EXT)      : $(geomSrcStructs)DBilinearPatch3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)DTriangle3d$(OUT_EXT)      : $(geomSrcStructs)DTriangle3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-$(OUT_DIR)dsegment4d$(OUT_EXT)      : $(geomSrcStructs)dsegment4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)proximitydata$(OUT_EXT)   : $(geomSrcStructs)proximitydata.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)graphicspoint$(OUT_EXT)   : $(geomSrcStructs)graphicspoint.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 

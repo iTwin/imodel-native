@@ -26,7 +26,12 @@
 #include <stdlib.h>
 #include <assert.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
-
+// deprecated, body in refdsegment4d.cpp
+void       bsiDSegment4d_getXYWImplicitDPoint4dPlane
+(
+DSegment4dCP pInstance,
+DPoint4dP pPlaneCoffs
+);
 static double s_lineUnitCircleIntersectionTolerance = 1.0e-8;
 
 #define FIX_MIN(value, min)          if (value < min) min = value
@@ -2510,7 +2515,7 @@ DSegment4dCP pSegment
     DConic4d   localConic;
 
     bsiDMatrix4d_initForDPoint4dOrigin (&worldToLocal, NULL, &pSegment->point[0]);
-    bsiDSegment4d_transformDMatrix4d (&localSegment, &worldToLocal, pSegment);
+    localSegment.InitProduct (worldToLocal, *pSegment);
     bsiDConic4d_applyDMatrix4d (&localConic, &worldToLocal, pConic);
 
     bsiDSegment4d_getXYWImplicitDPoint4dPlane (&localSegment, &planeCoffs);
@@ -2530,23 +2535,12 @@ DSegment4dCP pSegment
             {
             double segmentParam;
             localConicPoint.SumOf(localConic.center, localConic.vector0, trigPoints[i].x, localConic.vector90, trigPoints[i].y);
-
-            bsiDSegment4d_projectDPoint4dCartesianXYW
-                    (
-                    &localSegment,
-                    NULL,
-                    &segmentParam,
-                    &localConicPoint
-                    );
+            DPoint4d localLinePoint;
+            localSegment.ProjectPointUnboundedCartesianXYW (localLinePoint, segmentParam, localConicPoint);
             if (pLineParams)
                 pLineParams[i] = segmentParam;
             if (pLinePoints)
-                bsiDSegment4d_fractionParameterToDPoint4d
-                        (
-                        pSegment,
-                        &pLinePoints[i],
-                        segmentParam
-                        );
+                pSegment->FractionParameterToPoint (pLinePoints[i], segmentParam);
             }
         }
     return numAngle;

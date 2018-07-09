@@ -2865,7 +2865,7 @@ double              tolerance
     return  (SUCCESS);
     }
 #endif
-
+#ifdef CompileBoresite
 Public GEOMDLLIMPEXP int      bspsurf_imposeBoundary
 (
 MSBsplineSurface    *surface,
@@ -2880,7 +2880,7 @@ int                 *numSurfPts
     direction.DifferenceOf (directionPoints->high, directionPoints->low);
     return bspsurf_imposeBoundaryBySweptCurve (surface, curve, tolerance, &direction, surfPoints, numSurfPts);
     }
-
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/92
 +---------------+---------------+---------------+---------------+---------------+------*/

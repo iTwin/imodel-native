@@ -690,9 +690,9 @@ DMatrix4dCP matrix
             {
             segmentB.point[0] = linestring[iB-1];
             segmentB.point[1] = linestring[iB];
-            bsiDSegment4d_initFromDPoint3d (&segmentBH, &segmentB.point[0], &segmentB.point[1]);
+            segmentBH.Init (segmentB.point[0], segmentB.point[1]);
             if (NULL != matrix)
-                bsiDSegment4d_transformDMatrix4d (&segmentBH, matrix, &segmentBH);
+                segmentBH.InitProduct (*matrix, segmentBH);
                 
             bsiBezierDPoint4d_intersectDSegment4dXY (
                     pointA, fractionA, NULL, fractionB,
@@ -1826,7 +1826,7 @@ void MSBsplineCurve::AddLineIntersectionsXY (bvector<DPoint3d> *curvePoints, bve
     else
         {
         DSegment4d segmentXYZW;
-        bsiDSegment4d_initFromDPoint3d (&segmentXYZW, &segment.point[0], &segment.point[1]);
+        segmentXYZW.Init (segment.point[0], segment.point[1]);
         matrix->Multiply (segmentXYZW.point, segmentXYZW.point, 2);        
         // Perspective time.
         // We want planeCoffs such that:
@@ -1853,7 +1853,7 @@ void MSBsplineCurve::AddLineIntersectionsXY (bvector<DPoint3d> *curvePoints, bve
                 {
                 DPoint4d transformedWorkPoint, closestLinePoint;
                 matrix->Multiply (&transformedWorkPoint, &curveWorkPoint[i], NULL, 1);
-                if (bsiDSegment4d_projectDPoint4dCartesianXYW (&segmentXYZW, &closestLinePoint, &lineWorkFraction, &transformedWorkPoint))
+                if (segmentXYZW.ProjectPointUnboundedCartesianXYW (closestLinePoint, lineWorkFraction, transformedWorkPoint))
                     {
                     if (extendSegment || (lineWorkFraction >= 0.0 && lineWorkFraction <= 1.0))
                         {

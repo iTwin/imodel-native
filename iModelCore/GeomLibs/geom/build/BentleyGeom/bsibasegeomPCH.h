@@ -21,6 +21,4 @@
 #include <Geom/internal/BezierTriangle.h>
 #include <Geom/internal/rotmatrix_dep.fdf>
 
-#include <Geom/internal/dsegment4d.fdf>
-
 #include <stdlib.h>

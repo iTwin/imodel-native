@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdsegment4d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -61,7 +61,7 @@ DPoint4dCP pPoint
 * @indexVerb get
 * @bsihdr                                                       EarlinLutz      03/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void       bsiDSegment4d_getXYWImplicitDPoint4dPlane
+void       bsiDSegment4d_getXYWImplicitDPoint4dPlane
 
 (
 DSegment4dCP pInstance,
@@ -83,28 +83,6 @@ DPoint4dP pPlaneCoffs
     pPlaneCoffs->z = 0.0;
     pPlaneCoffs->w = b * cross.z;
     }
-
-
-
-/*-----------------------------------------------------------------*//**
-*
-* Apply a transformation to the source segment.
-* @param pTransform => transformation to apply.
-* @param pSource => source segment
-* @indexVerb transform
-* @bsihdr                                                       EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiDSegment4d_transformDMatrix4d
-(
-DSegment4dP pDest,
-DMatrix4dCP pTransform,
-DSegment4dCP pSource
-)
-    {
-    pTransform->Multiply (pDest->point, pSource->point, 2);
-    return true;
-    }
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
@@ -596,8 +574,8 @@ DSegment4dCR inSegment23
 
     bsiDMatrix4d_initForDPoint4dOrigin (&worldToLocal, &localToWorld, &inSegment01.point[0]);
 
-    bsiDSegment4d_transformDMatrix4d (&segment01, &worldToLocal, &inSegment01);
-    bsiDSegment4d_transformDMatrix4d (&segment23, &worldToLocal, &inSegment23);
+    segment01.InitProduct (worldToLocal, inSegment01);
+    segment23.InitProduct (worldToLocal, inSegment23);
 
     bsiDSegment4d_getXYWImplicitDPoint4dPlane (&segment01, &plane01);
     bsiDSegment4d_getXYWImplicitDPoint4dPlane (&segment23, &plane23);
@@ -695,7 +673,39 @@ DSegment4dCR inSegment23
     return boolstat;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Project a point onto the extended, cartesian line using only xyw parts of the line.
+*
+* @indexVerb projection
+* @bsihdr                                                       EarlinLutz      10/98
++---------------+---------------+---------------+---------------+---------------+------*/
+bool               DSegment4d::ProjectPointUnboundedCartesianXYW
+(
+DPoint4dR closestPoint,
+double    &closestParam,
+DPoint4dCR   spacePoint
+) const
+    {
+    DPoint4d vectorU;
+    DPoint3d diffPA, diffUP, vectorUBar;
 
+    double dot0, dot1, param;
+    bool    result;
+
+    vectorU.DifferenceOf (point[1], point[0]);
+    vectorUBar.WeightedDifferenceOf(point[1], point[0]);
+    diffPA.WeightedDifferenceOf(spacePoint, point[0]);
+    diffUP.WeightedDifferenceOf(vectorU, spacePoint);
+
+    dot0 = diffPA.DotProductXY (vectorUBar);
+    dot1 = diffUP.DotProductXY (vectorUBar);
+    result = DoubleOps::SafeDivide (param, dot0, dot1, 0.0);
+
+    closestParam = param;
+
+    closestPoint.SumOf(point[0], vectorU, param);
+    return result;
+    }
 
 
 END_BENTLEY_GEOMETRY_NAMESPACE

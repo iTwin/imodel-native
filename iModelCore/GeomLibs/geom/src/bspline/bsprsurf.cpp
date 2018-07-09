@@ -647,6 +647,7 @@ MSBsplineSurface    *surface
         }
     }
 
+#ifdef CompileBoresite
 Public GEOMDLLIMPEXP int      bsprsurf_boresiteToSurface
 (
 DPoint3dP           borePt,
@@ -765,6 +766,7 @@ MSBsplineSurface    *surfaceP       /* => surface */
 
     return SUCCESS;    
     }
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lu.Han          11/92
 +---------------+---------------+---------------+---------------+---------------+------*/

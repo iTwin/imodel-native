@@ -1070,20 +1070,21 @@ Public GEOMDLLIMPEXP int      bspcurv_helix
 MSBsplineCurve  *curve,                /* <= spiral bspline curve */
 double          iRad,                  /* => initial Radius */
 double          fRad,                  /* => final Radius */
-double          pitchValue,            /* => pitch height or number */
-DPoint3d        *startPt,
-DPoint3d        *axis1,
-DPoint3d        *axis2,
+double          pitchValue,            /* => if valueIsHeight != 0, pitchValue is the axis advance per 360 degrees. 
+                                              if valueIsHeight == 0, pitchValue is the number of 360 degree turns in the distance from startCenter to endCenter */
+DPoint3d        *xAxisTargetPoint,
+DPoint3d        *axisStartPoint,
+DPoint3d        *axisTargetPoint,
 int             valueIsHeight
 )
     {
     int         i, status;
     double      sweep, height, turns;
-    DVec3d      tmp1, tmp2, tmp3;
+    DVec3d      xDir, yDir, zDir;
     DPoint3d     *pP, *endP;
     RotMatrix   rotMatrix;
 
-    height = axis1->Distance (*axis2);
+    height = axisStartPoint->Distance (*axisTargetPoint);
     turns = valueIsHeight ? height/pitchValue : pitchValue;
     sweep = msGeomConst_2pi  * turns;
 
@@ -1098,13 +1099,13 @@ int             valueIsHeight
     for (i=0, pP=endP=curve->poles, endP += curve->params.numPoles; pP < endP; pP++, i++)
         pP->z = i * height / (curve->params.numPoles - 1);
 
-    tmp1.NormalizedDifference (*startPt, *axis1);
-    tmp3.NormalizedDifference (*axis2, *axis1);
-    tmp2.CrossProduct (tmp3, tmp1);
-    rotMatrix.InitFromRowVectors (tmp1, tmp2, tmp3);
+    xDir.NormalizedDifference (*xAxisTargetPoint, *axisStartPoint);
+    zDir.NormalizedDifference (*axisTargetPoint, *axisStartPoint);
+    yDir.CrossProduct (zDir, xDir);
+    rotMatrix.InitFromRowVectors (xDir, yDir, zDir);
 
     rotMatrix.MultiplyTranspose (curve->poles, curve->poles, curve->params.numPoles);
-    DPoint3d::AddToArray (curve->poles, curve->params.numPoles, *axis1);
+    DPoint3d::AddToArray (curve->poles, curve->params.numPoles, *axisStartPoint);
 
     bsputil_weightPoles (curve->poles, curve->poles, curve->weights, curve->params.numPoles);
 

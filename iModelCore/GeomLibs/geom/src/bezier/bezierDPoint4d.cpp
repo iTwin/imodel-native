@@ -3143,7 +3143,7 @@ bool extendSegment1
         double segmentFraction;
         double curveFraction = root[i];
         bsiBezier_functionAndDerivative ((double*)&curvePoint, NULL, (double*)bezierPoles, (int)order, 4, curveFraction);
-        if (bsiDSegment4d_projectDPoint4dCartesianXYW (&segment, &segmentPoint, &segmentFraction, &curvePoint))
+        if (segment.ProjectPointUnboundedCartesianXYW (segmentPoint, segmentFraction, curvePoint))
             {
             if (!extendSegment0 && segmentFraction < -epsilon)
                 continue;
