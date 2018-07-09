@@ -29,8 +29,7 @@ GlobalConnection::GlobalConnection(const Utf8String serverUrl, CredentialsCR cre
     wsRepositoryClient->SetCredentials(credentials);
 
     m_wsRepositoryClient = wsRepositoryClient;
-    IWSRepositoryClientPtr t = wsRepositoryClient;
-    m_eventManager = GlobalEventManager(t);
+    m_eventManagerPtr = new GlobalEventManager(std::static_pointer_cast<IWSRepositoryClient>(wsRepositoryClient));
     }
 
 //---------------------------------------------------------------------------------------

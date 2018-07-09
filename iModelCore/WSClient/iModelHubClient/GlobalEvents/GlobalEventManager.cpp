@@ -20,8 +20,17 @@ USING_NAMESPACE_BENTLEY_DGN
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Karolis.Uzkuraitis            05/2018
 //---------------------------------------------------------------------------------------
-void GlobalEventManager::UpdateSASTokenForSubscription(Utf8StringCR instanceId)
+void GlobalEventManager::UpdateSASTokenForSubscription(Utf8StringCR instanceId, const ICancellationTokenPtr cancellationToken)
     {
+    if(nullptr == m_eventSAS)
+        {
+        auto result = GetEventServiceSASToken(cancellationToken)->GetResult();
+        if (result.IsSuccess())
+            {
+            m_eventSAS = result.GetValue();
+            }
+        }
+
     if (m_eventServiceClients.find(instanceId) == m_eventServiceClients.end())
         m_eventServiceClients[instanceId] = EventServiceClient::Create(m_eventSAS->GetBaseAddress(), instanceId);
 
@@ -40,17 +49,7 @@ GlobalEventSubscriptionTaskPtr GlobalEventManager::ModifySubscription(const Glob
         if (!result.IsSuccess())
             return result;
 
-        GetEventServiceSASToken(cancellationToken)->Then([=] (AzureServiceBusSASDTOResultCR setResult)
-            {
-            if (!setResult.IsSuccess())
-                {
-                return;
-                }
-
-            m_eventSAS = setResult.GetValue();
-            UpdateSASTokenForSubscription(instanceId);
-            return;
-            });
+        UpdateSASTokenForSubscription(instanceId);
 
         return result;
         });
@@ -233,7 +232,7 @@ GlobalEventSubscriptionTaskPtr GlobalEventManager::SendEventChangesetRequest
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Uzkuraitis             05/2018
 //---------------------------------------------------------------------------------------
-Json::Value GlobalEventManager::GenerateEventSASJson()
+Json::Value GlobalEventManager::GenerateEventSASJson() const
     {
     return BaseEventManager::GenerateEventSASJson(ServerSchema::Schema::Global, ServerSchema::Class::GlobalEventSAS);
     }
@@ -261,15 +260,7 @@ GlobalEventSubscriptionTaskPtr GlobalEventManager::SubscribeToEvents(BeGuidCR su
         if (!result.IsSuccess())
             return result;
 
-        GetEventServiceSASToken(cancellationToken)->Then([=] (AzureServiceBusSASDTOResultCR setResult)
-            {
-            if (!setResult.IsSuccess())
-                return;
-
-            m_eventSAS = setResult.GetValue();
-            auto instanceId = result.GetValue()->GetSubscriptionInstanceId();
-            UpdateSASTokenForSubscription(instanceId);
-            });
+        UpdateSASTokenForSubscription(result.GetValue()->GetSubscriptionInstanceId());
         return result;
         }), methodName, start);
     }
@@ -277,7 +268,7 @@ GlobalEventSubscriptionTaskPtr GlobalEventManager::SubscribeToEvents(BeGuidCR su
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Uzkuraitis             04/2018
 //---------------------------------------------------------------------------------------
-StatusTaskPtr GlobalEventManager::UnsubscribeEvents(const GlobalEventSubscriptionId instanceId)
+StatusTaskPtr GlobalEventManager::UnsubscribeEvents(const GlobalEventSubscriptionId instanceId) const
     {
     const Utf8String methodName = "GlobalConnection::UnsubscribeEvents";
     LogHelper::Log(LOG_DEBUG, methodName, "Method called.");
