@@ -90,7 +90,7 @@ BentleyStatus TestECDbCreator::ImportSchemas(ECDbCR ecdb, std::vector<SchemaItem
 BentleyStatus TestECDbCreator::_UpgradeOldFiles() const
     {
     Profile const& profile = ECDbProfile::Get();
-    std::vector<TestFile> testFiles = profile.GetAllVersionsOfTestFile(m_fileName.c_str(), false);
+    std::vector<TestFile> testFiles = profile.GetAllVersionsOfTestFile(profile.GetTestDataFolder(), m_fileName.c_str(), false);
     for (TestFile const& testFile : testFiles)
         {
         if (testFile.GetAge() != ProfileState::Age::Older)

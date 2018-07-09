@@ -47,7 +47,7 @@ def pullAllNugets(path, pathToNugetPuller, name):
     versions = nugetpkg.SearchVersionsFromServer(address, name)
     for v in versions:
         # ignore stale versions until they have been deleted fromthe nuget server
-        if LooseVersion(v) < LooseVersion("2018.6.28.2"):
+        if LooseVersion(v) < LooseVersion("2018.7.9.1"):
             continue
         # Dowload and save all versions
         localDir = path
@@ -81,7 +81,7 @@ def main():
     for subdir in os.listdir(nugetPath):
         path = os.path.join(nugetPath, subdir)
         if os.path.isdir(path):
-            copytree(dataPath, os.path.join(path, "run", "SeedData"))
+            copytree(dataPath, os.path.join(path, "run", "NewData"))
 
 if __name__ == "__main__":
     main()

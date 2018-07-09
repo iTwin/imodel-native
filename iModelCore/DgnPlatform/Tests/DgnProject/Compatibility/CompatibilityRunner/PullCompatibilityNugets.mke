@@ -21,9 +21,7 @@
 
 NUGET_DIR = $(SrcRoot)/nuget/iModelCompatibility/
 ASSETS_DIR = $(IMS_DIR)/Assets
-IMS_NUGETS_DIR = $(IMS_DIR)/Nugets
-CURRENT_DATASET_DIR = $(OutputRootDir)Product/iModelSchemaEvolutionGTest/run/SeedData
-NUGET_DATASETS_DIR = $(OutputRootDir)iModelSchemaEvolution/Data/SeedData
+
 always:
     ~mkdir $(NUGET_DIR)
     ~mkdir $(IMS_DIR)

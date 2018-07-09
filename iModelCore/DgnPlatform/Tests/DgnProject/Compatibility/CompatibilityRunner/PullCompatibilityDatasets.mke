@@ -11,9 +11,15 @@
 #----------------------------------------------------------
 %include  mdl.mki
 
+PRODUCT_OUTPUT_DIR = $(OutputRootDir)Product/iModelSchemaEvolutionGTest/run/TestData
+
 %include $(SrcRoot)DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
 
 always:
     ~mkdir $(IMS_DIR)
     ~mkdir $(DATA_DIR)
     python Tests/DgnProject/Compatibility/CompatibilityRunner/PullCompatibilityDatasets.py $(OutputRootDir)iModelSchemaEvolution/Data $(SrcRoot)BentleyBuild/bentleybuild
+
+always:
+	~mkdir $(PRODUCT_OUTPUT_DIR)
+    python $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(NUGET_DATASETS_DIR) $(PRODUCT_OUTPUT_DIR)

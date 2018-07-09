@@ -37,11 +37,10 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
 
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
-            switch (testDb.GetState())
+            switch (testDb.GetAge())
                 {
-                    case TestDb::State::Older:
-                    case TestDb::State::Upgraded:
-                    case TestDb::State::UpToDate:
+                    case ProfileState::Age::Older:
+                    case ProfileState::Age::UpToDate:
                     {
                     EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
 
@@ -88,7 +87,7 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     EXPECT_EQ(JsonValue(R"js({"classcount":14, "enumcount": 2})js"), testDb.GetSchemaItemCounts("CoreCustomAttributes")) << testDb.GetDescription();
                     break;
                     }
-                    case TestDb::State::Newer:
+                    case ProfileState::Age::Newer:
                     {
                     EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
 
@@ -134,7 +133,7 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     }
 
                     default:
-                        FAIL() << "Unhandled TestDb::State enum value | " << testDb.GetDescription();
+                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
                         break;
                 }
             }

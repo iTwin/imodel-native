@@ -35,11 +35,10 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
 
-            switch (testDb.GetState())
+            switch (testDb.GetAge())
                 {
-                    case TestDb::State::Older:
-                    case TestDb::State::Upgraded:
-                    case TestDb::State::UpToDate:
+                    case ProfileState::Age::Older:
+                    case ProfileState::Age::UpToDate:
                     {
                     EXPECT_EQ(5, testDb.GetSchemaCount()) << testDb.GetDescription();
 
@@ -72,7 +71,7 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                     break;
                     }
 
-                    case TestDb::State::Newer:
+                    case ProfileState::Age::Newer:
                     {
                     EXPECT_LE(5, testDb.GetSchemaCount()) << testDb.GetDescription();
 
@@ -103,7 +102,7 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                     break;
                     }
                     default:
-                        FAIL() << "Unhandled TestDb::State enum value | " << testDb.GetDescription();
+                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
                         break;
                 }
             }
