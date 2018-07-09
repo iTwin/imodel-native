@@ -89,13 +89,12 @@ struct Profile : NonCopyableClass
         static constexpr WCharCP PROFILEVERSIONFOLDER_VERSIONSEPARATOR_W = L"_";
 
         Utf8CP m_name = nullptr;
-        BeFileName m_profileNewDataFolder;
-        BeFileName m_profileOldDataFolder;
+        BeFileName m_profileCreatedDataFolder; // files created by this test run (will be saved as nugets)
+        BeFileName m_profilePulledTestDataFolder; // pre-existing test files (pulled as nugets)
         BeFileName m_profileOutFolder;
 
         virtual BentleyStatus _Init() const = 0;
         BeFileName GetFolderForNewTestFile() const;
-        std::vector<TestFile> GetAllVersionsOfTestFile(BeFileNameCR rootFolder, Utf8CP testFileName, bool logFoundFiles) const;
 
     protected:
         Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name);
@@ -109,9 +108,11 @@ struct Profile : NonCopyableClass
 
         BeSQLite::ProfileVersion const& GetExpectedVersion() const { return m_expectedVersion; }
 
-        std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles = true) const;
-        std::vector<TestFile> GetAllVersionsOfTestFileFromOldData(Utf8CP testFileName, bool logFoundFiles = true) const { return GetAllVersionsOfTestFile(m_profileOldDataFolder, testFileName, logFoundFiles); }
+        BeFileNameCR GetTestDataFolder() const { return m_profilePulledTestDataFolder; }
         BeFileNameCR GetOutFolder() const { return m_profileOutFolder; }
+
+        std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles = true) const;
+        std::vector<TestFile> GetAllVersionsOfTestFile(BeFileNameCR rootFolder, Utf8CP testFileName, bool logFoundFiles) const;
         BeFileName GetPathForNewTestFile(Utf8StringCR testFileName) const { return GetFolderForNewTestFile().AppendToPath(BeFileName(testFileName)); }
         BeFileName GetPathForNewUpgradedTestFile(TestFile const& oldSeedFile) const;
     };
