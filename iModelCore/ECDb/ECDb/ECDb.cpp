@@ -68,6 +68,16 @@ DbResult ECDb::_OnDbCreated(CreateParams const& params)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                    07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::_OnAfterChangesetApplied(bool hasSchemaChanges) const
+    {
+    Schemas().RepopulateCacheTables();
+    Schemas().UpgradeECInstances();
+    return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
 //override

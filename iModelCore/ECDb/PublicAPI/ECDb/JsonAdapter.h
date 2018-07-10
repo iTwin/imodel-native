@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/JsonAdapter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -149,7 +149,6 @@ struct JsonECSqlSelectAdapter final
             private:
                 MemberNameCasing m_memberNameCasing = MemberNameCasing::KeepOriginal;
                 ECN::ECJsonInt64Format m_int64Format = ECN::ECJsonInt64Format::AsDecimalString;
-
             public:
                 //! Initializes a default FormatOptions object
                 //! with MemberCasingMode::KeepOriginal and ECJsonInt64Format::AsDecimalString
@@ -164,21 +163,28 @@ struct JsonECSqlSelectAdapter final
                 ECN::ECJsonInt64Format GetInt64Format() const { return m_int64Format; }
             };
     private:
-        ECSqlStatementCR m_ecsqlStatement;
+        mutable ECSqlStatement const* m_ecsqlStatement;
+        mutable uint64_t m_hashCode;
+        mutable std::unique_ptr<bvector<Utf8String>> m_members;
+        bool m_thisAdaptorCached;
         FormatOptions m_formatOptions;
-   
         //not copyable
         JsonECSqlSelectAdapter(JsonECSqlSelectAdapter const&) = delete;
         JsonECSqlSelectAdapter& operator=(JsonECSqlSelectAdapter const&) = delete;
-
+        BentleyStatus Init() const;
     public:
 
         //! Initializes a new JsonECSqlSelectAdapter instance for the specified ECSqlStatement. 
         //! @param[in] ecsqlStatement Prepared ECSqlStatement
         //! @param[in] formatOptions Options to control the output. 
+        //! @param[in] thisAdaptorCached Options to control if Json use StaticString for attribute names for performance. Adaptor must outlive Json::Value that is returned by GetRow().
         //! @see ECSqlStatement
-        JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions const& formatOptions = FormatOptions()) : m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions) {}
+        JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions const& formatOptions = FormatOptions(), bool thisAdaptorCached = false) : m_ecsqlStatement(&ecsqlStatement), m_formatOptions(formatOptions) , m_thisAdaptorCached (thisAdaptorCached), m_hashCode (ecsqlStatement.GetHashCode()){}
         ~JsonECSqlSelectAdapter() {}
+
+        //! Set new statement point but it should have same ecsql
+        //! @param[in] ecsqlStatement Prepared ECSqlStatement
+        ECDB_EXPORT BentleyStatus SetStatement(ECSqlStatementCR ecsqlStatement) const;
 
         //! Gets the current row as JSON object with pairs of property name value for each
         //! item in the ECSQL select clause.

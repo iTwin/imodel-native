@@ -202,7 +202,7 @@ protected:
     ECDB_EXPORT DbResult _OnDbDetached(Utf8CP dbAlias) const override;
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
-
+    ECDB_EXPORT DbResult _OnAfterChangesetApplied(bool hasSchemaChanges) const override;
     //! Resets ECDb's ECInstanceId sequence to the current maximum ECInstanceId for the specified BriefcaseId.
     //! @param[in] briefcaseId BriefcaseId to which the sequence will be reset
     //! @param[in] ecClassIgnoreList List of ids of ECClasses whose ECInstanceIds should be ignored when
