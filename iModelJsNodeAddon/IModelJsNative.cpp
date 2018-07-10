@@ -1251,7 +1251,9 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         {
         OPTIONAL_ARGUMENT_STRING(0, description, Env().Undefined());
         REQUIRE_DB_TO_BE_OPEN
+        auto was = JsInterop::SetOkEndBulkMode(true);
         auto stat = GetDgnDb().SaveChanges(description);
+        JsInterop::SetOkEndBulkMode(was);
         return Napi::Number::New(Env(), (int)stat);
         }
 

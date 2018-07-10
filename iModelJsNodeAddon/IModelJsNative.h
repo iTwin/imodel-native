@@ -101,6 +101,7 @@ public:
     static void GetIModelProps(JsonValueR, DgnDbCR dgndb);
     
     static DgnPlatformLib::Host::RepositoryAdmin& GetRepositoryAdmin();
+    static bool SetOkEndBulkMode(bool);
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestToInsertElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemProps);
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestForElementById(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemIdJson, BeSQLite::DbOpcode opcode);
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestForElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemPropsJson, BeSQLite::DbOpcode opcode);

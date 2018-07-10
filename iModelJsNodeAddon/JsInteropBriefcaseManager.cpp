@@ -9,6 +9,8 @@
 
 namespace IModelJsNative {
 
+static bool s_okEndBulkMode;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -93,6 +95,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
                 AccumulateRequests(req);
             else
                 {
+                JsInterop::ThrowJsException("Cannot acquire resources in native code. See startBulkOperation.");
                 BeAssert(req.IsEmpty() && "Cannot acquire resources in native code. See startBulkOperation.");
                 }
             }
@@ -185,6 +188,8 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
     RepositoryStatus _OnFinishRevision(DgnRevision const& rev) override
         {
+        // The schema upgrade logic calls Merge. Nothing we do about that.
+#ifdef COMMENT_OUT
         if (!m_inBulkUpdate)
             {
             // TODO: Notify TypeScript about this!
@@ -196,14 +201,19 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
         BeAssert(false && "don't merge changes while in a bulk op");
         return RepositoryStatus::PendingTransactions;
+#endif
+        return RepositoryStatus::Success;
         }
 
     void _OnCommit(TxnManager& mgr) override
         {
+        // The schema upgrade logic calls SaveChanges. Nothing we do about that.
+#ifdef COMMENT_OUT
         // This event is invoked whenver any DgnDb is committed, not just mine.
         if (&GetDgnDb() != &mgr.GetDgnDb())
             return;
         BeAssert(!m_inBulkUpdate && "don't call SaveChanges while in a bulk op");
+#endif
         }
 
     void _OnAppliedChanges(TxnManager& mgr) override
@@ -284,6 +294,9 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
     Response _EndBulkOperation() override
         {
+        if (!s_okEndBulkMode)   // We ignore requests to end bulk mode unless they come from imodeljsNative.
+            return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::Success);
+
         if (m_inBulkUpdate <= 0)
             {
             BeAssert(false);
@@ -402,6 +415,13 @@ struct NativeRepositoryAdmin : DgnPlatformLib::Host::RepositoryAdmin
 } // IModelJsNative
 
 using namespace IModelJsNative;
+
+bool JsInterop::SetOkEndBulkMode(bool b)
+    {
+    bool was = s_okEndBulkMode;
+    s_okEndBulkMode = b;
+    return was;
+    }
 
 //=======================================================================================
 // @bsistruct                                   Sam.Wilson                  05/17
@@ -550,5 +570,8 @@ RepositoryStatus JsInterop::BriefcaseManagerStartBulkOperation(DgnDbR dgndb)
 RepositoryStatus JsInterop::BriefcaseManagerEndBulkOperation(DgnDbR dgndb)
     {
     auto& bcm = dgndb.BriefcaseManager();
-    return bcm.EndBulkOperation().Result();
+    auto was = SetOkEndBulkMode(true);
+    auto res = bcm.EndBulkOperation().Result();
+    SetOkEndBulkMode(was);
+    return res;
     }
