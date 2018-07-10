@@ -113,6 +113,17 @@ m_schemasDir(schemasDir)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSRepositoryResult> DiskRepositoryClient::GetInfo(ICancellationTokenPtr ct) const
+    {
+    WSRepository repository;
+    repository.SetId("diskRepositoryClientTest");
+    repository.SetServerUrl("testUrl");
+    return CreateCompletedAsyncTask(WSRepositoryResult::Success(repository));
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSFileResult> DiskRepositoryClient::SendGetFileRequest
