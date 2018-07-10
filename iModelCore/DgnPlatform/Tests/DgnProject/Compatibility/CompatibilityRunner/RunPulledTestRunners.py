@@ -27,7 +27,11 @@ def main():
         fullPath = os.path.join(testRunnersSandboxFolder, subdir);
         if (os.path.isdir(fullPath)):
             try:
-                subprocess.check_call(os.path.join(fullPath, "iModelSchemaEvolution.exe"))
+                exePath = os.path.join(fullPath, "iModelEvolutionTests.exe")
+                if not os.path.exists(exePath):
+                    print >> sys.stderr, "Compatibility test runner '{0}' does not exist.".format(exePath)
+                    hasError = True
+                subprocess.check_call(exePath)
                 print "Compatibility test runner for '" + subdir + "' succeeded."
             except subprocess.CalledProcessError as err:
                 print >> sys.stderr, "Compatibility test runner for '{0}' failed: {1}".format(subdir, err)
