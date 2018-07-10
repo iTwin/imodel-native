@@ -218,6 +218,13 @@
     <!-- Compatibility Tests -->
     <!-- ********************************************************************************************** -->
 
+    <!-- Entry point part -->
+    <Part Name="RuniModelSchemaEvolutionTests" PrgOutputDir="iModelSchemaEvolutionTests">
+        <SubPart PartName="iModelSchemaEvolutionRunAllTestRunners"/>
+        <SubNuGetProduct NuGetProductName="iModelSchemaEvolutionTestNuget"/>
+        <SubNuGetProduct NuGetProductName="iModelSchemaEvolutionTestFilesNuget"/>
+    </Part>
+
     <Part Name="iModelSchemaEvolutionTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Compatibility">
         <!-- <SubPart PartName="PrewireForUnitTests" /> -->
         <SubPart PartName="TestFixtureForUnitTests" />
@@ -349,11 +356,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="RuniModelSchemaEvolutionTests" PrgOutputDir="iModelSchemaEvolutionTests">
-        <SubPart PartName="iModelSchemaEvolutionRunAllTestRunners"/>
-        <SubNuGetProduct NuGetProductName="iModelSchemaEvolutionTestNuget"/>
-        <SubNuGetProduct NuGetProductName="iModelSchemaEvolutionTestFilesNuget"/>
-    </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
