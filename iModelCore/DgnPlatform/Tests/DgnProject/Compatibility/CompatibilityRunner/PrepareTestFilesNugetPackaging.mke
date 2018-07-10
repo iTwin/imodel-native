@@ -1,6 +1,6 @@
 #---------------------------------------------------------------------------------------+
 #
-#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/PrepareNugetPackaging.mke $
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/PrepareTestFilesNugetPackaging.mke $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -8,12 +8,8 @@
 %include mdl.mki
 %include $(SrcRoot)DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
 
-# 1) Symlink the test files to be packaged to the build context, where
-#    the respective part will pick up for packaging
-#    (The test files are first copied from the run folder into the build folder, because the run folder
-#    will be deleted in the next step)
-# 2) Delete the run folder, to avoid the test results are packaged into the test runner nuget
-
+# Symlink the test files to be packaged to the build context, where
+# the respective part will pick up for packaging
 
 %if !exists($(NEWFILES_DIR))
     %error This part must be run at least once after a full execution of the iModelEvolution GTest suite.
@@ -34,4 +30,4 @@ COPYDIR_OUTPUT = $(CacheDir)
 always:
     ~mkdir $(ContextDir)
     python $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(CacheDir) $(ContextDir)
-    $(rmdirRecursiveCmd) $(CURRENTTESTRUNNER_RUN_DIR)
+    
