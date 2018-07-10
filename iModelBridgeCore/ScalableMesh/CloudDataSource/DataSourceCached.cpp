@@ -106,7 +106,11 @@ CacheWriter::Ptr CacheWriter::GetCacheWriter()
 
 void CacheWriter::ShutdownCacheWriter()
     {
-    if (s_cacheWriter.IsValid()) s_cacheWriter->Shutdown();
+    if (s_cacheWriter.IsValid())
+        {
+        s_cacheWriter->Shutdown();
+        s_cacheWriter = nullptr;
+        }
     }
 
 DataSourceStatus DataSourceCached::writeToCache(DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize size)
