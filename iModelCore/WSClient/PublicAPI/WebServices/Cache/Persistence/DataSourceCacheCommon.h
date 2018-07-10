@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/DataSourceCacheCommon.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,14 +19,9 @@ enum class CacheRootPersistence
     Default = Full
     };
 
-// TODO: remove
 // JSON specific properties
 #define DataSourceCache_PROPERTY_LocalInstanceId        "id"
 #define DataSourceCache_PROPERTY_ClassKey               "className"
 #define DataSourceCache_PROPERTY_RemoteId               "$RemoteId"
-
-#define DataSourceCache_PROPERTY_DisplayInfo            "$DisplayInfo"
-#define DataSourceCache_PROPERTY_DisplayData            "$DisplayData"
-#define DataSourceCache_PROPERTY_RawData                "$RawData"
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
