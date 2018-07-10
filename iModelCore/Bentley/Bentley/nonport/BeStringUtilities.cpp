@@ -958,7 +958,11 @@ Utf8PrintfString::Utf8PrintfString(Utf8CP format, ...) : Utf8String()
         return;
 
     if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
-        BeUtf8StringSprintf(*this, format, args, result);
+        {                // Note that we have to re-create 'args' in order make a second attempt.
+        va_start(args, format);
+        result = BeUtf8StringSprintf(*this, format, args, result);
+        va_end(args);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
