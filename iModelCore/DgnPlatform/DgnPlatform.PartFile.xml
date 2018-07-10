@@ -260,7 +260,8 @@
 
     <Part Name="IModelEvolutionPrepareCurrentTestRunner" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PrepareCurrentTestRunner.mke">
         <SubPart PartName="IModelEvolutionPullNugets"/>
-        <SubPart PartName="IModelEvolutionCopyCurrentEXE"/>
+        <SubProduct ProductName="IModelEvolutionGTest"/>
+        <!--<SubPart PartName="IModelEvolutionCopyCurrentEXE"/>-->
     </Part>
 
     <Part Name="IModelEvolutionPullNugets" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PullNugets.mke">
@@ -334,7 +335,7 @@
         <!-- Must run after the tests are complete -->
         <SubPart PartName="IModelEvolutionRunAllTestRunners" />
         <Bindings>
-            <Directory ProductDirectoryName="Datasets" SourceName="IModelEvolutionDatasets" />
+            <Directory ProductDirectoryName="Datasets" SourceName="IModelEvolutionTestFiles" />
         </Bindings>
     </Part>
 
