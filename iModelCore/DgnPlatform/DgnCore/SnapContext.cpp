@@ -512,34 +512,70 @@ bool EvaluateCurve()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyHitDetail()
     {
-    MSBsplineCurveCP bcurve = (m_hitCurveDetail.curve ? m_hitCurveDetail.curve->GetProxyBsplineCurveCP() : nullptr);
-
-    if (nullptr == bcurve || 2 != bcurve->params.order)
+    if (nullptr == m_hitCurveDetail.curve)
         return;
+
+    switch (m_hitCurveDetail.curve->GetCurvePrimitiveType())
+        {
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+            {
+            DSegment3dCP segment = m_hitCurveDetail.curve->GetLineCP();
+
+            if (segment->point[0].IsEqual(segment->point[1])) // Check for zero length line and don't include redundant primitive...
+                {
+                m_hitCurveDetail.curve = nullptr;
+                m_hitGeomType = HitGeomType::Point;
+                }
+
+            break;
+            }
+
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+            {
+            bvector<DPoint3d> const* points = m_hitCurveDetail.curve->GetLineStringCP();
+
+            if ((1 == points->size()) || (2 == points->size() && points->at(0).IsEqual(points->at(1))))
+                {
+                m_hitCurveDetail.curve = nullptr;
+                m_hitGeomType = HitGeomType::Point;
+                }
+
+            break;
+            }
+
+        default:
+            {
+            MSBsplineCurveCP bcurve = m_hitCurveDetail.curve->GetProxyBsplineCurveCP();
+
+            if (nullptr == bcurve || 2 != bcurve->params.order)
+                break;
     
-    // An order 2 bspline curve should be treated the same as a linestring for snapping...
-    bvector<DPoint3d> poles;
+            // An order 2 bspline curve should be treated the same as a linestring for snapping...
+            bvector<DPoint3d> poles;
 
-    bcurve->GetUnWeightedPoles(poles);
+            bcurve->GetUnWeightedPoles(poles);
 
-    if (bcurve->params.closed)
-        poles.push_back(poles.at(0));
+            if (bcurve->params.closed)
+                poles.push_back(poles.at(0));
 
-    ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLineString(poles);
-    CurveLocationDetail detail;
+            ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLineString(poles);
+            CurveLocationDetail detail;
 
-    if (!curve->ClosestPointBounded(m_hitCurveDetail.point, detail))
-        return;
+            if (!curve->ClosestPointBounded(m_hitCurveDetail.point, detail))
+                break;
 
-    CurvePrimitiveIdCP curveId = m_hitCurveDetail.curve->GetId();
+            CurvePrimitiveIdCP curveId = m_hitCurveDetail.curve->GetId();
 
-    if (nullptr != curveId)
-        curve->SetId(curveId->Clone().get()); // Preserve curve topology id from source curve...
+            if (nullptr != curveId)
+                curve->SetId(curveId->Clone().get()); // Preserve curve topology id from source curve...
 
-    detail.a = m_hitCurveDetail.a; // Preserve distance to original hit...
+            detail.a = m_hitCurveDetail.a; // Preserve distance to original hit...
 
-    m_hitCurveDerived = curve;
-    m_hitCurveDetail = detail;
+            m_hitCurveDerived = curve;
+            m_hitCurveDetail = detail;
+            break;
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1426,9 +1462,10 @@ bool ProcessGeometry(GeometricPrimitiveR geom, TransformCR localToWorld, bool ch
 
     if (checkRange)
         {
+        double      maxOutsideDist = (1.0e-2 * (1.0 + localPoint.Magnitude()));
         DRange3d    localRange;
 
-        if (geom.GetRange(localRange) && localRange.DistanceOutside(localPoint) > 1.0e-5)
+        if (geom.GetRange(localRange) && localRange.DistanceOutside(localPoint) > maxOutsideDist)
             return false;
         }
 
