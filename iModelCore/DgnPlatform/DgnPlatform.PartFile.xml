@@ -308,15 +308,15 @@
 
     <NuGetProduct Name="IModelEvolutionTestRunnerNuget" Description="Create nuget that contains the current test runner">
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
-        <SubNuGetProduct NuGetProductName="IModelEvolutionTestFilesNuget"/>
+        <SubPart PartName="BuildIModelEvolutionGTest"/>
     </NuGetProduct>
 
     <NuGetProduct Name="IModelEvolutionTestFilesNuget" Description="Create the test files nuget">
         <Directories DirectoryListName="IModelEvolutionTestFilesForNugetPackage"/>
-        <SubPart PartName="PrepareIModelEvolutionTestNugetPackaging"/>
+        <SubPart PartName="PrepareIModelEvolutionTestFilesNugetPackaging"/>
     </NuGetProduct>
 
-    <Part Name="PrepareIModelEvolutionTestNugetPackaging" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PrepareNugetPackaging.mke">
+    <Part Name="PrepareIModelEvolutionTestFilesNugetPackaging" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PrepareTestFilesNugetPackaging.mke">
         <!-- Must run after all tests are complete -->
         <SubPart PartName="IModelEvolutionRunAllTestRunners" />
         <Bindings>
