@@ -1111,16 +1111,19 @@ void DgnElementDependencyGraph::DiscoverEdges()
     auto& queue = *m_edgeQueue;
     auto& elementDrivesElement = *m_elementDrivesElement;
 
+    bvector<Edge> fringe;
+    bset<BeSQLite::EC::ECInstanceId> edges_seen;
+
     //  Find edges affected by the Elements that were directly changed
     Edge directlyChanged;
     while (elementDrivesElement.StepSelectWhereRootInDirectChanges(directlyChanged) == BE_SQLITE_ROW)
-        queue.AddEdge(directlyChanged);
+        fringe.push_back(directlyChanged);
 
     while (elementDrivesElement.StepSelectWhereDependentInDirectChanges(directlyChanged) == BE_SQLITE_ROW)
-        queue.AddEdge(directlyChanged);
+        fringe.push_back(directlyChanged);
 
     while (elementDrivesElement.StepSelectWhereRelationshipInDirectChanges(directlyChanged) == BE_SQLITE_ROW)
-        queue.AddEdge(directlyChanged);
+        fringe.push_back(directlyChanged);
 
     // Find and schedule the EDEs which where deleted.
     for (auto deletedRel : m_txnMgr.ElementDependencies().m_deletedRels)
@@ -1131,26 +1134,35 @@ void DgnElementDependencyGraph::DiscoverEdges()
         deletedEdge.m_deleted = true;
         deletedEdge.m_relId = deletedRel.m_relKey.GetInstanceId();
         deletedEdge.m_relClassId = deletedRel.m_relKey.GetClassId();
-        queue.AddEdge(deletedEdge);
+        fringe.push_back(deletedEdge);
         }
 
     //  Find edges reachable from the initial set found above.
-    Edge currEdge;
-    queue.ResetSelectAll();
-    while (queue.StepSelectAll(currEdge) == BE_SQLITE_ROW)
+    while (!fringe.empty())
         {
-        //  Return currEdge as result
-        EDGLOG(LOG_TRACE, "VISIT %s", FmtEdge(currEdge).c_str());
+        bvector<Edge> working_fringe;
+        std::swap(working_fringe, fringe);
+        for (auto& currEdge : working_fringe)
+            {
+            if (edges_seen.find(currEdge.m_relId) != edges_seen.end())
+                continue;
+            edges_seen.insert(currEdge.m_relId);
 
-        // Find all relationships with dependency handlers that take currEdge.m_eout as their input or their output.
-        // Add all of those relationships to the queue
-        Edge affected;
-        affected.m_ein = currEdge.m_eout;
+            EDGLOG(LOG_TRACE, "VISIT %s", FmtEdge(currEdge).c_str());
+            queue.AddEdge(currEdge);
 
-        //  The output of currEdge could be the input of other ElementDrivesElement dependencies. Those downstream dependencies must be fired as a result.
-        elementDrivesElement.BindSelectByRoot(currEdge.m_eout);
-        while (elementDrivesElement.StepSelectByRoot(affected) == BE_SQLITE_ROW)
-            queue.AddEdge(affected);
+            // Find all relationships with dependency handlers that take currEdge.m_eout as their input or their output.
+            // Add all of those relationships to the queue
+            Edge affected;
+            affected.m_ein = currEdge.m_eout;
+
+            //  The output of currEdge could be the input of other ElementDrivesElement dependencies. Those downstream dependencies must be fired as a result.
+            elementDrivesElement.BindSelectByRoot(currEdge.m_eout);
+            while (elementDrivesElement.StepSelectByRoot(affected) == BE_SQLITE_ROW)
+                {
+                fringe.push_back(affected);
+                }
+            }
         }
 
     // Fill the NODES table
