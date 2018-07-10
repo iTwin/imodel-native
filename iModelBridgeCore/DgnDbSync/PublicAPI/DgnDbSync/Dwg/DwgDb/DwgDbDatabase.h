@@ -103,6 +103,7 @@ public:
     DWGDB_EXPORT DwgDbObjectId      GetTEXTSTYLE () const;
     DWGDB_EXPORT bool               GetTILEMODE () const;
     DWGDB_EXPORT bool               GetVISRETAIN () const;
+    DWGDB_EXPORT DwgDbStatus        SetVISRETAIN (bool on);
     DWGDB_EXPORT bool               GetLineweightDisplay () const;
     DWGDB_EXPORT DwgDbObjectId      GetActiveUserViewportId ();         // active viewport entity in active layout
     DWGDB_EXPORT DwgDbObjectId      GetActiveModelspaceViewportId ();   // active viewport table record in modelspace

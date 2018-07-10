@@ -109,6 +109,8 @@ $(o)RasterTests.obj             : $(BEGTEST_INPUT)RasterTests.cpp               
 
 $(o)TextBlockTests.obj          : $(BEGTEST_INPUT)TextBlockTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
 
+$(o)ItemTypeTests.obj           : $(BEGTEST_INPUT)ItemTypeTests.cpp             $(TestsHeaders) ${MultiCompileDepends}
+
 $(o)ConvertToDgnDbElementExtensionTests.obj : $(BEGTEST_INPUT)ConvertToDgnDbElementExtensionTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
