@@ -1527,6 +1527,12 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)JsInterop::BriefcaseManagerEndBulkOperation(GetDgnDb()));
         }
 
+    static Napi::Value GetAssetDir(Napi::CallbackInfo const& info)
+        {
+        BeFileName asset = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+        return Napi::String::New(info.Env(), asset.GetNameUtf8().c_str());
+        }
+
     void UpdateProjectExtents(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, newExtentsJson, )
@@ -1727,6 +1733,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("abandonCreateChangeSet", &NativeDgnDb::AbandonCreateChangeSet),
             InstanceMethod("addPendingChangeSet", &NativeDgnDb::AddPendingChangeSet),
             InstanceMethod("appendBriefcaseManagerResourcesRequest", &NativeDgnDb::AppendBriefcaseManagerResourcesRequest),
+            InstanceMethod("applyChangeSets", &NativeDgnDb::ApplyChangeSets),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
             InstanceMethod("briefcaseManagerEndBulkOperation", &NativeDgnDb::BriefcaseManagerEndBulkOperation),
             InstanceMethod("briefcaseManagerStartBulkOperation", &NativeDgnDb::BriefcaseManagerStartBulkOperation),
@@ -1739,6 +1746,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
             InstanceMethod("deleteModel", &NativeDgnDb::DeleteModel),
             InstanceMethod("detachChangeCache", &NativeDgnDb::DetachChangeCache),
+            InstanceMethod("dumpChangeSet", &NativeDgnDb::DumpChangeSet),
+            InstanceMethod("embedFont", &NativeDgnDb::EmbedFont),
             InstanceMethod("executeTest", &NativeDgnDb::ExecuteTest),
             InstanceMethod("extractBriefcaseManagerResourcesRequest", &NativeDgnDb::ExtractBriefcaseManagerResourcesRequest),
             InstanceMethod("extractBulkResourcesRequest", &NativeDgnDb::ExtractBulkResourcesRequest),
@@ -1749,8 +1758,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getBriefcaseId", &NativeDgnDb::GetBriefcaseId),
             InstanceMethod("getDbGuid", &NativeDgnDb::GetDbGuid),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
-            InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
-            InstanceMethod("getSchema", &NativeDgnDb::GetSchema),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
             InstanceMethod("getElementPropertiesForDisplay", &NativeDgnDb::GetElementPropertiesForDisplay),
             InstanceMethod("getIModelProps", &NativeDgnDb::GetIModelProps),
@@ -1758,6 +1765,10 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getParentChangeSetId", &NativeDgnDb::GetParentChangeSetId),
             InstanceMethod("getPendingChangeSets", &NativeDgnDb::GetPendingChangeSets),
             InstanceMethod("getReversedChangeSetId", &NativeDgnDb::GetReversedChangeSetId),
+            InstanceMethod("getSchema", &NativeDgnDb::GetSchema),
+            InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
+            InstanceMethod("getTiles", &NativeDgnDb::GetTiles),
+            InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
@@ -1766,20 +1777,17 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
-            InstanceMethod("applyChangeSets", &NativeDgnDb::ApplyChangeSets),
-            InstanceMethod("dumpChangeSet", &NativeDgnDb::DumpChangeSet),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryNextAvailableFileProperty", &NativeDgnDb::QueryNextAvailableFileProperty),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
             InstanceMethod("removePendingChangeSet", &NativeDgnDb::RemovePendingChangeSet),
-            InstanceMethod("embedFont", &NativeDgnDb::EmbedFont),
             InstanceMethod("saveChanges", &NativeDgnDb::SaveChanges),
             InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
+            InstanceMethod("setAsMaster", &NativeDgnDb::SetAsMaster),
             InstanceMethod("setBriefcaseId", &NativeDgnDb::SetBriefcaseId),
             InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
             InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerPessimisticConcurrencyControlPolicy),
             InstanceMethod("setDbGuid", &NativeDgnDb::SetDbGuid),
-            InstanceMethod("setAsMaster", &NativeDgnDb::SetAsMaster),
             InstanceMethod("startCreateChangeSet", &NativeDgnDb::StartCreateChangeSet),
             InstanceMethod("txnManagerGetCurrentTxnId", &NativeDgnDb::TxnManagerGetCurrentTxnId),
             InstanceMethod("txnManagerGetTxnDescription", &NativeDgnDb::TxnManagerGetTxnDescription),
@@ -1789,12 +1797,11 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("txnManagerQueryNextTxnId", &NativeDgnDb::TxnManagerQueryNextTxnId),
             InstanceMethod("txnManagerQueryPreviousTxnId", &NativeDgnDb::TxnManagerQueryPreviousTxnId),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
+            InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
             InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),
             InstanceMethod("updateModel", &NativeDgnDb::UpdateModel),
             InstanceMethod("updateProjectExtents", &NativeDgnDb::UpdateProjectExtents),
-            InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
-            InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
-            InstanceMethod("getTiles", &NativeDgnDb::GetTiles),
+            StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
         });
 
         exports.Set("NativeDgnDb", t);
@@ -3238,6 +3245,7 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
     };
 
 //=======================================================================================
+// A request to generate a snap point given an element and additional parameters.
 //! @bsiclass
 //=======================================================================================
 struct SnapRequest : Napi::ObjectWrap<SnapRequest>
@@ -3308,6 +3316,7 @@ struct SnapRequest : Napi::ObjectWrap<SnapRequest>
         m_pending->Queue();  // Snap happens in another thread
         }
 
+    // Cancel a previous request for a snap. If no snap is pending, does nothing
     void CancelSnap(Napi::CallbackInfo const& info)
         {
         BeMutexHolder holder(m_mutex);
