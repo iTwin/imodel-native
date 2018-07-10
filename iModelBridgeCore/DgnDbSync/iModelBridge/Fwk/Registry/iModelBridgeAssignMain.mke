@@ -35,6 +35,8 @@ $(o)iModelBridgeAssignMain$(oext): $(baseDir)iModelBridgeAssignMain.cpp $(iModel
 
 $(o)iModelBridgeRegistry$(oext): $(baseDir)iModelBridgeRegistry.cpp $(iModelBridgeAPISrc)iModelBridgeFwkTypes.h $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h ${MultiCompileDepends}
 
+$(o)iModelBridgeRegistryUtils$(oext): $(baseDir)iModelBridgeRegistryUtils.cpp $(iModelBridgeAPISrc)iModelBridgeFwkTypes.h $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h ${MultiCompileDepends}
+
 $(o)cpl_spawn$(oext): $(baseDir)cpl_spawn.cpp $(baseDir)cpl_spawn.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

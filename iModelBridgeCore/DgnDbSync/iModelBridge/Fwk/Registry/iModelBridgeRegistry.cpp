@@ -185,6 +185,7 @@ static CPLSpawnedProcess* findOrStartAffinityCalculator(BeFileNameCR affinityLib
         return iFound->second;
 
     auto calcexe = Desktop::FileSystem::GetExecutableDir();
+    calcexe.AppendToPath(L"iModelBridgeGetAffinityHost/");
     calcexe.AppendToPath(L"iModelBridgeGetAffinityHost" EXE_EXT);
     BeAssert(calcexe.DoesPathExist());
 
@@ -684,111 +685,6 @@ BentleyStatus iModelBridgeRegistry::_FindBridgeInRegistry(BeFileNameR bridgeLibr
     }
 #endif
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     10/2012
-//---------------------------------------------------------------------------------------
-static void justLogAssertionFailures(WCharCP message, WCharCP file, uint32_t line, BeAssertFunctions::AssertType atype)
-    {
-    WPrintfString str(L"ASSERT: (%ls) @ %ls:%u\n", message, file, line);
-    LOG.error(str.c_str());
-    //::OutputDebugStringW (str.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeRegistryBase::InitCrt(bool quietAsserts)
-    {
-#ifdef NDEBUG
-    quietAsserts = true; // we never allow disruptive asserts in a production program
-#endif
-
-    if (quietAsserts)
-        BeAssertFunctions::SetBeAssertHandler(justLogAssertionFailures);
-
-#ifdef _WIN32
-    if (quietAsserts)
-        _set_error_mode(_OUT_TO_STDERR);
-    else
-        _set_error_mode(_OUT_TO_MSGBOX);
-
-    #if defined (UNICODE_OUTPUT_FOR_TESTING)
-        // turning this on makes it so we can show unicode characters, but screws up piped output for programs like python.
-        _setmode(_fileno(stdout), _O_U16TEXT);  // so we can output any and all unicode to the console
-        _setmode(_fileno(stderr), _O_U16TEXT);  // so we can output any and all unicode to the console
-    #endif
-
-    // FOR THE CONSOLE PUBLISHER ONLY! "Gui" publishers won't have any console output and won't need this.
-    // C++ programs start-up with the "C" locale in effect by default, and the "C" locale does not support conversions of any characters outside
-    // the "basic character set". ... The call to setlocale() says "I want to use the user's default narrow string encoding". This encoding is
-    // based on the Posix-locale for Posix environments. In Windows, this encoding is the ACP, which is based on the system-locale.
-    // However, the success of this code is dependent on two things:
-    //      1) The narrow encoding must support the wide character being converted.
-    //      2) The font/gui must support the rendering of that character.
-    // In Windows, #2 is often solved by setting cmd.exe's font to Lucida Console."
-    // (http://cboard.cprogramming.com/cplusplus-programming/145590-non-english-characters-cout-2.html)
-    setlocale(LC_CTYPE, "");
-#else
-    // unix-specific CRT init
-#endif
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-void* iModelBridgeRegistryBase::GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName)
-    {
-    BeFileName pathname(BeFileName::FileNameParts::DevAndDir, bridgeDllName);
-
-    BeGetProcAddress::SetLibrarySearchPath(pathname);
-    auto hinst = BeGetProcAddress::LoadLibrary(bridgeDllName);
-    if (!hinst)
-        {
-        LOG.fatalv(L"%ls: not found or could not be loaded", bridgeDllName.c_str());
-        return nullptr;
-        }
-
-    return BeGetProcAddress::GetProcAddress (hinst, funcName);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-int iModelBridgeRegistryBase::ComputeAffinityMain(int argc, WCharCP argv[])
-    {
-    iModelBridgeRegistryBase::InitCrt(false);
-
-    if (argc != 2)
-        {
-        fprintf(stderr, "syntax: iModelBridgeGetAffinityHost affinityLibraryName\n");
-        return -1;
-        }
-
-    BeFileName affinityLibraryPath(argv[1]);
-
-    auto getAffinity = (T_iModelBridge_getAffinity*)GetBridgeFunction(affinityLibraryPath, "iModelBridge_getAffinity");
-    if (nullptr == getAffinity)
-        {
-        LOG.errorv(L"%ls - does not export the iModelBridge_getAffinity function. That is probably an error.", affinityLibraryPath.c_str());
-        return -1;
-        }
-
-    char filePathUtf8[MAX_PATH*2];
-    while (fgets(filePathUtf8, sizeof(filePathUtf8), stdin))
-        {
-        BeFileName filePath(filePathUtf8, true);
-        filePath.RemoveQuotes();
-        
-        WChar registryName[MAX_PATH] = {0};
-        iModelBridgeAffinityLevel affinity = iModelBridgeAffinityLevel::None;
-        getAffinity(registryName, MAX_PATH, affinity, affinityLibraryPath.c_str(), filePath.c_str());
-        fprintf(stdout, "%d\n%s\n", (int) affinity, Utf8String(registryName).c_str());
-        fflush(stdout);
-        }
-
-    return 0;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -937,7 +833,7 @@ static void initLoggingForAssignMain(BeFileNameCR loggingConfigFileName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeRegistryBase::AssignMain(int argc, WCharCP argv[])
     {
-    iModelBridgeRegistry::InitCrt(false);
+    iModelBridgeRegistryUtils::InitCrt(false);
 
     AssignCmdLineArgs args;
     if (BSISUCCESS != args.ParseCommandLine(argc, argv))
