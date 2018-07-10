@@ -313,8 +313,8 @@ TEST_F(CachingDataSourceTests, Close_Opened_SucceedsAndTransactionsCannotBeStart
     EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
 
-    EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(*client, SendGetFileRequest(_, ::testing::An<BeFileNameCR>(), _, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "SchemaId"), objectId);
         Utf8String schemaXml(
@@ -356,8 +356,8 @@ TEST_F(CachingDataSourceTests, Close_Opened_CancelsServerRequest)
     EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
 
-    EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(*client, SendGetFileRequest(_, ::testing::An<BeFileNameCR>(), _, _, _)).Times(1)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "SchemaId"), objectId);
         Utf8String schemaXml(
