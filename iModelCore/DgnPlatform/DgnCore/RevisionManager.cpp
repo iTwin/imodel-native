@@ -121,9 +121,11 @@ private:
         BeAssert(m_outLzmaFileStream == nullptr);
         m_outLzmaFileStream = new BeFileLzmaOutStream();
 
+        BeFileName::CreateNewDirectory(m_pathname.GetDirectoryName());
         BeFileStatus fileStatus = m_outLzmaFileStream->CreateOutputFile(m_pathname, true /* createAlways */);
         if (fileStatus != BeFileStatus::Success)
             {
+            LOG.fatalv(L"%ls - OutLzmaFileStream::CreateOutputFile failed", m_pathname.c_str());
             BeAssert(false);
             return BE_SQLITE_ERROR;
             }
@@ -675,7 +677,11 @@ DgnRevision::~DgnRevision()
     if (m_ownsRevChangesFile && m_revChangesFile.DoesPathExist())
         {
         BeFileNameStatus status = m_revChangesFile.BeDeleteFile();
-        BeAssert(BeFileNameStatus::Success == status && "Could not delete temporary change stream file");
+        if (BeFileNameStatus::Success != status)
+            {
+            LOG.errorv(L"Could not delete temporary change stream file %ls - error %x", m_revChangesFile.c_str(), status);
+            BeAssert(BeFileNameStatus::Success == status && "Could not delete temporary change stream file");
+            }
         }
 #endif
     }
@@ -689,6 +695,8 @@ BeFileName DgnRevision::BuildRevisionChangesPathname(Utf8String revisionId)
     BeFileName tempPathname;
     BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, CHANGESET_REL_DIR);
     BeAssert(SUCCESS == status && "Cannot get temporary directory");
+    tempPathname.AppendToPath(WPrintfString(L"%d", BeThreadUtilities::GetCurrentProcessId()).c_str());
+    BeFileName::CreateNewDirectory(tempPathname.c_str());
     tempPathname.AppendToPath(WString(revisionId.c_str(), true).c_str());
     tempPathname.AppendExtension(CHANGESET_FILE_EXT);
     return tempPathname;
@@ -1349,6 +1357,8 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
     if (revision.IsNull())
         return revision;
 
+    LOG.tracev(L"CreateRevisionObject %ls for cs %ls", tempRevisionPathname.c_str(), revision->GetRevisionChangesFile().c_str());
+
     BeFileNameCR revisionPathname = revision->GetRevisionChangesFile();
     if (revisionPathname.DoesPathExist() && BeFileNameStatus::Success != revisionPathname.BeDeleteFile()) // Note: Need to delete since BeMoveFile doesn't overwrite
         {
@@ -1358,7 +1368,7 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
 
     if (BeFileNameStatus::Success != BeFileName::BeMoveFile(tempRevisionPathname.c_str(), revision->GetRevisionChangesFile().c_str(), 2))
         {
-        BeAssert(false && "Could not setup file containing revision changes");
+        BeAssert(false && "Could not rename temp revision changes file");
         return nullptr;
         }
 
@@ -1481,7 +1491,7 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSche
 
     return pathname.DoesPathExist() ? RevisionStatus::Success : RevisionStatus::NoTransactions;
     }
-	
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
@@ -1491,6 +1501,8 @@ BeFileName RevisionManager::BuildTempRevisionPathname()
     BeFileName tempPathname;
     BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, CHANGESET_REL_DIR);
     BeAssert(SUCCESS == status && "Cannot get temporary directory");
+    tempPathname.AppendToPath(WPrintfString(L"%d", BeThreadUtilities::GetCurrentProcessId()).c_str());
+    BeFileName::CreateNewDirectory(tempPathname.c_str());
     tempPathname.AppendToPath(L"CurrentChangeSet").c_str();
     tempPathname.AppendExtension(CHANGESET_FILE_EXT);
     return tempPathname;
@@ -1526,6 +1538,8 @@ DgnRevisionPtr RevisionManager::CreateRevision(RevisionStatus* outStatus, TxnMan
 DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /* = nullptr */)
     {
     RevisionStatus ALLOW_NULL_OUTPUT(status, outStatus);
+
+    LOG.tracev(L"RevisonManager::StartCreateRevision for %ls", m_dgndb.GetFileName().c_str());
 
     TxnManagerR txnMgr = m_dgndb.Txns();
     if (!txnMgr.IsTracking())

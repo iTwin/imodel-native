@@ -306,33 +306,28 @@
         </Bindings>
     </Part>
 
-    <NuGetProduct Name="IModelEvolutionTestRunnerNuget" Description="Nuget that contains the current test runner">
+    <NuGetProduct Name="IModelEvolutionTestRunnerNuget" Description="Create nuget that contains the current test runner">
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
-        <SubPart PartName="BuildIModelEvolutionGTest"/>
+        <SubNuGetProduct NuGetProductName="IModelEvolutionTestFilesNuget"/>
     </NuGetProduct>
 
-    <Product Name="IModelEvolutionTestFiles" SaveProduct="true">
-        <SubPart PartName="PrepareIModelEvolutionTestFilesForNugetPackaging"/>
-        <Directories DirectoryListName="IModelEvolutionTestFiles"/>
-    </Product>
-
-    <NuGetProduct Name="IModelEvolutionTestFilesNuget" Description="Test file nuget">
-        <SubPart PartName="PrepareIModelEvolutionTestFilesForNugetPackaging"/>
-        <Directories DirectoryListName="IModelEvolutionTestFiles"/>
+    <NuGetProduct Name="IModelEvolutionTestFilesNuget" Description="Create the test files nuget">
+        <Directories DirectoryListName="IModelEvolutionTestFilesForNugetPackage"/>
+        <SubPart PartName="PrepareIModelEvolutionTestNugetPackaging"/>
     </NuGetProduct>
 
-    <ProductDirectoryList ListName="IModelEvolutionTestFiles" >
-        <ProductDirectory Name="Datasets" Path="TestFiles"/>
-    </ProductDirectoryList>
-
-    <Part Name="PrepareIModelEvolutionTestFilesForNugetPackaging" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\LinkTestFilesToBuildContext.mke">
-        <!-- Must run after the tests are complete -->
+    <Part Name="PrepareIModelEvolutionTestNugetPackaging" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PrepareNugetPackaging.mke">
+        <!-- Must run after all tests are complete -->
         <SubPart PartName="IModelEvolutionRunAllTestRunners" />
         <Bindings>
-            <Directory ProductDirectoryName="Datasets" SourceName="IModelEvolutionTestFiles" />
+            <Directory ProductDirectoryName="TestFiles" SourceName="IModelEvolutionTestFilesForNugetPackage" />
         </Bindings>
     </Part>
 
+    <ProductDirectoryList ListName="IModelEvolutionTestFilesForNugetPackage" >
+        <ProductDirectory Name="TestFiles" Path="TestFiles"/>
+    </ProductDirectoryList>
+    
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
