@@ -2916,11 +2916,40 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         void SetResult(ECPresentationResult&& result) {m_result = std::move(result);}
     };
 
+    /*=================================================================================**//**
+    * @bsiclass                                     Aidas.Kililnskas                05/2018
+    +===============+===============+===============+===============+===============+======*/
+    struct LocalState : IJsonLocalState
+    {
+    //! Saves the Utf8String value in the local state. Set to empty to delete value.
+    //! @note The nameSpace and key pair must be unique.
+    private:
+        bmap<Utf8String, Utf8String> m_map;
+    protected:
+        void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
+            {
+            Utf8PrintfString compositeKey("%s:%s", nameSpace, key);
+            m_map[compositeKey] = value;
+            }
+
+        //! Returns a stored Utf8String from the local state. Returns empty if value does not exist.
+        //! @note The nameSpace and key pair uniquely identifies the value.
+        Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
+            {
+            Utf8PrintfString compositeKey("%s:%s", nameSpace, key);
+            auto iter = m_map.find(compositeKey);
+            if (iter != m_map.end())
+                return iter->second;
+            return "";
+            }
+    };
+
     static Napi::FunctionReference s_constructor;
 
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     RefCountedPtr<SimpleRuleSetLocater> m_ruleSetLocater;
+    LocalState m_localState;
 
     NativeECPresentationManager(Napi::CallbackInfo const& info)
         : Napi::ObjectWrap<NativeECPresentationManager>(info)
@@ -2928,6 +2957,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections, T_HOST.GetIKnownLocationsAdmin()));
         m_ruleSetLocater = SimpleRuleSetLocater::Create();
         m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
+        m_presentationManager->SetLocalState(&m_localState);
         }
     ~NativeECPresentationManager()
         {

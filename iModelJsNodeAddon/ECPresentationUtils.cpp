@@ -952,34 +952,6 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     };
 
 /*=================================================================================**//**
-* @bsiclass                                     Aidas.Kililnskas                05/2018
-+===============+===============+===============+===============+===============+======*/
-struct LocalState : IJsonLocalState
-    {
-    //! Saves the Utf8String value in the local state. Set to empty to delete value.
-    //! @note The nameSpace and key pair must be unique.
-    private:
-        bmap<Utf8String, Utf8String> m_map;
-    protected:
-        void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
-            {
-            Utf8PrintfString compositeKey("%s:%s", nameSpace, key);
-            m_map[compositeKey] = value;
-            }
-
-        //! Returns a stored Utf8String from the local state. Returns empty if value does not exist.
-        //! @note The nameSpace and key pair uniquely identifies the value.
-        Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
-            {
-            Utf8PrintfString compositeKey("%s:%s", nameSpace, key);
-            auto iter = m_map.find(compositeKey);
-            if (iter != m_map.end())
-                return iter->second;
-            return "";
-            }
-    };
-
-/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                05/2018
 +===============+===============+===============+===============+===============+======*/
 struct IModelJsECPresentationLocalizationProvider : ILocalizationProvider
@@ -1161,7 +1133,6 @@ public:
     IModelJsECPresentationLocalizationProvider& GetLocalizationProvider() {return *m_localizationProvider;}
     };
 static IModelJsECPresentationStaticSetupHelper s_staticSetup;
-static LocalState s_localState;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2017
@@ -1176,7 +1147,6 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
 
     RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
     RulesDrivenECPresentationManager* manager = new RulesDrivenECPresentationManager(connections, paths);
-    manager->SetLocalState(&s_localState);
     
     BeFileName supplementalsDirectory = BeFileName(assetsDir).AppendToPath(L"PresentationRules");
     manager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalsDirectory.GetNameUtf8().c_str())));
