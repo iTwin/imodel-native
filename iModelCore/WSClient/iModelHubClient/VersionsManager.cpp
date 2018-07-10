@@ -210,8 +210,10 @@ VersionInfoTaskPtr VersionsManager::CreateVersion(VersionInfoR version, ICancell
     {
     const Utf8String methodName = "VersionsManager::CreateVersion";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    auto jsonBody = version.GenerateJson();
+    m_globalRequestOptionsPtr->InsertRequestOptions(jsonBody);
 
-    return m_wsRepositoryClient->SendCreateObjectRequest(version.GenerateJson(), BeFileName(), nullptr, cancellationToken)
+    return m_wsRepositoryClient->SendCreateObjectRequest(jsonBody, BeFileName(), nullptr, cancellationToken)
         ->Then<VersionInfoResult>([=](const WSCreateObjectResult& versionInfoResult)
         {
         if (versionInfoResult.IsSuccess())

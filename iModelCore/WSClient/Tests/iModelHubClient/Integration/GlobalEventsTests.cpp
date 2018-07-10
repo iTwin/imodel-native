@@ -10,6 +10,7 @@
 #include <WebServices/iModelHub/GlobalEvents/iModelCreatedEvent.h>
 #include <WebServices/iModelHub/GlobalEvents/GlobalEventManager.h>
 #include "LRPJobBackdoorAPI.h"
+#include "RequestBehaviorOptions.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -65,6 +66,12 @@ struct GlobalEventsTests : IntegrationTestsBase
         {
         IntegrationTestsBase::SetUp();
         m_db = CreateTestDb();
+
+        bmap<Utf8String, Utf8String> requestOptions = bmap<Utf8String, Utf8String>();
+        auto behaviourOptions = RequestBehaviorOptions();
+        behaviourOptions.DisableOption(RequestBehaviorOptionsEnum::DisableGlobalEvents);
+        requestOptions.insert(behaviourOptions.GetBehaviorOptionsResultPair());
+        s_client->GlobalRequestOptions()->SetRequestOptions(requestOptions);
         }
 
     /*--------------------------------------------------------------------------------------+

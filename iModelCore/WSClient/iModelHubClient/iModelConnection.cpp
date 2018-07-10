@@ -36,8 +36,9 @@ iModelConnection::iModelConnection
 iModelInfoCR           iModel,
 WebServices::CredentialsCR credentials,
 WebServices::ClientInfoPtr clientInfo,
+GlobalRequestOptionsPtr    globalRequestOptions,
 IHttpHandlerPtr            customHandler
-) : m_iModelInfo(iModel), m_customHandler(customHandler)
+) : m_iModelInfo(iModel), m_customHandler(customHandler), m_globalRequestOptionsPtr(globalRequestOptions)
     {
     auto wsRepositoryClient = WSRepositoryClient::Create(iModel.GetServerURL(), iModel.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
     CompressionOptions options;
@@ -383,6 +384,7 @@ IWSRepositoryClient::RequestOptionsPtr requestOptions
     const Utf8String methodName = "iModelConnection::SendChangesetRequestInternal";
 
     changeset->GetRequestOptions().SetResponseContent(WSChangeset::Options::ResponseContent::Empty);
+    m_globalRequestOptionsPtr->InsertRequestOptions(changeset);
 
     if (static_cast<bool>(options.GetBriefcaseResponseOptions() & IBriefcaseManager::ResponseOptions::UnlimitedReporting))
         changeset->GetRequestOptions().SetCustomOption(ServerSchema::ExtendedParameters::SetMaximumInstances, "-1");
@@ -1875,7 +1877,6 @@ ConflictsInfoPtr                    conflictsInfo
 
     //Push ChangeSet initialization request and Locks update in a single batch
     const Utf8String methodName = "iModelConnection::InitializeChangeSet";
-    HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
 
     std::shared_ptr<StatusResult> finalResult = std::make_shared<StatusResult>();
 
@@ -1993,6 +1994,7 @@ iModelConnectionResult iModelConnection::Create
 iModelInfoCR     iModel,
 CredentialsCR    credentials,
 ClientInfoPtr    clientInfo,
+GlobalRequestOptionsPtr globalRequestOptions,
 IHttpHandlerPtr  customHandler
 )
     {
@@ -2015,7 +2017,7 @@ IHttpHandlerPtr  customHandler
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    iModelConnectionPtr imodelConnection(new iModelConnection(iModel, credentials, clientInfo, customHandler));
+    iModelConnectionPtr imodelConnection(new iModelConnection(iModel, credentials, clientInfo, globalRequestOptions, customHandler));
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
