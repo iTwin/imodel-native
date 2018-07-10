@@ -214,107 +214,125 @@
         </Bindings>
     </Part>
 
-    <!-- ********************************************************************************************** -->
-    <!-- Compatibility Tests -->
-    <!-- ********************************************************************************************** -->
+    <!-- **********************************************************************************************
+         IModel Evolution Tests
+         ********************************************************************************************** -->
 
-    <Part Name="iModelSchemaEvolutionTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Compatibility">
-        <!-- <SubPart PartName="PrewireForUnitTests" /> -->
-        <SubPart PartName="TestFixtureForUnitTests" />
-        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
+    <!-- Entry point part -->
+    <Part Name="RunIModelEvolutionTests" PrgOutputDir="IModelEvolutionTests">
+        <SubPart PartName="IModelEvolutionRunAllTestRunners"/>
+        <SubNuGetProduct NuGetProductName="IModelEvolutionTestRunnerNuget"/>
+        <SubNuGetProduct NuGetProductName="IModelEvolutionTestFilesNuget"/>
+    </Part>
+
+    <!-- Runs all compatibility tests:
+         Preparation:
+         * Downloads all existing test runners and test files
+         
+         Run:
+         1) Runs current test runner (from current software) against
+            * files it creates itself (-> get saved as nuget afterwards)
+            * all downloaded test files.
+         2) Runs all downloaded test runners against 
+            * all downloaded test files
+            * files created by the current test runner
+    -->
+    <Part Name="IModelEvolutionRunAllTestRunners" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunPulledTestRunners.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubPart PartName="IModelEvolutionPrepareAllTestRunners"/>
+    </Part>
+
+    <!-- Runs the current compatibility test runner (from current software):
+         Preparation:
+         * Downloads all existing test files
+         
+         Run:
+         1) Runs current test runner (from current software) against
+            * files it creates itself (-> get saved as nuget afterwards)
+            * all downloaded test files.
+    -->
+    <Part Name="IModelEvolutionRunCurrentTestRunner" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=IModelEvolutionGTest -dGTEST_NAME=IModelEvolutionTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/IModelEvolutionTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubPart PartName="IModelEvolutionPrepareCurrentTestRunner"/>
+    </Part>
+
+    <Part Name="IModelEvolutionPrepareAllTestRunners" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PreparePulledTestRunners.mke">
+        <SubPart PartName="IModelEvolutionRunCurrentTestRunner"/>
+    </Part>
+
+    <Part Name="IModelEvolutionPrepareCurrentTestRunner" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PrepareCurrentTestRunner.mke">
+        <SubPart PartName="IModelEvolutionPullNugets"/>
+        <SubProduct ProductName="IModelEvolutionGTest"/>
+    </Part>
+
+    <Part Name="IModelEvolutionPullNugets" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PullNugets.mke">
+    </Part>
+
+    <Product Name="IModelEvolutionGTest">
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="BuildIModelEvolutionGTest"/>
+    </Product>
+   
+    <Part Name="BuildIModelEvolutionGTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=IModelEvolutionTests -dTEST_COLLECTION_PRODUCT=IModelEvolutionTests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+        <SubProduct ProductName="IModelEvolutionTests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Compatibility" SourceName="Delivery/UnitTests/Objects/Compatibility"/>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/IModelEvolutionTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/IModelEvolutionTests/Assets" />
         </Bindings>
     </Part>
 
-    <Part Name="iModelSchemaEvolutionTestsDynamic" DeferType="BuildUnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
-        <SubPart PartName="iModelSchemaEvolutionTests"/>
-    </Part>
 
-    <Part Name="iModelSchemaEvolutionTestsStatic" DeferType="BuildUnitTests" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
-        <SubPart PartName="iModelSchemaEvolutionTests" LibType="Static" />
-    </Part>
-
-    <Product Name="iModelSchemaEvolution">
+    <Product Name="IModelEvolutionTests">
         <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
-        <SubPart PartName="iModelSchemaEvolutionTestsStatic" />
-        <SubPart PartName="iModelSchemaEvolutionTestsDynamic" />
+        <SubPart PartName="BuildIModelEvolutionTestsStatic" />
+        <SubPart PartName="BuildIModelEvolutionTestsDynamic" />
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <FeatureExclude>GeoCoordAssets</FeatureExclude> <!-- Exclude geocoord assets because we don't need them for schema evolution tests -->
     </Product>
 
-    <Part Name="iModelSchemaEvolutionGTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=iModelSchemaEvolution -dTEST_COLLECTION_PRODUCT=iModelSchemaEvolution -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
-        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
-        <SubProduct ProductName="iModelSchemaEvolution"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <Part Name="BuildIModelEvolutionTestsDynamic" DeferType="BuildUnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="BuildIModelEvolutionTests"/>
+    </Part>
+
+    <Part Name="BuildIModelEvolutionTestsStatic" DeferType="BuildUnitTests" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="BuildIModelEvolutionTests" LibType="Static" />
+    </Part>
+
+    <Part Name="BuildIModelEvolutionTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Compatibility">
+        <SubPart PartName="TestFixtureForUnitTests" />
+        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
         <Bindings>
-            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/iModelSchemaEvolution/Assemblies/*</Files>
-            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/iModelSchemaEvolution/Assets" />
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="DgnPlatform/Compatibility" SourceName="Delivery/UnitTests/Objects/Compatibility"/>
         </Bindings>
     </Part>
 
-    <Part Name="iModelSchemaEvolutionPullDatasets" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PullCompatibilityDatasets.mke">
-    </Part>
- 
-    <Part Name="iModelSchemaEvolutionPullTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PullCompatibilityNugets.mke">
-         <SubPart PartName="iModelSchemaEvolutionRunGTest" />    
-    </Part>
-
-    <Product Name="iModelSchemaEvolutionGTest">
+    <NuGetProduct Name="IModelEvolutionTestRunnerNuget" Description="Nuget that contains the current test runner">
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
-        <SubPart PartName="iModelSchemaEvolutionGTest"/>
-    </Product>
- 
-    <Part Name="iModelSchemaEvolutionRunGTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelSchemaEvolutionGTest -dGTEST_NAME=iModelSchemaEvolution -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/iModelSchemaEvolution" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubProduct ProductName="iModelSchemaEvolutionGTest" />
-    </Part>
-
-    <Part Name="iModelSchemaEvolutionTestsCopyDatasets" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\CopyDatasets.mke">
-        <SubPart PartName="iModelSchemaEvolutionPullDatasets"/>
-        <SubPart PartName="iModelSchemaEvolutionRunGTest"/>
-    </Part>
-
-    <Part Name="iModelSchemaEvolutionRunGTestBackwards" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunBackwardsCompatibilityTest.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubPart PartName="iModelSchemaEvolutionTestsCopyDatasets"/>
-    </Part>
- 
-    <Part Name="iModelSchemaEvolutionRunGTestForwards" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunCompatibilityTests.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubPart PartName="iModelSchemaEvolutionRunGTestBackwards"/>
-        <SubPart PartName="iModelSchemaEvolutionPullTests"/>
-    </Part>
-
-    <NuGetProduct Name="iModelSchemaEvolutionTestNuget" Description="Awesome description here">
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
-        <SubPart PartName="iModelSchemaEvolutionGTest"/>
+        <SubPart PartName="BuildIModelEvolutionGTest"/>
     </NuGetProduct>
 
-    <Product Name="iModelSchemaEvolutionTestFiles" SaveProduct="true">
-        <SubPart PartName="SaveSchemaEvolutionTestFiles"/>
-        <Directories DirectoryListName="SchemaEvolutionTestFiles"/>
+    <Product Name="IModelEvolutionTestFiles" SaveProduct="true">
+        <SubPart PartName="PrepareIModelEvolutionTestFilesForNugetPackaging"/>
+        <Directories DirectoryListName="IModelEvolutionTestFiles"/>
     </Product>
 
-    <NuGetProduct Name="iModelSchemaEvolutionTestFilesNuget" Description="Datasets">
-        <SubPart PartName="SaveSchemaEvolutionTestFiles"/>
-        <Directories DirectoryListName="SchemaEvolutionTestFiles"/>
+    <NuGetProduct Name="IModelEvolutionTestFilesNuget" Description="Test file nuget">
+        <SubPart PartName="PrepareIModelEvolutionTestFilesForNugetPackaging"/>
+        <Directories DirectoryListName="IModelEvolutionTestFiles"/>
     </NuGetProduct>
 
-    <ProductDirectoryList ListName="SchemaEvolutionTestFiles" >
-        <ProductDirectory Name="Datasets" Path="Datasets"/>
+    <ProductDirectoryList ListName="IModelEvolutionTestFiles" >
+        <ProductDirectory Name="Datasets" Path="TestFiles"/>
     </ProductDirectoryList>
 
-    <Part Name="SaveSchemaEvolutionTestFiles" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\SaveDatasets.mke">
+    <Part Name="PrepareIModelEvolutionTestFilesForNugetPackaging" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\LinkTestFilesToBuildContext.mke">
         <!-- Must run after the tests are complete -->
-        <SubPart PartName="iModelSchemaEvolutionRunGTest" />
+        <SubPart PartName="IModelEvolutionRunAllTestRunners" />
         <Bindings>
-            <Directory ProductDirectoryName="Datasets" SourceName="iModelSchemaEvolutionDatasets" />
+            <Directory ProductDirectoryName="Datasets" SourceName="IModelEvolutionTestFiles" />
         </Bindings>
     </Part>
 
-    <Part Name="RuniModelSchemaEvolutionTests" PrgOutputDir="iModelSchemaEvolutionTests">
-        <SubPart PartName="iModelSchemaEvolutionRunGTestForwards"/>
-        <SubNuGetProduct NuGetProductName="iModelSchemaEvolutionTestNuget"/>
-        <SubNuGetProduct NuGetProductName="iModelSchemaEvolutionTestFilesNuget"/>
-    </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->

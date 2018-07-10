@@ -286,6 +286,16 @@
     <ClCompile Include="TestFixture\DgnPlatformSeedManager.cpp">
       <Filter>TestFixture</Filter>
     </ClCompile>
+    <ClCompile Include="DgnDbTestUtils\RepositoryManagerUtil.cpp" />
+    <ClCompile Include="Published\Compatibility_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaVersion_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\ElementAspectPerformance.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
@@ -348,6 +358,7 @@
     <ClInclude Include="TestFixture\DgnPlatformSeedManager.h">
       <Filter>TestFixture</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\RepositoryManagerUtil.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Published">

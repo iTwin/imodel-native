@@ -244,6 +244,7 @@ public:
     BE_JSON_NAME(scopeSpec);
     BE_JSON_NAME(spec);
     BE_JSON_NAME(version);
+    BE_JSON_NAME(isManagedWithDgnDb);
 
 private:
     DgnDbR          m_dgndb;
@@ -272,6 +273,11 @@ public:
 
     Utf8String GetRegistrySuffix() const {return m_specProperties[json_registrySuffix()].asString();}
     void SetRegistrySuffix(Utf8CP registrySuffix) {if (registrySuffix && *registrySuffix) m_specProperties[json_registrySuffix()] = registrySuffix;}
+
+    //! Return true if the codes associated with this CodeSpec are managed along with the DgnDb. Return false if the codes associated with this CodeSpec are managed by an external service.
+    bool IsManagedWithDgnDb() const {return m_specProperties[json_isManagedWithDgnDb()].asBool(true);}
+    //! Set whether the codes associated with this CodeSpec are managed along with the DgnDb or by an external service.
+    void SetIsManagedWithDgnDb(bool isManagedWithDgnDb) {m_specProperties[json_isManagedWithDgnDb()] = isManagedWithDgnDb;}
 
     //! Return the CodeSpecId of the NullCodeSpec
     static CodeSpecId GetNullCodeSpecId() {return CodeSpecId((uint64_t)1LL);}

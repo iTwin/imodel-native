@@ -42,7 +42,7 @@ struct TileContext;
 // #define DISABLE_EDGE_GENERATION
 
 // For debugging tile generation code - disables use of cached tiles.
-//#define DISABLE_TILE_CACHE
+// #define DISABLE_TILE_CACHE
 
 // We used to cache GeometryLists for elements occupying a significant (25%) fraction of the total model range.
 // That can't work for BReps because they are associated with a specific thread's partition.
@@ -878,7 +878,6 @@ bool Loader::IsCacheable() const
     {
     return GetElementTile().IsCacheable();
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1074,7 +1073,7 @@ BentleyStatus Loader::_LoadTile()
             {
             if (geometry.IsEmpty() || !geometry.ContainsCurves())
                 tile.SetIsLeaf();
-            else if (isLeafInCache)
+            else if (isLeafInCache && !T_HOST.GetTileAdmin()._WantCachedHiResTiles(root.GetDgnDb()))
                 tile.SetZoomFactor(1.0);
             }
         }
@@ -1229,6 +1228,17 @@ bool Loader::_IsValidData()
     else
         reader.FindDeletedElements(m_omitElemIds);
 
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Loader::_WantWaitOnSave() const
+    {
+    // BuildingConceptStation's tools invalidate tiles on every single mouse motion.
+    // If we don't wait on the save to cache, then a subsequent tile invalidation may cause cache row to be updated/deleted
+    // before a pending save completes, producing errors in sqlite.
     return true;
     }
 
@@ -1777,6 +1787,9 @@ void Tile::_Invalidate()
         m_generator.reset();
 
         m_contentRange = ElementAlignedBox3d();
+
+        if (m_hasZoomFactor)
+            _UnloadChildren(BeTimePoint::Now());
 
         m_isLeaf = false;
         m_hasZoomFactor = false;

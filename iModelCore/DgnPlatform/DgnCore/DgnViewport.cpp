@@ -82,7 +82,7 @@ void DgnViewport::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) co
     {
     DRange3d corners = GetViewCorners();
     Transform scrToNpcTran;
-    bsiTransform_initFromRange(nullptr, &scrToNpcTran, &corners.low, &corners.high);
+    LegacyMath::TMatrix::InitTransformsFromRange(nullptr, &scrToNpcTran, &corners.low, &corners.high);
     scrToNpcTran.Multiply(npcVec, screenVec, nPts);
     }
 
@@ -93,7 +93,7 @@ void DgnViewport::NpcToView(DPoint3dP screenVec, DPoint3dCP npcVec, int nPts) co
     {
     DRange3d corners = GetViewCorners();
     Transform    npcToScrTran;
-    bsiTransform_initFromRange(&npcToScrTran, nullptr, &corners.low, &corners.high);
+    LegacyMath::TMatrix::InitTransformsFromRange(&npcToScrTran, nullptr, &corners.low, &corners.high);
     npcToScrTran.Multiply(screenVec, npcVec, nPts);
     }
 
@@ -1226,7 +1226,7 @@ void Frustum::ScaleAboutCenter(double scale)
     m_pts[NPC_000].Interpolate(orig.GetCorner(NPC_111), f, orig.GetCorner(NPC_000));
     m_pts[NPC_100].Interpolate(orig.GetCorner(NPC_011), f, orig.GetCorner(NPC_100));
     m_pts[NPC_010].Interpolate(orig.GetCorner(NPC_101), f, orig.GetCorner(NPC_010));
-    m_pts[NPC_110].Interpolate(orig.GetCorner(NPC_001), f, orig.GetCorner(NPC_110));
+    m_pts[NPC_110].Interpolate(orig.GetCorner(NPC_001), f, orig.GetCorner(NPC_110));    
     m_pts[NPC_001].Interpolate(orig.GetCorner(NPC_110), f, orig.GetCorner(NPC_001));
     m_pts[NPC_101].Interpolate(orig.GetCorner(NPC_010), f, orig.GetCorner(NPC_101));
     m_pts[NPC_011].Interpolate(orig.GetCorner(NPC_100), f, orig.GetCorner(NPC_011));

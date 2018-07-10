@@ -1,21 +1,21 @@
 #---------------------------------------------------------------------------------------+
 #
-#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/SaveDatasets.mke $
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/LinkTestFilesToBuildContext.mke $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
+%include $(SrcRoot)DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
 
-TestOutputDir = $(OutputRootDir)Product/iModelSchemaEvolutionGTest/run/SeedData/
-CacheDir = $(OutBuildDir)iModelSchemaEvolutionDatasets/
-ContextDir = $(BuildContext)iModelSchemaEvolutionDatasets/
+CacheDir = $(OutBuildDir)iModelEvolutionTestFiles/
+ContextDir = $(BuildContext)iModelEvolutionTestFiles/
 
 # Tests only write their side effects into the Product/ directory structure.
 # Further, test runner parts do not re-run tests of a log file is cached in the build/ directory structure.
 # We must thus make a hard copy of the output we need to survive a <bb b -r>.
 
-COPYDIR_INPUT= $(TestOutputDir)
+COPYDIR_INPUT= $(NEWFILES_DIR)
 COPYDIR_OUTPUT = $(CacheDir)
 
 always:

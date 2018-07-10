@@ -1561,7 +1561,7 @@ Sheet::Attachment::Root3d::Root3d(Sheet::ViewController& sheetController, ViewAt
     int32_t biasDistance = Render::Target::DepthFromDisplayPriority(attach.GetDisplayPriority());
     m_biasDistance = double(biasDistance);
 
-    bsiTransform_initFromRange(&m_viewport->m_toParent, nullptr, &range.low, &range.high);
+    LegacyMath::TMatrix::InitTransformsFromRange(&m_viewport->m_toParent, nullptr, &range.low, &range.high);
     m_viewport->m_toParent.ScaleMatrixColumns(scale.x, scale.y, 1.0);
 
     Transform fromParent;

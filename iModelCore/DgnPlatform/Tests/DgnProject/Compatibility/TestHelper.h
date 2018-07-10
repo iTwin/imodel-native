@@ -10,22 +10,26 @@
 #include "Profiles.h"
 
 //=======================================================================================
+// Features that were added later. Use TestDb::SupportsFeature to check whether a certain file supports a 
+// feature or not.
+// @bsiclass                                                 Krischan.Eberle     07/2018
+//=======================================================================================    
+enum class Feature
+    {
+    PersistedECVersions,
+    NamedEnumerators,
+    UnitsAndFormats
+    };
+
+//=======================================================================================
 //! Provides helper methods for testing certain areas of a DgnDb or ECDb file in the compatibility tests
 // @bsiclass                                                 Krischan.Eberle     06/2018
 //=======================================================================================    
 struct TestDb
     {
-public:
-    enum class State
-        {
-        Older,
-        Upgraded,
-        UpToDate,
-        Newer
-        };
-
 protected:
     TestFile const& m_testFile;
+    BeSQLite::ProfileState::Age m_age;
 
 private:
     virtual ECDbR _GetDb() const = 0;
@@ -43,11 +47,14 @@ protected:
     TestDb(TestDb&&) = default;
     TestDb& operator=(TestDb&&) = default;
 
-    State GetState() const;
+    BeSQLite::ProfileState::Age GetAge() const { return m_age; }
+    bool IsUpgraded() const { return GetOpenParams().GetProfileUpgradeOptions() == ECDb::ProfileUpgradeOptions::Upgrade; }
     TestFile const& GetTestFile() const { return m_testFile; }
     ECDbR GetDb() const { return _GetDb(); }
     ECDb::OpenParams const& GetOpenParams() const { return _GetOpenParams(); }
     Utf8String GetDescription() const;
+
+    bool SupportsFeature(Feature) const;
 
     DbResult Open();
     void Close() { _Close(); }
@@ -107,7 +114,7 @@ private:
     ECDb::OpenParams m_openParams;
 
     ECDbR _GetDb() const override { return const_cast<ECDbR> (m_ecdb); }
-    DbResult _Open() override { return m_ecdb.OpenBeSQLiteDb(m_testFile.GetPath(), m_openParams); }
+    DbResult _Open() override;
     void _Close() override
         {
         if (m_ecdb.IsDbOpen())
@@ -162,12 +169,7 @@ struct TestIModel final : TestDb
         DgnDb::OpenParams m_openParams;
 
         ECDbR _GetDb() const override { BeAssert(m_dgndb != nullptr); return *m_dgndb; }
-        DbResult _Open() override
-            {
-            DbResult stat = BeSQLite::BE_SQLITE_OK;
-            m_dgndb = DgnDb::OpenDgnDb(&stat, m_testFile.GetPath(), m_openParams);
-            return stat;
-            }
+        DbResult _Open() override;
         void _Close() override
             {
             if (m_dgndb != nullptr && m_dgndb->IsDbOpen())
