@@ -47,7 +47,7 @@ def pullAllNugets(path, pathToNugetPuller, name):
     versions = nugetpkg.SearchVersionsFromServer(address, name)
     for v in versions:
         # ignore stale versions until they have been deleted fromthe nuget server
-        if LooseVersion(v) < LooseVersion("2018.7.9.3"):
+        if LooseVersion(v) < LooseVersion("2018.7.10.2"):
             continue
         # Dowload and save all versions
         localDir = path
@@ -92,28 +92,28 @@ def mergeTestFiles(testFilesNugetPath, targetDir):
 def main():
     if len(sys.argv) < 4:
         print "Arg 1: <nuget path in src>"
-        print "Arg 2: <iModelSchemaEvolution folder in out>"
-        print "Arg 3: <nuget folder in iModelSchemaEvolution out dir>"
+        print "Arg 2: <Artefacts root folder in out>"
+        print "Arg 3: <nuget folder in Artefacts root folder>"
         print "Arg 4: <path to nuget python script>"
         return
 
     nugetPathInSrc = sys.argv[1]
-    imsPath = sys.argv[2]
-    imsNugetPath = sys.argv[3]
+    artefactsPath = sys.argv[2]
+    nugetPath = sys.argv[3]
     nugetScript = sys.argv[4]
     sys.path.insert(0, nugetScript)
     # Test runners are downloaded into src as pulling them in with every TMR might take too long
     # They are symlinked into the out dir afterwards
-    pullAllNugets(nugetPathInSrc, nugetScript, "iModelSchemaEvolutionTestNuget_bim0200dev_x64")
-    pullAllNugets(nugetPathInSrc, nugetScript, "iModelSchemaEvolutionTestNuget_bim0200dev_ec32_x64")
+    pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_bim0200dev_x64")
+    pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_bim0200dev_ec32_x64")
     unzipNugets(nugetPathInSrc)
     # Test files can be downloaded in out folder directly
-    testFileNugetPath = os.path.join(imsNugetPath, "testfiles")
-    pullAllNugets(testFileNugetPath, nugetScript, "iModelSchemaEvolutionTestFilesNuget_bim0200dev_x64")
-    pullAllNugets(testFileNugetPath, nugetScript, "iModelSchemaEvolutionTestFilesNuget_bim0200dev_ec32_x64")
+    testFileNugetPath = os.path.join(nugetPath, "testfiles")
+    pullAllNugets(testFileNugetPath, nugetScript, "iModelvolutionTestFilesNuget_bim0200dev_x64")
+    pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_bim0200dev_ec32_x64")
     unzipNugets(testFileNugetPath)
     # Copy test files from all nugets into a single central folder
-    targetDir = os.path.join(imsPath, "TestFiles")
+    targetDir = os.path.join(artefactsPath, "TestFiles")
     mergeTestFiles(testFileNugetPath, targetDir)
 
 if __name__ == "__main__":

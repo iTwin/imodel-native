@@ -13,15 +13,15 @@
 %include $(SrcRoot)DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
 
 #----------------------------------------------------------
-# Pull the test runner and test file nugets from server and copy them to IMS_NUGETS_DIR (out/iModelSchemaEvolution)
+# Pull the test runner and test file nugets from server and copy them to IMS_NUGETS_DIR (out/iModelEvolutionTests)
 #----------------------------------------------------------
 
-NUGET_DIR = $(SrcRoot)/nuget/iModelCompatibility/
+NUGET_SRC_DIR = $(SrcRoot)/nuget/iModelEvolutionTests/
 
 always:
-    ~mkdir $(NUGET_DIR)
+    ~mkdir $(NUGET_SRC_DIR)
     ~mkdir $(TESTFILES_NUGET_DIR)
     ~mkdir $(TESTRUNNERS_NUGET_DIR)
     ~mkdir $(TESTFILES_DIR)
-    python Tests/DgnProject/Compatibility/CompatibilityRunner/PullNugets.py $(NUGET_DIR) $(IMS_DIR) $(IMS_NUGET_DIR) $(SrcRoot)BentleyBuild/bentleybuild
-    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(NUGET_DIR) $(TESTRUNNERS_NUGET_DIR)
+    python Tests/DgnProject/Compatibility/CompatibilityRunner/PullNugets.py $(NUGET_SRC_DIR) $(ARTEFACTS_ROOTDIR) $(NUGET_DIR) $(SrcRoot)BentleyBuild/bentleybuild
+    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(NUGET_SRC_DIR) $(TESTRUNNERS_NUGET_DIR)

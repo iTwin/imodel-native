@@ -36,7 +36,7 @@ def main():
     if is_same(currentDatasetPath, oldDatasetPath):
         sys.exit(0)
     else:
-        print "Current dataset is diffent than newest dataset. A new one needs to be published. Run iModelSchemaEvolutionTests-PublishDataset job"
+        print "Current dataset is diffent than newest dataset. A new one needs to be published. Run iModelEvolutionTests-PublishTestPackage job"
         sys.exit(1)
 
 if __name__ == "__main__":
