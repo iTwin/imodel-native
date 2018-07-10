@@ -20,7 +20,7 @@ TESTRUNNERS_NUGET_DIR = $(NUGET_DIR)/testrunners
 
 # Central place where all pulled test files are copied to.
 # Test runners will copy them into their own sandbox folders form here
-TESTFILES_DIR = $(ARTEFACT_ROOTDIR)/TestFiles
+TESTFILES_DIR = $(ARTEFACTS_ROOTDIR)/TestFiles
 
 
 
