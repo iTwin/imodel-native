@@ -109,8 +109,8 @@ MSBsplineSurfacePtr HyperbolicGridSurface (size_t uOrder, size_t vOrder, size_t 
     for (size_t j = 0; j < numJ; j++)
         for (size_t i = 0; i < numI; i++)
             {
-            double u = u1 / (double)(numI - 1);
-            double v = v1 / (double)(numJ - 1);
+            double u = i * u1 / (double)(numI - 1);
+            double v = j * v1 / (double)(numJ - 1);
             poles.push_back (patch.Evaluate (u, v));
             }
 
