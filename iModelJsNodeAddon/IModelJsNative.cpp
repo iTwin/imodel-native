@@ -2898,11 +2898,22 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
     //=======================================================================================
     struct ResponseSender : Napi::AsyncWorker
     {
+        struct BoolPredicate : IConditionVariablePredicate
+            {
+            BeAtomic<bool>& m_flag;
+            BoolPredicate(BeAtomic<bool>& flag) : m_flag(flag) {}
+            bool _TestCondition(BeConditionVariable&) override {return m_flag.load();}
+            };
     private:
+        BeConditionVariable m_waiter;
         ECPresentationResult m_result;
+        BeAtomic<bool> m_hasResult;
     protected:
-        //Nothing is executed in worker thread because result was set in ECPresentation thread
-        void Execute() override {}
+        void Execute() override
+            {
+            BoolPredicate pred(m_hasResult);
+            m_waiter.WaitOnCondition(&pred, BeConditionVariable::Infinite);
+            }
         void OnOK() override
             {
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), m_result, true)});
@@ -2912,8 +2923,8 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), ECPresentationResult(ECPresentationStatus::Error, "callback error"))});
             }
     public:
-        ResponseSender(Napi::Function& callback) : Napi::AsyncWorker(callback) {}
-        void SetResult(ECPresentationResult&& result) {m_result = std::move(result);}
+        ResponseSender(Napi::Function& callback) : Napi::AsyncWorker(callback), m_hasResult(false) {}
+        void SetResult(ECPresentationResult&& result) {m_result = std::move(result); m_hasResult.store(true); m_waiter.notify_all();}
     };
 
     /*=================================================================================**//**
@@ -3049,6 +3060,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         JsonValueCR params = request["params"];
 
         ResponseSender* responseSender = new ResponseSender(responseCallback);
+        responseSender->Queue();
         folly::Future<ECPresentationResult> result = folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "request.requestId");});
 
         if (0 == strcmp("GetRootNodesCount", requestId))
@@ -3075,11 +3087,9 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         result.then([responseSender](ECPresentationResult result)
             {
             responseSender->SetResult(std::move(result));
-            responseSender->Queue();
             }).onError([responseSender](folly::exception_wrapper)
             {
             responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Error, "future error"));
-            responseSender->Queue();
             });
         }
 
