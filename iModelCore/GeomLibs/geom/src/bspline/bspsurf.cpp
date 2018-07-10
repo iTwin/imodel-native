@@ -484,6 +484,7 @@ MSBsplineSurface    *surf
 //  This is zero if (a) the edge is degenerate, (b) the edge and inbound polygon line are always parallel.
 // So it is a curviness measure for the boundary quads.
 // called by _computePartials if the normal vanishes.
+// this is exported only for testing ...
 /*----------------------------------------------------------------------+
 |                                                                       |
 | name          bspsurf_computeZeroSurfNorm                             |
@@ -491,7 +492,7 @@ MSBsplineSurface    *surf
 | author        LuHan                                   2/93            |
 |                                                                       |
 +----------------------------------------------------------------------*/
-static void    bspsurf_computeZeroSurfNorm
+GEOMDLLIMPEXP void    bspsurf_computeZeroSurfNorm
 (
 DPoint3d            *normP,
 const MSBsplineSurface    *surfP,
@@ -499,153 +500,62 @@ double              param,
 int                 direction
 )
     {
-    int         i, numU, numV, tmp, itmp1, itmp2, total;
+    int         numU, numV;
     DPoint3d    pole11, pole12, pole21, pole22, diff1, diff2, sum, cross;
-
     sum.x = sum.y = sum.z = 0.0;
     numU = surfP->uParams.numPoles;
     numV = surfP->vParams.numPoles;
     if (direction == BSSURF_U)
         {
-        tmp = numU-1;
-        if (param < fc_epsilon)
+        size_t j0 = 0;
+        size_t j1 = 1;
+        double scale = 1.0 / numU;
+        if (param >= fc_epsilon)
             {
-            for (i=0; i<tmp; i++)
-                {
-                if (surfP->rational)
-                    {
-                    bsputil_unWeightPoles (&pole11, surfP->poles+i,
-                                       surfP->weights+i, 1);
-                    bsputil_unWeightPoles (&pole12, surfP->poles+i+numU,
-                                       surfP->weights+i+numU, 1);
-                    bsputil_unWeightPoles (&pole21, surfP->poles+i+1,
-                                       surfP->weights+i+1, 1);
-                    bsputil_unWeightPoles (&pole22, surfP->poles+i+1+numU,
-                                       surfP->weights+i+1+numU, 1);
-                    }
-                else
-                    {
-                    pole11 = surfP->poles[i];
-                    pole12 = surfP->poles[i+numU];
-                    pole21 = surfP->poles[i+1];
-                    pole22 = surfP->poles[i+numU+1];
-                    }
-
-                diff1.DifferenceOf (pole12, pole11);
-                diff2.DifferenceOf (pole22, pole21);
-
-                cross.CrossProduct (diff2, diff1);
-                sum.SumOf (sum, cross);
-                }
-            normP->Scale (sum, 1.0/numU);
+            j0 = numV - 1;
+            j1 = numV - 2;
+            scale = -scale;
             }
-        else
+        for (int i=0; i + 1 < numU; i++)
             {
-            total = numU * (numV-1);
-            for (i=0; i<tmp; i++)
-                {
-                if (surfP->rational)
-                    {
-                    bsputil_unWeightPoles (&pole11, surfP->poles+i+total,
-                                       surfP->weights+i+total, 1);
-                    bsputil_unWeightPoles (&pole12, surfP->poles+i+total-numU,
-                                       surfP->weights+i+total-numU, 1);
+            pole11 = surfP->GetUnWeightedPole (i,j0);
+            pole12 = surfP->GetUnWeightedPole (i, j1);
+            pole21 = surfP->GetUnWeightedPole (i+1, j0);
+            pole22 = surfP->GetUnWeightedPole (i+1, j1);
 
-                    bsputil_unWeightPoles (&pole21, surfP->poles+i+1+total,
-                                       surfP->weights+i+1+total, 1);
-                    bsputil_unWeightPoles (&pole22, surfP->poles+i+1+total-numU,
-                                       surfP->weights+i+1+total-numU, 1);
-                    }
-                else
-                    {
-                    pole11 = surfP->poles[i+total];
-                    pole12 = surfP->poles[i+total-numU];
-                    pole21 = surfP->poles[i+total+1];
-                    pole22 = surfP->poles[i+total-numU+1];
-                    }
+            diff1.DifferenceOf (pole12, pole11);
+            diff2.DifferenceOf (pole22, pole21);
 
-
-                diff1.DifferenceOf (pole12, pole11);
-                diff2.DifferenceOf (pole22, pole21);
-
-                cross.CrossProduct (diff1, diff2);
-                sum.SumOf (sum, cross);
-                }
-            normP->Scale (sum, 1.0/numV);
+            cross.CrossProduct (diff2, diff1);
+            sum.SumOf (sum, cross);
             }
+        normP->Scale (sum, scale);
         }
     else
         {
-        tmp = numV - 1;
-        if (param < fc_epsilon)
+        size_t i0 = 0;
+        size_t i1 = 1;
+        double sign = -1.0;
+        if (param >= fc_epsilon)
             {
-            for (i=0; i<tmp; i++)
-                {
-                itmp1 = i * numU;
-                itmp2 = itmp1 + numU;
-                if (surfP->rational)
-                    {
-                    bsputil_unWeightPoles (&pole11, surfP->poles+itmp1,
-                                       surfP->weights+itmp1, 1);
-                    bsputil_unWeightPoles (&pole12, surfP->poles+itmp1+1,
-                                       surfP->weights+itmp1+1, 1);
-
-                    bsputil_unWeightPoles (&pole21, surfP->poles+itmp2,
-                                       surfP->weights+itmp2, 1);
-                    bsputil_unWeightPoles (&pole22, surfP->poles+itmp2+1,
-                                       surfP->weights+itmp2+1, 1);
-                    }
-                else
-                    {
-                    pole11 = surfP->poles[itmp1];
-                    pole12 = surfP->poles[itmp1+1];
-                    pole21 = surfP->poles[itmp2];
-                    pole22 = surfP->poles[itmp2+1];
-                    }
-
-
-                diff1.DifferenceOf (pole12, pole11);
-                diff2.DifferenceOf (pole22, pole21);
-
-                cross.CrossProduct (diff1, diff2);
-                sum.SumOf (sum, cross);
-                }
-            normP->Scale (sum, 1.0/numV);
+            i0 = numU - 1;
+            i1 = numU - 2;
+            sign = 1.0;
             }
-        else
+        for (int j=0; j + 1 < numV; j++)
             {
-            for (i=0; i<tmp; i++)
-                {
-                itmp1 = (i+1)*numU-1;
-                itmp2 = itmp1 + numU;
-                if (surfP->rational)
-                    {
-                    bsputil_unWeightPoles (&pole11, surfP->poles+itmp1,
-                                       surfP->weights+itmp1, 1);
-                    bsputil_unWeightPoles (&pole12, surfP->poles+itmp1-1,
-                                       surfP->weights+itmp1-1, 1);
+            pole11 = surfP->GetUnWeightedPole (i0, j);
+            pole12 = surfP->GetUnWeightedPole (i1, j);
+            pole21 = surfP->GetUnWeightedPole (i0, j+1);
+            pole22 = surfP->GetUnWeightedPole (i1, j+1);
 
-                    bsputil_unWeightPoles (&pole21, surfP->poles+itmp2,
-                                       surfP->weights+itmp2, 1);
-                    bsputil_unWeightPoles (&pole22, surfP->poles+itmp2-1,
-                                       surfP->weights+itmp2-1, 1);
-                    }
-                else
-                    {
-                    pole11 = surfP->poles[itmp1];
-                    pole12 = surfP->poles[itmp1-1];
-                    pole21 = surfP->poles[itmp2];
-                    pole22 = surfP->poles[itmp2-1];
-                    }
+            diff1.DifferenceOf (pole12, pole11);
+            diff2.DifferenceOf (pole22, pole21);
 
-                diff1.DifferenceOf (pole12, pole11);
-                diff2.DifferenceOf (pole22, pole21);
-
-                cross.CrossProduct (diff2, diff1);
-                sum.SumOf (sum, cross);
-                }
-            normP->Scale (sum, 1.0/numV);
+            cross.CrossProduct (diff2, diff1);
+            sum.SumOf (sum, cross);
             }
+        normP->Scale (sum, sign/numV);
         }
     }
 
@@ -4224,7 +4134,6 @@ void            *argsP                 /* => passed through to flushFunc */
     return SUCCESS;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brian.Peters    04/93
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4274,364 +4183,6 @@ void                *argP              /* => passed through to strokeFunc */
         }
 
     return SUCCESS;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EDL             04/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP StatusInt    bspssi_projectToTangentSystem
-(
-DPoint3d            *paramP,            /* <= x,y are parameters of projection
-                                                of pointP onto skewed plane.  z=0 */
-double              *duduP,             /* <= squared magnitude of U vector */
-double              *dvdvP,             /* <= squared magnitude of V vector */
-DPoint3d            *vectorUP,          /* => parameter space U direction */
-DPoint3d            *vectorVP,          /* => parameter space V direction */
-DPoint3d            *originP,           /* => origin of parameter system */
-DPoint3d            *pointP,            /* => space point to be projected */
-double              shortVecTol         /* => tolerance to consider short vectors zero */
-)
-    {
-    double a00, a01, a10, a11, b0, b1, det, p0, p1;
-    DPoint3d vectorW;
-    static double relTol = 1.0e-10;
-    StatusInt status;
-    double tol2 = shortVecTol * shortVecTol;
-    vectorW.DifferenceOf (*pointP, *originP);
-
-    a00 = *duduP = vectorUP->DotProduct (*vectorUP);
-    a01 = a10    = vectorUP->DotProduct (*vectorVP);
-    a11 = *dvdvP = vectorVP->DotProduct (*vectorVP);
-    if (a00 <= tol2 || a11 <= tol2)
-        return ERROR;
-
-    b0  = vectorUP->DotProduct (vectorW);
-    b1  = vectorVP->DotProduct (vectorW);
-
-    p0 = a00 * a11; /* Must be positive */
-    p1 = a01 * a10; /* Also must be positive !! */
-    det = p0 - p1;
-    if (det == 0.0 || fabs (det) < (p0 + p1) * relTol)
-        {
-        paramP->x = paramP->y = paramP->z = 0.0;
-        status = ERROR;
-        }
-    else
-        {
-        double inverseDet = 1.0 / det;
-        paramP->x = (b0 * a11 - b1 * a01) * inverseDet;
-        paramP->y = -(b0 * a10 - b1 * a00) * inverseDet;
-        paramP->z = 0.0;
-        status = SUCCESS;
-        }
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BFP             03/91
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspssi_relaxToDifficultSurface
-(
-DPoint3d            *nearPt,           /* <= closest point on surface */
-DPoint3d            *normal,           /* <= normal to surf @ nearPt, scaled by sine angle */
-double              *degeneracy,       /* <= sine of angle between surface partials */
-DPoint2d            *uv,               /* <=> initial guess -> param of pt */
-DPoint3d            *testPt,           /* => want closest pt to this pt */
-Evaluator           *eval,
-int                 iterations,        /* => number of iterations to try */
-double              convTol            /* => convergence tolerance in UV space */
-)
-    {
-    int             count;
-    bool            bad_dPdu, bad_dPdv;
-    double          mag_cross, mag_dPdu, mag_dPdv, mag_dCrossDu, mag_dCrossDv,
-                    mag_cross2, prod;
-    double          dudu, dvdv;
-    DVec3d          du, dv, zeroVec, difference,
-                    dNormDu, dNormDv, cross, dCrossDu, dCrossDv, tmp0, tmp1;
-    RotMatrix       tmp;
-
-    StatusInt paramStat;
-
-    zeroVec.x = zeroVec.y = zeroVec.z =
-    difference.x = difference.y = 0.0;
-
-    for (count=0; count < iterations; count++)
-        {
-        uv->x += difference.x;
-        uv->y += difference.y;
-
-        /*---------------------------------------------------------------
-        Add the correction to the uv pair. If I am crossing an edge of the
-        [0,1] parameter square then if closed go around to the other side,
-        or if open, just relax to boundary. This assumes that the new uv
-        is no more than 1.0 outside the unit square; i.e. adding/subtracting
-        one will wrap around to the opposite side of a closed surface.
-        ---------------------------------------------------------------*/
-        if (uv->x < 0.0)
-            {
-            if (eval->surf->uParams.closed)
-                uv->x += 1.0;
-            else
-                uv->x = 0.0;
-            }
-        else if (uv->x > 1.0)
-            {
-            if (eval->surf->uParams.closed)
-                uv->x -= 1.0;
-            else
-                uv->x = 1.0;
-            }
-        if (uv->y < 0.0)
-            {
-            if (eval->surf->vParams.closed)
-                uv->y += 1.0;
-            else
-                uv->y = 0.0;
-            }
-        else if (uv->y > 1.0)
-            {
-            if (eval->surf->vParams.closed)
-                uv->y -= 1.0;
-            else
-                uv->y = 1.0;
-            }
-
-
-        if (eval->offset)
-            {
-            DPoint3d duu, duv, dvv, safeNormal;
-
-            bspsurf_computePartials (nearPt, NULL, &du, &dv, &duu, &dvv, &duv,
-                                 &safeNormal, uv->x, uv->y, eval->surf);
-            /*-----------------------------------------------------------
-            Must correct the partials, see Farouki, R.T. in CAGD vol 3, pp. 15-45.
-            -----------------------------------------------------------*/
-            nearPt->SumOf (*nearPt, safeNormal, eval->distance / safeNormal.Magnitude ());
-
-            cross.CrossProduct (du, dv);
-            tmp0.CrossProduct (duu, dv);
-            tmp1.CrossProduct (du, duv);
-            dCrossDu.SumOf (tmp0, tmp1);
-            tmp0.CrossProduct (duv, dv);
-            tmp1.CrossProduct (du, dvv);
-            dCrossDv.SumOf (tmp0, tmp1);
-
-            mag_cross    = cross.Magnitude ();
-            mag_cross2   = mag_cross * mag_cross;
-            mag_dCrossDu = cross.DotProduct (dCrossDu) / mag_cross;
-            mag_dCrossDv = cross.DotProduct (dCrossDv) / mag_cross;
-
-            dNormDu.Scale (dCrossDu, mag_cross);
-            dNormDu.SumOf (dNormDu, cross, - mag_dCrossDu);
-            dNormDu.Scale (dNormDu, 1.0 / mag_cross2);
-            dNormDv.Scale (dCrossDv, mag_cross);
-            dNormDv.SumOf (dNormDv, cross, - mag_dCrossDv);
-            dNormDv.Scale (dNormDv, 1.0 / mag_cross2);
-
-            du.SumOf (du, dNormDu, eval->distance);
-            dv.SumOf (dv, dNormDv, eval->distance);
-            }
-        else
-            {
-            bspsurf_evaluateSurfacePoint (nearPt, NULL, &du, &dv,
-                                 uv->x, uv->y, eval->surf);
-            }
-        mag_dPdu = du.Magnitude ();
-        mag_dPdv = dv.Magnitude ();
-        bad_dPdu = mag_dPdu < fc_epsilon;
-        bad_dPdv = mag_dPdv < fc_epsilon;
-        cross.CrossProduct (du, dv);
-        mag_cross = cross.Magnitude ();
-
-        if (bad_dPdu || bad_dPdv)
-            {
-            /* Use the safe normal vector. */
-            DPoint3d safeNormal;
-            bspsurf_computePartials (NULL, NULL, &du, &dv, NULL, NULL, NULL,
-                                 &safeNormal, uv->x, uv->y, eval->surf);
-
-
-            *degeneracy = 0.0;
-            *normal = safeNormal;
-            mag_cross = safeNormal.Magnitude ();
-
-            if (mag_cross < fc_epsilon)
-                return STATUS_NONCONVERGED;
-
-            /* Fix the bad partials so the Jacobian doesn't go wild. */
-            if (bad_dPdu && ! bad_dPdv)
-                {
-                du.CrossProduct (dv, *normal);
-                du.Normalize ();
-                du.Scale (du, mag_cross / mag_dPdv);
-                }
-            else if (bad_dPdv && ! bad_dPdu)
-                {
-                dv.CrossProduct (*normal, du);
-                dv.Normalize ();
-                dv.Scale (dv, mag_cross / mag_dPdu);
-                }
-            else
-                {
-                rotMatrix_orthogonalFromZRow (&tmp, (DVec3d*)normal);
-                tmp.GetRow (du, 0);
-                tmp.GetRow (dv, 1);
-                du.Scale (du, sqrt (mag_cross));
-                dv.Scale (dv, sqrt (mag_cross));
-                }
-            }
-        else
-            {
-            prod = 1.0 / (mag_dPdu * mag_dPdv);
-            mag_cross *= prod;
-            *degeneracy = mag_cross;     /* sine of angle between dPdu & dPdv */
-            normal->Scale (cross, prod);    /* scaled by sine angle btw partials */
-            }
-
-#if defined (debug_relax)
-    {
-    DPoint3d        line[2];
-    ElementUnion    u;
-
-    line[0] = *nearPt;
-    line[1].SumOf (*line, *normal, fc_1000);
-    mdlLine_directCreate (&u, NULL, line, NULL);
-    u.line_3d.dhdr.symb.b.style = 3;
-    mdlElement_display (&u, 2);
-    }
-#endif
-
-        paramStat = bspssi_projectToTangentSystem (&difference, &dudu, &dvdv, &du, &dv, nearPt, testPt, fc_epsilon);
-
-        if (fabs (difference.x) < convTol &&
-            fabs (difference.y) < convTol &&
-            SUCCESS == paramStat)
-            return STATUS_CONVERGED;
-        }
-
-    /* Failed to converge within iterations */
-    return STATUS_NONCONVERGED;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BFP             03/91
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspssi_relaxToSurface
-(
-DPoint3d            *nearPt,           /* <= closest point on surface */
-DPoint3d            *normal,           /* <= normal to surf @ nearPt, scaled by sine angle */
-double              *degeneracy,       /* <= sine of angle between surface partials */
-DPoint2d            *uv,               /* <=> initial guess -> param of pt */
-DPoint3d            *testPt,           /* => want closest pt to this pt */
-Evaluator           *eval,
-int                 iterations,        /* => number of iterations to try */
-double              convTol            /* => convergence tolerance in UV space */
-)
-    {
-    int             count;
-    double          prod;
-    double          dudu, dvdv;
-    DPoint3d        du, dv, zeroVec, difference,
-                    cross;
-    DPoint3d        localNormal;
-    double          localDegeneracy;
-
-    StatusInt paramStat;
-    bool    converged;
-    static int alwaysDifficult = 0;
-
-    if (alwaysDifficult || eval->offset)
-        return bspssi_relaxToDifficultSurface (nearPt,
-                            normal ? normal : &localNormal,
-                            degeneracy ? degeneracy : &localDegeneracy,
-                            uv, testPt, eval, iterations, convTol);
-
-    zeroVec.x = zeroVec.y = zeroVec.z =
-    difference.x = difference.y = 0.0;
-
-    for (count=0; count++ < iterations;)
-        {
-        uv->x += difference.x;
-        uv->y += difference.y;
-
-        /*---------------------------------------------------------------
-        Add the correction to the uv pair. If I am crossing an edge of the
-        [0,1] parameter square then if closed go around to the other side,
-        or if open, just relax to boundary. This assumes that the new uv
-        is no more than 1.0 outside the unit square; i.e. adding/subtracting
-        one will wrap around to the opposite side of a closed surface.
-        ---------------------------------------------------------------*/
-        if (uv->x < 0.0)
-            {
-            if (eval->surf->uParams.closed)
-                uv->x += 1.0;
-            else
-                uv->x = 0.0;
-            }
-        else if (uv->x > 1.0)
-            {
-            if (eval->surf->uParams.closed)
-                uv->x -= 1.0;
-            else
-                uv->x = 1.0;
-            }
-        if (uv->y < 0.0)
-            {
-            if (eval->surf->vParams.closed)
-                uv->y += 1.0;
-            else
-                uv->y = 0.0;
-            }
-        else if (uv->y > 1.0)
-            {
-            if (eval->surf->vParams.closed)
-                uv->y -= 1.0;
-            else
-                uv->y = 1.0;
-            }
-
-
-        bspsurf_evaluateSurfacePoint (nearPt, NULL, &du, &dv,
-                                 uv->x, uv->y, eval->surf);
-
-        paramStat = bspssi_projectToTangentSystem (&difference, &dudu, &dvdv,
-                            &du, &dv, nearPt, testPt, fc_epsilon);
-
-        if (SUCCESS != paramStat)
-                return bspssi_relaxToDifficultSurface (nearPt,
-                            normal ? normal : &localNormal,
-                            degeneracy ? degeneracy : &localDegeneracy,
-                            uv, testPt, eval, iterations, convTol);
-
-        converged = fabs (difference.x) < convTol && fabs (difference.y) < convTol;
-
-        if (converged || count == iterations)
-            {
-            if (normal || degeneracy)
-                {
-                cross.CrossProduct (du, dv);
-                prod = 1.0 / sqrt (dudu * dvdv);
-
-                if (degeneracy)
-                    {
-                    double dwdw;
-                    dwdw = cross.DotProduct (cross);
-                    *degeneracy = sqrt (dwdw) * prod;   /* sine of angle btw partials */
-                    }
-
-                if (normal)
-                    normal->Scale (cross, prod);   /* scaled by sine angle btw partials */
-                }
-            }
-
-        if (converged)
-            return STATUS_CONVERGED;
-        }
-
-    /* Failed to converge within iterations */
-    return STATUS_NONCONVERGED;
     }
 
 
