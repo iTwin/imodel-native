@@ -121,9 +121,11 @@ private:
         BeAssert(m_outLzmaFileStream == nullptr);
         m_outLzmaFileStream = new BeFileLzmaOutStream();
 
+        BeFileName::CreateNewDirectory(m_pathname.GetDirectoryName());
         BeFileStatus fileStatus = m_outLzmaFileStream->CreateOutputFile(m_pathname, true /* createAlways */);
         if (fileStatus != BeFileStatus::Success)
             {
+            LOG.fatalv(L"%ls - OutLzmaFileStream::CreateOutputFile failed", m_pathname.c_str());
             BeAssert(false);
             return BE_SQLITE_ERROR;
             }
