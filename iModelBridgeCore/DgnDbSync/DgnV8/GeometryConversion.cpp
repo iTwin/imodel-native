@@ -2980,6 +2980,31 @@ bool AppendAsSubGraphics(DgnV8PathGeom& currPathGeom, DgnV8PathEntry& currPathEn
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IsValidGraphicElement(DgnV8EhCR v8eh)
+    {
+    DgnV8Api::MSElement const& v8el = *v8eh.GetElementCP();
+
+    // Skip displayable elements marked invisible as well as non-graphic components of cells (ex. type 38/39)...
+    if (!v8el.ehdr.isGraphics || v8el.hdr.dhdr.props.b.invisible)
+        return false;
+
+    // Skip elements with invalid ranges, they would not have displayed in V8 and likely contain bad/corrupt data...
+    Bentley::DRange3d range;
+    if (!DgnV8Api::DataConvert::CheckedScanRangeToDRange3d(range, v8el.hdr.dhdr.range, v8el.hdr.dhdr.props.b.is3d))
+        return false;
+
+    if (!v8el.hdr.dhdr.props.b.is3d)
+        range.low.z = range.high.z = 0.0;
+
+    if (range.IsEmpty())
+        return false;
+
+    return true;
+    }
+
 public:
 
 /*---------------------------------------------------------------------------------**//**
@@ -2987,8 +3012,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnCategoryId targetCategoryId, DgnCode elementCode, DgnV8EhCR v8eh)
     {
-    if (!v8eh.GetElementCP()->ehdr.isGraphics || v8eh.GetElementCP()->hdr.dhdr.props.b.invisible)
-        return; // Skip displayable elements marked invisible as well as non-graphic components of cells (ex. type 38/39)...
+    if (!IsValidGraphicElement(v8eh))
+        return;
 
     bool        isValidBasis = false;
     bool        isValidBasisAndScale = false;
