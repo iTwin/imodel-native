@@ -150,13 +150,16 @@ Utf8String BeFileName::GetNameUtf8() const
 Utf8String BeFileName::GetUri() const
     {
     Utf8String nameUtf8(this->c_str());
-    Utf8String uri(nameUtf8[0] == '/' ? "file://" : "file:///");
-    uri.append(nameUtf8.c_str());
+    Utf8String uri("file:");
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    uri.ReplaceAll("\\", "/");
+    nameUtf8.ReplaceAll("\\", "/");
+    uri.append(nameUtf8[0] != '/' ? "///" : "//");
+#else
+    uri.append("//");
 #endif
 
+    uri.append(nameUtf8.c_str());
     return uri;
     }
 
