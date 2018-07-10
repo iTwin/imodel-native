@@ -64,7 +64,7 @@ DataSourceCache::~DataSourceCache()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceCacheOpenState& DataSourceCache::GetState()
+WSCacheState& DataSourceCache::GetState()
     {
     if (nullptr == m_state)
         throw std::runtime_error("DataSourceCache is not open!");

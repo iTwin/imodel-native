@@ -31,7 +31,7 @@ struct DataSourceCache : public IDataSourceCache
         std::shared_ptr<struct WSCacheState> m_state;
 
     private:
-        DataSourceCacheOpenState& GetState();
+        struct WSCacheState& GetState();
         BentleyStatus ExecuteWithinTransaction(std::function<BentleyStatus()> execute);
 
         BentleyStatus InitializeCreatedDb();

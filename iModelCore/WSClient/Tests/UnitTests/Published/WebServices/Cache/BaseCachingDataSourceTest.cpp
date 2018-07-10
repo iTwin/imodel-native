@@ -59,6 +59,8 @@ CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSource(BeVersion webA
         seedEnvironment.temporaryFileCacheDir = BeFileName(seedCacheFolderPath).AppendToPath(L"temporary");
         auto ds = CreateNewTestDataSource(seedCachePath, seedEnvironment, client, nullptr, StubWSInfoWebApi(webApiVersion));
         EXPECT_FALSE(nullptr == ds);
+        if (nullptr == ds)
+            return nullptr;
         }
 
     // Prepare target files
@@ -87,10 +89,6 @@ void BaseCachingDataSourceTest::SetupTestDataSource(CachingDataSourcePtr& reusab
         {
         reusable = CreateNewTestDataSource(GetMockClientPtr(), nullptr, info);
         }
-
-    auto txn = reusable->StartCacheTransaction();
-    // EXPECT_EQ(SUCCESS, txn.GetCache().Reset());
-    EXPECT_EQ(SUCCESS, txn.Commit());
 
     reusable->GetCacheAccessThread()->OnEmpty()->Wait();
     }
@@ -213,6 +211,10 @@ void BaseCachingDataSourceTest::TearDown()
         }
 
     BaseCacheTest::TearDown();
+
+    BeFileName::EmptyAndRemoveDirectory(StubCacheEnvironemnt().externalFileCacheDir);
+    BeFileName::EmptyAndRemoveDirectory(StubCacheEnvironemnt().persistentFileCacheDir);
+    BeFileName::EmptyAndRemoveDirectory(StubCacheEnvironemnt().temporaryFileCacheDir);
     }
 
 void BaseCachingDataSourceTest::SetUpTestCase()

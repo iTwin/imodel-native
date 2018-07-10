@@ -154,9 +154,9 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, BeginTransaction_NotOpenDb_Error)
 TEST_F(BeSQLiteDbTransactionHandlerTests, BeginTransaction_ClosedDb_Error)
     {
     BeSQLite::Db::CreateParams createParams;
-    createParams.SetStartDefaultTxn(BeSQLite::StartDefaultTransaction::DefaultTxn_No);
+    createParams.SetStartDefaultTxn(BeSQLite::DefaultTxn::No);
     BeSQLite::Db db;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(StubFilePath(), BeDbGuid(), createParams));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(StubFilePath(), BeSQLite::BeGuid(), createParams));
     BeSQLiteDbTransactionHandler handler(db);
     EXPECT_EQ(SUCCESS, handler.BeginTransaction());
     EXPECT_EQ(SUCCESS, handler.RollbackTransaction());
