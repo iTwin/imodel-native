@@ -358,32 +358,30 @@ static bool isLimitEdge(double limitValue, DPoint3dR point0, DPoint3dR point1)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    RayBentley                      03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void addPlaneSet(DPoint3dP pPoints, int* pFlags, int nPoints, void* pUserArg)
+static void addPlaneSet(bvector<DPoint3d> const &points, bvector<bool> const &isBoundary, AddPlaneSetParams &params)
     {
-    int                     i;
-    double                  area = bsiGeom_getXYPolygonArea(pPoints, nPoints);
+    size_t nPoints = points.size ();
+    double                  area = bsiGeom_getXYPolygonArea(points.data (), nPoints);
     DPoint3d                point0, point1, point0Local, point1Local;
     DVec3d                  zVector = DVec3d::From(0.0, 0.0, 1.0);
     DVec3d                  normal, tangent;
-    AddPlaneSetParams       *pParams = static_cast<AddPlaneSetParams *>(pUserArg);
     DPoint3d                closurePoint;
     ConvexClipPlaneSet      convexSet;
     bool                    reverse = (area < 0.0);
 
-
-    for (i = 0;  i < nPoints; i++, point0 = point1, point0Local = point1Local)
+    for (size_t i = 0;  i < points.size (); i++, point0 = point1, point0Local = point1Local)
         {
-        point1Local = pPoints[i % nPoints];
-        point1.SumOf(point1Local, pParams->m_localOrigin);
+        point1Local = points[i % nPoints];
+        point1.SumOf(point1Local, params.m_localOrigin);
         if (i == 0)
             closurePoint = point1;
 
         if (i && !point1.IsEqual(point0, TINY_VALUE))
             {
-            bool bIsLimitPlane = isLimitEdge(pParams->m_limitValue, point0Local, point1Local);
-            bool isInterior    =  (0 == (pFlags[i-1] & POLYFILL_EXTERIOR_EDGE)) || bIsLimitPlane;
+            bool bIsLimitPlane = isLimitEdge(params.m_limitValue, point0Local, point1Local);
+            bool isInterior    =  (!isBoundary[i]) || bIsLimitPlane;
 
-            if (NULL == pParams->m_focalLength)
+            if (NULL == params.m_focalLength)
                 {
                 tangent.DifferenceOf(point1, point0);
                 normal.NormalizedCrossProduct(zVector, tangent);
@@ -391,7 +389,7 @@ static void addPlaneSet(DPoint3dP pPoints, int* pFlags, int nPoints, void* pUser
                 if (reverse)
                     normal.Negate();
 
-                convexSet.push_back(ClipPlane(normal, point0, pParams->m_invisible, isInterior));
+                convexSet.push_back(ClipPlane(normal, point0, params.m_invisible, isInterior));
                 }
             else
                 {
@@ -399,15 +397,15 @@ static void addPlaneSet(DPoint3dP pPoints, int* pFlags, int nPoints, void* pUser
                 if (reverse)
                     normal.Negate();
 
-                convexSet.push_back(ClipPlane(normal, 0.0, pParams->m_invisible, isInterior));
+                convexSet.push_back(ClipPlane(normal, 0.0, params.m_invisible, isInterior));
                 }
             }
         }
 
-    addZClipPlanes(convexSet, pParams->m_zLow, pParams->m_zHigh, pParams->m_invisible);        // Note - we add the clip limits even for outside (TR# 236791) to avoid overlapping regions.
+    addZClipPlanes(convexSet, params.m_zLow, params.m_zHigh, params.m_invisible);        // Note - we add the clip limits even for outside (TR# 236791) to avoid overlapping regions.
 
     if (!convexSet.empty())
-        pParams->m_planeSets.push_back(convexSet);
+        params.m_planeSets.push_back(convexSet);
     }                                                                     
 
 /*---------------------------------------------------------------------------------**//**      
@@ -559,7 +557,13 @@ static void parseConcavePolygonPlanes(ClipPlaneSetR planeSet, DPoint2dCP pVertic
         params.m_limitValue = HUGE_VALUE;
         }
 
-    vu_splitToConvexParts(&point3d.front(), (int) point3d.size(), &params, addPlaneSet);
+    bvector<bvector<DPoint3d>> loops;
+    bvector<bvector<bool>> isBoundary;
+    vu_splitToConvexParts(point3d, 0, loops, &isBoundary);
+    for (size_t i = 0; i < loops.size (); i++)
+        addPlaneSet (loops[i], isBoundary[i], params);
+
+//    vu_splitToConvexParts(&point3d.front(), (int) point3d.size(), &params, addPlaneSet);
 
     if (params.m_outside)
         {

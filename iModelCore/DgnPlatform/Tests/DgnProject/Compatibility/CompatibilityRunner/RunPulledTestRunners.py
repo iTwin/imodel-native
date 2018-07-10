@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #
-#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/RunCompatibilityTests.py $
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/RunPulledTestRunners.py $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -14,16 +14,18 @@ from shutil import rmtree
 # bsimethod                         Kyle.Abramowitz             05/2018
 #------------------------------------------------------------------------
 def main():
-    if len(sys.argv) < 2:
-        print "Must give the test root"
+    if len(sys.argv) < 1:
+        print "Arg 1: Test runners sandbox folder"
         return sys.exit(1)
         
-    hasError = False
-    testRoot = sys.argv[1]
+    testRunnersSandboxFolder = sys.argv[1]
+    if not os.path.exists(testRunnersSandboxFolder):
+        return sys.exit(0)
 
-    for subdir in os.listdir(testRoot):
-        fullPath = os.path.join(testRoot, subdir);
-        if (os.path.isdir(fullPath) and subdir != "Assets"):
+    hasError = False
+    for subdir in os.listdir(testRunnersSandboxFolder):
+        fullPath = os.path.join(testRunnersSandboxFolder, subdir);
+        if (os.path.isdir(fullPath)):
             try:
                 subprocess.check_call(os.path.join(fullPath, "iModelSchemaEvolution.exe"))
                 print "Compatibility test runner for '" + subdir + "' succeeded."
