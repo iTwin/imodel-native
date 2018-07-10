@@ -98,10 +98,11 @@ def checkLogFileForFailures(logfilename):
                     colon = ':'
                     failedtestlist_temp.append(failed.group(1))
                     continue
-
+       
     if not anyFailures and foundSummary:
         printLogFile(logfilename)
-        return '',summarystr
+        return '',summarystr,failedTestsList
+        
 
     #advicestr = '************ Failures from: ' + logfilename + ' ******************'
     advicestr = ''
@@ -132,8 +133,8 @@ def checkLogFileForFailures(logfilename):
         print '************ ' + logfilename + ' ******************'
         printLogFile(logfilename, hasErrors=True)
         print '*********************************************************************************'
-
-    return advicestr,summarystr
+   
+    return advicestr,summarystr,failedTestsList
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Sam.Wilson      05/2016
@@ -147,14 +148,15 @@ if __name__ == '__main__':
 
     dir = sys.argv[1]
     breakonfailure = False
-
+    
     if len(sys.argv) > 2 and int(sys.argv[2]) != 0:
         breakonfailure = True
     
     advicestr = ''
     summarystr = ''
     exename = ''
-
+    failedTestsList=''
+    temp=''
     for root,dirs,files in os.walk (dir, topdown=True, onerror=None, followlinks=True):
         for file in files:
             if not file.endswith('.log'):
@@ -162,10 +164,15 @@ if __name__ == '__main__':
 
             checkedCount = checkedCount + 1
             path = os.path.join(root, file)
-            adviceForThisLog,summarystrThisLog = checkLogFileForFailures(path)
+            adviceForThisLog,summarystrThisLog,failedTestsList = checkLogFileForFailures(path)
             summarystr = summarystr + '\n\n' + summarystrThisLog
             if 0 != len(adviceForThisLog):
                 advicestr = advicestr + '\n\n' + adviceForThisLog
+            if 0 != len(failedTestsList):
+                if temp=='':
+                    temp=failedTestsList
+                else:
+                    temp = temp +":"+failedTestsList
      
     if checkedCount == 0:
         print 'no logfiles found in ' + dir
@@ -178,11 +185,13 @@ if __name__ == '__main__':
     if 0 == len(advicestr):
         print "All tests passed."
         exit (0)
-    buildstrategy=os.environ.get("BuildStrategy")
-    if  buildstrategy!=None and buildstrategy.lower()=="dgnclientsdk":
-        preventautoignore=filters.PreventAutoIgnoreTests(failedtestlist_temp)
+
+    failedTestsList=temp.split(":")
+
+    if not breakonfailure and len(failedTestsList)!=0:
+        preventautoignore=filters.PreventAutoIgnoreTests(failedTestsList)
         if preventautoignore==1:
-            breakonfailure=1
+            breakonfailure=len(failedTestsList)
      
     print advicestr
     exit(breakonfailure)
