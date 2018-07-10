@@ -32,7 +32,9 @@
     <ClInclude Include="TestECDbCreators.h" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="..\..\..\DgnPlatform.PartFile.xml" />
+    <Xml Include="..\..\..\DgnPlatform.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7782F16A-217A-417A-BF3B-B7B8A137BE16}</ProjectGuid>
