@@ -18,6 +18,7 @@
 #include <WebServices/iModelHub/Client/iModelAdmin.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <DgnPlatform/DgnDomain.h>
+#include <WebServices/iModelHub/Client/GlobalRequestOptions.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -41,6 +42,7 @@ typedef std::function<BeFileName(iModelInfoCR, FileInfoCR)> LocalBriefcaseFileNa
 struct Client : RefCountedBase
 {
 private:
+    GlobalRequestOptionsPtr     m_globalRequestOptionsPtr = nullptr;
     Utf8String                  m_serverUrl;
     Credentials                 m_credentials;
     ClientInfoPtr               m_clientInfo;
@@ -51,16 +53,23 @@ private:
     static StatusResult MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath, 
                                                  ICancellationTokenPtr cancellationToken = nullptr);
 
-    Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, Utf8StringCR url) :
-        m_clientInfo(clientInfo), m_customHandler(customHandler), m_iModelAdmin(this), m_serverUrl(url) {}
+    Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, Utf8StringCR url) : 
+        m_globalRequestOptionsPtr(new Hub::GlobalRequestOptions()),
+        m_serverUrl(url),
+        m_clientInfo(clientInfo),
+        m_customHandler(customHandler),
+        m_iModelAdmin(this)
+        {}
 
     StatusResult DownloadBriefcase(iModelConnectionPtr connection, BeFileName filePath, BriefcaseInfoCR briefcaseInfo,
                                    bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
                                    ICancellationTokenPtr cancellationToken = nullptr) const;
     iModelTaskPtr CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR iModelName, Utf8StringCR description,
                                        ICancellationTokenPtr cancellationToken) const;
-    iModelConnectionResult CreateiModelConnection(iModelInfoCR iModelInfo) const {return iModelConnection::Create(iModelInfo, m_credentials, 
-                                                                                                                  m_clientInfo, m_customHandler);}
+    iModelConnectionResult CreateiModelConnection(iModelInfoCR iModelInfo) const
+        {
+        return iModelConnection::Create(iModelInfo, m_credentials, m_clientInfo, m_globalRequestOptionsPtr, m_customHandler);
+        }
     IWSRepositoryClientPtr CreateProjectConnection(Utf8StringCR projectId) const;
 
     BeFileNameTaskPtr DownloadStandaloneBriefcaseInternal(iModelConnectionPtr connection, iModelInfoCR iModelInfo, FileInfoCR fileInfo, 
@@ -315,6 +324,10 @@ public:
     //! Provides connection to Global events.
     //! @return Asynchronous task that has Global events connection as the result.
     IMODELHUBCLIENT_EXPORT GlobalConnectionTaskPtr GlobalConnection();
+
+    //! Provides interface to set custom request options.
+    //! @return Request options object.
+    IMODELHUBCLIENT_EXPORT GlobalRequestOptionsPtr GlobalRequestOptions() const;
 
 };
 

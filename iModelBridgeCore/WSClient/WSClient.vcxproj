@@ -195,6 +195,7 @@
     <ClCompile Include="iModelHubClient\GlobalEvents\iModelCreatedEvent.cpp" />
     <ClCompile Include="iModelHubClient\GlobalEvents\NamedVersionCreatedEvent.cpp" />
     <ClCompile Include="iModelHubClient\GlobalEvents\SoftiModelDeleteEvent.cpp" />
+    <ClCompile Include="iModelHubClient\GlobalRequestOptions.cpp" />
     <ClCompile Include="iModelHubClient\iModelAdmin.cpp" />
     <ClCompile Include="iModelHubClient\iModelManager.cpp" />
     <ClCompile Include="iModelHubClient\iModelConnection.cpp" />
@@ -319,6 +320,7 @@
     <ClInclude Include="Connect\DelegationTokenProvider.h" />
     <ClInclude Include="Connect\WrapperTokenProvider.h" />
     <ClInclude Include="iModelHubClient\Error.xliff.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\GlobalRequestOptions.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\EventsCommon\BaseEventManager.h" />
     <ClInclude Include="iModelHubClient\Events\EventManager.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\GlobalEventManager.h" />

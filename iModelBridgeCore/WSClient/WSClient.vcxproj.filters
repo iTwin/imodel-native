@@ -573,6 +573,9 @@
     <ClCompile Include="iModelHubClient\ThumbnailsManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="iModelHubClient\GlobalRequestOptions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -1302,6 +1305,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ThumbnailsManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\GlobalRequestOptions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

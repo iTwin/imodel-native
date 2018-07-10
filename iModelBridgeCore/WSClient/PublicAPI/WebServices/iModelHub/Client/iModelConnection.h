@@ -28,6 +28,7 @@
 #include <WebServices/iModelHub/Client/ThumbnailsManager.h>
 #include <WebServices/iModelHub/Client/ChunkedWSChangeset.h>
 #include <WebServices/iModelHub/Client/ConflictsInfo.h>
+#include <WebServices/iModelHub/Client/GlobalRequestOptions.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -184,6 +185,7 @@ private:
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
     IHttpHandlerPtr            m_customHandler;
+    GlobalRequestOptionsPtr    m_globalRequestOptionsPtr;
 
     EventManagerPtr            m_eventManagerPtr;
     EventCallbackManagerPtr    m_eventCallbackManagerPtr;
@@ -193,7 +195,7 @@ private:
     StatisticsManager          m_statisticsManager;
     ThumbnailsManager          m_thumbnailsManager;
 
-    iModelConnection(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
+    iModelConnection(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, GlobalRequestOptionsPtr globalRequestOptions, IHttpHandlerPtr customHandler);
 
     StatusTaskPtr DownloadFileInternal(BeFileName localFile, ObjectIdCR fileId, FileAccessKeyPtr fileAccessKey, 
                                        Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
@@ -422,7 +424,7 @@ private:
     //! @param[in] customHandler Http handler for connect authentication.
     //! @return Asynchronous task that has the created connection instance as the result.
     //! @note Client is the class that creates this connection. See Client::OpenBriefcase.
-    static iModelConnectionResult Create(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo,
+    static iModelConnectionResult Create(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, GlobalRequestOptionsPtr globalRequestOptions,
                                          IHttpHandlerPtr customHandler = nullptr);
 
     //! Checks whether seed file with specified fileId is active.
@@ -501,7 +503,7 @@ public:
         {
         m_wsRepositoryClient = client;
         m_userInfoManager = UserInfoManager(client);
-        m_versionsManager = VersionsManager(client, this);
+        m_versionsManager = VersionsManager(client, m_globalRequestOptionsPtr, this);
         m_changeSetCacheManager = ChangeSetCacheManager(this);
         m_statisticsManager = StatisticsManager(client);
         m_thumbnailsManager = ThumbnailsManager(client);
