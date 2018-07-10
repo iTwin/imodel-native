@@ -2181,11 +2181,20 @@ void ScalableMeshModel::RefreshClips()
             {
               toActivate.insert(it.first);
             }
-        else notActivated.insert(it.first);
+        else 
+        {
+            if (it.second.first == ClipMode::Mask)
+                notActivated.insert(it.first);
+        }
 
         if (it.second.first == ClipMode::Clip && it.second.second && m_smPtr->ShouldInvertClips())
+        {
             toActivate.insert(it.first);
-        else notActivated.insert(it.first);
+        }
+        else
+        {
+            if (it.second.first == ClipMode::Clip) notActivated.insert(it.first);
+        }
 
         }
 
@@ -2232,6 +2241,8 @@ void ScalableMeshModel::InitializeTerrainRegions(/*ViewContextR context*/)
     ScalableMeshModel::GetAllScalableMeshes(GetDgnDb(), allScalableMeshes);
     if (!m_subModel)
         SetDefaultClipsActive();
+    else
+        RefreshClips();
 
 
     bvector<uint64_t> coverageIds;
