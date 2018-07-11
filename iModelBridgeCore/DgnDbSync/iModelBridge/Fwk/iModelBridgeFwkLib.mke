@@ -39,6 +39,8 @@ $(o)IModelClientForBridges$(oext): $(baseDir)IModelClientForBridges.cpp $(BuildC
 
 $(o)iModelBridgeRegistry$(oext): $(RegistryDir)iModelBridgeRegistry.cpp $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
 
+$(o)iModelBridgeRegistryUtils$(oext): $(RegistryDir)iModelBridgeRegistryUtils.cpp $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
+
 $(o)cpl_spawn$(oext): $(RegistryDir)cpl_spawn.cpp $(RegistryDir)cpl_spawn.h ${MultiCompileDepends}
 
 $(o)Decrypt$(oext): $(baseDir)Decrypt.cpp $(baseDir)Decrypt.h ${MultiCompileDepends}

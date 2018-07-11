@@ -37,6 +37,15 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson   02/15
 //=======================================================================================
+struct iModelBridgeRegistryUtils
+    {
+    static void InitCrt(bool quietAsserts);
+    static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
+    };
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson   02/15
+//=======================================================================================
 struct iModelBridgeRegistryBase : RefCounted<IModelBridgeRegistry>
 {
     struct AssignCmdLineArgs
@@ -66,10 +75,10 @@ private:
     
     BentleyStatus WriteBridgesFile();
     //bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
-    static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
+    
     void EnsureDocumentPropertiesFor(BeFileNameCR);
     
-    static void InitCrt(bool quietAsserts);
+    
 
     BentleyStatus    ComputeBridgeAffinityInParentContext(iModelBridgeWithAffinity& affinity, bool thisBridgeIsPP, WStringCR parent);
 protected:
