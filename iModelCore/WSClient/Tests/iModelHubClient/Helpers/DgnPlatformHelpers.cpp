@@ -72,33 +72,46 @@ PhysicalModelPtr CreateModel(Utf8CP name, DgnDbR db)
     return model;
     }
 
-DgnElementPtr Create3dElement(DgnModelR model)
+DgnElementPtr Create3dElement(DgnModelR model, DgnCodeCR code)
     {
     DgnDbR db = model.GetDgnDb();
     DgnCategoryId catId = (*SpatialCategory::MakeIterator(db).begin()).GetId<DgnCategoryId>();
-    return GenericPhysicalObject::Create(*model.ToPhysicalModelP(), catId);
+    DgnClassId classId = model.GetDgnDb().Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
+    if (!classId.IsValid() || !catId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+    GenericPhysicalObject::CreateParams createParams(db, model.GetModelId(), classId, catId, Dgn::Placement3d(), code);
+    return GenericPhysicalObject::Create(createParams);
     }
 
-DgnElementPtr Create2dElement(DgnModelR model)
+DgnElementPtr Create2dElement(DgnModelR model, DgnCodeCR code)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Annotation2d::GetHandler());
     DgnCategoryId catId = (*SpatialCategory::MakeIterator(db).begin()).GetId<DgnCategoryId>();
-    return AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, model.GetModelId(), classId, catId));
+    if (!classId.IsValid() || !catId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+    AnnotationElement2d::CreateParams createParams(db, model.GetModelId(), classId, catId, Dgn::Placement2d(), code);
+    return AnnotationElement2d::Create(createParams);
     }
 
-DgnElementCPtr CreateElement(DgnModelR model, bool acquireLocks)
+DgnElementCPtr CreateElement(DgnModelR model, DgnCodeCR code, bool acquireLocks)
     {
-    auto elem = model.Is3d() ? Create3dElement(model) : Create2dElement(model);
+    auto elem = model.Is3d() ? Create3dElement(model, code) : Create2dElement(model, code);
     if (acquireLocks)
         {
         IBriefcaseManager::Request req;
         EXPECT_EQ(RepositoryStatus::Success, model.GetDgnDb().BriefcaseManager().PrepareForElementInsert(req, *elem, IBriefcaseManager::PrepareAction::Acquire));
         }
 
-    auto persistentElem = elem->Insert();
+    auto insertedElement = elem->Insert();
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, model.GetDgnDb().SaveChanges());
-    return persistentElem;
+    return insertedElement;
     }
 
 void OpenDgnDb(DgnDbPtr& db, BeFileNameCR path)

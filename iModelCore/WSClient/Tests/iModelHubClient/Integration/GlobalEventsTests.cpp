@@ -231,7 +231,7 @@ TEST_F(GlobalEventsTests, GetMultipleEventTypes)
     const auto iModelConnection = CreateiModelConnection(createResult.GetValue());
     BriefcasePtr briefcase = acquireResult.GetValue();
     auto model = CreateModel(GetTestInfo().name(), briefcase->GetDgnDb());
-    CreateElement(*model, false);
+    CreateElement(*model, DgnCode(), false);
 
     ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true));
     expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::ChangeSetCreatedEvent, s_projectId, createResult.GetValue()->GetId()));

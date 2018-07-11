@@ -133,10 +133,18 @@ StatusTaskPtr Briefcase::Merge(ChangeSets const& changeSets, ICancellationTokenP
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Gintare.Grazulyte             12/2017
 //---------------------------------------------------------------------------------------
-StatusTaskPtr Briefcase::Push(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR uploadCallback, 
-                              ICancellationTokenPtr cancellationToken, ConflictsInfoPtr conflictsInfo) const
+StatusTaskPtr Briefcase::Push
+(
+Utf8CP description,
+bool relinquishCodesLocks,
+Http::Request::ProgressCallbackCR uploadCallback,
+ICancellationTokenPtr cancellationToken,
+ConflictsInfoPtr conflictsInfo,
+CodeCallbackFunction* codesCallback
+) const
     {
-    return Push(description, relinquishCodesLocks, uploadCallback, IBriefcaseManager::ResponseOptions::None, cancellationToken, conflictsInfo);
+    return Push(description, relinquishCodesLocks, uploadCallback, IBriefcaseManager::ResponseOptions::None,
+                cancellationToken, conflictsInfo, codesCallback);
     }
 
 //TODO: all of the parameters must be optional
@@ -150,7 +158,8 @@ bool relinquishCodesLocks,
 Http::Request::ProgressCallbackCR uploadCallback, 
 IBriefcaseManager::ResponseOptions options,
 ICancellationTokenPtr cancellationToken,
-ConflictsInfoPtr conflictsInfo
+ConflictsInfoPtr conflictsInfo,
+CodeCallbackFunction* codesCallback
 ) const
     {
     const Utf8String methodName = "Briefcase::Push";
@@ -213,7 +222,7 @@ ConflictsInfoPtr conflictsInfo
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::BeforePushChangeSetToServer);
 #endif
-    return m_imodelConnection->Push(changeSet, *m_db, relinquishCodesLocks, uploadCallback, options, cancellationToken, conflictsInfo)
+    return m_imodelConnection->Push(changeSet, *m_db, relinquishCodesLocks, uploadCallback, options, cancellationToken, conflictsInfo, codesCallback)
         ->Then<StatusResult>([=](StatusResultCR pushResult)
         {
 #if defined (ENABLE_BIM_CRASH_TESTS)
@@ -290,27 +299,45 @@ ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR call
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Gintare.Grazulyte             12/2017
 //---------------------------------------------------------------------------------------
-ChangeSetsTaskPtr Briefcase::PullMergeAndPush(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
-                                              Http::Request::ProgressCallbackCR uploadCallback,
-                                              ICancellationTokenPtr cancellationToken,
-                                              int attemptsCount, ConflictsInfoPtr conflictsInfo)
+ChangeSetsTaskPtr Briefcase::PullMergeAndPush
+(
+Utf8CP description,
+bool relinquishCodesLocks,
+Http::Request::ProgressCallbackCR downloadCallback,
+Http::Request::ProgressCallbackCR uploadCallback,
+ICancellationTokenPtr cancellationToken,
+int attemptsCount,
+ConflictsInfoPtr conflictsInfo,
+CodeCallbackFunction* codesCallback
+)
     {
-    return PullMergeAndPush(description, relinquishCodesLocks, downloadCallback, uploadCallback, IBriefcaseManager::ResponseOptions::None, cancellationToken, attemptsCount, conflictsInfo);
+    return PullMergeAndPush(description, relinquishCodesLocks, downloadCallback, uploadCallback,
+                            IBriefcaseManager::ResponseOptions::None, cancellationToken,
+                            attemptsCount, conflictsInfo, codesCallback);
     }
 
 //TODO: all of the parameters must be optional
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-ChangeSetsTaskPtr Briefcase::PullMergeAndPush(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
-                                              Http::Request::ProgressCallbackCR uploadCallback,
-                                              IBriefcaseManager::ResponseOptions options,
-                                              ICancellationTokenPtr cancellationToken, 
-                                              int attemptsCount, ConflictsInfoPtr conflictsInfo)
+ChangeSetsTaskPtr Briefcase::PullMergeAndPush
+(
+Utf8CP description,
+bool relinquishCodesLocks,
+Http::Request::ProgressCallbackCR downloadCallback,
+Http::Request::ProgressCallbackCR uploadCallback,
+IBriefcaseManager::ResponseOptions options,
+ICancellationTokenPtr cancellationToken, 
+int attemptsCount,
+ConflictsInfoPtr conflictsInfo,
+CodeCallbackFunction* codesCallback
+)
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPush";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, options, cancellationToken, attemptsCount, 1, 0, conflictsInfo);
+    return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback,
+                                    uploadCallback, options, cancellationToken, attemptsCount,
+                                    1, 0, conflictsInfo, codesCallback);
     }
 
 //---------------------------------------------------------------------------------------
@@ -386,12 +413,15 @@ ICancellationTokenPtr cancellationToken,
 int attemptsCount, 
 int attempt, 
 int delay,
-ConflictsInfoPtr conflictsInfo
+ConflictsInfoPtr conflictsInfo,
+CodeCallbackFunction* codesCallback
 )
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPushRepeated";
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Attempt %d/%d.", attempt, attemptsCount);
-    auto result = PullMergeAndPushInternal(description, relinquishCodesLocks, downloadCallback, uploadCallback, options, cancellationToken, conflictsInfo)->GetResult();
+    auto result = PullMergeAndPushInternal(description, relinquishCodesLocks, downloadCallback,
+                                           uploadCallback, options, cancellationToken,
+                                           conflictsInfo, codesCallback)->GetResult();
 
     if (result.IsSuccess())
         {
@@ -471,7 +501,8 @@ Http::Request::ProgressCallbackCR downloadCallback,
 Http::Request::ProgressCallbackCR uploadCallback,
 IBriefcaseManager::ResponseOptions options,
 ICancellationTokenPtr cancellationToken,
-ConflictsInfoPtr conflictsInfo
+ConflictsInfoPtr conflictsInfo,
+CodeCallbackFunction* codesCallback
 ) const
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPushInternal";
@@ -513,7 +544,8 @@ ConflictsInfoPtr conflictsInfo
             return;
             }
 
-        Push(description, relinquishCodesLocks, uploadCallback, options, cancellationToken, conflictsInfo)->Then([=](StatusResultCR pushResult)
+        Push(description, relinquishCodesLocks, uploadCallback, options, cancellationToken,
+             conflictsInfo, codesCallback)->Then([=](StatusResultCR pushResult)
             {
             if (!pushResult.IsSuccess())
                 {

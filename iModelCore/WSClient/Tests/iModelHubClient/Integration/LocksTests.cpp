@@ -548,7 +548,7 @@ TEST_F(LocksTests, WorkflowCreateNewElementReleaseLocksOnPush)
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, false, false);
 
-    auto newElement = CreateElement(*createdModel, true);
+    auto newElement = CreateElement(*createdModel);
     briefcase->GetDgnDb().SaveChanges();
     auto lockElementId = LockableId(newElement->GetElementId());
 
@@ -596,7 +596,7 @@ TEST_F(LocksTests, WorkflowCreateNewElementDoNotReleaseLocks)
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Shared, false, false);
 
     // New element creation should acquire locks
-    auto newElement = CreateElement(*createdModel, true);
+    auto newElement = CreateElement(*createdModel);
     briefcase->GetDgnDb().SaveChanges();
     auto lockElementId = LockableId(newElement->GetElementId());
 
@@ -642,7 +642,7 @@ TEST_F(LocksTests, WorkflowCreateNewElementModelExclusivelyLocked)
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, true);
 
     // New element creation should not acquire locks in the server
-    auto newElement = CreateElement(*createdModel, true);
+    auto newElement = CreateElement(*createdModel);
     briefcase->GetDgnDb().SaveChanges();
     auto lockElementId = LockableId(newElement->GetElementId());
 
@@ -677,7 +677,7 @@ TEST_F(LocksTests, WorkflowUpdateElement)
     DgnDbR db = briefcase->GetDgnDb();
 
     auto createdModel = CreateModel(TestCodeName().c_str(), db);
-    auto newElement = CreateElement(*createdModel, true);
+    auto newElement = CreateElement(*createdModel);
     db.SaveChanges();
 
     // After creation user should have local lock, but it should not be send to server
@@ -725,7 +725,7 @@ TEST_F(LocksTests, WorkflowUpdateElementWithExclusiveModelLock)
     DgnDbR db = briefcase->GetDgnDb();
 
     auto createdModel = CreateModel(TestCodeName().c_str(), db);
-    auto newElement = CreateElement(*createdModel, true);
+    auto newElement = CreateElement(*createdModel);
     db.SaveChanges();
 
     // After creation user should have local lock, but it should not be send to server
@@ -793,8 +793,8 @@ TEST_F(LocksTests, IndirectChangesShouldNotBeExtractedAsRequiredLocks)
     auto createdModel = CreateModel(TestCodeName().c_str(), db);
 
     // Create two elements and insert the relationship between them
-    DgnElementCPtr root = CreateElement(*createdModel, true);
-    DgnElementCPtr dependent = CreateElement(*createdModel, true);
+    DgnElementCPtr root = CreateElement(*createdModel);
+    DgnElementCPtr dependent = CreateElement(*createdModel);
     TestElementDrivesElementHandler::SetCallback(this);
     TestElementDrivesElementHandler::Insert(db, root->GetElementId(), dependent->GetElementId());
     db.SaveChanges();

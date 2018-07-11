@@ -817,16 +817,16 @@ TEST_F(CodesTests, CodesStatesResponseTest)
     DgnDbR db2 = briefcase2->GetDgnDb();
 
     //Create a models and push them.
-    auto model1 = CreateModel("Model1", briefcase1->GetDgnDb());
+    auto model1 = CreateModel(TestCodeName().c_str(), briefcase1->GetDgnDb());
     briefcase1->GetDgnDb().SaveChanges();
     ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true));
 
-    auto model2 = CreateModel("Model2", briefcase1->GetDgnDb());
+    auto model2 = CreateModel(TestCodeName(1).c_str(), briefcase1->GetDgnDb());
     briefcase1->GetDgnDb().SaveChanges();
     ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true));
 
     DgnCodeSet codeSet;
-    DgnCode code1 = MakeStyleCode("Code1", db1);
+    DgnCode code1 = MakeStyleCode(TestCodeName(2).c_str(), db1);
     codeSet.insert(code1);
 
     auto response = db1.BriefcaseManager().ReserveCodes(codeSet, IBriefcaseManager::ResponseOptions::CodeState);
@@ -837,6 +837,63 @@ TEST_F(CodesTests, CodesStatesResponseTest)
     EXPECT_EQ(1, response.CodeStates().size());
     auto codeState = *response.CodeStates().begin();
     EXPECT_EQ(briefcase1->GetBriefcaseId(), codeState.GetReservedBy());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             07/2018
+//---------------------------------------------------------------------------------------
+TEST_F(CodesTests, ExternalCodesTest)
+    {
+    //Prapare imodel and acquire briefcases
+    BriefcasePtr briefcase1 = AcquireAndOpenBriefcase();
+    DgnDbR db1 = briefcase1->GetDgnDb();
+
+    //Create an external code spec
+    CodeSpecPtr internalCodeSpec = CodeSpec::Create(db1, TestCodeName(1).c_str());
+    ASSERT_TRUE(internalCodeSpec.IsValid());
+    internalCodeSpec->SetIsManagedWithDgnDb(false);
+
+    //Create an element with an external code.
+    auto model = CreateModel(TestCodeName().c_str(), db1);
+    db1.CodeSpecs().Insert(*internalCodeSpec);
+    DgnElementCPtr element = CreateElement(*model.get(), internalCodeSpec->CreateCode(TestCodeName(2)));
+    db1.SaveChanges();
+
+    //Push changes
+    DgnCodeSet externalAssignedCodes, externalDiscardedCodes;
+    CodeCallbackFunction callback = [&] (DgnCodeSet const& assignedCodes, DgnCodeSet const& discardedCodes)
+        {
+        externalAssignedCodes = assignedCodes;
+        externalDiscardedCodes = discardedCodes;
+        return CreateCompletedAsyncTask();
+        };
+
+    //There should be 1 external assigned code and 1 imodelhub assigned code for model
+    ChangeSetsResult pushResult = briefcase1->PullMergeAndPush(nullptr, false, nullptr, nullptr, nullptr, 1, nullptr, &callback)->GetResult();
+    ASSERT_SUCCESS(pushResult);
+    EXPECT_EQ(1, externalAssignedCodes.size());
+    EXPECT_EQ(0, externalDiscardedCodes.size());
+    externalAssignedCodes.clear();
+    externalDiscardedCodes.clear();
+
+    //Reserve a new code
+    auto updatedCode = internalCodeSpec->CreateCode(TestCodeName(3));
+    db1.BriefcaseManager().ReserveCode(updatedCode);
+
+    //Update element with the new code
+    DgnElementPtr mutableElement = db1.Elements().GetForEdit<DgnElement>(element->GetElementId());
+    ASSERT_TRUE(mutableElement.IsValid());
+    mutableElement->SetCode(updatedCode);
+    DgnDbStatus status;
+    mutableElement->Update(&status);
+    ASSERT_EQ(DgnDbStatus::Success, status);
+    db1.SaveChanges();
+
+    //There should be 1 assigned and 1 discarded external codes, no new codes in iModelHub
+    pushResult = briefcase1->PullMergeAndPush(nullptr, false, nullptr, nullptr, nullptr, 1, nullptr, &callback)->GetResult();
+    ASSERT_SUCCESS(pushResult);
+    EXPECT_EQ(1, externalAssignedCodes.size());
+    EXPECT_EQ(1, externalDiscardedCodes.size());
     }
 
 //---------------------------------------------------------------------------------------

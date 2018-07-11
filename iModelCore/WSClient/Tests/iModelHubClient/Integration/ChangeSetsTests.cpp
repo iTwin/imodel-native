@@ -122,7 +122,7 @@ TEST_F(ChangeSetsTests, PushToEmptyiModel)
 
     BriefcasePtr briefcase = acquireResult.GetValue();
     DgnModelPtr model = CreateTestModel(*briefcase);
-    CreateElement(*model, false);
+    CreateElement(*model, DgnCode(), false);
 
     ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true));
 
@@ -188,7 +188,7 @@ TEST_F(ChangeSetsTests, PullMergeAndPush)
     Utf8String originalChangeSetId = m_briefcase->GetDgnDb().Revisions().GetParentRevisionId();
 
     auto model = CreateTestModel(*m_briefcase);
-    CreateElement(*model, false);
+    CreateElement(*model, DgnCode(), false);
 
     ChangeSetsResult result = iModelHubHelpers::PullMergeAndPush(m_briefcase, true);
     ASSERT_SUCCESS(result);
