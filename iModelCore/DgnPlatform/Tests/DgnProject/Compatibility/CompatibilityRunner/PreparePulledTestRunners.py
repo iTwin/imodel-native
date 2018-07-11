@@ -55,6 +55,8 @@ def main():
                 rmtree(targetTestRunnerFolder)
             copytree(fullPath, targetTestRunnerFolder)
             mergeFolders(testFilesPath, createdFilesPath, os.path.join(targetTestRunnerFolder, "run", "TestFiles"))
+            print "Copied pulled test runner and pulled and created test files into sandbox folder (" + fullPath + " -> " + targetTestRunnerFolder + ")"
+
 
 if __name__ == "__main__":
     main()

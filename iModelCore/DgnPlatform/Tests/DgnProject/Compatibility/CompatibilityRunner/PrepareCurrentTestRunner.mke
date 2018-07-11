@@ -16,5 +16,5 @@ CURRENTTESTRUNNER_TESTFILES_DIR = $(CURRENTTESTRUNNER_RUN_DIR)/TestFiles
 
 always:
     ~mkdir $(TESTFILES_DIR)
-    ~mkdir $(CURRENTTESTRUNNER_RUN_DIR)/TestFiles
+    ~mkdir $(CURRENTTESTRUNNER_TESTFILES_DIR)
     python Tests/DgnProject/Compatibility/CompatibilityRunner/PrepareCurrentTestRunner.py $(TESTFILES_DIR) $(CURRENTTESTRUNNER_TESTFILES_DIR)
