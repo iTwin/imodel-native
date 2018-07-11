@@ -63,7 +63,7 @@ private:
     EventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(EventTypeSet* eventTypes = nullptr,
                                                                 ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    Json::Value GenerateEventSASJson() override;
+    Json::Value GenerateEventSASJson() const override;
 
     StatusTaskPtr UnsubscribeEvents();
 

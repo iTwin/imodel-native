@@ -343,6 +343,8 @@ iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR 
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
 
     Json::Value imodelCreationJson = iModelCreationJson(iModelName, description);
+    m_globalRequestOptionsPtr->InsertRequestOptions(imodelCreationJson);
+
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending create iModel request for project %s.", projectId.c_str());
     return client->SendCreateObjectRequest(imodelCreationJson, BeFileName(), nullptr, cancellationToken)
@@ -1068,8 +1070,13 @@ StatusTaskPtr Client::DeleteiModel(Utf8StringCR projectId, iModelInfoCR iModelIn
 
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
     ObjectId iModelId = ObjectId(ServerSchema::Schema::Project, ServerSchema::Class::iModel, iModelInfo.GetId());
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    changeset->AddInstance(iModelId, WSChangeset::ChangeState::Deleted, std::make_shared<Json::Value>());
+    m_globalRequestOptionsPtr->InsertRequestOptions(changeset);
+
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending delete iModel request. iModel ID: %s.", iModelInfo.GetId().c_str());
-    return client->SendDeleteObjectRequest(iModelId, cancellationToken)->Then<StatusResult>([=](WSDeleteObjectResult const& result)
+    const HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
+    return client->SendChangesetRequestWithOptions(request, nullptr, nullptr, cancellationToken)->Then<StatusResult>([=](WSChangesetResult const& result)
         {
         if (!result.IsSuccess())
             {
@@ -1384,4 +1391,12 @@ GlobalConnectionTaskPtr Client::GlobalConnection()
         m_globalConnectionPtr = globalConnectionResult.GetValue();
 
     return CreateCompletedAsyncTask<GlobalConnectionResult>(globalConnectionResult);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Uzkuraitis             07/2018
+//---------------------------------------------------------------------------------------
+GlobalRequestOptionsPtr Client::GlobalRequestOptions() const
+    {
+    return m_globalRequestOptionsPtr;
     }

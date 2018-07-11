@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "IntegrationTestsBase.h"
+#include "RequestBehaviorOptions.h"
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include <FakeServer/MockIMHubHttpHandler.h>
@@ -112,6 +113,9 @@ void IntegrationTestsBase::TearDownTestCase()
 void IntegrationTestsBase::SetUp()
     {
     ASSERT_TRUE(s_client.IsValid());
+    bmap<Utf8String, Utf8String> requestOptions = bmap<Utf8String, Utf8String>();
+    requestOptions.insert(RequestBehaviorOptions().GetBehaviorOptionsResultPair());
+    s_client->GlobalRequestOptions()->SetRequestOptions(requestOptions);
     }
 
 void IntegrationTestsBase::TearDown()
