@@ -61,7 +61,7 @@ struct DataSourceCache : public IDataSourceCache
             (
             BeFileNameCR cacheFilePath,
             CacheEnvironmentCR baseEnvironment,
-            const ECDb::OpenParams& params = ECDb::OpenParams(ECDb::OpenMode::ReadWrite)
+            const ECDb::OpenParams& params = ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade)
             ) override;
 
         WSCACHE_EXPORT BentleyStatus Close() override;
