@@ -517,7 +517,7 @@ namespace iModelHubHelpers
         DgnModelPtr model = CreateModel(Utf8GuidString("AddChangeSetsModel%s").c_str(), briefcase.GetDgnDb());
         for (uint32_t i = statingNumber; i < statingNumber + count; ++i)
             {
-            CreateElement(*model, true);
+            CreateElement(*model);
             ChangeSetsResult result = PullMergeAndPush(briefcase, expectSuccess, true, expectSuccess);
             if (!result.IsSuccess())
                 {

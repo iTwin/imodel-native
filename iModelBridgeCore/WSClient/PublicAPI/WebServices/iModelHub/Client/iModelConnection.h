@@ -50,6 +50,7 @@ typedef RefCountedPtr<struct EventManager> EventManagerPtr;
 typedef RefCountedPtr<struct PredownloadManager> PredownloadManagerPtr;
 typedef RefCountedPtr<struct CodeLockSetResultInfo> CodeLockSetResultInfoPtr;
 typedef std::function<void(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksResult)> CodeLocksSetAddFunction;
+typedef std::function<Tasks::AsyncTaskPtr<void>(Dgn::DgnCodeSet const&, Dgn::DgnCodeSet const&)> CodeCallbackFunction;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CodeSequence);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ChangeSetCacheManager);
 
@@ -400,9 +401,16 @@ private:
         ConflictsInfoPtr conflictsInfo = nullptr) const;
 
     //! Initializes the changeSet.
-    StatusTaskPtr InitializeChangeSet(Dgn::DgnRevisionPtr changeSet, Dgn::DgnDbR dgndb, JsonValueR pushJson, ObjectId changeSetObjectId, 
-                                      bool relinquishCodesLocks, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
-                                      ICancellationTokenPtr cancellationToken = nullptr, ConflictsInfoPtr conflictsInfo = nullptr) const;
+    StatusTaskPtr InitializeChangeSet(
+        Dgn::DgnRevisionPtr changeSet,
+        Dgn::DgnDbR dgndb,
+        JsonValueR pushJson,
+        ObjectId changeSetObjectId,
+        bool relinquishCodesLocks,
+        IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
+        ICancellationTokenPtr cancellationToken = nullptr,
+        ConflictsInfoPtr conflictsInfo = nullptr,
+        CodeCallbackFunction* codesCallback = nullptr) const;
 
     StatusTaskPtr PushPendingCodesLocks(Dgn::DgnDbPtr dgndb, ICancellationTokenPtr cancellationToken = nullptr) const;
 
@@ -410,10 +418,15 @@ private:
     void WaitForInitializedBIMFile(BeSQLite::BeGuid fileGuid, FileResultPtr finalResult, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Push this ChangeSet file to server.
-    StatusTaskPtr Push(DgnRevisionPtr changeSet, Dgn::DgnDbR dgndb, bool relinquishCodesLocks, 
-                       Http::Request::ProgressCallbackCR callback = nullptr,
-                       IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
-                       ICancellationTokenPtr cancellationToken = nullptr, ConflictsInfoPtr conflictsInfo = nullptr) const;
+    StatusTaskPtr Push(
+        DgnRevisionPtr changeSet,
+        Dgn::DgnDbR dgndb,
+        bool relinquishCodesLocks, 
+        Http::Request::ProgressCallbackCR callback = nullptr,
+        IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
+        ICancellationTokenPtr cancellationToken = nullptr,
+        ConflictsInfoPtr conflictsInfo = nullptr,
+        CodeCallbackFunction* codesCallback = nullptr) const;
 
     static Json::Value CreateFileJson(FileInfoCR fileInfo);
 

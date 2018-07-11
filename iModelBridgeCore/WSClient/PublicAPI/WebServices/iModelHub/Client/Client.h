@@ -64,8 +64,10 @@ private:
     StatusResult DownloadBriefcase(iModelConnectionPtr connection, BeFileName filePath, BriefcaseInfoCR briefcaseInfo,
                                    bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
                                    ICancellationTokenPtr cancellationToken = nullptr) const;
+
     iModelTaskPtr CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR iModelName, Utf8StringCR description,
                                        ICancellationTokenPtr cancellationToken) const;
+                                       
     iModelConnectionResult CreateiModelConnection(iModelInfoCR iModelInfo) const
         {
         return iModelConnection::Create(iModelInfo, m_credentials, m_clientInfo, m_globalRequestOptionsPtr, m_customHandler);

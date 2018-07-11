@@ -1638,7 +1638,8 @@ bool                                relinquishCodesLocks,
 Http::Request::ProgressCallbackCR   callback,
 IBriefcaseManager::ResponseOptions  options,
 ICancellationTokenPtr               cancellationToken,
-ConflictsInfoPtr                    conflictsInfo
+ConflictsInfoPtr                    conflictsInfo,
+CodeCallbackFunction*               codesCallback
 ) const
     {
     const Utf8String methodName = "iModelConnection::Push";
@@ -1694,7 +1695,7 @@ ConflictsInfoPtr                    conflictsInfo
                     }
 
                 // Stage 3. Initialize changeSet.
-                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, options, cancellationToken, conflictsInfo)
+                InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, options, cancellationToken, conflictsInfo, codesCallback)
                     ->Then([=] (StatusResultCR result)
                     {
                     if (result.IsSuccess())
@@ -1756,15 +1757,58 @@ FileTaskPtr iModelConnection::GetLatestSeedFile(ICancellationTokenPtr cancellati
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             07/2018
+//---------------------------------------------------------------------------------------
+void FilterExternalCodes
+(
+DgnCodeSet&             filteredCodes,
+DgnCodeSet*             externalCodes,
+DgnCodeSet const&       allCodes,
+Dgn::DgnDbR             dgndb
+)
+    {
+    for (DgnCodeCR code : allCodes)
+        {
+        CodeSpecCPtr codeSpec = dgndb.CodeSpecs().GetCodeSpec(code.GetCodeSpecId());
+        BeAssert(codeSpec.IsValid() && "Invalid CodeSpec for pushed ChangeSet");
+        if (codeSpec->IsManagedWithDgnDb())
+            filteredCodes.insert(code);
+        else if (nullptr != externalCodes)
+            externalCodes->insert(code);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             07/2018
+//---------------------------------------------------------------------------------------
+void ExtractCodes
+(
+DgnCodeSet&             assignedCodes,
+DgnCodeSet&             discardedCodes,
+DgnCodeSet*             externalAssignedCodes,
+DgnCodeSet*             externalDiscardedCodes,
+Dgn::DgnRevisionPtr     changeSet,
+Dgn::DgnDbR             dgndb
+)
+    {
+    DgnCodeSet allAssignedCodes, allDiscardedCodes;
+    changeSet->ExtractCodes(allAssignedCodes, allDiscardedCodes, dgndb);
+    FilterExternalCodes(assignedCodes, externalAssignedCodes, allAssignedCodes, dgndb);
+    FilterExternalCodes(discardedCodes, externalDiscardedCodes, allDiscardedCodes, dgndb);
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas            03/2017
 //---------------------------------------------------------------------------------------
 void ExtractCodesLocksChangeset
-    (
-    Dgn::DgnRevisionPtr  changeSet,
-    ChunkedWSChangeset&  chunkedChangeset,
-    Dgn::DgnDbR          dgndb,
-    bool                 relinquishCodesLocks
-    )
+(
+Dgn::DgnRevisionPtr     changeSet,
+ChunkedWSChangeset&     chunkedChangeset,
+Dgn::DgnDbR             dgndb,
+bool                    relinquishCodesLocks,
+DgnCodeSet*             externalAssignedCodes = nullptr,
+DgnCodeSet*             externalDiscardedCodes = nullptr
+)
     {
     BeBriefcaseId briefcaseId = dgndb.GetBriefcaseId();
 
@@ -1779,7 +1823,7 @@ void ExtractCodesLocksChangeset
                                        WSChangeset::ChangeState::Modified, true);
 
     DgnCodeSet assignedCodes, discardedCodes;
-    changeSet->ExtractCodes(assignedCodes, discardedCodes, dgndb);
+    ExtractCodes(assignedCodes, discardedCodes, externalAssignedCodes, externalDiscardedCodes, changeSet, dgndb);
 
     if (!assignedCodes.empty())
         {
@@ -1863,7 +1907,8 @@ ObjectId                            changeSetObjectId,
 bool                                relinquishCodesLocks,
 IBriefcaseManager::ResponseOptions  options,
 ICancellationTokenPtr               cancellationToken,
-ConflictsInfoPtr                    conflictsInfo
+ConflictsInfoPtr                    conflictsInfo,
+CodeCallbackFunction*               codesCallback
 ) const
     {
     DgnDbP pDgnDb = &dgndb;
@@ -1888,27 +1933,41 @@ ConflictsInfoPtr                    conflictsInfo
     return SendChangesetRequest(changeset, options, cancellationToken, requestOptions)
         ->Then([=](const StatusResult& initializeChangeSetResult)
         {
-        if (initializeChangeSetResult.IsSuccess())
+        if (!initializeChangeSetResult.IsSuccess())
             {
-            ChunkedWSChangeset codesLocksChangeSet;
-            ExtractCodesLocksChangeset(changeSet, codesLocksChangeSet, *pDgnDb, relinquishCodesLocks);
-
-            ChangesetResponseOptions changesetOptions(IBriefcaseManager::ResponseOptions::All, ConflictStrategy::Continue);
-            auto codesLocksResult = SendChunkedChangesetRequest(codesLocksChangeSet, changesetOptions, cancellationToken, requestOptions, 3, conflictsInfo)
-                ->Then([=](const StatusResult& codesLocksResult) {
-
-                if (codesLocksResult.IsSuccess() || codesLocksResult.GetError().GetId() == Error::Id::ConflictsAggregate)
-                    PendingChangeSetStorage::RemoveItem(*pDgnDb, changeSet->GetId());
-
-                finalResult->SetSuccess();
-                return;
-                });
+            PendingChangeSetStorage::RemoveItem(*pDgnDb, changeSet->GetId());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, initializeChangeSetResult.GetError().GetMessage().c_str());
+            finalResult->SetError(initializeChangeSetResult.GetError());
             return;
             }
 
-        PendingChangeSetStorage::RemoveItem(*pDgnDb, changeSet->GetId());
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, initializeChangeSetResult.GetError().GetMessage().c_str());
-        finalResult->SetError(initializeChangeSetResult.GetError());
+        ChunkedWSChangeset codesLocksChangeSet;
+        DgnCodeSet externalAssignedCodes, externalDiscardedCodes;
+        ExtractCodesLocksChangeset(changeSet, codesLocksChangeSet, *pDgnDb, relinquishCodesLocks, &externalAssignedCodes, &externalDiscardedCodes);
+
+        ChangesetResponseOptions changesetOptions(IBriefcaseManager::ResponseOptions::All, ConflictStrategy::Continue);
+
+        bset<std::shared_ptr<AsyncTask>> tasks;
+        auto imodelHubCodesLocksTask = SendChunkedChangesetRequest(codesLocksChangeSet, changesetOptions, cancellationToken, requestOptions, 3, conflictsInfo)
+            ->Then<StatusResult>([=](const StatusResult& codesLocksResult) {
+            if (codesLocksResult.IsSuccess() || codesLocksResult.GetError().GetId() == Error::Id::ConflictsAggregate)
+                PendingChangeSetStorage::RemoveItem(*pDgnDb, changeSet->GetId());
+
+            return codesLocksResult;
+            });
+        tasks.insert(imodelHubCodesLocksTask);
+
+        if (nullptr != codesCallback)
+            {
+            auto extenalCodesTask = (*codesCallback)(externalAssignedCodes, externalDiscardedCodes);
+            tasks.insert(extenalCodesTask);
+            }
+
+        AsyncTask::WhenAll(tasks)->Then([=] ()
+            {
+            *finalResult = imodelHubCodesLocksTask->GetResult();
+            });
+
         })->Then<StatusResult>([=]
             {
             return *finalResult;
