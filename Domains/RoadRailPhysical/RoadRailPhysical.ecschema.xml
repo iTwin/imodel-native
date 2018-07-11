@@ -5,7 +5,7 @@
     <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
     <ECSchemaReference name="RoadRailAlignment" version="01.00.00" alias="rralign"/>
 
-    <KindOfQuantity typeName="VELOCITY" displayLabel="Velocity" persistenceUnit="M/SEC(DefaultReal)" presentationUnits="MPH(real4u);KM/HR(real4u)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="VELOCITY" displayLabel="Road &amp; Rail Velocity" persistenceUnit="M/SEC(DefaultReal)" presentationUnits="KM/HR(real2u);MPH(real2u)" relativeError="0.0001"/>
 
     <ECEntityClass typeName="RoadwayStandardsModel">
         <BaseClass>bis:DefinitionModel</BaseClass>
