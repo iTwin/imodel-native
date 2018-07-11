@@ -112,7 +112,7 @@ TEST_F(FormatUtilsTest, GetAvailableStrings)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatIntegerTest, FormatIntegerSignOptionTests)
+TEST_F(FormatIntegerTest, SignOptionTests)
     {
     NumericFormatSpec nfs;
 
@@ -148,7 +148,7 @@ TEST_F(FormatIntegerTest, FormatIntegerSignOptionTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatIntegerTest, FormatIntegerThousandsSeparatorTests)
+TEST_F(FormatIntegerTest, ThousandsSeparatorTests)
     {
     NumericFormatSpec nfs;
     nfs.SetUse1000Separator(true);
@@ -170,7 +170,7 @@ TEST_F(FormatIntegerTest, FormatIntegerThousandsSeparatorTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatIntegerTest, FormatIntegerPresentationTypeTests)
+TEST_F(FormatIntegerTest, PresentationTypeTests)
     {
     // Decimal
     {
@@ -210,7 +210,7 @@ TEST_F(FormatIntegerTest, FormatIntegerPresentationTypeTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatIntegerTest, FormatIntegerIndividualFormatTraitsTests)
+TEST_F(FormatIntegerTest, IndividualFormatTraitsTests)
     {
     NumericFormatSpec nfs;
     Utf8String string;
@@ -281,6 +281,110 @@ TEST_F(FormatIntegerTest, FormatIntegerIndividualFormatTraitsTests)
     EXPECT_STREQ("0", nfs.Format(0).c_str());
     EXPECT_STREQ("100501", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-100501", nfs.Format(testValNeg).c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Joseph.Urbano                   07/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatIntegerTest, MaxInt)
+    {
+    NumericFormatSpec nfs;
+    nfs.SetUse1000Separator(true);
+
+    int const intMax = INT_MAX;
+    int const intMin = -intMax; //INT_MIN;    
+    // INT_MIN doesn't work because the FormatInt function negates the value (i.e. -INT_MIN)
+    // This can't be represented and just ends up being INT_MIN again
+
+    nfs.SetThousandSeparator(',');
+    EXPECT_STREQ("2,147,483,647", nfs.Format(intMax).c_str());
+    EXPECT_STREQ("-2,147,483,647", nfs.Format(intMin).c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Joseph.Urbano                   07/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatIntegerTest, MinWidthTests)
+    {
+    NumericFormatSpec nfs;
+
+    nfs.SetMinWidth(1);
+    EXPECT_STREQ("100501", nfs.Format(testValPos).c_str());
+
+    nfs.SetMinWidth(6);
+    EXPECT_STREQ("100501", nfs.Format(testValPos).c_str());
+
+    nfs.SetMinWidth(10);
+    EXPECT_STREQ("0000100501", nfs.Format(testValPos).c_str());
+
+    nfs.SetMinWidth(63);
+    EXPECT_STREQ("000000000000000000000000000000000000000000000000000000000100501", nfs.Format(testValPos).c_str());
+
+    nfs.SetMinWidth(100); // maxed out
+    EXPECT_STREQ("000000000000000000000000000000000000000000000000000000000100501", nfs.Format(testValPos).c_str());
+
+
+    // Min width includes separator characters
+    nfs.SetUse1000Separator(true);
+    nfs.SetThousandSeparator(',');
+
+    nfs.SetMinWidth(1);
+    EXPECT_STREQ("100,501", nfs.Format(testValPos).c_str());
+
+    nfs.SetMinWidth(7);
+    EXPECT_STREQ("100,501", nfs.Format(testValPos).c_str());
+
+    nfs.SetMinWidth(10);
+    EXPECT_STREQ("000100,501", nfs.Format(testValPos).c_str());
+
+    nfs.SetMinWidth(63);
+    EXPECT_STREQ("00000000000000000000000000000000000000000000000000000000100,501", nfs.Format(testValPos).c_str());
+
+    nfs.SetMinWidth(100); // maxed out
+    EXPECT_STREQ("00000000000000000000000000000000000000000000000000000000100,501", nfs.Format(testValPos).c_str());
+
+
+    // Min width does not include sign characters
+    nfs.SetSignOption(SignOption::SignAlways);
+
+    nfs.SetMinWidth(1);
+    EXPECT_STREQ("+100,501", nfs.Format(testValPos).c_str());
+    EXPECT_STREQ("-100,501", nfs.Format(testValNeg).c_str());
+
+    nfs.SetMinWidth(7);
+    EXPECT_STREQ("+100,501", nfs.Format(testValPos).c_str());
+    EXPECT_STREQ("-100,501", nfs.Format(testValNeg).c_str());
+
+    nfs.SetMinWidth(10);
+    EXPECT_STREQ("+000100,501", nfs.Format(testValPos).c_str());
+    EXPECT_STREQ("-000100,501", nfs.Format(testValNeg).c_str());
+
+    nfs.SetMinWidth(62);
+    EXPECT_STREQ("+0000000000000000000000000000000000000000000000000000000100,501", nfs.Format(testValPos).c_str());
+    EXPECT_STREQ("-0000000000000000000000000000000000000000000000000000000100,501", nfs.Format(testValNeg).c_str());
+
+    nfs.SetMinWidth(100); // maxed out
+    EXPECT_STREQ("+0000000000000000000000000000000000000000000000000000000100,501", nfs.Format(testValPos).c_str());
+    EXPECT_STREQ("-0000000000000000000000000000000000000000000000000000000100,501", nfs.Format(testValNeg).c_str());
+
+
+    // Min width does not include parentheses
+    nfs.SetSignOption(SignOption::NegativeParentheses);
+
+    nfs.SetMinWidth(1);
+    EXPECT_STREQ("(100,501)", nfs.Format(testValNeg).c_str());
+
+    nfs.SetMinWidth(7);
+    EXPECT_STREQ("(100,501)", nfs.Format(testValNeg).c_str());
+
+    nfs.SetMinWidth(10);
+    EXPECT_STREQ("(000100,501)", nfs.Format(testValNeg).c_str());
+
+    nfs.SetMinWidth(61);
+    EXPECT_STREQ("(000000000000000000000000000000000000000000000000000000100,501)", nfs.Format(testValNeg).c_str());
+
+    nfs.SetMinWidth(100); // maxed out
+    EXPECT_STREQ("(000000000000000000000000000000000000000000000000000000100,501)", nfs.Format(testValNeg).c_str());
     }
 
 //---------------------------------------------------------------------------------------

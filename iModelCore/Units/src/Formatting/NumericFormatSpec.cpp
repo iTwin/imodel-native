@@ -628,9 +628,12 @@ int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
         return static_cast<int>(FormatDouble(n, bufOut, bufLen));
 
     char sign = '+';
-    char buf[64];
+    int numIgnoredChars = 1;
     int n1;
-    uint32_t ind = 0;
+
+    char buf[64];
+    uint32_t ind = sizeof(buf);
+    memset(buf, 0, ind--);
 
     if (bufLen < 2)  // if output buffer is too short make it empty and return
         {
@@ -649,12 +652,17 @@ int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
         {
         n = -n;
         sign = IsNegativeParentheses() ? '(' : '-';
+        numIgnoredChars++;
         }
 
-    ind = sizeof(buf);
-    memset(buf, 0, ind--);
     if ('(' == sign)
+        {
         buf[--ind] = ')';
+        numIgnoredChars++;
+        }
+
+    if (IsSignAlways() && sign == '+')
+        numIgnoredChars++;
 
     int digs = 0;
     uint32_t numberLength = 0; // The number of digits + separators
@@ -668,18 +676,19 @@ int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
             {
             digs = 0;
             buf[--ind] = m_thousandsSeparator;
+            ++numberLength;
             }
         ++numberLength;
-        } while (n > 0 && ind >= 0);
+        } while (n > 0);
 
-    uint32_t minWidth;
-    if (GetMinWidth() > ind-3)
+    uint32_t minWidth = GetMinWidth();
+    if (GetMinWidth() > sizeof(buf) - numIgnoredChars)
         {
-        minWidth = ind - 3;
+        minWidth = sizeof(buf) - numIgnoredChars;
         LOG.warningv("A minWidth of %d is too large. Setting min width to %d", GetMinWidth(), minWidth);
         }
 
-    while (numberLength < GetMinWidth()) 
+    while (numberLength < minWidth) 
         {
         buf[--ind] = '0';
         ++numberLength;
@@ -689,7 +698,7 @@ int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
         buf[--ind] = sign;
 
     int textLen = sizeof(buf) - ind;
-    if (textLen > (--bufLen))
+    if (textLen > bufLen)
         textLen = bufLen;
     memcpy(bufOut, &buf[ind], textLen--);
     return textLen;
