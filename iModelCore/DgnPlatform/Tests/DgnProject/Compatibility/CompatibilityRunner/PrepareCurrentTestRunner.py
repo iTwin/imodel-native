@@ -25,8 +25,8 @@ def main():
     testRunnerTestFilesFolder = sys.argv[2]
     if os.path.exists(testRunnerTestFilesFolder):
         rmtree(testRunnerTestFilesFolder)
-    else:
-        copytree(testFilesSeedPath, testRunnerTestFilesFolder)
+    copytree(testFilesSeedPath, testRunnerTestFilesFolder)
+    print "Copied pulled test files into current runner's run folder (" + testFilesSeedPath + " -> " + testRunnerTestFilesFolder + ")"
 
 if __name__ == "__main__":
     main()
