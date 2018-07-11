@@ -4,12 +4,12 @@
     <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
     <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
 
-    <KindOfQuantity typeName="STATION" displayLabel="Station" persistenceUnit="M(DefaultReal)" presentationUnits="M(stop1000-2-3z);FT(stop100-2-2z)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="LENGTH" displayLabel="Length" persistenceUnit="M(DefaultReal)" presentationUnits="M(real2u);FT(real2u)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real2u);SQ.FT(real2u)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="BEARING" displayLabel="Bearing" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(dms)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="SLOPE" displayLabel="Slope" persistenceUnit="M/M" relativeError="0.0001" />
+    <KindOfQuantity typeName="STATION" displayLabel="Road &amp; Rail Station" persistenceUnit="M(DefaultReal)" presentationUnits="M(stop1000-2-3z);FT(stop100-2-2z);M(real2u);FT(real2u)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="LENGTH" displayLabel="Road &amp; Rail Alignment Length" persistenceUnit="M(DefaultReal)" presentationUnits="M(real2u);FT(real2u)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="AREA" displayLabel="Road &amp; Rail Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real2u);SQ.FT(real2u)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="ANGLE" displayLabel="Road &amp; Rail Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="BEARING" displayLabel="Road &amp; Rail Bearing" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(dms)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="SLOPE" displayLabel="Road &amp; Rail Slope" persistenceUnit="M/M" presentationUnits="M/M(real2u);FT/FT(real2u)" relativeError="0.0001" />
 
     <ECEntityClass typeName="RoadRailCategoryModel">
         <BaseClass>bis:DefinitionModel</BaseClass>
