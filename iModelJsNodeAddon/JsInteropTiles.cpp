@@ -325,6 +325,10 @@ DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR id
     if (DgnDbStatus::Success == status && !root->_ToJson(result))
         status = DgnDbStatus::NotFound;
 
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    BeAssert(nullptr != root);
     auto rootTile = root->GetRootTile();
     if (rootTile.IsNull())
         return DgnDbStatus::NotFound;
