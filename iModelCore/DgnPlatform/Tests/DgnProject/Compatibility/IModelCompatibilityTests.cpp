@@ -217,7 +217,7 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32Enums)
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
-            if (!testDb.SupportsFeature(Feature::NamedEnumerators))
+            if (!testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
                 {
                 testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
                 {{"Unspecified", ECValue("Unspecified"), nullptr},
@@ -276,7 +276,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32Enums)
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
-            ASSERT_TRUE(testDb.SupportsFeature(Feature::NamedEnumerators)) << testDb.GetDescription();
+            ASSERT_TRUE(testDb.SupportsFeature(ECDbFeature::NamedEnumerators)) << testDb.GetDescription();
 
             testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
             {{"Unspecified", ECValue("Unspecified"), nullptr},
@@ -318,7 +318,7 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32KindOfQuantities)
             testDb.AssertKindOfQuantity("PreEC32Koqs", "POWER", "Power", nullptr, "u:W", JsonValue(R"json(["f:DefaultRealU(4)[u:W]", "f:DefaultRealU(4)[u:KW]", "f:DefaultRealU(4)[u:MEGAW]", "f:DefaultRealU(4)[u:BTU_PER_HR]", "f:DefaultRealU(4)[u:KILOBTU_PER_HR]", "f:DefaultRealU(4)[u:HP]"])json"), 0.001);
             testDb.AssertKindOfQuantity("PreEC32Koqs", "LIQUID_VOLUME", "Liquid Volume", nullptr, "u:CUB_M", JsonValue(R"json(["f:DefaultRealU(4)[u:LITRE]", "f:DefaultRealU(4)[u:GALLON]"])json"), 0.0001);
 
-            if (testDb.SupportsFeature(Feature::UnitsAndFormats))
+            if (TestDb::VersionSupportsFeature(testDb.GetECDbInitialVersion(), ECDbFeature::UnitsAndFormats))
                 testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_NoPresUnit", nullptr, nullptr, "u:W_PER_M_K", JsonValue(), 0.4);
             else
                 {
@@ -330,7 +330,7 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32KindOfQuantities)
             testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormat_NoPresUnit", nullptr, nullptr, "u:W_PER_M_K", JsonValue(R"json(["f:DefaultReal[u:W_PER_M_K]"])json"), 0.5);
             testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormatWithUnit_NoPresUnit", nullptr, nullptr, "u:FT", JsonValue(R"json(["f:AmerFI"])json"), 0.6);
 
-            if (!testDb.SupportsFeature(Feature::UnitsAndFormats))
+            if (!testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
                 {
                 EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units", false) == nullptr) << testDb.GetDescription();
                 EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats", false) == nullptr) << testDb.GetDescription();
@@ -380,7 +380,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32KindOfQuantities)
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
-            ASSERT_TRUE(testDb.SupportsFeature(Feature::UnitsAndFormats)) << testDb.GetDescription();
+            ASSERT_TRUE(testDb.SupportsFeature(ECDbFeature::UnitsAndFormats)) << testDb.GetDescription();
 
             testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithMandatoryComposite", "My first test KOQ", nullptr, "u:CM", JsonValue(R"js(["f:DefaultRealU(4)[u:M]"])js"), 0.1);
             testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithOptionalComposite", nullptr, "My second test KOQ", "u:CM", JsonValue(R"js(["f:AmerFI[u:FT|feet][u:IN|inches]"])js"), 0.2);
@@ -403,7 +403,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32Units)
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
-            ASSERT_TRUE(testDb.SupportsFeature(Feature::UnitsAndFormats)) << testDb.GetDescription();
+            ASSERT_TRUE(testDb.SupportsFeature(ECDbFeature::UnitsAndFormats)) << testDb.GetDescription();
 
             testDb.AssertKindOfQuantity("EC32Units", "KoqWithCustomFormat", nullptr, nullptr, "u:M", JsonValue(R"js(["MyFormat[u:M]"])js"), 0.1);
             testDb.AssertKindOfQuantity("EC32Units", "KoqWithCustomUnit", nullptr, nullptr, "MySquareM", JsonValue(R"js(["f:DefaultRealU(4)[MySquareM]"])js"), 0.2);

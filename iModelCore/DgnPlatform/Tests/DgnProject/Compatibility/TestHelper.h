@@ -14,7 +14,7 @@
 // feature or not.
 // @bsiclass                                                 Krischan.Eberle     07/2018
 //=======================================================================================    
-enum class Feature
+enum class ECDbFeature
     {
     PersistedECVersions,
     NamedEnumerators,
@@ -47,6 +47,9 @@ protected:
     TestDb(TestDb&&) = default;
     TestDb& operator=(TestDb&&) = default;
 
+    DbResult Open();
+    void Close() { _Close(); }
+
     BeSQLite::ProfileState::Age GetAge() const { return m_age; }
     bool IsUpgraded() const { return GetOpenParams().GetProfileUpgradeOptions() == ECDb::ProfileUpgradeOptions::Upgrade; }
     TestFile const& GetTestFile() const { return m_testFile; }
@@ -54,10 +57,9 @@ protected:
     ECDb::OpenParams const& GetOpenParams() const { return _GetOpenParams(); }
     Utf8String GetDescription() const;
 
-    bool SupportsFeature(Feature) const;
-
-    DbResult Open();
-    void Close() { _Close(); }
+    bool SupportsFeature(ECDbFeature feature) const { return VersionSupportsFeature(GetDb().GetECDbProfileVersion(), feature); }
+    static bool VersionSupportsFeature(ProfileVersion const&, ECDbFeature);
+    BeSQLite::ProfileVersion GetECDbInitialVersion() const;
     JsonValue ExecuteECSqlSelect(Utf8CP ecsql) const;
     SchemaVersion GetSchemaVersion(Utf8CP schemaName) const;
     BeVersion GetOriginalECXmlVersion(Utf8CP schemaName) const;
