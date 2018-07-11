@@ -10,6 +10,7 @@
 #include <WebServices/iModelHub/GlobalEvents/iModelCreatedEvent.h>
 #include <WebServices/iModelHub/GlobalEvents/GlobalEventManager.h>
 #include "LRPJobBackdoorAPI.h"
+#include "RequestBehaviorOptions.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -65,6 +66,12 @@ struct GlobalEventsTests : IntegrationTestsBase
         {
         IntegrationTestsBase::SetUp();
         m_db = CreateTestDb();
+
+        bmap<Utf8String, Utf8String> requestOptions = bmap<Utf8String, Utf8String>();
+        auto behaviourOptions = RequestBehaviorOptions();
+        behaviourOptions.DisableOption(RequestBehaviorOptionsEnum::DisableGlobalEvents);
+        requestOptions.insert(behaviourOptions.GetBehaviorOptionsResultPair());
+        s_client->GlobalRequestOptions()->SetRequestOptions(requestOptions);
         }
 
     /*--------------------------------------------------------------------------------------+
@@ -82,7 +89,7 @@ struct GlobalEventsTests : IntegrationTestsBase
             auto eventManager = globalConnection->GetGlobalEventManager();
             for (const Utf8String subscriptionInstanceId : m_unsubscribeSubscriptionInstances)
                 {
-                eventManager.UnsubscribeEvents(subscriptionInstanceId);
+                eventManager->UnsubscribeEvents(subscriptionInstanceId);
                 }
             }
         IntegrationTestsBase::TearDown();
@@ -102,7 +109,7 @@ ClientPtr GlobalEventsTests::s_serviceAccountClient;
 //---------------------------------------------------------------------------------------
 //@bsimethod                                Karolis.Uzkuraitis                  05/2018
 //---------------------------------------------------------------------------------------
-void CheckAllEventsReceived(const Utf8String subscriptionInstanceId, GlobalEventManagerR eventManager, std::list<ExpectedEventIdentifier> &expectedEvents)
+void CheckAllEventsReceived(const Utf8String subscriptionInstanceId, GlobalEventManagerPtr eventManager, std::list<ExpectedEventIdentifier> &expectedEvents)
     {
     const clock_t timeStart = clock();
     clock_t timeLastEvent = timeStart;
@@ -118,7 +125,7 @@ void CheckAllEventsReceived(const Utf8String subscriptionInstanceId, GlobalEvent
             break;
             }
 
-        GlobalEventTaskPtr eventResult = eventManager.GetEvent(subscriptionInstanceId);
+        GlobalEventTaskPtr eventResult = eventManager->GetEvent(subscriptionInstanceId);
         if(eventResult->GetResult().IsSuccess())
             {
             timeLastEvent = clock();
@@ -156,15 +163,15 @@ TEST_F(GlobalEventsTests, SubscribeTests)
     auto eventManager = globalConnection->GetGlobalEventManager();
 
     const BeGuid newGuid(true);
-    auto subscrResult = eventManager.SubscribeToEvents(newGuid, &eventTypes);
+    auto subscrResult = eventManager->SubscribeToEvents(newGuid, &eventTypes);
     EXPECT_SUCCESS(subscrResult->GetResult());
     m_unsubscribeSubscriptionInstances.insert(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId());
 
     eventTypes.insert(GlobalEvent::GlobalEventType::ChangeSetCreatedEvent);
-    auto modifiedSubscriptionResult = eventManager.ModifySubscription(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId(), &eventTypes);
+    auto modifiedSubscriptionResult = eventManager->ModifySubscription(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId(), &eventTypes);
     EXPECT_SUCCESS(modifiedSubscriptionResult->GetResult());
 
-    auto unsubscribeResult = eventManager.UnsubscribeEvents(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId());
+    auto unsubscribeResult = eventManager->UnsubscribeEvents(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId());
     EXPECT_SUCCESS(unsubscribeResult->GetResult());
     m_unsubscribeSubscriptionInstances.erase(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId());
     }
@@ -180,7 +187,7 @@ TEST_F(GlobalEventsTests, EventGetTests)
     auto eventManager = globalConnection->GetGlobalEventManager();
 
     const BeGuid newGuid(true);
-    auto subscrResult = eventManager.SubscribeToEvents(newGuid, &eventTypes);
+    auto subscrResult = eventManager->SubscribeToEvents(newGuid, &eventTypes);
     EXPECT_SUCCESS(subscrResult->GetResult());
     m_unsubscribeSubscriptionInstances.insert(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId());
 
@@ -211,7 +218,7 @@ TEST_F(GlobalEventsTests, GetMultipleEventTypes)
     auto eventManager = globalConnection->GetGlobalEventManager();
 
     const BeGuid newGuid(true);
-    auto subscrResult = eventManager.SubscribeToEvents(newGuid, &eventTypes);
+    auto subscrResult = eventManager->SubscribeToEvents(newGuid, &eventTypes);
     EXPECT_SUCCESS(subscrResult->GetResult());
     m_unsubscribeSubscriptionInstances.insert(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId());
 

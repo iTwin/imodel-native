@@ -35,16 +35,16 @@ protected:
 
     BaseEventManager() {}
 
-    virtual Json::Value GenerateEventSASJson() = 0;
+    virtual Json::Value GenerateEventSASJson() const = 0;
     virtual bool IsSubscribedToEvents(EventServiceClientPtr eventServiceClient) const = 0;
 
     static Json::Value GenerateEventSASJson(const Utf8CP schemaName, const Utf8CP className);
     static AzureServiceBusSASDTOPtr CreateEventSASFromResponse(JsonValueCR responseJson);
     static Json::Value EventSubscriptionResponseToJsonInstance(const Utf8String response, Utf8StringR subscriptionId);
     
-    AzureServiceBusSASDTOTaskPtr GetEventServiceSASToken(const ICancellationTokenPtr cancellationToken);
+    AzureServiceBusSASDTOTaskPtr GetEventServiceSASToken(const ICancellationTokenPtr cancellationToken) const;
     AsyncTaskPtr<WSChangesetResult> SendChangesetRequest(const std::shared_ptr<WSChangeset> changeset, const ICancellationTokenPtr cancellationToken) const;
-    StatusTaskPtr SendDeleteObjectRequest(ObjectId eventSubscriptionObject);
+    StatusTaskPtr SendDeleteObjectRequest(ObjectId eventSubscriptionObject) const;
     BaseEventReponseTaskPtr GetEventServiceResponse
     (
         int numOfRetries,

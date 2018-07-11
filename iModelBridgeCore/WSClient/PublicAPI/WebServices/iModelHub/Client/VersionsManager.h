@@ -11,6 +11,7 @@
 #include <WebServices/iModelHub/Common.h>
 #include <WebServices/iModelHub/Client/ChangeSetInfo.h>
 #include <WebServices/iModelHub/Client/VersionInfo.h>
+#include <WebServices/iModelHub/Client/GlobalRequestOptions.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -28,8 +29,9 @@ private:
     //WIP remove then relationship to get changeSets implemented
     iModelConnectionCP m_connection;
     IWSRepositoryClientPtr m_wsRepositoryClient = nullptr;
-    VersionsManager(IWSRepositoryClientPtr reposiroryClient, iModelConnectionCP connection)
-        : m_wsRepositoryClient(reposiroryClient), m_connection(connection){};
+    GlobalRequestOptionsPtr m_globalRequestOptionsPtr = nullptr;
+    VersionsManager(IWSRepositoryClientPtr reposiroryClient, GlobalRequestOptionsPtr globalRequestOptionsPtr, iModelConnectionCP connection)
+        : m_connection(connection), m_wsRepositoryClient(reposiroryClient), m_globalRequestOptionsPtr(globalRequestOptionsPtr){};
 
     WSQuery CreateChangeSetsBetweenVersionsQuery(Utf8StringCR sourceVersionId, Utf8String destinationVersionsId, BeSQLite::BeGuidCR fileId) const;
 

@@ -25,6 +25,7 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Client/Result.h                 \
                                 $(iModelHubClientMkiPublicApiDir)Client/Error.h                  \
                                 $(iModelHubClientMkiPublicApiDir)Client/ClientHelper.h           \
+                                $(iModelHubClientMkiPublicApiDir)Client/GlobalRequestOptions.h   \
                                 $(iModelHubClientMkiPublicApiDir)Events/EventSubscription.h      \
                                 $(iModelHubClientMkiPublicApiDir)Events/Event.h                  \
                                 $(iModelHubClientMkiPublicApiDir)Events/EventParser.h            \
@@ -103,6 +104,8 @@ $(o)iModelManager$(oext)                   : $(iModelHubClientMkiSourceDir)iMode
 $(o)iModelAdmin$(oext)                     : $(iModelHubClientMkiSourceDir)iModelAdmin.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)Client$(oext)                          : $(iModelHubClientMkiSourceDir)Client.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)GlobalRequestOptions$(oext)            : $(iModelHubClientMkiSourceDir)GlobalRequestOptions.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)EventCallbackManager$(oext)            : $(iModelHubClientMkiSourceDir)Events/EventCallbackManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 

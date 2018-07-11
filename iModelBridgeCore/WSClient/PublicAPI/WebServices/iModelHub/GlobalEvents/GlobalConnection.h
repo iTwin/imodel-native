@@ -40,7 +40,7 @@ private:
     IAzureBlobStorageClientPtr  m_azureClient;
     IHttpHandlerPtr             m_customHandler;
 
-    GlobalEventManager          m_eventManager;
+    GlobalEventManagerPtr       m_eventManagerPtr;
 
     GlobalConnection(Utf8String serverUrl, CredentialsCR credentials, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
 
@@ -58,6 +58,6 @@ public:
 
     //! Gets GlobalEventManager for global event subscriptions and event gathering
     //! @return GlobalEventManager
-    IMODELHUBCLIENT_EXPORT GlobalEventManagerCR GetGlobalEventManager() const { return m_eventManager; }
+    IMODELHUBCLIENT_EXPORT GlobalEventManagerPtr GetGlobalEventManager() const { return m_eventManagerPtr; }
     };
 END_BENTLEY_IMODELHUB_NAMESPACE
