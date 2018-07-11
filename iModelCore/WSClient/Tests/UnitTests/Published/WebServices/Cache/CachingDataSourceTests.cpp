@@ -63,13 +63,12 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_CalledSecondTimeAfterCacheWasCreated
         }));
 
     // Create
-    auto thread = WorkerThread::Create("DS1");
-    auto ds1 = CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt(), thread)->GetResult().GetValue();
+    auto ds1 = CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt())->GetResult().GetValue();
     ASSERT_TRUE(nullptr != ds1);
 
     // Ensure that cache is closed
+    ds1->Close();
     ds1 = nullptr;
-    thread->OnEmpty()->Wait();
 
     // Open
     auto ds2 = CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt())->GetResult().GetValue();

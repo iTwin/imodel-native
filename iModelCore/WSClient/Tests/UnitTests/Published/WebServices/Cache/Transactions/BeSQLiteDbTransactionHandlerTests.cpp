@@ -17,7 +17,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 void DebugLog(Utf8CP str)
     {
-    //BeDebugLog (stc);
+    //BeDebugLog (str);
     };
 
 struct TestBeSQLiteDbTransactionHandler : BeSQLiteDbTransactionHandler
@@ -40,7 +40,7 @@ struct TestBeSQLiteDbTransactionHandler : BeSQLiteDbTransactionHandler
             {
             DebugLog(Utf8PrintfString("%s BSY:%d", m_name.c_str(), count).c_str());
             m_lastBusyCount = count;
-            //BeThreadUtilities::BeSleep (1);
+            BeThreadUtilities::BeSleep (1);
             return true;
             }
     };
@@ -187,7 +187,7 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, BeginTransaction_TwoConnections_Second
     ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(path, BeSQLite::BeGuid(), params));
     db.CloseDb();
 
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 2; i++)
         {
         DebugLog(">>> \n\n------------------------- BeginTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction -----------\n\n");
 
@@ -238,7 +238,10 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, BeginTransaction_TwoConnections_Second
         db1InTransaction.WaitUntilReached();
         db2Start.Continue();
 
-        while (handler2.m_lastBusyCount == 0); // Wait until handler2 gets busy error and retries
+        while (handler2.m_lastBusyCount == 0)
+            {
+            BeThreadUtilities::BeSleep(25);
+            }// Wait until handler2 gets busy error and retries
         EXPECT_FALSE(db2InTransaction.WasReached()); // Check if still blocked
 
         db1InTransaction.Continue();
