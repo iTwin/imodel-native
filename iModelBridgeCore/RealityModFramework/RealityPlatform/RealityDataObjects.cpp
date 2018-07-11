@@ -931,6 +931,7 @@ RealityDataEnterpriseStat& RealityDataEnterpriseStat::operator=(const RealityDat
 
 uint64_t RealityDataEnterpriseStat::GetTotalSizeKB() const { return m_totalSizeKB; }
 void RealityDataEnterpriseStat::SetTotalSizeKB(uint64_t totalSizeKB) { m_totalSizeKB = totalSizeKB; }
+void RealityDataEnterpriseStat::SetTotalSizeKB(double totalSizeKB) { m_totalSizeKB = (uint64_t)totalSizeKB; }
 
 uint64_t RealityDataEnterpriseStat::GetNbRealityData() const { return m_nbRealityData; }
 void RealityDataEnterpriseStat::SetNbRealityData(uint64_t nbRealityData) { m_nbRealityData = nbRealityData; }
@@ -976,6 +977,7 @@ RealityDataServiceStat& RealityDataServiceStat::operator=(const RealityDataServi
 
 uint64_t RealityDataServiceStat::GetTotalSizeKB() const { return m_totalSizeKB; }
 void RealityDataServiceStat::SetTotalSizeKB(uint64_t totalSizeKB) { m_totalSizeKB = totalSizeKB; }
+void RealityDataServiceStat::SetTotalSizeKB(double totalSizeKB) { m_totalSizeKB = (uint64_t)totalSizeKB; }
 
 uint64_t RealityDataServiceStat::GetNbRealityData() const { return m_nbRealityData; }
 void RealityDataServiceStat::SetNbRealityData(uint64_t nbRealityData) { m_nbRealityData = nbRealityData; }
@@ -1026,6 +1028,7 @@ RealityDataUserStat& RealityDataUserStat::operator=(const RealityDataUserStat& o
 
 uint64_t RealityDataUserStat::GetTotalSizeKB() const { return m_totalSizeKB; }
 void RealityDataUserStat::SetTotalSizeKB(uint64_t totalSizeKB) { m_totalSizeKB = totalSizeKB; }
+void RealityDataUserStat::SetTotalSizeKB(double totalSizeKB) { m_totalSizeKB = (uint64_t)totalSizeKB; }
 
 uint64_t RealityDataUserStat::GetNbRealityData() const { return m_nbRealityData; }
 void RealityDataUserStat::SetNbRealityData(uint64_t nbRealityData) { m_nbRealityData = nbRealityData; }

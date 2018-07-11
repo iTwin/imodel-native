@@ -129,7 +129,7 @@ StatusInt RealityConversionTools::JsonToEnterpriseStat(Json::Value properties, R
         statObject.SetNbRealityData(properties["NumberOfRealityData"].asInt64());
 
     if (properties.isMember("TotalSize") && !properties["TotalSize"].isNull())
-        statObject.SetTotalSizeKB(properties["TotalSize"].asInt64());
+        statObject.SetTotalSizeKB(properties["TotalSize"].asDouble());
 
     if (properties.isMember("OrganizationId") && !properties["OrganizationId"].isNull())
         statObject.SetOrganizationId(properties["OrganizationId"].asString().c_str());
@@ -204,7 +204,7 @@ StatusInt RealityConversionTools::JsonToServiceStat(Json::Value properties, Real
         statObject.SetNbRealityData(properties["NumberOfRealityData"].asInt64());
 
     if (properties.isMember("TotalSize") && !properties["TotalSize"].isNull())
-        statObject.SetTotalSizeKB(properties["TotalSize"].asInt64());
+        statObject.SetTotalSizeKB(properties["TotalSize"].asDouble());
 
     if (properties.isMember("UltimateId") && !properties["UltimateId"].isNull())
         statObject.SetUltimateId(properties["UltimateId"].asString().c_str());
@@ -276,7 +276,7 @@ StatusInt RealityConversionTools::JsonToUserStat(Json::Value properties, Reality
         statObject.SetNbRealityData(properties["NumberOfRealityData"].asInt64());
 
     if (properties.isMember("TotalSize") && !properties["TotalSize"].isNull())
-        statObject.SetTotalSizeKB(properties["TotalSize"].asInt64());
+        statObject.SetTotalSizeKB(properties["TotalSize"].asDouble());
 
     if (properties.isMember("UserId") && !properties["UserId"].isNull())
         statObject.SetUserId(properties["UserId"].asString().c_str());

@@ -141,11 +141,6 @@ Utf8String CreateUpload()
     crd.SetRealityDataType("S3MX");
     crd.SetVisibility(RealityDataBase::Visibility::ENTERPRISE);
     crd.SetRootDocument("DummyRootDocument.json");
-    crd.SetOrganizationId("72adad30-c07c-465d-a1fe-2f2dfac950d7");
-    crd.SetUltimateId("72adad30-c07c-465d-a1fe-2f2dfac950d8");
-    crd.SetUltimateSite("72adad30-c07c-465d-a1fe-2f2dfac950d9");
-    crd.SetContainerName("72adad30-c07c-465d-a1fe-2f2dfac950da");
-    crd.SetDataLocationGuid("72adad30-c07c-465d-a1fe-2f2dfac950db");
     crd.SetDataset("SRTM1");
     crd.SetDescription("example upload for SimpleRDSApi");
     

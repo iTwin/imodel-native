@@ -31,7 +31,7 @@ RequestConstructor::RequestConstructor()
     size_t pos = exeDir.find_last_of(L"/\\");
     exeDir = exeDir.substr(0, pos + 1);
     BeFileName caBundlePath = BeFileName(exeDir);
-    m_certificatePath = caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"ContextServices.pem");
+    //m_certificatePath = caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"ContextServices.pem");
 #endif
     }
 
