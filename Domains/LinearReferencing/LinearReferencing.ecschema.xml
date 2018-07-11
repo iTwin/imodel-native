@@ -2,7 +2,7 @@
 <ECSchema schemaName="LinearReferencing" alias="lr" version="01.00.00" description="Base schema for Linear Referencing." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
 
-    <KindOfQuantity typeName="LENGTH" persistenceUnit="M(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="LENGTH" displayLabel="Linear Referencing Length" persistenceUnit="M(DefaultReal)" presentationUnits="M(real2u);FT(real2u)" relativeError="0.0001"/>
 
     <ECEntityClass typeName="ILinearElement" description="Mix-in to be supported by Element-subclasses meant to play the role of Linear-Elements." modifier="Abstract">
         <ECCustomAttributes>
