@@ -108,11 +108,45 @@ const ECDb::OpenParams& params
         return ERROR;
         }
 
-    DbResult status = m_db.OpenBeSQLiteDb(cacheFilePath, params);
+    // Files should be auto-upgraded if necessary. If the passed params has OpenMode::Readonly, the open call will fail,
+    // as upgrades require a readwrite connection.
+    ECDb::OpenParams effectiveParams(params);
+    if (!params.IsReadonly())
+        effectiveParams.SetProfileUpgradeOptions(ECDb::ProfileUpgradeOptions::Upgrade);
+
+    DbResult status = m_db.OpenBeSQLiteDb(cacheFilePath, effectiveParams);
     if (BE_SQLITE_OK != status)
         {
         return ERROR;
         }
+
+    // CheckProfileVersion needs a transaction. So open the default transaction if none was open
+    // and close it afterwards
+    const bool transactionWasActive = m_db.IsTransactionActive();
+    if (!transactionWasActive)
+        {
+        BeAssert(m_db.GetDefaultTransaction() != nullptr);
+        m_db.GetDefaultTransaction()->Begin();
+        }
+
+    ProfileState profileState = m_db.CheckProfileVersion();
+    if (!transactionWasActive)
+        {
+        BeAssert(m_db.GetDefaultTransaction() != nullptr);
+        m_db.GetDefaultTransaction()->Commit(nullptr);
+        }
+
+    if (profileState.IsOlder())
+        {
+        if (profileState.IsUpgradable())
+            LOG.errorv("Cannot open file %s read-only, as it requires an upgrade. Please re-open the file readwrite first, which will auto-upgrade the file. Then you can open it read-only again.",
+                       cacheFilePath.GetNameUtf8().c_str());
+        else
+            LOG.errorv("Cannot open file %s. It is too old.", cacheFilePath.GetNameUtf8().c_str());
+
+        return ERROR;
+        }
+
 
     if (SUCCESS != UpgradeIfNeeded(cacheFilePath, baseEnvironment, params))
         {
