@@ -69,8 +69,7 @@ bool EvaluateInterior()
             DRay3d boresite = GetBoresite(localPoint, m_hitLocalToView.M1);
 
             CurveVector::InOutClassification result = curves.RayPierceInOnOut(boresite, solidDetail);
-
-            if (CurveVector::InOutClassification::INOUT_In != result && CurveVector::InOutClassification::INOUT_On != result)
+            if (CurveVector::InOutClassification::INOUT_Unknown == result)
                 return false;
 
             if (interiorPt)
@@ -81,55 +80,6 @@ bool EvaluateInterior()
 
         case GeometricPrimitive::GeometryType::SolidPrimitive:
             {
-            if (HitGeomType::None != m_hitGeomType) // Don't need to find "best" face for view direction if hatch line/arc center hit...
-                {
-                SolidLocationDetail solidDetail;
-
-                if (!m_hitGeom->GetAsISolidPrimitive()->ClosestPoint(localPoint, solidDetail))
-                    return false;
-
-                DVec3d    uDir, vDir;
-                DPoint3d  point;
-
-                if (!m_hitGeom->GetAsISolidPrimitive()->TryUVFractionToXYZ(solidDetail.GetFaceIndices(), solidDetail.GetU(), solidDetail.GetV(), point, uDir, vDir))
-                    return false;
-
-#if defined (NOT_NOW_DEBUG)
-                printf("\n>>> ClosestPoint/TryUVFractionToXYZ: %d - %d - %d\n", (int) solidDetail.GetFaceIndices().Index0(), (int) solidDetail.GetFaceIndices().Index1(), (int) solidDetail.GetFaceIndices().Index2());
-                if (!DPoint3dOps::AlmostEqual(solidDetail.GetXYZ(), point, 1.0e-3))
-                    printf("(BAD)\n");
-
-                DRay3d boresite = GetBoresite(localPoint, m_hitLocalToView.M1);
-                bvector<SolidLocationDetail> intersectLocationDetail;
-
-                m_hitGeom->GetAsISolidPrimitive()->AddRayIntersections(intersectLocationDetail, boresite);
-
-                if (!intersectLocationDetail.empty())
-                    {
-                    DVec3d    uDir2, vDir2;
-                    DPoint3d  point2;
-
-                    for (SolidLocationDetail& rayDetail : intersectLocationDetail)
-                        {
-                        if (!rayDetail.GetFaceIndices().Is(solidDetail.GetFaceIndices().Index0(), solidDetail.GetFaceIndices().Index1(), solidDetail.GetFaceIndices().Index2()))
-                            continue;
-
-                        printf("\n>>> AddRayIntersections/TryUVFractionToXYZ: %d - %d - %d\n", (int) rayDetail.GetFaceIndices().Index0(), (int) rayDetail.GetFaceIndices().Index1(), (int) rayDetail.GetFaceIndices().Index2());
-                        if (!m_hitGeom->GetAsISolidPrimitive()->TryUVFractionToXYZ(rayDetail.GetFaceIndices(), rayDetail.GetU(), rayDetail.GetV(), point2, uDir2, vDir2))
-                            printf("(BAD)\n");
-
-                        if (!DPoint3dOps::AlmostEqual(rayDetail.GetXYZ(), point2, 1.0e-3))
-                            printf("(BAD)\n");
-                        }
-                    }
-#endif
-
-                if (interiorPt)
-                    m_hitCurveDetail.point = point;
-                m_hitNormalLocal.NormalizedCrossProduct(uDir, vDir);
-                break;
-                }
-
             SolidLocationDetail solidDetail;
 
             if (!m_hitGeom->GetAsISolidPrimitive()->ClosestPoint(m_hitClosePtLocal, solidDetail)) // Prefer face identified by original hit location...
@@ -155,8 +105,7 @@ bool EvaluateInterior()
                 case IGeometry::GeometryType::CurveVector:
                     {
                     CurveVector::InOutClassification result = faceGeom->GetAsCurveVector()->RayPierceInOnOut(boresite, solidDetail);
-
-                    if (CurveVector::InOutClassification::INOUT_In != result && CurveVector::InOutClassification::INOUT_On != result)
+                    if (CurveVector::InOutClassification::INOUT_Unknown == result)
                         return false;
 
                     if (interiorPt)
@@ -313,10 +262,21 @@ bool EvaluateArcCenter()
     localPts[0] = m_hitClosePtLocal;
     localPts[1] = arc->center;
 
-    m_hitLocalToView.M0.Multiply(viewPts, localPts, nullptr, 2);
+    // NOTE: For keypoint snap to interior, choose arc center if interior point is "closer" to it than to the edge...
+    if (SnapMode::NearestKeypoint == m_snapMode && (HitParentGeomType::Sheet == m_hitParentGeomType || HitParentGeomType::Solid == m_hitParentGeomType))
+        {
+        double radius = DoubleOps::Min(arc->vector0.Magnitude(), arc->vector90.Magnitude());
 
-    if (viewPts[0].RealDistance(viewPts[1]) > m_snapAperture)
-        return false;
+        if (localPts[0].Distance(localPts[1]) > (radius * 0.25))
+            return false;
+        }
+    else
+        {
+        m_hitLocalToView.M0.Multiply(viewPts, localPts, nullptr, 2);
+
+        if (viewPts[0].RealDistance(viewPts[1]) > m_snapAperture)
+            return false;
+        }
 
     m_hitGeomType = HitGeomType::Point;
     m_hitCurveDetail.point = arc->center;
@@ -512,34 +472,70 @@ bool EvaluateCurve()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyHitDetail()
     {
-    MSBsplineCurveCP bcurve = (m_hitCurveDetail.curve ? m_hitCurveDetail.curve->GetProxyBsplineCurveCP() : nullptr);
-
-    if (nullptr == bcurve || 2 != bcurve->params.order)
+    if (nullptr == m_hitCurveDetail.curve)
         return;
+
+    switch (m_hitCurveDetail.curve->GetCurvePrimitiveType())
+        {
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+            {
+            DSegment3dCP segment = m_hitCurveDetail.curve->GetLineCP();
+
+            if (segment->point[0].IsEqual(segment->point[1])) // Check for zero length line and don't include redundant primitive...
+                {
+                m_hitCurveDetail.curve = nullptr;
+                m_hitGeomType = HitGeomType::Point;
+                }
+
+            break;
+            }
+
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+            {
+            bvector<DPoint3d> const* points = m_hitCurveDetail.curve->GetLineStringCP();
+
+            if ((1 == points->size()) || (2 == points->size() && points->at(0).IsEqual(points->at(1))))
+                {
+                m_hitCurveDetail.curve = nullptr;
+                m_hitGeomType = HitGeomType::Point;
+                }
+
+            break;
+            }
+
+        default:
+            {
+            MSBsplineCurveCP bcurve = m_hitCurveDetail.curve->GetProxyBsplineCurveCP();
+
+            if (nullptr == bcurve || 2 != bcurve->params.order)
+                break;
     
-    // An order 2 bspline curve should be treated the same as a linestring for snapping...
-    bvector<DPoint3d> poles;
+            // An order 2 bspline curve should be treated the same as a linestring for snapping...
+            bvector<DPoint3d> poles;
 
-    bcurve->GetUnWeightedPoles(poles);
+            bcurve->GetUnWeightedPoles(poles);
 
-    if (bcurve->params.closed)
-        poles.push_back(poles.at(0));
+            if (bcurve->params.closed)
+                poles.push_back(poles.at(0));
 
-    ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLineString(poles);
-    CurveLocationDetail detail;
+            ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLineString(poles);
+            CurveLocationDetail detail;
 
-    if (!curve->ClosestPointBounded(m_hitCurveDetail.point, detail))
-        return;
+            if (!curve->ClosestPointBounded(m_hitCurveDetail.point, detail))
+                break;
 
-    CurvePrimitiveIdCP curveId = m_hitCurveDetail.curve->GetId();
+            CurvePrimitiveIdCP curveId = m_hitCurveDetail.curve->GetId();
 
-    if (nullptr != curveId)
-        curve->SetId(curveId->Clone().get()); // Preserve curve topology id from source curve...
+            if (nullptr != curveId)
+                curve->SetId(curveId->Clone().get()); // Preserve curve topology id from source curve...
 
-    detail.a = m_hitCurveDetail.a; // Preserve distance to original hit...
+            detail.a = m_hitCurveDetail.a; // Preserve distance to original hit...
 
-    m_hitCurveDerived = curve;
-    m_hitCurveDetail = detail;
+            m_hitCurveDerived = curve;
+            m_hitCurveDetail = detail;
+            break;
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1426,9 +1422,10 @@ bool ProcessGeometry(GeometricPrimitiveR geom, TransformCR localToWorld, bool ch
 
     if (checkRange)
         {
+        double      maxOutsideDist = (1.0e-2 * (1.0 + localPoint.Magnitude()));
         DRange3d    localRange;
 
-        if (geom.GetRange(localRange) && localRange.DistanceOutside(localPoint) > 1.0e-5)
+        if (geom.GetRange(localRange) && localRange.DistanceOutside(localPoint) > maxOutsideDist)
             return false;
         }
 
@@ -1666,7 +1663,8 @@ ICurvePrimitivePtr& GetHitCurvePrimitivePtr() {return m_hitCurveDerived;} // Val
 HitGeomType GetHitGeomType() const {return m_hitGeomType;}
 HitParentGeomType GetHitParentGeomType() const {return m_hitParentGeomType;}
 DPoint3d GetHitPointWorld() const {DPoint3d hitPtWorld = m_hitCurveDetail.point; m_hitLocalToWorld.Multiply(hitPtWorld); return hitPtWorld;}
-DVec3d GetHitNormalWorld() const {DVec3d hitNormalWorld = m_hitNormalLocal; m_hitLocalToWorld.MultiplyMatrixOnly(hitNormalWorld); return hitNormalWorld;}
+bool IsHitNormalValid() const {return 0.0 != m_hitNormalLocal.Magnitude();}
+DVec3d GetHitNormalWorld() const {DVec3d hitNormalWorld = m_hitNormalLocal; m_hitLocalToWorld.MultiplyMatrixOnly(hitNormalWorld); hitNormalWorld.Normalize(); return hitNormalWorld;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
@@ -1915,7 +1913,7 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
             if (!helper.GetHitGeometryParams().IsWeightFromSubCategoryAppearance())
                 output.SetWeight(helper.GetHitGeometryParams().GetWeight());
 
-            if (0.0 != helper.GetHitNormalWorld().Magnitude())
+            if (helper.IsHitNormalValid())
                 output.SetNormal(helper.GetHitNormalWorld());
 
             if (nullptr != helper.GetHitCurveDetail().curve)
@@ -1949,58 +1947,6 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus SnapContext::DoDefaultDisplayableSnap()
     {
-#if defined (NOT_NOW_USE_HITDETAIL)
-    Json::Value input;
-
-    input["elementId"] = GetSnapDetail()->GetElementId().ToHexStr();
-    JsonUtils::DPoint3dToJson(input["closePoint"], GetSnapDetail()->GetGeomDetail().GetClosestPoint());
-    JsonUtils::DMatrix4dToJson(input["worldToView"], GetWorldToView().M0);
-    input["viewFlags"] = m_viewflags.ToJson();
-
-    input["snapMode"] = (uint32_t) GetSnapMode();
-    input["snapAperture"] = GetSnapAperture();
-    input["snapDivisor"] = GetSnapDivisor();
-
-    Json::Value output = SnapContext::DoSnap(input, GetDgnDb());
-
-    SnapStatus status = (output["status"].isNull() ? SnapStatus::NotSnappable : (SnapStatus) output["status"].asUInt());
-
-    if (SnapStatus::Success == status)
-        {
-        DPoint3d snapPoint;
-
-        JsonUtils::DPoint3dFromJson(snapPoint, output["snapPoint"]);
-
-        if (!output["normal"].isNull())
-            {
-            DVec3d normal;
-
-            JsonUtils::DVec3dFromJson(normal, output["normal"]);
-            GetSnapDetail()->GetGeomDetailW().SetSurfaceNormal(normal);
-            }
-
-        HitGeomType hitGeomType = (output["geomType"].isNull() ? HitGeomType::None : (HitGeomType) output["geomType"].asUInt());
-        Transform hitLocalToWorld = Transform::FromIdentity();
-        ICurvePrimitivePtr curve;
-
-        if (!output["localToWorld"].isNull())
-            JsonUtils::TransformFromJson(hitLocalToWorld, output["localToWorld"]);
-
-        if (!output["curve"].isNull())
-            {
-            bvector<IGeometryPtr> geometry;
-
-            if (IModelJson::TryIModelJsonValueToGeometry(output["curve"], geometry) && 1 == geometry.size())
-                curve = geometry.at(0)->GetAsICurvePrimitive();
-            }
-
-        GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(curve.IsValid() ? curve.get() : nullptr, &hitLocalToWorld, hitGeomType);
-
-        SetSnapInfo(*GetSnapDetail(), GetSnapMode(), GetSnapSprite(GetSnapMode()), snapPoint, SnapMode::Center == GetSnapMode(), GetSnapAperture(), false);
-        }
-
-    return status;
-#else
     GeomDetailCR    detail = GetSnapDetail()->GetGeomDetail();
 
     // Don't require a curve primitive if hit geom is point or mode is nearest because current hit point is correct...
@@ -2049,7 +1995,7 @@ SnapStatus SnapContext::DoDefaultDisplayableSnap()
                     {
                     GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(helper.GetHitCurveDetail().curve, &helper.GetHitLocalToWorld(), helper.GetHitGeomType());
 
-                    if (0.0 != helper.GetHitNormalWorld().Magnitude())
+                    if (helper.IsHitNormalValid())
                         GetSnapDetail()->GetGeomDetailW().SetSurfaceNormal(helper.GetHitNormalWorld());
 
                     SetSnapInfo(*GetSnapDetail(), GetSnapMode(), GetSnapSprite(GetSnapMode()), helper.GetHitPointWorld(), SnapMode::Center == GetSnapMode(), GetSnapAperture(), false);
@@ -2073,7 +2019,6 @@ SnapStatus SnapContext::DoDefaultDisplayableSnap()
         }
 
     return DoSnapUsingCurve(GetSnapMode());
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

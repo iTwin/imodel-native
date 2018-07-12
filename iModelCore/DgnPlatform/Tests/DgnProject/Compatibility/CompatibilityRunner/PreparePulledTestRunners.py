@@ -7,7 +7,7 @@
 #----------------------------------------------------------------------
 import sys
 import os
-from shutil import copytree, copyfile
+from shutil import copytree, copyfile, rmtree
 
 # Copies all pulled test runners into the test out folder and copies all pulled test files and all files created by
 # the current software's runner into its folder, so that every pulled test runner runs against all available test files.
@@ -55,6 +55,8 @@ def main():
                 rmtree(targetTestRunnerFolder)
             copytree(fullPath, targetTestRunnerFolder)
             mergeFolders(testFilesPath, createdFilesPath, os.path.join(targetTestRunnerFolder, "run", "TestFiles"))
+            print "Copied pulled test runner and pulled and created test files into sandbox folder (" + fullPath + " -> " + targetTestRunnerFolder + ")"
+
 
 if __name__ == "__main__":
     main()
