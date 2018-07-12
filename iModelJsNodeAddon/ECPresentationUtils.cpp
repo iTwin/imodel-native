@@ -1146,7 +1146,8 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
         BeFileName::CreateNewDirectory(tempDir.c_str());
 
     RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
-    RulesDrivenECPresentationManager* manager = new RulesDrivenECPresentationManager(connections, paths);
+    RulesDrivenECPresentationManager::Params params(connections, paths);
+    RulesDrivenECPresentationManager* manager = new RulesDrivenECPresentationManager(params);
     
     BeFileName supplementalsDirectory = BeFileName(assetsDir).AppendToPath(L"PresentationRules");
     manager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalsDirectory.GetNameUtf8().c_str())));
