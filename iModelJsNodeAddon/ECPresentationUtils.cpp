@@ -1338,7 +1338,7 @@ static folly::Future<NavNodeCPtr> GetNode(IECPresentationManager& mgr, IConnecti
     NavNodeKeyCPtr key = NavNodeKey::FromJson(connection, params["nodeKey"]);
     if (key.IsNull())
         return NavNodeCPtr();
-    return mgr.GetNode(connection.GetECDb(), *key);
+    return mgr.GetNode(connection.GetECDb(), *key, GetNavigationOptions(params).GetJson());
     }
 
 /*---------------------------------------------------------------------------------**//**
