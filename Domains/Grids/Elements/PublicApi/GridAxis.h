@@ -145,13 +145,13 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisX : GridAxis
     private:
 
     protected:
-        DECLARE_GRIDS_ELEMENT_BASE_METHODS(OrthogonalAxisX, GRIDELEMENTS_EXPORT)
         friend struct OrthogonalAxisXHandler;
 
         explicit GRIDELEMENTS_EXPORT OrthogonalAxisX(CreateParams const& params);
 
         virtual bool _IsOrthogonalAxisX() const { return true; }
     public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS(OrthogonalAxisX, GRIDELEMENTS_EXPORT)
 
         //---------------------------------------------------------------------------------------
         // Creation
@@ -197,13 +197,13 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisY : GridAxis
     private:
 
     protected:
-        DECLARE_GRIDS_ELEMENT_BASE_METHODS(OrthogonalAxisY, GRIDELEMENTS_EXPORT)
         friend struct OrthogonalAxisYHandler;
 
         explicit GRIDELEMENTS_EXPORT OrthogonalAxisY(CreateParams const& params);
 
         virtual bool _IsOrthogonalAxisY() const { return true; }
     public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS(OrthogonalAxisY, GRIDELEMENTS_EXPORT)
 
         //---------------------------------------------------------------------------------------
         // Creation
