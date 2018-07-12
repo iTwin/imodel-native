@@ -9,7 +9,7 @@ import sys
 import os
 import zipfile
 import imp
-from shutil import rmtree, copytree
+from shutil import rmtree, copyfile
 
 #-------------------------------------------------------------------------------------------
  # bsimethod                         Kyle.Abramowitz             05/2018
@@ -31,7 +31,7 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir):
     try:
         nugetpkg.GetPackage(pkgGetUrl, pkgName, pkgPathName, version, localDir)
         return pkgPathName
-    except utils.BuildError as err:
+    except BuildError as err:
         print >> sys.stderr, err
         sys.exit(1)
 
@@ -47,7 +47,7 @@ def pullAllNugets(path, pathToNugetPuller, name):
     versions = nugetpkg.SearchVersionsFromServer(address, name)
     for v in versions:
         # ignore stale versions until they have been deleted fromthe nuget server
-        if LooseVersion(v) < LooseVersion("2018.7.10.7"):
+        if LooseVersion(v) < LooseVersion("2018.7.11.1"):
             continue
         # Dowload and save all versions
         localDir = path
@@ -72,19 +72,28 @@ def unzipNugets(srcPath):
 #------------------------------------------------------------------------
 # bsimethod                         Krischan.Eberle            07/2018
 #------------------------------------------------------------------------
+def copyFiles(sourceFolder,targetFolder):
+    for subElement in os.listdir(sourceFolder):
+        sourcePath = os.path.join(sourceFolder, subElement)
+        targetPath = os.path.join(targetFolder, subElement)
+        if os.path.isdir(sourcePath):
+            copyFiles(sourcePath,targetPath)
+        else:
+            if not os.path.exists(targetFolder):
+                os.makedirs(targetFolder)
+            copyfile(sourcePath,targetPath)
+
+#------------------------------------------------------------------------
+# bsimethod                         Krischan.Eberle            07/2018
+#------------------------------------------------------------------------
 def mergeTestFiles(testFilesNugetPath, targetDir):
-    if not os.path.exists(targetDir):
-        os.makedirs(targetDir)
     for subdir in os.listdir(testFilesNugetPath):
         path = os.path.join(testFilesNugetPath, subdir)
-        if os.path.isdir(path):
-            datasetPath = os.path.join(path, "Datasets")
-            if os.path.exists(datasetPath):
-                for testFile in os.listdir(datasetPath):
-                    testFilePath = os.path.join(datasetPath, testFile)
-                    for version in os.listdir(testFilePath):
-                        if not os.path.exists(os.path.join(targetDir, testFile, version)):
-                            copytree(os.path.join(testFilePath, version), os.path.join(targetDir, testFile, version))
+        if not os.path.isdir(path):
+            continue
+        testFilesNugetFolder = os.path.join(path, "TestFiles")
+        if os.path.exists(testFilesNugetFolder):
+            copyFiles(testFilesNugetFolder, targetDir)
 
  #------------------------------------------------------------------------
  # bsimethod                         Kyle.Abramowitz             05/2018
@@ -109,7 +118,7 @@ def main():
     unzipNugets(nugetPathInSrc)
     # Test files can be downloaded in out folder directly
     testFileNugetPath = os.path.join(nugetPath, "testfiles")
-    pullAllNugets(testFileNugetPath, nugetScript, "iModelvolutionTestFilesNuget_bim0200dev_x64")
+    pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_bim0200dev_x64")
     pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_bim0200dev_ec32_x64")
     unzipNugets(testFileNugetPath)
     # Copy test files from all nugets into a single central folder
