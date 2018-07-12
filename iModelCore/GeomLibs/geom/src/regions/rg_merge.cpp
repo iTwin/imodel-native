@@ -2412,15 +2412,15 @@ MTGNodeId       nodeId1
             jmdlRG_setEdgeStartBit (pRG, nodeId3, false);
 
             GEOMAPI_PRINTF (" Pre-twist face sizes: %d %d\n",
-                        jmdlMTGGraph_countNodesAroundFace (pRG->pGraph, resolvedNodeId0),
-                        jmdlMTGGraph_countNodesAroundFace (pRG->pGraph, resolvedNodeId1)
+                        (int)pRG->pGraph->CountNodesAroundFace (resolvedNodeId0),
+                        (int)pRG->pGraph->CountNodesAroundFace (resolvedNodeId1)
                         );
 
             jmdlMTGGraph_vertexTwist (pRG->pGraph, resolvedNodeId0, nodeId2);
             jmdlMTGGraph_vertexTwist (pRG->pGraph, resolvedNodeId1, nodeId3);
             GEOMAPI_PRINTF (" Post-twist face sizes: %d %d\n",
-                        jmdlMTGGraph_countNodesAroundFace (pRG->pGraph, nodeId2),
-                        jmdlMTGGraph_countNodesAroundFace (pRG->pGraph, nodeId3)
+                        (int)pRG->pGraph->CountNodesAroundFace (nodeId2),
+                        (int)pRG->pGraph->CountNodesAroundFace (nodeId3)
                         );
             }
         }
@@ -2515,8 +2515,7 @@ double          vertexEdgeTolerance
     int i, k;
     static int s_noisy = 0;
 
-
-    jmdlMTGGraph_collectAndNumberVertexLoops (pGraph, pNodeToVertexLoopArray, NULL);
+    pGraph->CollectVertexLoops (*pNodeToVertexLoopArray);
 
     if (vertexVertexTolerance > 0.0)
         {

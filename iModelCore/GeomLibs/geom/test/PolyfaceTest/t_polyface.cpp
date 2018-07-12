@@ -24,7 +24,9 @@ static double sGridTextSize = 0.4;
 #endif
 static size_t s_maxPolyfacePrint = 2;
 
-
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+GEOMDLLIMPEXP void jmdlMTGGraph_printLoopCounts (MTGGraph  *pGraph);
+END_BENTLEY_GEOMETRY_NAMESPACE
 
 static void StartNewGridRow ()
     {
@@ -500,24 +502,16 @@ void PrintGraph (MTGGraph *pGraph, int vertexLabelOffset)
             }
         }
     MTGARRAY_END_SET_LOOP (seedNodeId, pGraph)
-    printf ("   (Active %d) (Exterior %d) (F %d) (V %d) (C %d)\n", numActive, numExterior,
-            jmdlMTGGraph_collectAndNumberFaceLoops (pGraph, NULL, NULL),
-            jmdlMTGGraph_collectAndNumberVertexLoops (pGraph, NULL, NULL),
-            jmdlMTGGraph_collectAndNumberConnectedComponents (pGraph, NULL, NULL)
-            );
+    printf ("   (Active %d) (Exterior %d)\n", numActive, numExterior);
+    jmdlMTGGraph_printLoopCounts (pGraph);
     jmdlMTGGraph_dropMask (pGraph, faceVisited);
     jmdlMTGGraph_dropMask (pGraph, vertexVisited);
     }
 
 void PrintGraphSummary (MTGGraphP graph, char const* title)
     {
-    printf ("  %s (N %d) (F %d) (V %d) (C %d)\n",
-            title,
-            (int)graph->GetActiveNodeCount (),
-            (int)jmdlMTGGraph_collectAndNumberFaceLoops (graph, NULL, NULL),
-            (int)jmdlMTGGraph_collectAndNumberVertexLoops (graph, NULL, NULL),
-            (int)jmdlMTGGraph_collectAndNumberConnectedComponents (graph, NULL, NULL)
-            );    
+    printf ("  %s (N %d)\n", title, (int)graph->GetActiveNodeCount ());
+    jmdlMTGGraph_printLoopCounts (graph);
     }
 void PrintNewLine (size_t i, size_t numTotal, size_t numPerLine)
     {
@@ -949,18 +943,17 @@ TEST(Polyface, StitchCube)
             polyfaceMesh.get()->Compress ();
             MTGGraphP pGraph = jmdlMTGFacets_getGraph (mtgFacets);
             Check::True ( PolyfaceToMTG (mtgFacets, &vertexToNodeId, &nodeIdToPolyfaceIndexPosition, *polyfaceMesh.get(), dropToSingleFace, absTol, relTol));    
-   
-            int numVertex = jmdlMTGGraph_collectAndNumberVertexLoops (pGraph, NULL, NULL);
-            int numFace   = jmdlMTGGraph_collectAndNumberFaceLoops (pGraph, NULL, NULL);
-            int numComponent = jmdlMTGGraph_collectAndNumberConnectedComponents (pGraph, NULL, NULL);
+ 
             int num0, num1;
             jmdlMTGGraph_countMasksInSet (&num1, &num0, pGraph, MTG_EXTERIOR_MASK);
+            int numFace = (int)pGraph->CountFaceLoops ();
             if (s_printGraph)
                 {
-                printf ("(Patches %d) (%s) (V %d) (F %d) (C %d) (Ex %d)\n",
+               jmdlMTGGraph_printLoopCounts (pGraph);
+               printf ("(Patches %d) (%s) (Ex %d)\n",
                         numPanel,
                         dropToSingleFace ? "SingleFace" : "DoubleFace",
-                        numVertex, numFace, numComponent, num1);
+                        num1);
                 PrintGraph (pGraph, mtgFacets->vertexLabelOffset);
                 }
 

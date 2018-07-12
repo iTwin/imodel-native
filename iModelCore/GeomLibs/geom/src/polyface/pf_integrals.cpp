@@ -277,7 +277,7 @@ DPoint3dP             pOrigin
     bool boolstat = false;
     const MTGGraph * pGraph = (&pFacetHeader->graphHdr);
     bvector<int>faceStart;
-    jmdlMTGGraph_collectAndNumberFaceLoops(pGraph, &faceStart, NULL);
+    ((MTGGraph*)pGraph)->CollectFaceLoops (faceStart);
 
     MTGNodeId node0Id, node1Id, node2Id;
     DPoint3d point0, point1, point2;

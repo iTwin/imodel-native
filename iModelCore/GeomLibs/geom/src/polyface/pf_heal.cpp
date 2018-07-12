@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/pf_heal.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -449,7 +449,7 @@ static size_t FillHolesByLocalRetriangulation (MTGFacets* facets, bool purgeDoub
             && ! jmdlMTGGraph_getMask (graph, seedNodeId, visitMask))
             {
             jmdlMTGGraph_setMaskAroundFace (graph, seedNodeId, visitMask);
-            if (jmdlMTGGraph_countNodesAroundFace (graph, seedNodeId) < 4)
+            if ((int)graph->CountNodesAroundFace (seedNodeId) < 4)
                 {
                 jmdlMTGGraph_clearMaskAroundFace (graph, seedNodeId, MTG_EXTERIOR_MASK);
                 jmdlMTGGraph_setMaskAroundFace   (graph, seedNodeId, MTG_DIRECTED_EDGE_MASK);

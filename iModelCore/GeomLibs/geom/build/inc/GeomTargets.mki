@@ -774,7 +774,7 @@ $(OUT_DIR)MtgFacetPlanarMerge$(OUT_EXT) : $(geomSrcMTG)MtgFacetPlanarMerge.cpp  
 
 $(OUT_DIR)jmdl_mtgmask$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgmask.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)jmdl_mtgloop$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgloop.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)jmdl_mtgloop$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgloop.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)jmdl_mtgmarkset$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgmarkset.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 

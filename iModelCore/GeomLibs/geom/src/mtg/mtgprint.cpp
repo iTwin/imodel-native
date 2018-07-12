@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/mtg/mtgprint.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -161,7 +161,7 @@ void        *pContext
             MTGARRAY_END_FACE_LOOP (currNodeId, pGraph, startNodeId)
             loopCount++;
             GEOMAPI_PRINTF("   )\n //\t)//End face %d  edge count %d\n", loopCount,
-                            jmdlMTGGraph_countNodesAroundFace (pGraph, startNodeId));
+                            (int)pGraph->CountNodesAroundFace (startNodeId));
             }
         }
     MTGARRAY_END_SET_LOOP (startNodeId, pGraph)
@@ -192,10 +192,12 @@ Public GEOMDLLIMPEXP void jmdlMTGGraph_printLoopCounts
 MTGGraph  *pGraph
 )
     {
-    int numVertex = jmdlMTGGraph_collectAndNumberVertexLoops (pGraph, NULL, NULL);
-    int numFace = jmdlMTGGraph_collectAndNumberFaceLoops (pGraph, NULL, NULL);
-    int numComponent = jmdlMTGGraph_collectAndNumberConnectedComponents (pGraph, NULL, NULL);
-    int numEdge =  jmdlMTGGraph_collectAndNumberEdges (pGraph, NULL, NULL);
+    int numVertex = (int)pGraph->CountVertexLoops ();
+    int numFace = (int)pGraph->CountFaceLoops ();
+    bvector<bvector<MTGNodeId>> component;
+    pGraph->CollectConnectedComponents (component);
+    int numComponent = (int)component.size ();
+    int numEdge = (int)(pGraph->GetActiveNodeCount () / 2);
     GEOMAPI_PRINTF ("  V = %d\n", numVertex);
     GEOMAPI_PRINTF ("  E = %d\n", numEdge);
     GEOMAPI_PRINTF ("  F = %d\n", numFace);

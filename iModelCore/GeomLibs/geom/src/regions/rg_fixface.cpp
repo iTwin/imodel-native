@@ -452,10 +452,14 @@ int                 noisy
 )
     {
     MTGGraph *pGraph = jmdlRG_getGraph (pRG);
-    int numVertex = jmdlMTGGraph_collectAndNumberVertexLoops (pGraph, NULL, NULL);
-    int numFace   = jmdlMTGGraph_collectAndNumberFaceLoops (pGraph, NULL, NULL);
-    int numComponent = jmdlMTGGraph_collectAndNumberConnectedComponents (pGraph, NULL, NULL);
-    int numEdge = jmdlMTGGraph_getNodeCount (pGraph) / 2;
+
+    int numVertex = (int)pGraph->CountVertexLoops ();
+    int numFace = (int)pGraph->CountFaceLoops ();
+    bvector<bvector<MTGNodeId>> component;
+    pGraph->CollectConnectedComponents (component);
+    int numComponent = (int)component.size ();
+    int numEdge = (int)(pGraph->GetActiveNodeCount () / 2);
+
     int numHole = numComponent - (numVertex - numEdge + numFace) / 2;
 
     if (noisy)

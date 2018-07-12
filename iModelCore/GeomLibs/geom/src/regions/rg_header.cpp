@@ -1843,8 +1843,7 @@ void *                          pUserData
 
     EmbeddedIntArray *pFaceStartArray = jmdlEmbeddedIntArray_grab ();
     EmbeddedDPoint3dArray *pCoordinateHeader = jmdlEmbeddedDPoint3dArray_grab ();
-
-    jmdlMTGGraph_collectAndNumberFaceLoops (pRG->pGraph, pFaceStartArray, NULL);
+    pRG->pGraph->CollectFaceLoops (*pFaceStartArray);
 
     for (iFace = 0; jmdlEmbeddedIntArray_getInt (pFaceStartArray, &startNodeId, iFace); iFace++)
         {
@@ -2233,7 +2232,7 @@ int                             excludedComponent
                 pPoint->x, pPoint->y,
                 params.minNodeId,
                 params.nodeId,
-                jmdlMTGGraph_countNodesAroundFace (pRG->pGraph, params.minNodeId),
+                (int)pRG->pGraph->CountNodesAroundFace (params.minNodeId),
                 faceArea
                 );
         }
@@ -2781,17 +2780,14 @@ double                          lowOffset,
 double                          highOffset
 )
     {
-    int i, numFace;
-    MTGNodeId faceSeedNodeId;
     double faceArea;
     MTGGraph *pGraph = pRG->pGraph;
-    EmbeddedIntArray *pFaceStartArray = jmdlEmbeddedIntArray_grab ();
-
-    numFace = jmdlMTGGraph_collectAndNumberFaceLoops (pGraph, pFaceStartArray, NULL);
+    bvector<int> faceStartArray;
+    pGraph->CollectFaceLoops (faceStartArray);
     jmdlRG_freeFaceRangeTree (pRG);
     rgXYRangeTree_initializeTree ((void**)&pRG->pFaceRangeTree);
     jmdlMTGGraph_clearMaskInSet (pGraph, RG_MTGMASK_IS_NEGATIVE_AREA_FACE);
-    for (i = 0;jmdlEmbeddedIntArray_getInt (pFaceStartArray, &faceSeedNodeId, i); i++)
+    for (int faceSeedNodeId : faceStartArray)
         {
         /* 'Faces between duplicate edges' and 'faces whose area cannot be computed'
                 are left out. */
@@ -2820,8 +2816,6 @@ double                          highOffset
             }
         }
 
-    jmdlEmbeddedIntArray_drop (pFaceStartArray);
-
     return  true;
     }
 
@@ -2848,7 +2842,6 @@ Public void            jmdlRG_buildFaceHoleArray
 RG_Header                       *pRG
 )
     {
-    EmbeddedIntArray *pNodeIdToComponentArray = jmdlEmbeddedIntArray_grab ();
     EmbeddedIntArray *pFaceHoleNodeIdArray;
     MTGGraph    *pGraph = pRG->pGraph;
     MTGMask     visitMask = jmdlMTGGraph_grabMask (pGraph);
@@ -2859,8 +2852,18 @@ RG_Header                       *pRG
     RG_EdgeData edgeData;
     static      double s_offsetFraction = 1.2378237432432e-3;
 
-
-    int numComponent = jmdlMTGGraph_collectAndNumberConnectedComponents (pRG->pGraph, NULL, pNodeIdToComponentArray);
+    bvector<bvector<MTGNodeId>> components;
+    pRG->pGraph->CollectConnectedComponents (components);
+    bvector<int> nodeToComponentIdArray;
+    for (size_t i = 0; i < pRG->pGraph->GetNodeIdCount (); i++)
+        nodeToComponentIdArray.push_back (-1);
+    int numComponent = 0;
+    for (auto &component : components)
+        {
+        for (auto nodeId : component)
+            nodeToComponentIdArray[(size_t)nodeId] = numComponent;
+        numComponent++;
+        }
 
     if (pRG->pFaceHoleNodeIdArray)
         {
@@ -2888,7 +2891,7 @@ RG_Header                       *pRG
                 jmdlMTGGraph_setMaskAroundFace (pGraph, faceSeedNodeId, visitMask);
                 jmdlRG_getEdgeData (pRG, &edgeData, faceSeedNodeId);
                 jmdlRG_evaluateEdgeData (pRG, &vertexCoordinates, &edgeData, s_offsetFraction);
-                jmdlEmbeddedIntArray_getInt(pNodeIdToComponentArray, &excludedComponent, faceSeedNodeId);
+                jmdlEmbeddedIntArray_getInt(&nodeToComponentIdArray, &excludedComponent, faceSeedNodeId);
                 if (jmdlMTGGraph_getMask (pGraph, faceSeedNodeId, RG_MTGMASK_IS_NEGATIVE_AREA_FACE))
                     {
                     innerRefNodeId = jmdlRG_resolveFaceNodeId (pRG, faceSeedNodeId);
@@ -2901,7 +2904,7 @@ RG_Header                       *pRG
                                         &containingFaceNodeId,
                                         NULL,
                                         &vertexCoordinates,
-                                        pNodeIdToComponentArray,
+                                        &nodeToComponentIdArray,
                                         excludedComponent
                                         );
 
@@ -2930,7 +2933,6 @@ RG_Header                       *pRG
 
     pRG->pFaceHoleNodeIdArray = pFaceHoleNodeIdArray;
     jmdlMTGGraph_dropMask (pGraph, visitMask);
-    jmdlEmbeddedIntArray_drop (pNodeIdToComponentArray);
     }
 
 

@@ -227,7 +227,7 @@ MTGFacets           *pFacetHeader
             MTGARRAY_FACE_LOOP (currNodeId, pGraph, seedNodeId)
                 {
                 numAroundFace++;
-                if (jmdlMTGGraph_countNodesAroundVertex (pGraph, currNodeId) != 2)
+                if ((int)pGraph->CountNodesAroundVertex (currNodeId) != 2)
                     numComplexVertex++;
                 }
             MTGARRAY_END_FACE_LOOP (currNodeId, pGraph, seedNodeId)

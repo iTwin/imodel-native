@@ -783,17 +783,13 @@ MTGFacets * pFacetHeader
     for (size_t i = 0; i < (size_t) numNodeId; i++)
         vertexNormalArray.push_back (zeroVector);
 
-    int iFace;
-    int nFace = jmdlMTGGraph_collectAndNumberFaceLoops ((jmdlMTGFacets_getGraph (pFacetHeader)), &faceStartArray, NULL);
+    jmdlMTGFacets_getGraph (pFacetHeader)->CollectFaceLoops (faceStartArray);
     const DPoint3d *pCoordinateArray;
     DVec3d normal;
-    int startId;
-    int errorCount = 0;
 
-    for (iFace = 0; iFace < nFace; iFace++)
+    for (int startId : faceStartArray)
         {
-        if (   TryGet <int> (faceStartArray, &startId, iFace)
-            && jmdlMTGFacets_getFaceCoordinates ((jmdlMTGFacets_getGraph (pFacetHeader)),
+        if (jmdlMTGFacets_getFaceCoordinates ((jmdlMTGFacets_getGraph (pFacetHeader)),
                         &faceLoopArray, (&pFacetHeader->vertexArrayHdr), startId, vertexIdOffset)
             )
             {
@@ -805,10 +801,6 @@ MTGFacets * pFacetHeader
                 vertexNormalArray[currNodeId] = normal;
                 }
             MTGARRAY_END_FACE_LOOP (currNodeId, pGraph, startId)
-            }
-        else
-            {
-            errorCount++;
             }
         }
 
@@ -1174,7 +1166,7 @@ public:
             {
             if (!jmdlMTGGraph_getMask (pGraph, seedNodeId, visitMask))
                 {
-                int numAroundVertex = jmdlMTGGraph_countNodesAroundVertex (pGraph, seedNodeId);
+                int numAroundVertex = (int)pGraph->CountNodesAroundVertex (seedNodeId);
                 jmdlMTGGraph_setMaskAroundVertex (pGraph, seedNodeId, visitMask);
                 if (sDebug)
                     {

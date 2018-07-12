@@ -1493,7 +1493,7 @@ const MTGFacets *               pFacetHeader
         {
         if (    !jmdlMTGGraph_getMask (pGraph, startNodeId, MTG_EXTERIOR_MASK))
             {
-            int numNode = jmdlMTGGraph_countNodesAroundFace (pGraph, startNodeId);
+            int numNode = (int)pGraph->CountNodesAroundFace (startNodeId);
             if (numNode >= 3 && numNode <= 4
                 && jmdlMTGFacets_getFaceCoordinatesToBuffer (pGraph, coords, &numNode, 4,
                                             pVertexArray, startNodeId, vertexOffset)
