@@ -53,29 +53,24 @@ public:
     bvector<NavNodesProviderPtr> const& GetNodeProviders() const {return m_nodeProviders;}
 };
 
-BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                04/2017
-+===============+===============+===============+===============+===============+======*/
-struct DataSourceRelatedSettingsUpdater
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DataSourceRelatedSettingsUpdater::DataSourceRelatedSettingsUpdater(DataSourceInfo const& info, NavNodesProviderContextCR context)
+    : m_datasourceInfo(info), m_context(context)
     {
-    DataSourceInfo const& m_datasourceInfo;
-    NavNodesProviderContextCR m_context;
-    size_t m_relatedSettingsCountBefore;
+    m_relatedSettingsCountBefore = m_context.GetRelatedSettings().size();
+    }
 
-    DataSourceRelatedSettingsUpdater(DataSourceInfo const& info, NavNodesProviderContextCR context)
-        : m_datasourceInfo(info), m_context(context)
-        {
-        m_relatedSettingsCountBefore = m_context.GetRelatedSettings().size();
-        }
-    ~DataSourceRelatedSettingsUpdater()
-        {
-        bvector<UserSettingEntry> settings = m_context.GetRelatedSettings();
-        if (settings.size() != m_relatedSettingsCountBefore)
-            m_context.GetNodesCache().Update(m_datasourceInfo, nullptr, nullptr, &settings);
-        }
-    };
-END_BENTLEY_ECPRESENTATION_NAMESPACE
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DataSourceRelatedSettingsUpdater::~DataSourceRelatedSettingsUpdater()
+    {
+    bvector<UserSettingEntry> settings = m_context.GetRelatedSettings();
+    if (settings.size() != m_relatedSettingsCountBefore)
+        m_context.GetNodesCache().Update(m_datasourceInfo, nullptr, nullptr, &settings);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
