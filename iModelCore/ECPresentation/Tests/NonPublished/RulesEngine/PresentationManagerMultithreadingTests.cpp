@@ -189,7 +189,6 @@ struct RulesDrivenECPresentationManagerMultithreadingRealConnectionTests : Rules
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS) && !defined(BENTLEYCONFIG_OS_LINUX)
 TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, HandlesBusyConnectionByWaiting)
     {
     // set up some ruleset so we do actually hit the db
@@ -222,7 +221,6 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
     count.wait(std::chrono::seconds(1));
     ASSERT_TRUE(count.isReady());
     }
-#endif
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015

@@ -149,7 +149,6 @@ struct HierarchyUpdateTests : UpdateTests
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS) && !defined(BENTLEYCONFIG_OS_LINUX)
 TEST_F (HierarchyUpdateTests, RemovesECInstanceNodeAfterECInstanceDelete)
     {
     // insert some widget instances
@@ -5427,7 +5426,6 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterInsertWhenItAlreadyHasManyTo
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
     EXPECT_EQ(*childNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
     }
-#endif
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                10/2016
@@ -5858,7 +5856,6 @@ struct SelectionUpdateTests : UpdateTests
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS) && !defined(BENTLEYCONFIG_OS_LINUX)
 TEST_F(SelectionUpdateTests, RemovesECInstanceNodeKeyFromSelection)
     {
     // insert some widget instances
@@ -6219,4 +6216,3 @@ TEST_F(SelectionUpdateTests, DoesntRefreshSelectionWhenUnaffectedGroupingNodeCha
     // expect no selection change events
     EXPECT_EQ(0, selectionChangeEvents.size());
     }
-#endif
