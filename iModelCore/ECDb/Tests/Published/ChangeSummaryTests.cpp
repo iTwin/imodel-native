@@ -763,6 +763,7 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
 
     auto assertCache = [] (ECDbCR ecdb, bool expectedIsValidCache, Utf8CP assertMessage)
         {
+        EXPECT_TRUE(ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
         EXPECT_EQ(expectedIsValidCache, ecdb.IsChangeCacheAttached()) << assertMessage;
         EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().ContainsSchema("ECDbChange")) << assertMessage;
         EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().ContainsSchema("ECDbChange", SchemaLookupMode::ByName, "ecchange")) << assertMessage;
@@ -867,6 +868,7 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
     BeFileName cachePath = ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName());
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache(cachePath));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
     ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbChange", "InstanceChange") != nullptr);
     m_ecdb.CloseDb();
@@ -877,6 +879,7 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(ecdbPath));
     ASSERT_EQ(BE_SQLITE_OK, ecdb.AttachChangeCache(cachePath));
+    ASSERT_TRUE(ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
     ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChange", "InstanceChange") != nullptr);
     }
@@ -887,6 +890,7 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(ecdbPath));
     ASSERT_EQ(BE_SQLITE_OK, ecdb.AttachChangeCache(cachePath));
+    ASSERT_TRUE(ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
     ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChange", "InstanceChange") != nullptr);
     ecdb.ClearECDbCache();
@@ -917,6 +921,7 @@ TEST_F(ChangeSummaryTestFixture, AttachChangeCacheMethodInput)
 
     ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeCache(BeFileName())) << "Change cache path must not be empty";
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache(cachePath));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
 
     {
@@ -935,6 +940,7 @@ TEST_F(ChangeSummaryTestFixture, AttachChangeCacheMethodInput)
 
     ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache(cachePath));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
     }
 
