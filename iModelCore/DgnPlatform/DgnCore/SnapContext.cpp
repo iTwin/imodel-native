@@ -94,36 +94,6 @@ bool EvaluateInterior()
                 if (!m_hitGeom->GetAsISolidPrimitive()->TryUVFractionToXYZ(solidDetail.GetFaceIndices(), solidDetail.GetU(), solidDetail.GetV(), point, uDir, vDir))
                     return false;
 
-#if defined (NOT_NOW_DEBUG)
-                printf("\n>>> ClosestPoint/TryUVFractionToXYZ: %d - %d - %d\n", (int) solidDetail.GetFaceIndices().Index0(), (int) solidDetail.GetFaceIndices().Index1(), (int) solidDetail.GetFaceIndices().Index2());
-                if (!DPoint3dOps::AlmostEqual(solidDetail.GetXYZ(), point, 1.0e-3))
-                    printf("(BAD)\n");
-
-                DRay3d boresite = GetBoresite(localPoint, m_hitLocalToView.M1);
-                bvector<SolidLocationDetail> intersectLocationDetail;
-
-                m_hitGeom->GetAsISolidPrimitive()->AddRayIntersections(intersectLocationDetail, boresite);
-
-                if (!intersectLocationDetail.empty())
-                    {
-                    DVec3d    uDir2, vDir2;
-                    DPoint3d  point2;
-
-                    for (SolidLocationDetail& rayDetail : intersectLocationDetail)
-                        {
-                        if (!rayDetail.GetFaceIndices().Is(solidDetail.GetFaceIndices().Index0(), solidDetail.GetFaceIndices().Index1(), solidDetail.GetFaceIndices().Index2()))
-                            continue;
-
-                        printf("\n>>> AddRayIntersections/TryUVFractionToXYZ: %d - %d - %d\n", (int) rayDetail.GetFaceIndices().Index0(), (int) rayDetail.GetFaceIndices().Index1(), (int) rayDetail.GetFaceIndices().Index2());
-                        if (!m_hitGeom->GetAsISolidPrimitive()->TryUVFractionToXYZ(rayDetail.GetFaceIndices(), rayDetail.GetU(), rayDetail.GetV(), point2, uDir2, vDir2))
-                            printf("(BAD)\n");
-
-                        if (!DPoint3dOps::AlmostEqual(rayDetail.GetXYZ(), point2, 1.0e-3))
-                            printf("(BAD)\n");
-                        }
-                    }
-#endif
-
                 if (interiorPt)
                     m_hitCurveDetail.point = point;
                 m_hitNormalLocal.NormalizedCrossProduct(uDir, vDir);
@@ -313,10 +283,21 @@ bool EvaluateArcCenter()
     localPts[0] = m_hitClosePtLocal;
     localPts[1] = arc->center;
 
-    m_hitLocalToView.M0.Multiply(viewPts, localPts, nullptr, 2);
+    // NOTE: For keypoint snap to interior, choose arc center if interior point is "closer" to it than to the edge...
+    if (SnapMode::NearestKeypoint == m_snapMode && (HitParentGeomType::Sheet == m_hitParentGeomType || HitParentGeomType::Solid == m_hitParentGeomType))
+        {
+        double radius = DoubleOps::Min(arc->vector0.Magnitude(), arc->vector90.Magnitude());
 
-    if (viewPts[0].RealDistance(viewPts[1]) > m_snapAperture)
-        return false;
+        if (localPts[0].Distance(localPts[1]) > (radius * 0.25))
+            return false;
+        }
+    else
+        {
+        m_hitLocalToView.M0.Multiply(viewPts, localPts, nullptr, 2);
+
+        if (viewPts[0].RealDistance(viewPts[1]) > m_snapAperture)
+            return false;
+        }
 
     m_hitGeomType = HitGeomType::Point;
     m_hitCurveDetail.point = arc->center;
@@ -1986,58 +1967,6 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus SnapContext::DoDefaultDisplayableSnap()
     {
-#if defined (NOT_NOW_USE_HITDETAIL)
-    Json::Value input;
-
-    input["elementId"] = GetSnapDetail()->GetElementId().ToHexStr();
-    JsonUtils::DPoint3dToJson(input["closePoint"], GetSnapDetail()->GetGeomDetail().GetClosestPoint());
-    JsonUtils::DMatrix4dToJson(input["worldToView"], GetWorldToView().M0);
-    input["viewFlags"] = m_viewflags.ToJson();
-
-    input["snapMode"] = (uint32_t) GetSnapMode();
-    input["snapAperture"] = GetSnapAperture();
-    input["snapDivisor"] = GetSnapDivisor();
-
-    Json::Value output = SnapContext::DoSnap(input, GetDgnDb());
-
-    SnapStatus status = (output["status"].isNull() ? SnapStatus::NotSnappable : (SnapStatus) output["status"].asUInt());
-
-    if (SnapStatus::Success == status)
-        {
-        DPoint3d snapPoint;
-
-        JsonUtils::DPoint3dFromJson(snapPoint, output["snapPoint"]);
-
-        if (!output["normal"].isNull())
-            {
-            DVec3d normal;
-
-            JsonUtils::DVec3dFromJson(normal, output["normal"]);
-            GetSnapDetail()->GetGeomDetailW().SetSurfaceNormal(normal);
-            }
-
-        HitGeomType hitGeomType = (output["geomType"].isNull() ? HitGeomType::None : (HitGeomType) output["geomType"].asUInt());
-        Transform hitLocalToWorld = Transform::FromIdentity();
-        ICurvePrimitivePtr curve;
-
-        if (!output["localToWorld"].isNull())
-            JsonUtils::TransformFromJson(hitLocalToWorld, output["localToWorld"]);
-
-        if (!output["curve"].isNull())
-            {
-            bvector<IGeometryPtr> geometry;
-
-            if (IModelJson::TryIModelJsonValueToGeometry(output["curve"], geometry) && 1 == geometry.size())
-                curve = geometry.at(0)->GetAsICurvePrimitive();
-            }
-
-        GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(curve.IsValid() ? curve.get() : nullptr, &hitLocalToWorld, hitGeomType);
-
-        SetSnapInfo(*GetSnapDetail(), GetSnapMode(), GetSnapSprite(GetSnapMode()), snapPoint, SnapMode::Center == GetSnapMode(), GetSnapAperture(), false);
-        }
-
-    return status;
-#else
     GeomDetailCR    detail = GetSnapDetail()->GetGeomDetail();
 
     // Don't require a curve primitive if hit geom is point or mode is nearest because current hit point is correct...
@@ -2110,7 +2039,6 @@ SnapStatus SnapContext::DoDefaultDisplayableSnap()
         }
 
     return DoSnapUsingCurve(GetSnapMode());
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
