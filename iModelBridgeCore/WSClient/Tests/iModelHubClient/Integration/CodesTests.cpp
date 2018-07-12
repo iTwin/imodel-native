@@ -842,7 +842,33 @@ TEST_F(CodesTests, CodesStatesResponseTest)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             07/2018
 //---------------------------------------------------------------------------------------
-TEST_F(CodesTests, ExternalCodesTest)
+TEST_F(CodesTests, ExternalCodesRequestTest)
+    {
+    //Prapare imodel and acquire briefcases
+    BriefcasePtr briefcase1 = AcquireAndOpenBriefcase();
+    DgnDbR db1 = briefcase1->GetDgnDb();
+
+    //Create an external code spec
+    CodeSpecPtr externalCodeSpec = CodeSpec::Create(db1, TestCodeName().c_str());
+    ASSERT_TRUE(externalCodeSpec.IsValid());
+    externalCodeSpec->SetIsManagedWithDgnDb(false);
+    db1.CodeSpecs().Insert(*externalCodeSpec);
+    db1.SaveChanges();
+
+    //Try to acquire code
+    DgnCode testCode = externalCodeSpec->CreateCode(TestCodeName(1));
+    IRepositoryManagerP manager = s_client->GetiModelAdmin()->_GetRepositoryManager(db1);
+    IBriefcaseManager::Request req;
+    req.Codes().insert(testCode);
+    IRepositoryManager::Response response = manager->Acquire(req, db1);
+
+    EXPECT_EQ(RepositoryStatus::InvalidRequest, response.Result());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             07/2018
+//---------------------------------------------------------------------------------------
+TEST_F(CodesTests, ExternalCodesPushTest)
     {
     //Prapare imodel and acquire briefcases
     BriefcasePtr briefcase1 = AcquireAndOpenBriefcase();
@@ -855,8 +881,10 @@ TEST_F(CodesTests, ExternalCodesTest)
 
     //Create an element with an external code.
     auto model = CreateModel(TestCodeName().c_str(), db1);
+    ASSERT_TRUE(model.IsValid());
     db1.CodeSpecs().Insert(*internalCodeSpec);
     DgnElementCPtr element = CreateElement(*model.get(), internalCodeSpec->CreateCode(TestCodeName(2)));
+    ASSERT_TRUE(element.IsValid());
     db1.SaveChanges();
 
     //Push changes

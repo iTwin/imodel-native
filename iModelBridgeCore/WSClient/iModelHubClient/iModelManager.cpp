@@ -23,6 +23,7 @@ iModelManager::iModelManager(iModelConnectionPtr connection) : m_connection(conn
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManager::Response iModelManager::_ProcessRequest(Request const& req, DgnDbR db, bool queryOnly)
     {
+    const Utf8String methodName = "iModelManager::_ProcessRequest";
     auto purpose = queryOnly ? IBriefcaseManager::RequestPurpose::Query : IBriefcaseManager::RequestPurpose::Acquire;
 
     if (req.Locks().IsEmpty() && req.Codes().empty())
@@ -30,6 +31,20 @@ IBriefcaseManager::Response iModelManager::_ProcessRequest(Request const& req, D
 
     if (m_connection.IsNull())
         return Response(purpose, req.Options(), RepositoryStatus::ServerUnavailable);
+
+    if (!req.Codes().empty())
+        {
+        for (DgnCodeCR code : req.Codes())
+            {
+            CodeSpecCPtr codeSpec = db.CodeSpecs().GetCodeSpec(code.GetCodeSpecId());
+            if (!codeSpec->IsManagedWithDgnDb())
+                {
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Cannot request code managed by external service.");
+                return Response(purpose, req.Options(), RepositoryStatus::InvalidRequest);
+                }
+            }
+        }
+
     Utf8String lastChangeSetId = db.Revisions().GetParentRevisionId();
 
     StatusResultPtr result;
