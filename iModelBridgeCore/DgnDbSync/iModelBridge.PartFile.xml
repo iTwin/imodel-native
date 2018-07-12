@@ -136,12 +136,12 @@
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <Product Name="iModelBridgeAssign" SaveProduct="true">
       <SubPart PartName="iModelBridgeAssignExeShim" />
-      <SubPart PartName="iModelBridgeGetAffinityHostExeShim"/>
+      <SubPart PartName="iModelBridgeGetAffinityHostExe" LibType="Static"/>
       <Directories DirectoryListName="iModelBridgeAssignDirList" />
     </Product>
 
     <ProductDirectoryList ListName="iModelBridgeAssignDirList">
-      <ProductDirectory Name="Assemblies"                Deliver="false" Path="" LibType="Static"/>
+      <ProductDirectory Name="Assemblies"                Deliver="true" Path="" LibType="Static"/>
       <ProductDirectory Name="Assemblies"                Deliver="true"  Path="" LibType="dynamic"/>
       <ProductDirectory Name="Libs"                      Deliver="false" LibType="static"/>
       <ProductDirectory Name="Libs"                      Deliver="false" LibType="dynamic"/>
@@ -188,10 +188,9 @@
 
     <Part Name="iModelBridgeGetAffinityHostExe" BentleyBuildMakeFile="iModelBridge/Fwk/Registry/iModelBridgeGetAffinityHost.mke">
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
-        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="PublicApi"/>
         <Bindings>
-            <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
+            <Files ProductDirectoryName="Assemblies" ProductSubDirectory="iModelBridgeGetAffinityHost">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
         </Bindings>
     </Part>
 

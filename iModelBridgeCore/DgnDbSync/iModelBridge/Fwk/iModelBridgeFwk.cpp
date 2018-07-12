@@ -1425,7 +1425,17 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
     uint8_t retryopenII = 0;
     while (!m_briefcaseDgnDb.IsValid() && (DbResult::BE_SQLITE_ERROR_SchemaUpgradeFailed == dbres) && (++retryopenII < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
         {
-        GetLogger().infov("SchemaUpgrade failed. Retrying.");
+        // The upgrade may have failed because we could not get the schema lock, and that may have failed because
+        // another briefcase pushed schema changes after this briefcase last pulled.
+        // If so, then we have to pull before re-trying.
+        GetLogger().infov("SchemaUpgrade failed. Pulling.");
+        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
+        oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
+        m_briefcaseDgnDb = DgnDb::OpenDgnDb(&dbres, m_briefcaseName, oparams);
+        Briefcase_PullMergePush("");    // TRICKY Only Briefcase_PullMergePush contains the mergeschemachanges logic. Briefcase_PullAndMerge does not.
+        m_briefcaseDgnDb = nullptr;
+
+        GetLogger().infov("Retrying SchemaUpgrade (if still necessary).");
         m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
         }
     if (!m_briefcaseDgnDb.IsValid())
