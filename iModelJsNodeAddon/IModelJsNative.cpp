@@ -190,19 +190,21 @@ struct NapiUtils
                 return Napi::Boolean::New(env, jsonValue.asBool());
             case Json::ValueType::intValue:
                 {
+                int64_t val = jsonValue.asInt64();
                 napi_value v;
-                if (napi_create_int32(env, jsonValue.asInt(), &v) != napi_ok)
-                    return env.Undefined();
+                if ((val < std::numeric_limits<std::int32_t>::max()) && napi_create_int32(env, val, &v) == napi_ok)
+                    return Napi::Number(env, v);
 
-                return Napi::Number(env, v);
+                return Napi::Number::New (env, val);
                 }
             case Json::ValueType::uintValue:
                 {
+                uint64_t val = jsonValue.asUInt64();
                 napi_value v;
-                if (napi_create_uint32(env, jsonValue.asUInt(), &v) != napi_ok)
-                    return env.Undefined();
+                if ((val < std::numeric_limits<std::uint32_t>::max()) && napi_create_uint32(env, val, &v) == napi_ok)
+                    return Napi::Number(env, v);
 
-                return Napi::Number(env, v);
+                return Napi::Number::New(env, val);
                 }
             case Json::ValueType::realValue:
                 return Napi::Number::New(env, jsonValue.asDouble());
@@ -233,6 +235,55 @@ struct NapiUtils
 
         return env.Undefined();
         }
+
+        static Json::Value Convert(Napi::Value jsValue)
+            {
+            switch (jsValue.Type())
+                {
+                case napi_valuetype::napi_boolean:
+                    return Json::Value(jsValue.ToBoolean().Value());
+                case napi_valuetype::napi_undefined:
+                case napi_valuetype::napi_null:
+                    return Json::Value();
+                case napi_valuetype::napi_number:
+                    return Json::Value(jsValue.ToNumber().DoubleValue());
+                case napi_valuetype::napi_object:
+                    {
+                    Napi::Object obj = jsValue.ToObject();
+                    if (obj.IsArray())
+                        {
+                        Json::Value jsonArray(Json::ValueType::arrayValue);
+                        for (uint32_t i = 0; i < obj.As<Napi::Array>().Length(); i++)
+                            jsonArray.append(Convert(obj.Get(i)));
+
+                        return jsonArray;
+                        }
+
+                    if (obj.IsObject())
+                        {
+                        Json::Value jsonObject(Json::ValueType::objectValue);
+                        Napi::Array propertyNames = obj.GetPropertyNames();
+                        for (uint32_t i = 0; i < propertyNames.Length(); i++)
+                            {
+                            Napi::Value propertyName = propertyNames.Get(i);                        
+                            jsonObject[propertyName.ToString().Utf8Value().c_str()] = Convert(obj.Get(propertyName));
+                            }
+
+                        return jsonObject;
+                        }
+
+                    }
+                case napi_valuetype::napi_string:
+                    return Json::Value(jsValue.ToString().Utf8Value().c_str());
+                case napi_valuetype::napi_symbol:
+                case napi_valuetype::napi_external:
+                case napi_valuetype::napi_function:
+                    break;
+                }
+
+            BeAssert(false);
+            return Json::Value();;
+            }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                05/18
@@ -378,7 +429,7 @@ struct NativeECDb : Napi::ObjectWrap<NativeECDb>
 
         Napi::Value CreateDb(Napi::CallbackInfo const& info)
             {
-            REQUIRE_ARGUMENT_STRING(0, dbName, Env().Undefined());
+            REQUIRE_ARGUMENT_STRING(0, dbName, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
             DbResult status = JsInterop::CreateECDb(GetECDb(), BeFileName(dbName.c_str(), true));
             if (BE_SQLITE_OK == status)
                 {
@@ -391,9 +442,9 @@ struct NativeECDb : Napi::ObjectWrap<NativeECDb>
 
         Napi::Value OpenDb(Napi::CallbackInfo const& info)
             {
-            REQUIRE_ARGUMENT_STRING(0, dbName, Env().Undefined());
-            REQUIRE_ARGUMENT_INTEGER(1, mode, Env().Undefined());
-            OPTIONAL_ARGUMENT_BOOL(2, upgrade, false, Env().Undefined());
+            REQUIRE_ARGUMENT_STRING(0, dbName, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            REQUIRE_ARGUMENT_INTEGER(1, mode, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            OPTIONAL_ARGUMENT_BOOL(2, upgrade, false, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
             Db::OpenParams params((Db::OpenMode) mode);
             if (upgrade)
@@ -426,7 +477,7 @@ struct NativeECDb : Napi::ObjectWrap<NativeECDb>
 
         Napi::Value SaveChanges(Napi::CallbackInfo const& info)
             {
-            OPTIONAL_ARGUMENT_STRING(0, changeSetName, Env().Undefined());
+            OPTIONAL_ARGUMENT_STRING(0, changeSetName, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
             DbResult status = GetECDb().SaveChanges(changeSetName.empty() ? nullptr : changeSetName.c_str());
             return Napi::Number::New(Env(), (int) status);
             }
@@ -439,7 +490,7 @@ struct NativeECDb : Napi::ObjectWrap<NativeECDb>
 
         Napi::Value ImportSchema(Napi::CallbackInfo const& info)
             {
-            REQUIRE_ARGUMENT_STRING(0, schemaPathName, Env().Undefined());
+            REQUIRE_ARGUMENT_STRING(0, schemaPathName, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
             DbResult status = JsInterop::ImportSchema(GetECDb(), BeFileName(schemaPathName.c_str(), true));
             return Napi::Number::New(Env(), (int) status);
             }
@@ -1200,7 +1251,9 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         {
         OPTIONAL_ARGUMENT_STRING(0, description, Env().Undefined());
         REQUIRE_DB_TO_BE_OPEN
+        auto was = JsInterop::SetOkEndBulkMode(true);
         auto stat = GetDgnDb().SaveChanges(description);
+        JsInterop::SetOkEndBulkMode(was);
         return Napi::Number::New(Env(), (int)stat);
         }
 
@@ -1476,6 +1529,12 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)JsInterop::BriefcaseManagerEndBulkOperation(GetDgnDb()));
         }
 
+    static Napi::Value GetAssetDir(Napi::CallbackInfo const& info)
+        {
+        BeFileName asset = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+        return Napi::String::New(info.Env(), asset.GetNameUtf8().c_str());
+        }
+
     void UpdateProjectExtents(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, newExtentsJson, )
@@ -1676,6 +1735,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("abandonCreateChangeSet", &NativeDgnDb::AbandonCreateChangeSet),
             InstanceMethod("addPendingChangeSet", &NativeDgnDb::AddPendingChangeSet),
             InstanceMethod("appendBriefcaseManagerResourcesRequest", &NativeDgnDb::AppendBriefcaseManagerResourcesRequest),
+            InstanceMethod("applyChangeSets", &NativeDgnDb::ApplyChangeSets),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
             InstanceMethod("briefcaseManagerEndBulkOperation", &NativeDgnDb::BriefcaseManagerEndBulkOperation),
             InstanceMethod("briefcaseManagerStartBulkOperation", &NativeDgnDb::BriefcaseManagerStartBulkOperation),
@@ -1688,6 +1748,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
             InstanceMethod("deleteModel", &NativeDgnDb::DeleteModel),
             InstanceMethod("detachChangeCache", &NativeDgnDb::DetachChangeCache),
+            InstanceMethod("dumpChangeSet", &NativeDgnDb::DumpChangeSet),
+            InstanceMethod("embedFont", &NativeDgnDb::EmbedFont),
             InstanceMethod("executeTest", &NativeDgnDb::ExecuteTest),
             InstanceMethod("extractBriefcaseManagerResourcesRequest", &NativeDgnDb::ExtractBriefcaseManagerResourcesRequest),
             InstanceMethod("extractBulkResourcesRequest", &NativeDgnDb::ExtractBulkResourcesRequest),
@@ -1698,8 +1760,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getBriefcaseId", &NativeDgnDb::GetBriefcaseId),
             InstanceMethod("getDbGuid", &NativeDgnDb::GetDbGuid),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
-            InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
-            InstanceMethod("getSchema", &NativeDgnDb::GetSchema),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
             InstanceMethod("getElementPropertiesForDisplay", &NativeDgnDb::GetElementPropertiesForDisplay),
             InstanceMethod("getIModelProps", &NativeDgnDb::GetIModelProps),
@@ -1707,6 +1767,10 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getParentChangeSetId", &NativeDgnDb::GetParentChangeSetId),
             InstanceMethod("getPendingChangeSets", &NativeDgnDb::GetPendingChangeSets),
             InstanceMethod("getReversedChangeSetId", &NativeDgnDb::GetReversedChangeSetId),
+            InstanceMethod("getSchema", &NativeDgnDb::GetSchema),
+            InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
+            InstanceMethod("getTiles", &NativeDgnDb::GetTiles),
+            InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
@@ -1715,20 +1779,17 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
-            InstanceMethod("applyChangeSets", &NativeDgnDb::ApplyChangeSets),
-            InstanceMethod("dumpChangeSet", &NativeDgnDb::DumpChangeSet),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryNextAvailableFileProperty", &NativeDgnDb::QueryNextAvailableFileProperty),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
             InstanceMethod("removePendingChangeSet", &NativeDgnDb::RemovePendingChangeSet),
-            InstanceMethod("embedFont", &NativeDgnDb::EmbedFont),
             InstanceMethod("saveChanges", &NativeDgnDb::SaveChanges),
             InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
+            InstanceMethod("setAsMaster", &NativeDgnDb::SetAsMaster),
             InstanceMethod("setBriefcaseId", &NativeDgnDb::SetBriefcaseId),
             InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
             InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerPessimisticConcurrencyControlPolicy),
             InstanceMethod("setDbGuid", &NativeDgnDb::SetDbGuid),
-            InstanceMethod("setAsMaster", &NativeDgnDb::SetAsMaster),
             InstanceMethod("startCreateChangeSet", &NativeDgnDb::StartCreateChangeSet),
             InstanceMethod("txnManagerGetCurrentTxnId", &NativeDgnDb::TxnManagerGetCurrentTxnId),
             InstanceMethod("txnManagerGetTxnDescription", &NativeDgnDb::TxnManagerGetTxnDescription),
@@ -1738,12 +1799,11 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("txnManagerQueryNextTxnId", &NativeDgnDb::TxnManagerQueryNextTxnId),
             InstanceMethod("txnManagerQueryPreviousTxnId", &NativeDgnDb::TxnManagerQueryPreviousTxnId),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
+            InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
             InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),
             InstanceMethod("updateModel", &NativeDgnDb::UpdateModel),
             InstanceMethod("updateProjectExtents", &NativeDgnDb::UpdateProjectExtents),
-            InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
-            InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
-            InstanceMethod("getTiles", &NativeDgnDb::GetTiles),
+            StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
         });
 
         exports.Set("NativeDgnDb", t);
@@ -1778,13 +1838,6 @@ private:
         return BE_SQLITE_ERROR;
         }
 
-    IECSqlBinder& GetBinder()
-        {
-        if (m_binder == nullptr)
-            Napi::TypeError::New(Env(), "Invalid Binder").ThrowAsJavaScriptException();
-
-        return *m_binder;
-        }
 public:
     NativeECSqlBinder(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlBinder>(info)
         {
@@ -1848,93 +1901,117 @@ public:
 
     Napi::Value BindNull(Napi::CallbackInfo const& info)
         {
-        ECSqlStatus stat = GetBinder().BindNull();
+        if (m_binder == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+        ECSqlStatus stat = m_binder->BindNull();
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
     Napi::Value BindBlob(Napi::CallbackInfo const& info)
         {
+        if (m_binder == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
         if (info.Length() == 0)
-            THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires an argument", Env().Undefined());
+            THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires an argument", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         Napi::Value blobVal = info[0];
         if (blobVal.IsArrayBuffer())
             {
             auto arrayBuf = blobVal.As<Napi::ArrayBuffer>();
-            ECSqlStatus stat = GetBinder().BindBlob(arrayBuf.Data(), (int) arrayBuf.ByteLength(), IECSqlBinder::MakeCopy::Yes);
+            ECSqlStatus stat = m_binder->BindBlob(arrayBuf.Data(), (int) arrayBuf.ByteLength(), IECSqlBinder::MakeCopy::Yes);
             return Napi::Number::New(Env(), (int) ToDbResult(stat));
             }
 
         if (!blobVal.IsString())
-            THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires either a base64-encoded-string or an ArrayBuffer", Env().Undefined());
+            THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires either a base64-encoded-string or an ArrayBuffer", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         Utf8String base64Str(blobVal.ToString().Utf8Value().c_str());
         ByteStream blob;
         Base64Utilities::Decode(blob, base64Str);
 
-        ECSqlStatus stat = GetBinder().BindBlob(blob.data(), (int) blob.size(), IECSqlBinder::MakeCopy::Yes);
+        ECSqlStatus stat = m_binder->BindBlob(blob.data(), (int) blob.size(), IECSqlBinder::MakeCopy::Yes);
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
     Napi::Value BindBoolean(Napi::CallbackInfo const& info)
         {
+        if (m_binder == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
         Napi::Value boolVal;
         if (info.Length() == 0 || !(boolVal = info[0]).IsBoolean())
-            THROW_TYPE_EXCEPTION_AND_RETURN("BindBoolean expects a boolean", Env().Undefined());
+            THROW_TYPE_EXCEPTION_AND_RETURN("BindBoolean expects a boolean", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
-        ECSqlStatus stat = GetBinder().BindBoolean(boolVal.ToBoolean());
+        ECSqlStatus stat = m_binder->BindBoolean(boolVal.ToBoolean());
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
     Napi::Value BindDateTime(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, isoString, Env().Undefined());
+        if (m_binder == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+        REQUIRE_ARGUMENT_STRING(0, isoString, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         DateTime dt;
         if (SUCCESS != DateTime::FromString(dt, isoString.c_str()))
             return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
 
-        ECSqlStatus stat = GetBinder().BindDateTime(dt);
+        ECSqlStatus stat = m_binder->BindDateTime(dt);
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
     Napi::Value BindDouble(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_NUMBER(0, val, Env().Undefined());
-        ECSqlStatus stat = GetBinder().BindDouble(val.DoubleValue());
+        if (m_binder == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+        REQUIRE_ARGUMENT_NUMBER(0, val, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        ECSqlStatus stat = m_binder->BindDouble(val.DoubleValue());
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
     Napi::Value BindGuid(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, guidString, Env().Undefined());
+        if (m_binder == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+        REQUIRE_ARGUMENT_STRING(0, guidString, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
         BeGuid guid;
         if (SUCCESS != guid.FromString(guidString.c_str()))
             return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
 
-        ECSqlStatus stat = GetBinder().BindGuid(guid, IECSqlBinder::MakeCopy::Yes);
+        ECSqlStatus stat = m_binder->BindGuid(guid, IECSqlBinder::MakeCopy::Yes);
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
     Napi::Value BindId(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, hexString, Env().Undefined());
+        if (m_binder == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+        REQUIRE_ARGUMENT_STRING(0, hexString, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
         BeInt64Id id;
         if (SUCCESS != BeInt64Id::FromString(id, hexString.c_str()))
             return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
 
-        ECSqlStatus stat = GetBinder().BindId(id);
+        ECSqlStatus stat = m_binder->BindId(id);
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
     Napi::Value BindInteger(Napi::CallbackInfo const& info)
         {
+        if (m_binder == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
         if (info.Length() == 0)
-            THROW_TYPE_EXCEPTION_AND_RETURN("BindInteger expects a string or number", Env().Undefined());
+            THROW_TYPE_EXCEPTION_AND_RETURN("BindInteger expects a string or number", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         Napi::Value val = info[0];
         if (!val.IsNumber() && !val.IsString())
-            THROW_TYPE_EXCEPTION_AND_RETURN("BindInteger expects a string or number", Env().Undefined());
+            THROW_TYPE_EXCEPTION_AND_RETURN("BindInteger expects a string or number", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         int64_t int64Val;
         if (val.IsNumber())
@@ -1943,7 +2020,7 @@ public:
             {
             Utf8String strVal(val.ToString().Utf8Value().c_str());
             if (strVal.empty())
-                THROW_TYPE_EXCEPTION_AND_RETURN("Integral string passed to BindInteger must not be empty.", Env().Undefined());
+                THROW_TYPE_EXCEPTION_AND_RETURN("Integral string passed to BindInteger must not be empty.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
             bool const isNegativeNumber = strVal[0] == '-';
             Utf8CP positiveNumberStr = isNegativeNumber ? strVal.c_str() + 1 : strVal.c_str();
@@ -1952,14 +2029,14 @@ public:
                 {
                 Utf8String error;
                 error.Sprintf("BindInteger failed. Could not parse string %s to a valid integer.", strVal.c_str());
-                THROW_TYPE_EXCEPTION_AND_RETURN(error.c_str(), Env().Undefined());
+                THROW_TYPE_EXCEPTION_AND_RETURN(error.c_str(), Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
                 }
 
             if (isNegativeNumber && uVal > (uint64_t) std::numeric_limits<int64_t>::max())
                 {
                 Utf8String error;
                 error.Sprintf("BindInteger failed. Number in string %s is too large to fit into a signed 64 bit integer value.", strVal.c_str());
-                THROW_TYPE_EXCEPTION_AND_RETURN(error.c_str(), Env().Undefined());
+                THROW_TYPE_EXCEPTION_AND_RETURN(error.c_str(), Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
                 }
 
             int64Val = uVal;
@@ -1967,39 +2044,51 @@ public:
                 int64Val *= -1;
             }
 
-        ECSqlStatus stat = GetBinder().BindInt64(int64Val);
+        ECSqlStatus stat = m_binder->BindInt64(int64Val);
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
     Napi::Value BindPoint2d(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_NUMBER(0, x, Env().Undefined());
-        REQUIRE_ARGUMENT_NUMBER(1, y, Env().Undefined());
-        ECSqlStatus stat = GetBinder().BindPoint2d(DPoint2d::From(x.DoubleValue(),y.DoubleValue()));
+        if (m_binder == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+        REQUIRE_ARGUMENT_NUMBER(0, x, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        REQUIRE_ARGUMENT_NUMBER(1, y, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        ECSqlStatus stat = m_binder->BindPoint2d(DPoint2d::From(x.DoubleValue(),y.DoubleValue()));
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
     Napi::Value BindPoint3d(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_NUMBER(0, x, Env().Undefined());
-        REQUIRE_ARGUMENT_NUMBER(1, y, Env().Undefined());
-        REQUIRE_ARGUMENT_NUMBER(2, z, Env().Undefined());
-        ECSqlStatus stat = GetBinder().BindPoint3d(DPoint3d::From(x.DoubleValue(), y.DoubleValue(), z.DoubleValue()));
+        if (m_binder == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+        REQUIRE_ARGUMENT_NUMBER(0, x, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        REQUIRE_ARGUMENT_NUMBER(1, y, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        REQUIRE_ARGUMENT_NUMBER(2, z, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        ECSqlStatus stat = m_binder->BindPoint3d(DPoint3d::From(x.DoubleValue(), y.DoubleValue(), z.DoubleValue()));
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
     Napi::Value BindString(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, val, Env().Undefined());
-        ECSqlStatus stat = GetBinder().BindText(val.c_str(), IECSqlBinder::MakeCopy::Yes);
+        if (m_binder == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+        REQUIRE_ARGUMENT_STRING(0, val, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        ECSqlStatus stat = m_binder->BindText(val.c_str(), IECSqlBinder::MakeCopy::Yes);
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
     Napi::Value BindNavigation(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, navIdHexStr, Env().Undefined());
-        OPTIONAL_ARGUMENT_STRING(1, relClassName, Env().Undefined());
-        OPTIONAL_ARGUMENT_STRING(2, relClassTableSpaceName, Env().Undefined());
+        if (m_binder == nullptr || m_ecdb == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+        REQUIRE_ARGUMENT_STRING(0, navIdHexStr, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        OPTIONAL_ARGUMENT_STRING(1, relClassName, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        OPTIONAL_ARGUMENT_STRING(2, relClassTableSpaceName, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         BeInt64Id navId;
         if (SUCCESS != BeInt64Id::FromString(navId, navIdHexStr.c_str()))
@@ -2016,20 +2105,26 @@ public:
             relClassId = m_ecdb->Schemas().GetClassId(tokens[0], tokens[1], SchemaLookupMode::AutoDetect, relClassTableSpaceName.c_str());
             }
 
-        ECSqlStatus stat = GetBinder().BindNavigation(navId, relClassId);
+        ECSqlStatus stat = m_binder->BindNavigation(navId, relClassId);
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
     Napi::Value BindMember(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, memberName, Env().Undefined());
-        IECSqlBinder& memberBinder = GetBinder()[memberName.c_str()];
+        if (m_binder == nullptr || m_ecdb == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+        REQUIRE_ARGUMENT_STRING(0, memberName, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        IECSqlBinder& memberBinder = m_binder->operator[](memberName.c_str());
         return New(info.Env(), memberBinder, *m_ecdb);
         }
 
     Napi::Value AddArrayElement(Napi::CallbackInfo const& info)
         {
-        IECSqlBinder& elementBinder = GetBinder().AddArrayElement();
+        if (m_binder == nullptr || m_ecdb == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlBinder is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+        IECSqlBinder& elementBinder = m_binder->AddArrayElement();
         return New(info.Env(), elementBinder, *m_ecdb);
         }
     };
@@ -2065,14 +2160,6 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
         static Napi::FunctionReference s_constructor;
         ECSqlColumnInfo const* m_colInfo = nullptr;
 
-        ECSqlColumnInfo const& GetColInfo() const
-            {
-            if (m_colInfo == nullptr)
-                Napi::TypeError::New(Env(), "Invalid ECSqlColumnInfo").ThrowAsJavaScriptException();
-
-            return *m_colInfo;
-            }
-
     public:
         NativeECSqlColumnInfo(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlColumnInfo>(info)
             {
@@ -2081,7 +2168,7 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
 
             m_colInfo = info[0].As<Napi::External<ECSqlColumnInfo>>().Data();
             if (m_colInfo == nullptr)
-                Napi::TypeError::New(Env(), "Invalid first arg for NativeECSqlColumnInfo constructor. ECSqlColumnInfo must not be nullptr").ThrowAsJavaScriptException();
+                THROW_TYPE_EXCEPTION_AND_RETURN("Invalid first arg for NativeECSqlColumnInfo constructor. ECSqlColumnInfo must not be nullptr",);
             }
 
         ~NativeECSqlColumnInfo() {}
@@ -2125,7 +2212,10 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
 
         Napi::Value GetType(Napi::CallbackInfo const& info)
             {
-            ECTypeDescriptor const& dataType = GetColInfo().GetDataType();
+            if (m_colInfo == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlColumnInfo is not initialized.", Env().Undefined());
+
+            ECTypeDescriptor const& dataType = m_colInfo->GetDataType();
             Type type = Type::Id;
             if (dataType.IsNavigation())
                 type = Type::Navigation;
@@ -2142,7 +2232,7 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
                     {
                         case PRIMITIVETYPE_Binary:
                         {
-                        ECPropertyCP prop = GetColInfo().GetProperty();
+                        ECPropertyCP prop = m_colInfo->GetProperty();
                         if (prop->HasExtendedType())
                             {
                             BeAssert(prop->GetIsPrimitive());
@@ -2174,13 +2264,13 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
                             break;
                         case PRIMITIVETYPE_Long:
                         {
-                        if (GetColInfo().IsSystemProperty())
+                        if (m_colInfo->IsSystemProperty())
                             {
                             type = Type::Id;
                             break;
                             }
 
-                        ECPropertyCP prop = GetColInfo().GetProperty();
+                        ECPropertyCP prop = m_colInfo->GetProperty();
                         if (prop->HasExtendedType())
                             {
                             BeAssert(prop->GetIsPrimitive());
@@ -2204,7 +2294,7 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
                             type = Type::String;
                             break;
                         default:
-                            Napi::TypeError::New(info.Env(), "Unsupported ECSqlValue primitive type.").ThrowAsJavaScriptException();
+                            THROW_TYPE_EXCEPTION_AND_RETURN("Unsupported ECSqlValue primitive type.", Env().Undefined());
                             break;
                     }
                 }
@@ -2214,54 +2304,75 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
 
         Napi::Value GetPropertyName(Napi::CallbackInfo const& info)
             {
-            ECPropertyCP prop = GetColInfo().GetProperty();
+            if (m_colInfo == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlColumnInfo is not initialized.", Env().Undefined());
+
+            ECPropertyCP prop = m_colInfo->GetProperty();
             if (prop == nullptr)
-                Napi::TypeError::New(info.Env(), "ECSqlColumnInfo does not represent a property.").ThrowAsJavaScriptException();
+                THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlColumnInfo does not represent a property.", Env().Undefined());
 
             return Napi::String::New(Env(), prop->GetName().c_str());
             }
 
         Napi::Value GetAccessString(Napi::CallbackInfo const& info)
             {
+            if (m_colInfo == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlColumnInfo is not initialized.", Env().Undefined());
+
             //if property is generated, the display label contains the select clause item as is.
             //The property name in contrast would have encoded special characters of the select clause item.
             //Ex: SELECT MyProp + 4 FROM Foo -> the name must be "MyProp + 4"
-            if (GetColInfo().IsGeneratedProperty())
+            if (m_colInfo->IsGeneratedProperty())
                 {
-                BeAssert(GetColInfo().GetPropertyPath().Size() == 1);
-                ECPropertyCP prop = GetColInfo().GetProperty();
+                BeAssert(m_colInfo->GetPropertyPath().Size() == 1);
+                ECPropertyCP prop = m_colInfo->GetProperty();
                 if (prop == nullptr)
                     THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlColumnInfo's Property must not be null for a generated property.", Env().Undefined());
 
                 return Napi::String::New(Env(), prop->GetDisplayLabel().c_str());
                 }
 
-            return Napi::String::New(Env(), GetColInfo().GetPropertyPath().ToString().c_str());
+            return Napi::String::New(Env(), m_colInfo->GetPropertyPath().ToString().c_str());
             }
 
         Napi::Value IsSystemProperty(Napi::CallbackInfo const& info)
             {
-            return Napi::Boolean::New(Env(), GetColInfo().IsSystemProperty());
+            if (m_colInfo == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlColumnInfo is not initialized.", Env().Undefined());
+
+            return Napi::Boolean::New(Env(), m_colInfo->IsSystemProperty());
             }
 
         Napi::Value IsGeneratedProperty(Napi::CallbackInfo const& info)
             {
-            return Napi::Boolean::New(Env(), GetColInfo().IsGeneratedProperty());
+            if (m_colInfo == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlColumnInfo is not initialized.", Env().Undefined());
+
+            return Napi::Boolean::New(Env(), m_colInfo->IsGeneratedProperty());
             }
 
         Napi::Value GetRootClassTableSpace(Napi::CallbackInfo const& info)
             {
-            return Napi::String::New(Env(), GetColInfo().GetRootClass().GetTableSpace().c_str());
+            if (m_colInfo == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlColumnInfo is not initialized.", Env().Undefined());
+
+            return Napi::String::New(Env(), m_colInfo->GetRootClass().GetTableSpace().c_str());
             }
 
         Napi::Value GetRootClassName(Napi::CallbackInfo const& info)
             {
-            return Napi::String::New(Env(), ECJsonUtilities::FormatClassName(GetColInfo().GetRootClass().GetClass()).c_str());
+            if (m_colInfo == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlColumnInfo is not initialized.", Env().Undefined());
+
+            return Napi::String::New(Env(), ECJsonUtilities::FormatClassName(m_colInfo->GetRootClass().GetClass()).c_str());
             }
 
         Napi::Value GetRootClassAlias(Napi::CallbackInfo const& info)
             {
-            return Napi::String::New(Env(), GetColInfo().GetRootClass().GetAlias().c_str());
+            if (m_colInfo == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlColumnInfo is not initialized.", Env().Undefined());
+
+            return Napi::String::New(Env(), m_colInfo->GetRootClass().GetAlias().c_str());
             }
     };
 
@@ -2276,14 +2387,6 @@ private:
     IECSqlValue const* m_ecsqlValue = nullptr;
     ECDb const* m_ecdb = nullptr;
 
-
-    IECSqlValue const& GetECSqlValue() const
-        {
-        if (m_ecsqlValue == nullptr)
-            Napi::TypeError::New(Env(), "Invalid ECSqlValue").ThrowAsJavaScriptException();
-
-        return *m_ecsqlValue;
-        }
 public:
     NativeECSqlValue(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlValue>(info)
         {
@@ -2296,7 +2399,7 @@ public:
 
         m_ecdb = info[1].As<Napi::External<ECDb>>().Data();
         if (m_ecdb == nullptr)
-            Napi::TypeError::New(Env(), "Invalid second arg for NativeECSqlValue constructor. ECDb must not be nullptr").ThrowAsJavaScriptException();
+            THROW_TYPE_EXCEPTION_AND_RETURN("Invalid second arg for NativeECSqlValue constructor. ECDb must not be nullptr", );
         }
 
     ~NativeECSqlValue() {}
@@ -2351,18 +2454,27 @@ public:
 
     Napi::Value GetColumnInfo(Napi::CallbackInfo const& info)
         {
-        return NativeECSqlColumnInfo::New(Env(), GetECSqlValue().GetColumnInfo());
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        return NativeECSqlColumnInfo::New(Env(), m_ecsqlValue->GetColumnInfo());
         }
 
     Napi::Value IsNull(Napi::CallbackInfo const& info)
         {
-        return Napi::Boolean::New(Env(), GetECSqlValue().IsNull());
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        return Napi::Boolean::New(Env(), m_ecsqlValue->IsNull());
         }
 
     Napi::Value GetBlob(Napi::CallbackInfo const& info)
         {
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
         int blobSize;
-        void const* data = GetECSqlValue().GetBlob(&blobSize);
+        void const* data = m_ecsqlValue->GetBlob(&blobSize);
         auto blob = Napi::ArrayBuffer::New(Env(), blobSize);
         memcpy(blob.Data(), data, blobSize);
         return blob;
@@ -2370,55 +2482,76 @@ public:
 
     Napi::Value GetBoolean(Napi::CallbackInfo const& info)
         {
-        return Napi::Boolean::New(Env(), GetECSqlValue().GetBoolean());
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        return Napi::Boolean::New(Env(), m_ecsqlValue->GetBoolean());
         }
 
     Napi::Value GetDateTime(Napi::CallbackInfo const& info)
         {
-        DateTime dt = GetECSqlValue().GetDateTime();
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        DateTime dt = m_ecsqlValue->GetDateTime();
         return Napi::String::New(Env(), dt.ToString().c_str());
         }
 
     Napi::Value GetDouble(Napi::CallbackInfo const& info)
         {
-        return Napi::Number::New(Env(), GetECSqlValue().GetDouble());
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        return Napi::Number::New(Env(), m_ecsqlValue->GetDouble());
         }
 
     Napi::Value GetGeometry(Napi::CallbackInfo const& info)
         {
-        IGeometryPtr geom = GetECSqlValue().GetGeometry();
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        IGeometryPtr geom = m_ecsqlValue->GetGeometry();
         Json::Value json;
         if (SUCCESS != ECJsonUtilities::IGeometryToJson(json, *geom))
-            Napi::TypeError::New(info.Env(), "Could not convert IGeometry to JSON.").ThrowAsJavaScriptException();
+            THROW_TYPE_EXCEPTION_AND_RETURN("Could not convert IGeometry to JSON.", Env().Undefined());
 
         return Napi::String::New(Env(), json.ToString().c_str());
         }
 
     Napi::Value GetGuid(Napi::CallbackInfo const& info)
         {
-        BeGuid guid = GetECSqlValue().GetGuid();
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        BeGuid guid = m_ecsqlValue->GetGuid();
         return Napi::String::New(Env(), guid.ToString().c_str());
         }
 
     Napi::Value GetId(Napi::CallbackInfo const& info)
         {
-        BeInt64Id id = GetECSqlValue().GetId<BeInt64Id>();
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        BeInt64Id id = m_ecsqlValue->GetId<BeInt64Id>();
         return Napi::String::New(Env(), id.ToHexStr().c_str());
         }
 
     Napi::Value GetClassNameForClassId(Napi::CallbackInfo const& info)
         {
-        ECClassId classId = GetECSqlValue().GetId<ECClassId>();
-        if (!classId.IsValid())
-            Napi::TypeError::New(info.Env(), "Failed to get class name from ECSqlValue: The ECSqlValue does not refer to a valid class id.").ThrowAsJavaScriptException();
+        if (m_ecsqlValue == nullptr || m_ecdb == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
 
-        Utf8StringCR tableSpace = GetECSqlValue().GetColumnInfo().GetRootClass().GetTableSpace();
+        ECClassId classId = m_ecsqlValue->GetId<ECClassId>();
+        if (!classId.IsValid())
+            THROW_TYPE_EXCEPTION_AND_RETURN("Failed to get class name from ECSqlValue: The ECSqlValue does not refer to a valid class id.", Env().Undefined());
+
+        Utf8StringCR tableSpace = m_ecsqlValue->GetColumnInfo().GetRootClass().GetTableSpace();
         ECClassCP ecClass = m_ecdb->Schemas().GetClass(classId, tableSpace.c_str());
         if (ecClass == nullptr)
             {
             Utf8String err;
             err.Sprintf("Failed to get class name from ECSqlValue: Class not found for ECClassId %s.", classId.ToHexStr().c_str());
-            Napi::TypeError::New(info.Env(), err.c_str()).ThrowAsJavaScriptException();
+            THROW_TYPE_EXCEPTION_AND_RETURN(err.c_str(), Env().Undefined());
             }
 
         return Napi::String::New(Env(), ECJsonUtilities::FormatClassName(*ecClass).c_str());
@@ -2426,17 +2559,26 @@ public:
 
     Napi::Value GetInt(Napi::CallbackInfo const& info)
         {
-        return Napi::Number::New(Env(), GetECSqlValue().GetInt());
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        return Napi::Number::New(Env(), m_ecsqlValue->GetInt());
         }
 
     Napi::Value GetInt64(Napi::CallbackInfo const& info)
         {
-        return Napi::Number::New(Env(), GetECSqlValue().GetInt64());
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        return Napi::Number::New(Env(), m_ecsqlValue->GetInt64());
         }
 
     Napi::Value GetPoint2d(Napi::CallbackInfo const& info)
         {
-        DPoint2d pt = GetECSqlValue().GetPoint2d();
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        DPoint2d pt = m_ecsqlValue->GetPoint2d();
         Napi::Object jsPt = Napi::Object::New(Env());
         jsPt.Set(ECN::ECJsonSystemNames::Point::X(), Napi::Number::New(Env(), pt.x));
         jsPt.Set(ECN::ECJsonSystemNames::Point::Y(), Napi::Number::New(Env(), pt.y));
@@ -2445,7 +2587,10 @@ public:
 
     Napi::Value GetPoint3d(Napi::CallbackInfo const& info)
         {
-        DPoint3d pt = GetECSqlValue().GetPoint3d();
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        DPoint3d pt = m_ecsqlValue->GetPoint3d();
         Napi::Object jsPt = Napi::Object::New(Env());
         jsPt.Set(ECN::ECJsonSystemNames::Point::X(), Napi::Number::New(Env(), pt.x));
         jsPt.Set(ECN::ECJsonSystemNames::Point::Y(), Napi::Number::New(Env(), pt.y));
@@ -2455,22 +2600,28 @@ public:
 
     Napi::Value GetString(Napi::CallbackInfo const& info)
         {
-        return Napi::String::New(Env(), GetECSqlValue().GetText());
+        if (m_ecsqlValue == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+        return Napi::String::New(Env(), m_ecsqlValue->GetText());
         }
 
     Napi::Value GetNavigation(Napi::CallbackInfo const& info)
         {
+        if (m_ecsqlValue == nullptr || m_ecdb == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
         ECClassId relClassId;
-        BeInt64Id navId = GetECSqlValue().GetNavigation(&relClassId);
+        BeInt64Id navId = m_ecsqlValue->GetNavigation(&relClassId);
 
         Napi::Object jsNavValue = Napi::Object::New(Env());
         jsNavValue.Set(ECN::ECJsonSystemNames::Navigation::Id(), Napi::String::New(Env(), navId.ToHexStr().c_str()));
         if (relClassId.IsValid())
             {
-            Utf8StringCR relClassTableSpace = GetECSqlValue().GetColumnInfo().GetRootClass().GetTableSpace();
+            Utf8StringCR relClassTableSpace = m_ecsqlValue->GetColumnInfo().GetRootClass().GetTableSpace();
             ECClassCP relClass = m_ecdb->Schemas().GetClass(relClassId, relClassTableSpace.c_str());
             if (relClass == nullptr)
-                Napi::TypeError::New(info.Env(), "Failed to find ECRelationhipClass for the Navigation Value's RelECClassId.").ThrowAsJavaScriptException();
+                THROW_TYPE_EXCEPTION_AND_RETURN("Failed to find ECRelationhipClass for the Navigation Value's RelECClassId.", Env().Undefined());
 
             Utf8String relClassName = ECJsonUtilities::FormatClassName(*relClass);
             jsNavValue.Set(ECN::ECJsonSystemNames::Navigation::RelClassName(), Napi::String::New(Env(), relClassName.c_str()));
@@ -2502,17 +2653,17 @@ struct NativeECSqlValueIterator : Napi::ObjectWrap<NativeECSqlValueIterator>
         NativeECSqlValueIterator(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlValueIterator>(info)
             {
             if (info.Length() < 2)
-                Napi::TypeError::New(Env(), "NativeECSqlValueIterator constructor expects two argument.").ThrowAsJavaScriptException();
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlValueIterator constructor expects two argument.", );
 
             m_iterable = info[0].As<Napi::External<IECSqlValueIterable>>().Data();
             if (m_iterable == nullptr)
-                Napi::TypeError::New(Env(), "Invalid first arg for NativeECSqlValueIterator constructor. IECSqlValueIterable must not be nullptr").ThrowAsJavaScriptException();
+                THROW_TYPE_EXCEPTION_AND_RETURN("Invalid first arg for NativeECSqlValueIterator constructor. IECSqlValueIterable must not be nullptr",);
 
             m_endIt = m_iterable->end();
 
             m_ecdb = info[1].As<Napi::External<ECDb>>().Data();
             if (m_ecdb == nullptr)
-                Napi::TypeError::New(Env(), "Invalid second arg for NativeECSqlValueIterator constructor. ECDb must not be nullptr").ThrowAsJavaScriptException();
+                THROW_TYPE_EXCEPTION_AND_RETURN("Invalid second arg for NativeECSqlValueIterator constructor. ECDb must not be nullptr",);
             }
 
         ~NativeECSqlValueIterator() {}
@@ -2577,7 +2728,10 @@ struct NativeECSqlValueIterator : Napi::ObjectWrap<NativeECSqlValueIterator>
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeECSqlValue::GetStructIterator(Napi::CallbackInfo const& info)
     {
-    return NativeECSqlValueIterator::New(info.Env(), GetECSqlValue().GetStructIterable(), *m_ecdb);
+    if (m_ecsqlValue == nullptr || m_ecdb == nullptr)
+        THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+    return NativeECSqlValueIterator::New(info.Env(), m_ecsqlValue->GetStructIterable(), *m_ecdb);
     }
 
 //--------------------------------------------------------------------------------------
@@ -2585,7 +2739,10 @@ Napi::Value NativeECSqlValue::GetStructIterator(Napi::CallbackInfo const& info)
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeECSqlValue::GetArrayIterator(Napi::CallbackInfo const& info)
     {
-    return NativeECSqlValueIterator::New(info.Env(), GetECSqlValue().GetArrayIterable(), *m_ecdb);
+    if (m_ecsqlValue == nullptr || m_ecdb == nullptr)
+        THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
+
+    return NativeECSqlValueIterator::New(info.Env(), m_ecsqlValue->GetArrayIterable(), *m_ecdb);
     }
 
 
@@ -2596,8 +2753,6 @@ Napi::Value NativeECSqlValue::GetArrayIterator(Napi::CallbackInfo const& info)
 struct NativeECSqlStatement : Napi::ObjectWrap<NativeECSqlStatement>
 {
 private:
-    #define MUST_HAVE_M_STMT if (m_stmt.get() == nullptr) Napi::TypeError::New(Env(), "Statement is not prepared").ThrowAsJavaScriptException();
-
     static Napi::FunctionReference s_constructor;
     std::unique_ptr<ECSqlStatement> m_stmt;
 
@@ -2632,7 +2787,7 @@ public:
     Napi::Value Prepare(Napi::CallbackInfo const& info)
         {
         if (info.Length() < 2)
-            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlStatement::Prepare requires two arguments", Env().Undefined());
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlStatement::Prepare requires two arguments", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         Napi::Object dbObj = info[0].As<Napi::Object>();
 
@@ -2655,11 +2810,10 @@ public:
             }
         else
             {
-            Napi::TypeError::New(Env(), "Argument 0 must be a NativeDgnDb or NativeECDb object").ThrowAsJavaScriptException();
-            return Env().Undefined();
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlStatement::Prepare requires first argument to be a NativeDgnDb or NativeECDb object.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
             }
 
-        REQUIRE_ARGUMENT_STRING(1, ecsql, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(1, ecsql, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         BeSqliteDbMutexHolder serializeAccess(*ecdb); // hold mutex, so that we have a chance to get last ECDb error message
 
@@ -2669,27 +2823,31 @@ public:
 
     Napi::Value Reset(Napi::CallbackInfo const& info)
         {
-        MUST_HAVE_M_STMT;
+        if (m_stmt == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlStatement is not prepared.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
         ECSqlStatus status = m_stmt->Reset();
         return Napi::Number::New(Env(), (int) ToDbResult(status));
         }
 
     void Dispose(Napi::CallbackInfo const& info)
         {
-        MUST_HAVE_M_STMT;
         m_stmt = nullptr;
         }
 
     Napi::Value ClearBindings(Napi::CallbackInfo const& info)
         {
-        MUST_HAVE_M_STMT;
+        if (m_stmt == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlStatement is not prepared.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
         auto status = m_stmt->ClearBindings();
         return Napi::Number::New(Env(), (int) ToDbResult(status));
         }
 
     Napi::Value GetBinder(Napi::CallbackInfo const& info)
         {
-        MUST_HAVE_M_STMT;
+        if (m_stmt == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlStatement is not prepared.", Env().Undefined());
 
         if (info.Length() != 1)
             THROW_TYPE_EXCEPTION_AND_RETURN("GetBinder requires a parameter index or name as argument", Env().Undefined());
@@ -2710,14 +2868,18 @@ public:
 
     Napi::Value Step(Napi::CallbackInfo const& info)
         {
-        MUST_HAVE_M_STMT;
+        if (m_stmt == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlStatement is not prepared.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
         DbResult status = m_stmt->Step();
         return Napi::Number::New(Env(), (int)status);
         }
 
     Napi::Value StepForInsert(Napi::CallbackInfo const& info)
         {
-        MUST_HAVE_M_STMT;
+        if (m_stmt == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlStatement is not prepared.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
         ECInstanceKey key;
         DbResult status = m_stmt->Step(key);
 
@@ -2731,14 +2893,18 @@ public:
 
     Napi::Value GetColumnCount(Napi::CallbackInfo const& info)
         {
-        MUST_HAVE_M_STMT;
+        if (m_stmt == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlStatement is not prepared.", Env().Undefined());
+
         int colCount = m_stmt->GetColumnCount();
         return Napi::Number::New(info.Env(), colCount);
         }
 
     Napi::Value GetValue(Napi::CallbackInfo const& info)
         {
-        MUST_HAVE_M_STMT;
+        if (m_stmt == nullptr)
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlStatement is not prepared.", Env().Undefined());
+
         REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
 
         IECSqlValue const& val = m_stmt->GetValue(colIndex);
@@ -2755,131 +2921,425 @@ public:
 };
 
 //=======================================================================================
-// Projects ElementLocateManager into JS
+// Projects the BeSQLite::Statement class into JS.
 //! @bsiclass
 //=======================================================================================
-struct NativeElementLocateManager : Napi::ObjectWrap<NativeElementLocateManager>
-{
-    //=======================================================================================
-    // Async Worker which does a locate on another thread.
-    //! @bsiclass
-    //=======================================================================================
-    struct Locater : Napi::AsyncWorker
+struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
     {
     private:
-        // Inputs:
-        DgnDbPtr m_db;      // ?? Viewport ??
-        DPoint3d m_point;
-        Napi::ObjectReference m_locateManager;
+        static Napi::FunctionReference s_constructor;
+        std::unique_ptr<Statement> m_stmt;
 
-        // Outputs:
-        DgnDbStatus m_status;
-        // Store the results that we obtain when doing the locate in the background thread
-        // HitListCP    m_result;       ?
-        Utf8String m_result;   // *** NEEDS WORK: Replace this with the real result of DoLocate
-
-        void OnComplete()
+        int GetParameterIndex(Napi::Value const& paramIndexOrNameArg) const
             {
-            NativeElementLocateManager::Unwrap(m_locateManager.Value())->m_pendingLocate = nullptr;
+            if (m_stmt == nullptr || (!paramIndexOrNameArg.IsNumber() && !paramIndexOrNameArg.IsString()))
+                return -1;
+
+            if (paramIndexOrNameArg.IsNumber())
+                return (int) paramIndexOrNameArg.ToNumber().Int32Value();
+
+            return m_stmt->GetParameterIndex(paramIndexOrNameArg.ToString().Utf8Value().c_str());
             }
 
-    protected:
+    public:
+        NativeSqliteStatement(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeSqliteStatement>(info), m_stmt(new Statement()) {}
+
+        //  Create projections
+        static void Init(Napi::Env& env, Napi::Object exports)
+            {
+            Napi::HandleScope scope(env);
+            Napi::Function t = DefineClass(env, "NativeSqliteStatement", {
+            InstanceMethod("dispose", &NativeSqliteStatement::Dispose),
+            InstanceMethod("prepare", &NativeSqliteStatement::Prepare),
+            InstanceMethod("bindNull", &NativeSqliteStatement::BindNull),
+            InstanceMethod("bindBlob", &NativeSqliteStatement::BindBlob),
+            InstanceMethod("bindDouble", &NativeSqliteStatement::BindDouble),
+            InstanceMethod("bindInteger", &NativeSqliteStatement::BindInteger),
+            InstanceMethod("bindString", &NativeSqliteStatement::BindString),
+            InstanceMethod("clearBindings", &NativeSqliteStatement::ClearBindings),
+            InstanceMethod("step", &NativeSqliteStatement::Step),
+            InstanceMethod("reset", &NativeSqliteStatement::Reset),
+            InstanceMethod("getColumnCount", &NativeSqliteStatement::GetColumnCount),
+            InstanceMethod("getColumnType", &NativeSqliteStatement::GetColumnType),
+            InstanceMethod("getColumnName", &NativeSqliteStatement::GetColumnName),
+            InstanceMethod("isValueNull", &NativeSqliteStatement::IsValueNull),
+            InstanceMethod("getValueBlob", &NativeSqliteStatement::GetValueBlob),
+            InstanceMethod("getValueDouble", &NativeSqliteStatement::GetValueDouble),
+            InstanceMethod("getValueInteger", &NativeSqliteStatement::GetValueInteger),
+            InstanceMethod("getValueString", &NativeSqliteStatement::GetValueString),
+            });
+
+            exports.Set("NativeSqliteStatement", t);
+
+            s_constructor = Napi::Persistent(t);
+            // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+            // from running at program shutdown time, which would attempt to reset the reference when
+            // the environment is no longer valid.
+            s_constructor.SuppressDestruct();
+            }
+
+        void Dispose(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt != nullptr)
+                m_stmt = nullptr;
+            }
+
+        Napi::Value Prepare(Napi::CallbackInfo const& info)
+            {
+            if (info.Length() < 2)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement::Prepare requires two arguments", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            Napi::Object dbObj = info[0].As<Napi::Object>();
+
+            Db* db = nullptr;
+            if (NativeDgnDb::InstanceOf(dbObj))
+                {
+                NativeDgnDb* nativeDgndb = NativeDgnDb::Unwrap(dbObj);
+                if (!nativeDgndb->IsOpen())
+                    return NapiUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());
+
+                db = &nativeDgndb->GetDgnDb();
+                }
+            else if (NativeECDb::InstanceOf(dbObj))
+                {
+                NativeECDb* nativeECDb = NativeECDb::Unwrap(dbObj);
+                db = &nativeECDb->GetECDb();
+                }
+            else
+                {
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement::Prepare requires first argument to be a NativeDgnDb or NativeECDb object.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+                }
+
+            REQUIRE_ARGUMENT_STRING(1, sql, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            BeSqliteDbMutexHolder serializeAccess(*db); // hold mutex, so that we have a chance to get last Db error message
+
+            const DbResult status = m_stmt->Prepare(*db, sql.c_str());
+            return NapiUtils::CreateErrorObject0(status, status != BE_SQLITE_OK ? db->GetLastError().c_str() : nullptr, Env());
+            }
+
+        Napi::Value BindNull(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            if (info.Length() != 1)
+                THROW_TYPE_EXCEPTION_AND_RETURN("BindNull requires an argument", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            int paramIndex = GetParameterIndex(info[0]);
+            if (paramIndex < 1)
+                THROW_TYPE_EXCEPTION_AND_RETURN("Invalid parameter index or name passed to BindNull", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            return Napi::Number::New(Env(), (int) m_stmt->BindNull(paramIndex));
+            }
+
+        Napi::Value BindBlob(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            if (info.Length() != 2)
+                THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires two arguments", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            int paramIndex = GetParameterIndex(info[0]);
+            if (paramIndex < 1)
+                THROW_TYPE_EXCEPTION_AND_RETURN("Invalid parameter index or name passed to BindBlob", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            Napi::Value const& blobVal = info[1];
+            if (blobVal.IsArrayBuffer())
+                {
+                Napi::ArrayBuffer arrayBuf = blobVal.As<Napi::ArrayBuffer>();
+                const DbResult stat = m_stmt->BindBlob(paramIndex, arrayBuf.Data(), (int) arrayBuf.ByteLength(), Statement::MakeCopy::Yes);
+                return Napi::Number::New(Env(), (int) stat);
+                }
+            else
+                THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires an ArrayBuffer arg", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            }
+
+        Napi::Value BindDouble(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            if (info.Length() != 2)
+                THROW_TYPE_EXCEPTION_AND_RETURN("BindDouble requires two arguments", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            int paramIndex = GetParameterIndex(info[0]);
+            if (paramIndex < 1)
+                THROW_TYPE_EXCEPTION_AND_RETURN("Invalid parameter index or name passed to BindDouble", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            REQUIRE_ARGUMENT_NUMBER(1, val, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            const DbResult stat = m_stmt->BindDouble(paramIndex, val.DoubleValue());
+            return Napi::Number::New(Env(), (int) stat);
+            }
+
+        Napi::Value BindInteger(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            if (info.Length() != 2)
+                THROW_TYPE_EXCEPTION_AND_RETURN("BindInteger requires two arguments", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            int paramIndex = GetParameterIndex(info[0]);
+            if (paramIndex < 1)
+                THROW_TYPE_EXCEPTION_AND_RETURN("Invalid parameter index or name passed to BindInteger", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            Napi::Value const& val = info[1];
+            if (!val.IsNumber() && !val.IsString())
+                THROW_TYPE_EXCEPTION_AND_RETURN("BindInteger expects a string or number value.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            int64_t int64Val;
+            if (val.IsNumber())
+                int64Val = val.ToNumber().Int64Value();
+            else
+                {
+                Utf8String strVal(val.ToString().Utf8Value().c_str());
+                if (strVal.empty())
+                    THROW_TYPE_EXCEPTION_AND_RETURN("Integral string passed to BindInteger must not be empty.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+                bool const isNegativeNumber = strVal[0] == '-';
+                Utf8CP positiveNumberStr = isNegativeNumber ? strVal.c_str() + 1 : strVal.c_str();
+                uint64_t uVal = 0;
+                if (SUCCESS != BeStringUtilities::ParseUInt64(uVal, positiveNumberStr)) //also supports hex strings
+                    {
+                    Utf8String error;
+                    error.Sprintf("BindInteger failed. Could not parse string %s to a valid integer.", strVal.c_str());
+                    THROW_TYPE_EXCEPTION_AND_RETURN(error.c_str(), Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+                    }
+
+                if (isNegativeNumber && uVal > (uint64_t) std::numeric_limits<int64_t>::max())
+                    {
+                    Utf8String error;
+                    error.Sprintf("BindInteger failed. Number in string %s is too large to fit into a signed 64 bit integer value.", strVal.c_str());
+                    THROW_TYPE_EXCEPTION_AND_RETURN(error.c_str(), Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+                    }
+
+                int64Val = uVal;
+                if (isNegativeNumber)
+                    int64Val *= -1;
+                }
+
+            const DbResult stat = m_stmt->BindInt64(paramIndex, int64Val);
+            return Napi::Number::New(Env(), (int) stat);
+            }
+
+        Napi::Value BindString(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            if (info.Length() != 2)
+                THROW_TYPE_EXCEPTION_AND_RETURN("BindString requires two arguments", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            int paramIndex = GetParameterIndex(info[0]);
+            if (paramIndex < 1)
+                THROW_TYPE_EXCEPTION_AND_RETURN("Invalid parameter index or name passed to BindString", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            REQUIRE_ARGUMENT_STRING(1, val, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            const DbResult stat = m_stmt->BindText(paramIndex, val.c_str(), Statement::MakeCopy::Yes);
+            return Napi::Number::New(Env(), (int) stat);
+            }
+
+        Napi::Value ClearBindings(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            const DbResult status = m_stmt->ClearBindings();
+            return Napi::Number::New(Env(), (int) status);
+            }
+
+        Napi::Value Step(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            const DbResult status = m_stmt->Step();
+            return Napi::Number::New(Env(), (int) status);
+            }
+
+        Napi::Value GetColumnCount(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Env().Undefined());
+
+            const int colCount = m_stmt->GetColumnCount();
+            return Napi::Number::New(info.Env(), colCount);
+            }
+
+        Napi::Value GetColumnType(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Env().Undefined());
+
+            REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
+            return Napi::Number::New(Env(), (int) m_stmt->GetColumnType(colIndex));
+            }
+
+        Napi::Value GetColumnName(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Env().Undefined());
+
+            REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
+            return Napi::String::New(Env(), m_stmt->GetColumnName(colIndex));
+            }
+
+        Napi::Value IsValueNull(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Env().Undefined());
+
+            REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
+            return Napi::Boolean::New(Env(), m_stmt->IsColumnNull(colIndex));
+            }
+
+        Napi::Value GetValueBlob(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Env().Undefined());
+
+            REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
+
+            void const* data = m_stmt->GetValueBlob(colIndex);
+            int blobSize = m_stmt->GetColumnBytes(colIndex);
+            Napi::ArrayBuffer blob = Napi::ArrayBuffer::New(Env(), blobSize);
+            memcpy(blob.Data(), data, blobSize);
+            return blob;
+            }
+
+        Napi::Value GetValueDouble(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Env().Undefined());
+
+            REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
+            return Napi::Number::New(Env(), m_stmt->GetValueDouble(colIndex));
+            }
+
+        Napi::Value GetValueInteger(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Env().Undefined());
+
+            REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
+            return Napi::Number::New(Env(), m_stmt->GetValueInt64(colIndex));
+            }
+
+        Napi::Value GetValueString(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Env().Undefined());
+
+            REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
+            return Napi::String::New(Env(), m_stmt->GetValueText(colIndex));
+            }
+
+        Napi::Value Reset(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            const DbResult status = m_stmt->Reset();
+            return Napi::Number::New(Env(), (int) status);
+            }
+    };
+
+//=======================================================================================
+// A request to generate a snap point given an element and additional parameters.
+//! @bsiclass
+//=======================================================================================
+struct SnapRequest : Napi::ObjectWrap<SnapRequest>
+{
+    //=======================================================================================
+    // Async Worker that does a snap on another thread.
+    //! @bsiclass
+    //=======================================================================================
+    struct Snapper : Napi::AsyncWorker
+    {
+        DgnDbPtr m_db;
+        SnapContext::Request m_input;
+        SnapContext::Response m_output;
+        CheckStop m_checkStop;
+        Napi::ObjectReference m_snapRequest;
+
+        void OnComplete() 
+            {
+            auto* request = SnapRequest::Unwrap(m_snapRequest.Value());
+            BeMutexHolder holder(request->m_mutex);
+            request->m_pending = nullptr;
+            }
+
         // This is invoked by node/uv in the BACKGROUND THREAD. DO NOT CALL N-API OR JS METHODS IN HERE.
         void Execute() override
             {
-            // TODO: Call DoLocate
-            //       Store the results that we obtain when doing the locate in the background thread
-            //      Utf8StringP cantAcceptExplanation;
-            //      m_result = ElementLocateManager::DoLocate( ... m_point ... )
-#define NATIVE_ELEMENT_LOCATE_MANAGER_TEST_SUCCESS
-#ifdef NATIVE_ELEMENT_LOCATE_MANAGER_TEST_SUCCESS
-            m_result.Sprintf("TBD locate near %lf,%lf,%lf", m_point.x, m_point.y, m_point.z);
-            m_status = DgnDbStatus::Success;
-#else
-            // If you want to return an ERROR, do this:
-            m_status = DgnDbStatus::BadRequest;     // Set to the appropriate error status
-            SetError("some error message");         // You MUST call SetError with a string. That tells N-API to invoke OnError
-#endif
+            m_output = SnapContext::DoSnap(m_input, *m_db, m_checkStop);
+            if (m_checkStop.WasAborted())
+                SetError("aborted");  // You MUST call SetError with a string. That tells N-API to invoke OnError
             }
 
         // This is invoked by node/uv in the main JS thread when the operation is completed successfully
         void OnOK() override
             {
             OnComplete();
-            auto locateResult = Napi::String::New(Env(), m_result.c_str());  // *** NEEDS WORK: Replace this with logic to convert the real return value to JS
-            auto retval = NapiUtils::CreateBentleyReturnSuccessObject(locateResult, Env());
+            auto retval = NapiUtils::CreateBentleyReturnSuccessObject(NapiUtils::Convert(Env(), m_output), Env());
             Callback().MakeCallback(Receiver().Value(), {retval});
             }
 
         // This is invoked by node/uv in the main JS thread when the operation is completed with an error
-        void OnError(const Napi::Error& e) override
+        void OnError(Napi::Error const& e) override
             {
             OnComplete();
-            auto retval = NapiUtils::CreateBentleyReturnErrorObject(m_status, e.Message().c_str(), Env());
+            auto retval = NapiUtils::CreateBentleyReturnErrorObject(1, e.Message().c_str(), Env());
             Callback().MakeCallback(Receiver().Value(), {retval});
             }
 
-    public:
-        Locater(Napi::Function& callback, NativeElementLocateManager const& locateManager, DgnDbR db, DPoint3dCR pt) : Napi::AsyncWorker(callback), m_db(&db), m_point(pt)
-            {
-            m_locateManager.Reset(locateManager.Value(), 1);
-            }
-        ~Locater()
-            {
-            m_locateManager.Reset();
-            }
+        Snapper(Napi::Function& callback, SnapRequest const& request, DgnDbR db, SnapContext::Request const& input) : Napi::AsyncWorker(callback), m_db(&db), m_input(input) {m_snapRequest.Reset(request.Value(), 1);}
+        ~Snapper() {m_snapRequest.Reset();}
     };
 
     static Napi::FunctionReference s_constructor;
-    Locater* m_pendingLocate;
+    mutable BeMutex m_mutex;
+    Snapper* m_pending = nullptr;
 
-    void DoLocate(Napi::CallbackInfo const& info)
+    void DoSnap(Napi::CallbackInfo const& info)
         {
-        if (m_pendingLocate != nullptr)
-            CancelLocate(info);
+        BeMutexHolder holder(m_mutex);
+        if (m_pending != nullptr)
+            CancelSnap(info);
 
-        BeAssert(m_pendingLocate == nullptr);
-
-        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db, );     // *** NEEDS WORK: Viewport?
-        REQUIRE_ARGUMENT_ANY_OBJ(1, ptobj, );
+        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db, ); 
+        REQUIRE_ARGUMENT_ANY_OBJ(1, snapObj, );
         REQUIRE_ARGUMENT_FUNCTION(2, callback, );
-        if (!db->IsOpen())
+
+        Json::Value request(NapiUtils::Convert(snapObj));
+        m_pending = new Snapper(callback, *this, db->GetDgnDb(), (SnapContext::Request const&) request); // freed in caller of OnOK and OnError see AsyncWorker::OnWorkComplete
+        m_pending->Queue();  // Snap happens in another thread
+        }
+
+    // Cancel a previous request for a snap. If no snap is pending, does nothing
+    void CancelSnap(Napi::CallbackInfo const& info)
+        {
+        BeMutexHolder holder(m_mutex);
+        if (nullptr != m_pending)
             {
-            callback.Call({NapiUtils::CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen, "", Env())});
-            return;
+            m_pending->m_checkStop.SetAborted();
+            m_pending = nullptr;
             }
-
-        DPoint3d pt;
-        pt.x = ptobj.Get("x").ToNumber().FloatValue();
-        pt.y = ptobj.Get("y").ToNumber().FloatValue();
-        pt.z = ptobj.Get("z").ToNumber().FloatValue();
-
-        m_pendingLocate = new Locater(callback, *this, db->GetDgnDb(), pt);
-        m_pendingLocate->Queue();                       // Run the locate in another thread
         }
 
-    void CancelLocate(Napi::CallbackInfo const& info)
-        {
-        if (nullptr == m_pendingLocate)
-            return;
-        m_pendingLocate->Cancel();
-        m_pendingLocate = nullptr;
-        }
-
-    NativeElementLocateManager(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeElementLocateManager>(info)
-        {
-        m_pendingLocate = nullptr;
-        }
+    SnapRequest(Napi::CallbackInfo const& info) : Napi::ObjectWrap<SnapRequest>(info) {}
 
     static void Init(Napi::Env& env, Napi::Object exports)
         {
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "NativeElementLocateManager", {
-          InstanceMethod("doLocate", &NativeElementLocateManager::DoLocate),
-          InstanceMethod("cancelLocate", &NativeElementLocateManager::CancelLocate)
+        Napi::Function t = DefineClass(env, "SnapRequest", {
+          InstanceMethod("doSnap", &SnapRequest::DoSnap),
+          InstanceMethod("cancelSnap", &SnapRequest::CancelSnap)
         });
 
-        exports.Set("NativeElementLocateManager", t);
+        exports.Set("SnapRequest", t);
 
         s_constructor = Napi::Persistent(t);
         s_constructor.SuppressDestruct();
@@ -2918,7 +3378,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             {
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), m_result, true)});
             }
-        void OnError(const Napi::Error& e) override
+        void OnError(Napi::Error const& e) override
             {
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), ECPresentationResult(ECPresentationStatus::Error, "callback error"))});
             }
@@ -3349,10 +3809,11 @@ static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exp
     IModelJsNative::NativeECSqlValue::Init(env, exports);
     IModelJsNative::NativeECSqlColumnInfo::Init(env, exports);
     IModelJsNative::NativeECSqlValueIterator::Init(env, exports);
+    IModelJsNative::NativeSqliteStatement::Init(env, exports);
     IModelJsNative::NativeBriefcaseManagerResourcesRequest::Init(env, exports);
     IModelJsNative::NativeECPresentationManager::Init(env, exports);
     IModelJsNative::NativeECSchemaXmlContext::Init(env, exports);
-    IModelJsNative::NativeElementLocateManager::Init(env, exports);
+    IModelJsNative::SnapRequest::Init(env, exports);
 
     exports.DefineProperties(
         {
@@ -3369,10 +3830,11 @@ Napi::FunctionReference IModelJsNative::NativeECSqlBinder::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECSqlValue::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECSqlColumnInfo::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECSqlValueIterator::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeSqliteStatement::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeDgnDb::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECPresentationManager::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECDb::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECSchemaXmlContext::s_constructor;
-Napi::FunctionReference IModelJsNative::NativeElementLocateManager::s_constructor;
+Napi::FunctionReference IModelJsNative::SnapRequest::s_constructor;
 
 NODE_API_MODULE(at_bentley_imodeljs_nodeaddon, iModelJsNativeRegisterModule)
