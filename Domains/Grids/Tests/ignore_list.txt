@@ -2,7 +2,6 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 GridsStrategyTests.CSEArcGridPlacementStrategyTests
-GridsTestFixture.TryCreateOrthogonalGridAndSurfaceInSingleRequest
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
