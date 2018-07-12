@@ -315,41 +315,56 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                01/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodePtr LocateNodeInHierarchy(bvector<Utf8String> const& path, int index, NavNodeCPtr parentNode, ICancelationTokenCR cancelationToken)
+    NavNodeCPtr LocateNodeInHierarchy(bvector<Utf8String> const& path, int index, NavNodeCP parentNode, ICancelationTokenCR cancelationToken)
         {
-        if (path.size() == index)
+        if (path.size() <= index)
             return nullptr;
 
         INavNodesDataSourcePtr nodes;
-        if (parentNode.IsNull())
+        if (!parentNode)
             nodes = m_manager.GetRootNodes(m_connection, PageOptions(), m_options, cancelationToken);
         else
             nodes = m_manager.GetChildren(m_connection, *parentNode, PageOptions(), m_options, cancelationToken);
 
 
         size_t nodesCount = nodes->GetSize();
-        NavNodePtr node;
+        NavNodeCPtr node;
         bool found = false;
         for (size_t i = 0; i < nodesCount; ++i)
             {
             node = nodes->GetNode(i);
             bvector<Utf8String> const& nodePath = node->GetKey()->GetPathFromRoot();
-            if (nodePath.size() < index)
-                break;
-
-            if (nodePath[index].Equals(path[index]))
+            if (nodePath.size() <= index)
                 {
-                found = true;
+                BeAssert(false);
+                break;
+                }
+
+            found = true;
+            size_t virtualIndex = index;
+            for (; virtualIndex < nodePath.size() && virtualIndex < path.size(); ++virtualIndex)
+                {
+                if (!nodePath[virtualIndex].Equals(path[virtualIndex]))
+                    {
+                    found = false;
+                    break;
+                    }
+                }
+
+            if (found)
+                {
+                index = virtualIndex - 1;
                 break;
                 }
             }
 
         if (!found)
             return nullptr;
+
         if (path.size() == index + 1)
             return node;
 
-        return LocateNodeInHierarchy(path, index + 1, node, cancelationToken);
+        return LocateNodeInHierarchy(path, index + 1, node.get(), cancelationToken);
         }
 
 public:
@@ -365,11 +380,6 @@ public:
         NavNodeCPtr node = m_manager.GetNodesCache().LocateNode(m_connection, m_options.GetLocale(), nodeKey);
         if (node.IsNull())
             node = LocateNodeInHierarchy(nodeKey.GetPathFromRoot(), 0, nullptr, cancelationToken);
-
-        // after hierarchy is cached try one more time to locate node,
-        // maybe it is virtual node
-        if (node.IsNull())
-            node = m_manager.GetNodesCache().LocateNode(m_connection, m_options.GetLocale(), nodeKey);
 
         return node;
         }
