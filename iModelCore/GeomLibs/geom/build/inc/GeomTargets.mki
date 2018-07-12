@@ -18,7 +18,7 @@ geomSrcPubGeomInteral = $(geomSrcPubGeom)internal/
 
 $(OUT_DIR)embeddedintarray$(OUT_EXT)      : $(geomSrcMemory)embeddedintarray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)embeddeddpoint3darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint3darray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)embeddeddpoint3darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint3darray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)dmap4d$(OUT_EXT)          : $(geomSrcStructs)dmap4d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -437,15 +437,11 @@ $(OUT_DIR)vureg$(OUT_EXT)               : $(vuSrc)vureg.cpp $(OTHER_DEPENDENCIES
 
 $(OUT_DIR)vustack$(OUT_EXT)             : $(vuSrc)vustack.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)vuexcise$(OUT_EXT)            : $(vuSrc)vuexcise.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
 $(OUT_DIR)vucluster$(OUT_EXT)           : $(vuSrc)vucluster.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 #$(OUT_DIR)vuperiodicconnect$(OUT_EXT)   : $(vuSrc)vuperiodicconnect.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)vugrid$(OUT_EXT)              : $(vuSrc)vugrid.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-$(OUT_DIR)pbfvu$(OUT_EXT)               : $(vuSrc)pbfvu.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)vumem$(OUT_EXT)          : $(vuSrc)vumem.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 

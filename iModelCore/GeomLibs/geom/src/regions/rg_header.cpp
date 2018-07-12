@@ -72,7 +72,7 @@ void
                             RG_NULL_CURVEID
                             );
 
-    pRG->pVertexArray = jmdlEmbeddedDPoint3dArray_new ();
+    pRG->pVertexArray = new bvector<DPoint3d> ();
     pRG->pFaceHoleNodeIdArray = NULL;
     pRG->pFaceRangeTree = pRG->pEdgeRangeTree = NULL;
     pRG->tolerance      = 1.0e-12;
@@ -96,7 +96,7 @@ RG_Header       *pRG
     if (pRG)
         {
         pRG->pGraph = jmdlMTGGraph_freeGraph (pRG->pGraph);
-        jmdlEmbeddedDPoint3dArray_free(pRG->pVertexArray);
+        delete pRG->pVertexArray;
         jmdlRG_freeFaceRangeTree (pRG);
         jmdlRG_freeEdgeRangeTree (pRG);
         if (pRG->pFaceHoleNodeIdArray)
@@ -397,8 +397,7 @@ DRange3d    *pRange
     count = jmdlEmbeddedDPoint3dArray_getCount (pXYZArray);
 
 
-    if (bsiTransform_initFromPlaneOfDPoint3dArray
-                    (&planeToWorld, pBuffer, count)
+    if (bsiTransform_initFromPlaneOfDPoint3dArray (&planeToWorld, *pXYZArray)
         && worldToPlane.InverseOf (planeToWorld))
         {
         double bigSize;

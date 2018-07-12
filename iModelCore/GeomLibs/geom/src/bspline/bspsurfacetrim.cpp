@@ -380,8 +380,8 @@ const MSBsplineSurface *surface
                     newNumJ = numJ + 1;
                 countFactor = (double)newNumJ / (double)numJ;
                 numJ = newNumJ;
-                jmdlEmbeddedDPoint3dArray_trim (pCurvePoints,   baseCount);
-                jmdlEmbeddedDPoint3dArray_trim (pSurfacePoints, baseCount);
+                pCurvePoints->resize ((size_t)baseCount);
+                pSurfacePoints->resize ((size_t)baseCount);
                 }
             }
         }

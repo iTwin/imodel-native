@@ -3773,15 +3773,13 @@ Public GEOMDLLIMPEXP bool     bsiTransform_initFromPlaneOfDPoint3dArray
 
 (
 TransformP pTransform,
-DPoint3dCP pPoint,
-int             numPoint
-)
+bvector <DPoint3d> const &points)
     {
     DVec3d normal;
     DPoint3d origin;
     DVec3d vector0, vector1, vector2;
     bool    boolstat = false;
-    if (bsiGeom_planeThroughPoints (&normal, &origin, pPoint, numPoint))
+    if (points.size () > 0 && bsiGeom_planeThroughPoints (&normal, &origin, points.data (), (int)points.size ()))
         {
         boolstat = normal.GetNormalizedTriad (vector0, vector1, vector2);
         pTransform->InitFromOriginAndVectors(origin, vector0, vector1, vector2);
@@ -3822,4 +3820,212 @@ double      tolerance
     return c2 <= tolerance * tolerance * a2 * b2;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @description Append a DPoint3d to the end of the array.  The array count is increased
+*       by one.
+* @param pHeader    IN OUT  array to modify.
+* @param pPoint     IN      DPoint3d to append to the array.
+* @return true if operation is successful
+* @group        "DPoint3d Array"
+* @bsimethod                                    EarlinLutz      01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDPoint3dArray_addDPoint3d
+(
+        EmbeddedDPoint3dArray   *pHeader,
+const   DPoint3d                *pPoint
+)
+    {
+    if (pHeader)
+        {
+        pHeader->push_back (*pPoint);
+        return true;
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description Get a DPoint3d from a specified index in the array.
+*
+* @param pHeader    IN      header of array to access.
+* @param pPoint     OUT     DPoint3d accessed from the array.
+* @param index      IN      index of DPoint3d to access. Any negative index indicates
+*                           highest numbered element in the array.
+* @return false if the index is too large, i.e., no DPoint3d was accessed.
+* @group        "DPoint3d Array"
+* @bsimethod                                    EarlinLutz      01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDPoint3dArray_getDPoint3d
+(
+bvector<DPoint3d> const   *pHeader,
+        DPoint3d                *pPoint,
+        int                     index
+)
+    {
+    size_t i = (size_t)index;
+    if ( pHeader != nullptr
+        && i < pHeader->size ())
+        {
+        *pPoint = pHeader->at(i);
+        return true;
+        }
+    return false;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @description Return the number of DPoint3ds in the array.
+*
+* @param pHeader    IN      array to query.
+* @return array count
+* @group        "DPoint3d Array"
+* @bsimethod                                    EarlinLutz      01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int   jmdlEmbeddedDPoint3dArray_getCount
+(
+const   EmbeddedDPoint3dArray   *pHeader
+)
+    {
+    if (!pHeader)
+        return 0;
+    return (int) pHeader->size ();
+    }
+/*---------------------------------------------------------------------------------**//**
+* @description Reduce the count (number of DPoint3ds) in the array to zero.
+*       Existing memory is retained so the array can be refilled to its prior
+*       size without requiring reallocation.
+* @param pHeader    IN OUT  array to modify
+* @group        "DPoint3d Array"
+* @bsimethod                                    EarlinLutz      01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void  jmdlEmbeddedDPoint3dArray_empty
+(
+EmbeddedDPoint3dArray *pHeader
+)
+    {
+    if (pHeader)
+        pHeader->clear ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description Get a pointer to the contiguous buffer at specified index.  This pointer
+*       may become invalid if array contents are altered.
+* @param pHeader    IN      array to access.
+* @param index      IN      index of array entry.  Any negative index indicates the final
+*                           DPoint3d in the array.
+* @return pointer to contiguous buffer (simple C array).
+* @group        "DPoint3d Array"
+* @bsimethod                                    EarlinLutz      01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP DPoint3d* jmdlEmbeddedDPoint3dArray_getPtr
+(
+EmbeddedDPoint3dArray   *pHeader,
+int                     index
+)
+    {
+    return DPoint3dArrayWrapper::getPtr (pHeader, index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description Grab (borrow) an array from the cache.  Caller is responsible
+*       for using ~mEmbeddedDPoint3dArray_drop to return the array to the cache when
+*       finished.   Controlled "grab and drop" of cache arrays is faster than using
+*       either local variables (~mEmbeddedDPoint3dArray_init and
+*       ~mEmbeddedDPoint3dArray_releaseMem) or heap allocation
+*       (~mEmbeddedDPoint3dArray_new and ~mEmbeddedDPoint3dArray_free)
+*       because the preallocated variable size parts of cached arrays are immediately
+*       available without revisiting the system cache.
+* @return An array header obtained from the cache.
+* @group        "DPoint3d Array"
+* @bsimethod                                    EarlinLutz      01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP EmbeddedDPoint3dArray *jmdlEmbeddedDPoint3dArray_grab
+(
+void
+)
+    {
+    return new EmbeddedDPoint3dArray ();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @description Drop (return) an array to the cache.  Use this to dispose of arrays
+*       borrowed with ~mEmbeddedDPoint3dArray_grab.
+* @param pHeader    IN      pointer to array to return to cache.
+* @return always returns NULL.
+* @group        "DPoint3d Array"
+* @bsimethod                                    EarlinLutz      01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP EmbeddedDPoint3dArray *jmdlEmbeddedDPoint3dArray_drop
+(
+EmbeddedDPoint3dArray     *pHeader
+)
+    {
+    if (pHeader)
+        delete pHeader;
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description Append an array of DPoint3d to the end of the array.
+*
+* @param pHeader    IN OUT  header of array receiving values
+* @param pPoint     IN      array of data to add
+* @param n          IN      number to add.
+* @return true if operation is successful
+* @group        "DPoint3d Array"
+* @bsimethod                                    EarlinLutz      01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDPoint3dArray_addDPoint3dArray
+(
+        EmbeddedDPoint3dArray   *pHeader,
+const   DPoint3d                *pPoint,
+        int                     n
+)
+    {
+    return pHeader != NULL
+            && SUCCESS == DPoint3dArrayWrapper::insert (pHeader, pPoint, -1, n);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @description Insert at a specified position, shifting others to higher
+*       positions as needed.
+* @param pHeader    IN OUT  array to modify.
+* @param pPoint     IN      data to insert.
+* @param index      IN      index at which the value is to appear in the array.
+*                           The special index -1 (negative one) indicates to
+*                           insert at the end of the array.
+* @return true if operation is successful
+* @group        "DPoint3d Array"
+* @bsimethod                                    EarlinLutz      01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDPoint3dArray_insertDPoint3d
+(
+        EmbeddedDPoint3dArray   *pHeader,
+const   DPoint3d                *pPoint,
+        int                     index
+)
+    {
+    return SUCCESS == DPoint3dArrayWrapper::insert (pHeader, pPoint, index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description Store a DPoint3d in the array at the specified index.
+*
+* @param pHeader    IN OUT  array to modify.
+* @param pPoint     IN      DPoint3d to store.
+* @param index      IN      position where the DPoint3d is stored.  A negative
+*                           indicates replacement of the current final DPoint3d.  If the
+*                           index is beyond the final current DPoint3d, zeros are
+*                           inserted to fill to the new index.
+* @return false if the index required array expansion and the reallocation failed.
+* @group        "DPoint3d Array"
+* @bsimethod                                    EarlinLutz      01/02
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool      jmdlEmbeddedDPoint3dArray_setDPoint3d
+(
+EmbeddedDPoint3dArray   *pHeader,
+DPoint3dCP              pPoint,
+int                     index
+)
+    {
+    return pHeader != NULL
+        && SUCCESS == DPoint3dArrayWrapper::set (pHeader, pPoint, index);
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE
