@@ -1849,11 +1849,7 @@ DbResult Db::DetachDb(Utf8CP alias) const
 
     DbResult rc = (DbResult) sqlite3_exec(GetSqlDb(), SqlPrintfString("DETACH %s", alias), nullptr, nullptr, nullptr);
     if (rc != BE_SQLITE_OK)
-        {
-        BeAssert(false);
-        Utf8String lastError = GetLastError(nullptr); // keep on separate line for debugging
-        LOG.errorv("DetachDb failed: \"%s\" alias:[%s]", lastError.c_str(), alias);
-        }
+        LOG.errorv("DetachDb failed: \"%s\" alias:[%s]", GetLastError(nullptr).c_str(), alias);
 
     if (wasActive)
         txn->Begin();
