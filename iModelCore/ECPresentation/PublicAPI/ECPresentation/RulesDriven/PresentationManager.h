@@ -32,6 +32,14 @@ USING_NAMESPACE_BENTLEY_EC
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_UPDATE             LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE ".Update"
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_THREADS            LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE ".Threads"
 
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_WINRT) || defined(BENTLEYCONFIG_OS_ANDROID)
+    // 50 MB on mobile platforms
+    #define DEFAULT_DISK_CACHE_SIZE_LIMIT   50 * 1024 * 1024
+#else
+    // 1 GB on desktop
+    #define DEFAULT_DISK_CACHE_SIZE_LIMIT   1024 * 1024 * 1024
+#endif
+
 //__PUBLISH_SECTION_END__
 //#define RULES_ENGINE_FORCE_SINGLE_THREAD
 struct IRulesDrivenECPresentationManagerDependenciesFactory;
@@ -67,6 +75,38 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
             {}
         BeFileNameCR GetAssetsDirectory() const {return m_assetsDirectory;}
         BeFileNameCR GetTemporaryDirectory() const {return m_tempDirectory;}
+    };
+    
+    //===================================================================================
+    //! Parameters for RulesDrivenECPresentationManager
+    // @bsiclass                                    Grigas.Petraitis            07/2018
+    //===================================================================================
+    struct Params
+    {
+    private:
+        IConnectionManagerR m_connections;
+        Paths m_paths;
+        bool m_disableDiskCache;
+        uint64_t m_diskCacheFileSizeLimit;
+    public:
+        //! Constructor.
+        //! @param[in] connections Connection manager used by the presentation manager
+        //! @param[in] paths Known directory paths required by the presentation manager
+        Params(IConnectionManagerR connections, Paths paths)
+            : m_connections(connections), m_paths(paths)
+            {
+            m_disableDiskCache = false;
+            m_diskCacheFileSizeLimit = DEFAULT_DISK_CACHE_SIZE_LIMIT;
+            }
+        IConnectionManagerR GetConnections() const {return m_connections;}
+        Paths const& GetPaths() const {return m_paths;}
+        //! Is hierarchy caching on disk disabled
+        bool ShouldDisableDiskCache() const {return m_disableDiskCache;}
+        void SetDisableDiskCache(bool value) {m_disableDiskCache = value;}
+        //! Maximum allowed size (in bytes) of cache that's stored on disk by presentation manager.
+        //! 0 means infinite size. Defaults to DEFAULT_DISK_CACHE_SIZE_LIMIT.
+        uint64_t GetDiskCacheFileSizeLimit() const {return m_diskCacheFileSizeLimit;}
+        void SetDiskCacheFileSizeLimit(uint64_t value) {m_diskCacheFileSizeLimit = value;}
     };
 
     //===================================================================================
@@ -217,9 +257,13 @@ public:
     //! Constructor.
     //! @param[in] connections Connection manager used by this presentation manager.
     //! @param[in] paths Application paths provider.
-    //! @param[in] disableDiskCache Is hierarchy caching on disk disabled. It's recommended to keep this enabled unless being used
-    //! for testing.
+    //! @param[in] disableDiskCache Is hierarchy caching on disk disabled. It's recommended to keep 
+    //! this enabled unless being used for testing.
     ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(IConnectionManagerR connections, Paths const& paths, bool disableDiskCache = false);
+
+    //! Constructor.
+    //! @param[in] params A object that contains various configuration parameters for the presentation manager
+    ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(Params const& params);
 
     //! Destructor.
     ECPRESENTATION_EXPORT ~RulesDrivenECPresentationManager();

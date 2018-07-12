@@ -406,10 +406,27 @@ std::unique_ptr<IRulesDrivenECPresentationManagerDependenciesFactory> RulesDrive
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static RulesDrivenECPresentationManager::Params CreateParams(IConnectionManagerR connections, RulesDrivenECPresentationManager::Paths const& paths, bool disableDiskCache)
+    {
+    RulesDrivenECPresentationManager::Params params(connections, paths);
+    params.SetDisableDiskCache(disableDiskCache);
+    return params;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(IConnectionManagerR connections, Paths const& paths, bool disableDiskCache)
-    : IECPresentationManager(connections)
+    : RulesDrivenECPresentationManager(CreateParams(connections, paths, disableDiskCache))
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Params const& params)
+    : IECPresentationManager(params.GetConnections())
     {
 #ifdef RULES_ENGINE_FORCE_SINGLE_THREAD
     m_executor = new folly::InlineExecutor();
@@ -417,8 +434,11 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(IConnectionMa
     m_executor = new SingleThreadedQueueExecutor("ECPresentation");
 #endif
     m_cancelableTasks = new CancelableTasksStore();
-    m_connectionsWrapper = new ConnectionManagerWrapper(*this, connections);
-    m_impl = new RulesDrivenECPresentationManagerImpl(*CreateDependenciesFactory(), *m_connectionsWrapper, paths, disableDiskCache);
+    m_connectionsWrapper = new ConnectionManagerWrapper(*this, params.GetConnections());
+    Params implParams(*m_connectionsWrapper, params.GetPaths());
+    implParams.SetDisableDiskCache(params.ShouldDisableDiskCache());
+    implParams.SetDiskCacheFileSizeLimit(params.GetDiskCacheFileSizeLimit());
+    m_impl = new RulesDrivenECPresentationManagerImpl(*CreateDependenciesFactory(), implParams);
     }
 
 /*---------------------------------------------------------------------------------**//**

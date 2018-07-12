@@ -68,11 +68,11 @@ IUserSettingsManager* RulesDrivenECPresentationManagerDependenciesFactory::_Crea
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenECPresentationManager::Impl::Impl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, IConnectionManagerCR connections, Paths const& paths)
+RulesDrivenECPresentationManager::Impl::Impl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, Params const& params)
     : m_localState(nullptr), m_ecPropertyFormatter(nullptr), m_categorySupplier(nullptr)
     {
-    m_locaters = dependenciesFactory._CreateRulesetLocaterManager(connections);
-    m_userSettings = dependenciesFactory._CreateUserSettingsManager(paths.GetTemporaryDirectory());
+    m_locaters = dependenciesFactory._CreateRulesetLocaterManager(params.GetConnections());
+    m_userSettings = dependenciesFactory._CreateUserSettingsManager(params.GetPaths().GetTemporaryDirectory());
     m_userSettings->SetLocalizationProvider(&IECPresentationManager::GetLocalizationProvider());
     m_compositeUpdateRecordsHandler = new CompositeUpdateRecordsHandler();
     m_compositeUpdateRecordsHandler->AddRef();
@@ -532,26 +532,26 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory,
-    IConnectionManagerCR connections, Paths const& paths, bool disableDiskCache)
-    : RulesDrivenECPresentationManager::Impl(dependenciesFactory, connections, paths), m_connections(connections)
+RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, Params const& params)
+    : RulesDrivenECPresentationManager::Impl(dependenciesFactory, params), m_connections(params.GetConnections())
     {
-    m_customFunctions = new CustomFunctionsInjector(connections);
+    m_customFunctions = new CustomFunctionsInjector(m_connections);
     m_rulesetECExpressionsCache = new RulesetECExpressionsCache();
-    m_ecdbCaches = new ECDbCaches(connections);
+    m_ecdbCaches = new ECDbCaches(m_connections);
     m_nodesProviderContextFactory = new NodesProviderContextFactory(*this);
     m_nodesProviderFactory = new NodesProviderFactory(*this);
     m_usedClassesListener = new UsedClassesListener(*this);
     m_nodesFactory = new JsonNavNodesFactory();
-    m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory,
-        connections, GetUserSettingsManager(), *m_ecdbCaches, disableDiskCache ? NodesCacheType::Memory : NodesCacheType::Disk);
+    m_nodesCache = new NodesCache(params.GetPaths().GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory,
+        m_connections, GetUserSettingsManager(), *m_ecdbCaches, params.ShouldDisableDiskCache() ? NodesCacheType::Memory : NodesCacheType::Disk);
+    m_nodesCache->SetCacheFileSizeLimit(params.GetDiskCacheFileSizeLimit());
     m_contentCache = new ContentCache();
-    m_updateHandler = new UpdateHandler(m_nodesCache, m_contentCache, connections, *m_nodesProviderContextFactory,
+    m_updateHandler = new UpdateHandler(m_nodesCache, m_contentCache, m_connections, *m_nodesProviderContextFactory,
         *m_nodesProviderFactory, *m_rulesetECExpressionsCache);
 
     GetLocaters().SetRulesetCallbacksHandler(this);
     GetUserSettingsManager().SetChangesListener(this);
-    connections.AddListener(*this);
+    m_connections.AddListener(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

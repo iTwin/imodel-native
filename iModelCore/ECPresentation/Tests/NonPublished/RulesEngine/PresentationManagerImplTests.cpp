@@ -64,8 +64,9 @@ void RulesDrivenECPresentationManagerImplTests::SetUp()
     {
     ECPresentationTest::SetUp();    
     m_locater = TestRuleSetLocater::Create();
-    m_impl = new RulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManagerDependenciesFactory(), m_connections,
-        RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
+    RulesDrivenECPresentationManagerImpl::Params params(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
+    params.SetDisableDiskCache(true);
+    m_impl = new RulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManagerDependenciesFactory(), params);
     m_impl->SetCategorySupplier(&m_categorySupplier);
     m_impl->GetLocaters().RegisterLocater(*m_locater);
     m_connections.NotifyConnectionOpened(s_project->GetECDb());

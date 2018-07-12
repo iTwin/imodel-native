@@ -391,9 +391,9 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
 +---------------+---------------+---------------+---------------+---------------+------*/
 NodesCache::NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR nodesFactory, INodesProviderContextFactoryCR contextFactory, IConnectionManagerCR connections,
     IUserSettingsManager const& userSettings, IECSqlStatementCacheProvider& ecsqlStatements, NodesCacheType type)
-    : m_nodesFactory(nodesFactory), m_contextFactory(contextFactory), m_connections(connections), m_userSettings(userSettings), m_statements(50), m_type(type), m_tempCache(false), m_ecsqlStamementCache(ecsqlStatements)
+    : m_nodesFactory(nodesFactory), m_contextFactory(contextFactory), m_connections(connections), m_userSettings(userSettings), 
+    m_statements(50), m_type(type), m_tempCache(false), m_ecsqlStamementCache(ecsqlStatements), m_sizeLimit(0)
     {
-    m_sizeLimit = NAVNODES_CACHE_DB_SIZE_LIMIT;
     Initialize(tempDirectory);
     m_connections.AddListener(*this);
     }

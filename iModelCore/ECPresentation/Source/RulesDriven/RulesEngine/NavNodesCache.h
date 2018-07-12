@@ -125,12 +125,6 @@ public:
     SavepointPtr CreateSavepoint() {return _CreateSavepoint();}
 };
 
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_WINRT) || defined(BENTLEYCONFIG_OS_ANDROID)
-    #define NAVNODES_CACHE_DB_SIZE_LIMIT    50 * 1024 * 1024
-#else
-    #define NAVNODES_CACHE_DB_SIZE_LIMIT    1024 * 1024 * 1024
-#endif
-
 #define NODESCACHE_TABLENAME_DataSources        "DataSources"
 #define NODESCACHE_TABLENAME_DataSourceClasses  "DataSourceClasses"
 #define NODESCACHE_TABLENAME_DataSourceSettings "DataSourceSettings"
