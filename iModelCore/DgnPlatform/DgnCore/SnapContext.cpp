@@ -69,8 +69,7 @@ bool EvaluateInterior()
             DRay3d boresite = GetBoresite(localPoint, m_hitLocalToView.M1);
 
             CurveVector::InOutClassification result = curves.RayPierceInOnOut(boresite, solidDetail);
-
-            if (CurveVector::InOutClassification::INOUT_In != result && CurveVector::InOutClassification::INOUT_On != result)
+            if (CurveVector::InOutClassification::INOUT_Unknown == result)
                 return false;
 
             if (interiorPt)
@@ -81,25 +80,6 @@ bool EvaluateInterior()
 
         case GeometricPrimitive::GeometryType::SolidPrimitive:
             {
-            if (HitGeomType::None != m_hitGeomType) // Don't need to find "best" face for view direction if hatch line/arc center hit...
-                {
-                SolidLocationDetail solidDetail;
-
-                if (!m_hitGeom->GetAsISolidPrimitive()->ClosestPoint(localPoint, solidDetail))
-                    return false;
-
-                DVec3d    uDir, vDir;
-                DPoint3d  point;
-
-                if (!m_hitGeom->GetAsISolidPrimitive()->TryUVFractionToXYZ(solidDetail.GetFaceIndices(), solidDetail.GetU(), solidDetail.GetV(), point, uDir, vDir))
-                    return false;
-
-                if (interiorPt)
-                    m_hitCurveDetail.point = point;
-                m_hitNormalLocal.NormalizedCrossProduct(uDir, vDir);
-                break;
-                }
-
             SolidLocationDetail solidDetail;
 
             if (!m_hitGeom->GetAsISolidPrimitive()->ClosestPoint(m_hitClosePtLocal, solidDetail)) // Prefer face identified by original hit location...
@@ -125,8 +105,7 @@ bool EvaluateInterior()
                 case IGeometry::GeometryType::CurveVector:
                     {
                     CurveVector::InOutClassification result = faceGeom->GetAsCurveVector()->RayPierceInOnOut(boresite, solidDetail);
-
-                    if (CurveVector::InOutClassification::INOUT_In != result && CurveVector::InOutClassification::INOUT_On != result)
+                    if (CurveVector::InOutClassification::INOUT_Unknown == result)
                         return false;
 
                     if (interiorPt)
@@ -1684,7 +1663,8 @@ ICurvePrimitivePtr& GetHitCurvePrimitivePtr() {return m_hitCurveDerived;} // Val
 HitGeomType GetHitGeomType() const {return m_hitGeomType;}
 HitParentGeomType GetHitParentGeomType() const {return m_hitParentGeomType;}
 DPoint3d GetHitPointWorld() const {DPoint3d hitPtWorld = m_hitCurveDetail.point; m_hitLocalToWorld.Multiply(hitPtWorld); return hitPtWorld;}
-DVec3d GetHitNormalWorld() const {DVec3d hitNormalWorld = m_hitNormalLocal; m_hitLocalToWorld.MultiplyMatrixOnly(hitNormalWorld); return hitNormalWorld;}
+bool IsHitNormalValid() const {return 0.0 != m_hitNormalLocal.Magnitude();}
+DVec3d GetHitNormalWorld() const {DVec3d hitNormalWorld = m_hitNormalLocal; m_hitLocalToWorld.MultiplyMatrixOnly(hitNormalWorld); hitNormalWorld.Normalize(); return hitNormalWorld;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
@@ -1933,7 +1913,7 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
             if (!helper.GetHitGeometryParams().IsWeightFromSubCategoryAppearance())
                 output.SetWeight(helper.GetHitGeometryParams().GetWeight());
 
-            if (0.0 != helper.GetHitNormalWorld().Magnitude())
+            if (helper.IsHitNormalValid())
                 output.SetNormal(helper.GetHitNormalWorld());
 
             if (nullptr != helper.GetHitCurveDetail().curve)
@@ -2015,7 +1995,7 @@ SnapStatus SnapContext::DoDefaultDisplayableSnap()
                     {
                     GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(helper.GetHitCurveDetail().curve, &helper.GetHitLocalToWorld(), helper.GetHitGeomType());
 
-                    if (0.0 != helper.GetHitNormalWorld().Magnitude())
+                    if (helper.IsHitNormalValid())
                         GetSnapDetail()->GetGeomDetailW().SetSurfaceNormal(helper.GetHitNormalWorld());
 
                     SetSnapInfo(*GetSnapDetail(), GetSnapMode(), GetSnapSprite(GetSnapMode()), helper.GetHitPointWorld(), SnapMode::Center == GetSnapMode(), GetSnapAperture(), false);
