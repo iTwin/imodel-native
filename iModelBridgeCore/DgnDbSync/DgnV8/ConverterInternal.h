@@ -101,6 +101,7 @@
 #include <ScalableMeshSchema/ScalableMeshSchemaApi.h>
 #include "ECSchemaMappings.h"
 #include "LinkConverter.h"
+#include <DgnPlatform/TileWriter.h>
 #include <DgnPlatform/DgnProgressMeter.h>
 
 #define LOG             ConverterLogging::GetLogger (ConverterLogging::Namespace::General)
