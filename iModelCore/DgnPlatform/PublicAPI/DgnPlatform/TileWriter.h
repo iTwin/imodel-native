@@ -20,34 +20,65 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(ICesiumPublisher)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PublishedTile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshMaterial)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileTexture)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileTextureImage)
 
 DEFINE_REF_COUNTED_PTR(TileTexture)
+DEFINE_REF_COUNTED_PTR(TileTextureImage)
 DEFINE_REF_COUNTED_PTR(PublishedTile)
+
+//=======================================================================================
+// ! Holds a texture image.
+// @bsistruct                                                   Paul.Connelly   07/16
+//=======================================================================================
+struct TileTextureImage : RefCountedBase
+    {
+    private:
+        Render::ImageSource     m_imageSource;
+        bool                    m_repeat;
+
+        TileTextureImage(Render::ImageSource&& imageSource, bool repeat) : m_imageSource(std::move(imageSource)), m_repeat(repeat) { BeAssert(m_imageSource.IsValid()); }
+        TileTextureImage(Render::ImageSource& imageSource, bool repeat) : m_imageSource (imageSource), m_repeat(repeat) { BeAssert(m_imageSource.IsValid()); }
+    public:
+        static TileTextureImagePtr Create(Render::ImageSource&& imageSource, bool repeat=true) { return new TileTextureImage(std::move(imageSource), repeat); }
+        static TileTextureImagePtr Create(Render::ImageSource& imageSource, bool repeat=true) { return new TileTextureImage(imageSource, repeat); }
+        static TileTextureImagePtr Create(GradientSymbCR gradient);
+        //static Render::ImageSource Load(TileDisplayParamsCR params, DgnDbR db);
+
+        Render::ImageSourceCR GetImageSource() const { return m_imageSource; }
+        bool GetRepeat() const { return m_repeat; }
+    };
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     04/2017
 +===============+===============+===============+===============+===============+======*/
 struct TileTexture : Render::Texture
  {
-    CreateParams        m_createParams;
-    Render::Image               m_image;
+    CreateParams                m_createParams;
+    Render::ImageSource         m_imageSource;
+    Render::Image::BottomUp     m_bottomUp;
+    bool                        m_repeat = false;
+    Dimensions                  m_dimensions;
+    
+    TileTexture(Render::ImageCR image, Texture::CreateParams const& createParams) : Render::Texture(createParams), m_createParams(createParams), 
+            m_imageSource(image, Render::Image::Format::Rgba == image.GetFormat() ? Render::ImageSource::Format::Png : Render::ImageSource::Format::Jpeg), m_bottomUp(Render::Image::BottomUp::No), m_dimensions(image.GetWidth(), image.GetHeight())  { }
+    TileTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp, Texture::CreateParams const& createParams) : Render::Texture(createParams), m_createParams(createParams), m_imageSource(source), m_bottomUp(bottomUp) { }
 
-    TileTexture(CreateParams const& params) : Render::Texture(params), m_createParams(params) { }
-    TileTexture(Render::ImageCR image, CreateParams const& createParams) : Render::Texture(createParams), m_image(image), m_createParams(createParams) { }
+    TileTextureImagePtr CreateTexture() const { return TileTextureImage::Create(Render::ImageSource(m_imageSource), !m_createParams.m_isTileSection); }
+    virtual Dimensions GetDimensions() const override { return m_dimensions; }
 
-    bool GetRepeat() const { return !m_createParams.m_isTileSection; }
-    Dimensions GetDimensions() const override { BeAssert(false); return Dimensions(0, 0); }
- }; // TileTexture
+ }; // Texture
 
 
 //=======================================================================================
-// @bsistruct                                                   Ray.Bentley     12/2016                                                     a
+// @bsistruct                                                   Ray.Bentley     12/2016                                                     
 //=======================================================================================
 struct Writer
 {
 public:
     Writer(StreamBufferR buffer, GeometricModelR model) : m_buffer(buffer), m_model(model) { }
     BentleyStatus WriteGltf();
+    void                AddPrimitivesJson(Json::Value const& primitives);
+
 
 protected:
     Json::Value         m_json;
@@ -116,6 +147,7 @@ struct PublishedTile : RefCountedBase
     {
 private:
     BeFileName                  m_fileName;
+    Utf8String                  m_url;
     bvector<PublishedTilePtr>   m_children;
     DRange3d                    m_publishedRange;
     DRange3d                    m_tileRange;
@@ -131,6 +163,7 @@ public:
     DRange3dCR GetPublishedRange() const { return m_publishedRange; }
     DRange3dCR GetTileRange() const { return m_tileRange; }
     double GetTolerance() const { return m_tolerance; }
+    Utf8String GetURL() const { return m_url; }
     };
 
 //=======================================================================================
@@ -147,11 +180,46 @@ struct ICesiumPublisher
     //! Invoked after a model is processed, with the result of processing.
     virtual TileTree::IO::WriteStatus _EndProcessModel(GeometricModelCR model, PublishedTileCR rootTile, TileTree::IO::WriteStatus status) = 0;
     //! Write cesium tileset for a GeometricModel
-    DGNPLATFORM_EXPORT static TileTree::IO::WriteStatus WriteCesiumTileset(ICesiumPublisher& publisher, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance);
+    DGNPLATFORM_EXPORT static TileTree::IO::WriteStatus PublishCesiumTileset(ICesiumPublisher& publisher, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance);
+    DGNPLATFORM_EXPORT static TileTree::IO::WriteStatus WriteCesiumTileset(BeFileName outputFileName, BeFileNameCR tileOutputDirectory, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance);
 
 
 };  // ICesiumPublisher
 
 
 
+
 END_TILETREE_IO_NAMESPACE
+
+
+
+
+
+
+
+                                                                                                           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

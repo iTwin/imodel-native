@@ -18,9 +18,19 @@ USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
        
 
+
 static double s_minToleranceRatio = 512.0;
 
 BEGIN_TILETREE_IO_NAMESPACE
+
+#define JSON_Root "root"
+#define JSON_GeometricError "geometricError"
+#define JSON_BoundingVolume "boundingVolume"
+#define JSON_Box "box"
+#define JSON_Children "children"
+#define JSON_Content "content"
+#define JSON_Transform "transform"
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
@@ -198,13 +208,16 @@ BatchTableBuilder(FeatureTableCR attrs, DgnDbR db, bool is3d) : m_json(Json::obj
 +===============+===============+===============+===============+===============+======*/
 struct MeshMaterial 
 { 
-    Utf8String  m_name;
+    Utf8String              m_name;
+    Render::MaterialCPtr    m_material;
+    TileTextureCPtr         m_texture;
 
-    MeshMaterial (Utf8StringCR suffix) : m_name("Material_" + suffix) { }
+    MeshMaterial (Utf8StringCR suffix, MaterialCP material, TextureCP texture) : m_name("Material_" + suffix), m_material(material), m_texture(dynamic_cast<TileTextureCP>(texture)) { }
 
-    bool IsTextured() const { return false; }
+    bool IsTextured() const { return m_texture.IsValid(); }
     bool IgnoresLighting() const { return false; }
     Utf8StringCR GetName() const { return m_name; }
+    TileTextureCPtr     GetTexture() const { return m_texture; }
 
 
 };  // MeshMaterial
@@ -217,6 +230,70 @@ struct CesiumTileWriter : TileTree::IO::Writer
 {
     CesiumTileWriter(StreamBufferR streamBuffer, GeometricModelR model) : TileTree::IO::Writer(streamBuffer, model) { }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String AddTextureImage (TileTextureCR texture, Utf8StringCR idStr)
+    {
+    Render::ImageSourceCR   imageSource = texture.m_imageSource;
+    bool                    hasAlpha = imageSource.GetFormat() == ImageSource::Format::Png;
+
+    Utf8String  textureId = Utf8String ("texture_") + idStr;
+    Utf8String  imageId   = Utf8String ("image_")   + idStr;
+    Utf8String  bvImageId = Utf8String ("imageBufferView") + idStr;
+
+    m_json["textures"][textureId] = Json::objectValue;
+    m_json["textures"][textureId]["format"] = hasAlpha ? static_cast<int32_t>(Gltf::DataType::Rgba) : static_cast<int32_t>(Gltf::DataType::Rgb);
+    m_json["textures"][textureId]["internalFormat"] = hasAlpha ? static_cast<int32_t>(Gltf::DataType::Rgba) : static_cast<int32_t>(Gltf::DataType::Rgb);
+    m_json["textures"][textureId]["sampler"] = texture.m_repeat ? "sampler_0" : "sampler_2";
+    m_json["textures"][textureId]["source"] = imageId;
+
+    m_json["images"][imageId] = Json::objectValue;
+
+
+    m_json["bufferViews"][bvImageId] = Json::objectValue;
+    m_json["bufferViews"][bvImageId]["buffer"] = "binary_glTF";
+
+
+    m_json["images"][imageId]["extensions"]["KHR_binary_glTF"] = Json::objectValue;
+    m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["bufferView"] = bvImageId;
+    m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = imageSource.GetFormat() == ImageSource::Format::Png ? "image/png" : "image/jpeg";
+
+    Render::Texture::Dimensions     dimensions = texture.GetDimensions();
+    if (0 == dimensions.width || 0 == dimensions.height)
+        {
+        Image       image (imageSource, hasAlpha ? Image::Format::Rgba : Image::Format::Rgb);
+        
+        dimensions.width = image.GetWidth();
+        dimensions.height = image.GetHeight();
+        }
+
+    m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"]  = dimensions.width;
+    m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = dimensions.height;
+
+    ByteStream const& imageData = imageSource.GetByteStream();
+    m_json["bufferViews"][bvImageId]["byteOffset"] = BinaryDataSize();
+    m_json["bufferViews"][bvImageId]["byteLength"] = imageData.size();
+    AddBinaryData (imageData.data(), imageData.size());
+
+    return textureId;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value     CreateMaterialJson(MeshMaterialCR material, Utf8StringCR idStr)
+    { 
+    Json::Value         json = Json::objectValue, values = Json::objectValue;
+    
+    if (material.GetTexture().IsValid())
+        values["tex"] = AddTextureImage(*material.GetTexture(), idStr);
+
+    json["values"] = values;
+    return json; 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -233,9 +310,6 @@ BentleyStatus CreateTriMesh(Json::Value& primitiveJson, TriMeshArgs const& meshA
         primitiveJson["attributes"]["TEXCOORD_0"] = AddParamAttribute (meshArgs.m_textureUV, meshArgs.m_numPoints, "Param", idStr.c_str());
     if (meshArgs.m_colors.m_numColors > 1)
         AddColors(primitiveJson, meshArgs.m_colors, meshArgs.m_numPoints, idStr);
-
-    BeAssert (meshMaterial.IgnoresLighting() || nullptr != meshArgs.m_normals);
-
     if (nullptr != meshArgs.m_normals && !meshMaterial.IgnoresLighting())        // No normals if ignoring lighting (reality meshes).
         primitiveJson["attributes"]["NORMAL"] = AddNormals(meshArgs.m_normals, meshArgs.m_numPoints, "Normal", idStr.c_str());
 
@@ -254,14 +328,11 @@ void AddTriMesh(Json::Value& primitivesNode, TriMeshArgsCR meshArgs, ColorTableC
         return;
 
     Utf8String          idStr(std::to_string(index++).c_str());
-    Json::Value         materialJson = Json::objectValue, primitiveJson = Json::objectValue;
+    Json::Value         primitiveJson;
 
-    if (//SUCCESS == CreateMeshMaterialJson(materialJson, colorTable, meshMaterial, idStr) &&
-        SUCCESS == CreateTriMesh(primitiveJson, meshArgs, meshMaterial, idStr))
+    if (SUCCESS == CreateTriMesh(primitiveJson, meshArgs, meshMaterial, idStr))
         {
-#ifdef NONDEFAULT_MATERIALS
-        m_json["materials"][meshMaterial.GetName()] = materialJson;
-#endif
+        m_json["materials"][meshMaterial.GetName()] = CreateMaterialJson(meshMaterial, idStr);
         primitiveJson["material"] = meshMaterial.GetName();
         primitivesNode.append(primitiveJson);
         }
@@ -283,7 +354,7 @@ void BeginBatchedModel(uint32_t& startPosition, uint32_t& lengthDataPosition, Re
     m_buffer.Append(B3dm::Version);                                                          
     lengthDataPosition = m_buffer.GetSize();
     m_buffer.Append((uint32_t) 0);                                                      // total length - filled in later.
-    m_buffer.Append(static_cast<uint32_t>(featureTableStr.size()));                        // feature table JSon length.
+    m_buffer.Append(static_cast<uint32_t>(featureTableStr.size()));                     // feature table JSon length.
     m_buffer.Append((uint32_t) 0);                                                      // length of binary portion of feature table (zero).
     m_buffer.Append(static_cast<uint32_t>(batchTableStr.size()));                       // batch table JSon length.
     m_buffer.Append((uint32_t) 0);                                                      // length of binary portion of batch table (zero)
@@ -319,6 +390,7 @@ BentleyStatus  WriteBatchedModel(Render::FeatureTableCR featureTable)
 
 };  // CesiumTileWriter
 
+
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     04/2017
 +===============+===============+===============+===============+===============+======*/
@@ -330,7 +402,7 @@ struct RenderSystem : Render::System
     mutable CesiumTileWriter            m_writer;
     mutable Json::Value                 m_primitives;
     mutable DRange3d                    m_range;
-    mutable FeatureTable               m_featureTable;
+    mutable FeatureTable                m_featureTable;
 
     RenderSystem(GeometricModelR model) : m_writer(m_streamBuffer, model), m_range(DRange3d::NullRange()), m_featureTable(model.GetModelId(), s_maxFeatures)  { }
 
@@ -352,10 +424,9 @@ struct RenderSystem : Render::System
     virtual uint32_t   _GetMaxFeaturesPerBatch() const override { return s_maxFeatures; }
 
     virtual TexturePtr _GetTexture(GradientSymbCR gradient, DgnDbR db) const override {return nullptr; }
-    virtual TexturePtr _CreateTexture(ImageCR image, DgnDbR, Render::Texture::CreateParams const& params) const override {return new TileTexture(image, params);}
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, DgnDbR, Texture::CreateParams const& params) const override { BeAssert(false); return nullptr; }
+    virtual TexturePtr _CreateTexture(ImageCR image, DgnDbR, Texture::CreateParams const& params)  const override {return new TileTexture(image, params); }
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, DgnDbR, Texture::CreateParams const& params)  const override {return new TileTexture(source, bottomUp, params); }
     virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const override  { return nullptr; }
-    virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb)  const override {return nullptr; }
     virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const override { return nullptr; }
 
 /*---------------------------------------------------------------------------------**//**
@@ -384,12 +455,20 @@ virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR triMesh, DgnDbR db) const overri
     ColorTable      colorTable;
     size_t          index = (size_t) m_primitives.size();
     Utf8String      idStr(std::to_string(index).c_str());
-    MeshMaterial    meshMaterial(idStr);
+    MeshMaterial    meshMaterial(idStr, triMesh.m_material.get(), triMesh.m_texture.get());
 
     m_range.Extend(triMesh.m_pointParams.GetRange());
     m_writer.AddTriMesh(m_primitives, triMesh, colorTable, meshMaterial, index); 
 
     return new Graphic(db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb)  const override 
+    {
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -400,6 +479,7 @@ WriteStatus WriteTile(PublishedTileR outputTile)
     if (m_range.IsNull())
         return WriteStatus::NoGeometry;
 
+    m_writer.AddPrimitivesJson(m_primitives);
     m_writer.WriteBatchedModel(m_featureTable);
 
     BeFile          outputFile;
@@ -424,17 +504,16 @@ struct Context
 {
     TileTree::TilePtr   m_inputTile;
     PublishedTilePtr    m_outputTile;
-    Transform           m_transformFromDgn;
     ICesiumPublisherP   m_publisher;
     double              m_leafTolerance;
     GeometricModelP     m_model;
     ClipVectorPtr       m_clip;
 
-    Context(TileTree::TileP inputTile, PublishedTileP outputTile, TransformCR transformFromDgn, ClipVectorCP clip, ICesiumPublisher* publisher, double leafTolerance, GeometricModelP model) : 
-            m_inputTile(inputTile), m_outputTile(outputTile), m_transformFromDgn(transformFromDgn), m_publisher(publisher), m_leafTolerance(leafTolerance), m_model(model) { if (nullptr != clip) m_clip = clip->Clone(nullptr); }
+    Context(TileTree::TileP inputTile, PublishedTileP outputTile, ClipVectorCP clip, ICesiumPublisher* publisher, double leafTolerance, GeometricModelP model) : 
+            m_inputTile(inputTile), m_outputTile(outputTile), m_publisher(publisher), m_leafTolerance(leafTolerance), m_model(model) { if (nullptr != clip) m_clip = clip->Clone(nullptr); }
 
     Context(TileTree::TileP inputTile, PublishedTileP outputTile, Context const& inContext) :
-            m_inputTile(inputTile), m_outputTile(outputTile), m_transformFromDgn(inContext.m_transformFromDgn), m_clip(inContext.m_clip), m_publisher(inContext.m_publisher), m_leafTolerance(inContext.m_leafTolerance), m_model(inContext.m_model) { }
+            m_inputTile(inputTile), m_outputTile(outputTile), m_clip(inContext.m_clip), m_publisher(inContext.m_publisher), m_leafTolerance(inContext.m_leafTolerance), m_model(inContext.m_model) { }
 
 
 };
@@ -453,6 +532,7 @@ PublishedTile::PublishedTile(TileTree::TileCR inputTile, BeFileNameCR outputDire
     name.ReplaceAll(L"/", L"_");
 
     m_tileRange = inputTile.GetRange();
+    m_url =   Utf8String(BeFileName (nullptr, nullptr, name.c_str(), L".b3dm"));
     m_fileName = BeFileName (nullptr, outputDirectory.c_str(), name.c_str(), L".b3dm");
     m_tolerance = m_tileRange.DiagonalDistance() / s_minToleranceRatio;
     }
@@ -532,10 +612,10 @@ static FutureWriteStatus generateChildTiles (WriteStatus parentStatus, Context c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bewntley    08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-FutureWriteStatus writeCesiumTileset(ICesiumPublisher* publisher, GeometricModelP model, TransformCR transformFromDgn, double leafTolerance)
+FutureWriteStatus writeCesiumTileset(ICesiumPublisher* publisher, GeometricModelP model, double leafTolerance)
     {
-    TileTree::IO::RenderSystem        renderSystem(*model);
-    TileTree::RootCPtr              tileRoot = model->GetTileTree(&renderSystem);
+    auto                            renderSystem = std::make_shared<RenderSystem>(*model);
+    TileTree::RootCPtr              tileRoot = model->GetTileTree(renderSystem.get());
     ClipVectorPtr                   clip;
     PublishedTilePtr                publishedRoot = new PublishedTile(*tileRoot->GetRootTile(), publisher->_GetOutputDirectory(*model));
 
@@ -551,14 +631,16 @@ FutureWriteStatus writeCesiumTileset(ICesiumPublisher* publisher, GeometricModel
         if (WriteStatus::Success != status)
             return folly::makeFuture(status);
 
-        Transform           transformFromRoot = Transform::FromProduct(transformFromDgn, tileRoot->GetLocation());
         TileTree::TilePtr   inputTile = tileRoot->GetRootTile();
-        Context             context(inputTile.get(), publishedRoot.get(), transformFromRoot, clip.get(), publisher, leafTolerance, model);
+        Context             context(inputTile.get(), publishedRoot.get(), clip.get(), publisher, leafTolerance, model);
                                                                                                                 
         return generateParentTile(context).then([=](FutureWriteStatus status) { return generateChildTiles(status.value(), context); });
         })
     .then([=](FutureWriteStatus status)
         {
+        auto pRenderSys = renderSystem.get();
+        UNUSED_VARIABLE(pRenderSys);
+
         return folly::makeFuture(publisher->_EndProcessModel(*model, *publishedRoot, status.value()));   
         });
     }
@@ -566,10 +648,179 @@ FutureWriteStatus writeCesiumTileset(ICesiumPublisher* publisher, GeometricModel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bewntley    08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-WriteStatus ICesiumPublisher::WriteCesiumTileset(ICesiumPublisher& publisher, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance)
+WriteStatus ICesiumPublisher::PublishCesiumTileset(ICesiumPublisher& publisher, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance)
     {
-    return TileTree::IO::writeCesiumTileset(&publisher, const_cast<GeometricModelP> (&model), transformFromDgn, leafTolerance).get();
+    return TileTree::IO::writeCesiumTileset(&publisher, const_cast<GeometricModelP> (&model), leafTolerance).get();
     }
 
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     08/2017
+//=======================================================================================
+struct CesiumTilesetPublisher: ICesiumPublisher
+{
+public:
+    CesiumTilesetPublisher(BeFileName outputFileName, BeFileNameCR outputDirectory, TransformCR dbToEcef) : m_outputFileName(outputFileName), m_outputDirectory(outputDirectory), m_dbToEcef(dbToEcef) { }
+
+protected:
+    BeFileName      m_outputDirectory;
+    BeFileName      m_outputFileName;
+    Transform       m_dbToEcef;
+
+
+    BeFileName  _GetOutputDirectory(GeometricModelCR model) const override { return m_outputDirectory; }
+
+    static void AppendPoint(Json::Value& val, DPoint3dCR pt) { val.append(pt.x); val.append(pt.y); val.append(pt.z); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void WriteBoundingVolume(Json::Value& val, DRange3dCR range)
+    {
+    BeAssert (!range.IsNull());
+    DPoint3d    center = DPoint3d::FromInterpolate (range.low, .5, range.high);
+    DVec3d      diagonal = range.DiagonalVector();
+
+    // Range identified by center point and axes
+    // Axes are relative to origin of box, not center
+    static double      s_minSize = .001;   // Meters...  Don't allow degenerate box.
+
+    auto& volume = val[JSON_BoundingVolume];
+    auto& box = volume[JSON_Box];
+
+    AppendPoint(box, center);
+    AppendPoint(box, DPoint3d::FromXYZ (std::max(s_minSize, diagonal.x)/2.0, 0.0, 0.0));
+    AppendPoint(box, DPoint3d::FromXYZ (0.0, std::max(s_minSize, diagonal.y)/2.0, 0.0));
+    AppendPoint(box, DPoint3d::FromXYZ (0.0, 0.0, std::max(s_minSize, diagonal.z/2.0)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void WriteModelMetadataTree (DRange3dR range, Json::Value& root, PublishedTileCR tile, GeometricModelCR model)
+    {
+    if (tile.GetIsEmpty() && tile.GetChildren().empty())
+        {
+        range = DRange3d::NullRange();
+        return;
+        }
+
+    WString         rootName = TileUtil::GetRootNameForModel(model.GetModelId(), false);
+    DRange3d        contentRange, publishedRange = tile.GetPublishedRange();
+
+    
+    // the published range represents the actual range of the published meshes. - This may be smaller than the 
+    // range estimated when we built the tile tree. -- However we do not clip the meshes to the tile range.
+    // so start the range out as the intersection of the tile range and the published range.
+    range = contentRange = DRange3d::FromIntersection (tile.GetTileRange(), publishedRange, true);
+
+    if (!tile.GetChildren().empty())
+        {
+        root[JSON_Children] = Json::arrayValue;
+
+        // Append children to this tileset.
+        for (auto& childTile : tile.GetChildren())
+            {
+            Json::Value         child;
+            DRange3d            childRange;
+
+            WriteModelMetadataTree (childRange, child, *childTile, model);
+            if (!childRange.IsNull())
+                {
+                root[JSON_Children].append(child);
+                range.Extend (childRange);
+                }
+            }
+        }
+    if (range.IsNull())
+        return;
+
+    root["refine"] = "REPLACE";
+    root[JSON_GeometricError] = tile.GetTolerance();
+
+    WriteBoundingVolume (root, tile.GetTileRange());
+    
+    if (!tile.GetIsEmpty())
+        {
+        // TBD.  ContentRange.
+        root[JSON_Content]["url"] = tile.GetURL();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value TransformToJson(TransformCR tf)
+    {
+    auto matrix = DMatrix4d::From(tf);
+    Json::Value json(Json::arrayValue);
+    for (size_t i=0;i<4; i++)
+        for (size_t j=0; j<4; j++)
+            json.append (matrix.coff[j][i]);
+
+
+    return json;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+WriteStatus WriteTileset (GeometricModelCR model, PublishedTileCR rootTile)
+    {
+    Json::Value val, modelRoot;
+
+    val["asset"]["version"] = "0.0";
+    val["asset"]["gltfUpAxis"] = "Z";
+ 
+    DRange3d    rootRange;
+    WriteModelMetadataTree (rootRange, modelRoot, rootTile, model);
+
+    val[JSON_Root] = std::move(modelRoot);
+
+    val[JSON_Root][JSON_Transform] = TransformToJson(m_dbToEcef);
+
+    return SUCCESS == TileUtil::WriteJsonToFile (m_outputFileName.c_str(), val) ? WriteStatus::Success : WriteStatus::UnableToWriteFile;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileNameStatus InitializeDirectories()
+    {
+    return BeFileName::DoesPathExist(m_outputDirectory) ? BeFileName::EmptyDirectory (m_outputDirectory) :  BeFileName::CreateNewDirectory(m_outputDirectory);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+WriteStatus _BeginProcessModel(GeometricModelCR model)
+    {
+    return (BeFileNameStatus::Success == InitializeDirectories()) ? WriteStatus::Success : WriteStatus::UnableToOpenFile;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+WriteStatus _EndProcessModel(GeometricModelCR model, PublishedTileCR rootTile, WriteStatus status)
+    {
+    if (WriteStatus::Success != status)
+        {
+        BeFileName::EmptyAndRemoveDirectory (m_outputDirectory);
+        return status;
+        }
+    return WriteTileset(model, rootTile);
+    }
+};  // CesiumTilesetPublisher.
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::IO::WriteStatus ICesiumPublisher::WriteCesiumTileset(BeFileName outputFileName, BeFileNameCR tileOutputDirectory, GeometricModelCR model, TransformCR dbToEcef, double leafTolerance) 
+    {   
+    CesiumTilesetPublisher publisher(outputFileName, tileOutputDirectory, dbToEcef);
+
+    return ICesiumPublisher::PublishCesiumTileset(publisher, model, dbToEcef, leafTolerance);
+    }    
 END_TILETREE_IO_NAMESPACE
 
