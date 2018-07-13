@@ -232,7 +232,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
                 }
 
             ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
-            renderTextures[resourceName] = scene._CreateTexture(jpeg, Image::BottomUp::Yes);
+            renderTextures[resourceName] = scene._CreateTexture(jpeg, Image::BottomUp::No);
             }
         }
 
@@ -285,6 +285,13 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
             geomParams.m_numIndices = 3 * ctm.GetInteger(CTM_TRIANGLE_COUNT);
             geomParams.m_vertIndex  = ctm.GetIntegerArray(CTM_INDICES);
             geomParams.m_textureUV  = (FPoint2d const*) ctm.GetFloatArray(CTM_UV_MAP_1);
+
+            // IModelJS does not support the BottomUp images (and shouldn't).   Rather than doing expensive image
+            // flipping, invert the UV parameter here to work around this nonsense as it is required only for this
+            // obsolescent format.
+            FPoint2d*  uv = const_cast<FPoint2d*> (geomParams.m_textureUV); 
+            for (size_t i=0; i<geomParams.m_numPoints; i++, uv++)
+                uv->y = 1.0 - uv->y;
 
             auto texture = renderTextures.find(texName);
             geomParams.m_texture = (texture == renderTextures.end()) ? nullptr : texture->second;
