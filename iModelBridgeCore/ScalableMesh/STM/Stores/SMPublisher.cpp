@@ -338,7 +338,7 @@ StatusInt SM3SMPublisher::ProcessNode(IScalableMeshNodePtr sourceNode, IScalable
         if (SUCCESS != SetNodeMeshData(sourceNode, nullptr, destNode, transform))
             return ERROR;
         }
-    else
+    else if (parentDestNode != nullptr)
         {
         // Create new (empty) node so that children nodes can effectively be created/added as well
         if (SUCCESS != CreateAndAddNewNode(sourceNode, parentDestNode, destNode))

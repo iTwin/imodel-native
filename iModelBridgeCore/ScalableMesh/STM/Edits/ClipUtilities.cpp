@@ -2301,9 +2301,170 @@ void MeshClipper::SetMeshExtents(DRange3d extentOfData, DRange3d extentOfTexture
     m_nodeRange = extentOfTexture;
 }
 
+void MeshClipper::OrderClipGeometryList()
+{
+    orderedClipList.clear();
+    for (auto& poly : allPolys)
+        orderedClipList.push_back(&poly);
+    for (auto& vec : allVectors)
+        orderedClipList.push_back(&vec);
+
+    std::sort(orderedClipList.begin(), orderedClipList.end(),[](ClipInfo* a, ClipInfo* b) {
+        if (!a->isClipMask() && b->isClipMask())
+        return true; 
+        if (a->isClipMask() && !b->isClipMask())
+            return false;
+        return false;
+    });
+}
+
+bool MeshClipper::HasOnlyPolygons()
+{
+    return allVectors.empty();
+}
+
+void MeshClipper::GetClipsAsPolygons(bvector<bvector<DPoint3d>>& outPolygons)
+{
+    for (auto& clip : orderedClipList)
+    {
+        if (clip->type == ClipInfo::Type::Polygon)
+            outPolygons.push_back(static_cast<ClipPolyInfo*>(clip)->pts);
+    }
+}
+
+void MeshClipper::GetClipsAsVectors(bvector<ClipVectorPtr>& outVectors)
+{
+    for (auto& clip : orderedClipList)
+    {
+        if (clip->type == ClipInfo::Type::Vector)
+            outVectors.push_back(ClipVectorPtr(const_cast<ClipVector*>(static_cast<ClipVectorInfo*>(clip)->clip)));
+        else if (clip->type == ClipInfo::Type::Polygon)
+        {
+            CurveVectorPtr curvePtr = CurveVector::CreateLinear(static_cast<ClipPolyInfo*>(clip)->pts, CurveVector::BOUNDARY_TYPE_Outer);
+            vectorDefs.push_back(ClipVector::CreateFromCurveVector(*curvePtr, 1e-8, 1e-8));
+            outVectors.push_back(vectorDefs.back().get());
+        }
+    }
+}
+
+
+void MeshClipper::GetClipsAsSingleVector(ClipVectorPtr& outVector)
+{
+    for (auto& clip : orderedClipList)
+    {
+        if (clip->type == ClipInfo::Type::Vector)
+        {
+            for (size_t i = 0; i < static_cast<ClipVectorInfo*>(clip)->clip->size(); ++i)
+            {
+                outVector->push_back((*static_cast<ClipVectorInfo*>(clip)->clip)[i]);
+                outVector->back()->SetIsMask(static_cast<ClipVectorInfo*>(clip)->arePrimitivesMasks[i]);
+            }
+        }
+        else if (clip->type == ClipInfo::Type::Polygon)
+        {
+            CurveVectorPtr curvePtr = CurveVector::CreateLinear(static_cast<ClipPolyInfo*>(clip)->pts, CurveVector::BOUNDARY_TYPE_Outer);
+            vectorDefs.push_back(ClipVector::CreateFromCurveVector(*curvePtr, 1e-8, 1e-8));
+            for (size_t i = 0; i < vectorDefs.back()->size(); ++i)
+            {
+                outVector->push_back((*vectorDefs.back())[i]);
+                outVector->back()->SetIsMask(static_cast<ClipPolyInfo*>(clip)->isMask);
+            }
+        }
+    }
+}
+
 void MeshClipper::ComputeClip()
 {
+    bvector<bvector<PolyfaceHeaderPtr>> outputRegions;
+    if (m_is25dData && HasOnlyPolygons())
+    {
+        bvector<bvector<DPoint3d>> polygons;
+        GetClipsAsPolygons(polygons);
 
+        GetRegionsFromClipPolys(outputRegions, polygons);
+
+        for (size_t i = 0; i < orderedClipList.size() && i < polygons.size() && i < outputRegions.size()+1; ++i)
+        {
+            ClippedRegion reg;
+            reg.isExterior = false;
+            reg.id = orderedClipList[i]->id;
+            for (auto& m : outputRegions[i + 1])
+                reg.meshes.push_back(m);
+            computedRegions.push_back(reg);
+        }
+        ClippedRegion regExt;
+        regExt.isExterior = true;
+        regExt.id = 0;
+        for (auto& m : outputRegions[0])
+            regExt.meshes.push_back(m);
+        computedRegions.push_back(regExt);
+    }
+    else
+    {
+        if (HasOnlyPolygons())
+        {
+            bvector<bvector<DPoint3d>> polygons;
+            GetClipsAsPolygons(polygons);
+
+            GetRegionsFromClipPolys3D(outputRegions, polygons, m_sourceData);
+
+            for (size_t i = 0; i < orderedClipList.size() && i < polygons.size() && i < outputRegions.size() + 1; ++i)
+            {
+                ClippedRegion reg;
+                reg.isExterior = false;
+                reg.id = orderedClipList[i]->id;
+                for (auto& m : outputRegions[i + 1])
+                    reg.meshes.push_back(m);
+                computedRegions.push_back(reg);
+            }
+            ClippedRegion regExt;
+            regExt.isExterior = true;
+            regExt.id = 0;
+            for (auto& m : outputRegions[0])
+                regExt.meshes.push_back(m);
+            computedRegions.push_back(regExt);
+        }
+        else
+        {
+            ClipVectorPtr unifiedVector = ClipVector::Create();
+            bvector<bool> isMask;
+            GetClipsAsSingleVector(unifiedVector);
+
+            GetRegionsFromClipVector3D(outputRegions, unifiedVector.get(), m_sourceData, isMask);
+
+            size_t reg = 1;
+            for (auto& clip : orderedClipList)
+            {
+                if (reg >= outputRegions.size())  break;
+                ClippedRegion regClipped;
+                regClipped.isExterior = false;
+                regClipped.id = clip->id;
+                if (clip->type == ClipInfo::Type::Vector)
+                {
+                    for (size_t i = 0; i < static_cast<ClipVectorInfo*>(clip)->clip->size(); ++i)
+                    {
+                        for (auto& m : outputRegions[reg])
+                            regClipped.meshes.push_back(m);
+                        ++reg;
+                    }
+                }
+                else if (clip->type == ClipInfo::Type::Polygon)
+                {
+                    for (auto& m : outputRegions[reg])
+                        regClipped.meshes.push_back(m);
+                    ++reg;
+                }
+                computedRegions.push_back(regClipped);
+            }
+            ClippedRegion regExt;
+            regExt.isExterior = true;
+            regExt.id = 0;
+            for (auto& m : outputRegions[0])
+                regExt.meshes.push_back(m);
+            computedRegions.push_back(regExt);
+        }
+    }
+    wasClipped = true;
 }
 
 MeshClipper::RegionResult MeshClipper::GetRegions(bvector<uint64_t>& ids, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces)
@@ -2313,6 +2474,18 @@ MeshClipper::RegionResult MeshClipper::GetRegions(bvector<uint64_t>& ids, bvecto
 
 MeshClipper::RegionResult MeshClipper::GetExteriorRegion(PolyfaceHeaderPtr& mesh)
 {
+    if (!WasClipped())
+        return MeshClipper::RegionResult::ClippingNotComputed;
+
+    if (computedRegions.size() == 0)
+        return MeshClipper::RegionResult::NoData;
+
+    PolyfaceHeaderPtr pt = PolyfaceHeader::CreateFixedBlockIndexed(3);
+    auto reg = std::find_if(computedRegions.begin(), computedRegions.end(), [](ClippedRegion& r) { return r.isExterior == 0; });
+    pt->CopyFrom(*reg->meshes[0]);
+
+    for (size_t i = 1; i < reg->meshes.size(); ++i)
+        pt->AddIfMatchedLayout(*reg->meshes[i]);
     return MeshClipper::RegionResult::Success;
 }
 
@@ -2333,6 +2506,7 @@ MeshClipper::RegionResult MeshClipper::GetSelectedRegion(PolyfaceHeaderPtr& mesh
 {
     return MeshClipper::RegionResult::Success;
 }
+
 bvector<bpair<uint64_t, PolyfaceHeaderPtr>>&& MeshClipper::GetSelectedRegions(MeshClipper::RegionResult& result)
 {
     bvector<bpair<uint64_t, PolyfaceHeaderPtr>> vec;
