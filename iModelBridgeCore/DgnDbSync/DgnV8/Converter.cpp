@@ -1615,6 +1615,7 @@ void Converter::OnCreateComplete()
 
 
     GenerateThumbnails();
+    GenerateRealityModelTilesets();
     GetDgnDb().SaveSettings();
     }
 

@@ -835,6 +835,7 @@ struct Converter
         L10N_STRING(STEP_CONVERTING_VIEWS)             // =="Converting Views"==
         L10N_STRING(STEP_CREATE_IMODEL)                // =="Creating .imodel File"==
         L10N_STRING(STEP_CREATE_THUMBNAILS)            // =="Creating Thumbnails"==
+        L10N_STRING(STEP_CREATE_REALITY_MODEL_TILES)   // =="Creating Reality Model Tiles"==
         L10N_STRING(STEP_CREATING)                     // =="Creating DgnDb [%s]"==
         L10N_STRING(STEP_EMBED_FILES)                  // =="Embedding Files"==
         L10N_STRING(STEP_EMBED_FONTS)                  // =="Embedding Fonts"==
@@ -980,6 +981,7 @@ protected:
     DgnModelId          m_jobDefinitionModelId;
     DgnElementId         m_textStyleNoneId;
     bset<DgnModelId>    m_unchangedModels;
+    bset<DgnModelId>    m_modelsRequiringRealityTiles;;
 
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
@@ -1159,6 +1161,7 @@ public:
     //! @name DgnDb properties
     //! @{
     BentleyStatus GenerateThumbnails();
+    BentleyStatus GenerateRealityModelTilesets();
     bool ThumbnailUpdateRequired(ViewDefinition const& view);
 
     void CopyExpirationDate(DgnV8FileR);
@@ -1964,6 +1967,8 @@ public:
     //! Remove the V8 progress meter
     void ClearV8ProgressMeter();
     
+    //! Add model requiring reality tiles.
+    void AddModelRequiringRealityTiles(DgnModelId id) { m_modelsRequiringRealityTiles.insert(id); }
     //! @}
 
     //! @name Change Monitoring
