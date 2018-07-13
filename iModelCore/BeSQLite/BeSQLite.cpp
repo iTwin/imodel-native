@@ -521,6 +521,20 @@ DbResult Statement::DoPrepare(DbFileCR dbFile, Utf8CP sql)
     return (nullptr != m_stmt) ? BE_SQLITE_MISUSE : (DbResult) sqlite3_prepare_v2(dbHdl, sql, -1, &m_stmt, 0);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle    04/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+bool Statement::IsReadonly() const 
+    {
+    if (!IsPrepared())
+        {
+        BeAssert(IsPrepared() && "Can call Statement::IsReadonly only on prepared statements");
+        return true; // pick true in error case, as an unprepared statement cannot change the DB either
+        }
+
+    return sqlite3_stmt_readonly(m_stmt) != 0; 
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/

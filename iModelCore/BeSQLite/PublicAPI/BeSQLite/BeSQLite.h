@@ -652,6 +652,12 @@ public:
     //! @see sqlite3_prepare
     BE_SQLITE_EXPORT DbResult TryPrepare(DbCR db, Utf8CP sql);
 
+    //! Indicates whether the prepared statement makes no @b direct changes to the content of the db or not.
+    //! @remarks 
+    //! @return true if the prepared statement makes no direct changes to the content of the db, false otherwise
+    //! @see sqlite3_stmt_readonly, https://www.sqlite.org/c3ref/stmt_readonly.html
+    BE_SQLITE_EXPORT bool IsReadonly() const;
+
     //! Perform a single step on this (previously prepared) Statement
     //! @see sqlite3_step
     BE_SQLITE_EXPORT DbResult Step();
