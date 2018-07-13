@@ -311,8 +311,6 @@ CreateParams const& params
     {
     PlanCartesianGridSurfacePtr gridSurface = PlanCartesianGridSurface::Create(params);
 
-    BuildingLocks_LockElementForOperation(*gridSurface, BeSQLite::DbOpcode::Insert, "Inserting PlanCartesianGridSurface");
-
     if (!gridSurface->Insert().IsValid())
         return nullptr;
 
@@ -456,8 +454,6 @@ CreateParams const& params
 )
     {
     PlanRadialGridSurfacePtr gridSurface = PlanRadialGridSurface::Create(params);
-
-    BuildingLocks_LockElementForOperation(*gridSurface, BeSQLite::DbOpcode::Insert, "Inserting PlanRadialGridSurface");
 
     if (!gridSurface->Insert().IsValid())
         return nullptr;
@@ -803,12 +799,10 @@ void ElevationGridSurface::_PerformJsonAction (Json::Value const& actionData)
             SetCode(newCode);
             }
 
-        BuildingLocks_LockElementForOperation(*this, BeSQLite::DbOpcode::Update, "ElevationGridSurface::UpdateFromJson");
         Update();
         }
     else if (action.Equals(BCSJSONACTIONPERFORMER_ACTION_DELETE))
         {
-        BuildingLocks_LockElementForOperation(*this, BeSQLite::DbOpcode::Delete, "AllocatedVolume::Delete");
         Delete();
         }
     }

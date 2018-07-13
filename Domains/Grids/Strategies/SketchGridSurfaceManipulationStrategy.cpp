@@ -54,8 +54,7 @@ Dgn::DgnElementPtr SketchGridSurfaceManipulationStrategy::_FinishElement()
         return nullptr;
 
     if (!surface->GetThisElem().GetDgnDb().Txns().InDynamicTxn())
-        if (Dgn::RepositoryStatus::Success != BuildingLocks_LockElementForOperation(surface->GetThisElem(), BeSQLite::DbOpcode::Update, "Update Grid Surface"))
-            return nullptr;
+        return nullptr;
 
     if (surface->GetThisElemR().Update().IsNull())
         return nullptr;

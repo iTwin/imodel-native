@@ -64,8 +64,6 @@ CreateParams const& params
     {
     OrthogonalGridPtr thisGrid = OrthogonalGrid::Create(params);
 
-    BuildingLocks_LockElementForOperation(*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting orthogonal grid");
-
     if (!thisGrid->Insert().IsValid())
         return nullptr;
 

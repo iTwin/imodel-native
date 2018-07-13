@@ -292,7 +292,6 @@ GridAxisCR gridAxis
 
             ElevationGridSurface::CreateParams params (*subModel, gridAxis, surface.get(), elevation);
             ElevationGridSurfacePtr gridPlane = ElevationGridSurface::Create (params);
-            BuildingLocks_LockElementForOperation (*gridPlane, BeSQLite::DbOpcode::Insert, "Inserting ElevationSurface");
             gridPlane->Insert ();
             DPlane3d planeThis;
             planeThis = gridPlane->GetPlane ();
@@ -330,7 +329,6 @@ CreateParams const& params
     {
     ElevationGridPtr thisGrid = new ElevationGrid (params);
 
-    BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting elevation grid");
     if (!thisGrid->Insert ().IsValid ())
         return nullptr;
 

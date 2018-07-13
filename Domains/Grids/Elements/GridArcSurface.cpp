@@ -282,8 +282,6 @@ CreateParams const& params
     {
     PlanCircumferentialGridSurfacePtr gridSurface = PlanCircumferentialGridSurface::Create(params);
 
-    BuildingLocks_LockElementForOperation(*gridSurface, BeSQLite::DbOpcode::Insert, "Inserting PlanCircumferentialGridSurface");
-
     if (!gridSurface->Insert().IsValid())
         return nullptr;
 

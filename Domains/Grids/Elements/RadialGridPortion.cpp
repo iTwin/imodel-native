@@ -57,8 +57,6 @@ RadialGridPtr RadialGrid::CreateAndInsert (CreateParams const& params)
     {
     RadialGridPtr thisGrid = RadialGrid::Create(params);
 
-    BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting Radial grid");
-
     if (!thisGrid->Insert ().IsValid ())
         return nullptr;
 

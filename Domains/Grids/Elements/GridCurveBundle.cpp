@@ -29,7 +29,6 @@ GridCurveBundlePtr GridCurveBundle::CreateAndInsert
     GridCurveBundlePtr bundle = new GridCurveBundle(params);
     bundle->SetCurvesPortion(portion);
 
-    BuildingLocks_LockElementForOperation(*bundle, BeSQLite::DbOpcode::Insert, "Insert GridCurveBundle");
     Dgn::DgnDbStatus status;
     bundle->Insert(&status);
     if (Dgn::DgnDbStatus::Success != status)
@@ -126,7 +125,6 @@ Dgn::DgnDbStatus GridCurveBundle::_OnDelete() const
     GridCurveCPtr gridCurve = GetGridCurve();
     if (gridCurve.IsValid())
         {
-        BuildingLocks_LockElementForOperation(*gridCurve, BeSQLite::DbOpcode::Delete, "Delete GridCurve");
         Dgn::DgnDbStatus gridCurveDeleteStatus = gridCurve->Delete();
         if (Dgn::DgnDbStatus::Success != gridCurveDeleteStatus)
             return gridCurveDeleteStatus;
@@ -183,12 +181,10 @@ void GridCurveBundle::UpdateGridCurve()
         if (intersection.IsValid())
             {
             gridCurve->SetCurve(intersection);
-            BuildingLocks_LockElementForOperation(*gridCurve, BeSQLite::DbOpcode::Update, "Update GridCurve");
             gridCurve->Update();
             }
         else
             {
-            BuildingLocks_LockElementForOperation(*gridCurve, BeSQLite::DbOpcode::Delete, "Delete GridCurve");
             gridCurve->Delete();
             }
         }
@@ -208,7 +204,6 @@ void GridCurveBundle::UpdateGridCurve()
         else if (intersection->GetBsplineCurveCP() || intersection->GetInterpolationCurveCP())
             gridCurve = GridSpline::Create(*portion, intersection);
 
-        BuildingLocks_LockElementForOperation(*gridCurve, BeSQLite::DbOpcode::Insert, "Insert GridCurve");
         Dgn::DgnDbStatus status;
         gridCurve->Insert(&status);
         BeAssert(Dgn::DgnDbStatus::Success == status);

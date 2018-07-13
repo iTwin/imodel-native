@@ -147,8 +147,7 @@ Dgn::DgnElementPtr LineGridSurfaceManipulationStrategy::_FinishElement
         return nullptr;
 
     if (!m_surface->GetDgnDb().Txns().InDynamicTxn())
-        if (Dgn::RepositoryStatus::Success != BuildingLocks_LockElementForOperation(*m_surface, BeSQLite::DbOpcode::Insert, "Insert Grid Surface"))
-            return nullptr;
+        return nullptr;
 
     if (m_surface->Insert().IsNull())
         return nullptr;

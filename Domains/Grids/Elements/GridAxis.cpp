@@ -109,8 +109,6 @@ OrthogonalGridCR grid
     {
     OrthogonalAxisXPtr thisAxis = OrthogonalAxisX::Create (model, grid);
 
-    BuildingLocks_LockElementForOperation (*thisAxis, BeSQLite::DbOpcode::Insert, "Inserting grid axis");
-    
     if (!thisAxis->Insert().IsValid ())
         return nullptr;
 
@@ -154,8 +152,6 @@ OrthogonalGridCR grid
 )
     {
     OrthogonalAxisYPtr thisAxis = OrthogonalAxisY::Create (model, grid);
-
-    BuildingLocks_LockElementForOperation (*thisAxis, BeSQLite::DbOpcode::Insert, "Inserting grid axis");
 
     if (!thisAxis->Insert().IsValid())
         return nullptr;
@@ -201,8 +197,6 @@ RadialGridCR grid
     {
     CircularAxisPtr thisAxis = CircularAxis::Create (model, grid);
 
-    BuildingLocks_LockElementForOperation (*thisAxis, BeSQLite::DbOpcode::Insert, "Inserting grid axis");
-
     if (!thisAxis->Insert().IsValid())
         return nullptr;
 
@@ -247,8 +241,6 @@ RadialGridCR grid
     {
     RadialAxisPtr thisAxis = RadialAxis::Create (model, grid);
 
-    BuildingLocks_LockElementForOperation (*thisAxis, BeSQLite::DbOpcode::Insert, "Inserting grid axis");
-
     if (!thisAxis->Insert().IsValid())
         return nullptr;
 
@@ -292,8 +284,6 @@ GridCR grid
 )
     {
     GeneralGridAxisPtr thisAxis = GeneralGridAxis::Create (model, grid);
-
-    BuildingLocks_LockElementForOperation (*thisAxis, BeSQLite::DbOpcode::Insert, "Inserting grid axis");
 
     if (!thisAxis->Insert().IsValid())
         return nullptr;

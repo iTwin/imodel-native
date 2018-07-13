@@ -300,7 +300,6 @@ Dgn::DgnDbStatus GridSurface::_OnDelete() const
         if (bundle.IsNull())
             continue;
 
-        BuildingLocks_LockElementForOperation(*bundle, BeSQLite::DbOpcode::Delete, "Delete GridCurveBundle");
         Dgn::DgnDbStatus bundleDeleteStatus = bundle->Delete();
         if (Dgn::DgnDbStatus::Success != bundleDeleteStatus)
             return bundleDeleteStatus;

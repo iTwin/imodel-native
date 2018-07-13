@@ -106,9 +106,6 @@ Dgn::DgnElementPtr ArcGridSurfaceManipulationStrategy::_FinishElement
     if (m_surface.IsNull())
         return nullptr;
 
-    if (Dgn::RepositoryStatus::Success != BuildingLocks_LockElementForOperation(*m_surface, BeSQLite::DbOpcode::Insert, "Insert Grid Surface"))
-        return nullptr;
-
     if (m_surface->Insert().IsNull())
         return nullptr;
 
