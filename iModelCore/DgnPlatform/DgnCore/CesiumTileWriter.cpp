@@ -793,7 +793,7 @@ BeFileNameStatus InitializeDirectories()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-WriteStatus _BeginProcessModel(GeometricModelCR model)
+WriteStatus _BeginProcessModel(GeometricModelCR model) override
     {
     return (BeFileNameStatus::Success == InitializeDirectories()) ? WriteStatus::Success : WriteStatus::UnableToOpenFile;
     }
@@ -801,7 +801,7 @@ WriteStatus _BeginProcessModel(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-WriteStatus _EndProcessModel(GeometricModelCR model, PublishedTileCR rootTile, WriteStatus status)
+WriteStatus _EndProcessModel(GeometricModelCR model, PublishedTileCR rootTile, WriteStatus status) override
     {
     if (WriteStatus::Success != status)
         {
