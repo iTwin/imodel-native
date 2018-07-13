@@ -202,25 +202,25 @@ void            DwgImporter::InitBusinessKeyCodeSpec ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::ReportDbFileStatus (DbResult fileStatus, BeFileNameCR projectFileName)
     {
-    auto category = DwgImporter::IssueCategory::DiskIO();
-    auto issue = DwgImporter::Issue::Error();
+    auto category = IssueCategory::DiskIO();
+    auto issue = Issue::Error();
     switch (fileStatus)
         {
         case BE_SQLITE_ERROR_FileNotFound:
-            issue = DwgImporter::Issue::FileNotFound();
+            issue = Issue::FileNotFound();
             break;
 
         case BE_SQLITE_CORRUPT:
         case BE_SQLITE_ERROR_NoPropertyTable:
-            issue = DwgImporter::Issue::NotADgnDb();
+            issue = Issue::NotADgnDb();
             break;
 
         case BE_SQLITE_ERROR_InvalidProfileVersion:
         case BE_SQLITE_ERROR_ProfileUpgradeFailed:
         case BE_SQLITE_ERROR_ProfileTooOldForReadWrite:
         case BE_SQLITE_ERROR_ProfileTooOld:
-            category = DwgImporter::IssueCategory::Compatibility();
-            issue = DwgImporter::Issue::Error();
+            category = IssueCategory::Compatibility();
+            issue = Issue::Error();
             break;
         }
 
@@ -244,7 +244,7 @@ BentleyStatus   DwgImporter::AttachSyncInfo ()
         else if (DgnDbStatus::VersionTooOld == static_cast<DgnDbStatus>(status))
             reason = "file version too old";
 
-        this->ReportSyncInfoIssue(DwgImporter::IssueSeverity::Fatal, DwgImporter::IssueCategory::Sync(), DwgImporter::Issue::CantOpenSyncInfo(), reason);
+        this->ReportSyncInfoIssue(IssueSeverity::Fatal, IssueCategory::Sync(), Issue::CantOpenSyncInfo(), reason);
         BeFileName::BeDeleteFile(syncInfoFileName.c_str());
         return this->OnFatalError (IssueCategory::Sync(), Issue::FatalError(), reason);
         }

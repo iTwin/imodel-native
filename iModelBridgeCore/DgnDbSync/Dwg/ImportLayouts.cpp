@@ -44,7 +44,7 @@ BentleyStatus   LayoutFactory::CalculateSheetSize (DPoint2dR sheetSize) const
     if (DwgDbStatus::Success != m_layout->GetPlotPaperSize(sheetSize))
         {
         // failed reading layout data!
-        m_importer.ReportError (DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::CantOpenObject(), Utf8PrintfString("layout %ls", m_layout->GetName().c_str()).c_str());
+        m_importer.ReportError (IssueCategory::UnexpectedData(), Issue::CantOpenObject(), Utf8PrintfString("layout %ls", m_layout->GetName().c_str()).c_str());
         // default to 8.5 x 11.0
         sheetSize.Init (0.216, 0.279);
         return  BSIERROR;

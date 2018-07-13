@@ -584,13 +584,13 @@ bool            ViewportFactory::FindEnvironmentImageFile (BeFileNameR filename)
         {
         // warn about a none-JPEG file
         if (!filename.GetExtension().EqualsI(L"jpg"))
-            m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::Unsupported(), DwgImporter::Issue::ImageNotAJpeg(), filename.GetNameUtf8().c_str());
+            m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::Unsupported(), Issue::ImageNotAJpeg(), filename.GetNameUtf8().c_str());
         return  true;
         }
     
     // warn about the missing background file:
     Utf8PrintfString    context("Background \"%ls\"", filename.c_str());
-    m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::MissingData(), DwgImporter::Issue::FileNotFound(), filename.GetNameUtf8().c_str(), context.c_str());
+    m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::MissingData(), Issue::FileNotFound(), filename.GetNameUtf8().c_str(), context.c_str());
     return  false;
     }
 
@@ -622,7 +622,7 @@ void            ViewportFactory::AddSpatialCategories (Utf8StringCR viewName)
     DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
     if (nullptr == model)
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "CategorySelector");
+        m_importer.ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "CategorySelector");
         model = &m_importer.GetDgnDb().GetDictionaryModel ();
         }
 
@@ -687,7 +687,7 @@ bool            ViewportFactory::ValidateViewName (Utf8StringR viewNameInOut)
     DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
     if (nullptr == model)
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "ViewDefinition");
+        m_importer.ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "ViewDefinition");
         model = &dgndb.GetDictionaryModel ();
         }
 
@@ -728,17 +728,17 @@ bool    ViewportFactory::UpdateViewName (ViewDefinitionR view, Utf8StringCR prop
     auto status = view.SetCode (DgnCode::From(code.GetCodeSpecId(), code.GetScopeString(), newName));
     if (status != DgnDbStatus::Success)
         {
-        m_importer.ReportIssueV (DwgImporter::IssueSeverity::Error, DwgImporter::IssueCategory::Briefcase(), DwgImporter::Issue::CannotUpdateName(), view.GetName().c_str(), newName.c_str());
+        m_importer.ReportIssueV (DwgImporter::IssueSeverity::Error, IssueCategory::Briefcase(), Issue::CannotUpdateName(), view.GetName().c_str(), newName.c_str());
         return  false;
         }
 
     // change category selector name - caller shall update element
-    auto userLabel = DwgImporter::DataStrings::GetString (DwgImporter::DataStrings::CategorySelector());
+    auto userLabel = DataStrings::GetString (DataStrings::CategorySelector());
     auto& categorySelector = view.GetCategorySelector ();
     m_importer.UpdateElementName (categorySelector, newName, userLabel.c_str(), false);
     
     // change display style name - caller shall update element
-    userLabel = DwgImporter::DataStrings::GetString (DwgImporter::DataStrings::DisplayStyle());
+    userLabel = DataStrings::GetString (DataStrings::DisplayStyle());
     auto& displayStyle = view.GetDisplayStyle ();
     m_importer.UpdateElementName (displayStyle, newName, userLabel.c_str(), false);
 
@@ -746,7 +746,7 @@ bool    ViewportFactory::UpdateViewName (ViewDefinitionR view, Utf8StringCR prop
     auto spatialView = view.ToSpatialViewP ();
     if (nullptr != spatialView)
         {
-        userLabel = DwgImporter::DataStrings::GetString (DwgImporter::DataStrings::ModelSelector());
+        userLabel = DataStrings::GetString (DataStrings::ModelSelector());
         m_importer.UpdateElementName (spatialView->GetModelSelector(), newName, userLabel.c_str(), true);
         }
 
@@ -803,7 +803,7 @@ DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8Stri
     DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
     if (nullptr == model)
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "SpatialView");
+        m_importer.ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "SpatialView");
         model = &dgndb.GetDictionaryModel ();
         }
 
@@ -829,12 +829,12 @@ DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8Stri
     this->ComputeSpatialView (*view);
 
     view->SetIsPrivate (m_isPrivate);
-    view->SetUserLabel (DwgImporter::DataStrings::GetString(DwgImporter::DataStrings::ModelView()).c_str());
+    view->SetUserLabel (DataStrings::GetString(DataStrings::ModelView()).c_str());
 
     // insert the view to BIM
     if (!view.IsValid() || view->Insert().IsNull())
         {
-        m_importer.ReportError(DwgImporter::IssueCategory::CorruptData(), DwgImporter::Issue::Error(), viewName.c_str());
+        m_importer.ReportError(IssueCategory::CorruptData(), Issue::Error(), viewName.c_str());
         return viewId;
         }
 
@@ -876,7 +876,7 @@ BentleyStatus   ViewportFactory::UpdateSpatialView (DgnViewId viewId, Utf8String
     this->ComputeSpatialView (*spatialView);
 
     if (!spatialView->Update().IsValid())
-        m_importer.ReportError (DwgImporter::IssueCategory::Briefcase(), DwgImporter::Issue::UpdateFailure(), spatialView->GetName().c_str());
+        m_importer.ReportError (IssueCategory::Briefcase(), Issue::UpdateFailure(), spatialView->GetName().c_str());
 
     m_importer.GetSyncInfo().UpdateView (viewId, m_inputViewport->GetObjectId(), m_viewportType, spatialView->GetName());
     m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
@@ -898,7 +898,7 @@ DgnViewId       ViewportFactory::CreateSheetView (DgnModelId modelId, Utf8String
     DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
     if (nullptr == model)
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "SheetViewDefinition");
+        m_importer.ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "SheetViewDefinition");
         model = &dgndb.GetDictionaryModel ();
         }
 
@@ -921,12 +921,12 @@ DgnViewId       ViewportFactory::CreateSheetView (DgnModelId modelId, Utf8String
     this->ComputeSheetView (*view.get());
 
     view->SetIsPrivate (m_isPrivate);
-    view->SetUserLabel (DwgImporter::DataStrings::GetString(DwgImporter::DataStrings::LayoutView()).c_str());
+    view->SetUserLabel (DataStrings::GetString(DataStrings::LayoutView()).c_str());
 
     // now insert the new view into DB:
     if (view->Insert().IsNull())
         {
-        m_importer.ReportError(DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Error(), viewName.c_str());
+        m_importer.ReportError(IssueCategory::UnexpectedData(), Issue::Error(), viewName.c_str());
         return viewId;
         }
 
@@ -968,7 +968,7 @@ BentleyStatus   ViewportFactory::UpdateSheetView (DgnViewId viewId, Utf8StringCR
     sheetView->SetIsPrivate (m_isPrivate);
 
     if (!sheetView->Update().IsValid())
-        m_importer.ReportError (DwgImporter::IssueCategory::Briefcase(), DwgImporter::Issue::UpdateFailure(), sheetView->GetName().c_str());
+        m_importer.ReportError (IssueCategory::Briefcase(), Issue::UpdateFailure(), sheetView->GetName().c_str());
 
     m_importer.GetSyncInfo().UpdateView (viewId, m_inputViewport->GetObjectId(), m_viewportType, sheetView->GetName());
     m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
