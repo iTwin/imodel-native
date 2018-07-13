@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI\Column.h"
+#include "PublicAPI\StructuralPhysicalDefinitions.h"
 
 HANDLER_DEFINE_MEMBERS(ColumnHandler)
 
@@ -16,9 +17,9 @@ ColumnPtr Column::Create(Dgn::PhysicalModelR model)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
-
-    // TODO: needs a real category, not a fake one just passed
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), Dgn::DgnCategoryId());
+    Dgn::DgnDbR db = model.GetDgnDb();
+    Dgn::DgnCategoryId categoryId = Structural::StructuralPhysicalCategory::QueryStructuralPhysicalCategoryId(db, STRUCTURAL_PHYSICAL_CLASS_Column);
+    CreateParams createParams(db, model.GetModelId(), QueryClassId(db), categoryId);
 
     return new Column(createParams);
     }

@@ -9,6 +9,7 @@
 
 //__PUBLISH_SECTION_START__
 #include "StructuralMember.h"
+#include "StructuralDomainApi.h"
 
 USING_NAMESPACE_BENTLEY_STRUCTURAL
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
