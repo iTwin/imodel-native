@@ -707,7 +707,7 @@ DgnElementId    DwgImporter::CreateModelElement (DwgDbBlockTableRecordCR block, 
         // modelspace or xref model
         SubjectCPtr             rootSubject = m_dgndb->Elements().GetRootSubject ();
         DgnCode                 partitionCode = PhysicalPartition::CreateUniqueCode (*rootSubject, modelName.c_str());
-        PhysicalPartitionCPtr   partition = PhysicalPartition::CreateAndInsert (*rootSubject, partitionCode.GetValueUtf8CP());
+        PhysicalPartitionCPtr   partition = PhysicalPartition::CreateAndInsert (*rootSubject, partitionCode.GetValueUtf8CP(), descr.c_str());
         if (partition.IsValid())
             modelElementId = partition->GetElementId();
         else
@@ -1488,6 +1488,10 @@ SubjectCPtr DwgImporter::GetOrCreateModelSubject (SubjectCR parent, Utf8StringCR
     SubjectPtr ed = Subject::Create(parent, modelName.c_str());
 
     ed->SetSubjectJsonProperties(Subject::json_Model(), modelProps);
+
+    // set user label to help the element name display in Navigator's version comparison - TFS 915733:
+    Utf8PrintfString    userLabel("%s %s", modelProps["Type"].asCString(), DataStrings::GetString(DataStrings::Subject()).c_str());
+    ed->SetUserLabel (userLabel.c_str());
 
     return ed->InsertT<Subject>();
     }

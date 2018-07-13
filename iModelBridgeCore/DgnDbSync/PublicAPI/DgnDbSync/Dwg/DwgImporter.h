@@ -932,6 +932,7 @@ public:
         L10N_STRING(CategorySelector)                  // =="Categories"==
         L10N_STRING(ModelSelector)                     // =="Models"==
         L10N_STRING(DisplayStyle)                      // =="Display Style"==
+        L10N_STRING(Subject)                           // =="Subject"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
     
     struct IssueReporter
