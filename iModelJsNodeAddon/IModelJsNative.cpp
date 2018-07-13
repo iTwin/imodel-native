@@ -2951,6 +2951,7 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
             Napi::Function t = DefineClass(env, "NativeSqliteStatement", {
             InstanceMethod("dispose", &NativeSqliteStatement::Dispose),
             InstanceMethod("prepare", &NativeSqliteStatement::Prepare),
+            InstanceMethod("isReadonly", &NativeSqliteStatement::IsReadonly),
             InstanceMethod("bindNull", &NativeSqliteStatement::BindNull),
             InstanceMethod("bindBlob", &NativeSqliteStatement::BindBlob),
             InstanceMethod("bindDouble", &NativeSqliteStatement::BindDouble),
@@ -2986,8 +2987,11 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
 
         Napi::Value Prepare(Napi::CallbackInfo const& info)
             {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not initialized.", NapiUtils::CreateErrorObject0((int) BE_SQLITE_ERROR, nullptr, Env()));
+            
             if (info.Length() < 2)
-                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement::Prepare requires two arguments", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement::Prepare requires two arguments", NapiUtils::CreateErrorObject0((int) BE_SQLITE_ERROR, nullptr, Env()));
 
             Napi::Object dbObj = info[0].As<Napi::Object>();
 
@@ -3016,6 +3020,17 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
 
             const DbResult status = m_stmt->Prepare(*db, sql.c_str());
             return NapiUtils::CreateErrorObject0(status, status != BE_SQLITE_OK ? db->GetLastError().c_str() : nullptr, Env());
+            }
+
+        Napi::Value IsReadonly(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not initialized.", Env().Undefined());
+
+            if (!m_stmt->IsPrepared())
+                THROW_TYPE_EXCEPTION_AND_RETURN("Cannot call IsReadonly on unprepared statement.", Env().Undefined());
+
+            return Napi::Boolean::New(Env(), m_stmt->IsReadonly());
             }
 
         Napi::Value BindNull(Napi::CallbackInfo const& info)
