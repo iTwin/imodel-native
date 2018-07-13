@@ -240,6 +240,9 @@ public:
     DGNPLATFORM_EXPORT static BentleyStatus GetTrueTypeGlyphDataDirect(bvector<Byte>&, double& scaleFactor, DgnGlyphCR);
     DGNPLATFORM_EXPORT DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id, DgnFontStyle) const override;
     DGNPLATFORM_EXPORT double _GetDescenderRatio(DgnFontStyle) const override;
+
+    //! @private -- only intended for use in the DgnV8Converter.
+    DGNPLATFORM_EXPORT bvector<unsigned int /*FT_Uint*/> ComputeGlyphIndices(Utf8CP, bool isBold, bool isItalic) const;
 };
 
 //=======================================================================================
