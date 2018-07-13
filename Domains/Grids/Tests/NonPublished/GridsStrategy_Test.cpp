@@ -102,13 +102,12 @@ void GridsStrategyTests::SetUp()
     {
     GridsTestFixtureBase::SetUp();
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
     SpatialLocationPartitionPtr partition = SpatialLocationPartition::Create(*rootSubject, "GridSpatialPartition");
-    BS::BuildingLocks_LockElementForOperation(*partition.get(), BeSQLite::DbOpcode::Insert, "SpatialLocationPartition : Insert for GridsStrategy_Test");
     db.Elements().Insert<SpatialLocationPartition>(*partition);
     m_model = SpatialLocationModel::CreateAndInsert(*partition);
     m_sketchGrid = SketchGrid::Create(*m_model.get(), partition->GetElementId(), "Sketch grid", 0.0, 10.0);
-    BS::BuildingLocks_LockElementForOperation(*m_sketchGrid.get(), BeSQLite::DbOpcode::Insert, "SketchGrid :  Insert for GridsStrategy_Test");
     m_sketchGrid->Insert();
     }
 

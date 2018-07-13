@@ -116,9 +116,9 @@ void GridsTestFixture::SetUp()
     {
     GridsTestFixtureBase::SetUp ();
     DgnDbR db = *DgnClientApp::App ().Project ();
+    db.BriefcaseManager().StartBulkOperation();
     SubjectCPtr rootSubject = db.Elements ().GetRootSubject ();
     SpatialLocationPartitionPtr partition = SpatialLocationPartition::Create(*rootSubject, "GridSpatialPartition");
-    BuildingLocks_LockElementForOperation(*partition.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     db.Elements().Insert<SpatialLocationPartition>(*partition);
     m_model = SpatialLocationModel::CreateAndInsert (*partition);
     }
@@ -252,6 +252,8 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_CreatedAndDeleted)
     ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From( 0, 0, 1 ))) << "Grid plane normal is incorrect";
 
     db.SaveChanges ();
+
+    db.BriefcaseManager().StartBulkOperation();
 
     GridPtr thisGrid = Grid::TryGet(db, db.Elements().GetRootSubject()->GetElementId(), "Unconstrained Grid");
     ASSERT_TRUE(thisGrid.IsValid()) << "Failed to get created grid";
@@ -414,6 +416,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
     OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     if (orthogonalGridUnconstrained.IsNull())
         {
@@ -425,9 +428,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
     Placement3d translatedPlacement(orthogonalGridUnconstrained->GetPlacement());
     translatedPlacement.SetOrigin(newBaseOrigin);
     orthogonalGridUnconstrained->SetPlacement(translatedPlacement);
-    BuildingLocks_LockElementForOperation(*orthogonalGridUnconstrained.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     ASSERT_TRUE(orthogonalGridUnconstrained->Update().IsValid()) << "orthogonal grid translation was not successful";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     bvector<DgnElementId> axesIds = orthogonalGridUnconstrained->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
@@ -503,6 +506,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotat
     OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     if (orthogonalGridUnconstrained.IsNull())
         {
@@ -514,9 +518,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotat
     Placement3d translatedPlacement(orthogonalGridUnconstrained->GetPlacement());
     translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
     orthogonalGridUnconstrained->SetPlacement(translatedPlacement);
-    BuildingLocks_LockElementForOperation(*orthogonalGridUnconstrained.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     ASSERT_TRUE(orthogonalGridUnconstrained->Update().IsValid()) << "orthogonal grid translation was not successful";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     double existingAngle;
     ASSERT_EQ(newAngle, orthogonalGridUnconstrained->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
@@ -595,6 +599,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
     OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     if (orthogonalGridUnconstrained.IsNull())
         {
@@ -608,9 +613,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
     translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
     translatedPlacement.SetOrigin(newBaseOrigin);
     orthogonalGridUnconstrained->SetPlacement(translatedPlacement);
-    BuildingLocks_LockElementForOperation(*orthogonalGridUnconstrained.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     ASSERT_TRUE(orthogonalGridUnconstrained->Update().IsValid()) << "orthogonal grid translation+rotation was not successful";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     ASSERT_EQ(newAngle, orthogonalGridUnconstrained->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
 
@@ -693,6 +698,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_CreatedAndDeleted)
     ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(0, 0, 1))) << "Grid plane normal is incorrect";
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     GridPtr thisGrid = Grid::TryGet(db, db.Elements().GetRootSubject()->GetElementId(), "Unconstrained Grid");
     ASSERT_TRUE(thisGrid.IsValid()) << "Failed to get created grid";
@@ -849,6 +855,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
     OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     if (orthogonalGridUnconstrainedExtended.IsNull())
         {
@@ -860,9 +867,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
     Placement3d translatedPlacement(orthogonalGridUnconstrainedExtended->GetPlacement());
     translatedPlacement.SetOrigin(newBaseOrigin);
     orthogonalGridUnconstrainedExtended->SetPlacement(translatedPlacement);
-    BuildingLocks_LockElementForOperation(*orthogonalGridUnconstrainedExtended.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     ASSERT_TRUE(orthogonalGridUnconstrainedExtended->Update().IsValid()) << "orthogonal grid translation was not successful";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     bvector<DgnElementId> axesIds = orthogonalGridUnconstrainedExtended->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
@@ -938,6 +945,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
     OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     if (orthogonalGridUnconstrainedExtended.IsNull())
         {
@@ -949,9 +957,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
     Placement3d translatedPlacement(orthogonalGridUnconstrainedExtended->GetPlacement());
     translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
     orthogonalGridUnconstrainedExtended->SetPlacement(translatedPlacement);
-    BuildingLocks_LockElementForOperation(*orthogonalGridUnconstrainedExtended.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     ASSERT_TRUE(orthogonalGridUnconstrainedExtended->Update().IsValid()) << "orthogonal grid translation+rotation was not successful";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     bvector<DgnElementId> axesIds = orthogonalGridUnconstrainedExtended->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
@@ -1031,6 +1039,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_CreatedAndDeleted)
     ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(0, 0, 1))) << "Grid plane normal is incorrect";
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     GridPtr thisGrid = Grid::TryGet(db, db.Elements().GetRootSubject()->GetElementId(), "Constrained Grid");
     ASSERT_TRUE(thisGrid.IsValid()) << "Failed to get created grid";
@@ -1187,6 +1196,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
     OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     if (orthogonalGridConstrained.IsNull())
         {
@@ -1198,9 +1208,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
     Placement3d translatedPlacement(orthogonalGridConstrained->GetPlacement());
     translatedPlacement.SetOrigin(newBaseOrigin);
     orthogonalGridConstrained->SetPlacement(translatedPlacement);
-    BuildingLocks_LockElementForOperation(*orthogonalGridConstrained.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     ASSERT_TRUE(orthogonalGridConstrained->Update().IsValid()) << "orthogonal grid translation was not successful";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     bvector<DgnElementId> axesIds = orthogonalGridConstrained->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
@@ -1276,6 +1286,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotatio
     OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     if (orthogonalGridConstrained.IsNull())
         {
@@ -1287,9 +1298,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotatio
     Placement3d translatedPlacement(orthogonalGridConstrained->GetPlacement());
     translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
     orthogonalGridConstrained->SetPlacement(translatedPlacement);
-    BuildingLocks_LockElementForOperation(*orthogonalGridConstrained.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     ASSERT_TRUE(orthogonalGridConstrained->Update().IsValid()) << "orthogonal grid rotation was not successful";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     double existingAngle;
     ASSERT_EQ(newAngle, orthogonalGridConstrained->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
@@ -1368,6 +1379,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
     OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     if (orthogonalGridConstrained.IsNull())
         {
@@ -1381,9 +1393,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
     translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
     translatedPlacement.SetOrigin(newBaseOrigin);
     orthogonalGridConstrained->SetPlacement(translatedPlacement);
-    BuildingLocks_LockElementForOperation(*orthogonalGridConstrained.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     ASSERT_TRUE(orthogonalGridConstrained->Update().IsValid()) << "orthogonal grid translation+rotation was not successful";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     double existingAngle;
     ASSERT_EQ(newAngle, orthogonalGridConstrained->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
@@ -1466,6 +1478,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_CreatedAndDeleted)
     ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(0, 0, 1))) << "Grid plane normal is incorrect";
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     GridPtr thisGrid = Grid::TryGet(db, db.Elements().GetRootSubject()->GetElementId(), "Constrained Grid");
     ASSERT_TRUE(thisGrid.IsValid()) << "Failed to get created grid";
@@ -1622,6 +1635,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
     OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     if (orthogonalGridConstrainedExtended.IsNull())
         {
@@ -1633,9 +1647,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
     Placement3d translatedPlacement(orthogonalGridConstrainedExtended->GetPlacement());
     translatedPlacement.SetOrigin(newBaseOrigin);
     orthogonalGridConstrainedExtended->SetPlacement(translatedPlacement);
-    BuildingLocks_LockElementForOperation(*orthogonalGridConstrainedExtended.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     ASSERT_TRUE(orthogonalGridConstrainedExtended->Update().IsValid()) << "orthogonal grid translation was not successful";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     bvector<DgnElementId> axesIds = orthogonalGridConstrainedExtended->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
@@ -1711,6 +1725,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
     OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     if (orthogonalGridConstrainedExtended.IsNull())
         {
@@ -1722,9 +1737,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
     Placement3d translatedPlacement(orthogonalGridConstrainedExtended->GetPlacement());
     translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
     orthogonalGridConstrainedExtended->SetPlacement(translatedPlacement);
-    BuildingLocks_LockElementForOperation(*orthogonalGridConstrainedExtended.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     ASSERT_TRUE(orthogonalGridConstrainedExtended->Update().IsValid()) << "orthogonal grid translation+rotation was not successful";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     double existingAngle;
     ASSERT_EQ(newAngle, orthogonalGridConstrainedExtended->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
@@ -1803,7 +1818,6 @@ TEST_F(GridsTestFixture, RadialGrid_Empty_CreatedAndDeleted)
 
     RadialGridPtr empty = RadialGrid::Create(params);
     ASSERT_TRUE(empty.IsValid()) << "Failed to create empty radial grid";
-    BuildingLocks_LockElementForOperation(*empty.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     ASSERT_TRUE(empty->Insert().IsValid()) << "Failed to insert empty grid";
 
     ASSERT_EQ(DgnDbStatus::Success, empty->Delete());
@@ -1826,6 +1840,7 @@ TEST_F(GridsTestFixture, RadialGrid_CreatedAndDeleted)
     ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(0, 0, 1))) << "Grid plane normal is incorrect";
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     GridPtr thisGrid = Grid::TryGet(db, db.Elements().GetRootSubject()->GetElementId(), "Radial Grid");
     ASSERT_TRUE(thisGrid.IsValid()) << "Failed to get created grid";
@@ -1974,6 +1989,7 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
     RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(createParams, 7, 5);
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     if (radialGrid.IsNull())
         {
@@ -1985,9 +2001,9 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
     Placement3d translatedPlacement(radialGrid->GetPlacement());
     translatedPlacement.SetOrigin(newBaseOrigin);
     radialGrid->SetPlacement(translatedPlacement);
-    BuildingLocks_LockElementForOperation(*radialGrid.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     ASSERT_TRUE(radialGrid->Update().IsValid()) << "radial grid translation was not successful";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     bvector<DgnElementId> axesIds = radialGrid->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
@@ -2058,6 +2074,7 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
     RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(createParams, 7, 5);
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     if (radialGrid.IsNull())
         {
@@ -2069,9 +2086,9 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
     Placement3d translatedPlacement(radialGrid->GetPlacement());
     translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
     radialGrid->SetPlacement(translatedPlacement);
-    BuildingLocks_LockElementForOperation(*radialGrid.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     ASSERT_TRUE(radialGrid->Update().IsValid()) << "radial grid rotation was not successful";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     double existingAngle;
     ASSERT_EQ(newAngle, radialGrid->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
@@ -2150,6 +2167,7 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
     RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(createParams, 7, 5);
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     if (radialGrid.IsNull())
         {
@@ -2163,9 +2181,9 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
     translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
     translatedPlacement.SetOrigin(newBaseOrigin);
     radialGrid->SetPlacement(translatedPlacement);
-    BuildingLocks_LockElementForOperation(*radialGrid.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     ASSERT_TRUE(radialGrid->Update().IsValid()) << "radial grid translation+rotation was not successful";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     ASSERT_EQ(newAngle, radialGrid->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
 
@@ -2249,9 +2267,9 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
     // Check if grid is valid and has correct number of elements
     /////////////////////////////////////////////////////////////
     ASSERT_TRUE(sketchGrid.IsValid()) << "Failed to create sketch grid";
-    BuildingLocks_LockElementForOperation(*sketchGrid.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     ASSERT_TRUE(sketchGrid->Insert().IsValid()) << "Failed to insert sketch grid";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     GridPtr thisGrid = Grid::TryGet(db, m_model->GetModeledElementId(), "Sketch Grid");
     ASSERT_TRUE(thisGrid.IsValid()) << "Failed to get created grid";
@@ -2305,9 +2323,9 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
 
     ASSERT_TRUE(surfacePlane.normal.IsParallelTo(expectedNormal)) << "plane's normal is incorrect";
 
-    BuildingLocks_LockElementForOperation(*plane.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     plane->Insert();
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     bvector<DgnElementId> axisElementsAfterFirstPlaneInsert = gridAxis->MakeIterator().BuildIdList<DgnElementId>();
     ASSERT_EQ(1, axisElementsAfterFirstPlaneInsert.size()) << "Axis should contain one element now";
@@ -2328,9 +2346,9 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
     GridArcSurfacePtr arc = SketchArcGridSurface::Create(arcParams);
 
     ASSERT_TRUE(arc.IsValid()) << "Failed to create grid plane surface";
-    BuildingLocks_LockElementForOperation(*arc.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     arc->Insert();
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     bvector<DgnElementId> axisElementsAfterArcInsert = gridAxis->MakeIterator().BuildIdList<DgnElementId>();
     ASSERT_EQ(2, axisElementsAfterArcInsert.size()) << "Axis should contain two elements now";
@@ -2350,9 +2368,9 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
     GridSplineSurfacePtr spline = SketchSplineGridSurface::Create(splineParams);
 
     ASSERT_TRUE(spline.IsValid()) << "Failed to create grid spline surface";
-    BuildingLocks_LockElementForOperation(*spline.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     spline->Insert();
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     bvector<DgnElementId> axisElementsAfterSplineInsert = gridAxis->MakeIterator().BuildIdList<DgnElementId>();
     ASSERT_EQ(3, axisElementsAfterSplineInsert.size()) << "Axis should contain two elements now";
@@ -2398,7 +2416,6 @@ TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
 
     
     invalidGridPlane_FromHandler->SetCategoryId(categoryId);
-    BuildingLocks_LockElementForOperation(*invalidGridPlane_FromHandler.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     ASSERT_TRUE(invalidGridPlane_FromHandler->Insert().IsNull()) << "Element insertion should fail";
 
     ASSERT_TRUE(!invalidGridPlane_FromHandler->GetElementId().IsValid()) << "element id should be invalid";
@@ -2414,7 +2431,6 @@ TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
     ASSERT_TRUE(invalidGridArc_FromHandler.IsValid()) << "element created from handler shouldn't be a nullptr";
 
     invalidGridArc_FromHandler->SetCategoryId(categoryId);
-    BuildingLocks_LockElementForOperation(*invalidGridArc_FromHandler.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     ASSERT_TRUE(invalidGridArc_FromHandler->Insert().IsNull()) << "Element insertion should fail";
 
     ASSERT_TRUE(!invalidGridArc_FromHandler->GetElementId().IsValid()) << "element id should be invalid";
@@ -2430,7 +2446,6 @@ TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
     ASSERT_TRUE(invalidGridSpline_FromHandler.IsValid()) << "element created from handler shouldn't be a nullptr";
 
     invalidGridSpline_FromHandler->SetCategoryId(categoryId);
-    BuildingLocks_LockElementForOperation(*invalidGridSpline_FromHandler.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     ASSERT_TRUE(invalidGridSpline_FromHandler->Insert().IsNull()) << "Element insertion should fail";
 
     ASSERT_TRUE(!invalidGridSpline_FromHandler->GetElementId().IsValid()) << "element id should be invalid";
@@ -2443,7 +2458,6 @@ TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
     DgnElement::CreateParams params (db, m_model->GetModelId (), classId);
 
     DgnElementPtr element = handler.Create (params);
-    BuildingLocks_LockElementForOperation(*element.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     element->Insert ();
 
     ASSERT_TRUE (!element->GetElementId ().IsValid ()) << "should fail to insert axis created via handler";
@@ -2459,7 +2473,6 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     DgnDbR db = *DgnClientApp::App ().Project ();
 
     SketchGridPtr grid = SketchGrid::Create (*m_model, m_model->GetModeledElementId(), "SketchGrid-1", 0.0, 10.0);
-    BuildingLocks_LockElementForOperation(*grid.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     grid->Insert ();
     GeneralGridAxisPtr axis1 = GeneralGridAxis::CreateAndInsert (BuildingUtils::GetGroupInformationModel(db), *grid);
 
@@ -2470,7 +2483,6 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     SketchLineGridSurface::CreateParams lineParams(*grid->GetSurfacesModel(), *axis1, 0.0, 10.0, DPoint2d::FromZero(), DPoint2d::FromZero());
     GridPlanarSurfacePtr invalidGridPlane_Empty = SketchLineGridSurface::Create(lineParams);
 
-    BuildingLocks_LockElementForOperation(*invalidGridPlane_Empty.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     ASSERT_TRUE(invalidGridPlane_Empty->Insert().IsNull()) << "Invalid grid plane surface has been created";
 
     /////////////////////////////////////////////////////////////
@@ -2481,13 +2493,11 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     SketchSplineGridSurface::CreateParams nonZPlanelineParams(*grid->GetSurfacesModel(), *axis1, 0.0, 10.0, *linePrimitive);
     GridSplineSurfacePtr invalidGridSpline_Plane = SketchSplineGridSurface::Create(nonZPlanelineParams);
 
-    BuildingLocks_LockElementForOperation(*invalidGridSpline_Plane.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     ASSERT_TRUE(invalidGridSpline_Plane->Insert().IsNull()) << "Invalid grid spline surface has been created";
 
     // Check sketch grid arc surface created from invalid arc (0 radius)
     SketchArcGridSurface::CreateParams arcParams(*grid->GetSurfacesModel(), *axis1, 0, 10, DEllipse3d::FromCenterRadiusXY(DPoint3d::FromZero(), 0.0));
     GridArcSurfacePtr invalidGridSpline_Arc = SketchArcGridSurface::Create(arcParams);
-    BuildingLocks_LockElementForOperation(*invalidGridSpline_Arc.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     ASSERT_TRUE(invalidGridSpline_Arc->Insert().IsNull()) << "Invalid grid spline surface has been created";
 
     /////////////////////////////////////////////////////////////
@@ -2498,7 +2508,6 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     SketchLineGridSurface::CreateParams validLineParams(*grid->GetSurfacesModel(), *axis1, 0.0, 10.0, DPoint2d::FromZero(), DPoint2d::From(10.0, 10.0));
     GridPlanarSurfacePtr validPlaneSurface = SketchLineGridSurface::Create(validLineParams);
 
-    BuildingLocks_LockElementForOperation(*validPlaneSurface.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     validPlaneSurface->Insert();
     ASSERT_TRUE(validPlaneSurface->GetElementId().IsValid()) << "failed to insert a valid-planar gridplanesurface";
     
@@ -2506,10 +2515,10 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     validPlaneSurface->SetCurveVector(*validGridPlaneVector.get());
 
     DgnDbStatus status;
-    BuildingLocks_LockElementForOperation(*validPlaneSurface.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     validPlaneSurface->Update(&status);
     ASSERT_EQ(DgnDbStatus::Success, status) << "Failed to update plane with valid curve vector";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
     {
     // Check valid plane extrusion detail
     DgnExtrusionDetail validGridPlaneExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 0, 10, 0 }, { 10, 10, 0 }, 50);
@@ -2520,12 +2529,12 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     builder->Append(*ISolidPrimitive::CreateDgnExtrusion(validGridPlaneExtDetail), Dgn::GeometryBuilder::CoordSystem::World);
     builder->Finish(*geomElem);
 
-    BuildingLocks_LockElementForOperation(*validPlaneSurface.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     validPlaneSurface->Update(&status);
     ASSERT_EQ(DgnDbStatus::Success, status) << "Failed to update plane with valid dgn extrusion";
     db.SaveChanges();
     }
     // Check valid arc extrusion detail
+    db.BriefcaseManager().StartBulkOperation();
     DPoint3d center = DPoint3d::From(0.0, 0.0, 0.0);
     DPoint3d start = DPoint3d::From(0.0, -100.0, 0.0);
     DPoint3d end = DPoint3d::From(0.0, 0.0, 100.0);
@@ -2533,10 +2542,10 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     SketchArcGridSurface::CreateParams validArcParams(*grid->GetSurfacesModel(), *axis1, 0.0, 100.0, DEllipse3d::FromArcCenterStartEnd(center, start, end));
     GridArcSurfacePtr validArcSurface = SketchArcGridSurface::Create(validArcParams);
 
-    BuildingLocks_LockElementForOperation(*validArcSurface.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     validArcSurface->Insert();
     ASSERT_TRUE(validArcSurface->GetElementId().IsValid()) << "failed to insert a valid gridarcsurface";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
     {
     DgnExtrusionDetail validGridArcExtDetail = GeometryUtils::CreateArcExtrusionDetail(20, msGeomConst_pi / 2, 50);
 
@@ -2546,11 +2555,11 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     builder->Append(*ISolidPrimitive::CreateDgnExtrusion(validGridArcExtDetail), Dgn::GeometryBuilder::CoordSystem::World);
     builder->Finish(*geomElem);
 
-    BuildingLocks_LockElementForOperation(*validPlaneSurface.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
     validArcSurface->Update(&status);
     ASSERT_EQ(DgnDbStatus::Success, status) << "Failed to update arc with valid dgn extrusion";
     db.SaveChanges();
     }
+    db.BriefcaseManager().StartBulkOperation();
     // Check valid spline extrusion detail
     ICurvePrimitivePtr validSplinePrimitive = GeometryUtils::CreateSplinePrimitive({ { 0, 0, 0 },{ 10, 0, 0 },{ 0, 10, 0 } } /*poles*/);
     SketchSplineGridSurface::CreateParams validSplineSurfaceParams(*grid->GetSurfacesModel(), *axis1, 0.0, 10.0, *validSplinePrimitive);
@@ -2558,10 +2567,10 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
 
     ASSERT_TRUE(validSplineSurface.IsValid()) << "Failed to create grid spline surface";
 
-    BuildingLocks_LockElementForOperation(*validSplineSurface.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     validSplineSurface->Insert();
     ASSERT_TRUE(validSplineSurface->GetElementId().IsValid()) << "failed to insert a valid gridsplinesurface";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
     {
     DgnExtrusionDetail validGridSplineExtDetail = GeometryUtils::CreateSplineExtrusionDetail({ { 0, 0, 0 },{ 10, 0, 0 },{ 10, 30, 0 },{ 0, 0, 0 } }, 50);
 
@@ -2570,11 +2579,12 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
 
     builder->Append(*ISolidPrimitive::CreateDgnExtrusion(validGridSplineExtDetail), Dgn::GeometryBuilder::CoordSystem::World);
     builder->Finish(*geomElem);
-    BuildingLocks_LockElementForOperation(*validPlaneSurface.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
     validSplineSurface->Update(&status);
     ASSERT_EQ(DgnDbStatus::Success, status) << "Failed to update arc with valid dgn extrusion";
     db.SaveChanges();
     }
+    db.BriefcaseManager().StartBulkOperation();
     /////////////////////////////////////////////////////////////
     // Check if invalid geometry can't be set to grid surfaces
     /////////////////////////////////////////////////////////////
@@ -2591,7 +2601,7 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     invalidVector->push_back(prim);
     builder->Append(*invalidVector->Clone(), Dgn::GeometryBuilder::CoordSystem::World);
     builder->Finish(*geomElem);
-    BuildingLocks_LockElementForOperation(*planeSurfaceToUpdate.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
     planeSurfaceToUpdate->Update(&status);
     ASSERT_TRUE(status == DgnDbStatus::Success) << "should still succeed to update.. would reset the geometry stream though";
     db.SaveChanges();
@@ -2625,6 +2635,7 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
                                                                             floorPlaneCurves);
                                                                                             
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Check validity of grid plane surfaces
@@ -2674,10 +2685,11 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     ASSERT_TRUE(orthogonalGrid.IsValid()) << "Failed to create orthogonal grid";
 
     GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
-    BuildingLocks_LockElementForOperation(*curvesPortion.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     curvesPortion->Insert();
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Check intersection curves with orthogonal grid
@@ -2690,6 +2702,7 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
         }
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     // Check if grid curves are all created and have valid geometry
     for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
@@ -2765,6 +2778,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
                                                                               "Floor-Grid"),
                                                                               floorPlaneCurves);
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Check validity of grid plane surfaces
@@ -2814,9 +2828,9 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     ASSERT_TRUE(radialGrid.IsValid()) << "Failed to create radial grid";
 
     GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
-    BuildingLocks_LockElementForOperation(*curvesPortion.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     curvesPortion->Insert();
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Check intersection curves with radial grid
@@ -2829,6 +2843,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
         }
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     // Check if grid curves are all created and have valid geometry
     for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
@@ -2908,6 +2923,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
                                                                               "Floor-Grid"),
                                                                               floorPlaneCurves);
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Check validity of grid plane surfaces
@@ -2942,38 +2958,40 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     /////////////////////////////////////////////////////////////
     SketchGridPtr sketchGrid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Sketch Grid", 0.0, 10.0);
     ASSERT_TRUE(sketchGrid.IsValid()) << "Failed to create sketch grid";
-    BuildingLocks_LockElementForOperation(*sketchGrid.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     ASSERT_TRUE(sketchGrid->Insert().IsValid()) << "Failed to insert sketch grid";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(db);
     Grids::GridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert(defModel, *sketchGrid);
 
     ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create sketch grid axis";
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     DgnExtrusionDetail planeExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 0, 0, -BUILDING_TOLERANCE }, { 25, 25, -BUILDING_TOLERANCE }, 30 + 2*BUILDING_TOLERANCE);
     SketchLineGridSurface::CreateParams lineSurfParams(*sketchGrid->GetSurfacesModel(), *gridAxis, -BUILDING_TOLERANCE, 30 + BUILDING_TOLERANCE, { 0, 0 }, { 25, 25 });
     GridPlanarSurfacePtr plane = SketchLineGridSurface::Create(lineSurfParams);
     ASSERT_TRUE(plane.IsValid()) << "Failed to create grid plane surface";
-    BuildingLocks_LockElementForOperation(*plane.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     plane->Insert();
 
     SketchArcGridSurface::CreateParams arcSurfParams(*sketchGrid->GetSurfacesModel(), *gridAxis, -BUILDING_TOLERANCE, 30 + BUILDING_TOLERANCE, GeometryUtils::CreateArc(10 /*radius*/, 30 * msGeomConst_pi / 180 /*base angle*/, 0 /*extend length*/));
     GridArcSurfacePtr arc = SketchArcGridSurface::Create(arcSurfParams);
     ASSERT_TRUE(arc.IsValid()) << "Failed to create grid plane surface";
-    BuildingLocks_LockElementForOperation(*arc.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     arc->Insert();
 
     ICurvePrimitivePtr splinePrimitive = GeometryUtils::CreateSplinePrimitive({ { 0, 0, 0 },{ 2, 3, 0 },{8, 5, 0 } } /*poles*/);
     SketchSplineGridSurface::CreateParams splineSurfParams(*sketchGrid->GetSurfacesModel(), *gridAxis, -BUILDING_TOLERANCE, 30 + BUILDING_TOLERANCE, *splinePrimitive);
     GridSplineSurfacePtr spline = SketchSplineGridSurface::Create(splineSurfParams);
     ASSERT_TRUE(spline.IsValid()) << "Failed to create grid spline surface";
-    BuildingLocks_LockElementForOperation(*spline.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     spline->Insert();
 
     GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
-    BuildingLocks_LockElementForOperation(*curvesPortion.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     curvesPortion->Insert();
 
     /////////////////////////////////////////////////////////////
@@ -2987,6 +3005,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
         }
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     // Check if grid curves are all created and have valid geometry
     for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
@@ -3070,14 +3089,14 @@ TEST_F(GridsTestFixture, GridArc_Created)
     ASSERT_EQ(arcEllipse.ArcLength(), arcAngle * 5) << "Created arcCurve's length is incorrect";
 
     GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
-    BuildingLocks_LockElementForOperation(*curvesPortion.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     curvesPortion->Insert();
 
     // Try creating the grid arc
     GridArcPtr arc = GridArc::Create(*curvesPortion, arcCurve);
     ASSERT_TRUE(arc.IsValid()) << "Error when creating grid arc";
 
-    BuildingLocks_LockElementForOperation(*arc.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     ASSERT_TRUE(arc->Insert().IsValid()) << "Error when inserting grid arc";
     ICurvePrimitivePtr actualGeometry = arc->GetCurve();
 
@@ -3085,6 +3104,7 @@ TEST_F(GridsTestFixture, GridArc_Created)
     ASSERT_TRUE(actualGeometry->IsSameStructureAndGeometry(*arcCurve.get(), BUILDING_TOLERANCE));
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Create Grid arc with curve primitive containing not arc
@@ -3095,14 +3115,14 @@ TEST_F(GridsTestFixture, GridArc_Created)
     GridArcPtr lineArc = GridArc::Create(*curvesPortion, lineCurve);
     ASSERT_TRUE(lineArc.IsValid()) << "Error when creating grid arc";
 
-    BuildingLocks_LockElementForOperation(*lineArc.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     ASSERT_TRUE(lineArc->Insert().IsNull()) << "Should not be able to insert GridArc with invalid geometry";
     
     /////////////////////////////////////////////////////////////
     // Try setting a valid GridArc with invalid geometry
     /////////////////////////////////////////////////////////////
     arc->SetCurve(lineCurve);
-    BuildingLocks_LockElementForOperation(*arc.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
     ASSERT_TRUE(arc->Update().IsNull()) << "Should not be able to update GridArc with invalid geometry";
 
     db.SaveChanges();
@@ -3135,13 +3155,12 @@ TEST_F(GridsTestFixture, GridLine_Created)
         })) << "Created line curve geometry is incorrect";
 
     GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
-    BuildingLocks_LockElementForOperation(*curvesPortion.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     curvesPortion->Insert();
     // Try creating the grid line
     GridLinePtr gridLine = GridLine::Create(*curvesPortion, lineCurve);
     ASSERT_TRUE(gridLine.IsValid()) << "Error when creating grid line";
 
-    BuildingLocks_LockElementForOperation(*gridLine.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
     ASSERT_TRUE(gridLine->Insert().IsValid()) << "Error when inserting grid line";
     ICurvePrimitivePtr actualGeometry = gridLine->GetCurve();
 
@@ -3149,6 +3168,7 @@ TEST_F(GridsTestFixture, GridLine_Created)
     ASSERT_TRUE(actualGeometry->IsSameStructureAndGeometry(*lineCurve.get(), BUILDING_TOLERANCE));
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Create Grid line with curve primitive containing not line
@@ -3159,14 +3179,14 @@ TEST_F(GridsTestFixture, GridLine_Created)
     GridLinePtr arcLine = GridLine::Create(*curvesPortion, arcCurve);
     ASSERT_TRUE(arcLine.IsValid()) << "Error when creating grid line";
 
-    BuildingLocks_LockElementForOperation(*arcLine.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     ASSERT_TRUE(arcLine->Insert().IsNull()) << "Should not be able to insert GridLine with invalid geometry";
 
     /////////////////////////////////////////////////////////////
     // Try setting a valid GridLine with invalid geometry
     /////////////////////////////////////////////////////////////
     gridLine->SetCurve(arcCurve);
-    BuildingLocks_LockElementForOperation(*gridLine.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
     ASSERT_TRUE(gridLine->Update().IsNull()) << "Should not be able to update GridLine with invalid geometry";
 
     db.SaveChanges();
@@ -3180,7 +3200,7 @@ TEST_F(GridsTestFixture, GridSpline_Created)
     DgnDbR db = *DgnClientApp::App().Project();
 
     GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
-    BuildingLocks_LockElementForOperation(*curvesPortion.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     curvesPortion->Insert();
     /////////////////////////////////////////////////////////////
     // Create Grid spline with curve primitive containing spline
@@ -3194,7 +3214,7 @@ TEST_F(GridsTestFixture, GridSpline_Created)
     GridSplinePtr gridSpline = GridSpline::Create(*curvesPortion, splineCurve);
     ASSERT_TRUE(gridSpline.IsValid()) << "Error when creating grid spline";
 
-    BuildingLocks_LockElementForOperation(*gridSpline.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     ASSERT_TRUE(gridSpline->Insert().IsValid()) << "Error when inserting grid spline";
     ICurvePrimitivePtr actualGeometry = gridSpline->GetCurve();
 
@@ -3202,6 +3222,7 @@ TEST_F(GridsTestFixture, GridSpline_Created)
     ASSERT_TRUE(actualGeometry->IsSameStructureAndGeometry(*splineCurve.get(), BUILDING_TOLERANCE));
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Create Grid spline with curve primitive containing not spline
@@ -3212,14 +3233,14 @@ TEST_F(GridsTestFixture, GridSpline_Created)
     GridSplinePtr arcSpline = GridSpline::Create(*curvesPortion, arcCurve);
     ASSERT_TRUE(arcSpline.IsValid()) << "Error when creating grid spline";
 
-    BuildingLocks_LockElementForOperation(*arcSpline.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     ASSERT_TRUE(arcSpline->Insert().IsNull()) << "Should not be able to insert GridSpline with invalid geometry";
 
     /////////////////////////////////////////////////////////////
     // Try setting a valid GridSpline with invalid geometry
     /////////////////////////////////////////////////////////////
     gridSpline->SetCurve(arcCurve);
-    BuildingLocks_LockElementForOperation(*gridSpline.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
     ASSERT_TRUE(gridSpline->Update().IsNull()) << "Should not be able to update GridSpline with invalid geometry";
 
     db.SaveChanges();
@@ -3233,7 +3254,7 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     DgnDbR db = *DgnClientApp::App().Project();
 
     SketchGridPtr grid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Grid", 0.0, 10.0);
-    BuildingLocks_LockElementForOperation(*grid.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
     
     /////////////////////////////////////////////////////////////
@@ -3244,13 +3265,14 @@ TEST_F(GridsTestFixture, GridAxis_Created)
 
     ASSERT_TRUE(gridAxis0.IsValid()) << "Failed to create grid axis";
     ASSERT_FALSE(gridAxis0->GetElementId().IsValid()) << "Grid axis should not have been inserted yet";
-    BuildingLocks_LockElementForOperation(*gridAxis0.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     ASSERT_TRUE(gridAxis0->Insert().IsValid()) << "Failed to insert created grid axis";
     ASSERT_TRUE(gridAxis0->GetElementId().IsValid()) << "Inserted grid axis' id should be valid";
 
     ASSERT_EQ(grid->GetElementId(), gridAxis0->GetGridId()) << "Grid axis' grid id is incorrect";
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Use CreateAndInsert method to create grid axis
@@ -3262,25 +3284,27 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     ASSERT_EQ(grid->GetElementId(), gridAxis1->GetGridId()) << "Grid axis' grid id is incorrect";
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Try setting grid id to a grid axis
     /////////////////////////////////////////////////////////////
     SketchGridPtr otherGrid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Other Grid", 0.0, 10.0);
-    BuildingLocks_LockElementForOperation(*otherGrid.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     ASSERT_TRUE(otherGrid->Insert().IsValid()) << "Failed to insert grid";
 
     gridAxis0->SetGridId(otherGrid->GetElementId());
-    BuildingLocks_LockElementForOperation(*gridAxis0.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
     ASSERT_TRUE(gridAxis0->Update().IsValid()) << "Failed to update grid axis with other grid's id";
     ASSERT_EQ(otherGrid->GetElementId(), gridAxis0->GetGridId()) << "Grid axis' grid id is incorrect";
 
 
     gridAxis0->SetGridId(DgnElementId());
-    BuildingLocks_LockElementForOperation(*gridAxis0.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
     ASSERT_TRUE(gridAxis0->Update().IsNull()) << "Should not be able to update grid axis with invalid grid id";
     
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Check grid axis' elements
@@ -3294,6 +3318,7 @@ TEST_F(GridsTestFixture, GridAxis_Created)
 
     plane->Insert();
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     ASSERT_EQ(1, gridAxis1->MakeIterator().BuildIdList<DgnElementId>().size()) << "Grid axis should contain the inserted grid plane";
 
@@ -3311,15 +3336,16 @@ TEST_F(GridsTestFixture, SetName)
     DgnDbR db = *DgnClientApp::App().Project();
 
     SketchGridPtr grid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Grid", 0.0, 10.0);
-    BuildingLocks_LockElementForOperation(*grid.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
 
     ASSERT_EQ(SUCCESS, db.SaveChanges());
+    db.BriefcaseManager().StartBulkOperation();
 
     ASSERT_STREQ(grid->GetName(), "Grid");
 
     grid->SetName("NewName");
-    BuildingLocks_LockElementForOperation(*grid.get(), BeSQLite::DbOpcode::Update, "Update for Grids_Tests");
+
     ASSERT_TRUE(grid->Update().IsValid());
 
     ASSERT_EQ(SUCCESS, db.SaveChanges());
@@ -3353,7 +3379,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     DgnDbR db = *DgnClientApp::App().Project();
 
     SketchGridPtr grid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Grid", 0.0, 10.0);
-    BuildingLocks_LockElementForOperation(*grid.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
 
     Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(db);
@@ -3364,10 +3390,11 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     SketchLineGridSurfacePtr surface = SketchLineGridSurface::Create(lineSurfParams);
 
     ASSERT_TRUE(surface.IsValid()) << "Failed to create grid plane surface";
-    BuildingLocks_LockElementForOperation(*surface.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
     ASSERT_TRUE(surface->Insert().IsValid()) << "Failed to insert grid plane surface";
 
     db.SaveChanges();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Check created grid surface
@@ -3396,7 +3423,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     { // Try rotating around origin
             {
             surface->RotateXY(msGeomConst_pi / 4);
-            BuildingLocks_LockElementForOperation(*surface.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
             ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
 
             CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 0, 0, 0 },{ 7.07, 7.07, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
@@ -3410,7 +3437,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
             // Return to previous state
             {
             surface->RotateXY(-msGeomConst_pi / 4);
-            BuildingLocks_LockElementForOperation(*surface.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
             ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
 
             CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 0, 0, 0 },{ 10, 0, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
@@ -3425,7 +3452,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     { // Try rotating around given point
             {
             surface->RotateXY({ 10, 0, 0 }, msGeomConst_pi / 4);
-            BuildingLocks_LockElementForOperation(*surface.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
             ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
 
             CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 2.93, -7.07, 0 },{ 10, 0, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
@@ -3439,7 +3466,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
             // Return to previous state
             {
             surface->RotateXY({ 10, 0, 0 }, -msGeomConst_pi / 4);
-            BuildingLocks_LockElementForOperation(*surface.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
             ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
 
             CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 0, 0, 0 },{ 10, 0, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
@@ -3454,7 +3481,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     { // Try translate by given vector
             {
             surface->TranslateXY(DVec2d::From(10, 10));
-            BuildingLocks_LockElementForOperation(*surface.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
             ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
 
             CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 10, 10, 0 },{ 20, 10, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
@@ -3468,7 +3495,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
             // Return to previous state
             {
             surface->TranslateXY(DVec2d::From(-10, -10));
-            BuildingLocks_LockElementForOperation(*surface.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
             ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
 
             CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 0, 0, 0 },{ 10, 0, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
@@ -3483,7 +3510,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     { // Try translate by given vector
             {
             surface->Translate(DVec3d::From( 10, 10, 10 ));
-            BuildingLocks_LockElementForOperation(*surface.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
             ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
 
             CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 10, 10, 10 },{ 20, 10, 10 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
@@ -3497,7 +3524,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
             // Return to previous state
             {
             surface->Translate(DVec3d::From(-10, -10, -10));
-            BuildingLocks_LockElementForOperation(*surface.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
             ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
 
             CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 0, 0, 0 },{ 10, 0, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
@@ -3523,10 +3550,10 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
         { //Creation, Insertion, Update validity
             GridCurvesPortionPtr portion = GridCurvesPortion::Create(*m_model);
             ASSERT_TRUE(portion.IsValid()) << "Failed to create grid curves portion";
-            BuildingLocks_LockElementForOperation(*portion.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
             ASSERT_TRUE(portion->Insert().IsValid()) << "Failed to insert grid curves portion";
             DgnDbStatus stat;
-            BuildingLocks_LockElementForOperation(*portion.get(), BeSQLite::DbOpcode::Insert, "Update for Grids_Tests");
+
             portion->Update(&stat);
             ASSERT_EQ(DgnDbStatus::Success, stat) << "Failed to update inserted grid curves portion";
         }
@@ -3543,7 +3570,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
 
 
             invalidGridCurvesPortion_FromHandler->SetCategoryId(categoryId);
-            BuildingLocks_LockElementForOperation(*invalidGridCurvesPortion_FromHandler.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
             ASSERT_TRUE(invalidGridCurvesPortion_FromHandler->Insert().IsValid()) << "Grid curves portion element via handler insertion failed";
 
             ASSERT_TRUE(invalidGridCurvesPortion_FromHandler->GetElementId().IsValid()) << "Grid curves portion element id via handler is invalid";
@@ -3567,7 +3594,7 @@ TEST_F(GridsTestFixture, GridCurveDependancyFromPortionsTest) {
         invalidGridLine_FromHandler->SetCategoryId(categoryId);
         invalidGridLine_FromHandler->SetCurve(lineCurve);
         DgnDbStatus stat;
-        BuildingLocks_LockElementForOperation(*invalidGridLine_FromHandler.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
         invalidGridLine_FromHandler->Insert(&stat);
         ASSERT_EQ(DgnDbStatus::ValidationFailed, stat) << "Grid Line was inserted into wrong model sucessfully";
     }
@@ -3581,7 +3608,7 @@ TEST_F(GridsTestFixture, GridCurveDependancyFromPortionsTest) {
         invalidGridArc_FromHandler->SetCategoryId(categoryId);
         invalidGridArc_FromHandler->SetCurve(arcCurve);
         DgnDbStatus stat;
-        BuildingLocks_LockElementForOperation(*invalidGridArc_FromHandler.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
         invalidGridArc_FromHandler->Insert(&stat);
         ASSERT_EQ(DgnDbStatus::ValidationFailed, stat) << "Grid Arc was inserted into wrong model sucessfully";
     }
@@ -3597,7 +3624,7 @@ TEST_F(GridsTestFixture, GridCurveDependancyFromPortionsTest) {
         invalidGridSpline_FromHandler->SetCategoryId(categoryId);
         invalidGridSpline_FromHandler->SetCurve(splineCurve);
         DgnDbStatus stat;
-        BuildingLocks_LockElementForOperation(*invalidGridSpline_FromHandler.get(), BeSQLite::DbOpcode::Insert, "Insert for Grids_Tests");
+
         invalidGridSpline_FromHandler->Insert(&stat);
         ASSERT_EQ(DgnDbStatus::ValidationFailed, stat) << "Grid Spline was inserted into wrong model sucessfully";
     }
