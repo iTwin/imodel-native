@@ -1,2 +1,0 @@
-# Currently fails due to possibly incrorrect implementation
-BeUriTests.GetHost_UrlsWithHost_HostReturned

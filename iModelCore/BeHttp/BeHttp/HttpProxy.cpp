@@ -2,7 +2,7 @@
  |
  |     $Source: BeHttp/HttpProxy.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -47,7 +47,7 @@ HttpProxy HttpProxy::s_defaultProxy;
 +---------------+---------------+---------------+---------------+---------------+------*/
 HttpProxy::HttpProxy(Utf8String proxyUrl, Credentials credentials) :
     m_proxyUrl(proxyUrl),
-    m_credentials(credentials) 
+    m_credentials(credentials)
     {
     BeUri::EscapeUnsafeCharactersInUrl(m_proxyUrl);
     }
@@ -171,10 +171,10 @@ bool HttpProxy::ShouldBypassUrl(Utf8StringCR url) const
         return true; // We're in the process of fetching the PAC script; don't use a proxy for that.
     if (m_proxyBypassHosts.empty())
         return false;
-    Utf8String host = BeUri(url).GetHost();
+    Utf8String authority = BeUri(url).GetAuthority(); // Using authority to include port
     for (auto const& proxyBypassHost : m_proxyBypassHosts)
         {
-        if (host == proxyBypassHost)
+        if (authority == proxyBypassHost)
             return true;
         }
     return false;
@@ -194,7 +194,7 @@ Utf8String HttpProxy::GetLastErrorAsString()
         return "0"; // No error message has been recorded
 
     LPSTR buffer = nullptr;
-    size_t size = FormatMessageA 
+    size_t size = FormatMessageA
         (
         FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
         nullptr, errorId, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -240,7 +240,7 @@ BentleyStatus HttpProxy::GetProxyUrlsFromPacScript(Utf8StringCR requestUrl, bvec
     Utf8String errorStr;
     CFErrorRef error = nullptr;
     CFArrayRef proxies = nullptr;
-    
+
     if (nullptr != pacScript && nullptr != urlRef)
         {
         proxies = CFNetworkCopyProxiesForAutoConfigurationScript(pacScript, urlRef, &error);
@@ -256,7 +256,7 @@ BentleyStatus HttpProxy::GetProxyUrlsFromPacScript(Utf8StringCR requestUrl, bvec
         CFRelease(urlString);
     if (nullptr != urlRef)
         CFRelease(urlRef);
-    
+
     if (nullptr != error)
         {
         CFStringRef errorStrCf = CFErrorCopyDescription(error);
@@ -324,15 +324,8 @@ BentleyStatus HttpProxy::GetProxyUrlsFromPacScript(Utf8StringCR requestUrl, bvec
                 SplitHosts(proxyServerSetting, hosts);
                 for (Utf8StringCR host : hosts)
                     {
-                    Utf8String scheme = BeUri(host).GetScheme();
-                    if (scheme.empty())
-                        {
+                    if (!host.StartsWith("http://") || !host.StartsWith("https://"))
                         proxyUrlsOut.push_back("http://" + host);
-                        }
-                    else if (scheme == "http" || scheme == "https")
-                        {
-                        proxyUrlsOut.push_back(host);
-                        }
                     }
                 }
             FreeProxyString(proxyInfo.lpszProxy);
@@ -510,7 +503,7 @@ void HttpProxy::SetPacUrl(Utf8String pacUrl)
     {
     if (pacUrl == m_pacUrl)
         return;
-        
+
     m_pacScript.clear();
     m_pacUrl = pacUrl;
     m_pacResponseTask = nullptr;

@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/BeHttp/BeUri.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,27 +19,82 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 struct BeUri
     {
     private:
-        Utf8String m_uri;
+        enum class UriPatternGroup
+            {
+            Scheme = 2,
+            Authority = 3,
+            Userinfo = 6,
+            Host = 7,
+            Port = 10,
+            Path = 11,
+            Query = 13,
+            Fragment = 15
+            };
+
+        struct MatchResults;
+
+    private:
+        static Utf8String GetUriComponent(UriPatternGroup group, const MatchResults& results);
+        static Utf8String EscapeUriComponent(Utf8String component);
+
+    private:
+        Utf8String m_scheme;
+        Utf8String m_userInfo;
+        Utf8String m_host;
+        Utf8String m_path;
+        Utf8String m_query;
+        Utf8String m_fragment;
+        int32_t m_port = -1;
+        bool m_authorityIsPresent = false;
+        bool m_valid = false;
 
     public:
+        //! Creates invalid URI
         BeUri() = default;
-        //! Creates URI and percent-escapes any unsafe symbols
-        BEHTTP_EXPORT BeUri(Utf8String uri);
 
-        //! Get full URI string
-        Utf8StringCR GetString() const { return m_uri; }
+        //! Creates URI and percent-escapes any unsafe symbols in path, query, and fragment components.
+        //! IMPORTANT: Improperly formatted URIs may exhibit unexpected behaviors. For example,
+        //! missing authority prefix "//" in "localhost:8080" will cause the URI to be split into
+        //! scheme component "localhost" and path component "8080". For complete URI format specification,
+        //! consult <a href="https://tools.ietf.org/html/rfc3986#section-3">[RFC 3986] section 3</a>.
+        BEHTTP_EXPORT BeUri(Utf8StringCR uri);
 
-        //! Parse and get URI scheme
-        BEHTTP_EXPORT Utf8String GetScheme(bool lowerCase = true) const;
-        //! Parse and get URI host
-        BEHTTP_EXPORT Utf8String GetHost(bool lowerCase = true) const;
+        //! Returns whether the uri is valid
+        bool IsValid() const { return m_valid; }
+
+        //! Returns full URI string in original letter case
+        BEHTTP_EXPORT Utf8String ToString() const;
+
+        //! Returns scheme component in lower case
+        BEHTTP_EXPORT Utf8String GetScheme() const { return Utf8String(m_scheme).ToLower(); }
+
+        //! Returns authority component with host in lower case
+        BEHTTP_EXPORT Utf8String GetAuthority() const;
+
+        //! Returns userinfo component in original letter case
+        BEHTTP_EXPORT Utf8StringCR GetUserInfo() const { return m_userInfo; }
+
+        //! Returns host component in lower case
+        BEHTTP_EXPORT Utf8String GetHost() const { return Utf8String(m_host).ToLower(); }
+
+        //! Returns port number. If port was not specified, returns -1.
+        BEHTTP_EXPORT int32_t GetPort() const { return m_port; }
+
+        //! Returns path component in original letter case
+        BEHTTP_EXPORT Utf8String GetPath() const;
+
+        //! Returns query component in original letter case
+        BEHTTP_EXPORT Utf8StringCR GetQuery() const { return m_query; }
+
+        //! Returns fragment component in original letter case
+        BEHTTP_EXPORT Utf8StringCR GetFragment() const { return m_fragment; }
 
         //! Use percent-escape for specific URL parts
         BEHTTP_EXPORT static Utf8String EscapeString(Utf8StringCR str);
         //! Remove percent-escape to original characters
         BEHTTP_EXPORT static Utf8String UnescapeString(Utf8StringCR str);
 
-        //! Use percent-escape for unsafe characters in URL. This is done automaticaly before using URL in Http::Request 
+        //! Use percent-escape for unsafe characters in URL. This is done automaticaly before using URL in Http::Request
         //! More info: https://tools.ietf.org/html/rfc1738#section-2.2 and https://tools.ietf.org/html/rfc2396
         BEHTTP_EXPORT static Utf8String& EscapeUnsafeCharactersInUrl(Utf8String& url);
     };

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/HttpProxyTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -100,9 +100,19 @@ TEST_F(HttpProxyTests, SetProxyServer_ValidHostnameAndPort_HttpUrlWithPortSet)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                        12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpProxyTests, SetProxyServer_HostWithUnsafeCharactersAndPort_CharactersAreEscapedAndHttpUrlSet)
+TEST_F(HttpProxyTests, SetProxyServer_HostWithUpperCaseCharactersAndPort_CharactersAreLowerCaseAndHttpUrlSet)
     {
     HttpProxy proxy;
-    proxy.SetProxyServer(TEST_URL_UNSAFE_CHARS, 9999);
-    EXPECT_STREQ("http://" TEST_URL_UNSAFE_CHARS_ESCAPED ":9999", proxy.GetProxyUrl().c_str());
+    proxy.SetProxyServer("HOST", 9999);
+    EXPECT_STREQ("http://host:9999", proxy.GetProxyUrl().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpProxyTests, SetProxyUrl_HostWithUnsafeCharactersAndPort_CharactersAreEscapedAndHttpUrlSet)
+    {
+    HttpProxy proxy;
+    proxy.SetProxyUrl(TEST_URL_UNSAFE_CHARS);
+    EXPECT_STREQ(TEST_URL_UNSAFE_CHARS_ESCAPED, proxy.GetProxyUrl().c_str());
     }

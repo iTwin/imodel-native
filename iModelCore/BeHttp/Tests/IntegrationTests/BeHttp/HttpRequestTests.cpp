@@ -168,7 +168,7 @@ TEST_F(HttpRequestTests, Perform_EmptyUrl_ErrorCouldNotConnect)
     Response response = request.Perform().get();
     EXPECT_EQ(ConnectionStatus::CouldNotConnect, response.GetConnectionStatus());
     }
-    
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -355,28 +355,28 @@ TEST_F(HttpRequestTests, Perform_UnsafeCharactersInUrl_EscapesUnsafeCharactersAn
     //  query: http://httpbin.org/ip?<>"{}|\^~[]`
     //  url:   http://httpbin.org/ip<>"{}|\^~[]`
     //FireFox:
-    //  query: http://httpbin.org/ip?%3C%3E%22{}|\^~[]%60 
+    //  query: http://httpbin.org/ip?%3C%3E%22{}|\^~[]%60
     //  url:   http://httpbin.org/ip%3C%3E%22%7B%7D|%5C%5E~%5B%5D%60
     //InternetExplorer:
     //  query: http://httpbin.org/ip?<>"{}|\^~[]`
     //  url:   http://httpbin.org/ip%3C%3E%22%7B%7D%7C/%5E~[]%60
     //Chrome:
-    //  query: http://httpbin.org/ip?%3C%3E%22{}|\^~[]` 
+    //  query: http://httpbin.org/ip?%3C%3E%22{}|\^~[]`
     //  url:   http://httpbin.org/ip%3C%3E%22%7B%7D%7C/%5E~[]%60
     //Casablanca :
     //  Allows only #, % and ~ from unsafe sumbols
     //CURL:
     //  Removes everything after #, does not encode anything. Some have special meaning - [], {} for using multiple urls in command line
 
-    Request request(TEST_URL_UNSAFE_CHARS);
+    Request request(TEST_URL_UNSAFE_CHARS_NO_FRAGMENT);
 
     Response response = request.Perform().get();
 
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
-    EXPECT_STREQ(TEST_URL_UNSAFE_CHARS_ESCAPED, response.GetEffectiveUrl().c_str());
+    EXPECT_STREQ(TEST_URL_UNSAFE_CHARS_NO_FRAGMENT_ESCAPED, response.GetEffectiveUrl().c_str());
     }
-    
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -745,7 +745,7 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompression_Success)
 
     request.SetCompressionOptions(options);
 
-    // Content-encoding should be added automaticly. 
+    // Content-encoding should be added automaticly.
     // But by forcing it we check whether request is trully compressed by api
     request.GetHeaders().AddValue("Content-Encoding", "gzip");
 
@@ -768,7 +768,7 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompressionForRequestWithType_Succ
     request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
     request.SetCompressionOptions(options);
 
-    // Content-encoding should be added automaticly. 
+    // Content-encoding should be added automaticly.
     // But by forcing it we check whether request is trully compressed by api
     request.GetHeaders().AddValue("Content-Encoding", "gzip");
 
@@ -793,7 +793,7 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithCompressionTypesSet
     request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
     request.SetCompressionOptions(options);
 
-    // Content-encoding should be added automaticly. 
+    // Content-encoding should be added automaticly.
     // But by forcing it we check whether request is trully compressed by api
     request.GetHeaders().AddValue("Content-Encoding", "gzip");
 
