@@ -796,7 +796,7 @@ Root::Root(DgnDbR db, DgnModelId modelId, TransformCR location, Utf8CP rootResou
     : Root(db, modelId, true, location, rootResource, system)
     {
     auto model = db.Models().GetModel(modelId);
-    BeAssert(model.IsValid());
+//    BeAssert(model.IsValid());   This is null when called during conversion of ThreeMx.
     if (model.IsValid() && !model->Is3d())
         m_is3d = false;
     }
