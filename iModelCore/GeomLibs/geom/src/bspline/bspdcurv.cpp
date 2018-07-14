@@ -646,7 +646,6 @@ int             dimension
         memcpy (auxGPolesP, auxTmpPoles, dim*dimension*sizeof(double));
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lu.Han          03/92
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -665,6 +664,15 @@ int             order,               /* => the order of the bspline */
 int             dimension
 )
     {
+// EDL 7/14/18
+// static analysis issues a complaint about C6385, names tmpPoles as part of
+//    possible out-of-bounds expressions.
+// A sensible thing to be suspicious of, indeed!
+// This is old, complex code and ripping it apart seems more dangerous than ignoring it.
+// BUT . . .
+// request to ignore 2220 triggers compile erorr for unknown pragman number.
+// 
+PUSH_MSVC_IGNORE(6385)
     int         i, j, itmp, jtmp, ltmp, k, num, numProduct,
                 allocSize, index, newIndex, status = SUCCESS;
     double      *product, *prodP, *endP, *mP, factor, *auxTmpPoles, *dP0, *dP1;
@@ -728,8 +736,8 @@ wrapup:
     if (tmpPoles)    BSIBaseGeom::Free(tmpPoles);
     if (auxTmpPoles) BSIBaseGeom::Free(auxTmpPoles);
     return status;
+POP_MSVC_IGNORE
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lu.Han          04/92
 +---------------+---------------+---------------+---------------+---------------+------*/

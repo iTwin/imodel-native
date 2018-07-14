@@ -1928,12 +1928,13 @@ bvector<DPoint4d> curvePoles
                 (polesP[i], curvePoles.data (), order, i);
 
     /* find roots of last P that doesn't identically vanish */
-    i = 3;
+    i = 2;
+    numRoot = 0;
     do
-        bsiBezier_univariateRoots (rootsP, &numRoot, polesP[--i], orderP);
-    while (numRoot == orderP && i);
+        bsiBezier_univariateRoots (rootsP, &numRoot, polesP[i], orderP);
+    while (numRoot == orderP && --i >= 0);
 
-    if (numRoot > 0 && numRoot < orderP)
+    if (i >= 0 && numRoot > 0 && numRoot < orderP)
         {
         if (i > 1)
             {
