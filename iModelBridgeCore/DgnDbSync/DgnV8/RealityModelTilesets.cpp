@@ -35,7 +35,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
     WString      dbFileName = GetDgnDb().GetFileName().GetFileNameWithoutExtension();
 
     outputDirectory.AppendToPath(dbFileName.c_str());
-    if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(outputDirectory))
+    if (!outputDirectory.IsDirectory() && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(outputDirectory))
         {
         BeAssert(false && "unable to create output directory");
         return ERROR;
@@ -47,11 +47,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
     AddTasks((int32_t)m_modelsRequiringRealityTiles.size());
 
     auto    ecefLocation = m_dgndb->GeoLocation().GetEcefLocation();
-
-    if (!ecefLocation.m_isValid)
-        return ERROR;           // TBD... Default ECEF.
-
-    auto    dbToEcefTransform = Transform::From(ecefLocation.m_angles.ToRotMatrix(), ecefLocation.m_origin);
+    auto    dbToEcefTransform = ecefLocation.m_isValid ? Transform::From(ecefLocation.m_angles.ToRotMatrix(), ecefLocation.m_origin) : Transform::FromIdentity();
 
     for (auto const& modelId : m_modelsRequiringRealityTiles)
         {
@@ -64,7 +60,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             return ERROR;
 
             }
-        static double   s_leafTolerance = .10;      // TBD. make this a setting.
+        static double   s_leafTolerance = .01;      // TBD. make this a setting.
 
         // TBD... Carole M.   Provide an (empty) scratch directory and a filename (in that directory) for the root/JSON file.
          TileTree::IO::ICesiumPublisher::WriteCesiumTileset(rootJsonFile, outputDirectory, *geometricModel, dbToEcefTransform, s_leafTolerance);
