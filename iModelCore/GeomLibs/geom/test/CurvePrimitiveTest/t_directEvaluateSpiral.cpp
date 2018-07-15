@@ -597,62 +597,86 @@ bool AnnounceIntermediateIntegral (double t, double *pIntegrals) override
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,HalfCosineIntegrals)
     {
-    bvector<DPoint3d> stroke, strokeD1, strokeD2, strokeD3;
+    bvector<DPoint3d> exactXY, exactD1, exactD2, exactD3;
     double tangentLength = 100.0;
     double r1 = 800.0;
     DPoint2d xy;
     DVec2d d1xy, d2xy, d3xy;
-    uint32_t numInterval = 16;
-    double df = 1.0 / numInterval;
-    HalfCosineIntegrands integrands (tangentLength, r1);
+    bvector<HalfCosineIntegrands> allIntegrands;
 
 
     BSIQuadraturePoints quadraturePoints;
     quadraturePoints.InitGauss (5);
     double errorBound;
-    quadraturePoints.IntegrateWithRombergExtrapolation (integrands, 0.0, 1.0, numInterval, errorBound);
 
+    for (int numInterval : {16, 8, 4})
+        {
+        allIntegrands.push_back (HalfCosineIntegrands (tangentLength, r1));
+        quadraturePoints.IntegrateWithRombergExtrapolation (allIntegrands.back (), 0.0, 1.0, numInterval, errorBound);
+        }
+    double df = 1.0 / 16.0;
     for (double f = 0.0; f < 1.0 + df * 0.00000001; f += df)
         {
         double x = f * tangentLength;
         DSpiral2dDirectHalfCosine::EvaluateAtAxisDistanceInStandardOrientation (
             x, tangentLength, r1,
             xy, &d1xy, &d2xy, &d3xy);
-        stroke.push_back (DPoint3d::From (x, xy.y));
-        strokeD1.push_back (DPoint3d::From (x, d1xy.y));
-        strokeD2.push_back (DPoint3d::From (x, d2xy.y));
-        strokeD3.push_back (DPoint3d::From (x, d3xy.y));
+        exactXY.push_back (DPoint3d::From (x, xy.y));
+        exactD1.push_back (DPoint3d::From (x, d1xy.y));
+        exactD2.push_back (DPoint3d::From (x, d2xy.y));
+        exactD3.push_back (DPoint3d::From (x, d3xy.y));
         }
-    double dy = 50.0;
+
+    double dy = 80.0;
+    double dy1 = 1.0;
     double dx = tangentLength;
     {
     SaveAndRestoreCheckTransform shifter (0, dy, 0);
-    Check::SaveTransformed (DSegment3d::From (0,0,0, 2 * dx, 0, 0));
-    Check::SaveTransformed (stroke);
-    Check::Shift (dx,stroke[0].y,0);
-    Check::SaveTransformed (integrands.summedD1Y);
+    Check::SaveTransformed (DSegment3d::From (0,0,0, dx, 0, 0));
+    Check::SaveTransformed (exactXY);
+    double y0 = exactXY[0].y;
+    Check::Shift (0,y0,0);
+    for (auto &integrands : allIntegrands)
+        {
+        Check::Shift (0,dy1,0);
+        Check::SaveTransformed (integrands.summedD1Y);
+        Check::Near (exactXY.back ().y, integrands.summedD1Y.back ().y + y0, "Integrated Y");
+        }
     }
 
     {
     SaveAndRestoreCheckTransform shifter (0, dy, 0);
-    Check::SaveTransformed (DSegment3d::From (0,0,0, 2 * dx, 0, 0));
-    Check::SaveTransformed (strokeD1);
-    Check::Shift (dx,strokeD1[0].y,0);
-    Check::SaveTransformed (integrands.summedD2Y);
+    Check::SaveTransformed (DSegment3d::From (0,0,0, dx, 0, 0));
+    Check::SaveTransformed (exactD1);
+    Check::Shift (0,exactD1[0].y,0);
+    double y0 = exactD1[0].y;
+    Check::Shift (0,y0,0);
+    for (auto &integrands : allIntegrands)
+        {
+        Check::Shift (0,dy1,0);
+        Check::SaveTransformed (integrands.summedD2Y);
+        Check::Near (exactD1.back ().y, integrands.summedD2Y.back ().y + y0, "Integrated DY");
+        }
     }
 
     {
     SaveAndRestoreCheckTransform shifter (0, dy, 0);
-    Check::SaveTransformed (DSegment3d::From (0,0,0, 2 * dx, 0, 0));
-    Check::SaveTransformed (strokeD2);
-    Check::Shift (dx,strokeD2[0].y,0);
-    Check::SaveTransformed (integrands.summedD3Y);
+    Check::SaveTransformed (DSegment3d::From (0,0,0, dx, 0, 0));
+    Check::SaveTransformed (exactD2);
+    double y0 = exactD2[0].y;
+    Check::Shift (0,y0,0);
+    for (auto &integrands : allIntegrands)
+        {
+        Check::Shift (0,dy1,0);
+        Check::SaveTransformed (integrands.summedD3Y);
+        Check::Near (exactD2.back ().y, integrands.summedD3Y.back ().y + y0, "Integrated D2Y");
+        }
     }
 
     {
     SaveAndRestoreCheckTransform shifter (dy,0,0);
     Check::SaveTransformed (DSegment3d::From (0,0,0, 2 * dx, 0, 0));
-    Check::SaveTransformed (strokeD3);
+    Check::SaveTransformed (exactD3);
     }
     Check::ClearGeometry ("Spiral.HalfCosineIntegrals");
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/BSIQuadrature.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -471,6 +471,8 @@ double &totalErrorBound
     double du = (t1 - t0) / numInterval;
     BSIIntegrationStack stack ((uint32_t)function.GetVectorIntegrandCount ());
     stack.PushZeroFrame ();
+    if (!function.AnnounceIntermediateIntegral (t0, stack.TopOfStackAddress ()))
+        return false;
     totalErrorBound = 0.0;
     double rombergFactor = 1.0 / (pow (2.0, GetConvergencePower ()) - 1.0);
     for (uint32_t interval = 0; interval < numInterval; interval++, u0 = u1)
@@ -478,7 +480,7 @@ double &totalErrorBound
         if (interval + 1 == numInterval)
             u1 = t1;
         else
-            u1 = t0 + interval * du;
+            u1 = t0 + (interval + 1) * du;
         stack.AccumulateToNewFrame (*this, function, u0, u1, 1);
         stack.AccumulateToNewFrame (*this, function, u0, u1, 2);
         double dMax = stack.MaxDiff ();
