@@ -485,7 +485,6 @@ size_t GeomDetail::GetPointCount() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeomDetail::IsValidSurfaceHit() const
     {
-//    return (HitGeomType::Surface == GetGeomType() && 0.0 != GetSurfaceNormal().Magnitude());
     return 0.0 != GetSurfaceNormal().Magnitude();
     }
 

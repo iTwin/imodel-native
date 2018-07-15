@@ -80,9 +80,14 @@ bool EvaluateInterior()
 
         case GeometricPrimitive::GeometryType::SolidPrimitive:
             {
+            bool                useCurvePoint = (HitGeomType::Point == m_hitGeomType || SnapMode::Center == m_snapMode);
+            DPoint3d            testPointLocal = (useCurvePoint ? m_hitCurveDetail.point : m_hitClosePtLocal); // Prefer face identified by original hit location to disambiguate face for edge...
             SolidLocationDetail solidDetail;
 
-            if (!m_hitGeom->GetAsISolidPrimitive()->ClosestPoint(m_hitClosePtLocal, solidDetail)) // Prefer face identified by original hit location...
+            if (!m_hitGeom->GetAsISolidPrimitive()->ClosestPoint(testPointLocal, solidDetail))
+                return false;
+
+            if (useCurvePoint && testPointLocal.Distance(solidDetail.GetXYZ()) > 1.0e-5)
                 return false;
 
             // NOTE: U/V directions don't ensure outward normals, so instead of trying to compare normals, we'll just look for a different face at point closer to eye...
@@ -205,10 +210,12 @@ bool EvaluateInterior()
 #if defined (BENTLEYCONFIG_PARASOLID)
         case GeometricPrimitive::GeometryType::BRepEntity:
             {
-            DRay3d         boresite = GetBoresite(m_hitClosePtLocal, m_hitLocalToView.M1);
+            bool           useCurvePoint = (HitGeomType::Point == m_hitGeomType || SnapMode::Center == m_snapMode);
+            DPoint3d       testPointLocal = (useCurvePoint ? m_hitCurveDetail.point : m_hitClosePtLocal); // Prefer face identified by original hit location to disambiguate face for edge...
+            DRay3d         boresite = GetBoresite(testPointLocal, m_hitLocalToView.M1);
             DVec3d         viewZ = DVec3d::FromScale(boresite.direction, -1.0);
             IBRepEntityCR  entity = *m_hitGeom->GetAsIBRepEntity();
-            ISubEntityPtr  closeEntity = BRepUtil::ClosestFace(entity, m_hitClosePtLocal, &viewZ); // Prefer face identified by original hit location...
+            ISubEntityPtr  closeEntity = BRepUtil::ClosestFace(entity, testPointLocal, &viewZ); // Prefer face identified by original hit location...
 
             if (!closeEntity.IsValid())
                 return false;
@@ -219,6 +226,9 @@ bool EvaluateInterior()
 
             if (!BRepUtil::ClosestPointToFace(*closeEntity, localPoint, point, param) || SUCCESS != BRepUtil::EvaluateFace(*closeEntity, point, normal, uDir, vDir, param))
                 return false;
+
+            if (useCurvePoint && testPointLocal.Distance(point) > 1.0e-5)
+                return false; // reject point not on surface...
 
             if (interiorPt)
                 m_hitCurveDetail.point = point;
@@ -1994,9 +2004,7 @@ SnapStatus SnapContext::DoDefaultDisplayableSnap()
                 if (SnapStatus::Success == status && helper.ComputeSnapLocation())
                     {
                     GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(helper.GetHitCurveDetail().curve, &helper.GetHitLocalToWorld(), helper.GetHitGeomType());
-
-                    if (helper.IsHitNormalValid())
-                        GetSnapDetail()->GetGeomDetailW().SetSurfaceNormal(helper.GetHitNormalWorld());
+                    GetSnapDetail()->GetGeomDetailW().SetSurfaceNormal(helper.IsHitNormalValid() ? helper.GetHitNormalWorld() : DVec3d::FromZero()); // Update or clear surface normal for snap location...
 
                     SetSnapInfo(*GetSnapDetail(), GetSnapMode(), GetSnapSprite(GetSnapMode()), helper.GetHitPointWorld(), SnapMode::Center == GetSnapMode(), GetSnapAperture(), false);
 
