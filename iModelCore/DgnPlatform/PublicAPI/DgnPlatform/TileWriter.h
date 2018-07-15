@@ -146,8 +146,9 @@ protected:
 struct PublishedTile : RefCountedBase
     {
 private:
-    BeFileName                  m_fileName;
-    Utf8String                  m_url;
+    BeFileName                  m_outputDirectory;
+    Utf8String                  m_name;
+    Utf8String                  m_extension;
     bvector<PublishedTilePtr>   m_children;
     DRange3d                    m_publishedRange;
     DRange3d                    m_tileRange;
@@ -155,7 +156,6 @@ private:
 
 public:
     PublishedTile(TileTree::TileCR inputTile, BeFileNameCR outputDirectory);
-    BeFileNameCR GetFileName() const { return m_fileName; }
     bvector<PublishedTilePtr>& GetChildren() { return m_children; }
     bvector<PublishedTilePtr>const& GetChildren() const { return m_children; }
     void SetPublishedRange(DRange3dCR range) { m_publishedRange = range; }
@@ -163,7 +163,9 @@ public:
     DRange3dCR GetPublishedRange() const { return m_publishedRange; }
     DRange3dCR GetTileRange() const { return m_tileRange; }
     double GetTolerance() const { return m_tolerance; }
-    Utf8String GetURL() const { return m_url; }
+    void SetExtension(CharCP extension) { m_extension = extension; }
+    Utf8String GetURL() const;
+    BeFileName GetFileName() const;
     };
 
 //=======================================================================================
@@ -178,7 +180,7 @@ struct ICesiumPublisher
     //! Invoked before a model is processed.
     virtual TileTree::IO::WriteStatus _BeginProcessModel(GeometricModelCR model) { return TileTree::IO::WriteStatus::Success; }
     //! Invoked after a model is processed, with the result of processing.
-    virtual TileTree::IO::WriteStatus _EndProcessModel(GeometricModelCR model, PublishedTileCR rootTile, TileTree::IO::WriteStatus status) = 0;
+    virtual TileTree::IO::WriteStatus _EndProcessModel(GeometricModelCR model, TransformCR location, PublishedTileCR rootTile, TileTree::IO::WriteStatus status) = 0;
     //! Write cesium tileset for a GeometricModel
     DGNPLATFORM_EXPORT static TileTree::IO::WriteStatus PublishCesiumTileset(ICesiumPublisher& publisher, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance);
     DGNPLATFORM_EXPORT static TileTree::IO::WriteStatus WriteCesiumTileset(BeFileName outputFileName, BeFileNameCR tileOutputDirectory, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance);
