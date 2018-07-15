@@ -297,7 +297,7 @@ void ApplySurfaceAction (MSBsplineSurfacePtr &surface, SurfaceAction action)
 template <typename T>
 T BitWiseAnd (T valueA, T valueB)
     {
-    return (T)((uint32_t)valueA, (uint32_t)valueB);
+    return (T)((uint32_t)valueA & (uint32_t)valueB);
     }
 
 /*---------------------------------------------------------------------------------**//**

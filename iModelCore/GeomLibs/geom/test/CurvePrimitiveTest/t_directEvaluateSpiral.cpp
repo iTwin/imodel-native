@@ -555,3 +555,104 @@ TEST(Spiral,HalfCosineEvaluation)
     Check::SaveTransformed (strokeD3);
     Check::ClearGeometry ("Spiral.HalfCosineEvaluation");
     }
+// Vector integrands for testing
+struct HalfCosineIntegrands : BSIIncrementalVectorIntegrand
+{
+double m_tangentLength;
+double m_r1;
+
+HalfCosineIntegrands (double tangentLength, double r1) :
+    m_tangentLength (tangentLength),
+    m_r1 (r1)
+    {
+    }
+
+int GetVectorIntegrandCount () override { return 3;}
+void EvaluateVectorIntegrand (double t, double *pF) override
+    {
+    double x = t * m_tangentLength;
+    DPoint2d xy;
+    DVec2d d1xy, d2xy, d3xy;
+    DSpiral2dDirectHalfCosine::EvaluateAtAxisDistanceInStandardOrientation (
+            x, m_tangentLength, m_r1,
+            xy, &d1xy, &d2xy, &d3xy);
+    pF[0] = d1xy.y;
+    pF[1] = d2xy.y;
+    pF[2] = d3xy.y;
+    }
+bvector<DPoint3d> summedD1Y;    // should match Y
+bvector<DPoint3d> summedD2Y;    // shoudl match d1Y
+bvector<DPoint3d> summedD3Y;    // should match d2Y
+bool AnnounceIntermediateIntegral (double t, double *pIntegrals) override
+    {
+    double x = t * m_tangentLength;
+    summedD1Y.push_back (DPoint3d::From (x, pIntegrals[0]));
+    summedD2Y.push_back (DPoint3d::From (x, pIntegrals[1]));
+    summedD3Y.push_back (DPoint3d::From (x, pIntegrals[2]));
+    return true;
+    }
+};
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Spiral,HalfCosineIntegrals)
+    {
+    bvector<DPoint3d> stroke, strokeD1, strokeD2, strokeD3;
+    double tangentLength = 100.0;
+    double r1 = 800.0;
+    DPoint2d xy;
+    DVec2d d1xy, d2xy, d3xy;
+    uint32_t numInterval = 16;
+    double df = 1.0 / numInterval;
+    HalfCosineIntegrands integrands (tangentLength, r1);
+
+
+    BSIQuadraturePoints quadraturePoints;
+    quadraturePoints.InitGauss (5);
+    double errorBound;
+    quadraturePoints.IntegrateWithRombergExtrapolation (integrands, 0.0, 1.0, numInterval, errorBound);
+
+    for (double f = 0.0; f < 1.0 + df * 0.00000001; f += df)
+        {
+        double x = f * tangentLength;
+        DSpiral2dDirectHalfCosine::EvaluateAtAxisDistanceInStandardOrientation (
+            x, tangentLength, r1,
+            xy, &d1xy, &d2xy, &d3xy);
+        stroke.push_back (DPoint3d::From (x, xy.y));
+        strokeD1.push_back (DPoint3d::From (x, d1xy.y));
+        strokeD2.push_back (DPoint3d::From (x, d2xy.y));
+        strokeD3.push_back (DPoint3d::From (x, d3xy.y));
+        }
+    double dy = 50.0;
+    double dx = tangentLength;
+    {
+    SaveAndRestoreCheckTransform shifter (0, dy, 0);
+    Check::SaveTransformed (DSegment3d::From (0,0,0, 2 * dx, 0, 0));
+    Check::SaveTransformed (stroke);
+    Check::Shift (dx,stroke[0].y,0);
+    Check::SaveTransformed (integrands.summedD1Y);
+    }
+
+    {
+    SaveAndRestoreCheckTransform shifter (0, dy, 0);
+    Check::SaveTransformed (DSegment3d::From (0,0,0, 2 * dx, 0, 0));
+    Check::SaveTransformed (strokeD1);
+    Check::Shift (dx,strokeD1[0].y,0);
+    Check::SaveTransformed (integrands.summedD2Y);
+    }
+
+    {
+    SaveAndRestoreCheckTransform shifter (0, dy, 0);
+    Check::SaveTransformed (DSegment3d::From (0,0,0, 2 * dx, 0, 0));
+    Check::SaveTransformed (strokeD2);
+    Check::Shift (dx,strokeD2[0].y,0);
+    Check::SaveTransformed (integrands.summedD3Y);
+    }
+
+    {
+    SaveAndRestoreCheckTransform shifter (dy,0,0);
+    Check::SaveTransformed (DSegment3d::From (0,0,0, 2 * dx, 0, 0));
+    Check::SaveTransformed (strokeD3);
+    }
+    Check::ClearGeometry ("Spiral.HalfCosineIntegrals");
+    }
