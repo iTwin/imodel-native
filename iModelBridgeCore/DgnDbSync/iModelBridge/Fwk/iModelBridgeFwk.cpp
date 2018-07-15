@@ -559,6 +559,12 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         PrintUsage(argv[0]);
         return BSIERROR;
         }
+    
+    if (!bankArgs.ParsedAny())
+        {
+        m_bargptrs.clear();
+        m_bargptrs.push_back(argv[0]);
+        }
 
     IModelHubArgs hubArgs;
     if ((BSISUCCESS != hubArgs.ParseCommandLine(m_bargptrs, (int) serverRawArgPtrs.size(), serverRawArgPtrs.data())) || (BSISUCCESS != hubArgs.Validate((int) serverRawArgPtrs.size(), serverRawArgPtrs.data())))

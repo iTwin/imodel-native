@@ -306,7 +306,7 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::Validate(int argc, WCharCP argv[])
 
     if (!m_workspaceDir.DoesPathExist())
         {
-        GetLogger().trace("Workspace directory provided is invalid.");
+        GetLogger().fatal("Workspace directory provided is invalid.");
         return BSIERROR;
         }
 
@@ -315,7 +315,7 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::Validate(int argc, WCharCP argv[])
 
     if (m_folderId < 1 || m_documentId < 1 || m_dataSource.empty())
         {
-        GetLogger().trace("FolderId, documentId and datasource needs to be provided or PW URN path should be specified.");
+        GetLogger().fatal("FolderId, documentId and datasource needs to be provided or PW URN path should be specified.");
         return BSIERROR;
         }
 
