@@ -462,5 +462,63 @@ ElevationGridSurfaceCPtr ElevationGrid::GetTopSurface() const
     return topMostSurface;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ElevationGridSurfaceCPtr ElevationGrid::GetFirstBelow
+(
+    double elevation
+) const
+    {
+    ECN::ECClassCP surfaceClass = ElevationGridSurface::QueryClass(GetDgnDb());
+    if (nullptr == surfaceClass)
+        {
+        BeAssert(nullptr != surfaceClass);
+        return nullptr;
+        }
+
+    Utf8String ecsql("SELECT ElementId, Elevation FROM ");
+    ecsql.append(surfaceClass->GetECSqlName()).append(" WHERE Elevation<? ORDER BY Elevation DESC LIMIT 1");
+
+    BeSQLite::EC::ECSqlStatement statement;
+    statement.Prepare(GetDgnDb(), ecsql.c_str());
+    statement.BindDouble(1, elevation);
+
+    if (BeSQLite::BE_SQLITE_ROW != statement.Step())
+        return nullptr;
+
+    Dgn::DgnElementId surfaceId = statement.GetValueId<Dgn::DgnElementId>(0);
+    return ElevationGridSurface::Get(GetDgnDb(), surfaceId);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ElevationGridSurfaceCPtr ElevationGrid::GetFirstAbove
+(
+    double elevation
+) const
+    {
+    ECN::ECClassCP surfaceClass = ElevationGridSurface::QueryClass(GetDgnDb());
+    if (nullptr == surfaceClass)
+        {
+        BeAssert(nullptr != surfaceClass);
+        return nullptr;
+        }
+
+    Utf8String ecsql("SELECT ElementId, Elevation FROM ");
+    ecsql.append(surfaceClass->GetECSqlName()).append(" WHERE Elevation>? ORDER BY Elevation ASC LIMIT 1");
+
+    BeSQLite::EC::ECSqlStatement statement;
+    statement.Prepare(GetDgnDb(), ecsql.c_str());
+    statement.BindDouble(1, elevation);
+
+    if (BeSQLite::BE_SQLITE_ROW != statement.Step())
+        return nullptr;
+
+    Dgn::DgnElementId surfaceId = statement.GetValueId<Dgn::DgnElementId>(0);
+    return ElevationGridSurface::Get(GetDgnDb(), surfaceId);
+    }
+
 END_GRIDS_NAMESPACE
 
