@@ -42,6 +42,7 @@ struct iModelBridgeRegistryBase : RefCounted<IModelBridgeRegistry>
     struct AssignCmdLineArgs
         {
         BeFileName m_stagingDir;
+        BeFileName m_registryDir;
         BeFileName m_loggingConfigFileName;
         Utf8String m_repositoryName;
         BeFileName m_inputFileName;
@@ -54,6 +55,7 @@ protected:
 private:
     BeFileName m_stateFileName;
     BeFileName m_stagingDir;
+    BeFileName m_registryDir;
     BeFileName m_masterFilePath;
     
     bool QueryAnyInstalledBridges();
