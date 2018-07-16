@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/RoadRailAlignment/AlignmentXSViewDefinition.h $
+|     $Source: PublicAPI/RoadRailAlignment/ClipPlanesViewDefinition.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,13 +17,13 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 // Specialized view definition that works with the AlignmentXSViewController defined in CivilControls
 // The CivilControls component is expected to register its view controller factory
 //=======================================================================================
-struct AlignmentXSViewDefinition : Dgn::SpatialViewDefinition
+struct ClipPlanesViewDefinition : Dgn::SpatialViewDefinition
 {
-DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentXSViewDefinition, Dgn::SpatialViewDefinition);
-friend struct AlignmentXSViewDefinitionHandler;
+DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_ClipPlanesViewDefinition, Dgn::SpatialViewDefinition);
+friend struct ClipPlanesViewDefinitionHandler;
 
 public:
-    typedef Dgn::ViewControllerPtr(*IViewControllerFactory)(AlignmentXSViewDefinitionCR);
+    typedef Dgn::ViewControllerPtr(*IViewControllerFactory)(ClipPlanesViewDefinitionCR);
     ROADRAILALIGNMENT_EXPORT static void RegisterControllerFactory(IViewControllerFactory);
     static constexpr Utf8CP SYSTEM_VIEW_NAME = "AlignmentXSViewDefinition";
 
@@ -33,7 +33,7 @@ private:
 protected:
     bool m_isDynamic;
     bool m_allowRotation;
-    Json::Value m_dynamicPoints;
+    Json::Value m_targetPlane;
 
 protected:
     void _SetRotation(RotMatrixCR rot) override final;
@@ -43,35 +43,37 @@ protected:
     bool _ViewsModel(Dgn::DgnModelId modelId) override final;
 
     //! @private
-    explicit AlignmentXSViewDefinition(CreateParams const& params) : T_Super(params) {}
+    explicit ClipPlanesViewDefinition(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentXSViewDefinition)
-    DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(AlignmentXSViewDefinition)
+    DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(ClipPlanesViewDefinition)
+    DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(ClipPlanesViewDefinition)
 
     void SetAllowRotation(bool value) { m_allowRotation = value; }
     bool GetAllowRotation() const { return m_allowRotation; }
     ROADRAILALIGNMENT_EXPORT void SetIsDynamic(bool value) { m_isDynamic = value; }
     ROADRAILALIGNMENT_EXPORT bool GetIsDynamic() const { return m_isDynamic; }
+    ROADRAILALIGNMENT_EXPORT void SetTargetPlane(JsonValueCR target) { m_targetPlane = target; }
+    ROADRAILALIGNMENT_EXPORT Json::Value GetTargetPlane() const { return m_targetPlane; }
 
 
 
     //! Construct a SpatialViewDefinition in the specified DefinitionModel
-    ROADRAILALIGNMENT_EXPORT AlignmentXSViewDefinition(ConfigurationModelCR model, Utf8StringCR name, Dgn::CategorySelectorR categories, Dgn::DisplayStyle3dR displayStyle, Dgn::ModelSelectorR modelSelector);
+    ROADRAILALIGNMENT_EXPORT ClipPlanesViewDefinition(ConfigurationModelCR model, Utf8StringCR name, Dgn::CategorySelectorR categories, Dgn::DisplayStyle3dR displayStyle, Dgn::ModelSelectorR modelSelector);
 
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnViewId QuerySystemViewId(Dgn::SubjectCR subject);
-}; // AlignmentXSViewDefinition
+}; // ClipPlanesViewDefinition
 
 
 //__PUBLISH_SECTION_END__
 //=======================================================================================
-//! The ElementHandler for the AlignmentXSViewDefinition class
+//! The ElementHandler for the ClipPlanesViewDefinition class
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AlignmentXSViewDefinitionHandler : Dgn::ViewElementHandler::SpatialView
+struct EXPORT_VTABLE_ATTRIBUTE ClipPlanesViewDefinitionHandler : Dgn::ViewElementHandler::SpatialView
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentXSViewDefinition, AlignmentXSViewDefinition,
-    AlignmentXSViewDefinitionHandler, Dgn::ViewElementHandler::SpatialView, ROADRAILALIGNMENT_EXPORT)
-}; // AlignmentXSViewDefinition
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_ClipPlanesViewDefinition, ClipPlanesViewDefinition,
+    ClipPlanesViewDefinitionHandler, Dgn::ViewElementHandler::SpatialView, ROADRAILALIGNMENT_EXPORT)
+}; // ClipPlanesViewDefinition
 
 //__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
