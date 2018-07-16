@@ -2,7 +2,7 @@
 |
 |     $Source: BeXml/BeXml.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1245,7 +1245,7 @@ BeXmlStatus BeXmlNode::GetXmlString (WString& xmlString)
     xmlOutputBufferPtr  buf = xmlAllocOutputBuffer (NULL);
     xmlNodeDumpOutput (buf, this->doc, this, 0, 0, NULL);
 
-    BeStringUtilities::Utf8ToWChar (xmlString, (Utf8CP)buf->buffer->content, buf->buffer->use);
+    BeStringUtilities::Utf8ToWChar (xmlString, (Utf8CP)xmlBufContent(buf->buffer), xmlBufUse(buf->buffer));
 
     xmlOutputBufferClose (buf);
     return BEXML_Success;
@@ -1259,7 +1259,7 @@ BeXmlStatus BeXmlNode::GetXmlString (Utf16BufferR xmlString)
     xmlOutputBufferPtr  buf = xmlAllocOutputBuffer (NULL);
     xmlNodeDumpOutput (buf, this->doc, this, 0, 0, NULL);
 
-    BeStringUtilities::Utf8ToUtf16 (xmlString, (Utf8CP)buf->buffer->content, buf->buffer->use);
+    BeStringUtilities::Utf8ToUtf16 (xmlString, (Utf8CP)xmlBufContent(buf->buffer), xmlBufUse(buf->buffer));
 
     xmlOutputBufferClose (buf);
     return BEXML_Success;
@@ -1274,7 +1274,7 @@ BeXmlStatus BeXmlNode::GetXmlString (Utf8StringR xmlString)
     
     xmlNodeDumpOutput (buf, this->doc, this, 0, 0, NULL);
 
-    xmlString.assign ((Utf8CP)buf->buffer->content);
+    xmlString.assign ((Utf8CP)xmlBufContent(buf->buffer));
 
     xmlOutputBufferClose (buf);
     
