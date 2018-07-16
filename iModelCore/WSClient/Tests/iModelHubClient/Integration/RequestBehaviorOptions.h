@@ -16,7 +16,8 @@ BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
 enum class RequestBehaviorOptionsEnum
     {
     DoNotScheduleRenderThumbnailJob = 1 << 0,
-    DisableGlobalEvents = 1 << 1
+    DisableGlobalEvents = 1 << 1,
+    DisableNotifications = 1 << 2
     };
 
 RequestBehaviorOptionsEnum operator| (RequestBehaviorOptionsEnum a, RequestBehaviorOptionsEnum b);
@@ -32,7 +33,7 @@ struct RequestBehaviorOptions
     {
 private:
     RequestBehaviorOptionsEnum m_behaviorOptions = 
-        RequestBehaviorOptionsEnum::DoNotScheduleRenderThumbnailJob | RequestBehaviorOptionsEnum::DisableGlobalEvents;
+        RequestBehaviorOptionsEnum::DoNotScheduleRenderThumbnailJob | RequestBehaviorOptionsEnum::DisableGlobalEvents | RequestBehaviorOptionsEnum::DisableNotifications;
 
 public:
     void EnableOption(RequestBehaviorOptionsEnum option)

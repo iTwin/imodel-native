@@ -43,6 +43,8 @@ bpair<Utf8String, Utf8String> RequestBehaviorOptions::GetBehaviorOptionsResultPa
             nameList.push_back("DoNotScheduleRenderThumbnailJob");
         if (RequestBehaviorOptionsEnum::DisableGlobalEvents == (m_behaviorOptions & RequestBehaviorOptionsEnum::DisableGlobalEvents))
             nameList.push_back("DisableGlobalEvents");
+        if (RequestBehaviorOptionsEnum::DisableNotifications == (m_behaviorOptions & RequestBehaviorOptionsEnum::DisableNotifications))
+            nameList.push_back("DisableNotifications");
 
         Utf8String outString = "";
         for (unsigned int i = 0; i < nameList.size(); i++)
