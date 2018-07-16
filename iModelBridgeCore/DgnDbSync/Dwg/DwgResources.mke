@@ -2,7 +2,7 @@
 #
 #     $Source: Dwg/DwgResources.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 %include mdl.mki
@@ -17,7 +17,7 @@ o = $(OutputRootDir)Build/DwgResources/
 always:
     ~mkdir $(o)
 
-SQLANG_CHeader      = $(DwgPubApi)DwgImporter.h
+SQLANG_CHeader      = $(DwgPubApi)DwgL10N.h
 SQLANG_Xliff        = $(o)DwgImporter_en.xliff
 
 %include $(sharedMki)CHeaderToXliff.mki

@@ -38,6 +38,7 @@ DwgDepends          = $(DwgDbPubApi)DwgDbCommon.h           \
                       $(DwgDbPubApi)BasicTypes.h            \
                       $(DwgPubApi)DwgSyncInfo.h             \
                       $(DwgPubApi)DwgHelper.h               \
+                      $(DwgPubApi)DwgL10N.h                 \
                       $(DwgPubApi)DwgImporter.h             \
                       $(DwgPubApi)ProtocalExtensions.h
 

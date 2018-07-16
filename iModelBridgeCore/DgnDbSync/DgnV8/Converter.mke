@@ -72,6 +72,8 @@ $(o)DgnV8GeoCoord$(oext):  $(baseDir)DgnV8GeoCoord.cpp $(DgnDbSyncDepends) ${Mul
 
 $(o)Thumbnails$(oext):  $(baseDir)Thumbnails.cpp $(DgnDbSyncDepends) ${MultiCompileDepends}
 
+$(o)RealityModelTilesets$(oext):  $(baseDir)RealityModelTilesets.cpp $(DgnDbSyncDepends) ${MultiCompileDepends}
+
 $(o)ImportConfig$(oext):  $(baseDir)ImportConfig/ImportConfig.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)Converter$(oext):  $(baseDir)Converter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}

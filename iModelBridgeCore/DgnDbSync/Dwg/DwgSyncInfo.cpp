@@ -1501,7 +1501,7 @@ DwgSyncInfo::Layer DwgSyncInfo::InsertLayer(DgnSubCategoryId gcategoryId, DwgMod
     if (BE_SQLITE_DONE != layerprov.Insert(*m_dgndb))
         {
         layerprov.m_id = DgnSubCategoryId();
-        m_dwgImporter.ReportIssue(DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::InconsistentData(), DwgImporter::Issue::InvalidLayer(),
+        m_dwgImporter.ReportIssue(DwgImporter::IssueSeverity::Info, IssueCategory::InconsistentData(), Issue::InvalidLayer(),
                                   Utf8PrintfString("%s (%lld)", name.c_str(), id).c_str());
         }
 
@@ -1663,7 +1663,7 @@ DwgSyncInfo::Linetype   DwgSyncInfo::InsertLinetype (DgnStyleId lstyleId, DwgMod
     if (BE_SQLITE_DONE != linetypeProv.Insert(*m_dgndb))
         {
         linetypeProv.m_id = DgnStyleId ();
-        m_dwgImporter.ReportIssue(DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::InconsistentData(), DwgImporter::Issue::LinetypeError(),
+        m_dwgImporter.ReportIssue(DwgImporter::IssueSeverity::Info, IssueCategory::InconsistentData(), Issue::LinetypeError(),
                                   Utf8PrintfString("%s (%lld)", name.c_str(), id).c_str());
         }
 
@@ -1741,7 +1741,7 @@ DwgSyncInfo::View DwgSyncInfo::InsertView (DgnViewId viewId, DwgDbObjectIdCR obj
     if (BE_SQLITE_DONE != vportProv.Insert(*m_dgndb))
         {
         vportProv.m_id = DgnViewId ();
-        m_dwgImporter.ReportIssueV(DwgImporter::IssueSeverity::Error, DwgImporter::IssueCategory::Sync(), DwgImporter::Issue::ViewportError(), Utf8PrintfString("inserting %s (%lld)", name.c_str(), vportId).c_str());
+        m_dwgImporter.ReportIssueV(DwgImporter::IssueSeverity::Error, IssueCategory::Sync(), Issue::ViewportError(), Utf8PrintfString("inserting %s (%lld)", name.c_str(), vportId).c_str());
         }
 
     return vportProv;
@@ -1892,7 +1892,7 @@ DwgSyncInfo::Material   DwgSyncInfo::InsertMaterial (RenderMaterialId id, DwgDbM
     if (BE_SQLITE_DONE != prov.Insert(*m_dgndb))
         {
         prov.m_id = RenderMaterialId ();
-        m_dwgImporter.ReportSyncInfoIssue(DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::Sync(), DwgImporter::Issue::MaterialError(),
+        m_dwgImporter.ReportSyncInfoIssue(DwgImporter::IssueSeverity::Info, IssueCategory::Sync(), Issue::MaterialError(),
                                   Utf8PrintfString("%s (%lld)", prov.m_name.c_str(), id).c_str());
         }
 
