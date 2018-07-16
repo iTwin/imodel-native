@@ -643,7 +643,7 @@ BentleyStatus TileCache::_Cleanup() const
     uint64_t garbageSize = sum - (m_allowedSize * .95); // 5% slack to avoid purging often
 
     CachedStatementPtr selectStatement;
-    constexpr Utf8CP selectSql = "SELECT DataSize,Created FROM " JOIN_TileTreeTables "ORDER BY Created ASC";
+    constexpr Utf8CP selectSql = "SELECT DataSize,Created FROM " JOIN_TileTreeTables " ORDER BY Created ASC";
 
     m_db.GetCachedStatement(selectStatement, selectSql);
     BeAssert(selectStatement.IsValid());
