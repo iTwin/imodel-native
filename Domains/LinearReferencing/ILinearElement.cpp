@@ -533,6 +533,38 @@ ILinearlyLocatedSingleAt::ILinearlyLocatedSingleAt(CreateAtParams const& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+LinearlyReferencedAtLocationCP ILinearlyLocatedSingleAt::GetSingleLinearlyReferencedAtLocation() const
+    {
+    if (!m_atLocationAspectId.IsValid())
+        {
+        auto aspectIds = QueryLinearlyReferencedLocationIds();
+        BeAssert(1 == aspectIds.size());
+
+        m_atLocationAspectId = aspectIds.front();
+        }
+
+    return GetLinearlyReferencedAtLocation(m_atLocationAspectId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+LinearlyReferencedAtLocationP ILinearlyLocatedSingleAt::GetSingleLinearlyReferencedAtLocationP()
+    {
+    if (!m_atLocationAspectId.IsValid())
+        {
+        auto aspectIds = QueryLinearlyReferencedLocationIds();
+        BeAssert(1 == aspectIds.size());
+
+        m_atLocationAspectId = aspectIds.front();
+        }
+
+    return GetLinearlyReferencedAtLocationP(m_atLocationAspectId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 double ILinearlyLocatedSingleAt::GetAtDistanceAlongFromStart() const
@@ -607,6 +639,41 @@ double ILinearlyLocatedSingleFromTo::GetFromDistanceAlongFromStart() const
     BeAssert(locationCP);
 
     return locationCP->GetFromPosition().GetDistanceAlongFromStart();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+LinearlyReferencedFromToLocationP ILinearlyLocatedSingleFromTo::GetSingleLinearlyReferencedFromToLocationP()
+    {
+    if (!m_fromToLocationAspectId.IsValid())
+        {
+        auto aspectIds = QueryLinearlyReferencedLocationIds();
+        BeAssert(1 == aspectIds.size());
+
+        m_fromToLocationAspectId = aspectIds.front();
+        }
+
+    auto locationP = GetLinearlyReferencedFromToLocationP(m_fromToLocationAspectId);
+    BeAssert(locationP);
+
+    return GetLinearlyReferencedFromToLocationP(m_fromToLocationAspectId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+LinearlyReferencedFromToLocationCP ILinearlyLocatedSingleFromTo::GetSingleLinearlyReferencedFromToLocation() const
+    {
+    if (!m_fromToLocationAspectId.IsValid())
+        {
+        auto aspectIds = QueryLinearlyReferencedLocationIds();
+        BeAssert(1 == aspectIds.size());
+
+        m_fromToLocationAspectId = aspectIds.front();
+        }
+
+    return GetLinearlyReferencedFromToLocation(m_fromToLocationAspectId);
     }
 
 /*---------------------------------------------------------------------------------**//**

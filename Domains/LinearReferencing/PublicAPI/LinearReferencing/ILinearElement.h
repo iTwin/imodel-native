@@ -306,6 +306,9 @@ protected:
     static bool ValidateParams(CreateAtParams const& params) { return params.m_linearElementCPtr.IsValid() && params.m_linearElementCPtr->GetElementId().IsValid(); }
 
 public:
+    LINEARREFERENCING_EXPORT LinearReferencing::LinearlyReferencedAtLocationCP GetSingleLinearlyReferencedAtLocation() const;
+    LINEARREFERENCING_EXPORT LinearReferencing::LinearlyReferencedAtLocationP GetSingleLinearlyReferencedAtLocationP();
+
     //! Get the distance along of this LinearLocated from the start of the ILinearElement
     LINEARREFERENCING_EXPORT double GetAtDistanceAlongFromStart() const;
 
@@ -357,6 +360,9 @@ protected:
     static bool ValidateParams(CreateFromToParams const& params) { return params.m_linearElementCPtr.IsValid() && params.m_linearElementCPtr->GetElementId().IsValid(); }
 
 public:
+    LINEARREFERENCING_EXPORT LinearReferencing::LinearlyReferencedFromToLocationCP GetSingleLinearlyReferencedFromToLocation() const;
+    LINEARREFERENCING_EXPORT LinearReferencing::LinearlyReferencedFromToLocationP GetSingleLinearlyReferencedFromToLocationP();
+
     //! Get the "From" distance from the start.
     LINEARREFERENCING_EXPORT double GetFromDistanceAlongFromStart() const;
     
