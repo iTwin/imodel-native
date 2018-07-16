@@ -305,8 +305,94 @@ void CompareAnalyticQuarticWithBezier (double c0, double c1, double c2, double c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(AnalyticRoots,QuarticFailureA)
+TEST(AnalyticRoots,Quartic)
     {
     CompareAnalyticQuarticWithBezier (3, -11.2, 6.279999999999999, 8.24, -3.32);
     CompareAnalyticQuarticWithBezier (3.2125, -11.87, 7.039999999999999, 8.06, -3.6300000000000003);
+    }
+
+
+void SolveBezierQuadratic(double a0, double a1, double a2, double target)
+    {
+    double uVals[2];
+    Polynomial::Bezier::Order3 bezier (a0, a1, a2);
+    for (bool restrict01 : { false, true})
+        {
+        int n = AnalyticRoots::SolveBezierQuadric (a0, a1, a2, target, uVals, restrict01);
+        for (int i = 0; i < n; i++)
+            {
+            double u = uVals[i];
+            double f = bezier.Evaluate (u);
+            Check::Near (target, f);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  7/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(AnalyticRoots,BezierQuadric)
+    {
+    for (double target : {0.0, -1.0, 1.0})
+        {
+        SolveBezierQuadratic (3, -11.2, 6.279999999999999, target);
+        SolveBezierQuadratic (3.2125, -11.87, 7.039999999999999, target );
+        }
+    }
+
+void SolveBezierCubic (double a0, double a1, double a2, double a3, double target)
+    {
+    double uVals[5];
+    Polynomial::Bezier::Order4 bezier (a0, a1, a2, a3);
+    for (bool restrict01 : { false, true})
+        {
+        int n = AnalyticRoots::SolveBezierCubic (a0, a1, a2, a3, target, uVals, restrict01);
+        for (int i = 0; i < n; i++)
+            {
+            double u = uVals[i];
+            double f = bezier.Evaluate (u);
+            Check::Near (target, f);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  7/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(AnalyticRoots,BezierCubic)
+    {
+    for (double target : {0.0, -1.0, 1.0})
+        {
+        SolveBezierCubic (-3, 1, -1, 3, target);
+        SolveBezierCubic (3.2125, -11.87, 7.039999999999999, 20.0, target );
+        }
+    }
+
+
+void SolveBezierQuartic (double a0, double a1, double a2, double a3, double a4, double target)
+    {
+    double uVals[5];
+    Polynomial::Bezier::Order5 bezier (a0, a1, a2, a3, a4);
+    for (bool restrict01 : { false, true})
+        {
+        int n = AnalyticRoots::SolveBezierQuartic (a0, a1, a2, a3, a4, target, uVals, restrict01);
+        for (int i = 0; i < n; i++)
+            {
+            double u = uVals[i];
+            double f = bezier.Evaluate (u);
+            Check::Near (target, f);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  7/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(AnalyticRoots,BezierQuartic)
+    {
+    for (double target : {0.0, -1.0, 1.0})
+        {
+        SolveBezierQuartic (-3, 1, -1, 3, 4, target);
+        SolveBezierQuartic (3.2125, -11.87, 7.039999999999999, 20.0, 25.0, target );
+        }
     }
