@@ -377,7 +377,7 @@ TEST(Spiral,DocCheck)
         DSpiral2dBase::TransitionType_Clothoid,
         DSpiral2dBase::TransitionType_NewSouthWales,
         DSpiral2dBase::TransitionType_MXCubic,
-        DSpiral2dBase::TransitionType_DirectHalfCosine
+        //DSpiral2dBase::TransitionType_DirectHalfCosine
         })
         {
         ICurvePrimitivePtr curve1 = nullptr;
