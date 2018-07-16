@@ -376,11 +376,12 @@ TEST(Spiral,DocCheck)
         {
         DSpiral2dBase::TransitionType_Clothoid,
         DSpiral2dBase::TransitionType_NewSouthWales,
-        DSpiral2dBase::TransitionType_MXCubic
+        DSpiral2dBase::TransitionType_MXCubic,
+        DSpiral2dBase::TransitionType_DirectHalfCosine
         })
         {
         ICurvePrimitivePtr curve1 = nullptr;
-        if (spiralType > 20)
+        if (spiralType >= TransitionType_FirstDirectEvaluate)
             curve1 = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (
                     spiralType,
                     DPoint3d::From (0,0,0),

@@ -90,7 +90,7 @@ static const int TransitionType_PolishCubic         = 54; // NOT IMPLEMENTED
 static const int TransitionType_AremaCubic          = 55; // NOT IMPLEMENTED
 static const int TransitionType_MXCubic             = 56; // IMPLEMENTED 01/18
 static const int TransitionType_MXCubicArc          = 57; // NOT IMPLEMENTED
-static const int TransitionType_DirectHalfCosine    = 60; // NOT IMPLEMENTED
+static const int TransitionType_DirectHalfCosine    = 60; // IN DEVELOPMENT 7/18
 
 //! invoke appropriate concrete class constructor ...
 public: static DSpiral2dBaseP Create (int transitionType);

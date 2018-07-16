@@ -482,12 +482,19 @@ Public void     jmdlRG_fixTopology
 RG_Header           *pRG
 )
     {
+    // This function seeks some known special cases of ordering and adjacency errors that result from
+    // numerical fuzz in merging.
+    // The release form only executes the tests if _countTopology reports that there are holes in the graph.
+    // Note that these holes are 3D holes (donut holes!!) -- not merely holes in an area.
+    // The test suite does not have cases that exhibit problems.  Hence the bulk of this file does not get executed.
+    // Setting (at compile time) s_checkAll to true triggers all the tests and gets file coverage up to 71% of 210 lines.
+    // (
     EmbeddedIntArray *pNodeIdToVertexIdArray = jmdlEmbeddedIntArray_grab ();
     int numHole;
 
-
+    static int s_checkAll = false;
     numHole = jmdlRG_countTopology (pRG, "PRE-FIXUP", s_noisy);
-    if (numHole > 0)
+    if (numHole > 0 || s_checkAll)
         {
         if (s_noisy)
             jmdlRG_countTopology (pRG, "PRE-FIXUP", 0);
