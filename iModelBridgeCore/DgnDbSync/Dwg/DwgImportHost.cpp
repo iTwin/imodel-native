@@ -74,7 +74,7 @@ void            DwgImportHost::_FatalError (WCharCP format, ...)
     WString     errMessage = WPrintfString (format, varArgs);
     va_end (varArgs);
 
-    m_importer->OnFatalError (DwgImporter::IssueCategory::ToolkitError(), DwgImporter::Issue::FatalError(), Utf8String(errMessage.c_str()).c_str());
+    m_importer->OnFatalError (IssueCategory::ToolkitError(), Issue::FatalError(), Utf8String(errMessage.c_str()).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -85,7 +85,7 @@ void            DwgImportHost::_Alert (WCharCP message) const
     Utf8String  msg(message);
     // remove whilte spaces and linefeed etc from front & end of the string:
     msg.Trim ();
-    m_importer->ReportError (DwgImporter::IssueCategory::ToolkitError(), DwgImporter::Issue::Error(), msg.c_str());
+    m_importer->ReportError (IssueCategory::ToolkitError(), Issue::Error(), msg.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -331,7 +331,7 @@ bool            DwgImportHost::FindFontFile (WStringR outFile, WCharCP inFont, A
         return  true;
         }
 
-    m_importer->ReportError (DwgImporter::IssueCategory::ToolkitError(), DwgImporter::Issue::FileNotFound(), inFont);
+    m_importer->ReportError (IssueCategory::ToolkitError(), Issue::FileNotFound(), inFont);
 
     return  false;
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/RasterConversion.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -978,8 +978,19 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
         models.AddModel(pModel->GetModelId());
         models.Update();
         }
+    // Schedule reality model tileset creation.
+    AddModelRequiringRealityTiles(pModel->GetModelId());
 
     return SUCCESS;    
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
+
+
+
+
+
+
+
+
+

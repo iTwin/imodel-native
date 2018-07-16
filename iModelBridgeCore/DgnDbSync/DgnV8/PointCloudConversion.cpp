@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/PointCloudConversion.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -209,6 +209,10 @@ BentleyStatus SpatialConverterBase::_ConvertPointCloudElement(DgnV8EhCR v8eh, Re
         ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), Utf8String(filename.c_str()).c_str());
         return ERROR;
         }
+
+    // Schedule reality model tileset creation.
+    AddModelRequiringRealityTiles(pPointCloudModel->GetModelId());
+
         
     // Display the point cloud (or not) in the DgnDb views
     DgnCategoryId category = GetSyncInfo().GetCategory(v8eh, v8mm);

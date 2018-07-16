@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Config/ConvertConfig.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
@@ -87,8 +87,8 @@ void DwgImporter::Config::ReadFromXmlFile ()
 
         WString errorMsg;
         m_instanceDom->GetErrorMessage (errorMsg);
-        m_dwgImporter.ReportIssueV(DwgImporter::IssueSeverity::Error, DwgImporter::IssueCategory::ConfigXml(), DwgImporter::Issue::ConfigFileError(), nullptr, Utf8String(GetInstanceFilename()).c_str(), lineNumber, column, errorMsg.c_str());
-        m_dwgImporter.ReportIssue(DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::ConfigXml(), DwgImporter::Issue::ConfigUsingDefault(), "");
+        m_dwgImporter.ReportIssueV(DwgImporter::IssueSeverity::Error, IssueCategory::ConfigXml(), Issue::ConfigFileError(), nullptr, Utf8String(GetInstanceFilename()).c_str(), lineNumber, column, errorMsg.c_str());
+        m_dwgImporter.ReportIssue(DwgImporter::IssueSeverity::Warning, IssueCategory::ConfigXml(), Issue::ConfigUsingDefault(), "");
         m_instanceDom = nullptr;
         return;
         }

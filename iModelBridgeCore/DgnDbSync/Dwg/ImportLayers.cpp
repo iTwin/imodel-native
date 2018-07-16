@@ -39,7 +39,7 @@ DwgDbObjectId   ResolveEntityLayer (DwgDbObjectId layerId)
 
     if (layer.IsNull())
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::MissingData(), DwgImporter::Issue::CantOpenObject(), "failed opening an xref layer!");
+        m_importer.ReportError (IssueCategory::MissingData(), Issue::CantOpenObject(), "failed opening an xref layer!");
         effectiveLayerId = masterDwg.GetLayer0Id ();
         }
     else if (layerId == m_xrefDwg->GetLayer0Id())
@@ -57,7 +57,7 @@ DwgDbObjectId   ResolveEntityLayer (DwgDbObjectId layerId)
         // xref layers are not saved in the master file - use the layerId of the xRef:
         if (layerId.GetDatabase() != m_xrefDwg)
             {
-            m_importer.ReportError (DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Error(), Utf8PrintfString("Invalid xref layer %ls", layer->GetName().c_str()).c_str());
+            m_importer.ReportError (IssueCategory::UnexpectedData(), Issue::Error(), Utf8PrintfString("Invalid xref layer %ls", layer->GetName().c_str()).c_str());
             effectiveLayerId = masterDwg.GetLayer0Id ();
             }
         else
@@ -72,7 +72,7 @@ DwgDbObjectId   ResolveEntityLayer (DwgDbObjectId layerId)
         DwgDbSymbolTablePtr masterFileLayers(masterDwg.GetLayerTableId(), DwgDbOpenMode::ForRead);
         if (masterFileLayers.IsNull() || !(layerId = masterFileLayers->GetByName(layerName.c_str())).IsValid())
             {
-            m_importer.ReportError (DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Error(), Utf8PrintfString("can't find xref layer %ls", layerName.c_str()).c_str());
+            m_importer.ReportError (IssueCategory::UnexpectedData(), Issue::Error(), Utf8PrintfString("can't find xref layer %ls", layerName.c_str()).c_str());
             effectiveLayerId = masterDwg.GetLayer0Id ();
             }
         else
@@ -216,7 +216,7 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
     DefinitionModelP    definitionModel = this->GetOrCreateJobDefinitionModel().get ();
     if (nullptr == definitionModel)
         {
-        this->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "SpartialCategory");
+        this->ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "SpartialCategory");
         definitionModel = &db.GetDictionaryModel ();
         }
 
@@ -376,7 +376,7 @@ void            DwgImporter::InitUncategorizedCategory ()
     DefinitionModelP    definitionModel = this->GetOrCreateJobDefinitionModel().get ();
     if (nullptr == definitionModel)
         {
-        this->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "SpartialCategory");
+        this->ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "SpartialCategory");
         definitionModel = &m_dgndb->GetDictionaryModel ();
         }
 
@@ -426,7 +426,7 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
     DefinitionModelP definitionModel = this->GetOrCreateJobDefinitionModel().get ();
     if (nullptr == definitionModel)
         {
-        this->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "DrawingCategory");
+        this->ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "DrawingCategory");
         definitionModel = &db.GetDictionaryModel();
         }
 

@@ -1216,7 +1216,7 @@ virtual void    _Shell (size_t nPoints, DPoint3dCP points, size_t nFaceList, int
                 Utf8PrintfString msg("skipped a shell having face vertex count of %d [expected %d]", nVertices, maxFaceVertices);
                 if (m_entity != nullptr)
                     msg += Utf8PrintfString(" ID=%ls", m_entity->GetObjectId().ToAscii().c_str());
-                importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), msg.c_str());
+                importer.ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::UnexpectedData(), Issue::Message(), msg.c_str());
                 return;
                 }
 
@@ -1297,14 +1297,14 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
     if (string.IsEmpty())
         {
         Utf8PrintfString    msg ("skipped empty text entity, ID=%ls!", m_entity == nullptr ? L"?" : m_entity->GetObjectId().ToAscii().c_str());
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), msg.c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::Message(), msg.c_str());
         return  BSIERROR;
         }
 
     if (!importer.ArePointsValid(&position, 1, m_drawParams.GetSourceEntity()))
         {
         Utf8PrintfString    msg ("skipped out of range text entity, ID=%ls!", m_entity == nullptr ? L"?" : m_entity->GetObjectId().ToAscii().c_str());
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::InvalidRange(), msg.c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::InvalidRange(), msg.c_str());
         return  BSIERROR;
         }
 
@@ -1313,7 +1313,7 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
     if (textString.empty())
         {
         Utf8PrintfString    msg ("skipped text containing all white spaces, ID=%ls!", m_entity == nullptr ? L"?" : m_entity->GetObjectId().ToAscii().c_str());
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), msg.c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::Message(), msg.c_str());
         return  BSIERROR;
         }
 
@@ -1437,7 +1437,7 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgS
     if (DwgDbStatus::Success != giStyle.GetFontInfo(fontInfo))
         {
         WString     fname = giStyle.GetFileName ();
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::MissingData(), DwgImporter::Issue::Message(), Utf8PrintfString("no font found in text style %s - using default font", fname.c_str()).c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::MissingData(), Issue::Message(), Utf8PrintfString("no font found in text style %s - using default font", fname.c_str()).c_str());
 
         font = importer.GetDefaultFont();
         }
@@ -1968,7 +1968,7 @@ ElementFactory::ElementFactory (DwgImporter::ElementImportResults& results, DwgI
     if (!m_partModel.IsValid())
         {
         // should not occur but back it up anyway!
-        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "GeometryParts");
+        m_importer.ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "GeometryParts");
         m_partModel = &m_importer.GetDgnDb().GetDictionaryModel ();
         }
     m_geometryMap = nullptr;
@@ -2320,7 +2320,7 @@ BentleyStatus   ElementFactory::CreatePartElements (DwgImporter::T_SharedPartLis
     if (failed > 0)
         {
         Utf8PrintfString msg("%lld out of %lld shared part geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, parts.size(), m_elementCode.GetValueUtf8CP(), m_inputs.GetEntityId().ToUInt64());
-        m_importer.ReportError (DwgImporter::IssueCategory::VisualFidelity(), DwgImporter::Issue::Error(), msg.c_str());
+        m_importer.ReportError (IssueCategory::VisualFidelity(), Issue::Error(), msg.c_str());
         if (BSISUCCESS == status)
             status = BSIERROR;
         }
@@ -2445,7 +2445,7 @@ BentleyStatus   ElementFactory::CreateIndividualElements ()
     if (failed > 0)
         {
         Utf8PrintfString msg("%lld out of %lld individual geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, total, m_elementCode.GetValueUtf8CP(), m_inputs.GetEntityId().ToUInt64());
-        m_importer.ReportError (DwgImporter::IssueCategory::VisualFidelity(), DwgImporter::Issue::Error(), msg.c_str());
+        m_importer.ReportError (IssueCategory::VisualFidelity(), Issue::Error(), msg.c_str());
         if (BSISUCCESS == status)
             status = BSIERROR;
         }
@@ -3238,7 +3238,7 @@ DgnDbStatus     DwgImporter::InsertResults (ElementImportResults& results)
         }
 
     if (ret.IsValid())  // an Invalid element is acceptable and means it was purposefully discarded during import
-        LOG_ENTITY.tracev ("Inserted %s, %s", DwgImporter::IssueReporter::FmtElement(*ret).c_str(), ret->GetDisplayLabel().c_str());
+        LOG_ENTITY.tracev ("Inserted %s, %s", IssueReporter::FmtElement(*ret).c_str(), ret->GetDisplayLabel().c_str());
 
     DgnElementId    parentId = results.m_importedElement->GetElementId ();
 
