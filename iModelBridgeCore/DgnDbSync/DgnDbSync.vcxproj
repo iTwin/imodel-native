@@ -57,6 +57,7 @@
     <ClCompile Include="DgnV8\MaterialConverter.cpp" />
     <ClCompile Include="DgnV8\PointCloudConversion.cpp" />
     <ClCompile Include="DgnV8\RasterConversion.cpp" />
+    <ClCompile Include="DgnV8\RealityModelTilesets.cpp" />
     <ClCompile Include="DgnV8\RootModelConverter.cpp" />
     <ClCompile Include="DgnV8\ScalableMeshConversion.cpp" />
     <ClCompile Include="DgnV8\ScalableMeshV8Utilities.cpp" />

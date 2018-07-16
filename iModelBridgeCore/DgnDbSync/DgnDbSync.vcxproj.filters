@@ -171,6 +171,9 @@
     <ClCompile Include="DgnV8\ScalableMeshV8Utilities.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>
+    <ClCompile Include="DgnV8\RealityModelTilesets.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="DgnV8\ImportConfig\ImportConfig.xml">
