@@ -93,6 +93,26 @@ BentleyStatus Writer::WriteGltf()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Writer::AddPrimitivesJson(Json::Value const& primitives)
+    {
+    Utf8String      meshName   = "Mesh";
+
+    Json::Value     mesh       = Json::objectValue;
+    Json::Value     meshes     = Json::objectValue;
+    Json::Value     nodes      = Json::objectValue;
+    Json::Value     rootNode   = Json::objectValue;
+
+    mesh["primitives"] = primitives;
+    meshes[meshName] = mesh;
+    rootNode["meshes"].append (meshName);
+    nodes["rootNode"] = rootNode;
+    m_json["meshes"] = meshes;
+    m_json["nodes"]  = nodes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Writer::WriteLength(uint32_t startPosition, uint32_t lengthDataPosition)

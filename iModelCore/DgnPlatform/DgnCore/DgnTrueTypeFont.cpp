@@ -740,3 +740,32 @@ double DgnTrueTypeFont::_GetDescenderRatio(DgnFontStyle fontStyle) const
         return fabs ((double)ftFace->descender / (double)ftFace->ascender);
         });
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+bvector<unsigned int /*FT_Uint*/> DgnTrueTypeFont::ComputeGlyphIndices(Utf8CP str, bool isBold, bool isItalic) const
+    {
+    bvector<unsigned int /*FT_Uint*/> glyphIndices;
+
+    // Determine the best face data to use.
+    DgnFontStyle style;
+    FreeTypeFace face = determineFace(style, isBold, isItalic, (IDgnTrueTypeFontData&)*m_data);
+    
+    // UTF-8 is mulit-byte; need to figure out each UCS "character" so we can look up the glyph.
+    bvector<Byte> ucs4CharsBuffer;
+    size_t numUcs4Chars = 0;
+    uint32_t const* ucs4Chars = DgnFont::Utf8ToUcs4(ucs4CharsBuffer, numUcs4Chars, str);
+    if (0 == numUcs4Chars)
+        return glyphIndices;
+    
+    // Convert to glyph indices.
+    glyphIndices.reserve(numUcs4Chars);
+    face.Execute([&](FT_Face face)
+        {
+        for (size_t iGlyph = 0; iGlyph < numUcs4Chars; ++iGlyph)
+            glyphIndices.push_back(FT_Get_Char_Index(face, ucs4Chars[iGlyph]));
+        });
+
+    return glyphIndices;
+    }

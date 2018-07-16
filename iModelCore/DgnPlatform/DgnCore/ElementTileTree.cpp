@@ -1073,7 +1073,7 @@ BentleyStatus Loader::_LoadTile()
             {
             if (geometry.IsEmpty() || !geometry.ContainsCurves())
                 tile.SetIsLeaf();
-            else if (isLeafInCache && !T_HOST.GetTileAdmin()._WantCachedHiResTiles(root.GetDgnDb()))
+            else if (isLeafInCache)
                 tile.SetZoomFactor(1.0);
             }
         }
