@@ -55,7 +55,7 @@ bool RegionsApiWrapper::ImprintPoly
         for (size_t i = 0; i < pointArrayCount; i++)
             {
             pPointArray[i].z = 0.0;
-            bsiDPoint3d_scaleInPlace(&pPointArray[i], 1.0 / m_uorToMeter);
+            pPointArray[i].Scale (1.0 / m_uorToMeter);
             pPointArray[i].z = 0.0;
             }
 
@@ -143,13 +143,13 @@ bool RegionsApiWrapper::GetEndPoints
 
     if (pStartPoint)
         {
-        bsiDPoint3d_scaleInPlace(pStartPoint, m_uorToMeter);
+        pStartPoint->Scale (m_uorToMeter);
         m_localToWorldTransform.Multiply(*pStartPoint);
         }
 
     if (pEndPoint)
         {
-        bsiDPoint3d_scaleInPlace(pEndPoint, m_uorToMeter);
+        pEndPoint->Scale (m_uorToMeter);
         m_localToWorldTransform.Multiply(*pEndPoint);
         }
 
@@ -492,13 +492,10 @@ bvector<MTGNodeId> RegionsApiWrapper::GetFaces
 )
     {
     bvector<MTGNodeId>nodes;
-    EmbeddedIntArray* pFaceStartArray = jmdlEmbeddedIntArray_grab();
-    MTGNodeId         faceNodeId = MTG_NULL_NODEID;
-    int               iFace = 0;
+    bvector<MTGNodeId> faceStartArray;
+    jmdlRG_getGraph (m_pRG)->CollectFaceLoops (faceStartArray);
 
-    jmdlMTGGraph_collectAndNumberFaceLoops(jmdlRG_getGraph(m_pRG), pFaceStartArray, NULL);
-
-    while (jmdlEmbeddedIntArray_getInt(pFaceStartArray, &faceNodeId, iFace++))
+    for (auto faceNodeId : faceStartArray)
         {
         // DO NOT test for directed edge here; the face may have been formed from linestrings, in which case its edges may be directed or not!
         bool isPositive = !jmdlRG_faceIsNegativeArea(m_pRG, faceNodeId);
@@ -508,8 +505,6 @@ bvector<MTGNodeId> RegionsApiWrapper::GetFaces
             nodes.push_back(faceNodeId);
             }
         }
-
-    jmdlEmbeddedIntArray_drop(pFaceStartArray);
 
     return nodes;
     }
