@@ -74,8 +74,7 @@ BentleyStatus ChangeSummaryExtractor::Extract(Context& ctx, ECInstanceId summary
         ECInstanceId primaryInstanceId = rowEntry.GetPrimaryInstanceId();
         if (primaryClass == nullptr || !primaryInstanceId.IsValid())
             {
-            ctx.Issues().ReportV("Could not determine the primary instance corresponding to a change to table %s", rowEntry.GetTableName().c_str());
-            BeAssert(false && "Could not determine the primary instance corresponding to a change.");
+            ctx.Issues().ReportV("Could not determine the primary instance for %s", rowEntry.ToString().c_str());
             return ERROR;
             }
 
@@ -107,8 +106,14 @@ BentleyStatus ChangeSummaryExtractor::ExtractInstance(Context& ctx, ECInstanceId
     {
     InstanceChange instance(summaryId, ECInstanceKey(rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId()), rowEntry.GetDbOpcode(),
                                        RawIndirectToBool(rowEntry.GetIndirect()));
-    bool recordOnlyIfUpdatedProperties = (rowEntry.GetDbOpcode() == DbOpcode::Update);
-    return RecordInstance(ctx, instance, rowEntry, recordOnlyIfUpdatedProperties);
+    const bool recordOnlyIfUpdatedProperties = (rowEntry.GetDbOpcode() == DbOpcode::Update);
+    if (SUCCESS != RecordInstance(ctx, instance, rowEntry, recordOnlyIfUpdatedProperties))
+        {
+        ctx.Issues().ReportV("Failed to extract change summary. Failed to extract from %s.", rowEntry.ToString().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -122,8 +127,8 @@ BentleyStatus ChangeSummaryExtractor::ExtractRelInstance(Context& ctx, ECInstanc
     ClassMap const* classMap = ctx.GetPrimaryFileSchemaManager().GetClassMap(*primaryClass);
     if (classMap == nullptr)
         {
-        ctx.Issues().ReportV("Failed to extract change summary. The changed relationship class '%s' is not in the main ECDb, but in an attached file, which is not supported.",
-                            primaryClass->GetFullName());
+        ctx.Issues().ReportV("Failed to extract change summary. The changed relationship class '%s' is not in the main ECDb, but in an attached file, which is not supported. [%s]",
+                            primaryClass->GetFullName(), rowEntry.ToString().c_str());
         return ERROR;
         }
 
@@ -519,20 +524,25 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
 
         relClassId = rowEntry.GetClassIdFromChangeOrTable(relClassIdColumnMap.GetName().c_str(), rowEntry.GetPrimaryInstanceId());
         if (!relClassId.IsValid())
-            return ERROR; //rel class id wasn't set along with nav id
+            {
+            //rel class id wasn't set along with nav id
+            ctx.Issues().ReportV("Failed to extract change summary. ECClassId of ForeignKey Relationship %s not found.", rowEntry.ToString().c_str());
+            return ERROR;
+            }
         }
 
-    ECInstanceId relInstanceId = rowEntry.GetPrimaryInstanceId();
-    
     ECN::ECClassCP relClassRaw = ctx.GetPrimaryECDb().Schemas().GetClass(relClassId);
     if (relClassRaw == nullptr || !relClassRaw->IsRelationshipClass())
         {
-        BeAssert(false);
+        //rel class id wasn't set along with nav id
+        ctx.Issues().ReportV("Failed to extract change summary. ForeignKey Relationship %s does not refer to relationship.", rowEntry.ToString().c_str());
         return ERROR;
         }
-    ECRelationshipClassCR relClass = *relClassRaw->GetRelationshipClassCP();
 
+    ECRelationshipClassCR relClass = *relClassRaw->GetRelationshipClassCP();
     RelationshipClassEndTableMap const& relClassMap = ctx.GetPrimaryFileSchemaManager().GetClassMap(relClass)->GetAs<RelationshipClassEndTableMap>();
+
+    ECInstanceId relInstanceId = rowEntry.GetPrimaryInstanceId();
 
     // Setup this end of the relationship (Note: EndInstanceId = RelationshipInstanceId)
     ECN::ECClassId thisEndClassId = rowEntry.GetPrimaryClass()->GetId();
@@ -545,6 +555,8 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
     if (otherEndClassIdColumn == nullptr)
         {
         BeAssert(false && "Need to adjust code when constraint ecclassid column is nullptr");
+        ctx.Issues().ReportV("Failed to extract change summary. %sECClassId column not found for ForeignKey Relationship %s.", otherEnd == ECRelationshipEnd_Source ? "Source" : "Target",
+                             rowEntry.ToString().c_str());
         return ERROR;
         }
 
@@ -555,7 +567,7 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
         ECRelationshipConstraintCR endConstraint = (otherEnd == ECRelationshipEnd_Source) ? relClass.GetSource() : relClass.GetTarget();
         if (endConstraint.GetConstraintClasses().size() != 1)
             {
-            BeAssert(false && "Multiple classes at end. Cannot pick something arbitrary");
+            ctx.Issues().ReportV("Failed to extract change summary. Could not determine %sECClassId for the ForeignKey Relationship '%s': More than one constraint class on this end.", otherEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
             return ERROR;
             }
 
@@ -567,7 +579,7 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
         DbTable const& otherEndTable = otherEndClassIdColumn->GetTable();
         if (otherEndTable.GetPrimaryKeyConstraint() == nullptr || otherEndTable.GetPrimaryKeyConstraint()->GetColumns().size() != 1)
             {
-            BeAssert(false && "Other end table is expected to have primary key constraint with one column");
+            ctx.Issues().ReportV("Failed to extract change summary. Could not determine %sECClassId for the ForeignKey Relationship '%s': Related table has a multi-column primary key which is not supported.", otherEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
             return ERROR;
             }
          
@@ -575,16 +587,24 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
 
         if (newOtherEndInstanceId.IsValid())
             {
-            newOtherEndClassId = DbUtilities::QueryRowClassId(ctx.GetPrimaryECDb(), otherEndTable.GetName(), otherEndClassIdColumn->GetName(), otherEndPkCol.GetName(),
-                                                                         newOtherEndInstanceId);
-            BeAssert(newOtherEndClassId.IsValid());
+            if (SUCCESS != DbUtilities::QueryRowClassId(newOtherEndClassId, ctx.GetPrimaryECDb(), otherEndTable.GetName(), otherEndClassIdColumn->GetName(), otherEndPkCol.GetName(),
+                                                              newOtherEndInstanceId))
+                {
+                ctx.Issues().ReportV("Failed to extract change summary. Could not determine new value of %sECClassId for the ForeignKey Relationship '%s': Related instance in related table %s not found.", otherEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str(),
+                                     otherEndTable.GetName().c_str());
+                return ERROR;
+                }
             }
 
         if (oldOtherEndInstanceId.IsValid())
             {
-            oldOtherEndClassId = DbUtilities::QueryRowClassId(ctx.GetPrimaryECDb(), otherEndTable.GetName(), otherEndClassIdColumn->GetName(), otherEndPkCol.GetName(),
-                                                                         oldOtherEndInstanceId);
-            BeAssert(oldOtherEndClassId.IsValid());
+            if (SUCCESS != DbUtilities::QueryRowClassId(oldOtherEndClassId, ctx.GetPrimaryECDb(), otherEndTable.GetName(), otherEndClassIdColumn->GetName(), otherEndPkCol.GetName(),
+                                                                         oldOtherEndInstanceId))
+                {
+                ctx.Issues().ReportV("Failed to extract change summary. Could not determine old value of %sECClassId for the ForeignKey Relationship '%s': Related instance in related table %s not found.", otherEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str(),
+                                     otherEndTable.GetName().c_str());
+                return ERROR;
+                }
             }
         }
 
@@ -622,7 +642,13 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
         }
 
     InstanceChange instance(summaryId, ECInstanceKey(relClassId, relInstanceId), relDbOpcode, RawIndirectToBool(rowEntry.GetIndirect()));
-    return ChangeSummaryExtractor::RecordRelInstance(ctx, instance, rowEntry, *oldSourceInstanceKey, *newSourceInstanceKey, *oldTargetInstanceKey, *newTargetInstanceKey);
+    if (SUCCESS != ChangeSummaryExtractor::RecordRelInstance(ctx, instance, rowEntry, *oldSourceInstanceKey, *newSourceInstanceKey, *oldTargetInstanceKey, *newTargetInstanceKey))
+        {
+        ctx.Issues().ReportV("Failed to extract change summary. Failed to persist extraction from ForeignKey Relationship %s.", rowEntry.ToString().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 
@@ -640,12 +666,20 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::Extract(Conte
     InstanceChange instance(summaryId, ECInstanceKey(rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId()), rowEntry.GetDbOpcode(), RawIndirectToBool(rowEntry.GetIndirect()));
 
     ECInstanceKey oldSourceInstanceKey, newSourceInstanceKey;
-    GetRelEndInstanceKeys(ctx, oldSourceInstanceKey, newSourceInstanceKey, summaryId, rowEntry, classMap, instance.GetKeyOfChangedInstance().GetInstanceId(), ECRelationshipEnd_Source);
+    if (SUCCESS != GetRelEndInstanceKeys(ctx, oldSourceInstanceKey, newSourceInstanceKey, summaryId, rowEntry, classMap, instance.GetKeyOfChangedInstance().GetInstanceId(), ECRelationshipEnd_Source))
+        return ERROR;
 
     ECInstanceKey oldTargetInstanceKey, newTargetInstanceKey;
-    GetRelEndInstanceKeys(ctx, oldTargetInstanceKey, newTargetInstanceKey, summaryId, rowEntry, classMap, instance.GetKeyOfChangedInstance().GetInstanceId(), ECRelationshipEnd_Target);
+    if (SUCCESS != GetRelEndInstanceKeys(ctx, oldTargetInstanceKey, newTargetInstanceKey, summaryId, rowEntry, classMap, instance.GetKeyOfChangedInstance().GetInstanceId(), ECRelationshipEnd_Target))
+        return ERROR;
 
-    return ChangeSummaryExtractor::RecordRelInstance(ctx, instance, rowEntry, oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey);
+    if (SUCCESS != ChangeSummaryExtractor::RecordRelInstance(ctx, instance, rowEntry, oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey))
+        {
+        ctx.Issues().ReportV("Failed to extract change summary. Failed to persist extraction from Link Table %s.", rowEntry.ToString().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -669,7 +703,7 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndInst
     if (columnsDisp.GetColumns().size() != 1)
         return ERROR;
 
-    int instanceIdColumnIndex = rowEntry.GetTableMap()->GetColumnIndexByName(columnsDisp.GetColumns()[0]->GetName());
+    const int instanceIdColumnIndex = rowEntry.GetTableMap()->GetColumnIndexByName(columnsDisp.GetColumns()[0]->GetName());
     BeAssert(instanceIdColumnIndex >= 0);
 
     ECInstanceId oldEndInstanceId, newEndInstanceId;
@@ -677,15 +711,19 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndInst
 
     if (newEndInstanceId.IsValid())
         {
-        ECClassId newClassId = GetRelEndClassId(ctx, summaryId, rowEntry, relClassMap, relInstanceId, relEnd, newEndInstanceId);
-        BeAssert(newClassId.IsValid());
+        ECClassId newClassId;
+        if (SUCCESS != GetRelEndClassId(newClassId, ctx, summaryId, rowEntry, relClassMap, relInstanceId, relEnd, newEndInstanceId, false))
+            return ERROR;
+
         newInstanceKey = ECInstanceKey(newClassId, newEndInstanceId);
         }
 
     if (oldEndInstanceId.IsValid())
         {
-        ECClassId oldClassId = GetRelEndClassId(ctx, summaryId, rowEntry, relClassMap, relInstanceId, relEnd, oldEndInstanceId);
-        BeAssert(oldClassId.IsValid());
+        ECClassId oldClassId;
+        if (SUCCESS != GetRelEndClassId(oldClassId, ctx, summaryId, rowEntry, relClassMap, relInstanceId, relEnd, oldEndInstanceId, true))
+            return ERROR;
+
         oldInstanceKey = ECInstanceKey(oldClassId, oldEndInstanceId);
         }
 
@@ -696,21 +734,22 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndInst
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
 //static
-ECN::ECClassId ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndClassId(Context& ctx, ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relationshipClassMap, ECInstanceId relationshipInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId relEndInstanceId)
+BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndClassId(ECClassId& endClassId, Context& ctx, ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relationshipClassMap, ECInstanceId relationshipInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId relEndInstanceId, bool isBeforeChange)
     {
     ConstraintECClassIdPropertyMap const* classIdPropMap = relationshipClassMap.GetConstraintECClassIdPropMap(relEnd);
     if (classIdPropMap == nullptr)
         {
-        BeAssert(false);
-        return ECClassId();
+        ctx.Issues().ReportV("Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': Its PropertyMap could not be found.",
+                             isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+        return ERROR;
         }
 
     GetColumnsPropertyMapVisitor columnsDisp(PropertyMap::Type::All, /* doNotSkipSystemPropertyMaps */ true);
     classIdPropMap->AcceptVisitor(columnsDisp);
     if (columnsDisp.GetColumns().size() != 1)
         {
-        BeAssert(false);
-        return ECClassId();
+        ctx.Issues().ReportV("Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': Its PropertyMap maps to more than one column.", isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+        return ERROR;
         }
 
     DbColumn const* classIdColumn = columnsDisp.GetColumns()[0];
@@ -729,15 +768,6 @@ ECN::ECClassId ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndCla
     *    + Note that the end table could be the relationship table itself in case of foreign key constraints (e.g., Element's ParentId)
     *    + We detect this case by checking if the ClassId constraint column is persisted, and is setup as the primary "ECClassId" column
     *      of the table that contains it. Note that the latter check differentiates case #3.
-    *
-    * 3. By definition the end can point to many tables, and a Source/Target ECClassId column in the relationship table stores the ECClassId
-    *    + We use the relationship instance id to search the Source/Target ECClassId column in the relationship table
-    *    + Even if the Source/Target ECClassId is in the same row as the currently processed change, it may not be part of the
-    *      change if it wasn't modified. Therefore we need to first search for the column in the current change, and subsequently the DbTable.
-    *    + Note that like the previous case, the end table could be the same as the relationship table.
-    *    + We detect this case by checking if the ClassId constraint column is persisted, and is *not* the primary "ECClassId" column of the
-    *      table that contains it.
-    *
     */
 
     // Case #1: End can point to only one class
@@ -748,34 +778,53 @@ ECN::ECClassId ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndCla
         ECRelationshipConstraintCR endConstraint = (relEnd == ECRelationshipEnd_Source) ? relClass.GetSource() : relClass.GetTarget();
         if (endConstraint.GetConstraintClasses().size() != 1)
             {
-            BeAssert(false && "Multiple classes at end. Cannot pick something arbitrary");
-            return ECClassId();
+            ctx.Issues().ReportV("Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': More than one constraint class on this end.", isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+            return ERROR;
             }
 
-        return endConstraint.GetConstraintClasses()[0]->GetId();
+        endClassId = endConstraint.GetConstraintClasses()[0]->GetId();
+        return SUCCESS;
         }
 
     // Case #2: End is in only one table (Note: not in the current table the row belongs to, but some OTHER end table)
-    const bool endIsInOneTable = classIdPropMap->GetTables().size() == 1;
-    if (endIsInOneTable)
+    if (classIdPropMap->GetTables().size() > 1)
         {
-        DbTable const& endTable = classIdColumn->GetTable();
-        if (endTable.GetPrimaryKeyConstraint() == nullptr || endTable.GetPrimaryKeyConstraint()->GetColumns().size() != 1)
-            {
-            BeAssert(false && "End table is expected to have a single col PK");
-            return ECClassId();
-            }
-        // Search in the end table
-        ECClassId classId = DbUtilities::QueryRowClassId(ctx.GetPrimaryECDb(), endTable.GetName(), classIdColumn->GetName(), endTable.GetPrimaryKeyConstraint()->GetColumns()[0]->GetName(), relEndInstanceId);
-        BeAssert(classId.IsValid());
-        return classId;
+        BeAssert(false && "Link table with multiple related tables on one constraint end is not supported, so should not occur anymore");
+        ctx.Issues().ReportV("Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': Constraint maps to more than one table which is not supported.", isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+        return ERROR;
         }
 
-    // Case #3: End could be in many tables
-    Utf8StringCR classIdColumnName = classIdColumn->GetName();
-    ECClassId classId = rowEntry.GetClassIdFromChangeOrTable(classIdColumnName.c_str(), relationshipInstanceId);
-    BeAssert(classId.IsValid());
-    return classId;
+    DbTable const& relatedTable = classIdColumn->GetTable();
+    if (relatedTable.GetPrimaryKeyConstraint() == nullptr || relatedTable.GetPrimaryKeyConstraint()->GetColumns().size() != 1)
+        {
+        ctx.Issues().ReportV("Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': Related table has a multi-column primary key which is not supported.", isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+        return ERROR;
+        }
+
+    // Search in the related table
+    // Search in all changes of this summary
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("SELECT ChangedInstance.ClassId FROM change.InstanceChange WHERE Summary.Id=? AND ChangedInstance.Id=?");
+    if (stmt == nullptr || ECSqlStatus::Success != stmt->BindId(1, summaryId) || ECSqlStatus::Success != stmt->BindId(2, relEndInstanceId))
+        {
+        ctx.Issues().ReportV("Failed to extract change summary. ECSQL to determine %s value of %sECClassId for the Link Table '%s' in the current change summary failed to execute.", isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+        return ERROR;
+        }
+
+    if (BE_SQLITE_ROW == stmt->Step())
+        {
+        endClassId = stmt->GetValueId<ECClassId>(0);
+        return SUCCESS;
+        }
+
+    stmt = nullptr;
+
+    if (SUCCESS != DbUtilities::QueryRowClassId(endClassId, ctx.GetPrimaryECDb(), relatedTable.GetName(), classIdColumn->GetName(), relatedTable.GetPrimaryKeyConstraint()->GetColumns()[0]->GetName(), relEndInstanceId))
+        {
+        ctx.Issues().ReportV("Failed to extract change summary. ECSQL to determine %s value of %sECClassId for the Link Table '%s' in the related table %s failed to execute.", isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str(), relatedTable.GetName().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //****************************************************************************************************
