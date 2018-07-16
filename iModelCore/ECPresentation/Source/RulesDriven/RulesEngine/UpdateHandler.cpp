@@ -329,6 +329,9 @@ IUpdateTaskPtr UpdateTasksFactory::CreateReportTask(UpdateRecord record) const
         return nullptr;
         }
 
+    if (nullptr == m_recordsHandler)
+        return nullptr;
+
     return new HierarchyChangeReportTask(*m_recordsHandler, record);
     }
 
@@ -337,6 +340,9 @@ IUpdateTaskPtr UpdateTasksFactory::CreateReportTask(UpdateRecord record) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IUpdateTaskPtr UpdateTasksFactory::CreateReportTask(FullUpdateRecord record) const
     {
+    if (nullptr == m_recordsHandler)
+        return nullptr;
+
     return new FullUpdateReportTask(*m_recordsHandler, record);
     }
 
@@ -451,7 +457,7 @@ void UpdateHandler::AddTask(bvector<IUpdateTaskPtr>& tasks, size_t startIndex, I
     {
     uint32_t taskPriority = task.GetPriority();
     auto iter = tasks.begin() + startIndex;
-    while (iter != tasks.end() && (*iter)->GetPriority() >= taskPriority)
+    while (iter != tasks.end() && (*iter).IsValid() && (*iter)->GetPriority() >= taskPriority)
         iter++;
 
     tasks.insert(iter, &task);
@@ -472,18 +478,23 @@ void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
     size_t i = 0;
     while (i < tasks.size())
         {
-        IUpdateTaskPtr task = tasks[i];
+        IUpdateTaskPtr task = tasks[i++];
+        if (task.IsNull())
+            continue;
+            
         LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("Executing task: %s", task->GetPrintStr().c_str()).c_str());
 
         StopWatch timer(nullptr, true);
         bvector<IUpdateTaskPtr> subTasks = task->Perform();
 
-        LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("Task executed in %.2f s. Resulted in %" PRIu64 " sub-tasks.", 
+        LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("Task executed in %.2f s. Resulted in %" PRIu64 " sub-tasks.",
             timer.GetCurrentSeconds(), (uint64_t)subTasks.size()).c_str());
 
         for (IUpdateTaskPtr const& subTask : subTasks)
-            AddTask(tasks, i + 1, *subTask);
-        i++;
+            {
+            if (subTask.IsValid())
+                AddTask(tasks, i, *subTask);
+            }
         }
     LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("Total executed tasks: %u", i).c_str());
 
@@ -583,7 +594,8 @@ void UpdateHandler::NotifyCategoriesChanged()
 NavNodesProviderPtr HierarchyUpdater::CreateProvider(IConnectionCR connection, HierarchyLevelInfo const& info) const
     {
     // create the nodes provider context
-    NavNodesProviderContextPtr context = m_contextFactory.Create(connection, info.GetRulesetId().c_str(), info.GetPhysicalParentNodeId());
+    NavNodesProviderContextPtr context = m_contextFactory.Create(connection, info.GetRulesetId().c_str(), 
+        info.GetLocale().c_str(), info.GetPhysicalParentNodeId());
     if (context.IsNull())
         return nullptr;
 
@@ -724,6 +736,7 @@ void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTask
         {
         NavNodesProviderContextCR parentProviderContext = parentProvider->GetContext();
         HierarchyLevelInfo parentInfo(parentProviderContext.GetConnection().GetId(), parentProviderContext.GetRuleset().GetRuleSetId(),
+            parentProviderContext.IsLocalizationContext() ? parentProviderContext.GetLocale() : "", 
             parentProviderContext.GetPhysicalParentNodeId());
         subTasks.push_back(m_tasksFactory.CreateRefreshHierarchyTask(*this, context, parentProviderContext.GetConnection(), parentInfo));
         }
@@ -734,6 +747,7 @@ void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTask
 void HierarchyUpdater::CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR nodeToCustomize, NavNodesProviderCR newNodeProvider) const
     {
     bool nodeChanged = false;
+    DataSourceRelatedSettingsUpdater updater(newNodeProvider.GetDataSourceInfo(), newNodeProvider.GetContext());
 
     // if the old node was customized, we have to customize the new one as well;
     // otherwise the comparison is incorrect

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/StatementHandlers.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -27,7 +27,7 @@ protected:
         Utf8CP displayLabel = statement.GetValueText(GetContract().GetIndex(Contract::DisplayLabelFieldName));
         Utf8CP relatedInstanceInfo = statement.GetValueText(GetContract().GetIndex(Contract::RelatedInstanceInfoFieldName));
         Utf8CP skippedInstanceKeys = statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName));
-        JsonNavNodePtr node = GetFactory().CreateECInstanceNode(GetConnection(), ecClassId, ecInstanceId, displayLabel);
+        JsonNavNodePtr node = GetFactory().CreateECInstanceNode(GetConnection(), GetLocale(), ecClassId, ecInstanceId, displayLabel);
         if (node.IsValid())
             {
             NavNodesHelper::AddRelatedInstanceInfo(*node, relatedInstanceInfo);
@@ -62,7 +62,7 @@ protected:
         {
         Utf8CP displayLabel = statement.GetValueText(GetContract().GetIndex(Contract::DisplayLabelFieldName));
         GroupedInstanceKeysList keys = GetGroupedInstanceKeys<Contract>(statement, GetContract());
-        JsonNavNodePtr node = GetFactory().CreateDisplayLabelGroupingNode(GetConnection().GetId(), displayLabel, keys);
+        JsonNavNodePtr node = GetFactory().CreateDisplayLabelGroupingNode(GetConnection().GetId(), GetLocale(), displayLabel, keys);
         if (node.IsValid())
             {
             Utf8CP skippedInstanceKeys = statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName));
@@ -101,7 +101,7 @@ protected:
 
         Utf8CP displayLabel = statement.GetValueText(GetContract().GetIndex(Contract::DisplayLabelFieldName));
         GroupedInstanceKeysList keys = GetGroupedInstanceKeys<Contract>(statement, GetContract());
-        JsonNavNodePtr node = GetFactory().CreateECClassGroupingNode(GetConnection().GetId(), *ecClass, displayLabel, keys);
+        JsonNavNodePtr node = GetFactory().CreateECClassGroupingNode(GetConnection().GetId(), GetLocale(), *ecClass, displayLabel, keys);
         if (node.IsValid())
             {
             Utf8CP skippedInstanceKeys = statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName));
@@ -140,7 +140,7 @@ protected:
 
         Utf8CP displayLabel = statement.GetValueText(GetContract().GetIndex(Contract::DisplayLabelFieldName));
         GroupedInstanceKeysList keys = GetGroupedInstanceKeys<Contract>(statement, GetContract());
-        JsonNavNodePtr node = GetFactory().CreateECClassGroupingNode(GetConnection().GetId(), *ecClass, displayLabel, keys);
+        JsonNavNodePtr node = GetFactory().CreateECClassGroupingNode(GetConnection().GetId(), GetLocale(), *ecClass, displayLabel, keys);
         if (node.IsValid())
             {
             Utf8CP skippedInstanceKeys = statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName));
@@ -362,7 +362,7 @@ protected:
         rapidjson::Document groupingValue = GetGroupingValueAsJson(*ecProperty, statement.GetValueText(GetContract().GetIndex(Contract::GroupingValuesFieldName)), isRangeGroupingNode);
         Utf8CP imageId = statement.GetValueText(GetContract().GetIndex(Contract::ImageIdFieldName));
         GroupedInstanceKeysList keys = GetGroupedInstanceKeys<Contract>(statement, GetContract());
-        JsonNavNodePtr node = GetFactory().CreateECPropertyGroupingNode(GetConnection().GetId(), *ecClass, *ecProperty, displayLabel, imageId, groupingValue, isRangeGroupingNode, keys);
+        JsonNavNodePtr node = GetFactory().CreateECPropertyGroupingNode(GetConnection().GetId(), GetLocale(), *ecClass, *ecProperty, displayLabel, imageId, groupingValue, isRangeGroupingNode, keys);
         if (node.IsValid())
             {
             Utf8CP skippedInstanceKeys = statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName));
@@ -378,7 +378,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeReaderPtr NavNodeReader::Create(JsonNavNodesFactory const& factory, IConnectionCR connection, NavigationQueryContract const& contract, NavigationQueryResultType resultType)
+NavNodeReaderPtr NavNodeReader::Create(JsonNavNodesFactory const& factory, IConnectionCR connection, Utf8StringCR locale, NavigationQueryContract const& contract, NavigationQueryResultType resultType)
     {
     NavNodeReaderPtr reader = nullptr;
     switch (resultType)
@@ -407,5 +407,6 @@ NavNodeReaderPtr NavNodeReader::Create(JsonNavNodesFactory const& factory, IConn
         }
 
     reader->m_connection = &connection;
+    reader->m_locale = &locale;
     return reader;
     }

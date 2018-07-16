@@ -24,18 +24,21 @@ struct NavNodeReader : RefCountedBase
 {
 private:
     IConnectionCP m_connection;
+    Utf8StringCP m_locale;
     JsonNavNodesFactory const& m_factory;
     NavigationQueryContract const& m_contract;
 
 protected:
-    NavNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : m_factory(factory), m_contract(contract) {}
+    NavNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) 
+        : m_factory(factory), m_contract(contract), m_connection(nullptr), m_locale(nullptr) {}
     IConnectionCR GetConnection() const {return *m_connection;}
+    Utf8StringCR GetLocale() const {return *m_locale;}
     JsonNavNodesFactory const& GetFactory() const {return m_factory;}
     NavigationQueryContract const& GetContract() const {return m_contract;}
     virtual JsonNavNodePtr _ReadNode(ECSqlStatementCR statement) const = 0;
 
 public:
-    static NavNodeReaderPtr Create(JsonNavNodesFactory const&, IConnectionCR, NavigationQueryContract const&, NavigationQueryResultType resultType);
+    static NavNodeReaderPtr Create(JsonNavNodesFactory const&, IConnectionCR, Utf8StringCR, NavigationQueryContract const&, NavigationQueryResultType resultType);
     virtual ~NavNodeReader() {}
     JsonNavNodePtr ReadNode(ECSqlStatementCR statement) const {return _ReadNode(statement);}
 };
@@ -87,6 +90,7 @@ private:
     NavigationQueryCP m_query;
     JsonNavNodesFactory const& m_nodesFactory;
     NavNodeReaderPtr m_reader;
+    Utf8String m_locale;
     mutable bvector<JsonNavNodePtr> m_nodes;
     
 protected:
@@ -94,8 +98,8 @@ protected:
     void _ReadRecord(ECSqlStatement&) override;
 
 public:
-    ECPRESENTATION_EXPORT NavigationQueryExecutor(JsonNavNodesFactory const&, IConnectionCR, ECSqlStatementCache const&, NavigationQuery const&);
-    ECPRESENTATION_EXPORT NavigationQueryExecutor(JsonNavNodesFactory const&, IConnectionCR, ECSqlStatementCache const&);
+    ECPRESENTATION_EXPORT NavigationQueryExecutor(JsonNavNodesFactory const&, IConnectionCR, Utf8StringCR, ECSqlStatementCache const&, NavigationQuery const&);
+    ECPRESENTATION_EXPORT NavigationQueryExecutor(JsonNavNodesFactory const&, IConnectionCR, Utf8StringCR, ECSqlStatementCache const&);
     ECPRESENTATION_EXPORT void SetQuery(NavigationQuery const& query, bool clearCache = true);
     ECPRESENTATION_EXPORT JsonNavNodePtr GetNode(size_t index) const;
     ECPRESENTATION_EXPORT size_t GetNodesCount() const;

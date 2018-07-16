@@ -28,21 +28,23 @@ struct LocalizationHelperTests : ECPresentationTest
     PresentationRuleSetPtr m_ruleset;
     TestLocalizationProvider m_l10nProvider;
     LocalizationHelper m_helper;
-    LocalizationHelperTests() : m_ruleset(PresentationRuleSet::CreateInstance("", 1, 0, false, "", "", "", false)), m_helper(m_l10nProvider, m_ruleset.get()) {}
+    LocalizationHelperTests() 
+        : m_ruleset(PresentationRuleSet::CreateInstance("", 1, 0, false, "", "", "", false)), m_helper(m_l10nProvider, "test locale", m_ruleset.get()) {}
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(LocalizationHelperTests, LocalizeString_PassesValidKeyToLocalizationProvider)
+TEST_F(LocalizationHelperTests, LocalizeString_PassesValidLocaleAndKeyToLocalizationProvider)
     {
-    m_l10nProvider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue)
+    m_l10nProvider.SetHandler([](Utf8StringCR locale, Utf8StringCR key, Utf8StringR localizedValue)
         {
-        EXPECT_TRUE(0 == strcmp("test", key.c_str()));
+        EXPECT_STREQ("test locale", locale.c_str());
+        EXPECT_STREQ("test key", key.c_str());
         localizedValue = key;
         return true;
         });
-    Utf8String str = "@test@";
+    Utf8String str = "@test key@";
     m_helper.LocalizeString(str);
     SUCCEED();
     }
@@ -52,7 +54,7 @@ TEST_F(LocalizationHelperTests, LocalizeString_PassesValidKeyToLocalizationProvi
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LocalizationHelperTests, LocalizeString_JustLocalizedPart)
     {
-    m_l10nProvider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
+    m_l10nProvider.SetHandler([](Utf8StringCR, Utf8StringCR key, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
     Utf8String str = "@Namespace:Id@";
     ASSERT_TRUE(m_helper.LocalizeString(str));
     ASSERT_STREQ("localized", str.c_str());
@@ -63,7 +65,7 @@ TEST_F(LocalizationHelperTests, LocalizeString_JustLocalizedPart)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LocalizationHelperTests, LocalizeString_MultipleLocalizedParts)
     {
-    m_l10nProvider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
+    m_l10nProvider.SetHandler([](Utf8StringCR, Utf8StringCR key, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
     Utf8String str = "@Namespace:Id@@Namespace:Id@";
     ASSERT_TRUE(m_helper.LocalizeString(str));
     ASSERT_STREQ("localizedlocalized", str.c_str());
@@ -74,7 +76,7 @@ TEST_F(LocalizationHelperTests, LocalizeString_MultipleLocalizedParts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LocalizationHelperTests, LocalizeString_MultipleLocalizedPartsWithOtherText)
     {
-    m_l10nProvider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
+    m_l10nProvider.SetHandler([](Utf8StringCR, Utf8StringCR key, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
     Utf8String str = "123@Namespace:Id@ @Namespace:Id@ @Namespace:Id";
     ASSERT_TRUE(m_helper.LocalizeString(str));
     ASSERT_STREQ("123localized localized @Namespace:Id", str.c_str());
@@ -85,7 +87,7 @@ TEST_F(LocalizationHelperTests, LocalizeString_MultipleLocalizedPartsWithOtherTe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LocalizationHelperTests, LocalizeString_NoLocalizedParts)
     {
-    m_l10nProvider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
+    m_l10nProvider.SetHandler([](Utf8StringCR, Utf8StringCR key, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
     Utf8String str = "@Namespace:Id";
     ASSERT_TRUE(m_helper.LocalizeString(str));
     ASSERT_STREQ("@Namespace:Id", str.c_str());
@@ -124,7 +126,7 @@ struct SQLangLocalizationProviderTests : ECPresentationTest
 TEST_F(SQLangLocalizationProviderTests, ReturnsLocalizedString)
     {
     Utf8String localized;
-    ASSERT_TRUE(m_provider.GetString("RulesEngine:Test", localized));
+    ASSERT_TRUE(m_provider.GetString("", "RulesEngine:Test", localized));
     ASSERT_STREQ("T35T", localized.c_str());
     }
 
@@ -134,7 +136,7 @@ TEST_F(SQLangLocalizationProviderTests, ReturnsLocalizedString)
 TEST_F(SQLangLocalizationProviderTests, ReturnsEmptyStringIfNotFound)
     {
     Utf8String localized;
-    ASSERT_FALSE(m_provider.GetString("RulesEngine:DoesNotExist", localized));
+    ASSERT_FALSE(m_provider.GetString("", "RulesEngine:DoesNotExist", localized));
     ASSERT_STREQ("", localized.c_str());
     }
 
@@ -144,7 +146,7 @@ TEST_F(SQLangLocalizationProviderTests, ReturnsEmptyStringIfNotFound)
 TEST_F(SQLangLocalizationProviderTests, ReturnsEmptyStringIfInvalidFormat)
     {
     Utf8String localized;
-    ASSERT_FALSE(m_provider.GetString("InvalidFormat", localized));
+    ASSERT_FALSE(m_provider.GetString("", "InvalidFormat", localized));
     ASSERT_STREQ("", localized.c_str());
     }
 
@@ -173,7 +175,7 @@ struct RulesEngineLocalizedStringTests : ECPresentationTest
 TEST_F(RulesEngineLocalizedStringTests, LocalizesRulesEngineStrings)
     {
     Utf8String str;
-    LocalizationHelper helper(m_provider);
+    LocalizationHelper helper(m_provider, "");
 
     str = RULESENGINE_LOCALIZEDSTRING_Other;
     EXPECT_TRUE(helper.LocalizeString(str));
@@ -198,7 +200,7 @@ TEST_F(CustomNodesProviderLocalizationTests, NodesLabelAndDescriptionAreLocalize
     m_context->SetRootNodeContext(rule);
 
     TestLocalizationProvider localizationProvider;
-    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
+    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
     m_context->SetLocalizationContext(localizationProvider);
 
     JsonNavNodePtr node;
@@ -216,7 +218,7 @@ TEST_F(CustomNodesProviderLocalizationTests, NodesLabelAndDescriptionAreLocalize
 TEST_F(CustomNodesProviderLocalizationTests, NodesOverridenLabelIsLocalized)
     {
     TestLocalizationProvider localizationProvider;
-    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
+    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
     m_context->SetLocalizationContext(localizationProvider);
 
     m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "\"@Namespace:label@\"", ""));
@@ -242,7 +244,7 @@ TEST_F(CustomNodesProviderLocalizationTests, NodesLabelIsLocalizedWithLocalizati
     m_context->SetRootNodeContext(rule);
 
     TestLocalizationProvider localizationProvider;
-    localizationProvider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue)
+    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringCR key, Utf8StringR localizedValue)
         {
         EXPECT_TRUE(key.Equals("from_definition"));
         localizedValue = "localized";
@@ -269,7 +271,7 @@ TEST_F(CustomNodesProviderLocalizationTests, NodesLabelIsLocalizedWithLocalizati
     m_context->SetRootNodeContext(rule);
 
     TestLocalizationProvider localizationProvider;
-    localizationProvider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue){return false;});
+    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringCR key, Utf8StringR localizedValue){return false;});
     m_context->SetLocalizationContext(localizationProvider);
     
     m_ruleset->AddPresentationRule(*new LocalizationResourceKeyDefinition(1, "Namespace:Id", "from_definition", "default_value"));
@@ -295,7 +297,7 @@ struct QueryExecutorLocalizationTests : QueryExecutorTests
 TEST_F(QueryExecutorLocalizationTests, ECInstanceNodesLabelIsLocalized)
     {
     TestLocalizationProvider localizationProvider;
-    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
+    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
 
     RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@Namespace:Id@"));});
@@ -308,10 +310,10 @@ TEST_F(QueryExecutorLocalizationTests, ECInstanceNodesLabelIsLocalized)
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
-    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, m_statementCache, *query);
+    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
 
     EXPECT_TRUE(executor.GetNodesCount() > 0);
@@ -332,7 +334,7 @@ TEST_F(QueryExecutorLocalizationTests, ECClassGroupingNodesLabelIsLocalized)
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsClassGroupingNode", 1, "\"@Namespace:Id@\"", ""));
 
     TestLocalizationProvider localizationProvider;
-    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
+    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
 
     RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
@@ -343,10 +345,10 @@ TEST_F(QueryExecutorLocalizationTests, ECClassGroupingNodesLabelIsLocalized)
     query->GroupByContract(*contract);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
     
-    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, m_statementCache, *query);
+    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
 
     EXPECT_TRUE(executor.GetNodesCount() > 0);
@@ -367,7 +369,7 @@ TEST_F(QueryExecutorLocalizationTests, ECPropertyGroupingNodesLabelIsLocalized)
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsPropertyGroupingNode", 1, "\"@Namespace:Id@\"", ""));
 
     TestLocalizationProvider localizationProvider;
-    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
+    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
 
     RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
@@ -379,10 +381,10 @@ TEST_F(QueryExecutorLocalizationTests, ECPropertyGroupingNodesLabelIsLocalized)
     query->GroupByContract(*contract);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
     
-    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, m_statementCache, *query);
+    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
 
     EXPECT_TRUE(executor.GetNodesCount() > 0);
@@ -401,7 +403,7 @@ TEST_F(QueryExecutorLocalizationTests, ECPropertyGroupingNodesLabelIsLocalized)
 TEST_F(QueryExecutorLocalizationTests, DisplayLabelGroupingNodesLabelIsLocalized)
     {
     TestLocalizationProvider localizationProvider;
-    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
+    localizationProvider.SetHandler([](Utf8StringCR, Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
 
     RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@Namespace:Id@"));});
@@ -415,10 +417,10 @@ TEST_F(QueryExecutorLocalizationTests, DisplayLabelGroupingNodesLabelIsLocalized
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
     
-    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, m_statementCache, *query);
+    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
 
     EXPECT_TRUE(executor.GetNodesCount() > 0);

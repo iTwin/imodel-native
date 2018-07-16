@@ -110,6 +110,7 @@ struct ContentSetItemExtendedData : ItemExtendedData
 #define NAVNODE_EXTENDEDDATA_GroupedInstanceKeys                "GroupedInstanceKeys"
 #define NAVNODE_EXTENDEDDATA_InstanceKey_ECClassId              "ECClassId"
 #define NAVNODE_EXTENDEDDATA_InstanceKey_ECInstanceId           "ECInstanceId"
+#define NAVNODE_EXTENDEDDATA_Locale                             "Locale"
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2015
 +===============+===============+===============+===============+===============+======*/
@@ -191,6 +192,10 @@ struct NavNodeExtendedData : ItemExtendedData
     ECPRESENTATION_EXPORT void SetSkippedInstanceKeys(rapidjson::Value&& json);
     ECPRESENTATION_EXPORT void SetSkippedInstanceKeys(bvector<BeSQLite::EC::ECInstanceKey> const& keys);
     ECPRESENTATION_EXPORT void SetSkippedInstanceKey(BeSQLite::EC::ECInstanceKeyCR key);
+    
+    bool HasLocale() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_Locale);}
+    Utf8CP GetLocale() const {return GetJson()[NAVNODE_EXTENDEDDATA_Locale].GetString();}
+    void SetLocale(Utf8CP name) {AddMember(NAVNODE_EXTENDEDDATA_Locale, rapidjson::Value(name, GetAllocator()));}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

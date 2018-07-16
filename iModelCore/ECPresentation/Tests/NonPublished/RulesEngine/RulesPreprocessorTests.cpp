@@ -30,6 +30,7 @@ protected:
     RuleSetLocaterManager m_locaterManager;
     TestUserSettings m_userSettings;
     ECExpressionsCache m_expressionsCache;
+    Utf8String m_locale;
 
 public:
     static void SetUpTestCase()
@@ -51,6 +52,7 @@ public:
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
         m_locater = TestRuleSetLocater::Create();
         m_locaterManager.RegisterLocater(*m_locater);
+        m_locale = "test locale";
         }
 
     void TearDown() override
@@ -245,7 +247,7 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_NoConditions)
     rules->AddPresentationRule(*new RootNodeRule("", 1, false, TargetTree_MainTree, false));
     rules->GetRootNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification());
     
-    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_locale, m_userSettings, nullptr, m_expressionsCache);
     RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
     ASSERT_EQ(1, specs.size());
     }
@@ -263,7 +265,7 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_RulesSortedByPriority)
     rule->SetStopFurtherProcessing(true);
     rules->AddPresentationRule(*rule);
     
-    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_locale, m_userSettings, nullptr, m_expressionsCache);
     RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
     ASSERT_EQ(0, specs.size()); // rule with higher priority has no specs
     }
@@ -279,7 +281,7 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_SpecsSortedByPriority)
     rules->GetRootNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification(3, false, false, false, false, false, ""));
     rules->GetRootNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, ""));
     
-    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_locale, m_userSettings, nullptr, m_expressionsCache);
     RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
     ASSERT_EQ(3, specs.size());
     ASSERT_EQ(3, specs[0].GetPriority());
@@ -300,7 +302,7 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithConditions)
     rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
     
-    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_locale, m_userSettings, nullptr, m_expressionsCache);
     RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
     ASSERT_EQ(1, specs.size());
     }
@@ -322,19 +324,19 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithTargetTree)
     rules->AddPresentationRule(*rule);
     
     // note: using "supported schemas" as a way to know which rule the specification came from
-    RulesPreprocessor::RootNodeRuleParameters paramsMainTree(m_connections, *m_connection, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::RootNodeRuleParameters paramsMainTree(m_connections, *m_connection, *rules, TargetTree_MainTree, m_locale, m_userSettings, nullptr, m_expressionsCache);
     RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(paramsMainTree);
     ASSERT_EQ(2, specs.size());
     ASSERT_STREQ("1", (static_cast<AllInstanceNodesSpecificationCP>(&specs[0].GetSpecification()))->GetSupportedSchemas().c_str());
     ASSERT_STREQ("3", (static_cast<AllInstanceNodesSpecificationCP>(&specs[1].GetSpecification()))->GetSupportedSchemas().c_str());
     
-    RulesPreprocessor::RootNodeRuleParameters paramsSelectionTree(m_connections, *m_connection, *rules, TargetTree_SelectionTree, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::RootNodeRuleParameters paramsSelectionTree(m_connections, *m_connection, *rules, TargetTree_SelectionTree, m_locale, m_userSettings, nullptr, m_expressionsCache);
     specs = RulesPreprocessor::GetRootNodeSpecifications(paramsSelectionTree);
     ASSERT_EQ(2, specs.size());
     ASSERT_STREQ("2", (static_cast<AllInstanceNodesSpecificationCP>(&specs[0].GetSpecification()))->GetSupportedSchemas().c_str());
     ASSERT_STREQ("3", (static_cast<AllInstanceNodesSpecificationCP>(&specs[1].GetSpecification()))->GetSupportedSchemas().c_str());
     
-    RulesPreprocessor::RootNodeRuleParameters paramsBothTrees(m_connections, *m_connection, *rules, TargetTree_Both, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::RootNodeRuleParameters paramsBothTrees(m_connections, *m_connection, *rules, TargetTree_Both, m_locale, m_userSettings, nullptr, m_expressionsCache);
     specs = RulesPreprocessor::GetRootNodeSpecifications(paramsBothTrees);
     ASSERT_EQ(1, specs.size());
     ASSERT_STREQ("3", (static_cast<AllInstanceNodesSpecificationCP>(&specs[0].GetSpecification()))->GetSupportedSchemas().c_str());
@@ -352,7 +354,7 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithOnlyIfNotHandled)
     rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
     
-    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_locale, m_userSettings, nullptr, m_expressionsCache);
     RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
     ASSERT_EQ(0, specs.size());
     }
@@ -373,7 +375,7 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithStopFurtherProcess
     rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
     
-    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_locale, m_userSettings, nullptr, m_expressionsCache);
     RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
     ASSERT_EQ(1, specs.size());
     }
@@ -396,7 +398,7 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_IncludesSpecsFromSubCo
 
     rules->AddPresentationRule(*rule);
     
-    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::RootNodeRuleParameters params(m_connections, *m_connection, *rules, TargetTree_MainTree, m_locale, m_userSettings, nullptr, m_expressionsCache);
     RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
     ASSERT_EQ(2, specs.size());
     }
@@ -411,7 +413,7 @@ TEST_F (RulesPreprocessorTests, GetChildNodeSpecifications)
     rules->GetChildNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification());
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::ChildNodeRuleParameters params(m_connections, *m_connection, *node, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::ChildNodeRuleParameters params(m_connections, *m_connection, *node, *rules, TargetTree_MainTree, m_locale, m_userSettings, nullptr, m_expressionsCache);
     ChildNodeRuleSpecificationsList specs = RulesPreprocessor::GetChildNodeSpecifications(params);
     ASSERT_EQ(1, specs.size());
     }
@@ -447,7 +449,7 @@ TEST_F (RulesPreprocessorTests, GetChildNodeSpecifications_BySpecificationId)
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData nodeExtendedDataWriter(*node);
     nodeExtendedDataWriter.SetSpecificationHash(spec1->GetHash());
-    RulesPreprocessor::ChildNodeRuleParameters params1(m_connections, *m_connection, *node, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::ChildNodeRuleParameters params1(m_connections, *m_connection, *node, *rules, TargetTree_MainTree, m_locale, m_userSettings, nullptr, m_expressionsCache);
     ChildNodeRuleSpecificationsList specs = RulesPreprocessor::GetChildNodeSpecifications(params1);
 
     // all sub-specs of the the spec that generated the node
@@ -457,7 +459,7 @@ TEST_F (RulesPreprocessorTests, GetChildNodeSpecifications_BySpecificationId)
     ASSERT_STREQ("two", (static_cast<AllInstanceNodesSpecificationCP>(&specs[1].GetSpecification()))->GetSupportedSchemas().c_str());
 
     nodeExtendedDataWriter.SetSpecificationHash(spec2->GetHash());
-    RulesPreprocessor::ChildNodeRuleParameters params2(m_connections, *m_connection, *node, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::ChildNodeRuleParameters params2(m_connections, *m_connection, *node, *rules, TargetTree_MainTree, m_locale, m_userSettings, nullptr, m_expressionsCache);
     specs = RulesPreprocessor::GetChildNodeSpecifications(params2);
     // all sub-specs of the the spec that generated the node
     ASSERT_EQ(1, specs.size()); 
@@ -498,7 +500,7 @@ TEST_F(RulesPreprocessorTests, GetChildNodeSpecifications_BySpecificationIdWithR
     nodeExtendedDataWriter.SetSpecificationHash(spec->GetHash());
     nodeExtendedDataWriter.SetRequestedSpecification(true);
 
-    RulesPreprocessor::ChildNodeRuleParameters params(m_connections, *m_connection, *node, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::ChildNodeRuleParameters params(m_connections, *m_connection, *node, *rules, TargetTree_MainTree, m_locale, m_userSettings, nullptr, m_expressionsCache);
     ChildNodeRuleSpecificationsList specs = RulesPreprocessor::GetChildNodeSpecifications(params);
     // all sub-specs of the the spec that generated the node
     ASSERT_EQ(3, specs.size());
@@ -518,7 +520,7 @@ TEST_F (RulesPreprocessorTests, GetLabelOverride_WithoutCondition)
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
     ASSERT_TRUE(nullptr != labelOverride); 
     ASSERT_STREQ("GetLabelOverride_WithoutCondition", labelOverride->GetLabel().c_str());
@@ -534,7 +536,7 @@ TEST_F (RulesPreprocessorTests, GetLabelOverride_WithoutLabelAndDescription)
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
     ASSERT_TRUE(nullptr == labelOverride); 
     }
@@ -549,7 +551,7 @@ TEST_F (RulesPreprocessorTests, GetLabelOverride_WithMatchingCondition)
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
     ASSERT_TRUE(nullptr != labelOverride); 
     ASSERT_STREQ("GetLabelOverride_WithMatchingCondition", labelOverride->GetLabel().c_str());
@@ -565,7 +567,7 @@ TEST_F (RulesPreprocessorTests, GetLabelOverride_WithNoMatchingCondition)
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
     ASSERT_TRUE(nullptr == labelOverride); 
     }
@@ -580,7 +582,7 @@ TEST_F (RulesPreprocessorTests, GetStyleOverride_WithoutCondition)
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     StyleOverrideCP styleOverride = RulesPreprocessor::GetStyleOverride(params);
     ASSERT_TRUE(nullptr != styleOverride);
     }
@@ -595,7 +597,7 @@ TEST_F (RulesPreprocessorTests, GetStyleOverride_WithMatchingCondition)
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     StyleOverrideCP styleOverride = RulesPreprocessor::GetStyleOverride(params);
     ASSERT_TRUE(nullptr != styleOverride);
     }
@@ -610,7 +612,7 @@ TEST_F (RulesPreprocessorTests, GetStyleOverride_WithNoMatchingCondition)
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     StyleOverrideCP styleOverride = RulesPreprocessor::GetStyleOverride(params);
     ASSERT_TRUE(nullptr == styleOverride);
     }
@@ -629,7 +631,7 @@ TEST_F (RulesPreprocessorTests, GetSortingRules_SortedByPriority)
     rules->AddPresentationRule(*rule3);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::AggregateCustomizationRuleParameters params(node.get(), 0, m_connections, *m_connection, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::AggregateCustomizationRuleParameters params(node.get(), 0, m_connections, *m_connection, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     bvector<SortingRuleCP> sortingRules = RulesPreprocessor::GetSortingRules(params);
     ASSERT_EQ(3, sortingRules.size()); 
     EXPECT_EQ(3, sortingRules[0]->GetPriority());
@@ -652,7 +654,7 @@ TEST_F (RulesPreprocessorTests, GetSortingRules_VerifiesCondition)
     NavNodeExtendedData extendedData(*node);
     extendedData.SetPropertyName("TestProperty");
     
-    RulesPreprocessor::AggregateCustomizationRuleParameters params(node.get(), 0, m_connections, *m_connection, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::AggregateCustomizationRuleParameters params(node.get(), 0, m_connections, *m_connection, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     bvector<SortingRuleCP> sortingRules = RulesPreprocessor::GetSortingRules(params);
     ASSERT_EQ(1, sortingRules.size()); 
     EXPECT_EQ(2, sortingRules[0]->GetPriority());
@@ -672,7 +674,7 @@ TEST_F (RulesPreprocessorTests, GetGroupingRules_SortedByPriority)
     rules->AddPresentationRule(*rule3);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::AggregateCustomizationRuleParameters params(node.get(), 0, m_connections, *m_connection, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::AggregateCustomizationRuleParameters params(node.get(), 0, m_connections, *m_connection, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     bvector<GroupingRuleCP> groupingRules = RulesPreprocessor::GetGroupingRules(params);
     ASSERT_EQ(3, groupingRules.size()); 
     EXPECT_EQ(3, groupingRules[0]->GetPriority());
@@ -695,7 +697,7 @@ TEST_F (RulesPreprocessorTests, GetGroupingRules_VerifiesCondition)
     NavNodeExtendedData extendedData(*node);
     extendedData.SetPropertyName("TestProperty");
     
-    RulesPreprocessor::AggregateCustomizationRuleParameters params(node.get(), 0, m_connections, *m_connection, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::AggregateCustomizationRuleParameters params(node.get(), 0, m_connections, *m_connection, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     bvector<GroupingRuleCP> groupingRules = RulesPreprocessor::GetGroupingRules(params);
     ASSERT_EQ(1, groupingRules.size()); 
     EXPECT_EQ(2, groupingRules[0]->GetPriority());
@@ -712,7 +714,7 @@ TEST_F (RulesPreprocessorTests, GetGroupingRules_OnlyIfNotHandledFlagHandled)
     rules->AddPresentationRule(*rule1);
     rules->AddPresentationRule(*rule2);
     
-    RulesPreprocessor::AggregateCustomizationRuleParameters params(nullptr, 0, m_connections, *m_connection, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::AggregateCustomizationRuleParameters params(nullptr, 0, m_connections, *m_connection, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     bvector<GroupingRuleCP> groupingRules = RulesPreprocessor::GetGroupingRules(params);
     ASSERT_EQ(1, groupingRules.size()); 
     EXPECT_EQ(2, groupingRules[0]->GetPriority());
@@ -754,7 +756,7 @@ TEST_F (RulesPreprocessorTests, GetImageIdOverride_WithoutCondition)
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     ImageIdOverrideCP imageOverride = RulesPreprocessor::GetImageIdOverride(params);
     ASSERT_TRUE(nullptr != imageOverride);
     }
@@ -769,7 +771,7 @@ TEST_F (RulesPreprocessorTests, GetImageIdOverride_WithMatchingCondition)
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     ImageIdOverrideCP imageOverride = RulesPreprocessor::GetImageIdOverride(params);
     ASSERT_TRUE(nullptr != imageOverride);
     }
@@ -784,7 +786,7 @@ TEST_F (RulesPreprocessorTests, GetImageIdOverride_WithNoMatchingCondition)
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     ImageIdOverrideCP imageOverride = RulesPreprocessor::GetImageIdOverride(params);
     ASSERT_TRUE(nullptr == imageOverride);
     }
@@ -799,7 +801,7 @@ TEST_F (RulesPreprocessorTests, GetCheckboxRule_WithoutCondition)
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     CheckBoxRuleCP checkboxRule = RulesPreprocessor::GetCheckboxRule(params);
     ASSERT_TRUE(nullptr != checkboxRule);
     }
@@ -814,7 +816,7 @@ TEST_F (RulesPreprocessorTests, GetCheckboxRule_WithMatchingCondition)
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     CheckBoxRuleCP checkboxRule = RulesPreprocessor::GetCheckboxRule(params);
     ASSERT_TRUE(nullptr != checkboxRule);
     }
@@ -829,7 +831,7 @@ TEST_F (RulesPreprocessorTests, GetCheckboxRule_WithNoMatchingCondition)
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     CheckBoxRuleCP checkboxRule = RulesPreprocessor::GetCheckboxRule(params);
     ASSERT_TRUE(nullptr == checkboxRule);
     }
@@ -846,7 +848,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_NoConditions)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
     rules->AddPresentationRule(*new ContentRule("", 1, false));
     
-    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
+    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
     ContentRuleInputKeysList specs = RulesPreprocessor::GetContentSpecifications(params);
     ASSERT_EQ(1, specs.size());
     }
@@ -866,7 +868,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_RulesSortedByPriority)
     ContentRuleP rule2 = new ContentRule("", 2, true);
     rules->AddPresentationRule(*rule2);
     
-    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
+    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
     ContentRuleInputKeysList specs = RulesPreprocessor::GetContentSpecifications(params);
     ASSERT_EQ(1, specs.size());
     ASSERT_EQ(rule2, &(*specs.begin()).GetRule());
@@ -887,7 +889,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_WithConditions)
     ContentRuleP rule2 = new ContentRule("1 = 1", 1, false);
     rules->AddPresentationRule(*rule2);
     
-    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
+    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
     ContentRuleInputKeysList specs = RulesPreprocessor::GetContentSpecifications(params);
     ASSERT_EQ(1, specs.size());
     ASSERT_EQ(rule2, &(*specs.begin()).GetRule());
@@ -906,7 +908,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_ReturnsMultipleRulesIfO
     rules->AddPresentationRule(*new ContentRule("", 1, false));
     rules->AddPresentationRule(*new ContentRule("", 1, false));
     
-    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
+    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
     ContentRuleInputKeysList specs = RulesPreprocessor::GetContentSpecifications(params);
     ASSERT_EQ(2, specs.size());
     }
@@ -924,7 +926,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_ReturnsOneRuleIfOnlyIfN
     rules->AddPresentationRule(*new ContentRule("", 1, true));
     rules->AddPresentationRule(*new ContentRule("", 1, true));
     
-    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
+    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
     ContentRuleInputKeysList specs = RulesPreprocessor::GetContentSpecifications(params);
     ASSERT_EQ(1, specs.size());
     }
@@ -945,7 +947,7 @@ TEST_F(RulesPreprocessorTests, GetNestedGroupingRules_DoesNotFindRulesDefinedDee
     rules->GetChildNodesRules()[0]->AddSpecification(*spec);
     rules->GetChildNodesRules()[0]->AddCustomizationRule(*new GroupingRule("", 1, false, "TestSchemaName2", "", "", "", ""));
 
-    RulesPreprocessor::AggregateCustomizationRuleParameters params(nullptr, spec->GetHash(), m_connections, *m_connection, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::AggregateCustomizationRuleParameters params(nullptr, spec->GetHash(), m_connections, *m_connection, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     bvector<GroupingRuleCP> groupingRules = RulesPreprocessor::GetGroupingRules(params);
     // Returns only root level and nested level customization rules, because specification nested rule doesn't have specification 
     ASSERT_EQ(2, groupingRules.size());
@@ -971,7 +973,7 @@ TEST_F(RulesPreprocessorTests, GetNestedGroupingRules_FindsMostlyNestedRule_Retu
     rules->GetChildNodesRules()[0]->AddSpecification(*spec);
     rules->GetChildNodesRules()[0]->AddCustomizationRule(*new GroupingRule("", 1, false, "TestSchemaName3", "", "", "", ""));
 
-    RulesPreprocessor::AggregateCustomizationRuleParameters params(nullptr, nestedSpec->GetHash(), m_connections, *m_connection, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::AggregateCustomizationRuleParameters params(nullptr, nestedSpec->GetHash(), m_connections, *m_connection, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     bvector<GroupingRuleCP> groupingRules = RulesPreprocessor::GetGroupingRules(params);
     // Returns all rules from all nested levels
     ASSERT_EQ(3, groupingRules.size());
@@ -997,7 +999,7 @@ TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_SameScope_SamePriorit
     NavNodeExtendedData nodeExtendedDataWriter(*node);
     nodeExtendedDataWriter.SetSpecificationHash(spec->GetHash());
 
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
     // Same scope, conditions match, same prority - returns first declaired
     ASSERT_TRUE(nullptr != labelOverride);
@@ -1021,7 +1023,7 @@ TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_SameScope_DifferentPr
     NavNodeExtendedData nodeExtendedDataWriter(*node);
     nodeExtendedDataWriter.SetSpecificationHash(spec->GetHash());
 
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     ImageIdOverrideCP imageOverride = RulesPreprocessor::GetImageIdOverride(params);
     // Same scope - returns highest priority
     ASSERT_TRUE(nullptr != imageOverride);
@@ -1045,7 +1047,7 @@ TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_DifferentScopes_Diffe
     NavNodeExtendedData nodeExtendedDataWriter(*node);
     nodeExtendedDataWriter.SetSpecificationHash(spec->GetHash());
 
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     StyleOverrideCP styleOverride = RulesPreprocessor::GetStyleOverride(params);
     // Different Scopes - returns highest priority
     ASSERT_TRUE(nullptr != styleOverride);
@@ -1069,7 +1071,7 @@ TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_DifferentScopes_SameP
     NavNodeExtendedData nodeExtendedDataWriter(*node);
     nodeExtendedDataWriter.SetSpecificationHash(spec->GetHash());
 
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     CheckBoxRuleCP checkBox = RulesPreprocessor::GetCheckboxRule(params);
     // Different scopes, same priority - return mostly nested
     ASSERT_TRUE(nullptr != checkBox);
@@ -1093,7 +1095,7 @@ TEST_F(RulesPreprocessorTests, GetCustomizationRule_WithConditions)
     NavNodeExtendedData nodeExtendedDataWriter(*node);
     nodeExtendedDataWriter.SetSpecificationHash(spec->GetHash());
 
-    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::CustomizationRuleParameters params(m_connections, *m_connection, *node, nullptr, *rules, m_locale, m_userSettings, nullptr, m_expressionsCache);
     LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
     // Same scope, conditions do not match, different priorities - return condition true
     ASSERT_TRUE(nullptr != labelOverride);

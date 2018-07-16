@@ -12,6 +12,29 @@
 #include "LoggingHelper.h"
 #include "PropertyInfoStore.h"
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ApplyFieldLocalization(ContentDescriptor::Field& field, ContentDescriptorBuilder::Context const& context)
+    {
+    if (!context.GetLocalizationProvider())
+        return;
+
+    LocalizationHelper helper(*context.GetLocalizationProvider(), context.GetLocale(), &context.GetRuleset());
+
+    Utf8String fieldLabel = field.GetLabel();
+    if (helper.LocalizeString(fieldLabel))
+        field.SetLabel(fieldLabel);
+
+    Utf8String categoryLabel = field.GetCategory().GetLabel();
+    if (helper.LocalizeString(categoryLabel))
+        {
+        ContentDescriptor::Category localizedCategory(field.GetCategory());
+        localizedCategory.SetLabel(categoryLabel);
+        field.SetCategory(localizedCategory);
+        }
+    }
+
 //=======================================================================================
 // @bsiclass                                    Grigas.Petraitis                06/2017
 //=======================================================================================
@@ -138,6 +161,7 @@ private:
             ContentDescriptor::Category fieldCategory = m_context.GetCategorySupplier().GetCategory(primaryClass, m_relatedClassPath, ecProperty, m_relationshipMeaning);
             ContentFieldEditor const* editor = m_propertyInfos.GetPropertyEditor(ecProperty, m_actualClass);
             field = new ContentDescriptor::ECPropertiesField(fieldCategory, "", CreateFieldDisplayLabel(ecProperty), editor ? new ContentFieldEditor(*editor) : nullptr);
+            ApplyFieldLocalization(*field, m_context);
             }
 
         return field;
@@ -313,6 +337,8 @@ private:
             ContentDescriptor::Category fieldCategory = m_context.GetCategorySupplier().GetCategory(primaryClass, relationshipPath, m_actualClass);
             m_nestedContentField = new ContentDescriptor::NestedContentField(fieldCategory, CreateNestedContentFieldName(relationshipPath), 
                 m_actualClass.GetDisplayLabel(), m_actualClass, classAlias, relationshipPath);
+            ApplyFieldLocalization(*m_nestedContentField, m_context);
+
             if (nullptr != nestingField)
                 {
                 // if the field is nested, add it to the nesting field
@@ -467,7 +493,7 @@ private:
             if (ecClass.Is(modifierClass))
                 {
                 QueryBuilderHelpers::AddCalculatedFields(*m_descriptor, modifier->GetCalculatedProperties(), 
-                    GetContext().GetLocalizationProvider(), GetContext().GetRuleset(), modifierClass);
+                    GetContext().GetLocalizationProvider(), GetContext().GetLocale(), GetContext().GetRuleset(), modifierClass);
                 }
             }
         }
@@ -520,7 +546,7 @@ public:
         : ContentSpecificationsHandler(context), m_specification(specification), m_isRecursiveSpecification(false),
         m_propertyInfos(GetContext().GetSchemaHelper(), GetContext().GetRuleset(), specification)
         {
-        RulesDrivenECPresentationManager::ContentOptions options(GetContext().GetRuleset().GetRuleSetId());
+        RulesDrivenECPresentationManager::ContentOptions options(GetContext().GetRuleset().GetRuleSetId(), GetContext().GetLocale());
         m_descriptor = ContentDescriptor::Create(GetContext().GetConnection(), options.GetJson(), GetContext().GetInputKeys(), GetContext().GetPreferredDisplayType());
 
         if (nullptr != GetContext().GetSelectionInfo())
@@ -530,13 +556,9 @@ public:
 
         if (nullptr == m_descriptor->GetDisplayLabelField())
             {
-            Utf8String displayLabel = IECPresentationManager::GetLocalizationProvider().GetString(bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()});
-            if (displayLabel.empty())
-                {
-                BeAssert(false);
-                displayLabel = "Display Label";
-                }
-            m_descriptor->AddField(new ContentDescriptor::DisplayLabelField(displayLabel));
+            ContentDescriptor::DisplayLabelField* field = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()));
+            ApplyFieldLocalization(*field, GetContext());
+            m_descriptor->AddField(field);
             m_descriptor->GetDisplayLabelField()->SetPropertiesMap(QueryBuilderHelpers::GetMappedLabelOverridingProperties(GetContext().GetSchemaHelper(), GetContext().GetRuleset().GetInstanceLabelOverrides()));
             }
         }
@@ -606,7 +628,7 @@ public:
         if (nullptr != m_specification && !m_descriptor->HasContentFlag(ContentFlags::NoFields))
             {
             QueryBuilderHelpers::AddCalculatedFields(*m_descriptor, m_specification->GetCalculatedProperties(),
-                GetContext().GetLocalizationProvider(), GetContext().GetRuleset(), nullptr);
+                GetContext().GetLocalizationProvider(), GetContext().GetLocale(), GetContext().GetRuleset(), nullptr);
             }
 
         return m_descriptor;

@@ -381,7 +381,8 @@ RootNodeRuleSpecificationsList RulesPreprocessor::GetRootNodeSpecifications(Root
     ECDbExpressionSymbolContext ecdbExpressionContext(params.GetConnection().GetECDb());
     std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
-        ECExpressionContextsProvider::NodeRulesContextParameters contextParams(nullptr, params.GetConnection(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
+        ECExpressionContextsProvider::NodeRulesContextParameters contextParams(nullptr, params.GetConnection(), params.GetLocale(),
+            params.GetUserSettings(), params.GetUsedUserSettingsListener());
         return ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
         };
     AddMatchingSpecifications(params.GetRuleset().GetRootNodesRules(), params.GetTargetTree(), params.GetECExpressionsCache(), specs, handled, nullptr, contextPreparer);
@@ -399,7 +400,8 @@ ChildNodeRuleSpecificationsList RulesPreprocessor::GetChildNodeSpecifications(Ch
     ECDbExpressionSymbolContext ecdbExpressionContext(params.GetConnection().GetECDb());
     std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
-        ECExpressionContextsProvider::NodeRulesContextParameters contextParams(&params.GetParentNode(), params.GetConnection(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
+        ECExpressionContextsProvider::NodeRulesContextParameters contextParams(&params.GetParentNode(), params.GetConnection(), params.GetLocale(), 
+            params.GetUserSettings(), params.GetUsedUserSettingsListener());
         return ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
         };
     OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), params.GetParentNode().GetKey(), "");
@@ -450,7 +452,8 @@ LabelOverrideCP RulesPreprocessor::GetLabelOverride(CustomizationRuleParametersC
     ECDbExpressionSymbolContext ecdbExpressionContext(params.GetConnection().GetECDb());
     std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
-        ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(), params.GetConnection(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
+        ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(), 
+            params.GetConnection(), params.GetLocale(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
         return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
         };
     bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;
@@ -490,7 +493,8 @@ StyleOverrideCP RulesPreprocessor::GetStyleOverride(CustomizationRuleParametersC
     ECDbExpressionSymbolContext ecdbExpressionContext(params.GetConnection().GetECDb());
     std::function<ExpressionContextPtr()> contextPreparer = [&]() 
         {
-        ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(), params.GetConnection(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
+        ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(),
+            params.GetConnection(), params.GetLocale(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
         return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
         };
     bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;
@@ -526,7 +530,8 @@ bvector<GroupingRuleCP> RulesPreprocessor::GetGroupingRules(AggregateCustomizati
     {
     std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
-        ECExpressionContextsProvider::NodeRulesContextParameters contextParams(params.GetParentNode(), params.GetConnection(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
+        ECExpressionContextsProvider::NodeRulesContextParameters contextParams(params.GetParentNode(), params.GetConnection(), params.GetLocale(),
+            params.GetUserSettings(), params.GetUsedUserSettingsListener());
         return ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
         };
     OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), nullptr == params.GetParentNode() ? nullptr : params.GetParentNode()->GetKey(), "");
@@ -563,7 +568,8 @@ bvector<SortingRuleCP> RulesPreprocessor::GetSortingRules(AggregateCustomization
     {
     std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
-        ECExpressionContextsProvider::NodeRulesContextParameters contextParams(params.GetParentNode(), params.GetConnection(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
+        ECExpressionContextsProvider::NodeRulesContextParameters contextParams(params.GetParentNode(), params.GetConnection(), params.GetLocale(),
+            params.GetUserSettings(), params.GetUsedUserSettingsListener());
         return ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
         };
     OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), nullptr == params.GetParentNode() ? nullptr : params.GetParentNode()->GetKey(), "");
@@ -612,7 +618,8 @@ ImageIdOverrideCP RulesPreprocessor::GetImageIdOverride(CustomizationRuleParamet
     ECDbExpressionSymbolContext ecdbExpressionContext(params.GetConnection().GetECDb());
     std::function<ExpressionContextPtr()> contextPreparer = [&]() 
         {
-        ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(), params.GetConnection(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
+        ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(),
+            params.GetConnection(), params.GetLocale(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
         return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
         };
     bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;  
@@ -649,7 +656,8 @@ CheckBoxRuleCP RulesPreprocessor::GetCheckboxRule(CustomizationRuleParametersCR 
     ECDbExpressionSymbolContext ecdbExpressionContext(params.GetConnection().GetECDb());
     std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
-        ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(), params.GetConnection(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
+        ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(),
+            params.GetConnection(), params.GetLocale(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
         return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
         };
     bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;
@@ -694,7 +702,8 @@ ContentRuleInputKeysList RulesPreprocessor::GetContentSpecifications(ContentRule
         std::function<ExpressionContextPtr()> contextPreparer = [&]()
             {
             ECExpressionContextsProvider::ContentRulesContextParameters contextParams(params.GetPreferredDisplayType().c_str(), params.GetSelectionProviderName(),
-                params.IsSubSelection(), params.GetConnection(), params.GetNodeLocater(), inputNodeKey.get(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
+                params.IsSubSelection(), params.GetConnection(), params.GetLocale(), params.GetNodeLocater(), inputNodeKey.get(), 
+                params.GetUserSettings(), params.GetUsedUserSettingsListener());
             return ECExpressionContextsProvider::GetContentRulesContext(contextParams);
             };
         OptimizedExpressionsParameters optimizedParams(params.GetConnections(), params.GetConnection(), inputNodeKey.get(), params.GetPreferredDisplayType().c_str());
@@ -719,7 +728,7 @@ ContentRuleInputKeysList RulesPreprocessor::GetContentSpecifications(ContentRule
     std::function<ExpressionContextPtr()> contextPreparer = [&]() 
         {
         ECExpressionContextsProvider::ContentRulesContextParameters contextParams(params.GetPreferredDisplayType().c_str(), "", false,
-            params.GetConnection(), params.GetNodeLocater(), nullptr, params.GetUserSettings(), params.GetUsedUserSettingsListener());
+            params.GetConnection(), params.GetLocale(), params.GetNodeLocater(), nullptr, params.GetUserSettings(), params.GetUsedUserSettingsListener());
         return ECExpressionContextsProvider::GetContentRulesContext(contextParams);
         };
 

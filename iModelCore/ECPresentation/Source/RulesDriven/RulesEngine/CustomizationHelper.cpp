@@ -22,7 +22,7 @@ ExpressionContext& NavNodeCustomizer::GetNodeExpressionContext()
     if (m_nodeExpressionContext.IsNull())
         {
         ECExpressionContextsProvider::CustomizationRulesContextParameters params(m_node, m_parentNode, 
-            m_context.GetConnection(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener());
+            m_context.GetConnection(), m_context.GetLocale(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener());
         m_nodeExpressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
         }
     return *m_nodeExpressionContext;
@@ -35,7 +35,7 @@ bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride(bool customizeLabel)
     {
     bool didOverride = false;
     RulesPreprocessor::CustomizationRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), m_node, m_parentNode, 
-        m_context.GetRuleset(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetRuleset(), m_context.GetLocale(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
     LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
     if (nullptr != labelOverride)
         {
@@ -66,7 +66,7 @@ bool NavNodeCustomizer::ApplyStyleOverride()
     {
     bool didOverride = false;
     RulesPreprocessor::CustomizationRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), m_node, m_parentNode, 
-        m_context.GetRuleset(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetRuleset(), m_context.GetLocale(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
     StyleOverrideCP styleOverride = RulesPreprocessor::GetStyleOverride(params);
     if (nullptr != styleOverride)
         {
@@ -104,7 +104,7 @@ bool NavNodeCustomizer::ApplyImageIdOverride()
     {
     bool didOverride = false;
     RulesPreprocessor::CustomizationRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), m_node, m_parentNode, 
-        m_context.GetRuleset(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetRuleset(), m_context.GetLocale(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
     ImageIdOverrideCP imageIdOverride = RulesPreprocessor::GetImageIdOverride(params);
     if (nullptr != imageIdOverride)
         {
@@ -128,7 +128,7 @@ bool NavNodeCustomizer::ApplyLocalization()
     if (m_context.IsLocalizationContext())
         {
         bool didLocalize = false;
-        LocalizationHelper helper(m_context.GetLocalizationProvider(), &m_context.GetRuleset());
+        LocalizationHelper helper(m_context.GetLocalizationProvider(), m_context.GetLocale(), &m_context.GetRuleset());
 
         Utf8String label = m_node.GetLabel();
         if (!label.empty() && helper.LocalizeString(label))
@@ -157,7 +157,7 @@ bool NavNodeCustomizer::ApplyLocalization()
 bool NavNodeCustomizer::ApplyCheckboxRules()
     {
     RulesPreprocessor::CustomizationRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), m_node, m_parentNode, 
-        m_context.GetRuleset(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetRuleset(), m_context.GetLocale(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
     CheckBoxRuleCP rule = RulesPreprocessor::GetCheckboxRule(params);
     if (nullptr == rule)
         return false;
@@ -315,7 +315,8 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentSet
         }
 
     ECClassInstanceKeyCR itemKey = item.GetKeys().front();
-    JsonNavNodePtr node = context.GetNodesFactory().CreateECInstanceNode(context.GetConnection(), itemKey.GetClass()->GetId(), itemKey.GetId(), "");
+    Utf8String locale = context.IsLocalizationContext() ? context.GetLocale() : "";
+    JsonNavNodePtr node = context.GetNodesFactory().CreateECInstanceNode(context.GetConnection(), locale, itemKey.GetClass()->GetId(), itemKey.GetId(), "");
     NavNodeExtendedData(*node).SetRelatedInstanceKeys(extendedData.GetRelatedInstanceKeys());
     // create temporary key
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(context.GetConnection(), *node, bvector<Utf8String>()));

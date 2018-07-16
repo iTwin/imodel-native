@@ -43,7 +43,7 @@ bool LocalizationHelper::LocalizeString(Utf8StringR str) const
             }
 
         Utf8String localizedString;
-        if (!m_provider.GetString(key, localizedString))
+        if (!m_provider.GetString(m_locale, key, localizedString))
             localizedString = defaultValue;
 
         if (!localizedString.empty())

@@ -473,14 +473,15 @@ void QueryBuilderHelpers::ApplyDefaultContentFlags(ContentDescriptorR descriptor
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                    Tautvydas.Zinys                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryBuilderHelpers::AddCalculatedFields(ContentDescriptorR descriptor, CalculatedPropertiesSpecificationList const& calculatedProperties, ILocalizationProvider const* localizationProvider, PresentationRuleSetCR ruleSet, ECClassCP ecClass)
+void QueryBuilderHelpers::AddCalculatedFields(ContentDescriptorR descriptor, CalculatedPropertiesSpecificationList const& calculatedProperties, 
+    ILocalizationProvider const* localizationProvider, Utf8StringCR locale, PresentationRuleSetCR ruleSet, ECClassCP ecClass)
     {
     for (size_t i = 0; i < calculatedProperties.size(); i++)
         {
         Utf8String label = calculatedProperties[i]->GetLabel();
 
         if (localizationProvider != nullptr)
-            LocalizationHelper(*localizationProvider, &ruleSet).LocalizeString(label);
+            LocalizationHelper(*localizationProvider, locale, &ruleSet).LocalizeString(label);
 
         Utf8String propertyName = Utf8String("CalculatedProperty_").append(std::to_string(i).c_str());
 

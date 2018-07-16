@@ -123,14 +123,14 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     EXPECT_EQ(0, provider->GetNodesCount());
 
     // verify the nodes cache is empty
-    EXPECT_TRUE(m_nodesCache.GetDataSource(HierarchyLevelInfo(m_connection->GetId(), m_ruleset->GetRuleSetId(), nullptr)).IsNull());
+    EXPECT_TRUE(m_nodesCache.GetDataSource(HierarchyLevelInfo(m_connection->GetId(), m_ruleset->GetRuleSetId(), "", nullptr)).IsNull());
 
     // remove the cancelation token and verify provider gets initialized successfully
     m_context->SetCancelationToken(nullptr);
 
     EXPECT_TRUE(provider->HasNodes());
     EXPECT_EQ(2, provider->GetNodesCount());
-    EXPECT_FALSE(m_nodesCache.GetDataSource(HierarchyLevelInfo(m_connection->GetId(), m_ruleset->GetRuleSetId(), nullptr)).IsNull());
+    EXPECT_FALSE(m_nodesCache.GetDataSource(HierarchyLevelInfo(m_connection->GetId(), m_ruleset->GetRuleSetId(), "", nullptr)).IsNull());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2015

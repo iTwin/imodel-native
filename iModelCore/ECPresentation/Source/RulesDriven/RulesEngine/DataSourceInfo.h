@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/DataSourceInfo.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -21,6 +21,7 @@ struct HierarchyLevelInfo
 private:
     Utf8String m_connectionId;
     Utf8String m_rulesetId;
+    Utf8String m_locale;
     uint64_t const* m_physicalParentNodeId;
 private:
     void SetParentNodeId(uint64_t const* id)
@@ -32,22 +33,24 @@ private:
         }
 public:
     HierarchyLevelInfo() : m_physicalParentNodeId(nullptr) {}
-    HierarchyLevelInfo(HierarchyLevelInfo&& other) : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId))
+    HierarchyLevelInfo(HierarchyLevelInfo&& other) 
+        : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId)), m_locale(std::move(other.m_locale))
         {
         m_physicalParentNodeId = other.m_physicalParentNodeId;
         other.m_physicalParentNodeId = nullptr;
         }
-    HierarchyLevelInfo(HierarchyLevelInfo const& other) : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId)
+    HierarchyLevelInfo(HierarchyLevelInfo const& other)
+        : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_locale(other.m_locale)
         {
         SetParentNodeId(other.m_physicalParentNodeId);
         }
-    HierarchyLevelInfo(Utf8String connectionId, Utf8String rulesetId, uint64_t const* physicalParentNodeId)
-        : m_connectionId(connectionId), m_rulesetId(rulesetId)
+    HierarchyLevelInfo(Utf8String connectionId, Utf8String rulesetId, Utf8String locale, uint64_t const* physicalParentNodeId)
+        : m_connectionId(connectionId), m_rulesetId(rulesetId), m_locale(locale)
         {
         SetParentNodeId(physicalParentNodeId);
         }
-    HierarchyLevelInfo(Utf8String connectionId, Utf8String rulesetId, uint64_t physicalParentNodeId)
-        : m_connectionId(connectionId), m_rulesetId(rulesetId)
+    HierarchyLevelInfo(Utf8String connectionId, Utf8String rulesetId, Utf8String locale, uint64_t physicalParentNodeId)
+        : m_connectionId(connectionId), m_rulesetId(rulesetId), m_locale(locale)
         {
         SetParentNodeId(&physicalParentNodeId);
         }
@@ -56,6 +59,7 @@ public:
         {
         m_connectionId = std::move(other.m_connectionId);
         m_rulesetId = std::move(other.m_rulesetId);
+        m_locale = std::move(other.m_locale);
         m_physicalParentNodeId = other.m_physicalParentNodeId;
         other.m_physicalParentNodeId = nullptr;
         return *this;
@@ -64,6 +68,7 @@ public:
         {
         m_connectionId = other.m_connectionId;
         m_rulesetId = other.m_rulesetId;
+        m_locale = other.m_locale;
         SetParentNodeId(other.m_physicalParentNodeId);
         return *this;
         }
@@ -83,17 +88,24 @@ public:
             return true;
         if (rulesetIdCmp > 0)
             return false;
+        int localeCmp = m_locale.CompareTo(other.m_locale);
+        if (localeCmp < 0)
+            return true;
+        if (localeCmp > 0)
+            return false;
         return (m_connectionId < other.m_connectionId);        
         }
     bool operator==(HierarchyLevelInfo const& other) const
         {
         return m_connectionId == other.m_connectionId
             && m_rulesetId.Equals(other.m_rulesetId)
+            && m_locale.Equals(other.m_locale)
             && (nullptr == m_physicalParentNodeId && nullptr == other.m_physicalParentNodeId
                 || nullptr != m_physicalParentNodeId && nullptr != other.m_physicalParentNodeId && *m_physicalParentNodeId == *other.m_physicalParentNodeId);
         }
     Utf8StringCR GetConnectionId() const {return m_connectionId;}
     Utf8StringCR GetRulesetId() const {return m_rulesetId;}
+    Utf8StringCR GetLocale() const {return m_locale;}
     uint64_t const* GetPhysicalParentNodeId() const {return m_physicalParentNodeId;}
     void SetPhysicalParentNodeId(uint64_t id) {DELETE_AND_CLEAR(m_physicalParentNodeId); SetParentNodeId(&id);}
 };
@@ -120,14 +132,14 @@ public:
         {
         other.m_virtualParentNodeId = nullptr;
         }
-    DataSourceInfo(Utf8String connectionId, Utf8String rulesetId, uint64_t const* physicalParentNodeId, uint64_t const* virtualParentNodeId)
-        : HierarchyLevelInfo(connectionId, rulesetId, physicalParentNodeId), m_datasourceId(0), m_virtualParentNodeId(nullptr)
+    DataSourceInfo(Utf8String connectionId, Utf8String rulesetId, Utf8String locale, uint64_t const* physicalParentNodeId, uint64_t const* virtualParentNodeId)
+        : HierarchyLevelInfo(connectionId, rulesetId, locale, physicalParentNodeId), m_datasourceId(0), m_virtualParentNodeId(nullptr)
         {
         if (nullptr != virtualParentNodeId)
             m_virtualParentNodeId = new uint64_t(*virtualParentNodeId);
         }
-    DataSourceInfo(uint64_t datasourceId, Utf8String connectionId, Utf8String rulesetId, uint64_t const* physicalParentNodeId, uint64_t const* virtualParentNodeId)
-        : HierarchyLevelInfo(connectionId, rulesetId, physicalParentNodeId), m_datasourceId(datasourceId), m_virtualParentNodeId(nullptr)
+    DataSourceInfo(uint64_t datasourceId, Utf8String connectionId, Utf8String rulesetId, Utf8String locale, uint64_t const* physicalParentNodeId, uint64_t const* virtualParentNodeId)
+        : HierarchyLevelInfo(connectionId, rulesetId, locale, physicalParentNodeId), m_datasourceId(datasourceId), m_virtualParentNodeId(nullptr)
         {
         if (nullptr != virtualParentNodeId)
             m_virtualParentNodeId = new uint64_t(*virtualParentNodeId);

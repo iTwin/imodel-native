@@ -237,7 +237,8 @@ struct RulesDrivenECPresentationManagerCustomImplMultithreadingTests : RulesDriv
 void RulesDrivenECPresentationManagerCustomImplMultithreadingTests::SetUp()
     {
     RulesDrivenECPresentationManagerMultithreadingTests::SetUp();
-    m_impl = new TestRulesDrivenECPresentationManagerImpl(*m_manager->CreateDependenciesFactory(), *m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
+    RulesDrivenECPresentationManager::Params params(*m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
+    m_impl = new TestRulesDrivenECPresentationManagerImpl(*m_manager->CreateDependenciesFactory(), params);
     m_manager->SetImpl(*m_impl);
     }
 

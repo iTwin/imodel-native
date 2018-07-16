@@ -201,8 +201,8 @@ protected:
         }
 
 public:
-    TestRulesDrivenECPresentationManagerImpl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, IConnectionManagerCR connections, Paths const& paths)
-        : RulesDrivenECPresentationManager::Impl(dependenciesFactory, connections, paths)
+    TestRulesDrivenECPresentationManagerImpl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, Params const& params)
+        : RulesDrivenECPresentationManager::Impl(dependenciesFactory, params)
         {}
 
     void SetRootNodesHandler(Handler_GetRootNodes handler) {m_rootNodesHandler = handler;}

@@ -68,11 +68,11 @@ IUserSettingsManager* RulesDrivenECPresentationManagerDependenciesFactory::_Crea
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenECPresentationManager::Impl::Impl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, IConnectionManagerCR connections, Paths const& paths)
+RulesDrivenECPresentationManager::Impl::Impl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, Params const& params)
     : m_localState(nullptr), m_ecPropertyFormatter(nullptr), m_categorySupplier(nullptr)
     {
-    m_locaters = dependenciesFactory._CreateRulesetLocaterManager(connections);
-    m_userSettings = dependenciesFactory._CreateUserSettingsManager(paths.GetTemporaryDirectory());
+    m_locaters = dependenciesFactory._CreateRulesetLocaterManager(params.GetConnections());
+    m_userSettings = dependenciesFactory._CreateUserSettingsManager(params.GetPaths().GetTemporaryDirectory());
     m_userSettings->SetLocalizationProvider(&IECPresentationManager::GetLocalizationProvider());
     m_compositeUpdateRecordsHandler = new CompositeUpdateRecordsHandler();
     m_compositeUpdateRecordsHandler->AddRef();
@@ -309,68 +309,77 @@ struct NavNodeLocater
 private:
     RulesDrivenECPresentationManagerImpl& m_manager;
     IConnectionCR m_connection;
-    ICancelationTokenCR m_cancelationToken;
-    RulesDrivenECPresentationManagerImpl::NavigationOptions m_navigationOptions;
-
+    RulesDrivenECPresentationManager::NavigationOptions m_options;
+    
 private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                01/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodePtr LocateNodeInHierarchy(bvector<Utf8String> const& path, int index, NavNodeCPtr parentNode)
+    NavNodeCPtr LocateNodeInHierarchy(bvector<Utf8String> const& path, int index, NavNodeCP parentNode, ICancelationTokenCR cancelationToken)
         {
-        if (path.size() == index)
+        if (path.size() <= index)
             return nullptr;
 
         INavNodesDataSourcePtr nodes;
-        if (parentNode.IsNull())
-            nodes = m_manager.GetRootNodes(m_connection, PageOptions(), m_navigationOptions, m_cancelationToken);
+        if (!parentNode)
+            nodes = m_manager.GetRootNodes(m_connection, PageOptions(), m_options, cancelationToken);
         else
-            nodes = m_manager.GetChildren(m_connection, *parentNode, PageOptions(), m_navigationOptions, m_cancelationToken);
+            nodes = m_manager.GetChildren(m_connection, *parentNode, PageOptions(), m_options, cancelationToken);
 
 
         size_t nodesCount = nodes->GetSize();
-        NavNodePtr node;
+        NavNodeCPtr node;
         bool found = false;
         for (size_t i = 0; i < nodesCount; ++i)
             {
             node = nodes->GetNode(i);
             bvector<Utf8String> const& nodePath = node->GetKey()->GetPathFromRoot();
-            if (nodePath.size() < index)
-                break;
-
-            if (nodePath[index].Equals(path[index]))
+            if (nodePath.size() <= index)
                 {
-                found = true;
+                BeAssert(false);
+                break;
+                }
+
+            found = true;
+            size_t virtualIndex = index;
+            for (; virtualIndex < nodePath.size() && virtualIndex < path.size(); ++virtualIndex)
+                {
+                if (!nodePath[virtualIndex].Equals(path[virtualIndex]))
+                    {
+                    found = false;
+                    break;
+                    }
+                }
+
+            if (found)
+                {
+                index = virtualIndex - 1;
                 break;
                 }
             }
 
         if (!found)
             return nullptr;
+
         if (path.size() == index + 1)
             return node;
 
-        return LocateNodeInHierarchy(path, index + 1, node);
+        return LocateNodeInHierarchy(path, index + 1, node.get(), cancelationToken);
         }
 
 public:
-    NavNodeLocater(RulesDrivenECPresentationManagerImpl& manager, IConnectionCR connection, Utf8CP rulesetId, ICancelationTokenCR cancelationToken)
-        : m_manager(manager), m_connection(connection), m_cancelationToken(cancelationToken), m_navigationOptions(rulesetId, RuleTargetTree::TargetTree_MainTree)
+    NavNodeLocater(RulesDrivenECPresentationManagerImpl& manager, IConnectionCR connection, RulesDrivenECPresentationManager::NavigationOptions options)
+        : m_manager(manager), m_connection(connection), m_options(options)
         {}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                01/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodeCPtr LocateNode(NavNodeKeyCR nodeKey)
+    NavNodeCPtr LocateNode(NavNodeKeyCR nodeKey, ICancelationTokenCR cancelationToken)
         {
-        NavNodeCPtr node = m_manager.GetNodesCache().LocateNode(m_connection, nodeKey);
+        NavNodeCPtr node = m_manager.GetNodesCache().LocateNode(m_connection, m_options.GetLocale(), nodeKey);
         if (node.IsNull())
-            node = LocateNodeInHierarchy(nodeKey.GetPathFromRoot(), 0, nullptr);
-
-        // after hierarchy is cached try one more time to locate node,
-        // maybe it is virtual node
-        if (node.IsNull())
-            node = m_manager.GetNodesCache().LocateNode(m_connection, nodeKey);
+            node = LocateNodeInHierarchy(nodeKey.GetPathFromRoot(), 0, nullptr, cancelationToken);
 
         return node;
         }
@@ -395,7 +404,7 @@ private:
         if (nullptr == parent)
             {
             RulesPreprocessor::RootNodeRuleParameters params(m_manager.m_connections, context.GetConnection(), context.GetRuleset(), TargetTree_MainTree,
-                context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
+                context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
             RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
             if (!specs.empty())
                 provider = MultiSpecificationNodesProvider::Create(context, specs);
@@ -403,7 +412,7 @@ private:
         else
             {
             RulesPreprocessor::ChildNodeRuleParameters params(m_manager.m_connections, context.GetConnection(), *parent, context.GetRuleset(), TargetTree_MainTree,
-                context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
+                context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
             ChildNodeRuleSpecificationsList specs = RulesPreprocessor::GetChildNodeSpecifications(params);
             if (!specs.empty())
                 provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
@@ -431,7 +440,9 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     NavNodesProviderPtr _CreateForHierarchyLevel(NavNodesProviderContextR context, JsonNavNodeCP parent) const override
         {
-        HierarchyLevelInfo info(context.GetConnection().GetId(), context.GetRuleset().GetRuleSetId(), nullptr != parent ? parent->GetNodeId() : 0);
+        HierarchyLevelInfo info(context.GetConnection().GetId(), context.GetRuleset().GetRuleSetId(), 
+            context.IsLocalizationContext() ? context.GetLocale() : "", 
+            nullptr != parent ? parent->GetNodeId() : 0);
         NavNodesProviderPtr provider = m_manager.m_nodesCache->GetDataSource(info);
         if (provider.IsNull())
             provider = CreateProvider(context, parent);
@@ -454,7 +465,9 @@ protected:
         {
         uint64_t parentId = (nullptr != parent) ? parent->GetNodeId() : 0;
         uint64_t const* parentIdP = (nullptr != parent) ? &parentId : nullptr;
-        DataSourceInfo info(context.GetConnection().GetId(), context.GetRuleset().GetRuleSetId(), parentIdP, parentIdP);
+        DataSourceInfo info(context.GetConnection().GetId(), context.GetRuleset().GetRuleSetId(),
+            context.IsLocalizationContext() ? context.GetLocale() : "",
+            parentIdP, parentIdP);
         NavNodesProviderPtr provider = m_manager.m_nodesCache->GetDataSource(info);
         if (provider.IsNull())
             provider = CreateProvider(context, parent);
@@ -476,7 +489,7 @@ private:
     RulesDrivenECPresentationManagerImpl& m_manager;
 
 protected:
-    NavNodesProviderContextPtr _Create(IConnectionCR connection, Utf8CP rulesetId, uint64_t const* parentNodeId, ICancelationTokenCP cancelationToken, bool disableUpdates) const override
+    NavNodesProviderContextPtr _Create(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId, ICancelationTokenCP cancelationToken, bool disableUpdates) const override
         {
         // get the ruleset
         RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Navigation, "[NodesProviderContextFactory::Create] Get ruleset", NativeLogging::LOG_TRACE);
@@ -501,7 +514,7 @@ protected:
 
         // set up the nodes provider context
         _l2 = LoggingHelper::CreatePerformanceLogger(Log::Navigation, "[NodesProviderContextFactory::Create] Create context", NativeLogging::LOG_TRACE);
-        NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, true, TargetTree_MainTree, parentNodeId,
+        NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, true, TargetTree_MainTree, locale, parentNodeId,
             settings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_manager.m_nodesFactory, m_manager.GetNodesCache(),
             *m_manager.m_nodesProviderFactory, m_manager.GetLocalState());
         context->SetQueryContext(m_manager.m_connections, connection, statementsCache, *m_manager.m_customFunctions, m_manager.m_usedClassesListener);
@@ -519,26 +532,26 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory,
-    IConnectionManagerCR connections, Paths const& paths, bool disableDiskCache)
-    : RulesDrivenECPresentationManager::Impl(dependenciesFactory, connections, paths), m_connections(connections)
+RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, Params const& params)
+    : RulesDrivenECPresentationManager::Impl(dependenciesFactory, params), m_connections(params.GetConnections())
     {
-    m_customFunctions = new CustomFunctionsInjector(connections);
+    m_customFunctions = new CustomFunctionsInjector(m_connections);
     m_rulesetECExpressionsCache = new RulesetECExpressionsCache();
-    m_ecdbCaches = new ECDbCaches(connections);
+    m_ecdbCaches = new ECDbCaches(m_connections);
     m_nodesProviderContextFactory = new NodesProviderContextFactory(*this);
     m_nodesProviderFactory = new NodesProviderFactory(*this);
     m_usedClassesListener = new UsedClassesListener(*this);
     m_nodesFactory = new JsonNavNodesFactory();
-    m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory,
-        connections, GetUserSettingsManager(), *m_ecdbCaches, disableDiskCache ? NodesCacheType::Memory : NodesCacheType::Disk);
+    m_nodesCache = new NodesCache(params.GetPaths().GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory,
+        m_connections, GetUserSettingsManager(), *m_ecdbCaches, params.ShouldDisableDiskCache() ? NodesCacheType::Memory : NodesCacheType::Disk);
+    m_nodesCache->SetCacheFileSizeLimit(params.GetDiskCacheFileSizeLimit());
     m_contentCache = new ContentCache();
-    m_updateHandler = new UpdateHandler(m_nodesCache, m_contentCache, connections, *m_nodesProviderContextFactory,
+    m_updateHandler = new UpdateHandler(m_nodesCache, m_contentCache, m_connections, *m_nodesProviderContextFactory,
         *m_nodesProviderFactory, *m_rulesetECExpressionsCache);
 
     GetLocaters().SetRulesetCallbacksHandler(this);
     GetUserSettingsManager().SetChangesListener(this);
-    connections.AddListener(*this);
+    m_connections.AddListener(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -645,7 +658,8 @@ void RulesDrivenECPresentationManagerImpl::_OnECInstancesChanged(ECDbCR db, bvec
 INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(IConnectionCR connection, ICancelationTokenCR cancelationToken, NavigationOptions const& options)
     {
     // create the nodes provider context
-    NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(connection, options.GetRulesetId(), nullptr, &cancelationToken, options.GetDisableUpdates());
+    NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(connection, options.GetRulesetId(), options.GetLocale(),
+        nullptr, &cancelationToken, options.GetDisableUpdates());
     if (context.IsNull())
         return nullptr;
 
@@ -686,7 +700,8 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
     {
     // create the nodes provider context
     uint64_t parentNodeId = parent.GetNodeId();
-    NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(connection, options.GetRulesetId(), &parentNodeId, &cancelationToken, options.GetDisableUpdates());
+    NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(connection, options.GetRulesetId(), options.GetLocale(),
+        &parentNodeId, &cancelationToken, options.GetDisableUpdates());
     if (context.IsNull())
         return nullptr;
 
@@ -738,8 +753,8 @@ NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetParent(IConnectionCR, NavN
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetNode(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken)
     {
-    NavNodeLocater locater(*this, connection, options.GetRulesetId(), cancelationToken);
-    return locater.LocateNode(nodeKey);
+    NavNodeLocater locater(*this, connection, options);
+    return locater.LocateNode(nodeKey, cancelationToken);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -767,10 +782,11 @@ static void TraverseHierarchy(RulesDrivenECPresentationManagerImpl& mgr, IConnec
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(IConnectionCR connection, Utf8CP filterText, NavigationOptions const& options, ICancelationTokenCR cancelationToken)
     {
-    if (!GetNodesCache().IsDataSourceCached(connection.GetId(), options.GetRulesetId()))
+    if (!GetNodesCache().IsDataSourceCached(connection.GetId(), options.GetRulesetId(), options.GetLocale()))
         GetRootNodes(connection, PageOptions(), options, cancelationToken);
 
-    NavNodesProviderPtr provider = GetNodesCache().GetUndeterminedNodesProvider(connection, options.GetRulesetId(), options.GetDisableUpdates());
+    NavNodesProviderPtr provider = GetNodesCache().GetUndeterminedNodesProvider(connection, options.GetRulesetId(), 
+        options.GetLocale(), options.GetDisableUpdates());
     if (provider.IsNull())
         return bvector<NavNodeCPtr>();
 
@@ -781,7 +797,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(ICo
         provider->GetNode(node, i);
         TraverseHierarchy(*this, connection, *node, options, cancelationToken);
         }
-    return GetNodesCache().GetFilteredNodes(connection, options.GetRulesetId(), filterText);
+    return GetNodesCache().GetFilteredNodes(connection, options.GetRulesetId(), options.GetLocale(), filterText);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -810,7 +826,7 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                01/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<ECInstanceKey> GetECInstanceKeys(NavNodeKeyListCR nodeKeys)
+    bvector<ECInstanceKey> GetECInstanceKeys(NavNodeKeyListCR nodeKeys, ICancelationTokenCR cancelationToken)
         {
         bvector<ECInstanceKey> instanceKeys;
         for (NavNodeKeyCPtr key : nodeKeys)
@@ -821,7 +837,7 @@ private:
                 continue;
                 }
 
-            NavNodeCPtr node = m_locater.LocateNode(*key);
+            NavNodeCPtr node = m_locater.LocateNode(*key, cancelationToken);
             if (node.IsNull() || NavNodesHelper::IsCustomNode(*node))
                 continue;
 
@@ -832,21 +848,29 @@ private:
             }
         return instanceKeys;
         }
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Saulius.Skliutas                07/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static RulesDrivenECPresentationManager::NavigationOptions ToNavigationOptions(RulesDrivenECPresentationManager::ContentOptions const& contentOptions)
+        {
+        return RulesDrivenECPresentationManager::NavigationOptions(contentOptions.GetRulesetId(), TargetTree_Both, false, contentOptions.GetLocale());
+        }
 
 public:
-    ContentRulesSpecificationsInputHandler(RulesDrivenECPresentationManagerImpl& manager, IConnectionCR connection, Utf8CP rulesetId, ICancelationTokenCR cancelationToken) 
-        : m_locater(manager, connection, rulesetId, cancelationToken)
+    ContentRulesSpecificationsInputHandler(RulesDrivenECPresentationManagerImpl& manager, IConnectionCR connection, RulesDrivenECPresentationManager::ContentOptions const& options) 
+        : m_locater(manager, connection, ToNavigationOptions(options))
         {}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                01/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentRuleInstanceKeysList HandleSpecifications(ContentRuleInputKeysList& specs)
+    ContentRuleInstanceKeysList HandleSpecifications(ContentRuleInputKeysList& specs, ICancelationTokenCR cancelationToken)
         {
         ContentRuleInstanceKeysList instanceSpecs;
         for (ContentRuleInputKeys& spec : specs)
             {
-            bvector<ECInstanceKey> instanceKeys = GetECInstanceKeys(spec.GetMatchingNodeKeys());
+            bvector<ECInstanceKey> instanceKeys = GetECInstanceKeys(spec.GetMatchingNodeKeys(), cancelationToken);
             instanceSpecs.insert(ContentRuleInstanceKeys(spec.GetRule(), instanceKeys));
             }
         return instanceSpecs;
@@ -886,7 +910,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     ECSqlStatementCache& statementsCache = m_ecdbCaches->GetStatementsCache(connection);
 
     // set up the provider context
-    ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, true, key.GetPreferredDisplayType(), inputKeys, *m_nodesCache,
+    ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, true, options.GetLocale(), key.GetPreferredDisplayType(), inputKeys, *m_nodesCache,
         GetCategorySupplier(), settings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_nodesFactory, GetLocalState());
     context->SetQueryContext(m_connections, connection, statementsCache, *m_customFunctions);
     context->SetLocalizationContext(IECPresentationManager::GetLocalizationProvider());
@@ -897,12 +921,13 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
 
     // get content specifications
     _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider] Get specifications", NativeLogging::LOG_TRACE);
-    RulesPreprocessor::ContentRuleParameters params(m_connections, connection, inputKeys, key.GetPreferredDisplayType(), selectionInfo, *ruleset, settings, &context->GetUsedSettingsListener(), ecexpressionsCache, *m_nodesCache);
+    RulesPreprocessor::ContentRuleParameters params(m_connections, connection, inputKeys, key.GetPreferredDisplayType(), 
+        selectionInfo, *ruleset, options.GetLocale(), settings, &context->GetUsedSettingsListener(), ecexpressionsCache, *m_nodesCache);
     ContentRuleInputKeysList specs = RulesPreprocessor::GetContentSpecifications(params);
     _l2 = nullptr;
 
-    ContentRulesSpecificationsInputHandler inputHandler(*this, connection, ruleset->GetRuleSetId().c_str(), cancelationToken);
-    ContentRuleInstanceKeysList instanceSpecs = inputHandler.HandleSpecifications(specs);
+    ContentRulesSpecificationsInputHandler inputHandler(*this, connection, ruleset->GetRuleSetId().c_str());
+    ContentRuleInstanceKeysList instanceSpecs = inputHandler.HandleSpecifications(specs, cancelationToken);
 
     _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider] Create provider", NativeLogging::LOG_TRACE);
     provider = SpecificationContentProvider::Create(*context, instanceSpecs);
@@ -918,7 +943,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentDescriptorCR descriptor, INavNodeKeysContainerCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options)
     {
-    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), descriptor.GetPreferredDisplayType(), inputKeys, selectionInfo);
+    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), descriptor.GetPreferredDisplayType(), options.GetLocale(), inputKeys, selectionInfo);
     SpecificationContentProviderCPtr cachedProvider = GetContentProvider(connection, cancelationToken, key, inputKeys, selectionInfo, options);
     if (cachedProvider.IsNull())
         return nullptr;
@@ -960,7 +985,8 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
 
     // locate the classes
     ECSchemaHelper schemaHelper(connection, &relatedPathsCache, &polymorphicallyRelatedClassesCache, &statementsCache, &ecexpressionsCache);
-    ContentClassesLocater::Context locaterContext(schemaHelper, m_connections, connection, *ruleset, preferredDisplayType, settings, ecexpressionsCache, *m_nodesCache);
+    ContentClassesLocater::Context locaterContext(schemaHelper, m_connections, connection, 
+        *ruleset, options.GetLocale(), preferredDisplayType, settings, ecexpressionsCache, *m_nodesCache);
     return ContentClassesLocater(locaterContext).Locate(classes);
     }
 
@@ -976,7 +1002,7 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
         preferredDisplayType = ContentDisplayType::Undefined;
 
     INavNodeKeysContainerCPtr nodeKeys = inputKeys.GetAllNavNodeKeys();
-    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), preferredDisplayType, *nodeKeys, selectionInfo);
+    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), preferredDisplayType, options.GetLocale(), *nodeKeys, selectionInfo);
     ContentProviderCPtr provider = GetContentProvider(connection, cancelationToken, key, *nodeKeys, selectionInfo, options);
     return provider.IsValid() ? provider->GetContentDescriptor() : nullptr;
     }
@@ -1078,8 +1104,8 @@ bvector<ECInstanceChangeResult> RulesDrivenECPresentationManagerImpl::_SaveValue
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImpl::_OnNodeChecked(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken)
     {
-    NavNodeLocater locater(*this, connection, options.GetRulesetId(), cancelationToken);
-    NavNodeCPtr node = locater.LocateNode(nodeKey);
+    NavNodeLocater locater(*this, connection, options);
+    NavNodeCPtr node = locater.LocateNode(nodeKey, cancelationToken);
     JsonNavNodePtr jsonNode;
     if (node.IsValid())
         jsonNode = GetNodesCache().GetNode(node->GetNodeId());
@@ -1092,8 +1118,8 @@ void RulesDrivenECPresentationManagerImpl::_OnNodeChecked(IConnectionCR connecti
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImpl::_OnNodeUnchecked(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken)
     {
-    NavNodeLocater locater(*this, connection, options.GetRulesetId(), cancelationToken);
-    NavNodeCPtr node = locater.LocateNode(nodeKey);
+    NavNodeLocater locater(*this, connection, options);
+    NavNodeCPtr node = locater.LocateNode(nodeKey, cancelationToken);
     JsonNavNodePtr jsonNode;
     if (node.IsValid())
         jsonNode = GetNodesCache().GetNode(node->GetNodeId());
@@ -1106,8 +1132,8 @@ void RulesDrivenECPresentationManagerImpl::_OnNodeUnchecked(IConnectionCR connec
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImpl::_OnNodeExpanded(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken)
     {
-    NavNodeLocater locater(*this, connection, options.GetRulesetId(), cancelationToken);
-    NavNodeCPtr node = locater.LocateNode(nodeKey);
+    NavNodeLocater locater(*this, connection, options);
+    NavNodeCPtr node = locater.LocateNode(nodeKey, cancelationToken);
     JsonNavNodePtr jsonNode;
     if (node.IsValid())
         jsonNode = GetNodesCache().GetNode(node->GetNodeId());
@@ -1123,8 +1149,8 @@ void RulesDrivenECPresentationManagerImpl::_OnNodeExpanded(IConnectionCR connect
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImpl::_OnNodeCollapsed(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken)
     {
-    NavNodeLocater locater(*this, connection, options.GetRulesetId(), cancelationToken);
-    NavNodeCPtr node = locater.LocateNode(nodeKey);
+    NavNodeLocater locater(*this, connection, options);
+    NavNodeCPtr node = locater.LocateNode(nodeKey, cancelationToken);
     JsonNavNodePtr jsonNode;
     if (node.IsValid())
         jsonNode = GetNodesCache().GetNode(node->GetNodeId());

@@ -83,6 +83,7 @@ private:
     IUsedUserSettingsListener* m_usedSettingsListener;
     ECExpressionsCache& m_ecexpressionsCache;
     ILocalizationProvider const* m_localizationProvider;
+    Utf8String m_locale;
     IUsedClassesListener* m_usedClassesListener;
     JsonNavNodeCP m_parentNode;
     rapidjson::Value const* m_extendedData;
@@ -91,7 +92,7 @@ private:
     IECPropertyFormatter const* m_propertyFormatter;
     
 public:
-    ECPRESENTATION_EXPORT CustomFunctionsContext(ECSchemaHelper const&, IConnectionManagerCR, IConnectionCR, PresentationRuleSetCR, IUserSettings const&, IUsedUserSettingsListener*,
+    ECPRESENTATION_EXPORT CustomFunctionsContext(ECSchemaHelper const&, IConnectionManagerCR, IConnectionCR, PresentationRuleSetCR, Utf8String locale, IUserSettings const&, IUsedUserSettingsListener*,
         ECExpressionsCache&, JsonNavNodesFactory const&, IUsedClassesListener*, JsonNavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter = nullptr);
     ECPRESENTATION_EXPORT ~CustomFunctionsContext();
 
@@ -99,6 +100,7 @@ public:
 
     void SetLocalizationProvider(ILocalizationProvider const& provider) {m_localizationProvider = &provider;}
     ILocalizationProvider const* GetLocalizationProvider() const {return m_localizationProvider;}
+    Utf8StringCR GetLocale() const {return m_locale;}
     ECSchemaHelper const& GetSchemaHelper() const {return m_schemaHelper;}
     IConnectionManagerCR GetConnections() const {return m_connections;}
     IConnectionCR GetConnection() const {return m_connection;}

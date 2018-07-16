@@ -390,27 +390,29 @@ struct NodeContextEvaluator : PropertySymbol::ContextEvaluator
 private:
     RulesEngineRootSymbolsContext& m_rootContext;
     IConnectionCR m_connection;
+    Utf8String m_locale;
     INavNodeLocaterCR m_locater;
     NavNodeKeyCP m_key;
     SymbolExpressionContextPtr m_context;
-    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, INavNodeLocaterCR locater, NavNodeKeyCP key)
-        : m_rootContext(rootContext), m_connection(connection), m_locater(locater), m_key(key), m_context(nullptr)
+    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, Utf8String locale, INavNodeLocaterCR locater, NavNodeKeyCP key)
+        : m_rootContext(rootContext), m_connection(connection), m_locale(locale), m_locater(locater), m_key(key), m_context(nullptr)
         {}
 public:
-    static RefCountedPtr<NodeContextEvaluator> Create(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, INavNodeLocaterCR locater, NavNodeKeyCP key)
+    static RefCountedPtr<NodeContextEvaluator> Create(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, 
+        Utf8String locale, INavNodeLocaterCR locater, NavNodeKeyCP key)
         {
-        return new NodeContextEvaluator(rootContext, connection, locater, key);
+        return new NodeContextEvaluator(rootContext, connection, locale, locater, key);
         }
     virtual ExpressionContextPtr _GetContext() override
         {
         if (m_context.IsValid())
             return m_context;
 
-        JsonNavNodeCPtr node = (nullptr != m_key) ? m_locater.LocateNode(m_connection, *m_key) : nullptr;
+        JsonNavNodeCPtr node = (nullptr != m_key) ? m_locater.LocateNode(m_connection, m_locale, *m_key) : nullptr;
         if (node.IsNull() && nullptr != m_key && nullptr != m_key->AsECInstanceNodeKey())
             {
             ECInstanceNodeKey const* instanceKey = m_key->AsECInstanceNodeKey();
-            JsonNavNodePtr temp = JsonNavNodesFactory().CreateECInstanceNode(m_connection, instanceKey->GetECClassId(), instanceKey->GetInstanceId(), "");
+            JsonNavNodePtr temp = JsonNavNodesFactory().CreateECInstanceNode(m_connection, m_locale, instanceKey->GetECClassId(), instanceKey->GetInstanceId(), "");
             temp->SetNodeKey(*NavNodesHelper::CreateNodeKey(m_connection, *temp, bvector<Utf8String>()));
             node = temp;
             }
@@ -762,7 +764,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetContentRulesContext(Conten
     userSettingsSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
     
     // SelectedNode
-    rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("SelectedNode", *NodeContextEvaluator::Create(*rootCtx, params.GetConnection(), params.GetNodeLocater(), params.GetSelectedNodeKey())));
+    rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("SelectedNode", *NodeContextEvaluator::Create(*rootCtx, params.GetConnection(), params.GetLocale(), params.GetNodeLocater(), params.GetSelectedNodeKey())));
 
     // Content-specific
     rootCtx->GetSymbolsContext().AddSymbol(*ValueSymbol::Create("ContentDisplayType", ECValue(params.GetContentDisplayType().c_str())));

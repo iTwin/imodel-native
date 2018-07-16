@@ -31,6 +31,7 @@ private:
     // common
     PresentationRuleSetCR m_ruleset;
     bool m_holdsRuleset;
+    Utf8String m_locale;
     IJsonLocalState const* m_localState;
     IUserSettings const& m_userSettings;
     mutable UsedUserSettingsListener* m_usedSettingsListener;
@@ -55,7 +56,7 @@ private:
     void Init();
 
 protected:
-    ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, bool holdRuleset, IUserSettings const&, ECExpressionsCache&, 
+    ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, bool holdRuleset, Utf8String locale, IUserSettings const&, ECExpressionsCache&, 
         RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT RulesDrivenProviderContext(RulesDrivenProviderContextCR other);
     
@@ -75,6 +76,7 @@ public:
     IJsonLocalState const* GetLocalState() const {return m_localState;}
     ECPRESENTATION_EXPORT ICancelationTokenCR GetCancelationToken() const;
     void SetCancelationToken(ICancelationTokenCP token) {m_cancelationToken = token;}
+    Utf8StringCR GetLocale() const {return m_locale;}
     
     // localization context
     ECPRESENTATION_EXPORT void SetLocalizationContext(ILocalizationProvider const& provider);

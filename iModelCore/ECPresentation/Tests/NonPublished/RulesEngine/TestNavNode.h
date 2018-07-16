@@ -57,50 +57,51 @@ struct TestNodesFactory : JsonNavNodesFactory
 {
 private:
     Utf8String m_rulesetId;
+    Utf8String m_locale;
 
 public:
-    TestNodesFactory(Utf8String rulesetId)
-        : m_rulesetId(rulesetId)
+    TestNodesFactory(Utf8String rulesetId, Utf8String locale = "")
+        : m_rulesetId(rulesetId), m_locale(locale)
         {}
     JsonNavNodePtr CreateECInstanceNode(IConnectionCR connection, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
         {
-        JsonNavNodePtr node = JsonNavNodesFactory::CreateECInstanceNode(connection, classId, instanceId, label);
+        JsonNavNodePtr node = JsonNavNodesFactory::CreateECInstanceNode(connection, m_locale, classId, instanceId, label);
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }
     JsonNavNodePtr CreateECInstanceNode(Utf8StringCR connectionId, IECInstanceCR instance, Utf8CP label) const
         {
-        JsonNavNodePtr node = JsonNavNodesFactory::CreateECInstanceNode(connectionId, instance, label);
+        JsonNavNodePtr node = JsonNavNodesFactory::CreateECInstanceNode(connectionId, m_locale, instance, label);
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }
     JsonNavNodePtr CreateECClassGroupingNode(Utf8StringCR connectionId, ECClassCR ecClass, Utf8CP label, GroupedInstanceKeysListCR list) const
         {
-        JsonNavNodePtr node = JsonNavNodesFactory::CreateECClassGroupingNode(connectionId, ecClass, label, list);
+        JsonNavNodePtr node = JsonNavNodesFactory::CreateECClassGroupingNode(connectionId, m_locale, ecClass, label, list);
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }
     JsonNavNodePtr CreateECRelationshipGroupingNode(Utf8StringCR connectionId, ECRelationshipClassCR ecRel, Utf8CP label, GroupedInstanceKeysListCR list) const
         {
-        JsonNavNodePtr node = JsonNavNodesFactory::CreateECRelationshipGroupingNode(connectionId, ecRel, label, list);
+        JsonNavNodePtr node = JsonNavNodesFactory::CreateECRelationshipGroupingNode(connectionId, m_locale, ecRel, label, list);
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }
     JsonNavNodePtr CreateECPropertyGroupingNode(Utf8StringCR connectionId, ECClassCR ecClass, ECPropertyCR ecProp, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR list) const
         {
-        JsonNavNodePtr node = JsonNavNodesFactory::CreateECPropertyGroupingNode(connectionId, ecClass, ecProp, label, imageId, groupingValue, isRangeGrouping, list);
+        JsonNavNodePtr node = JsonNavNodesFactory::CreateECPropertyGroupingNode(connectionId, m_locale, ecClass, ecProp, label, imageId, groupingValue, isRangeGrouping, list);
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }
     JsonNavNodePtr CreateDisplayLabelGroupingNode(Utf8StringCR connectionId, Utf8CP label, GroupedInstanceKeysListCR list) const
         {
-        JsonNavNodePtr node = JsonNavNodesFactory::CreateDisplayLabelGroupingNode(connectionId, label, list);
+        JsonNavNodePtr node = JsonNavNodesFactory::CreateDisplayLabelGroupingNode(connectionId, m_locale, label, list);
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }
     JsonNavNodePtr CreateCustomNode(Utf8StringCR connectionId, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const
         {
-        JsonNavNodePtr node = JsonNavNodesFactory::CreateCustomNode(connectionId, label, description, imageId, type);
+        JsonNavNodePtr node = JsonNavNodesFactory::CreateCustomNode(connectionId, m_locale, label, description, imageId, type);
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }

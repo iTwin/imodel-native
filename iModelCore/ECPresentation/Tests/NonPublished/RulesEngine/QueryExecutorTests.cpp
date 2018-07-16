@@ -120,8 +120,8 @@ TEST_F (NavigationQueryExecutorTests, GetInstanceNodes)
     query->From(*RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(classes, "this"));
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
 
     JsonNavNodePtr node;
@@ -180,8 +180,8 @@ TEST_F (NavigationQueryExecutorTests, GetInstanceNodes_GroupsByInstanceKey)
     query->GroupByContract(*contract);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
 
     size_t nodesCount = executor.GetNodesCount();
@@ -224,8 +224,8 @@ TEST_F (NavigationQueryExecutorTests, GetClassGroupingNodes)
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Class);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
 
@@ -283,8 +283,8 @@ TEST_F (NavigationQueryExecutorTests, GetDisplayLabelGroupingNodes)
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::DisplayLabelGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
     
@@ -317,8 +317,8 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode)
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
 
     size_t nodesCount = executor.GetNodesCount();
@@ -352,8 +352,8 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode_In
 
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
 
     size_t nodesCount = executor.GetNodesCount();
@@ -383,8 +383,8 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfClassGroupingNode_NotGroupe
     query->From(ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false));
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
 
@@ -415,8 +415,8 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfClassGroupingNode_GroupedBy
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::DisplayLabelGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
 
@@ -447,8 +447,8 @@ TEST_F (NavigationQueryExecutorTests, OverridesLabel)
     query->From(*RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(classes, "this"));
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
     EXPECT_EQ(3, executor.GetNodesCount());
 
@@ -485,8 +485,8 @@ TEST_F (NavigationQueryExecutorTests, InstanceNodesSortedAlphanumerically)
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
     ASSERT_EQ(3, executor.GetNodesCount());
     for (size_t i = 0; i < executor.GetNodesCount(); i++)
@@ -524,8 +524,8 @@ TEST_F (NavigationQueryExecutorTests, InstanceNodesSortedAlphanumerically_Instan
 
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
     ASSERT_EQ(3, executor.GetNodesCount());
     for (size_t i = 0; i < executor.GetNodesCount(); i++)
@@ -576,8 +576,8 @@ TEST_F (NavigationQueryExecutorTests, ClassGroupingNodesSortedByLabel)
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Class);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
     ASSERT_EQ(3, executor.GetNodesCount());
 
@@ -618,8 +618,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyGrouping)
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *grouped);
     executor.ReadRecords();
     ASSERT_EQ(3, executor.GetNodesCount());
     for (size_t i = 0; i < 3; i++)
@@ -669,8 +669,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyRangeGrouping)
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
 
     NavigationQueryExtendedData(*grouped).AddRangesData(groupingProperty, propertyGroup);    
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *grouped);
     executor.ReadRecords();
     ASSERT_EQ(3, executor.GetNodesCount());
     for (size_t i = 0; i < 3; i++)
@@ -718,8 +718,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyRangeGroupingWithCustomLabelsAndIm
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
     NavigationQueryExtendedData(*grouped).AddRangesData(groupingProperty, propertyGroup);
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *grouped);
     executor.ReadRecords();
     ASSERT_EQ(3, executor.GetNodesCount());
     for (size_t i = 0; i < executor.GetNodesCount(); i++)
@@ -783,8 +783,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithoutDisplay
 
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));   
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *grouped);
     executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
     
@@ -829,8 +829,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *grouped);
     executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
     for (size_t i = 0; i < executor.GetNodesCount(); i++)
@@ -881,8 +881,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
 
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *grouped);
     executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
     for (size_t i = 0; i < executor.GetNodesCount(); i++)
@@ -927,8 +927,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
 
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:ClassD", "StringProperty"));
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *grouped);
     executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
 
@@ -966,8 +966,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithLabelOverr
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *grouped);
     executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
 
@@ -1005,8 +1005,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithInstanceLa
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *grouped);
     executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
 
@@ -1051,8 +1051,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *grouped);
     executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
     
@@ -1097,8 +1097,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
 
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *grouped);
     executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
     
@@ -1162,8 +1162,8 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForECInstanceNodes)
     ComplexNavigationQueryPtr query = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(*m_widgetClass, true, "this");
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
 
@@ -1203,8 +1203,8 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForECClassGroupingNo
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Class);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
     
@@ -1251,8 +1251,8 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForBaseClassGrouping
     sorted->From(*grouped);
     sorted->OrderBy("DisplayLabel");
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &sorted->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *sorted);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &sorted->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *sorted);
     executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
     
@@ -1282,8 +1282,8 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForDisplayLabelGroup
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
 
     //m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));   
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *query);
     executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
     
@@ -1318,8 +1318,8 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForPropertyGroupingN
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *grouped);
     executor.ReadRecords();
     ASSERT_EQ(3, executor.GetNodesCount());
     
@@ -1359,8 +1359,8 @@ TEST_F(NavigationQueryExecutorTests, SetsRelatedInstanceKeysForECInstanceNodes)
     UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create(*gadgetsQuery, *sprocketsQuery);
     unionQuery->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &unionQuery->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *unionQuery);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &unionQuery->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *unionQuery);
     executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
 
@@ -1413,7 +1413,7 @@ TEST_F(ContentQueryExecutorTests, HandlesUnionSelectionFromClassWithPointPropert
 
     UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.ReadRecords();
     
@@ -1449,7 +1449,7 @@ TEST_F(ContentQueryExecutorTests, HandlesResultsMergingFromOneClass)
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query), "gadget");
     query->From(*m_gadgetClass, false, "gadget");
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.ReadRecords();
 
@@ -1521,7 +1521,7 @@ TEST_F(ContentQueryExecutorTests, HandlesResultsMergingFromMultipleClasses)
     query->SelectContract(*ContentQueryContract::Create(0, *outerDescriptor, nullptr, *query));
     query->From(*UnionContentQuery::Create(*q1, *q2));    
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.ReadRecords();
 
@@ -1562,7 +1562,7 @@ TEST_F(ContentQueryExecutorTests, HandlesStructProperties)
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classI, *query, bvector<RelatedClass>(), false), "this");
     query->From(*classI, false, "this");
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.ReadRecords();
 
@@ -1627,7 +1627,7 @@ TEST_F(ContentQueryExecutorTests, HandlesArrayProperties)
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classR, *query, bvector<RelatedClass>(), false), "this");
     query->From(*classR, false, "this");
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.ReadRecords();
 
@@ -1676,7 +1676,7 @@ TEST_F(ContentQueryExecutorTests, SelectsRelatedProperties)
     query->From(*m_gadgetClass, false, "this");
     query->Join(RelatedClass(*m_gadgetClass, *m_widgetClass, *widgetHasGadgetsRelationship, false, "rel_RET_Widget_0"));
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.ReadRecords();
 
@@ -1730,7 +1730,7 @@ TEST_F(ContentQueryExecutorTests, SelectsRelatedPropertiesFromOnlySingleClassWhe
 
     UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.ReadRecords();
 
@@ -1797,7 +1797,7 @@ TEST_F(ContentQueryExecutorTests, UsesSuppliedECPropertyFormatterToFormatPrimiti
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query), "widget");
     query->From(*m_widgetClass, false, "widget");
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.SetPropertyFormatter(formatter);
     executor.ReadRecords();
@@ -1845,7 +1845,7 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromPropertyField)
     query->From(*nestedQuery);
     query->GroupByContract(*contract);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.ReadRecords();
 
@@ -1892,7 +1892,7 @@ TEST_F(ContentQueryExecutorTests, GetDistinctValuesFromCalculatedPropertyField)
     query->From(*nestedQuery);
     query->GroupByContract(*contract);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.ReadRecords();
 
@@ -1954,7 +1954,7 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromMergedECPropertyField)
 
     UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.ReadRecords();
 
@@ -2000,7 +2000,7 @@ TEST_F(QueryExecutorTests, GetDistinctPointValuesFromPropertiesField)
     query->From(*nestedQuery);
     query->GroupByContract(*contract);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.ReadRecords();
     

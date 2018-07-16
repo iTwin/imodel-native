@@ -4283,7 +4283,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_UsedInCustomizationRuleCondition)
+TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_UsedInLabelOverrideRuleCondition)
     {
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
     ECInstanceId widgetId;
@@ -4298,34 +4298,41 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     rules->AddPresentationRule(*rule);
     rules->AddPresentationRule(*new LabelOverride("1 = GetSettingIntValue(\"test\")", 1, "\"test\"", "\"test\""));
 
+    Utf8String defaultLabel = CommonTools::GetDefaultDisplayLabel(m_widgetClass->GetDisplayLabel(), widgetId.GetValue());
+
     // request for root nodes
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
     DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(m_widgetClass->GetDisplayLabel(), widgetId.GetValue()).c_str(), rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(defaultLabel.c_str(), rootNodes[0]->GetLabel().c_str());
 
-    // change a setting
-    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+    for (int i = 1; i <= 2; ++i)
+        {
+        bool shouldLabelChange = (1 == i);
 
-    // still expect 1 root node
-    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
-    ASSERT_EQ(1, rootNodes.GetSize());
+        // change a setting
+        m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", i);
 
-    // its label should have changed
-    EXPECT_STREQ("test", rootNodes[0]->GetLabel().c_str());
-    
-    // expect 1 update record
-    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+        // still expect 1 root node
+        rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+        ASSERT_EQ(1, rootNodes.GetSize());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_STREQ(widget->GetInstanceId().c_str(), m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
-    EXPECT_TRUE(NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).IsCustomized());
+        // verify label
+        EXPECT_STREQ(shouldLabelChange ? "test" : defaultLabel.c_str(), rootNodes[0]->GetLabel().c_str());
+
+        // expect 1 update record
+        ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+        EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+        EXPECT_STREQ(widget->GetInstanceId().c_str(), m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
+        EXPECT_TRUE(NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).IsCustomized());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_UsedInCustomizationRuleExpression)
+TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_UsedInLabelOverrideRuleExpression)
     {
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
 
@@ -4345,22 +4352,116 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("test0", rootNodes[0]->GetLabel().c_str());
 
-    // change a setting
-    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+    for (int i = 1; i <= 2; ++i)
+        {
+        // change a setting
+        m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", i);
 
-    // still expect 1 root node
-    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
-    ASSERT_EQ(1, rootNodes.GetSize());
+        // still expect 1 root node
+        rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+        ASSERT_EQ(1, rootNodes.GetSize());
 
-    // its label should have changed
-    EXPECT_STREQ("test1", rootNodes[0]->GetLabel().c_str());
+        // its label should have changed
+        EXPECT_STREQ(Utf8PrintfString("test%d", i).c_str(), rootNodes[0]->GetLabel().c_str());
+
+        // expect 1 update record
+        ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+        EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+        EXPECT_STREQ(widget->GetInstanceId().c_str(), m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
+        EXPECT_TRUE(NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).IsCustomized());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_UsedInCustomizationRuleCondition)
+    {
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
+    ECInstanceId widgetId;
+    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+        "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+    rules->AddPresentationRule(*new StyleOverride("1 = GetSettingIntValue(\"test\")", 1, "\"test\"", "\"test\"", "\"test\""));
     
-    // expect 1 update record
-    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ("", rootNodes[0]->GetForeColor().c_str());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_STREQ(widget->GetInstanceId().c_str(), m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
-    EXPECT_TRUE(NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).IsCustomized());
+    for (int i = 1; i <= 2; ++i)
+        {
+        bool shouldColorChange = (1 == i);
+
+        // change a setting
+        m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", i);
+
+        // still expect 1 root node
+        rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+        ASSERT_EQ(1, rootNodes.GetSize());
+
+        // verify label
+        EXPECT_STREQ(shouldColorChange ? "test" : "", rootNodes[0]->GetForeColor().c_str());
+
+        // expect 1 update record
+        ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+        EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+        EXPECT_STREQ(widget->GetInstanceId().c_str(), m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
+        EXPECT_TRUE(NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).IsCustomized());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_UsedInCustomizationRuleExpression)
+    {
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+        "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+    rules->AddPresentationRule(*new StyleOverride("", 1, "\"test\" & GetSettingIntValue(\"test\")", "\"test\"", "\"test\""));
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ("test0", rootNodes[0]->GetForeColor().c_str());
+
+    for (int i = 1; i <= 2; ++i)
+        {
+        // change a setting
+        m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", i);
+
+        // still expect 1 root node
+        rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+        ASSERT_EQ(1, rootNodes.GetSize());
+
+        // its label should have changed
+        EXPECT_STREQ(Utf8PrintfString("test%d", i).c_str(), rootNodes[0]->GetForeColor().c_str());
+
+        // expect 1 update record
+        ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+        EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+        EXPECT_STREQ(widget->GetInstanceId().c_str(), m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
+        EXPECT_TRUE(NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).IsCustomized());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5606,7 +5707,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterCategoriesChange)
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
     for (ContentDescriptor::Field const* field : fields)
         {
-        EXPECT_TRUE(field->GetCategory() == supplier.GetUsedCategory());
+        EXPECT_STREQ(field->GetCategory().GetName().c_str(), supplier.GetUsedCategory().GetName().c_str());
         }
     
     // change supplied category
@@ -5618,7 +5719,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterCategoriesChange)
     fields = descriptor->GetVisibleFields();
     for (ContentDescriptor::Field const* field : fields)
         {
-        EXPECT_TRUE(field->GetCategory() == supplier.GetUsedCategory());
+        EXPECT_STREQ(field->GetCategory().GetName().c_str(), supplier.GetUsedCategory().GetName().c_str());
         }
 
     // expect one full update record

@@ -56,7 +56,7 @@ TestNavNodePtr TestNodesHelper::CreateInstanceNode(IConnectionCR connection, ECC
 TestNavNodePtr TestNodesHelper::CreateInstanceNode(IConnectionCR connection, IECInstanceR instance)
     {
     TestNavNodePtr node = TestNavNode::Create(connection);
-    s_testNodesFactory.InitECInstanceNode(*node, connection.GetId(), instance, "label");
+    s_testNodesFactory.InitECInstanceNode(*node, connection.GetId(), "locale", instance, "label");
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(connection, *node, bvector<Utf8String>()));
     return node;
     }
@@ -67,7 +67,7 @@ TestNavNodePtr TestNodesHelper::CreateInstanceNode(IConnectionCR connection, IEC
 TestNavNodePtr TestNodesHelper::CreateClassGroupingNode(IConnectionCR connection, ECClassCR ecClass, Utf8CP label)
     {
     TestNavNodePtr node = TestNavNode::Create(connection);
-    s_testNodesFactory.InitECClassGroupingNode(*node, connection.GetId(), ecClass, label, GroupedInstanceKeysList());
+    s_testNodesFactory.InitECClassGroupingNode(*node, connection.GetId(), "locale", ecClass, label, GroupedInstanceKeysList());
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(connection, *node, bvector<Utf8String>()));
     return node;
     }
@@ -78,7 +78,7 @@ TestNavNodePtr TestNodesHelper::CreateClassGroupingNode(IConnectionCR connection
 TestNavNodePtr TestNodesHelper::CreateRelationshipGroupingNode(IConnectionCR connection, ECRelationshipClassCR rel, Utf8CP label)
     {
     TestNavNodePtr node = TestNavNode::Create(connection);
-    s_testNodesFactory.InitECRelationshipGroupingNode(*node, connection.GetId(), rel, label, GroupedInstanceKeysList());
+    s_testNodesFactory.InitECRelationshipGroupingNode(*node, connection.GetId(), "locale", rel, label, GroupedInstanceKeysList());
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(connection, *node, bvector<Utf8String>()));
     return node;
     }
@@ -89,7 +89,7 @@ TestNavNodePtr TestNodesHelper::CreateRelationshipGroupingNode(IConnectionCR con
 TestNavNodePtr TestNodesHelper::CreatePropertyGroupingNode(IConnectionCR connection, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP label, RapidJsonValueCR groupingValue, bool isRangeGrouping)
     {
     TestNavNodePtr node = TestNavNode::Create(connection);
-    s_testNodesFactory.InitECPropertyGroupingNode(*node, connection.GetId(), ecClass, ecProperty, label, "", groupingValue, isRangeGrouping, GroupedInstanceKeysList());
+    s_testNodesFactory.InitECPropertyGroupingNode(*node, connection.GetId(), "locale", ecClass, ecProperty, label, "", groupingValue, isRangeGrouping, GroupedInstanceKeysList());
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(connection, *node, bvector<Utf8String>()));
     return node;
     }
@@ -100,7 +100,7 @@ TestNavNodePtr TestNodesHelper::CreatePropertyGroupingNode(IConnectionCR connect
 TestNavNodePtr TestNodesHelper::CreateLabelGroupingNode(IConnectionCR connection, Utf8CP label)
     {
     TestNavNodePtr node = TestNavNode::Create(connection);
-    s_testNodesFactory.InitDisplayLabelGroupingNode(*node, connection.GetId(), label, GroupedInstanceKeysList());
+    s_testNodesFactory.InitDisplayLabelGroupingNode(*node, connection.GetId(), "locale", label, GroupedInstanceKeysList());
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(connection, *node, bvector<Utf8String>()));
     return node;
     }
@@ -111,7 +111,7 @@ TestNavNodePtr TestNodesHelper::CreateLabelGroupingNode(IConnectionCR connection
 TestNavNodePtr TestNodesHelper::CreateCustomNode(IConnectionCR connection, Utf8CP type, Utf8CP label, Utf8CP description)
     {
     TestNavNodePtr node = TestNavNode::Create(connection);
-    s_testNodesFactory.InitCustomNode(*node, connection.GetId(), label, description, "", type);
+    s_testNodesFactory.InitCustomNode(*node, connection.GetId(), "locale", label, description, "", type);
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(connection, *node, bvector<Utf8String>()));
     return node;
     }
