@@ -135,6 +135,7 @@ enum class FormatProblemCode
     CVS_UncomparableUnits = 20053,      //!< Units provided on the argument list are not comparable
     CVS_InvalidUnitName = 20054,        //!< Not-recognizd unit name or unit is not associated with a Phenomenon
     CVS_InvalidMajorUnit = 20055,       //!< The MajorUnit in ComboNumbers is null or invalid
+    CVS_ConstantAsUnit = 20056,
     QT_PhenomenonNotDefined = 20101,
     QT_PhenomenaNotSame = 20102,
     QT_InvalidTopMidUnits = 20103,

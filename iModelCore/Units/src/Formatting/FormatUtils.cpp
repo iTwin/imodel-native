@@ -431,6 +431,7 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
         case FormatProblemCode::CVS_UncomparableUnits: return "Units are not comparable";
         case FormatProblemCode::CVS_InvalidUnitName: return "Unknown name of the Unit";
         case FormatProblemCode::CVS_InvalidMajorUnit: return "Unknown name of the Major Unit";
+        case FormatProblemCode::CVS_ConstantAsUnit: return "Constant as a composite unit is not allowed";
         case FormatProblemCode::QT_PhenomenonNotDefined: return "Unknown name of the Phenomenon";
         case FormatProblemCode::QT_PhenomenaNotSame: return "Different Phenomena";
         case FormatProblemCode::QT_InvalidTopMidUnits: return "Top and Middle units are not comparable";

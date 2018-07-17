@@ -40,8 +40,20 @@ CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middle
     if (nullptr != subUnit)
         m_proxys[indxSub].SetUnit(subUnit);
 
-    if (unitCount > 0)
+    bool constant = false;
+    for (const auto& p : m_proxys)
+        {
+        if (p.GetUnit()->IsConstant())
+            {
+            LOG.errorv("Cannot add '%s' as a composite unit because it is a constant", p.GetUnit()->GetName().c_str());
+            constant = true;
+            }
+        }
+
+    if (unitCount > 0 && !constant)
         CalculateUnitRatios();
+    else if (constant)
+        m_problem.UpdateProblemCode(FormatProblemCode::CVS_ConstantAsUnit);
     else
         m_problem.UpdateProblemCode(FormatProblemCode::NotInitialized);
     }
@@ -89,15 +101,21 @@ CompositeValueSpec::CompositeValueSpec(bvector<BEU::UnitCP> const& units)
     m_proxys.reserve(4);
     m_proxys.resize(units.size());
 
+    bool constant = false;
     int i = 0;
     for(auto const& unit : units)
         {
+        if (unit->IsConstant())
+            constant = true;
+
         m_proxys[i] = unit;
         i++;
         }
 
-    if (units.size() > 0)
+    if (units.size() > 0 && !constant)
         CalculateUnitRatios();
+    else if (constant)
+        m_problem.UpdateProblemCode(FormatProblemCode::CVS_ConstantAsUnit);
     else
         m_problem.UpdateProblemCode(FormatProblemCode::NotInitialized);
     }

@@ -259,6 +259,45 @@ TEST_F(CompositeValueSpecTest, Quatro_SetUnitLabels)
     }
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  07/2018
+//--------------------------------------------------------------------------------------
+TEST_F(CompositeValueSpecTest, ConstantAsUnit)
+    {
+    auto pi = s_unitsContext->LookupConstant("PI");
+    auto expectedProblemCode = FormatProblemCode::CVS_ConstantAsUnit;
+    FormatProblemDetail detail = FormatProblemDetail(expectedProblemCode);
+    auto expectedProblemDescription = detail.GetProblemDescription();
+
+    {
+    CompositeValueSpec cvs1Unit(*pi);
+    EXPECT_TRUE(cvs1Unit.IsProblem());
+    EXPECT_STRCASEEQ(expectedProblemDescription.c_str(), cvs1Unit.GetProblemDescription().c_str());
+    }
+
+    {
+    CompositeValueSpec cvs1Unit(*s_mile, *s_yrd, *pi, *s_inch);
+    EXPECT_TRUE(cvs1Unit.IsProblem());
+    EXPECT_STRCASEEQ(expectedProblemDescription.c_str(), cvs1Unit.GetProblemDescription().c_str());
+    }
+
+    {
+    bvector<Units::UnitCP> units = {s_mile, s_yrd, s_ft, pi};
+    CompositeValueSpec spec;
+    ASSERT_FALSE(CompositeValueSpec::CreateCompositeSpec(spec, units));
+    EXPECT_TRUE(spec.IsProblem());
+    EXPECT_STRCASEEQ(expectedProblemDescription.c_str(), spec.GetProblemDescription().c_str());
+    }
+
+    {
+    bvector<Units::UnitCP> units = {pi};
+    CompositeValueSpec spec;
+    ASSERT_FALSE(CompositeValueSpec::CreateCompositeSpec(spec, units));
+    EXPECT_TRUE(spec.IsProblem());
+    EXPECT_STRCASEEQ(expectedProblemDescription.c_str(), spec.GetProblemDescription().c_str());
+    }
+    }
+
 //===================================================
 // FormatCompositeStringTest
 //===================================================
