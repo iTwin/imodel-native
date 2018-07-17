@@ -22,7 +22,7 @@ struct UrlProviderTests : public WSClientBaseTest
     void TearDown() { Reset(); }
     };
 
-typedef ::testing::tuple<UrlProvider::Environment, UrlProvider::UrlDescriptor*> TestingUrlParameter;
+typedef ::testing::tuple<UrlProvider::Environment, const UrlProvider::UrlDescriptor*> TestingUrlParameter;
 struct UrlProviderParamTests : public UrlProviderTests, public ::testing::WithParamInterface<TestingUrlParameter>
     {
     struct PrintToStringParamName

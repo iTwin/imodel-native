@@ -35,7 +35,7 @@ void UrlProviderTests::TearDown()
 
 #ifdef USE_GTEST
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoBuddiUrl_ReturnsDefaultUrl)
     {
@@ -50,7 +50,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoBuddiUrl_ReturnsDefault
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoConnectionError_ReturnsDefaultUrl)
     {
@@ -65,7 +65,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoConnectionError_Returns
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeWhenUrlIsCached_GetsUrlFromLocalState)
     {
@@ -81,7 +81,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeWhenUrlIsCached_Gets
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutSetToZero_ReturnsCachedUrlButAlsoCallBuddiGet)
     {
@@ -104,7 +104,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutSetToZero_ReturnsCachedUrlBut
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeAfterTimeoutAndBuddiCannotConnect_ReturnsLastCachedUrl)
     {
@@ -121,7 +121,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeAfterTimeoutAndBuddi
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl)
     {
@@ -145,7 +145,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBu
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_ReturnsCachedUrl)
     {
@@ -162,7 +162,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_Returns
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi)
     {
@@ -187,7 +187,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_Ig
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     {
@@ -245,7 +245,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     {
@@ -303,7 +303,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithDifferentEnvironment_CleansUpCache)
     {
@@ -328,7 +328,7 @@ TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithDifferentEnvironment_Cle
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithSameEnvironment_DoesNotCleanUpCache)
     {
@@ -345,7 +345,7 @@ TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithSameEnvironment_DoesNotC
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetValidateCertificate)
     {
@@ -365,7 +365,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetVa
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetValidateCertificate)
     {
@@ -385,7 +385,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetVal
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2016
+* @bsitest                                                      Vincas.Razma    10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsValidateCertificate)
     {
@@ -402,5 +402,78 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsVali
 
     Http::Request request("foo");
     configurator->_PerformRequest(request)->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                  Robert.Lukasonok    07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, ResolveUrlDescriptor_EmptyURI_Null)
+    {
+    EXPECT_EQ(nullptr, UrlProvider::ResolveUrlDescriptor(""));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                  Robert.Lukasonok    07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, ResolveUrlDescriptor_InvalidScheme_Null)
+    {
+    EXPECT_EQ(nullptr, UrlProvider::ResolveUrlDescriptor("test://resolve/" + UrlProvider::Urls::ConnectWsgGlobal.GetName()));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                  Robert.Lukasonok    07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, ResolveUrlDescriptor_InvalidHost_Null)
+    {
+    EXPECT_EQ(nullptr, UrlProvider::ResolveUrlDescriptor("buddi://foo/" + UrlProvider::Urls::ConnectWsgGlobal.GetName()));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                  Robert.Lukasonok    07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, ResolveUrlDescriptor_EmptyPath_Null)
+    {
+    EXPECT_EQ(nullptr, UrlProvider::ResolveUrlDescriptor("buddi://resolve" + UrlProvider::Urls::ConnectWsgGlobal.GetName()));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                  Robert.Lukasonok    07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, ResolveUrlDescriptor_UnknownDescriptorName_Null)
+    {
+    EXPECT_EQ(nullptr, UrlProvider::ResolveUrlDescriptor("buddi://resolve/foobar" + UrlProvider::Urls::ConnectWsgGlobal.GetName()));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                  Robert.Lukasonok    07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, ResolveUrlDescriptor_KnownDescriptorName_ExpectedDescriptor)
+    {
+    const UrlProvider::UrlDescriptor* descriptor = UrlProvider::ResolveUrlDescriptor
+        (
+        "buddi://resolve/" + UrlProvider::Urls::ConnectWsgGlobal.GetName()
+        );
+    ASSERT_NE(nullptr, descriptor);
+    EXPECT_STREQ(UrlProvider::Urls::ConnectWsgGlobal.GetName().c_str(), descriptor->GetName().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                  Robert.Lukasonok    07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlDescriptorTests, GetBuddiUrl_UrlDescriptorWithNonEmptyName_ExpectedUriString)
+    {
+    UrlProvider::UrlDescriptor::Registry registry;
+    UrlProvider::UrlDescriptor descriptor("foobar", "", "", "", "", &registry);
+    EXPECT_STREQ("buddi://resolve/foobar", descriptor.GetBuddiUri().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                  Robert.Lukasonok    07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlDescriptorTests, GetBuddiUrl_UrlDescriptorWithEmptyName_EmptyString)
+    {
+    UrlProvider::UrlDescriptor::Registry registry;
+    UrlProvider::UrlDescriptor descriptor("", "", "", "", "", &registry);
+    EXPECT_STREQ("", descriptor.GetBuddiUri().c_str());
     }
 #endif

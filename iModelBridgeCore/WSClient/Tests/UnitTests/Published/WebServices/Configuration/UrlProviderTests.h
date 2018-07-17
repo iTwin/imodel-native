@@ -16,3 +16,5 @@ struct UrlProviderTests : BaseMockHttpHandlerTest
     void SetUp();
     void TearDown();
     };
+
+struct UrlDescriptorTests : ::testing::Test {};

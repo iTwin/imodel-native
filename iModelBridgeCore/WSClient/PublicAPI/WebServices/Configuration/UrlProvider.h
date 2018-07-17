@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_TASKS
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Brad.Hadden    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-//! UrlProvider is a class that allows getting remotely configured service URLs based on 
+//! UrlProvider is a class that allows getting remotely configured service URLs based on
 //! initialized environment (DEV, QA or PROD/RELEASE). Environment is set of services working
 //! in isolated system. Switching between environments is only needed for testing.
 //! All released software should point to PROD/RELEASE environment services by default.
@@ -39,15 +39,18 @@ struct UrlProvider
 
         struct UrlDescriptor
             {
+            public:
+                using Registry = bmap<Utf8String, const UrlDescriptor*>;
+
             private:
                 Utf8String m_name;
                 Utf8String m_defaultUrls[4];
-                bset<UrlDescriptor*>* m_registry;
+                Registry* m_registry;
 
             public:
                 //! Constructur for internal use
-                UrlDescriptor(Utf8CP name, Utf8CP devUrl, Utf8CP qaUrl, Utf8CP prodUrl, Utf8CP perfUrl, bset<UrlDescriptor*>* registry);
-                ~UrlDescriptor();
+                WSCLIENT_EXPORT UrlDescriptor(Utf8CP name, Utf8CP devUrl, Utf8CP qaUrl, Utf8CP prodUrl, Utf8CP perfUrl, Registry* registry);
+                WSCLIENT_EXPORT ~UrlDescriptor();
 
                 //! Get URL name used to identify it
                 WSCLIENT_EXPORT Utf8StringCR GetName() const;
@@ -55,6 +58,9 @@ struct UrlProvider
                 //! Retrieve cached, server configured or default configured URL.
                 //! Will update URL in cache periodically in background.
                 WSCLIENT_EXPORT Utf8String Get() const;
+
+                //! Returns a BUDDI URI which can be resolved back into this descriptor
+                WSCLIENT_EXPORT Utf8String GetBuddiUri() const;
 
                 //! DEPRECATED
                 WSCLIENT_EXPORT AsyncTaskPtr<Utf8String> GetAsync() const;
@@ -102,8 +108,13 @@ struct UrlProvider
         //! Clear local URL cache
         WSCLIENT_EXPORT static void CleanUpUrlCache();
 
-        //! Get Available Urls
-        WSCLIENT_EXPORT static const bset<UrlProvider::UrlDescriptor*> GetUrlRegistry();
+        //! Get available UrlDescriptors
+        WSCLIENT_EXPORT static bset<const UrlProvider::UrlDescriptor*> GetUrlRegistry();
+
+        //! Resolve UrlDescriptor by its BUDDI URI.
+        //! @param uri - BUDDI URI retrieved from UrlDescriptor::GetBuddiUri call
+        //! @return If succeeds, returns a pointer to UrlDescriptor. Otherwise, nullptr.
+        WSCLIENT_EXPORT static const UrlDescriptor* ResolveUrlDescriptor(Utf8StringCR uri);
 
         //! Available URLs
         struct Urls
