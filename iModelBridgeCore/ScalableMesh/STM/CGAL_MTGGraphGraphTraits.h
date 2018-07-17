@@ -307,8 +307,8 @@ class MTG_edge_iterator
     MTG_edge_iterator                                // Derived
     , edge_id_t  // Value
     , std::bidirectional_iterator_tag                       // CategoryOrTraversal,
-    , edge_id_t
-    , edge_id_t  // Reference
+    , edge_id_t// Reference
+    , int  // difference
     >
     {
     public:

@@ -22,8 +22,8 @@ OPTIMIZE_FOR_SPEED=1
 
 DgnPlatformV8LibDir = ${BuildContext}/SubParts/DgnV8Libs/
 
-dirToSearch=$(BuildContext)VendorAPI/CGAL
-%include cincapnd.mki
+#dirToSearch=$(BuildContext)VendorAPI/CGAL
+#%include cincapnd.mki
 
 dirToSearch=$(BuildContext)VendorAPI/Boost
 %include cincapnd.mki
@@ -79,12 +79,15 @@ CCompOpts + -wd4172
 
 #x86 build. signed/unsigned mismatch and int64/size_t issues.
 CCompOpts + -wd4018 -wd4309 -wd4305
+
+#error in boost (roguewave.h)
+CCompOpts + -wd4067 -wd4459
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__  -DVANCOUVER_API -wd4091 -wd4312
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__  -DVANCOUVER_API -wd4091 -wd4312 -wd4067 -wd4459
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
