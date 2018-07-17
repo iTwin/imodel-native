@@ -719,7 +719,7 @@ TEST_F(KindOfQuantityDeserializationTest, TestReadingFormatStrings)
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
     KindOfQuantityCP koq = schema->GetKindOfQuantityCP("KoQWithPres");
-    EXPECT_STRCASEEQ("M(AmerFI8)", koq->GetDefaultPresentationUnit().ToText(false).c_str());
+    EXPECT_STRCASEEQ("FT(AmerFI8)", koq->GetDefaultPresentationUnit().ToText(false).c_str());
     }
 
     {

@@ -479,17 +479,26 @@ ECObjectsStatus KindOfQuantity::FormatStringToFUSDescriptor(Utf8StringR fusDescr
             if (Utf8String::IsNullOrEmpty(mappedName))
                 {
                 LOG.warningv("Presentation Format String '%s' has a format that could not be mapped on KoQ '%s'", formatString.c_str(), koq.GetFullName().c_str());
-                mappedName = "DefaultRealR";
+                mappedName = "DefaultRealU";
                 }
             }
         }
-    Utf8CP unitName = nullptr;
+    Utf8String unitName = nullptr;
     if (!unitNames.empty())
-        {
         unitName = unitNames.front().c_str();
+    else
+        {
+        auto format = Formatting::StdFormatSet::FindFormatSpec(mappedName);
+        if (format != nullptr && format->HasComposite())
+            {
+            auto major = format->GetCompositeMajorUnit();
+            if (major != nullptr)
+                unitName = Utf8String("u:") + major->GetName();
+            }
         }
+
     Utf8String presFusString;
-    if (!Utf8String::IsNullOrEmpty(unitName))
+    if (!Utf8String::IsNullOrEmpty(unitName.c_str()))
         {
         Utf8String newName;
         Utf8String alias;
