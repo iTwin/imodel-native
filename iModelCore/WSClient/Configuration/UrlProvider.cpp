@@ -43,7 +43,7 @@ uint32_t s_regionsId[4] = {
 //  Request should contain 4 URLs and their maching regions. See s_regionsId for using proper region.
 //  Got to buddi.bentley.com to dobule check if correct URLs were added.
 // Will log errors if buddi.bentley.com does not have required URL for given environment (region).
-bset<UrlProvider::UrlDescriptor*> s_urlRegistry;
+UrlProvider::UrlDescriptor::Registry s_urlRegistry;
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::BIMReviewShare(
     "BIMReviewShare",
@@ -318,9 +318,36 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ProjectSharedFederatedUIURL(
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas   11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-const bset<UrlProvider::UrlDescriptor*> UrlProvider::GetUrlRegistry()
+bset<const UrlProvider::UrlDescriptor*> UrlProvider::GetUrlRegistry()
     {
-    return s_urlRegistry;
+    bset<const UrlDescriptor*> registry;
+    for (const auto& pair : s_urlRegistry)
+        registry.insert(pair.second);
+
+    return registry;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Robert.Lukasonok    07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+const UrlProvider::UrlDescriptor* UrlProvider::ResolveUrlDescriptor(Utf8StringCR uriString)
+    {
+    BeUri uri(uriString);
+    if (uri.GetScheme() != "buddi")
+        return nullptr;
+
+    if (uri.GetHost() != "resolve")
+        return nullptr;
+
+    Utf8String path = uri.GetPath().substr(1);
+    if (path.empty())
+        return nullptr;
+
+    auto urlDescriptor = s_urlRegistry.find(path);
+    if (s_urlRegistry.end() == urlDescriptor)
+        return nullptr;
+
+    return urlDescriptor->second;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -439,7 +466,7 @@ void UrlProvider::CleanUpUrlCache()
     {
     for (auto& descriptor : s_urlRegistry)
         {
-        s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, descriptor->GetName().c_str(), Json::Value::GetNull());
+        s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, descriptor.second->GetName().c_str(), Json::Value::GetNull());
         }
     }
 
@@ -458,15 +485,19 @@ IHttpHandlerPtr UrlProvider::GetSecurityConfigurator(IHttpHandlerPtr customHandl
         }, customHandler);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void UrlProvider::SetHttpHandler(IHttpHandlerPtr customHandler)
     {
     s_customHandler = customHandler;
     s_buddi = std::make_shared<BuddiClient>(s_customHandler, nullptr, s_thread);
     }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-UrlProvider::UrlDescriptor::UrlDescriptor(Utf8CP name, Utf8CP devUrl, Utf8CP qaUrl, Utf8CP prodUrl, Utf8CP perfUrl, bset<UrlDescriptor*>* registry) :
+UrlProvider::UrlDescriptor::UrlDescriptor(Utf8CP name, Utf8CP devUrl, Utf8CP qaUrl, Utf8CP prodUrl, Utf8CP perfUrl, Registry* registry) :
 m_name(name),
 m_registry(registry)
     {
@@ -477,7 +508,8 @@ m_registry(registry)
 
     if (nullptr != m_registry)
         {
-        m_registry->insert(this);
+        BeAssert(m_registry->find(m_name) == m_registry->end());
+        (*m_registry)[m_name] = this;
         }
     }
 
@@ -488,7 +520,7 @@ UrlProvider::UrlDescriptor::~UrlDescriptor()
     {
     if (nullptr != m_registry)
         {
-        m_registry->erase(this);
+        m_registry->erase(m_name);
         }
     }
 
@@ -506,6 +538,17 @@ Utf8StringCR UrlProvider::UrlDescriptor::GetName() const
 Utf8String UrlProvider::UrlDescriptor::Get() const
     {
     return UrlProvider::GetUrl(m_name, m_defaultUrls);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Robert.Lukasonok    07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String UrlProvider::UrlDescriptor::GetBuddiUri() const
+    {
+    if (m_name.empty())
+        return "";
+
+    return "buddi://resolve/" + m_name;
     }
 
 /*--------------------------------------------------------------------------------------+
