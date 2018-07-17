@@ -102,7 +102,7 @@ struct ChangeSummaryExtractor final
                 ~LinkTableRelChangeExtractor() = delete;
 
                 static BentleyStatus GetRelEndInstanceKeys(Context&, ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&, ECInstanceId relInstanceId, ECN::ECRelationshipEnd);
-                static ECN::ECClassId GetRelEndClassId(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&, ECInstanceId relInstanceId, ECN::ECRelationshipEnd, ECInstanceId endInstanceId);
+                static BentleyStatus GetRelEndClassId(ECN::ECClassId&, Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&, ECInstanceId relInstanceId, ECN::ECRelationshipEnd, ECInstanceId endInstanceId, bool isBeforeChange);
 
             public:
                 static BentleyStatus Extract(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&);

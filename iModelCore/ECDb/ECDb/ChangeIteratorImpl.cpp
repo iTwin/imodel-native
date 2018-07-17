@@ -203,7 +203,13 @@ ECN::ECClassId ChangeIterator::RowEntry::GetClassIdFromChangeOrTable(Utf8CP clas
         }
     
     // The class id entry hasn't been updated at all - get it from the database itself
-    return DbUtilities::QueryRowClassId(m_ecdb, m_tableMap->GetTableName(), classIdColumnName, m_tableMap->GetIdColumn().GetName(), instanceId);
+    ECClassId classId;
+    if (SUCCESS != DbUtilities::QueryRowClassId(classId, m_ecdb, m_tableMap->GetTableName(), classIdColumnName, m_tableMap->GetIdColumn().GetName(), instanceId))
+        {
+        BeAssert(false && "Failed to execute SQL to query for class id of a change.");
+        }
+
+    return classId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -265,6 +271,37 @@ ChangeIterator::RowEntry& ChangeIterator::RowEntry::operator++()
     ++m_change;
     Initialize();
     return *this;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                            Krischan.Eberle    07/2018
+//---------------------------------------------------------------------------------------
+Utf8String ChangeIterator::RowEntry::ToString() const
+    {
+    if (!IsValid())
+        return "Invalid change";
+
+    Utf8CP opCodeStr = nullptr;
+    switch (GetDbOpcode())
+        {
+            case DbOpcode::Delete:
+                opCodeStr = "Delete";
+                break;
+            case DbOpcode::Insert:
+                opCodeStr = "Insert";
+                break;
+            case DbOpcode::Update:
+                opCodeStr = "Update";
+                break;
+            default:
+                return "Invalid Change: unknown DbOpCode";
+        };
+
+    return Utf8PrintfString("Change (Primary class: %s | Primary instance id: %s | OpCode: %s | IsIndirect: %s | Table: %s | Primary table: %s)",
+                            GetPrimaryClass() != nullptr ? GetPrimaryClass()->GetFullName() : "-",
+                            GetPrimaryInstanceId().IsValid() ? GetPrimaryInstanceId().ToString().c_str() : "-",
+                            opCodeStr, GetIndirect() ? "yes" : "no",
+                            GetTableName().c_str(), IsPrimaryTable() ? "yes" : "no");
     }
 
 //******************************************************************************
