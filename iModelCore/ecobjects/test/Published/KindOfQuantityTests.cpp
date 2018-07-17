@@ -712,6 +712,35 @@ TEST_F(KindOfQuantityDeserializationTest, TestReadingFormatStrings)
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
+               displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="f:AmerFi" relativeError="10e-3" />
+        </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
+    KindOfQuantityCP koq = schema->GetKindOfQuantityCP("KoQWithPres");
+    EXPECT_STRCASEEQ("M(AmerFI8)", koq->GetDefaultPresentationUnit().ToText(false).c_str());
+    }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
+               displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="f:AmerFi[u:MM]" relativeError="10e-3" />
+        </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
+    KindOfQuantityCP koq = schema->GetKindOfQuantityCP("KoQWithPres");
+    // This case should never happen but adding a test just in case. This is invalid EC3.2 but we don't check for equality of unit overrides in ec3.1 source code.
+    EXPECT_STRCASEEQ("MM(AmerFI8)", koq->GetDefaultPresentationUnit().ToText(false).c_str());
+    }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
                displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="banana:banana[u:MM][u:UM]" relativeError="10e-3" />
         </ECSchema>)xml";
     ECSchemaPtr schema;

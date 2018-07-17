@@ -303,7 +303,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 
     Formatting::FormatUnitSet persistenceFUS;
     bool invalidUnit = false;
-    ECObjectsStatus status = ParseFUSDescriptor(persistenceFUS, invalidUnit, value.c_str(), *this, !ecSchemaXmlGreaterThen31, !ecSchemaXmlGreaterThen31);
+    ECObjectsStatus status = ParseFUSDescriptor(persistenceFUS, invalidUnit, value.c_str(), *this, !ecSchemaXmlGreaterThen31);
     if (ECObjectsStatus::Success != status)
         return SchemaReadStatus::InvalidECSchemaXml;
 
@@ -327,7 +327,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
             bool invalidUnit = false;
             if (!ecSchemaXmlGreaterThen31)
                 {
-                ECObjectsStatus status = ParseFUSDescriptor(presFUS, invalidUnit, presValue.c_str(), *this, true, true);
+                ECObjectsStatus status = ParseFUSDescriptor(presFUS, invalidUnit, presValue.c_str(), *this, true);
                 if (ECObjectsStatus::Success != status || invalidUnit)
                     {
                     LOG.warningv("Presentation FormatUnitSet '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
@@ -336,80 +336,13 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
                 }
             else
                 {
-                Utf8CP mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(presValue.c_str());
-                
-                Utf8String formatName;
-                Nullable<int32_t> prec;
-                bvector<Utf8String> unitNames;
-                bvector<Nullable<Utf8String>> unitLabels;
-                if ((SUCCESS != ParseFormatString(formatName, prec, unitNames, unitLabels, presValue)) || formatName.empty())
-                    {
-                    LOG.warningv("Presentation Format String '%s' is invalid on KoQ '%s'", presValue.c_str(), GetFullName().c_str());
+                Utf8String fusDesc;
+                if (ECObjectsStatus::Success != FormatStringToFUSDescriptor(fusDesc, *this, presValue))
                     continue;
-                    }
 
-                if (Utf8String::IsNullOrEmpty(mappedName))
+                if (ECObjectsStatus::Success != ParseFUSDescriptor(presFUS, invalidUnit, fusDesc.c_str(), *this, false))
                     {
-                    if (prec.IsValid())
-                        {
-                        Utf8String nameWithPrec;
-                        nameWithPrec = formatName;
-                        nameWithPrec
-                            .append("(")
-                            .append(std::to_string(prec.Value()).c_str())
-                            .append(")");
-                        Utf8String _alias;
-                        Utf8String name;
-                        ECClass::ParseClassName(_alias, name, nameWithPrec.c_str());     
-                        mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(("FORMATS:" + name).c_str());
-                        }
-                    if (nullptr == mappedName)
-                        {
-                        Utf8String _alias;
-                        Utf8String name;
-                        ECClass::ParseClassName(_alias, name, formatName.c_str());
-                        mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(("FORMATS:" + name).c_str());
-                        if (Utf8String::IsNullOrEmpty(mappedName))
-                            {
-                            LOG.warningv("Presentation Format String '%s' has a format that could not be mapped on KoQ '%s'", presValue.c_str(), GetFullName().c_str());
-                            mappedName = "DefaultRealR";
-                            }
-                        }
-                    }
-                Utf8CP unitName = nullptr;
-                if (!unitNames.empty())
-                    {
-                    unitName = unitNames.front().c_str();
-                    }
-                Utf8String presFusString;
-                if (!Utf8String::IsNullOrEmpty(unitName))
-                    {
-                    Utf8String newName;
-                    Utf8String alias;
-                    Utf8String className;
-                    ECClass::ParseClassName(alias, className, unitName);
-
-                    if (alias.Equals("u"))
-                        alias = "UNITS";
-
-                    if(!Units::UnitRegistry::Instance().TryGetNewNameFromECName((alias + ":" + className).c_str(), newName))
-                        {
-                        LOG.warningv("Failed to map unit '%s' from format string '%s' to a known unit on KoQ '%s'", unitName, presValue.c_str(), GetFullName().c_str());
-                        newName = GetPersistenceUnit().GetUnitName();
-                        }
-                    presFusString.append(newName);
-                    }
-                else
-                    presFusString.append(GetPersistenceUnit().GetUnitName());
-
-                presFusString
-                    .append("(")
-                    .append(mappedName)
-                    .append(")");
-
-                if (ECObjectsStatus::Success != ParseFUSDescriptor(presFUS, invalidUnit, presFusString.c_str(), *this, true, false))
-                    {
-                    LOG.warningv("Failed to parse FUS '%s' created from format string '%s' on KoQ '%s'", presFusString.c_str(), presValue.c_str(), GetFullName().c_str());
+                    LOG.warningv("Failed to parse FUS '%s' created from format string '%s' on KoQ '%s'", fusDesc.c_str(), presValue.c_str(), GetFullName().c_str());
                     continue;
                     }
                 }
@@ -422,7 +355,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fus, bool& hasInvalidUnit, Utf8CP descriptor, KindOfQuantityCR koq, bool strictUnit, bool strictFUS)
+ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fus, bool& hasInvalidUnit, Utf8CP descriptor, KindOfQuantityCR koq, bool strict)
     {
     Utf8String unitName;
     Utf8String format;
@@ -437,7 +370,7 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fu
         nfs = Formatting::StdFormatSet::FindFormatSpec(format.c_str());
         if (nullptr == nfs)
             {
-            if (strictFUS)
+            if (strict)
                 {
                 LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid FUS, '%s'.",
                     descriptor, koq.GetFullName().c_str(), format.c_str());
@@ -474,7 +407,7 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fu
     unit = Units::UnitRegistry::Instance().LookupUnit(name.c_str());
     if (nullptr == unit)
         {
-        if (strictUnit)
+        if (strict)
             {
             LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid Unit, '%s'.",
                 descriptor, koq.GetFullName().c_str(), unitName.c_str());
@@ -502,6 +435,85 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fu
         LOG.warningv("FormatUnitSet '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
             descriptor, koq.GetFullName().c_str(), fus.GetProblemDescription().c_str());
 
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Kyle.Abramowitz                  07/18
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus KindOfQuantity::FormatStringToFUSDescriptor(Utf8StringR fusDescriptor, KindOfQuantityCR koq, Utf8StringCR formatString)
+    {
+    Utf8CP mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(formatString.c_str());
+                
+    Utf8String formatName;
+    Nullable<int32_t> prec;
+    bvector<Utf8String> unitNames;
+    bvector<Nullable<Utf8String>> unitLabels;
+    if ((SUCCESS != ParseFormatString(formatName, prec, unitNames, unitLabels, formatString)) || formatName.empty())
+        {
+        LOG.warningv("Presentation Format String '%s' is invalid on KoQ '%s'", formatString.c_str(), koq.GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    if (Utf8String::IsNullOrEmpty(mappedName))
+        {
+        if (prec.IsValid())
+            {
+            Utf8String nameWithPrec;
+            nameWithPrec = formatName;
+            nameWithPrec
+                .append("(")
+                .append(std::to_string(prec.Value()).c_str())
+                .append(")");
+            Utf8String _alias;
+            Utf8String name;
+            ECClass::ParseClassName(_alias, name, nameWithPrec.c_str());     
+            mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(("FORMATS:" + name).c_str());
+            }
+        if (nullptr == mappedName)
+            {
+            Utf8String _alias;
+            Utf8String name;
+            ECClass::ParseClassName(_alias, name, formatName.c_str());
+            mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(("FORMATS:" + name).c_str());
+            if (Utf8String::IsNullOrEmpty(mappedName))
+                {
+                LOG.warningv("Presentation Format String '%s' has a format that could not be mapped on KoQ '%s'", formatString.c_str(), koq.GetFullName().c_str());
+                mappedName = "DefaultRealR";
+                }
+            }
+        }
+    Utf8CP unitName = nullptr;
+    if (!unitNames.empty())
+        {
+        unitName = unitNames.front().c_str();
+        }
+    Utf8String presFusString;
+    if (!Utf8String::IsNullOrEmpty(unitName))
+        {
+        Utf8String newName;
+        Utf8String alias;
+        Utf8String className;
+        ECClass::ParseClassName(alias, className, unitName);
+
+        if (alias.Equals("u"))
+            alias = "UNITS";
+
+        if(!Units::UnitRegistry::Instance().TryGetNewNameFromECName((alias + ":" + className).c_str(), newName))
+            {
+            LOG.warningv("Failed to map unit '%s' from format string '%s' to a known unit on KoQ '%s'", unitName, formatString.c_str(), koq.GetFullName().c_str());
+            newName = koq.GetPersistenceUnit().GetUnitName();
+            }
+        presFusString.append(newName);
+        }
+    else
+        presFusString.append(koq.GetPersistenceUnit().GetUnitName());
+
+    presFusString
+        .append("(")
+        .append(mappedName)
+        .append(")");
+    fusDescriptor = presFusString;
     return ECObjectsStatus::Success;
     }
 
