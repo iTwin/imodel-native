@@ -492,13 +492,10 @@ bvector<MTGNodeId> RegionsApiWrapper::GetFaces
 )
     {
     bvector<MTGNodeId>nodes;
-    EmbeddedIntArray* pFaceStartArray = jmdlEmbeddedIntArray_grab();
-    MTGNodeId         faceNodeId = MTG_NULL_NODEID;
-    int               iFace = 0;
+    bvector<MTGNodeId> faceStartArray;
+    jmdlRG_getGraph (m_pRG)->CollectFaceLoops (faceStartArray);
 
-    jmdlMTGGraph_collectAndNumberFaceLoops(jmdlRG_getGraph(m_pRG), pFaceStartArray, NULL);
-
-    while (jmdlEmbeddedIntArray_getInt(pFaceStartArray, &faceNodeId, iFace++))
+    for (auto faceNodeId : faceStartArray)
         {
         // DO NOT test for directed edge here; the face may have been formed from linestrings, in which case its edges may be directed or not!
         bool isPositive = !jmdlRG_faceIsNegativeArea(m_pRG, faceNodeId);
@@ -508,8 +505,6 @@ bvector<MTGNodeId> RegionsApiWrapper::GetFaces
             nodes.push_back(faceNodeId);
             }
         }
-
-    jmdlEmbeddedIntArray_drop(pFaceStartArray);
 
     return nodes;
     }

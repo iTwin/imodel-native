@@ -521,52 +521,85 @@ bvector<double>& zElevationVector
         return BSIERROR;
         }
 
-    double rangeExtendValue = 0.5;
-    range.Extend (rangeExtendValue);
-    bvector<DPoint3d> cutProfilePoints;
-    cutProfilePoints.push_back ({ range.low.x, range.low.y, 0.0 });
-    cutProfilePoints.push_back ({ range.low.x + range.XLength (), range.low.y , 0.0 });
-    cutProfilePoints.push_back ({ range.low.x + range.XLength (), range.low.y + range.YLength (), 0.0 });
-    cutProfilePoints.push_back ({ range.low.x, range.low.y + range.YLength (), 0.0 });
-
-    CurveVectorPtr cutProfilePtr = CurveVector::CreateLinear (cutProfilePoints, CurveVector::BOUNDARY_TYPE_Outer);
-    Dgn::IBRepEntityPtr sheetBody = nullptr;
-    Dgn::BRepUtil::Create::BodyFromCurveVector (sheetBody, *cutProfilePtr);
-
-    bvector<Dgn::IBRepEntityPtr> cutSheetBodies;
-
-    Transform transformBottom = Transform::FromIdentity ();
-    Transform transformTop = Transform::FromIdentity();
-    DPoint3d translation = { 0.0, 0.0, 0.0 };
-
-    for (bvector<double>::iterator pIter = zElevationVector.begin (); pIter != zElevationVector.end (); ++pIter)
+    for (bvector<double>::iterator pIter = zElevationVector.begin(); pIter != zElevationVector.end(); ++pIter)
         {
-        Dgn::IBRepEntityPtr slice = geometryToSlice.Clone();
-
-        translation.z = *pIter;
-        transformBottom.SetTranslation(translation);
-        Dgn::IBRepEntityPtr elevatedSheetBodyBottom = sheetBody->Clone();
-        elevatedSheetBodyBottom->ApplyTransform(transformBottom);
-
-        Dgn::BRepUtil::Modify::BooleanCut(slice, *elevatedSheetBodyBottom, Dgn::BRepUtil::Modify::CutDirectionMode::Backward, Dgn::BRepUtil::Modify::CutDepthMode::All, 0.0, true);
         if ((pIter + 1) == zElevationVector.end())
-            {
             break;
-            }
 
+        double bottomElevation = *pIter;
+        double topElevation = *(pIter + 1);
 
-        translation.z = *(pIter + 1);
-        transformTop.SetTranslation(translation);
-
-        Dgn::IBRepEntityPtr elevatedSheetBodyTop = sheetBody->Clone();
-        elevatedSheetBodyTop->ApplyTransform(transformTop);
-
-        Dgn::BRepUtil::Modify::BooleanCut(slice, *elevatedSheetBodyTop, Dgn::BRepUtil::Modify::CutDirectionMode::Forward, Dgn::BRepUtil::Modify::CutDepthMode::All, 0.0, true);
-
-        slicedGeometry.push_back({ slice, *pIter });
+        Dgn::IBRepEntityPtr slice = GetBodySlice(geometryToSlice, bottomElevation, topElevation);
+        slicedGeometry.push_back({slice, bottomElevation});
         }
 
     return BSISUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::IBRepEntityPtr DgnGeometryUtils::GetBodySlice
+(
+    Dgn::IBRepEntityCR geometryToSlice, 
+    double bottomElevation, 
+    double topElevation
+)
+    {
+    BeAssert(bottomElevation <= topElevation);
+
+    if (DoubleOps::AlmostEqual(bottomElevation, topElevation))
+        {
+        CurveVectorPtr crossSection = GetXYCrossSection(geometryToSlice, bottomElevation);
+        if (crossSection.IsNull())
+            return nullptr;
+
+        Dgn::IBRepEntityPtr crossSectionSheet = nullptr;
+        Dgn::BRepUtil::Create::BodyFromCurveVector(crossSectionSheet, *crossSection);
+        return crossSectionSheet;
+        }
+
+    Dgn::IBRepEntityPtr slice = geometryToSlice.Clone();
+    DRange3d range = geometryToSlice.GetEntityRange();
+    if (range.IsNull())
+        return nullptr;
+
+    Transform transformBottom = Transform::From(DPoint3d::From(0, 0, bottomElevation));
+    Transform transformTop = Transform::From(DPoint3d::From(0, 0, topElevation));
+
+    double rangeExtendValue = 0.5;
+    range.Extend(rangeExtendValue);
+    bvector<DPoint3d> cutProfilePoints;
+    cutProfilePoints.push_back({range.low.x, range.low.y, 0.0});
+    cutProfilePoints.push_back({range.low.x + range.XLength(), range.low.y , 0.0});
+    cutProfilePoints.push_back({range.low.x + range.XLength(), range.low.y + range.YLength(), 0.0});
+    cutProfilePoints.push_back({range.low.x, range.low.y + range.YLength(), 0.0});
+
+    CurveVectorPtr cutProfilePtr = CurveVector::CreateLinear(cutProfilePoints, CurveVector::BOUNDARY_TYPE_Outer);
+    Dgn::IBRepEntityPtr sheetBody = nullptr;
+    Dgn::BRepUtil::Create::BodyFromCurveVector(sheetBody, *cutProfilePtr);
+    if (sheetBody.IsNull())
+        return nullptr;
+
+    Dgn::IBRepEntityPtr elevatedSheetBodyBottom = sheetBody->Clone();
+    if (elevatedSheetBodyBottom.IsNull())
+        return nullptr;
+    elevatedSheetBodyBottom->ApplyTransform(transformBottom);
+
+    Dgn::IBRepEntityPtr elevatedSheetBodyTop = sheetBody->Clone();
+    if (elevatedSheetBodyTop.IsNull())
+        return nullptr;
+    elevatedSheetBodyTop->ApplyTransform(transformTop);
+
+    Dgn::BRepUtil::Modify::BooleanCut(slice, *elevatedSheetBodyBottom, Dgn::BRepUtil::Modify::CutDirectionMode::Backward, Dgn::BRepUtil::Modify::CutDepthMode::All, 0.0, true);
+    if (slice.IsNull())
+        return nullptr;
+
+    Dgn::BRepUtil::Modify::BooleanCut(slice, *elevatedSheetBodyTop, Dgn::BRepUtil::Modify::CutDirectionMode::Forward, Dgn::BRepUtil::Modify::CutDepthMode::All, 0.0, true);
+    if (slice.IsNull())
+        return nullptr;
+
+    return slice;
     }
 
 //--------------------------------------------------------------------------------------
