@@ -348,25 +348,31 @@ void TaskScheduler::Start()
         for (; SUCCESS == dirIter.GetCurrentEntry(name, isDir); dirIter.ToNext())        
             {                                
             if (isDir == false && 0 == name.GetExtension().CompareTo(L"xml"))
-                {
-                isThereTaskAvailable = true;
-
+                {                
                 struct _stat64i32 buffer;
 
                 if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
 
+                isThereTaskAvailable = true;
+
                 FILE* file = nullptr;
                 
-                _wfopen_s(&file, name, L"abN+");
+                errno_t err = _wfopen_s(&file, name, L"abN+");
                 
                 if (file == nullptr) continue;
+
+                if (err != 0)
+                    {
+                    assert(file == nullptr);
+                    continue;
+                    }
 
                 //If first char is equal to 0 the file has already been process
                 char startingChar = 0;
                 size_t readSize = fread(&startingChar, 1, 1, file);
-                assert(readSize == 1);
+                //assert(readSize == 1);
 
-                if (startingChar == 0)
+                if (startingChar == 0 || readSize == 0)
                     {
                     fclose(file);
                     continue;

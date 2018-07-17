@@ -166,7 +166,8 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadMasterHeader(SMIndexMa
     return sizeof(*indexHeader);
     }
 
-template <class EXTENT> size_t SMSQLiteStore<EXTENT>::StoreNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID)
+
+template <class EXTENT> size_t StoreNodeHeaderToFile(SMSQLiteFilePtr sqlLiteFilePtr, SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID)
     {
     if (header == nullptr) return 0;
     if (header->m_ptsIndiceID.size() > 0)header->m_ptsIndiceID[0] = blockID;
@@ -175,11 +176,16 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::StoreNodeHeader(SMIndexNod
         nodeHeader.m_apSubNodeID[0] = nodeHeader.m_SubNodeNoSplitID;
     nodeHeader.m_nodeID = blockID.m_integerID;
     nodeHeader.m_graphID = nodeHeader.m_nodeID;
-    {
-        SharedTransaction trans(m_smSQLiteFile, false);
-        m_smSQLiteFile->SetNodeHeader(nodeHeader);
-    }
+        {
+        SharedTransaction trans(sqlLiteFilePtr, false);
+        sqlLiteFilePtr->SetNodeHeader(nodeHeader);
+        }
     return sizeof(header);
+    }
+
+template <class EXTENT> size_t SMSQLiteStore<EXTENT>::StoreNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID)
+    {
+    return StoreNodeHeaderToFile(m_smSQLiteFile, header, blockID);
     }
 
 template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID)
@@ -775,16 +781,28 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
         SharedTransaction trans(m_smSQLiteFile, false);
         switch (m_dataType)
         {
-        case SMStoreDataType::Points:
+        case SMStoreDataType::Points:           
+            if (m_smSQLiteFile->IsShared())
+                StoreNodeHeaderToFile<EXTENT>(m_smSQLiteFile, m_nodeHeader, id);
+           
             m_smSQLiteFile->StorePoints(id, nodeData, countData * sizeof(DATATYPE));
             break;
+
         case SMStoreDataType::TriPtIndices:
+            if (m_smSQLiteFile->IsShared())
+                StoreNodeHeaderToFile<EXTENT>(m_smSQLiteFile, m_nodeHeader, id);
+
             m_smSQLiteFile->StoreIndices(id, nodeData, countData * sizeof(DATATYPE));
             break;
         case SMStoreDataType::TriUvIndices:
             m_smSQLiteFile->StoreUVIndices(id, nodeData, countData * sizeof(DATATYPE));
             break;
         case SMStoreDataType::Graph:
+            /*
+            if (m_smSQLiteFile->IsShared())
+                StoreNodeHeaderToFile<EXTENT>(m_smSQLiteFile, m_nodeHeader, id);
+                */
+
             m_smSQLiteFile->StoreGraph(id, nodeData, dataSize);
             free(dataBuffer);
             break;

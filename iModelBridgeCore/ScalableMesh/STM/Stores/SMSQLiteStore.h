@@ -10,6 +10,7 @@ struct SharedTransaction
 {
 private:
     bool m_transactionNeedsClosing;
+    bool m_dbNeedsClosing;
     SMSQLiteFilePtr m_smSQLiteFile;
 public:
     SharedTransaction(SMSQLiteFilePtr fileP, bool readonly, bool startTransaction = false);
@@ -27,8 +28,7 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         HFCPtr<HRFRASTERFILE> m_streamingRasterFile;
         HFCPtr<HRARASTER> m_raster;
         SMIndexMasterHeader<EXTENT> m_masterHeader;
-        std::mutex                  m_preloadMutex;
-
+        std::mutex                  m_preloadMutex;        
         IClipDefinitionDataProviderPtr m_clipProvider;
 
 

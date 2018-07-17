@@ -4,6 +4,7 @@
 #include "SMSQLiteClipDefinitionsFile.h"
 #include "SMSQLiteDiffsetFile.h"
 #include "SMSQLiteFeatureFile.h"
+#include "Stores/SMSQLiteStore.h"
 
 #define WSTRING_FROM_CSTR(cstr) WString(cstr, BentleyCharEncoding::Utf8)
 #define MAKE_COPY_NO Statement::MakeCopy::No
@@ -244,6 +245,13 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
         result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
         }
     m_isShared = openShareable;
+
+
+    if (openShareable)
+        {
+        m_database->CloseDb();
+        }
+
     return result == BE_SQLITE_OK;
     }
 
@@ -1282,6 +1290,8 @@ size_t SMSQLiteFile::GetNumberOfMetadataChars(int64_t nodeId)
 
 bool SMSQLiteFile::SetWkt(WCharCP extendedWkt)
     {
+    SharedTransaction trans(this, false);
+
     std::lock_guard<std::mutex> lock(dbLock);
     Utf8String extendedWktUtf8String;
     BeStringUtilities::WCharToUtf8(extendedWktUtf8String, extendedWkt);
@@ -1319,6 +1329,8 @@ bool SMSQLiteFile::SetWkt(WCharCP extendedWkt)
 
 bool SMSQLiteFile::HasWkt()
     {
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT GCS FROM SMMasterHeader WHERE MasterHeaderId=?");
@@ -1333,6 +1345,8 @@ bool SMSQLiteFile::HasWkt()
 
 bool SMSQLiteFile::HasMasterHeader()
     {
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT count(MasterHeaderId) FROM SMMasterHeader");
@@ -1344,6 +1358,8 @@ bool SMSQLiteFile::HasMasterHeader()
 
 bool SMSQLiteFile::HasPoints()
     {
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT MAX(_ROWID_) FROM SMPoint LIMIT 1"); //select count() is not optimized on sqlite
@@ -1354,7 +1370,9 @@ bool SMSQLiteFile::HasPoints()
     }
 
 bool SMSQLiteFile::IsSingleFile()
-    {
+    {    
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT SingleFile  FROM SMMasterHeader WHERE MasterHeaderId=?");
@@ -1368,6 +1386,8 @@ bool SMSQLiteFile::IsSingleFile()
 
 bool SMSQLiteFile::GetWkt(WString& wktStr)
 {
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT GCS FROM SMMasterHeader WHERE MasterHeaderId=?");
@@ -1383,6 +1403,8 @@ bool SMSQLiteFile::GetWkt(WString& wktStr)
 
 bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
 {
+    SharedTransaction trans(this, false);
+
     std::lock_guard<std::mutex> lock(dbLock);
     BeAssert(m_database->IsTransactionActive());
     Savepoint s(*m_database, "sources");
@@ -1545,6 +1567,8 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
 
 bool SMSQLiteFile::HasSources()
     {
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmtTest;
     m_database->GetCachedStatement(stmtTest, "SELECT COUNT(SourceId) FROM SMSources");
@@ -1554,6 +1578,8 @@ bool SMSQLiteFile::HasSources()
 
 bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
     {
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT SourceId, SourceType, DTMSourceID, GroupID, ModelId, ModelName, LevelId, LevelName, RootToRefPersistentPath, "
@@ -1659,6 +1685,8 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
 
 bool SMSQLiteFile::SetSingleFile(bool isSingleFile)
 {
+    SharedTransaction trans(this, false);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmtTest;
     m_database->GetCachedStatement(stmtTest, "SELECT COUNT(MasterHeaderId) FROM SMMasterHeader WHERE MasterHeaderId=?");

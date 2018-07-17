@@ -206,7 +206,7 @@ public:
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
 
         
-            bool IsDirty() const;
+    BENTLEY_SM_EXPORT bool IsDirty() const;
 
     virtual void SetDirty(bool dirty); 
 
@@ -364,7 +364,7 @@ public:
     -----------------------------------------------------------------------------*/
     size_t GetDepth() const;
 
-    void GetAllNeighborNodes(vector<SMPointIndexNode*>& nodes) const;
+    BENTLEY_SM_EXPORT void GetAllNeighborNodes(vector<SMPointIndexNode*>& nodes) const;
 
     BENTLEY_SM_EXPORT bool IsNeighborsLoaded() const;
 
@@ -412,8 +412,15 @@ public:
 
     @return Sub-node no split
     -----------------------------------------------------------------------------*/
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > GetSubNodeNoSplit() const;
+    BENTLEY_SM_EXPORT HFCPtr<SMPointIndexNode<POINT, EXTENT> > GetSubNodeNoSplit() const;
 
+    /**----------------------------------------------------------------------------
+    Returns the children nodes of this node.
+
+    @return Children nodes.
+    -----------------------------------------------------------------------------*/
+    BENTLEY_SM_EXPORT vector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> GetSubNodes() const;
+        
     /**----------------------------------------------------------------------------
     Returns the minimum resolution between the geometric resolution and texture resolution..
 
@@ -533,7 +540,7 @@ public:
 
     virtual void OnPushNodeDown() {};
 
-	virtual void RemoveNonDisplayPoolData();
+    BENTLEY_SM_EXPORT virtual void RemoveNonDisplayPoolData();
 
 
     /**----------------------------------------------------------------------------

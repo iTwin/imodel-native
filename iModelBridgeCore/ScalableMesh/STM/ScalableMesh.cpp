@@ -62,8 +62,12 @@ extern bool   GET_HIGHEST_RES;
 #include "MosaicTextureProvider.h"
 #include "ScalableMeshGroup.h"
 #include "ScalableMeshMesher.h"
+#include "ScalableMeshDb.h"
 #include <ScalableMesh/IScalableMeshPublisher.h>
-#include "Stores/SMPublisher.h"
+
+
+
+
 //#include "CGALEdgeCollapse.h"
 
 //DataSourceManager s_dataSourceManager;
@@ -702,7 +706,8 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
         (BeFileName::GetExtension(filePath).CompareToI(L"stm2") == 0))
         { // Open 3sm file
         StatusInt openStatus;
-        if (openShareable && s_enableSharedDatabase)
+        
+        if (openShareable && ScalableMeshDb::GetEnableSharedDatabase())
             {
             smSQLiteFile = SMSQLiteFile::Open(filePath, openReadOnly, openStatus, true);
             }

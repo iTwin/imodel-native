@@ -563,7 +563,7 @@ void  IScalableMeshCreator::Impl::SetShareable(bool isShareable)
 {
     if (m_smSQLitePtr.IsValid())
         return;
-    m_isShareable = isShareable;
+    m_isShareable = isShareable;    
 }
 
 ScalableMeshDb* IScalableMeshCreator::Impl::GetDatabaseFile()
@@ -860,7 +860,8 @@ SMSQLiteFilePtr IScalableMeshCreator::Impl::GetFile(bool fileExists)
            m_smSQLitePtr = dynamic_cast<const ScalableMeshBase&>(*m_scmPtr).GetDbFile();
     }
     else
-        assert(m_smSQLitePtr->IsOpen());
+        assert(m_smSQLitePtr->IsOpen() || m_smSQLitePtr->IsShared());
+
     return m_smSQLitePtr;
 }
 
@@ -959,13 +960,21 @@ int IScalableMeshCreator::Impl::SaveGCS()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt IScalableMeshCreator::Impl::LoadFromFile  ()
     {
-
-
-        m_smSQLitePtr = GetFile(fileExist(m_scmFileName.c_str()));
+    m_smSQLitePtr = GetFile(fileExist(m_scmFileName.c_str()));
         
+    if (!Load())
+        return BSIERROR;
 
-        if (!Load())
-            return BSIERROR;
+    if (m_isShareable)
+        {
+        ScalableMeshDb* smDb(m_smSQLitePtr->GetDb());
+        assert(smDb != nullptr);
+
+        bool wasTransactionAbandoned;
+        smDb->CommitTransaction();
+        smDb->CloseShared(wasTransactionAbandoned);
+        }
+
 
     return BSISUCCESS;
     }

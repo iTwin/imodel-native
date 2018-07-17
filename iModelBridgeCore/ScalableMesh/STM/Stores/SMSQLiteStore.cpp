@@ -215,15 +215,18 @@ SharedTransaction::SharedTransaction(SMSQLiteFilePtr fileP, bool readonly, bool 
 {
 #ifndef VANCOUVER_API
     m_transactionNeedsClosing = false;
+    m_dbNeedsClosing = false;
     m_smSQLiteFile = fileP;
     if (m_smSQLiteFile.IsValid() && !m_smSQLiteFile->IsOpen() && m_smSQLiteFile->IsShared())
     {
         m_smSQLiteFile->GetDb()->ReOpenShared(readonly, true);
+        m_dbNeedsClosing = true;
         if (startTransaction)
         {
             m_smSQLiteFile->GetDb()->StartTransaction();
             m_transactionNeedsClosing = true;
         }
+
     }
 #endif
 }
@@ -236,7 +239,9 @@ SharedTransaction::~SharedTransaction()
     {
         if (m_transactionNeedsClosing)
             m_smSQLiteFile->GetDb()->CommitTransaction();
-        m_smSQLiteFile->GetDb()->CloseShared(wasAbandoned);
+
+        if (m_dbNeedsClosing)
+            m_smSQLiteFile->GetDb()->CloseShared(wasAbandoned);      
     }
 #endif
 }

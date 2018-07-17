@@ -46,7 +46,7 @@ class SMSQLiteSisterFile
 
         bool SetProjectFilesPath(BeFileName& projectFilesPath);
 
-        void SaveSisterFiles();
+        BENTLEY_SM_EXPORT void SaveSisterFiles();
 
 		void Compact();
 

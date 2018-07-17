@@ -92,11 +92,9 @@ DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
     }
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
-#ifndef VANCOUVER_API 
-bool s_enableSharedDatabase = false;
-#else
-bool s_enableSharedDatabase = false;
-#endif
+
+bool ScalableMeshDb::s_enableSharedDatabase = false;
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 
 int InfiniteRetries::_OnBusy(int count) const
@@ -118,7 +116,11 @@ bool ScalableMeshDb::ReOpenShared(bool readonly, bool allowBusyRetry)
     if (m_path.empty())
         return false;
 
-    this->OpenBeSQLiteDb(m_path.c_str(), BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite, readonly ? BeSQLite::DefaultTxn::No : BeSQLite::DefaultTxn::Immediate, allowBusyRetry ? new InfiniteRetries() : nullptr));
+    DbResult result = this->OpenBeSQLiteDb(m_path.c_str(), BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite, readonly ? BeSQLite::DefaultTxn::No : BeSQLite::DefaultTxn::Immediate, allowBusyRetry ? new InfiniteRetries() : nullptr));
+
+    if (result != BE_SQLITE_OK)
+        return false;
+
     this->SetAllowImplictTransactions(true);
     return true;
 }
@@ -135,16 +137,20 @@ bool ScalableMeshDb::StartTransaction()
 }
 
 bool ScalableMeshDb::CommitTransaction()
-{
+    {
     if (m_currentSavepoint == nullptr)
         return false;
 
     if (!this->IsDbOpen())
         return false;
-
+       
     m_currentSavepoint->Commit();
+    
+    delete m_currentSavepoint;
+    m_currentSavepoint = nullptr;
+   
     return true;
-}
+    }
 
 void ScalableMeshDb::CloseShared(bool& wasTransactionAbandoned)
 {
@@ -153,10 +159,13 @@ void ScalableMeshDb::CloseShared(bool& wasTransactionAbandoned)
     wasTransactionAbandoned = false;
 
     if (m_currentSavepoint != nullptr)
-    {
-        m_currentSavepoint->Cancel();
+        {
+        m_currentSavepoint->Cancel();        
         wasTransactionAbandoned = true;
-    }
+       
+        delete m_currentSavepoint;
+        m_currentSavepoint = nullptr;       
+        }
 
     this->CloseDb();
 }
@@ -165,5 +174,16 @@ void ScalableMeshDb::GetSharedDbFileName(BENTLEY_NAMESPACE_NAME::Utf8String& pat
     {
     path = m_path;
     }
+
+bool ScalableMeshDb::GetEnableSharedDatabase() 
+    {
+    return s_enableSharedDatabase;
+    }
+
+void  ScalableMeshDb::SetEnableSharedDatabase(bool isShared)
+    {
+    s_enableSharedDatabase = isShared;
+    }
+
 
 #endif

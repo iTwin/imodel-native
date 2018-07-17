@@ -907,8 +907,8 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
     HINVARIANTS;
 
     return true;
-    }
-
+    }   
+    
 //=======================================================================================
 // @bsimethod                                                 Elenie.Godzaridis 09/17
 //=======================================================================================
@@ -6013,6 +6013,15 @@ template<class POINT, class EXTENT>
 HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::GetSubNodeNoSplit() const
     {
     return m_pSubNodeNoSplit;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Mathieu.St-Pierre 07/18
+//=======================================================================================
+template<class POINT, class EXTENT>
+vector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> SMPointIndexNode<POINT, EXTENT>::GetSubNodes() const
+    {
+    return m_apSubNodes;
     }
 
 //=======================================================================================

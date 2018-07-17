@@ -70,11 +70,11 @@ IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(con
     }
     
     IScalableMeshSourceCreatorWorkerPtr pCreatorWorker = new IScalableMeshSourceCreatorWorker(new IScalableMeshSourceCreatorWorker::Impl(filePath));
-
+    
     status = pCreatorWorker->m_implP->LoadFromFile();
     if (BSISUCCESS != status)
         return 0;
-
+    
     return pCreatorWorker.get();
 }
 
@@ -117,6 +117,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName)
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
     SetThreadingOptions(false, true, false);    
     SetShareable(true);
+    ScalableMeshDb::SetEnableSharedDatabase(true);
     }
 
 IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr)
@@ -125,6 +126,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr)
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
     SetThreadingOptions(false, true, false);
     SetShareable(true);
+    ScalableMeshDb::SetEnableSharedDatabase(true);
     }
 
 IScalableMeshSourceCreatorWorker::Impl::~Impl()
@@ -140,6 +142,10 @@ HFCPtr<MeshIndexType> IScalableMeshSourceCreatorWorker::Impl::GetDataIndex()
 
         assert(m_pDataIndex.GetPtr() != nullptr);   
         assert(status == SUCCESS);
+        assert(dynamic_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()) != nullptr);
+
+        SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
+        pSqliteStore->SetRemoveTempGenerationFile(false);        
         }
 
     return m_pDataIndex;
@@ -309,6 +315,11 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
    // pDataIndex->ClearNodeMap();
     pDataIndex->Store();
     m_smSQLitePtr->Save();
+
+    SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
+    assert(pSqliteStore != nullptr);
+    pSqliteStore->SaveSisterFiles();
+
     meshNode->Unload();
     meshNode = nullptr;
 
@@ -334,30 +345,146 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
     HPMBlockID blockID(tileId);
 
     HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
-    
+
+    assert(!meshNode->IsDirty());
+    meshNode->Unload();
+    meshNode->RemoveNonDisplayPoolData();
+
+    /*
     if (!meshNode->IsNeighborsLoaded())
         {
         meshNode->Unload();
-        }
+        }  
+        */
 
     meshNode->NeedToLoadNeighbors(true);    
     meshNode->Load();
-
     assert(!meshNode->m_nodeHeader.m_arePoints3d);
 
+    //Ensure that loaded neighbor node and data are in sync with each other.
+    SMSQLiteFilePtr sqliteFilePtr(GetFile(true));
+    ScalableMeshDb* smDb(sqliteFilePtr->GetDb());
+    assert(smDb != nullptr);
+    
+    bool dbOpResult = true;
+   
+    if (!smDb->IsDbOpen() || !smDb->IsReadonly())
+        dbOpResult = smDb->ReOpenShared(true, true);
+    
+    assert(dbOpResult == true);
+    
+    vector<SMPointIndexNode<DPoint3d, DRange3d>*> neighborNodes;
+
+    meshNode->GetAllNeighborNodes(neighborNodes);    
+    dbOpResult = smDb->StartTransaction();
+    assert(dbOpResult == true);
+    
+    bvector<RefCountedPtr<SMMemoryPoolVectorItem<DPoint3d>>>      ptsNeighbors;
+    bvector<RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>>       ptsIndicesNeighbors;
+    bvector<RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>>> graphNeighbors;
+    
+    
+    for (auto node : neighborNodes)
+        {
+        assert(!node->IsDirty());
+        node->Unload(); 
+        node->RemoveNonDisplayPoolData();
+        node->Load();
+                
+        SMMeshIndexNode<DPoint3d, DRange3d>* pMeshIndexNode(dynamic_cast<SMMeshIndexNode<DPoint3d, DRange3d>*>(node));
+        assert(pMeshIndexNode != nullptr);
+
+        RefCountedPtr<SMMemoryPoolVectorItem<DPoint3d>> pointPtr(pMeshIndexNode->GetPointsPtr());
+        size_t nbPoints = node->GetNbPoints();
+
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndices(pMeshIndexNode->GetPtsIndicePtr());
+
+        if (nbPoints == 0 || ptsIndices->size() == 0)
+            {
+            int i = 0;
+            i = i;
+            }
+
+               
+
+        assert(nbPoints == pointPtr->size());
+                
+        ptsNeighbors.push_back(pMeshIndexNode->GetPointsPtr());
+        ptsIndicesNeighbors.push_back(pMeshIndexNode->GetPtsIndicePtr());
+        graphNeighbors.push_back(pMeshIndexNode->GetGraphPtr());
+        }
+
     bool isMeshed = pDataIndex->GetMesher2_5d()->Stitch(meshNode);
+
+    bool wasTransactionAbandoned;
+
+    dbOpResult = smDb->CommitTransaction();
+    assert(dbOpResult == true);    
+    smDb->CloseShared(wasTransactionAbandoned);
+    assert(wasTransactionAbandoned == false);
+    //Ensure that loaded neighbor node and data are in sync with each other - END
+            
+    
+
+    if (!smDb->IsDbOpen() || !smDb->IsReadonly())
+        dbOpResult = smDb->ReOpenShared(true, true);
+
+    ptsNeighbors.clear();
+    ptsIndicesNeighbors.clear();
+    graphNeighbors.clear();
+
+    if (!smDb->IsDbOpen() || smDb->IsReadonly())
+        {
+        if (smDb->IsDbOpen())
+            {
+            smDb->CloseShared(wasTransactionAbandoned);
+            assert(wasTransactionAbandoned == false);
+            }
+
+        dbOpResult = smDb->ReOpenShared(false, true);
+        }
 
     if (isMeshed)
         {
         meshNode->SetDirty(true);
         }
 
+    for (auto node : neighborNodes)
+        {
+        assert(!node->IsDirty());        
+        }
+
+    {
+        size_t nbPoints = meshNode->GetNbPoints();
+
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndices(meshNode->GetPtsIndicePtr());
+
+        if (nbPoints == 0 || ptsIndices->size() == 0)
+        {
+            int i = 0;
+            i = i;
+        }
+    }
+
     meshNode->Discard();    
+    
    // pDataIndex->ClearNodeMap();
     pDataIndex->Store();
     m_smSQLitePtr->Save();
+
+    SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
+    assert(pSqliteStore != nullptr);
+    pSqliteStore->SaveSisterFiles();
+
     meshNode->Unload();
+    
     meshNode = nullptr;
+
+    if (smDb->IsDbOpen())
+        {
+        smDb->CloseShared(wasTransactionAbandoned);
+        assert(wasTransactionAbandoned == false);
+        }
 
     return SUCCESS;
     }
@@ -386,6 +513,23 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
     meshNode->Load();
 
     assert(!meshNode->m_nodeHeader.m_arePoints3d);
+
+    //Ensure that all children nodes are reloaded so that it the contains the latest data which might have been generated by another worker.    
+    HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> subNodeNoSplit(meshNode->GetSubNodeNoSplit());
+
+    if (subNodeNoSplit != nullptr)
+        {
+        subNodeNoSplit->Unload();        
+        }
+    else
+        {
+        vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> childrenNodes(meshNode->GetSubNodes());
+
+        for (auto& node : childrenNodes)
+            {
+            node->Unload();
+            }
+        }
     
     meshNode->Filter((int)meshNode->GetLevel(), nullptr);
         
@@ -412,10 +556,10 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTaskPlan()
     uint32_t nbRes = (uint32_t)pDataIndex->GetDepth();
 
     for (uint32_t resInd = nbRes; resInd > 0; resInd--)
-        {        
+        {                             
         BeXmlNodeP stitchTaskNode(xmlDomPtr->AddNewElement("stitch", nullptr, taskPlanNode));
         stitchTaskNode->AddAttributeUInt32Value("res", resInd);
-
+        
         BeXmlNodeP filterTaskNode(xmlDomPtr->AddNewElement("filter", nullptr, taskPlanNode));
         filterTaskNode->AddAttributeUInt32Value("res", resInd - 1);        
         }
@@ -441,8 +585,10 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ExecuteNextTaskInTaskPlan()
 
     GetTaskPlanFileName(taskPlanFileName);
 
-    FILE* file = _wfopen(taskPlanFileName.c_str(), L"ab+");
+    FILE* file = nullptr;
 
+    _wfopen_s(&file, taskPlanFileName.c_str(), L"abN+");
+    
     if (file == nullptr)
         { 
         return SUCCESS;
@@ -505,10 +651,13 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ExecuteNextTaskInTaskPlan()
     BeXmlDom::ToStringOption toStrOption = (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent);
 
     pXmlDom->ToString(updatedTaskPlanXml, toStrOption);
+    
+    FILE* reOpenFile = nullptr;
 
-    file = _wfreopen(taskPlanFileName.c_str(), L"wb", file);
-    fwrite(updatedTaskPlanXml.c_str(), updatedTaskPlanXml.SizeInBytes(), 1, file);        
-    int closeStatus = fclose(file);
+    while ((reOpenFile = _wfreopen(taskPlanFileName.c_str(), L"wb", file)) == nullptr);
+    
+    fwrite(updatedTaskPlanXml.c_str(), updatedTaskPlanXml.SizeInBytes(), 1, reOpenFile);
+    int closeStatus = fclose(reOpenFile);
     assert(closeStatus == 0);
 
     return SUCCESS;

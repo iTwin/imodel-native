@@ -77,7 +77,6 @@ public:
     #define BESQL_VERSION_STRUCT ProfileVersion    
 #endif
 
-extern bool s_enableSharedDatabase;
 
 class InfiniteRetries : public BeSQLite::BusyRetry
 {
@@ -96,6 +95,8 @@ class ScalableMeshDb : public BeSQLite::Db
         BENTLEY_NAMESPACE_NAME::Utf8String m_path;
 #endif
 
+        static bool s_enableSharedDatabase;
+
     protected:
 #ifndef VANCOUVER_API    
        ProfileState _CheckProfileVersion() const override;
@@ -112,15 +113,19 @@ class ScalableMeshDb : public BeSQLite::Db
         //Offer functions to more explicitly deal with shared db's; open/close after specific transactions, allow implicit transactions, busy-retry
 
         DbResult OpenShared(BENTLEY_NAMESPACE_NAME::Utf8CP path, bool readonly, bool allowBusyRetry);
-        bool ReOpenShared(bool readonly, bool allowBusyRetry);
-        bool StartTransaction();
-        bool CommitTransaction();
-        void CloseShared(bool& wasTransactionAbandoned);
+        BENTLEY_SM_EXPORT bool ReOpenShared(bool readonly, bool allowBusyRetry);
+        BENTLEY_SM_EXPORT bool StartTransaction();
+        BENTLEY_SM_EXPORT bool CommitTransaction();
+        BENTLEY_SM_EXPORT void CloseShared(bool& wasTransactionAbandoned);
 
         void GetSharedDbFileName(BENTLEY_NAMESPACE_NAME::Utf8String& path);        
 #endif
 
         static const BESQL_VERSION_STRUCT CURRENT_VERSION;
+
+        BENTLEY_SM_EXPORT static bool GetEnableSharedDatabase();
+
+        BENTLEY_SM_EXPORT static void  SetEnableSharedDatabase(bool isShared);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

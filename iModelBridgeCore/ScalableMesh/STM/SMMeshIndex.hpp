@@ -1256,7 +1256,7 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushUV
     //assert(m_nodeHeader.m_uvsIndicesID.size() == 0);
     m_nodeHeader.m_uvsIndicesID.push_back(GetBlockID());
     }
-
+   
 //=======================================================================================
 // @bsimethod                                                 Elenie.Godzaridis 09/17
 //=======================================================================================
