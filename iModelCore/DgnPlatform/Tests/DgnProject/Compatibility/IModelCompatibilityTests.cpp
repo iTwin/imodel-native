@@ -20,7 +20,11 @@ struct IModelCompatibilityTestFixture : CompatibilityTestFixture
     {
     protected:
         ScopedDgnHost m_host;
-        void SetUp() override { ASSERT_EQ(SUCCESS, TestIModelCreation::Run()); }
+        void SetUp() override 
+            {
+            CompatibilityTestFixture::SetUp();
+            ASSERT_EQ(SUCCESS, TestIModelCreation::Run()); 
+            }
     };
 
 //---------------------------------------------------------------------------------------
@@ -382,10 +386,10 @@ TEST_F(IModelCompatibilityTestFixture, EC32KindOfQuantities)
             testDb.AssertLoadSchemas();
             ASSERT_TRUE(testDb.SupportsFeature(ECDbFeature::UnitsAndFormats)) << testDb.GetDescription();
 
-            testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithMandatoryComposite", "My first test KOQ", nullptr, "u:CM", JsonValue(R"js(["f:DefaultRealU(4)[u:M]"])js"), 0.1);
-            testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithOptionalComposite", nullptr, "My second test KOQ", "u:CM", JsonValue(R"js(["f:AmerFI[u:FT|feet][u:IN|inches]"])js"), 0.2);
-            testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithoutComposite", nullptr, nullptr, "u:CM", JsonValue(R"js(["f:AmerFI"])js"), 0.3);
-            testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_NoPresFormat", nullptr, nullptr, "u:KG", JsonValue(), 0.4);
+            testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithMandatoryComposite", "My first test KOQ", nullptr, "CM(DefaultReal)", JsonValue(R"js(["M(Real4U)"])js"), 0.1);
+            testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithOptionalComposite", nullptr, "My second test KOQ", "CM(DefaultReal)", JsonValue(R"js(["FT(AmerFI8)"])js"), 0.2);
+            testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_PresFormatWithoutComposite", nullptr, nullptr, "CM(DefaultReal)", JsonValue(R"js(["CM(AmerFI8)"])js"), 0.3);
+            testDb.AssertKindOfQuantity("EC32Koqs", "TestKoq_NoPresFormat", nullptr, nullptr, "KG(DefaultReal)", JsonValue(), 0.4);
             }
         }
     }
@@ -405,9 +409,9 @@ TEST_F(IModelCompatibilityTestFixture, EC32Units)
             testDb.AssertLoadSchemas();
             ASSERT_TRUE(testDb.SupportsFeature(ECDbFeature::UnitsAndFormats)) << testDb.GetDescription();
 
-            testDb.AssertKindOfQuantity("EC32Units", "KoqWithCustomFormat", nullptr, nullptr, "u:M", JsonValue(R"js(["MyFormat[u:M]"])js"), 0.1);
-            testDb.AssertKindOfQuantity("EC32Units", "KoqWithCustomUnit", nullptr, nullptr, "MySquareM", JsonValue(R"js(["f:DefaultRealU(4)[MySquareM]"])js"), 0.2);
-            testDb.AssertKindOfQuantity("EC32Units", "KoqWithCustomUnitAndFormat", nullptr, nullptr, "MySquareFt", JsonValue(R"js(["MyFormat[MySquareFt]"])js"), 0.3);
+            testDb.AssertKindOfQuantity("EC32Units", "KoqWithCustomFormat", nullptr, nullptr, "M(DefaultReal)", JsonValue(R"js(["M(DefaultRealU)"])js"), 0.1);
+            testDb.AssertKindOfQuantity("EC32Units", "KoqWithCustomUnit", nullptr, nullptr, "MySquareM(DefaultReal)", JsonValue(R"js(["MySquareM(Real4U)"])js"), 0.2);
+            testDb.AssertKindOfQuantity("EC32Units", "KoqWithCustomUnitAndFormat", nullptr, nullptr, "MySquareFt(DefaultReal)", JsonValue(R"js(["MySquareFt(DefaultRealU)"])js"), 0.3);
 
             testDb.AssertUnitSystem("EC32Units", "MyMetric", "Metric", "Metric Units of measure");
             testDb.AssertUnitSystem("EC32Units", "MyImperial", "Imperial", "Units of measure from the British Empire");

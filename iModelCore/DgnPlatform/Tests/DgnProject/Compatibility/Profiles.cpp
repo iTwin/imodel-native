@@ -249,18 +249,7 @@ ECDbProfile const* ECDbProfile::s_singleton = nullptr;
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbProfile::_Init() const
     {
-    if (!ECDb::IsInitialized())
-        {
-        BeFileName applicationSchemaDir;
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
-
-        BeFileName temporaryDir;
-        BeTest::GetHost().GetOutputRoot(temporaryDir);
-
-        ECDb::Initialize(temporaryDir, &applicationSchemaDir);
-        srand((uint32_t) (BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
-        }
-
+    BeAssert(ECDb::IsInitialized());
     ECDb db;
     if (BE_SQLITE_OK != db.CreateNewDb(BEDB_MemoryDb))
         return ERROR;
@@ -279,10 +268,6 @@ BeDbProfile const* BeDbProfile::s_singleton = nullptr;
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus BeDbProfile::_Init() const
     {
-    BeFileName temporaryDir;
-    BeTest::GetHost().GetOutputRoot(temporaryDir);
-    BeSQLiteLib::Initialize(temporaryDir);
-
     Db db;
     if (BE_SQLITE_OK != db.CreateNewDb(BEDB_MemoryDb))
         return ERROR;
@@ -301,18 +286,7 @@ DgnDbProfile const* DgnDbProfile::s_singleton = nullptr;
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DgnDbProfile::_Init() const
     {
-    if (!DgnDb::IsInitialized())
-        {
-        BeFileName applicationSchemaDir;
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
-
-        BeFileName temporaryDir;
-        BeTest::GetHost().GetOutputRoot(temporaryDir);
-
-        DgnDb::Initialize(temporaryDir, &applicationSchemaDir);
-        srand((uint32_t) (BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
-        }
-
+    BeAssert(DgnDb::IsInitialized());
     BeFileName temporaryDir;
     BeTest::GetHost().GetTempDir(temporaryDir);
     temporaryDir.AppendUtf8("temp");
