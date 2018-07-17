@@ -2,7 +2,7 @@
 #
 #     $Source: LicensingCrossPlatform/Licensing.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
@@ -12,6 +12,7 @@ Headers =
 Headers + $(SourceDir)UsageDb.h
 Headers + $(SourceDir)PolicyToken.h
 Headers + $(SourceDir)ClientImpl.h
+Headers + $(SourceDir)GenerateSID.h
 Headers + $(PublicApiDir)Licensing.h
 Headers + $(PublicApiDir)Client.h
 Headers + $(PublicApiDir)Utils/SCVWritter.h
@@ -31,6 +32,8 @@ $(o)ClientImpl$(oext)                : $(SourceDir)ClientImpl.cpp $(Headers) ${M
 $(o)UsageDb$(oext)                   : $(SourceDir)UsageDb.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)PolicyToken$(oext)               : $(SourceDir)PolicyToken.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)GenerateSID$(oext)               : $(SourceDir)GenerateSID.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)SCVWritter$(oext)                : $(SourceDir)Utils/SCVWritter.cpp $(Headers) ${MultiCompileDepends}
 

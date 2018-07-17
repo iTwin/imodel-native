@@ -39,6 +39,9 @@
     <ClCompile Include="Published\Utils\UrlSafeBase64UtilitiesTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Published\GenerateSIDTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\TestsHelper.h">
@@ -63,6 +66,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Published\Utils\SCVWritterTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\GenerateSIDTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,7 +2,7 @@
  |
  |     $Source: LicensingCrossPlatform/PublicAPI/Licensing/Client.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,9 +26,8 @@ typedef std::shared_ptr<struct Client> ClientPtr;
 struct Client
 {
 private:
-     std::unique_ptr<struct ClientImpl> m_impl;
+    std::unique_ptr<struct ClientImpl> m_impl;
 
-private:
     Client
         (
         BeFileNameCR dbPath,

@@ -2,7 +2,7 @@
 |
 |     $Source: LicensingCrossPlatform/Tests/UnitTests/Published/PolicyTokenTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -47,7 +47,7 @@ TEST_F(PolicyTokenTests, GetQualifier_NotExistingQualifier_ReturnsNullJson)
     auto policyToken = PolicyToken::Create(jwToken);
     EXPECT_NE(policyToken, nullptr);
 
-    auto qualifierJson = policyToken->GetQualifier("NonExistingQualifier");
+    auto qualifierJson = policyToken->GetDefaultQualifier("NonExistingQualifier");
     EXPECT_TRUE(qualifierJson.isNull());
     }
 
@@ -62,7 +62,7 @@ TEST_F(PolicyTokenTests, GetQualifier_ExistingQualifier_ReturnsQualifier)
     auto policyToken = PolicyToken::Create(jwToken);
     EXPECT_NE(policyToken, nullptr);
 
-    auto qualifierJson = policyToken->GetQualifier("HeartbeatInterval");
+    auto qualifierJson = policyToken->GetDefaultQualifier("HeartbeatInterval");
     EXPECT_FALSE(qualifierJson.isNull());
 
     EXPECT_EQ("HeartbeatInterval", qualifierJson["Name"].asString());

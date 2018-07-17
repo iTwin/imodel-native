@@ -12,6 +12,7 @@
     <ClCompile Include="Licensing\PolicyToken.cpp" />
     <ClCompile Include="Licensing\UsageDb.cpp" />
     <ClCompile Include="Licensing\Utils\DelayedExecutor.cpp" />
+    <ClCompile Include="Licensing\GenerateSID.cpp" />
     <ClCompile Include="Licensing\Utils\InMemoryJsonLocalState.cpp" />
     <ClCompile Include="Licensing\Utils\JWToken.cpp" />
     <ClCompile Include="Licensing\Utils\SCVWritter.cpp" />
@@ -25,6 +26,7 @@
     <ClInclude Include="PublicAPI\Licensing\Client.h" />
     <ClInclude Include="PublicAPI\Licensing\Licensing.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\DelayedExecutor.h" />
+    <ClInclude Include="Licensing\GenerateSID.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\InMemoryJsonLocalState.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\JWToken.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\SCVWritter.h" />
@@ -37,6 +39,11 @@
     <None Include="Licensing.mki" />
     <None Include="Licensing.VC.db" />
     <None Include="LicensingCompileOptions.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\LicensingCrossPlatform.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <PropertyGroup>
     <ShowAllFiles>true</ShowAllFiles>

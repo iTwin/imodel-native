@@ -2,7 +2,7 @@
  |
  |     $Source: LicensingCrossPlatform/Licensing/ClientImpl.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,6 +23,13 @@
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
+#define LICENSE_CLIENT_SCHEMA_VERSION       1.0
+
+// Log Posting Sources
+#define LOGPOSTINGSOURCE_REALTIME           "RealTime"
+#define LOGPOSTINGSOURCE_OFFLINE            "Offline"
+#define LOGPOSTINGSOURCE_CHECKOUT           "Checkout"
+
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -31,8 +38,17 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 * @bsiclass                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct ClientImpl> ClientImplPtr;
+
 struct ClientImpl
 {
+private:
+    typedef enum
+        {
+        RealTime,
+        Offline,
+        Checkout
+        } LogPostingSource;
+
 private:
     BeFileName m_dbPath;
     std::shared_ptr<IConnectAuthenticationProvider> m_authProvider;
@@ -47,10 +63,15 @@ private:
 
     std::unique_ptr<UsageDb> m_usageDb;
 
-private:
-    folly::Future<Utf8String> PerformGetPolicyRequest();
+    Utf8String m_featureString;
+    Utf8String m_projectId;
+    Utf8String m_correlationId;
 
+private:
+    Utf8String GetLoggingPostSource(LogPostingSource lps) const;
+    folly::Future<Utf8String> PerformGetPolicyRequest();
     void HeartbeatUsage(int64_t currentTime);
+
 
 public:
     LICENSING_EXPORT ClientImpl
@@ -68,12 +89,13 @@ public:
     LICENSING_EXPORT BentleyStatus StartApplication(); 
     LICENSING_EXPORT BentleyStatus StopApplication();
 
-    LICENSING_EXPORT folly::Future<Utf8String> GetCertificate();
-    LICENSING_EXPORT folly::Future<std::shared_ptr<PolicyToken>> GetPolicy();
-
     // usageSCV usage file to send
     // The company ID in SAP. // TODO: figure out where to get this one from.
     LICENSING_EXPORT folly::Future<folly::Unit> SendUsage(BeFileNameCR usageSCV, Utf8StringCR ultId);
+
+    LICENSING_EXPORT folly::Future<Utf8String> GetCertificate();
+
+    LICENSING_EXPORT folly::Future<std::shared_ptr<PolicyToken>> GetPolicy();
 
     // Used in tests
     LICENSING_EXPORT UsageDb& GetUsageDb();

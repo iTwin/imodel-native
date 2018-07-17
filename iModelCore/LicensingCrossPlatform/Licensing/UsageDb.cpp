@@ -2,7 +2,7 @@
 |
 |     $Source: LicensingCrossPlatform/Licensing/UsageDb.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "UsageDb.h"
@@ -68,10 +68,40 @@ BentleyStatus UsageDb::CreateDb(BeFileNameCR filePath)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::SetUpTables()
     {
-    if (m_db.CreateTable("Usage", 
-        "StartTime INTEGER, "
-        "EndTime INTEGER") != DbResult::BE_SQLITE_OK)
+    // Create Policy table
+    if (m_db.CreateTable("Policy",
+                         "PolicyId NVARCHAR(20) PRIMARY KEY, "
+                         "ExpirationDate NVARCHAR(20), "
+                         "LastUpdateTime NVARCHAR(20), "
+                         "PolicyFile BLOB") != DbResult::BE_SQLITE_OK)
+        {
         return ERROR;
+        }
+
+    // Create Usage Record table
+    if (m_db.CreateTable("Usage",
+                         "UltimateSAPId INTEGER, "
+                         "PrincipalId NVARCHAR(20), "
+                         "ImsId NVARCHAR(20), "
+                         "MachineName NVARCHAR(255), "
+                         "MachineSID NVARCHAR(255), "
+                         "UserName NVARCHAR(255), "
+                         "UserSID NVARCHAR(255), "
+                         "PolicyId NVARCHAR(20), "
+                         "SecurableId NVARCHAR(20), "
+                         "ProductId INTEGER, "
+                         "FeatureString NVARCHAR(255), "
+                         "ProductVersion INTEGER, "
+                         "ProjectId NVARCHAR(20), "
+                         "CorrelationId NVARCHAR(20), "
+                         "EventTime NVARCHAR(20), "
+                         "SchemaVersion REAL, "
+                         "LogPostingSource NVARCHAR(20), "
+                         "Country NVARCHAR(20), "
+                         "UsageType NVARCHAR(20)") != DbResult::BE_SQLITE_OK)
+        {
+        return ERROR;
+        }
 
     return SUCCESS;
     }
@@ -89,16 +119,16 @@ void UsageDb::Close()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::InsertNewRecord(int64_t startTime, int64_t endTime)
     {
-    Statement stmt;
+    /*Statement stmt;
     stmt.Prepare(m_db, "INSERT INTO Usage VALUES (?, ?)");
-    stmt.BindInt64(1, startTime);
-    stmt.BindInt64(2, endTime);
+    stmt.BindText(12, startTime, Statement::MakeCopy::No);
+    //stmt.BindInt64(2, endTime);
     
     DbResult result = stmt.Step();
-    if (result == DbResult::BE_SQLITE_DONE)
+    if (result == DbResult::BE_SQLITE_DONE)*/
         return SUCCESS;
 
-    return ERROR;
+    //return ERROR;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -122,7 +152,7 @@ int64_t UsageDb::GetLastRowId()
 int64_t UsageDb::GetLastRecordEndTime()
     {
     Statement stmt;
-    stmt.Prepare(m_db, "SELECT EndTime FROM Usage ORDER BY rowid DESC LIMIT 1");
+    stmt.Prepare(m_db, "SELECT EventTime FROM Usage ORDER BY rowid DESC LIMIT 1");
     
     DbResult result = stmt.Step();
     if (result != DbResult::BE_SQLITE_ROW)
@@ -136,20 +166,20 @@ int64_t UsageDb::GetLastRecordEndTime()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::UpdateLastRecordEndTime(int64_t endTime)
     {
-    int64_t lastRowId = GetLastRowId();
+    /*int64_t lastRowId = GetLastRowId();
     if (lastRowId < 1)
         return ERROR;
 
     Statement stmt;
-    stmt.Prepare(m_db, "UPDATE Usage set EndTime = ? WHERE rowid = ?");
+    stmt.Prepare(m_db, "UPDATE Usage set EventTime = ? WHERE rowid = ?");
     stmt.BindInt64(1, endTime);
     stmt.BindInt64(2, lastRowId);
 
     DbResult result = stmt.Step();
-    if (result == DbResult::BE_SQLITE_DONE)
+    if (result == DbResult::BE_SQLITE_DONE)*/
         return SUCCESS;
 
-    return ERROR;
+    //return ERROR;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -173,19 +203,82 @@ int64_t UsageDb::GetRecordCount()
 BentleyStatus UsageDb::WriteUsageToSCVFile(BeFileNameCR path)
     {
     SCVWritter writter;
-    writter.AddRow("StartTime", "EndTime");
+    writter.AddRow("EventTime");
 
     Statement stmt;
-    stmt.Prepare(m_db, "SELECT StartTime, EndTime FROM Usage");
+    stmt.Prepare(m_db, "SELECT EventTime FROM Usage");
 
     DbResult result = stmt.Step();
     while (result == DbResult::BE_SQLITE_ROW)
         {
-        writter.AddRow(stmt.GetValueInt64(0), stmt.GetValueInt64(1));
+        //writter.AddRow(stmt.GetValueInt64(0), stmt.GetValueInt64(1));
         result = stmt.Step();
         }
     if (result != DbResult::BE_SQLITE_DONE)
         return ERROR;
 
     return writter.WriteToFile(path);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken)
+    {
+    Statement stmt;
+    
+    if (m_db.IsDbOpen())
+        {
+        stmt.Prepare(m_db, "INSERT INTO Policy VALUES (?, ?, ?, ?)");
+        stmt.BindText(1, policyId, Statement::MakeCopy::No);
+        stmt.BindText(2, expirationDate, Statement::MakeCopy::No);
+        stmt.BindText(3, lastUpdateTime, Statement::MakeCopy::No);
+        stmt.BindBlob(4, &policyToken, policyToken.size(), Statement::MakeCopy::No);
+
+        DbResult result = stmt.Step();
+        if (result == DbResult::BE_SQLITE_DONE)
+            return SUCCESS;
+        }
+    return ERROR;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus UsageDb::RecordUsage(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
+                                   Utf8StringCR machineSID, Utf8StringCR userName, Utf8StringCR userSID, Utf8StringCR policyId,
+                                   Utf8StringCR securableId, int productId, Utf8String featureString, int64_t productVersion, 
+                                   Utf8StringCR projectId, Utf8String correlationId, Utf8StringCR eventTime, double schemaVersion,
+                                   Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType)
+    {
+    Statement stmt;
+
+    if (m_db.IsDbOpen())
+        {
+        stmt.Prepare(m_db, "INSERT INTO Usage VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        stmt.BindInt64(1, ultimateSAPId);
+        stmt.BindText(2, principalId, Statement::MakeCopy::No);
+        stmt.BindText(3, imsId, Statement::MakeCopy::No);
+        stmt.BindText(4, machineName, Statement::MakeCopy::No);
+        stmt.BindText(5, machineSID, Statement::MakeCopy::No);
+        stmt.BindText(6, userName, Statement::MakeCopy::No);
+        stmt.BindText(7, userSID, Statement::MakeCopy::No);
+        stmt.BindText(8, policyId, Statement::MakeCopy::No);
+        stmt.BindText(9, securableId, Statement::MakeCopy::No);
+        stmt.BindInt(10, productId);
+        stmt.BindText(11, featureString, Statement::MakeCopy::No);
+        stmt.BindInt64(12, productVersion);
+        stmt.BindText(13, projectId, Statement::MakeCopy::No);
+        stmt.BindText(14, correlationId, Statement::MakeCopy::No);
+        stmt.BindText(15, eventTime, Statement::MakeCopy::No);
+        stmt.BindDouble(16, schemaVersion);
+        stmt.BindText(17, logPostingSource, Statement::MakeCopy::No);
+        stmt.BindText(18, country, Statement::MakeCopy::No);
+        stmt.BindText(19, usageType, Statement::MakeCopy::No);
+        
+        DbResult result = stmt.Step();
+        if (result == DbResult::BE_SQLITE_DONE)
+            return SUCCESS;
+        }
+    return ERROR;
     }
