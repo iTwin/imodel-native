@@ -756,7 +756,7 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
 
     Formatting::FormatUnitSet persistenceFus;
     bool hasDummyUnit = false; // unused
-    if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(persistenceFus, hasDummyUnit, persUnitStr, *koq, !fileUsesEC32Koqs, !fileUsesEC32Koqs))
+    if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(persistenceFus, hasDummyUnit, persUnitStr, *koq, !fileUsesEC32Koqs))
         {
         LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit's FormatUnitSet descriptor '%s' could not be parsed.", koq->GetFullName().c_str(), persUnitStr);
         return ERROR;
