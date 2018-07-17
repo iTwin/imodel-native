@@ -145,8 +145,8 @@ private:
     void getVolumeCharacteristics (bool    ensureNonnegativeVolume)
         {
         bvector<MTGNodeId>  faceSeeds;
-        MTGNodeId           faceSeedId;
-        int                 numFace;
+        // unused - MTGNodeId           faceSeedId;
+        // unused - int                 numFace;
 
         m_bClosed = false;
         m_volume = 0.0;

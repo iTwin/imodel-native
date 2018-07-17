@@ -19,8 +19,6 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
        
 
 
-static double s_minToleranceRatio = 512.0;
-
 BEGIN_TILETREE_IO_NAMESPACE
 
 #define JSON_Root "root"
@@ -624,7 +622,7 @@ PublishedTile::PublishedTile(TileTree::TileCR inputTile, BeFileNameCR outputDire
     m_name.ReplaceAll("/", "_");
 
     m_tileRange = inputTile.GetRange();
-    m_tolerance = m_tileRange.DiagonalDistance() / s_minToleranceRatio;
+    m_tolerance = 0.0 == inputTile._GetMaximumSize() ? 1.0E8 : m_tileRange.DiagonalDistance() / inputTile._GetMaximumSize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -900,7 +898,7 @@ BeFileNameStatus InitializeDirectories()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-WriteStatus _BeginProcessModel(GeometricModelCR model)
+WriteStatus _BeginProcessModel(GeometricModelCR model) override
     {
     return (BeFileNameStatus::Success == InitializeDirectories()) ? WriteStatus::Success : WriteStatus::UnableToOpenFile;
     }
@@ -908,7 +906,7 @@ WriteStatus _BeginProcessModel(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-WriteStatus _EndProcessModel(GeometricModelCR model, TransformCR tileToDb, PublishedTileCR rootTile, WriteStatus status)
+WriteStatus _EndProcessModel(GeometricModelCR model, TransformCR tileToDb, PublishedTileCR rootTile, WriteStatus status) override
     {
     if (WriteStatus::Success != status)
         {
