@@ -14,9 +14,20 @@
 #include <ostream>
 
 //=======================================================================================
-// @bsiclass                                                 Affan.Khan          03/2018
+// @bsiclass                                     Krischan.Eberle                  07/18
 //======================================================================================
-struct CompatibilityTestFixture : ::testing::Test {};
+struct CompatibilityTestFixture : ::testing::Test 
+    {
+private:
+    static bool s_isInitialized;
+
+protected:
+    //! Initializes the test environment by setting up the schema read context and search dirs etc.
+    //! Gets implicitly called in the Setup of the subclassing test fixture
+    static void Initialize();
+
+    void SetUp() override { Initialize(); }
+    };
 
 //=======================================================================================    
 // @bsiclass                                   Krischan.Eberle                  06/18
