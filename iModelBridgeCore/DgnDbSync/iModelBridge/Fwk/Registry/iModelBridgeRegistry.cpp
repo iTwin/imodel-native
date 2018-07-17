@@ -532,7 +532,7 @@ void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocuments()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeRegistryBase::WriteBridgesFile()
     {
-    BeFileName bridgesFileName(m_stagingDir);
+    BeFileName bridgesFileName(m_stateFileName.GetDirectoryName());
     bridgesFileName.AppendToPath(L"bridges.txt");
     BeFileStatus status;
     BeTextFilePtr bridgesFile = BeTextFile::Open(status, bridgesFileName.c_str(), TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
@@ -780,6 +780,12 @@ int iModelBridgeRegistryBase::AssignCmdLineArgs::ParseCommandLine(int argc, WCha
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"--registry-dir="))
+            {
+            m_registryDir.SetName(getArgValueW(argv[iArg]));
+            continue;
+            }
+
         if (argv[iArg] == wcsstr(argv[iArg], L"--server-repository="))
             {
             m_repositoryName = getArgValue(argv[iArg]);
@@ -842,13 +848,14 @@ int iModelBridgeRegistryBase::AssignMain(int argc, WCharCP argv[])
     if (args.m_stagingDir.empty() || !args.m_stagingDir.DoesPathExist()
      || args.m_repositoryName.empty())
         {
-        fwprintf(stderr, L"syntax: %ls --server-repository=<reponame> --fwk-staging-dir=<dirname>\n", argv[0]);
+        fwprintf(stderr, L"syntax: %ls --server-repository=<reponame> --fwk-staging-dir=<dirname> [--registry-dir]\n", argv[0]);
         return -1;
         }
 
     initLoggingForAssignMain(args.m_loggingConfigFileName);
 
-    auto dbname = MakeDbName(args.m_stagingDir, args.m_repositoryName);
+    BeFileName dbDir = !args.m_registryDir.empty() ? args.m_registryDir : args.m_stagingDir;
+    auto dbname = MakeDbName(dbDir, args.m_repositoryName);
     Dgn::iModelBridgeRegistry app(args.m_stagingDir, dbname);
 
     auto dbres = app.OpenOrCreateStateDb();
