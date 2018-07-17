@@ -9,6 +9,8 @@ ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run w
 #TFS 720060 Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
 
+FileFormatCompatibilityTests.ForwardCompatibilitySafeguards_KOQs
+
 JsonUpdaterTests.Options
 
     # TFS#901857
