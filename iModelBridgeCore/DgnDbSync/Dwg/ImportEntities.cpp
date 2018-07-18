@@ -1899,9 +1899,8 @@ void            ComputeCategory (DgnCategoryId& categoryId, DgnSubCategoryId& su
 
     if (toModel.Is3d())
         {
-        // we are in a modelspace, in the masterfile or an xref, get a spatial category and sub-category from the syncInfo:
-        categoryId = importer.FindCategoryFromSyncInfo (layerId, xrefDwg);
-        subcategoryId = importer.FindSubCategoryFromSyncInfo (layerId, xrefDwg);
+        // we are in a modelspace, of the master file or an xref file, get a spatial category and a sub-category from the syncInfo:
+        categoryId = importer.GetSpatialCategory (subcategoryId, layerId, xrefDwg);
 
         if (this->IsDrawingBlock())
             {
@@ -2780,8 +2779,7 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
     if (model.Is3d())
         {
         // get spatial category & subcategory from the syncInfo:
-        params.m_categoryId = this->FindCategoryFromSyncInfo (layerId, xrefDwg);
-        params.m_subCategoryId = this->FindSubCategoryFromSyncInfo (layerId, xrefDwg);
+        params.m_categoryId = this->GetSpatialCategory (params.m_subCategoryId, layerId, xrefDwg);
         }
     else
         {
