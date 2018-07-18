@@ -477,12 +477,20 @@ ElevationGridSurfaceCPtr ElevationGrid::GetFirstBelow
         return nullptr;
         }
 
-    Utf8String ecsql("SELECT ElementId, Elevation FROM ");
-    ecsql.append(surfaceClass->GetECSqlName()).append(" WHERE Elevation<? ORDER BY Elevation DESC LIMIT 1");
+    SpatialLocationModelPtr surfaceModel = GetSurfacesModel();
+    if (surfaceModel.IsNull())
+        {
+        BeAssert(surfaceModel.IsValid());
+        return nullptr;
+        }
+
+    Utf8String ecsql("SELECT ECInstanceId FROM ");
+    ecsql.append(surfaceClass->GetECSqlName()).append(" WHERE Model.Id=? AND Elevation<? ORDER BY Elevation DESC LIMIT 1");
 
     BeSQLite::EC::ECSqlStatement statement;
     statement.Prepare(GetDgnDb(), ecsql.c_str());
-    statement.BindDouble(1, elevation);
+    statement.BindId(1, surfaceModel->GetModelId());
+    statement.BindDouble(2, elevation);
 
     if (BeSQLite::BE_SQLITE_ROW != statement.Step())
         return nullptr;
@@ -506,12 +514,20 @@ ElevationGridSurfaceCPtr ElevationGrid::GetFirstAbove
         return nullptr;
         }
 
-    Utf8String ecsql("SELECT ElementId, Elevation FROM ");
-    ecsql.append(surfaceClass->GetECSqlName()).append(" WHERE Elevation>? ORDER BY Elevation ASC LIMIT 1");
+    SpatialLocationModelPtr surfaceModel = GetSurfacesModel();
+    if (surfaceModel.IsNull())
+        {
+        BeAssert(surfaceModel.IsValid());
+        return nullptr;
+        }
+
+    Utf8String ecsql("SELECT ECInstanceId FROM ");
+    ecsql.append(surfaceClass->GetECSqlName()).append(" WHERE Model.Id=? AND Elevation>? ORDER BY Elevation ASC LIMIT 1");
 
     BeSQLite::EC::ECSqlStatement statement;
     statement.Prepare(GetDgnDb(), ecsql.c_str());
-    statement.BindDouble(1, elevation);
+    statement.BindId(1, surfaceModel->GetModelId());
+    statement.BindDouble(2, elevation);
 
     if (BeSQLite::BE_SQLITE_ROW != statement.Step())
         return nullptr;
