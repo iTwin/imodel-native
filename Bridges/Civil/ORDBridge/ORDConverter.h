@@ -69,6 +69,7 @@ public:
     void SetORDParams(Params* ordParams) { m_ordParams = ordParams; }
     void SetIsProcessing(bool newVal) { m_isProcessing = newVal; }
 
+    bool IsPhysicalNetworkModelSet() const { return m_physicalNetworkModelPtr.IsValid(); }
     Dgn::PhysicalModelR GetPhysicalNetworkModel() const { return *m_physicalNetworkModelPtr; }
     void SetPhysicalNetworkModel(Dgn::PhysicalModelR physicalNetworkModel) { m_physicalNetworkModelPtr = &physicalNetworkModel; }
     void SetUpModelFormatters(Dgn::SubjectCR jobSubject);

@@ -1313,7 +1313,8 @@ void ORDConverter::CreateRoadRailElements()
 
     updateProjectExtents(*designHorizAlignmentModelCPtr, *m_ordParams, false);
     updateProjectExtents(*linearsHorizAlignmentModelCPtr, *m_ordParams, false);
-    updateProjectExtents(GetPhysicalNetworkModel(), *m_ordParams, true);
+    if (IsPhysicalNetworkModelSet())
+        updateProjectExtents(GetPhysicalNetworkModel(), *m_ordParams, true);
 
     if (IsCreatingNewDgnDb() || !IsUpdating())
         {
