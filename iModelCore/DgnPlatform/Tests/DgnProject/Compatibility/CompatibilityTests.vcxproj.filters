@@ -7,10 +7,10 @@
     <ClCompile Include="TestECDbCreators.cpp" />
     <ClCompile Include="TestIModelCreators.cpp" />
     <ClCompile Include="IModelCompatibilityTests.cpp" />
-    <ClCompile Include="TestHelper.cpp" />
     <ClCompile Include="Profiles.cpp" />
     <ClCompile Include="iModelHubMock\iModelHubMock.cpp" />
     <ClCompile Include="iModelHubMock\iModelHubMockTests.cpp" />
+    <ClCompile Include="TestDb.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\..\..\DgnPlatform.PartFile.xml" />
@@ -19,9 +19,9 @@
     <ClInclude Include="CompatibilityTestFixture.h" />
     <ClInclude Include="TestECDbCreators.h" />
     <ClInclude Include="TestIModelCreators.h" />
-    <ClInclude Include="TestHelper.h" />
     <ClInclude Include="CompatibilityTests.h" />
     <ClInclude Include="Profiles.h" />
     <ClInclude Include="iModelHubMock\iModelHubMock.h" />
+    <ClInclude Include="TestDb.h" />
   </ItemGroup>
 </Project>
