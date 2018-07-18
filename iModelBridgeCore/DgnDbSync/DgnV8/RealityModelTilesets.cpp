@@ -102,7 +102,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
         Utf8String rootDoc = Utf8String(dbFileName).c_str() + Utf8String("/TileRoot.json");
         crd.SetRootDocument(rootDoc.c_str());
         crd.SetClassification(RealityDataBase::MODEL);
-        crd.SetVisibility(RealityDataBase::Visibility::ENTERPRISE);
+        crd.SetVisibility(RealityDataBase::Visibility::PERMISSION);
         crd.SetDataset(model->GetName().c_str());
         crd.SetRealityDataType("RealityMesh3DTiles");
         RealityDataService::SetProjectId("fb1696c8-c074-4c76-a539-a5546e048cc6"); // This is the project id  used for testing on qa.
