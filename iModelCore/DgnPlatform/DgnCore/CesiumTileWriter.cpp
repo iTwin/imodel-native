@@ -19,8 +19,6 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
        
 
 
-static double s_minToleranceRatio = 512.0;
-
 BEGIN_TILETREE_IO_NAMESPACE
 
 #define JSON_Root "root"
@@ -35,7 +33,7 @@ BEGIN_TILETREE_IO_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String      getJsonString(Json::Value const& value)
+static Utf8String      getJsonString(Json::Value const& value)
     {
     Utf8String      string =  Json::FastWriter().write(value);
 
@@ -206,6 +204,28 @@ BatchTableBuilder(FeatureTableCR attrs, DgnDbR db, bool is3d) : m_json(Json::obj
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     04/2017
 +===============+===============+===============+===============+===============+======*/
+struct PointCloudData
+{
+    bvector<QPoint3d>   m_points;
+    bvector<uint8_t>    m_colors;
+    QPoint3d::Params    m_qParams;
+
+    PointCloudData(PointCloudArgsCR args) : m_qParams(args.m_qParams)
+        {
+        m_points.resize(args.m_numPoints);
+        memcpy (m_points.data(), args.m_points, args.m_numPoints * sizeof(QPoint3d));
+        if (nullptr != args.m_colors)
+            {
+            m_colors.resize(args.m_numPoints * 3);
+            memcpy (m_colors.data(), args.m_colors, args.m_numPoints*3);
+            }
+        }
+
+};  // PointCloudData
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     04/2017
++===============+===============+===============+===============+===============+======*/
 struct MeshMaterial 
 { 
     Utf8String              m_name;
@@ -338,6 +358,7 @@ void AddTriMesh(Json::Value& primitivesNode, TriMeshArgsCR meshArgs, ColorTableC
         }
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -401,8 +422,9 @@ struct RenderSystem : Render::System
     mutable StreamBuffer                m_streamBuffer;
     mutable CesiumTileWriter            m_writer;
     mutable Json::Value                 m_primitives;
-    mutable DRange3d                    m_range;
-    mutable FeatureTable                m_featureTable;
+    mutable DRange3d                        m_range;
+    mutable FeatureTable                    m_featureTable;
+    mutable bvector<PointCloudData>         m_pointClouds;
 
     RenderSystem(GeometricModelR model) : m_writer(m_streamBuffer, model), m_range(DRange3d::NullRange()), m_featureTable(model.GetModelId(), s_maxFeatures)  { }
 
@@ -466,9 +488,11 @@ virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR triMesh, DgnDbR db) const overri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb)  const override 
+virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR pointCloud, DgnDbR db)  const override 
     {
-    return nullptr;
+    m_range.Extend(pointCloud.m_qParams.GetRange());
+    m_pointClouds.push_back(pointCloud);
+    return new Graphic(db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -479,21 +503,87 @@ WriteStatus WriteTile(PublishedTileR outputTile)
     if (m_range.IsNull())
         return WriteStatus::NoGeometry;
 
+    outputTile.SetPublishedRange(m_range);
+    outputTile.SetExtension(m_pointClouds.empty() ? "b3dm" : "pnts");
+
+    // Either pointClouds or (mesh) primitives - not both.
+    return m_pointClouds.empty() ? WriteMeshTile(outputTile) : WritePointCloudTile(outputTile);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+WriteStatus WriteMeshTile(PublishedTileR outputTile)
+    {
+    BeAssert (m_pointClouds.empty());
+
     m_writer.AddPrimitivesJson(m_primitives);
     m_writer.WriteBatchedModel(m_featureTable);
 
-    BeFile          outputFile;
+    BeFile  outputFile;
 
-    if (BeFileStatus::Success != outputFile.Create (outputTile.GetFileName()) ||
-        BeFileStatus::Success != outputFile.Write (nullptr, m_streamBuffer.data(), m_streamBuffer.size()))
-        return WriteStatus::UnableToOpenFile;
+   if (BeFileStatus::Success != outputFile.Create (outputTile.GetFileName()) ||
+       BeFileStatus::Success != outputFile.Write (nullptr, m_streamBuffer.data(), m_streamBuffer.size()))
+       return WriteStatus::UnableToOpenFile;
    
-    outputFile.Close();
-    outputTile.SetPublishedRange(m_range);
+   outputFile.Close();
+   return WriteStatus::Success;
+   }
 
-    return WriteStatus::Success;
-    }
-        
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+WriteStatus WritePointCloudTile(PublishedTileR outputTile)
+    {
+    BeAssert (m_primitives.empty());
+    BeAssert (m_pointClouds.size() == 1);       // Needs work to handle multiple clouds in a single tile.
+    BeFile  outputFile;
+
+   if (BeFileStatus::Success != outputFile.Create (outputTile.GetFileName()))
+       return WriteStatus::UnableToOpenFile;
+   
+    Json::Value     featureTable;
+    auto            pointCloud = m_pointClouds.front();
+    auto            paramRange = pointCloud.m_qParams.GetRange();
+    auto            paramRangeDiagonal = paramRange.DiagonalVector();
+    size_t          nPoints = pointCloud.m_points.size();
+
+    featureTable["POINTS_LENGTH"] = nPoints;
+    featureTable["POSITION_QUANTIZED"]["byteOffset"] = 0;
+
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(paramRange.low.x);
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(paramRange.low.y);
+    featureTable["QUANTIZED_VOLUME_OFFSET"].append(paramRange.low.z);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(paramRangeDiagonal.x);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(paramRangeDiagonal.y);
+    featureTable["QUANTIZED_VOLUME_SCALE"].append(paramRangeDiagonal.z);
+
+    size_t pointBytes =  nPoints * sizeof(QPoint3d);
+    if (!pointCloud.m_colors.empty())
+        featureTable["RGB"]["byteOffset"] = pointBytes;
+
+    Utf8String      featureTableStr =  getJsonString(featureTable);
+    uint32_t        featureTableStrLen = featureTableStr.size(); 
+    uint32_t        binaryLength = pointBytes + (pointCloud.m_colors.empty() ? 0 : (3 * nPoints));
+    uint32_t        magic = (uint32_t) Format::PointCloud, version = (uint32_t) PointCloud::Versions::Version;
+    uint32_t        totalSize = binaryLength + featureTableStrLen + 28, zero = 0;
+
+    outputFile.Write(nullptr, &magic, sizeof(magic));
+    outputFile.Write(nullptr, &version, sizeof(version));
+    outputFile.Write(nullptr, &totalSize, sizeof(totalSize));
+    outputFile.Write(nullptr, &featureTableStrLen, sizeof(featureTableStrLen));
+    outputFile.Write(nullptr, &binaryLength, sizeof(binaryLength));
+    outputFile.Write(nullptr, &zero, sizeof(zero));     // Batch JSON.
+    outputFile.Write(nullptr, &zero, sizeof(zero));     // Batch Binary.
+    outputFile.Write(nullptr, featureTableStr.c_str(), featureTableStrLen);
+    outputFile.Write(nullptr, pointCloud.m_points.data(), pointBytes);
+    if (!pointCloud.m_colors.empty())
+        outputFile.Write(nullptr, pointCloud.m_colors.data(), 3 * nPoints);
+
+   outputFile.Close();
+   return WriteStatus::Success;
+   }
+
 };  // RenderSystem
 
    
@@ -523,18 +613,34 @@ typedef folly::Future<WriteStatus> FutureWriteStatus;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017 
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublishedTile::PublishedTile(TileTree::TileCR inputTile, BeFileNameCR outputDirectory) : m_publishedRange(DRange3d::NullRange())
+PublishedTile::PublishedTile(TileTree::TileCR inputTile, BeFileNameCR outputDirectory) : m_publishedRange(DRange3d::NullRange()), m_outputDirectory(outputDirectory)
     {
-    WString         name = WString(inputTile._GetTileCacheKey().c_str(), true);
+    m_name = inputTile._GetTileCacheKey().c_str();
 
-    name.ReplaceAll(L":", L"_");
-    name.ReplaceAll(L".", L"_");
-    name.ReplaceAll(L"/", L"_");
+    m_name.ReplaceAll(":", "_");
+    m_name.ReplaceAll(".", "_");
+    m_name.ReplaceAll("/", "_");
 
     m_tileRange = inputTile.GetRange();
-    m_url =   Utf8String(BeFileName (nullptr, nullptr, name.c_str(), L".b3dm"));
-    m_fileName = BeFileName (nullptr, outputDirectory.c_str(), name.c_str(), L".b3dm");
-    m_tolerance = m_tileRange.DiagonalDistance() / s_minToleranceRatio;
+    m_tolerance = 0.0 == inputTile._GetMaximumSize() ? 1.0E8 : m_tileRange.DiagonalDistance() / inputTile._GetMaximumSize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017 
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String PublishedTile::GetURL() const
+    {
+    BeAssert (!m_extension.empty());
+    return m_name + Utf8String(".") + m_extension;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017 
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName PublishedTile::GetFileName() const
+    {
+    BeAssert (!m_extension.empty());
+    return BeFileName(nullptr, m_outputDirectory.c_str(), WString(m_name.c_str(), true).c_str(), WString(m_extension.c_str(), true).c_str());
     }
 
 
@@ -641,7 +747,7 @@ FutureWriteStatus writeCesiumTileset(ICesiumPublisher* publisher, GeometricModel
         auto pRenderSys = renderSystem.get();
         UNUSED_VARIABLE(pRenderSys);
 
-        return folly::makeFuture(publisher->_EndProcessModel(*model, *publishedRoot, status.value()));   
+        return folly::makeFuture(publisher->_EndProcessModel(*model, tileRoot->GetLocation(), *publishedRoot, status.value()));   
         });
     }
 
@@ -765,7 +871,7 @@ static Json::Value TransformToJson(TransformCR tf)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-WriteStatus WriteTileset (GeometricModelCR model, PublishedTileCR rootTile)
+WriteStatus WriteTileset (GeometricModelCR model, TransformCR tileToDb, PublishedTileCR rootTile)
     {
     Json::Value val, modelRoot;
 
@@ -776,8 +882,7 @@ WriteStatus WriteTileset (GeometricModelCR model, PublishedTileCR rootTile)
     WriteModelMetadataTree (rootRange, modelRoot, rootTile, model);
 
     val[JSON_Root] = std::move(modelRoot);
-
-    val[JSON_Root][JSON_Transform] = TransformToJson(m_dbToEcef);
+    val[JSON_Root][JSON_Transform] = TransformToJson(Transform::FromProduct(m_dbToEcef, tileToDb));
 
     return SUCCESS == TileUtil::WriteJsonToFile (m_outputFileName.c_str(), val) ? WriteStatus::Success : WriteStatus::UnableToWriteFile;
     }
@@ -801,14 +906,14 @@ WriteStatus _BeginProcessModel(GeometricModelCR model) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-WriteStatus _EndProcessModel(GeometricModelCR model, PublishedTileCR rootTile, WriteStatus status) override
+WriteStatus _EndProcessModel(GeometricModelCR model, TransformCR tileToDb, PublishedTileCR rootTile, WriteStatus status) override
     {
     if (WriteStatus::Success != status)
         {
         BeFileName::EmptyAndRemoveDirectory (m_outputDirectory);
         return status;
         }
-    return WriteTileset(model, rootTile);
+    return WriteTileset(model, tileToDb, rootTile);
     }
 };  // CesiumTilesetPublisher.
 
