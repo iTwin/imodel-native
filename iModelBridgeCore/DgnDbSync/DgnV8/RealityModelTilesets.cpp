@@ -20,25 +20,51 @@ BE_JSON_NAME(tilesetUrl)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::GenerateRealityModelTilesets()
     {
+    bool doUpload = false;
+    bool doLocal = false;
     Bentley::WString uploadConfigVar;
-    if (SUCCESS != DgnV8Api::ConfigurationManager::GetVariable(uploadConfigVar, L"DGNDB_REALITY_MODEL_UPLOAD"))
+    Bentley::WString serverConfigVar;
+    if (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(uploadConfigVar, L"DGNDB_REALITY_MODEL_UPLOAD"))
+        doUpload = true;
+    else
+        {
+        if (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(serverConfigVar, L"DGNDB_REALITY_MODEL_TEMPDIR"))
+            doLocal = true;
+        }
+
+    if (!doUpload && !doLocal)
         return SUCCESS;
 
     if (m_modelsRequiringRealityTiles.empty())
         return SUCCESS;
 
-    RDSRequestManager::Setup();
-    if (!RealityDataService::AreParametersSet())
+    if (doUpload)
         {
-        ReportIssue(Converter::IssueSeverity::Error, IssueCategory::Unknown(), Issue::RDSUninitialized(), "");
-        return ERROR;
+        RDSRequestManager::Setup();
+        if (!RealityDataService::AreParametersSet())
+            {
+            ReportIssue(Converter::IssueSeverity::Error, IssueCategory::Unknown(), Issue::RDSUninitialized(), "");
+            return ERROR;
+            }
         }
 
     BeFileName              outputDirectory;
-    if (BentleyStatus::ERROR == T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(outputDirectory, L"Bentley\\RealityModelTileSets"))
+    if (doUpload)
         {
-        ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TemporaryDirectoryNotFound(), Utf8String(outputDirectory.c_str()).c_str());
-        return ERROR;
+        if (BentleyStatus::ERROR == T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(outputDirectory, L"Bentley\\RealityModelTileSets"))
+            {
+            ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TemporaryDirectoryNotFound(), Utf8String(outputDirectory.c_str()).c_str());
+            return ERROR;
+            }
+        }
+    else
+        {
+        outputDirectory.SetName(serverConfigVar.c_str());
+        if (!outputDirectory.IsDirectory())
+            {
+            BeAssert(false && "output directory does not exist");
+            return ERROR;
+            }
         }
 
     WString      dbFileName = GetDgnDb().GetFileName().GetFileNameWithoutExtension();
@@ -68,60 +94,68 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             return ERROR;
             }
 
-        BeFileName tempDir = outputDirectory;
-        tempDir.AppendToPath(WString(model->GetModelId().ToString().c_str()).c_str());
-        if (tempDir.DoesPathExist())
+        BeFileName modelDir = outputDirectory;
+        modelDir.AppendToPath(WString(model->GetModelId().ToString().c_str()).c_str());
+        if (modelDir.DoesPathExist())
             {
-            if (!tempDir.IsDirectory())
+            if (!modelDir.IsDirectory())
                 {
-                if (BeFileNameStatus::Success != tempDir.BeDeleteFile())
+                if (BeFileNameStatus::Success != modelDir.BeDeleteFile())
                     {
                     return ERROR;
                     }
-                if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(tempDir))
+                if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(modelDir))
                     {
                     return ERROR;
                     }
                 }
-            else if (BeFileNameStatus::Success != BeFileName::EmptyDirectory(tempDir))
+            else if (BeFileNameStatus::Success != BeFileName::EmptyDirectory(modelDir))
                 {
                 return ERROR;
                 }
             }
 
-        BeFileName  rootJsonFile(nullptr, tempDir.c_str(), L"TileRoot", L"json");
-
+        BeFileName  rootJsonFile(nullptr, modelDir.c_str(), L"TileRoot", L"json");
         static double   s_leafTolerance = .01;      // TBD. make this a setting.
-
-        TileTree::IO::ICesiumPublisher::WriteCesiumTileset(rootJsonFile, tempDir, *geometricModel, dbToEcefTransform, s_leafTolerance);
-
-        ConnectedRealityData crd = ConnectedRealityData();
-        crd.SetName(Utf8String(dbFileName).c_str());
-        Utf8PrintfString description(ConverterDataStrings::RDS_Description(), Utf8String(dbFileName).c_str());
-        crd.SetDescription(description.c_str());
-        Utf8String rootDoc = Utf8String(dbFileName).c_str() + Utf8String("/TileRoot.json");
-        crd.SetRootDocument(rootDoc.c_str());
-        crd.SetClassification(RealityDataBase::MODEL);
-        crd.SetVisibility(RealityDataBase::Visibility::PERMISSION);
-        crd.SetDataset(model->GetName().c_str());
-        crd.SetRealityDataType("RealityMesh3DTiles");
-        RealityDataService::SetProjectId("fb1696c8-c074-4c76-a539-a5546e048cc6"); // This is the project id  used for testing on qa.
-
-        Utf8String empty = "";
-        ConnectedResponse response = crd.Upload(tempDir, empty);
-
-        if (!response.simpleSuccess)
+        TileTree::IO::ICesiumPublisher::WriteCesiumTileset(rootJsonFile, modelDir, *geometricModel, dbToEcefTransform, s_leafTolerance);
+        
+        Utf8String url;
+        if (doUpload)
             {
-            ReportIssue(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::RDSUploadFailed(), "");
-            return ERROR;
+            ConnectedRealityData crd = ConnectedRealityData();
+            crd.SetName(Utf8String(dbFileName).c_str());
+            Utf8PrintfString description(ConverterDataStrings::RDS_Description(), Utf8String(dbFileName).c_str());
+            crd.SetDescription(description.c_str());
+            Utf8String rootDoc("TileRoot.json");
+            crd.SetRootDocument(rootDoc.c_str());
+            crd.SetClassification(RealityDataBase::MODEL);
+            crd.SetVisibility(RealityDataBase::Visibility::PERMISSION);
+            crd.SetDataset(model->GetName().c_str());
+            crd.SetRealityDataType("RealityMesh3DTiles");
+            RealityDataService::SetProjectId("fb1696c8-c074-4c76-a539-a5546e048cc6"); // This is the project id  used for testing on qa.
+
+            Utf8String empty = "";
+            ConnectedResponse response = crd.Upload(modelDir, empty);
+
+            if (!response.simpleSuccess)
+                {
+                ReportIssue(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::RDSUploadFailed(), "");
+                return ERROR;
+                }
+
+            Utf8String identifier = crd.GetIdentifier();
+            RealityDataByIdRequest rd = RealityDataByIdRequest(identifier);
+            Utf8String url = rd.GetHttpRequestString();
+            BeFileName::EmptyAndRemoveDirectory(modelDir);
+
+            }
+        else
+            {
+            url = Utf8String("http://localhost:8080/") + Utf8String(dbFileName).c_str() + "/" + model->GetModelId().ToString() + Utf8String("/TileRoot.json");
             }
 
-        Utf8String identifier = crd.GetIdentifier();
-        RealityDataByIdRequest rd = RealityDataByIdRequest(identifier);
-        Utf8String url = rd.GetHttpRequestString();
         model->SetJsonProperties(json_tilesetUrl(), url);
         model->Update();
-        BeFileName::EmptyAndRemoveDirectory(tempDir);
         }
 
     return BSISUCCESS;
