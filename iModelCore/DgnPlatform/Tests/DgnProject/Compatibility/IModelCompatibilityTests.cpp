@@ -123,7 +123,6 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     EXPECT_EQ(JsonValue(R"js({"classcount":38, "enumcount": 8})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
                     
                     EXPECT_EQ(SchemaVersion(5, 0, 1), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
-                    EXPECT_EQ((int) ECVersion::V3_2, (int) testDb.GetECVersion("ECDbSystem")) << testDb.GetDescription();
                     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
                     EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), testDb.GetSchemaItemCounts("ECDbSystem")) << testDb.GetDescription();
                     

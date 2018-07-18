@@ -40,14 +40,6 @@ void CompatibilityTestFixture::Initialize()
         DgnDb::Initialize(temporaryDir, &applicationSchemaDir);
         srand((uint32_t) (BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
 
-        BeFileName sqlangFile;
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
-        sqlangFile.AppendToPath(L"sqlang");
-        sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
-
-        BeSQLite::L10N::Shutdown();
-        BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
-
         s_isInitialized = true;
         }
     }
