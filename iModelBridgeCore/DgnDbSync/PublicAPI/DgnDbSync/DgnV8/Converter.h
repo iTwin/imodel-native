@@ -809,6 +809,9 @@ struct Converter
         L10N_STRING(DwgFileIgnored)              // =="master DWG/DXF file [%s] is ignored - use DwgImporter to convert these"==
         L10N_STRING(FailedLoadingFileIO)         // =="Unable to load file handler %s"==
         L10N_STRING(MissingFileIOImplementer)    // =="File handler %s missing V8 file type implementation"==
+        L10N_STRING(TemporaryDirectoryNotFound)  // =="Failed to find/create temporary directory %s"==
+        L10N_STRING(RDSUninitialized)            // =="Failed to initialize RDSRequestManager"==
+        L10N_STRING(RDSUploadFailed)             // =="Failed to upload tileset to Reality Data Server"==
 
         L10N_STRING(InitProjectWiseLinkError)      // =="Could not initialize ProjectWise extension. Any ProjectWise documents that are target of links will not be embedded."==
         L10N_STRING(TerminateProjectWiseLinkError) // =="Could not terminate ProjectWise extension."==
@@ -866,6 +869,7 @@ struct Converter
         L10N_STRING(V8StyleNone) // =="V8 Default Style"==
         L10N_STRING(V8StyleNoneDescription) // =="Created from V8 active settings to handle Style (none)"==
         L10N_STRING(LinkModelDefaultName) // =="Default Link Model"==
+        L10N_STRING(RDS_Description) // =="Reality Model Tileset for %s"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Reports conversion issues

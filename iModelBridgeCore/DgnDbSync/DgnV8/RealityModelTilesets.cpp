@@ -6,6 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
+#include <RealityPlatformTools/SimpleRDSApi.h>
+
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
@@ -17,18 +20,24 @@ BE_JSON_NAME(tilesetUrl)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::GenerateRealityModelTilesets()
     {
-    Bentley::WString        serverConfigVar;
-
-    if (SUCCESS != DgnV8Api::ConfigurationManager::GetVariable(serverConfigVar, L"DGNDB_REALITY_MODEL_TEMPDIR"))
+    Bentley::WString uploadConfigVar;
+    if (SUCCESS != DgnV8Api::ConfigurationManager::GetVariable(uploadConfigVar, L"DGNDB_REALITY_MODEL_UPLOAD"))
         return SUCCESS;
 
     if (m_modelsRequiringRealityTiles.empty())
         return SUCCESS;
 
-    BeFileName              outputDirectory(serverConfigVar.c_str());
-    if (!outputDirectory.IsDirectory())
+    RDSRequestManager::Setup();
+    if (!RealityDataService::AreParametersSet())
         {
-        BeAssert(false && "output directory does not exist");
+        ReportIssue(Converter::IssueSeverity::Error, IssueCategory::Unknown(), Issue::RDSUninitialized(), "");
+        return ERROR;
+        }
+
+    BeFileName              outputDirectory;
+    if (BentleyStatus::ERROR == T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(outputDirectory, L"Bentley\\RealityModelTileSets"))
+        {
+        ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TemporaryDirectoryNotFound(), Utf8String(outputDirectory.c_str()).c_str());
         return ERROR;
         }
 
@@ -37,12 +46,11 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
     outputDirectory.AppendToPath(dbFileName.c_str());
     if (!outputDirectory.IsDirectory() && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(outputDirectory))
         {
+        ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TemporaryDirectoryNotFound(), Utf8String(outputDirectory.c_str()).c_str());
         BeAssert(false && "unable to create output directory");
         return ERROR;
         }
     
-    BeFileName  rootJsonFile(nullptr, outputDirectory.c_str(), L"TileRoot", L"json");
-
     SetStepName(ProgressMessage::STEP_CREATE_REALITY_MODEL_TILES());
     AddTasks((int32_t)m_modelsRequiringRealityTiles.size());
 
@@ -58,19 +66,62 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             {
             BeAssert(false && "Reality model requested for non-geometric model");
             return ERROR;
-
             }
+
+        BeFileName tempDir = outputDirectory;
+        tempDir.AppendToPath(WString(model->GetModelId().ToString().c_str()).c_str());
+        if (tempDir.DoesPathExist())
+            {
+            if (!tempDir.IsDirectory())
+                {
+                if (BeFileNameStatus::Success != tempDir.BeDeleteFile())
+                    {
+                    return ERROR;
+                    }
+                if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(tempDir))
+                    {
+                    return ERROR;
+                    }
+                }
+            else if (BeFileNameStatus::Success != BeFileName::EmptyDirectory(tempDir))
+                {
+                return ERROR;
+                }
+            }
+
+        BeFileName  rootJsonFile(nullptr, tempDir.c_str(), L"TileRoot", L"json");
+
         static double   s_leafTolerance = .01;      // TBD. make this a setting.
 
-        // TBD... Carole M.   Provide an (empty) scratch directory and a filename (in that directory) for the root/JSON file.
-         TileTree::IO::ICesiumPublisher::WriteCesiumTileset(rootJsonFile, outputDirectory, *geometricModel, dbToEcefTransform, s_leafTolerance);
+        TileTree::IO::ICesiumPublisher::WriteCesiumTileset(rootJsonFile, tempDir, *geometricModel, dbToEcefTransform, s_leafTolerance);
 
-        // TBD... Carole M.   Upload the contents of the output directory to Reality Data Server and return URL for the root/JSON file.
-        // Add the URL to the reality model (in the modeled element or a JSON property???) - delete the temporary output directory and its contents.
-        Utf8String      urlValue = Utf8String("http://localhost:8080/") + Utf8String(dbFileName).c_str() + Utf8String("/TileRoot.json");
+        ConnectedRealityData crd = ConnectedRealityData();
+        crd.SetName(Utf8String(dbFileName).c_str());
+        Utf8PrintfString description(ConverterDataStrings::RDS_Description(), Utf8String(dbFileName).c_str());
+        crd.SetDescription(description.c_str());
+        Utf8String rootDoc = Utf8String(dbFileName).c_str() + Utf8String("/TileRoot.json");
+        crd.SetRootDocument(rootDoc.c_str());
+        crd.SetClassification(RealityDataBase::MODEL);
+        crd.SetVisibility(RealityDataBase::Visibility::ENTERPRISE);
+        crd.SetDataset(model->GetName().c_str());
+        crd.SetRealityDataType("RealityMesh3DTiles");
+        RealityDataService::SetProjectId("fb1696c8-c074-4c76-a539-a5546e048cc6"); // This is the project id  used for testing on qa.
 
-        model->SetJsonProperties(json_tilesetUrl(), urlValue);
+        Utf8String empty = "";
+        ConnectedResponse response = crd.Upload(tempDir, empty);
+
+        if (!response.simpleSuccess)
+            {
+            ReportIssue(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::RDSUploadFailed(), "");
+            return ERROR;
+            }
+
+        Utf8String identifier = crd.GetIdentifier();
+        RealityDataByIdRequest rd = RealityDataByIdRequest(identifier);
+        Utf8String url = rd.GetHttpRequestString();
+        model->SetJsonProperties(json_tilesetUrl(), url);
         model->Update();
+        BeFileName::EmptyAndRemoveDirectory(tempDir);
         }
 
     return BSISUCCESS;

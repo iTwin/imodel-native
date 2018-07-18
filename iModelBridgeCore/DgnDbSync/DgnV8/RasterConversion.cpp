@@ -770,7 +770,7 @@ bool ComputeDepthBias(double& depthBias, DgnV8Api::Raster::DgnRaster& raster)
     return true;
     }
 
-//----------------------------------------------------------------------------------------t46
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
 BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool copyRaster)
