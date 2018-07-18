@@ -33,7 +33,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (IssueCategory, dwg_issueCategory)
 IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
 //! A problem in the conversion process
-IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(Issue, dwg_issue)
+IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (Issue, dwg_issue)
     L10N_STRING(CannotCreateChangesFile)     // =="Cannot create changes file"==
     L10N_STRING(CannotEmbedFont)             // =="Could not embed font type/name %i/'%s'; a different font will be used for display."==
     L10N_STRING(CannotOpenModelspace)        // =="Cannot open modelspace for file [%s]"==
@@ -71,6 +71,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(Issue, dwg_issue)
     L10N_STRING(LayerDisplayInconsistent)    // =="Layer [%s] is turned on for some attachments but is turned off for [%s]"==
     L10N_STRING(LayerNotFoundInRoot)         // =="Layer [%s] found in tile file [%s] but not in root file [%s]. The root file must define all Layers."==
     L10N_STRING(LayerSymbologyInconsistent)  // =="Layer [%s] has a different definition in [%s] than in other files or attachments: %s"==
+    L10N_STRING(MissingCategory)             // =="Missing category for layer [%s]"==
     L10N_STRING(LinetypeError)               // =="Linetype import error %s: "==
     L10N_STRING(Message)                     // =="%s"==
     L10N_STRING(MissingLayer)                // =="Missing Layer %d"==
@@ -99,7 +100,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(Issue, dwg_issue)
 IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
 //! Progress messages for the conversion process
-IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ProgressMessage, dwg_progress)
+IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (ProgressMessage, dwg_progress)
     L10N_STRING(STEP_INITIALIZING)                 // =="Initializing"==
     L10N_STRING(STEP_CLEANUP_EMPTY_TABLES)         // =="Cleaning up empty tables"==
     L10N_STRING(STEP_OPENINGFILE)                  // =="Opening File %ls [%s]"==
@@ -125,7 +126,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ProgressMessage, dwg_progress)
 IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
 //! Miscellaneous strings needed for DwgImporter
-IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(DataStrings, dwg_dataStrings)
+IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (DataStrings, dwg_dataStrings)
     L10N_STRING(AttrdefsSchemaDescription)  // =="Block attribute definitions created from DWG file %ls"==
     L10N_STRING(BlockAttrdefDescription)    // =="Attribute definition created from DWG block %ls"==
     L10N_STRING(ModelView)                  // =="Model View"==
