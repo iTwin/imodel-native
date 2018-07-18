@@ -485,6 +485,11 @@ BentleyStatus   iModelBridgeRegistryBase::SearchForBridgesToAssignToFile(BeFileN
 
     //Assign the incoming file
     WString bridgeName;
+    //Skip already assigned files to prevent circural reference cases
+    BeFileName a;
+    if (BSISUCCESS == QueryBridgeAssignedToDocument(a, bridgeName, fileName)) // If we have already assigned a bridge to this document, then stick with that.
+        return BSISUCCESS;
+
     SearchForBridgeToAssignToDocument(bridgeName, fileName, parentBridgeName);
 
     BASFileLocator locator;
