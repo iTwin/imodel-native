@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Compatibility/TestHelper.cpp $
+|  $Source: Tests/DgnProject/Compatibility/TestDb.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "TestHelper.h"
+#include "TestDb.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -113,58 +113,8 @@ BeVersion TestDb::GetOriginalECXmlVersion(Utf8CP schemaName) const
         return originalXmlVersion;
         }
 
-    // older files where Original ECXml Version was not persisted yet
-    ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
-    if (schema == nullptr)
-        {
-        EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
-        return BeVersion();
-        }
-
-    return BeVersion((uint16_t) schema->GetOriginalECXmlVersionMajor(), (uint16_t) schema->GetOriginalECXmlVersionMinor());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                    06/18
-//+---------------+---------------+---------------+---------------+---------------+------
-ECVersion TestDb::GetECVersion(Utf8CP schemaName) const
-    {
-    /* WIP_PERSIST_ECVERSION
-    if (SupportsFeature(Feature::PersistedECVersions))
-        {
-        JsonValue rows = ExecuteECSqlSelect(Utf8PrintfString("SELECT ECVersion ver FROM meta.ECSchemaDef WHERE Name='%s'", schemaName).c_str());
-        if (!rows.m_value.isArray() || rows.m_value.size() != 1)
-            return ECVersion::V2_0;
-
-        JsonValueCR versionJson = rows.m_value[0];
-        if (!versionJson.isMember("ver"))
-            {
-            EXPECT_TRUE(false) << "ECSQL to retrieve ECVersion did not return the version for schema " << schemaName << ". | " << GetDescription();
-            return ECVersion::V2_0;
-            }
-
-        const ECVersion ver = (ECVersion) versionJson["ver"].asInt();
-        //verify that version is the same if fetched via ECObjects
-        ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
-        EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
-        if (GetState() != State::Newer)
-            EXPECT_EQ(ver, schema->GetECVersion()) << "ECVersion of " << schemaName << " retrieved from ECObjects differs from when retrieved with ECSQL" << " | " << GetDescription();
-        else
-            EXPECT_GE(ver, schema->GetECVersion()) << "ECVersion of " << schemaName << " retrieved from ECObjects differs from when retrieved with ECSQL" << " | " << GetDescription();
-
-        return ver;
-        }
-
-    // older files where ECVersion was not persisted yet
-    */
-    ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
-    if (schema == nullptr)
-        {
-        EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
-        return ECVersion::V2_0;
-        }
-
-    return schema->GetECVersion();
+    //if not persisted, return an empty version
+    return BeVersion();
     }
 
 //---------------------------------------------------------------------------------------

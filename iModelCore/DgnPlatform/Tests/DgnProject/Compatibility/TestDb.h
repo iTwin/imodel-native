@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Compatibility/TestHelper.h $
+|  $Source: Tests/DgnProject/Compatibility/TestDb.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -62,8 +62,9 @@ protected:
     BeSQLite::ProfileVersion GetECDbInitialVersion() const;
     JsonValue ExecuteECSqlSelect(Utf8CP ecsql) const;
     SchemaVersion GetSchemaVersion(Utf8CP schemaName) const;
+    //! Returns the Original ECXML version as persisted in the file.
+    //! If the file hasn't persisted the version yet, an empty version is returned
     BeVersion GetOriginalECXmlVersion(Utf8CP schemaName) const;
-    ECN::ECVersion GetECVersion(Utf8CP schemaName) const;
     int GetSchemaCount() const;
     JsonValue GetSchemaItemCounts(Utf8CP schemaName) const;
     
