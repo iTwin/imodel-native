@@ -16,6 +16,9 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 //=======================================================================================
 struct DgnGeometryUtils
     {
+    private:
+        static Dgn::IBRepEntityPtr GetCutSheetBody(Dgn::IBRepEntityCR geometryToSlice, double elevation);
+
     public:
         BUILDINGSHAREDDGNUTILS_EXPORT static BentleyStatus    CreateBodyFromGeometricPrimitive(Dgn::IBRepEntityPtr& out, Dgn::GeometricPrimitiveCPtr primitive, bool assignIds = false);
         BUILDINGSHAREDDGNUTILS_EXPORT static BentleyStatus    SliceBodyByPlanes(bvector<bpair<Dgn::IBRepEntityPtr, CurveVectorPtr>>& slicedGeometry, Dgn::IBRepEntityCR geometryToSlice,
@@ -63,6 +66,9 @@ struct DgnGeometryUtils
         //! @return the cross section of a given solid at a given Z.
         BUILDINGSHAREDDGNUTILS_EXPORT static CurveVectorPtr GetXYCrossSection(Dgn::IBRepEntityCR solid, double z);
 
+        //! Does the same thing as GetXYCrossSection but returns a BRepEntityPtr.
+        BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::IBRepEntityPtr GetXYCrossSectionSheetBody(Dgn::IBRepEntityCR solid, double z);
+
         //! slice the body by Z elevations
         //! @param[out] slicedGeometry      solid slices paired with corresponding z elevations of the cuts
         //! @param[in]  geometryToSlice     geometry to slice
@@ -77,6 +83,20 @@ struct DgnGeometryUtils
         //! @return                         solid slice of the geometryToSlice between given bottom and top elevations.
         //!                                 Returns sheet body when bottomElevation matches topElevation.
         BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::IBRepEntityPtr GetBodySlice(Dgn::IBRepEntityCR geometryToSlice, double bottomElevation, double topElevation);
+
+        //! Cut off geometry below given elevation.
+        //! @param[in]  geometryToSlice     geometry to slice.
+        //! @param[in]  elevation           the lower bound of result geometry.
+        //! @return                         solid slice of geometryToSlice with the geometry below given elevation cut off.
+        //!                                 Returns sheet body when the given elevation is at the top of geometryToSlice.
+        BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::IBRepEntityPtr GetUpwardSlice(Dgn::IBRepEntityCR geometryToSlice, double elevation);
+
+        //! Cut off geometry above given elevation.
+        //! @param[in]  geometryToSlice     geometry to slice.
+        //! @param[in]  elevation           the upper bound of result geometry.
+        //! @return                         solid slice of geometryToSlice with the geometry above given elevation cut off.
+        //!                                 Returns sheet body when the given elevation is at the bottom of geometryToSlice.
+        BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::IBRepEntityPtr GetDownwardSlice(Dgn::IBRepEntityCR geometryToSlice, double elevation);
 
         //! Gets extrusion's extrusion detail
         //! @param[out] extDetail   extrusion detail of this extrusion
