@@ -109,14 +109,17 @@ void* RequestConstructor::PrepareRequestBase(const WSGURL& wsgRequest, RawServer
 
     curl_easy_setopt(curl, CURLOPT_URL, wsgRequest.GetHttpRequestString());
 
-    if(m_certificatePath.empty())
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-    else
-        {
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, (verifyPeer ? 1: 0));
+    //curl_easy_setopt(curl, CURLOPT_CERTINFO, 1L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, (verifyPeer ? 1L : 0));
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, (verifyPeer ? 2L : 0));
 
-        curl_easy_setopt(curl, CURLOPT_CAINFO, m_certificatePath.GetNameUtf8());
+    auto info = curl_version_info(CURLVERSION_NOW);
+    if (verifyPeer && nullptr != info && nullptr != info->ssl_version && nullptr == strstr(info->ssl_version, "WinSSL"))
+        {
+        if(!m_certificatePath.empty() || m_certificatePath.DoesPathExist())
+            curl_easy_setopt(curl, CURLOPT_CAINFO, m_certificatePath.GetNameUtf8().c_str());
         }
+
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
 
@@ -159,6 +162,19 @@ void WSGRequest::_PerformRequest(const WSGURL& wsgRequest, RawServerResponse& re
 
     response.toolCode = (int)curl_easy_perform(curl);
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(response.responseCode));
+
+    /*struct curl_certinfo *ci;
+    curl_easy_getinfo(curl, CURLINFO_CERTINFO, &ci);
+    printf(wsgRequest.GetHttpRequestString().c_str());
+    printf("%d certs!\n", ci->num_of_certs);
+
+    for (size_t i = 0; i < ci->num_of_certs; i++) {
+        struct curl_slist *slist;
+
+        for (slist = ci->certinfo[i]; slist; slist = slist->next)
+            printf("%s\n", slist->data);
+        }*/
+
     curl_easy_cleanup(curl);
 
     if (response.body.Contains("Token is not valid") && retry)

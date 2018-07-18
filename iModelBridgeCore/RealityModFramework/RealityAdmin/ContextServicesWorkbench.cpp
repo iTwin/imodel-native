@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/ContextServicesWorkbench.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -54,6 +54,8 @@ ContextServicesWorkbench::ContextServicesWorkbench(Utf8StringCR authorizationTok
     BeFileName caBundlePath = getBaseFolder();
     
     m_certificatePath = caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"ContextServices.pem");
+    if(!m_certificatePath.DoesPathExist())
+        m_certificatePath.clear();
     }
 
 void ContextServicesWorkbench::Init()
