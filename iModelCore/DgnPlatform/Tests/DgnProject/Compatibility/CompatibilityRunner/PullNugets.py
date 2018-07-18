@@ -31,7 +31,7 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir):
     try:
         nugetpkg.GetPackage(pkgGetUrl, pkgName, pkgPathName, version, localDir)
         return pkgPathName
-    except BuildError as err:
+    except BaseException as err:
         print >> sys.stderr, err
         sys.exit(1)
 
