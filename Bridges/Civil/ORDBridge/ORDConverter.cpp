@@ -906,7 +906,7 @@ void updateProjectExtents(SpatialModelCR spatialModel, ORDConverter::Params& par
 
     modelExtents.Extend(0.5);
 
-    if (params.isCreatingNewDgnDb && !forceExtendExtents)
+    if ((params.isCreatingNewDgnDb || !params.isUpdating) && !forceExtendExtents)
         {
         db.GeoLocation().SetProjectExtents(modelExtents);
         return;
@@ -1315,7 +1315,7 @@ void ORDConverter::CreateRoadRailElements()
     updateProjectExtents(*linearsHorizAlignmentModelCPtr, *m_ordParams, false);
     updateProjectExtents(GetPhysicalNetworkModel(), *m_ordParams, true);
 
-    if (IsCreatingNewDgnDb())
+    if (IsCreatingNewDgnDb() || !IsUpdating())
         {
         designAlignmentModelPtr->SetIsPrivate(false);
         designAlignmentModelPtr->Update();

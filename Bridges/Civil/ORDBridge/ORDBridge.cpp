@@ -182,6 +182,7 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     Transform _old, _new;
     params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
     params.isCreatingNewDgnDb = IsCreatingNewDgnDb();
+    params.isUpdating = _GetParams().IsUpdating();
 
     m_converter->SetORDParams(&params);
     ConvertORDElementXDomain convertORDXDomain(*m_converter);

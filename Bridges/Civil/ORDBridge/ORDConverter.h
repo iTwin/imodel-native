@@ -39,6 +39,7 @@ public:
         Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId;
         bool spatialDataTransformHasChanged;
         bool isCreatingNewDgnDb;
+        bool isUpdating;
         Dgn::UnitSystem rootModelUnitSystem;
         };
 
