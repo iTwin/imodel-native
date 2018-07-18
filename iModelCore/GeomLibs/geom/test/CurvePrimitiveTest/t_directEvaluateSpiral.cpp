@@ -11,10 +11,9 @@ USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PseudoSpiral,Serialize)
     {
-    double dyShift = 40.0;
-    double dxShift = 500.0;
     //bvector<double> pseudoLengthMeters {100.02506262460328, 100.15873011778872, 100.66666663992606};
     //bvector<double> edgeCount {15, 25, 35};
+    double smallYShift = 1.0;
     for (int spiralType : {
                 DSpiral2dBase::TransitionType_Clothoid,
 #ifdef doAll
@@ -30,25 +29,26 @@ TEST(PseudoSpiral,Serialize)
                 DSpiral2dBase::TransitionType_Australian,
                 //DSpiral2dBase::TransitionType_Italian,
                 //DSpiral2dBase::TransitionType_Polish
-                DSpiral2dBase::TransitionType_MXCubic
+                DSpiral2dBase::TransitionType_MXCubic,
+                DSpiral2dBase::TransitionType_DirectHalfCosine
                 })
         {
-        double xShift = -dxShift;
-        double yShift = 50.0;
+        Check::SetTransform (Transform::FromIdentity ());
+        double yShift = 200.0;
         for (double spiralLength : {100.0, 200.0})
             {
-            yShift += 3.0 * dyShift;
+            SaveAndRestoreCheckTransform shifter (0, yShift, 0);
             for (double radius1 : {800.0, 400.0, 200.0})
                 {
-                xShift += dxShift;
                 for (double fraction0 : {0.0, 0.6})
                     {
-                    auto frame = Transform::From (xShift, yShift, 0);
-                    yShift += dyShift;
                     for (double bearing0 : {0.0,  Angle::DegreesToRadians (10), Angle::DegreesToRadians (135)})
                         {
                         for (double radiusFactor : {-1.0, 1.0})
                             {
+                            // This shift moves the partial curves away from the full curve, in the vertical direction inward curve.
+                            auto frame = Transform::From (0, smallYShift * radiusFactor * fraction0, 0);
+
                             auto spiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (
                                     spiralType,
                                     bearing0, 0.0, spiralLength, radiusFactor / radius1,
@@ -377,11 +377,19 @@ TEST(Spiral,DocCheck)
         DSpiral2dBase::TransitionType_Clothoid,
         DSpiral2dBase::TransitionType_NewSouthWales,
         DSpiral2dBase::TransitionType_MXCubic,
-        //DSpiral2dBase::TransitionType_DirectHalfCosine
+        DSpiral2dBase::TransitionType_DirectHalfCosine,
+        DSpiral2dBase::TransitionType_Australian,
         })
         {
+        SaveAndRestoreCheckTransform shifter (0, 20, 0);
+        Check::SaveTransformed (
+            bvector<DPoint3d> {
+                        DPoint3d::From (0,0),
+                        DPoint3d::From ((double)spiralType, 0),
+                        DPoint3d::From ((double)spiralType, -2),
+                        });
         ICurvePrimitivePtr curve1 = nullptr;
-        if (spiralType >= TransitionType_FirstDirectEvaluate)
+        if (spiralType >= DSpiral2dBase::TransitionType_FirstDirectEvaluate)
             curve1 = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (
                     spiralType,
                     DPoint3d::From (0,0,0),
@@ -400,20 +408,28 @@ TEST(Spiral,DocCheck)
                     Transform::FromIdentity (),
                     0.0, 1.0
                     );
+        // QUIET skip ... 
+        if (curve1 == nullptr)
+            continue;
         Utf8String typeName;
         DSpiral2dBase::TransitionTypeToString (spiralType, typeName);
         double stationStep = 10.0;
         DPoint3d xyz;
         DVec3d   tangent;
         printf ("\n\n **** SPIRAL TYPE %d (%s) *********\n", spiralType, typeName.c_str ());
-
+        bvector<DPoint3d> strokes;
         for (double stationDistance = 0.0; stationDistance < 1.001 * L; stationDistance += stationStep)
             {
             double f = stationDistance / L;
             curve1->FractionToPoint (f, xyz, tangent);
+            strokes.push_back (xyz);
             printf ("    %10.4lf     %20.4f   %20.4lf    %20.5lf\n", stationDistance, xyz.x, xyz.y,
                 Angle::RadiansToDegrees (atan2 (tangent.y, tangent.x)));
             }
+         Check::SaveTransformed (strokes);
+         Utf8String fileName;
+         fileName.Sprintf ("Spiral.DocCheck.%s", typeName.c_str ());
+         Check::ClearGeometry (fileName.c_str());
          curve1->FractionToPoint (1.0, xyz, tangent);
          auto degrees1 = Angle::RadiansToDegrees (atan2 (tangent.y, tangent.x));
          printf ("Final angles (expected %20.6lf) (actual %20.6lf)\n", expectedTurnDegrees, degrees1);
@@ -532,28 +548,44 @@ TEST(Spiral,SpiralStartEndMatch)
 TEST(Spiral,HalfCosineEvaluation)
     {
     bvector<DPoint3d> stroke, strokeD1, strokeD2, strokeD3;
-    double tangentLength = 100.0;
+    double tangentLength = 200.0;
     double r1 = 800.0;
     DPoint2d xy;
     DVec2d d1xy, d2xy, d3xy;
-    for (double x = 0.0; x <= tangentLength; x += 4.0)
+    int numStep = 25;
+    for (int step = 0; step <= numStep; step++)
         {
-        DSpiral2dDirectHalfCosine::EvaluateAtAxisDistanceInStandardOrientation (
-            x, tangentLength, r1,
+        double f = (double)step / (double)numStep;
+        DSpiral2dDirectHalfCosine::EvaluateAtFractionInStandardOrientation (
+            f, tangentLength, r1,
             xy, &d1xy, &d2xy, &d3xy);
+        double x = xy.x;
+        Check::Near (x, f * tangentLength);
         stroke.push_back (DPoint3d::From (x, xy.y));
         strokeD1.push_back (DPoint3d::From (x, d1xy.y));
         strokeD2.push_back (DPoint3d::From (x, d2xy.y));
         strokeD3.push_back (DPoint3d::From (x, d3xy.y));
         }
-    double dy = 10.0;
+    double dy = tangentLength * 0.75;
+    bvector<DPoint3d> axis {
+        DPoint3d::From (0,10,0),
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (tangentLength, 0, 0)
+        };
     Check::SaveTransformed (stroke);
+    Check::SaveTransformed (axis);
     Check::Shift (0,dy,0);
+
     Check::SaveTransformed (strokeD1);
+    Check::SaveTransformed (axis);
     Check::Shift (0,dy,0);
+
     Check::SaveTransformed (strokeD2);
+    Check::SaveTransformed (axis);
     Check::Shift (0,dy,0);
+
     Check::SaveTransformed (strokeD3);
+    Check::SaveTransformed (axis);
     Check::ClearGeometry ("Spiral.HalfCosineEvaluation");
     }
 // Vector integrands for testing
@@ -568,28 +600,30 @@ HalfCosineIntegrands (double tangentLength, double r1) :
     {
     }
 
-int GetVectorIntegrandCount () override { return 3;}
+int GetVectorIntegrandCount () override { return 4;}
 void EvaluateVectorIntegrand (double t, double *pF) override
     {
-    double x = t * m_tangentLength;
     DPoint2d xy;
     DVec2d d1xy, d2xy, d3xy;
-    DSpiral2dDirectHalfCosine::EvaluateAtAxisDistanceInStandardOrientation (
-            x, m_tangentLength, m_r1,
+    DSpiral2dDirectHalfCosine::EvaluateAtFractionInStandardOrientation (
+            t, m_tangentLength, m_r1,
             xy, &d1xy, &d2xy, &d3xy);
     pF[0] = d1xy.y;
     pF[1] = d2xy.y;
     pF[2] = d3xy.y;
+    pF[3] = d1xy.Magnitude ();
     }
 bvector<DPoint3d> summedD1Y;    // should match Y
 bvector<DPoint3d> summedD2Y;    // shoudl match d1Y
 bvector<DPoint3d> summedD3Y;    // should match d2Y
+bvector<DPoint3d> summedDistance;
 bool AnnounceIntermediateIntegral (double t, double *pIntegrals) override
     {
     double x = t * m_tangentLength;
     summedD1Y.push_back (DPoint3d::From (x, pIntegrals[0]));
     summedD2Y.push_back (DPoint3d::From (x, pIntegrals[1]));
     summedD3Y.push_back (DPoint3d::From (x, pIntegrals[2]));
+    summedDistance.push_back (DPoint3d::From (x, pIntegrals[3]));
     return true;
     }
 };
@@ -599,7 +633,7 @@ bool AnnounceIntermediateIntegral (double t, double *pIntegrals) override
 TEST(Spiral,HalfCosineIntegrals)
     {
     bvector<DPoint3d> exactXY, exactD1, exactD2, exactD3;
-    double tangentLength = 100.0;
+    double tangentLength = 200.0;
     double r1 = 800.0;
     DPoint2d xy;
     DVec2d d1xy, d2xy, d3xy;
@@ -619,8 +653,8 @@ TEST(Spiral,HalfCosineIntegrals)
     for (double f = 0.0; f < 1.0 + df * 0.00000001; f += df)
         {
         double x = f * tangentLength;
-        DSpiral2dDirectHalfCosine::EvaluateAtAxisDistanceInStandardOrientation (
-            x, tangentLength, r1,
+        DSpiral2dDirectHalfCosine::EvaluateAtFractionInStandardOrientation (
+            f, tangentLength, r1,
             xy, &d1xy, &d2xy, &d3xy);
         exactXY.push_back (DPoint3d::From (x, xy.y));
         exactD1.push_back (DPoint3d::From (x, d1xy.y));
@@ -629,7 +663,7 @@ TEST(Spiral,HalfCosineIntegrals)
         }
 
     double dy = 80.0;
-    double dy1 = 1.0;
+    double dy1 = 2.0;
     double dx = tangentLength;
     {
     SaveAndRestoreCheckTransform shifter (0, dy, 0);
@@ -675,9 +709,27 @@ TEST(Spiral,HalfCosineIntegrals)
     }
 
     {
-    SaveAndRestoreCheckTransform shifter (dy,0,0);
+    SaveAndRestoreCheckTransform shifter (0, dy,0);
     Check::SaveTransformed (DSegment3d::From (0,0,0, 2 * dx, 0, 0));
     Check::SaveTransformed (exactD3);
     }
+
+    {
+    SaveAndRestoreCheckTransform shifter (0, dy, 0);
+    Check::SaveTransformed (DSegment3d::From (0,0,0, dx, 0, 0));
+    // expect integrals to be a little above this.
+    Check::SaveTransformed (DSegment3d::From (0,0,0, dx, dx, 0));
+    DVec3d delta1 = DVec3d::From (0, -dy1, 0);
+    DVec3d delta2 = DVec3d::From (dy1, -dy1, 0);
+
+    for (auto &integrands : allIntegrands)
+        {
+        Check::Shift (0,dy1,0);
+        auto xyz = integrands.summedDistance.back ();
+        Check::SaveTransformed (bvector<DPoint3d> {xyz, xyz + delta1, xyz + delta2});
+        Check::SaveTransformed (integrands.summedDistance);
+        }
+    }
+
     Check::ClearGeometry ("Spiral.HalfCosineIntegrals");
     }

@@ -71,6 +71,15 @@ DSpiral2dBaseP DSpiral2dBase::Create (int transitionType)
     return NULL;
     }
 
+DSpiral2dBaseP DSpiral2dBase::CreateWithParameter (int transitionType, double parameter)
+    {
+    if (transitionType == TransitionType_DirectHalfCosine)
+        return new DSpiral2dDirectHalfCosine (parameter);
+    return NULL;
+    }
+
+
+
 struct SpiralTagName {
     int type;
     Utf8CP name;
@@ -91,7 +100,8 @@ static SpiralTagName s_spiralNames [] =
         {DSpiral2dBase::TransitionType_PolishCubic, "PolishCubic"},
         {DSpiral2dBase::TransitionType_AremaCubic, "AremaCubic"},
         {DSpiral2dBase::TransitionType_MXCubic, "MXCubic"},
-        {DSpiral2dBase::TransitionType_MXCubicArc, "MXCubicArc"}
+        {DSpiral2dBase::TransitionType_MXCubicArc, "MXCubicArc"},
+        {DSpiral2dBase::TransitionType_DirectHalfCosine, "HalfCosine"}
     };
 int DSpiral2dBase::StringToTransitionType (Utf8CP name)
     {
@@ -339,6 +349,12 @@ DVec2dR ddXdfdf,
 DVec2dR dddXdfdfdf
 )
     {
+    DSpiral2dFractionOfNominalLengthCurve * fractionalSpiral = dynamic_cast <DSpiral2dFractionOfNominalLengthCurve*> (this);
+    if (fractionalSpiral)
+        {
+        DPoint2d uv;
+        return fractionalSpiral->EvaluateAtFraction (fraction, uv, &dXdf, &ddXdfdf, &dddXdfdfdf);
+        }
     double scale = mLength;     // each derivative scales by higher power.
     double distance = FractionToDistance (fraction);
     double bearingRadians = DistanceToGlobalAngle (distance);
