@@ -94,4 +94,77 @@ void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, in
 BENTLEY_SM_EXPORT bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, const PolyfaceQuery* meshP);
 BENTLEY_SM_EXPORT bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, ClipVectorCP clip, const PolyfaceQuery* meshP, const bvector<bool>& isMask);
 //void BuildSkirtMeshesForPolygonSet(bvector<bvector<PolyfaceHeaderPtr>>& skirts, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, DRange3d& nodeRange);
+
+class MeshClipper
+{
+private:
+    const DPoint3d* m_vertexBuffer;
+    const size_t m_nVertices;
+    const int32_t* m_indexBuffer;
+    const size_t m_nIndices;
+    const DPoint2d* m_uvBuffer;
+    const int32_t* m_uvIndices;
+    DRange3d m_range;
+    DRange3d m_nodeRange;
+    size_t m_widthOfTexData;
+    size_t m_heightOfTexData;
+    bool m_is25dData;
+public:
+
+    void SetSourceMesh(const PolyfaceQuery* meshSourceData, bool is25dData=false);
+    void SetTextureDimensions(size_t width, size_t height)
+    {
+        m_widthOfTexData = width;
+        m_heightOfTexData = height;
+    }
+
+    void SetClipGeometry(const bvector<uint64_t>& ids, const bvector<bvector<DPoint3d>>& polygons);
+    void SetClipGeometry(const bvector<uint64_t>& ids, const bvector<bvector<DPoint3d>>& polygons, const bvector<bool>& polygonIsMask);
+    void SetClipGeometry(const bmap<size_t, uint64_t>& idsForPrimitives, ClipVectorCP clip);
+    void SetClipGeometry(const bmap<size_t, uint64_t>& idsForPrimitives, ClipVectorCP clip, const bmap<size_t, bool>& isMaskForEachPrimitive);
+    void SetClipGeometry(uint64_t id, ClipVectorCP clip, bool isMask = true);
+
+    void SetMaskInfo(uint64_t id, bool isMask);
+    bool IsClipMask(uint64_t id);
+
+    void SetMeshExtents(DRange3d extentOfData, DRange3d extentOfTexture);
+
+    void ComputeClip();
+
+    void GetRegions(bvector<uint64_t>& ids, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces);
+    void GetExteriorRegion(PolyfaceHeaderPtr& mesh);
+    bool WasClipped();
+
+    enum class RegionResult
+    {
+        Success,
+        ClippingNotComputed,
+        NoData,
+        NoIntersectionWithClips,
+        InsufficientRegionFilterArguments,
+        NoRegionsMatchingSelection
+    };
+
+    enum class RegionFilter
+    {
+        Boundary,
+        Mask,
+        All
+    };
+
+    enum class RegionFilterMode
+    {
+        All,
+        None,
+        AllExceptSelected,
+        OnlySelected
+    };
+
+    RegionResult SelectRegions(RegionFilter filter, RegionFilterMode mode);
+    RegionResult SelectRegions(RegionFilter filter, RegionFilterMode mode, bvector<uint64_t>& idsFilter);
+    void GetSelectedRegion(PolyfaceHeaderPtr& mesh);
+    bvector<bpair<uint64_t, PolyfaceHeaderPtr>>&& GetSelectedRegions();
+
+};
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE
