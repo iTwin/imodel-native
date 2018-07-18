@@ -510,7 +510,7 @@ ECObjectsStatus KindOfQuantity::FormatStringToFUSDescriptor(Utf8StringR fusDescr
 
         if(!Units::UnitRegistry::Instance().TryGetNewNameFromECName((alias + ":" + className).c_str(), newName))
             {
-            LOG.warningv("Failed to map unit '%s' from format string '%s' to a known unit on KoQ '%s'", unitName, formatString.c_str(), koq.GetFullName().c_str());
+            LOG.warningv("Failed to map unit '%s' from format string '%s' to a known unit on KoQ '%s'", unitName.c_str(), formatString.c_str(), koq.GetFullName().c_str());
             newName = koq.GetPersistenceUnit().GetUnitName();
             }
         presFusString.append(newName);
