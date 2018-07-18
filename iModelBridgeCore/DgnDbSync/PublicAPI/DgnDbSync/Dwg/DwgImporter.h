@@ -703,6 +703,21 @@ public:
     typedef bmap<DwgDbObjectId, RenderMaterialId>       T_MaterialIdMap;
     typedef bmap<Utf8String, DgnTextureId>              T_MaterialTextureIdMap;
 
+    //! Category cache for fast layer-category retrieving
+    struct CategoryEntry
+        {
+    private:
+        DgnCategoryId       m_categoryId;
+        DgnSubCategoryId    m_subcategoryId;
+    public:
+        CategoryEntry (DgnCategoryId cat, DgnSubCategoryId sub) : m_categoryId(cat), m_subcategoryId(sub) {}
+        CategoryEntry () {}
+        DgnCategoryId       GetCategoryId () const { return m_categoryId; }
+        DgnSubCategoryId    GetSubCategoryId () const { return m_subcategoryId; }
+        };  // CategoryEntry
+    typedef bpair<DwgDbObjectId, CategoryEntry>         T_DwgDgnLayer;
+    typedef bmap<DwgDbObjectId, CategoryEntry>          T_DwgDgnLayerMap;
+
     //! ElementAspect's host element cache for PresentationRules
     struct PresentationRuleContent
         {
@@ -898,6 +913,7 @@ protected:
     T_MaterialIdMap             m_importedMaterials;
     T_MaterialTextureIdMap      m_materialTextures;
     bvector<BeFileName>         m_materialSearchPaths;
+    T_DwgDgnLayerMap            m_layersInSync;
     uint32_t                    m_entitiesImported;
     uint32_t                    m_layersImported;
     MessageCenter               m_messageCenter;
@@ -936,6 +952,8 @@ private:
     bool                    IsXrefInsertedInPaperspace (DwgDbObjectIdCR xrefInsertId) const;
     bool                    ShouldSkipAllXrefs (ResolvedModelMapping const& ownerModel, DwgDbObjectIdCR ownerSpaceId);
     DgnDbStatus             UpdateElementName (DgnElementR editElement, Utf8StringCR newValue, Utf8CP label = nullptr, bool save = true);
+    DgnCategoryId           FindCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
+    DgnSubCategoryId        FindSubCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
 
     static void             RegisterProtocalExtensions ();
 
@@ -1153,8 +1171,9 @@ public:
     void                                AddDgnMaterialTexture (Utf8StringCR fileName, DgnTextureId texture);
     ECN::ECSchemaCP                     GetAttributeDefinitionSchema () { return m_attributeDefinitionSchema; }
     bool                                GetConstantAttrdefIdsFor (DwgDbObjectIdArray& ids, DwgDbObjectIdCR blockId);
-    DgnCategoryId                       FindCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
-    DgnSubCategoryId                    FindSubCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
+    //! Get a spatial category and/or a sub-category for a modelspace entity layer. The syncInfo is read in and cached for fast retrieval.
+    DgnCategoryId                       GetSpatialCategory (DgnSubCategoryId& subCategoryId, DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
+    //! Get a drawing category for paperspace entity layer. If the category not already exists, a new one will be created.
     DgnCategoryId                       GetOrAddDrawingCategory (DgnSubCategoryId& subCategory, DwgDbObjectIdCR layerId, DwgDbObjectIdCR viewportId, DgnModelCR model, DwgDbDatabaseP xrefDwg = nullptr);
     DgnSubCategoryId                    InsertAlternateSubCategory (DgnSubCategoryCPtr subcategory, DgnSubCategory::Appearance const& appearance, Utf8CP desiredName = nullptr);
     //! Get the block-geometry map that caches imported geometries.

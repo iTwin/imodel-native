@@ -485,6 +485,58 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnCategoryId   DwgImporter::GetSpatialCategory (DgnSubCategoryId& subCategoryId, DwgDbObjectIdCR entityLayer, DwgDbDatabaseP xrefDwg)
+    {
+    /*-----------------------------------------------------------------------------------
+    This method finds category and sub-categeory from the syncInfo for a layer.  If found,
+    it caches the entry so next time when the same layer is requested it will be retrieved
+    from the cache.  This is done for the sake of performance.
+    -----------------------------------------------------------------------------------*/
+    DwgDbObjectId   layerId = entityLayer;
+    if (nullptr != xrefDwg && xrefDwg != m_dwgdb.get())
+        {
+        // entity is in an xRef file - find the layer in master file by layer name:
+        XRefLayerResolver xresolver (*this, xrefDwg);
+        layerId = xresolver.ResolveEntityLayer (entityLayer);
+        }
+
+    // retieve layer from the cache
+    auto found = m_layersInSync.find (layerId);
+    if (found != m_layersInSync.end())
+        {
+        // a sync layer found in cache
+        subCategoryId = found->second.GetSubCategoryId ();
+        return  found->second.GetCategoryId ();
+        }
+
+    // not cached yet - querying them from the syncInfo for the resolved master file layer:
+    auto categoryId = this->FindCategoryFromSyncInfo (layerId);
+    subCategoryId = this->FindSubCategoryFromSyncInfo (layerId);
+
+    if (!categoryId.IsValid() || !subCategoryId.IsValid())
+        {
+        // should not reach here - error out!
+        Utf8String  layerName("???");
+        DwgDbLayerTableRecordPtr    layer(layerId, DwgDbOpenMode::ForRead);
+        if (layer.OpenStatus() == DwgDbStatus::Success)
+            layerName.Assign (layer->GetName().c_str());
+        this->ReportIssueV (IssueSeverity::Warning, IssueCategory::InconsistentData(), Issue::MissingCategory(), layerName.c_str());
+
+        // fallback to the default category:
+        categoryId = this->GetUncategorizedCategory ();
+        subCategoryId = DgnCategory::GetDefaultSubCategoryId (this->GetUncategorizedCategory());
+        }
+
+    // cache the sync'ed layer-category mapping for fast retrieving
+    CategoryEntry   entry(categoryId, subCategoryId);
+    m_layersInSync.insert (T_DwgDgnLayer(layerId, entry));
+
+    return  categoryId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId   DwgImporter::FindCategoryFromSyncInfo (DwgDbObjectIdCR entityLayerId, DwgDbDatabaseP xrefDwg)
     {
     // find spatial category from syncInfo for the input layer

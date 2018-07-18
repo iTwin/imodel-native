@@ -1938,6 +1938,7 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
     m_currIdPolicy = StableIdPolicy::ById;
     m_modelspaceXrefs.clear ();
     m_paperspaceXrefs.clear ();
+    m_layersInSync.clear ();
     m_importedTextstyles.clear ();
     m_importedLinestyles.clear ();
     m_importedMaterials.clear ();
