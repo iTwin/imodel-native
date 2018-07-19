@@ -54,6 +54,8 @@ struct TestFileCreator
     private:
         virtual BentleyStatus _Create() = 0;
         virtual BentleyStatus _UpgradeOldFiles() const = 0;
+        virtual BentleyStatus _UpgradeSchemas() const { return SUCCESS; }
+
     protected:
         explicit TestFileCreator(Utf8CP fileName) : m_fileName(fileName) {}
 

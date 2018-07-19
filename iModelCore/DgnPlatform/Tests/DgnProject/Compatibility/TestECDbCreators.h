@@ -61,7 +61,6 @@ struct TestECDbCreator : TestFileCreator
         static BentleyStatus ImportSchema(ECDbCR ecdb, SchemaItem const& schema) { return ImportSchemas(ecdb, {schema}); }
         static BentleyStatus ImportSchemas(ECDbCR, std::vector<SchemaItem> const&);
 
-
     public:
         virtual ~TestECDbCreator() {}
 
