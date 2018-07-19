@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/reftransformMultiply.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -820,6 +820,11 @@ void Transform::Multiply (bvector<DPoint3d> &out, bvector<DPoint3d> const &in) c
             Multiply (out[i], in[i]);
     }
 
+void Transform::Multiply (bvector<DPoint3d> &inout) const
+    {
+    for (auto &xyz: inout)
+        Multiply (xyz);
+    }
 
 #ifdef CompileMultiplyTranspose
 /*-----------------------------------------------------------------*//**

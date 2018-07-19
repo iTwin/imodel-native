@@ -61,6 +61,95 @@ double parametricCurvatureDerivative (double dx, double dy, double ddx, double d
     return (df * g - f * dg) / gg;
     }
 
+//! Evaluate the spiral and derivatives at specified distance along.
+//! return true if valid evaluation.
+//! DSpiral2dDirectEvaluation default implementation returns false.
+bool DSpiral2dDirectEvaluation::EvaluateAtDistance
+(
+double distanceAlong, //!< [in] distance for evaluation
+DPoint2dR xyz,          //!< [out] coordinates on spiral
+DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
+DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
+DVec2dP d3XYZ    //!< [out] third derivative wrt distance
+) const
+    {
+    return false;
+    }
+
+
+double DSpiral2dFractionOfNominalLengthCurve::DistanceToLocalAngle  (double distance) const
+    {
+    return FractionToLocalAngle (distance / m_nominalLength);
+    }
+// Return the curvature at specified distance from start ...
+double DSpiral2dFractionOfNominalLengthCurve::DistanceToCurvature   (double distance) const
+    {
+    return FractionToCurvature (distance / m_nominalLength);
+    }
+// Return the derivative of curvature wrt arc length at specified distance from start ...
+double DSpiral2dFractionOfNominalLengthCurve::DistanceToCurvatureDerivative (double distance) const
+    {
+    double curvature, dCurvatureDFraction;
+    double fraction = distance / m_nominalLength;
+    double dCurvatureDDistance = 0.0;
+    if (FractionToDCurvatureDFraction (fraction, curvature, dCurvatureDFraction))
+        {
+        double velocity = FractionToVelocity (fraction);
+        DoubleOps::SafeDivide (dCurvatureDDistance, dCurvatureDFraction, velocity, 0.0);
+        }
+    return dCurvatureDDistance;
+    }
+
+double DSpiral2dFractionOfNominalLengthCurve::FractionToCurvature (double fraction) const
+    {
+    DPoint2d uv;
+    DVec2d uvD1, uvD2;
+    double curvature = 0.0;
+    if (EvaluateAtFraction (fraction, uv, &uvD1, &uvD2, nullptr))
+        {
+        curvature = parametricCurvature (uvD1.x, uvD1.y, uvD2.x, uvD2.y);
+        }
+    return curvature;
+    }    
+
+double DSpiral2dFractionOfNominalLengthCurve::FractionToVelocity(double fraction) const
+    {
+    DPoint2d uv;
+    DVec2d uvD1;
+    double velocity = 0.0;
+    if (EvaluateAtFraction (fraction, uv, &uvD1, nullptr, nullptr))
+        {
+        velocity = uvD1.Magnitude ();
+        }
+    return 0.0;
+    }    
+
+double DSpiral2dFractionOfNominalLengthCurve::FractionToLocalAngle(double fraction) const
+    {
+    DPoint2d uv;
+    DVec2d uvD1;
+    double radians = 0.0;
+    if (EvaluateAtFraction (fraction, uv, &uvD1, nullptr, nullptr))
+        {
+        radians = atan2 (uvD1.y, uvD1.x);
+        }
+    return radians;
+    }    
+
+bool DSpiral2dFractionOfNominalLengthCurve::FractionToDCurvatureDFraction (double fraction, double &curvature, double &dCurvatureDFraction) const
+    {
+    DPoint2d uv;
+    DVec2d uvD1, uvD2, uvD3;
+    if (EvaluateAtFraction (fraction, uv, &uvD1, &uvD2, &uvD3))
+        {
+        curvature = parametricCurvature (uvD1.x, uvD1.y, uvD2.x, uvD2.y);
+        dCurvatureDFraction = parametricCurvatureDerivative (uvD1.x, uvD1.y, uvD2.x, uvD2.y, uvD3.x, uvD3.y);
+        return true;
+        }
+    curvature = 0.0;
+    dCurvatureDFraction = 0.0;
+    return false;
+    }  
 
 double DSpiral2dDirectEvaluation::DistanceToLocalAngle (double distance) const
     {
@@ -155,7 +244,6 @@ bool DSpiral2dNewSouthWales::EvaluateAtDistanceInStandardOrientation
         d3XY->Init (-60.0 * factorX, 6.0 * factorY);
     return true;
     }
-
 bool DSpiral2dNewSouthWales::EvaluateAtDistance
     (
     double s, //!< [in] distance for evaluation
@@ -323,7 +411,6 @@ bool DSpiral2dAustralian::EvaluateAtDistanceInStandardOrientation
         
     return true;
     }
-
 bool DSpiral2dAustralian::EvaluateAtDistance
     (
     double s, //!< [in] distance for evaluation
@@ -392,7 +479,6 @@ bool DSpiral2dMXCubic::EvaluateAtDistanceInStandardOrientation
         }
     return true;
     }
-
 bool DSpiral2dMXCubic::EvaluateAtDistance
     (
     double s, //!< [in] distance for evaluation
@@ -461,7 +547,6 @@ bool DSpiral2dItalian::EvaluateAtDistanceInStandardOrientation
         }
     return true;
     }
-
 bool DSpiral2dItalian::EvaluateAtDistance
     (
     double s, //!< [in] distance for evaluation
@@ -594,12 +679,12 @@ double ClothoidCosineApproximation::Evaluate40R2L2Map (double alpha, double R, d
 // Specialize spiral for DIRECTHALFCOSINE ....
 
 
-
-DSpiral2dDirectHalfCosine::DSpiral2dDirectHalfCosine () : DSpiral2dDirectEvaluation () {}
+DSpiral2dFractionOfNominalLengthCurve::DSpiral2dFractionOfNominalLengthCurve (double nominalLength) : m_nominalLength (nominalLength) {}
+DSpiral2dDirectHalfCosine::DSpiral2dDirectHalfCosine (double projectedLength) : DSpiral2dFractionOfNominalLengthCurve (projectedLength) {}
 // STATIC method ...
-bool DSpiral2dDirectHalfCosine::EvaluateAtAxisDistanceInStandardOrientation
+bool DSpiral2dDirectHalfCosine::EvaluateAtFractionInStandardOrientation
     (
-    double x,           //!< [in] distance along x axis
+    double u,           //!< [in] distance along x axis
     double length,      //! [in] strictly nonzero length along spiral.
     double radius1,  //! [in] strictly nonzero exit radius
     DPoint2dR xy,      //!< [out] coordinates on spiral
@@ -608,19 +693,19 @@ bool DSpiral2dDirectHalfCosine::EvaluateAtAxisDistanceInStandardOrientation
     DVec2dP d3XY   //!< [out] third derivative wrt fractional position
     )
     {
-    double u = x / length;
     double c = length * length / radius1;
     double pi = Angle::Pi ();
     double c1 = 1.0 / (2.0 * pi * pi);
+    double c2 = 0.25;
     double upi = u * pi;
-    double y = c * (u * u + c1 * (1.0 - cos (upi)));
-    double dydu = c * (2.0 * u + c1 * pi * sin (upi));
-    double d2ydu2 = c * (2.0 + c1 * pi * pi * cos (upi));
-    double d3ydu3 = - c * c1 * pi * pi * pi * sin (upi);
+    double y = c * (c2 * u * u - c1 * (1.0 - cos (upi)));
+    double dydu = c * (2.0 * c2 * u - c1 * pi * sin (upi));
+    double d2ydu2 = c * (2.0 * c2 - c1 * pi * pi * cos (upi));
+    double d3ydu3 = c * c1 * pi * pi * pi * sin (upi);
 
-    xy.Init (x,y);
+    xy.Init (u * length,y);
     if (d1XY)
-        d1XY->Init (1.0, dydu);
+        d1XY->Init (length, dydu);
     if (d2XY)
         d2XY->Init (0.0, d2ydu2);
     if (d3XY)
@@ -629,9 +714,9 @@ bool DSpiral2dDirectHalfCosine::EvaluateAtAxisDistanceInStandardOrientation
     return true;
     }
 
-bool DSpiral2dDirectHalfCosine::EvaluateAtDistance
+bool DSpiral2dDirectHalfCosine::EvaluateAtFraction
     (
-    double s, //!< [in] distance for evaluation
+    double fraction, //!< [in] distance for evaluation
     DPoint2dR xy,          //!< [out] coordinates on spiral
     DVec2dP d1XY,   //!< [out] first derivative wrt distance
     DVec2dP d2XY,   //!< [out] second derivative wrt distance
@@ -640,16 +725,17 @@ bool DSpiral2dDirectHalfCosine::EvaluateAtDistance
     {
     if (mCurvature0 == 0.0)
         {
-        bool stat = EvaluateAtAxisDistanceInStandardOrientation (s, mLength, mCurvature1, xy, d1XY, d2XY, d3XY);
+        bool stat = EvaluateAtFractionInStandardOrientation (fraction, mLength, 1.0 / mCurvature1, xy, d1XY, d2XY, d3XY);
         if (stat)
-            ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
+            DSpiral2dDirectEvaluation::ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
         return stat;
         }       
     return false;
     }
+
 DSpiral2dBaseP DSpiral2dDirectHalfCosine::Clone () const
     {
-    DSpiral2dDirectHalfCosine *pClone = new DSpiral2dDirectHalfCosine ();
+    DSpiral2dDirectHalfCosine *pClone = new DSpiral2dDirectHalfCosine (m_nominalLength);
     pClone->CopyBaseParameters (this);
     return pClone;
     }

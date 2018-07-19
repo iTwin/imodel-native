@@ -87,7 +87,7 @@ void ReplaceCurve (MSBsplineCurvePtr source)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      03/2016
 +--------------------------------------------------------------------------------------*/
-void UpdateCurve(double maxStrokeLength)
+void UpdateIntegratedCurve(double maxStrokeLength)
     {
     double errorEstimate;
     DVec2d uvA = DVec2d::From (0,0);
@@ -124,6 +124,66 @@ void UpdateCurve(double maxStrokeLength)
 #endif
 
     }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      03/2016
++--------------------------------------------------------------------------------------*/
+bool UpdateFractionCurve(double maxStrokeLength)
+    {
+    DSpiral2dFractionOfNominalLengthCurve *fractionalSpiral = dynamic_cast <DSpiral2dFractionOfNominalLengthCurve*> (m_placement.spiral);
+    if (nullptr == fractionalSpiral)
+        return false;
+    DSegment1d interval = m_placement.FractionInterval ();
+    size_t numInterval = DSpiral2dBase::GetIntervalCount (*fractionalSpiral, interval.GetStart (), interval.GetEnd (), 0.0, 2, maxStrokeLength);
+    DPoint2d uv;
+    DVec2d uvD1;
+    double bearing0Radians = 0.0;
+    double bearing1Radians = 1.0;
+    // Evaluate pure xy points ...
+    for (size_t i = 0; i <= numInterval; i++)
+        {
+        double f = (double) i / (double) numInterval;
+        double g = m_placement.ActiveFractionToGlobalFraction (f);
+        fractionalSpiral->EvaluateAtFraction (g, uv, &uvD1, nullptr, nullptr);
+        m_strokes.m_f.push_back (g);
+        m_strokes.m_xyz.push_back (DPoint3d::From (uv));
+        if (i == 0)
+            bearing0Radians = atan2 (uvD1.y, uvD1.x);
+        else if (i == numInterval)
+            bearing1Radians = atan2 (uvD1.y, uvD1.x);
+        }
+    MSBsplineCurve curve;
+    if (SUCCESS == bspcurv_interpolateXYWithBearingAndRadiusExt (&curve,
+                m_strokes.m_xyz.data (), (int)m_strokes.m_xyz.size (),
+                true, bearing0Radians, false, 0,
+                true, bearing1Radians, false, 0))
+        {
+        m_placement.frame.Multiply (m_strokes.m_xyz);
+        curve.TransformCurve (m_placement.frame);
+        ReplaceCurve (curve.CreateCapture ());
+        return true;
+        }
+    return false;
+    }
+
+#ifdef abc
+            status = bspcurv_interpolateXYWithBearingAndRadiusExt
+                        (
+                        pCurve,
+                        &xyzPoints[0], (int)numXYZ,
+                        true,
+                        bearingA,
+                        bApplyRadius,
+                        RadiusFromCurvature (curvatureA),
+                        true,
+                        bearingB,
+                        bApplyRadius,
+                        RadiusFromCurvature (curvatureB)
+                        );
+            Transform placement;
+            placement.InitFrom (*pFrame, *pOrigin);
+            bspcurv_transformCurve (pCurve, pCurve, &placement);
+#endif
 public:
 
 /*--------------------------------------------------------------------------------**//**
@@ -239,7 +299,8 @@ double fractionB,
 double maxStrokeLength = 10.0
 ) : m_placement (spiral, frame, fractionA, fractionB)
     {
-    UpdateCurve (maxStrokeLength);
+    if (!UpdateFractionCurve (maxStrokeLength))
+        UpdateIntegratedCurve (maxStrokeLength);
     }
 ~CurvePrimitiveSpiralCurve1 ()
     {
