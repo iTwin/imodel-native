@@ -53,9 +53,6 @@ Dgn::DgnElementPtr SketchGridSurfaceManipulationStrategy::_FinishElement()
     if (BentleyStatus::ERROR == _UpdateGridSurface())
         return nullptr;
 
-    if (!surface->GetThisElem().GetDgnDb().Txns().InDynamicTxn())
-        return nullptr;
-
     if (surface->GetThisElemR().Update().IsNull())
         return nullptr;
 

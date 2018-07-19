@@ -34,12 +34,14 @@ void SplineGridSurfacePlacementStrategyTestFixture::SetUp()
     {
     GridsTestFixtureBase::SetUp();
     DgnDbR db = GetDgnDb();
+    db.BriefcaseManager().StartBulkOperation();
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
     SpatialLocationPartitionPtr partition = SpatialLocationPartition::Create(*rootSubject, "GridSpatialPartition");
     db.Elements().Insert<SpatialLocationPartition>(*partition);
     m_model = SpatialLocationModel::CreateAndInsert(*partition);
     m_sketchGrid = SketchGrid::Create(*m_model.get(), partition->GetElementId(), "Sketch grid", 0.0, 10.0);
     m_sketchGrid->Insert();
+    db.SaveChanges();
     }
 
 //--------------------------------------------------------------------------------------
@@ -93,7 +95,7 @@ bool            GetDgnExtrusionDetail
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SplineGridSurfacePlacementStrategyTestFixture, CreateControlPointsSplineGridSurface) 
     {
-
+    GetDgnDb().BriefcaseManager().StartBulkOperation();
     int order = 3;
     
     SplineGridSurfacePlacementStrategyPtr strat = SplineGridSurfacePlacementStrategy::Create(SplinePlacementStrategyType::ControlPoints, GetDgnDb());
@@ -130,6 +132,7 @@ TEST_F(SplineGridSurfacePlacementStrategyTestFixture, CreateControlPointsSplineG
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SplineGridSurfacePlacementStrategyTestFixture, CreateThroughPointsSplineGridSurface)
     {
+    GetDgnDb().BriefcaseManager().StartBulkOperation();
     SplineGridSurfacePlacementStrategyPtr strat = SplineGridSurfacePlacementStrategy::Create(SplinePlacementStrategyType::ThroughPoints, GetDgnDb());
     ASSERT_TRUE(strat.IsValid()) << "Strategy failed to create";
     strat->SetProperty(SketchGridSurfacePlacementStrategy::prop_BottomElevation, 0.0);

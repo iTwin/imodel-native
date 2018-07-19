@@ -109,6 +109,7 @@ void GridsStrategyTests::SetUp()
     m_model = SpatialLocationModel::CreateAndInsert(*partition);
     m_sketchGrid = SketchGrid::Create(*m_model.get(), partition->GetElementId(), "Sketch grid", 0.0, 10.0);
     m_sketchGrid->Insert();
+    db.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -130,7 +131,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementStrategy_ByPoints)
     // Try creating strategy object
     //////////////////////////////////////
     DgnDbR db = *DgnClientApp::App().Project();
-
+    db.BriefcaseManager().StartBulkOperation();
     // Create strategy
     LineGridSurfacePlacementStrategyPtr strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::Points, db);
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
@@ -379,7 +380,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementStrategy_ByPointsLength)
     // Try creating strategy object
     //////////////////////////////////////
     DgnDbR db = *DgnClientApp::App().Project();
-
+    db.BriefcaseManager().StartBulkOperation();
     // Create strategy
     LineGridSurfacePlacementStrategyPtr strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointsLength, db);
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
@@ -647,7 +648,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementStrategy_ByPointsAngle)
     // Try creating strategy object
     //////////////////////////////////////
     DgnDbR db = *DgnClientApp::App().Project();
-
+    db.BriefcaseManager().StartBulkOperation();
     // Create strategy
     LineGridSurfacePlacementStrategyPtr strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointsAngle, db);
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
@@ -915,7 +916,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementStrategy_ByPointLengthAngle)
     // Try creating strategy object
     //////////////////////////////////////
     DgnDbR db = *DgnClientApp::App().Project();
-
+    db.BriefcaseManager().StartBulkOperation();
     // Create strategy
     LineGridSurfacePlacementStrategyPtr strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointLengthAngle, db);
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";

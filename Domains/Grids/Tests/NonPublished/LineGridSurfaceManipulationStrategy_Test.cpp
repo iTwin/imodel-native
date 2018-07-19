@@ -47,6 +47,7 @@ void LineGridSurfaceManipulationStrategyTestFixture::SetUp()
     m_model = SpatialLocationModel::CreateAndInsert(*partition);
     m_sketchGrid = SketchGrid::Create(*m_model.get(), partition->GetElementId(), "Sketch grid", 0.0, 10.0);
     m_sketchGrid->Insert();
+    db.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -64,6 +65,7 @@ void LineGridSurfaceManipulationStrategyTestFixture::TearDown()
 //--------------+---------------+---------------+---------------+---------------+-------- 
 TEST_F(LineGridSurfaceManipulationStrategyTestFixture, ModifyExisting)
     {
+    GetDgnDb().BriefcaseManager().StartBulkOperation();
     SketchGridPtr grid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "TEST_GRID", 0, 10);
     ASSERT_TRUE(grid.IsValid());
     ASSERT_TRUE(grid->Insert().IsValid());
@@ -78,7 +80,7 @@ TEST_F(LineGridSurfaceManipulationStrategyTestFixture, ModifyExisting)
     ASSERT_TRUE(surface->Insert().IsValid());
 
     ASSERT_EQ(SUCCESS, GetDgnDb().SaveChanges());
-
+    GetDgnDb().BriefcaseManager().StartBulkOperation();
     LineGridSurfaceManipulationStrategyPtr sut = LineGridSurfaceManipulationStrategy::Create(*surface);
     ASSERT_TRUE(sut.IsValid());
 

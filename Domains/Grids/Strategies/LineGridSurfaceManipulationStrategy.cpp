@@ -146,9 +146,6 @@ Dgn::DgnElementPtr LineGridSurfaceManipulationStrategy::_FinishElement
     if (m_surface.IsNull())
         return nullptr;
 
-    if (!m_surface->GetDgnDb().Txns().InDynamicTxn())
-        return nullptr;
-
     if (m_surface->Insert().IsNull())
         return nullptr;
 

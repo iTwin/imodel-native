@@ -121,6 +121,7 @@ void GridsTestFixture::SetUp()
     SpatialLocationPartitionPtr partition = SpatialLocationPartition::Create(*rootSubject, "GridSpatialPartition");
     db.Elements().Insert<SpatialLocationPartition>(*partition);
     m_model = SpatialLocationModel::CreateAndInsert (*partition);
+    db.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -243,6 +244,7 @@ RadialGrid::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForRadialGr
 TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App ().Project ();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
     OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -411,6 +413,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_CreatedAndDeleted)
 TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
     OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -501,6 +504,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
 TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
     OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -594,6 +598,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotat
 TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTranslationAndRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
     OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -689,6 +694,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
 TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
 
     OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -850,6 +856,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_CreatedAndDeleted)
 TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
 
     OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -940,6 +947,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
 TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
 
     OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -1030,6 +1038,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
 TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
     OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -1191,6 +1200,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_CreatedAndDeleted)
 TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
     OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -1281,6 +1291,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
 TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
     OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -1374,6 +1385,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotatio
 TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTranslationAndRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
     OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -1469,6 +1481,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
 TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
 
     OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -1630,6 +1643,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_CreatedAndDeleted)
 TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
 
     OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -1720,6 +1734,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
 TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
 
     OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
@@ -1813,6 +1828,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
 TEST_F(GridsTestFixture, RadialGrid_Empty_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
 
     RadialGrid::CreateParams params(*m_model, m_model->GetModeledElementId(), "empty radial grid", 0, 0, 0, 0, 0 , 0, 0, 10);
 
@@ -1831,6 +1847,7 @@ TEST_F(GridsTestFixture, RadialGrid_Empty_CreatedAndDeleted)
 TEST_F(GridsTestFixture, RadialGrid_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
 
     RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(createParams, 7, 5);
@@ -1984,6 +2001,7 @@ TEST_F(GridsTestFixture, RadialGrid_CreatedAndDeleted)
 TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
 
     RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(createParams, 7, 5);
@@ -2069,6 +2087,7 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
 TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
 
     RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(createParams, 7, 5);
@@ -2162,6 +2181,7 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
 TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
     RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
 
     RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(createParams, 7, 5);
@@ -2256,6 +2276,7 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
 TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
 
     SketchGridPtr sketchGrid = SketchGrid::Create(*m_model.get(), m_model->GetModeledElementId(), "Sketch Grid", 0.0, 10.0);
 
@@ -2403,6 +2424,7 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
 TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
     {
     DgnDbR db = *DgnClientApp::App ().Project ();
+    db.BriefcaseManager().StartBulkOperation();
 
     DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), GRIDS_CATEGORY_CODE_Uncategorized);
     {
@@ -2471,6 +2493,7 @@ TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
 TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     {
     DgnDbR db = *DgnClientApp::App ().Project ();
+    db.BriefcaseManager().StartBulkOperation();
 
     SketchGridPtr grid = SketchGrid::Create (*m_model, m_model->GetModeledElementId(), "SketchGrid-1", 0.0, 10.0);
     grid->Insert ();
@@ -2613,6 +2636,7 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
 TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Create Grid surfaces representing floors
@@ -2757,6 +2781,7 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
 TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Create Grid surfaces representing floors
@@ -2902,6 +2927,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
 TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Create Grid surfaces representing floors
@@ -3068,6 +3094,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
 TEST_F(GridsTestFixture, GridArc_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Create Grid arc with curve primitive containing arc
@@ -3134,6 +3161,7 @@ TEST_F(GridsTestFixture, GridArc_Created)
 TEST_F(GridsTestFixture, GridLine_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
 
     /////////////////////////////////////////////////////////////
     // Create Grid arc with curve primitive containing line
@@ -3198,6 +3226,7 @@ TEST_F(GridsTestFixture, GridLine_Created)
 TEST_F(GridsTestFixture, GridSpline_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
 
     GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
 
@@ -3252,6 +3281,7 @@ TEST_F(GridsTestFixture, GridSpline_Created)
 TEST_F(GridsTestFixture, GridAxis_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
 
     SketchGridPtr grid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Grid", 0.0, 10.0);
 
@@ -3334,6 +3364,7 @@ TEST_F(GridsTestFixture, GridAxis_Created)
 TEST_F(GridsTestFixture, SetName)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
 
     SketchGridPtr grid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Grid", 0.0, 10.0);
 
@@ -3359,6 +3390,7 @@ TEST_F(GridsTestFixture, SetName)
 TEST_F(GridsTestFixture, Orthogonal_CreateAndInsertWithSurfaces_NotUniqueNameReturnsNullInsteadOfCrashing)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
 
     Utf8String name = "TestName";
 
@@ -3377,6 +3409,7 @@ TEST_F(GridsTestFixture, Orthogonal_CreateAndInsertWithSurfaces_NotUniqueNameRet
 TEST_F(GridsTestFixture, GridSurfacesTests)
     {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
 
     SketchGridPtr grid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Grid", 0.0, 10.0);
 
@@ -3547,6 +3580,10 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     // @betest                                      Martynas.Saulius                02/2018
     //--------------+---------------+---------------+---------------+---------------+-------- 
     TEST_F(GridsTestFixture, GridCurvesPortionTests) {
+
+        DgnDbR db = *DgnClientApp::App().Project();
+        db.BriefcaseManager().StartBulkOperation();
+
         { //Creation, Insertion, Update validity
             GridCurvesPortionPtr portion = GridCurvesPortion::Create(*m_model);
             ASSERT_TRUE(portion.IsValid()) << "Failed to create grid curves portion";
@@ -3557,7 +3594,6 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
             portion->Update(&stat);
             ASSERT_EQ(DgnDbStatus::Success, stat) << "Failed to update inserted grid curves portion";
         }
-        DgnDbR db = *DgnClientApp::App().Project();
 
         DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), GRIDS_CATEGORY_CODE_Uncategorized);
         { // Check grid curves portion created from handler
@@ -3582,6 +3618,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
 //--------------+---------------+---------------+---------------+---------------+-------- 
 TEST_F(GridsTestFixture, GridCurveDependancyFromPortionsTest) {
     DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
 
     DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), GRIDS_CATEGORY_CODE_Uncategorized);
     { // Check grid line created from handler
@@ -3637,6 +3674,8 @@ TEST_F(GridsTestFixture, GridCurveDependancyFromPortionsTest) {
 TEST_F(GridsTestFixture, TryCreateOrthogonalGridAndSurfaceInSingleRequest) 
 {
     DgnDbR db = *DgnClientApp::App ().Project ();
+    db.BriefcaseManager().StartBulkOperation();
+
     OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
     OrthogonalGridPtr thisGrid = OrthogonalGrid::Create(createParams);
