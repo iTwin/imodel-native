@@ -105,6 +105,9 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(BeFileNameCR rootFolder,
     std::vector<TestFile> testFiles;
     for (BeFileNameCR filePath : fileMatches)
         {
+        if (filePath.IsDirectory())
+            continue;
+
         BeFileName profileVersionFolderName = filePath.GetDirectoryName();
         //just get folder name without path
         if (profileVersionFolderName.EndsWith(L"/") || profileVersionFolderName.EndsWith(L"\\"))
