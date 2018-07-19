@@ -719,7 +719,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
     char fractBuf[64];
     char locBuf[128];
     size_t ind = 0;
-    if (IsZeroEmpty() && (abs(dval - 0.0) < 0.0001))
+    if (IsZeroEmpty() && (std::abs(dval - 0.0) < 0.0001))
         { 
         *buf = 0;
         return 0;
