@@ -107,9 +107,11 @@ $(o)ConverterAppTests.obj       : $(BEGTEST_INPUT)ConverterAppTests.cpp         
 
 $(o)RasterTests.obj             : $(BEGTEST_INPUT)RasterTests.cpp               $(TestsHeaders) ${MultiCompileDepends}
 
-$(o)TextBlockTests.obj          : $(BEGTEST_INPUT)TextBlockTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
+$(o)TextBlockTests.obj          : $(BEGTEST_INPUT)TextBlockTests.cpp            $(TestsHeaders) ${MultiCompileDepends}
 
 $(o)ItemTypeTests.obj           : $(BEGTEST_INPUT)ItemTypeTests.cpp             $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ViewTests.obj               : $(BEGTEST_INPUT)ViewTests.cpp                 $(TestsHeaders) ${MultiCompileDepends}
 
 $(o)ConvertToDgnDbElementExtensionTests.obj : $(BEGTEST_INPUT)ConvertToDgnDbElementExtensionTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
 

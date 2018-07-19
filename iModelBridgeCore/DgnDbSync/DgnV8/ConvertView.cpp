@@ -558,6 +558,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         auto viewId = ViewDefinition::QueryViewId(*definitionModel, name);
         if (viewId.IsValid())
             {
+            GetChangeDetector()._OnViewSeen(*this, viewId);
             // *** WIP_UPDATER: check that per-attachment level definitions and visibility are unchanged
             return BSISUCCESS;
             }
@@ -666,6 +667,8 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     m_viewNumberMap.insert({view->GetViewId(), viewInfo.GetViewNumber()});
     if (!viewId.IsValid())
         viewId = view->GetViewId();
+    GetChangeDetector()._OnViewSeen(*this, viewId);
+
     return BSISUCCESS;
     }
 
