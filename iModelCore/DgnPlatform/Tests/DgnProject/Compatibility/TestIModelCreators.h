@@ -15,6 +15,7 @@
 
 #define TESTIMODEL_EMPTY "empty.bim"
 #define TESTIMODEL_PREEC32ENUMS "preec32enums.bim"
+#define TESTIMODEL_UPGRADEDEC32ENUMS "upgradedec32enums.ecdb"
 #define TESTIMODEL_EC32ENUMS "ec32enums.bim"
 #define TESTIMODEL_PREEC32KOQS "preec32koqs.bim"
 #define TESTIMODEL_EC32KOQS "ec32koqs.bim"

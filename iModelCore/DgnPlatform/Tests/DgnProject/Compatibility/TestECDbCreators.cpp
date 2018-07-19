@@ -116,3 +116,43 @@ BentleyStatus TestECDbCreator::_UpgradeOldFiles() const
 
     return SUCCESS;
     }
+
+//************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus UpgradedEC32EnumsTestECDbCreator::_UpgradeSchemas() const
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(ECDbProfile::Get().GetCreatedDataFolder(), TESTECDB_UPGRADEDEC32ENUMS, false))
+        {
+        if (testFile.GetAge() != ProfileState::Age::UpToDate)
+            {
+            BeAssert(false && "files to upgrade schemas for should be up-to-date profilewise.");
+            return ERROR;
+            }
+
+        ECDb ecdb;
+        DbResult stat = ecdb.OpenBeSQLiteDb(testFile.GetSeedPath(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+        if (BE_SQLITE_OK != stat)
+            {
+            LOG.errorv("Failed to upgrade schema in test file '%s': Could not open the test file read-write: %s", testFile.GetSeedPath().GetNameUtf8().c_str(), Db::InterpretDbResult(stat));
+            return ERROR;
+            }
+
+
+        //Upgrade the enumerator names of the enums
+        return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="UpgradedEC32Enums" alias="upgradedec32" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                                        <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                                                            <ECEnumerator name="Unknown" value="0"/>
+                                                            <ECEnumerator name="On" value="1"/>
+                                                            <ECEnumerator name="Off" value="2"/>
+                                                        </ECEnumeration>
+                                                        <ECEnumeration typeName="StringEnum_EnumeratorsWithDisplayLabel" displayLabel="String Enumeration with enumerators with display label" backingTypeName="string" isStrict="false">
+                                                            <ECEnumerator name="An" value="On" displayLabel="Turned On"/>
+                                                            <ECEnumerator name="Aus" value="Off" displayLabel="Turned Off"/>
+                                                        </ECEnumeration>
+                                                     </ECSchema>)xml"));
+        }
+    }

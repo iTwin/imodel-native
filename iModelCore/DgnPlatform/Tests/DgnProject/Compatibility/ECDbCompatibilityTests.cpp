@@ -217,16 +217,41 @@ TEST_F(ECDbCompatibilityTestFixture, UpgradingPreEC32EnumsToEC32AfterProfileUpgr
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
 
-            //regardless of whether the actual test file is 3.1 and not upgraded yet or it is newer and upgraded,
-            //the upgrade does not affect the EC31 enum API. So the test code is generic
-            testDb.AssertEnum("UpgradedEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-            {{ECValue(0), nullptr},
-            {ECValue(1), nullptr},
-            {ECValue(2), nullptr}});
+            switch (testDb.GetAge())
+                {
+                // older file which has not been upgraded has the auto-generated enumerator names
+                    case ProfileState::Age::Older:
+                    {
+                    testDb.AssertEnum("UpgradedEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                    {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+                    {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+                    {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
 
-            testDb.AssertEnum("UpgradedEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-            {{ECValue("On"), "Turned On"},
-            {ECValue("Off"), "Turned Off"}});
+                    testDb.AssertEnum("UpgradedEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
+                    {{"On", ECValue("On"), "Turned On"},
+                    {"Off", ECValue("Off"), "Turned Off"}});
+                    break;
+                    }
+
+                    // upgraded files must have the names from the schema upgrade
+                    case ProfileState::Age::UpToDate:
+                    case ProfileState::Age::Newer:
+                    {
+                    testDb.AssertEnum("UpgradedEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                    {{"Unknown", ECValue(0), nullptr},
+                    {"On", ECValue(1), nullptr},
+                    {"Off", ECValue(2), nullptr}});
+
+                    testDb.AssertEnum("UpgradedEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
+                    {{"An", ECValue("On"), "Turned On"},
+                    {"Aus", ECValue("Off"), "Turned Off"}});
+                    break;
+                    }
+
+                    default:
+                        FAIL() << "unhandled ProfileState::Age enum value";
+                        return;
+                }
             }
         }
     }

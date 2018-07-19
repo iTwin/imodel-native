@@ -54,19 +54,18 @@ public:
 //======================================================================================
 struct TestECDbCreator : TestFileCreator
     {
+    private:
+        BentleyStatus _UpgradeOldFiles() const override;
+
     protected:
         explicit TestECDbCreator(Utf8CP fileName) : TestFileCreator(fileName) {}
-
-        BentleyStatus _UpgradeOldFiles() const override;
 
         static DbResult CreateNewTestFile(ECDbR, Utf8StringCR fileName);
         static BentleyStatus ImportSchema(ECDbCR ecdb, SchemaItem const& schema) { return ImportSchemas(ecdb, {schema}); }
         static BentleyStatus ImportSchemas(ECDbCR, std::vector<SchemaItem> const&);
 
-
     public:
         virtual ~TestECDbCreator() {}
-
     };
 
 //======================================================================================
@@ -123,17 +122,13 @@ struct PreEC32EnumsTestECDbCreator final : TestECDbCreator
 struct UpgradedEC32EnumsTestECDbCreator final : TestECDbCreator
     {
     private:
-        BentleyStatus _Create() override { return SUCCESS; }
-        BentleyStatus _UpgradeOldFiles() const override 
+        BentleyStatus _Create() override
             {
-            if (SUCCESS != TestECDbCreator::_UpgradeOldFiles())
-                return ERROR;
-
             ECDb ecdb;
             if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
                 return ERROR;
 
-            //The actual upgrade to EC32 enums will happen on the respective EC32 version of this creator
+            //Initial import of EC3.1 enums. _UpgradeSchemas will then upgrade to EC32 enums
             return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="UpgradedEC32Enums" alias="upgradedec32" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
@@ -147,6 +142,9 @@ struct UpgradedEC32EnumsTestECDbCreator final : TestECDbCreator
                                                         </ECEnumeration>
                                                      </ECSchema>)xml"));
             }
+
+        BentleyStatus _UpgradeSchemas() const override;
+
     public:
         explicit UpgradedEC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_UPGRADEDEC32ENUMS) {}
         ~UpgradedEC32EnumsTestECDbCreator() {}

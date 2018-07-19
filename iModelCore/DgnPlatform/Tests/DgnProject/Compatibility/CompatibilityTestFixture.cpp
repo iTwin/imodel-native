@@ -80,7 +80,10 @@ BentleyStatus TestFileCreator::Run()
 
     LOG.infov("Created new test file '%s'.", m_fileName.c_str());
 
-    return _UpgradeOldFiles();
+    if (SUCCESS != _UpgradeOldFiles())
+        return ERROR;
+
+    return _UpgradeSchemas();
     }
 
 //**************************************************************************************
