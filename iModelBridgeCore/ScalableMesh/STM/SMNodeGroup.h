@@ -1306,9 +1306,9 @@ template<class EXTENT>
 void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) const
     {
     Json::Value tileSet;
-    tileSet["asset"]["version"] = "0.0";
+    tileSet["asset"]["version"] = "1.0";
     tileSet["root"] = pi_Group->m_tilesetRootNode;
-
+    tileSet["geometricError"] = tileSet["root"]["geometricError"].asFloat();
     if (pi_Group->IsRoot())
         {
         // Save master header info in Cesium tileset

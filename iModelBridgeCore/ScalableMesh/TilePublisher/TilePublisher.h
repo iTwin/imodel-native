@@ -210,8 +210,9 @@ private:
     void ProcessMeshes(Json::Value& value);
     void AddExtensions(Json::Value& value);
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
-    void AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max);
+    void AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max, unsigned short* qmin = nullptr, unsigned short* qmax = nullptr);
     void AddBinaryData (void const* data, size_t size);
+    void PadBinaryDataToBoundary(size_t boundarySize);
 
     Utf8String AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent, bool ignoreLighting);
     Utf8String AddPolylineShaderTechnique (Json::Value& rootNode);
