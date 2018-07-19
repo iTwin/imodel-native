@@ -145,7 +145,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
 
             Utf8String identifier = crd.GetIdentifier();
             RealityDataByIdRequest rd = RealityDataByIdRequest(identifier);
-            Utf8String url = rd.GetHttpRequestString();
+            url = rd.GetHttpRequestString();
             BeFileName::EmptyAndRemoveDirectory(modelDir);
 
             }
