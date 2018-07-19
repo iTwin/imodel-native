@@ -96,6 +96,8 @@ struct Profile : NonCopyableClass
         virtual BentleyStatus _Init() const = 0;
         BeFileName GetFolderForNewTestFile() const;
 
+        std::vector<TestFile> GetAllVersionsOfTestFile(BeFileNameCR rootFolder, WStringCR fileNamePattern, bool logFoundFiles) const;
+
     protected:
         Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name);
 
@@ -112,6 +114,7 @@ struct Profile : NonCopyableClass
         BeFileNameCR GetOutFolder() const { return m_profileOutFolder; }
 
         std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles = true) const;
+        std::vector<TestFile> GetAllVersionsOfAllPulledTestFiles(bool logFoundFiles = true) const { return GetAllVersionsOfTestFile(m_profilePulledTestDataFolder, L"*.*", logFoundFiles); }
         std::vector<TestFile> GetAllVersionsOfTestFile(BeFileNameCR rootFolder, Utf8CP testFileName, bool logFoundFiles) const;
         BeFileName GetPathForNewTestFile(Utf8StringCR testFileName) const { return GetFolderForNewTestFile().AppendToPath(BeFileName(testFileName)); }
         BeFileName GetPathForNewUpgradedTestFile(TestFile const& oldSeedFile) const;
