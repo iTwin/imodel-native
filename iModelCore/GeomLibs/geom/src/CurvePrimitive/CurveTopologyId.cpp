@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/CurveTopologyId.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -179,7 +179,7 @@ BentleyStatus CurveTopologyId::Init (void const* pData, size_t dataBytes)
     Byte const*  data = (Byte const*) pData;
 
     m_ids.clear();
-    if (dataBytes <= 2)
+    if (dataBytes < 2)
         {
         m_type = Type::Unknown;
         return SUCCESS;
