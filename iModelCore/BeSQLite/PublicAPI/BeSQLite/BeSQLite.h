@@ -601,8 +601,8 @@ public:
 
     //! Gets the current ILanguageSupport. Can return nullptr.
     BE_SQLITE_EXPORT static ILanguageSupport* GetLanguageSupport();
-	
-	//! Get memory used by SQLite for current process
+    
+    //! Get memory used by SQLite for current process
     BE_SQLITE_EXPORT static DbResult GetMemoryUsed(int64_t& current, int64_t& high, bool reset = false);
 
     static int GetBaseDbResult(DbResult val) {return 0xff & val;}
