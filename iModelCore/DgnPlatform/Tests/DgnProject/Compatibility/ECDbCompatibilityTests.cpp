@@ -217,40 +217,28 @@ TEST_F(ECDbCompatibilityTestFixture, UpgradingPreEC32EnumsToEC32AfterProfileUpgr
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
 
-            switch (testDb.GetAge())
+            // older files for which the schema upgrade wasn't run must have the auto-generated enumerator names
+            if (testDb.GetOriginalECXmlVersion("UpgradedEC32Enums") <= BeVersion(3, 1))
                 {
-                // older file which has not been upgraded has the auto-generated enumerator names
-                    case ProfileState::Age::Older:
-                    {
-                    testDb.AssertEnum("UpgradedEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                    {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
-                    {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
-                    {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
+                testDb.AssertEnum("UpgradedEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
 
-                    testDb.AssertEnum("UpgradedEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-                    {{"On", ECValue("On"), "Turned On"},
-                    {"Off", ECValue("Off"), "Turned Off"}});
-                    break;
-                    }
+                testDb.AssertEnum("UpgradedEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
+                {{"On", ECValue("On"), "Turned On"},
+                {"Off", ECValue("Off"), "Turned Off"}});
+                }
+            else
+                {
+                testDb.AssertEnum("UpgradedEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                {{"Unknown", ECValue(0), nullptr},
+                {"On", ECValue(1), nullptr},
+                {"Off", ECValue(2), nullptr}});
 
-                    // upgraded files must have the names from the schema upgrade
-                    case ProfileState::Age::UpToDate:
-                    case ProfileState::Age::Newer:
-                    {
-                    testDb.AssertEnum("UpgradedEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                    {{"Unknown", ECValue(0), nullptr},
-                    {"On", ECValue(1), nullptr},
-                    {"Off", ECValue(2), nullptr}});
-
-                    testDb.AssertEnum("UpgradedEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-                    {{"An", ECValue("On"), "Turned On"},
-                    {"Aus", ECValue("Off"), "Turned Off"}});
-                    break;
-                    }
-
-                    default:
-                        FAIL() << "unhandled ProfileState::Age enum value";
-                        return;
+                testDb.AssertEnum("UpgradedEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
+                {{"An", ECValue("On"), "Turned On"},
+                {"Aus", ECValue("Off"), "Turned Off"}});
                 }
             }
         }

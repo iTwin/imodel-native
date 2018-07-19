@@ -68,7 +68,7 @@ BentleyStatus TestECDbCreator::ImportSchemas(ECDbCR ecdb, std::vector<SchemaItem
     ECN::ECSchemaReadContextPtr ctx = DeserializeSchemas(ecdb, schemas);
     if (ctx == nullptr)
         {
-        LOG.errorv("Failed to create new test file '%s': Could not deserialize ECSchemas to import.", ecdb.GetDbFileName());
+        LOG.errorv("Failed to create new/upgrade test file '%s': Could not deserialize ECSchemas to import.", ecdb.GetDbFileName());
         return ERROR;
         }
 
@@ -80,7 +80,7 @@ BentleyStatus TestECDbCreator::ImportSchemas(ECDbCR ecdb, std::vector<SchemaItem
         }
 
     sp.Cancel();
-    LOG.errorv("Failed to create new test file '%s': Could not import ECSchemas.", ecdb.GetDbFileName());
+    LOG.errorv("Failed to create new/upgrade test file '%s': Could not import ECSchemas.", ecdb.GetDbFileName());
     return ERROR;
     }
 
@@ -142,8 +142,8 @@ BentleyStatus UpgradedEC32EnumsTestECDbCreator::_UpgradeSchemas() const
 
 
         //Upgrade the enumerator names of the enums
-        return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                                    <ECSchema schemaName="UpgradedEC32Enums" alias="upgradedec32" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        if (SUCCESS != ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="UpgradedEC32Enums" alias="upgradedec32" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                                         <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
                                                             <ECEnumerator name="Unknown" value="0"/>
                                                             <ECEnumerator name="On" value="1"/>
@@ -153,6 +153,11 @@ BentleyStatus UpgradedEC32EnumsTestECDbCreator::_UpgradeSchemas() const
                                                             <ECEnumerator name="An" value="On" displayLabel="Turned On"/>
                                                             <ECEnumerator name="Aus" value="Off" displayLabel="Turned Off"/>
                                                         </ECEnumeration>
-                                                     </ECSchema>)xml"));
+                                                     </ECSchema>)xml")))
+            {
+            LOG.errorv("Failed to upgrade schema in test file '%s'.", testFile.GetSeedPath().GetNameUtf8().c_str());
+            return ERROR;
+            }
         }
+    return SUCCESS;
     }

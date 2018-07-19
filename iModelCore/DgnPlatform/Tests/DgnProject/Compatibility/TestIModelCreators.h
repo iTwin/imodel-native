@@ -24,6 +24,7 @@
 #define TESTIMODELCREATOR_LIST {std::make_shared<EmptyTestIModelCreator>(), \
                                 std::make_shared<EC32EnumsTestIModelCreator>(), \
                                 std::make_shared<PreEC32EnumsTestIModelCreator>(), \
+                                std::make_shared<UpgradedEC32EnumsTestIModelCreator>(), \
                                 std::make_shared<PreEC32KoqsTestIModelCreator>(), \
                                 std::make_shared<EC32KoqsTestIModelCreator>(), \
                                 std::make_shared<EC32UnitsTestIModelCreator>()}
@@ -55,7 +56,7 @@ protected:
     explicit TestIModelCreator(Utf8CP fileName) : TestFileCreator(fileName) {}
 
     static DgnDbPtr CreateNewTestFile(Utf8StringCR fileName);
-    BentleyStatus ImportSchema(DgnDbR dgndb, SchemaItem const& schema) { return ImportSchemas(dgndb, {schema}); }
+    static BentleyStatus ImportSchema(DgnDbR dgndb, SchemaItem const& schema) { return ImportSchemas(dgndb, {schema}); }
     static BentleyStatus ImportSchemas(DgnDbR dgndb, std::vector<SchemaItem> const& schemas);
 
 public:
@@ -106,6 +107,39 @@ struct PreEC32EnumsTestIModelCreator final : TestIModelCreator
         ~PreEC32EnumsTestIModelCreator() {}
     };
 
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      07/2018
+//======================================================================================
+struct UpgradedEC32EnumsTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
+            if (bim == nullptr)
+                return ERROR;
+
+            //Initial import of EC3.1 enums. _UpgradeSchemas will then upgrade to EC32 enums
+            return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="UpgradedEC32Enums" alias="upgradedec32" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                        <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                                                            <ECEnumerator value="0"/>
+                                                            <ECEnumerator value="1"/>
+                                                            <ECEnumerator value="2"/>
+                                                        </ECEnumeration>
+                                                        <ECEnumeration typeName="StringEnum_EnumeratorsWithDisplayLabel" displayLabel="String Enumeration with enumerators with display label" backingTypeName="string" isStrict="false">
+                                                            <ECEnumerator value="On" displayLabel="Turned On"/>
+                                                            <ECEnumerator value="Off" displayLabel="Turned Off"/>
+                                                        </ECEnumeration>
+                                                     </ECSchema>)xml"));
+            }
+
+        BentleyStatus _UpgradeSchemas() const override;
+
+    public:
+        explicit UpgradedEC32EnumsTestIModelCreator() : TestIModelCreator(TESTIMODEL_UPGRADEDEC32ENUMS) {}
+        ~UpgradedEC32EnumsTestIModelCreator() {}
+    };
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
 //======================================================================================
