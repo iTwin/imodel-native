@@ -119,7 +119,6 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::GetOrCreateGridAndAxis(Sket
                 )
             );
             sketchGrid->SetPlacement(planePlacement);
-            BuildingLocks_LockElementForOperation(*sketchGrid.get(), BeSQLite::DbOpcode::Insert, "SketchGrid : Insert" );
             if (sketchGrid->Insert().IsNull())
                 return BentleyStatus::ERROR;
 
