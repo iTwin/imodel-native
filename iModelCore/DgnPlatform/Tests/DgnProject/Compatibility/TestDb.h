@@ -171,7 +171,7 @@ struct TestIModel final : TestDb
         DgnDbPtr m_dgndb = nullptr;
         DgnDb::OpenParams m_openParams;
 
-        ECDbR _GetDb() const override { BeAssert(m_dgndb != nullptr); return *m_dgndb; }
+        ECDbR _GetDb() const override { return GetDgnDb(); }
         DbResult _Open() override;
         void _Close() override
             {
@@ -187,6 +187,7 @@ struct TestIModel final : TestDb
         TestIModel(TestFile const& testFile, DgnDb::OpenParams const& openParams = DgnDb::OpenParams(DgnDb::OpenMode::Readonly)) : TestDb(testFile), m_openParams(openParams) {}
         ~TestIModel() { _Close(); }
 
+        DgnDbR GetDgnDb() const { BeAssert(m_dgndb != nullptr); return *m_dgndb; }
         static Iterable GetPermutationsFor(TestFile const&);
 
         void AssertProfileVersion() const;
