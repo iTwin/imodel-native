@@ -12,6 +12,7 @@
 
 #include "UsageDb.h"
 #include "PolicyToken.h"
+#include "LicenseStatus.h"
 
 #include <Licensing/Utils/TimeRetriever.h>
 #include <Licensing/Utils/DelayedExecutor.h>
@@ -88,6 +89,7 @@ public:
 
     LICENSING_EXPORT BentleyStatus StartApplication(); 
     LICENSING_EXPORT BentleyStatus StopApplication();
+    LICENSING_EXPORT LicenseStatus GetProductStatus();
 
     // usageSCV usage file to send
     // The company ID in SAP. // TODO: figure out where to get this one from.

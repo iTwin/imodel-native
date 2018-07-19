@@ -303,3 +303,20 @@ Utf8String ClientImpl::GetLoggingPostSource(LogPostingSource lps) const
                 return "Unknown";
         }
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LicenseStatus ClientImpl::GetProductStatus()
+	{
+	return LicenseStatus::Ok;
+	// Cases for Ok:
+	//   
+	// Cases for Offline:
+	// Cases for Expired:
+	// Cases for AccessDenied:
+	// Cases for DisabledByLogSend:
+	// Cases for DisabledByPolicy:
+	// Cases for Trial:
+	// Cases for NotEntitled:
+	}
