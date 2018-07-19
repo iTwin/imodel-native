@@ -9003,19 +9003,6 @@ TEST_F(SchemaUpgradeTestFixture, ModifyEnumeratorNameInPre32ECSchema)
                 </ECEnumeration>
                 </ECSchema>)xml")));
 
-    EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
-                    <ECEnumerator name="IntEnum0" value="0" />
-                    <ECEnumerator name="IntEnum1" value="1" />
-                </ECEnumeration>
-                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
-                    <ECEnumerator name="TurnOn" value="On" />
-                    <ECEnumerator name="Off" value="Off" />
-                </ECEnumeration>
-                </ECSchema>)xml"))) << "Enumerator names of String enums can never be changed";
-
     EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
               <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -9024,10 +9011,10 @@ TEST_F(SchemaUpgradeTestFixture, ModifyEnumeratorNameInPre32ECSchema)
                     <ECEnumerator name="Off" value="1" />
                 </ECEnumeration>
                 <ECEnumeration typeName="StringEnum" backingTypeName="string" >
-                    <ECEnumerator name="On" value="On" />
-                    <ECEnumerator name="Off" value="Off" />
+                    <ECEnumerator name="An" value="On" />
+                    <ECEnumerator name="Aus" value="Off" />
                 </ECEnumeration>
-                </ECSchema>)xml"))) << "When coming from 3.1 schema, an enumerator name change for an int enum is valid";
+                </ECSchema>)xml"))) << "When coming from 3.1 schema, an enumerator name change is valid";
 
     EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>

@@ -3255,7 +3255,8 @@ BentleyStatus SchemaWriter::VerifyEnumeratorChanges(Context& ctx, ECEnumerationC
     //this is only done for int enums. For string enums, enumerator name changes are not allowed at all.
     //Once the enumerator name changes are detected, any regular deleted enumerators are invalid, any regular new enumerators are fine.
     const bool isIntEnum = oldEnum.GetType() == PRIMITIVETYPE_Integer;
-    bmap<int, EnumeratorChange*> deletedEnumerators, newEnumerators;
+    bmap<int, EnumeratorChange*> deletedIntEnumerators, newIntEnumerators;
+    bmap<Utf8CP, EnumeratorChange*, CompareUtf8> deletedStringEnumerators, newStringEnumerators;
     for (size_t i = 0; i < enumeratorChanges.Count(); i++)
         {
         EnumeratorChange& change = enumeratorChanges[i];
@@ -3263,17 +3264,16 @@ BentleyStatus SchemaWriter::VerifyEnumeratorChanges(Context& ctx, ECEnumerationC
             {
                 case ECChange::OpCode::New:
                     if (isIntEnum)
-                        newEnumerators[change.Integer().GetNew().Value()] = &change;
+                        newIntEnumerators[change.Integer().GetNew().Value()] = &change;
+                    else
+                        newStringEnumerators[change.String().GetNew().Value().c_str()] = &change;
 
                     continue;
                 case ECChange::OpCode::Deleted:
                     if (isIntEnum)
-                        deletedEnumerators[change.Integer().GetOld().Value()] = &change;
+                        deletedIntEnumerators[change.Integer().GetOld().Value()] = &change;
                     else
-                        {
-                        ctx.Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
-                        return ERROR;
-                        }
+                        deletedStringEnumerators[change.String().GetOld().Value().c_str()] = &change;
 
                     break;
                 case ECChange::OpCode::Modified:
@@ -3296,16 +3296,33 @@ BentleyStatus SchemaWriter::VerifyEnumeratorChanges(Context& ctx, ECEnumerationC
     const bool enumeratorNameChangeAllowed = oldSchemaOriginalVersionMajor < 3 || (oldSchemaOriginalVersionMajor == 3 && oldSchemaOriginalVersionMinor < 2);
 
     //only need to iterate over deleted enumerators. Any new Enumerators which this might miss, is fine, as they are always supported
-    for (bpair<int, EnumeratorChange*> const& kvPair : deletedEnumerators)
+    if (isIntEnum)
         {
-        const int val = kvPair.first;
-        //We consider this a name change as the int values are equal.
-        if (enumeratorNameChangeAllowed && newEnumerators.find(val) != newEnumerators.end())
-            continue; 
+        for (bpair<int, EnumeratorChange*> const& kvPair : deletedIntEnumerators)
+            {
+            const int val = kvPair.first;
+            //We consider this a name change as the int values are equal.
+            if (enumeratorNameChangeAllowed && newIntEnumerators.find(val) != newIntEnumerators.end())
+                continue;
 
-        //no counterpart with matching value found or old name is not the auto-generated EC3.2 conversion default name
-        ctx.Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
-        return ERROR;
+            //no counterpart with matching value found or old name is not the auto-generated EC3.2 conversion default name
+            ctx.Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
+            return ERROR;
+            }
+        }
+    else
+        {
+        for (bpair<Utf8CP, EnumeratorChange*> const& kvPair : deletedStringEnumerators)
+            {
+            Utf8CP val = kvPair.first;
+            //We consider this a name change as the int values are equal.
+            if (enumeratorNameChangeAllowed && newStringEnumerators.find(val) != newStringEnumerators.end())
+                continue;
+
+            //no counterpart with matching value found or old name is not the auto-generated EC3.2 conversion default name
+            ctx.Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
+            return ERROR;
+            }
         }
 
     return SUCCESS;
