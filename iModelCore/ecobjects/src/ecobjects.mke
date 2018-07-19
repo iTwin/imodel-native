@@ -77,7 +77,7 @@ $(o)DesignByContract$(oext)                                : $(baseDir)DesignByC
 
 $(o)ECClass$(oext)                                         : $(baseDir)ECClass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECContext$(oext)                                       : $(baseDir)ECContext.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)ECcontext$(oext)                                       : $(baseDir)ECcontext.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECCustomAttribute$(oext)                               : $(baseDir)ECCustomAttribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
