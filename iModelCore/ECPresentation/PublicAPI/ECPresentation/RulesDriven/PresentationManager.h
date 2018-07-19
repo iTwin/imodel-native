@@ -170,6 +170,7 @@ protected:
     ECPRESENTATION_EXPORT virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP preferredDisplayType, KeySetCR, SelectionInfo const*, JsonValueCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR, PageOptionsCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<Utf8String> _GetDisplayLabel(IConnectionCR, KeySetCR) override;
 
     // IECPresentationManager: Updating
     ECPRESENTATION_EXPORT virtual folly::Future<bvector<ECInstanceChangeResult>> _SaveValueChange(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR) override;

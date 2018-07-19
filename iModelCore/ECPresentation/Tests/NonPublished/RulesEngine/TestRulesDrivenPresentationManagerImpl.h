@@ -37,6 +37,7 @@ struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManag
     typedef std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentDescriptor;
     typedef std::function<ContentCPtr(ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)> Handler_GetContent;
     typedef std::function<size_t(ContentDescriptorCR, ICancelationTokenCR)> Handler_GetContentSetSize;
+    typedef std::function<Utf8String(IConnectionCR, ECInstanceKeyCR, ICancelationTokenCR)> Handler_GetDisplayLabel;
     
     typedef std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR)> Handler_SaveValueChange;
     
@@ -64,6 +65,7 @@ private:
     Handler_GetContentDescriptor m_contentDescriptorHandler;
     Handler_GetContent m_contentHandler;
     Handler_GetContentSetSize m_contentSetSizeHandler;
+    Handler_GetDisplayLabel m_displayLabelHandler;
     
     Handler_SaveValueChange m_saveValueChangeHandler;
     
@@ -171,6 +173,12 @@ protected:
             return m_contentSetSizeHandler(descriptor, cancelationToken);
         return 0;
         }
+    Utf8String _GetDisplayLabel(IConnectionCR connection, ECInstanceKeyCR key, ICancelationTokenCR cancelationToken) override
+        {
+        if (m_displayLabelHandler)
+            return m_displayLabelHandler(connection, key, cancelationToken);
+        return "";
+        }
 
     bvector<ECInstanceChangeResult> _SaveValueChange(IConnectionCR connection, bvector<ChangedECInstanceInfo> const& changedInstances, Utf8CP propertyAccessor, ECValueCR value) override 
         {
@@ -223,6 +231,7 @@ public:
     void SetContentDescriptorHandler(Handler_GetContentDescriptor handler) {m_contentDescriptorHandler = handler;}
     void SetContentHandler(Handler_GetContent handler) {m_contentHandler = handler;}
     void SetContentSetSizeHandler(Handler_GetContentSetSize handler) {m_contentSetSizeHandler = handler;}
+    void SetDisplayLabelHandler(Handler_GetDisplayLabel handler) {m_displayLabelHandler = handler;}
     
     void SetSaveValueChangeHandler(Handler_SaveValueChange handler) {m_saveValueChangeHandler = handler;}
     

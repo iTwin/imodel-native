@@ -134,8 +134,31 @@ folly::Future<ContentCPtr> IECPresentationManager::GetContent(ContentDescriptorC
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<size_t> IECPresentationManager::GetContentSetSize(ContentDescriptorCR descriptor)
     {
-
     return _GetContentSetSize(descriptor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<Utf8String> IECPresentationManager::GetDisplayLabel(ECDbCR db, ECInstanceKeyCR key)
+    {
+    ECClassCP ecClass = db.Schemas().GetClass(key.GetClassId());
+    KeySetPtr keys = KeySet::Create({ECClassInstanceKey(ecClass, key.GetInstanceId())});
+    return GetDisplayLabel(db, *keys);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<Utf8String> IECPresentationManager::GetDisplayLabel(ECDbCR db, KeySetCR keys)
+    {
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return folly::makeFuture(Utf8String());
+        }
+    return _GetDisplayLabel(*connection, keys);
     }
 
 /*---------------------------------------------------------------------------------**//**

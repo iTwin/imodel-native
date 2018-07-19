@@ -12917,3 +12917,55 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMu
     EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["Element_ElementMultiAspect"].GetString());
     EXPECT_TRUE(record->IsMerged("Element_ElementMultiAspect"));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ReturnsDisplayLabelOfSingleInstance, R"*(
+    <ECEntityClass typeName="Element">
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsDisplayLabelOfSingleInstance)
+    {
+    // set up data set
+    ECClassCP elementClass = GetClass("Element");
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    
+    // create key
+    ECInstanceKey key(elementClass->GetId(), RulesEngineTestHelpers::GetInstanceKey(*element).GetId());
+
+    // get label
+    Utf8String label = IECPresentationManager::GetManager().GetDisplayLabel(s_project->GetECDb(), key).get();
+
+    // verify
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*element).c_str(), label.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ReturnsDisplayLabelOfMultipleInstances, R"*(
+    <ECEntityClass typeName="Element">
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsDisplayLabelOfMultipleInstances)
+    {
+    // set up data set
+    ECClassCP elementClass = GetClass("Element");
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    
+    // create keys
+    KeySetPtr keys = KeySet::Create(
+        bvector<ECClassInstanceKey>{
+        RulesEngineTestHelpers::GetInstanceKey(*element1),
+        RulesEngineTestHelpers::GetInstanceKey(*element2)
+        });
+
+    // get label
+    Utf8String label = IECPresentationManager::GetManager().GetDisplayLabel(s_project->GetECDb(), *keys).get();
+
+    // verify
+    Utf8String expected = RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_MultipleInstances());
+    EXPECT_STREQ(expected.c_str(), label.c_str());
+    }

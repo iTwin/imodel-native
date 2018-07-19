@@ -712,6 +712,25 @@ folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(Conte
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<Utf8String> RulesDrivenECPresentationManager::_GetDisplayLabel(IConnectionCR primaryConnection, KeySetCR keys)
+    {
+    TaskDependencies dependencies(primaryConnection.GetId(), DISPLAY_LABEL_RULESET_ID, ContentDisplayType::List, nullptr);
+    auto promise = CreateCancelablePromise<Utf8String>(*m_cancelableTasks, "Display label", dependencies);
+    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), keys = KeySetCPtr(&keys)]()
+        {
+        if (promise->IsCanceled())
+            return;
+        
+        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
+        Utf8String label = m_impl->GetDisplayLabel(*connection, *keys, promise->GetCancelationToken());
+        promise->SetValue(label);
+        });
+    return promise->GetFuture();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 IRulesetLocaterManager& RulesDrivenECPresentationManager::GetLocaters() {return m_impl->GetLocaters();}

@@ -10,6 +10,8 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+#define DISPLAY_LABEL_RULESET_ID    "RulesDrivenECPresentationManager_RulesetId_DisplayLabel"
+
 struct NodesCache;
 struct ContentCache;
 struct ContentProviderKey;
@@ -80,6 +82,7 @@ protected:
     virtual ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR) = 0;
     virtual ContentCPtr _GetContent(ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR) = 0;
     virtual size_t _GetContentSetSize(ContentDescriptorCR, ICancelationTokenCR) = 0;
+    virtual Utf8String _GetDisplayLabel(IConnectionCR, KeySetCR, ICancelationTokenCR) = 0;
 /** @} */
 
 /** @name IECPresentationManager: Updating */
@@ -162,6 +165,7 @@ public:
     ContentDescriptorCPtr GetContentDescriptor(IConnectionCR connection, Utf8CP preferredDisplayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) {return _GetContentDescriptor(connection, preferredDisplayType, inputKeys, selectionInfo, options, cancelationToken);}
     ContentCPtr GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions, ICancelationTokenCR cancelationToken) {return _GetContent(descriptor, pageOptions, cancelationToken);}
     size_t GetContentSetSize(ContentDescriptorCR descriptor, ICancelationTokenCR cancelationToken) {return _GetContentSetSize(descriptor, cancelationToken);}
+    Utf8String GetDisplayLabel(IConnectionCR connection, KeySetCR keys, ICancelationTokenCR cancelationToken) {return _GetDisplayLabel(connection, keys, cancelationToken);}
 /** @} */
 
 /** @name IECPresentationManager: Updating */
@@ -235,6 +239,7 @@ protected:
     ECPRESENTATION_EXPORT ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT ContentCPtr _GetContent(ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT size_t _GetContentSetSize(ContentDescriptorCR, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT Utf8String _GetDisplayLabel(IConnectionCR, KeySetCR, ICancelationTokenCR) override;
 
     // RulesDrivenECPresentationManager::Impl: Updating
     ECPRESENTATION_EXPORT bvector<ECInstanceChangeResult> _SaveValueChange(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR) override;
