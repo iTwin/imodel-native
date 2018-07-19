@@ -28,6 +28,25 @@ struct IModelCompatibilityTestFixture : CompatibilityTestFixture
     };
 
 //---------------------------------------------------------------------------------------
+// Runs basic tests on all available test files. This is a basic test to cover tests and test files
+// which are added in the future, and to which existing test runners cannot be adjusted to.
+// @bsimethod                                  Krischan.Eberle                      07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, BasicTestsOnAllPulledFiles)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfAllPulledTestFiles())
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
