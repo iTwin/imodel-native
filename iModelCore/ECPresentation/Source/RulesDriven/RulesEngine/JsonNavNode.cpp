@@ -668,16 +668,21 @@ NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNod
         }
     if (node.GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode))
         {
+        uint64_t groupedInstancesCount = (uint64_t)extendedData.GetGroupedInstanceKeysCount();
         ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(extendedData.GetECClassId());
-        return ECClassGroupingNodeKey::Create(*ecClass, path);
+        return ECClassGroupingNodeKey::Create(*ecClass, path, groupedInstancesCount);
         }
     if (node.GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode))
         {
+        uint64_t groupedInstancesCount = (uint64_t)extendedData.GetGroupedInstanceKeysCount();
         ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(extendedData.GetECClassId());
-        return ECPropertyGroupingNodeKey::Create(*ecClass, extendedData.GetPropertyName(), extendedData.GetPropertyValue(), path);
+        return ECPropertyGroupingNodeKey::Create(*ecClass, extendedData.GetPropertyName(), extendedData.GetPropertyValue(), path, groupedInstancesCount);
         }
     if (node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))
-        return LabelGroupingNodeKey::Create(node.GetLabel(), path);
+        {
+        uint64_t groupedInstancesCount = (uint64_t)extendedData.GetGroupedInstanceKeysCount();
+        return LabelGroupingNodeKey::Create(node.GetLabel(), path, groupedInstancesCount);
+        }
     return NavNodeKey::Create(node.GetType(), path);
     }
 
