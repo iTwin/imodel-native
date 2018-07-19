@@ -1419,6 +1419,9 @@ void Multiply (bvector<DPoint4d> &xyzwOut, bvector<DPoint4d> const &xyzwIn) cons
 //! @param [out] xyzOut transformed points.
 //! @param [in] xyzIn original points.
 void Multiply (bvector<DPoint3d> &xyzOut, bvector<DPoint3d> const &xyzIn) const;
+//! @description Mutliply 3D points in place
+//! @param [out] xyInOut transformed points.
+void Multiply (bvector<DPoint3d> &xyzInOut) const;
 //! @description Mutliply 2D points.
 //! @param [out] xyOut transformed points..   z parts from transform are ignored.
 //! @param [in] xyIn original points.  Implicitly z=0 for mutliplication.
