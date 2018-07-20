@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
 #include <RealityPlatformTools/SimpleRDSApi.h>
+#include "DgnPlatform/WebMercator.h"
+
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -18,10 +20,35 @@ BE_JSON_NAME(tilesetUrl)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Converter::GenerateWebMercatorModel()
+    {
+    RepositoryLinkPtr aerialLink = RepositoryLink::Create(*GetDgnDb().GetRealityDataSourcesModel(), nullptr, "Bing Aerial");
+    if (!aerialLink.IsValid() ||  !aerialLink->Insert().IsValid())
+        return ERROR;
+
+    // set up the Bing Aerial map properties Json.
+    BentleyApi::Json::Value jsonParameters;
+    jsonParameters[WebMercator::WebMercatorModel::json_providerName()] = WebMercator::BingImageryProvider::prop_BingProvider();
+    jsonParameters[WebMercator::WebMercatorModel::json_groundBias()] = -1.0;
+    jsonParameters[WebMercator::WebMercatorModel::json_transparency()] = 0.0;
+    BentleyApi::Json::Value& bingAerialJson = jsonParameters[WebMercator::WebMercatorModel::json_providerData()];
+
+    bingAerialJson[WebMercator::WebMercatorModel::json_mapType()] = (int) WebMercator::MapType::Aerial;
+    WebMercator::WebMercatorModel::CreateParams createParams (GetDgnDb(), aerialLink->GetElementId(), jsonParameters);
+
+    WebMercator::WebMercatorModelPtr model = new WebMercator::WebMercatorModel (createParams);
+    DgnDbStatus insertStatus = model->Insert();
+    BeAssert (DgnDbStatus::Success == insertStatus);
+    return DgnDbStatus::Success == insertStatus ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::GenerateRealityModelTilesets()
     {
-    bool doUpload = false;
-    bool doLocal = false;
+    bool doUpload = false, doLocal = false;
+
     Bentley::WString uploadConfigVar;
     Bentley::WString serverConfigVar;
     if (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(uploadConfigVar, L"DGNDB_REALITY_MODEL_UPLOAD"))
@@ -145,9 +172,8 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
 
             Utf8String identifier = crd.GetIdentifier();
             RealityDataByIdRequest rd = RealityDataByIdRequest(identifier);
-            Utf8String url = rd.GetHttpRequestString();
+            url = rd.GetHttpRequestString();
             BeFileName::EmptyAndRemoveDirectory(modelDir);
-
             }
         else
             {
