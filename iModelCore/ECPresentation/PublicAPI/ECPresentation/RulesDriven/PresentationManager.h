@@ -32,6 +32,14 @@ USING_NAMESPACE_BENTLEY_EC
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_UPDATE             LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE ".Update"
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_THREADS            LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE ".Threads"
 
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_WINRT) || defined(BENTLEYCONFIG_OS_ANDROID)
+    // 50 MB on mobile platforms
+    #define DEFAULT_DISK_CACHE_SIZE_LIMIT   50 * 1024 * 1024
+#else
+    // 1 GB on desktop
+    #define DEFAULT_DISK_CACHE_SIZE_LIMIT   1024 * 1024 * 1024
+#endif
+
 //__PUBLISH_SECTION_END__
 //#define RULES_ENGINE_FORCE_SINGLE_THREAD
 struct IRulesDrivenECPresentationManagerDependenciesFactory;
@@ -68,36 +76,105 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         BeFileNameCR GetAssetsDirectory() const {return m_assetsDirectory;}
         BeFileNameCR GetTemporaryDirectory() const {return m_tempDirectory;}
     };
+    
+    //===================================================================================
+    //! Parameters for RulesDrivenECPresentationManager
+    // @bsiclass                                    Grigas.Petraitis            07/2018
+    //===================================================================================
+    struct Params
+    {
+    private:
+        IConnectionManagerR m_connections;
+        Paths m_paths;
+        bool m_disableDiskCache;
+        uint64_t m_diskCacheFileSizeLimit;
+    public:
+        //! Constructor.
+        //! @param[in] connections Connection manager used by the presentation manager
+        //! @param[in] paths Known directory paths required by the presentation manager
+        Params(IConnectionManagerR connections, Paths paths)
+            : m_connections(connections), m_paths(paths)
+            {
+            m_disableDiskCache = false;
+            m_diskCacheFileSizeLimit = DEFAULT_DISK_CACHE_SIZE_LIMIT;
+            }
+        IConnectionManagerR GetConnections() const {return m_connections;}
+        Paths const& GetPaths() const {return m_paths;}
+        //! Is hierarchy caching on disk disabled
+        bool ShouldDisableDiskCache() const {return m_disableDiskCache;}
+        void SetDisableDiskCache(bool value) {m_disableDiskCache = value;}
+        //! Maximum allowed size (in bytes) of cache that's stored on disk by presentation manager.
+        //! 0 means infinite size. Defaults to DEFAULT_DISK_CACHE_SIZE_LIMIT.
+        uint64_t GetDiskCacheFileSizeLimit() const {return m_diskCacheFileSizeLimit;}
+        void SetDiskCacheFileSizeLimit(uint64_t value) {m_diskCacheFileSizeLimit = value;}
+    };
 
     //===================================================================================
     //! A helper class to help create the extended options JSON object for rules-driven
-    //! presentation manager's navigation-related request functions.
-    // @bsiclass                                    Grigas.Petraitis            03/2015
+    //! presentation manager's request functions.
+    // @bsiclass                                    Grigas.Petraitis            07/2018
     //===================================================================================
-    struct NavigationOptions : JsonCppAccessor
-        {
-        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RulesetId;
-        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RuleTargetTree;
-        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_DisableUpdates;
+    struct CommonOptions : JsonCppAccessor
+    {
+    ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RulesetId;
+    ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_Locale;
 
+    protected:
         //! Constructor. Creates a read-only accessor.
-        NavigationOptions(JsonValueCR data) : JsonCppAccessor(data) {}
+        CommonOptions(JsonValueCR data) : JsonCppAccessor(data) {}
         //! Constructor. Creates a read-write accessor.
-        NavigationOptions(JsonValueR data) : JsonCppAccessor(data) {}
+        CommonOptions(JsonValueR data) : JsonCppAccessor(data) {}
         //! Copy constructor.
-        NavigationOptions(NavigationOptions const& other) : JsonCppAccessor(other) {}
+        CommonOptions(CommonOptions const& other) : JsonCppAccessor(other) {}
         //! Constructor.
-        //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
-        //! @param[in] ruleTargetTree The target tree.
-        //! @param[in] disableUpdates True if hierarchy should not be auto-updating. (User knows that hierarchy won't change)
-        NavigationOptions(Utf8CP rulesetId, RuleTargetTree ruleTargetTree, bool disableUpdates = false) : JsonCppAccessor() {SetRulesetId(rulesetId); SetRuleTargetTree(ruleTargetTree); SetDisableUpdates(disableUpdates);}
+        //! @param[in] rulesetId The ID of the ruleset.
+        //! @param[in] locale Locale identifier
+        CommonOptions(Utf8CP rulesetId, Utf8CP locale = nullptr) : JsonCppAccessor() {SetRulesetId(rulesetId); SetLocale(locale);}
 
+    public:
         //! Is ruleset ID defined.
         bool HasRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId);}
         //! Get the ruleset ID.
         Utf8CP GetRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId) ? GetJson()[OPTION_NAME_RulesetId].asCString() : "";}
         //! Set the ruleset ID.
         void SetRulesetId(Utf8CP rulesetId) {AddMember(OPTION_NAME_RulesetId, rulesetId);}
+
+        //! Get locale identifier.
+        Utf8CP GetLocale() const {return GetJson().isMember(OPTION_NAME_Locale) ? GetJson()[OPTION_NAME_Locale].asCString() : "";}
+        //! Set locale identifier.
+        void SetLocale(Utf8CP locale) {AddMember(OPTION_NAME_Locale, locale);}
+    };
+
+    //===================================================================================
+    //! A helper class to help create the extended options JSON object for rules-driven
+    //! presentation manager's navigation-related request functions.
+    // @bsiclass                                    Grigas.Petraitis            03/2015
+    //===================================================================================
+    struct NavigationOptions : CommonOptions
+        {
+        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RuleTargetTree;
+        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_DisableUpdates;
+
+        //! Constructor. Creates a read-only accessor.
+        NavigationOptions(JsonValueCR data) : CommonOptions(data) {}
+        //! Constructor. Creates a read-write accessor.
+        NavigationOptions(JsonValueR data) : CommonOptions(data) {}
+        //! Copy constructor.
+        NavigationOptions(NavigationOptions const& other) : CommonOptions(other) {}
+        //! Constructor.
+        //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
+        //! @param[in] ruleTargetTree The target tree.
+        //! @param[in] disableUpdates True if hierarchy should not be auto-updating. (User knows that hierarchy won't change)
+        //! @param[in] locale Locale identifier
+        NavigationOptions(Utf8CP rulesetId, RuleTargetTree ruleTargetTree = TargetTree_Both, bool disableUpdates = false, Utf8CP locale = nullptr) 
+            : CommonOptions(rulesetId, locale) {SetRuleTargetTree(ruleTargetTree); SetDisableUpdates(disableUpdates);}
+        //! Constructor.
+        //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
+        //! @param[in] ruleTargetTree The target tree.
+        //! @param[in] disableUpdates True if hierarchy should not be auto-updating. (User knows that hierarchy won't change)
+        //! @param[in] locale Locale identifier
+        NavigationOptions(Utf8StringCR rulesetId, RuleTargetTree ruleTargetTree = TargetTree_Both, bool disableUpdates = false, Utf8CP locale = nullptr) 
+            : NavigationOptions(rulesetId.c_str(), ruleTargetTree, disableUpdates, locale) {}
 
         //! Get disable updates.
         bool GetDisableUpdates() const {return GetJson().isMember(OPTION_NAME_DisableUpdates) ? GetJson()[OPTION_NAME_DisableUpdates].asBool() : false;}
@@ -117,29 +194,22 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
     //! presentation manager's content-related request functions.
     // @bsiclass                                    Grigas.Petraitis            03/2015
     //===================================================================================
-    struct ContentOptions : JsonCppAccessor
+    struct ContentOptions : CommonOptions
         {
-        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RulesetId;
-
         //! Constructor. Creates a read-only accessor.
-        ContentOptions(JsonValueCR data) : JsonCppAccessor(data) {}
+        ContentOptions(JsonValueCR data) : CommonOptions(data) {}
         //! Constructor. Creates a read-write accessor.
-        ContentOptions(JsonValueR data) : JsonCppAccessor(data) {}
+        ContentOptions(JsonValueR data) : CommonOptions(data) {}
         //! Copy constructor.
-        ContentOptions(ContentOptions const& other) : JsonCppAccessor(other) {}
+        ContentOptions(ContentOptions const& other) : CommonOptions(other) {}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
-        ContentOptions(Utf8CP rulesetId) : JsonCppAccessor() {SetRulesetId(rulesetId);}
+        //! @param[in] locale Locale identifier
+        ContentOptions(Utf8CP rulesetId, Utf8CP locale = nullptr) : CommonOptions(rulesetId, locale) {}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
-        ContentOptions(Utf8StringCR rulesetId) : ContentOptions(rulesetId.c_str()) {}
-
-        //! Is ruleset ID defined.
-        bool HasRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId);}
-        //! Get the ruleset ID.
-        Utf8CP GetRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId) ? GetJson()[OPTION_NAME_RulesetId].asCString() : "";}
-        //! Set the ruleset ID.
-        void SetRulesetId(Utf8CP rulesetId) {AddMember(OPTION_NAME_RulesetId, rulesetId);}
+        //! @param[in] locale Locale identifier
+        ContentOptions(Utf8StringCR rulesetId, Utf8StringCR locale = "") : CommonOptions(rulesetId.c_str(), locale.empty() ? nullptr : locale.c_str()) {}
         };
 
 private:
@@ -188,9 +258,13 @@ public:
     //! Constructor.
     //! @param[in] connections Connection manager used by this presentation manager.
     //! @param[in] paths Application paths provider.
-    //! @param[in] disableDiskCache Is hierarchy caching on disk disabled. It's recommended to keep this enabled unless being used
-    //! for testing.
+    //! @param[in] disableDiskCache Is hierarchy caching on disk disabled. It's recommended to keep 
+    //! this enabled unless being used for testing.
     ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(IConnectionManagerR connections, Paths const& paths, bool disableDiskCache = false);
+
+    //! Constructor.
+    //! @param[in] params A object that contains various configuration parameters for the presentation manager
+    ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(Params const& params);
 
     //! Destructor.
     ECPRESENTATION_EXPORT ~RulesDrivenECPresentationManager();

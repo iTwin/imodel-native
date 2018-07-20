@@ -163,18 +163,18 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryExecutor::NavigationQueryExecutor(JsonNavNodesFactory const& nodesFactory, IConnectionCR connection, ECSqlStatementCache const& statementCache)
-    : QueryExecutor(connection, statementCache), m_nodesFactory(nodesFactory)
+NavigationQueryExecutor::NavigationQueryExecutor(JsonNavNodesFactory const& nodesFactory, IConnectionCR connection, Utf8StringCR locale, ECSqlStatementCache const& statementCache)
+    : QueryExecutor(connection, statementCache), m_nodesFactory(nodesFactory), m_locale(locale)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryExecutor::NavigationQueryExecutor(JsonNavNodesFactory const& nodesFactory, IConnectionCR connection, ECSqlStatementCache const& statementCache, NavigationQuery const& query)
-    : QueryExecutor(connection, statementCache, query), m_nodesFactory(nodesFactory), m_query(&query)
+NavigationQueryExecutor::NavigationQueryExecutor(JsonNavNodesFactory const& nodesFactory, IConnectionCR connection, Utf8StringCR locale, ECSqlStatementCache const& statementCache, NavigationQuery const& query)
+    : QueryExecutor(connection, statementCache, query), m_nodesFactory(nodesFactory), m_query(&query), m_locale(locale)
     {
-    m_reader = NavNodeReader::Create(m_nodesFactory, GetConnection(), *query.GetContract(), query.GetResultParameters().GetResultType());
+    m_reader = NavNodeReader::Create(m_nodesFactory, GetConnection(), m_locale, *query.GetContract(), query.GetResultParameters().GetResultType());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -187,7 +187,7 @@ void NavigationQueryExecutor::SetQuery(NavigationQuery const& query, bool clearC
 
     if (m_query != &query)
         {
-        m_reader = NavNodeReader::Create(m_nodesFactory, GetConnection(), *query.GetContract(), query.GetResultParameters().GetResultType());
+        m_reader = NavNodeReader::Create(m_nodesFactory, GetConnection(), m_locale, *query.GetContract(), query.GetResultParameters().GetResultType());
         m_query = &query;
         }
 

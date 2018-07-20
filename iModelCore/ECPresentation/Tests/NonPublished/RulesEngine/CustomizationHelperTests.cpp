@@ -53,7 +53,7 @@ struct CustomizationHelperTests : ECPresentationTest
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
         m_customFunctions = new CustomFunctionsInjector(m_connections, *m_connection);
         m_ruleset = PresentationRuleSet::CreateInstance("CustomizationHelperTests", 1, 0, false, "", "", "", false);
-        m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, 0, 
+        m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, "locale", 0, 
             m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, 
             m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
         m_context->SetQueryContext(m_connections, *m_connection, m_statementCache, *m_customFunctions, nullptr);
@@ -195,7 +195,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyCheckboxRules)
 TEST_F (CustomizationHelperTests, CustomizeNode_ApplyLocalization)
     {
     TestLocalizationProvider provider;
-    provider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue) { localizedValue = "localized"; return true; });
+    provider.SetHandler([](Utf8StringCR, Utf8StringCR key, Utf8StringR localizedValue) { localizedValue = "localized"; return true; });
     m_context->SetLocalizationContext(provider);
     JsonNavNodePtr node = CreateNode("@Namespace:Id@", "description", "imageId", "type");
     CustomizationHelper::Customize(*m_context, *node, false);
@@ -213,7 +213,7 @@ TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSym
     uint64_t parentNodeId = parentNode->GetNodeId();
 
     ChildNodeRule rule("", 1, false, RuleTargetTree::TargetTree_Both);
-    NavNodesProviderContextPtr childContext = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, &parentNodeId, 
+    NavNodesProviderContextPtr childContext = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, "locale", &parentNodeId, 
         m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, 
         m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
     childContext->SetQueryContext(*m_context);

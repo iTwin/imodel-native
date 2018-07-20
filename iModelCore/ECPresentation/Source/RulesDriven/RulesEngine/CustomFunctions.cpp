@@ -37,7 +37,7 @@ static void ApplyLocalization(Utf8StringR str, CustomFunctionsContext const& con
         return;
         }
 
-    LocalizationHelper helper(*context.GetLocalizationProvider(), &context.GetRuleset());
+    LocalizationHelper helper(*context.GetLocalizationProvider(), context.GetLocale(), &context.GetRuleset());
     if (!helper.LocalizeString(str))
         LoggingHelper::LogMessage(Log::Localization, Utf8PrintfString("Localization provider failed to localize string: '%s'", str.c_str()).c_str(), NativeLogging::LOG_ERROR);
     }
@@ -106,20 +106,20 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ProcessLabelOverrides(Utf8StringR label, CustomFunctionsContext const& context, ECClassId const& classId, ECInstanceId const& instanceId, Utf8CP relatedInstanceInfo)
     {
-    JsonNavNodePtr thisNode = context.GetNodesFactory().CreateECInstanceNode(context.GetConnection(), classId, instanceId, "");
+    JsonNavNodePtr thisNode = context.GetNodesFactory().CreateECInstanceNode(context.GetConnection(), context.GetLocale(), classId, instanceId, "");
     thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(context.GetConnection(), *thisNode, bvector<Utf8String>()));
     NavNodesHelper::AddRelatedInstanceInfo(*thisNode, relatedInstanceInfo);
 
     // look for label override
     ECDbExpressionSymbolContext ecdbSymbols(context.GetSchemaHelper().GetConnection().GetECDb());
     RulesPreprocessor::CustomizationRuleParameters params(context.GetConnections(), context.GetConnection(), *thisNode, context.GetParentNode(),
-        context.GetRuleset(), context.GetUserSettings(), context.GetUsedUserSettingsListener(), context.GetECExpressionsCache());
+        context.GetRuleset(), context.GetLocale(), context.GetUserSettings(), context.GetUsedUserSettingsListener(), context.GetECExpressionsCache());
     LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
     if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
         {
         // evaluate the ECExpression to get the label
         ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, context.GetParentNode(),
-            context.GetConnection(), context.GetUserSettings(), context.GetUsedUserSettingsListener());
+            context.GetConnection(), context.GetLocale(), context.GetUserSettings(), context.GetUsedUserSettingsListener());
         ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
         ECValue value;
         if (ECExpressionsHelper(context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
@@ -328,20 +328,20 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
             GroupedInstanceKeysList groupedInstanceKeys;
             groupedInstanceKeys.resize(args[1].GetValueInt64()); // note: this creates a list of invalid ECInstanceKeys. but it's okay as we only need it for count
             if (ecClass->IsRelationshipClass())
-                thisNode = GetContext().GetNodesFactory().CreateECRelationshipGroupingNode(GetContext().GetConnection().GetId(), *ecClass->GetRelationshipClassCP(), "", groupedInstanceKeys);
+                thisNode = GetContext().GetNodesFactory().CreateECRelationshipGroupingNode(GetContext().GetConnection().GetId(), GetContext().GetLocale(), *ecClass->GetRelationshipClassCP(), "", groupedInstanceKeys);
             else
-                thisNode = GetContext().GetNodesFactory().CreateECClassGroupingNode(GetContext().GetConnection().GetId(), *ecClass, "", groupedInstanceKeys);
+                thisNode = GetContext().GetNodesFactory().CreateECClassGroupingNode(GetContext().GetConnection().GetId(), GetContext().GetLocale(), *ecClass, "", groupedInstanceKeys);
 
             // create temporary key
             thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
 
             RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetConnections(), GetContext().GetConnection(), *thisNode, GetContext().GetParentNode(),
-                GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
+                GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
             LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                 {
                 ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(),
-                    GetContext().GetConnection(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+                    GetContext().GetConnection(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
                 ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
                 ECValue value;
                 if (ECExpressionsHelper(GetContext().GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
@@ -407,11 +407,11 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
         auto iter = GetCache().find(key);
         if (GetCache().end() == iter)
             {
-            JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), classId, instanceId, "");
+            JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), GetContext().GetLocale(), classId, instanceId, "");
             // create temporary key
             thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
             ECExpressionContextsProvider::CalculatedPropertyContextParameters params(*thisNode, GetContext().GetConnection(), 
-                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+                GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
             ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(params);
 
             ECValue value;
@@ -523,16 +523,16 @@ public:
             // first, look for label override
             GroupedInstanceKeysList groupedInstanceKeys;
             groupedInstanceKeys.resize(groupedInstancesCount); // note: this creates a list of invalid ECInstanceKeys. but it's okay as we only need it for count
-            JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECPropertyGroupingNode(GetContext().GetConnection().GetId(), *ecClass, *ecProperty, "", nullptr, rapidjson::Document(), false, groupedInstanceKeys);
+            JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECPropertyGroupingNode(GetContext().GetConnection().GetId(), GetContext().GetLocale(), *ecClass, *ecProperty, "", nullptr, rapidjson::Document(), false, groupedInstanceKeys);
             // create temporary node key
             thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
             RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetConnections(), GetContext().GetConnection(), *thisNode, GetContext().GetParentNode(),
-                GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
+                GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
             LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                 {
                 ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(),
-                    GetContext().GetConnection(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+                    GetContext().GetConnection(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
                 ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
                 ECValue value;
                 if (ECExpressionsHelper(GetContext().GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
@@ -1550,11 +1550,11 @@ public:
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomFunctionsContext::CustomFunctionsContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection,
-    PresentationRuleSetCR ruleset, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener,
+    PresentationRuleSetCR ruleset, Utf8String locale, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener,
     ECExpressionsCache& ecexpressionsCache, JsonNavNodesFactory const& nodesFactory, IUsedClassesListener* usedClassesListener,
     JsonNavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter)
-    : m_schemaHelper(schemaHelper), m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_userSettings(userSettings),
-    m_usedSettingsListener(usedSettingsListener), m_ecexpressionsCache(ecexpressionsCache),
+    : m_schemaHelper(schemaHelper), m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_locale(locale),
+    m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener), m_ecexpressionsCache(ecexpressionsCache),
     m_parentNode(parentNode), m_nodesFactory(nodesFactory), m_usedClassesListener(usedClassesListener),
     m_extendedData(queryExtendedData), m_localizationProvider(nullptr), m_propertyFormatter(formatter)
     {

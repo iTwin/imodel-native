@@ -737,6 +737,7 @@ TEST_F(DefaultECPresentationSerializerTests, DisplayLabelFieldSerialization)
         "IsReadOnly": true,
         "Priority": 10
         })");
+    expected["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_Miscellaneous().m_str).c_str(), expected.GetAllocator());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -770,6 +771,7 @@ TEST_F(DefaultECPresentationSerializerTests, CalculatedPropertyFieldSerializatio
         "IsReadOnly": true,
         "Priority": 10
         })");
+    expected["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_Miscellaneous().m_str).c_str(), expected.GetAllocator());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -1107,6 +1109,7 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentFieldSerialization)
     expected["PathToPrimary"][0]["SourceClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
     expected["PathToPrimary"][0]["TargetClassInfo"]["Id"].SetString(testClassB->GetId().ToString().c_str(), expected.GetAllocator());
     expected["PathToPrimary"][0]["RelationshipInfo"]["Id"].SetString(relClassAClassB->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["NestedFields"][0]["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_Miscellaneous().m_str).c_str(), expected.GetAllocator());
     expected["NestedFields"][1]["Properties"][0]["Property"]["BaseClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
     expected["NestedFields"][1]["Properties"][0]["Property"]["ActualClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
 
@@ -1148,6 +1151,7 @@ TEST_F(DefaultECPresentationSerializerTests, DisplayLabelFieldSerializationHasCo
             "Params": {}
             }
         })");
+    expected["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_Miscellaneous().m_str).c_str(), expected.GetAllocator());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -2131,12 +2135,14 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
         "FilterExpression": "ExpressionText",
         "InputKeysHash": "",
         "ContentOptions": {
-            "RulesetId": "rulesetIdText"
+            "RulesetId": "rulesetIdText",
+            "Locale": ""
             }
         })");
 
     expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
     expected["InputKeysHash"].SetString(container->GetHash().c_str(), expected.GetAllocator());
+    expected["Fields"][0]["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_Miscellaneous().m_str).c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["SelectClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["PathToPrimaryClass"][0]["SourceClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["PathToPrimaryClass"][0]["TargetClassInfo"]["Id"].SetString(testClassB->GetId().ToString().c_str(), expected.GetAllocator());
@@ -2176,7 +2182,8 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationWithS
         "FilterExpression": "",
         "InputKeysHash": "",
         "ContentOptions": {
-            "RulesetId": "rulesetIdText"
+            "RulesetId": "rulesetIdText",
+            "Locale": ""
             },
         "SelectionInfo": {
             "SelectionProvider": "ProviderNameText",
@@ -2334,7 +2341,8 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSerialization)
             "FilterExpression": "",
             "InputKeysHash": "d41d8cd98f00b204e9800998ecf8427e",
             "ContentOptions": {
-                "RulesetId": "rulesetIdText"
+                "RulesetId": "rulesetIdText",
+                "Locale": ""
                 }
             },
         "ContentSet": [{
@@ -2387,7 +2395,8 @@ TEST_F(DefaultECPresentationSerializerTests, ContenteSerializationContentSetItem
             "FilterExpression": "",
             "InputKeysHash": "d41d8cd98f00b204e9800998ecf8427e",
             "ContentOptions": {
-                "RulesetId": "rulesetIdText"
+                "RulesetId": "rulesetIdText",
+                "Locale": ""
                 }
             },
         "ContentSet": []

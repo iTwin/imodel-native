@@ -399,7 +399,7 @@ folly::Future<ECInstanceChangeResult> IECPresentationManager::SaveValueChange(EC
         if (result.empty())
             {
             BeAssert(false);
-            return ECInstanceChangeResult::Error(IECPresentationManager::GetLocalizationProvider().GetString(bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()}));
+            return ECInstanceChangeResult::Error(IECPresentationManager::GetLocalizationProvider().GetString("", bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()}));
             }
         return result[0];
         });
@@ -429,7 +429,7 @@ folly::Future<ECInstanceChangeResult> IECPresentationManager::SaveValueChange(EC
         if (result.empty())
             {
             BeAssert(false);
-            return ECInstanceChangeResult::Error(IECPresentationManager::GetLocalizationProvider().GetString(bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()}));
+            return ECInstanceChangeResult::Error(IECPresentationManager::GetLocalizationProvider().GetString("", bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()}));
             }
         return result[0];
         });
@@ -450,7 +450,7 @@ folly::Future<bvector<ECInstanceChangeResult>> IECPresentationManager::SaveValue
         {
         BeAssert(false && "Failed to determine the changed property or it's not primitive");
         return bvector<ECInstanceChangeResult>(instanceInfos.size(), 
-            ECInstanceChangeResult::Error(IECPresentationManager::GetLocalizationProvider().GetString(bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::ERROR_General_Unknown()})));
+            ECInstanceChangeResult::Error(IECPresentationManager::GetLocalizationProvider().GetString("", bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::ERROR_General_Unknown()})));
         }
     ECValue ecValue = ValueHelpers::GetECValueFromJson(*prop, value);
     return SaveValueChange(db, instanceInfos, propertyAccessor, ecValue, extendedOptions);

@@ -91,7 +91,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
     {
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
         descriptor.GetPreferredDisplayType().c_str(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
-        m_params.GetLocalizationProvider(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
+        m_params.GetLocalizationProvider(), m_params.GetLocale(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
     ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification, input);
     if (specificationDescriptor.IsNull())
         return nullptr;
@@ -158,7 +158,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
     {
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
         descriptor.GetPreferredDisplayType().c_str(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
-        m_params.GetLocalizationProvider(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
+        m_params.GetLocalizationProvider(), m_params.GetLocale(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
     ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification, input);
     if (specificationDescriptor.IsNull())
         return nullptr;
@@ -217,7 +217,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
     {
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
         descriptor.GetPreferredDisplayType().c_str(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
-        m_params.GetLocalizationProvider(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
+        m_params.GetLocalizationProvider(), m_params.GetLocale(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
     ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification);
     if (specificationDescriptor.IsNull())
         return nullptr;
@@ -262,7 +262,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentDescriptor::NestedConten
     {
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
         ContentDisplayType::Undefined, m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
-        m_params.GetLocalizationProvider(), *NavNodeKeyListContainer::Create(), nullptr);
+        m_params.GetLocalizationProvider(), m_params.GetLocale(), *NavNodeKeyListContainer::Create(), nullptr);
     ContentDescriptorPtr descriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(contentField);
     if (!descriptor.IsValid())
         return nullptr;

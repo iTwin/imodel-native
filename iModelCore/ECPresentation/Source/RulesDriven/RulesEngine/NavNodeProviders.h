@@ -60,7 +60,7 @@ private:
     ChildNodeRuleCP m_childNodeRule;
 
     // ECDb context
-    NavigationQueryBuilder* m_queryBuilder;
+    mutable NavigationQueryBuilder* m_queryBuilder;
     ECDbUsedClassesListenerWrapper* m_usedClassesListener;
 
     // Update context
@@ -68,16 +68,17 @@ private:
 
 private:
     void Init();
-    ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, bool, RuleTargetTree, uint64_t const*, IUserSettings const&, ECExpressionsCache&, 
+    ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, bool, RuleTargetTree, Utf8String, uint64_t const*, IUserSettings const&, ECExpressionsCache&, 
         RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IHierarchyCache&, INodesProviderFactoryCR, IJsonLocalState const*);
     ECPRESENTATION_EXPORT NavNodesProviderContext(NavNodesProviderContextCR other);
     
 public:
-    static NavNodesProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, RuleTargetTree targetTree, uint64_t const* physicalParentId, IUserSettings const& userSettings, 
-        ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache,
-        JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache, INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState) 
+    static NavNodesProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, RuleTargetTree targetTree, Utf8String locale, uint64_t const* physicalParentId, 
+        IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, 
+        PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache, 
+        INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState) 
         {
-        return new NavNodesProviderContext(ruleset, holdRuleset, targetTree, physicalParentId, userSettings, ecexpressionsCache, 
+        return new NavNodesProviderContext(ruleset, holdRuleset, targetTree, locale, physicalParentId, userSettings, ecexpressionsCache, 
             relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, nodesCache, providerFactory, localState);
         }
     static NavNodesProviderContextPtr Create(NavNodesProviderContextCR other) {return new NavNodesProviderContext(other);}
@@ -124,7 +125,7 @@ public:
     // ECDb context
     ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR, ECSqlStatementCache const&, CustomFunctionsInjector&, IECDbUsedClassesListener*);
     ECPRESENTATION_EXPORT void SetQueryContext(NavNodesProviderContextCR other);
-    NavigationQueryBuilder& GetQueryBuilder() const {BeAssert(IsQueryContext()); return *m_queryBuilder;}
+    NavigationQueryBuilder& GetQueryBuilder() const;
     IUsedClassesListener* GetUsedClassesListener() const;
 
     // Update context
@@ -139,14 +140,14 @@ public:
 struct INodesProviderContextFactory
 {
 protected:
-    virtual NavNodesProviderContextPtr _Create(IConnectionCR, Utf8CP rulesetId, uint64_t const* parentNodeId, 
+    virtual NavNodesProviderContextPtr _Create(IConnectionCR, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId, 
         ICancelationTokenCP, bool disableUpdates) const = 0;
 public:
     virtual ~INodesProviderContextFactory() {}
-    NavNodesProviderContextPtr Create(IConnectionCR connection, Utf8CP rulesetId, uint64_t const* parentNodeId, 
+    NavNodesProviderContextPtr Create(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId, 
         ICancelationTokenCP cancelationToken = nullptr, bool disableUpdates = false) const 
         {
-        return _Create(connection, rulesetId, parentNodeId, cancelationToken, disableUpdates);
+        return _Create(connection, rulesetId, locale, parentNodeId, cancelationToken, disableUpdates);
         }
 };
 
@@ -163,7 +164,19 @@ enum HasChildrenFlag
 struct NodesCountContext;
 struct NodesCheckContext;
 struct DisabledFullNodesLoadContext;
-struct DataSourceRelatedSettingsUpdater;
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                07/2017
++===============+===============+===============+===============+===============+======*/
+struct DataSourceRelatedSettingsUpdater
+    {
+    DataSourceInfo const& m_datasourceInfo;
+    NavNodesProviderContextCR m_context;
+    size_t m_relatedSettingsCountBefore;
+
+    DataSourceRelatedSettingsUpdater(DataSourceInfo const& info, NavNodesProviderContextCR context);
+    ~DataSourceRelatedSettingsUpdater();
+    };
 
 /*=================================================================================**//**
 * Abstract class for navigation node providers.
@@ -176,7 +189,6 @@ struct NavNodesProvider : RefCountedBase
     friend struct NodesCountContext;
     friend struct NodesCheckContext;
     friend struct DisabledFullNodesLoadContext;
-    friend struct DataSourceRelatedSettingsUpdater;
 
 private:
     NavNodesProviderContextPtr m_context;
@@ -188,7 +200,6 @@ private:
 protected:
     ECPRESENTATION_EXPORT NavNodesProvider(NavNodesProviderContextCR context);
     DataSourceInfo& GetDataSourceInfo() {return m_datasourceInfo;}
-    DataSourceInfo const& GetDataSourceInfo() const {return m_datasourceInfo;}
     void SetDataSourceInfo(DataSourceInfo info) {m_datasourceInfo = info;}
     HasChildrenFlag AnyChildSpecificationReturnsNodes(JsonNavNode const& parentNode, bool isParentPhysical) const;
     NavNodesProviderCR GetRootBaseProvider() const;
@@ -207,6 +218,7 @@ public:
     virtual ~NavNodesProvider() {}
     NavNodesProviderContextR GetContextR() const {return *m_context;}
     NavNodesProviderContextCR GetContext() const {return GetContextR();}
+    DataSourceInfo const& GetDataSourceInfo() const {return m_datasourceInfo;}
     MultiNavNodesProviderCP AsMultiProvider() const {return _AsMultiProvider();}
     EmptyNavNodesProviderCP AsEmptyProvider() const {return _AsEmptyProvider();}
     SingleNavNodeProviderCP AsSingleProvider() const {return _AsSingleProvider();}

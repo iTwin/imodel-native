@@ -46,6 +46,7 @@ struct ContentSpecificationsHandler
         IConnectionManagerCR m_connections;
         IConnectionCR m_connection;
         PresentationRuleSetCR m_ruleset;
+        Utf8String m_locale;
         Utf8CP m_preferredDisplayType;
         ECSchemaHelper const& m_helper;
         bmap<ECClassCP, size_t> m_classCounter;
@@ -55,12 +56,13 @@ struct ContentSpecificationsHandler
         bmap<ECClassCP, bvector<RelatedClass>> m_handledNavigationPropertiesPaths;
 
     public:
-        Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType) 
-            : m_helper(helper), m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_preferredDisplayType(preferredDisplayType)
+        Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8String locale, Utf8CP preferredDisplayType) 
+            : m_helper(helper), m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_locale(locale), m_preferredDisplayType(preferredDisplayType)
             {}
         IConnectionManagerCR GetConnections() const {return m_connections;}
         IConnectionCR GetConnection() const {return m_connection;}
         PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
+        Utf8StringCR GetLocale() const {return m_locale;}
         Utf8CP GetPreferredDisplayType() const {return m_preferredDisplayType;}
         void SetPreferredDisplayType(Utf8CP value) {m_preferredDisplayType = value;}
         ECSchemaHelper const& GetSchemaHelper() const {return m_helper;}

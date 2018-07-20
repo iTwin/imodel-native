@@ -44,7 +44,7 @@ struct IUserSettings
 protected:
     virtual ~IUserSettings() {}
 
-    virtual Json::Value _GetPresentationInfo() const = 0;
+    virtual Json::Value _GetPresentationInfo(Utf8StringCR locale) const = 0;
 
     virtual bool _HasSetting(Utf8CP id) const = 0;
 
@@ -62,7 +62,7 @@ protected:
 
 public:
     //! Get the presentation info for user settings stored in this instance.
-    Json::Value GetPresentationInfo() const {return _GetPresentationInfo();}
+    Json::Value GetPresentationInfo(Utf8StringCR locale) const {return _GetPresentationInfo(locale);}
 
     //! Is there a user setting with the specified id.
     bool HasSetting(Utf8CP id) const {return _HasSetting(id);}
@@ -111,12 +111,13 @@ private:
     mutable BeMutex m_mutex;
 
 private:
-    void AddValues(JsonValueR json) const;
-    Utf8String GetLocalizedLabel(Utf8StringCR nonLocalizedLabel) const;
+    void LocalizeLabels(JsonValueR, Utf8StringCR locale) const;
+    void AddValues(JsonValueR) const;
+    Utf8String GetLocalizedLabel(Utf8StringCR nonLocalizedLabel, Utf8StringCR locale) const;
     void InitFromJson(UserSettingsGroupList const& rules, JsonValueR presentationObj);
 
 protected:
-    ECPRESENTATION_EXPORT Json::Value _GetPresentationInfo() const override;
+    ECPRESENTATION_EXPORT Json::Value _GetPresentationInfo(Utf8StringCR locale) const override;
     ECPRESENTATION_EXPORT bool _HasSetting(Utf8CP id) const override;
     ECPRESENTATION_EXPORT void _InitFrom(UserSettingsGroupList const&) override;
     ECPRESENTATION_EXPORT void _SetSettingValue(Utf8CP id, Utf8CP value) override;

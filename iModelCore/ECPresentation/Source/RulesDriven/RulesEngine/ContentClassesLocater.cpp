@@ -254,7 +254,7 @@ bvector<NavNodeKeyCPtr> ContentClassesLocater::GetClassKeys(bvector<ECClassCP> c
 bvector<SelectClassInfo> ContentClassesLocater::Locate(bvector<ECClassCP> const& classes) const
     {
     RulesPreprocessor::ContentRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), *NavNodeKeyListContainer::Create(GetClassKeys(classes)), 
-        m_context.GetPreferredDisplayType(), nullptr, m_context.GetRuleset(), m_context.GetUserSettings(), 
+        m_context.GetPreferredDisplayType(), nullptr, m_context.GetRuleset(), m_context.GetLocale(), m_context.GetUserSettings(), 
         nullptr, m_context.GetECExpressionsCache(), m_context.GetNodesLocater());
     ContentRuleInputKeysList ruleSpecs = RulesPreprocessor::GetContentSpecifications(params);
 

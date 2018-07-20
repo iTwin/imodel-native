@@ -227,7 +227,7 @@ TEST_F(UserSettingsTests, InitializesFromRules)
     expectedPresentationInfo[1]["Items"][1]["Options"] = "IntValue";
     expectedPresentationInfo[1]["Items"][1]["Value"] = 999;
 
-    Json::Value actualInfo = GetSettings().GetPresentationInfo();
+    Json::Value actualInfo = GetSettings().GetPresentationInfo("locale");
     EXPECT_TRUE(expectedPresentationInfo == actualInfo)
         << "Expected: " << Json::StyledWriter().write(expectedPresentationInfo).c_str() << "\r\n"
         << "Actual:   " << Json::StyledWriter().write(actualInfo).c_str();
@@ -278,7 +278,7 @@ TEST_F(UserSettingsTests, InitializesFromNestedRules)
     expectedPresentationInfo[0]["NestedGroups"][0]["Items"][1]["Options"] = "TrueFalse";
     expectedPresentationInfo[0]["NestedGroups"][0]["Items"][1]["Value"] = false;
     
-    Json::Value actualInfo = GetSettings().GetPresentationInfo();
+    Json::Value actualInfo = GetSettings().GetPresentationInfo("locale");
     EXPECT_TRUE(expectedPresentationInfo == actualInfo)
         << "Expected: " << Json::StyledWriter().write(expectedPresentationInfo).c_str() << "\r\n"
         << "Actual:   " << Json::StyledWriter().write(actualInfo).c_str();
@@ -326,7 +326,7 @@ TEST_F(UserSettingsTests, InitializesFromRulesWithDefaults)
     GetSettings().InitFrom(rules);
 
     // additionally, check if Item5_Id has the "options" value "TrueFalse"
-    Json::Value presentationInfo = GetSettings().GetPresentationInfo();
+    Json::Value presentationInfo = GetSettings().GetPresentationInfo("locale");
     ASSERT_STREQ("TrueFalse", presentationInfo[0]["Items"][4]["Options"].asCString());
 
     for (UserSettingsGroupCP rule : rules)
@@ -362,8 +362,9 @@ TEST_F(UserSettingsTests, InitializingFromRulesDoesntOverwriteLocalStateValues)
 TEST_F(UserSettingsTests, LocalizesLabels)
     {
     TestLocalizationProvider localizationProvider;
-    localizationProvider.SetHandler([](Utf8StringCR id, Utf8StringR str)
+    localizationProvider.SetHandler([](Utf8StringCR locale, Utf8StringCR id, Utf8StringR str)
         {
+        EXPECT_STREQ("test locale", locale.c_str());
         if (id.Equals("Group:LabelId"))
             {
             str = "LocalizedGroupLabel";
@@ -384,7 +385,7 @@ TEST_F(UserSettingsTests, LocalizesLabels)
     rules.push_back(group);
     
     GetSettings().InitFrom(rules);
-    Json::Value presentationInfo = GetSettings().GetPresentationInfo();
+    Json::Value presentationInfo = GetSettings().GetPresentationInfo("test locale");
     ASSERT_STREQ("LocalizedGroupLabel", presentationInfo[0]["Label"].asCString());
     ASSERT_STREQ("LocalizedItemLabel", presentationInfo[0]["Items"][0]["Label"].asCString());
 

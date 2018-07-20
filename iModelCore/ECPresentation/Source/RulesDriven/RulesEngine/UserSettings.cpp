@@ -281,7 +281,31 @@ void UserSettings::AddValues(JsonValueR groupListJson) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value UserSettings::_GetPresentationInfo() const
+void UserSettings::LocalizeLabels(JsonValueR groupListJson, Utf8StringCR locale) const
+    {
+    for (Json::ArrayIndex i = 0; i < groupListJson.size(); i++)
+        {
+        JsonValueR groupJson = groupListJson[i];
+        if (groupJson.isMember("Label"))
+            groupJson["Label"] = GetLocalizedLabel(groupJson["Label"].asCString(), locale);
+        if (groupJson.isMember("Items"))
+            {
+            for (Json::ArrayIndex j = 0; j < groupJson["Items"].size(); j++)
+                {
+                JsonValueR itemJson = groupJson["Items"][j];
+                if (itemJson.isMember("Label"))
+                    itemJson["Label"] = GetLocalizedLabel(itemJson["Label"].asCString(), locale);
+                }
+            }
+        if (groupJson.isMember("NestedGroups"))
+            LocalizeLabels(groupJson["NestedGroups"], locale);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value UserSettings::_GetPresentationInfo(Utf8StringCR locale) const
     {
     BeMutexHolder lock(m_mutex);
 
@@ -292,6 +316,7 @@ Json::Value UserSettings::_GetPresentationInfo() const
         }
 
     Json::Value json = m_presentationInfo;
+    LocalizeLabels(json, locale);
     AddValues(json);
     return json;
     }
@@ -299,7 +324,7 @@ Json::Value UserSettings::_GetPresentationInfo() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UserSettings::GetLocalizedLabel(Utf8StringCR nonLocalizedLabel) const
+Utf8String UserSettings::GetLocalizedLabel(Utf8StringCR nonLocalizedLabel, Utf8StringCR locale) const
     {
     if (nullptr == m_localizationProvider)
         {
@@ -308,7 +333,7 @@ Utf8String UserSettings::GetLocalizedLabel(Utf8StringCR nonLocalizedLabel) const
         }
 
     Utf8String localizedLabel = nonLocalizedLabel;
-    LocalizationHelper helper(*m_localizationProvider);
+    LocalizationHelper helper(*m_localizationProvider, locale);
     return helper.LocalizeString(localizedLabel) ? localizedLabel : nonLocalizedLabel;
     }
 
@@ -340,7 +365,7 @@ void UserSettings::InitFromJson(UserSettingsGroupList const& rules, JsonValueR p
     for (UserSettingsGroupCP group : rules)
         {
         Json::Value groupJson(Json::objectValue);
-        groupJson["Label"] = GetLocalizedLabel(group->GetCategoryLabel());
+        groupJson["Label"] = group->GetCategoryLabel();
         if (!group->GetSettingsItems().empty())
             groupJson["Items"] = Json::Value(Json::arrayValue);
 
@@ -369,7 +394,7 @@ void UserSettings::InitFromJson(UserSettingsGroupList const& rules, JsonValueR p
             // create the presentation info
             Json::Value itemPresentationInfo(Json::objectValue);
             itemPresentationInfo["Id"] = item->GetId();
-            itemPresentationInfo["Label"] = GetLocalizedLabel(item->GetLabel());
+            itemPresentationInfo["Label"] = item->GetLabel();
             itemPresentationInfo["Options"] = item->GetOptions().empty() ? "TrueFalse" : item->GetOptions();
             groupJson["Items"].append(itemPresentationInfo);
             }

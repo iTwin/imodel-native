@@ -46,6 +46,7 @@ struct RulesDrivenECPresentationManagerDependenciesFactory : IRulesDrivenECPrese
 struct RulesDrivenECPresentationManager::Impl
 {
     typedef RulesDrivenECPresentationManager::Paths Paths;
+    typedef RulesDrivenECPresentationManager::Params Params;
     typedef RulesDrivenECPresentationManager::NavigationOptions NavigationOptions;
     typedef RulesDrivenECPresentationManager::ContentOptions ContentOptions;
     struct CompositeUpdateRecordsHandler;
@@ -97,7 +98,7 @@ protected:
 /**/
 
 public:
-    ECPRESENTATION_EXPORT Impl(IRulesDrivenECPresentationManagerDependenciesFactory const&, IConnectionManagerCR, Paths const&);
+    ECPRESENTATION_EXPORT Impl(IRulesDrivenECPresentationManagerDependenciesFactory const&, Params const&);
     ECPRESENTATION_EXPORT virtual ~Impl();
 
     IUserSettingsManager& GetUserSettingsManager() const {return *m_userSettings;}
@@ -251,7 +252,7 @@ protected:
     ECPRESENTATION_EXPORT void _OnCategoriesChanged() override;
 
 public:
-    ECPRESENTATION_EXPORT RulesDrivenECPresentationManagerImpl(IRulesDrivenECPresentationManagerDependenciesFactory const&, IConnectionManagerCR, Paths const&, bool disableDiskCache = false);
+    ECPRESENTATION_EXPORT RulesDrivenECPresentationManagerImpl(IRulesDrivenECPresentationManagerDependenciesFactory const&, Params const&);
     ECPRESENTATION_EXPORT ~RulesDrivenECPresentationManagerImpl();
     NodesCache& GetNodesCache() {return *m_nodesCache;}
     UpdateHandler& GetUpdateHandler() const {return *m_updateHandler;}

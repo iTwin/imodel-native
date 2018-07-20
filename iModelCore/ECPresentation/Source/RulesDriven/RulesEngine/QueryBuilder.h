@@ -36,15 +36,16 @@ private:
     IConnectionManagerCR m_connections;
     IConnectionCR m_connection;
     PresentationRuleSetCP m_ruleset;
+    Utf8String m_locale;
     IUserSettings const& m_userSettings;
     ECExpressionsCache& m_ecexpressionsCache;
     IJsonLocalState const* m_localState;
 
 public:
     QueryBuilderParameters(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, 
-        IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, IJsonLocalState const* localState = nullptr) 
-        : m_schemaHelper(schemaHelper), m_connections(connections), m_connection(connection), m_ruleset(&ruleset), m_userSettings(userSettings), 
-        m_ecexpressionsCache(ecexpressionsCache), m_localState(localState)
+        Utf8String locale, IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, IJsonLocalState const* localState = nullptr) 
+        : m_schemaHelper(schemaHelper), m_connections(connections), m_connection(connection), m_ruleset(&ruleset), m_locale(locale),
+        m_userSettings(userSettings), m_ecexpressionsCache(ecexpressionsCache), m_localState(localState)
         {}
     void SetRuleset(PresentationRuleSetCR ruleset) {m_ruleset = &ruleset;}
     void SetLocalState(IJsonLocalState const& localState) {m_localState = &localState;}
@@ -52,6 +53,7 @@ public:
     IConnectionManagerCR GetConnections() const {return m_connections;}
     IConnectionCR GetConnection() const {return m_connection;}
     PresentationRuleSetCR GetRuleset() const {return *m_ruleset;}
+    Utf8StringCR GetLocale() const {return m_locale;}
     IUserSettings const& GetUserSettings() const {return m_userSettings;}
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     IJsonLocalState const* GetLocalState() const {return m_localState;}
@@ -68,9 +70,9 @@ private:
     IUsedUserSettingsListener* m_usedSettingsListener;
 public:
     NavigationQueryBuilderParameters(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, 
-        IUserSettings const& userSettings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache, 
+        Utf8String locale, IUserSettings const& userSettings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache, 
         IHierarchyCacheCR nodesCache, IJsonLocalState const* localState = nullptr) 
-        : QueryBuilderParameters(schemaHelper, connections, connection, ruleset, userSettings, ecexpressionsCache, localState), m_nodesCache(nodesCache), 
+        : QueryBuilderParameters(schemaHelper, connections, connection, ruleset, locale, userSettings, ecexpressionsCache, localState), m_nodesCache(nodesCache), 
         m_usedClassesListener(nullptr), m_usedSettingsListener(settingsListener)
         {}
     IHierarchyCacheCR GetNodesCache() const {return m_nodesCache;}
@@ -155,8 +157,8 @@ struct ContentDescriptorBuilder
         SelectionInfo const* m_selectionInfo;
     public:
         Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType, IPropertyCategorySupplierR categorySupplier,
-            IECPropertyFormatter const* propertyFormatter, ILocalizationProvider const* localizationProvider, INavNodeKeysContainerCR input, SelectionInfo const* selection) 
-            : ContentSpecificationsHandler::Context(helper, connections, connection, ruleset, preferredDisplayType), m_categorySupplier(categorySupplier), 
+            IECPropertyFormatter const* propertyFormatter, ILocalizationProvider const* localizationProvider, Utf8String locale, INavNodeKeysContainerCR input, SelectionInfo const* selection) 
+            : ContentSpecificationsHandler::Context(helper, connections, connection, ruleset, locale, preferredDisplayType), m_categorySupplier(categorySupplier), 
             m_propertyFormatter(propertyFormatter), m_localizationProvider(localizationProvider), m_inputKeys(&input), m_selectionInfo(selection)
             {}
         IPropertyCategorySupplierR GetCategorySupplier() const {return m_categorySupplier;}
@@ -191,11 +193,11 @@ private:
     IPropertyCategorySupplierR m_categorySupplier;
     IECPropertyFormatter const* m_formatter;
 public:
-    ContentQueryBuilderParameters(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, INavNodeLocaterCR nodesLocater, IConnectionCR connection, PresentationRuleSetCR ruleset, 
-        IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, IPropertyCategorySupplierR categorySupplier, 
+    ContentQueryBuilderParameters(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, INavNodeLocaterCR nodesLocater, IConnectionCR connection, 
+        PresentationRuleSetCR ruleset, Utf8String locale, IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, IPropertyCategorySupplierR categorySupplier, 
         IECPropertyFormatter const* formatter, IJsonLocalState const* localState = nullptr, ILocalizationProvider const* localizationProvider = nullptr)
-        : QueryBuilderParameters(schemaHelper, connections, connection, ruleset, userSettings, ecexpressionsCache, localState), m_categorySupplier(categorySupplier), 
-        m_formatter(formatter), m_nodesLocater(nodesLocater), m_localizationProvider(localizationProvider)
+        : QueryBuilderParameters(schemaHelper, connections, connection, ruleset, locale, userSettings, ecexpressionsCache, localState), 
+        m_categorySupplier(categorySupplier), m_formatter(formatter), m_nodesLocater(nodesLocater), m_localizationProvider(localizationProvider)
         {}
     void SetLoacalizationProvider(ILocalizationProvider const* localizationProvider) {m_localizationProvider = localizationProvider;}
     INavNodeLocaterCR GetNodesLocater() const {return m_nodesLocater;}
