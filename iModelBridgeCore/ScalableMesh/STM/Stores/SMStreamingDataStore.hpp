@@ -141,7 +141,7 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
 
         this->m_projectID = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProjectID();
         }
-    else if (url.ContainsI(L"http://"))
+    else if (url.StartsWith(L"http") || url.StartsWith(L"https"))
         {
         this->m_location = ServerLocation::HTTP_SERVER;
         this->m_commMethod = CommMethod::CURL;
