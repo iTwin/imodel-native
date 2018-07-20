@@ -38,6 +38,8 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcManipulationStrategy();
 
+        static bool PointsOnLine(DPoint3dCR, DPoint3dCR, DPoint3dCR);
+
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
 

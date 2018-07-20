@@ -492,3 +492,101 @@ TEST_F(GeometryUtilsTests, GetBodySlice)
         ASSERT_DOUBLE_EQ(sliceRange.high.z, 50);
         }
     }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryUtilsTests, GetUpwardSlice)
+    {
+    DgnBoxDetail boxDetail = DgnBoxDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, 100), DVec3d::UnitX(), DVec3d::UnitY(),
+                                          200, 200, 200, 200, true);
+    ISolidPrimitivePtr boxSolidPrimitive = ISolidPrimitive::CreateDgnBox(boxDetail);
+    ASSERT_TRUE(boxSolidPrimitive.IsValid());
+    GeometricPrimitivePtr boxGeomPrimitive = GeometricPrimitive::Create(boxSolidPrimitive);
+    ASSERT_TRUE(boxGeomPrimitive.IsValid());
+    IBRepEntityPtr boxSolid;
+    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(boxSolid, boxGeomPrimitive, true);
+    ASSERT_TRUE(boxSolid.IsValid());
+
+    if (true)
+        {
+        IBRepEntityPtr slice = DgnGeometryUtils::GetUpwardSlice(*boxSolid, 10);
+        ASSERT_TRUE(slice.IsValid());
+        DRange3d sliceRange = slice->GetEntityRange();
+        ASSERT_DOUBLE_EQ(sliceRange.low.z, 10);
+        ASSERT_DOUBLE_EQ(sliceRange.high.z, 100);
+        }
+
+    if (true)
+        {
+        IBRepEntityPtr slice = DgnGeometryUtils::GetUpwardSlice(*boxSolid, -5);
+        ASSERT_TRUE(slice.IsValid());
+        DRange3d sliceRange = slice->GetEntityRange();
+        ASSERT_DOUBLE_EQ(sliceRange.low.z, 0);
+        ASSERT_DOUBLE_EQ(sliceRange.high.z, 100);
+        }
+
+    if (true)
+        {
+        IBRepEntityPtr slice = DgnGeometryUtils::GetUpwardSlice(*boxSolid, 105);
+        ASSERT_TRUE(slice.IsNull());
+        }
+
+    if (true)
+        {
+        IBRepEntityPtr slice = DgnGeometryUtils::GetUpwardSlice(*boxSolid, 100);
+        ASSERT_TRUE(slice.IsValid());
+        DRange3d sliceRange = slice->GetEntityRange();
+        ASSERT_DOUBLE_EQ(sliceRange.low.z, 100);
+        ASSERT_DOUBLE_EQ(sliceRange.high.z, 100);
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryUtilsTests, GetDownwardSlice)
+    {
+    DgnBoxDetail boxDetail = DgnBoxDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, 100), DVec3d::UnitX(), DVec3d::UnitY(),
+                                          200, 200, 200, 200, true);
+    ISolidPrimitivePtr boxSolidPrimitive = ISolidPrimitive::CreateDgnBox(boxDetail);
+    ASSERT_TRUE(boxSolidPrimitive.IsValid());
+    GeometricPrimitivePtr boxGeomPrimitive = GeometricPrimitive::Create(boxSolidPrimitive);
+    ASSERT_TRUE(boxGeomPrimitive.IsValid());
+    IBRepEntityPtr boxSolid;
+    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(boxSolid, boxGeomPrimitive, true);
+    ASSERT_TRUE(boxSolid.IsValid());
+
+    if (true)
+        {
+        IBRepEntityPtr slice = DgnGeometryUtils::GetDownwardSlice(*boxSolid, 10);
+        ASSERT_TRUE(slice.IsValid());
+        DRange3d sliceRange = slice->GetEntityRange();
+        ASSERT_DOUBLE_EQ(sliceRange.low.z, 0);
+        ASSERT_DOUBLE_EQ(sliceRange.high.z, 10);
+        }
+
+    if (true)
+        {
+        IBRepEntityPtr slice = DgnGeometryUtils::GetDownwardSlice(*boxSolid, 105);
+        ASSERT_TRUE(slice.IsValid());
+        DRange3d sliceRange = slice->GetEntityRange();
+        ASSERT_DOUBLE_EQ(sliceRange.low.z, 0);
+        ASSERT_DOUBLE_EQ(sliceRange.high.z, 100);
+        }
+
+    if (true)
+        {
+        IBRepEntityPtr slice = DgnGeometryUtils::GetDownwardSlice(*boxSolid, -5);
+        ASSERT_TRUE(slice.IsNull());
+        }
+
+    if (true)
+        {
+        IBRepEntityPtr slice = DgnGeometryUtils::GetDownwardSlice(*boxSolid, 0);
+        ASSERT_TRUE(slice.IsValid());
+        DRange3d sliceRange = slice->GetEntityRange();
+        ASSERT_DOUBLE_EQ(sliceRange.low.z, 0);
+        ASSERT_DOUBLE_EQ(sliceRange.high.z, 0);
+        }
+    }
