@@ -693,6 +693,31 @@ TEST_F(ArcStartMidEndPlacementStrategyTests, FixedSweep)
     ASSERT_DOUBLE_EQ(arc.sweep, Angle::TwoPi());
     }
 
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcStartMidEndPlacementStrategyTests, FinishPrimitive_3InlinePoints_IsInvalid)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartMidEnd);
+    ASSERT_TRUE(sut.IsValid());
+
+    DVec3d normal;
+    DVec3d expectedNormal = DVec3d::From(0, 0, 1);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+
+    ASSERT_FALSE(sut->IsComplete());
+    sut->AddKeyPoint({0,0,0});
+    sut->AddKeyPoint({1,0,0});
+    sut->AddDynamicKeyPoint({1,0,0});
+    ASSERT_TRUE(sut->FinishPrimitive().IsNull());
+    ASSERT_TRUE(sut->FinishGeometry().IsNull());
+
+    sut->AddKeyPoint({2,0,0});
+    ASSERT_TRUE(sut->FinishPrimitive().IsNull());
+    ASSERT_TRUE(sut->FinishGeometry().IsNull());
+    }
+
 #pragma endregion
 
 #pragma region Arc_StartEndMid_PlacementStrategy

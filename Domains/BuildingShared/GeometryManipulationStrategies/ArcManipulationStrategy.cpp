@@ -60,6 +60,25 @@ ArcManipulationStrategyPtr ArcManipulationStrategy::Create
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ArcManipulationStrategy::PointsOnLine
+(
+    DPoint3dCR p1, 
+    DPoint3dCR p2, 
+    DPoint3dCR p3
+)
+    {
+    if (p1.AlmostEqual(p2) || p1.AlmostEqual(p3) || p2.AlmostEqual(p3))
+        return true;
+
+    DVec3d p1ToP2 = p2 - p1;
+    DVec3d p1ToP3 = p3 - p1;
+
+    return DoubleOps::AlmostEqual(DVec3d::FromCrossProduct(p1ToP2, p1ToP3).Magnitude(), 0);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
@@ -88,6 +107,9 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
 
     if (IsStartSet() && IsMidSet() && IsEndSet())
         {
+        if (PointsOnLine(GetStart(), GetMid(), GetEnd()))
+            return nullptr;
+
         DEllipse3d arc = DEllipse3d::FromPointsOnArc(GetStart(), GetMid(), GetEnd());
         if (m_useSweep)
             arc.sweep = m_sweep;
