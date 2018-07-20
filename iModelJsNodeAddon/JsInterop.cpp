@@ -12,7 +12,6 @@
 
 static Utf8String s_lastECDbIssue;
 static BeFileName s_addonDllDir;
-static IModelJsNative::JsInterop::T_AssertHandler s_assertHandler;
 
 namespace IModelJsNative {
 
@@ -72,6 +71,8 @@ struct IModelJsTileAdmin : DgnPlatformLib::Host::TileAdmin
 struct DgnPlatformHost : DgnPlatformLib::Host
 {
 private:
+    BeMutex m_mutex;
+
     void _SupplyProductName(Utf8StringR name) override { name.assign("IModelJs"); }
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new KnownLocationsAdmin(); }
     TileAdmin& _SupplyTileAdmin() override { return *new IModelJsTileAdmin(); }
@@ -84,15 +85,8 @@ private:
 
     RepositoryAdmin& _SupplyRepositoryAdmin() override {return JsInterop::GetRepositoryAdmin();}
 
-    static void OnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
-        {
-        if (s_assertHandler)
-            s_assertHandler(msg, file, line, type);
-        else
-            printf("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
-        }
 public:
-    DgnPlatformHost() { BeAssertFunctions::SetBeAssertHandler(&DgnPlatformHost::OnAssert); }
+    DgnPlatformHost() { BeAssertFunctions::SetBeAssertHandler(&NativeAssertionsHelper::HandleAssertion); }
 };
 
 //=======================================================================================
@@ -152,31 +146,20 @@ struct NativeLoggingShim : NativeLogging::Provider::ILogProvider
 using namespace IModelJsNative;
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 07/17
+// @bsimethod                              Krischan.Eberle                07/17
 //---------------------------------------------------------------------------------------
-void JsInterop::InitLogging()
-    {
-    NativeLogging::LoggingConfig::ActivateProvider(new NativeLoggingShim());
-    }
+//static
+intptr_t JsInterop::s_mainThreadId;
+Napi::Env* JsInterop::s_env = nullptr;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
-NativeLogging::ILogger& JsInterop::GetLogger()
+void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env& env)
     {
-    static NativeLogging::ILogger* s_logger;
-    if (nullptr == s_logger)
-        s_logger = NativeLogging::LoggingManager::GetLogger("imodeljs-addon"); // This is thread-safe. The assignment is atomic, and GetLogger will always return the same value for a given key anyway.
-    return *s_logger;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  05/17
-//---------------------------------------------------------------------------------------
-void JsInterop::Initialize(BeFileNameCR addonDllDir, T_AssertHandler assertHandler)
-    {
+    s_env = new Napi::Env(env);
+    s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
     s_addonDllDir = addonDllDir;
-    s_assertHandler = assertHandler;
 
 #if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
     // Include this location for delay load of pskernel...
@@ -195,6 +178,21 @@ void JsInterop::Initialize(BeFileNameCR addonDllDir, T_AssertHandler assertHandl
         });
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+void JsInterop::InitLogging() { NativeLogging::LoggingConfig::ActivateProvider(new NativeLoggingShim()); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  05/17
+//---------------------------------------------------------------------------------------
+NativeLogging::ILogger& JsInterop::GetLogger()
+    {
+    static NativeLogging::ILogger* s_logger;
+    if (nullptr == s_logger)
+        s_logger = NativeLogging::LoggingManager::GetLogger("imodeljs-addon"); // This is thread-safe. The assignment is atomic, and GetLogger will always return the same value for a given key anyway.
+    return *s_logger;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
@@ -707,6 +705,61 @@ ECInstanceId JsInterop::GetInstanceIdFromInstance(ECDbCR ecdb, JsonValueCR jsonI
     return instanceId;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::ThrowJsException(Utf8CP msg) { Napi::Error::New(Env(), msg).ThrowAsJavaScriptException(); }
+
+//***********************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BeMutex* NativeAssertionsHelper::s_mutex = new BeMutex();
+bool NativeAssertionsHelper::s_assertionsEnabled = true;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool NativeAssertionsHelper::AreAssertionsEnabled()
+    {
+    BeMutexHolder lock(*s_mutex);
+    return s_assertionsEnabled;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool NativeAssertionsHelper::SetAssertionsEnabled(bool enable)
+    {
+    BeMutexHolder lock(*s_mutex);
+    if (enable != s_assertionsEnabled)
+        {
+        s_assertionsEnabled = enable;
+        return true;
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+void NativeAssertionsHelper::HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
+    {
+    BeMutexHolder lock(*s_mutex);
+    if (!s_assertionsEnabled || !JsInterop::IsMainThread())
+        return;
+
+    Napi::Error::New(JsInterop::Env(), Utf8PrintfString("Native Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str()).ThrowAsJavaScriptException();
+    }
+
+//***********************************************************************************
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      02/18
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -742,6 +795,8 @@ void HexStrSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     BeStringUtilities::FormatUInt64(stringBuffer, stringBufferLength, numValue.GetValueUInt64(), HexFormatOptions::IncludePrefix);
     ctx.SetResultText(stringBuffer, (int) strlen(stringBuffer), Context::CopyData::Yes);
     }
+
+//***********************************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      02/18

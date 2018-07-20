@@ -12,6 +12,7 @@
 #include <ECDb/ECDbApi.h>
 #include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/DgnFontData.h>
+#include <Bentley/BeThread.h>
 #include <node-addon-api/napi.h>
 
 USING_NAMESPACE_BENTLEY
@@ -45,18 +46,20 @@ struct JsInterop
     BE_JSON_NAME(value)
 
 private:
+    static Napi::Env* s_env;
+    static intptr_t s_mainThreadId;
+
     static RevisionStatus ReadChangeSet(DgnRevisionPtr& revisionPtr, Utf8StringCR dbGuid, JsonValueCR changeSetToken);
     static void GetRowAsJson(Json::Value &json, BeSQLite::EC::ECSqlStatement &);
 
 public:
+    static void Initialize(BeFileNameCR, Napi::Env&);
+
     static void GetECValuesCollectionAsJson(Json::Value &json, ECN::ECValuesCollectionCR);
     static ECN::ECClassCP GetClassFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static void InitLogging();
 
-    typedef std::function<void(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType)> T_AssertHandler;
-
-    static void Initialize(BeFileNameCR, T_AssertHandler assertHandler);
     static DgnDbPtr CreateIModel(DbResult& db, Utf8StringCR name, JsonValueCR, Napi::Env);
     static BeSQLite::DbResult OpenDgnDb(DgnDbPtr &, BeFileNameCR dbname, DgnDb::OpenMode mode);
     static void CloseDgnDb(DgnDbR dgndb);
@@ -121,7 +124,29 @@ public:
 
     static void LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg);
     static bool IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev);
+
+    static Napi::Env& Env() { BeAssert(s_env != nullptr); return *s_env; }
+    static bool IsMainThread() { return BeThreadUtilities::GetCurrentThreadId() == s_mainThreadId; }
 };
+
+//=======================================================================================
+// @bsiclass                                                   Krischan.Eberle       07/18
+//=======================================================================================
+struct NativeAssertionsHelper final
+    {
+private:
+    static BeMutex* s_mutex;
+    static bool s_assertionsEnabled;
+
+    NativeAssertionsHelper() = delete;
+    ~NativeAssertionsHelper() = delete;
+
+public:
+    //! @return true if enable state was modified, false if enable state wasn't modified.
+    static bool SetAssertionsEnabled(bool enable);
+    static bool AreAssertionsEnabled();
+    static void HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
+    };
 
 //=======================================================================================
 //! TEXT HexStr(number INT)

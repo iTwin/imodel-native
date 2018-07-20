@@ -407,8 +407,8 @@ struct NativeECDb : Napi::ObjectWrap<NativeECDb>
         std::unique_ptr<ECDb> m_ecdb;
 
     public:
-    NativeECDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECDb>(info) {}
-    ~NativeECDb() {}
+        NativeECDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECDb>(info) {}
+        ~NativeECDb() {}
 
         // Check if val is really a NativeECDb peer object
         static bool InstanceOf(Napi::Value val)
@@ -3626,28 +3626,78 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         }
     };
 
-static Napi::Env* s_env;
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct DisableNativeAssertions : Napi::ObjectWrap<DisableNativeAssertions>
+    {
+    private:
+        static Napi::FunctionReference s_constructor;
+        bool m_enableOnDispose = false;
+
+        void DoDispose() 
+            {
+            if (m_enableOnDispose)
+                {
+                NativeAssertionsHelper::SetAssertionsEnabled(true);
+                //only re-enable assertions once. DoDispose is be called from the explicit
+                //call to Dispose and later when the destructor is called
+                m_enableOnDispose = false;
+                }
+            }
+
+    public:
+        DisableNativeAssertions(Napi::CallbackInfo const& info) : Napi::ObjectWrap<DisableNativeAssertions>(info) 
+            {
+            m_enableOnDispose = NativeAssertionsHelper::SetAssertionsEnabled(false);
+            }
+
+        ~DisableNativeAssertions() { DoDispose(); }
+
+        // Check if val is really a DisableNativeAssertions peer object
+        static bool InstanceOf(Napi::Value val)
+            {
+            if (!val.IsObject())
+                return false;
+
+            Napi::HandleScope scope(val.Env());
+            return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
+            }
+
+        void Dispose(Napi::CallbackInfo const& info) { DoDispose(); }
+
+        //  Add a reference to this wrapper object, keeping it and its peer JS object alive.
+        void AddRef() { this->Ref(); }
+
+        //  Remove a reference from this wrapper object and its peer JS object .
+        void Release() { this->Unref(); }
+
+        static void Init(Napi::Env env, Napi::Object exports)
+            {
+            Napi::HandleScope scope(env);
+            Napi::Function t = DefineClass(env, "DisableNativeAssertions", {
+            InstanceMethod("dispose", &DisableNativeAssertions::Dispose),
+            });
+
+            exports.Set("DisableNativeAssertions", t);
+
+            s_constructor = Napi::Persistent(t);
+            // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+            // from running at program shutdown time, which would attempt to reset the reference when
+            // the environment is no longer valid.
+            s_constructor.SuppressDestruct();
+            }
+    };
+
 static Napi::ObjectReference s_logger;
-static intptr_t s_mainThreadId;
 struct LogMessage {Utf8String m_category; Utf8String m_message; NativeLogging::SEVERITY m_severity;};
 static bvector<LogMessage>* s_deferredLogging;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void ThrowJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
-    {
-    if (BeThreadUtilities::GetCurrentThreadId() == s_mainThreadId)
-        Napi::Error::New(*s_env, Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str()).ThrowAsJavaScriptException();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Napi::Value GetLogger(Napi::CallbackInfo const& info)
-    {
-    return s_logger.Value();
-    }
+static Napi::Value GetLogger(Napi::CallbackInfo const& info) { return s_logger.Value(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/18
@@ -3675,7 +3725,7 @@ static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP 
     auto method = IModelJsNative::s_logger.Get(fname).As<Napi::Function>();
     if (method == env.Undefined())
         {
-        Napi::Error::New(*IModelJsNative::s_env, "Invalid Logger").ThrowAsJavaScriptException();
+        Napi::Error::New(IModelJsNative::JsInterop::Env(), "Invalid Logger").ThrowAsJavaScriptException();
         return;
         }
 
@@ -3696,7 +3746,7 @@ static bool callIsLogLevelEnabledJs(Utf8CP category, NativeLogging::SEVERITY sev
     auto method = IModelJsNative::s_logger.Get("isEnabled").As<Napi::Function>();
     if (method == env.Undefined())
         {
-        Napi::Error::New(*IModelJsNative::s_env, "Invalid Logger").ThrowAsJavaScriptException();
+        Napi::Error::New(IModelJsNative::JsInterop::Env(), "Invalid Logger").ThrowAsJavaScriptException();
         return true;
         }
 
@@ -3748,13 +3798,6 @@ static void doDeferredLogging()
     s_deferredLogging = nullptr;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool isMainThread()
-    {
-    return BeThreadUtilities::GetCurrentThreadId() == IModelJsNative::s_mainThreadId;
-    }
 
 } // namespace IModelJsNative
 
@@ -3763,7 +3806,7 @@ static bool isMainThread()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IModelJsNative::JsInterop::LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
     {
-    if (IModelJsNative::s_logger.IsEmpty() || !IModelJsNative::isMainThread())
+    if (IModelJsNative::s_logger.IsEmpty() || !IsMainThread())
         {
         IModelJsNative::deferLogging(category, sev, msg);
         return;
@@ -3778,20 +3821,14 @@ void IModelJsNative::JsInterop::LogMessage(Utf8CP category, NativeLogging::SEVER
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IModelJsNative::JsInterop::IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev)
     {
-    if (IModelJsNative::s_logger.IsEmpty() || !IModelJsNative::isMainThread())
+    if (IModelJsNative::s_logger.IsEmpty() || !IsMainThread())
         return true;
 
     IModelJsNative::doDeferredLogging();
     return IModelJsNative::callIsLogLevelEnabledJs(category, sev);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsNative::JsInterop::ThrowJsException(Utf8CP msg)
-    {
-    Napi::Error::New(*IModelJsNative::s_env, msg).ThrowAsJavaScriptException();
-    }
+
 
 static Utf8String s_mobileResourcesDir;
 /*---------------------------------------------------------------------------------**//**
@@ -3804,8 +3841,6 @@ void imodeljs_addon_setMobileResourcesDir(Utf8CP d) {s_mobileResourcesDir = d;}
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exports)
     {
-    IModelJsNative::s_env = new Napi::Env(env);
-
     Napi::HandleScope scope(env);
 
 #if (defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)) || defined(BENTLEYCONFIG_OS_LINUX) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
@@ -3814,9 +3849,8 @@ static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exp
     BeFileName addondir(s_mobileResourcesDir);
 #endif
 
-    IModelJsNative::s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
 
-    IModelJsNative::JsInterop::Initialize(addondir, IModelJsNative::ThrowJsExceptionOnAssert);
+    IModelJsNative::JsInterop::Initialize(addondir, env);
     IModelJsNative::NativeDgnDb::Init(env, exports);
     IModelJsNative::NativeECDb::Init(env, exports);
     IModelJsNative::NativeECSqlStatement::Init(env, exports);
@@ -3829,6 +3863,7 @@ static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exp
     IModelJsNative::NativeECPresentationManager::Init(env, exports);
     IModelJsNative::NativeECSchemaXmlContext::Init(env, exports);
     IModelJsNative::SnapRequest::Init(env, exports);
+    IModelJsNative::DisableNativeAssertions::Init(env, exports);
 
     exports.DefineProperties(
         {
@@ -3851,5 +3886,6 @@ Napi::FunctionReference IModelJsNative::NativeECPresentationManager::s_construct
 Napi::FunctionReference IModelJsNative::NativeECDb::s_constructor;
 Napi::FunctionReference IModelJsNative::NativeECSchemaXmlContext::s_constructor;
 Napi::FunctionReference IModelJsNative::SnapRequest::s_constructor;
+Napi::FunctionReference IModelJsNative::DisableNativeAssertions::s_constructor;
 
 NODE_API_MODULE(at_bentley_imodeljs_nodeaddon, iModelJsNativeRegisterModule)
