@@ -11,6 +11,7 @@
 Headers =
 Headers + $(SourceDir)UsageDb.h
 Headers + $(SourceDir)PolicyToken.h
+Headers + $(SourceDir)Policy.h
 Headers + $(SourceDir)ClientImpl.h
 Headers + $(SourceDir)GenerateSID.h
 Headers + $(PublicApiDir)Licensing.h
@@ -32,6 +33,8 @@ $(o)ClientImpl$(oext)                : $(SourceDir)ClientImpl.cpp $(Headers) ${M
 $(o)UsageDb$(oext)                   : $(SourceDir)UsageDb.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)PolicyToken$(oext)               : $(SourceDir)PolicyToken.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)Policy$(oext)                    : $(SourceDir)Policy.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)GenerateSID$(oext)               : $(SourceDir)GenerateSID.cpp $(Headers) ${MultiCompileDepends}
 

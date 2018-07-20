@@ -9,6 +9,7 @@
   <ItemGroup>
     <ClCompile Include="Licensing\Client.cpp" />
     <ClCompile Include="Licensing\ClientImpl.cpp" />
+    <ClCompile Include="Licensing\Policy.cpp" />
     <ClCompile Include="Licensing\PolicyToken.cpp" />
     <ClCompile Include="Licensing\UsageDb.cpp" />
     <ClCompile Include="Licensing\Utils\DelayedExecutor.cpp" />
@@ -20,7 +21,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Licensing\ClientImpl.h" />
+    <ClInclude Include="Licensing\DateHelper.h" />
+    <ClInclude Include="Licensing\LicenseStatus.h" />
     <ClInclude Include="Licensing\Logging.h" />
+    <ClInclude Include="Licensing\Policy.h" />
+    <ClInclude Include="Licensing\PolicyHelper.h" />
     <ClInclude Include="Licensing\PolicyToken.h" />
     <ClInclude Include="Licensing\UsageDb.h" />
     <ClInclude Include="PublicAPI\Licensing\Client.h" />
@@ -76,7 +81,7 @@
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r Licensing -f LicensingCrossPlatform -p Licensing re Licensing -s</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -v4 -ax64 -r Licensing -f LicensingCrossPlatform -p Licensing re Licensing -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)licensing\LicensingCrossPlatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath)</IncludePath>
+    <IncludePath>$(SrcRoot)licensing\LicensingCrossPlatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);D:\dev\crossDev\src\licensing\LicensingCrossPlatform\PublicAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>

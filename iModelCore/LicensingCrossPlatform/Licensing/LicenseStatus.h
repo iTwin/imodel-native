@@ -10,7 +10,7 @@
 
 //BEGIN_BENTLEY_LICENSING_NAMESPACE
 
-enum LicenseStatus
+enum class LicenseStatus
 	{
 	Error = -1,
 	Ok = 101,
