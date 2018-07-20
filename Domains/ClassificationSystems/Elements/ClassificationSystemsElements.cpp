@@ -69,24 +69,26 @@ Json::Value& elementData
     {
     Dgn::DgnDbR db = GetDgnDb();
     elementData["name"] = GetName();
-    elementData["value"] = Json::Value(Json::arrayValue);
+    elementData["id"] = GetElementId().GetValueUnchecked();
+    elementData["classifications"] = Json::Value(Json::arrayValue);
+    elementData["groups"] = Json::Value(Json::arrayValue);
     for (auto element : GetSubModel()->MakeIterator())
         {
             Json::Value elementValue;
-            Json::Value code;
-            element.GetCode().ToJson(code);
-            auto id = element.GetElementId();
-            elementValue["id"] = id.GetValueUnchecked();
-            elementValue["label"] = code["Name"];
+            elementValue["id"] = element.GetElementId().GetValueUnchecked();
 
-            auto classification = db.Elements().Get<ClassificationSystems::Classification>(id);
+            auto classification = db.Elements().Get<ClassificationSystems::Classification>(element.GetElementId());
             if (classification.IsValid()) 
                 {
+                elementValue["label"] = classification->GetName();
                 elementValue["groupId"] = classification->GetGroupId().GetValueUnchecked();
-                elementValue["specializationId"] = classification->GetSpecializationId().GetValueUnchecked();
+                elementData["classifications"].append(elementValue);
                 }
-
-            elementData["value"].append(elementValue);
+            else
+                {
+                elementValue["label"] = db.Elements().Get<ClassificationSystems::ClassificationGroup>(element.GetElementId())->GetName();
+                elementData["groups"].append(elementValue);
+                }
         }
     }
 
