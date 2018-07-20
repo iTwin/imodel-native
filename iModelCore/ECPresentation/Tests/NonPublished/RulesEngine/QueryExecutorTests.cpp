@@ -2006,3 +2006,29 @@ TEST_F(QueryExecutorTests, GetDistinctPointValuesFromPropertiesField)
     
     ASSERT_EQ(1, executor.GetRecordsCount());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentQueryExecutorTests, DoesntIncludeFieldPropertyValueInstanceKeysWhenDescriptorContainsExcludeEditingDataFlag)
+    {
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+
+    RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+    descriptor->SetContentFlags(descriptor->GetContentFlags() | (int)ContentFlags::ExcludeEditingData);
+    AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
+    
+    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query), "widget");
+    query->From(*m_widgetClass, false, "widget");
+    
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
+    ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
+    executor.ReadRecords();
+    
+    ASSERT_EQ(1, executor.GetRecordsCount());
+    ContentSetItemPtr record = executor.GetRecord(0);
+    ASSERT_TRUE(record.IsValid());
+    EXPECT_TRUE(record->GetFieldInstanceKeys().empty());
+    }

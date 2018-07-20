@@ -71,12 +71,13 @@ public:
 //=======================================================================================
 enum class ContentFlags
     {
-    KeysOnly =       1,      //!< Each content record has only ECInstanceKey and no data
-    ShowImages =     1 << 1, //!< Each content record additionally has an image id
-    ShowLabels =     1 << 2, //!< Each content record additionally has a label
-    MergeResults =   1 << 3, //!< All content records are merged into a single record
-    DistinctValues = 1 << 4, //!< Content has only distinct values
-    NoFields =       1 << 5, //!< Doesnt create property or calculated fields. Can be used in conjunction with @e ShowLabels.
+    KeysOnly =              1,      //!< Each content record has only ECInstanceKey and no data
+    ShowImages =            1 << 1, //!< Each content record additionally has an image id
+    ShowLabels =            1 << 2, //!< Each content record additionally has a label
+    MergeResults =          1 << 3, //!< All content records are merged into a single record
+    DistinctValues =        1 << 4, //!< Content has only distinct values
+    NoFields =              1 << 5, //!< Doesnt create property or calculated fields. Can be used in conjunction with @e ShowLabels.
+    ExcludeEditingData =    1 << 6, //!< Should editing data be excluded from the content. This flag increases performance and should be used when requesting data for read-only cases.
     };
 
 //=======================================================================================

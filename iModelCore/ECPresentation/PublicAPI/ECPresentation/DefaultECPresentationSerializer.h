@@ -19,13 +19,13 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE DefaultECPresentationSerializer : IECPresentationSerializer
 {
 protected:
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ConnectionEvent const& connectionEvent, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ConnectionEvent const& connectionEvent, rapidjson::Document::AllocatorType*) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContentFieldEditor const& contentFieldEditor, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContentFieldEditor const& contentFieldEditor, rapidjson::Document::AllocatorType*) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContentDescriptor::Category const& category, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContentDescriptor::Category const& category, rapidjson::Document::AllocatorType*) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContentDescriptor::Property const& property, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContentDescriptor::Property const& property, rapidjson::Document::AllocatorType*) const override;
 
     ECPRESENTATION_EXPORT virtual void _FieldAsJson(ContentDescriptor::Field const& field, RapidJsonDocumentR fieldBaseJson) const override;
     virtual void _AsJson(ContentDescriptor::DisplayLabelField const&, RapidJsonDocumentR) const override {}
@@ -36,7 +36,7 @@ protected:
     virtual void _AsJson(ContentDescriptor::ECInstanceKeyField const&, RapidJsonDocumentR) const override {}
     virtual void _AsJson(ContentDescriptor::ECNavigationInstanceIdField const&, RapidJsonDocumentR) const override {}
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(UpdateRecord const& updateRecord, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(UpdateRecord const& updateRecord, rapidjson::Document::AllocatorType*) const override;
 
     virtual void _ParamsAsJson(ContentFieldEditor::Params const&, RapidJsonDocumentR) const override {}
     ECPRESENTATION_EXPORT virtual void _AsJson(FieldEditorJsonParams const& jsonParams, RapidJsonDocumentR paramsBaseJson) const override;
@@ -50,17 +50,17 @@ protected:
     ECPRESENTATION_EXPORT virtual void _AsJson(ContentDescriptor::Field::StructTypeDescription const& structTypeDescription, RapidJsonDocumentR typeDescriptionBaseJson) const override;
     ECPRESENTATION_EXPORT virtual void _AsJson(ContentDescriptor::Field::NestedContentTypeDescription const& nestedContentTypeDescription, RapidJsonDocumentR typeDescriptionBaseJson) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECClassCR ecClass, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECClassCR ecClass, rapidjson::Document::AllocatorType*) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContentDescriptor const& contentDescriptor, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContentDescriptor const& contentDescriptor, rapidjson::Document::AllocatorType*) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContentSetItem const& contentSetItem, int flags, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContentSetItem const& contentSetItem, int flags, rapidjson::Document::AllocatorType*) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECClassInstanceKeyCR key, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECClassInstanceKeyCR key, rapidjson::Document::AllocatorType*) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(Content const& content, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(Content const& content, rapidjson::Document::AllocatorType*) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECInstanceChangeResult const& ecInstanceChangeResult, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECInstanceChangeResult const& ecInstanceChangeResult, rapidjson::Document::AllocatorType*) const override;
 
     ECPRESENTATION_EXPORT virtual void _NavNodeKeyAsJson(NavNodeKey const& navNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
     ECPRESENTATION_EXPORT virtual NavNodeKeyPtr _GetNavNodeKeyFromJson(IConnectionCR, JsonValueCR json) const override;
@@ -80,21 +80,21 @@ protected:
     ECPRESENTATION_EXPORT virtual LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(JsonValueCR json) const override;
     ECPRESENTATION_EXPORT virtual LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(RapidJsonValueCR json) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(NavNode const& navNode, rapidjson::Document::AllocatorType* allocator) const override;
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(NodesPathElement const& navNodesPathElement, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(NavNode const& navNode, rapidjson::Document::AllocatorType*) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(NodesPathElement const& navNodesPathElement, rapidjson::Document::AllocatorType*) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(KeySet const&, rapidjson::Document::AllocatorType*) const override;
     ECPRESENTATION_EXPORT virtual KeySetPtr _GetKeySetFromJson(IConnectionCR, JsonValueCR json) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(SelectionChangedEvent const& selectionChangedEvent, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(SelectionChangedEvent const& selectionChangedEvent, rapidjson::Document::AllocatorType*) const override;
     ECPRESENTATION_EXPORT virtual SelectionChangedEventPtr _GetSelectionChangedEventFromJson(IConnectionCacheCR connectionCache, JsonValueCR json) const override;
-    ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(ECEnumerationCR enumeration, rapidjson::Document::AllocatorType& allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(ECEnumerationCR enumeration, rapidjson::Document::AllocatorType&) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(KindOfQuantityCR koq, rapidjson::Document::AllocatorType& allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(KindOfQuantityCR koq, rapidjson::Document::AllocatorType&) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(RelatedClassPathCR path, rapidjson::Document::AllocatorType& allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(RelatedClassPathCR path, rapidjson::Document::AllocatorType&) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(SelectionInfo const& selectionInfo, rapidjson::Document::AllocatorType& allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(SelectionInfo const& selectionInfo, rapidjson::Document::AllocatorType&) const override;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE
