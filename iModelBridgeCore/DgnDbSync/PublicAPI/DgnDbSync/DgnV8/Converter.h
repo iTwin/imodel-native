@@ -1169,6 +1169,8 @@ public:
     //! @{
     BentleyStatus GenerateThumbnails();
     BentleyStatus GenerateRealityModelTilesets();
+    BentleyStatus GenerateWebMercatorModel();
+
     bool ThumbnailUpdateRequired(ViewDefinition const& view);
 
     void CopyExpirationDate(DgnV8FileR);
