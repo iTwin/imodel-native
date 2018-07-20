@@ -8,6 +8,79 @@
 #include    <DgnPlatformInternal.h>
 #include    <DgnPlatform/VecMath.h>
 #include <Geom/internal/dsegment3d.fdf>
+
+/*-----------------------------------------------------------------*//**
+@description Compute the composite transformation
+    Transform = Xlate(putdownPoint) . ( putdownAxes . Inverse (pickupAxes) ) . S (s,s,s) . Xlate(-pickupPoint)
+In common usage, geometry flows from right to left as follows:
+<ul>
+<li>Treat the pickup point as the origin.</li>
+<li>Scale about the (local) origin.</li>
+<li>Using the same origin, Rotate from the pickup axes to the putdown axes.</li>
+<li>Move the pickup point to the putdown point.</li>
+</ul>
+
+@param pResult OUT composite transformation.
+@param pPutdownPoint IN putdown point
+@param pPutdownAxes IN matrix whose columns are axes of putdown orientation.  Usually, but not necessarily,
+    a rotation.
+@param pScale IN scale factor to apply.
+@param pPickupAxes IN matrix whose columns are axes of pickup orientation.  Usually, but not necessarily,
+    a rotation.
+@param pPickupPoint IN pickup origin
+@return false if pPickupAxes was not invertible.  In this case the computation completes using the global
+principal axes as pickup axes.
+ @group "Transform Initialization"
+ @bsimethod                               EarlinLutz      03/02
++---------------+---------------+---------------+---------------+------*/
+bool bsiTransform_composeLocalOriginOperations_go
+(
+TransformP pResult,
+DPoint3dCP pPutdownPoint,
+RotMatrixCP pPutdownAxes,
+const double    *pScale,
+RotMatrixCP pPickupAxes,
+DPoint3dCP pPickupPoint
+)
+    {
+    Transform        _temp;
+    bool    boolstat = true;
+    RotMatrix inversePickup;
+
+    if (pResult == NULL)
+        pResult = &_temp;
+
+    /* Build incrementally from left to right. */
+    if (pPutdownPoint)
+        pResult->InitFrom (pPutdownPoint->x, pPutdownPoint->y, pPutdownPoint->z);
+    else
+        pResult->InitIdentity ();
+    if (pPutdownAxes)
+        pResult->InitProduct (*pResult, *pPutdownAxes);
+
+    if (pPickupAxes)
+        {
+        if (inversePickup.InverseOf (*pPickupAxes))
+            pResult->InitProduct (*pResult, inversePickup);
+        else
+            boolstat = false;
+        }
+
+    if (pScale)
+        pResult->ScaleMatrixColumns (*pScale, *pScale, *pScale);
+
+    if (pPickupPoint)
+        {
+        Transform   toZero;
+        toZero.InitFrom (- pPickupPoint->x, - pPickupPoint->y, - pPickupPoint->z);
+        pResult->InitProduct (*pResult, toZero);
+        }
+
+    return boolstat;
+    }
+
+
+
 /*---------------------------------------------------------------------------------**//**
 * see Quaternion Interpolation with extra spins (Jack Morrison, Graphic Gems III)
 * @bsimethod                                                    RayBentley      11/94
@@ -324,7 +397,7 @@ RotMatrixCP pR1,                /*  => current rotation or NULL */
 DPoint3dCP pP1                 /*  => current location or NULL */
 )
     {
-    bsiTransform_composeLocalOriginOperations (pTransform, pP2, pR2, NULL, pR1, pP1);
+    bsiTransform_composeLocalOriginOperations_go (pTransform, pP2, pR2, NULL, pR1, pP1);
     return pTransform;
     }
 
@@ -866,9 +939,15 @@ DPoint3dCP endPointP
 )
     {
     DSegment3d segment;
-    bsiDSegment3d_initFromDPoint3d (&segment, startPointP, endPointP);
-    return bsiDSegment3d_projectPoint (&segment, outPointP, outFractionP, inPointP)
-            ? SUCCESS : ERROR;
+    segment.Init (*startPointP, *endPointP);
+    DPoint3d point;
+    double fraction;
+    bool ok = segment.ProjectPoint (point, fraction, *inPointP);
+    if (outPointP)
+        *outPointP = point;
+    if (outFractionP)
+        *outFractionP = fraction;
+    return ok;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1011,3 +1090,55 @@ const DPoint3d *pt                  /* <=> */
     return LegacyMath::Vec::ColinearToTolerance (pt, mgds_fc_epsilon);
     }
 
+/*-----------------------------------------------------------------*//**
+ Sets pNpcToGlobal to the transformation from 000...111 to the
+ globallyaligned cube with diagonally opposite corners pMin and pMax.
+ Sets pGlobalToNpc to the inverse of this transform.
+ The diagonal component for any degenerate direction is 1.
+ A NULL for either transformation parameter indicates that that
+ transformation is not needed.
+
+ @param pNpcToGlobal <= transformation from unit cube to given cube
+ @param pGlobalToNpc <= transformation from given cube to unit cube
+ @param pMin => The 000 corner of cube
+ @param pMax => The 111 corner of cube
+ @group "Transform Initialization"
+ @bsimethod                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+void LegacyMath::TMatrix::InitTransformsFromRange
+(
+TransformP pNpcToGlobal,
+TransformP pGlobalToNpc,
+DPoint3dCP pMin,
+DPoint3dCP pMax
+)
+    {
+    DPoint3d diag;
+    RotMatrix matrix;
+    diag.DifferenceOf (*pMax, *pMin);
+
+    if (diag.x == 0.0)
+        diag.x = 1.0;
+    if (diag.y == 0.0)
+        diag.y = 1.0;
+    if (diag.z == 0.0)
+        diag.z = 1.0;
+    if (pNpcToGlobal)
+        {
+        matrix.InitFromScaleFactors (diag.x, diag.y, diag.z);
+        pNpcToGlobal->InitFrom (matrix, *pMin);
+
+        }
+
+    if (pGlobalToNpc)
+        {
+        DPoint3d origin;
+
+        origin.x = - pMin->x / diag.x;
+        origin.y = - pMin->y / diag.y;
+        origin.z = - pMin->z / diag.z;
+
+        matrix.InitFromScaleFactors (1.0 / diag.x, 1.0 / diag.y, 1.0 /diag.z);
+        pGlobalToNpc->InitFrom (matrix, origin);
+        }
+    }

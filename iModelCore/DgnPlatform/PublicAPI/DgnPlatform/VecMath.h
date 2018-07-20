@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/VecMath.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
@@ -61,6 +61,21 @@ struct TMatrix
     DGNPLATFORM_EXPORT static void SetMatrixRow (TransformP transformP, DPoint3dCP vectorP, int rowIndex);
     DGNPLATFORM_EXPORT static void FromNormalizedRowsOfTMatrix (TransformP normalizedTMatrix, DPoint3dP scaleVector, TransformCP in);
     DGNPLATFORM_EXPORT static StatusInt Unscale (TransformP newTransform, TransformCP oldTransform, DPoint3dCP anchor);
+    /*-----------------------------------------------------------------*//**
+     Sets pNpcToGlobal to the transformation from 000...111 to the
+     globallyaligned cube with diagonally opposite corners pMin and pMax.
+     Sets pGlobalToNpc to the inverse of this transform.
+     The diagonal component for any degenerate direction is 1.
+     A NULL for either transformation parameter indicates that that
+     transformation is not needed.
+
+     @param pNpcToGlobal <= transformation from unit cube to given cube
+     @param pGlobalToNpc <= transformation from given cube to unit cube
+     @param pMin => The 000 corner of cube
+     @param pMax => The 111 corner of cube
+    +---------------+---------------+---------------+---------------+------*/
+    DGNPLATFORM_EXPORT static void InitTransformsFromRange(TransformP pNpcToGlobal, TransformP pGlobalToNpc, DPoint3dCP pMin, DPoint3dCP pMax);
+
     };
 
 }; // LegacyMath

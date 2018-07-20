@@ -664,7 +664,7 @@ protected:
     virtual bool _DoDecimate() const { return false; }
     virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
     virtual TileGeomPartCPtr _GetPart() const { return TileGeomPartCPtr(); }
-    virtual bool _IsPoint() const { return false; }
+    virtual bool _IsPoint() const { return false; }     
 
     void SetFacetCount(size_t numFacets);
 public:
@@ -674,6 +674,7 @@ public:
     DgnElementId GetEntityId() const { return m_entityId; } //!< The ID of the element from which this geometry was produced
     size_t GetFacetCount(IFacetOptionsR options) const;
     size_t GetFacetCount(FacetCounter& counter) const { return _GetFacetCount(counter); }
+    virtual bool _IsViewDependent() const { return false; }
 
     FeatureAttributes GetAttributes() const { return m_params.IsValid() ? FeatureAttributes(GetEntityId(), *m_params) : FeatureAttributes(); }
     

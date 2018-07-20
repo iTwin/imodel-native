@@ -182,6 +182,7 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
             return BE_SQLITE_ERROR_SchemaUpgradeRequired;
         case SchemaStatus::SchemaUpgradeRecommended:
             return BE_SQLITE_ERROR_SchemaUpgradeRecommended;
+        // case SchemaStatus::SchemaLockFailed:     NEEDS WORK - shouldn't we map this to BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes, too?
         case SchemaStatus::CouldNotAcquireLocksOrCodes:
             return BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes;
         default:

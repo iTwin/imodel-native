@@ -14,6 +14,7 @@
 // to make sure that the old software can work with the newer files.
 #define TESTECDB_EMPTY "empty.ecdb"
 #define TESTECDB_PREEC32ENUMS "preec32enums.ecdb"
+#define TESTECDB_UPGRADEDEC32ENUMS "upgradedec32enums.ecdb"
 #define TESTECDB_EC32ENUMS "ec32enums.ecdb"
 #define TESTECDB_PREEC32KOQS "preec32koqs.ecdb"
 #define TESTECDB_EC32KOQS "ec32koqs.ecdb"
@@ -27,6 +28,7 @@
 
 #define TESTECDBCREATOR_LIST {std::make_shared<EmptyTestECDbCreator>(), \
                               std::make_shared<PreEC32EnumsTestECDbCreator>(), \
+                              std::make_shared<UpgradedEC32EnumsTestECDbCreator>(), \
                                std::make_shared<PreEC32KoqsTestECDbCreator>()}
 
 //======================================================================================
@@ -49,15 +51,19 @@ public:
 //======================================================================================
 struct TestECDbCreator : TestFileCreator
     {
+    private:
+        BentleyStatus _UpgradeOldFiles() const override;
+
     protected:
-        TestECDbCreator() : TestFileCreator() {}
+        explicit TestECDbCreator(Utf8CP fileName) : TestFileCreator(fileName) {}
+
+        static DbResult CreateNewTestFile(ECDbR, Utf8StringCR fileName);
+        static BentleyStatus ImportSchema(ECDbCR ecdb, SchemaItem const& schema) { return ImportSchemas(ecdb, {schema}); }
+        static BentleyStatus ImportSchemas(ECDbCR, std::vector<SchemaItem> const&);
 
     public:
         virtual ~TestECDbCreator() {}
 
-        static DbResult CreateNewTestFile(ECDbR, Utf8CP fileName);
-        static BentleyStatus ImportSchema(ECDbCR ecdb, SchemaItem const& schema) { return ImportSchemas(ecdb, {schema}); }
-        static BentleyStatus ImportSchemas(ECDbCR, std::vector<SchemaItem> const&);
     };
 
 //======================================================================================
@@ -69,9 +75,11 @@ struct EmptyTestECDbCreator final : TestECDbCreator
         BentleyStatus _Create() override
             {
             ECDb ecdb;
-            return BE_SQLITE_OK == CreateNewTestFile(ecdb, TESTECDB_EMPTY) ? SUCCESS : ERROR;
+            return CreateNewTestFile(ecdb, m_fileName) == BE_SQLITE_OK ? SUCCESS : ERROR;
             }
+
     public:
+        explicit EmptyTestECDbCreator() : TestECDbCreator(TESTECDB_EMPTY) {}
         ~EmptyTestECDbCreator() {}
     };
 
@@ -84,7 +92,7 @@ struct PreEC32EnumsTestECDbCreator final : TestECDbCreator
         BentleyStatus _Create() override
             {
             ECDb ecdb;
-            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, TESTECDB_PREEC32ENUMS))
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
                 return ERROR;
 
             // add types of enums which don't exist in the schemas already in the test file
@@ -102,7 +110,39 @@ struct PreEC32EnumsTestECDbCreator final : TestECDbCreator
                                                      </ECSchema>)xml"));
             }
     public:
+        explicit PreEC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_PREEC32ENUMS) {}
         ~PreEC32EnumsTestECDbCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      07/2018
+//======================================================================================
+struct UpgradedEC32EnumsTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
+                return ERROR;
+
+            //The actual upgrade to EC32 enums will happen on the respective EC32 version of this creator
+            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="UpgradedEC32Enums" alias="upgradedec32" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                        <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                                                            <ECEnumerator value="0"/>
+                                                            <ECEnumerator value="1"/>
+                                                            <ECEnumerator value="2"/>
+                                                        </ECEnumeration>
+                                                        <ECEnumeration typeName="StringEnum_EnumeratorsWithDisplayLabel" displayLabel="String Enumeration with enumerators with display label" backingTypeName="string" isStrict="false">
+                                                            <ECEnumerator value="On" displayLabel="Turned On"/>
+                                                            <ECEnumerator value="Off" displayLabel="Turned Off"/>
+                                                        </ECEnumeration>
+                                                     </ECSchema>)xml"));
+            }
+    public:
+        explicit UpgradedEC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_UPGRADEDEC32ENUMS) {}
+        ~UpgradedEC32EnumsTestECDbCreator() {}
     };
 
 //======================================================================================
@@ -114,7 +154,7 @@ struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
         BentleyStatus _Create() override
             {
             ECDb ecdb;
-            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, TESTECDB_PREEC32KOQS))
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
                 return ERROR;
 
             //test schema for KOQs originates from AECUnits ECSchemas
@@ -176,6 +216,7 @@ struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
 </ECSchema>)xml"));
             }
     public:
+        explicit PreEC32KoqsTestECDbCreator() : TestECDbCreator(TESTECDB_PREEC32KOQS) {}
         ~PreEC32KoqsTestECDbCreator() {}
     };
 

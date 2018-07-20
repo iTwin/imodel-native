@@ -542,6 +542,7 @@ public:
 
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _SaveToDb();
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _ReadFromDb();
+    DGNPLATFORM_EXPORT virtual bool _WantWaitOnSave() const;
 
     //! Called to get the data from the original location. The call must be fast and execute any long running operation asynchronously.
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _GetFromSource();

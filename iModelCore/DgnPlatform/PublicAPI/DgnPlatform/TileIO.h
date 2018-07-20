@@ -50,6 +50,7 @@ enum class WriteStatus
     NoGeometry,
     UnableToLoadTile,
     UnableToOpenFile,
+    UnableToWriteFile,
     Aborted,
     };
 

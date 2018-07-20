@@ -15,6 +15,7 @@
 
 #define TESTIMODEL_EMPTY "empty.bim"
 #define TESTIMODEL_PREEC32ENUMS "preec32enums.bim"
+#define TESTIMODEL_UPGRADEDEC32ENUMS "upgradedec32enums.ecdb"
 #define TESTIMODEL_EC32ENUMS "ec32enums.bim"
 #define TESTIMODEL_PREEC32KOQS "preec32koqs.bim"
 #define TESTIMODEL_EC32KOQS "ec32koqs.bim"
@@ -22,6 +23,7 @@
 
 #define TESTIMODELCREATOR_LIST {std::make_shared<EmptyTestIModelCreator>(), \
                                 std::make_shared<PreEC32EnumsTestIModelCreator>(), \
+                                std::make_shared<UpgradedEC32EnumsTestIModelCreator>(), \
                                 std::make_shared<PreEC32KoqsTestIModelCreator>()}
 
 //======================================================================================
@@ -44,15 +46,18 @@ public:
 //======================================================================================
 struct TestIModelCreator : TestFileCreator
     {
+private:
+    BentleyStatus _UpgradeOldFiles() const override;
+
 protected:
-    TestIModelCreator() : TestFileCreator() {}
+    explicit TestIModelCreator(Utf8CP fileName) : TestFileCreator(fileName) {}
+
+    static DgnDbPtr CreateNewTestFile(Utf8StringCR fileName);
+    BentleyStatus ImportSchema(DgnDbR dgndb, SchemaItem const& schema) { return ImportSchemas(dgndb, {schema}); }
+    static BentleyStatus ImportSchemas(DgnDbR dgndb, std::vector<SchemaItem> const& schemas);
 
 public:
     virtual ~TestIModelCreator() {}
-
-    static DgnDbPtr CreateNewTestFile(Utf8CP fileName);
-    BentleyStatus ImportSchema(DgnDbR dgndb, SchemaItem const& schema) { return ImportSchemas(dgndb, {schema}); }
-    static BentleyStatus ImportSchemas(DgnDbR dgndb, std::vector<SchemaItem> const& schemas);
     };
 
 //======================================================================================
@@ -61,9 +66,10 @@ public:
 struct EmptyTestIModelCreator final : TestIModelCreator
     {
     private:
-        BentleyStatus _Create() override { return CreateNewTestFile(TESTIMODEL_EMPTY) != nullptr ? SUCCESS : ERROR;  }
+        BentleyStatus _Create() override { return CreateNewTestFile(m_fileName) != nullptr ? SUCCESS : ERROR;  }
 
     public:
+        EmptyTestIModelCreator() : TestIModelCreator(TESTIMODEL_EMPTY) {}
         ~EmptyTestIModelCreator() {}
     };
 
@@ -75,7 +81,7 @@ struct PreEC32EnumsTestIModelCreator final : TestIModelCreator
     private:
         BentleyStatus _Create() override
             {
-            DgnDbPtr bim = CreateNewTestFile(TESTIMODEL_PREEC32ENUMS);
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
             if (bim == nullptr)
                 return ERROR;
 
@@ -94,7 +100,38 @@ struct PreEC32EnumsTestIModelCreator final : TestIModelCreator
                                                      </ECSchema>)xml"));
             }
     public:
+        PreEC32EnumsTestIModelCreator() : TestIModelCreator(TESTIMODEL_PREEC32ENUMS) {}
         ~PreEC32EnumsTestIModelCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      07/2018
+//======================================================================================
+struct UpgradedEC32EnumsTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
+            if (bim == nullptr)
+                return ERROR;
+            //The actual upgrade to EC32 enums will happen on the respective EC32 version of this creator
+            return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="UpgradedEC32Enums" alias="upgradedec32" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                        <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                                                            <ECEnumerator value="0"/>
+                                                            <ECEnumerator value="1"/>
+                                                            <ECEnumerator value="2"/>
+                                                        </ECEnumeration>
+                                                        <ECEnumeration typeName="StringEnum_EnumeratorsWithDisplayLabel" displayLabel="String Enumeration with enumerators with display label" backingTypeName="string" isStrict="false">
+                                                            <ECEnumerator value="On" displayLabel="Turned On"/>
+                                                            <ECEnumerator value="Off" displayLabel="Turned Off"/>
+                                                        </ECEnumeration>
+                                                     </ECSchema>)xml"));
+            }
+    public:
+        explicit UpgradedEC32EnumsTestIModelCreator() : TestIModelCreator(TESTIMODEL_UPGRADEDEC32ENUMS) {}
+        ~UpgradedEC32EnumsTestIModelCreator() {}
     };
 
 //======================================================================================
@@ -105,7 +142,7 @@ struct PreEC32KoqsTestIModelCreator final : TestIModelCreator
     private:
         BentleyStatus _Create() override
             {
-            DgnDbPtr bim = CreateNewTestFile(TESTIMODEL_PREEC32KOQS);
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
             if (bim == nullptr)
                 return ERROR;
 
@@ -168,5 +205,6 @@ struct PreEC32KoqsTestIModelCreator final : TestIModelCreator
 </ECSchema>)xml"));
             }
     public:
+        PreEC32KoqsTestIModelCreator() : TestIModelCreator(TESTIMODEL_PREEC32KOQS) {}
         ~PreEC32KoqsTestIModelCreator() {}
     };

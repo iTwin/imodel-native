@@ -539,8 +539,8 @@ Json::Value Render::HiddenLineParams::Style::ToJson() const
     Json::Value val;
     val[json_ovrColor()] = m_ovrColor;
     val[json_color()] = m_color.GetValue();
-    val[json_pattern()] = (Json::UInt32) m_pattern;
-    val[json_width()] = (Json::UInt32) m_width;
+    val[json_pattern()] = (uint32_t) m_pattern;
+    val[json_width()] = (uint32_t) m_width;
     return val;
     }
 

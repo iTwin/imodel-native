@@ -1073,7 +1073,7 @@ BentleyStatus Loader::_LoadTile()
             {
             if (geometry.IsEmpty() || !geometry.ContainsCurves())
                 tile.SetIsLeaf();
-            else if (isLeafInCache && !T_HOST.GetTileAdmin()._WantCachedHiResTiles(root.GetDgnDb()))
+            else if (isLeafInCache)
                 tile.SetZoomFactor(1.0);
             }
         }
@@ -1228,6 +1228,17 @@ bool Loader::_IsValidData()
     else
         reader.FindDeletedElements(m_omitElemIds);
 
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Loader::_WantWaitOnSave() const
+    {
+    // BuildingConceptStation's tools invalidate tiles on every single mouse motion.
+    // If we don't wait on the save to cache, then a subsequent tile invalidation may cause cache row to be updated/deleted
+    // before a pending save completes, producing errors in sqlite.
     return true;
     }
 
@@ -1776,6 +1787,9 @@ void Tile::_Invalidate()
         m_generator.reset();
 
         m_contentRange = ElementAlignedBox3d();
+
+        if (m_hasZoomFactor)
+            _UnloadChildren(BeTimePoint::Now());
 
         m_isLeaf = false;
         m_hasZoomFactor = false;

@@ -100,11 +100,19 @@ folly::Future<BentleyStatus> TileLoader::Perform()
             auto saveToDb = me->_SaveToDb();
 
             // don't wait on the save unless caller wants to immediately extract data from cache.
-            if (T_HOST.GetTileAdmin()._WantWaitOnSave(tile.GetRoot().GetDgnDb()))
+            if (me->_WantWaitOnSave())
                 saveToDb.get();
 
             return SUCCESS;
             });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileLoader::_WantWaitOnSave() const
+    {
+    return T_HOST.GetTileAdmin()._WantWaitOnSave(m_tile->GetRoot().GetDgnDb());
     }
 
 //----------------------------------------------------------------------------------------
@@ -788,7 +796,7 @@ Root::Root(DgnDbR db, DgnModelId modelId, TransformCR location, Utf8CP rootResou
     : Root(db, modelId, true, location, rootResource, system)
     {
     auto model = db.Models().GetModel(modelId);
-    BeAssert(model.IsValid());
+//    BeAssert(model.IsValid());   This is null when called during conversion of ThreeMx.
     if (model.IsValid() && !model->Is3d())
         m_is3d = false;
     }

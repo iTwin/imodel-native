@@ -39,15 +39,22 @@ struct TestFile final
         BeSQLite::ProfileVersion m_ecdbVersion = BeSQLite::ProfileVersion(0, 0, 0, 0);
         BeSQLite::ProfileVersion m_dgndbVersion = BeSQLite::ProfileVersion(0, 0, 0, 0);
 
-    public:
-        TestFile(Utf8StringCR name, BeFileNameCR path, BeFileNameCR seedPath, BeSQLite::ProfileVersion const& bedbVersion, BeSQLite::ProfileVersion const& ecdbVersion, BeSQLite::ProfileVersion const& dgndbVersion);
+        BeSQLite::ProfileVersion m_initialBeDbVersion = BeSQLite::ProfileVersion(0, 0, 0, 0);
+        BeSQLite::ProfileVersion m_initialECDbVersion = BeSQLite::ProfileVersion(0, 0, 0, 0);
+        BeSQLite::ProfileVersion m_initialDgnDbVersion = BeSQLite::ProfileVersion(0, 0, 0, 0);
 
-        TestFile(TestFile const&) = delete;
-        TestFile& operator=(TestFile const&) = delete;
+    public:
+        TestFile(Utf8StringCR name, BeFileNameCR path, BeFileNameCR seedPath, 
+                 BeSQLite::ProfileVersion const& bedbVersion, BeSQLite::ProfileVersion const& ecdbVersion, BeSQLite::ProfileVersion const& dgndbVersion, 
+                 BeSQLite::ProfileVersion const& initialBeDbVersion, BeSQLite::ProfileVersion const& initialECDbVersion, BeSQLite::ProfileVersion const& initialDgnDbVersion);
+
+        TestFile(TestFile const&) = default;
+        TestFile& operator=(TestFile const&) = default;
         TestFile(TestFile&&) = default;
         TestFile& operator=(TestFile&&) = default;
 
-        BeFileNameStatus CloneFromSeed() const;
+        BeFileNameStatus CloneSeedToOutput() const { return CloneSeed(m_path); }
+        BeFileNameStatus CloneSeed(BeFileNameCR targetFolder) const;
 
         Utf8StringCR GetName() const { return m_name; }
         BeFileNameCR GetPath() const { return m_path; }
@@ -55,6 +62,12 @@ struct TestFile final
         BeSQLite::ProfileVersion const& GetBeDbVersion() const { return m_bedbVersion; }
         BeSQLite::ProfileVersion const& GetECDbVersion() const { return m_ecdbVersion; }
         BeSQLite::ProfileVersion const& GetDgnDbVersion() const { return m_dgndbVersion; }
+
+        //The test file is an upgraded file, i.e. not created from scratch
+        bool IsUpgraded() const { return m_dgndbVersion > m_initialDgnDbVersion || m_ecdbVersion > m_initialECDbVersion || m_bedbVersion > m_initialBeDbVersion; }
+        BeSQLite::ProfileVersion const& GetInitialBeDbVersion() const { return m_initialBeDbVersion; }
+        BeSQLite::ProfileVersion const& GetInitialECDbVersion() const { return m_initialECDbVersion; }
+        BeSQLite::ProfileVersion const& GetInitialDgnDbVersion() const { return m_initialDgnDbVersion; }
 
         //Indicates whether the test file in its un-upgraded state is older/newer/up-to-date compared to the version expected by the software.
         BeSQLite::ProfileState::Age GetAge() const;
@@ -72,11 +85,18 @@ struct Profile : NonCopyableClass
         BeSQLite::PropertySpec m_versionPropertySpec;
 
     private:
+        static constexpr Utf8CP PROFILEVERSIONFOLDER_VERSIONSEPARATOR = "_";
+        static constexpr WCharCP PROFILEVERSIONFOLDER_VERSIONSEPARATOR_W = L"_";
+
         Utf8CP m_name = nullptr;
+        BeFileName m_profileCreatedDataFolder; // files created by this test run (will be saved as nugets)
+        BeFileName m_profilePulledTestDataFolder; // pre-existing test files (pulled as nugets)
         BeFileName m_profileOutFolder;
-        BeFileName m_profileSeedFolder;
 
         virtual BentleyStatus _Init() const = 0;
+        BeFileName GetFolderForNewTestFile() const;
+
+        std::vector<TestFile> GetAllVersionsOfTestFile(BeFileNameCR rootFolder, WStringCR fileNamePattern, bool logFoundFiles) const;
 
     protected:
         Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name);
@@ -90,10 +110,14 @@ struct Profile : NonCopyableClass
 
         BeSQLite::ProfileVersion const& GetExpectedVersion() const { return m_expectedVersion; }
 
-        std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles = true) const;
+        BeFileNameCR GetTestDataFolder() const { return m_profilePulledTestDataFolder; }
         BeFileNameCR GetOutFolder() const { return m_profileOutFolder; }
-        BeFileNameCR GetSeedFolder() const { return m_profileSeedFolder; }
-        BeFileName GetPathForNewTestFile(Utf8CP testFileName) const;
+
+        std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles = true) const;
+        std::vector<TestFile> GetAllVersionsOfAllPulledTestFiles(bool logFoundFiles = true) const { return GetAllVersionsOfTestFile(m_profilePulledTestDataFolder, L"*.*", logFoundFiles); }
+        std::vector<TestFile> GetAllVersionsOfTestFile(BeFileNameCR rootFolder, Utf8CP testFileName, bool logFoundFiles) const;
+        BeFileName GetPathForNewTestFile(Utf8StringCR testFileName) const { return GetFolderForNewTestFile().AppendToPath(BeFileName(testFileName)); }
+        BeFileName GetPathForNewUpgradedTestFile(TestFile const& oldSeedFile) const;
     };
 
 //======================================================================================

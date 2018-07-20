@@ -12,6 +12,50 @@
 
 USING_NAMESPACE_BENTLEY_EC
 
+//**************************************************************************************
+// CompatibilityTestFixture
+//**************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle     07/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool CompatibilityTestFixture::s_isInitialized = false;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle     07/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+void CompatibilityTestFixture::Initialize()
+    {
+    if (!s_isInitialized)
+        {
+        //establish standard schema search paths (they are in the application dir)
+        BeFileName applicationSchemaDir;
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
+
+        BeFileName temporaryDir;
+        BeTest::GetHost().GetOutputRoot(temporaryDir);
+
+        DgnDb::Initialize(temporaryDir, &applicationSchemaDir);
+        srand((uint32_t) (BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
+
+        BeFileName sqlangFile;
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
+        sqlangFile.AppendToPath(L"sqlang");
+        sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
+
+        BeSQLite::L10N::Shutdown();
+        BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
+
+        s_isInitialized = true;
+        }
+    }
+
+//**************************************************************************************
+// TestFileCreator
+//**************************************************************************************
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -32,6 +76,22 @@ ECN::ECSchemaReadContextPtr TestFileCreator::DeserializeSchemas(ECDbCR ecdb, std
         }
 
     return context;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus TestFileCreator::Run()
+    {
+    if (SUCCESS != _Create())
+        return ERROR;
+
+    LOG.infov("Created new test file '%s'.", m_fileName.c_str());
+
+    if (SUCCESS != _UpgradeOldFiles())
+        return ERROR;
+
+    return _UpgradeSchemas();
     }
 
 //**************************************************************************************
