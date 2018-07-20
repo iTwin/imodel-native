@@ -29,6 +29,7 @@ struct ClassificationSystemsTestFixture : public ClassificationSystemsTestsBase 
 TEST_F(ClassificationSystemsTestFixture, StandardInsertion)
     {
         DgnDbR db = *DgnClientApp::App().Project();
+        db.BriefcaseManager().StartBulkOperation();
         Utf8CP expectedSystemName = "TestSys";
         Utf8CP expectedGroupName = "TestGroup";
         Utf8CP expectedClassificationName = "TestClassification";
@@ -46,7 +47,6 @@ TEST_F(ClassificationSystemsTestFixture, StandardInsertion)
         Utf8CP name = system->GetName();
         ASSERT_TRUE(0 == strcmp(name, expectedSystemName)) << "Failed to get name from Classification System";
 
-        BuildingLocks_LockElementForOperation(*system.get(), BeSQLite::DbOpcode::Insert, "Insert for ClassificationSystems_test");
         system->Insert(&stat);
         ASSERT_EQ(DgnDbStatus::Success, stat) << "System failed to be inserted to Db";
 
@@ -67,7 +67,6 @@ TEST_F(ClassificationSystemsTestFixture, StandardInsertion)
         code = classification->GetCode();
         ASSERT_TRUE(code.GetValue().Equals(expectedClassificationCode)) << "Code Value was set wrong";
 
-        BuildingLocks_LockElementForOperation(*classification.get(), BeSQLite::DbOpcode::Insert, "Insert for ClassificationSystems_test");
         classification->Insert(&stat);
         ASSERT_EQ(DgnDbStatus::Success, stat) << "Group failed to be inserted to Db";
         

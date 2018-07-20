@@ -135,12 +135,8 @@ Utf8CP name
 ) const
     {
     ClassificationSystemPtr classSystem = ClassificationSystem::Create(db, name);
-    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classSystem.get(), BeSQLite::DbOpcode::Insert, "ClassificationSystem : Insertion"))
-        {
-        classSystem->Insert();
-        return classSystem;
-        }
-    return nullptr;
+    classSystem->Insert();
+    return classSystem;
     }
 
 
@@ -154,12 +150,8 @@ Utf8CP name
 ) const
     {
     ClassificationGroupPtr classDefinitionGroup = ClassificationGroup::Create(system, name);
-    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinitionGroup.get(), BeSQLite::DbOpcode::Insert, "ClassificationGroup : Insertion"))
-        {
-        classDefinitionGroup->Insert();
-        return classDefinitionGroup;
-        }
-    return nullptr;
+    classDefinitionGroup->Insert();
+    return classDefinitionGroup;
     }
 
 //---------------------------------------------------------------------------------------
@@ -176,17 +168,8 @@ ClassificationCP specializes
 ) const
     {
     ClassificationPtr classification = Classification::Create(system, name, id, description, group, specializes);
-    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classification.get(), BeSQLite::DbOpcode::Insert, "Classification : Insertion"))
-        {
-        classification->Insert();
-        return classification;
-        }
-    return nullptr;
+    classification->Insert();
+    return classification;
     }
-
-
-
-
-
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
