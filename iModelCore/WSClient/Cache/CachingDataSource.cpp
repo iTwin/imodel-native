@@ -475,9 +475,9 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                     {
                     SchemaKey schemaKey = ReadSchemaKey(txn, schemaId);
                     if (ECSchema::IsStandardSchema(schemaKey.m_schemaName))
-                        {
                         continue;
-                        }
+                    if (L"ECDbMap" == schemaKey.m_schemaName)
+                        continue;
 
                     Utf8String eTag = txn.GetCache().ReadFileCacheTag(schemaId);
                     TempFilePtr schemaFile = GetTempFileForSchema(schemaKey);

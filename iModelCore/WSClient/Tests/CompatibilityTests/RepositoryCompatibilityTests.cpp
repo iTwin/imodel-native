@@ -210,9 +210,9 @@ TEST_P(RepositoryCompatibilityTests_DownloadSchemas, Download)
             properties["VersionMinor"].GetInt());
 
         BeFileName schemaFilePath(schemasFolder);
-        Utf8PrintfString fullSchemaName("%s.%2d.%2d", Utf8String(key.m_schemaName).c_str(), key.m_versionMajor, key.m_versionMinor);
+        Utf8PrintfString fullSchemaName("%s.%02d.%02d", Utf8String(key.m_schemaName).c_str(), key.m_versionMajor, key.m_versionMinor);
         schemaFilePath.AppendToPath(BeFileName(fullSchemaName + ".ecschema.xml"));
-     
+
         EXPECT_TRUE(client->SendGetFileRequest(schema.GetObjectId(), schemaFilePath)->GetResult().IsSuccess());
         }
 

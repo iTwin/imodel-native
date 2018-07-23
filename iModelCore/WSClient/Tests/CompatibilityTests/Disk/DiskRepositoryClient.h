@@ -100,7 +100,13 @@ struct DiskRepositoryClient : public IWSRepositoryClient
 
         virtual void UnregisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) override {};
 
-        virtual AsyncTaskPtr<WSRepositoryResult> GetInfo(ICancellationTokenPtr ct) const override;
+        virtual AsyncTaskPtr<WSRepositoryResult> GetInfo(ICancellationTokenPtr ct) const override
+            {
+            WSRepository repo;
+            repo.SetServerUrl("FakeUrl");
+            repo.SetId("FakeId");
+            return CreateCompletedAsyncTask(WSRepositoryResult::Success(repo));
+            };
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
