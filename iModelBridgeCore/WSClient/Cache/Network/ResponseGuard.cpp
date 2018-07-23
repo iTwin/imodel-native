@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Network/ResponseGuard.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ResponseGuard.h"
@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResponseGuard::ResponseGuard(Tasks::ICancellationTokenPtr tokenToWrap, Http::Request::ProgressCallbackCR onProgress) :
+ResponseGuard::ResponseGuard(ICancellationTokenPtr tokenToWrap, Http::Request::ProgressCallbackCR onProgress) :
 m_tokenEnabled(true),
 m_token(tokenToWrap),
 m_onProgress(onProgress)
@@ -21,7 +21,7 @@ m_onProgress(onProgress)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResponseGuardPtr ResponseGuard::Create(Tasks::ICancellationTokenPtr tokenToWrap, Http::Request::ProgressCallbackCR onProgress)
+ResponseGuardPtr ResponseGuard::Create(ICancellationTokenPtr tokenToWrap, Http::Request::ProgressCallbackCR onProgress)
     {
     return std::make_shared<ResponseGuard>(tokenToWrap, onProgress);
     }
@@ -37,7 +37,7 @@ bool ResponseGuard::IsCanceled()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ResponseGuard::Register(std::weak_ptr<Tasks::ICancellationListener> listener)
+void ResponseGuard::Register(std::weak_ptr<ICancellationListener> listener)
     {}
 
 /*--------------------------------------------------------------------------------------+

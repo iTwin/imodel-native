@@ -12,11 +12,10 @@
 #include <WebServices/Cache/WebServicesCache.h>
 #include <WebServices/Client/RequestOptions.h>
 #include <ECDb/ECDbApi.h>
-#include <Bentley/Tasks/CancellationToken.h>
+#include <Bentley/CancellationToken.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_TASKS
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 /*--------------------------------------------------------------------------------------+

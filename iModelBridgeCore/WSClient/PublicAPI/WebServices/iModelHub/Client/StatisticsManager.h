@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 #include <WebServices/iModelHub/Common.h>
 #include <WebServices/Client/WSRepositoryClient.h>
-#include <Bentley/Tasks/CancellationToken.h>
+#include <Bentley/CancellationToken.h>
 #include <WebServices/iModelHub/Client/StatisticsInfo.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
