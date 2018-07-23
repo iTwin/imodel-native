@@ -68,13 +68,13 @@ TEST_F(ViewTests, SavedViewsCRUD)
     v8editor.Save();
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
-
+    DgnViewId view1Id;
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         ASSERT_EQ(2, GetViewCount(*db)); // Default view + saved view
         DefinitionModelPtr definitionModel = GetJobDefinitionModel(*db);
-        auto viewId = ViewDefinition::QueryViewId(*definitionModel, "View1");
-        ASSERT_TRUE(viewId.IsValid());
+        view1Id = ViewDefinition::QueryViewId(*definitionModel, "View1");
+        ASSERT_TRUE(view1Id.IsValid());
         }
 
     // Confirm that saved view created after initial conversion gets converted during update
@@ -91,6 +91,7 @@ TEST_F(ViewTests, SavedViewsCRUD)
         ASSERT_TRUE(view2Id.IsValid());
         }
 
+    // Delete view
     ASSERT_EQ(DgnV8Api::NamedViewStatus::Success, view2->DeleteFromFile());
     v8editor.Save();
 
@@ -101,6 +102,24 @@ TEST_F(ViewTests, SavedViewsCRUD)
         DefinitionModelPtr definitionModel = GetJobDefinitionModel(*db);
         auto viewId = ViewDefinition::QueryViewId(*definitionModel, "View2");
         ASSERT_FALSE(viewId.IsValid());
+        }
+
+    // Updates
+    EXPECT_TRUE(DgnV8Api::NamedViewStatus::Success == view1->SetName(L"New Name"));
+    EXPECT_TRUE(DgnV8Api::NamedViewStatus::Success == view1->WriteToFile());
+    v8editor.Save();
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        ASSERT_EQ(2, GetViewCount(*db)); // default view + 1 saved views
+        DefinitionModelPtr definitionModel = GetJobDefinitionModel(*db);
+        auto viewId = ViewDefinition::QueryViewId(*definitionModel, "View1");
+        ASSERT_FALSE(viewId.IsValid());
+        viewId = ViewDefinition::QueryViewId(*definitionModel, "New Name");
+        ASSERT_TRUE(viewId.IsValid());
+
+        ASSERT_TRUE(viewId == view1Id);
         }
 
     }

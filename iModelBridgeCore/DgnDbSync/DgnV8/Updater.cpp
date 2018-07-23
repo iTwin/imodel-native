@@ -445,6 +445,7 @@ void ChangeDetector::_DetectDeletedViews(Converter& converter)
             if (!isAttached)
                 {
                 elements.Delete(viewId);
+                syncInfo.DeleteView(viewId);
                 }
             }
         }
