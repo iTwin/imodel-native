@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeHttp/HttpRequest.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,7 +15,7 @@
 #include <BeHttp/BeUri.h>
 #include <BeHttp/CompressionOptions.h>
 #include <Bentley/Tasks/AsyncTask.h>
-#include <Bentley/Tasks/CancellationToken.h>
+#include <Bentley/CancellationToken.h>
 #include <BeHttp/Credentials.h>
 #include <BeHttp/HttpResponse.h>
 #include <BeHttp/IHttpHandler.h>
@@ -48,7 +48,7 @@ private:
     HttpRequestHeaders m_requestHeaders;
     HttpBodyPtr m_requestBody;
     HttpBodyPtr m_responseBody;
-    Tasks::ICancellationTokenPtr m_cancellationToken;
+    ICancellationTokenPtr m_cancellationToken;
     ProgressCallback m_uploadProgressCallback;
     ProgressCallback m_downloadProgressCallback;
     unsigned m_connectionTimeoutSeconds = 60;
@@ -127,8 +127,8 @@ public:
     //! Set compression options for this request. By default request is not compressed
     void SetCompressionOptions(CompressionOptions options) {m_compressionOptions = std::move(options);}
     CompressionOptionsCR GetCompressionOptions() const {return m_compressionOptions;}
-    void SetCancellationToken(Tasks::ICancellationTokenPtr token) {m_cancellationToken = token;}
-    Tasks::ICancellationTokenPtr GetCancellationToken() const {return m_cancellationToken;}
+    void SetCancellationToken(ICancellationTokenPtr token) {m_cancellationToken = token;}
+    ICancellationTokenPtr GetCancellationToken() const {return m_cancellationToken;}
 
     void SetDownloadProgressCallback(ProgressCallbackCR onProgress) {m_downloadProgressCallback = onProgress;}
     ProgressCallbackCR GetDownloadProgressCallback() const {return m_downloadProgressCallback;}
