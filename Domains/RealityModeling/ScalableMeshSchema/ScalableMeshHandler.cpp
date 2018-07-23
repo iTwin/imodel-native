@@ -773,7 +773,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
     m_loadStatus.store(LoadStatus::Loading);
 
-    BeAssert(m_children.empty());
+    //BeAssert(m_children.empty()); 
 
     DRange3d range3D(scene.m_smPtr->GetRootNode()->GetContentExtent());
 

@@ -437,9 +437,7 @@ private:
     void MakeTileSubTree(Render::TileNodePtr& rootTile, IScalableMeshNodePtr& node, TransformCR transformDbToTile, size_t childIndex=0, Render::TileNode* parent=nullptr);
 
     uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
-
-    bool _AllowPublishing() const override;
-
+    
     Dgn::Render::PublishedTilesetInfo _GetPublishedTilesetInfo();
 
 protected:
@@ -591,6 +589,10 @@ public:
         SCALABLEMESH_SCHEMA_EXPORT void CreateBreaklines(const BeFileName& extraLinearFeatureAbsFileName, bvector<DSegment3d> const& breaklines);
 
         uint64_t GetAssociatedRegionId() const { return m_associatedRegion; }
+
+
+        //From IGetTileTreeForPublishing interface
+        bool _AllowPublishing() const override;
 };
 
 struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler::Spatial
