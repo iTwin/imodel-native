@@ -57,6 +57,9 @@
 #define PROFILES_CLASS_BuiltUpProfileComponent "BuiltUpProfileComponent"
 #define PROFILES_CLASS_ParametricProfile "ParametricProfile"
 
+#define PROFILES_CLASS_BuiltUpProfileOwnsBuiltUpProfileComponent "BuiltUpProfileOwnsBuiltUpProfileComponent"
+#define PROFILES_CLASS_BuiltUpProfileComponentUsesConstantProfile "BuiltUpProfileComponentUsesConstantProfile"
+
 #define BE_ECCLASS_NAME(__val__)   static constexpr Utf8CP ecclass_name_##__val__() {return #__val__;}
 
 //-----------------------------------------------------------------------------------------
@@ -81,7 +84,7 @@ PROFILES_POINTER_TYPEDEFS(ProfileDefinitionModel)
 PROFILES_POINTER_TYPEDEFS(Profile)
 PROFILES_POINTER_TYPEDEFS(ConstantProfile)
 PROFILES_POINTER_TYPEDEFS(BuiltUpProfile)
-PROFILES_POINTER_TYPEDEFS(BuiltUpProfileComponenet)
+PROFILES_POINTER_TYPEDEFS(BuiltUpProfileComponent)
 PROFILES_POINTER_TYPEDEFS(ParametricProfile)
 
 

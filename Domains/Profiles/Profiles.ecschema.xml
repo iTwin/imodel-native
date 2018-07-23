@@ -42,7 +42,7 @@
         <ECProperty propertyName="Index" typeName="int" description="Zero-based index corresponding to the order in which this component was added to its BuiltUpProfile."/>
         <ECProperty propertyName="PlacementPoint" typeName="int" description="The identifier of the location on the related Profile that is Offet away from 0,0 of BuiltUpProfile. This values are exactly the same as CIS/2 cardinal points."/>
         <ECProperty propertyName="MirrorProfileAboutYAxis" typeName="boolean" description="The profile used by the component is actually a mirror image of Profile. The mirroring is done about the profile's y-axis and is done before rotation and before determining the PlacementPoint."/>
-        <ECProperty propertyName="Offset" typeName="point2d" description="The offset in BuiltUpProfile coordinates from 0,0 to the PlacementPoint."/>
+        <ECProperty propertyName="OffsetPoint" typeName="point2d" description="The offset in BuiltUpProfile coordinates from 0,0 to the PlacementPoint."/>
         <ECProperty propertyName="Rotation" typeName="double" description="The rotation of this component's profile relative to the BuiltUpProfile's axes. Rotation are positive ccw (acw). A value of zero implies that the profile's x- and y- axes are parallel to those of the BuiltUpProfile. All rotation is done about the PlacementPoint."/>
         <ECNavigationProperty propertyName="Profile" relationshipName="BuiltUpProfileComponentUsesConstantProfile" direction="Forward" description="The using MultiAspect">
             <ECCustomAttributes>
