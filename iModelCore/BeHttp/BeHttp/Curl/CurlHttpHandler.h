@@ -38,6 +38,7 @@ struct CurlHttpHandler : IHttpHandler, IApplicationEventsListener
         std::shared_ptr<CurlTaskRunner::Factory>    m_webRunnerFactory;
         std::shared_ptr<WorkerThreadPool>   m_webThreadPool;
         CurlPool                            m_curlPool;
+        CurlPool                            m_emptyCurlPool;
         StartBackgroundTask                 m_startBackgroundTask;
         SimpleCancellationTokenPtr          m_ct;
 
@@ -46,7 +47,7 @@ struct CurlHttpHandler : IHttpHandler, IApplicationEventsListener
         static void ProcessInitialize();
         //! Unload CURL, should be called when process is shutting down
         static void ProcessUninitialize();
-    
+
         CurlHttpHandler();
         virtual ~CurlHttpHandler();
 

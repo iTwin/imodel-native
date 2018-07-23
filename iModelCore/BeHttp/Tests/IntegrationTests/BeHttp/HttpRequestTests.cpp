@@ -59,6 +59,7 @@ struct HttpRequestTests : ::testing::Test
         {
         // Enable full logging with LOG_TRACE if needed
         NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_WARNING);
+        NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BEHTTP_TESTS, NativeLogging::SEVERITY::LOG_INFO);
 
         putenv("http_proxy=");
         putenv("https_proxy=");
@@ -1164,6 +1165,54 @@ struct HttpRequestTestsProxy : HttpRequestTests
         EXPECT_EQ("Serving HTTP Proxy on ::1 port " LOCAL_PROXY_PORT " ...\n", GetLocalProxyLog());
         }
     };
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Robert.Lukasonok                       07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTestsProxy, Perform_SwitchingBetweenTwoServers_SamePerformanceBetweenPickers)
+    {
+    const bvector<Utf8String> urlList =
+        {
+        "http://httpbin.bentley.com/uuid",
+        "http://httpbin.org/uuid"
+        };
+    const size_t numUrls = urlList.size();
+    const size_t requestsPerUrl = 5;
+    const auto urlPickerList = {
+        std::function<size_t(size_t)>([numUrls] (size_t i) { return i % numUrls; }),
+        std::function<size_t(size_t)>([requestsPerUrl] (size_t i) { return i / requestsPerUrl; })
+        };
+
+    // Ignore first-time loads
+    for (const auto& url : urlList)
+        EXPECT_TRUE(Request(url).Perform().get().IsSuccess());
+
+    bvector<bvector<uint64_t>> pickerDurations;
+    for (const auto& urlPicker : urlPickerList)
+        {
+        bvector<uint64_t> urlDurations(numUrls, 0);
+        for (size_t i = 0; i < numUrls * requestsPerUrl; ++i)
+            {
+            size_t urlIndex = urlPicker(i);
+            Utf8String url = urlList[urlIndex];
+            Request request(url);
+            uint64_t before = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+            auto response = request.Perform().get();
+            EXPECT_TRUE(response.IsSuccess());
+            uint64_t after = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+            urlDurations[urlIndex] += after - before;
+            }
+
+        pickerDurations.push_back(std::move(urlDurations));
+        }
+
+    for (size_t i = 0; i < pickerDurations.size(); ++i)
+        {
+        TESTLOG.infov("Switching method #%d average wait time:", i + 1);
+        for (size_t j = 0; j < urlList.size(); ++j)
+            TESTLOG.infov("\t%31s - %5dms", urlList[j], pickerDurations[i][j] / requestsPerUrl);
+        }
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16

@@ -94,7 +94,8 @@ void CurlHttpHandler::CancelAllRequests()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<Response> CurlHttpHandler::_PerformRequest(RequestCR request)
     {
-    auto curlRequest = std::make_shared<CurlHttpRequest>(request, m_curlPool);
+    // No need to reuse CURL handles when using curl_multi_*, just reuse CURLM handle
+    auto curlRequest = std::make_shared<CurlHttpRequest>(request, m_emptyCurlPool);
     auto task = std::make_shared<SimplePackagedAsyncTask<std::shared_ptr<CurlHttpRequest>, Response>>(curlRequest);
 
     m_webThreadPool->Push(task);
