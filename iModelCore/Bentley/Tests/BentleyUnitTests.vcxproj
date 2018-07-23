@@ -62,7 +62,7 @@
     <ClCompile Include="Published\Tasks\AsyncResultTests.cpp" />
     <ClCompile Include="Published\Tasks\AsyncTasksManagerTests.cpp" />
     <ClCompile Include="Published\Tasks\AsyncTaskTests.cpp" />
-    <ClCompile Include="Published\Tasks\CancellationTokenTests.cpp" />
+    <ClCompile Include="Published\CancellationTokenTests.cpp" />
     <ClCompile Include="Published\Tasks\LimitingTaskQueueTests.cpp" />
     <ClCompile Include="Published\Tasks\ThreadlessTaskSchedulerTests.cpp" />
     <ClCompile Include="Published\Tasks\UniqueTaskHolderTests.cpp" />
@@ -93,9 +93,7 @@
     <ClInclude Include="Published\Tasks\AsyncResultTests.h" />
     <ClInclude Include="Published\Tasks\AsyncTaskTests.h" />
     <ClInclude Include="Published\Tasks\AsyncTestCheckpoint.h" />
-    <ClInclude Include="Published\Tasks\CancellationTokenTests.h" />
     <ClInclude Include="Published\Tasks\LimitingTaskQueueTests.h" />
-    <ClInclude Include="Published\Tasks\MockCancellationListener.h" />
     <ClInclude Include="Published\Tasks\StubTaskScheduler.h" />
     <ClInclude Include="Published\Tasks\TasksTestsHelper.h" />
     <ClInclude Include="Published\Tasks\UniqueTaskHolderTests.h" />

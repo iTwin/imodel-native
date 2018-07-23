@@ -11,7 +11,7 @@
 #include <Bentley/Tasks/Tasks.h>
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/AsyncTasksManager.h>
-#include <Bentley/Tasks/CancellationToken.h>
+#include <Bentley/CancellationToken.h>
 #include <Bentley/BeThread.h>
 #include <deque>
 #include <memory>

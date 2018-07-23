@@ -122,7 +122,7 @@
     <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTaskRunnerFactory.h" />
     <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTaskRunnerPool.h" />
     <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTasksManager.h" />
-    <ClInclude Include="PublicAPI\Bentley\Tasks\CancellationToken.h" />
+    <ClInclude Include="PublicAPI\Bentley\CancellationToken.h" />
     <ClInclude Include="PublicAPI\Bentley\Tasks\ConcurrentQueue.h" />
     <ClInclude Include="PublicAPI\Bentley\Tasks\ITaskRunner.h" />
     <ClInclude Include="PublicAPI\Bentley\Tasks\LimitingTaskQueue.h" />

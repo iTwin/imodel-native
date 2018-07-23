@@ -2,7 +2,7 @@
 #
 #     $Source: Tasks/Tasks.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 TasksSourceDir    = $(baseDir)Tasks/
@@ -15,7 +15,6 @@ TasksHeaders      = $(TasksPublicApiDir)AsyncError.h             \
                     $(TasksPublicApiDir)AsyncTaskRunnerPool.h    \
                     $(TasksPublicApiDir)AsyncTaskRunnerFactory.h \
                     $(TasksPublicApiDir)AsyncTasksManager.h      \
-                    $(TasksPublicApiDir)CancellationToken.h      \
                     $(TasksPublicApiDir)ConcurrentQueue.h        \
                     $(TasksPublicApiDir)ITaskRunner.h            \
                     $(TasksPublicApiDir)TaskScheduler.h          \
@@ -42,5 +41,3 @@ $(o)AsyncTask$(oext)                      : $(TasksSourceDir)AsyncTask.cpp ${Tas
 $(o)AsyncError$(oext)                     : $(TasksSourceDir)AsyncError.cpp ${TasksHeaders} ${MultiCompileDepends}
 
 $(o)AsyncTasksManager$(oext)              : $(TasksSourceDir)AsyncTasksManager.cpp ${TasksHeaders} ${MultiCompileDepends}
-
-$(o)CancellationToken$(oext)              : $(TasksSourceDir)CancellationToken.cpp ${TasksHeaders} ${MultiCompileDepends}

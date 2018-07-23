@@ -1,23 +1,23 @@
 /*--------------------------------------------------------------------------------------+
  |
- |     $Source: PublicAPI/Bentley/Tasks/CancellationToken.h $
+ |     $Source: PublicAPI/Bentley/CancellationToken.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
-
 #include <functional>
 #include <atomic>
+
 #if !defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
-#   include <thread>
+#include <thread>
 #endif
-#include <Bentley/Tasks/Tasks.h>
+
 #include <Bentley/bvector.h>
 
-BEGIN_BENTLEY_TASKS_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2015
@@ -110,4 +110,4 @@ struct MergeCancellationToken : ICancellationToken
         BENTLEYDLL_EXPORT virtual void Register(std::weak_ptr<ICancellationListener> listener) override;
     };
 
-END_BENTLEY_TASKS_NAMESPACE
+END_BENTLEY_NAMESPACE

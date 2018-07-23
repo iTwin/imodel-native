@@ -111,7 +111,6 @@
     <ClCompile Include="Published\DirectoryObserverTests.cpp" />
     <ClCompile Include="Published\Tasks\AsyncResultTests.cpp" />
     <ClCompile Include="Published\Tasks\AsyncTaskTests.cpp" />
-    <ClCompile Include="Published\Tasks\CancellationTokenTests.cpp" />
     <ClCompile Include="Published\Tasks\LimitingTaskQueueTests.cpp" />
     <ClCompile Include="Published\Tasks\UniqueTaskHolderTests.cpp" />
     <ClCompile Include="Published\Tasks\UniqueTasksHolderTests.cpp" />
@@ -134,6 +133,7 @@
     <ClCompile Include="..\Bentley\nonport\BeTest.cpp" />
     <ClCompile Include="Published\Tasks\AsyncTasksManagerTests.cpp" />
     <ClCompile Include="Published\Tasks\ThreadlessTaskSchedulerTests.cpp" />
+    <ClCompile Include="Published\CancellationTokenTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ignore_list.txt" />
@@ -162,9 +162,7 @@
     <ClInclude Include="Published\DirectoryObserverTests.h" />
     <ClInclude Include="Published\Tasks\AsyncResultTests.h" />
     <ClInclude Include="Published\Tasks\AsyncTaskTests.h" />
-    <ClInclude Include="Published\Tasks\CancellationTokenTests.h" />
     <ClInclude Include="Published\Tasks\LimitingTaskQueueTests.h" />
-    <ClInclude Include="Published\Tasks\MockCancellationListener.h" />
     <ClInclude Include="Published\Tasks\TasksTestsHelper.h" />
     <ClInclude Include="Published\Tasks\UniqueTaskHolderTests.h" />
     <ClInclude Include="Published\Tasks\UniqueTasksHolderTests.h" />

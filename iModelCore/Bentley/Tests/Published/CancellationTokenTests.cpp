@@ -1,19 +1,30 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/Tasks/CancellationTokenTests.cpp $
+|     $Source: Tests/Published/CancellationTokenTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
+
 +--------------------------------------------------------------------------------------*/
-#include "CancellationTokenTests.h"
+#include <Bentley/BeTest.h>
+#include <Bentley/CancellationToken.h>
+
+USING_NAMESPACE_BENTLEY
+class CancellationTokenTests : public ::testing::Test {};
 
 #ifdef USE_GTEST
 #include <gmock/gmock.h>
 #endif
 
-#include "MockCancellationListener.h"
-
 #ifdef USE_GTEST
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     Vincas.Razma    04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct MockCancellationListener : public ICancellationListener
+    {
+    MOCK_METHOD0(OnCanceled, void());
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Benediktas.Lipnickas                03/16

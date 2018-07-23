@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
  |
- |     $Source: Tasks/CancellationToken.cpp $
+ |     $Source: Bentley/CancellationToken.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
-#include <Bentley/Tasks/CancellationToken.h>
+#include <Bentley/CancellationToken.h>
 
-USING_NAMESPACE_BENTLEY_TASKS
+USING_NAMESPACE_BENTLEY
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2015

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/Tasks/UniqueTaskHolder.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,7 @@
 #include <Bentley/bmap.h>
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/AsyncTasksManager.h>
-#include <Bentley/Tasks/CancellationToken.h>
+#include <Bentley/CancellationToken.h>
 
 BEGIN_BENTLEY_TASKS_NAMESPACE
 
