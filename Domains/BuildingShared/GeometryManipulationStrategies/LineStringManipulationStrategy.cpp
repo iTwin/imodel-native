@@ -76,3 +76,11 @@ LineStringPlacementStrategyPtr LineStringManipulationStrategy::_CreateLineString
     {
     return LineStringPlacementStrategy::Create(strategyType, *this);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<IGeometryPtr> LineStringManipulationStrategy::_FinishConstructionGeometry() const
+    {
+    return bvector<IGeometryPtr>();
+    }

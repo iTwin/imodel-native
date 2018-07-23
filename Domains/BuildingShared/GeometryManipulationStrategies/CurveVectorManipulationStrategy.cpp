@@ -362,6 +362,24 @@ CurveVectorPtr CurveVectorManipulationStrategy::_Finish
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<IGeometryPtr> CurveVectorManipulationStrategy::_FinishConstructionGeometry() const
+    {
+    bvector<CurvePrimitiveManipulationStrategyPtr> const& strategies = m_primitiveStrategyContainer.GetManipulationStrategies();
+    if (strategies.empty())
+        return bvector<IGeometryPtr>();
+
+    if (strategies.back().IsNull())
+        {
+        BeAssert(strategies.back().IsValid());
+        return bvector<IGeometryPtr>();
+        }
+
+    return strategies.back()->FinishConstructionGeometry();
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 CurveVectorPtr CurveVectorManipulationStrategy::Finish

@@ -128,6 +128,7 @@ struct GeometryManipulationStrategyBase : RefCountedBase, IResettableDynamic
         virtual bool _CanAcceptMorePoints() const = 0;
 
         virtual IGeometryPtr _FinishGeometry() const = 0;
+        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const = 0;
 
     public:
         //! Set/TryGet a bool property.
@@ -166,6 +167,9 @@ struct GeometryManipulationStrategyBase : RefCountedBase, IResettableDynamic
 
         //! Create geometry from added key points.
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT IGeometryPtr FinishGeometry() const;
+
+        //! Create constructions geometry.
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<IGeometryPtr> FinishConstructionGeometry() const;
     };
 
 END_BUILDING_SHARED_NAMESPACE

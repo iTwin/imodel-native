@@ -283,3 +283,11 @@ DynamicStateBaseCPtr ChildCurveVectorManipulationStrategy::_GetDynamicState() co
     {
     return m_cvManipulationStrategy->GetDynamicState();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<IGeometryPtr> ChildCurveVectorManipulationStrategy::_FinishConstructionGeometry() const
+    {
+    return m_cvManipulationStrategy->FinishConstructionGeometry();
+    }

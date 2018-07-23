@@ -167,6 +167,14 @@ DynamicStateBaseCPtr GeometryPlacementStrategy::_GetDynamicState() const
     return _GetManipulationStrategy().GetDynamicState();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<IGeometryPtr> GeometryPlacementStrategy::_FinishConstructionGeometry() const
+    {
+    return _GetManipulationStrategy().FinishConstructionGeometry();
+    }
+
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
     void GeometryPlacementStrategy::_SetProperty(Utf8CP key, value_type const& value) \
         { \

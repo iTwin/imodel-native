@@ -51,6 +51,7 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         virtual GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyForEdit() = 0;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
 
         ELEM_PROPERTY_OVERRIDE(bool)
         ELEM_PROPERTY_OVERRIDE(int)

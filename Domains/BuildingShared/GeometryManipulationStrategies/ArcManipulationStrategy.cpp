@@ -162,6 +162,62 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<IGeometryPtr> ArcManipulationStrategy::_FinishConstructionGeometry() const
+    {
+    ICurvePrimitivePtr arcPrimitive = _FinishPrimitive();
+    if (arcPrimitive.IsValid())
+        {
+        DEllipse3d arc;
+        if (!arcPrimitive->TryGetArc(arc))
+            {
+            BeAssert(false);
+            return bvector<IGeometryPtr>();
+            }
+
+        DPoint3d center = arc.center;
+        DPoint3d arcStart, arcEnd;
+        arc.EvaluateEndPoints(arcStart, arcEnd);
+
+        if (arc.IsFullEllipse())
+            {
+            return {IGeometry::Create(ICurvePrimitive::CreateLineString(bvector<DPoint3d>({center, arcStart})))};
+            }
+        else
+            {
+            return {IGeometry::Create(ICurvePrimitive::CreateLineString(bvector<DPoint3d>({arcEnd, center, arcStart})))};
+            }
+        }
+    else
+        {
+        if (!IsStartSet() || !IsCenterSet())
+            return bvector<IGeometryPtr>();
+
+        DVec3d normal;
+        if (BentleyStatus::SUCCESS != _TryGetProperty(prop_Normal(), normal))
+            return bvector<IGeometryPtr>();
+
+        DPoint3d center = GetCenter();
+        DPoint3d start = GetStart();
+        DVec3d centerStart = start - center;
+
+        if (m_useRadius)
+            {
+            centerStart.ScaleToLength(m_radius);
+            }
+        if (DoubleOps::AlmostEqual(centerStart.Magnitude(), 0))
+            return bvector<IGeometryPtr>();
+
+        DPoint3d arcStart = center + centerStart;
+
+        IGeometryPtr arcGeometry = IGeometry::Create(ICurvePrimitive::CreateArc(DEllipse3d::FromCenterNormalRadius(center, normal, centerStart.Magnitude())));
+        IGeometryPtr lineStringGeometry = IGeometry::Create(ICurvePrimitive::CreateLineString(bvector<DPoint3d>({center, arcStart})));
+        return {arcGeometry, lineStringGeometry};
+        }
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 void ArcManipulationStrategy::_OnKeyPointsChanged()

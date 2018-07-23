@@ -42,6 +42,7 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
+        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
 
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
         virtual ArcPlacementStrategyPtr _CreateArcPlacementStrategy(ArcPlacementMethod method) override;

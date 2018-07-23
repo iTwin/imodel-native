@@ -24,6 +24,7 @@ struct ChildCurveVectorManipulationStrategy : public CurvePrimitiveManipulationS
 
     protected:
         virtual ICurvePrimitivePtr _FinishPrimitive() const override;
+        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
 
         virtual bool _IsComplete() const override;

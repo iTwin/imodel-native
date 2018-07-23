@@ -23,6 +23,7 @@ struct GeometryManipulationStrategyTests : public BuildingSharedTestFixtureBase
             virtual ICurvePrimitivePtr _FinishPrimitive() const override { return nullptr; }
             virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override { return nullptr; }
             virtual CurvePrimitiveManipulationStrategyPtr _Clone() const override { return nullptr; }
+            virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override { return bvector<IGeometryPtr>(); }
         };
     };
 

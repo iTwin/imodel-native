@@ -75,6 +75,30 @@ Dgn::DgnElementPtr DgnElementPlacementStrategy::_FinishElement()
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void DgnElementPlacementStrategy::AddWorldOverlay
+(
+    Dgn::Render::GraphicBuilderR builder, 
+    Dgn::ColorDefCR contrastingToBackgroundColor
+) const
+    {
+    _AddWorldOverlay(builder, contrastingToBackgroundColor);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void DgnElementPlacementStrategy::_AddWorldOverlay
+(
+    Dgn::Render::GraphicBuilderR builder,
+    Dgn::ColorDefCR contrastingToBackgroundColor
+) const
+    {
+    _GetDgnElementManipulationStrategy().AddWorldOverlay(builder, contrastingToBackgroundColor);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::DgnElementPtr DgnElementPlacementStrategy::FinishElement

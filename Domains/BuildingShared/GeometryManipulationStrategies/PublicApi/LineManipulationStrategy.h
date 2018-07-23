@@ -23,6 +23,7 @@ struct LineManipulationStrategy : public CurvePrimitiveManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual LinePlacementStrategyPtr _CreateLinePlacementStrategy(LinePlacementStrategyType strategyType) override;

@@ -249,3 +249,45 @@ TEST_F(CurveVectorManipulationStrategyTestFixture, Finish_InitializedFromParityR
     ASSERT_TRUE(actualShape.IsValid());
     ASSERT_TRUE(actualShape->IsSameStructureAndGeometry(*expectedShape));
     }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorManipulationStrategyTestFixture, FinishConstructionGeometry)
+    {
+    CurveVectorManipulationStrategyPtr sut = CurveVectorManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Spline);
+
+    sut->AppendKeyPoint({0,0,0});
+    sut->AppendKeyPoint({0,1,0});
+    sut->AppendKeyPoint({1,1,0});
+    sut->AppendKeyPoint({2,1,0});
+    sut->AppendKeyPoint({2,0,0});
+    bvector<IGeometryPtr> cGeom1 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(2, cGeom1.size());
+    ASSERT_TRUE(cGeom1[0].IsValid());
+    ASSERT_TRUE(cGeom1[1].IsValid());
+    ICurvePrimitivePtr cGeom1PointString = cGeom1[0]->GetAsICurvePrimitive();
+    ICurvePrimitivePtr cGeom1LineString = cGeom1[1]->GetAsICurvePrimitive();
+    ASSERT_TRUE(cGeom1PointString.IsValid());
+    ASSERT_TRUE(cGeom1LineString.IsValid());
+    bvector<DPoint3d> points1 {{0,0,0},{0,1,0},{1,1,0},{2,1,0},{2,0,0}};
+    ICurvePrimitivePtr expected1PointString = ICurvePrimitive::CreatePointString(points1);
+    ICurvePrimitivePtr expected1LineString = ICurvePrimitive::CreateLineString(points1);
+    ASSERT_TRUE(cGeom1PointString->IsSameStructureAndGeometry(*expected1PointString));
+    ASSERT_TRUE(cGeom1LineString->IsSameStructureAndGeometry(*expected1LineString));
+
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
+    sut->ChangeDefaultPlacementStrategy(ArcPlacementMethod::StartMidEnd);
+    sut->AppendKeyPoint({3,1,0});
+    sut->AppendDynamicKeyPoint({4,0,0});
+    sut->AppendKeyPoint({3,-1,0});
+    bvector<IGeometryPtr> cGeom2 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(1, cGeom2.size());
+    ASSERT_TRUE(cGeom2.front().IsValid());
+    ICurvePrimitivePtr cGeom2CP = cGeom2.front()->GetAsICurvePrimitive();
+    ASSERT_TRUE(cGeom2CP.IsValid());
+    ICurvePrimitivePtr expectedCGeom2CP = ICurvePrimitive::CreateLineString({{3,-1,0},{3,0,0},{2,0,0}});
+    ASSERT_TRUE(cGeom2CP->IsSameStructureAndGeometry(*expectedCGeom2CP));
+    }

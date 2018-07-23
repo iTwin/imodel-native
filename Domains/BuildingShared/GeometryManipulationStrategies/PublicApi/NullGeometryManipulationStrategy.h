@@ -58,6 +58,7 @@ struct NullGeometryManipulationStrategy final : public GeometryManipulationStrat
         virtual bool _CanAcceptMorePoints() const override { return false; }
 
         virtual IGeometryPtr _FinishGeometry() const override { return nullptr; }
+        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override { return bvector<IGeometryPtr>(); }
 
         // IRessetableDynamic
         virtual void _SetDynamicState(DynamicStateBaseCR state) override {}
