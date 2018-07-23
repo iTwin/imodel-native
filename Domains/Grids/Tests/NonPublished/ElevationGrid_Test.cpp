@@ -38,11 +38,12 @@ void ElevationGridTestFixture::SetUp()
     {
     GridsTestFixtureBase::SetUp();
     DgnDbR db = GetDgnDb();
+    db.BriefcaseManager().StartBulkOperation();
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
     SpatialLocationPartitionPtr partition = SpatialLocationPartition::Create(*rootSubject, "GridSpatialPartition");
-    BuildingLocks_LockElementForOperation(*partition.get(), BeSQLite::DbOpcode::Insert, "SpatialLocationPartition : Insert for ElevationGridTestFixture_Test");
     db.Elements().Insert<SpatialLocationPartition>(*partition);
     m_model = SpatialLocationModel::CreateAndInsert(*partition);
+    db.SaveChanges();
     }
 
 //--------------------------------------------------------------------------------------
@@ -60,7 +61,7 @@ void ElevationGridTestFixture::TearDown()
 TEST_F(ElevationGridTestFixture, GetFirstAboveAndBelow)
     {
     Dgn::DgnDbR db = GetDgnDb();
-
+    db.BriefcaseManager().StartBulkOperation();
     ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsert(ElevationGrid::CreateParams(*m_model,
                                                                                              db.Elements().GetRootSubject()->GetElementId(),
                                                                                              "Floor-Grid"));
@@ -73,12 +74,10 @@ TEST_F(ElevationGridTestFixture, GetFirstAboveAndBelow)
 
     ElevationGridSurface::CreateParams params1(*gridModel, *axis, nullptr, 0);
     ElevationGridSurfacePtr surface1 = ElevationGridSurface::Create(params1);
-    BuildingLocks_LockElementForOperation(*surface1, BeSQLite::DbOpcode::Insert, "Insert surface");
     ASSERT_TRUE(surface1->Insert().IsValid());
 
     ElevationGridSurface::CreateParams params2(*gridModel, *axis, nullptr, 10);
     ElevationGridSurfacePtr surface2 = ElevationGridSurface::Create(params2);
-    BuildingLocks_LockElementForOperation(*surface2, BeSQLite::DbOpcode::Insert, "Insert surface");
     ASSERT_TRUE(surface2->Insert().IsValid());
 
     ElevationGridCPtr otherFloorGrid = ElevationGrid::CreateAndInsert(ElevationGrid::CreateParams(*m_model,
@@ -93,17 +92,14 @@ TEST_F(ElevationGridTestFixture, GetFirstAboveAndBelow)
 
     ElevationGridSurface::CreateParams otherParams1(*otherGridModel, *otherAxis, nullptr, -0.5);
     ElevationGridSurfacePtr otherSurface1 = ElevationGridSurface::Create(otherParams1);
-    BuildingLocks_LockElementForOperation(*otherSurface1, BeSQLite::DbOpcode::Insert, "Insert surface");
     ASSERT_TRUE(otherSurface1->Insert().IsValid());
 
     ElevationGridSurface::CreateParams otherParams2(*otherGridModel, *otherAxis, nullptr, 1);
     ElevationGridSurfacePtr otherSurface2 = ElevationGridSurface::Create(otherParams2);
-    BuildingLocks_LockElementForOperation(*otherSurface2, BeSQLite::DbOpcode::Insert, "Insert surface");
     ASSERT_TRUE(otherSurface2->Insert().IsValid());
 
     ElevationGridSurface::CreateParams otherParams3(*otherGridModel, *otherAxis, nullptr, 10.5);
     ElevationGridSurfacePtr otherSurface3 = ElevationGridSurface::Create(otherParams3);
-    BuildingLocks_LockElementForOperation(*otherSurface3, BeSQLite::DbOpcode::Insert, "Insert surface");
     ASSERT_TRUE(otherSurface3->Insert().IsValid());
 
     ElevationGridSurfaceCPtr aboveMinus1 = floorGrid->GetFirstAbove(-1);
