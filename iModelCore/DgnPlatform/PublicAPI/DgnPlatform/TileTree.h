@@ -12,7 +12,7 @@
 #include <set>
 #include <forward_list>
 #include <folly/futures/Future.h>
-#include <Bentley/Tasks/CancellationToken.h>
+#include <Bentley/CancellationToken.h>
 #include <BeHttp/HttpRequest.h>
 #include <DgnPlatform/RealityDataCache.h>
 #include <forward_list>
@@ -146,7 +146,7 @@ struct StreamBuffer : ByteStream
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/16
 //=======================================================================================
-struct TileLoadState : Tasks::ICancellationToken, NonCopyableClass
+struct TileLoadState : ICancellationToken, NonCopyableClass
 {
 private:
     TileCPtr        m_tile;
@@ -157,7 +157,7 @@ public:
     DGNPLATFORM_EXPORT ~TileLoadState();
     bool IsCanceled() override {return m_canceled.load();}
     void SetCanceled() {m_canceled.store(true);}
-    void Register(std::weak_ptr<Tasks::ICancellationListener> listener) override {}
+    void Register(std::weak_ptr<ICancellationListener> listener) override {}
     TileCR GetTile() const { return *m_tile; }
     BeDuration GetPartialTimeout() const {return m_partialTimeout;}
     bool HasPartialTimeout() const {return !m_partialTimeout.IsZero();}
