@@ -10,7 +10,7 @@ WSRepositoryClientTests.SendUpdateFileRequest_EnableJobsWebApiV2JobSucceedsRespo
 #   Tests that fail randomly on PRG, can be removed to re-run locally - will not fail
 #----------------------------------------------------------------------------------------
 *Create_PassedMandatoryValues_SetsValues* # TODO: enable when Device::GetDeviceId() is implemented for Windows
-BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction # Hangs regularly on firebug; have notified Vincas.
+BeSQLiteDbTransactionHandlerTests.* # Hangs regularly on firebug; have notified Vincas.
 ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True # notified Vincas
 CachingDataSourceTests.* # notified Vincas
 ChangeManagerTests.* # notified Vincas

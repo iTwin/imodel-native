@@ -526,6 +526,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemasIncludeStandardSchemas_Skips
     StubInstances schemas;
     schemas.Add({"MetaSchema.ECSchemaDef", "A"}, {{"Name", "Bentley_Standard_CustomAttributes"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
     schemas.Add({"MetaSchema.ECSchemaDef", "B"}, {{"Name", "CustomSchema"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
+    schemas.Add({"MetaSchema.ECSchemaDef", "C"}, {{"Name", "ECDbMap"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
 
     EXPECT_CALL(GetMockClient().GetMockWSClient(), GetServerInfo(_))
         .WillRepeatedly(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
