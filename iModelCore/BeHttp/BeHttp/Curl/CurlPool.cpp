@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/CurlPool.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,10 +13,7 @@ USING_NAMESPACE_BENTLEY_HTTP
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurlPool::CurlPool(size_t maximumPoolSize) : m_maximumPoolSize(maximumPoolSize)
-    {
-    BeAssert (m_maximumPoolSize >= 0);
-    }
+CurlPool::CurlPool(size_t maximumPoolSize) : m_maximumPoolSize(maximumPoolSize) {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
