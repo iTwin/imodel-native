@@ -2,20 +2,18 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Util/FileUtil.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Cache/WebServicesCache.h>
-#include <Bentley/Tasks/CancellationToken.h>
+#include <Bentley/CancellationToken.h>
 #include <Bentley/BeFile.h>
 #include <Bentley/BeFileName.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_TASKS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    07/2013

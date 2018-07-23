@@ -39,6 +39,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_TASKS
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/

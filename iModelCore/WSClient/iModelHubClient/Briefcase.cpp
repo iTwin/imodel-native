@@ -32,7 +32,7 @@ Briefcase::Briefcase(Dgn::DgnDbPtr db, iModelConnectionPtr connection)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2016
 //---------------------------------------------------------------------------------------
-ChangeSetsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, Tasks::ICancellationTokenPtr cancellationToken) const
+ChangeSetsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Briefcase::Pull";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -262,7 +262,7 @@ CodeCallbackFunction* codesCallback
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR callback, Tasks::ICancellationTokenPtr cancellationToken) const
+ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Briefcase::PullAndMerge";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();

@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Network/ResponseGuard.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -10,7 +10,7 @@
 
 #include <WebServices/Cache/WebServicesCache.h>
 #include <BeHttp/HttpRequest.h>
-#include <Bentley/Tasks/CancellationToken.h>
+#include <Bentley/CancellationToken.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -19,23 +19,22 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct ResponseGuard> ResponseGuardPtr;
 
-struct ResponseGuard : public Tasks::ICancellationToken, std::enable_shared_from_this<ResponseGuard>
+struct ResponseGuard : public ICancellationToken, std::enable_shared_from_this<ResponseGuard>
     {
     private:
         bool                            m_tokenEnabled;
-        Tasks::ICancellationTokenPtr           m_token;
-        Http::Request::ProgressCallback   m_onProgress;
+        ICancellationTokenPtr           m_token;
+        Http::Request::ProgressCallback m_onProgress;
 
     public:
-        ResponseGuard(Tasks::ICancellationTokenPtr tokenToWrap, Http::Request::ProgressCallbackCR onProgress);
-        virtual ~ResponseGuard()
-            {};
+        ResponseGuard(ICancellationTokenPtr tokenToWrap, Http::Request::ProgressCallbackCR onProgress);
+        virtual ~ResponseGuard() {};
 
-        static ResponseGuardPtr Create(Tasks::ICancellationTokenPtr tokenToWrap, Http::Request::ProgressCallbackCR onProgress);
+        static ResponseGuardPtr Create(ICancellationTokenPtr tokenToWrap, Http::Request::ProgressCallbackCR onProgress);
         Http::Request::ProgressCallback GetProgressCallback();
 
         virtual bool IsCanceled() override;
-        virtual void Register(std::weak_ptr<Tasks::ICancellationListener> listener) override;
+        virtual void Register(std::weak_ptr<ICancellationListener> listener) override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

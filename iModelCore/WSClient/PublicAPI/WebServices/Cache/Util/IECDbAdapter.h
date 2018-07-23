@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/IECDbAdapter.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,13 +14,12 @@
 #include <Bentley/bset.h>
 #include <ECDb/ECSqlStatement.h>
 #include <ECObjects/ECObjectsAPI.h>
-#include <Bentley/Tasks/CancellationToken.h>
+#include <Bentley/CancellationToken.h>
 #include <WebServices/Cache/Util/ObservableECDb.h>
 #include <WebServices/Client/ObjectId.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_TASKS
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
