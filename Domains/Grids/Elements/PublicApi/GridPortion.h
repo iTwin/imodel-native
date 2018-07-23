@@ -281,5 +281,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
 
         //! Gets the top ElevationGridSurface from this ElevationGrid.
         GRIDELEMENTS_EXPORT ElevationGridSurfaceCPtr GetTopSurface() const;
+
+        //! Gets the ElevationGridSurface that is below the given elevation.
+        GRIDELEMENTS_EXPORT ElevationGridSurfaceCPtr GetFirstBelow(double elevation) const;
+
+        //! Gets the ElevationGridSurface that is above the given elevation.
+        GRIDELEMENTS_EXPORT ElevationGridSurfaceCPtr GetFirstAbove(double elevation) const;
     };
 END_GRIDS_NAMESPACE

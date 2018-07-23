@@ -3680,6 +3680,7 @@ TEST_F(GridsTestFixture, TryCreateOrthogonalGridAndSurfaceInSingleRequest)
 
     OrthogonalGridPtr thisGrid = OrthogonalGrid::Create(createParams);
     ASSERT_TRUE(thisGrid.IsValid());
+    ASSERT_TRUE(thisGrid->Insert().IsValid());
 
     Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(thisGrid->GetDgnDb());
 
@@ -3687,32 +3688,17 @@ TEST_F(GridsTestFixture, TryCreateOrthogonalGridAndSurfaceInSingleRequest)
     OrthogonalAxisYPtr verticalAxis = OrthogonalAxisY::Create(defModel, *thisGrid);
     ASSERT_TRUE(horizontalAxis.IsValid());
     ASSERT_TRUE(verticalAxis.IsValid());
+    ASSERT_TRUE(horizontalAxis->Insert().IsValid());
+    ASSERT_TRUE(verticalAxis->Insert().IsValid());
 
     Dgn::SpatialLocationModelPtr subModel = SpatialLocationModel::Create (*thisGrid);
     ASSERT_TRUE(subModel.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, subModel->Insert());
 
     //now try to create the gridSurface
     PlanCartesianGridSurface::CreateParams surfParams(*subModel, *horizontalAxis, 0.0, 0.0, 10.0, 0.0, 15.0);
     PlanCartesianGridSurfacePtr surface = PlanCartesianGridSurface::Create(surfParams);
     ASSERT_TRUE(surface.IsValid());
-
-    //now populate a single request
-    IBriefcaseManager::Request request;
-    BeSQLite::DbOpcode opCode = BeSQLite::DbOpcode::Insert;
-
-    ASSERT_EQ(RepositoryStatus::Success, thisGrid->PopulateRequest (request, opCode));
-    ASSERT_EQ(RepositoryStatus::Success, horizontalAxis->PopulateRequest (request, opCode));
-    ASSERT_EQ(RepositoryStatus::Success, verticalAxis->PopulateRequest (request, opCode));
-    ASSERT_EQ(RepositoryStatus::Success, subModel->PopulateRequest (request, opCode));
-    ASSERT_EQ(RepositoryStatus::Success, surface->PopulateRequest (request, opCode));
-
-
-
-    //now insert all elements
-    ASSERT_TRUE(thisGrid->Insert().IsValid());
-    ASSERT_TRUE(horizontalAxis->Insert().IsValid());
-    ASSERT_TRUE(verticalAxis->Insert().IsValid());
-    ASSERT_EQ(DgnDbStatus::Success, subModel->Insert());
     ASSERT_TRUE(surface->Insert().IsValid());
     db.SaveChanges();
 }
