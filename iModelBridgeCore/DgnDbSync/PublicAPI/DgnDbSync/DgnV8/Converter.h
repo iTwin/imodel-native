@@ -401,6 +401,7 @@ struct ViewFactory
 
     virtual bool _Is3d() const {return false;}
     virtual ViewDefinitionPtr _MakeView(Converter& converter, ViewDefinitionParams const&) = 0;
+    virtual ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, DgnViewId existingViewId) = 0;
 };
 
 //=======================================================================================
@@ -474,6 +475,8 @@ struct IChangeDetector
     //! @param rmm The V8 model and the DgnModel to which it is mapped
     virtual void _OnModelInserted(Converter&, ResolvedModelMapping const& rmm) = 0;
 
+    //! Called when a V8 view is discovered
+    virtual void _OnViewSeen(Converter&, DgnViewId) = 0;
     //! @}
 
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
@@ -484,6 +487,7 @@ struct IChangeDetector
     virtual void _DetectDeletedModels(Converter&, SyncInfo::ModelIterator&) = 0;        //!< don't forget to call _DetectDeletedModelsEnd when done
     virtual void _DetectDeletedModelsInFile(Converter&, DgnV8FileR) = 0;                //!< don't forget to call _DetectDeletedModelsEnd when done
     virtual void _DetectDeletedModelsEnd(Converter&) = 0;
+    virtual void _DetectDeletedViews(Converter&) = 0;
     //! @}
 
 };
@@ -809,6 +813,9 @@ struct Converter
         L10N_STRING(DwgFileIgnored)              // =="master DWG/DXF file [%s] is ignored - use DwgImporter to convert these"==
         L10N_STRING(FailedLoadingFileIO)         // =="Unable to load file handler %s"==
         L10N_STRING(MissingFileIOImplementer)    // =="File handler %s missing V8 file type implementation"==
+        L10N_STRING(TemporaryDirectoryNotFound)  // =="Failed to find/create temporary directory %s"==
+        L10N_STRING(RDSUninitialized)            // =="Failed to initialize RDSRequestManager"==
+        L10N_STRING(RDSUploadFailed)             // =="Failed to upload tileset to Reality Data Server"==
 
         L10N_STRING(InitProjectWiseLinkError)      // =="Could not initialize ProjectWise extension. Any ProjectWise documents that are target of links will not be embedded."==
         L10N_STRING(TerminateProjectWiseLinkError) // =="Could not terminate ProjectWise extension."==
@@ -866,6 +873,7 @@ struct Converter
         L10N_STRING(V8StyleNone) // =="V8 Default Style"==
         L10N_STRING(V8StyleNoneDescription) // =="Created from V8 active settings to handle Style (none)"==
         L10N_STRING(LinkModelDefaultName) // =="Default Link Model"==
+        L10N_STRING(RDS_Description) // =="Reality Model Tileset for %s"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Reports conversion issues
@@ -1162,6 +1170,8 @@ public:
     //! @{
     BentleyStatus GenerateThumbnails();
     BentleyStatus GenerateRealityModelTilesets();
+    BentleyStatus GenerateWebMercatorModel();
+
     bool ThumbnailUpdateRequired(ViewDefinition const& view);
 
     void CopyExpirationDate(DgnV8FileR);
@@ -2077,12 +2087,14 @@ struct CreatorChangeDetector : IChangeDetector
     void _OnElementSeen(Converter&, DgnElementId) override {}
     void _OnModelSeen(Converter&, ResolvedModelMapping const&) override {}
     void _OnModelInserted(Converter&, ResolvedModelMapping const&) override {}
+    void _OnViewSeen(Converter&, DgnViewId) override {}
     void _DetectDeletedElements(Converter&, SyncInfo::ElementIterator&) override {}
     void _DetectDeletedElementsInFile(Converter&, DgnV8FileR) override {}
     void _DetectDeletedElementsEnd(Converter&) override {}
     void _DetectDeletedModels(Converter&, SyncInfo::ModelIterator&) override {}
     void _DetectDeletedModelsInFile(Converter&, DgnV8FileR) override {}
     void _DetectDeletedModelsEnd(Converter&) override {}
+    void _DetectDeletedViews(Converter&) override {}
     
     DGNDBSYNC_EXPORT bool _IsElementChanged(SearchResults&, Converter&, DgnV8EhCR, ResolvedModelMapping const&, T_SyncInfoElementFilter* filter) override; // fills in element MD5 and returns true
 
@@ -2100,6 +2112,8 @@ struct ChangeDetector : IChangeDetector
     SyncInfo::ByV8ElementIdIter* m_byIdIter;
     SyncInfo::ByHashIter*       m_byHashIter;
     DgnElementIdSet             m_elementsSeen;
+    bset<DgnViewId>             m_viewsSeen;
+
     bset<SyncInfo::V8ModelSyncInfoId> m_v8ModelsSeen;
     bset<SyncInfo::V8ModelSyncInfoId> m_v8ModelsSkipped;
     bset<SyncInfo::V8ModelSyncInfoId> m_newlyDiscoveredModels; // models created during this run
@@ -2115,6 +2129,7 @@ struct ChangeDetector : IChangeDetector
     bool _ShouldSkipLevel(DgnCategoryId&, Converter&, DgnV8Api::LevelHandle const&, DgnV8FileR, Utf8StringCR) override {return false;}
     DGNDBSYNC_EXPORT void _OnModelSeen(Converter&, ResolvedModelMapping const&);
     DGNDBSYNC_EXPORT void _OnModelInserted(Converter&, ResolvedModelMapping const&);
+    DGNDBSYNC_EXPORT void _OnViewSeen(Converter&, DgnViewId id);
     DGNDBSYNC_EXPORT bool _AreContentsOfModelUnChanged(Converter&, ResolvedModelMapping const&) ;
     DGNDBSYNC_EXPORT bool _IsElementChanged(SearchResults&, Converter&, DgnV8EhCR, ResolvedModelMapping const&, T_SyncInfoElementFilter* filter) override;
 
@@ -2127,6 +2142,8 @@ struct ChangeDetector : IChangeDetector
     DGNDBSYNC_EXPORT void _DetectDeletedModels(Converter&, SyncInfo::ModelIterator&) override;        //!< don't forget to call _DetectDeletedModelsEnd when done
     DGNDBSYNC_EXPORT void _DetectDeletedModelsInFile(Converter&, DgnV8FileR) override;                //!< don't forget to call _DetectDeletedModelsEnd when done
     DGNDBSYNC_EXPORT void _DetectDeletedModelsEnd(Converter&) override {m_v8ModelsSeen.clear();}
+
+    DGNDBSYNC_EXPORT void _DetectDeletedViews(Converter&) override;
     //! @}
 
     ChangeDetector() : m_byIdIter(nullptr), m_byHashIter(nullptr) {}
@@ -2659,6 +2676,7 @@ struct SpatialViewFactory : ViewFactory
 {
     SpatialConverterBase& m_spatialConverter;
     ViewDefinitionPtr _MakeView(Converter& converter, ViewDefinitionParams const&) override;
+    ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, DgnViewId viewId) override;
     bool _Is3d() const override final {return true;}
     SpatialViewFactory(SpatialConverterBase& s) : m_spatialConverter(s) {}
 };

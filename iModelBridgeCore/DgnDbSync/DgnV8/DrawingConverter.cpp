@@ -23,6 +23,7 @@ struct DrawingViewFactory : ViewFactory
     DrawingViewFactory(ResolvedModelMapping const& v8mm) : m_drawingModelMapping(v8mm) {}
 
     ViewDefinitionPtr _MakeView(Converter& converter, ViewDefinitionParams const&) override;
+    ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, DgnViewId viewId) override;
     };
 
 /*=================================================================================**//**
@@ -762,6 +763,39 @@ ViewDefinitionPtr DrawingViewFactory::_MakeView(Converter& converter, ViewDefini
     converter.ConvertLevelMask(*view, parms.m_viewInfo, &parms.GetV8Model());
 
     return view;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ViewDefinitionPtr DrawingViewFactory::_UpdateView(Converter& converter, ViewDefinitionParams const& params, DgnViewId viewId)
+    {
+    ViewDefinitionPtr newDef = _MakeView(converter, params);
+    if (!newDef.IsValid())
+        return newDef;
+
+    DrawingViewDefinition* drawing = newDef->ToDrawingViewP();
+
+    DgnDbStatus stat;
+    // need to update the DisplayStyle and CategorySelector.
+    DrawingViewDefinitionPtr existingDef = converter.GetDgnDb().Elements().GetForEdit<DrawingViewDefinition>(viewId);
+
+    DisplayStyleR newDisplayStyle = drawing->GetDisplayStyle();
+    newDisplayStyle.ForceElementIdForInsert(existingDef->GetDisplayStyleId());
+    newDisplayStyle.Update(&stat);
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    drawing->SetDisplayStyle(newDisplayStyle);
+
+    CategorySelectorR newCategorySelector = drawing->GetCategorySelector();
+    newCategorySelector.ForceElementIdForInsert(existingDef->GetCategorySelectorId());
+    newCategorySelector.Update(&stat);
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    drawing->SetCategorySelector(newCategorySelector);
+
+    newDef->ForceElementIdForInsert(viewId);
+    return newDef;
     }
 
 static BentleyApi::TransformCR DoInterop(Bentley::Transform const&source) { return (BentleyApi::TransformCR)source; }

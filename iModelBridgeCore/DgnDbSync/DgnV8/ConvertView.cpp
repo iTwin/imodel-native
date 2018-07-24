@@ -381,6 +381,45 @@ ViewDefinitionPtr SpatialViewFactory::_MakeView(Converter& converter, ViewDefini
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ViewDefinitionPtr SpatialViewFactory::_UpdateView(Converter& converter, ViewDefinitionParams const& params, DgnViewId viewId)
+    {
+    ViewDefinitionPtr newDef = _MakeView(converter, params);
+    if (!newDef.IsValid())
+        return newDef;
+    
+    SpatialViewDefinition* spatial = newDef->ToSpatialViewP();
+
+    DgnDbStatus stat;
+    // need to update the ModelSelector, DisplayStyle, etc.
+    SpatialViewDefinitionPtr existingDef = converter.GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId);
+    ModelSelectorR newModelSelector = spatial->GetModelSelector();
+    newModelSelector.ForceElementIdForInsert(existingDef->GetModelSelectorId());
+    newModelSelector.Update(&stat);
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    spatial->SetModelSelector(newModelSelector);
+
+    DisplayStyle3dR newDisplayStyle = spatial->GetDisplayStyle3d();
+    newDisplayStyle.ForceElementIdForInsert(existingDef->GetDisplayStyleId());
+    newDisplayStyle.Update(&stat);
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    spatial->SetDisplayStyle(newDisplayStyle);
+
+    CategorySelectorR newCategorySelector = spatial->GetCategorySelector();
+    newCategorySelector.ForceElementIdForInsert(existingDef->GetCategorySelectorId());
+    newCategorySelector.Update(&stat);
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    spatial->SetCategorySelector(newCategorySelector);
+
+    newDef->ForceElementIdForInsert(viewId);
+    return newDef;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            12/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 ViewFactory::ViewDefinitionParams::ViewDefinitionParams(Converter* c, Utf8StringCR n, ResolvedModelMapping const& m, Bentley::ViewInfoCR vi, bool is3d) : m_name(n), m_modelMapping(m), m_viewInfo(vi)
@@ -553,13 +592,29 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     if (!definitionModel.IsValid())
         return BSIERROR;
 
+    DgnViewId existingViewId;
+    bool doUpdate = false;
     if (IsUpdating())
         {
-        auto viewId = ViewDefinition::QueryViewId(*definitionModel, name);
-        if (viewId.IsValid())
+        // For imodels that were created during the EAP, but before this table was implemented, need to do a check
+        if (GetSyncInfo().ViewTableExists())
             {
-            // *** WIP_UPDATER: check that per-attachment level definitions and visibility are unchanged
-            return BSISUCCESS;
+            double lastModified;
+            if (GetSyncInfo().TryFindView(existingViewId, lastModified, viewInfo))
+                {
+                if (lastModified == viewInfo.GetElementRef()->GetLastModified())
+                    {
+                    GetChangeDetector()._OnViewSeen(*this, existingViewId);
+                    return BSISUCCESS;
+                    }
+                doUpdate = true;
+                }
+            }
+        else
+            {
+            auto viewId = ViewDefinition::QueryViewId(*definitionModel, name);
+            if (viewId.IsValid())
+                doUpdate = true;
             }
         }
 
@@ -643,7 +698,12 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 
     parms.m_rot = (RotMatrixCR)v8Rotation;
 
-    ViewDefinitionPtr view = viewFactory._MakeView(*this, parms);
+    ViewDefinitionPtr view;
+    if (doUpdate)
+        view = viewFactory._UpdateView(*this, parms, existingViewId);
+    else
+        view = viewFactory._MakeView(*this, parms);
+
     if (!view.IsValid())
         return BSIERROR;
 
@@ -651,12 +711,23 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     ConvertViewGrids(view, viewInfo, *v8Model, ComputeUnitsScaleFactor(*v8Model));
     ConvertViewACS(view, viewInfo, *v8Model, trans, name);
 
-    if (!view->Insert().IsValid())
+    if (doUpdate)
         {
-        // this sometimes happens when a corrupt DgnV8 file has more than one viewgroup with the same name (which is an error).
-        // Just ignore the later viewgroups.
-        ReportError(IssueCategory::CorruptData(), Issue::Error(), name.c_str());
-        return BSIERROR;
+        if (!view->Update().IsValid())
+            {
+            ReportError(IssueCategory::CorruptData(), Issue::Error(), name.c_str());
+            return BSIERROR;
+            }
+        }
+    else
+        {
+        if (!view->Insert().IsValid())
+            {
+            // this sometimes happens when a corrupt DgnV8 file has more than one viewgroup with the same name (which is an error).
+            // Just ignore the later viewgroups.
+            ReportError(IssueCategory::CorruptData(), Issue::Error(), name.c_str());
+            return BSIERROR;
+            }
         }
 
     if (LOG_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
@@ -666,6 +737,11 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     m_viewNumberMap.insert({view->GetViewId(), viewInfo.GetViewNumber()});
     if (!viewId.IsValid())
         viewId = view->GetViewId();
+    GetChangeDetector()._OnViewSeen(*this, viewId);
+    if (doUpdate)
+        GetSyncInfo().UpdateView(viewId, viewInfo);
+    else
+        GetSyncInfo().InsertView(viewId, viewInfo);
     return BSISUCCESS;
     }
 

@@ -197,6 +197,12 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
         modelSelector.Update();
         }
 
+    if (((ScalableMeshModel*)spatialModel)->_AllowPublishing())
+        {
+        // Schedule reality model tileset creation.
+        converter.AddModelRequiringRealityTiles(modelId);
+        }
+
     return Result::SkipElement;
     }
 

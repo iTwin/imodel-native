@@ -19,9 +19,6 @@ void RootModelConverter::_ConvertSpatialViews()
     if (!IsFileAssignedToBridge(*GetRootV8File()))
         return;
 
-    if (IsUpdating())
-        return;         // pity, but we don't have the logic to *update* previously converted views.
-
     if (!m_viewGroup.IsValid())
         m_viewGroup = m_rootFile->GetViewGroupsR().FindByModelId(GetRootModelP()->GetModelId(), true, -1);
     if (!m_viewGroup.IsValid())
@@ -1315,6 +1312,7 @@ void RootModelConverter::_FinishConversion()
                 GetChangeDetector()._DetectDeletedElementsInFile(*this, *v8File);
                 GetChangeDetector()._DetectDeletedModelsInFile(*this, *v8File);    // NB: call this *after* DetectDeletedElements!
                 }
+            GetChangeDetector()._DetectDeletedViews(*this);
             GetChangeDetector()._DetectDeletedElementsEnd(*this);
             GetChangeDetector()._DetectDeletedModelsEnd(*this);
             }

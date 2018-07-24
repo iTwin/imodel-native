@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Updater.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -399,6 +399,58 @@ bool CreatorChangeDetector::_IsElementChanged(SearchResults& res, Converter& con
     res.m_currentElementProvenance = SyncInfo::ElementProvenance(v8eh, converter.GetSyncInfo(), converter.GetCurrentIdPolicy());
     res.m_changeType = ChangeType::Insert;
     return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void ChangeDetector::_OnViewSeen(Converter&, DgnViewId viewId)
+    {
+    if (viewId.IsValid())
+        m_viewsSeen.insert(viewId);
+    }
+
+//---------------------------------------------------------------------------------------
+// Copied from DwgImporter's implementation of UpdaterChangeDetector::_DetectDeletedViews
+//
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void ChangeDetector::_DetectDeletedViews(Converter& converter)
+    {
+    auto&   elements = converter.GetDgnDb().Elements();
+    auto&   syncInfo = converter.GetSyncInfo();
+    auto    jobModelId = converter.GetJobDefinitionModel()->GetModelId();
+
+    for (auto const& entry : ViewDefinition::MakeIterator(converter.GetDgnDb()))
+        {
+        auto viewId = entry.GetId();
+        if (m_viewsSeen.find(viewId) == m_viewsSeen.end())
+            {
+            // don't delete views not created by us:
+            auto view = entry.GetSpatialViewDefinition();
+            if (view.IsValid() && view->GetModel()->GetModelId() != jobModelId)
+                continue;
+
+            // a special case for a SpatialView: if attached to a Sheet::ViewAttachment, do not delete it:
+            bool    isAttached = false;
+            for (auto va : elements.MakeIterator(BIS_SCHEMA(BIS_CLASS_ViewAttachment)))
+                {
+                auto viewAttachment = elements.Get<Sheet::ViewAttachment>(va.GetElementId());
+                if (viewAttachment.IsValid() && viewAttachment->GetAttachedViewId() == viewId)
+                    {
+                    isAttached = true;
+                    break;
+                    }
+                }
+            if (!isAttached)
+                {
+                elements.Delete(viewId);
+                syncInfo.DeleteView(viewId);
+                }
+            }
+        }
+
+    m_viewsSeen.clear();
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
