@@ -21,10 +21,32 @@
         <SubPart PartName="RapidJson"               PartFile="Libsrc-Nugets"    Repository="bsicommon"/>
         <SubPart PartName="UnitsNative"             PartFile="Units"            Repository="Units" />
         <Bindings>
-
             <Libs>Delivery/$(libprefix)ECObjects$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
+            <Directory SourceName="Dox/Pages/ECObjects" SubPartDirectory="Dox/Pages/ECObjects"/>
         </Bindings>
+    </Part>
+    
+    <Part Name="ECObjects">
+        <SubPart PartName="ECObjectsPrepareDocGeneration" />
+        <SubPart PartName="ECObjectsNative" />
+        <SubPart PartName="PublicAPI" />
+    </Part>
+
+    <Part Name="ECObjectsPrepareDocGeneration" DeferType="BuildDocs">
+        <SubPart PartName="ECObjectsExtractCodeSamples" />
+        <SubPart PartName="ECObjectsBuildCodeSamples" />
+    </Part>
+
+    <Part Name="ECObjectsExtractCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)ECObjects/docs/samplecode -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECObjects/docs/extractedsamplecode -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Dox/Extractions/ECObjects">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Directory SourceName="Dox/Extractions/ECObjects" SubPartDirectory="Dox/Extractions/ECObjects"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="ECObjectsBuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)ECObjects/docs/samplecode -dBUILD_SAMPLE_CODE_SUB_DIR=ecobjectssamplecode">
+        <SubPart PartName="ECObjectsNative" />
     </Part>
 
     <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson">
@@ -431,6 +453,7 @@
     <Product Name="ECObjects">
         <SubPart PartName="ECObjectsNative"/>
         <SubPart PartName="PublishedApi_Doc" />
+        <SubPart PartName="ECObjectsPrepareDocGeneration" />
         <Directories DirectoryListName="ECObjects"/>
     </Product>
 

@@ -132,6 +132,7 @@ ECObjectsStatus KindOfQuantity::SetPersistenceUnit(ECUnitCR unit)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
+    UnitAndLabelPairs pairs;
     //will only be serialized in 3.0 and later
     if (ecXmlVersion < ECVersion::V3_0)
         return SchemaWriteStatus::Success;

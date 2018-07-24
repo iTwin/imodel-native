@@ -1387,7 +1387,10 @@ public:
 };
 
 //=======================================================================================
-//! The in-memory representation of a KindOfQuantity as defined by ECSchemaXML
+//! The in-memory representation of a KindOfQuantity as defined by ECSchemaXML. KindOfQuantities
+//! reference both units and formats which are gone over here:
+//! @see @ref UnitsOverview Units
+//! @see @ref FormatsOverview Formats
 //! @bsiclass
 //=======================================================================================
 struct KindOfQuantity : NonCopyableClass

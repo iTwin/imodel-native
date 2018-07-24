@@ -195,3 +195,10 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 #   NEEDSWORK : Temporary settings
 #----------------------------------------------------------------------
 %include $(sharedMki)linkLibrary.mki
+
+#----------------------------------------------------------------------------------------
+# Deploy documentation raw material for input into PublishApi+Doxygen by consuming SDKs
+#----------------------------------------------------------------------------------------
+
+always:
+        ~linkdir "$(BuildContext)Dox/Pages/ECObjects=$(SrcRoot)ECObjects/docs/source"

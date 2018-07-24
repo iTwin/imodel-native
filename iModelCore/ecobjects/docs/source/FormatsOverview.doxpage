@@ -1,0 +1,29 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: docs/source/FormatsOverview.doxpage $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+	/**
+    @page FormatsOverview Formats Overview
+
+    Formats are members of a schema that can be used to control the output format of values. They are closely associated with both
+    @ref UnitsOverview "Units" and @ref FormatsOverview "Formats"
+
+    This code creates a new ECFormat with a name, display label and description
+	__PUBLISH_INSERT_FILE__ Overview_Formats_CreateFormat.sampleCode
+
+	Formats contain a NumericFormatSpec and optionally a CompositeFormatSpec.
+
+	The Numeric spec controls the formatting of numbers (presicion, fractional output, spacing, separators, etc.) while the Composite spec allows numbers to be outputted in multiple units. 
+
+	For example:
+		1.234 km could be represented as 1km 234m
+
+	// Add more examples of Formats being used in KoQ and the different fields of Numeric and composite spec and what they do. Link/refer to ecspec?
+
+    @see @ref KindOfQuantityOverview for usage within the context of a KindOfQuantity
+    */
