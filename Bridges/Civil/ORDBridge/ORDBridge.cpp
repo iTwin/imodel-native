@@ -171,6 +171,20 @@ SubjectCPtr ORDBridge::_InitializeJob()
 //---------------------------------------------------------------------------------------
 BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     {
+    // This if statement's work is also done in _InitializeJob(), but when the bridge goes off for a second time (an update), 
+    // _InitializeJob() is not called. It's possible that this work can (should?) be just done here and NOT in _InitializeJob(), 
+    // but I'm not sure yet.
+    if (!m_converter->IsPhysicalNetworkModelSet())
+        {
+        auto physicalPartitionIds = RoadRailBim::PhysicalModelUtilities::QueryPhysicalPartitions(jobSubject);
+        auto physicalPartitionCPtr = jobSubject.GetDgnDb().Elements().Get<PhysicalPartition>(*physicalPartitionIds.begin());
+
+        // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
+        auto physicalNetworkModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalNetworkModel(jobSubject,
+            physicalPartitionCPtr->GetCode().GetValueUtf8CP(), RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalNetworkName());
+        m_converter->SetPhysicalNetworkModel(*physicalNetworkModelPtr);
+        }
+
     auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
 
     // IMODELBRIDGE REQUIREMENT: Keep information about the source document up to date.
