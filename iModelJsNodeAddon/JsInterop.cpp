@@ -12,6 +12,7 @@
 
 static Utf8String s_lastECDbIssue;
 static BeFileName s_addonDllDir;
+static BeFileName s_tempDir;
 
 namespace IModelJsNative {
 
@@ -49,7 +50,7 @@ struct KnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     //! Construct an instance of the KnownDesktopLocationsAdmin
     KnownLocationsAdmin()
         {
-        Desktop::FileSystem::BeGetTempPath(m_tempDirectory);
+        m_tempDirectory = s_tempDir;
         m_assetsDirectory = s_addonDllDir;
         m_assetsDirectory.AppendToPath(L"Assets");
         }
@@ -155,12 +156,12 @@ Napi::Env* JsInterop::s_env = nullptr;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
-void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env& env)
+void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env& env, BeFileNameCR tempDir)
     {
     s_env = new Napi::Env(env);
     s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
     s_addonDllDir = addonDllDir;
-
+    s_tempDir = tempDir;
 #if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
     // Include this location for delay load of pskernel...
     WString newPath;
@@ -181,7 +182,10 @@ void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env& env)
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-void JsInterop::InitLogging() { NativeLogging::LoggingConfig::ActivateProvider(new NativeLoggingShim()); }
+void JsInterop::InitLogging()
+    {
+    NativeLogging::LoggingConfig::ActivateProvider(new NativeLoggingShim());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
@@ -193,6 +197,7 @@ NativeLogging::ILogger& JsInterop::GetLogger()
         s_logger = NativeLogging::LoggingManager::GetLogger("imodeljs-addon"); // This is thread-safe. The assignment is atomic, and GetLogger will always return the same value for a given key anyway.
     return *s_logger;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
@@ -251,7 +256,7 @@ DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueC
 DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::OpenMode mode)
     {
     BeFileName pathname;
-    if (!fileOrPathname.GetDirectoryName().empty())
+    if (fileOrPathname.DoesPathExist())
         {
         pathname = fileOrPathname;
         }
@@ -262,11 +267,9 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
         BeFileName dbDir;
 #if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
         Utf8CP dbdirenv = getenv("NODE_DGNDB_DIR");
-#elif defined(BENTLEYCONFIG_OS_APPLE_IOS)
+#else
         auto mobileDir = DgnPlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory().GetNameUtf8();        
         Utf8CP dbdirenv = mobileDir.c_str();
-#else
-        Utf8CP dbdirenv = nullptr;
 #endif
         if (nullptr != dbdirenv)
             dbDir.SetNameUtf8(dbdirenv);
@@ -278,7 +281,9 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
             if (!dbDir.DoesPathExist())
                 return DbResult::BE_SQLITE_NOTFOUND;
             }
+            
         pathname = dbDir;
+        pathname.AppendToPath(L"../../Assets/");
         pathname.AppendToPath(fileOrPathname.c_str());
         }
 

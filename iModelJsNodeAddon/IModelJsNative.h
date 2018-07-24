@@ -53,13 +53,11 @@ private:
     static void GetRowAsJson(Json::Value &json, BeSQLite::EC::ECSqlStatement &);
 
 public:
-    static void Initialize(BeFileNameCR, Napi::Env&);
-
     static void GetECValuesCollectionAsJson(Json::Value &json, ECN::ECValuesCollectionCR);
     static ECN::ECClassCP GetClassFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static void InitLogging();
-
+    static void Initialize(BeFileNameCR, Napi::Env&, BeFileNameCR);
     static DgnDbPtr CreateIModel(DbResult& db, Utf8StringCR name, JsonValueCR, Napi::Env);
     static BeSQLite::DbResult OpenDgnDb(DgnDbPtr &, BeFileNameCR dbname, DgnDb::OpenMode mode);
     static void CloseDgnDb(DgnDbR dgndb);

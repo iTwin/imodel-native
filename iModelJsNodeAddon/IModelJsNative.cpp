@@ -3836,6 +3836,12 @@ static Utf8String s_mobileResourcesDir;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void imodeljs_addon_setMobileResourcesDir(Utf8CP d) {s_mobileResourcesDir = d;}
 
+static Utf8String s_mobileTempDir;
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Satyakam.Khadilkar    03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void imodeljs_addon_setMobileTempDir(Utf8CP d) {s_mobileTempDir = d;}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3845,12 +3851,15 @@ static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exp
 
 #if (defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)) || defined(BENTLEYCONFIG_OS_LINUX) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
     BeFileName addondir = Desktop::FileSystem::GetLibraryDir();
+    BeFileName tempdir;
+    Desktop::FileSystem::BeGetTempPath(tempdir);
 #else
     BeFileName addondir(s_mobileResourcesDir);
+    BeFileName tempdir(s_mobileTempDir);
 #endif
 
 
-    IModelJsNative::JsInterop::Initialize(addondir, env);
+    IModelJsNative::JsInterop::Initialize(addondir, env, tempdir);
     IModelJsNative::NativeDgnDb::Init(env, exports);
     IModelJsNative::NativeECDb::Init(env, exports);
     IModelJsNative::NativeECSqlStatement::Init(env, exports);
