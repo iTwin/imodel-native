@@ -79,6 +79,7 @@
     <ClCompile Include="BeHttp\HttpResponse.cpp" />
     <ClCompile Include="BeHttp\HttpStatusHelper.cpp" />
     <ClCompile Include="BeHttp\ProxyHttpHandler.cpp" />
+    <ClCompile Include="BeHttp\TrustManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BeHttp\Backdoor.h" />
@@ -93,6 +94,7 @@
     <ClInclude Include="BeHttp\HttpRequestTests.h" />
     <ClInclude Include="BeHttp\SimplePackagedAsyncTask.h" />
     <ClInclude Include="BeHttp\Tests.h" />
+    <ClInclude Include="BeHttp\TrustManager.h" />
     <ClInclude Include="BeHttp\WebLogging.h" />
     <ClInclude Include="PublicAPI\BeHttp\AuthenticationHandler.h" />
     <ClInclude Include="PublicAPI\BeHttp\BeUri.h" />
