@@ -2023,7 +2023,7 @@ TEST_F(ContentQueryExecutorTests, DoesntIncludeFieldPropertyValueInstanceKeysWhe
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query), "widget");
     query->From(*m_widgetClass, false, "widget");
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.ReadRecords();
     
