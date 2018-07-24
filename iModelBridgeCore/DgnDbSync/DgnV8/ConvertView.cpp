@@ -150,7 +150,7 @@ void convertSkyboxDisplay(DisplayStyle3dR dstyle3d, DgnV8Api::DisplayStyle const
     env.m_skybox.m_groundColor = toColorDef(gradLayer->GetGroundColor());
     env.m_skybox.m_nadirColor = toColorDef(gradLayer->GetNadirColor());
     env.m_skybox.m_skyExponent = gradLayer->GetSkyExponent();
-    env.m_skybox.m_groundExponent = gradLayer->GetSkyExponent();
+    env.m_skybox.m_groundExponent = gradLayer->GetGroundExponent();
     env.m_skybox.m_twoColor = gradLayer->Is2Color();
     env.m_skybox.m_enabled = true;
     dstyle3d.SetEnvironmentDisplay(env);
