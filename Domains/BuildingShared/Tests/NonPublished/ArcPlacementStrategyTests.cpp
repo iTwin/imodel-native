@@ -629,6 +629,100 @@ TEST_F(ArcCenterStartPlacementStrategyTests, FinishGeometry_IsNullWhen0Radius)
     ASSERT_TRUE(sut->FinishGeometry().IsNull());
     }
 
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcCenterStartPlacementStrategyTests, FinishPrimitive_SweepTest)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::CenterStart);
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), DVec3d::From(0, 0, 1));
+
+    sut->AddKeyPoint({0,0,0});
+    sut->AddKeyPoint({1,0,0});
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({1,0,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::TwoPi());
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({1,1,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(45));
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({1,-1,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(-45));
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({-1,0,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, -Angle::Pi());
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({0,1,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(-270));
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({1,-1,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(-45));
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({0,1,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(90));
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({-1,-1,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(225));
+        }
+    }
+
 #pragma endregion
 
 #pragma region Arc_StartMidEnd_PlacementStrategy

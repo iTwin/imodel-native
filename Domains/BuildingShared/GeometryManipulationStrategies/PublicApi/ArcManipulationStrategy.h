@@ -36,9 +36,12 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
         bool m_useRadius;
         double m_radius;
 
+        ICurvePrimitivePtr m_lastArc;
+
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcManipulationStrategy();
 
         static bool PointsOnLine(DPoint3dCR, DPoint3dCR, DPoint3dCR);
+        void UpdateLastArc();
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
@@ -47,7 +50,9 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
         virtual ArcPlacementStrategyPtr _CreateArcPlacementStrategy(ArcPlacementMethod method) override;
 
-
+        virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
+        virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
+        virtual void _ResetDynamicKeyPoint() override;
         virtual void _OnKeyPointsChanged() override;
 
         virtual bool _IsComplete() const override;
