@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGN
 
-# define LOCKS_GROUPS_COUNT 12
+# define LOCKS_GROUPS_COUNT 15
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
@@ -111,6 +111,8 @@ void AddLockToBuffer(bvector<BeInt64Id> objects[], DgnLock lock)
     int index = static_cast<int32_t>(lock.GetType()) * 3 + static_cast<int32_t>(lock.GetLevel());
     if (index >= 0 && index < LOCKS_GROUPS_COUNT)
         objects[index].push_back(lock.GetId());
+    else
+        BeAssert(false && "Lock index out of bounds! New lock type might have been added.");
     }
 
 //---------------------------------------------------------------------------------------
