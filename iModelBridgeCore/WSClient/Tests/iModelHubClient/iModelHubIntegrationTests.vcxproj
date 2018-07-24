@@ -30,6 +30,7 @@
     <ClCompile Include="Integration\BriefcaseTests.cpp" />
     <ClCompile Include="Integration\ChangeSetsTests.cpp" />
     <ClCompile Include="Integration\CodesLocksTests.cpp" />
+    <ClCompile Include="Integration\CodeSpecLockTests.cpp" />
     <ClCompile Include="Integration\CodesTests.cpp" />
     <ClCompile Include="Integration\EventParserTests.cpp" />
     <ClCompile Include="Integration\EventsTests.cpp" />
