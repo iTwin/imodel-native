@@ -3558,13 +3558,15 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params);
         else if(0 == strcmp("GetDistinctValues", requestId))
             result = ECPresentationUtils::GetDistinctValues(*m_presentationManager, db->GetDgnDb(), params);
+        else if(0 == strcmp("GetDisplayLabel", requestId))
+            result = ECPresentationUtils::GetDisplayLabel(*m_presentationManager, db->GetDgnDb(), params);
 
         result.then([responseSender](ECPresentationResult result)
             {
             responseSender->SetResult(std::move(result));
             }).onError([responseSender](folly::exception_wrapper)
             {
-            responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Error, "future error"));
+            responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Error, "Unknown error"));
             });
         }
 

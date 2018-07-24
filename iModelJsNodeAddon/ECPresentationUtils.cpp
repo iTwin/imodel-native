@@ -661,6 +661,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AsJson(ECClassGroupingNodeKey const& groupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override
         {
+        navNodeKeyBaseJson.AddMember("groupedInstancesCount", groupingNodeKey.GetGroupedInstancesCount(), navNodeKeyBaseJson.GetAllocator());
         navNodeKeyBaseJson.AddMember("className", rapidjson::StringRef(groupingNodeKey.GetECClass().GetFullName()), navNodeKeyBaseJson.GetAllocator());
         }
 
@@ -669,9 +670,10 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     +---------------+---------------+---------------+---------------+---------------+------*/
     ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const override
         {
+        uint64_t groupedInstancesCount = json["groupedInstancesCount"].asUInt64();
         Utf8CP className = json["className"].asCString();
         ECClassCP ecClass = GetClassFromFullName(connection, className);
-        return ECClassGroupingNodeKey::Create(*ecClass, ParseNodeKeyHashPath(json["pathFromRoot"]));
+        return ECClassGroupingNodeKey::Create(*ecClass, ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -679,9 +681,10 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     +---------------+---------------+---------------+---------------+---------------+------*/
     ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const override
         {
+        uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUint64();
         Utf8CP className = json["className"].GetString();
         ECClassCP ecClass = GetClassFromFullName(connection, className);
-        return ECClassGroupingNodeKey::Create(*ecClass, ParseNodeKeyHashPath(json["pathFromRoot"]));
+        return ECClassGroupingNodeKey::Create(*ecClass, ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -689,6 +692,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AsJson(ECPropertyGroupingNodeKey const& propertyGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override
         {
+        navNodeKeyBaseJson.AddMember("groupedInstancesCount", propertyGroupingNodeKey.GetGroupedInstancesCount(), navNodeKeyBaseJson.GetAllocator());
         navNodeKeyBaseJson.AddMember("className", rapidjson::StringRef(propertyGroupingNodeKey.GetECClass().GetFullName()), navNodeKeyBaseJson.GetAllocator());
         navNodeKeyBaseJson.AddMember("propertyName", rapidjson::Value(propertyGroupingNodeKey.GetPropertyName().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
         if (nullptr != propertyGroupingNodeKey.GetGroupingValue())
@@ -700,15 +704,16 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     +---------------+---------------+---------------+---------------+---------------+------*/
     ECPropertyGroupingNodeKeyPtr _GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const override
         {
+        uint64_t groupedInstancesCount = json["groupedInstancesCount"].asUInt64();
         Utf8CP className = json["className"].asCString();
         ECClassCP ecClass = GetClassFromFullName(connection, className);
         Utf8CP propertyName = json["propertyName"].asCString();
         if (!json.isMember("groupingValue"))
-            return ECPropertyGroupingNodeKey::Create(*ecClass, propertyName, nullptr, ParseNodeKeyHashPath(json["pathFromRoot"]));
+            return ECPropertyGroupingNodeKey::Create(*ecClass, propertyName, nullptr, ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
 
         rapidjson::Document groupingValue;
         groupingValue.Parse(Json::FastWriter().write(json["groupingValue"]).c_str());
-        return ECPropertyGroupingNodeKey::Create(*ecClass, propertyName, &groupingValue, ParseNodeKeyHashPath(json["pathFromRoot"]));
+        return ECPropertyGroupingNodeKey::Create(*ecClass, propertyName, &groupingValue, ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -716,13 +721,14 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     +---------------+---------------+---------------+---------------+---------------+------*/
     ECPropertyGroupingNodeKeyPtr _GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const override
         {
+        uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUint64();
         Utf8CP className = json["className"].GetString();
         ECClassCP ecClass = GetClassFromFullName(connection, className);
         Utf8CP propertyName = json["propertyName"].GetString();
         rapidjson::Value const* groupingValue = nullptr;
         if (json.HasMember("groupingValue"))
             groupingValue = &json["groupingValue"];
-        return ECPropertyGroupingNodeKey::Create(*ecClass, propertyName, groupingValue, ParseNodeKeyHashPath(json["pathFromRoot"]));
+        return ECPropertyGroupingNodeKey::Create(*ecClass, propertyName, groupingValue, ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -730,6 +736,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AsJson(LabelGroupingNodeKey const& labelGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override
         {
+        navNodeKeyBaseJson.AddMember("groupedInstancesCount", labelGroupingNodeKey.GetGroupedInstancesCount(), navNodeKeyBaseJson.GetAllocator());
         navNodeKeyBaseJson.AddMember("label", rapidjson::Value(labelGroupingNodeKey.GetLabel().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
         }
 
@@ -738,8 +745,9 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     +---------------+---------------+---------------+---------------+---------------+------*/
     LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(JsonValueCR json) const override
         {
+        uint64_t groupedInstancesCount = json["groupedInstancesCount"].asUInt64();
         Utf8CP label = json["label"].asCString();
-        return LabelGroupingNodeKey::Create(label, ParseNodeKeyHashPath(json["pathFromRoot"]));
+        return LabelGroupingNodeKey::Create(label, ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -747,8 +755,9 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     +---------------+---------------+---------------+---------------+---------------+------*/
     LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(RapidJsonValueCR json) const override
         {
+        uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUint64();
         Utf8CP label = json["label"].GetString();
-        return LabelGroupingNodeKey::Create(label, ParseNodeKeyHashPath(json["pathFromRoot"]));
+        return LabelGroupingNodeKey::Create(label, ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1666,4 +1675,30 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
                 return ECPresentationResult(std::move(response));
                 });
             });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<ECPresentationResult> ECPresentationUtils::GetDisplayLabel(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+    {
+    IConnectionCPtr connection = manager.Connections().GetConnection(db);
+    folly::Future<Utf8String> future = folly::makeFuture<Utf8String>("");
+    if (params.isMember("key"))
+        {
+        ECClassId classId(BeJsonUtilities::UInt64FromValue(params["key"]["classId"]));
+        ECInstanceId instanceId(BeJsonUtilities::UInt64FromValue(params["key"]["instanceId"]));
+        future = manager.GetDisplayLabel(db, ECInstanceKey(classId, instanceId));
+        }
+    else if (params.isMember("keys"))
+        {
+        KeySetPtr keys = KeySet::FromJson(*connection, params["keys"]);
+        future = manager.GetDisplayLabel(db, *keys);
+        }
+    return future.then([](Utf8String label)
+        {
+        rapidjson::Document responseJson;
+        responseJson.SetString(label.c_str(), responseJson.GetAllocator());
+        return ECPresentationResult(std::move(responseJson));
+        });
     }
