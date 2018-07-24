@@ -1616,7 +1616,7 @@ void Converter::OnCreateComplete()
 
     GenerateThumbnails();
     GenerateRealityModelTilesets();
-    if (nullptr != m_dgndb->GeoLocation().GetDgnGCS())
+    if (nullptr != m_dgndb->GeoLocation().GetDgnGCS() && !IsUpdating())
         GenerateWebMercatorModel();
 
     GetDgnDb().SaveSettings();
