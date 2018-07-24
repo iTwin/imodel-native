@@ -25,19 +25,21 @@ friend struct ClipPlanesViewDefinitionHandler;
 public:
     typedef Dgn::ViewControllerPtr(*IViewControllerFactory)(ClipPlanesViewDefinitionCR);
     ROADRAILALIGNMENT_EXPORT static void RegisterControllerFactory(IViewControllerFactory);
-    static constexpr Utf8CP SYSTEM_VIEW_NAME = "AlignmentXSViewDefinition";
+
+    //This has to stay AlignmentXSViewDefinition as that is the old name of the class, and the one used in the schema
+    //Changing this to be the proper name "ClipPlanesViewDefinition" would require a change to platform and all user files
+    static constexpr Utf8CP SYSTEM_VIEW_NAME = "AlignmentXSViewDefinition"; 
 
 private:
     static IViewControllerFactory s_factory;
 
 protected:
-    bool m_isDynamic;
     bool m_allowRotation;
     Json::Value m_targetPlane;
 
 protected:
     void _SetRotation(RotMatrixCR rot) override final;
-    void _EnableCamera() override final {}
+    void _EnableCamera() override final {   }
     bool _SupportsCamera() const override final { return false; }
     Dgn::ViewControllerPtr _SupplyController() const override final;
     bool _ViewsModel(Dgn::DgnModelId modelId) override final;
@@ -51,8 +53,6 @@ public:
 
     void SetAllowRotation(bool value) { m_allowRotation = value; }
     bool GetAllowRotation() const { return m_allowRotation; }
-    ROADRAILALIGNMENT_EXPORT void SetIsDynamic(bool value) { m_isDynamic = value; }
-    ROADRAILALIGNMENT_EXPORT bool GetIsDynamic() const { return m_isDynamic; }
     ROADRAILALIGNMENT_EXPORT void SetTargetPlane(JsonValueCR target) { m_targetPlane = target; }
     ROADRAILALIGNMENT_EXPORT Json::Value GetTargetPlane() const { return m_targetPlane; }
 
