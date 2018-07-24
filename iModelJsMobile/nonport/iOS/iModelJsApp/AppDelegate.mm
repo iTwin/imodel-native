@@ -17,9 +17,8 @@
 @implementation AppDelegate
 
 BentleyApi::iModelJs::ServicesTier::UvHostPtr m_host;
-
 extern void imodeljs_addon_setMobileResourcesDir(Utf8CP d);
-
+extern void imodeljs_addon_setMobileTempDir(Utf8CP d);
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 
     // Start BackEnd libUv Thread
@@ -27,15 +26,17 @@ extern void imodeljs_addon_setMobileResourcesDir(Utf8CP d);
     
     NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
     NSString *iModelJsNativePath = [appFolderPath stringByAppendingPathComponent:@"iModelJsNative"];
+    NSString *iTempFolder = NSTemporaryDirectory();
     imodeljs_addon_setMobileResourcesDir(iModelJsNativePath.UTF8String);
+    imodeljs_addon_setMobileTempDir(iTempFolder.UTF8String);
     m_host = new ServicesTier::UvHost;
     while (!m_host->IsReady()) { ; }
 
     m_host->PostToEventLoop([]()
         {
         auto& runtime = ServicesTier::Host::GetInstance().GetJsRuntime();
-        
-        NSString* backendJsPath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"Assets/backend/MyAppMobileBackend.js"];
+
+        NSString* backendJsPath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"Assets/MobileMain.js"];
         NSString* backendJs = [NSString stringWithContentsOfFile:backendJsPath encoding:NSUTF8StringEncoding error:NULL];
         auto evaluated = runtime.EvaluateScript (backendJs.UTF8String,
                         [NSURL fileURLWithPath:backendJsPath].absoluteString.UTF8String);

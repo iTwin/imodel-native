@@ -339,7 +339,7 @@ napi_status napi_define_class(napi_env env,
                 static_property_index++;
             }
         }
-        napi_define_properties(env, *result, instance_property_count, static_properties);
+        napi_define_properties(env, *result, static_property_count, static_properties);
         delete [] static_properties;
     }
 
@@ -599,7 +599,7 @@ napi_status napi_define_properties(napi_env env,
     if (property_count > 0) {
     CHECK_ARG(env, properties);
     }
-
+ 
     JSContextRef ctx = env->GetContext();
     for (size_t i=0; i < property_count; i++) {
         const napi_property_descriptor* p = properties + i;

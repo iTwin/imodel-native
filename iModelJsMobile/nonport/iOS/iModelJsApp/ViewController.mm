@@ -29,7 +29,7 @@
     auto& gateway = BentleyApi::iModelJs::ServicesTier::MobileGateway::GetInstance();
     
     NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
-    NSString *frontEndIndexPath = [appFolderPath stringByAppendingPathComponent:@"Assets/index.html"];
+    NSString *frontEndIndexPath = [appFolderPath stringByAppendingPathComponent:@"Assets/public/index.html"];
     
     NSURL* url = [NSURL fileURLWithPath:frontEndIndexPath];
     NSString* fragment = [NSString stringWithFormat:@"#%u", gateway.GetPort()];
