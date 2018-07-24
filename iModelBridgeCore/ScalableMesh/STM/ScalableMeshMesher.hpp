@@ -1299,6 +1299,7 @@ ISMMTGGraphDataStorePtr graphStore(node->GetGraphStore());
 
     if (faceIndices.size() >= 3 && geomData.size() > 0)
     CreateGraphFromIndexBuffer(tempGraph, (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
+    TRACEPOINT(THREAD_ID(), EventType::GRAPH_STORE, node->GetBlockID().m_integerID, (uint64_t)-1, -1, -1, memPoolItemPtr->GetSize(),  0)
     storedMemoryPoolItem->SetData(tempGraph);
     storedMemoryPoolItem->SetDirty();
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());

@@ -143,7 +143,7 @@
     <IncludePath>C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\scalablemesh\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ImagePP\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\BeSQLite\PublicAPI;C:\dev\ConceptStation\src\Imagepp\PublicApi;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\TerrainModel\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\Bentley\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ConceptStation\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI\RasterCore;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -ax64 -p ScalableMeshWorkerExe -f ScalableMesh -r ScalableMesh re ScalableMeshWorkerExe </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 -p ScalableMeshWorkerExe -f ScalableMesh -r ScalableMesh re ScalableMeshWorkerExe  </NMakeBuildCommandLine>
     <NMakeOutput>
     </NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>

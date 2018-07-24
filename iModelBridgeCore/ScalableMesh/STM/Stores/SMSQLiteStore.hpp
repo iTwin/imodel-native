@@ -432,7 +432,7 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::WriteClipDataToProjectFilePa
 		if (!sqlFilePtr.IsValid())
 			return;
 
-		ISM3DPtDataStorePtr dataStoreTarget = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, sqlFilePtr);
+		ISM3DPtDataStorePtr dataStoreTarget = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, sqlFilePtr, this);
 		IClipDefinitionExtOpsPtr extOps, extOpsTarget;
 		dataStore->GetClipDefinitionExtOps(extOps);
 		dataStoreTarget->GetClipDefinitionExtOps(extOpsTarget);
@@ -449,12 +449,12 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::WriteClipDataToProjectFilePa
 			SMNonDestructiveClipType type;
 			extOps->LoadClipWithParameters(clipData, id,geom,type, isActive);
 			extOpsTarget->StoreClipWithParameters(clipData, id, geom, type, isActive);
-		}
+		}   
 		existingIds.clear();
 		extOps->GetAllCoverageIDs(existingIds);
 
 		ISMCoverageNameDataStorePtr coverageNameSource = new SMExternalProviderDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, m_clipProvider.get());
-		ISMCoverageNameDataStorePtr coverageNameTarget = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
+		ISMCoverageNameDataStorePtr coverageNameTarget = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr, this);
 	
 		for (auto& id : existingIds)
 		{
@@ -481,7 +481,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtData
 
     assert(sqlFilePtr.IsValid());
 
-    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
+    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr, this);
 
     return true;    
     }
@@ -496,7 +496,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISDif
     if (!sqliteFilePtr.IsValid())
         return false;
     
-    dataStore = new SMSQLiteNodeDataStore<DifferenceSet, EXTENT>(SMStoreDataType::DiffSet, nodeHeader, sqliteFilePtr);
+    dataStore = new SMSQLiteNodeDataStore<DifferenceSet, EXTENT>(SMStoreDataType::DiffSet, nodeHeader, sqliteFilePtr, this);
 
     return true;    
     }
@@ -521,7 +521,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMInt32Dat
         sqliteFilePtr = m_smSQLiteFile;
         }
     
-    dataStore = new SMSQLiteNodeDataStore<int32_t, EXTENT>(dataType, nodeHeader, sqliteFilePtr);
+    dataStore = new SMSQLiteNodeDataStore<int32_t, EXTENT>(dataType, nodeHeader, sqliteFilePtr, this);
                     
     return true;    
     }
@@ -535,7 +535,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMMTGGraph
     assert(sqliteFilePtr.IsValid() == true);
 
 
-    dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, sqliteFilePtr);
+    dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, sqliteFilePtr, this);
                     
     return true;    
     }
@@ -548,7 +548,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTextureD
         return true;
         }
 
-    dataStore = new SMSQLiteNodeDataStore<Byte, EXTENT>(dataType, nodeHeader, m_smSQLiteFile);
+    dataStore = new SMSQLiteNodeDataStore<Byte, EXTENT>(dataType, nodeHeader, m_smSQLiteFile, this);
                     
     return true;    
     }
@@ -556,7 +556,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTextureD
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                
     assert(dataType == SMStoreDataType::UvCoords);
-    dataStore = new SMSQLiteNodeDataStore<DPoint2d, EXTENT>(dataType, nodeHeader, m_smSQLiteFile);
+    dataStore = new SMSQLiteNodeDataStore<DPoint2d, EXTENT>(dataType, nodeHeader, m_smSQLiteFile, this);
     return true;    
     }
 
@@ -564,19 +564,19 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMUVCoords
 //Multi-items loading store
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {                
-    dataStore = new SMSQLiteNodeDataStore<PointAndTriPtIndicesBase, EXTENT>(SMStoreDataType::PointAndTriPtIndices, nodeHeader, m_smSQLiteFile);
+    dataStore = new SMSQLiteNodeDataStore<PointAndTriPtIndicesBase, EXTENT>(SMStoreDataType::PointAndTriPtIndices, nodeHeader, m_smSQLiteFile, this);
     return true;    
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
-    dataStore = new SMSQLiteNodeDataStore<bvector<Byte>, EXTENT>(SMStoreDataType::Cesium3DTiles, nodeHeader, m_smSQLiteFile);
+    dataStore = new SMSQLiteNodeDataStore<bvector<Byte>, EXTENT>(SMStoreDataType::Cesium3DTiles, nodeHeader, m_smSQLiteFile, this);
     return true;
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
-    dataStore = new SMSQLiteNodeDataStore<Cesium3DTilesBase, EXTENT>(SMStoreDataType::Cesium3DTiles, nodeHeader, m_smSQLiteFile);
+    dataStore = new SMSQLiteNodeDataStore<Cesium3DTilesBase, EXTENT>(SMStoreDataType::Cesium3DTiles, nodeHeader, m_smSQLiteFile, this);
     return true;
     }
 
@@ -596,7 +596,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISMCo
     if (!sqlFilePtr.IsValid())
         return false;
     
-    dataStore = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
+    dataStore = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr, this);
 
     return true;
     }
@@ -617,14 +617,15 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISM3D
     if (!sqlFilePtr.IsValid())
         return false;
 
-    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
+    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr, this);
 
     return true;
     }
     
 
-template <class DATATYPE, class EXTENT> SMSQLiteNodeDataStore<DATATYPE, EXTENT>::SMSQLiteNodeDataStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, /*ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile)    
+template <class DATATYPE, class EXTENT> SMSQLiteNodeDataStore<DATATYPE, EXTENT>::SMSQLiteNodeDataStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, /*ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile, ISMDataStoreTypePtr<EXTENT> dataStorePtr)
     {       
+    m_dataStorePtr = dataStorePtr;
     m_smSQLiteFile = smSQLiteFile;
     m_nodeHeader = nodeHeader;
     m_dataType = dataType;
@@ -783,26 +784,24 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
         {
         case SMStoreDataType::Points:           
             if (m_smSQLiteFile->IsShared())
-                StoreNodeHeaderToFile<EXTENT>(m_smSQLiteFile, m_nodeHeader, id);
-           
+                m_dataStorePtr->StoreNodeHeader(m_nodeHeader, blockID);
+                                           
             m_smSQLiteFile->StorePoints(id, nodeData, countData * sizeof(DATATYPE));
             break;
 
         case SMStoreDataType::TriPtIndices:
             if (m_smSQLiteFile->IsShared())
-                StoreNodeHeaderToFile<EXTENT>(m_smSQLiteFile, m_nodeHeader, id);
+                m_dataStorePtr->StoreNodeHeader(m_nodeHeader, blockID);                
 
             m_smSQLiteFile->StoreIndices(id, nodeData, countData * sizeof(DATATYPE));
             break;
         case SMStoreDataType::TriUvIndices:
             m_smSQLiteFile->StoreUVIndices(id, nodeData, countData * sizeof(DATATYPE));
             break;
-        case SMStoreDataType::Graph:
-            /*
+        case SMStoreDataType::Graph:            
             if (m_smSQLiteFile->IsShared())
-                StoreNodeHeaderToFile<EXTENT>(m_smSQLiteFile, m_nodeHeader, id);
-                */
-
+                m_dataStorePtr->StoreNodeHeader(m_nodeHeader, blockID);
+                       
             m_smSQLiteFile->StoreGraph(id, nodeData, dataSize);
             free(dataBuffer);
             break;

@@ -107,9 +107,10 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
     {    
     private:
 
-        SMSQLiteFilePtr            m_smSQLiteFile;
-        SMIndexNodeHeader<EXTENT>* m_nodeHeader;
-        SMStoreDataType            m_dataType;
+        ISMDataStoreTypePtr<EXTENT> m_dataStorePtr;
+        SMSQLiteFilePtr             m_smSQLiteFile; //Could be the main file persisting the 3sm or a sister file.
+        SMIndexNodeHeader<EXTENT>*  m_nodeHeader;
+        SMStoreDataType             m_dataType;
 
         void   GetCompressedBlock(bvector<uint8_t>& nodeData, size_t& uncompressedSize, HPMBlockID blockID);
 
@@ -121,7 +122,7 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
 
     public:      
               
-        SMSQLiteNodeDataStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader,/* ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile);
+        SMSQLiteNodeDataStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, SMSQLiteFilePtr& smSQLiteFile, ISMDataStoreTypePtr<EXTENT> dataStorePtr);
             
         virtual ~SMSQLiteNodeDataStore();                      
             

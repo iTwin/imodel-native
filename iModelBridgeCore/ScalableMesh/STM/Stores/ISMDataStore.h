@@ -195,9 +195,13 @@ typedef RefCountedPtr<ISMNodeDataStore<bvector<Byte>>>  ISMTileMeshDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<Cesium3DTilesBase>>  ISMCesium3DTilesDataStorePtr;
 
 
-
 template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : public RefCountedBase
     {
+
+    private:
+
+        virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); } 
+
     public:
 
         ISMDataStore() {};

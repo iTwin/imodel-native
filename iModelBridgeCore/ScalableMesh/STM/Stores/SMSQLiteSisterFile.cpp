@@ -113,7 +113,7 @@ void SMSQLiteSisterFile::CopyClipSisterFile(SMStoreDataType dataType) const
 
 	BeFileName::BeCopyFile(sqlFileNameSource.c_str(), sqlFileName.c_str());
 }
-
+   
 SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing, bool useTempPath)
     {
     SMSQLiteFilePtr sqlFilePtr;
@@ -123,7 +123,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
         case SMStoreDataType::LinearFeature:
         case SMStoreDataType::Graph:
             {
-            assert(createSisterIfMissing == true);
+            assert(createSisterIfMissing == true || m_smSQLiteFile->IsShared());
             std::lock_guard<std::mutex> lock(m_featureOpen);
             if (!m_smFeatureSQLiteFile.IsValid())
                 {

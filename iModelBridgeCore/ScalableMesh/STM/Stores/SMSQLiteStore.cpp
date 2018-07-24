@@ -21,7 +21,7 @@ template class SMStreamedSourceStore<byte, DRange3d>;
 
 SMSQLiteClipDefinitionExtOps::SMSQLiteClipDefinitionExtOps(SMSQLiteFilePtr& smSQLiteFile)
     {
-    m_smSQLiteFile = smSQLiteFile;
+    m_smSQLiteFile = smSQLiteFile;  
     }
 
 SMSQLiteClipDefinitionExtOps::~SMSQLiteClipDefinitionExtOps()

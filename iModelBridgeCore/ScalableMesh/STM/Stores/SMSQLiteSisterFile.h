@@ -40,7 +40,7 @@ class SMSQLiteSisterFile
 
         ~SMSQLiteSisterFile();
 
-        SMSQLiteFilePtr GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing, bool useTempPath = true);
+        BENTLEY_SM_EXPORT SMSQLiteFilePtr GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing, bool useTempPath = true);
 
 		bool DoesSisterSQLiteFileExist(SMStoreDataType dataType) const;
 

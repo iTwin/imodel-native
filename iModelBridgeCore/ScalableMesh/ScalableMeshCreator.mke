@@ -319,7 +319,7 @@ $(o)ScalableMeshQuadTreeBCLIBFilters$(oext) : $(stmDir)ScalableMeshQuadTreeBCLIB
 
 #$(o)StreamTextureProvider$(oext) : $(stmDir)StreamTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)Tracer$(oext) : $(stmDir)Tracer.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+#$(o)Tracer$(oext) : $(stmDir)Tracer.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 #$(o)RasterUtilities$(oext) : $(stmDir)RasterUtilities.cpp $(stmDir)RasterUtilities.h ${MultiCompileDepends}
 
