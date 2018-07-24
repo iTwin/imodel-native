@@ -83,20 +83,31 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName, boo
 //+---------------+---------------+---------------+---------------+---------------+------
 std::vector<TestFile> Profile::GetAllVersionsOfTestFile(BeFileNameCR rootFolder, Utf8CP testFileNameUtf8, bool logFoundFiles) const
     {
-    if (!rootFolder.DoesPathExist())
-        return std::vector<TestFile>();
-
     BeFileName testFileName(testFileNameUtf8);
     WString extension = testFileName.GetExtension();
     WString fileNameWithoutExt = testFileName.GetFileNameWithoutExtension();
     WString fileNamePattern(fileNameWithoutExt);
     fileNamePattern.append(L"*.").append(extension);
+    return GetAllVersionsOfTestFile(rootFolder, fileNamePattern, logFoundFiles);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+std::vector<TestFile> Profile::GetAllVersionsOfTestFile(BeFileNameCR rootFolder, WStringCR fileNamePattern, bool logFoundFiles) const
+    {
+    if (!rootFolder.DoesPathExist())
+        return std::vector<TestFile>();
 
     bvector<BeFileName> fileMatches;
     BeDirectoryIterator::WalkDirsAndMatch(fileMatches, rootFolder, fileNamePattern.c_str(), true);
     std::vector<TestFile> testFiles;
     for (BeFileNameCR filePath : fileMatches)
         {
+        if (filePath.IsDirectory())
+            continue;
+
         BeFileName profileVersionFolderName = filePath.GetDirectoryName();
         //just get folder name without path
         if (profileVersionFolderName.EndsWith(L"/") || profileVersionFolderName.EndsWith(L"\\"))
@@ -141,7 +152,7 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(BeFileNameCR rootFolder,
 
         BeFileName testFilePath(GetOutFolder());
         testFilePath.AppendToPath(profileVersionFolderName).AppendToPath(filePath.GetFileNameAndExtension().c_str());
-        testFiles.push_back(TestFile(testFileNameUtf8, testFilePath, filePath, bedbVersion, ecdbVersion, dgndbVersion, initialBeDbVersion, initialECDbVersion, initialDgnDbVersion));
+        testFiles.push_back(TestFile(Utf8String(filePath.GetFileNameAndExtension()), testFilePath, filePath, bedbVersion, ecdbVersion, dgndbVersion, initialBeDbVersion, initialECDbVersion, initialDgnDbVersion));
         }
 
     if (logFoundFiles && LOG.isSeverityEnabled(NativeLogging::LOG_INFO))

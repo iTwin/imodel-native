@@ -26,6 +26,25 @@ struct ECDbCompatibilityTestFixture : CompatibilityTestFixture
     };
 
 //---------------------------------------------------------------------------------------
+// Runs basic tests on all available test files. This is a basic test to cover tests and test files
+// which are added in the future, and to which existing test runners cannot be adjusted to.
+// @bsimethod                                  Krischan.Eberle                      07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, BasicTestsOnAllPulledFiles)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfAllPulledTestFiles())
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
@@ -133,6 +152,34 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32Enums)
             {ECValue(2), nullptr}});
 
             testDb.AssertEnum("PreEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
+            {{ECValue("On"), "Turned On"},
+            {ECValue("Off"), "Turned Off"}});
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, UpgradingPreEC32EnumsToEC32AfterProfileUpgrade)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_UPGRADEDEC32ENUMS))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            //regardless of whether the actual test file is 3.1 and not upgraded yet or it is newer and upgraded,
+            //the upgrade does not affect the EC31 enum API. So the test code is generic
+            testDb.AssertEnum("UpgradedEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+            {{ECValue(0), nullptr},
+            {ECValue(1), nullptr},
+            {ECValue(2), nullptr}});
+
+            testDb.AssertEnum("UpgradedEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
             {{ECValue("On"), "Turned On"},
             {ECValue("Off"), "Turned Off"}});
             }
