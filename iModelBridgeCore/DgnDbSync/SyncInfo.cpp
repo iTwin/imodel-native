@@ -1780,6 +1780,8 @@ BeSQLite::DbResult SyncInfo::InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewIn
     stmt.BindId(col++, viewId);
 
     ElementRefP      viewElemRef = viewInfo.GetElementRef();
+    if (nullptr == viewElemRef)
+        return DbResult::BE_SQLITE_NOTFOUND;
 
     V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*viewElemRef->GetDgnModelP()->GetDgnFileP());
     if (!v8FileId.IsValid())
