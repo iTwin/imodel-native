@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include <set>
+#include <ECObjects/SchemaComparer.h>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -10863,5 +10864,238 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
     EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Physical FK on new nav prop in existing class";
 
     }
-    
+   
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, SchemaDiff)
+    {
+    ECSchemaReadContextPtr ctx1 = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr ctx2 = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema1, schema2;
+    ASSERT_EQ(ECN::SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema1, R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECEntityClass typeName="Parent" >
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="SubProp" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml", *ctx1));
+
+    // some changes, including strange ones which are not supported by ECDb. But the pure schema diff functionality should
+    // cope with them.
+    // * add new entity class
+    // * change property from primitive to primitive array type
+    // * change class from entity to relationship class
+    ASSERT_EQ(ECN::SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECEntityClass typeName="Parent" >
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECArrayProperty propertyName="Val" typeName="string" extendedTypeName="JSON" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Foo" >
+                                    <ECProperty propertyName="FooProp" typeName="string" />
+                                </ECEntityClass>
+                                <ECRelationshipClass typeName="Sub" modifier="Sealed" strength="referencing">
+                                   <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                                      <Class class="Parent" />
+                                    </Source>
+                                    <Target multiplicity="(0..*)" polymorphic="True"  roleLabel="is contained by">
+                                        <Class class="Foo" />
+                                    </Target>
+                                </ECRelationshipClass>
+                            </ECSchema>)xml", *ctx2));
+
+    SchemaComparer comparer;
+    SchemaDiff diff;
+    ASSERT_EQ(SUCCESS, comparer.Compare(diff, {schema1.get()}, {schema2.get()}));
+    ASSERT_EQ(1, diff.Changes().Count());
+    SchemaChange& schemaChange = diff.Changes()[0];
+    Utf8String s;
+    schemaChange.WriteToString(s);
+    LOG.trace(s.c_str());
+
+    ASSERT_TRUE(schemaChange.IsChanged());
+    ASSERT_EQ(ECChange::OpCode::Modified, schemaChange.GetOpCode());
+    EXPECT_FALSE(schemaChange.Alias().IsChanged());
+    EXPECT_FALSE(schemaChange.CustomAttributes().IsChanged());
+    EXPECT_FALSE(schemaChange.Description().IsChanged());
+    EXPECT_FALSE(schemaChange.DisplayLabel().IsChanged());
+    EXPECT_FALSE(schemaChange.ECVersion().IsChanged());
+    EXPECT_FALSE(schemaChange.Enumerations().IsChanged());
+    EXPECT_FALSE(schemaChange.Formats().IsChanged());
+    EXPECT_FALSE(schemaChange.KindOfQuantities().IsChanged());
+    EXPECT_FALSE(schemaChange.Name().IsChanged());
+    EXPECT_FALSE(schemaChange.OriginalECXmlVersionMajor().IsChanged());
+    EXPECT_FALSE(schemaChange.OriginalECXmlVersionMinor().IsChanged());
+    EXPECT_FALSE(schemaChange.Phenomena().IsChanged());
+    EXPECT_FALSE(schemaChange.PropertyCategories().IsChanged());
+    EXPECT_FALSE(schemaChange.References().IsChanged());
+    EXPECT_FALSE(schemaChange.VersionMinor().IsChanged());
+    EXPECT_FALSE(schemaChange.VersionRead().IsChanged());
+    EXPECT_FALSE(schemaChange.VersionWrite().IsChanged());
+
+    ClassChanges& classChanges = schemaChange.Classes();
+    ASSERT_TRUE(classChanges.IsChanged());
+    ASSERT_EQ(ECChange::OpCode::Modified, classChanges.GetOpCode());
+    ASSERT_EQ(3, classChanges.Count());
+    for (size_t i = 0; i < classChanges.Count(); i++)
+        {
+        ClassChange& classChange = classChanges[i];
+        //In class Parent, property Val was changed
+        if (BeStringUtilities::StricmpAscii(classChange.GetChangeName(), "Parent") == 0)
+            {
+            PropertyChanges& propChanges = classChange.Properties();
+            ASSERT_TRUE(propChanges.IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, propChanges.GetOpCode());
+            ASSERT_EQ(1, propChanges.Count());
+            PropertyChange& propChange = propChanges[0];
+            ASSERT_TRUE(propChange.IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, propChange.GetOpCode());
+            EXPECT_FALSE(propChange.Name().IsChanged());
+            ASSERT_STREQ("Val", propChange.GetChangeName());
+
+            ASSERT_TRUE(propChange.IsPrimitive().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, propChange.IsPrimitive().GetOpCode());
+            ASSERT_TRUE(propChange.IsPrimitive().GetOld().Value());
+            ASSERT_FALSE(propChange.IsPrimitive().GetNew().Value());
+
+            ASSERT_TRUE(propChange.IsPrimitiveArray().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, propChange.IsPrimitiveArray().GetOpCode());
+            ASSERT_FALSE(propChange.IsPrimitiveArray().GetOld().Value());
+            ASSERT_TRUE(propChange.IsPrimitiveArray().GetNew().Value());
+
+            ASSERT_TRUE(propChange.TypeName().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, propChange.TypeName().GetOpCode());
+            ASSERT_STRCASEEQ("int", propChange.TypeName().GetOld().Value().c_str());
+            ASSERT_STRCASEEQ("string", propChange.TypeName().GetNew().Value().c_str());
+
+            ASSERT_TRUE(propChange.ExtendedTypeName().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, propChange.ExtendedTypeName().GetOpCode());
+            ASSERT_TRUE(propChange.ExtendedTypeName().GetOld().IsNull());
+            ASSERT_STREQ("JSON", propChange.ExtendedTypeName().GetNew().Value().c_str());
+
+            ASSERT_TRUE(propChange.ArrayMinOccurs().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, propChange.ArrayMinOccurs().GetOpCode());
+            ASSERT_TRUE(propChange.ArrayMinOccurs().GetOld().IsNull());
+            ASSERT_EQ(0, propChange.ArrayMinOccurs().GetNew().Value());
+
+            ASSERT_TRUE(propChange.ArrayMaxOccurs().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, propChange.ArrayMaxOccurs().GetOpCode());
+            ASSERT_TRUE(propChange.ArrayMaxOccurs().GetOld().IsNull());
+            ASSERT_EQ(std::numeric_limits<uint32_t>::max(), propChange.ArrayMaxOccurs().GetNew().Value());
+
+            continue;
+            }
+
+        //Class Foo was added
+        if (BeStringUtilities::StricmpAscii(classChange.GetChangeName(), "Foo") == 0)
+            {
+            ASSERT_EQ(ECChange::OpCode::New, classChange.GetOpCode());
+            continue;
+            }
+
+        //Class Sub was changed from entity to relationship class
+        if (BeStringUtilities::StricmpAscii(classChange.GetChangeName(), "Sub") == 0)
+            {
+            ASSERT_EQ(ECChange::OpCode::Modified, classChange.GetOpCode());
+
+            ASSERT_TRUE(classChange.ClassType().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, classChange.ClassType().GetOpCode());
+            ASSERT_EQ(ECClassType::Entity, classChange.ClassType().GetOld().Value());
+            ASSERT_EQ(ECClassType::Relationship, classChange.ClassType().GetNew().Value());
+
+            PropertyChanges& propChanges = classChange.Properties();
+            ASSERT_TRUE(propChanges.IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, propChanges.GetOpCode());
+            ASSERT_EQ(1, propChanges.Count());
+            PropertyChange& propChange = propChanges[0];
+            ASSERT_STREQ("SubProp", propChange.GetChangeName());
+            ASSERT_TRUE(propChange.IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Deleted, propChange.GetOpCode());
+
+            BaseClassChanges& baseClassChanges = classChange.BaseClasses();
+            ASSERT_TRUE(baseClassChanges.IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, baseClassChanges.GetOpCode());
+            ASSERT_EQ(1, baseClassChanges.Count());
+            StringChange& baseClassChange = baseClassChanges[0];
+            ASSERT_TRUE(baseClassChange.IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Deleted, baseClassChange.GetOpCode());
+            ASSERT_STREQ("TestSchema:Parent", baseClassChange.GetOld().Value().c_str());
+
+            ASSERT_TRUE(classChange.Strength().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, classChange.Strength().GetOpCode());
+            ASSERT_TRUE(classChange.Strength().GetOld().IsNull());
+            ASSERT_EQ(StrengthType::Referencing, classChange.Strength().GetNew().Value());
+
+            ASSERT_TRUE(classChange.StrengthDirection().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, classChange.StrengthDirection().GetOpCode());
+            ASSERT_TRUE(classChange.StrengthDirection().GetOld().IsNull());
+            ASSERT_EQ(ECRelatedInstanceDirection::Forward, classChange.StrengthDirection().GetNew().Value());
+
+            
+            RelationshipConstraintChange& sourceChange = classChange.Source();
+            ASSERT_TRUE(sourceChange.IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, sourceChange.GetOpCode());
+
+            ASSERT_TRUE(sourceChange.IsPolymorphic().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, sourceChange.IsPolymorphic().GetOpCode());
+            ASSERT_TRUE(sourceChange.IsPolymorphic().GetOld().IsNull());
+            ASSERT_EQ(true, sourceChange.IsPolymorphic().GetNew().Value());
+
+            ASSERT_TRUE(sourceChange.Multiplicity().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, sourceChange.Multiplicity().GetOpCode());
+            ASSERT_TRUE(sourceChange.Multiplicity().GetOld().IsNull());
+            ASSERT_STREQ("(0..1)", sourceChange.Multiplicity().GetNew().Value().c_str());
+
+            ASSERT_TRUE(sourceChange.RoleLabel().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, sourceChange.RoleLabel().GetOpCode());
+            ASSERT_TRUE(sourceChange.RoleLabel().GetOld().IsNull());
+            ASSERT_STREQ("has", sourceChange.RoleLabel().GetNew().Value().c_str());
+
+            ASSERT_TRUE(sourceChange.ConstraintClasses().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, sourceChange.ConstraintClasses().GetOpCode());
+            ASSERT_EQ(1, sourceChange.ConstraintClasses().Count());
+            //a constraint class was added
+            ASSERT_TRUE(sourceChange.ConstraintClasses()[0].IsChanged());
+            ASSERT_EQ(ECChange::OpCode::New, sourceChange.ConstraintClasses()[0].GetOpCode());
+            ASSERT_STREQ("TestSchema:Parent", sourceChange.ConstraintClasses()[0].GetNew().Value().c_str());
+
+            RelationshipConstraintChange& targetChange = classChange.Target();
+            ASSERT_TRUE(targetChange.IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, targetChange.GetOpCode());
+
+            ASSERT_TRUE(targetChange.IsPolymorphic().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, targetChange.IsPolymorphic().GetOpCode());
+            ASSERT_TRUE(targetChange.IsPolymorphic().GetOld().IsNull());
+            ASSERT_EQ(true, targetChange.IsPolymorphic().GetNew().Value());
+
+            ASSERT_TRUE(targetChange.Multiplicity().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, targetChange.Multiplicity().GetOpCode());
+            ASSERT_TRUE(targetChange.Multiplicity().GetOld().IsNull());
+            ASSERT_STREQ("(0..*)", targetChange.Multiplicity().GetNew().Value().c_str());
+
+            ASSERT_TRUE(targetChange.RoleLabel().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, targetChange.RoleLabel().GetOpCode());
+            ASSERT_TRUE(targetChange.RoleLabel().GetOld().IsNull());
+            ASSERT_STREQ("is contained by", targetChange.RoleLabel().GetNew().Value().c_str());
+
+            ASSERT_TRUE(targetChange.ConstraintClasses().IsChanged());
+            ASSERT_EQ(ECChange::OpCode::Modified, targetChange.ConstraintClasses().GetOpCode());
+            ASSERT_EQ(1, targetChange.ConstraintClasses().Count());
+            //a constraint class was added
+            ASSERT_TRUE(targetChange.ConstraintClasses()[0].IsChanged());
+            ASSERT_EQ(ECChange::OpCode::New, targetChange.ConstraintClasses()[0].GetOpCode());
+            ASSERT_STREQ("TestSchema:Foo", targetChange.ConstraintClasses()[0].GetNew().Value().c_str());
+            }
+        }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
