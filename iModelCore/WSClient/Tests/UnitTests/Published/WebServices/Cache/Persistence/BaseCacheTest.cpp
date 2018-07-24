@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/BaseCacheTest.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -162,6 +162,14 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
                 </Target>
             </ECRelationshipClass>
             <ECRelationshipClass typeName="TestHoldingRelationshipClass" isDomainClass="True" strength="holding" strengthDirection="forward">
+                <Source cardinality="(0,N)" polymorphic="True">
+                    <Class class="TestClass" />
+                </Source>
+                <Target cardinality="(0,N)" polymorphic="True">
+                    <Class class="TestClass" />
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="TestEmbeddingRelationshipClass" isDomainClass="True" strength="embedding" strengthDirection="forward">
                 <Source cardinality="(0,N)" polymorphic="True">
                     <Class class="TestClass" />
                 </Source>
