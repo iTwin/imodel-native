@@ -9,6 +9,7 @@
 #include <DgnPlatform\DgnPlatformApi.h>
 #include <BuildingShared/BuildingSharedApi.h>
 #include "BuildingSharedTestFixtureBase.h"
+#include "TestUtils.h"
 
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(TestElementPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(TestElementManipulationStrategy)
@@ -34,6 +35,8 @@ struct TestElementManipulationStrategy : DgnElementManipulationStrategy
         NullGeometryManipulationStrategyPtr m_geomManipStrategy;
         NullGeometryPlacementStrategyPtr m_geomPlaceStrategy;
 
+        bvector<IGeometryPtr> m_constructionGeometry;
+
     protected:
         TestElementManipulationStrategy(Dgn::DgnDbR db) 
             : T_Super(db) 
@@ -56,8 +59,12 @@ struct TestElementManipulationStrategy : DgnElementManipulationStrategy
         virtual bool _IsComplete() const override { return false; }
         virtual bool _CanAcceptMorePoints() const override { return false; }
 
+        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override { return m_constructionGeometry; }
+
     public:
         static TestElementManipulationStrategyPtr Create(Dgn::DgnDbR db) { return new TestElementManipulationStrategy(db); }
+
+        void SetConstructionGeometryForTest(bvector<IGeometryPtr> const& constructionGeometry) { m_constructionGeometry = constructionGeometry; }
     };
 
 //=======================================================================================
@@ -85,6 +92,8 @@ struct TestElementPlacementStrategy : DgnElementPlacementStrategy
 
     public:
         static TestElementPlacementStrategyPtr Create(Dgn::DgnDbR db) { return new TestElementPlacementStrategy(db); }
+
+        void SetConstructionGeometryForTest(bvector<IGeometryPtr> const& constructionGeometry) { m_manipStrategy->SetConstructionGeometryForTest(constructionGeometry); }
     };
 
 END_BUILDING_SHARED_NAMESPACE
@@ -126,4 +135,74 @@ TEST_F(DgnElementPlacementStrategyTestFixture, GetFUS_Inches)
     ASSERT_STREQ("IN", lengthFUSProp.GetFUS().GetUnitName().c_str());
     ASSERT_STREQ("SQ.IN", areaFUSProp.GetFUS().GetUnitName().c_str());
     ASSERT_STREQ("CUB.IN", volumeFUSProp.GetFUS().GetUnitName().c_str());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnElementPlacementStrategyTestFixture, AddWorldOverlay)
+    {
+    TestElementPlacementStrategyPtr sut = TestElementPlacementStrategy::Create(GetDgnDb());
+    ASSERT_TRUE(sut.IsValid());
+
+    if (true)
+        {
+        CurveVectorPtr expectedCV = CurveVector::CreateLinear({{0,0,0},{1,0,0},{1,1,0}}, CurveVector::BOUNDARY_TYPE_Open);
+        sut->SetConstructionGeometryForTest({IGeometry::Create(expectedCV)});
+        FakeGraphicBuilderPtr builder = FakeGraphicBuilder::Create(GraphicBuilder::CreateParams::Scene(GetDgnDb()));
+        sut->AddWorldOverlay(*builder);
+
+        ASSERT_EQ(1, builder->m_geometry.size());
+        IGeometryPtr actualGeometry = builder->m_geometry.front().m_geometry;
+        ASSERT_TRUE(actualGeometry.IsValid());
+        ASSERT_TRUE(actualGeometry->GetAsCurveVector().IsValid());
+        ASSERT_TRUE(actualGeometry->GetAsCurveVector()->IsSameStructureAndGeometry(*expectedCV));
+        ASSERT_EQ(1, builder->m_geometry.front().m_graphicParams.GetWidth());
+        }
+
+    if (true)
+        {
+        ICurvePrimitivePtr expectedLineString = ICurvePrimitive::CreateLineString({{1,0,0},{2,2,0},{3,3,0}});
+        sut->SetConstructionGeometryForTest({IGeometry::Create(expectedLineString)});
+        FakeGraphicBuilderPtr builder = FakeGraphicBuilder::Create(GraphicBuilder::CreateParams::Scene(GetDgnDb()));
+        sut->AddWorldOverlay(*builder);
+
+        ASSERT_EQ(1, builder->m_geometry.size());
+        IGeometryPtr actualGeometry = builder->m_geometry.front().m_geometry;
+        ASSERT_TRUE(actualGeometry.IsValid());
+        ASSERT_TRUE(actualGeometry->GetAsICurvePrimitive().IsValid());
+        ASSERT_TRUE(actualGeometry->GetAsICurvePrimitive()->IsSameStructureAndGeometry(*expectedLineString));
+        ASSERT_EQ(1, builder->m_geometry.front().m_graphicParams.GetWidth());
+        }
+
+    if (true)
+        {
+        bvector<DPoint3d> points {{2,2,0},{2,3,0},{1,3,0}};
+        ICurvePrimitivePtr expectedPointString = ICurvePrimitive::CreatePointString(points);
+        sut->SetConstructionGeometryForTest({IGeometry::Create(expectedPointString)});
+        FakeGraphicBuilderPtr builder = FakeGraphicBuilder::Create(GraphicBuilder::CreateParams::Scene(GetDgnDb()));
+        sut->AddWorldOverlay(*builder);
+
+        ASSERT_EQ(1, builder->m_geometry.size());
+        IGeometryPtr actualGeometry = builder->m_geometry.front().m_geometry;
+        ASSERT_TRUE(actualGeometry.IsValid());
+        ASSERT_TRUE(actualGeometry->GetAsICurvePrimitive().IsValid());
+        ASSERT_TRUE(actualGeometry->GetAsICurvePrimitive()->IsSameStructureAndGeometry(*expectedPointString));
+        ASSERT_EQ(6, builder->m_geometry.front().m_graphicParams.GetWidth());
+        }
+
+    if (true)
+        {
+        ICurvePrimitivePtr expectedArc = ICurvePrimitive::CreateArc(DEllipse3d::FromCenterNormalRadius({0,0,0}, DVec3d::From(0, 0, 1), 5));
+        sut->SetConstructionGeometryForTest({IGeometry::Create(expectedArc)});
+        FakeGraphicBuilderPtr builder = FakeGraphicBuilder::Create(GraphicBuilder::CreateParams::Scene(GetDgnDb()));
+        sut->AddWorldOverlay(*builder);
+
+        ASSERT_EQ(1, builder->m_geometry.size());
+        IGeometryPtr actualGeometry = builder->m_geometry.front().m_geometry;
+        ASSERT_TRUE(actualGeometry.IsValid());
+        ASSERT_TRUE(actualGeometry->GetAsICurvePrimitive().IsValid());
+        ASSERT_TRUE(actualGeometry->GetAsICurvePrimitive()->IsSameStructureAndGeometry(*expectedArc));
+        ASSERT_EQ(1, builder->m_geometry.front().m_graphicParams.GetWidth());
+        }
     }

@@ -106,6 +106,15 @@ void DgnElementManipulationStrategy::_AddWorldOverlay
                     builder.AddLineString(points->size(), &points->front());
                     break;
                     }
+                case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Arc:
+                    {
+                    builder.SetSymbology(contrastingToBackgroundColor, Dgn::ColorDef::Black(), 1, Dgn::Render::LinePixels::Code2);
+                    DEllipse3d arc;
+                    if (!primitive->TryGetArc(arc))
+                        continue;
+
+                    builder.AddArc(arc, !arc.IsCircular(), false);
+                    }
                 default:
                     break;
                 }
