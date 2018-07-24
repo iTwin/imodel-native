@@ -226,6 +226,14 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
                     <Class class="TestClass" />
                 </Target>
             </ECRelationshipClass>
+            <ECRelationshipClass typeName="TestEmbeddingRelationshipClass" isDomainClass="True" strength="embedding" strengthDirection="forward">
+                <Source cardinality="(0,N)" polymorphic="True">
+                    <Class class="TestClass" />
+                </Source>
+                <Target cardinality="(0,N)" polymorphic="True">
+                    <Class class="TestClass" />
+                </Target>
+            </ECRelationshipClass>
         </ECSchema>)xml";
 
     ECSchemaPtr schema;

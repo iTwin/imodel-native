@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Instances/RelationshipInfoManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -433,7 +433,7 @@ bset<CachedInstanceKey>& cachedRelationshipsOut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RelationshipInfoManager::DeleteRelationshipLeavingInfo(RelationshipInfoR info)
+BentleyStatus RelationshipInfoManager::DeleteRelationshipLeavingInfo(RelationshipInfoCR info)
     {
     ECRelationshipClassCP relClass = m_dbAdapter.GetECRelationshipClass(info.GetInstanceKey());
     if (nullptr == relClass)
@@ -449,6 +449,17 @@ BentleyStatus RelationshipInfoManager::DeleteRelationshipLeavingInfo(Relationshi
         }
 
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RelationshipInfoManager::DeleteRelationshipOnlyWithInfo(RelationshipInfoCR info)
+    {
+    if (SUCCESS != DeleteRelationshipLeavingInfo(info))
+        return ERROR;
+
+    return m_dbAdapter.DeleteInstance(info.GetInfoKey());
     }
 
 /*--------------------------------------------------------------------------------------+
