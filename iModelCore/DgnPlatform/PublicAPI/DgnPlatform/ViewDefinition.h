@@ -628,6 +628,8 @@ public:
     DGNPLATFORM_EXPORT DisplayStyleR GetDisplayStyle();
     DgnElementId GetDisplayStyleId() const {return m_displayStyleId;}
 
+    void SetDisplayStyle(DisplayStyleR style) { BeAssert(!IsPersistent()); m_displayStyle = &style; m_displayStyleId = style.GetElementId(); }
+
     //! Set the CategorySelector for this view.
     void SetCategorySelector(CategorySelectorR categories) {BeAssert(!IsPersistent()); m_categorySelector = &categories; m_categorySelectorId=categories.GetElementId();}
 
