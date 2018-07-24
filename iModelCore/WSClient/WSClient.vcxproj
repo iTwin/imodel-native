@@ -573,6 +573,8 @@
     <None Include="CWSClientCLib.mke" />
     <None Include="CWSClientCLibOptions.mki" />
     <None Include="CWSClientCPrewire.mke" />
+    <None Include="FakeServerLib.mke" />
+    <None Include="FakeServerPrewire.mke" />
     <None Include="iModelHubClient.NuGetPackage.mke" />
     <None Include="iModelHubClient.nuspec" />
     <None Include="iModelHubClientLib.mke" />
