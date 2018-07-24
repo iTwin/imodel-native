@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/ChangeManagerTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2596,6 +2596,44 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedRelationshipDeletedAfte
     // Assert
     ASSERT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetRelationshipChange(relationship).GetChangeStatus());
     EXPECT_FALSE(VerifyHasRelationship(cache, testRelClass, source, target));
+    }
+
+TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedRelationshipWithEmbeddingStrengthAndCreatedObjectAndEmptyId_RemovesRelationshipButLeavesCreatedObject)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto source = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"}, {{"TestProperty", "ValueA"}});
+    ASSERT_TRUE(source.IsValid());
+
+    auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
+    auto testRelClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestEmbeddingRelationshipClass");
+
+    Json::Value targetJson;
+    targetJson["TestProperty"] = "ValueB";
+    auto target = cache->GetChangeManager().CreateObject(*testClass, targetJson);
+    ASSERT_TRUE(target.IsValid());
+    
+    auto relationship = cache->GetChangeManager().CreateRelationship(*testRelClass, source, target);
+    ASSERT_TRUE(relationship.IsValid());
+
+    auto revision = cache->GetChangeManager().ReadInstanceRevision(relationship);
+    ASSERT_TRUE(cache->FindRelationship(relationship).IsValid());
+    ASSERT_TRUE(VerifyHasRelationship(cache, testRelClass, source, target));
+
+    // Act
+    revision->SetRemoteId(""); // Relationship will need to be removed
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitInstanceRevision(*revision));
+
+    // Assert
+    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetRelationshipChange(relationship).GetChangeStatus());
+    EXPECT_EQ(ObjectId(), cache->FindRelationship(relationship));
+    EXPECT_FALSE(VerifyHasRelationship(cache, testRelClass, source, target));
+
+    EXPECT_TRUE(cache->GetCachedObjectInfo(source).IsInCache());
+    EXPECT_TRUE(cache->GetCachedObjectInfo(target).IsInCache());
+
+    EXPECT_EQ("ValueA", ReadInstance(*cache, source)["TestProperty"]);
+    EXPECT_EQ("ValueB", ReadInstance(*cache, target)["TestProperty"]);
     }
 
 TEST_F(ChangeManagerTests, CommitFileRevision_ModifiedFileModifiedAfterRevisionWasRead_PreservesNewFileAndLeavesAsModified)
