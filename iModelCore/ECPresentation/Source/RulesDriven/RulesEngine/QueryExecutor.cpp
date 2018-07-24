@@ -534,6 +534,7 @@ struct FieldValueInstanceKeyReader
 {
 private:
     ECDbCR m_db;
+    bool m_trackKeys;
     bmap<ContentDescriptor::ECPropertiesField const*, bvector<ECClassInstanceKey>> m_relatedFieldKeys;
     bmap<ContentDescriptor::ECPropertiesField const*, int> m_fieldProperties;
     bvector<ECClassInstanceKey> const& m_primaryKeys;
@@ -556,15 +557,18 @@ public:
     /*---------------------------------------------------------------------------------**//**
     // @bsimethod                                    Grigas.Petraitis               06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    FieldValueInstanceKeyReader(ECDbCR db, bvector<ECClassInstanceKey> const& primaryKeys)
-        : m_db(db), m_primaryKeys(primaryKeys) 
+    FieldValueInstanceKeyReader(ECDbCR db, bvector<ECClassInstanceKey> const& primaryKeys, bool trackKeys)
+        : m_db(db), m_primaryKeys(primaryKeys), m_trackKeys(trackKeys)
         {}
 
     /*---------------------------------------------------------------------------------**//**
     // @bsimethod                                    Grigas.Petraitis               06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     void ReadFieldKeys(ContentDescriptor::ECInstanceKeyField const& field, ECSqlStatement& statement, int columnIndex)
-        {        
+        {    
+        if (!m_trackKeys)
+            return;
+
         if (statement.IsValueNull(columnIndex))
             return;
 
@@ -597,6 +601,9 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void SetFieldProperty(ContentDescriptor::ECPropertiesField const& field, ContentDescriptor::Property const& prop, bool isMerged)
         {
+        if (!m_trackKeys)
+            return;
+
         if (isMerged)
             {
             m_fieldProperties[&field] = -1;
@@ -689,8 +696,10 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
             }
         }
     
+    bool needFieldValueKeys = (0 == (descriptor.GetContentFlags() & (int)ContentFlags::ExcludeEditingData));
+    FieldValueInstanceKeyReader fieldValueInstanceKeyReader(GetConnection().GetECDb(), primaryRecordKeys, needFieldValueKeys);
+
     ContentValueAppender values;
-    FieldValueInstanceKeyReader fieldValueInstanceKeyReader(GetConnection().GetECDb(), primaryRecordKeys);
     Utf8String displayLabel, imageId;
     ECClassCP recordClass = nullptr;
     if (0 == ((int)ContentFlags::KeysOnly & descriptor.GetContentFlags()))

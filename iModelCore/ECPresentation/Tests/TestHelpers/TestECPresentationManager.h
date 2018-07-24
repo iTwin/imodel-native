@@ -212,6 +212,10 @@ protected:
         {
         return 0;
         }
+    folly::Future<Utf8String> _GetDisplayLabel(IConnectionCR, KeySetCR) override
+        {
+        return "";
+        }
 
     // Updating
     folly::Future<bvector<ECInstanceChangeResult>> _SaveValueChange(IConnectionCR db, bvector<ChangedECInstanceInfo> const& instancesInfo, Utf8CP propertyAccessor, ECValueCR value, JsonValueCR options) override

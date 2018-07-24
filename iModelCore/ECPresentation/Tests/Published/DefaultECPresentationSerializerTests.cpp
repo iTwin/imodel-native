@@ -1538,7 +1538,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceNodeKeySerialization)
 //---------------------------------------------------------------------------------------
 TEST_F(DefaultECPresentationSerializerTests, ECClassGroupingNodeKeySerialization)
     {
-    ECClassGroupingNodeKeyPtr key = ECClassGroupingNodeKey::Create(*GetClassA(), {"123", "abc"});
+    ECClassGroupingNodeKeyPtr key = ECClassGroupingNodeKey::Create(*GetClassA(), {"123", "abc"}, 456);
     //Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1546,7 +1546,8 @@ TEST_F(DefaultECPresentationSerializerTests, ECClassGroupingNodeKeySerialization
     expected.Parse(R"({
         "Type": "ECClassGroupingNode",
         "PathFromRoot": ["123", "abc"],
-        "ECClassId": ""
+        "ECClassId": "",
+        "GroupedInstancesCount": 456
         })");
     expected["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
 
@@ -1582,7 +1583,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECClassGroupingNodeKeySerialization
 //---------------------------------------------------------------------------------------
 TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializationNoGroupingValue)
     {
-    ECPropertyGroupingNodeKeyPtr key = ECPropertyGroupingNodeKey::Create(*GetClassA(), "PropertyNameText", nullptr, {"123", "abc"});
+    ECPropertyGroupingNodeKeyPtr key = ECPropertyGroupingNodeKey::Create(*GetClassA(), "PropertyNameText", nullptr, {"123", "abc"}, 456);
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1591,7 +1592,8 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
         "Type": "ECPropertyGroupingNode",
         "PathFromRoot": ["123", "abc"],
         "ECClassId": "",
-        "PropertyName": "PropertyNameText"
+        "PropertyName": "PropertyNameText",
+        "GroupedInstancesCount": 456
         })");
     expected["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
 
@@ -1633,7 +1635,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
     {
     rapidjson::Document groupingValue;
     groupingValue.SetString("GroupingValueText");
-    ECPropertyGroupingNodeKeyPtr key = ECPropertyGroupingNodeKey::Create(*GetClassA(), "PropertyNameText", &groupingValue, {"123", "abc"});
+    ECPropertyGroupingNodeKeyPtr key = ECPropertyGroupingNodeKey::Create(*GetClassA(), "PropertyNameText", &groupingValue, {"123", "abc"}, 456);
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1643,7 +1645,8 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
         "PathFromRoot": ["123", "abc"],
         "ECClassId": "",
         "PropertyName": "PropertyNameText",
-        "GroupingValue": "GroupingValueText"
+        "GroupingValue": "GroupingValueText",
+        "GroupedInstancesCount": 456
         })");
     expected["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
 
@@ -1683,7 +1686,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
 //---------------------------------------------------------------------------------------
 TEST_F(DefaultECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
     {
-    LabelGroupingNodeKeyPtr key = LabelGroupingNodeKey::Create("LabelText", {"123", "abc"});
+    LabelGroupingNodeKeyPtr key = LabelGroupingNodeKey::Create("LabelText", {"123", "abc"}, 456);
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
@@ -1694,7 +1697,8 @@ TEST_F(DefaultECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
             "123",
             "abc"
             ],
-        "Label": "LabelText"
+        "Label": "LabelText",
+        "GroupedInstancesCount": 456
         })");
 
     ASSERT_EQ(expected, actual)

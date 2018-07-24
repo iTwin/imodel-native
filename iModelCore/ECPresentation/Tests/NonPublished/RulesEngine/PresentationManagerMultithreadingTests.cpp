@@ -205,7 +205,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
     ASSERT_TRUE(txn.IsActive());
 
     // attempt to get some data (don't expect to get any, but make sure request succeeds)
-    NavNodeKeyCPtr key = LabelGroupingNodeKey::Create("label", {"a", "b", "c"});
+    NavNodeKeyCPtr key = LabelGroupingNodeKey::Create("label", {"a", "b", "c"}, 1);
     RulesDrivenECPresentationManager::NavigationOptions options(ruleset->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
     folly::Future<size_t> count = m_manager->GetRootNodesCount(s_project->GetECDb(), options.GetJson());
 

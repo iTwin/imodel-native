@@ -62,7 +62,7 @@ protected:
         }
     void _AddListener(ISelectionChangesListener& listener) override {m_listeners.insert(&listener);}
     void _RemoveListener(ISelectionChangesListener& listener) override {m_listeners.erase(&listener);}
-    void _AddToSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR) override
+    void _AddToSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR, uint64_t) override
         {
         KeySetPtr curr = isSub ? m_subSelections[&db] : m_selections[&db];
         if (curr.IsNull())
@@ -74,7 +74,7 @@ protected:
         else
             SetSelection(db, *curr);
         }
-    void _RemoveFromSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR) override
+    void _RemoveFromSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR, uint64_t) override
         {
         KeySetPtr curr = isSub ? m_subSelections[&db] : m_selections[&db];
         if (curr.IsNull())
@@ -86,21 +86,21 @@ protected:
         else
             SetSelection(db, *curr);
         }
-    void _ChangeSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR) override
+    void _ChangeSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR, uint64_t) override
         {
         if (isSub)
             SetSubSelection(db, keys);
         else
             SetSelection(db, keys);
         }
-    void _ClearSelection(ECDbCR db, Utf8CP, bool isSub, RapidJsonValueCR) override
+    void _ClearSelection(ECDbCR db, Utf8CP, bool isSub, RapidJsonValueCR, uint64_t) override
         {
         if (isSub)
             SetSubSelection(db, *KeySet::Create());
         else
             SetSelection(db, *KeySet::Create());
         }
-    void _RefreshSelection(ECDbCR db, Utf8CP name, bool isSub, RapidJsonValueCR extendedData) override
+    void _RefreshSelection(ECDbCR db, Utf8CP name, bool isSub, RapidJsonValueCR extendedData, uint64_t) override
         {
         KeySetPtr curr = isSub ? m_subSelections[&db] : m_selections[&db];
         if (curr.IsNull())

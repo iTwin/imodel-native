@@ -204,6 +204,19 @@ static PresentationRuleSetPtr FindRuleset(IRulesetLocaterManager const& locaters
     return ruleset;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void RegisterDisplayLabelRuleset(IRulesetLocaterManager& locaters)
+    {
+    RefCountedPtr<SimpleRuleSetLocater> locater = SimpleRuleSetLocater::Create();
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(DISPLAY_LABEL_RULESET_ID, 1, 0, false, "", "", "", false);
+    ruleset->AddPresentationRule(*new ContentRule());
+    ruleset->GetContentRules().back()->AddSpecification(*new SelectedNodeInstancesSpecification());
+    locater->AddRuleSet(*ruleset);
+    locaters.RegisterLocater(*locater);
+    }
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                01/2017
 +===============+===============+===============+===============+===============+======*/
@@ -385,7 +398,6 @@ public:
         }
 };
 
-
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2017
 +===============+===============+===============+===============+===============+======*/
@@ -552,6 +564,8 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(IRule
     GetLocaters().SetRulesetCallbacksHandler(this);
     GetUserSettingsManager().SetChangesListener(this);
     m_connections.AddListener(*this);
+
+    RegisterDisplayLabelRuleset(GetLocaters());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1063,6 +1077,36 @@ size_t RulesDrivenECPresentationManagerImpl::_GetContentSetSize(ContentDescripto
     size_t size = provider->GetFullContentSetSize();
     LoggingHelper::LogMessage(Log::Content, Utf8PrintfString("[GetContentSetSize] returned %" PRIu64, (uint64_t)size).c_str());
     return size;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String RulesDrivenECPresentationManagerImpl::_GetDisplayLabel(IConnectionCR connection, KeySetCR keys, ICancelationTokenCR cancelationToken)
+    {
+    RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetDisplayLabel]", NativeLogging::LOG_TRACE);
+
+    ContentOptions options(DISPLAY_LABEL_RULESET_ID);
+    ContentDescriptorCPtr descriptor = GetContentDescriptor(connection, ContentDisplayType::List, keys, nullptr, options, cancelationToken);
+    if (descriptor.IsNull())
+        return "";
+
+    ContentDescriptorPtr labelDescriptor = ContentDescriptor::Create(*descriptor);
+    labelDescriptor->SetContentFlags((int)ContentFlags::NoFields | (int)ContentFlags::ShowLabels | (int)ContentFlags::MergeResults);
+
+    ContentCPtr content = GetContent(*labelDescriptor, PageOptions(), cancelationToken);
+    if (content.IsNull())
+        return "";
+
+    BeAssert(1 == content->GetContentSet().GetSize());
+    ContentSetItemCPtr item = content->GetContentSet().Get(0);
+    if (item.IsNull())
+        {
+        BeAssert(false);
+        return "";
+        }
+
+    return item->GetDisplayLabel();
     }
 
 /*---------------------------------------------------------------------------------**//**

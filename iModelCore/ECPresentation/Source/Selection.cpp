@@ -13,76 +13,76 @@
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
+void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
-    AddToSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData);
+    AddToSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData)
+void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     ECClassCP keyClass = ecdb.Schemas().GetClass(key.GetClassId());
-    AddToSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData);
+    AddToSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData)
+void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
-    AddToSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData);
+    AddToSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
+void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
-    RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData);
+    RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData)
+void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     ECClassCP keyClass = ecdb.Schemas().GetClass(key.GetClassId());
-    RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData);
+    RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData)
+void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
-    RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData);
+    RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
+void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
-    ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData);
+    ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData)
+void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     ECClassCP keyClass = ecdb.Schemas().GetClass(key.GetClassId());
-    ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData);
+    ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData)
+void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
-    ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData);
+    ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData, timestamp);
     }
 
 //=======================================================================================
@@ -282,10 +282,11 @@ void  SelectionManager::RemoveSyncHandler(SelectionSyncHandlerR handler)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::BroadcastSelectionChangedEvent(IConnectionCR connection, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData) const
+void SelectionManager::BroadcastSelectionChangedEvent(IConnectionCR connection, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, 
+    KeySetCR keys, RapidJsonValueCR extendedData, uint64_t timestamp) const
     {
     // create the selection changed event
-    SelectionChangedEventPtr evt = SelectionChangedEvent::Create(connection, source, changeType, isSubSelection, keys);
+    SelectionChangedEventPtr evt = SelectionChangedEvent::Create(connection, source, changeType, isSubSelection, keys, timestamp);
     evt->GetExtendedDataR().CopyFrom(extendedData, evt->GetExtendedDataAllocator());
 
     // notify listeners on the work thread
@@ -297,7 +298,7 @@ void SelectionManager::BroadcastSelectionChangedEvent(IConnectionCR connection, 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::_AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData)
+void SelectionManager::_AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
@@ -315,14 +316,14 @@ void SelectionManager::_AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSel
             GetLogger().debug("Sub selection cleared due to main selection change");
             }
         lock.unlock();
-        BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Add, isSubSelection, keys, extendedData);
+        BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Add, isSubSelection, keys, extendedData, timestamp);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::_RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData)
+void SelectionManager::_RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
@@ -340,14 +341,14 @@ void SelectionManager::_RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isS
             GetLogger().debug("Sub selection cleared due to main selection change");
             }
         lock.unlock();
-        BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Remove, isSubSelection, keys, extendedData);
+        BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Remove, isSubSelection, keys, extendedData, timestamp);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::_ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData)
+void SelectionManager::_ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
@@ -365,14 +366,14 @@ void SelectionManager::_ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSe
             GetLogger().debug("Sub selection cleared due to main selection change");
             }
         lock.unlock();
-        BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Replace, isSubSelection, keys, extendedData);
+        BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Replace, isSubSelection, keys, extendedData, timestamp);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::_ClearSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData)
+void SelectionManager::_ClearSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
@@ -392,13 +393,13 @@ void SelectionManager::_ClearSelection(ECDbCR ecdb, Utf8CP source, bool isSubSel
         }
     
     lock.unlock();
-    BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Clear, isSubSelection, *KeySet::Create(), extendedData);
+    BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Clear, isSubSelection, *KeySet::Create(), extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::_RefreshSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData)
+void SelectionManager::_RefreshSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData, uint64_t timestamp)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
@@ -407,7 +408,7 @@ void SelectionManager::_RefreshSelection(ECDbCR ecdb, Utf8CP source, bool isSubS
         return;
         }
     KeySetCPtr keys = isSubSelection ? GetSubSelection(ecdb) : GetSelection(ecdb);
-    BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Replace, isSubSelection, *keys, extendedData);
+    BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Replace, isSubSelection, *keys, extendedData, timestamp);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -533,7 +534,7 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::AddToSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys)
+void SelectionSyncHandler::AddToSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys, uint64_t timestamp)
     {
     if (nullptr == m_manager)
         {
@@ -542,13 +543,13 @@ void SelectionSyncHandler::AddToSelection(ECDbCR ecdb, bool isSubSelection, KeyS
         }
 
     BeAssert(nullptr != _GetSelectionSourceName() && 0 != *_GetSelectionSourceName());
-    m_manager->AddToSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData());
+    m_manager->AddToSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData(), timestamp);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::RemoveFromSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys)
+void SelectionSyncHandler::RemoveFromSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys, uint64_t timestamp)
     {
     if (nullptr == m_manager)
         {
@@ -557,13 +558,13 @@ void SelectionSyncHandler::RemoveFromSelection(ECDbCR ecdb, bool isSubSelection,
         }
 
     BeAssert(nullptr != _GetSelectionSourceName() && 0 != *_GetSelectionSourceName());
-    m_manager->RemoveFromSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData());
+    m_manager->RemoveFromSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData(), timestamp);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::ChangeSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys)
+void SelectionSyncHandler::ChangeSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys, uint64_t timestamp)
     {
     if (nullptr == m_manager)
         {
@@ -572,13 +573,13 @@ void SelectionSyncHandler::ChangeSelection(ECDbCR ecdb, bool isSubSelection, Key
         }
 
     BeAssert(nullptr != _GetSelectionSourceName() && 0 != *_GetSelectionSourceName());
-    m_manager->ChangeSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData());
+    m_manager->ChangeSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData(), timestamp);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::ClearSelection(ECDbCR ecdb, bool isSubSelection)
+void SelectionSyncHandler::ClearSelection(ECDbCR ecdb, bool isSubSelection, uint64_t timestamp)
     {
     if (nullptr == m_manager)
         {
@@ -587,7 +588,7 @@ void SelectionSyncHandler::ClearSelection(ECDbCR ecdb, bool isSubSelection)
         }
 
     BeAssert(nullptr != _GetSelectionSourceName() && 0 != *_GetSelectionSourceName());
-    m_manager->ClearSelection(ecdb, _GetSelectionSourceName(), isSubSelection, _CreateSelectionEventExtendedData());
+    m_manager->ClearSelection(ecdb, _GetSelectionSourceName(), isSubSelection, _CreateSelectionEventExtendedData(), timestamp);
     }
 
 //---------------------------------------------------------------------------------------
@@ -599,16 +600,16 @@ void SelectionSyncHandler::HandleSelectionChangeEvent(SelectionChangedEventCR ev
     switch (evt.GetChangeType())
         {
         case SelectionChangeType::Add:
-            AddToSelection(evt.GetDb(), evt.IsSubSelection(), *container);
+            AddToSelection(evt.GetDb(), evt.IsSubSelection(), *container, evt.GetTimestamp());
             break;
         case SelectionChangeType::Remove:
-            RemoveFromSelection(evt.GetDb(), evt.IsSubSelection(), *container);
+            RemoveFromSelection(evt.GetDb(), evt.IsSubSelection(), *container, evt.GetTimestamp());
             break;
         case SelectionChangeType::Replace:
-            ChangeSelection(evt.GetDb(), evt.IsSubSelection(), *container);
+            ChangeSelection(evt.GetDb(), evt.IsSubSelection(), *container, evt.GetTimestamp());
             break;
         case SelectionChangeType::Clear:
-            ClearSelection(evt.GetDb(), evt.IsSubSelection());
+            ClearSelection(evt.GetDb(), evt.IsSubSelection(), evt.GetTimestamp());
             break;
         default:
             BeAssert(false);

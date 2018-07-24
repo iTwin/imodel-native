@@ -105,6 +105,10 @@ protected:
     //! Get the content set size. 
     //! @see GetContentSetSize
     virtual folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR) = 0;
+    
+    //! Get display label
+    //! @see GetDisplayLabel
+    virtual folly::Future<Utf8String> _GetDisplayLabel(IConnectionCR, KeySetCR) = 0;
 /** @} */
     
 /** @name Updating
@@ -249,6 +253,16 @@ public:
     //! @param[in] descriptor The content descriptor which describes what should be included in the content and how
     //!            it should be formatted. To get the default descriptor, use @ref GetContentDescriptor.
     ECPRESENTATION_EXPORT folly::Future<size_t> GetContentSetSize(ContentDescriptorCR descriptor);
+    
+    //! Get display label of specific ECInstance
+    //! @param[in] db The db to use for getting the label.
+    //! @param[in] key Key of ECInstance to get the label for.
+    ECPRESENTATION_EXPORT folly::Future<Utf8String> GetDisplayLabel(ECDbCR db, ECInstanceKeyCR key);
+    
+    //! Get aggregated display label of multiple ECInstances
+    //! @param[in] db The db to use for getting the label.
+    //! @param[in] keys Set of ECInstance keys to get the label for.
+    ECPRESENTATION_EXPORT folly::Future<Utf8String> GetDisplayLabel(ECDbCR db, KeySetCR keys);
 /** @} */
     
 /** @name Updating

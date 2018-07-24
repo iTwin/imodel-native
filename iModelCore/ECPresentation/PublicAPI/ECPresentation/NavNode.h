@@ -25,6 +25,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 #define NAVNODE_TYPE_DisplayLabelGroupingNode   "DisplayLabelGroupingNode"
 
 struct ECInstanceNodeKey;
+struct GroupingNodeKey;
 struct ECClassGroupingNodeKey;
 struct ECPropertyGroupingNodeKey;
 struct LabelGroupingNodeKey;
@@ -46,6 +47,7 @@ protected:
     ECPRESENTATION_EXPORT virtual int _Compare(NavNodeKey const& other) const;
     virtual bool _IsSimilar(NavNodeKey const& other) const {return m_type.Equals(other.m_type);}
     virtual ECInstanceNodeKey const* _AsECInstanceNodeKey() const {return nullptr;}
+    virtual GroupingNodeKey const* _AsGroupingNodeKey() const {return nullptr;}
     virtual ECClassGroupingNodeKey const* _AsECClassGroupingNodeKey() const {return nullptr;}
     virtual ECPropertyGroupingNodeKey const* _AsECPropertyGroupingNodeKey() const {return nullptr;}
     virtual LabelGroupingNodeKey const* _AsLabelGroupingNodeKey() const {return nullptr;}
@@ -54,6 +56,7 @@ protected:
 
 public:
     ECInstanceNodeKey const* AsECInstanceNodeKey() const {return _AsECInstanceNodeKey();}
+    GroupingNodeKey const* AsGroupingNodeKey() const {return _AsGroupingNodeKey();}
     ECClassGroupingNodeKey const* AsECClassGroupingNodeKey() const {return _AsECClassGroupingNodeKey();}
     ECPropertyGroupingNodeKey const* AsECPropertyGroupingNodeKey() const {return _AsECPropertyGroupingNodeKey();}
     LabelGroupingNodeKey const* AsLabelGroupingNodeKey() const {return _AsLabelGroupingNodeKey();}
@@ -174,19 +177,39 @@ public:
     ECClassInstanceKeyCR GetClassInstanceKey() const {return m_instanceKey;}
 };
 
+typedef RefCountedPtr<GroupingNodeKey> GroupingNodeKeyPtr;
+//=======================================================================================
+//! NavNodeKey for ECClass grouping nodes.
+//! @ingroup GROUP_Presentation_Navigation
+// @bsiclass                                    Grigas.Petraitis                08/2016
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GroupingNodeKey : NavNodeKey
+{
+private:
+    uint64_t m_groupedInstancesCount;
+protected:
+    GroupingNodeKey(Utf8String type, bvector<Utf8String> path, uint64_t groupedInstancesCount) 
+        : NavNodeKey(type, path), m_groupedInstancesCount(groupedInstancesCount)
+        {}
+    GroupingNodeKey const* _AsGroupingNodeKey() const override {return this;}
+public:
+    //! Get the number of ECInstances grouped by the node.
+    uint64_t GetGroupedInstancesCount() const {return m_groupedInstancesCount;}
+};
+
 typedef RefCountedPtr<ECClassGroupingNodeKey>  ECClassGroupingNodeKeyPtr;
 //=======================================================================================
 //! NavNodeKey for ECClass grouping nodes.
 //! @ingroup GROUP_Presentation_Navigation
 // @bsiclass                                    Grigas.Petraitis                08/2016
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ECClassGroupingNodeKey : NavNodeKey
+struct EXPORT_VTABLE_ATTRIBUTE ECClassGroupingNodeKey : GroupingNodeKey
 {
 private:
     ECClassCP m_class;
 private:
-    ECClassGroupingNodeKey(bvector<Utf8String> path, ECClassCR ecClass) 
-        : NavNodeKey(NAVNODE_TYPE_ECClassGroupingNode, path), m_class(&ecClass)
+    ECClassGroupingNodeKey(bvector<Utf8String> path, ECClassCR ecClass, uint64_t groupedInstancesCount) 
+        : GroupingNodeKey(NAVNODE_TYPE_ECClassGroupingNode, path, groupedInstancesCount), m_class(&ecClass)
         {}
 protected:
     ECClassGroupingNodeKey const* _AsECClassGroupingNodeKey() const override {return this;}
@@ -200,9 +223,10 @@ public:
     //! Create an @ref ECClassGroupingNodeKey using supplied parameters.
     //! @param[in] ecClass The grouping ECClass
     //! @param[in] path The hashes which describe path from root node to this node.
-    static RefCountedPtr<ECClassGroupingNodeKey> Create(ECClassCR ecClass, bvector<Utf8String> path = bvector<Utf8String>())
+    //! @param[in] groupedInstancesCount Count of ECInstances the node is grouping.
+    static RefCountedPtr<ECClassGroupingNodeKey> Create(ECClassCR ecClass, bvector<Utf8String> path, uint64_t groupedInstancesCount)
         {
-        return new ECClassGroupingNodeKey(path, ecClass);
+        return new ECClassGroupingNodeKey(path, ecClass, groupedInstancesCount);
         }
     //! Get the ECClass
     ECClassCR GetECClass() const {return *m_class;}
@@ -216,15 +240,15 @@ typedef RefCountedPtr<ECPropertyGroupingNodeKey>  ECPropertyGroupingNodeKeyPtr;
 //! @ingroup GROUP_Presentation_Navigation
 // @bsiclass                                    Grigas.Petraitis                08/2016
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ECPropertyGroupingNodeKey : NavNodeKey
+struct EXPORT_VTABLE_ATTRIBUTE ECPropertyGroupingNodeKey : GroupingNodeKey
 {
 private:
     ECClassCP m_class;
     Utf8String m_propertyName;
     rapidjson::Document const* m_groupingValue;
 private:
-    ECPropertyGroupingNodeKey(bvector<Utf8String> path, ECClassCR ecClass, Utf8String propertyName, rapidjson::Value const* groupingValue) 
-        : NavNodeKey(NAVNODE_TYPE_ECPropertyGroupingNode, path), m_class(&ecClass), m_propertyName(propertyName), m_groupingValue(nullptr)
+    ECPropertyGroupingNodeKey(bvector<Utf8String> path, ECClassCR ecClass, Utf8String propertyName, rapidjson::Value const* groupingValue, uint64_t groupedInstancesCount) 
+        : GroupingNodeKey(NAVNODE_TYPE_ECPropertyGroupingNode, path, groupedInstancesCount), m_class(&ecClass), m_propertyName(propertyName), m_groupingValue(nullptr)
         {
         if (nullptr != groupingValue)
             {
@@ -248,9 +272,10 @@ public:
     //! @param[in] propertyName Name of the grouping property
     //! @param[in] groupingValue The grouping value.
     //! @param[in] path The hashes which describe path from root node to this node.
-    static RefCountedPtr<ECPropertyGroupingNodeKey> Create(ECClassCR ecClass, Utf8String propertyName, rapidjson::Value const* groupingValue, bvector<Utf8String> path = bvector<Utf8String>())
+    //! @param[in] groupedInstancesCount Count of ECInstances the node is grouping.
+    static RefCountedPtr<ECPropertyGroupingNodeKey> Create(ECClassCR ecClass, Utf8String propertyName, rapidjson::Value const* groupingValue, bvector<Utf8String> path, uint64_t groupedInstancesCount)
         {
-        return new ECPropertyGroupingNodeKey(path, ecClass, propertyName, groupingValue);
+        return new ECPropertyGroupingNodeKey(path, ecClass, propertyName, groupingValue, groupedInstancesCount);
         }
     ECClassCR GetECClass() const {return *m_class;}
     ECClassId GetECClassId() const {return m_class->GetId();}
@@ -264,13 +289,13 @@ typedef RefCountedPtr<LabelGroupingNodeKey>  LabelGroupingNodeKeyPtr;
 //! @ingroup GROUP_Presentation_Navigation
 // @bsiclass                                    Grigas.Petraitis                08/2016
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LabelGroupingNodeKey : NavNodeKey
+struct EXPORT_VTABLE_ATTRIBUTE LabelGroupingNodeKey : GroupingNodeKey
 {
 private:
     Utf8String m_label;
 private:
-    LabelGroupingNodeKey(bvector<Utf8String> path, Utf8String label) 
-        : NavNodeKey(NAVNODE_TYPE_DisplayLabelGroupingNode, path), m_label(label)
+    LabelGroupingNodeKey(bvector<Utf8String> path, Utf8String label, uint64_t groupedInstancesCount) 
+        : GroupingNodeKey(NAVNODE_TYPE_DisplayLabelGroupingNode, path, groupedInstancesCount), m_label(label)
         {}
 protected:
     LabelGroupingNodeKey const* _AsLabelGroupingNodeKey() const override {return this;}
@@ -284,9 +309,10 @@ public:
     //! Create an @ref LabelGroupingNodeKey using supplied parameters.
     //! @param[in] label Label of grouped nodes.
     //! @param[in] path The hashes which describe path from root node to this node.
-    static RefCountedPtr<LabelGroupingNodeKey> Create(Utf8String label, bvector<Utf8String> path = bvector<Utf8String>())
+    //! @param[in] groupedInstancesCount Count of ECInstances the node is grouping.
+    static RefCountedPtr<LabelGroupingNodeKey> Create(Utf8String label, bvector<Utf8String> path, uint64_t groupedInstancesCount)
         {
-        return new LabelGroupingNodeKey(path, label);
+        return new LabelGroupingNodeKey(path, label, groupedInstancesCount);
         }
     Utf8StringCR GetLabel() const {return m_label;}
 };
