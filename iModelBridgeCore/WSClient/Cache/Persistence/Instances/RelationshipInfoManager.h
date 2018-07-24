@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Instances/RelationshipInfoManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -75,7 +75,8 @@ struct RelationshipInfoManager : public IECDbAdapter::DeleteListener
             bset<CachedInstanceKey>& cachedRelationshipsOut
             );
 
-        BentleyStatus DeleteRelationshipLeavingInfo(RelationshipInfoR info);
+        BentleyStatus DeleteRelationshipLeavingInfo(RelationshipInfoCR info);
+        BentleyStatus DeleteRelationshipOnlyWithInfo(RelationshipInfoCR info);
         BentleyStatus RemoveAllCachedRelationships();
     };
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/ChangeManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1062,7 +1062,7 @@ BentleyStatus ChangeManager::CommitRelationshipChange(InstanceRevisionCR revisio
 
     if (currentRevision && newRemoteId.empty())
         {
-        return m_hierarchyManager.DeleteRelationship(info.GetInstanceKey());
+        return m_relationshipInfoManager.DeleteRelationshipOnlyWithInfo(info);
         }
     else if (currentRevision)
         {
