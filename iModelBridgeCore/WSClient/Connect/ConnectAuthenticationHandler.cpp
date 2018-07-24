@@ -143,10 +143,8 @@ AsyncTaskPtr<AuthenticationHandler::AuthorizationResult> ConnectAuthenticationHa
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectAuthenticationHandler::ShouldStopSendingToken(AttemptCR previousAttempt) const
     {
-    if (0 != previousAttempt.GetRequestUrl().compare(0, m_urlBaseToAuth.size(), m_urlBaseToAuth))
-        {
+    if (!previousAttempt.GetRequestUrl().StartsWithI(m_urlBaseToAuth.c_str()))
         return true;
-        }
 
     unsigned int expiredTokenRetryCount = m_retryExpiredToken ? 1 : 0;
 

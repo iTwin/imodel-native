@@ -89,6 +89,23 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_SameBaseUrl_Ret
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_SameBaseUrlWithDifferentCase_ReturnsExistingToken)
+    {
+    auto provider = std::make_shared<MockConnectTokenProvider>();
+    auto authHandler = ConnectAuthenticationHandler::Create("hTtp://TeST.com", provider, GetHandlerPtr(), "prefix");
+
+    SamlTokenPtr token = StubSamlToken(100);
+    EXPECT_CALL(*provider, GetToken()).WillRepeatedly(Return(token));
+
+    auto result = authHandler->_RetrieveAuthorization(StubAttempt("HttP://tESt.cOM/foo"))->GetResult();
+
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_EQ("prefix " + token->ToAuthorizationString(), result.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_PersistedToken_ReturnsToken)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
