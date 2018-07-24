@@ -547,6 +547,7 @@ protected:
 public:
     //////////// Vertical Editing /////////////////////////////
     // query for the slope at a given station
+    // Note this function was never finished, leaving it in here
     CIVILBASEGEOMETRY_EXPORT virtual double SlopeAtStation(const double& station);
 
 #if 0

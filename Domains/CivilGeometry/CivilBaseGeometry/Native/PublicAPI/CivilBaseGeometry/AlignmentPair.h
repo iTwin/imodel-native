@@ -177,6 +177,8 @@ public:
     //! @remarks also works with regular curves
     CIVILBASEGEOMETRY_EXPORT static void TransformCurveWithPartialCurves(CurveVectorR curve, TransformCR transform);
 
+    CIVILBASEGEOMETRY_EXPORT double SlopeAtDistanceAlong(const double& station) const;
+
 }; // AlignmentPair
 
 END_BENTLEY_CIVILGEOMETRY_NAMESPACE

@@ -8,7 +8,6 @@
 #include "CivilBaseGeometryInternal.h"
 #include <CivilBaseGeometry/AlignmentPair.h>
 
-
 #define DEFAULT_FAILURE_DISTANCE_ALONG -1.0 // Distance returned from HorizontalDistanceFromStart when the hz alignment isn't valid
 
 //---------------------------------------------------------------------------------------
@@ -989,4 +988,23 @@ void AlignmentPair::TransformCurveWithPartialCurves(CurveVectorR cv, TransformCR
                 }
             }
         }
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Arun.George                        06/2018
+//---------------------------------------------------------------------------------------
+double AlignmentPair::SlopeAtDistanceAlong(const double& distanceAlong) const
+    {
+    DPoint3d start, end;
+    start = GetPointAtWithZ(distanceAlong - 0.01);
+    end = GetPointAtWithZ(distanceAlong + 0.01);
+
+    double startX = HorizontalDistanceAlongFromStart(start);
+    double endX = HorizontalDistanceAlongFromStart(end);
+
+    if (start.z == end.z)
+        return 0.0;
+
+    return (end.z - start.z) / (endX - startX);
     }
