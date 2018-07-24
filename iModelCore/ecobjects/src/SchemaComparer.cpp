@@ -733,14 +733,18 @@ BentleyStatus SchemaComparer::CompareClass(ClassChange& change, ECClassCP oldVal
     change.Description().Set(oldClass.Description(), newClass.Description());
     change.ClassType().Set(oldClass.ClassType(), newClass.ClassType());
     change.ClassModifier().Set(oldClass.ClassModifier(), newClass.ClassModifier());
-    change.Strength().Set(oldClass.RelationStrength(), newClass.RelationStrength());
-    change.StrengthDirection().Set(oldClass.RelationStrengthDirection(), newClass.RelationStrengthDirection());
 
-    if (CompareRelationshipConstraint(change.Source(), oldClass.RelationSource(), newClass.RelationSource()) != SUCCESS)
-        return ERROR;
+    if ((oldVal != nullptr && oldVal->IsRelationshipClass()) || (newVal != nullptr && newVal->IsRelationshipClass()))
+        {
+        change.Strength().Set(oldClass.RelationStrength(), newClass.RelationStrength());
+        change.StrengthDirection().Set(oldClass.RelationStrengthDirection(), newClass.RelationStrengthDirection());
 
-    if (CompareRelationshipConstraint(change.Target(), oldClass.RelationTarget(), newClass.RelationTarget()) != SUCCESS)
-        return ERROR;
+        if (CompareRelationshipConstraint(change.Source(), oldClass.RelationSource(), newClass.RelationSource()) != SUCCESS)
+            return ERROR;
+
+        if (CompareRelationshipConstraint(change.Target(), oldClass.RelationTarget(), newClass.RelationTarget()) != SUCCESS)
+            return ERROR;
+        }
 
     if (CompareBaseClasses(change.BaseClasses(), oldClass.BaseClasses(), newClass.BaseClasses()) != SUCCESS)
         return ERROR;
@@ -977,11 +981,17 @@ BentleyStatus SchemaComparer::CompareProperty(PropertyChange& change, ECProperty
     change.Enumeration().Set(oldProp.Enumeration(), newProp.Enumeration());
     change.ExtendedTypeName().Set(oldProp.ExtendedTypeName(), newProp.ExtendedTypeName());
 
-    change.NavigationDirection().Set(oldProp.NavigationDirection(), newProp.NavigationDirection());
-    change.NavigationRelationship().Set(oldProp.NavigationRelationship(), newProp.NavigationRelationship());
+    if ((oldVal != nullptr && oldVal->GetIsNavigation()) || (newVal != nullptr && newVal->GetIsNavigation()))
+        {
+        change.NavigationDirection().Set(oldProp.NavigationDirection(), newProp.NavigationDirection());
+        change.NavigationRelationship().Set(oldProp.NavigationRelationship(), newProp.NavigationRelationship());
+        }
 
-    change.ArrayMinOccurs().Set(oldProp.ArrayMinOccurs(), newProp.ArrayMinOccurs());
-    change.ArrayMaxOccurs().Set(oldProp.ArrayMaxOccurs(), newProp.ArrayMaxOccurs());
+    if ((oldVal != nullptr && oldVal->GetIsArray()) || (newVal != nullptr && newVal->GetIsArray()))
+        {
+        change.ArrayMinOccurs().Set(oldProp.ArrayMinOccurs(), newProp.ArrayMinOccurs());
+        change.ArrayMaxOccurs().Set(oldProp.ArrayMaxOccurs(), newProp.ArrayMaxOccurs());
+        }
 
     return CompareCustomAttributes(change.CustomAttributes(), oldProp.CustomAttributes(), newProp.CustomAttributes());
     }
@@ -2058,6 +2068,9 @@ Utf8CP ECChange::TypeToString(Type type)
 //+---------------+---------------+---------------+---------------+---------------+------
 void CompositeECChange::_WriteToString(Utf8StringR str, int currentIndex, int indentSize) const
     {
+    if (m_changes.empty() || !IsChanged())
+        return;
+
     AppendBegin(str, *this, currentIndex);
     AppendEnd(str);
     for (auto& change : m_changes)
@@ -2196,14 +2209,10 @@ BentleyStatus PropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PropertyValueChange::_WriteToString(Utf8StringR str, int currentIndex, int indentSize) const
     {
-    if (m_value != nullptr)
-        {
-        m_value->WriteToString(str, currentIndex, indentSize);
+    if (!IsChanged())
         return;
-        }
 
-    AppendBegin(str, *this, currentIndex);
-    AppendEnd(str);
+    m_value->WriteToString(str, currentIndex, indentSize);
     }
 
 //---------------------------------------------------------------------------------------

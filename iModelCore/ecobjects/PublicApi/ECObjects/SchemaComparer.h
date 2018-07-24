@@ -264,6 +264,9 @@ struct ECChangeArray final : public ECChange
 
         void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
             {
+            if (m_changes.empty() || !IsChanged())
+                return;
+
             AppendBegin(str, *this, currentIndex);
             AppendEnd(str);
             for (ECChangePtr const& change : m_changes)
@@ -315,6 +318,9 @@ struct PrimitiveChange final : public ECChange
 
         void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
             {
+            if (!IsChanged())
+                return;
+
             AppendBegin(str, *this, currentIndex);
             str.append(": ").append(ToString());
             AppendEnd(str);
@@ -441,16 +447,47 @@ struct PrimitiveChange final : public ECChange
 
         Utf8String ToString() const
             {
-            Utf8String str;
-            if (GetOpCode() == OpCode::Deleted)
-                str.append(Stringify(GetOld().Value()));
-            if (GetOpCode() == OpCode::New)
-                str.append(Stringify(GetNew().Value()));
-            if (GetOpCode() == OpCode::Modified)
-                str.append(Stringify(GetOld().Value())).append(" -> ").append(Stringify(GetNew().Value()));
-            return str;
-            }
+            switch (GetOpCode())
+                {
+                    case OpCode::Deleted:
+                    {
+                    if (GetOld().IsNull())
+                        return "<unset>";
 
+                    return Stringify(GetOld().Value());
+                    }
+
+                    case OpCode::New:
+                    {
+                    if (GetNew().IsNull())
+                        return "<unset>";
+
+                    return Stringify(GetNew().Value());
+                    }
+
+                    case OpCode::Modified:
+                    {
+                    Utf8String str;
+                    if (GetOld().IsNull())
+                        str = "<unset>";
+                    else
+                        str = Stringify(GetOld().Value());
+
+                    str.append(" -> ");
+
+                    if (GetNew().IsNull())
+                        str.append("<unset>");
+                    else
+                        str.append(Stringify(GetNew().Value()));
+
+                    return str;
+                    }
+
+                    default:
+                        BeAssert(false && "Unhandled OpCode enum value");
+                        return "<programmer error: Unhanlded OpCode enum value";
+                }
+            }
     };
 
 typedef PrimitiveChange<bool> BooleanChange;
@@ -534,6 +571,9 @@ struct CustomAttributeChange final : public ECChange
         bool _IsChanged() const override { return m_propValueChanges->IsChanged(); }
         void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
             {
+            if (m_propValueChanges->Count() == 0 || !IsChanged())
+                return;
+
             AppendBegin(str, *this, currentIndex);
             AppendEnd(str);
             m_propValueChanges->WriteToString(str, currentIndex + indentSize, indentSize);
