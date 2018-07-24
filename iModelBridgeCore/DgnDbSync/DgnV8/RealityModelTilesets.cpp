@@ -22,7 +22,14 @@ BE_JSON_NAME(tilesetUrl)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::GenerateWebMercatorModel()
     {
-    RepositoryLinkPtr aerialLink = RepositoryLink::Create(*GetDgnDb().GetRealityDataSourcesModel(), nullptr, "Bing Aerial");
+    LinkModelPtr rdsModel = GetDgnDb().GetRealityDataSourcesModel();
+    Utf8String name("Bing Aerial");
+    DgnCode code = CodeSpec::CreateCode(BIS_CODESPEC_LinkElement, *rdsModel->GetModeledElement(), name);
+    DgnElementId existing = GetDgnDb().Elements().QueryElementIdByCode(code);
+    if (existing.IsValid())
+        return SUCCESS;
+
+    RepositoryLinkPtr aerialLink = RepositoryLink::Create(*rdsModel, nullptr, "Bing Aerial");
     if (!aerialLink.IsValid() ||  !aerialLink->Insert().IsValid())
         return ERROR;
 
