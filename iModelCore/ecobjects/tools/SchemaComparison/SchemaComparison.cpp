@@ -10,7 +10,6 @@
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECObjects/SchemaComparer.h>
 #include <Windows.h>
-#include <BeSQLite/L10N.h>
 
 #define SCHEMA_COMPARISON_EXIT_DIFFERENCES_DETECTED 1
 #define SCHEMA_COMPARISON_EXIT_DIFFERENCES_CHECKSUMS_MATCH 2
@@ -150,7 +149,7 @@ int CompareSchemas(SchemaComparisonOptions& options)
     {
     ECN::ECSchemaReadContextPtr contexts[NSCHEMAS];
     ECN::ECSchemaPtr schemas[NSCHEMAS];
-    uint32_t checksums[NSCHEMAS]; // TODO - After EC32 merge, change checksum type to Utf8String
+    Utf8String checksums[NSCHEMAS];
     for (int i = 0; i < NSCHEMAS; ++i)
         {
         contexts[i] = ECN::ECSchemaReadContext::CreateContext(true, true);
@@ -176,36 +175,31 @@ int CompareSchemas(SchemaComparisonOptions& options)
             }
         s_logger->infov("Located schema: %s\n", schemas[i]->GetName().c_str());
 
-        // TODO - After EC32 merge, change lines below to: checksums[i] = schemas[i]->ComputeCheckSum();
-        Utf8String xmlStr;
-        if (ECN::SchemaWriteStatus::Success != schemas[i]->WriteToXmlString(xmlStr))
-            checksums[i] = 0;
-        else
-            checksums[i] = ECN::ECSchema::ComputeSchemaXmlStringCheckSum(xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length());
+        checksums[i] = schemas[i]->ComputeCheckSum();
 
-        s_logger->infov("Checksum for %s = %d\n", schemas[i]->GetFullSchemaName(), checksums[i]);
+        s_logger->infov("Checksum for %s = %s\n", schemas[i]->GetFullSchemaName(), checksums[i]);
         }
 
     bvector<ECN::ECSchemaCP> cpSchemas[NSCHEMAS] = {{schemas[0].get()}, {schemas[1].get()}};
     ECN::SchemaComparer comparer;
-    ECN::SchemaChanges changes;
-    ECN::SchemaComparer::Options comparerOptions(ECN::SchemaComparer::AppendDetailLevel::Full, ECN::SchemaComparer::AppendDetailLevel::Full);
-    if (ERROR == comparer.Compare(changes, cpSchemas[0], cpSchemas[1], comparerOptions))
+    ECN::SchemaDiff diff;
+    ECN::SchemaComparer::Options comparerOptions(ECN::SchemaComparer::DetailLevel::Full, ECN::SchemaComparer::DetailLevel::Full);
+    if (ERROR == comparer.Compare(diff, cpSchemas[0], cpSchemas[1], comparerOptions))
         {
         s_logger->error("Failed to compare schemas");
         return SCHEMA_COMPARISON_EXIT_FAILURE;
         }
-    if (changes.IsEmpty())
+    if (diff.Changes().IsEmpty())
         {
         s_logger->info("The schemas are identical");
 
-        if (checksums[0] == 0 || checksums[1] == 0)
+        if (Utf8String::IsNullOrEmpty(checksums[0].c_str()) || Utf8String::IsNullOrEmpty(checksums[1].c_str()))
             {
             s_logger->error("Checksum computation for one or both of the schemas failed because of a serialization error. See errors above for more info.");
             return SCHEMA_COMPARISON_EXIT_FAILURE;
             }
 
-        if (checksums[0] == checksums[1])
+        if (checksums[0].EqualsIAscii(checksums[1]))
             return SUCCESS;
         else
             {
@@ -213,21 +207,21 @@ int CompareSchemas(SchemaComparisonOptions& options)
             return SCHEMA_COMPARISON_EXIT_IDENTICAL_CHECKSUMS_NOT_MATCH;
             }
         }
-    for (size_t i = 0; i < changes.Count(); ++i)
+    for (size_t i = 0; i < diff.Changes().Count(); ++i)
         {
         Utf8String s;
-        changes.At(i).WriteToString(s);
+        diff.Changes()[i].WriteToString(s);
         LogError(s);
         }
     s_logger->info("The schemas are different (see log)");
 
-    if (checksums[0] == 0 || checksums[1] == 0)
+    if (Utf8String::IsNullOrEmpty(checksums[0].c_str()) || Utf8String::IsNullOrEmpty(checksums[1].c_str()))
         {
         s_logger->error("Checksum computation for one or both of the schemas failed because of a serialization error. See errors above for more info.");
         return SCHEMA_COMPARISON_EXIT_FAILURE;
         }
 
-    if (checksums[0] == checksums[1])
+    if (checksums[0].EqualsIAscii(checksums[1]))
         {
         s_logger->error("The checksums should not match");
         return SCHEMA_COMPARISON_EXIT_DIFFERENCES_CHECKSUMS_MATCH;
@@ -261,14 +255,6 @@ int main(int argc, char** argv)
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
     workingDirectory.AppendToPath(L"Assets");
 
-    BeFileName sqlangFile(workingDirectory);
-    sqlangFile.AppendToPath(L"sqlang");
-    BeFileName tempDirectory(sqlangFile);
-    sqlangFile.AppendToPath(L"Tools_en.sqlang.db3");
-
-    BeSQLite::BeSQLiteLib::Initialize(tempDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
-    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
-
     if (progOptions.NoStandardSchemas)
         {
         s_logger->infov(L"Skipping initialization of ECSchemaReadContext");
@@ -280,8 +266,6 @@ int main(int argc, char** argv)
         }
     
     int comparisonResult = CompareSchemas(progOptions);
-
-    BeSQLite::L10N::Shutdown();
 
     return comparisonResult;
     }

@@ -34,8 +34,7 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(li
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)   
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeSqlite$(libext)  
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)
 
 %include $(SharedMki)linktool.mki
 

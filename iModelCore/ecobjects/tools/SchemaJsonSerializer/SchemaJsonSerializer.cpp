@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECObjects/ECObjectsAPI.h>
+#include <Bentley/BeFile.h>
 #include <Bentley/BeFileName.h>
 #include <Bentley/stdcxx/bvector.h>
 #include <Bentley/stdcxx/rw/bpair.h>
@@ -17,7 +18,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <BeSQLite/L10N.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -78,8 +78,8 @@ static bool TryWriteSchema(ECSchemaR schema, ConversionOptions options)
     GetOutputFile(outputFile, schema, options);
 
     Utf8String jsonString;
-    SchemaWriteStatus status = schema.WriteToJsonString(jsonString);
-    if (status != SchemaWriteStatus::Success)
+    bool status = schema.WriteToJsonString(jsonString);
+    if (status != true)
         {
         s_logger->errorv("Failed to save '%s' as ECJson.", schema.GetName());
         return false;
@@ -282,21 +282,11 @@ int main(int argc, char** argv)
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
     workingDirectory.AppendToPath(L"Assets");
 
-    BeFileName sqlangFile(workingDirectory.c_str());
-    sqlangFile.AppendToPath(L"sqlang");
-    BeFileName tempDirectory(sqlangFile.c_str());
-    sqlangFile.AppendToPath(L"Tools_en.sqlang.db3");
-
-    BeSQLite::BeSQLiteLib::Initialize(tempDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
-    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
-
     ECSchemaReadContext::Initialize(workingDirectory);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
 
     s_logger->infov(L"Loading schema '%ls' for  validation", options.InputFile.GetName());
     int validationResult = WriteSchema(options);
-
-    BeSQLite::L10N::Shutdown();
 
     return validationResult;
     }

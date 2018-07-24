@@ -367,7 +367,7 @@
 
     <Part Name="SchemaValidator" BentleyBuildMakeFile="tools/SchemaValidator/SchemaValidator.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsNative" />
-        <SubPart PartName="ToolsSqlang" />
+        
         <Bindings>
             <Files ProductDirectoryName="SchemaValidatorExe">
                 Delivery/SchemaValidator.exe
@@ -378,7 +378,7 @@
 
     <Part Name="SchemaComparison" BentleyBuildMakeFile="tools/SchemaComparison/SchemaComparison.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsNative" />
-        <SubPart PartName="ToolsSqlang" />
+        
         <Bindings>
             <Files ProductDirectoryName="SchemaComparisonExe">
                 Delivery/SchemaComparison.exe
