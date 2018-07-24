@@ -388,6 +388,70 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FixedSweep)
     ASSERT_DOUBLE_EQ(arc.sweep, Angle::TwoPi());
     }
 
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcStartCenterPlacementStrategyTests, FinishConstructionGeometry)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
+    ASSERT_TRUE(sut.IsValid());
+
+    DVec3d normal;
+    DVec3d expectedNormal = DVec3d::From(0, 0, 1);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+
+    ASSERT_TRUE(sut->FinishConstructionGeometry().empty());
+    sut->AddKeyPoint({2,0,0});
+    ASSERT_TRUE(sut->FinishConstructionGeometry().empty());
+    sut->AddDynamicKeyPoint({0,0,0});
+
+    bvector<IGeometryPtr> cGeom1 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(2, cGeom1.size());
+    ASSERT_TRUE(cGeom1[0].IsValid());
+    ASSERT_TRUE(cGeom1[1].IsValid());
+    ICurvePrimitivePtr arcCP1 = cGeom1[0]->GetAsICurvePrimitive();
+    ICurvePrimitivePtr lineStringCP1 = cGeom1[1]->GetAsICurvePrimitive();
+    ASSERT_TRUE(arcCP1.IsValid());
+    ASSERT_TRUE(lineStringCP1.IsValid());
+    ICurvePrimitivePtr expectedArcCP1 = ICurvePrimitive::CreateArc(DEllipse3d::FromCenterNormalRadius(DPoint3d::From(0, 0, 0), expectedNormal, 2));
+    ASSERT_TRUE(arcCP1->IsSameStructureAndGeometry(*expectedArcCP1));
+    ICurvePrimitivePtr expectedLineStringCP1 = ICurvePrimitive::CreateLineString({{0,0,0},{2,0,0}});
+    ASSERT_TRUE(lineStringCP1->IsSameStructureAndGeometry(*expectedLineStringCP1));
+
+    sut->AddKeyPoint({-1,0,0});
+    bvector<IGeometryPtr> cGeom2 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(2, cGeom2.size());
+    ASSERT_TRUE(cGeom2[0].IsValid());
+    ASSERT_TRUE(cGeom2[1].IsValid());
+    ICurvePrimitivePtr arcCP2 = cGeom2[0]->GetAsICurvePrimitive();
+    ICurvePrimitivePtr lineStringCP2 = cGeom2[1]->GetAsICurvePrimitive();
+    ASSERT_TRUE(arcCP2.IsValid());
+    ASSERT_TRUE(lineStringCP2.IsValid());
+    ICurvePrimitivePtr expectedArcCP2 = ICurvePrimitive::CreateArc(DEllipse3d::FromCenterNormalRadius(DPoint3d::From(-1, 0, 0), expectedNormal, 3));
+    ASSERT_TRUE(arcCP2->IsSameStructureAndGeometry(*expectedArcCP2));
+    ICurvePrimitivePtr expectedLineStringCP2 = ICurvePrimitive::CreateLineString({{-1,0,0},{2,0,0}});
+    ASSERT_TRUE(lineStringCP2->IsSameStructureAndGeometry(*expectedLineStringCP2));
+
+    sut->AddDynamicKeyPoint({-1,3,0});
+    bvector<IGeometryPtr> cGeom3 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(1, cGeom3.size());
+    ASSERT_TRUE(cGeom3.front().IsValid());
+    ICurvePrimitivePtr lineStringCP3 = cGeom3.front()->GetAsICurvePrimitive();
+    ASSERT_TRUE(lineStringCP3.IsValid());
+    ICurvePrimitivePtr expectedLineStringCP3 = ICurvePrimitive::CreateLineString({{-1,3,0},{-1,0,0},{2,0,0}});
+    ASSERT_TRUE(lineStringCP3->IsSameStructureAndGeometry(*expectedLineStringCP3));
+
+    sut->AddKeyPoint({-4,0,0});
+    bvector<IGeometryPtr> cGeom4 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(1, cGeom4.size());
+    ASSERT_TRUE(cGeom4.front().IsValid());
+    ICurvePrimitivePtr lineStringCP4 = cGeom4.front()->GetAsICurvePrimitive();
+    ASSERT_TRUE(lineStringCP4.IsValid());
+    ICurvePrimitivePtr expectedLineStringCP4 = ICurvePrimitive::CreateLineString({{-4,0,0},{-1,0,0},{2,0,0}});
+    ASSERT_TRUE(lineStringCP4->IsSameStructureAndGeometry(*expectedLineStringCP4));
+    }
+
 #pragma endregion
 
 #pragma region Arc_CenterStart_PlacementStrategy
@@ -565,6 +629,100 @@ TEST_F(ArcCenterStartPlacementStrategyTests, FinishGeometry_IsNullWhen0Radius)
     ASSERT_TRUE(sut->FinishGeometry().IsNull());
     }
 
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcCenterStartPlacementStrategyTests, FinishPrimitive_SweepTest)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::CenterStart);
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), DVec3d::From(0, 0, 1));
+
+    sut->AddKeyPoint({0,0,0});
+    sut->AddKeyPoint({1,0,0});
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({1,0,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::TwoPi());
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({1,1,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(45));
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({1,-1,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(-45));
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({-1,0,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, -Angle::Pi());
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({0,1,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(-270));
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({1,-1,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(-45));
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({0,1,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(90));
+        }
+
+    if (true)
+        {
+        sut->AddDynamicKeyPoint({-1,-1,0});
+        ICurvePrimitivePtr arcCV = sut->FinishPrimitive();
+        ASSERT_TRUE(arcCV.IsValid());
+        DEllipse3d arc;
+        ASSERT_TRUE(arcCV->TryGetArc(arc));
+        ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(225));
+        }
+    }
+
 #pragma endregion
 
 #pragma region Arc_StartMidEnd_PlacementStrategy
@@ -716,6 +874,44 @@ TEST_F(ArcStartMidEndPlacementStrategyTests, FinishPrimitive_3InlinePoints_IsInv
     sut->AddKeyPoint({2,0,0});
     ASSERT_TRUE(sut->FinishPrimitive().IsNull());
     ASSERT_TRUE(sut->FinishGeometry().IsNull());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcStartMidEndPlacementStrategyTests, FinishPrimitive_FinishConstructionGeometry)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartMidEnd);
+    ASSERT_TRUE(sut.IsValid());
+
+    DVec3d normal;
+    DVec3d expectedNormal = DVec3d::From(0, 0, 1);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+
+    ASSERT_TRUE(sut->FinishConstructionGeometry().empty());
+    sut->AddKeyPoint({0,0,0});
+    ASSERT_TRUE(sut->FinishConstructionGeometry().empty());
+    sut->AddKeyPoint({1,1,0});
+    ASSERT_TRUE(sut->FinishConstructionGeometry().empty());
+    sut->AddDynamicKeyPoint({2,0,0});
+
+    bvector<IGeometryPtr> cGeom1 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(1, cGeom1.size());
+    ASSERT_TRUE(cGeom1.front().IsValid());
+    ICurvePrimitivePtr cGeomCP1 = cGeom1.front()->GetAsICurvePrimitive();
+    ASSERT_TRUE(cGeomCP1.IsValid());
+    ICurvePrimitivePtr expectedCGeomCP1 = ICurvePrimitive::CreateLineString({{2,0,0},{1,0,0},{0,0,0}});
+    ASSERT_TRUE(cGeomCP1->IsSameStructureAndGeometry(*expectedCGeomCP1));
+
+    sut->AddKeyPoint({1,-1,0});
+    bvector<IGeometryPtr> cGeom2 = sut->FinishConstructionGeometry();
+    ASSERT_EQ(1, cGeom2.size());
+    ASSERT_TRUE(cGeom2.front().IsValid());
+    ICurvePrimitivePtr cGeomCP2 = cGeom2.front()->GetAsICurvePrimitive();
+    ASSERT_TRUE(cGeomCP2.IsValid());
+    ICurvePrimitivePtr expectedCGeomCP2 = ICurvePrimitive::CreateLineString({{1,-1,0}, {1,0,0}, {0,0,0}});
+    ASSERT_TRUE(cGeomCP2->IsSameStructureAndGeometry(*expectedCGeomCP2));
     }
 
 #pragma endregion

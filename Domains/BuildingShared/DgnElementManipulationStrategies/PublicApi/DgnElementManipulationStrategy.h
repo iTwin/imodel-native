@@ -35,6 +35,7 @@ struct DgnElementManipulationStrategy : ElementManipulationStrategy
 
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) = 0;
         virtual Dgn::DgnElementPtr _FinishElement() = 0;
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT virtual void _AddWorldOverlay(Dgn::Render::GraphicBuilderR builder, Dgn::ColorDefCR contrastingToBackgroundColor) const;
 
         DGNELEM_V_PROPERTY(Dgn::DgnElementCP)
         DGNELEM_V_PROPERTY(Dgn::DgnElementId)
@@ -45,6 +46,8 @@ struct DgnElementManipulationStrategy : ElementManipulationStrategy
     public:
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement(Dgn::DgnModelR model);
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement();
+
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT void AddWorldOverlay(Dgn::Render::GraphicBuilderR builder, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const;
 
         DGNELEM_PROPERTY(Dgn::DgnElementCP)
         DGNELEM_PROPERTY(Dgn::DgnElementId)

@@ -438,14 +438,29 @@ TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
 
     ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Strategy should have no points";
     ASSERT_TRUE(strategy->FinishPrimitive().IsNull()) << "No curve should be created with 0 points";
+    ASSERT_TRUE(strategy->FinishConstructionGeometry().empty());
 
     // Try adding points
     strategy->AddKeyPoint({ 0, 0, 0 });
     TestUtils::ComparePoints({ { 0, 0, 0 } }, strategy->GetKeyPoints());
     ASSERT_TRUE(strategy->FinishPrimitive().IsNull()) << "No curve should be created with 0 points";
+    ASSERT_TRUE(strategy->FinishConstructionGeometry().empty());
 
     strategy->AddKeyPoint({ 1, 0, 0 });
     TestUtils::ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 } }, strategy->GetKeyPoints());
+    bvector<IGeometryPtr> cGeom1 = strategy->FinishConstructionGeometry();
+    ASSERT_EQ(2, cGeom1.size());
+    ASSERT_TRUE(cGeom1[0].IsValid());
+    ASSERT_TRUE(cGeom1[1].IsValid());
+    ICurvePrimitivePtr cGeom1PointString = cGeom1[0]->GetAsICurvePrimitive();
+    ICurvePrimitivePtr cGeom1LineString = cGeom1[1]->GetAsICurvePrimitive();
+    ASSERT_TRUE(cGeom1PointString.IsValid());
+    ASSERT_TRUE(cGeom1LineString.IsValid());
+    bvector<DPoint3d> points1 {{0,0,0},{1,0,0}};
+    ICurvePrimitivePtr expected1PointString = ICurvePrimitive::CreatePointString(points1);
+    ICurvePrimitivePtr expected1LineString = ICurvePrimitive::CreateLineString(points1);
+    ASSERT_TRUE(cGeom1PointString->IsSameStructureAndGeometry(*expected1PointString));
+    ASSERT_TRUE(cGeom1LineString->IsSameStructureAndGeometry(*expected1LineString));
 
     ICurvePrimitivePtr expectedCurve = TestUtils::CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 } }, order);
     TestUtils::CompareCurves(expectedCurve, strategy->FinishPrimitive());
@@ -468,12 +483,27 @@ TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
     expectedCurve = TestUtils::CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 },{ 2, 5, 6 } }, order);
     TestUtils::CompareCurves(expectedCurve, strategy->FinishPrimitive());
 
+    bvector<IGeometryPtr> cGeom2 = strategy->FinishConstructionGeometry();
+    ASSERT_EQ(2, cGeom2.size());
+    ASSERT_TRUE(cGeom2[0].IsValid());
+    ASSERT_TRUE(cGeom2[1].IsValid());
+    ICurvePrimitivePtr cGeom2PointString = cGeom2[0]->GetAsICurvePrimitive();
+    ICurvePrimitivePtr cGeom2LineString = cGeom2[1]->GetAsICurvePrimitive();
+    ASSERT_TRUE(cGeom2PointString.IsValid());
+    ASSERT_TRUE(cGeom2LineString.IsValid());
+    bvector<DPoint3d> points2 {{0,0,0}, {1,0,0}, {0,1,0}, {2,5,6}};
+    ICurvePrimitivePtr expected2PointString = ICurvePrimitive::CreatePointString(points2);
+    ICurvePrimitivePtr expected2LineString = ICurvePrimitive::CreateLineString(points2);
+    ASSERT_TRUE(cGeom2PointString->IsSameStructureAndGeometry(*expected2PointString));
+    ASSERT_TRUE(cGeom2LineString->IsSameStructureAndGeometry(*expected2LineString));
+
     order = 0;
     strategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order(), order);
     ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(SplineControlPointsPlacementStrategy::prop_Order(), actualOrder)) << "Getting order should not fail";
     ASSERT_EQ(order, actualOrder) << "Incorrect strategy order";
 
     ASSERT_TRUE(strategy->FinishPrimitive().IsNull()) << "No curve should be created with invalid order";
+    ASSERT_TRUE(strategy->FinishConstructionGeometry().empty());
 
     order = 3;
     strategy = SplineControlPointsPlacementStrategy::Create(order);
@@ -497,6 +527,20 @@ TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
     TestUtils::ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 },{ 5, 6, 7 } }, strategy->GetKeyPoints());
     expectedCurve = TestUtils::CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 },{ 5, 6, 7 } }, order);
     TestUtils::CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    bvector<IGeometryPtr> cGeom3 = strategy->FinishConstructionGeometry();
+    ASSERT_EQ(2, cGeom3.size());
+    ASSERT_TRUE(cGeom3[0].IsValid());
+    ASSERT_TRUE(cGeom3[1].IsValid());
+    ICurvePrimitivePtr cGeom3PointString = cGeom3[0]->GetAsICurvePrimitive();
+    ICurvePrimitivePtr cGeom3LineString = cGeom3[1]->GetAsICurvePrimitive();
+    ASSERT_TRUE(cGeom3PointString.IsValid());
+    ASSERT_TRUE(cGeom3LineString.IsValid());
+    bvector<DPoint3d> points3 {{0, 0, 0}, {1, 0, 0}, {5, 6, 7}};
+    ICurvePrimitivePtr expected3PointString = ICurvePrimitive::CreatePointString(points3);
+    ICurvePrimitivePtr expected3LineString = ICurvePrimitive::CreateLineString(points3);
+    ASSERT_TRUE(cGeom3PointString->IsSameStructureAndGeometry(*expected3PointString));
+    ASSERT_TRUE(cGeom3LineString->IsSameStructureAndGeometry(*expected3LineString));
     }
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius                01/2018

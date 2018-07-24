@@ -21,6 +21,7 @@ ArcManipulationStrategy::ArcManipulationStrategy()
     , m_useRadius(false)
     , m_sweep(0)
     , m_radius(0)
+    , m_lastArc(nullptr)
     {
     std::fill_n(std::back_inserter(GetKeyPointsR()), 4, INVALID_POINT);
     }
@@ -119,46 +120,117 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
 
     if (IsCenterSet() && IsStartSet() && IsEndSet())
         {
+        DVec3d normal;
+        if (BentleyStatus::SUCCESS != _TryGetProperty(prop_Normal(), normal))
+            return nullptr;
+
         DVec3d centerStart = DVec3d::FromStartEnd(GetCenter(), GetStart());
         if (DoubleOps::AlmostEqual(centerStart.Magnitude(), 0)) // 0 radius arc
             return nullptr;
 
         DVec3d centerEnd = DVec3d::FromStartEnd(GetCenter(), GetEnd());
+        if (centerEnd.Magnitude() > 0)
+            centerEnd.ScaleToLength(centerStart.Magnitude());
 
-        bool startEndCenterInLine = DoubleOps::AlmostEqual(DVec3d::FromCrossProduct(centerStart, centerEnd).Magnitude(), 0);
-        if (startEndCenterInLine)
+        DVec3d vec90;
+        vec90.CrossProduct(normal, centerStart);
+        vec90.ScaleToLength(centerStart.Magnitude());
+
+        double angle = centerStart.PlanarAngleTo(centerEnd, normal);
+        if (DoubleOps::AlmostEqual(angle, 0))
             {
-            DVec3d normal;
-            if (BentleyStatus::SUCCESS != _TryGetProperty(prop_Normal(), normal))
-                return nullptr;
-
-            double centerEndMagnitude = centerEnd.Magnitude();
-            DEllipse3d arc = DEllipse3d::FromCenterNormalRadius(GetCenter(), normal, GetCenter().Distance(GetStart()));
-            if (DoubleOps::AlmostEqual(centerEndMagnitude, 0) ||
-                DoubleOps::AlmostEqual(centerStart.AngleTo(centerEnd), 0))
+            double sweep = Angle::TwoPi();
+            if (m_lastArc.IsValid())
                 {
-                return ICurvePrimitive::CreateArc(arc);
+                DEllipse3d arc;
+                m_lastArc->TryGetArc(arc);
+                if (arc.sweep < 0)
+                    sweep = -Angle::TwoPi();
                 }
-            else if (!DoubleOps::AlmostEqual(centerEndMagnitude, 0))
-                {
-                arc.sweep = GetSweep();
-                if (DoubleOps::AlmostEqual(arc.sweep, 0))
-                    arc.sweep = Angle::Pi();
-                return ICurvePrimitive::CreateArc(arc);
-                }
+            DEllipse3d newArc = DEllipse3d::FromVectors(GetCenter(), centerStart, vec90, 0.0, sweep);
+            return ICurvePrimitive::CreateArc(newArc);
             }
-
-        DEllipse3d tmpArc = DEllipse3d::FromArcCenterStartEnd(GetCenter(), GetStart(), GetEnd());
-        if (DoubleOps::AlmostEqual(GetSweep(), tmpArc.sweep))
-            return ICurvePrimitive::CreateArc(tmpArc);
         else
             {
-            tmpArc.ComplementSweep();
-            return ICurvePrimitive::CreateArc(tmpArc);
+            double lastSweep = 0;
+            if (m_lastArc.IsValid())
+                {
+                DEllipse3d arc;
+                m_lastArc->TryGetArc(arc);
+                lastSweep = arc.sweep;
+                }
+
+            double newSweep = angle;
+            if (angle < 0.0 && lastSweep > 0.0)
+                newSweep = Angle::TwoPi() + angle;
+            else if (angle > 0.0 && lastSweep < 0.0)
+                newSweep = -(Angle::TwoPi() - angle);
+
+            if (fabs(newSweep - lastSweep) > Angle::Pi() || DoubleOps::AlmostEqual(fabs(lastSweep), Angle::TwoPi()))
+                newSweep = angle;
+
+            DEllipse3d newArc = DEllipse3d::FromVectors(GetCenter(), centerStart, vec90, 0.0, newSweep);
+            return ICurvePrimitive::CreateArc(newArc);
             }
         }
 
     return nullptr;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<IGeometryPtr> ArcManipulationStrategy::_FinishConstructionGeometry() const
+    {
+    ICurvePrimitivePtr arcPrimitive = _FinishPrimitive();
+    if (arcPrimitive.IsValid())
+        {
+        DEllipse3d arc;
+        if (!arcPrimitive->TryGetArc(arc))
+            {
+            BeAssert(false);
+            return bvector<IGeometryPtr>();
+            }
+
+        DPoint3d center = arc.center;
+        DPoint3d arcStart, arcEnd;
+        arc.EvaluateEndPoints(arcStart, arcEnd);
+
+        if (arc.IsFullEllipse())
+            {
+            return {IGeometry::Create(ICurvePrimitive::CreateLineString(bvector<DPoint3d>({center, arcStart})))};
+            }
+        else
+            {
+            return {IGeometry::Create(ICurvePrimitive::CreateLineString(bvector<DPoint3d>({arcEnd, center, arcStart})))};
+            }
+        }
+    else
+        {
+        if (!IsStartSet() || !IsCenterSet())
+            return bvector<IGeometryPtr>();
+
+        DVec3d normal;
+        if (BentleyStatus::SUCCESS != _TryGetProperty(prop_Normal(), normal))
+            return bvector<IGeometryPtr>();
+
+        DPoint3d center = GetCenter();
+        DPoint3d start = GetStart();
+        DVec3d centerStart = start - center;
+
+        if (m_useRadius)
+            {
+            centerStart.ScaleToLength(m_radius);
+            }
+        if (DoubleOps::AlmostEqual(centerStart.Magnitude(), 0))
+            return bvector<IGeometryPtr>();
+
+        DPoint3d arcStart = center + centerStart;
+
+        IGeometryPtr arcGeometry = IGeometry::Create(ICurvePrimitive::CreateArc(DEllipse3d::FromCenterNormalRadius(center, normal, centerStart.Magnitude())));
+        IGeometryPtr lineStringGeometry = IGeometry::Create(ICurvePrimitive::CreateLineString(bvector<DPoint3d>({center, arcStart})));
+        return {arcGeometry, lineStringGeometry};
+        }
     }
 
 //--------------------------------------------------------------------------------------
@@ -378,4 +450,49 @@ BentleyStatus ArcManipulationStrategy::_TryGetProperty
         }
 
     return T_Super::_TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcManipulationStrategy::UpdateLastArc()
+    {
+    ICurvePrimitivePtr arc = _FinishPrimitive();
+    if (arc.IsValid())
+        m_lastArc = arc;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcManipulationStrategy::_ReplaceKeyPoint
+(
+    DPoint3dCR newKeyPoint, 
+    size_t index
+)
+    {
+    UpdateLastArc();
+    T_Super::_ReplaceKeyPoint(newKeyPoint, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcManipulationStrategy::_UpdateDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint, 
+    size_t index
+)
+    {
+    UpdateLastArc();
+    T_Super::_UpdateDynamicKeyPoint(newDynamicKeyPoint, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcManipulationStrategy::_ResetDynamicKeyPoint()
+    {
+    UpdateLastArc();
+    T_Super::_ResetDynamicKeyPoint();
     }

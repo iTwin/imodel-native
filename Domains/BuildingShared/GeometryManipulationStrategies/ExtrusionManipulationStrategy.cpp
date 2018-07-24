@@ -672,3 +672,11 @@ DynamicStateBaseCPtr ExtrusionManipulationStrategy::_GetDynamicState() const
 
     return ExtrusionDynamicState::Create(*baseState, m_dynamicHeightSet, m_dynamicSweepDirectionSet);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<IGeometryPtr> ExtrusionManipulationStrategy::_FinishConstructionGeometry() const
+    {
+    return m_baseShapeManipulationStrategy->FinishConstructionGeometry();
+    }

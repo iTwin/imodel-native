@@ -179,7 +179,6 @@ CategorySelectorPtr  BuildingUtils::CreateDefaultCategorySelector (DgnDbR db)
     CategorySelector catSel (db.GetDictionaryModel (), DEFAULT_BUILDING_CATEGORY_SELECTOR_NAME);
     catSel.SetCategories (categories);
 
-    BuildingLocks_LockElementForOperation(catSel, BeSQLite::DbOpcode::Insert, "Insert");
     auto insertedElement = db.Elements ().Insert (catSel);
     if (insertedElement.IsValid ())
         {
@@ -342,7 +341,6 @@ CategorySelectorPtr  BuildingUtils::CreateAndInsertFloorViewCategorySelector (Dg
 
     CategorySelector catSel (db.GetDictionaryModel (), FLOOR_VIEW_CATEGORY_SELECTOR_NAME);
     catSel.SetCategories (categories);
-    BuildingLocks_LockElementForOperation(catSel, BeSQLite::DbOpcode::Insert, "Insert");
     auto insertedElement = db.Elements ().Insert (catSel);
     if (insertedElement.IsValid ())
         {
@@ -395,7 +393,6 @@ DisplayStyle3dPtr  BuildingUtils::CreateFloorView3dDisplayStyle (DgnDbR db)
     dstyle.SetSkyBoxEnabled (false);
     dstyle.SetGroundPlaneEnabled (false);
     SetDisplayStyleOverrides(dstyle);
-    BuildingLocks_LockElementForOperation(dstyle, BeSQLite::DbOpcode::Insert, "Insert");
     auto insertedElement = db.Elements ().Insert (dstyle);
     if (insertedElement.IsValid ())
         {
@@ -562,8 +559,7 @@ void BuildingElementsUtils::AppendTableCell (JsonValueR jsonArr, Json::Value &&k
 //---------------------------------------------------------------------------------------
 BentleyStatus BuildingUtils::InsertElement(DgnElementPtr element)
     {
-    if (!element.IsValid() ||
-        Dgn::RepositoryStatus::Success != BuildingLocks_LockElementForOperation(*element, BeSQLite::DbOpcode::Insert, "Insert element"))
+    if (!element.IsValid())
         return BentleyStatus::ERROR;
 
     DgnDbStatus status;
@@ -742,35 +738,6 @@ Dgn::IBriefcaseManager::Response* pResponse
     Dgn::NotifyMessageDetails nmd (Dgn::OutputMessagePriority::Error, notify.c_str ());
     Dgn::NotificationManager::OutputMessage (nmd);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   Jonas.Valiunas   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::RepositoryStatus BuildingLocks_LockElementForOperation 
-(
-Dgn::DgnElementCR el, 
-BeSQLite::DbOpcode op, 
-Utf8CP pOperation
-)
-    {
-    IBriefcaseManager::Request request;
-    auto stat = el.PopulateRequest (request, op);
-    if (RepositoryStatus::Success == stat)
-        {
-        request.SetOptions (IBriefcaseManager::ResponseOptions::All);
-        Dgn::IBriefcaseManager::Response response = el.GetDgnDb ().BriefcaseManager ().Acquire (request);
-        //T_HOST.GetRepositoryAdmin ()._OnResponse (response, GetLocalizedToolName ().c_str ());
-
-        if (RepositoryStatus::Success != response.Result())
-            DisplayLockFailedMessage (el, op, &response);
-
-        }
-    else
-        DisplayLockFailedMessage (el, op, NULL);
-
-    return stat;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                03/2017
 //---------------------------------------------------------------------------------------

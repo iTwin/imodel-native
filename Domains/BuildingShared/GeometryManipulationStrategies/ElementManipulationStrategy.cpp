@@ -228,6 +228,14 @@ DynamicStateBaseCPtr ElementManipulationStrategy::_GetDynamicState() const
     return _GetGeometryManipulationStrategy().GetDynamicState();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<IGeometryPtr> ElementManipulationStrategy::_FinishConstructionGeometry() const
+    {
+    return _GetGeometryManipulationStrategy().FinishConstructionGeometry();
+    }
+
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
     void ElementManipulationStrategy::_SetProperty(Utf8CP key, value_type const& value) \
         { \

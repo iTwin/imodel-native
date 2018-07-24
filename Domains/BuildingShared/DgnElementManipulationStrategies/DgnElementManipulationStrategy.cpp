@@ -48,3 +48,76 @@ Dgn::DgnElementPtr DgnElementManipulationStrategy::FinishElement()
     {
     return _FinishElement();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void DgnElementManipulationStrategy::AddWorldOverlay
+(
+    Dgn::Render::GraphicBuilderR builder,
+    Dgn::ColorDefCR contrastingToBackgroundColor
+) const
+    {
+    _AddWorldOverlay(builder, contrastingToBackgroundColor);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void DgnElementManipulationStrategy::_AddWorldOverlay
+(
+    Dgn::Render::GraphicBuilderR builder,
+    Dgn::ColorDefCR contrastingToBackgroundColor
+) const
+    {
+    bvector<IGeometryPtr> constructionGeometry = _FinishConstructionGeometry();
+    if (constructionGeometry.empty())
+        return;
+
+    for (IGeometryPtr const& geometry : constructionGeometry)
+        {
+        if (geometry->GetAsCurveVector().IsValid())
+            {
+            builder.SetSymbology(contrastingToBackgroundColor, Dgn::ColorDef::Black(), 1, Dgn::Render::LinePixels::Code2);
+            builder.AddCurveVector(*geometry->GetAsCurveVector(), false);
+            }
+        else if (geometry->GetAsICurvePrimitive().IsValid())
+            {
+            ICurvePrimitivePtr primitive = geometry->GetAsICurvePrimitive();
+            switch (primitive->GetCurvePrimitiveType())
+                {
+                case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_PointString:
+                    {
+                    builder.SetSymbology(contrastingToBackgroundColor, Dgn::ColorDef::Black(), 6, Dgn::Render::LinePixels::Code2);
+                    bvector<DPoint3d> const* points = primitive->GetPointStringCP();
+                    if (nullptr == points)
+                        continue;
+
+                    builder.AddPointString(points->size(), &points->front());
+                    break;
+                    }
+                case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_LineString:
+                    {
+                    builder.SetSymbology(contrastingToBackgroundColor, Dgn::ColorDef::Black(), 1, Dgn::Render::LinePixels::Code2);
+                    bvector<DPoint3d> const* points = primitive->GetLineStringCP();
+                    if (nullptr == points)
+                        continue;
+
+                    builder.AddLineString(points->size(), &points->front());
+                    break;
+                    }
+                case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Arc:
+                    {
+                    builder.SetSymbology(contrastingToBackgroundColor, Dgn::ColorDef::Black(), 1, Dgn::Render::LinePixels::Code2);
+                    DEllipse3d arc;
+                    if (!primitive->TryGetArc(arc))
+                        continue;
+
+                    builder.AddArc(arc, !arc.IsCircular(), false);
+                    }
+                default:
+                    break;
+                }
+            }
+        }
+    }

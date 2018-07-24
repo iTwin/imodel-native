@@ -15,8 +15,8 @@ enum class DefaultNewGeometryType
     Line,
     LineString,
     Arc,
-    Spline,
-    InterpolationCurve
+    Spline,             //! ControlPoints
+    InterpolationCurve  //! ThroughPoints
     };
 
 typedef bpair<size_t, size_t> PrimitiveStrategyKeyPointIndexRange;
@@ -114,6 +114,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         virtual DPoint3d _AdjustPoint(DPoint3d keyPoint) const override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
+        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
 
         // IRessetableDynamic
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetDynamicState(DynamicStateBaseCR state) override;

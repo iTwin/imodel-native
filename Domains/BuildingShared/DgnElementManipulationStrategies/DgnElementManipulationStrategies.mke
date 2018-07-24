@@ -47,5 +47,6 @@ LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)Units$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GeometryManipulationStrategies$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
 
 %include $(sharedMki)linkLibrary.mki

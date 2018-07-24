@@ -111,3 +111,11 @@ IGeometryPtr GeometryManipulationStrategyBase::FinishGeometry() const
     {
     return _FinishGeometry();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<IGeometryPtr> GeometryManipulationStrategyBase::FinishConstructionGeometry() const
+    {
+    return _FinishConstructionGeometry();
+    }

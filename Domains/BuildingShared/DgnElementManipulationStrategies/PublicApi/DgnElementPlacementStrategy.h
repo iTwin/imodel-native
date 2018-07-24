@@ -58,6 +58,7 @@ struct DgnElementPlacementStrategy : ElementPlacementStrategy
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT virtual Dgn::DgnElementPtr _FinishElement();
 
         virtual void _AddViewOverlay(Dgn::Render::GraphicBuilderR builder, DRange3dCR viewRange, TransformCR worldToView, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const = 0;
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT virtual void _AddWorldOverlay(Dgn::Render::GraphicBuilderR builder, Dgn::ColorDefCR contrastingToBackgroundColor) const;
 
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, GeometryManipulationStrategyProperty const& value) override;
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, GeometryManipulationStrategyProperty& value) const override;
@@ -81,6 +82,7 @@ struct DgnElementPlacementStrategy : ElementPlacementStrategy
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement();
 
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT void AddViewOverlay(Dgn::Render::GraphicBuilderR builder, DRange3dCR viewRange, TransformCR worldToView, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const;
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT void AddWorldOverlay(Dgn::Render::GraphicBuilderR builder, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const;
 
         DGNELEM_P_PROPERTY(Dgn::DgnElementCP)
         DGNELEM_P_PROPERTY(Dgn::DgnElementId)

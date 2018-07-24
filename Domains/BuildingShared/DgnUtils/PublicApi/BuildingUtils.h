@@ -287,6 +287,4 @@ struct ElementIdIterator : Dgn::ECSqlStatementIterator<ElementIdIteratorEntry>
 
 BUILDINGSHAREDDGNUTILS_EXPORT void BuildingElement_notifyFail(Utf8CP pOperation, Dgn::DgnElement& elm, Dgn::DgnDbStatus* stat);
 
-BUILDINGSHAREDDGNUTILS_EXPORT Dgn::RepositoryStatus BuildingLocks_LockElementForOperation(Dgn::DgnElementCR el, BeSQLite::DbOpcode op, Utf8CP pOperation);
-
 END_BUILDING_SHARED_NAMESPACE
