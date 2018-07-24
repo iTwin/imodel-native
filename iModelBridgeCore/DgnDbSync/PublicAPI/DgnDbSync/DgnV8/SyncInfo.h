@@ -809,6 +809,21 @@ public:
                                                        V8ElementSource const& originalElement,
                                                        DgnCategoryId categoryId);
 
+    //! Record a mapping between a DgnV8 View and a DgnDb ID
+    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo);
+
+    //! Looks to see if this view has already been converted
+    DGNDBSYNC_EXPORT bool TryFindView(DgnViewId&, double& lastModified, DgnV8ViewInfoCR viewInfo) const;
+
+    //! Removes a mapping for a view that has been deleted
+    DGNDBSYNC_EXPORT BeSQLite::DbResult DeleteView(DgnViewId viewId);
+
+    //! Updates the information for a previously recorded view mapping
+    DGNDBSYNC_EXPORT BeSQLite::DbResult UpdateView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo);
+
+    //! Checks to see if the View syncinfo table exists.  This is only necessary when updating imodels created early during the EAP process
+    DGNDBSYNC_EXPORT bool ViewTableExists();
+
     //! Record sync info for a level.
     //! @param[out] info        Sync info for the level
     //! @param[in]  glevelId    The level's ID in the DgnDb

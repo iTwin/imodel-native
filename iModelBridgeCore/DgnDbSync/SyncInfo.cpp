@@ -158,6 +158,12 @@ BentleyStatus SyncInfo::CreateTables()
                          "LastModified TIMESTAMP,"
                          "Digest INTEGER");
 
+    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_View),
+                         "ElementId BIGINT NOT NULL, "
+                         "V8FileSyncInfoId INTEGER NOT NULL, "
+                         "V8ElementId BIGINT, "
+                         "LastModified REAL");
+
     ImportJob::CreateTable(*m_dgndb);
 
     //need a unique index to ensure uniqueness for schemas based on checksum
@@ -1742,5 +1748,109 @@ BentleyStatus SyncInfo::FinalizeNamedGroups()
 
     MUSTBEOK(m_dgndb->ExecuteSql("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) "_ng_uix ON " SYNC_TABLE_NamedGroups "(SourceId, TargetId);"));
     return BentleyApi::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SyncInfo::ViewTableExists()
+    {
+    Statement stmt;
+    Utf8PrintfString query("SELECT name, tbl_name FROM %s WHERE type='table' AND name='%s'", SYNC_TABLE_master, SYNC_TABLE_View);
+
+    if (BE_SQLITE_OK != stmt.Prepare(*m_dgndb, query.c_str()))
+        return false;
+
+    if (BE_SQLITE_ROW == stmt.Step())
+        return true;
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BeSQLite::DbResult SyncInfo::InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo)
+    {
+    if (!ViewTableExists())
+        return DbResult::BE_SQLITE_ERROR;
+
+    Statement stmt;
+    stmt.Prepare(*m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_View) "(ElementId, V8FileSyncInfoId, V8ElementId, LastModified) VALUES (?,?,?,?)");
+    int col = 1;
+    stmt.BindId(col++, viewId);
+
+    ElementRefP      viewElemRef = viewInfo.GetElementRef();
+    if (nullptr == viewElemRef)
+        return DbResult::BE_SQLITE_NOTFOUND;
+
+    V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*viewElemRef->GetDgnModelP()->GetDgnFileP());
+    if (!v8FileId.IsValid())
+        return BeSQLite::DbResult::BE_SQLITE_ERROR_FileNotFound;
+
+    stmt.BindInt(col++, v8FileId.GetValue());
+    stmt.BindInt(col++, viewElemRef->GetElementId());
+    stmt.BindDouble(col++, viewElemRef->GetLastModified());
+    auto res = stmt.Step();
+    return res;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SyncInfo::TryFindView(DgnViewId& viewId, double& lastModified, DgnV8ViewInfoCR viewInfo) const
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT ElementId, LastModified FROM "
+                                                    SYNCINFO_ATTACH(SYNC_TABLE_View)
+                                                    " WHERE V8FileSyncInfoId=? AND V8ElementId=?"))
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    ElementRefP      viewElemRef = viewInfo.GetElementRef();
+    V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*viewElemRef->GetDgnModelP()->GetDgnFileP());
+    if (!v8FileId.IsValid())
+        return false;
+    stmt->BindInt(1, v8FileId.GetValue());
+    stmt->BindInt(2, viewElemRef->GetElementId());
+    DbResult rc = stmt->Step();
+    if (BE_SQLITE_ROW != rc)
+        return false;
+
+    viewId = stmt->GetValueId<DgnViewId>(0);
+    lastModified = stmt->GetValueDouble(1);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BeSQLite::DbResult SyncInfo::DeleteView(DgnViewId viewId)
+    {
+    if (!ViewTableExists())
+        return DbResult::BE_SQLITE_ERROR;
+
+    Statement stmt;
+    stmt.Prepare(*m_dgndb, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_View) " WHERE ElementId=?");
+    stmt.BindId(1, viewId);
+    return stmt.Step();
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BeSQLite::DbResult SyncInfo::UpdateView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo)
+    {
+    if (!ViewTableExists())
+        return DbResult::BE_SQLITE_ERROR;
+
+    Statement stmt;
+    stmt.Prepare(*m_dgndb, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_View) " SET LastModified=? WHERE(ElementId=?)");
+    int col = 1;
+    stmt.BindDouble(col++, viewInfo.GetElementRef()->GetLastModified());
+    stmt.BindId(col++, viewId);
+    return stmt.Step();
     }
 END_DGNDBSYNC_DGNV8_NAMESPACE

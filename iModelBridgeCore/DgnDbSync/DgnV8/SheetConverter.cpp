@@ -17,6 +17,7 @@ struct SheetViewFactory : ViewFactory
     Converter& m_sheetConverter;
 
     ViewDefinitionPtr _MakeView(Converter& converter, ViewDefinitionParams const&) override;
+    ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, DgnViewId viewId) override;
 
     SheetViewFactory(Converter& s) : m_sheetConverter(s) {}
     };
@@ -74,6 +75,38 @@ ViewDefinitionPtr SheetViewFactory::_MakeView(Converter& converter, ViewDefiniti
     return view;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ViewDefinitionPtr SheetViewFactory::_UpdateView(Converter& converter, ViewDefinitionParams const& params, DgnViewId viewId)
+    {
+    ViewDefinitionPtr newDef = _MakeView(converter, params);
+    if (!newDef.IsValid())
+        return newDef;
+
+    SheetViewDefinition* sheet = newDef->ToSheetViewP();
+
+    DgnDbStatus stat;
+    // need to update the DisplayStyle and CategorySelector.
+    SheetViewDefinitionPtr existingDef = converter.GetDgnDb().Elements().GetForEdit<SheetViewDefinition>(viewId);
+
+    DisplayStyleR newDisplayStyle = sheet->GetDisplayStyle();
+    newDisplayStyle.ForceElementIdForInsert(existingDef->GetDisplayStyleId());
+    newDisplayStyle.Update(&stat);
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    sheet->SetDisplayStyle(newDisplayStyle);
+
+    CategorySelectorR newCategorySelector = sheet->GetCategorySelector();
+    newCategorySelector.ForceElementIdForInsert(existingDef->GetCategorySelectorId());
+    newCategorySelector.Update(&stat);
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    sheet->SetCategorySelector(newCategorySelector);
+
+    newDef->ForceElementIdForInsert(viewId);
+    return newDef;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
