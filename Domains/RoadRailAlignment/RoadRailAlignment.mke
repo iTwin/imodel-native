@@ -54,7 +54,7 @@ $(o)AlignmentProfileViewDefinition$(oext) : $(_MakeFilePath)AlignmentProfileView
 
 $(o)AlignmentReferent$(oext) : $(_MakeFilePath)AlignmentReferent.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentReferent.h
 
-$(o)AlignmentXSViewDefinition$(oext) : $(_MakeFilePath)AlignmentXSViewDefinition.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentXSViewDefinition.h
+$(o)ClipPlanesViewDefinition$(oext) : $(_MakeFilePath)ClipPlanesViewDefinition.cpp ${MultiCompileDepends} $(appPublicApi)ClipPlanesViewDefinition.h
 
 $(o)RoadRailAlignmentDomain$(oext) : $(_MakeFilePath)RoadRailAlignmentDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailAlignmentDomain.h
 
