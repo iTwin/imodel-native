@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncCachedDataTask.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -117,8 +117,8 @@ void SyncCachedDataTask::CacheInitialInstances(CacheTransactionCR txn, const bse
         {
         m_syncedInitialInstances = synced;
 
-        for (auto instance : instanceKeys)            
-            PrepareCachingQueries(txn, instance.key, true);
+        for (auto instance : handled)
+            PrepareCachingQueries(txn, instance, true);
 
         if (0 != synced)
             ReportProgress();
