@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelTestsBase.h"
+#include "RequestBehaviorOptions.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
@@ -25,8 +26,10 @@ struct ThumbnailsTests : public iModelTestsBase
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void SetUpTestCase()
         {
-        iModelTestsBase::SetUpTestCase();
+        auto behaviourOptions = RequestBehaviorOptions();
+        behaviourOptions.DisableOption(RequestBehaviorOptionsEnum::DoNotScheduleRenderThumbnailJob);
 
+        iModelTestsBase::SetUpTestCase(behaviourOptions);
         iModelHubHelpers::AcquireAndAddChangeSets(s_client, s_info, 3);
         for (int i = 1; i <= 3; i++)
             {

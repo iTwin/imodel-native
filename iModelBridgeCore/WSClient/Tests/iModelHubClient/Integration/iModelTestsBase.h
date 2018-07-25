@@ -8,6 +8,7 @@
 #pragma once
 #include "Helpers.h"
 #include "IntegrationTestsBase.h"
+#include "RequestBehaviorOptions.h"
 
 BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
 ::testing::TestInfo const& GetTestInfo();
@@ -20,7 +21,7 @@ protected:
     iModelInfoPtr               m_info;
 
 public:
-    static void SetUpTestCase();
+    static void SetUpTestCase(RequestBehaviorOptions behaviourOptions = RequestBehaviorOptions());
     static void TearDownTestCase();
     virtual void SetUp() override;
     virtual void TearDown() override;
