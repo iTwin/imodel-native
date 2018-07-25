@@ -223,6 +223,7 @@
     <ClInclude Include="PublicAPI\DgnPlatform\TextString.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\TextStyleInterop.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\TileTree.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\TileWriter.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\Tools\BitMask.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\Tools\FlexList.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\Tools\KeyTree.h" />
@@ -285,6 +286,8 @@
     <ClCompile Include="DgnCore\AnnotationTable.cpp" />
     <ClCompile Include="DgnCore\AnnotationTableStroker.cpp" />
     <ClCompile Include="DgnCore\BisCoreDomain.cpp" />
+    <ClCompile Include="DgnCore\CacheTileWriter.cpp" />
+    <ClCompile Include="DgnCore\CesiumTileWriter.cpp" />
     <ClCompile Include="DgnCore\ClipPrimitive.cpp" />
     <ClCompile Include="DgnCore\ClipUtil.cpp" />
     <ClCompile Include="DgnCore\ClipVector.cpp" />
