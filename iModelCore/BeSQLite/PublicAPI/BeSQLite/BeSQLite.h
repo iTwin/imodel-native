@@ -601,8 +601,8 @@ public:
 
     //! Gets the current ILanguageSupport. Can return nullptr.
     BE_SQLITE_EXPORT static ILanguageSupport* GetLanguageSupport();
-	
-	//! Get memory used by SQLite for current process
+    
+    //! Get memory used by SQLite for current process
     BE_SQLITE_EXPORT static DbResult GetMemoryUsed(int64_t& current, int64_t& high, bool reset = false);
 
     static int GetBaseDbResult(DbResult val) {return 0xff & val;}
@@ -651,6 +651,12 @@ public:
     //! @param[in] sql The SQL string to prepare.
     //! @see sqlite3_prepare
     BE_SQLITE_EXPORT DbResult TryPrepare(DbCR db, Utf8CP sql);
+
+    //! Indicates whether the prepared statement makes no @b direct changes to the content of the db or not.
+    //! @remarks 
+    //! @return true if the prepared statement makes no direct changes to the content of the db, false otherwise
+    //! @see sqlite3_stmt_readonly, https://www.sqlite.org/c3ref/stmt_readonly.html
+    BE_SQLITE_EXPORT bool IsReadonly() const;
 
     //! Perform a single step on this (previously prepared) Statement
     //! @see sqlite3_step

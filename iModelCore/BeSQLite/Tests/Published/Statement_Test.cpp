@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/Statement_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
@@ -407,3 +407,49 @@ TEST(StatementTests, GetTableType)
     EXPECT_STREQ ("linestyles", stat1.GetColumnTableName (0));
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                 07/18
+//---------------------------------------------------------------------------------------
+TEST(StatementTests, IsReadonly)
+    {
+    initBeSQLiteLib();
+    Db db;
+    createDB(L"readonlystatements.db", db);
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.TryPrepare(db, "SELECT * FROM linestyles"));
+    EXPECT_TRUE(stmt.IsReadonly()) << stmt.GetSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, stmt.TryPrepare(db, "CREATE TABLE Foo(NAME)"));
+    EXPECT_FALSE(stmt.IsReadonly()) << stmt.GetSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, stmt.TryPrepare(db, "INSERT INTO linestyles(lsId) VALUES(1)"));
+    EXPECT_FALSE(stmt.IsReadonly()) << stmt.GetSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, stmt.TryPrepare(db, "UPDATE linestyles SET lsId=1"));
+    EXPECT_FALSE(stmt.IsReadonly()) << stmt.GetSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, stmt.TryPrepare(db, "DELETE FROM linestyles"));
+    EXPECT_FALSE(stmt.IsReadonly()) << stmt.GetSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, stmt.TryPrepare(db, "pragma database_list"));
+    EXPECT_TRUE(stmt.IsReadonly()) << stmt.GetSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, stmt.TryPrepare(db, "WITH RECURSIVE "
+                                         "cnt(x) AS(VALUES(1) UNION ALL SELECT lsId + 1 FROM linestyles WHERE lsId<1000000) "
+                                         "SELECT x FROM cnt"));
+    EXPECT_TRUE(stmt.IsReadonly()) << stmt.GetSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, stmt.TryPrepare(db, "WITH RECURSIVE "
+                                         "cnt(x) AS(VALUES(1) UNION ALL SELECT lsId + 1 FROM linestyles WHERE lsId<1000000) "
+                                         "UPDATE linestyles SET lsName='Hello' WHERE (SELECT cnt.x FROM cnt LIMIT 1)"));
+    EXPECT_FALSE(stmt.IsReadonly()) << stmt.GetSql();
+    stmt.Finalize();
+    }
