@@ -83,20 +83,31 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName, boo
 //+---------------+---------------+---------------+---------------+---------------+------
 std::vector<TestFile> Profile::GetAllVersionsOfTestFile(BeFileNameCR rootFolder, Utf8CP testFileNameUtf8, bool logFoundFiles) const
     {
-    if (!rootFolder.DoesPathExist())
-        return std::vector<TestFile>();
-
     BeFileName testFileName(testFileNameUtf8);
     WString extension = testFileName.GetExtension();
     WString fileNameWithoutExt = testFileName.GetFileNameWithoutExtension();
     WString fileNamePattern(fileNameWithoutExt);
     fileNamePattern.append(L"*.").append(extension);
+    return GetAllVersionsOfTestFile(rootFolder, fileNamePattern, logFoundFiles);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+std::vector<TestFile> Profile::GetAllVersionsOfTestFile(BeFileNameCR rootFolder, WStringCR fileNamePattern, bool logFoundFiles) const
+    {
+    if (!rootFolder.DoesPathExist())
+        return std::vector<TestFile>();
 
     bvector<BeFileName> fileMatches;
     BeDirectoryIterator::WalkDirsAndMatch(fileMatches, rootFolder, fileNamePattern.c_str(), true);
     std::vector<TestFile> testFiles;
     for (BeFileNameCR filePath : fileMatches)
         {
+        if (filePath.IsDirectory())
+            continue;
+
         BeFileName profileVersionFolderName = filePath.GetDirectoryName();
         //just get folder name without path
         if (profileVersionFolderName.EndsWith(L"/") || profileVersionFolderName.EndsWith(L"\\"))
@@ -141,7 +152,7 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(BeFileNameCR rootFolder,
 
         BeFileName testFilePath(GetOutFolder());
         testFilePath.AppendToPath(profileVersionFolderName).AppendToPath(filePath.GetFileNameAndExtension().c_str());
-        testFiles.push_back(TestFile(testFileNameUtf8, testFilePath, filePath, bedbVersion, ecdbVersion, dgndbVersion, initialBeDbVersion, initialECDbVersion, initialDgnDbVersion));
+        testFiles.push_back(TestFile(Utf8String(filePath.GetFileNameAndExtension()), testFilePath, filePath, bedbVersion, ecdbVersion, dgndbVersion, initialBeDbVersion, initialECDbVersion, initialDgnDbVersion));
         }
 
     if (logFoundFiles && LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
@@ -249,18 +260,7 @@ ECDbProfile const* ECDbProfile::s_singleton = nullptr;
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbProfile::_Init() const
     {
-    if (!ECDb::IsInitialized())
-        {
-        BeFileName applicationSchemaDir;
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
-
-        BeFileName temporaryDir;
-        BeTest::GetHost().GetOutputRoot(temporaryDir);
-
-        ECDb::Initialize(temporaryDir, &applicationSchemaDir);
-        srand((uint32_t) (BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
-        }
-
+    BeAssert(ECDb::IsInitialized());
     ECDb db;
     if (BE_SQLITE_OK != db.CreateNewDb(BEDB_MemoryDb))
         return ERROR;
@@ -279,10 +279,6 @@ BeDbProfile const* BeDbProfile::s_singleton = nullptr;
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus BeDbProfile::_Init() const
     {
-    BeFileName temporaryDir;
-    BeTest::GetHost().GetOutputRoot(temporaryDir);
-    BeSQLiteLib::Initialize(temporaryDir);
-
     Db db;
     if (BE_SQLITE_OK != db.CreateNewDb(BEDB_MemoryDb))
         return ERROR;
@@ -301,18 +297,7 @@ DgnDbProfile const* DgnDbProfile::s_singleton = nullptr;
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DgnDbProfile::_Init() const
     {
-    if (!DgnDb::IsInitialized())
-        {
-        BeFileName applicationSchemaDir;
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
-
-        BeFileName temporaryDir;
-        BeTest::GetHost().GetOutputRoot(temporaryDir);
-
-        DgnDb::Initialize(temporaryDir, &applicationSchemaDir);
-        srand((uint32_t) (BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
-        }
-
+    BeAssert(DgnDb::IsInitialized());
     BeFileName temporaryDir;
     BeTest::GetHost().GetTempDir(temporaryDir);
     temporaryDir.AppendUtf8("temp");

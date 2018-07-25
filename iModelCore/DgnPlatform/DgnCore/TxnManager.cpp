@@ -1769,6 +1769,8 @@ void dgn_TxnTable::Model::_OnAppliedDelete(BeSQLite::Changes::Change const& chan
     if (!model.IsValid())
         return;
 
+    T_HOST.GetTxnAdmin()._OnAppliedModelDelete(*model);
+
     m_txnMgr.GetDgnDb().Models().DropLoadedModel(*model);
     }
 

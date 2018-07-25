@@ -165,17 +165,18 @@ static PK_ERROR_code_t threadedParasolidErrorHandler (PK_ERROR_sf_t* errorSf)
                 break;
 
             default:
-                printf ("Error %d caught in parasolid error handler\n", errorSf->code);
+                //printf ("Error %d caught in parasolid error handler\n", errorSf->code);
                 BeAssert (false && "Severe error during threaded processing");
                 break;
 
 
             }       
-        PSolidThreadLocalStorage::GoToPMark ();
 
         clearExclusions ();
         
         PK_THREAD_tidy();
+
+        PSolidThreadLocalStorage::GoToPMark ();
 
         throw PSolidThreadUtil::ParasolidException();
         }

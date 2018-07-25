@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Compatibility/TestHelper.h $
+|  $Source: Tests/DgnProject/Compatibility/TestDb.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,7 +14,7 @@
 // feature or not.
 // @bsiclass                                                 Krischan.Eberle     07/2018
 //=======================================================================================    
-enum class Feature
+enum class ECDbFeature
     {
     PersistedECVersions,
     NamedEnumerators,
@@ -47,6 +47,9 @@ protected:
     TestDb(TestDb&&) = default;
     TestDb& operator=(TestDb&&) = default;
 
+    DbResult Open();
+    void Close() { _Close(); }
+
     BeSQLite::ProfileState::Age GetAge() const { return m_age; }
     bool IsUpgraded() const { return GetOpenParams().GetProfileUpgradeOptions() == ECDb::ProfileUpgradeOptions::Upgrade; }
     TestFile const& GetTestFile() const { return m_testFile; }
@@ -54,14 +57,14 @@ protected:
     ECDb::OpenParams const& GetOpenParams() const { return _GetOpenParams(); }
     Utf8String GetDescription() const;
 
-    bool SupportsFeature(Feature) const;
-
-    DbResult Open();
-    void Close() { _Close(); }
+    bool SupportsFeature(ECDbFeature feature) const { return VersionSupportsFeature(GetDb().GetECDbProfileVersion(), feature); }
+    static bool VersionSupportsFeature(ProfileVersion const&, ECDbFeature);
+    BeSQLite::ProfileVersion GetECDbInitialVersion() const;
     JsonValue ExecuteECSqlSelect(Utf8CP ecsql) const;
     SchemaVersion GetSchemaVersion(Utf8CP schemaName) const;
+    //! Returns the Original ECXML version as persisted in the file.
+    //! If the file hasn't persisted the version yet, an empty version is returned
     BeVersion GetOriginalECXmlVersion(Utf8CP schemaName) const;
-    ECN::ECVersion GetECVersion(Utf8CP schemaName) const;
     int GetSchemaCount() const;
     JsonValue GetSchemaItemCounts(Utf8CP schemaName) const;
     
@@ -168,7 +171,7 @@ struct TestIModel final : TestDb
         DgnDbPtr m_dgndb = nullptr;
         DgnDb::OpenParams m_openParams;
 
-        ECDbR _GetDb() const override { BeAssert(m_dgndb != nullptr); return *m_dgndb; }
+        ECDbR _GetDb() const override { return GetDgnDb(); }
         DbResult _Open() override;
         void _Close() override
             {
@@ -184,6 +187,7 @@ struct TestIModel final : TestDb
         TestIModel(TestFile const& testFile, DgnDb::OpenParams const& openParams = DgnDb::OpenParams(DgnDb::OpenMode::Readonly)) : TestDb(testFile), m_openParams(openParams) {}
         ~TestIModel() { _Close(); }
 
+        DgnDbR GetDgnDb() const { BeAssert(m_dgndb != nullptr); return *m_dgndb; }
         static Iterable GetPermutationsFor(TestFile const&);
 
         void AssertProfileVersion() const;

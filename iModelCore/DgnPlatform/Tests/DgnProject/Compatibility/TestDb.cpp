@@ -1,32 +1,47 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Compatibility/TestHelper.cpp $
+|  $Source: Tests/DgnProject/Compatibility/TestDb.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "TestHelper.h"
+#include "TestDb.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    07/18
 //+---------------+---------------+---------------+---------------+---------------+------
-bool TestDb::SupportsFeature(Feature feature) const
+//static
+bool TestDb::VersionSupportsFeature(ProfileVersion const& ecdbVersion, ECDbFeature feature)
     {
     switch (feature)
         {
-            case Feature::PersistedECVersions:
-            case Feature::NamedEnumerators:
-            case Feature::UnitsAndFormats:
-                return GetDb().GetECDbProfileVersion() >= ProfileVersion(4, 0, 0, 2);
+            case ECDbFeature::PersistedECVersions:
+            case ECDbFeature::NamedEnumerators:
+            case ECDbFeature::UnitsAndFormats:
+                return ecdbVersion >= ProfileVersion(4, 0, 0, 2);
 
             default:
-                BeAssert(false && "Unhandled Feature enum value");
+                BeAssert(false && "Unhandled ECDbFeature enum value");
                 return false;
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+ProfileVersion TestDb::GetECDbInitialVersion() const
+    {
+    ProfileVersion version(0, 0, 0, 0);
+    Utf8String versionStr;
+    if (BE_SQLITE_ROW != GetDb().QueryProperty(versionStr, PropertySpec("InitialSchemaVersion", "ec_Db")))
+        return version;
+
+    version.FromJson(versionStr.c_str());
+    return version;
     }
 
 //---------------------------------------------------------------------------------------
@@ -78,7 +93,7 @@ SchemaVersion TestDb::GetSchemaVersion(Utf8CP schemaName) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BeVersion TestDb::GetOriginalECXmlVersion(Utf8CP schemaName) const
     {
-    if (SupportsFeature(Feature::PersistedECVersions))
+    if (SupportsFeature(ECDbFeature::PersistedECVersions))
         {
         JsonValue rows = ExecuteECSqlSelect(Utf8PrintfString("SELECT OriginalECXmlVersionMajor major, OriginalECXmlVersionMinor minor FROM meta.ECSchemaDef WHERE Name='%s'", schemaName).c_str());
         if (!rows.m_value.isArray() || rows.m_value.size() != 1)
@@ -99,58 +114,8 @@ BeVersion TestDb::GetOriginalECXmlVersion(Utf8CP schemaName) const
         return originalXmlVersion;
         }
 
-    // older files where Original ECXml Version was not persisted yet
-    ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
-    if (schema == nullptr)
-        {
-        EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
-        return BeVersion();
-        }
-
-    return BeVersion((uint16_t) schema->GetOriginalECXmlVersionMajor(), (uint16_t) schema->GetOriginalECXmlVersionMinor());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                    06/18
-//+---------------+---------------+---------------+---------------+---------------+------
-ECVersion TestDb::GetECVersion(Utf8CP schemaName) const
-    {
-    /* WIP_PERSIST_ECVERSION
-    if (SupportsFeature(Feature::PersistedECVersions))
-        {
-        JsonValue rows = ExecuteECSqlSelect(Utf8PrintfString("SELECT ECVersion ver FROM meta.ECSchemaDef WHERE Name='%s'", schemaName).c_str());
-        if (!rows.m_value.isArray() || rows.m_value.size() != 1)
-            return ECVersion::V2_0;
-
-        JsonValueCR versionJson = rows.m_value[0];
-        if (!versionJson.isMember("ver"))
-            {
-            EXPECT_TRUE(false) << "ECSQL to retrieve ECVersion did not return the version for schema " << schemaName << ". | " << GetDescription();
-            return ECVersion::V2_0;
-            }
-
-        const ECVersion ver = (ECVersion) versionJson["ver"].asInt();
-        //verify that version is the same if fetched via ECObjects
-        ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
-        EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
-        if (GetState() != State::Newer)
-            EXPECT_EQ(ver, schema->GetECVersion()) << "ECVersion of " << schemaName << " retrieved from ECObjects differs from when retrieved with ECSQL" << " | " << GetDescription();
-        else
-            EXPECT_GE(ver, schema->GetECVersion()) << "ECVersion of " << schemaName << " retrieved from ECObjects differs from when retrieved with ECSQL" << " | " << GetDescription();
-
-        return ver;
-        }
-
-    // older files where ECVersion was not persisted yet
-    */
-    ECSchemaCP schema = GetDb().Schemas().GetSchema(schemaName, false);
-    if (schema == nullptr)
-        {
-        EXPECT_TRUE(schema != nullptr) << schemaName << " | " << GetDescription();
-        return ECVersion::V2_0;
-        }
-
-    return schema->GetECVersion();
+    //if not persisted, return an empty version
+    return BeVersion();
     }
 
 //---------------------------------------------------------------------------------------
@@ -203,7 +168,7 @@ JsonValue TestDb::GetSchemaItemCounts(Utf8CP schemaName) const
     if (count != 0)
         counts.m_value["propertycategorycount"] = count;
 
-    if (SupportsFeature(Feature::UnitsAndFormats))
+    if (SupportsFeature(ECDbFeature::UnitsAndFormats))
         {
         JsonValue unitCount = ExecuteECSqlSelect(Utf8PrintfString("SELECT count(*) cnt FROM meta.UnitDef i JOIN meta.ECSchemaDef s ON i.Schema.Id=s.ECInstanceId WHERE s.Name='%s'", schemaName).c_str());
         if (unitCount.m_value.size() != 1)
@@ -291,6 +256,10 @@ void TestDb::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDispl
         i++;
         }
 
+    // if the file has EC3.2 enums, don't run the ECSQL verification as the persisted enumerator json differs from the expected
+    if (SupportsFeature(ECDbFeature::NamedEnumerators))
+        return;
+
     // 2) Via ECSQL
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDb(), "SELECT e.ECInstanceId,e.DisplayLabel,e.Description,e.IsStrict,e.Type,e.EnumValues FROM meta.ECEnumerationDef e JOIN meta.ECSchemaDef s ON e.Schema.Id=s.ECInstanceId WHERE s.Name=? AND e.Name=?")) << assertMessage;
@@ -370,6 +339,10 @@ void TestDb::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP expe
 
     EXPECT_DOUBLE_EQ(expectedRelError, koq->GetRelativeError()) << assertMessage;
 
+    // if the file has EC3.2 KOQs, don't run the ECSQL verification as the persisted enumerator json differs from the expected
+    if (SupportsFeature(ECDbFeature::UnitsAndFormats))
+        return;
+
     // 2) Via ECSQL
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDb(), "SELECT koq.ECInstanceId,koq.DisplayLabel,koq.Description,koq.PersistenceUnit,koq.PresentationUnits,koq.RelativeError FROM meta.KindOfQuantityDef koq JOIN meta.ECSchemaDef s ON koq.Schema.Id=s.ECInstanceId WHERE s.Name=? AND koq.Name=?")) << assertMessage;
@@ -414,7 +387,7 @@ void TestDb::AssertUnit(Utf8CP schemaName, Utf8CP unitName, Utf8CP expectedDispl
                             Nullable<double> expectedNumerator, Nullable<double> expectedDenominator, Nullable<double> expectedOffset, 
                             QualifiedName const& expectedUnitSystem, QualifiedName const& expectedPhenomenon, bool expectedIsConstant, QualifiedName const& expectedInvertingUnit) const
     {
-    if (!SupportsFeature(Feature::UnitsAndFormats))
+    if (!SupportsFeature(ECDbFeature::UnitsAndFormats))
         return;
 
     Utf8String assertMessage(schemaName);
@@ -488,7 +461,7 @@ void TestDb::AssertUnit(Utf8CP schemaName, Utf8CP unitName, Utf8CP expectedDispl
 //+---------------+---------------+---------------+---------------+---------------+------
 void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, JsonValue const& expectedNumericSpec, JsonValue const& expectedCompSpec) const
     {
-    if (!SupportsFeature(Feature::UnitsAndFormats))
+    if (!SupportsFeature(ECDbFeature::UnitsAndFormats))
         return;
 
     Utf8String assertMessage(schemaName);
@@ -565,7 +538,7 @@ void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedD
 //+---------------+---------------+---------------+---------------+---------------+------
 void TestDb::AssertUnitSystem(Utf8CP schemaName, Utf8CP unitsystemName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription) const
     {
-    if (!SupportsFeature(Feature::UnitsAndFormats))
+    if (!SupportsFeature(ECDbFeature::UnitsAndFormats))
         return;
 
     Utf8String assertMessage(schemaName);
@@ -594,7 +567,7 @@ void TestDb::AssertUnitSystem(Utf8CP schemaName, Utf8CP unitsystemName, Utf8CP e
 //+---------------+---------------+---------------+---------------+---------------+------
 void TestDb::AssertPhenomenon(Utf8CP schemaName, Utf8CP phenName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedDefinition) const
     {
-    if (!SupportsFeature(Feature::UnitsAndFormats))
+    if (!SupportsFeature(ECDbFeature::UnitsAndFormats))
         return;
 
     Utf8String assertMessage(schemaName);
@@ -674,7 +647,7 @@ void TestDb::AssertLoadSchemas() const
     EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.KindOfQuantityDef").m_value.isArray()) << GetDescription();
     EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.PropertyCategoryDef").m_value.isArray()) << GetDescription();
 
-    if (SupportsFeature(Feature::UnitsAndFormats))
+    if (SupportsFeature(ECDbFeature::UnitsAndFormats))
         {
         EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.UnitDef").m_value.isArray()) << GetDescription();
         EXPECT_TRUE(ExecuteECSqlSelect("SELECT * FROM meta.FormatDef").m_value.isArray()) << GetDescription();

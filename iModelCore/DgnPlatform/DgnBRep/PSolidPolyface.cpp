@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidPolyface.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -144,22 +144,19 @@ private:
     // sets m_bClosed, m_volume and m_numExteriorFace;
     void getVolumeCharacteristics (bool    ensureNonnegativeVolume)
         {
-        EmbeddedIntArrayP   pFaceSeeds = jmdlEmbeddedIntArray_grab();
-        MTGNodeId           faceSeedId;
-        int                 numFace;
+        bvector<MTGNodeId>  faceSeeds;
+        // unused - MTGNodeId           faceSeedId;
+        // unused - int                 numFace;
 
         m_bClosed = false;
         m_volume = 0.0;
         m_numExteriorFace = 0;
 
         // count exterior faces
-        numFace = jmdlMTGGraph_collectAndNumberFaceLoops (m_pGraph, pFaceSeeds, 0);
-        for (int i = 0; i < numFace; i++)
-            {
-            if (jmdlEmbeddedIntArray_getInt (pFaceSeeds, &faceSeedId, i) &&
-                jmdlMTGGraph_getMask (m_pGraph, faceSeedId, MTG_EXTERIOR_MASK))
+        m_pGraph->CollectFaceLoops (faceSeeds);
+        for (MTGNodeId faceSeedId : faceSeeds)
+            if (jmdlMTGGraph_getMask (m_pGraph, faceSeedId, MTG_EXTERIOR_MASK))
                 m_numExteriorFace++;
-            }
 
         if (m_numExteriorFace <= 0)
             {
@@ -171,8 +168,6 @@ private:
                 }
             m_bClosed = true;
             }
-
-        jmdlEmbeddedIntArray_drop (pFaceSeeds);
         }
 
 public:

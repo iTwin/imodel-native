@@ -188,6 +188,7 @@ public:
             virtual void _OnGraphicElementAdded(DgnDbR, DgnElementId) {}
             virtual void _OnGraphicElementModified(DgnDbR, DgnElementId) {}
             virtual void _OnGraphicElementDeleted(DgnDbR, DgnElementId) {}
+            virtual void _OnAppliedModelDelete(DgnModelR) {}
             DGNPLATFORM_EXPORT virtual void _OnCommit(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnCommitted(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnAppliedChanges(TxnManager&);

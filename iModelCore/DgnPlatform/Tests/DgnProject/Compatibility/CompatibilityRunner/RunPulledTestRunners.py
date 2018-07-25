@@ -26,15 +26,16 @@ def main():
     for subdir in os.listdir(testRunnersSandboxFolder):
         fullPath = os.path.join(testRunnersSandboxFolder, subdir);
         if (os.path.isdir(fullPath)):
+            exePath = os.path.join(fullPath, "iModelEvolutionTests.exe")
+            if not os.path.exists(exePath):
+                print >> sys.stderr, "Compatibility test runner '{0}' does not exist.".format(exePath)
+                hasError = True
             try:
-                exePath = os.path.join(fullPath, "iModelEvolutionTests.exe")
-                if not os.path.exists(exePath):
-                    print >> sys.stderr, "Compatibility test runner '{0}' does not exist.".format(exePath)
-                    hasError = True
+                print "Test runner '" + exePath + "' started..."
                 subprocess.check_call(exePath)
-                print "Compatibility test runner for '" + subdir + "' succeeded."
+                print "Test runner '" + exePath + "' succeeded."
             except subprocess.CalledProcessError as err:
-                print >> sys.stderr, "Compatibility test runner for '{0}' failed: {1}".format(subdir, err)
+                print >> sys.stderr, "Test runner '{0}' failed: {1}".format(subdir, err)
                 hasError = True
 
     if hasError:

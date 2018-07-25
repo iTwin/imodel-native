@@ -399,24 +399,15 @@ virtual BentleyStatus AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AddMeshes(Render::Primitives::GeometryCollectionCR geometry)
     {
-    Json::Value     meshes     = Json::objectValue;
-    Json::Value     mesh       = Json::objectValue;
-    Json::Value     nodes      = Json::objectValue;
-    Json::Value     rootNode   = Json::objectValue;
     Json::Value     primitives = Json::arrayValue;
-    Utf8String      meshName   = "Mesh";
     size_t          primitiveIndex = 0;
 
-    for (auto& mesh : geometry.Meshes())
-        AddMesh(primitives, *mesh, primitiveIndex);
+    for (auto& geomMesh : geometry.Meshes())
+        AddMesh(primitives, *geomMesh, primitiveIndex);
 
-    mesh["primitives"] = primitives;
-    meshes[meshName] = mesh;
-    rootNode["meshes"].append (meshName);
-    nodes["rootNode"] = rootNode;
-    m_json["meshes"] = meshes;
-    m_json["nodes"]  = nodes;
+    AddPrimitivesJson(primitives);
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
