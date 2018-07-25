@@ -81,13 +81,14 @@ SMSQLiteSisterFile::SMSQLiteSisterFile(SMSQLiteFilePtr sqliteFile)
       m_smFeatureSQLiteFile(nullptr),
       m_smClipSQLiteFile(nullptr),
       m_smClipDefinitionSQLiteFile(nullptr), 
-      m_useTempPath(true)
+      m_useTempPath(true), 
+      m_removeTempGenFile(true)
     {
     }
 
 SMSQLiteSisterFile::~SMSQLiteSisterFile()
     {
-    if (m_smFeatureSQLiteFile.IsValid())
+    if (m_smFeatureSQLiteFile.IsValid() && m_removeTempGenFile)
         {
         Utf8String dbFileName;
         bool result = m_smFeatureSQLiteFile->GetFileName(dbFileName);
@@ -99,6 +100,11 @@ SMSQLiteSisterFile::~SMSQLiteSisterFile()
         }
     }
 
+void SMSQLiteSisterFile::SetRemoveTempGenerationFile(bool removeTempGenFile)
+    {
+    m_removeTempGenFile = removeTempGenFile;
+    }
+
 void SMSQLiteSisterFile::CopyClipSisterFile(SMStoreDataType dataType) const
 {
 	WString sqlFileNameSource, sqlFileName;
@@ -107,7 +113,7 @@ void SMSQLiteSisterFile::CopyClipSisterFile(SMStoreDataType dataType) const
 
 	BeFileName::BeCopyFile(sqlFileNameSource.c_str(), sqlFileName.c_str());
 }
-
+   
 SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing, bool useTempPath)
     {
     SMSQLiteFilePtr sqlFilePtr;
@@ -117,7 +123,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
         case SMStoreDataType::LinearFeature:
         case SMStoreDataType::Graph:
             {
-            assert(createSisterIfMissing == true);
+            assert(createSisterIfMissing == true || m_smSQLiteFile->IsShared());
             std::lock_guard<std::mutex> lock(m_featureOpen);
             if (!m_smFeatureSQLiteFile.IsValid())
                 {
@@ -125,10 +131,24 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 GetSisterSQLiteFileName(sqlFileName, dataType);
 
                 Utf8String sqlNameUtf8(sqlFileName.c_str());
-                remove(sqlNameUtf8.c_str());
+
                 StatusInt status;
-                m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_GENERATION_FILE);
-                m_smFeatureSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_GENERATION_FILE);
+
+                if (!m_smSQLiteFile->IsShared())
+                    { 
+                    remove(sqlNameUtf8.c_str());
+                    m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_GENERATION_FILE);                    
+                    m_smFeatureSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_GENERATION_FILE);
+                    }
+                else
+                    {         
+#ifndef NDEBUG
+                    //Non sharing process should have create the sister file before sharing process can access it.
+                    struct _stat64i32 buffer;
+                    assert(_wstat(sqlFileName.c_str(), &buffer) == 0);
+#endif
+                    m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, true, SQLDatabaseType::SM_GENERATION_FILE);
+                    }                                
                 }
 
             sqlFilePtr = m_smFeatureSQLiteFile;
@@ -144,7 +164,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 GetSisterSQLiteFileName(sqlFileName, dataType, useTempPath);
                     
                 StatusInt status;
-                m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_DIFFSETS_FILE);
+                m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_DIFFSETS_FILE);
 
                 if (status == 0)
                     {
@@ -185,7 +205,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 GetSisterSQLiteFileName(sqlFileName, dataType, useTempPath);
 
                 StatusInt status;
-                m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_CLIP_DEF_FILE);
+                m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_CLIP_DEF_FILE);
 
                 if (status == 0)
                     {

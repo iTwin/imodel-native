@@ -39,9 +39,9 @@ BESQL_VERSION_STRUCT ScalableMeshDb::GetCurrentVersion() const
 ProfileState ScalableMeshDb::_CheckProfileVersion() const
     {
     CachedStatementPtr stmtTest;
-    GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
-    assert(stmtTest != nullptr);
-    DbResult status = stmtTest->Step();
+    DbResult status = GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
+    assert(stmtTest != nullptr && status == BE_SQLITE_OK);
+    status = stmtTest->Step();
 
     assert(status == BE_SQLITE_ROW);
 
@@ -51,11 +51,23 @@ ProfileState ScalableMeshDb::_CheckProfileVersion() const
 
     BESQL_VERSION_STRUCT currentVersion = GetCurrentVersion();
     if (s_checkShemaVersion && (databaseSchema.CompareTo(currentVersion, BESQL_VERSION_STRUCT::VERSION_All) < 0 || databaseSchema.CompareTo(currentVersion, BESQL_VERSION_STRUCT::VERSION_MajorMinor) != 0))
-        return ProfileState::Older(ProfileState::CanOpen::No, false);
+        return ProfileState::Older(ProfileState::CanOpen::No, true);
 
     return ProfileState::UpToDate();
-
     }
+
+
+DbResult ScalableMeshDb::_UpgradeProfile()
+    {
+    bool update = m_smFile->UpdateDatabase();
+
+    if (!update)
+        return BE_SQLITE_ERROR;     
+
+    return BE_SQLITE_OK;
+    }
+
+
 #else
 static Utf8CP s_versionfmt = "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}";
 Utf8String SchemaVersion::ToJson() const { return Utf8PrintfString(s_versionfmt, m_major, m_minor, m_sub1, m_sub2); }
@@ -77,4 +89,100 @@ DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
     stmt->Step();
         
     return BeSQLite::Db::_OnDbCreated(params);
+    }
+
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+bool ScalableMeshDb::s_enableSharedDatabase = false;
+
+END_BENTLEY_SCALABLEMESH_NAMESPACE
+
+int InfiniteRetries::_OnBusy(int count) const
+{
+    return 1;
+}
+
+#ifndef VANCOUVER_API   
+DbResult ScalableMeshDb::OpenShared(BENTLEY_NAMESPACE_NAME::Utf8CP path, bool readonly,bool allowBusyRetry)
+{
+    m_path = path;
+    DbResult result = this->OpenBeSQLiteDb(path, BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite, readonly ? BeSQLite::DefaultTxn::No : BeSQLite::DefaultTxn::Immediate, allowBusyRetry? new InfiniteRetries(): nullptr));
+    this->SetAllowImplictTransactions(true);
+    return result;
+}
+
+bool ScalableMeshDb::ReOpenShared(bool readonly, bool allowBusyRetry)
+{
+    if (m_path.empty())
+        return false;
+
+    DbResult result = this->OpenBeSQLiteDb(m_path.c_str(), BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite, readonly ? BeSQLite::DefaultTxn::No : BeSQLite::DefaultTxn::Immediate, allowBusyRetry ? new InfiniteRetries() : nullptr));
+
+    if (result != BE_SQLITE_OK)
+        return false;
+
+    this->SetAllowImplictTransactions(true);
+    return true;
+}
+
+bool ScalableMeshDb::StartTransaction()
+{
+    if (m_currentSavepoint != nullptr)
+        return false;
+    if (!this->IsDbOpen())
+        return false;
+
+    m_currentSavepoint = new BeSQLite::Savepoint(*this, "DefaultSavePoint");
+    return true;
+}
+
+bool ScalableMeshDb::CommitTransaction()
+    {
+    if (m_currentSavepoint == nullptr)
+        return false;
+
+    if (!this->IsDbOpen())
+        return false;
+       
+    m_currentSavepoint->Commit();
+    
+    delete m_currentSavepoint;
+    m_currentSavepoint = nullptr;
+   
+    return true;
+    }
+
+void ScalableMeshDb::CloseShared(bool& wasTransactionAbandoned)
+{
+    if (!this->IsDbOpen())
+        return;
+    wasTransactionAbandoned = false;
+
+    if (m_currentSavepoint != nullptr)
+        {
+        m_currentSavepoint->Cancel();        
+        wasTransactionAbandoned = true;
+       
+        delete m_currentSavepoint;
+        m_currentSavepoint = nullptr;       
+        }
+
+    this->CloseDb();
+}
+
+void ScalableMeshDb::GetSharedDbFileName(BENTLEY_NAMESPACE_NAME::Utf8String& path)
+    {
+    path = m_path;
+    }
+
+#endif
+
+bool ScalableMeshDb::GetEnableSharedDatabase() 
+    {
+    return s_enableSharedDatabase;
+    }
+
+void  ScalableMeshDb::SetEnableSharedDatabase(bool isShared)
+    {
+    s_enableSharedDatabase = isShared;
     }

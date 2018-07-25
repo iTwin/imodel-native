@@ -51,6 +51,8 @@ CCompOpts + -DNO_3D_MESH
 %if !defined (GarlandFilter)
 CCompOpts + -DNO_GARLAND_FILTER 
 %endif
+
+
 #----------------------------------------------------------------------
 #       Inform user of compile options
 #----------------------------------------------------------------------
@@ -68,12 +70,15 @@ CCompOpts + -wd4244
 
 #x86 build. signed/unsigned mismatch and int64/size_t issues.
 CCompOpts + -wd4018 -wd4309 -wd4305
+
+#error in boost (roguewave.h)
+CCompOpts + -wd4067 -wd4459
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__  -DVANCOUVER_API -wd4091 -wd4312
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__  -DVANCOUVER_API -wd4091 -wd4312 -wd4067 -wd4459
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki

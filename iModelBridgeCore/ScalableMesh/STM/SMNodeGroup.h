@@ -1230,7 +1230,7 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
             //range.high = DPoint3d::From(center.x + delta.x, center.y + delta.y, center.z + delta.z);
             };
         reprojectExtentHelper(pi_NodeHeader.m_nodeExtent, nodeTile);
-        if (pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
+        if (pi_NodeHeader.m_nodeCount > 0 && pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
             {
             reprojectExtentHelper(pi_NodeHeader.m_contentExtent, nodeTile["content"]);
             }
@@ -1306,9 +1306,9 @@ template<class EXTENT>
 void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) const
     {
     Json::Value tileSet;
-    tileSet["asset"]["version"] = "0.0";
+    tileSet["asset"]["version"] = "1.0";
     tileSet["root"] = pi_Group->m_tilesetRootNode;
-
+    tileSet["geometricError"] = tileSet["root"]["geometricError"].asFloat();
     if (pi_Group->IsRoot())
         {
         // Save master header info in Cesium tileset

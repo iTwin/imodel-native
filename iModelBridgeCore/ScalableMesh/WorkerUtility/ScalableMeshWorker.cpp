@@ -182,10 +182,11 @@ int ScalableMeshWorker::PrintUsage(WCharCP programName)
              L"\n\
                  ScalableMesh Worker Application For Cloud Computing.\n\
                  \n Usage: \n\
-                %ls -taskFolder=|tf= -startingIndexTask=|it= -h|-help\n\
+                %ls -taskFolder=|tf= -startingIndexTask=|it= -nbExtraWorkers=|ew= -h|-help\n\
                 -taskFolder=  (required) path to folder containing the task definitions. \n\
                 -startingIndexTask=  (optional) absolute path to xml file containing the indexing task definition. \n\
                                      When defined the taskFolder will be cleanup and the index task xml file copy to the taskFolder prior to any task processing\n\
+                -nbExtraWorkers=  (optional) spawn extra workers when setup. \n\
                 --help  (optional) print usage. \n\
                 ", programName);
 
@@ -233,6 +234,13 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"-nbExtraWorkers=") || argv[iArg] == wcsstr(argv[iArg], L"-ew="))
+            {
+            m_nbExtraWorkers = BeStringUtilities::Wtoi(GetArgValueW(argv[iArg]).c_str());
+            m_workerProcessName = Utf8String(argv[0]);
+            continue;
+            }
+        
         if (argv[iArg] == wcsstr(argv[iArg], L"-startingIndexTask=") || argv[iArg] == wcsstr(argv[iArg], L"-it="))
             {
             BeFileName::FixPathName(m_startingIndexTask, GetArgValueW(argv[iArg]).c_str());
@@ -255,7 +263,7 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
 //ScalableMeshStep
 
 void ScalableMeshWorker::Start()
-    {
+    {	
     if (m_startingIndexTask.size() > 0)
         {
         BeFileNameStatus fileStatus = BeFileName::EmptyDirectory(m_taskFolderName.c_str());
@@ -267,6 +275,27 @@ void ScalableMeshWorker::Start()
         fileStatus = BeFileName::BeCopyFile(m_startingIndexTask, newFileName, true);
         assert(fileStatus == BeFileNameStatus::Success);
         }
+
+    if (m_nbExtraWorkers > 0)
+        {        
+        Utf8String cmdStr(m_workerProcessName);                
+        cmdStr.append(Utf8PrintfString(" -taskFolder=\"%s\"", Utf8String(m_taskFolderName.c_str()).c_str()));
+        
+        for (uint16_t taskId = 0; taskId < m_nbExtraWorkers; taskId++)
+            {
+            STARTUPINFOA info;
+            PROCESS_INFORMATION processInfo;
+            ZeroMemory(&info, sizeof(info));
+            info.cb = sizeof(info);
+            ZeroMemory(&processInfo, sizeof(processInfo));
+
+            if (!CreateProcessA(NULL, (LPSTR)cmdStr.c_str(), NULL, NULL, FALSE, CREATE_NO_WINDOW, /*(void*)env.c_str()*/ NULL, NULL, &info, &processInfo))
+                {
+                assert(!"Cannot create process");
+                }
+            }
+        }
+
 
     TaskScheduler taskScheduler(m_taskFolderName);
 

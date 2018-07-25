@@ -30,6 +30,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
     #define SM_BIG_SPLIT_THRESHOLD 5000000
 #endif
 
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Elenie.Godzaridis   07/2015

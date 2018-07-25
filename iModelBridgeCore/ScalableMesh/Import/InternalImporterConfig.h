@@ -40,11 +40,6 @@ namespace Internal {
 +---------------+---------------+---------------+---------------+---------------+------*/
     class Config : public ImportConfig
     {
-#ifndef VANCOUVER_API
-		typedef HVE2DShape ImagePP::HVE2DShape;
-		typedef HFCPtr ImagePP::HFCPtr;
-		typedef HGF2DCoordSys ImagePP::HGF2DCoordSys;
-#endif
     friend struct BENTLEY_NAMESPACE_NAME::ScalableMesh::SourceImportConfig::Impl;
     CustomFilteringSequence         m_sourceFilters;
     CustomFilteringSequence         m_targetFilters;

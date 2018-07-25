@@ -658,8 +658,9 @@ bool ScalableMeshLib::IsInitialized()
 ScalableMeshLib::Host& ScalableMeshLib::GetHost()
     {
     return *t_scalableTerrainModelHost;
-    }
+    }   
 
+#ifdef VANCOUVER_API
 
 #if defined(__BENTLEYSTM_BUILD__) && !defined(__BENTLEYSTMIMPORT_BUILD__)     
 
@@ -678,6 +679,8 @@ void ScalableMeshLib::SetPodRegister(RegisterPODImportPluginFP podRegisterFP)
     {
     s_PODImportRegisterFP = podRegisterFP;
     }
+
+#endif
 
 #endif
 

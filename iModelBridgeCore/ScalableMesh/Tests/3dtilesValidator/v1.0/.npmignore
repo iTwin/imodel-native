@@ -1,0 +1,13 @@
+/coverage
+/doc
+/specs
+/test
+/tools
+/.idea
+.eslintrc.json
+.npmignore
+.travis.yml
+gulpfile.js
+*.tgz
+.eslintcache
+.nyc_output

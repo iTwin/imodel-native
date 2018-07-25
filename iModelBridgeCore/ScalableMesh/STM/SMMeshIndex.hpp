@@ -196,7 +196,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                                                                                      CreatedNodeMap*                      createdNodeMap)
                                                                                      : SMPointIndexNode<POINT, EXTENT>(blockID, static_pcast<SMPointIndexNode<POINT, EXTENT>, SMMeshIndexNode<POINT, EXTENT>>(parent), filter, balanced, propagateDataDown, createdNodeMap)
                  
-    {
+    { 
     m_SMIndex = meshIndex;
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
@@ -1256,7 +1256,7 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushUV
     //assert(m_nodeHeader.m_uvsIndicesID.size() == 0);
     m_nodeHeader.m_uvsIndicesID.push_back(GetBlockID());
     }
-
+   
 //=======================================================================================
 // @bsimethod                                                 Elenie.Godzaridis 09/17
 //=======================================================================================
@@ -4857,15 +4857,23 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Create
     }
 #endif
 
-template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIntersectsBox(uint64_t clipId, EXTENT ext, Transform tr)
+template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIntersectsBox(uint64_t clipId, EXTENT ext, Transform tr, bool skirtIntersects)
     {
     DRange3d extRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext), 0,
                                        ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext), 0);
     bvector<DPoint3d> polyPts;
-    SMClipGeometryType geom;
+    SMClipGeometryType geom = SMClipGeometryType::Polygon;
     SMNonDestructiveClipType type;
     bool isActive;
-    GetClipRegistry()->GetClipWithParameters(clipId, polyPts, geom,type, isActive);
+    if(!skirtIntersects)
+        GetClipRegistry()->GetClipWithParameters(clipId, polyPts, geom,type, isActive);
+    else
+    {
+        bvector<bvector<DPoint3d>> skirts;
+        GetClipRegistry()->GetSkirt(clipId, skirts);
+        for (auto&skirt : skirts)
+            polyPts.insert(polyPts.end(), skirt.begin(), skirt.end());
+    }
 
 	if (!tr.IsIdentity())
 	{
@@ -4968,7 +4976,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
 #endif
         bool emptyClip = false;
         //if (nodeRange.XLength() <= clipExt.XLength() * 10000 && nodeRange.YLength() <= clipExt.YLength() * 10000)
-        if (ClipIntersectsBox(clipId, m_nodeHeader.m_contentExtent, tr)) //m_nodeExtent
+        if (ClipIntersectsBox(clipId, m_nodeHeader.m_contentExtent, tr, !setToggledWhenIdIsOn)) //m_nodeExtent
 
             {
                     bool clipFound = false;
@@ -5388,7 +5396,7 @@ template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
 
     return pNewNode;
     }
-
+   
 
 template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndex<POINT, EXTENT>::CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode)
     {
@@ -5405,14 +5413,24 @@ template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
     return pNewNode;
     }
 
-template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndex<POINT, EXTENT>::CreateNewNode(HPMBlockID blockID, bool isRootNode)
+template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndex<POINT, EXTENT>::CreateNewNode(HPMBlockID blockID, bool isRootNode, bool useNodeMap)
     {
-/*
-    typename CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(blockID.m_integerID));
 
-    if (nodeIter != m_createdNodeMap->end())
-        return *nodeIter;
-*/
+    if (useNodeMap)
+        {
+        typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap::iterator nodeIter(m_createdNodeMap.find(blockID.m_integerID));
+
+        if (nodeIter != m_createdNodeMap.end())
+            return nodeIter->second;
+        }
+#ifndef NDEBUG
+    else
+        {
+        typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap::iterator nodeIter(m_createdNodeMap.find(blockID.m_integerID));
+        assert(nodeIter == m_createdNodeMap.end());
+        }
+#endif
+    
     HFCPtr<SMMeshIndexNode<POINT, EXTENT>> parent;
 
     auto meshNode = new SMMeshIndexNode<POINT, EXTENT>(blockID, parent, this, m_filter, m_needsBalancing, IsTextured() != SMTextureType::None, PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);

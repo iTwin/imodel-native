@@ -90,6 +90,7 @@ typedef DPoint3d                          PointType;
 typedef DRange3d PointIndexExtentType;
 typedef SMMeshIndex <PointType, PointIndexExtentType> MeshIndexType;
 
+
 BENTLEY_SM_EXPORT void RegisterDelayedImporters();
 inline bool fileExist(const WChar* fileName)
     {
@@ -131,6 +132,7 @@ struct IScalableMeshCreator::Impl
 
         const size_t                        m_workingLayer;
 
+        bool m_isShareable;
 
         //CREATOR2
 #ifndef LINUX_SCALABLEMESH_BUILD
@@ -190,9 +192,13 @@ struct IScalableMeshCreator::Impl
 
           HFCPtr<MeshIndexType>                   m_pDataIndex;
 
+          BENTLEY_SM_EXPORT ScalableMeshDb* GetDatabaseFile();
+
     protected:
 
         BENTLEY_SM_EXPORT virtual void ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d);
+
+        BENTLEY_SM_EXPORT void SetThreadingOptions(bool useThreadsInMeshing, bool useThreadsInStitching, bool useThreadsInFiltering);
           
     public :  
 
@@ -223,6 +229,10 @@ struct IScalableMeshCreator::Impl
         bool                               IsCanceled();
 
         void                               Cancel();
+
+        BENTLEY_SM_EXPORT bool IsShareable();
+
+        BENTLEY_SM_EXPORT void SetShareable(bool isShareable);
 
       //  IScalableMeshNodePtr                AddChildNode (const IScalableMeshNodePtr& parentNode, 
        //                                                   StatusInt&                  status);

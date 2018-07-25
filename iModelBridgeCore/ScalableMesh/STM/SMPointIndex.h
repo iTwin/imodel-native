@@ -206,7 +206,7 @@ public:
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
 
         
-            bool IsDirty() const;
+    BENTLEY_SM_EXPORT bool IsDirty() const;
 
     virtual void SetDirty(bool dirty); 
 
@@ -364,9 +364,11 @@ public:
     -----------------------------------------------------------------------------*/
     size_t GetDepth() const;
 
-    void GetAllNeighborNodes(vector<SMPointIndexNode*>& nodes) const;
+    BENTLEY_SM_EXPORT void GetAllNeighborNodes(vector<SMPointIndexNode*>& nodes) const;
 
-    void NeedToLoadNeighbors(const bool& needsNeighbors);
+    BENTLEY_SM_EXPORT bool IsNeighborsLoaded() const;
+
+    BENTLEY_SM_EXPORT void NeedToLoadNeighbors(const bool& needsNeighbors);    
 
     /**----------------------------------------------------------------------------
     Indicates if node is leaf
@@ -410,8 +412,15 @@ public:
 
     @return Sub-node no split
     -----------------------------------------------------------------------------*/
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > GetSubNodeNoSplit() const;
+    BENTLEY_SM_EXPORT HFCPtr<SMPointIndexNode<POINT, EXTENT> > GetSubNodeNoSplit() const;
 
+    /**----------------------------------------------------------------------------
+    Returns the children nodes of this node.
+
+    @return Children nodes.
+    -----------------------------------------------------------------------------*/
+    BENTLEY_SM_EXPORT vector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> GetSubNodes() const;
+        
     /**----------------------------------------------------------------------------
     Returns the minimum resolution between the geometric resolution and texture resolution..
 
@@ -531,7 +540,7 @@ public:
 
     virtual void OnPushNodeDown() {};
 
-	virtual void RemoveNonDisplayPoolData();
+    BENTLEY_SM_EXPORT virtual void RemoveNonDisplayPoolData();
 
 
     /**----------------------------------------------------------------------------
@@ -1399,7 +1408,7 @@ public:
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
     
     BENTLEY_SM_EXPORT bool                AddArray (const POINT* pointsArray, size_t countOfPoints, bool arePoints3d, bool regularGrid=false);
-    bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
+    bool                                  Clear(HFCPtr<HVEShape> pi_shapeToClear);        
     BENTLEY_SM_EXPORT bool                RemovePoints(const EXTENT& pi_extentToClear);
 
     StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, const short& pi_pGroupMode, bool pi_pCompress = true);
@@ -1687,7 +1696,9 @@ protected:
 
     //progress info
     bvector<size_t> m_countsOfNodesAtLevel;
-    size_t m_countsOfNodesTotal = 0;
+
+    //Avoid division by 0 if not used.
+    size_t m_countsOfNodesTotal = 1; 
 
     bool m_precomputedCountNodes = false;
 

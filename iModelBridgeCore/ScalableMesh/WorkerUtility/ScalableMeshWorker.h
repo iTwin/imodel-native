@@ -87,15 +87,17 @@ struct ScalableMeshWorker : DgnPlatformLib::Host
 #endif
         virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin();
 
-        BeFileName          m_taskFolderName;
-        BeFileName          m_startingIndexTask;        
+        BeFileName m_taskFolderName;
+        BeFileName m_startingIndexTask;       
+        uint16_t   m_nbExtraWorkers;
+        Utf8String m_workerProcessName;
 
         WString GetArgValueW(WCharCP arg);
         Utf8String GetArgValue(WCharCP arg);        
 
     public:
         BeFileName          m_outputName;
-        ScalableMeshWorker() {}
+        ScalableMeshWorker() { m_nbExtraWorkers = 0; }
         int PrintUsage(WCharCP programName);
         int ParseCommandLine(int argc, WCharP argv[]);
         BentleyStatus Initialize(int argc, WCharP argv[]);

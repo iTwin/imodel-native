@@ -21,7 +21,7 @@ template class SMStreamedSourceStore<byte, DRange3d>;
 
 SMSQLiteClipDefinitionExtOps::SMSQLiteClipDefinitionExtOps(SMSQLiteFilePtr& smSQLiteFile)
     {
-    m_smSQLiteFile = smSQLiteFile;
+    m_smSQLiteFile = smSQLiteFile;  
     }
 
 SMSQLiteClipDefinitionExtOps::~SMSQLiteClipDefinitionExtOps()
@@ -210,3 +210,38 @@ void SMSQLiteClipDefinitionExtOps::SetAutoCommit(bool autoCommit)
     {
     m_smSQLiteFile->m_autocommit = autoCommit;
     }
+
+SharedTransaction::SharedTransaction(SMSQLiteFilePtr fileP, bool readonly, bool startTransaction)
+{
+#ifndef VANCOUVER_API
+    m_transactionNeedsClosing = false;
+    m_dbNeedsClosing = false;
+    m_smSQLiteFile = fileP;
+    if (m_smSQLiteFile.IsValid() && !m_smSQLiteFile->IsOpen() && m_smSQLiteFile->IsShared())
+    {
+        m_smSQLiteFile->GetDb()->ReOpenShared(readonly, true);
+        m_dbNeedsClosing = true;
+        if (startTransaction)
+        {
+            m_smSQLiteFile->GetDb()->StartTransaction();
+            m_transactionNeedsClosing = true;
+        }
+
+    }
+#endif
+}
+
+SharedTransaction::~SharedTransaction()
+{
+#ifndef VANCOUVER_API
+    bool wasAbandoned;
+    if (m_smSQLiteFile.IsValid() && m_smSQLiteFile->IsShared())
+    {
+        if (m_transactionNeedsClosing)
+            m_smSQLiteFile->GetDb()->CommitTransaction();
+
+        if (m_dbNeedsClosing)
+            m_smSQLiteFile->GetDb()->CloseShared(wasAbandoned);      
+    }
+#endif
+}

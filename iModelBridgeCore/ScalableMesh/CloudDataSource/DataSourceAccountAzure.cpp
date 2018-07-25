@@ -329,10 +329,8 @@ DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & bl
 
     DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + DataSourceURL(WString(uriEncodedBlobUrl.c_str(), BentleyCharEncoding::Utf8).c_str()));
 
-    CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
-    CURL* curl = curl_handle->get();
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0/*1*/);  // &&RB TODO : Ask Francis.Boily about his server certificate
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0/*1*/);  // At some point we will have a valid CONNECT certificate and we'll need to reactivate OpenSSL
+    //CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
+    //CURL* curl = curl_handle->get();
 
     return SuperCURL::downloadBlobSync(url, source, readSize, size, session);
     }

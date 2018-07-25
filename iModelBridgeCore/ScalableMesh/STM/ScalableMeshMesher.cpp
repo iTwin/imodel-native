@@ -85,7 +85,7 @@ int AddPolygonsToDTMObject(bvector<bvector<DPoint3d>>& polygons, DTMFeatureType 
         {
         if (polygon.size() > 2)
             {
-            if (!bsiDPoint3d_pointEqualTolerance(&polygon.front(), &polygon.back(), 1e-8)) polygon.push_back(polygon.front());
+            if (!polygon.front().IsEqual (*(&polygon.back()), 1e-8)) polygon.push_back(polygon.front());
             if (type == DTMFeatureType::Void)
                 {
                 status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::GraphicBreak, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, (DPoint3d*)&(polygon[0]), (long)polygon.size());

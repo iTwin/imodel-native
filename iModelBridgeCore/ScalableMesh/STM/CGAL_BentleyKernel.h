@@ -6,7 +6,7 @@
 |       $Date: 2015/12/14 10:09:23 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // This file contains glue code to use CGAL algorithms on BentleyGeometry types. It follows the traits pattern; see following external links for additional information.
@@ -71,12 +71,12 @@ namespace CGAL
             {
             bool operator()(const Point_3& a, const Point_3& b)
                 {
-                return bsiDPoint3d_pointEqualTolerance(&a, &b, 1e-6);
+                return a.IsEqual (b, 1e-6);
                 }
 
             bool  operator()(const Vector_3& a, const Vector_3& b)
                 {
-                return bsiDPoint3d_pointEqualTolerance(&a, &b, 1e-6);
+                return a.IsEqual (b, 1e-6);
                 }
             } Equal_3;
         Equal_3 equal_3_object() { return Equal_3(); }

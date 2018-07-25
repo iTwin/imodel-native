@@ -25,6 +25,7 @@ class SMSQLiteSisterFile
         SMSQLiteFilePtr m_smClipDefinitionSQLiteFile;
         BeFileName      m_projectFilesPath;
         bool            m_useTempPath;
+        bool            m_removeTempGenFile;
 
         std::mutex m_defOpen;
         std::mutex m_featureOpen;
@@ -39,13 +40,13 @@ class SMSQLiteSisterFile
 
         ~SMSQLiteSisterFile();
 
-        SMSQLiteFilePtr GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing, bool useTempPath = true);
+        BENTLEY_SM_EXPORT SMSQLiteFilePtr GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing, bool useTempPath = true);
 
 		bool DoesSisterSQLiteFileExist(SMStoreDataType dataType) const;
 
         bool SetProjectFilesPath(BeFileName& projectFilesPath);
 
-        void SaveSisterFiles();
+        BENTLEY_SM_EXPORT void SaveSisterFiles();
 
 		void Compact();
 
@@ -56,4 +57,6 @@ class SMSQLiteSisterFile
         bool IsUsingTempPath() const;
 
         bool SetUseTempPath(bool useTempPath);
+
+        BENTLEY_SM_EXPORT void SetRemoveTempGenerationFile(bool removeTempGenFile);
     };

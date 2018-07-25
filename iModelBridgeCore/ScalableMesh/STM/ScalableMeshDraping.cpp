@@ -501,9 +501,10 @@ bool MeshTraversalQueue::CollectIntersects(bool& findTriangleAlongRay)
                 DRay3d triEdge2 = DRay3d::From(edge2);
                 DSegment3d edge3 = DSegment3d::From(triPoints[2], triPoints[0]);
                 DRay3d triEdge3 = DRay3d::From(edge3);
-                if (bsiDRay3d_closestApproach(&param, &param2, NULL, NULL, &ray, &triEdge1) && param2 > 0 && param2 < 1 && param>maxParam) maxParam = param;
-                if (bsiDRay3d_closestApproach(&param, &param2, NULL, NULL, &ray, &triEdge2) && param2 > 0 && param2 < 1 && param>maxParam) maxParam = param;
-                if (bsiDRay3d_closestApproach(&param, &param2, NULL, NULL, &ray, &triEdge3) && param2 > 0 && param2 < 1 && param>maxParam) maxParam = param;
+                DPoint3d pointA, pointB;
+                if (DRay3d::ClosestApproachUnboundedRayUnboundedRay (param, param2, pointA, pointB, ray, triEdge1) && param2 > 0 && param2 < 1 && param>maxParam) maxParam = param;
+                if (DRay3d::ClosestApproachUnboundedRayUnboundedRay (param, param2, pointA, pointB, ray, triEdge2) && param2 > 0 && param2 < 1 && param>maxParam) maxParam = param;
+                if (DRay3d::ClosestApproachUnboundedRayUnboundedRay (param, param2, pointA, pointB, ray, triEdge3) && param2 > 0 && param2 < 1 && param>maxParam) maxParam = param;
                 if (maxParam > 1.0e-8) m_collectedNodes.insert(make_pair(fraction.low, m_currentStep));
                 }
             }
@@ -583,7 +584,7 @@ void MeshTraversalQueue::ComputeDirectionOfNextNode(MeshTraversalStep& start)
 bool MeshTraversalQueue::NextAlongDirection()
     {
     /*if (m_intersectionWithNextNode == 255) ComputeDirectionOfNextNode();
-    if (m_intersectionWithNextNode != 255 && !bsiDPoint3d_pointEqualTolerance(&m_endOfLineInNode, &m_polylineToDrape[m_numPointsOnPolyline - 1], 1e-10))
+    if (m_intersectionWithNextNode != 255 && !m_endOfLineInNode.IsEqual (m_polylineToDrape[m_numPointsOnPolyline - 1], 1e-10))
         {
         char relativeX = (m_intersectionWithNextNode == 0 ? 1 : (m_intersectionWithNextNode == 1 ? -1 : 0));
         char relativeY = (m_intersectionWithNextNode == 3 ? 1 : (m_intersectionWithNextNode == 2 ? -1 : 0));
@@ -650,7 +651,7 @@ bool MeshTraversalQueue::NextAlongDirection()
 bool MeshTraversalQueue::CollectAlongDirection(MeshTraversalStep& start, NodeCallback c)
     {
     if (m_intersectionWithNextNode == 255) ComputeDirectionOfNextNode(start);
-    if (m_intersectionWithNextNode != 255 && !bsiDPoint3d_pointEqualTolerance(&m_endOfLineInNode, &m_polylineToDrape[m_numPointsOnPolyline - 1], 1e-10))
+    if (m_intersectionWithNextNode != 255 && !m_endOfLineInNode.IsEqual (m_polylineToDrape[m_numPointsOnPolyline - 1], 1e-10))
         {
         char relativeX = (m_intersectionWithNextNode == 0 ? 1 : (m_intersectionWithNextNode == 1 ? -1 : 0));
         char relativeY = (m_intersectionWithNextNode == 3 ? 1 : (m_intersectionWithNextNode == 2 ? -1 : 0));

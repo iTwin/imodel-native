@@ -4,6 +4,7 @@
 #include "SMSQLiteClipDefinitionsFile.h"
 #include "SMSQLiteDiffsetFile.h"
 #include "SMSQLiteFeatureFile.h"
+#include "Stores/SMSQLiteStore.h"
 
 #define WSTRING_FROM_CSTR(cstr) WString(cstr, BentleyCharEncoding::Utf8)
 #define MAKE_COPY_NO Statement::MakeCopy::No
@@ -18,6 +19,7 @@ const BESQL_VERSION_STRUCT SMSQLiteFile::CURRENT_VERSION = BESQL_VERSION_STRUCT(
 SMSQLiteFile::SMSQLiteFile()
 {
     m_database = nullptr;
+    m_isShared = false;
 }
 
 SMSQLiteFile::~SMSQLiteFile()
@@ -37,12 +39,12 @@ SMSQLiteFile::~SMSQLiteFile()
 
 void SMSQLiteFile::Save()
     {
-    if (m_database != nullptr) m_database->SaveChanges();
+    if (m_database != nullptr && m_database->IsDbOpen()) m_database->SaveChanges();
     }
 
 bool SMSQLiteFile::Close()
     {
-    m_database->SaveChanges();
+    Save();    
     m_database->CloseDb();
     return true;
     }
@@ -155,7 +157,7 @@ bool SMSQLiteFile::UpdateDatabase()
     stmtTest->Step();
 #ifndef VANCOUVER_API
     BESQL_VERSION_STRUCT databaseSchema(GET_VALUE_STR(stmtTest,0));
-    stmtTest->Finalize();
+
     for (size_t i = 0; i < GetNumberOfReleasedSchemas()- 1; ++i)
         {
         BESQL_VERSION_STRUCT databaseSchemaOld = GetListOfReleasedVersions()[i];
@@ -181,7 +183,10 @@ bool SMSQLiteFile::UpdateDatabase()
         stmt->BindUtf8String(1, versonJson, Statement::MAKE_COPY_Yes);
 #endif
         DbResult status = stmt->Step();
-        if (status == BE_SQLITE_DONE) return true;
+        if (status == BE_SQLITE_DONE) 
+            {
+            return true;
+            }
         }
     #endif
     assert(!"ERROR - Unknown database schema version");
@@ -189,19 +194,27 @@ bool SMSQLiteFile::UpdateDatabase()
     }
 
 
-bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly, SQLDatabaseType type)
+bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly, bool openShareable, SQLDatabaseType type)
     {
     if (m_database == nullptr)
-        m_database = new ScalableMeshDb(type);
-    DbResult result;
+        m_database = new ScalableMeshDb(type, this);
+    DbResult result = BE_SQLITE_OK;
     if (m_database->IsDbOpen())
         m_database->CloseDb();
-
+#ifndef VANCOUVER_API
+    if (openShareable)
+    {
+        result = m_database->OpenShared(filename, openReadOnly, true);
+    }
+    else
+#endif
     result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY: READWRITE));
 
-//#ifndef VANCOUVER_API
+#ifndef VANCOUVER_API
+    if (result == BE_SQLITE_SCHEMA || result == BE_SQLITE_ERROR_ProfileTooOld)
+#else
     if (result == BE_SQLITE_SCHEMA)
-//#endif
+#endif     
         {
         Db::OpenParams openParamUpdate(READWRITE);
 
@@ -215,24 +228,40 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 
         if (result == BE_SQLITE_OK)
         {
+#ifdef VANCOUVER_API		
             UpdateDatabase();
+#endif			
 
             m_database->CloseDb();
         }
 
+#ifndef VANCOUVER_API
+        if (openShareable)
+        {
+            m_database->OpenShared(filename, openReadOnly, true);
+        }
+        else
+#endif
         result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
         }
-    
+    m_isShared = openShareable;
+
+
+    if (openShareable)
+        {
+        m_database->CloseDb();
+        }
+
     return result == BE_SQLITE_OK;
     }
 
-bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly, SQLDatabaseType type)
+bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly, bool openShareable, SQLDatabaseType type)
     {
     Utf8String utf8FileName(filename);        
-    return Open(utf8FileName.c_str(), openReadOnly, type);
+    return Open(utf8FileName.c_str(), openReadOnly, openShareable, type);
     }
 
-SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, StatusInt& status, SQLDatabaseType type)
+SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, StatusInt& status, bool openShareable, SQLDatabaseType type)
     {
     bool result;
     SMSQLiteFilePtr smSQLiteFile;
@@ -253,7 +282,7 @@ SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, S
 
     Utf8String utf8File(filename);
 
-    result = smSQLiteFile->Open(utf8File.c_str(), openReadOnly, type);
+    result = smSQLiteFile->Open(utf8File.c_str(), openReadOnly, openShareable, type);
     // need to check version file ?
     status = result ? 1 : 0;
     return smSQLiteFile;
@@ -266,9 +295,20 @@ bool SMSQLiteFile::GetFileName(Utf8String& fileName) const
         return false;
         }
 
-    fileName = Utf8String(m_database->GetDbFileName());
+    Utf8CP dbFileName = m_database->GetDbFileName();
 
+    if (dbFileName != nullptr)
+        {
+        fileName = Utf8String(m_database->GetDbFileName());
+        return true;        
+        }
+
+#ifndef VANCOUVER_API   
+    m_database->GetSharedDbFileName(fileName);
     return true;
+#else
+    return false;
+#endif       
     }        
 
 DbResult SMSQLiteFile::CreateTables()
@@ -396,10 +436,9 @@ DbResult SMSQLiteFile::CreateTables()
     }
 
     bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename, SQLDatabaseType type)
-{
+        {
     if (m_database == nullptr)
-
-        m_database = new ScalableMeshDb(type);
+        m_database = new ScalableMeshDb(type, this);
 
     DbResult result;
     result = m_database->CreateNewDb(filename);
@@ -407,9 +446,7 @@ DbResult SMSQLiteFile::CreateTables()
     assert(result == BE_SQLITE_OK);
 
     result = CreateTables();
-
-                            
-
+                                
     m_database->SaveChanges();
 
     return result == BE_SQLITE_OK;
@@ -835,6 +872,7 @@ void SMSQLiteFile::StorePoints(int64_t& nodeID, const bvector<uint8_t>& pts, siz
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMPoint SET PointData=?, SizePts=? WHERE NodeId=?");
         stmt->BindBlob(1, &pts[0], (int)pts.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
@@ -890,6 +928,7 @@ void SMSQLiteFile::StoreIndices(int64_t& nodeID, const bvector<uint8_t>& indices
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMPoint SET IndexData=?, SizeIndices=? WHERE NodeId=?");
         stmt->BindBlob(1, &indices[0], (int)indices.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
@@ -928,6 +967,7 @@ void SMSQLiteFile::StoreUVIndices(int64_t& nodeID, const bvector<uint8_t>& uvCoo
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMUVs SET UVIndexData=?, SizeUVIndex=? WHERE NodeId=?");
         stmt->BindBlob(1, &uvCoords[0], (int)uvCoords.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
@@ -964,6 +1004,7 @@ void SMSQLiteFile::StoreTexture(int64_t& nodeID, const bvector<uint8_t>& texture
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMTexture SET TexData=?, SizeTexture=? WHERE NodeId=?");
         stmt->BindBlob(1, &texture[0], (int)texture.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
@@ -998,6 +1039,7 @@ void SMSQLiteFile::StoreUVs(int64_t& nodeID, const bvector<uint8_t>& uvCoords, s
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMUVs SET UvData=?, SizeUVs=? WHERE NodeId=?");
         stmt->BindBlob(1, &uvCoords[0], (int)uvCoords.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
@@ -1055,6 +1097,7 @@ void SMSQLiteFile::StoreMeshParts(int64_t& nodeID, const bvector<uint8_t>& data,
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMMeshParts SET Data=?, Size=? WHERE NodeId=?");
         stmt->BindBlob(1, &data[0], (int)data.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
@@ -1106,6 +1149,7 @@ void SMSQLiteFile::StoreMetadata(int64_t& nodeID, const bvector<uint8_t>& metada
         }
     else
         {
+        Savepoint updateTransaction(*m_database, "update");
         m_database->GetCachedStatement(stmt, "UPDATE SMMeshMetadata SET Data=?, Size=? WHERE NodeId=?");
         stmt->BindBlob(1, &metadata[0], (int)metadata.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
@@ -1246,6 +1290,8 @@ size_t SMSQLiteFile::GetNumberOfMetadataChars(int64_t nodeId)
 
 bool SMSQLiteFile::SetWkt(WCharCP extendedWkt)
     {
+    SharedTransaction trans(this, false);
+
     std::lock_guard<std::mutex> lock(dbLock);
     Utf8String extendedWktUtf8String;
     BeStringUtilities::WCharToUtf8(extendedWktUtf8String, extendedWkt);
@@ -1283,6 +1329,8 @@ bool SMSQLiteFile::SetWkt(WCharCP extendedWkt)
 
 bool SMSQLiteFile::HasWkt()
     {
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT GCS FROM SMMasterHeader WHERE MasterHeaderId=?");
@@ -1297,6 +1345,8 @@ bool SMSQLiteFile::HasWkt()
 
 bool SMSQLiteFile::HasMasterHeader()
     {
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT count(MasterHeaderId) FROM SMMasterHeader");
@@ -1308,6 +1358,8 @@ bool SMSQLiteFile::HasMasterHeader()
 
 bool SMSQLiteFile::HasPoints()
     {
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT MAX(_ROWID_) FROM SMPoint LIMIT 1"); //select count() is not optimized on sqlite
@@ -1318,7 +1370,9 @@ bool SMSQLiteFile::HasPoints()
     }
 
 bool SMSQLiteFile::IsSingleFile()
-    {
+    {    
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT SingleFile  FROM SMMasterHeader WHERE MasterHeaderId=?");
@@ -1332,6 +1386,8 @@ bool SMSQLiteFile::IsSingleFile()
 
 bool SMSQLiteFile::GetWkt(WString& wktStr)
 {
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT GCS FROM SMMasterHeader WHERE MasterHeaderId=?");
@@ -1347,6 +1403,8 @@ bool SMSQLiteFile::GetWkt(WString& wktStr)
 
 bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
 {
+    SharedTransaction trans(this, false);
+
     std::lock_guard<std::mutex> lock(dbLock);
     BeAssert(m_database->IsTransactionActive());
     Savepoint s(*m_database, "sources");
@@ -1509,6 +1567,8 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
 
 bool SMSQLiteFile::HasSources()
     {
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmtTest;
     m_database->GetCachedStatement(stmtTest, "SELECT COUNT(SourceId) FROM SMSources");
@@ -1518,6 +1578,8 @@ bool SMSQLiteFile::HasSources()
 
 bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
     {
+    SharedTransaction trans(this, true);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT SourceId, SourceType, DTMSourceID, GroupID, ModelId, ModelName, LevelId, LevelName, RootToRefPersistentPath, "
@@ -1623,6 +1685,8 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
 
 bool SMSQLiteFile::SetSingleFile(bool isSingleFile)
 {
+    SharedTransaction trans(this, false);
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmtTest;
     m_database->GetCachedStatement(stmtTest, "SELECT COUNT(MasterHeaderId) FROM SMMasterHeader WHERE MasterHeaderId=?");

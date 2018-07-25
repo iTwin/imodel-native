@@ -141,7 +141,7 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
 
         this->m_projectID = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProjectID();
         }
-    else if (url.ContainsI(L"http://"))
+    else if (url.StartsWith(L"http") || url.StartsWith(L"https"))
         {
         this->m_location = ServerLocation::HTTP_SERVER;
         this->m_commMethod = CommMethod::CURL;
@@ -927,12 +927,21 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     // But looking at other Cesium 3D tiles datasets (Marseille, Orlando) the computed tolerance seem to be something like this
     // and seems to work reasonably well as long as the bounding volume tightly fits the data :
     double tolerance = header->m_geometricResolution > 0 ? header->m_geometricResolution : (header->m_geometryResolution == -1 ? 64 / pow(2, header->m_level) : header->m_geometryResolution); // SM_NEEDS_WORK : Is this going to work for all datasets? What value should this be?
+    //double tolerance = pow(2., 16 - header->m_level); // nominal scale
 
     assert(tolerance > 0);
     // SM_NEEDS_WORK : is there a transformation to apply at some point?
     //transformDbToTile.Multiply(transformedRange, transformedRange);
 
-    tile["refine"] = "replace";
+    if (header->m_IsLeaf)
+        {
+        tolerance = 0;
+        }
+    else
+        {
+        tile["refine"] = "REPLACE";
+        }
+
     tile["geometricError"] = tolerance;
     if (!tile.isMember("boundingVolume"))
         {
@@ -1034,6 +1043,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(con
 
     block["nbFaceIndexes"] = header->m_nbFaceIndexes;
     block["nbIndiceID"] = (int)header->m_ptsIndiceID.size();
+
+    block["geometricResolution"] = header->m_geometricResolution;
+    block["textureResolution"] = header->m_textureResolution;
 
     auto& indiceID = block["indiceID"];
     Json::Value& indice = indiceID.append(Json::Value());
@@ -1296,7 +1308,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::WriteClipDataToProjectFil
 		if (!sqlFilePtr.IsValid())
 			return;
 
-		ISM3DPtDataStorePtr dataStoreTarget = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, sqlFilePtr);
+        SMSQLiteFilePtr sqlDataFilePtr;
+
+		ISM3DPtDataStorePtr dataStoreTarget = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, sqlDataFilePtr, this);
 		IClipDefinitionExtOpsPtr extOps, extOpsTarget;
 		dataStore->GetClipDefinitionExtOps(extOps);
 		dataStoreTarget->GetClipDefinitionExtOps(extOpsTarget);
@@ -1316,9 +1330,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::WriteClipDataToProjectFil
 		}
 		existingIds.clear();
 		extOps->GetAllCoverageIDs(existingIds);
-
+        
 		ISMCoverageNameDataStorePtr coverageNameSource = new SMExternalProviderDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, m_clipProvider.get());
-		ISMCoverageNameDataStorePtr coverageNameTarget = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
+		ISMCoverageNameDataStorePtr coverageNameTarget = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr, this);
 
 		for (auto& id : existingIds)
 		{
@@ -1577,8 +1591,8 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
         uint64_t parentNodeID = nodeHeader["parentID"].asUInt64();
         header->m_parentNodeID = parentNodeID != ISMStore::GetNullNodeID() ? HPMBlockID(parentNodeID) : ISMStore::GetNullNodeID();
 
-        header->m_geometricResolution = cesiumNodeHeader["geometricError"].asFloat();
-        header->m_textureResolution = header->m_geometricResolution;
+        header->m_geometricResolution = nodeHeader.isMember("geometricResolution") ? nodeHeader["geometricResolution"].asFloat() : cesiumNodeHeader["geometricError"].asFloat();
+        header->m_textureResolution = nodeHeader.isMember("textureResolution") ? nodeHeader["textureResolution"].asFloat() : header->m_geometricResolution;
 
         if (cesiumNodeHeader.isMember("transform"))
             {
@@ -1903,7 +1917,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
     if (!sqliteFilePtr.IsValid())
         return false;
     
-    dataStore = new SMSQLiteNodeDataStore<DifferenceSet, EXTENT>(SMStoreDataType::DiffSet, nodeHeader, sqliteFilePtr);
+    dataStore = new SMSQLiteNodeDataStore<DifferenceSet, EXTENT>(SMStoreDataType::DiffSet, nodeHeader, sqliteFilePtr, this);
 
     return true;
     }
@@ -1914,8 +1928,8 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGr
 
     sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::Graph, true, true);
     assert(sqliteFilePtr.IsValid() == true);
-
-    dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, sqliteFilePtr);
+    
+    dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, sqliteFilePtr, this);
 
     return true;
     }
@@ -1950,7 +1964,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
     if (!sqlFilePtr.IsValid())
         return false;
 
-    dataStore = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
+    dataStore = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr, this);
 
     return true;
     }
@@ -1970,7 +1984,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
     if (!sqlFilePtr.IsValid())
         return false;
 
-    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
+    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr, this);
 
     return true;
     }

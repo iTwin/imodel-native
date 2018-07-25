@@ -161,11 +161,13 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
         return pVoidRaster;
         }
 
+#ifdef VANCOUVER_API
     if (replacementGcsPtr != nullptr)
         {
         IRasterBaseGcsPtr rasterBaseGcsPtr = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(replacementGcsPtr.get());
         pRasterFile->GetPageDescriptor(0)->SetGeocoding(rasterBaseGcsPtr.get());
         }
+#endif
 
     GCSCP pRasterGcs = nullptr;
 

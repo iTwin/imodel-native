@@ -1299,6 +1299,7 @@ ISMMTGGraphDataStorePtr graphStore(node->GetGraphStore());
 
     if (faceIndices.size() >= 3 && geomData.size() > 0)
     CreateGraphFromIndexBuffer(tempGraph, (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
+    TRACEPOINT(THREAD_ID(), EventType::GRAPH_STORE, node->GetBlockID().m_integerID, (uint64_t)-1, -1, -1, memPoolItemPtr->GetSize(),  0)
     storedMemoryPoolItem->SetData(tempGraph);
     storedMemoryPoolItem->SetDirty();
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
@@ -1511,6 +1512,10 @@ for (size_t& neighborInd : neighborIndices)
             //if (node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] == false)
                 {
                 HFCPtr < SMMeshIndexNode<POINT, EXTENT>> meshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(node->m_apNeighborNodes[neighborInd][neighborSubInd]);
+
+                if (!meshNode->IsLoaded())
+                    meshNode->Load();                
+
                 if (meshNode->m_nodeHeader.m_nbFaceIndexes == 0) continue;
                 meshGraphNeighbor = MTGGraph();
                 if (node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] == false)
@@ -1704,7 +1709,7 @@ if (stitchedPoints.size() != 0 &&!isColinear)// return false; //nothing to stitc
     for (auto& bound : boundary)
         if (bound.size() > 2)
             {
-            if (!bsiDPoint3d_pointEqualTolerance(&bound.front(), &bound.back(), 1e-8)) bound.push_back(bound.front());
+            if (!bound.front().IsEqual (*(&bound.back()), 1e-8)) bound.push_back(bound.front());
 #if 0//SM_OUTPUT_MESHES_STITCHING
             WString namePoly = LOG_PATH_STR_W+L"poly_";
             namePoly.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
@@ -1843,7 +1848,7 @@ if (stitchedPoints.size() != 0 &&!isColinear)// return false; //nothing to stitc
                                     {
                                     current = xyz;
  
-                                    if (!bsiDPoint3d_pointEqualTolerance(&current.front(), &current.back(), 1e-8)) current.push_back(current.front());
+                                    if (!current.front().IsEqual (*(&current.back()), 1e-8)) current.push_back(current.front());
                                     /* {
                                      WString namePoly = L"E:\\output\\scmesh\\2016-01-14\\poly_before_untie_";
                                      namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
