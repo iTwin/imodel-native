@@ -17,7 +17,7 @@
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/ClipVector.h>
 #include "SMUnitTestDisplayQuery.h"
-
+#include "../../STM/Edits/ClipUtilities.h"
 
 
 
@@ -2115,6 +2115,44 @@ TEST_P(ScalableMeshTestWithParams, GetSkirtMeshes)
         current->GetSkirtMeshes(meshes, fakeClips);
 
         ASSERT_TRUE(meshes.empty());
+    }
+}
+
+TEST_P(ScalableMeshTestWithParams, MeshClipperClipFilterModes3D)
+{
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    // Create clip from scalable mesh extent
+    DRange3d range;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+    range.scaleAboutCenter(&range, 0.75);
+
+    bvector<DPoint3d> clipPoints;
+    CreateClipFromRangeHelper(clipPoints, range);
+
+    bvector<uint64_t> ids;
+    ids.push_back(1);
+    bvector<bvector<DPoint3d>> polygons;
+    polygons.push_back(clipPoints);
+
+    //load root node
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
+
+    auto mesh = nodeP->GetMesh(flags);
+    if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
+        ASSERT_TRUE(mesh.IsValid());
+    if (mesh.IsValid())
+    {
+        MeshClipper m;
+        m.SetSourceMesh(mesh->GetPolyfaceQuery());
+        m.SetClipGeometry(ids, polygons);
+
+        EXPECT_TRUE(m.IsClipMask(1));
+        EXPECT_FALSE(m.WasClipped());
     }
 }
 

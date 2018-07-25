@@ -1559,7 +1559,7 @@ public:
 
     @return Returns the extent of the content of the spatial index.
     -----------------------------------------------------------------------------*/
-    EXTENT              GetContentExtent() const;
+    BENTLEY_SM_EXPORT EXTENT              GetContentExtent() const;
 
     /**----------------------------------------------------------------------------
     Returns the total number of objects in index

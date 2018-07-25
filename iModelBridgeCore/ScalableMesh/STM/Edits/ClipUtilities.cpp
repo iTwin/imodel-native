@@ -2174,7 +2174,7 @@ void MeshClipper::SetClipGeometry(const bvector<uint64_t>& ids, const bvector<bv
         ClipPolyInfo info;
         info.id = ids[i];
         info.pts = polygons[i];
-        info.isMask = false;
+        info.isMask = true;
         allPolys.push_back(info);
         }
     OrderClipGeometryList();
@@ -2469,6 +2469,20 @@ void MeshClipper::ComputeClip()
 
 MeshClipper::RegionResult MeshClipper::GetRegions(bvector<uint64_t>& ids, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces)
 {
+
+    if (!WasClipped())
+        return MeshClipper::RegionResult::ClippingNotComputed;
+
+    if (computedRegions.size() == 0)
+        return MeshClipper::RegionResult::NoData;
+
+    bvector<bpair<uint64_t, PolyfaceHeaderPtr>> vec;
+
+    for (auto& reg : computedRegions)
+    {
+        ids.push_back(reg.id);
+        polyfaces.push_back(reg.meshes);
+    }
     return MeshClipper::RegionResult::Success;
 }
 
@@ -2494,22 +2508,170 @@ bool MeshClipper::WasClipped()
     return wasClipped;
 }
 
+MeshClipper::ClipInfo* MeshClipper::FindMatchingClip(uint64_t id)
+{
+    auto iter = std::find_if(orderedClipList.begin(), orderedClipList.end(), [id](ClipInfo* a) {
+        return (a->id == id);
+    });
+    if (iter == orderedClipList.end())
+        return nullptr;
+    return *iter;
+}
+
 void MeshClipper::SelectRegions(MeshClipper::RegionFilter filter, MeshClipper::RegionFilterMode mode)
 {
+    if (!WasClipped())
+    {
+        selectionError = MeshClipper::RegionResult::ClippingNotComputed;
+        return;
+    }
 
+    if (computedRegions.size() == 0)
+    {
+        selectionError = MeshClipper::RegionResult::NoData;
+        return;
+    }
+
+    if (mode == MeshClipper::RegionFilterMode::SelectedIDs || mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs)
+    {
+        selectionError = MeshClipper::RegionResult::InsufficientRegionFilterArguments;
+        return;
+    }
+    for (auto& region : computedRegions)
+    {
+        bool isRegionSuitable = false;
+        if (FindMatchingClip(region.id) == nullptr)
+            continue;
+        switch (filter)
+        {
+        case MeshClipper::RegionFilter::Boundary:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && !FindMatchingClip(region.id)->isClipMask()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && FindMatchingClip(region.id)->isClipMask());
+            break;
+        case MeshClipper::RegionFilter::Mask:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && FindMatchingClip(region.id)->isClipMask()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !FindMatchingClip(region.id)->isClipMask());
+            break;
+        case MeshClipper::RegionFilter::BoundaryOrExterior:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && (region.isExterior || !FindMatchingClip(region.id)->isClipMask())) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !(region.isExterior || !FindMatchingClip(region.id)->isClipMask()));
+            break;
+        case MeshClipper::RegionFilter::MaskOrExterior:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && (region.isExterior || FindMatchingClip(region.id)->isClipMask())) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !(region.isExterior || FindMatchingClip(region.id)->isClipMask()));
+            break;
+        case MeshClipper::RegionFilter::Exterior:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && region.isExterior) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !region.isExterior);
+            break;
+        case MeshClipper::RegionFilter::All:
+            isRegionSuitable = mode == MeshClipper::RegionFilterMode::IncludeSelected;
+            break;
+        default:
+            break;
+        };
+
+        if (isRegionSuitable)
+            selectedRegions.push_back(&region);
+    }
+    selectionError = MeshClipper::RegionResult::Success;
 }
 void MeshClipper::SelectRegions(MeshClipper::RegionFilter filter, MeshClipper::RegionFilterMode mode, bvector<uint64_t>& idsFilter)
 {
+    if (!WasClipped())
+    {
+        selectionError = MeshClipper::RegionResult::ClippingNotComputed;
+        return;
+    }
 
+    if (computedRegions.size() == 0)
+    {
+        selectionError = MeshClipper::RegionResult::NoData;
+        return;
+    }
+    for (auto& region : computedRegions)
+    {
+        bool isRegionSuitable = false;
+        switch (filter)
+        {
+        case MeshClipper::RegionFilter::Boundary:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && !FindMatchingClip(region.id)->isClipMask()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && FindMatchingClip(region.id)->isClipMask()) ||
+                (mode == MeshClipper::RegionFilterMode::SelectedIDs && !FindMatchingClip(region.id)->isClipMask() && std::find(idsFilter.begin(), idsFilter.end(), region.id) != idsFilter.end()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs && FindMatchingClip(region.id)->isClipMask() && std::find(idsFilter.begin(), idsFilter.end(), region.id) == idsFilter.end());
+            break;
+        case MeshClipper::RegionFilter::Mask:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && FindMatchingClip(region.id)->isClipMask()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !FindMatchingClip(region.id)->isClipMask()) ||
+                (mode == MeshClipper::RegionFilterMode::SelectedIDs && FindMatchingClip(region.id)->isClipMask() && std::find(idsFilter.begin(), idsFilter.end(), region.id) != idsFilter.end()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs && !FindMatchingClip(region.id)->isClipMask() && std::find(idsFilter.begin(), idsFilter.end(), region.id) == idsFilter.end());
+            break;
+        case MeshClipper::RegionFilter::BoundaryOrExterior:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && (region.isExterior || !FindMatchingClip(region.id)->isClipMask())) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !(region.isExterior || !FindMatchingClip(region.id)->isClipMask())) ||
+                (mode == MeshClipper::RegionFilterMode::SelectedIDs && (region.isExterior || !FindMatchingClip(region.id)->isClipMask()) && std::find(idsFilter.begin(), idsFilter.end(), region.id) != idsFilter.end()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs && !(region.isExterior || !FindMatchingClip(region.id)->isClipMask()) && std::find(idsFilter.begin(), idsFilter.end(), region.id) == idsFilter.end());
+            break;
+        case MeshClipper::RegionFilter::MaskOrExterior:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && (region.isExterior || FindMatchingClip(region.id)->isClipMask())) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !(region.isExterior || FindMatchingClip(region.id)->isClipMask())) ||
+                (mode == MeshClipper::RegionFilterMode::SelectedIDs && (region.isExterior || FindMatchingClip(region.id)->isClipMask()) && std::find(idsFilter.begin(), idsFilter.end(), region.id) != idsFilter.end()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs && !(region.isExterior || FindMatchingClip(region.id)->isClipMask()) && std::find(idsFilter.begin(), idsFilter.end(), region.id) == idsFilter.end());
+            break;
+        case MeshClipper::RegionFilter::Exterior:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && region.isExterior) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !region.isExterior) ||
+                (mode == MeshClipper::RegionFilterMode::SelectedIDs && region.isExterior && std::find(idsFilter.begin(), idsFilter.end(), region.id) != idsFilter.end()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs && !region.isExterior && std::find(idsFilter.begin(), idsFilter.end(), region.id) == idsFilter.end());
+            break;
+        case  MeshClipper::RegionFilter::All:
+            isRegionSuitable = mode == MeshClipper::RegionFilterMode::IncludeSelected ||
+                mode == MeshClipper::RegionFilterMode::SelectedIDs && std::find(idsFilter.begin(), idsFilter.end(), region.id) != idsFilter.end() ||
+                mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs && std::find(idsFilter.begin(), idsFilter.end(), region.id) == idsFilter.end();
+            break;
+        default:
+            break;
+        };
+
+        if (isRegionSuitable)
+            selectedRegions.push_back(&region);
+    }
+    selectionError = MeshClipper::RegionResult::Success;
 }
 MeshClipper::RegionResult MeshClipper::GetSelectedRegion(PolyfaceHeaderPtr& mesh)
 {
-    return MeshClipper::RegionResult::Success;
+    if (selectionError != MeshClipper::RegionResult::Success)
+        return selectionError;
+    if (selectedRegions.empty())
+        return MeshClipper::RegionResult::NoRegionsMatchingSelection;
+
+    if(selectedRegions.front()->meshes.empty())
+        return MeshClipper::RegionResult::NoData;
+    mesh = selectedRegions.front()->meshes.front();
+    if (selectedRegions.size() > 1)
+        return MeshClipper::RegionResult::MoreThanOneRegionMatchingSelection;
+    return selectionError;
 }
 
 bvector<bpair<uint64_t, PolyfaceHeaderPtr>>&& MeshClipper::GetSelectedRegions(MeshClipper::RegionResult& result)
 {
     bvector<bpair<uint64_t, PolyfaceHeaderPtr>> vec;
+    if (selectionError != MeshClipper::RegionResult::Success)
+    {
+        result = selectionError;
+        return std::move(vec);
+    }
+
+
+    if (selectedRegions.empty())
+        result = MeshClipper::RegionResult::NoRegionsMatchingSelection;
+
+    for (auto& reg : selectedRegions)
+    {
+        for (auto& m : reg->meshes)
+            vec.push_back(make_bpair(reg->id, m));
+    }
+    result = MeshClipper::RegionResult::Success;
     return std::move(vec);
 }
 
