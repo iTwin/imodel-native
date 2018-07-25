@@ -29,11 +29,6 @@ struct CustomFilteringSequence;
 
 struct ImportConfig : RefCountedBase
     {
-#ifndef VANCOUVER_API
-	typedef HVE2DShape ImagePP::HVE2DShape;
-	typedef HFCPtr ImagePP::HFCPtr;
-	typedef HGF2DCoordSys ImagePP::HGF2DCoordSys;
-#endif
     protected:
         virtual void _SetAreAttachmentsImported(bool importAttachments) = 0;
         virtual void _SetDefaultTargetLayer(uint32_t layer) = 0;
