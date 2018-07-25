@@ -896,6 +896,16 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extrac
     {
     LockRequest lockRequest;
 
+    if (ContainsSchemaChanges(dgndb))
+        {
+        // The briefcase may hold the Schemas lock.
+        IBriefcaseManager* mgr = dgndb.GetExistingBriefcaseManager();
+        LockableId schemasLock(dgndb.Schemas());
+        auto schemasLockLevel = mgr->QueryLockLevel(schemasLock);
+        if (schemasLockLevel != LockLevel::None)
+            lockRequest.InsertLock(schemasLock, schemasLockLevel);
+        }
+
     ECClassCP elemClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
     BeAssert(elemClass != nullptr);
     ECClassCP modelClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Model);
