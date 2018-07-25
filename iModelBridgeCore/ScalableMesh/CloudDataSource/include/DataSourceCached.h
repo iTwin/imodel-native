@@ -88,6 +88,10 @@ struct CacheWriter : public RefCountedBase, std::mutex, std::condition_variable
 #endif
         }
 
+    ~CacheWriter()
+        {
+        }
+
     void Shutdown()
         {
             {

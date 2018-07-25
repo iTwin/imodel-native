@@ -1231,7 +1231,11 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
         DRay3d ray = DRay3d::FromOriginAndVector(startPt, drapeDirection); 
         DPoint3d bary, projectedPt;
         double param;
+#ifdef VANCOUVER_API
+        bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts);
+#else
         trianglePoints.TransverseIntersection (ray, projectedPt, bary, param);
+#endif
         DPoint3d currentVertex = projectedPt;
         if (*segment >= nLinePts - 1) return true;
         projectedPoints[*segment].push_back(currentVertex);
@@ -1246,7 +1250,11 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
             DPoint3d pt2;
             pt2.SumOf(currentVertex, currentLineSegmentDirection);
             DRay3d toTriPlane = DRay3d::FromOriginAndVector(pt2, drapeDirection);
+#ifdef VANCOUVER_API
+            bsiDRay3d_intersectTriangle(&toTriPlane, &pt2, &bary, &p, pts);
+#else
             trianglePoints.TransverseIntersection (toTriPlane, pt2, bary, p);
+#endif
             DVec3d projDirection = DVec3d::FromStartEnd(currentVertex, pt2);
 
             DRay3d toNextPoint = DRay3d::FromOriginAndVector(currentVertex, projDirection);

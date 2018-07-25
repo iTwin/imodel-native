@@ -200,7 +200,9 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
 
     private:
 
+#ifndef VANCOUVER_API
         virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); } 
+#endif
 
     public:
 

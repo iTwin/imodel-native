@@ -58,3 +58,17 @@
 #include <RasterCore/msrastercore.h>
 #endif
 #include "../mki/StaticAnalysisWarningsPop.h"
+
+#ifndef VANCOUVER_API
+#define HVE2DSHAPE ImagePP::HVE2DShape
+#define HVESHAPE ImagePP::HVEShape
+#define HFCPTR ImagePP::HFCPtr
+#define HGF2DCOORDSYS ImagePP::HGF2DCoordSys
+#define HGF3DCOORD ImagePP::HGF3DCoord
+#else
+#define HFCPTR HFCPtr
+#define HVE2DSHAPE HVE2DShape
+#define HGF2DCOORDSYS HGF2DCoordSys
+#define HVESHAPE HVEShape
+#define HGF3DCOORD HGF3DCoord
+#endif

@@ -149,8 +149,12 @@ DPoint3d ScalableMeshGraphDraping::ProjectPointOnTrianglePlane(const DPoint3d& p
     {
     DRay3d ray = DRay3d::FromOriginAndVector(pt, m_drapeDirection);
     DPoint3d projectedPt;
+#ifdef VANCOUVER_API
+    bsiDRay3d_intersectTriangle(&ray, &projectedPt, barycentric, NULL, triangle);
+#else
     double rayParameter;
-    DTriangle3d (triangle[0], triangle[1], triangle[2]).TransverseIntersection (ray, projectedPt, *barycentric, rayParameter);
+    DTriangle3d(triangle[0], triangle[1], triangle[2]).TransverseIntersection(ray, projectedPt, *barycentric, rayParameter);
+#endif
     return projectedPt;
     }
 
@@ -184,9 +188,13 @@ DRay3d ScalableMeshGraphDraping::GetDirectionInTrianglePlane(const DPoint3d& sta
     DPoint3d pt2;
     pt2.SumOf(startPoint, direction);
     DRay3d toTriPlane = DRay3d::FromOriginAndVector(pt2, m_drapeDirection);
+#ifdef VANCOUVER_API
+    bsiDRay3d_intersectTriangle(&toTriPlane, &pt2, NULL, NULL, triangle);
+#else
     double rayParam;
     DPoint3d triangleParam;
     DTriangle3d (triangle[0], triangle[1], triangle[2]).TransverseIntersection (toTriPlane, pt2, triangleParam, rayParam);
+#endif
     DVec3d projDirection = DVec3d::FromStartEnd(startPoint, pt2);
    return DRay3d::FromOriginAndVector(startPoint, projDirection);
     }

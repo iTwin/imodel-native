@@ -175,6 +175,8 @@ void ScalableMeshDb::GetSharedDbFileName(BENTLEY_NAMESPACE_NAME::Utf8String& pat
     path = m_path;
     }
 
+#endif
+
 bool ScalableMeshDb::GetEnableSharedDatabase() 
     {
     return s_enableSharedDatabase;
@@ -184,6 +186,3 @@ void  ScalableMeshDb::SetEnableSharedDatabase(bool isShared)
     {
     s_enableSharedDatabase = isShared;
     }
-
-
-#endif

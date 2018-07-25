@@ -965,6 +965,7 @@ StatusInt IScalableMeshCreator::Impl::LoadFromFile  ()
     if (!Load())
         return BSIERROR;
 
+#ifndef VANCOUVER_API
     if (m_isShareable)
         {
         ScalableMeshDb* smDb(m_smSQLitePtr->GetDb());
@@ -974,6 +975,7 @@ StatusInt IScalableMeshCreator::Impl::LoadFromFile  ()
         smDb->CommitTransaction();
         smDb->CloseShared(wasTransactionAbandoned);
         }
+#endif
 
 
     return BSISUCCESS;

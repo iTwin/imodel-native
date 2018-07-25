@@ -1037,8 +1037,13 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(int* outTriangle, DPoint3d
                     intersectTri = PointProjectsToTriangle2d(point, pts);
                     }
                 else
-                    intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param) && bary.x >= -1.0e-6f
-                        && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param > maxParam;
+#ifdef VANCOUVER_API
+                    intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts) 
+#else
+                    intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param)
+#endif
+                && bary.x >= -1.0e-6f
+                    && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param > maxParam;
                 if (intersectTri)
                     {
                     outTriangle[0] = m_faceIndexes[i];
@@ -1674,8 +1679,12 @@ bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
                 if (!DRange3d::From(pts, 3).IsContainedXY(ray.origin)) continue;
             }
 
-        bool intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param) && bary.x >= -1.0e-6f
-            && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param >= -1e-6 &&param < minParam;
+#ifdef VANCOUVER_API
+        bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts)
+#else
+        bool intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param) 
+#endif
+            && bary.x >= -1.0e-6f && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param >= -1e-6 &&param < minParam;
         if (intersectTri)
             {
             pt = projectedPt;
@@ -1707,8 +1716,12 @@ bool ScalableMeshMesh::_IntersectRay(bvector<DTMRayIntersection>& hits, const DR
                     if (!DRange3d::From(pts, 3).IsContainedXY(ray.origin)) continue;
             }
 
-        bool intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param) && bary.x >= -1.0e-6f
-            && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0;
+#ifdef VANCOUVER_API
+        bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts)
+#else
+        bool intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param) 
+#endif
+            && bary.x >= -1.0e-6f && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0;
         //&& param < minParam;
         if (intersectTri)
             {
@@ -2083,8 +2096,12 @@ bool ScalableMeshMeshWithGraph::_FindTriangleForProjectedPoint(MTGNodeId& outTri
             intersectTri = PointProjectsToTriangle2d(point, pts);
             }
         else
-            intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param) && bary.x >= -1.0e-6f
-                && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param > maxParam;
+#ifdef VANCOUVER_API
+            intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts)
+#else
+            intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param) 
+#endif
+            && bary.x >= -1.0e-6f && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param > maxParam;
         if (intersectTri)
             {
             outTriangle = edgeId;

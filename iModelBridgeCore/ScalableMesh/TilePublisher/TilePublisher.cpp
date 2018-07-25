@@ -8,6 +8,7 @@
 #include <ScalableMeshPCH.h>
 #include "TilePublisher/TilePublisher.h"
 #include "Constants.h"
+#include <limits>
 
 //#include "..\STM\ScalableMeshQuery.h"
 
@@ -256,9 +257,7 @@ void TilePublisher::AddTechniqueParameter(Json::Value& technique, Utf8CP name, i
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AppendProgramAttribute(Json::Value& program, Utf8CP attrName)
     {
-    Json::Value obj;
-    obj[attrName] = Json::objectValue;
-    program["attributes"].append(obj);
+    program["attributes"].append(attrName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -438,18 +437,17 @@ PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, bvector<Byte>& o
     ProcessMeshes(sceneJson);
     Utf8String sceneStr = Json::FastWriter().write(sceneJson);
 
+    while (0 != sceneStr.size() % 4)
+        sceneStr = sceneStr + " ";
+
     Json::Value featureTableJson(Json::objectValue);
-    Utf8String featureTableStr = featureTableJson.empty() ? Utf8String() : Json::FastWriter().write(featureTableJson);
-    uint32_t featureTableJSONByteLength = static_cast<uint32_t>(featureTableStr.size());
+    featureTableJson["BATCH_LENGTH"] = 0;
+
+    Utf8String featureTableStr = Json::FastWriter().write(featureTableJson);
     uint32_t featureTableBinaryByteLength = 0;
 
     Json::Value batchTableJson(Json::objectValue);
-    //#ifndef VANCOUVER_API
-    //    //m_batchIds.ToJson(batchTableJson, m_context->GetDgnDb());
-	//assert(!"Not on DgnDb, missing argument in ToJson");
-    //#else
-        m_batchIds.ToJson(batchTableJson);
-    //#endif
+    m_batchIds.ToJson(batchTableJson);
     Utf8String batchTableStr = batchTableJson.empty() ? Utf8String() : Json::FastWriter().write(batchTableJson);
     uint32_t batchTableJSONByteLength = static_cast<uint32_t>(batchTableStr.size());
     uint32_t batchTableBinaryByteLength = 0;
@@ -465,7 +463,15 @@ PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, bvector<Byte>& o
     static const size_t s_b3dmHeaderSize = 28;
     //static const char s_b3dmMagic[] = "b3dm";
     //static const uint32_t s_b3dmVersion = 1;
-    uint32_t b3dmLength = s_b3dmHeaderSize + featureTableJSONByteLength + batchTableJSONByteLength + gltfLength;
+
+    // Pad to 8 byte boundary
+    while ((s_b3dmHeaderSize + featureTableStr.size()) % 8 > 0)
+        featureTableStr.append(" ");
+
+    uint32_t featureTableJSONByteLength = static_cast<uint32_t>(featureTableStr.size());
+
+    uint32_t b3dmLength = s_b3dmHeaderSize + featureTableJSONByteLength + featureTableBinaryByteLength + batchTableJSONByteLength + gltfLength;
+
 
     outData.resize(b3dmLength);
     uint32_t dataOffset = 0;
@@ -489,6 +495,9 @@ PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, bvector<Byte>& o
     // feature table
     memcpy(outData.data() + dataOffset, featureTableStr.c_str(), featureTableJSONByteLength);
     dataOffset += featureTableJSONByteLength;
+
+    memset(outData.data() + dataOffset, 0, featureTableBinaryByteLength);
+    dataOffset += featureTableBinaryByteLength;
 
     // batch table
     memcpy(outData.data() + dataOffset, batchTableStr.c_str(), batchTableJSONByteLength);
@@ -556,6 +565,7 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
     rootNode["extensions"]["CESIUM_RTC"]["center"].append(m_centroid.y);
     rootNode["extensions"]["CESIUM_RTC"]["center"].append(m_centroid.z);
 
+    rootNode["asset"]["version"] = "1.0";
     rootNode["scene"] = "defaultScene";
     rootNode["scenes"]["defaultScene"]["nodes"] = Json::arrayValue;
     rootNode["scenes"]["defaultScene"]["nodes"].append("node_0");
@@ -731,7 +741,6 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
     auto&   techniqueStates = technique["states"];
     techniqueStates["enable"] = Json::arrayValue;
     techniqueStates["enable"].append(GLTF_DEPTH_TEST);
-    techniqueStates["disable"].append(GLTF_CULL_FACE);
 
     auto& techniqueAttributes = technique["attributes"];
     techniqueAttributes["a_pos"] = "pos";
@@ -746,7 +755,7 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
         techniqueUniforms["u_nmx"] = "nmx";
 
     auto& rootProgramNode = (rootNode["programs"][programName.c_str()] = Json::objectValue);
-    rootProgramNode["attributes"] = Json::arrayValue;
+    rootProgramNode["attributes"] = Json::Value();
     AppendProgramAttribute(rootProgramNode, "a_pos");
     //AppendProgramAttribute(rootProgramNode, "a_batchId");
     if (!ignoreLighting)
@@ -906,8 +915,20 @@ void    TilePublisher::AddBinaryData (void const* data, size_t size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max)
+void    TilePublisher::PadBinaryDataToBoundary(size_t boundarySize)
     {
+    uint8_t        zero = 0;
+    while (0 != (m_binaryData.size() % boundarySize))
+        m_binaryData.Append(&zero, 1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max, unsigned short* qmin, unsigned short* qmax)
+    {
+    PadBinaryDataToBoundary(4);
+
     size_t              nValues = nComponents * nAttributes;
     size_t              dataSize;
     size_t              byteOffset = m_binaryData.size();
@@ -939,6 +960,11 @@ void TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const*
             {
             quantizeExtension["decodedMin"].append (min[i]);
             quantizeExtension["decodedMax"].append (max[i]);
+            if (qmin && qmax)
+                {
+                qmin[i] = std::numeric_limits<unsigned short>::max();
+                qmax[i] = std::numeric_limits<unsigned short>::min();
+                }
             }
 
         bvector <unsigned short>    quantizedValues;
@@ -946,7 +972,10 @@ void TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const*
         for (size_t i=0; i<nValues; i++)
             {
             size_t  componentIndex = i % nComponents;
-            quantizedValues.push_back ((unsigned short) (.5 + (values[i] - min[componentIndex]) * range / (max[componentIndex] - min[componentIndex])));
+            auto qVal = (unsigned short)(.5 + (values[i] - min[componentIndex]) * range / (max[componentIndex] - min[componentIndex]));
+            if (qmin && qVal < qmin[componentIndex]) qmin[componentIndex] = qVal;
+            if (qmax && qVal > qmax[componentIndex]) qmax[componentIndex] = qVal;
+            quantizedValues.push_back (qVal);
             }
         AddBinaryData (quantizedValues.data(), dataSize = nValues * sizeof (unsigned short));
         }
@@ -1065,7 +1094,9 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     attr["mode"] = mesh.Triangles().empty() ? GLTF_LINES : GLTF_TRIANGLES;
 
     attr["attributes"]["POSITION"] = accPositionId;
-    AddMeshVertexAttribute (rootNode, &mesh.Points().front().x, bvPositionId, accPositionId, 3, mesh.Points().size(), "VEC3", quantizePositions, &pointRange.low.x, &pointRange.high.x);
+
+    unsigned short qmin[3], qmax[3];
+    AddMeshVertexAttribute (rootNode, &mesh.Points().front().x, bvPositionId, accPositionId, 3, mesh.Points().size(), "VEC3", quantizePositions, &pointRange.low.x, &pointRange.high.x, &qmin[0], &qmax[0]);
 
     if (!mesh.Params().empty())
         {
@@ -1122,13 +1153,26 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         }
     
     rootNode["accessors"][accPositionId]["min"] = Json::arrayValue;
-    rootNode["accessors"][accPositionId]["min"].append(pointRange.low.x);
-    rootNode["accessors"][accPositionId]["min"].append(pointRange.low.y);
-    rootNode["accessors"][accPositionId]["min"].append(pointRange.low.z);
     rootNode["accessors"][accPositionId]["max"] = Json::arrayValue;
-    rootNode["accessors"][accPositionId]["max"].append(pointRange.high.x);
-    rootNode["accessors"][accPositionId]["max"].append(pointRange.high.y);
-    rootNode["accessors"][accPositionId]["max"].append(pointRange.high.z);
+    if (quantizePositions)
+        {
+        rootNode["accessors"][accPositionId]["min"].append(qmin[0]);
+        rootNode["accessors"][accPositionId]["min"].append(qmin[1]);
+        rootNode["accessors"][accPositionId]["min"].append(qmin[2]);
+        rootNode["accessors"][accPositionId]["max"].append(qmax[0]);
+        rootNode["accessors"][accPositionId]["max"].append(qmax[1]);
+        rootNode["accessors"][accPositionId]["max"].append(qmax[2]);
+        }
+    else
+        {
+        rootNode["accessors"][accPositionId]["min"].append(pointRange.low.x);
+        rootNode["accessors"][accPositionId]["min"].append(pointRange.low.y);
+        rootNode["accessors"][accPositionId]["min"].append(pointRange.low.z);
+        rootNode["accessors"][accPositionId]["max"].append(pointRange.high.x);
+        rootNode["accessors"][accPositionId]["max"].append(pointRange.high.y);
+        rootNode["accessors"][accPositionId]["max"].append(pointRange.high.z);
+        }
+
 
     rootNode["accessors"][accIndexId] = Json::objectValue;
     rootNode["accessors"][accIndexId]["bufferView"] = bvIndexId;
@@ -1136,6 +1180,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     rootNode["accessors"][accIndexId]["componentType"] = useShortIndices ? GLTF_UNSIGNED_SHORT : GLTF_UINT32;
     rootNode["accessors"][accIndexId]["count"] = useShortIndices ? shortIndices.size() : indices.size();
     rootNode["accessors"][accIndexId]["type"] = "SCALAR";
+
+    //AddMeshPointRange(tileData.m_json["accessors"][accPositionId], pointRange);
 
 
     rootNode["buffers"]["binary_glTF"]["byteLength"] = m_binaryData.size();
@@ -1335,7 +1381,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
 
                     Json::Value         child;
 
-                    child["refine"] = "replace";
+                    child["refine"] = "REPLACE";
                     child[JSON_GeometricError] = childTile->GetTolerance();
                     TilePublisher::WriteBoundingVolume(child, childRange);
 
@@ -1365,7 +1411,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
     if (range.IsNull())
         return;
 
-    root["refine"] = "replace";
+    root["refine"] = "REPLACE";
     root[JSON_GeometricError] = tile.GetTolerance();
     TilePublisher::WriteBoundingVolume(root, range);
 
@@ -1418,7 +1464,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 //        Json::Value         child;
 //
 //        rootRange.Extend (rootTile.GetTileRange());
-//        rootJson["refine"] = "replace";
+//        rootJson["refine"] = "REPLACE";
 //        rootJson[JSON_GeometricError] = rootTile.GetTolerance();
 //        TilePublisher::WriteBoundingVolume(rootJson, rootTile.GetTileRange());
 //
@@ -1521,7 +1567,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 //                transformValue.append (matrix.coff[j][i]);
 //        }
 //
-//    root["refine"] = "replace";
+//    root["refine"] = "REPLACE";
 //
 //    root[JSON_GeometricError] = 1.E6;
 //    TilePublisher::WriteBoundingVolume(root, rootRange);

@@ -506,6 +506,22 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 		bvector<DTMFeatureType> newTypes;
 		bvector<DTMFeatureType> otherNewTypes;
 		bvector<bvector<DPoint3d>> newLines;
+
+#if 0
+        LOG_SET_PATH("e:\\Elenie\\mesh\\")
+            LOG_SET_PATH_W("e:\\Elenie\\mesh\\")
+            BC_DTM_OBJ* dtmObjP = 0;
+        bcdtmObject_createDtmObject(&dtmObjP);
+        for(auto& feature: polylines)
+            if(IsVoidFeature((ISMStore::FeatureType)types[&feature-polylines.data()]))
+                bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::Breakline, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
+
+        WString dtmFileName(LOG_PATH_STR_W + L"ptile_");
+        LOGSTRING_NODE_INFO_W(pParentMeshNode, dtmFileName)
+            dtmFileName.append(L".tin");
+        bcdtmWrite_toFileDtmObject(dtmObjP, dtmFileName.c_str());
+#endif
+
 		MergePolygonSets(polylines, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
 		{
 			if (!IsVoidFeature((ISMStore::FeatureType)types[i]))

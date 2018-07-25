@@ -1653,7 +1653,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                                                    polyface->Param().size(), polyface->Param().data(),
                                                    polyface->ParamIndex().data());
                         }
-                    return ERROR;
+                    return SUCCESS;
                     };
                 PolyfaceHeaderPtr polyface = nullptr;
                 if ((*clips)[0]->IsMask())
