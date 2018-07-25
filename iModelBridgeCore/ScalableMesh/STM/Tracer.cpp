@@ -69,9 +69,13 @@ void CachedDataEventTracer::analyze(int processId)
     std::ostringstream fileNameStr;
     std::ostringstream fileNameObjStr;
 
+    fileNameStr << "c:\\trace";
+    fileNameObjStr << "c:\\traceByObj";
 
+    /*
     fileNameStr << "D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\trace";
     fileNameObjStr << "D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\traceByObj";    
+    */
 
     if (processId != -1)
         {
