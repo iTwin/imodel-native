@@ -42,6 +42,10 @@ declare class NativeSQLiteDb {
   * @return non-zero error status if operation failed.
   */
   abandonChanges(): DbResult;
+
+  /** Apply a changeset, which is contained in a series of "block" files. */
+  applyChangeSet(blockFileNames: string[]): DbResult;
+
 }
 
 declare class NativeSQLiteStatement {

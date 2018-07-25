@@ -50,6 +50,8 @@ $(o)IModelBank$(oext) : $(baseDir)IModelBank.cpp $(baseDir)IModelBank.h ${MultiC
 
 $(o)IModelBankLoggingInterop$(oext) : $(baseDir)IModelBankLoggingInterop.cpp $(baseDir)IModelBank.h ${MultiCompileDepends}
 
+$(o)ChangeSetManager$(oext) : $(baseDir)ChangeSetManager.cpp $(baseDir)ChangeSetManager.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 #----------------------------------------------------------------------

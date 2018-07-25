@@ -9,6 +9,8 @@
 #include <Bentley/Desktop/FileSystem.h>
 #include <node-addon-api/napi.h>
 #include <imodel-bank-package-version.h>
+#include <BeSQLite/ChangeSet.h>
+#include "ChangeSetManager.h"
 
 #define PROPERTY_ATTRIBUTES static_cast<napi_property_attributes>(napi_enumerable | napi_configurable)
 
@@ -321,13 +323,38 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
 
     Napi::Value IsOpen(const Napi::CallbackInfo &info) { return Napi::Boolean::New(Env(), GetDb().IsDbOpen()); }
 
+
+    // To catch any SQLite error when it happens, put a BP on sqlite3ErrorMsg
+
+    /*
+        Prereqs:
+        Define SQLite functions: DGN_bbox, DGN_bbox_value, DGN_placement_aabb, DGN_placement, DGN_point, DGN_angles
+    */
+
+    Napi::Value ApplyChangeset(const Napi::CallbackInfo &info)
+    {
+        if (info.Length() < 1 || !info[0].IsArray())
+            Napi::TypeError::New(info.Env(), "Argument 1 must be a string[]").ThrowAsJavaScriptException();
+        auto blockFileNamesJs = info[0].As<Napi::Array>();
+        bvector<BeFileName> blockFileNames;
+        for (uint32_t i = 0; i < blockFileNamesJs.Length(); ++i)
+        {
+            Napi::Value item = blockFileNamesJs[i];
+            blockFileNames.push_back(BeFileName(item.ToString().Utf8Value().c_str(), true));
+        }
+
+        ChangeSetManager mgr(GetDb());
+        auto status = mgr.ApplyChangeSet(blockFileNames);
+        return Napi::Number::New(Env(), (int)status);
+    }
+
     static void Init(Napi::Env env, Napi::Object exports)
     {
         // ***
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "NativeSQLiteDb", {InstanceMethod("createTable", &NativeSQLiteDb::CreateTable), InstanceMethod("createDb", &NativeSQLiteDb::CreateDb), InstanceMethod("openDb", &NativeSQLiteDb::OpenDb), InstanceMethod("closeDb", &NativeSQLiteDb::CloseDb), InstanceMethod("saveChanges", &NativeSQLiteDb::SaveChanges), InstanceMethod("abandonChanges", &NativeSQLiteDb::AbandonChanges), InstanceMethod("isOpen", &NativeSQLiteDb::IsOpen)});
+        Napi::Function t = DefineClass(env, "NativeSQLiteDb", {InstanceMethod("applyChangeSet", &NativeSQLiteDb::ApplyChangeset), InstanceMethod("createTable", &NativeSQLiteDb::CreateTable), InstanceMethod("createDb", &NativeSQLiteDb::CreateDb), InstanceMethod("openDb", &NativeSQLiteDb::OpenDb), InstanceMethod("closeDb", &NativeSQLiteDb::CloseDb), InstanceMethod("saveChanges", &NativeSQLiteDb::SaveChanges), InstanceMethod("abandonChanges", &NativeSQLiteDb::AbandonChanges), InstanceMethod("isOpen", &NativeSQLiteDb::IsOpen)});
 
         exports.Set("NativeSQLiteDb", t);
 
