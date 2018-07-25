@@ -903,6 +903,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPropertyCP m_property;
         ECClassCP m_propertyClass;
         RelatedClassPath m_relatedClassPath;
+        ValueKind m_valueKind;
         Utf8String m_type;
         ContentFieldEditor const* m_fieldEditor;
         KindOfQuantityCP m_koq;
@@ -911,6 +912,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPropertiesFieldKey(ECPropertyCR property, ECClassCR propertyClass, RelatedClassPathCR path, ContentFieldEditor const* editor)
             : m_property(&property), m_propertyClass(&propertyClass), m_relatedClassPath(path), m_fieldEditor(editor)
             {
+            m_valueKind = m_property->GetIsPrimitive() ? VALUEKIND_Primitive 
+                : m_property->GetIsNavigation() ? VALUEKIND_Navigation
+                : m_property->GetIsArray() ? VALUEKIND_Array 
+                : m_property->GetIsStruct() ? VALUEKIND_Navigation 
+                : VALUEKIND_Uninitialized;
             m_type = m_property->GetTypeName();
             m_koq = m_property->GetKindOfQuantity();
             }
@@ -918,6 +924,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
             : ECPropertiesFieldKey(prop.GetProperty(), prop.GetPropertyClass(), prop.GetRelatedClassPath(), editor) 
             {}
         bool operator<(ECPropertiesFieldKey const& rhs) const;
+        ValueKind GetValueKind() const {return m_valueKind;}
         Utf8CP GetName() const {return m_property->GetName().c_str();}
         Utf8CP GetType() const {return m_type.c_str();}
         KindOfQuantityCP GetKoq() const {return m_koq;}
