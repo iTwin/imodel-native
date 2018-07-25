@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ Overview_KindOfQuantity_Include.sampleCode
-#include <ECObjects/ECObjectsApi.h>
+#include <ECObjects/ECObjectsAPI.h>
 //__PUBLISH_EXTRACT_END__
 
 USING_NAMESPACE_BENTLEY_EC
