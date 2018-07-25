@@ -1014,7 +1014,7 @@ public:
     //! @}
 
     //! This returns false if the V8 file should not be converted by the bridge.
-    DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
+    DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File, Utf8StringP bridgeName = nullptr) const;
 
     bool HasRootTransChanged() const {return m_rootTransHasChanged;}
 
