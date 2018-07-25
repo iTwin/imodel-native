@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: geom/src/funcs/XYPointSearch.cpp $
+|     $Source: geom/src/funcs/XYBucketSearch.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -11,15 +11,13 @@
 BEGIN_BENTLEY_GEOMETRY_INTERNAL_NAMESPACE
 
 
-struct GEOMDLLIMPEXP TaggedPoint
+struct TaggedPoint
     {
-    double x, y;
-    XYPointSearcherTagType data;
-    TaggedPoint (double xx, double yy, XYPointSearcherTagType dd)
+    DPoint3d xyz;
+    XYBucketSearchTagType data;
+    TaggedPoint (DPoint3dCR _xyz, XYBucketSearchTagType dd, double zz = 0.0)
+        : xyz (_xyz), data (dd)
         {
-        x = xx;
-        y = yy;
-        data = dd;
         }
     };
 
@@ -40,26 +38,23 @@ struct GEOMDLLIMPEXP RowData
 
 /// <summary>Callback object for searches.</summary>
 ///
-class XYPointSearcherUtils;
-class XYPointSearcherAlgorithms;
+class XYBucketSearchUtils;
+class XYBucketSearchAlgorithms;
 
 
-class XYPointSearcherImplementation : XYPointSearcher
+class XYBucketSearchImplementation : XYBucketSearch
 {
 public:
-/// <summary>Add an <x,y,XYPointSearcherTagType> dataum.  Range data is updated and the mbSorted flag is set to
+/// <summary>Add an <x,y,XYBucketSearchTagType> dataum.  Range data is updated and the m_sorted flag is set to
 ///    force a sort on the next query.</summary>
-bool imp_AddPoint (double x, double y, XYPointSearcherTagType data);
+bool imp_AddPoint (DPoint3dCR xyz, XYBucketSearchTagType data);
 
 /// <summary>Query the range of the points.</summary>
 /// <return>True if point count is nonzero</return>
-bool imp_GetRange (double &xMin, double &yMin, double &xMax, double &yMax);
-
-/// <summary>Recompute the range of the ponts.  This should never be needed -- AddPoint updates with each call</summary>
-bool imp_ComputeRange ();
+DRange3d imp_GetRange () const {return m_range;}
 
 /// <summary>Return a point from the search structure.  Point indices can change due to sorting.</summary>
-bool imp_GetPoint (unsigned int i, double &x, double &y, XYPointSearcherTagType &data);
+bool imp_GetPoint (unsigned int i, DPoint3dR xyz, XYBucketSearchTagType &data) const;
 
 /// <summary>Fast search for the closest point</summary>
 /// <param name="x">x coordinate of search</param>
@@ -67,10 +62,13 @@ bool imp_GetPoint (unsigned int i, double &x, double &y, XYPointSearcherTagType 
 /// <param name="xOut">returned closest point x</param>
 /// <param name="yOut">returned closest point y</param>
 /// <param name="dataOut">returned tag</param>
-bool imp_ClosestPoint (double x, double y, double &xOut, double &yOut, XYPointSearcherTagType &dataOut);
+bool imp_ClosestPoint (double x, double y, double &xOut, double &yOut, XYBucketSearchTagType &dataOut);
 
 /// <summary>Invoke a callback for all points that fall in a specified range.</summary>
-void imp_SearchByRange (double xMin, double yMin, double xMax, double yMax, PointHandler &handler);
+void imp_CollectPointsInRange (double xMin, double yMin, double xMax, double yMax,
+bvector<DPoint3d> &searchPoint,
+bvector<XYBucketSearchTagType> &searchId
+);
 
 /// <summary>Slow search for the closest point</summary>
 /// <param name="x">x coordinate of search</param>
@@ -78,23 +76,23 @@ void imp_SearchByRange (double xMin, double yMin, double xMax, double yMax, Poin
 /// <param name="xOut">returned closest point x</param>
 /// <param name="yOut">returned closest point y</param>
 /// <param name="dataOut">returned tag</param>
-bool imp_ClosestPointLinear (double x, double y, double &xOut, double &yOut, XYPointSearcherTagType &dataOut);
+bool imp_ClosestPointLinear (double x, double y, double &xOut, double &yOut, XYBucketSearchTagType &dataOut);
 
 
-friend class XYPointSearcherUtils;
-friend class XYPointSearcherAlgorithms;
-friend class XYPointSearcher;
+friend class XYBucketSearchUtils;
+friend class XYBucketSearchAlgorithms;
+friend class XYBucketSearch;
 
 private:
     bvector<TaggedPoint> points;
     bvector<RowData>     rows;
-    bool mbSorted;
-    double mXMin, mYMin, mXMax, mYMax;
-    XYPointSearcherImplementation ();
+    bool m_sorted;
+    DRange3d m_range;
+    XYBucketSearchImplementation ();
 
 private:
 /// <summary>Return squared distance from x,y to indexed point.</summary>
-double DistanceSquared (double x, double y, unsigned int i);
+double DistanceSquaredXY (double x, double y, unsigned int i);
 /// <summary>"Less than" function for std::sort.  Lexical ordering by y then x.</summary>
 static bool cb_compareForYSort (const TaggedPoint &pointA, const TaggedPoint &pointB);
 /// <summary>"Less than" function for std::sort.  Lexical ordering by x then y..</summary>
@@ -112,133 +110,97 @@ int SplitRow (int rowIndex, double x);
 int SelectRow (double y);
 
 /// <summary>Find the closest point within specified row.</summary>
-double ClosestPointInRow (int rowIndex, double x, double y, double &xOut, double &yOut, XYPointSearcherTagType &dataOut, int &iMin);
+double ClosestPointInRow (int rowIndex, double x, double y, double &xOut, double &yOut, XYBucketSearchTagType &dataOut, int &iMin);
 
 };
 
-XYPointSearcherP XYPointSearcher::Allocate ()
+XYBucketSearchPtr XYBucketSearch::Create ()
     {
-    return new XYPointSearcherImplementation ();
+    return new XYBucketSearchImplementation ();
     }
 
-XYPointSearcher::XYPointSearcher ()
+XYBucketSearch::XYBucketSearch ()
     {
     }
 
-bool XYPointSearcher::AddPoint (double x, double y, XYPointSearcherTagType data)
-    {return ((XYPointSearcherImplementation*)this)->imp_AddPoint (x, y, data);}
+bool XYBucketSearch::AddPoint (DPoint3dCR xyz, XYBucketSearchTagType data)
+    {return ((XYBucketSearchImplementation*)this)->imp_AddPoint (xyz, data);}
 
-bool XYPointSearcher::GetRange (double &xMin, double &yMin, double &xMax, double &yMax)
-    {return ((XYPointSearcherImplementation*)this)->imp_GetRange (xMin, yMin, xMax, yMax);}
+DRange3d XYBucketSearch::GetRange () const
+    {return ((XYBucketSearchImplementation*)this)->imp_GetRange ();}
 
-bool XYPointSearcher::GetPoint (unsigned int i, double &x, double &y, XYPointSearcherTagType &data)
-    {return ((XYPointSearcherImplementation*)this)->imp_GetPoint (i, x, y, data);}
+bool XYBucketSearch::GetPoint (unsigned int i, DPoint3dR xyz, XYBucketSearchTagType &data) const
+    {return ((XYBucketSearchImplementation*)this)->imp_GetPoint (i, xyz, data);}
 
-bool XYPointSearcher::ClosestPoint (double x, double y, double &xOut, double &yOut, XYPointSearcherTagType &dataOut)
-    {return ((XYPointSearcherImplementation*)this)->imp_ClosestPoint (x, y, xOut, yOut, dataOut);}
+bool XYBucketSearch::ClosestPoint (double x, double y, double &xOut, double &yOut, XYBucketSearchTagType &dataOut)
+    {return ((XYBucketSearchImplementation*)this)->imp_ClosestPoint (x, y, xOut, yOut, dataOut);}
 
-void XYPointSearcher::SearchByRange (double xMin, double yMin, double xMax, double yMax, PointHandler &handler)
-    {return ((XYPointSearcherImplementation*)this)->imp_SearchByRange (xMin, yMin, xMax, yMax, handler);}
-
-bool XYPointSearcher::ClosestPointLinear (double x, double y, double &xOut, double &yOut, XYPointSearcherTagType &dataOut)
-    {return ((XYPointSearcherImplementation*)this)->imp_ClosestPointLinear (x, y, xOut, yOut, dataOut);}
-
-
-XYPointSearcherImplementation::XYPointSearcherImplementation ()
+void XYBucketSearch::CollectPointsInRange (double xMin, double yMin, double xMax, double yMax,
+bvector<DPoint3d> &searchPoint,
+bvector<XYBucketSearchTagType> &searchId
+)
     {
-    mbSorted = false;
-    mXMin = mYMin =  DBL_MAX;
-    mXMax = mYMax = -DBL_MAX;
+    return ((XYBucketSearchImplementation*)this)->imp_CollectPointsInRange (xMin, yMin, xMax, yMax, searchPoint, searchId);}
+
+bool XYBucketSearch::ClosestPointLinear (double x, double y, double &xOut, double &yOut, XYBucketSearchTagType &dataOut)
+    {return ((XYBucketSearchImplementation*)this)->imp_ClosestPointLinear (x, y, xOut, yOut, dataOut);}
+
+
+XYBucketSearchImplementation::XYBucketSearchImplementation ()
+    {
+    m_sorted = false;
+    m_range = DRange3d::NullRange ();
     }
 
-bool XYPointSearcherImplementation::imp_GetPoint (unsigned int i, double &x, double &y, XYPointSearcherTagType &data)
+bool XYBucketSearchImplementation::imp_GetPoint (unsigned int i, DPoint3dR xyz, XYBucketSearchTagType &data) const
     {
     if (i > points.size ())
         return false;
     TaggedPoint tp = points[i];
-    x = tp.x;
-    y = tp.y;
+    xyz = tp.xyz;
     data = tp.data;
     return true;
     }
 
-bool XYPointSearcherImplementation::imp_AddPoint (double x, double y, XYPointSearcherTagType data)
+bool XYBucketSearchImplementation::imp_AddPoint (DPoint3dCR xyz, XYBucketSearchTagType data)
     {
-    TaggedPoint tp (x, y, data);
+    TaggedPoint tp (xyz, data);
     points.push_back (tp);
-
-    if (tp.x < mXMin)
-        mXMin = tp.x;
-    if (tp.y < mYMin)
-        mYMin = tp.y;
-    if (tp.x > mXMax)
-        mXMax = tp.x;
-    if (tp.y > mYMax)
-        mYMax = tp.y;
-
-    mbSorted = false;
+    m_range.Extend (xyz);
+    m_sorted = false;
     return true;
     }
 
-double XYPointSearcherImplementation::DistanceSquared (double x, double y, unsigned int i)
+double XYBucketSearchImplementation::DistanceSquaredXY (double x, double y, unsigned int i)
     {
     if (i > points.size ())
         return DBL_MAX;
-    double dx = x - points[i].x;
-    double dy = y - points[i].y;
+    double dx = x - points[i].xyz.x;
+    double dy = y - points[i].xyz.y;
     return dx * dx + dy * dy;
     }
 
-bool XYPointSearcherImplementation::imp_GetRange (double &xMin, double &yMin, double &xMax, double &yMax)
+bool XYBucketSearchImplementation::cb_compareForYSort (const TaggedPoint &pointA, const TaggedPoint &pointB)
     {
-    xMin = mXMin;
-    yMin = mYMin;
-    xMax = mXMax;
-    yMax = mYMax;
-    return points.size () > 0;
-    }
-
-bool XYPointSearcherImplementation::imp_ComputeRange ()
-    {
-    mXMin = mYMin =  DBL_MAX;
-    mXMax = mYMax = -DBL_MAX;
-    size_t n = points.size ();
-    for (size_t i = 0; i < n; i++)
-        {
-        TaggedPoint tp = points[i];
-        if (tp.x < mXMin)
-            mXMin = tp.x;
-        if (tp.y < mYMin)
-            mYMin = tp.y;
-        if (tp.x > mXMax)
-            mXMax = tp.x;
-        if (tp.y > mYMax)
-            mYMax = tp.y;
-        }
-    return n > 0;
-    }
-
-bool XYPointSearcherImplementation::cb_compareForYSort (const TaggedPoint &pointA, const TaggedPoint &pointB)
-    {
-    if (pointA.y < pointB.y)
+    if (pointA.xyz.y < pointB.xyz.y)
         return true;
-    if (pointA.y > pointB.y)
+    if (pointA.xyz.y > pointB.xyz.y)
         return false;
-    return pointA.x < pointB.x;
+    return pointA.xyz.x < pointB.xyz.x;
     }
 
-bool XYPointSearcherImplementation::cb_compareForXSort (const TaggedPoint &pointA, const TaggedPoint &pointB)
+bool XYBucketSearchImplementation::cb_compareForXSort (const TaggedPoint &pointA, const TaggedPoint &pointB)
     {
-    if (pointA.x < pointB.x)
+    if (pointA.xyz.x < pointB.xyz.x)
         return true;
-    if (pointA.x > pointB.x)
+    if (pointA.xyz.x > pointB.xyz.x)
         return false;
-    return pointA.y < pointB.y;
+    return pointA.xyz.y < pointB.xyz.y;
     }
 
 #define MAX_XYPOINTSEARCH_ROW 2000
 #define MIN_PER_ROW 20
-void XYPointSearcherImplementation::Sort ()
+void XYBucketSearchImplementation::Sort ()
     {
     size_t numPoint = points.size ();
     if (points.size () == 0)
@@ -263,17 +225,17 @@ void XYPointSearcherImplementation::Sort ()
     for (unsigned int rowIndex = 0; rowIndex < numRow; rowIndex++, i0 = i1)
         {
         i1 = (unsigned int)((double) numPoint * (double)(rowIndex + 1)/ (double)numRow);
-        rows.push_back (RowData(i0, i1, points[i0].y, points[i1-1].y));
+        rows.push_back (RowData(i0, i1, points[i0].xyz.y, points[i1-1].xyz.y));
         bvector<TaggedPoint>::iterator limit0 = points.begin ();
         limit0 += i0;
         bvector<TaggedPoint>::iterator limit1 = points.begin ();
         limit1 += i1;
         std::sort (limit0, limit1, cb_compareForXSort);
         }
-    mbSorted = true;
+    m_sorted = true;
     }
 
-int XYPointSearcherImplementation::SelectRow (double y)
+int XYBucketSearchImplementation::SelectRow (double y)
     {
     size_t numRow = rows.size ();
     size_t i0 = 0;
@@ -292,22 +254,22 @@ int XYPointSearcherImplementation::SelectRow (double y)
 
 /// <summary> search x-sorted row. </summary>
 /// <return> returns smallest k such that points[k].x >= x</return>
-int XYPointSearcherImplementation::SplitRow (int rowIndex, double x)
+int XYBucketSearchImplementation::SplitRow (int rowIndex, double x)
     {
     RowData r = rows[rowIndex];     // rowIndex assumed ok ...
     int i0 = r.i0;
     int i1 = r.i1;
     int k0;
-    if (x <= points[i0].x)
+    if (x <= points[i0].xyz.x)
         k0 = i0;
-    else if (x >= points[i1 - 1].x)
+    else if (x >= points[i1 - 1].xyz.x)
         k0 = i1;
     else
         {
         while (i1 > i0 + 1)
             {
             int iMid = (i0 + i1) / 2;
-            if (x < points[iMid].x)
+            if (x < points[iMid].xyz.x)
                 i1 = iMid;
             else
                 i0 = iMid;
@@ -318,14 +280,14 @@ int XYPointSearcherImplementation::SplitRow (int rowIndex, double x)
     }
 
 
-double XYPointSearcherImplementation::ClosestPointInRow (int rowIndex, double x, double y, double &xOut, double &yOut, XYPointSearcherTagType &dataOut, int &iMin)
+double XYBucketSearchImplementation::ClosestPointInRow (int rowIndex, double x, double y, double &xOut, double &yOut, XYBucketSearchTagType &dataOut, int &iMin)
     {
     RowData r = rows[rowIndex];     // rowIndex assumed ok ...
     int i0 = r.i0;
     int i1 = r.i1;
     int k0 = SplitRow (rowIndex, x);
     iMin = k0;
-    double d2 = DistanceSquared (x, y, k0);
+    double d2 = DistanceSquaredXY (x, y, k0);
 
     double d2Min = d2;
     double dMin = sqrt (d2);
@@ -334,10 +296,10 @@ double XYPointSearcherImplementation::ClosestPointInRow (int rowIndex, double x,
     i0 = r.i0;
     i1 = r.i1;
     // Linear search forward ...
-    for (int i = k0 + 1; i < i1 && points[i].x < xMax; i++)
+    for (int i = k0 + 1; i < i1 && points[i].xyz.x < xMax; i++)
         {
         //double xx = points[i].x;
-        d2 = DistanceSquared (x, y, i);
+        d2 = DistanceSquaredXY (x, y, i);
         if (d2 < d2Min)
             {
             d2Min = d2;
@@ -349,10 +311,10 @@ double XYPointSearcherImplementation::ClosestPointInRow (int rowIndex, double x,
         }
 
     // Linear search backward ...
-    for (int i = k0 - 1; i >= i0 && points[i].x > xMin; i--)
+    for (int i = k0 - 1; i >= i0 && points[i].xyz.x > xMin; i--)
         {
         //double xx = points[i].x;
-        d2 = DistanceSquared (x, y, i);
+        d2 = DistanceSquaredXY (x, y, i);
         if (d2 < d2Min)
             {
             d2Min = d2;
@@ -363,17 +325,17 @@ double XYPointSearcherImplementation::ClosestPointInRow (int rowIndex, double x,
             }
         }
 
-    xOut = points[iMin].x;
-    yOut = points[iMin].y;
+    xOut = points[iMin].xyz.x;
+    yOut = points[iMin].xyz.y;
     dataOut = points[iMin].data;
     return dMin;
     }
 
-bool XYPointSearcherImplementation::imp_ClosestPoint (double x, double y, double &xOut, double &yOut, XYPointSearcherTagType &dataOut)
+bool XYBucketSearchImplementation::imp_ClosestPoint (double x, double y, double &xOut, double &yOut, XYBucketSearchTagType &dataOut)
     {
     if (points.size () < 1)
         return false;
-    if (!mbSorted)
+    if (!m_sorted)
         Sort ();
 
     int iMin = 0;
@@ -383,7 +345,7 @@ bool XYPointSearcherImplementation::imp_ClosestPoint (double x, double y, double
     bool bDownActive = true;
     double d;
     double xB, yB;
-    XYPointSearcherTagType dataB;
+    XYBucketSearchTagType dataB;
     int iMinB;
 
     size_t numRow = rows.size ();
@@ -439,16 +401,19 @@ bool XYPointSearcherImplementation::imp_ClosestPoint (double x, double y, double
     }
 
 /// <summary>Invoke a callback for all points that fall in a specified range.</summary>
-void XYPointSearcherImplementation::imp_SearchByRange
+void XYBucketSearchImplementation::imp_CollectPointsInRange
 (
 double xMin,
 double yMin,
 double xMax,
 double yMax,
-PointHandler &handler
+bvector<DPoint3d> &searchPoint,
+bvector<XYBucketSearchTagType> &searchId
 )
     {
-    if (!mbSorted)
+    searchPoint.clear ();
+    searchId.clear ();
+    if (!m_sorted)
         Sort ();
     size_t numRow = rows.size ();
     int lowRow = SelectRow (yMin);
@@ -465,35 +430,37 @@ PointHandler &handler
         for (int k = k0; k < i1; k++)
             {
             TaggedPoint p = points[k];
-            if (p.x > xMax)
-                return;
-            if (p.y >= yMin && p.y <= yMax)
-                if (!handler.ContinueAfterPoint (p.x, p.y, p.data))
-                    return;
+            if (p.xyz.x > xMax)
+                break;
+            if (p.xyz.y >=yMin && p.xyz.y <= yMax && p.xyz.x >= xMin)
+                {
+                searchPoint.push_back (p.xyz);
+                searchId.push_back (p.data);
+                }
             }
         }
     return;
     }
 
 
-bool XYPointSearcherImplementation::imp_ClosestPointLinear (double x, double y, double &xOut, double &yOut, XYPointSearcherTagType &dataOut)
+bool XYBucketSearchImplementation::imp_ClosestPointLinear (double x, double y, double &xOut, double &yOut, XYBucketSearchTagType &dataOut)
     {
     size_t n = points.size ();
     if (n < 1)
         return false;
-    double d2Min = DistanceSquared (x, y, 0);
-    xOut = points[0].x;
-    yOut = points[0].y;
+    double d2Min = DistanceSquaredXY (x, y, 0);
+    xOut = points[0].xyz.x;
+    yOut = points[0].xyz.y;
     dataOut = points[0].data;
     double d2;
     for (size_t i = 0; i < n; i++)
         {
-        d2 = DistanceSquared (x, y, (int)i);
+        d2 = DistanceSquaredXY (x, y, (int)i);
         if (d2 < d2Min)
             {
             d2Min = d2;
-            xOut = points[i].x;
-            yOut = points[i].y;
+            xOut = points[i].xyz.x;
+            yOut = points[i].xyz.y;
             dataOut = points[i].data;
             }
         }

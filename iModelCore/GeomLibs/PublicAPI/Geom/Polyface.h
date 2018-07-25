@@ -1953,6 +1953,13 @@ GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateTriangleGrid (int numPerRow);
 //! @param [in] convexHull if true, force the convex hull to be part of the triangulation.
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateXYTriangulation (bvector <DPoint3d> const &points, double fringeExpansionFactor = 0.10, bool retainFringeTriangles = false, bool convexHull = true);
 
+//! Create a new polyface with vertical panels between corresponding line segments.
+GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateVerticalPanelsBetweenSegments
+(
+bvector<FacetEdgeDetail> const &segments
+);
+
+
 //! Create a Delauney triangulation of points as viewed in xy.  Return the triangulation and its Voronoi dual as separate polyfaces.
 //! @return true if meshes created.
 GEOMDLLIMPEXP static bool CreateDelauneyTriangulationAndVoronoiRegionsXY
@@ -2501,10 +2508,28 @@ GEOMDLLIMPEXP bool TryGetMaxSingleFacetParamLength (DVec2dR uvLength);
 GEOMDLLIMPEXP bool TryGetMaxSingleFacetLocalXYLength (DVec2dR xySize);
 
 //! Create linestrings containing only the visible edges of this polyface.
+//! @remark The extraction is based on edge visiblity, not boundary analysis.
 //! @param [out] numOpen number of open faces.
 //! @param [out] numClosed number of closed faces.
 GEOMDLLIMPEXP CurveVectorPtr ExtractBoundaryStrings (size_t &numOpen, size_t &numClosed);
 
+//! Create segments containing edges of this polyface.
+//! The returned array indicates
+//! <ul>
+//! <li>segment coordinates
+//! <li> a readIndex.  Based on the returnSingleEdgeReadIndex value, his can be either the base readIndex for the whole facet, or the detail read index for the individual edge.
+//! <li> clusterIndex.  Shared edges will return the same cluster index.
+//! <li> number of edges in the cluster.   If collecting only unmatched edges, this normally be 1, but can be
+//     3 or more for nonmanifold edges, and 2 if the two edges do not have the required direction reversals.
+//! </ul>
+//!
+//! @param [out] segments array of segment data.
+//! @param [in] includeMatched true to include interior segemnts that have mates.
+//! @param [in] returnSingleEdgeReadIndex if true, return read index to the base of the individual edge.  If false,
+//!      return readIndex for the entire facet.  (The entire facet index is prefered for calling visitor->MoveToReadIndex ())
+GEOMDLLIMPEXP void CollectEdgeMateData (bvector<FacetEdgeDetail> &segments,
+        bool includeMatched = false,
+        bool returnSingleEdgeReadIndex = false);
 
 //! If (1) param, normal, or color indices are missing and (2) their respective data arrays have size match with points,
 //!    fill up the index array as duplicate of the pointIndex

@@ -24,9 +24,9 @@ TEST(PseudoSpiral,Serialize)
 #endif
                 //DSpiral2dBase::TransitionType_Viennese,
                 //DSpiral2dBase::TransitionType_WeightedViennese,
-                DSpiral2dBase::TransitionType_NewSouthWales,
+                DSpiral2dBase::TransitionType_WesternAustralian,
                 //DSpiral2dBase::TransitionType_Czech,
-                DSpiral2dBase::TransitionType_Australian,
+                DSpiral2dBase::TransitionType_AustralianRailCorp,
                 //DSpiral2dBase::TransitionType_Italian,
                 //DSpiral2dBase::TransitionType_Polish
                 DSpiral2dBase::TransitionType_MXCubic,
@@ -34,6 +34,8 @@ TEST(PseudoSpiral,Serialize)
                 })
         {
         Check::SetTransform (Transform::FromIdentity ());
+        double xShift = 500.0;
+        SaveAndRestoreCheckTransform typeShift (xShift, 0, 0);
         double yShift = 200.0;
         for (double spiralLength : {100.0, 200.0})
             {
@@ -73,7 +75,8 @@ TEST(PseudoSpiral,Serialize)
         char fileName[1024];
         Utf8String typeName;
         DSpiral2dBase::TransitionTypeToString (spiralType, typeName);
-        sprintf (fileName, "Spiral.Serialize.%s", typeName.c_str());
+        // add 1000 to ensure alphabetic sort maintains numeric order
+        sprintf (fileName, "Spiral.Serialize.%d%s", 1000+(int)spiralType, typeName.c_str());
         Check::ClearGeometry (fileName);
         }
     }
@@ -135,7 +138,7 @@ TEST(Spiral,TwoRadiusConstruction)
     {
     double radiusB = 1000.0;
     double length0B = 100.0;
-    int typeCode = DSpiral2dBase::TransitionType_NewSouthWales;
+    int typeCode = DSpiral2dBase::TransitionType_WesternAustralian;
     double yShiftB = 45.0;
     double yShiftA = 5.0;
     for (double bearing0Degrees : {0.0, 10.0})
@@ -183,7 +186,7 @@ void ShowFrame (DPoint3dCR origin, double bearingRadians, double sizeX, double s
 
 void testRadiusCombinations (bvector<double> radiiA, bvector<double> radiiB)
     {
-    int typeCode = DSpiral2dBase::TransitionType_NewSouthWales;
+    int typeCode = DSpiral2dBase::TransitionType_WesternAustralian;
     double lengthAB = 25.0;
     double lengthArc0 = 50.0;
     double gridStep = 400.0;
@@ -375,10 +378,10 @@ TEST(Spiral,DocCheck)
     for (auto spiralType :
         {
         DSpiral2dBase::TransitionType_Clothoid,
-        DSpiral2dBase::TransitionType_NewSouthWales,
+        DSpiral2dBase::TransitionType_WesternAustralian,
         DSpiral2dBase::TransitionType_MXCubic,
         DSpiral2dBase::TransitionType_DirectHalfCosine,
-        DSpiral2dBase::TransitionType_Australian,
+        DSpiral2dBase::TransitionType_AustralianRailCorp,
         })
         {
         SaveAndRestoreCheckTransform shifter (0, 20, 0);
@@ -496,7 +499,7 @@ TEST(Spiral,AustralianReversal)
             SaveAndRestoreCheckTransform shifter (10.0 * L,0,0);
             DPoint3d origin = DPoint3d::From (0,0,0);
             auto curve1 = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (
-                    DSpiral2dBase::TransitionType_Australian,
+                    DSpiral2dBase::TransitionType_AustralianRailCorp,
                     DPoint3d::From (0,0,0),
                     beta0,
                     R0,
@@ -526,7 +529,7 @@ TEST(Spiral,SpiralStartEndMatch)
     double startAngle = Angle::Pi ();
     double endRadius = 720.0;
     double startRadius = 0.0;
-    ICurvePrimitivePtr curvePrimiP = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius(DSpiral2dBase::TransitionType_NewSouthWales,
+    ICurvePrimitivePtr curvePrimiP = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius(DSpiral2dBase::TransitionType_WesternAustralian,
         startPoint, startAngle, startRadius, length, endRadius);
     double spiralLength = curvePrimiP->GetSpiralPlacementCP()->SpiralLength01();
     double position;
@@ -535,7 +538,7 @@ TEST(Spiral,SpiralStartEndMatch)
 
     startRadius = 720.0;
     endRadius = 0.0;
-    curvePrimiP = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius(DSpiral2dBase::TransitionType_NewSouthWales,
+    curvePrimiP = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius(DSpiral2dBase::TransitionType_WesternAustralian,
         startPoint, startAngle, startRadius, length, endRadius);
     spiralLength = curvePrimiP->GetSpiralPlacementCP()->SpiralLength01();
     curvePrimiP->SignedDistanceBetweenFractions(0.0, 1.0, position);
@@ -732,4 +735,130 @@ TEST(Spiral,HalfCosineIntegrals)
     }
 
     Check::ClearGeometry ("Spiral.HalfCosineIntegrals");
+    }
+
+
+// Vector integrands for testing
+struct WesternAustraliaDistanceTestIntegrands: BSIIncrementalVectorIntegrand
+{
+double m_l1;    // nominal length
+double m_r1;    // end radius
+
+WesternAustraliaDistanceTestIntegrands (double l1, double r1) :
+    m_l1 (l1),
+    m_r1 (r1)
+    {
+    }
+DPoint3d SToXY (double s, int numTerms = 1)
+    {
+    double s2 = s * s;
+    double s4 = s2 * s2;
+    double RL = m_r1 * m_l1;
+    auto xyz = DPoint3d::From (s * ( 1.0 - s4 / (40.0 * RL * RL)), s * s2 / (6.0 * RL));
+    if (numTerms > 1)
+        {
+        double s6 = s4 * s2;
+        double R3L3 = RL * RL * RL;
+        xyz.y -= s6 * s / (48.0 * 7.0 * R3L3);
+        xyz.x += s6 * s * s2 / (9.0 * 24.0 * 16.0 * R3L3 * RL);
+        }
+    return xyz;
+    }
+
+DVec2d SToDXY (double s)
+    {
+    double s2 = s * s;
+    double s4 = s2 * 2;
+    double RL = m_r1 * m_l1;
+    return DVec2d::From (1.0 - s4 / (8.0 * RL * RL), s2 / (2.0 * RL));
+    }
+int GetVectorIntegrandCount () override { return 4;}
+void EvaluateVectorIntegrand (double t, double *pF) override
+    {
+    double x = t * m_l1;
+    DVec2d Duv = SToDXY (x);
+    double theta = 0.5 * x * x  / (m_l1 * m_r1);
+    double dx = cos(theta) * m_l1;
+    double dy = sin(theta) * m_l1;
+    pF[0] = dx;
+    pF[1] = dy;
+    pF[2] =  Duv.Magnitude () * m_l1;   // integrated distance along the approximate curve
+    pF[3] = sqrt (dx * dx + dy * dy);   // integrated distance along true curve.
+    }
+
+bvector<DPoint3d> distanceError;
+bvector<DPoint3d> clothoidXY;
+bvector<DPoint3d> series1XY;
+bvector<DPoint3d> series2XY;
+
+
+bool AnnounceIntermediateIntegral (double t, double *pIntegrals) override
+    {
+    double s = t * m_l1;
+    DPoint3d XY1 = SToXY (s);
+    DPoint3d XY2 = SToXY (s, 2);
+    // <requestedDistance, relative distance error for 1 term, relative distance error for 2 term>
+    distanceError.push_back (DPoint3d::From (s, (pIntegrals[2] - s) / m_l1, (pIntegrals[3] - s) / m_l1));
+    series1XY.push_back (XY1);   // approximate curve
+    series2XY.push_back (XY2);
+    clothoidXY.push_back (DPoint3d::From (pIntegrals[0], pIntegrals[1])); // true curve
+    return true;
+    }
+};
+// extend points by adding a point at (dx,dy) from the last point.
+// (If several linestrings are very close to one another, adding strokes with different dx,dy makes them easier to mouse-pick)
+void AppendVector (bvector<DPoint3d> &points, double dx, double dy)
+    {
+    if (points.size () > 0)
+        {
+        DPoint3d xyz = points.back ();
+        xyz.x += dx;
+        xyz.y += dy;
+        points.push_back (xyz);
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Spiral,WesternAustralianDistanceErrors)
+    {
+    BSIQuadraturePoints quadraturePoints;
+    quadraturePoints.InitGauss (5);
+    double errorBound;
+    uint32_t numInterval = 16;
+    Check::StartScope ("Series Approximations for Clothoid");
+    for (double l1 : { 100, 200, 400})
+        {
+        Check::StartScope ("L", l1);
+        double displayShift = 1.25 * l1;
+        SaveAndRestoreCheckTransform shifter (displayShift, 0, 0);
+        for (double r1 : { 600, 800, 1000})
+            {
+            Check::StartScope ("R1", r1);
+            SaveAndRestoreCheckTransform shifter (0, displayShift , 0);
+            WesternAustraliaDistanceTestIntegrands integrands (l1, r1);
+            quadraturePoints.IntegrateWithRombergExtrapolation (integrands, 0.0, 1.0, numInterval, errorBound);
+            DPoint3d xyz = integrands.clothoidXY.back ();
+            DPoint3d xyz0 = DPoint3d::From (xyz.x, 0, 0);
+
+            AppendVector (integrands.clothoidXY, 1,0);
+            AppendVector (integrands.series1XY, 1,1);
+            AppendVector (integrands.series2XY, 1,2);
+
+            Check::SaveTransformed (integrands.distanceError);
+            Check::SaveTransformed (integrands.clothoidXY);
+            Check::SaveTransformed (integrands.series1XY);
+            Check::SaveTransformed (integrands.series2XY);
+            Check::SaveTransformed (DSegment3d::From (xyz, xyz0));
+            double d1 = integrands.distanceError.back ().y;    // integration of tangent lengths for 1-term sine.
+            double d2 = integrands.distanceError.back ().z;     // integrationi of tangent lengths for 2-term sine.
+            if (l1 < 0.5 * r1)  // Don't check if obviously too long a spiral
+                Check::LessThanOrEqual (d1, 0.008, "1-term sine approximation erorr limit");
+            Check::LessThanOrEqual (d2, 1.0e-8, "2-term sine approximation erorr limit");
+            Check::EndScope ();
+            }
+        Check::EndScope ();
+        }
+    Check::EndScope ();
+    Check::ClearGeometry ("Spiral.WesternAustralianDistanceErrors");
     }

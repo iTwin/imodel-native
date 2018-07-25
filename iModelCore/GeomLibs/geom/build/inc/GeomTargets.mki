@@ -346,6 +346,8 @@ $(OUT_DIR)BSIQuadrature$(OUT_EXT)   : $(geomSrcFuncs)BSIQuadrature.cpp          
 
 $(OUT_DIR)XYRangeTree$(OUT_EXT)     : $(geomSrcFuncs)XYRangeTree.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
+$(OUT_DIR)XYBucketSearch$(OUT_EXT)     : $(geomSrcFuncs)XYBucketSearch.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
 #$(OUT_DIR)XYZRangeTree$(OUT_EXT)     : $(geomSrcFuncs)XYZRangeTree.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)XYPointSearch$(OUT_EXT)     : $(geomSrcFuncs)XYPointSearch.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 

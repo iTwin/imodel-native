@@ -764,7 +764,7 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "TriDiagonalSolver.h"
 //#include "DMoments3d.h"
 #include "BSIQuadrature.h"
-#include "XYPointSearch.h"
+#include "XYBucketSearch.h"
 #ifndef NoGeomDSpiral2dBase
 #include "DSpiral2dBase.h"
 #endif

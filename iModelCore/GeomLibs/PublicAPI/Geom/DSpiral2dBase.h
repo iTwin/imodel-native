@@ -72,6 +72,7 @@ typedef struct AnnounceDoubleDPoint2d &AnnounceDoubleDPoint2dR;
 struct GEOMDLLIMPEXP DSpiral2dBase : BSIVectorIntegrand
 {
 public:
+// true transition spirals
 static const int TransitionType_Unknown           = 0;
 static const int TransitionType_Clothoid          = 10;
 static const int TransitionType_Bloss             = 11;
@@ -82,21 +83,23 @@ static const int TransitionType_Viennese          = 20;
 static const int TransitionType_WeightedViennese  = 21;
 // convention: spirals that really have direct evaluations start at 50.
 static const int TransitionType_FirstDirectEvaluate = 50;
-static const int TransitionType_NewSouthWales       = 50; // IMPLEMENTED 01/18
+static const int TransitionType_WesternAustralian       = 50; // IMPLEMENTED 01/18
 static const int TransitionType_Czech               = 51; // NOT IMPLEMENTED
-static const int TransitionType_Australian          = 52; // IMPLEMENTED 01/18
+static const int TransitionType_AustralianRailCorp          = 52; // IMPLEMENTED 01/18
 static const int TransitionType_Italian             = 53; // NOT IMPLEMENTED
 static const int TransitionType_PolishCubic         = 54; // NOT IMPLEMENTED
 static const int TransitionType_AremaCubic          = 55; // NOT IMPLEMENTED
 static const int TransitionType_MXCubic             = 56; // IMPLEMENTED 01/18
 static const int TransitionType_MXCubicArc          = 57; // NOT IMPLEMENTED
+// convention: spirals with nominal length parameter start at 60
 static const int TransitionType_DirectHalfCosine    = 60; // IN DEVELOPMENT 7/18
 
-//! invoke appropriate concrete class constructor ...
+//! invoke appropriate concrete class constructor.
+//! returns nullptr if transitionType is (a) the true transition spirals or (b) Direct evaluate
 public: static DSpiral2dBaseP Create (int transitionType);
 
-//! invoke appropriate concrete class constructor, with type-specific parameter
-public: static DSpiral2dBaseP CreateWithParameter (int transitionType, double parameter);
+//! invoke appropriate concrete class constructor, with type-specific nominal length
+public: static DSpiral2dBaseP CreateWithNominalLength (int transitionType, double parameter);
 
 //! return the integer code for the string name.
 public: static int StringToTransitionType (Utf8CP name);
@@ -697,11 +700,11 @@ GEOMAPI_VIRTUAL double DistanceToCurvatureDerivative (double distance) const ove
 //     x =  s *(1-a *s^4)
 //     y = b * s^3
 
-struct GEOMDLLIMPEXP DSpiral2dNewSouthWales : DSpiral2dDirectEvaluation
+struct GEOMDLLIMPEXP DSpiral2dWesternAustralian : DSpiral2dDirectEvaluation
 {
     DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
 public:
-    DSpiral2dNewSouthWales ();
+    DSpiral2dWesternAustralian ();
 
 //! Evaluate the spiral and optional derivatives at specified distance along.
 //! return true if valid evaluation.
@@ -731,11 +734,11 @@ static bool EvaluateAtDistanceInStandardOrientation
 // In local coordinates, with specific constants  a1,a2,a3,a4 and m based on length and final radius  . . .
 // x = s (1 - a1 m^2 s^4 + a2 m^4 s^8 - a3 m^6 s^12 + a4 m^8 s^16)
 // y = m * s^3
-struct GEOMDLLIMPEXP DSpiral2dAustralian : DSpiral2dDirectEvaluation
+struct GEOMDLLIMPEXP DSpiral2dAustralianRailCorp : DSpiral2dDirectEvaluation
 {
     DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
 public:
-    DSpiral2dAustralian ();
+    DSpiral2dAustralianRailCorp ();
 
 //! Evaluate the spiral and optional derivatives at specified distance along.
 //! return true if valid evaluation.

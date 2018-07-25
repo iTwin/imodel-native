@@ -724,7 +724,9 @@ double startRadians,        //!< [in] start bearing angle in xy plane.double cur
 double curvatureA,          //!< [in] (signed) curvature at start
 double lengthAB,            //!< [in] length of spiral between radiusA and radiusB.
 double curvatureB,          //!< [in] (signed) curvature at end.
-bool reverseInterval
+bool reverseInterval,
+double startFraction,
+double endFraction
 )
     {
 
@@ -751,16 +753,17 @@ bool reverseInterval
         auto frameA = Transform::FromOriginAndBearingXY (startPoint, startRadians);
         if (inverseC.IsValid ())
             {
-            double fractionAOut = reverseInterval ? fractionB : fractionA;
-            double fractionBOut = reverseInterval ? fractionA : fractionB;
+            double fractionA1 = reverseInterval ? fractionB : fractionA;
+            double fractionB1 = reverseInterval ? fractionA : fractionB;
+            double fractionA2 = DoubleOps::Interpolate (fractionA1, startFraction, fractionB1);
+            double fractionB2 = DoubleOps::Interpolate (fractionA1, endFraction, fractionB1);
             result = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (typeCode, 0.0, 0.0, length0B, curvatureB,
                 frameA * inverseC,
-                fractionAOut, fractionBOut);
+                fractionA2, fractionB2);
             }
         }
     return result;
     }
-
 //! Construct a spiral with start radius, spiral length, and end radius.
 //! This is a special construction for "cubic" approximations.
 //! The constructed spiral is a fractional subset of another spiral that includes its inflection point (which may be outside
@@ -772,7 +775,25 @@ DPoint3dCR startPoint,             //!< [in] start point of spiral.
 double startRadians,        //!< [in] start bearing angle in xy plane.
 double radiusA,             //!< [in] radiusA (signed) radius (or 0 for line) at start.
 double lengthAB,            //!< [in] length of spiral between radiusA and radiusB.
-double radiusB              //!< [in] radiusB (signed) radius (or 0 for line) at end.
+double radiusB             //!< [in] radiusB (signed) radius (or 0 for line) at end.
+)
+    {
+    return CreatePseudoSpiralPointBearingRadiusLengthRadius (typeCode, startPoint, startRadians, radiusA, lengthAB, radiusB, 0.0, 1.0);
+    }
+//! Construct a spiral with start radius, spiral length, and end radius.
+//! This is a special construction for "cubic" approximations.
+//! The constructed spiral is a fractional subset of another spiral that includes its inflection point (which may be outside
+//! the active fractional subset).
+ICurvePrimitivePtr ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius
+(
+int typeCode,               //!< [in] transition type.  This method is intended to work with "cubic" approximations (New South Wales, Australian etc)
+DPoint3dCR startPoint,             //!< [in] start point of spiral.
+double startRadians,        //!< [in] start bearing angle in xy plane.
+double radiusA,             //!< [in] radiusA (signed) radius (or 0 for line) at start.
+double lengthAB,            //!< [in] length of spiral between radiusA and radiusB.
+double radiusB,              //!< [in] radiusB (signed) radius (or 0 for line) at end.
+double startFraction,       //!< [in] start fraction for active interval.
+double endFraction          //!< [in] end fraction for active interval.
 )
     {
     double a = DoubleOps::SmallMetricDistance ();
@@ -806,12 +827,12 @@ double radiusB              //!< [in] radiusB (signed) radius (or 0 for line) at
     double curvatureA = DoubleOps::ValidatedDivideDistance (1.0, radiusA);
     double curvatureB = DoubleOps::ValidatedDivideDistance (1.0, radiusB);
     if (fabs (curvatureB) > fabs (curvatureA) || DoubleOps::AlmostEqual (fabs (radiusA), fabs (radiusB)))
-        return CreatePseudoSpiralCurvatureLengthCurvature_go (typeCode, startPoint, startRadians, curvatureA, lengthAB, curvatureB, false);
+        return CreatePseudoSpiralCurvatureLengthCurvature_go (typeCode, startPoint, startRadians, curvatureA, lengthAB, curvatureB, false, startFraction, endFraction);
     else
         {
         static double signA = -1.0;
         static double signB = -1.0;
-        return CreatePseudoSpiralCurvatureLengthCurvature_go (typeCode, startPoint, startRadians, signB * curvatureB, lengthAB, signA * curvatureA, true);
+        return CreatePseudoSpiralCurvatureLengthCurvature_go (typeCode, startPoint, startRadians, signB * curvatureB, lengthAB, signA * curvatureA, true, startFraction, endFraction);
         }
     }
  

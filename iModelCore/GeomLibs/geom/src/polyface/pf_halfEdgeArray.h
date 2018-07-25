@@ -500,6 +500,58 @@ bool MarkTopologicalBoundariesVisible (PolyfaceHeaderR mesh, bool preservePriorV
     return numChanged > 0;
     }
 
+//! Return all edge coordinates annotated for origin and partner counts.
+bool CollectEdgeMateData
+(
+PolyfaceHeaderR mesh,
+bvector<FacetEdgeDetail> &segments,
+bool includeMatched,
+bool returnSingleEdgeReadIndex
+)
+    {
+    size_t numHalfEdge = size ();
+    size_t numChanged = 0;
+    //bvector<int> &pointIndices = mesh.PointIndex ();
+    bvector<DPoint3d> const &points = mesh.Point ();
+    uint32_t clusterIndex = 0;
+    for (size_t i0 = 0, numMatch = 0; i0 < numHalfEdge; i0 += numMatch)
+        {
+        numMatch = 1;
+        size_t numVisible = 0;
+        if (at(i0).IsVisible ())
+            numVisible = 1;
+        for (size_t i1 = i0 + 1; i1 < numHalfEdge && !cb_LessThan_LowVertexHighVertex (at(i0), at(i1)); i1++)
+            {
+            numMatch++;
+            if (at(i1).IsVisible ())
+                numVisible++;
+            }
+
+        if ((!includeMatched) && numMatch == 2 && at(i0).IsReversedMateOf (at(i0 + 1)))
+            {
+            // This is an interior edge.  It is neither counted nor recorded.
+            }
+        else
+            {
+            clusterIndex++;
+            for (size_t i = i0; i < i0 + numMatch; i++)
+                {
+                HalfEdge he = at (i);
+                size_t readIndex = he.m_readIndex;
+                ptrdiff_t vertexIndex0 = abs ((int)he.m_vertex0) - 1;
+                ptrdiff_t vertexIndex1 = abs ((int)he.m_vertex1) - 1;
+                segments.push_back (
+                    FacetEdgeDetail(
+                        DSegment3d::From (points[vertexIndex0], points[vertexIndex1]),
+                        readIndex,
+                        (uint32_t)clusterIndex,
+                        (uint32_t)numMatch
+                        ));
+                }
+            }
+        }
+    return numChanged > 0;
+    }
 
 void ApplySignedVertex (MTGFacetsP facets, MTGNodeId nodeId, ptrdiff_t signedId, bool markPrimary)
     {

@@ -213,9 +213,9 @@ void DSpiral2dDirectEvaluation::EvaluateVectorIntegrand (double distance, double
 
 
 // Specialize spiral for NEWSOUTHWALES ....
-DSpiral2dNewSouthWales::DSpiral2dNewSouthWales () : DSpiral2dDirectEvaluation () {}
+DSpiral2dWesternAustralian::DSpiral2dWesternAustralian () : DSpiral2dDirectEvaluation () {}
 // STATIC method
-bool DSpiral2dNewSouthWales::EvaluateAtDistanceInStandardOrientation
+bool DSpiral2dWesternAustralian::EvaluateAtDistanceInStandardOrientation
     (
     double s, //!< [in] distance for evaluation
     double length,  //!< [in] nominal length.   ASSUMED NONZERO
@@ -244,7 +244,7 @@ bool DSpiral2dNewSouthWales::EvaluateAtDistanceInStandardOrientation
         d3XY->Init (-60.0 * factorX, 6.0 * factorY);
     return true;
     }
-bool DSpiral2dNewSouthWales::EvaluateAtDistance
+bool DSpiral2dWesternAustralian::EvaluateAtDistance
     (
     double s, //!< [in] distance for evaluation
     DPoint2dR xy,          //!< [out] coordinates on spiral
@@ -263,9 +263,9 @@ bool DSpiral2dNewSouthWales::EvaluateAtDistance
         }
     return false;
     }
-DSpiral2dBaseP DSpiral2dNewSouthWales::Clone () const
+DSpiral2dBaseP DSpiral2dWesternAustralian::Clone () const
     {
-    DSpiral2dNewSouthWales *pClone = new DSpiral2dNewSouthWales ();
+    DSpiral2dWesternAustralian *pClone = new DSpiral2dWesternAustralian ();
     pClone->CopyBaseParameters (this);
     return pClone;
     }
@@ -361,9 +361,9 @@ double aecAlg_computeAustralianXcFromRL( double L, double R )
     return( xc );
 }
 
-DSpiral2dAustralian::DSpiral2dAustralian () : DSpiral2dDirectEvaluation () {}
+DSpiral2dAustralianRailCorp::DSpiral2dAustralianRailCorp () : DSpiral2dDirectEvaluation () {}
 // STATIC method ...
-bool DSpiral2dAustralian::EvaluateAtDistanceInStandardOrientation
+bool DSpiral2dAustralianRailCorp::EvaluateAtDistanceInStandardOrientation
     (
     double s,           //!< [in] distance for evaluation
     double length,      //! [in] strictly nonzero length along spiral.
@@ -411,7 +411,7 @@ bool DSpiral2dAustralian::EvaluateAtDistanceInStandardOrientation
         
     return true;
     }
-bool DSpiral2dAustralian::EvaluateAtDistance
+bool DSpiral2dAustralianRailCorp::EvaluateAtDistance
     (
     double s, //!< [in] distance for evaluation
     DPoint2dR xy,          //!< [out] coordinates on spiral
@@ -429,9 +429,9 @@ bool DSpiral2dAustralian::EvaluateAtDistance
         }       
     return false;
     }
-DSpiral2dBaseP DSpiral2dAustralian::Clone () const
+DSpiral2dBaseP DSpiral2dAustralianRailCorp::Clone () const
     {
-    DSpiral2dAustralian *pClone = new DSpiral2dAustralian ();
+    DSpiral2dAustralianRailCorp *pClone = new DSpiral2dAustralianRailCorp ();
     pClone->CopyBaseParameters (this);
     return pClone;
     }

@@ -609,6 +609,26 @@ double lengthAB,            //!< [in] length of spiral between radiusA and radiu
 double radiusB              //!< [in] (signed) radius (or 0 for line) at end.
 );
 
+//! Construct a spiral with start radius, spiral length, and end radius.
+//!<ul>
+//!<li> The spiral is paralllel to the xy plane.
+//!<li> This is a special construction for "cubic" approximations.
+//!<li> The constructed spiral is a fractional subset of another spiral that includes its inflection point (which may be outside
+//!           the active fractional subset).
+//!</ul>
+GEOMDLLIMPEXP static ICurvePrimitivePtr CreatePseudoSpiralPointBearingRadiusLengthRadius
+(
+int typeCode,               //!< [in] transition type.  This method is intended to work with "cubic" approximations (New South Wales, Australian etc)
+DPoint3dCR startPoint,      //!< [in] start point of spiral.
+double startRadians,        //!< [in] start bearing angle in xy plane.
+double radiusA,             //!< [in] (signed) radius (or 0 for line) at start.
+double lengthAB,            //!< [in] length of spiral between radiusA and radiusB.
+double radiusB,              //!< [in] (signed) radius (or 0 for line) at end.
+double startFraction,       //!< [in] active interval start fraction
+double endFraction          //!< [in] active interval end fraction
+);
+
+
 //! Allocate and fill a reference to a portion of a parent curve.
 //! @param [in] parentCurve pointer to another curve.
 //! @param [in] fraction0 start of active portion of parent.

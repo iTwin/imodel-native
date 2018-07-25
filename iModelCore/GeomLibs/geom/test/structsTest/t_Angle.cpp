@@ -508,7 +508,7 @@ TEST(PseudoSpiral,NewSouthWales)
             auto frame = Transform::From (0, yShift, 0);
             ICurvePrimitivePtr spiral = nullptr;
             spiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (
-                DSpiral2dBase::TransitionType_NewSouthWales,
+                DSpiral2dBase::TransitionType_WesternAustralian,
                 0.0, 0.0, spiralLength, 1.0 / radius1,
                 frame,
                 0.0, 1.0

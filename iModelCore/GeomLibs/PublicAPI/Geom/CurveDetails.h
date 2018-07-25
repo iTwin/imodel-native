@@ -957,6 +957,20 @@ bvector<DSegment3d> &segmentB       //!< [out] segments
 
 };
 
+//! Coordinate and location data for a facet edge, as produced by CollectTopologicalBoundaries
+struct FacetEdgeDetail
+{
+DSegment3d segment;     // simple coordinates of the endpoints
+size_t readIndex;       // the facet read index.
+uint32_t clusterIndex;      // an index shared by all edges within a cluster
+uint32_t numInCluster;  // number of edges in the cluster.
+GEOMDLLIMPEXP FacetEdgeDetail (
+    DSegment3dCR _segment,
+    size_t readIndex = SIZE_MAX,
+    uint32_t _clusterIndex = UINT_MAX,
+    uint32_t _numInCluster = 0
+    );
+};
 END_BENTLEY_GEOMETRY_NAMESPACE
 
 #ifdef BENTLEY_WIN32

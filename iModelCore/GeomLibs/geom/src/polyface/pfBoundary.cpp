@@ -2,10 +2,11 @@
 |
 |     $Source: geom/src/polyface/pfBoundary.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
+#include "pf_halfEdgeArray.h"
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
@@ -127,12 +128,29 @@ CurveVectorPtr go (size_t &numOpen, size_t &numClosed)
 };
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  07/18
++---------------+---------------+---------------+---------------+---------------+------*/
 GEOMDLLIMPEXP CurveVectorPtr PolyfaceHeader::ExtractBoundaryStrings (size_t &numOpen, size_t &numClosed)
     {
     ExtractBoundaryContext context (*this);
     return context.go (numOpen,  numClosed);
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+GEOMDLLIMPEXP void PolyfaceHeader::CollectEdgeMateData
+(
+bvector<FacetEdgeDetail> &segments,
+bool includeMatched,
+bool returnSingleEdgeReadIndex
+)
+    {
+    segments.clear ();
+    HalfEdgeArray halfEdges (this);
+    halfEdges.BuildArray (*this, false, true, true);
+    halfEdges.SortForEdgeMatching ();
+    halfEdges.CollectEdgeMateData (*this, segments, includeMatched, returnSingleEdgeReadIndex);
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE
 

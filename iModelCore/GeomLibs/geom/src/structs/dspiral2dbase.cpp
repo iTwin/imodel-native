@@ -26,8 +26,8 @@ int DSpiral2dSine::GetTransitionTypeCode () const { return TransitionType_Sine;}
 
 int DSPiral2dWeightedViennese::GetTransitionTypeCode () const { return TransitionType_WeightedViennese;}
 int DSPiral2dViennese::GetTransitionTypeCode () const { return TransitionType_Viennese;}
-int DSpiral2dNewSouthWales::GetTransitionTypeCode () const { return TransitionType_NewSouthWales;}
-int DSpiral2dAustralian::GetTransitionTypeCode () const { return TransitionType_Australian;}
+int DSpiral2dWesternAustralian::GetTransitionTypeCode () const { return TransitionType_WesternAustralian;}
+int DSpiral2dAustralianRailCorp::GetTransitionTypeCode () const { return TransitionType_AustralianRailCorp;}
 int DSpiral2dDirectHalfCosine::GetTransitionTypeCode () const { return TransitionType_DirectHalfCosine;}
 
 int DSpiral2dMXCubic::GetTransitionTypeCode () const { return TransitionType_MXCubic;}
@@ -56,22 +56,22 @@ DSpiral2dBaseP DSpiral2dBase::Create (int transitionType)
         return new DSpiral2dCosine ();
     if (transitionType == TransitionType_Sine)
         return new DSpiral2dSine ();
-    if (transitionType == TransitionType_NewSouthWales)
-        return new DSpiral2dNewSouthWales ();
+    if (transitionType == TransitionType_WesternAustralian)
+        return new DSpiral2dWesternAustralian ();
 #ifdef CompileCZECH
     if (transitionType == TransitionType_Czech)
         return new DSpiral2dCzech ();
 #endif
     if (transitionType == TransitionType_Italian)
         return new DSpiral2dItalian ();
-    if (transitionType == TransitionType_Australian)
-        return new DSpiral2dAustralian ();
+    if (transitionType == TransitionType_AustralianRailCorp)
+        return new DSpiral2dAustralianRailCorp ();
     if (transitionType == TransitionType_MXCubic)
         return new DSpiral2dMXCubic ();
     return NULL;
     }
 
-DSpiral2dBaseP DSpiral2dBase::CreateWithParameter (int transitionType, double parameter)
+DSpiral2dBaseP DSpiral2dBase::CreateWithNominalLength(int transitionType, double parameter)
     {
     if (transitionType == TransitionType_DirectHalfCosine)
         return new DSpiral2dDirectHalfCosine (parameter);
@@ -93,9 +93,9 @@ static SpiralTagName s_spiralNames [] =
         {DSpiral2dBase::TransitionType_Sine, "sine"},
         {DSpiral2dBase::TransitionType_Viennese, "Viennese"},
         {DSpiral2dBase::TransitionType_WeightedViennese, "WeightedViennese"},
-        {DSpiral2dBase::TransitionType_NewSouthWales, "NewSouthWales"},
+        {DSpiral2dBase::TransitionType_WesternAustralian, "WesternAustralian"},
         {DSpiral2dBase::TransitionType_Czech, "Czech"},
-        {DSpiral2dBase::TransitionType_Australian, "Australian"},
+        {DSpiral2dBase::TransitionType_AustralianRailCorp, "AustralianRailCorp"},
         {DSpiral2dBase::TransitionType_Italian, "Italian"},
         {DSpiral2dBase::TransitionType_PolishCubic, "PolishCubic"},
         {DSpiral2dBase::TransitionType_AremaCubic, "AremaCubic"},
@@ -156,6 +156,12 @@ DSpiral2dBaseP DSpiral2dBase::CreateBearingCurvatureLengthCurvature
     if (data != NULL)
         data->SetBearingCurvatureLengthCurvature
               (startRadians, startCurvature, length, endCurvature);
+    else
+        {
+        data = CreateWithNominalLength (transitionType, length);
+        data->SetBearingCurvatureLengthCurvature
+              (startRadians, startCurvature, length, endCurvature);
+        }
     return data;
     }
 /*-----------------------------------------------------------------*//**

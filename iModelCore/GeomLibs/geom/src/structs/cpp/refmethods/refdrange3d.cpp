@@ -726,6 +726,19 @@ DRange3d DRange3d::From (bvector<FPoint3d> const &points)
     return range;
     }
 
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      05/17
++----------------------------------------------------------------------*/
+DRange3d DRange3d::From (bvector<DSegment3d> const &segments)
+    {
+    DRange3d range = NullRange ();
+    for (auto &segment : segments)
+        {
+        range.Extend (segment.point[0]);
+        range.Extend (segment.point[1]);
+        }
+    return range;
+    }
 
 /*-----------------------------------------------------------------*//**
 * @description Extends the coordinates of the range cube points in pRange so as

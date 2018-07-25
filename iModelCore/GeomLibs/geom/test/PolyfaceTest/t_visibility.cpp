@@ -10,6 +10,46 @@
 #include <Vu/VuApi.h>
 
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface,BuildSideFacets)
+    {
+    bvector<DSegment3d> string0{
+        DSegment3d::From (0,0,0,   1,0,0),
+        DSegment3d::From (1,0,0,   1,1,0),
+        DSegment3d::From (1,1,0, 0,1,0),
+        };
+    bvector<DSegment3d> allSegments = string0;
+    // put all the reversed segments in at different altitude:
+    for (DSegment3d seg : string0)  // by value !!!
+        {
+        seg.point[0].z = 1.0;
+        seg.point[1].z = 1.0;
+        std::swap (seg.point[0], seg.point[1]);
+        allSegments.push_back (seg);
+        }
+    // Pinch to a triangle
+    allSegments.push_back (DSegment3d::From (0,1,0, 0,2,0.5));
+    allSegments.push_back (DSegment3d::From (0,2,0.5, 0,1,1));
+
+    // interrupted
+    allSegments.push_back (DSegment3d::From (1,2,0, 4,2,0));
+
+    allSegments.push_back (DSegment3d::From (4,2,2, 3,2,2));
+    allSegments.push_back (DSegment3d::From (3,2,1, 1,2,1));
+    bvector<FacetEdgeDetail> facetSegments;
+    for (auto &s : allSegments)
+        facetSegments.push_back (FacetEdgeDetail (s));
+    auto pf = PolyfaceHeader::CreateVerticalPanelsBetweenSegments (facetSegments);
+    Check::SaveTransformed (allSegments);
+    Check::Shift (0, 4,0);
+    Check::SaveTransformed (pf);
+    Check::ClearGeometry ("Polyface.BuildSideFacets");
+    }
+
+
 void PolyfaceHeader__clipByXYVisibility
 (
 bvector<PolyfaceHeaderPtr> &source,
@@ -114,12 +154,13 @@ TEST(Clip,XYVisibilityB)
     bvector<PolyfaceHeaderPtr> meshA;
     BuildClipTestMeshSet (meshA);
     double a = 20.0;
+    double ax = 30.0;
 
     bvector<bool> trueFalse {true, false};
     for (auto &mesh : meshA)
         Check::SaveTransformed (*mesh);
 
-    Check::Shift (0,a,0);
+    Check::Shift (0, a, 0);
     for (DVec3d vectorToEye :
         bvector<DVec3d>
             {
@@ -129,12 +170,24 @@ TEST(Clip,XYVisibilityB)
             }
         )
         {
-        SaveAndRestoreCheckTransform shift0 (0, a, 0);
+        SaveAndRestoreCheckTransform shift0 (ax, 0, 0);
         PolyfaceHeaderPtr meshB;
         Transform localToWorld, worldToLocal;
         PolyfaceHeader::VisibleParts (meshA, vectorToEye, meshB, localToWorld, worldToLocal);
         if (meshB.IsValid ())
+            {
             Check::SaveTransformed (*meshB);
+            meshB->Compress ();
+            bvector<FacetEdgeDetail> segments;
+            meshB->CollectEdgeMateData (segments, false, false);
+            Check::Shift (0, a, 0);
+            Check::SaveTransformed (*meshB);
+            for (auto &s : segments)
+                Check::SaveTransformed (s.segment);
+            auto panels = PolyfaceHeader::CreateVerticalPanelsBetweenSegments (segments);
+            Check::Shift (0, a, 0);
+            Check::SaveTransformed (panels);
+            }
         }
 
     Check::ClearGeometry ("Clip.XYVisibilityB");

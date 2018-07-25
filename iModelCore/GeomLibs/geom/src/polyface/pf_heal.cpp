@@ -848,4 +848,158 @@ size_t PolyfaceQuery::HealVerticalPanels (PolyfaceQueryCR polyface, bool tryVert
     }
 
 
+
+struct SegmentMatchContext
+{
+VuSetP m_graph;
+MTGMask m_forwardMask;
+MTGMask m_primaryEdgeMask;
+double m_tolerance;
+SegmentMatchContext (double tolerance)
+    {
+    m_graph = vu_newVuSet (0);
+    m_forwardMask = VU_RULE_EDGE;
+    m_primaryEdgeMask = VU_SEAM_EDGE;
+    m_tolerance = tolerance;
+    vu_setUserDataPIsEdgeProperty (m_graph, true);
+    }
+~SegmentMatchContext () 
+    {
+    vu_freeVuSet (m_graph);
+    }
+VuP AddSegment (DSegment3dCR segment, int index)
+    {
+    VuP nodeA, nodeB;
+    vu_makePair (m_graph, &nodeA, &nodeB);
+    nodeA->SetMask (m_forwardMask);
+    nodeA->SetMask (m_forwardMask);
+    nodeB->SetMask (m_primaryEdgeMask);
+    nodeA->SetXYZ (segment.point[0]);
+    nodeB->SetXYZ (segment.point[1]);
+    vu_setUserDataPAsInt (nodeA, index);
+    vu_setUserDataPAsInt (nodeB, index);
+    return nodeA;
+    }
+bool SameXY (DPoint3d xyzA, DPoint3d xyzB)
+    {
+    return (xyzA.DistanceXY (xyzB) <= m_tolerance);
+    }
+void Merge ()
+    {
+    vu_mergeOrUnionLoops (m_graph, VUUNION_UNION);
+    }
+// Reset z coordinates to original values (merge smashes them to a single value around a vertex.)
+// When vertices are inserted within an edge, record it as a curve location detail in addedPoints, containing:
+// <ul>
+// <li> fraction -- fractional position along a segemnt.
+// <li> point -- interpolated point
+// <li> componentIndex = segment index.
+// <li> all other fields (curve pointer, numComonent, componentFraction, a) zeros.
+// </ul>
+void CorrectZCoordinates (bvector<FacetEdgeDetail> const &segments, bvector<CurveLocationDetail> &addedPoints)
+    {
+    // OUCH !!! merge may have smashed Z coordinates !!!
+    VU_SET_LOOP (node, m_graph)
+        {
+        ptrdiff_t index = (ptrdiff_t)vu_getUserDataPAsInt (node);
+        if (index >= 0 && index < (ptrdiff_t)segments.size ())
+            {
+            DSegment3d segment = segments[index].segment;
+            DPoint3d xyz;
+            vu_getDPoint3d (&xyz, node);
+            if (SameXY (xyz, segment.point[0]))
+                xyz.z = segment.point[0].z;
+            else if (SameXY (xyz, segment.point[1]))
+                xyz.z = segment.point[1].z;
+            else
+                {
+                // This node is "along" an original edge but at a (hopefully) internior point.
+                DPoint3d xyz1;
+                double fraction1;
+                segment.ProjectPointXY (xyz1, fraction1, xyz);
+                xyz.z = xyz1.z;     // but leave the x and y parts alone to honor the merge tolerance decisions 
+                addedPoints.push_back (
+                    CurveLocationDetail (nullptr, fraction1, xyz, (size_t)index, 0, 0.0, 0.0));
+                }
+            node->SetXYZ (xyz);
+            }
+        }
+    END_VU_SET_LOOP (node, m_graph)
+    }
+void CreateVerticalPolygons (bvector<bvector<DPoint3d>> &outputPolygons)
+    {
+    outputPolygons.clear ();
+    bvector<DPoint3d> facetXYZ;
+    // OUCH !!! merge may have smashed Z coordinates !!!
+    VU_SET_LOOP (nodeA, m_graph)
+        {
+        auto nodeB = nodeA->FSucc ();
+        auto nodeC = nodeB->FSucc ();
+        // Are we inside a sling, and at the lower-id node?
+        // nodeA and nodeB reference two original segments that had different Z.
+        // the xyz coordinates of the original A segment are in nodeA and its mate.
+        // the xyz coordinates of the original B segment are in nodeB and its mate.
+        if (nodeA == nodeC && nodeA->GetId () < nodeB->GetId ())
+            {
+            auto mateA = nodeA->EdgeMate ();
+            auto mateB = nodeB->EdgeMate ();
+            facetXYZ.clear ();
+            facetXYZ.push_back (nodeA->GetXYZ ());
+            facetXYZ.push_back (mateA->GetXYZ ());
+            facetXYZ.push_back (nodeB->GetXYZ ());
+            facetXYZ.push_back (mateB->GetXYZ ());
+            if (!nodeA->HasMask (m_primaryEdgeMask))
+                std::reverse (facetXYZ.begin (), facetXYZ.end ());
+            DPoint3dOps::CompressCyclic (facetXYZ, m_tolerance);
+            if (facetXYZ.size () > 2)
+                outputPolygons.push_back (facetXYZ);
+            }
+        }
+    END_VU_SET_LOOP (nodeA, m_graph)
+    }
+};
+
+//! input: array of line segments, e.g. boundary edges of a mesh with vertical facets missing.
+//! output: mesh with vertical panels to fill between segments that match  in z direction.
+PolyfaceHeaderPtr PolyfaceHeader::CreateVerticalPanelsBetweenSegments (bvector<FacetEdgeDetail> const &segments)
+    {
+    DRange3d range = DRange3d::NullRange ();
+    for (auto &s: segments)
+        {
+        range.Extend (s.segment.point[0]);
+        range.Extend (s.segment.point[1]);
+        }
+    double tightMatchedPointTolerance = 1.0e-14 * range.LargestCoordinateXY ();
+    SegmentMatchContext context (tightMatchedPointTolerance);
+    for (size_t i = 0; i < segments.size (); i++)
+        {
+        context.AddSegment (segments[i].segment, (int)i);
+        }
+    context.Merge ();
+    bvector<CurveLocationDetail> addedPoints;
+    context.CorrectZCoordinates (segments, addedPoints);
+    bvector<bvector<DPoint3d>> polygons;
+    auto polyface = PolyfaceHeader::CreateVariableSizeIndexed ();
+    context.CreateVerticalPolygons (polygons);
+    for (auto &polygon : polygons)
+        polyface->AddPolygon (polygon);
+    return polyface;
+    }
+
+
+FacetEdgeDetail::FacetEdgeDetail  (
+    DSegment3dCR _segment,
+    size_t _readIndex,
+    uint32_t _clusterIndex,
+    uint32_t numInCluster
+    ) :
+    segment (_segment),
+    readIndex (_readIndex),
+    clusterIndex (clusterIndex),
+    numInCluster (numInCluster)
+    {
+
+    }
+
+
 END_BENTLEY_GEOMETRY_NAMESPACE
