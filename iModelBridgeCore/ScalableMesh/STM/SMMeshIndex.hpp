@@ -4857,15 +4857,23 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Create
     }
 #endif
 
-template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIntersectsBox(uint64_t clipId, EXTENT ext, Transform tr)
+template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIntersectsBox(uint64_t clipId, EXTENT ext, Transform tr, bool skirtIntersects)
     {
     DRange3d extRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext), 0,
                                        ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext), 0);
     bvector<DPoint3d> polyPts;
-    SMClipGeometryType geom;
+    SMClipGeometryType geom = SMClipGeometryType::Polygon;
     SMNonDestructiveClipType type;
     bool isActive;
-    GetClipRegistry()->GetClipWithParameters(clipId, polyPts, geom,type, isActive);
+    if(!skirtIntersects)
+        GetClipRegistry()->GetClipWithParameters(clipId, polyPts, geom,type, isActive);
+    else
+    {
+        bvector<bvector<DPoint3d>> skirts;
+        GetClipRegistry()->GetSkirt(clipId, skirts);
+        for (auto&skirt : skirts)
+            polyPts.insert(polyPts.end(), skirt.begin(), skirt.end());
+    }
 
 	if (!tr.IsIdentity())
 	{
@@ -4968,7 +4976,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
 #endif
         bool emptyClip = false;
         //if (nodeRange.XLength() <= clipExt.XLength() * 10000 && nodeRange.YLength() <= clipExt.YLength() * 10000)
-        if (ClipIntersectsBox(clipId, m_nodeHeader.m_contentExtent, tr)) //m_nodeExtent
+        if (ClipIntersectsBox(clipId, m_nodeHeader.m_contentExtent, tr, !setToggledWhenIdIsOn)) //m_nodeExtent
 
             {
                     bool clipFound = false;
