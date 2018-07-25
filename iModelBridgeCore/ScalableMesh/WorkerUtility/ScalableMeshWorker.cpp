@@ -9,9 +9,13 @@
 #include "SMWorkerTaskScheduler.h"
 
 
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_IMAGEPP
+
+
+#define TRACE_ON 1
 
 
 BEGIN_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
@@ -263,7 +267,13 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
 //ScalableMeshStep
 
 void ScalableMeshWorker::Start()
-    {	
+    {
+
+#ifdef TRACE_ON	
+    BeFileNameStatus fileStatus = BeFileName::EmptyDirectory(L"D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\");
+    assert(fileStatus == BeFileNameStatus::Success);
+#endif	    
+
     if (m_startingIndexTask.size() > 0)
         {
         BeFileNameStatus fileStatus = BeFileName::EmptyDirectory(m_taskFolderName.c_str());

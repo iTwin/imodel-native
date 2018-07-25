@@ -331,7 +331,8 @@ void TaskScheduler::Start()
         //! Move to the next directory entry
         BENTLEYDLL_EXPORT StatusInt ToNext();
 */            
-
+    
+    BeDuration sleeper(BeDuration::FromSeconds(0.5));
     
     
     bool isThereTaskAvailable = true;
@@ -354,10 +355,24 @@ void TaskScheduler::Start()
                 if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
 
                 isThereTaskAvailable = true;
+                
+                BeFileName lockFileName(name);
+                lockFileName.AppendString(L".lock");
 
+                FILE* lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW);
+
+                if (lockFile == nullptr)
+                    continue;
+                                
+                //struct _stat64i32 buffer;
+
+                if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
+                                
                 FILE* file = nullptr;
                 
-                errno_t err = _wfopen_s(&file, name, L"abN+");
+                //errno_t err = _wfopen_s(&file, name, L"abN+");
+                errno_t err = 0;
+                file = _wfsopen(name, L"ab+", _SH_DENYRW);
                 
                 if (file == nullptr) continue;
 
@@ -384,14 +399,19 @@ void TaskScheduler::Start()
                 fclose(file);
 
                 while (0 != _wremove(name))
+                    {                    
+					}
+
+                fclose(lockFile);
+
+                while (0 != _wremove(lockFileName))
                     {
-                    //If file doesn't exist anymore, break.
-                    if (_wstat(name.c_str(), &buffer) != 0) break;
-                    }
+			        sleeper.Sleep();
+                    }                                
                 }
 
-            }                   
-
+            }          
+        
         if (!isThereTaskAvailable)
             {
             StatusInt status = GetSourceCreatorWorker()->ExecuteNextTaskInTaskPlan();        
@@ -401,6 +421,8 @@ void TaskScheduler::Start()
 
             isThereTaskAvailable = true;
             }
+
+        sleeper.Sleep();
         }
 
     m_sourceCreatorWorkerPtr = nullptr;

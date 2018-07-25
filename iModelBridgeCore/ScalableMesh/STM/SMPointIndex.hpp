@@ -7912,6 +7912,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
     if (m_indexHeader.m_rootNodeBlockID.IsValid() && m_pRootNode == nullptr && shouldCreateRoot)
         {
         m_pRootNode = CreateNewNode(m_indexHeader.m_rootNodeBlockID);
+        m_createdNodeMap.insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(m_pRootNode->m_nodeHeader.m_parentNodeID.m_integerID, m_pRootNode));
         }  
     }
 
@@ -8497,6 +8498,9 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::AddArray(c
            m_pRootNode = CreateNewNode(m_indexHeader.m_MaxExtent, true); 
         else
             m_pRootNode = CreateNewNode(SpatialOp<POINT, POINT, EXTENT>::GetExtent(pointsArray[0]), true); 
+
+        m_createdNodeMap.insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(m_pRootNode->m_nodeHeader.m_parentNodeID.m_integerID, m_pRootNode));
+
         m_pRootNode->m_nodeHeader.m_arePoints3d |= are3dPoints;
         }
 
@@ -9216,6 +9220,8 @@ HFCPtr<SMPointIndexNode<POINT, EXTENT> >    SMPointIndex<POINT, EXTENT>::CreateR
         {        
         m_pRootNode = CreateNewNode(ExtentOp<EXTENT>::Create(0, 0, 0, 0, 0, 0), true); 
         }    
+
+    m_createdNodeMap.insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(m_pRootNode->m_nodeHeader.m_parentNodeID.m_integerID, m_pRootNode));
     
     return m_pRootNode;
     }
@@ -9235,6 +9241,8 @@ HFCPtr<SMPointIndexNode<POINT, EXTENT> >    SMPointIndex<POINT, EXTENT>::CreateR
         {
         m_pRootNode = CreateNewNode(nodeId, ExtentOp<EXTENT>::Create(0, 0, 0, 0, 0, 0), true);
         }
+
+    m_createdNodeMap.insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(m_pRootNode->m_nodeHeader.m_parentNodeID.m_integerID, m_pRootNode));
 
     return m_pRootNode;
     }

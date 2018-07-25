@@ -25,6 +25,8 @@ CachedDataEventTracer::CachedDataEventTracer()
     end = ring.data() + ring.size();
     started = false;
     valToFilter = -1;
+    m_logDirectory = "c:\\";
+    m_outputObjLog = true;
     }
 
 bool CachedDataEventTracer::filter(TraceEvent& e)
@@ -44,6 +46,16 @@ CachedDataEventTracer* CachedDataEventTracer::GetInstance()
     if (s_instance == nullptr)
         s_instance = new CachedDataEventTracer();
     return s_instance;
+    }
+
+void CachedDataEventTracer::setLogDirectory(const Utf8String& logDir)
+    {
+    m_logDirectory = logDir;
+    }
+
+void CachedDataEventTracer::setOutputObjLog(bool outputObjLog)
+    {
+    m_outputObjLog = outputObjLog;
     }
 
 void CachedDataEventTracer::start()
@@ -68,15 +80,11 @@ void CachedDataEventTracer::analyze(int processId)
     {
     std::ostringstream fileNameStr;
     std::ostringstream fileNameObjStr;
+    
+    fileNameStr << m_logDirectory.c_str() << "trace";
+    fileNameObjStr << m_logDirectory.c_str() << "traceByObj";
 
-    fileNameStr << "c:\\trace";
-    fileNameObjStr << "c:\\traceByObj";
-
-    /*
-    fileNameStr << "D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\trace";
-    fileNameObjStr << "D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\traceByObj";    
-    */
-
+    
     if (processId != -1)
         {
         fileNameStr << std::to_string(processId);
@@ -98,15 +106,19 @@ void CachedDataEventTracer::analyze(int processId)
         eventsByVal[init->objVal].push_back(str.str());
         }
     traceFile.close();
-    traceFile.open(fileNameObjStr.str(), std::ios_base::app);
-    for (auto& obj : eventsByVal)
-        {
-        for (auto& str : obj.second)
-            traceFile << str;
 
-        traceFile << " ----------------- " << std::endl;
+    if (m_outputObjLog)
+        {
+        traceFile.open(fileNameObjStr.str(), std::ios_base::app);
+        for (auto& obj : eventsByVal)
+            {
+            for (auto& str : obj.second)
+                traceFile << str;
+
+            traceFile << " ----------------- " << std::endl;
+            }
+        traceFile.close();
         }
-    traceFile.close();
     }
 
 

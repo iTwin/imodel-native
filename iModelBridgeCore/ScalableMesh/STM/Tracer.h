@@ -62,6 +62,8 @@ private:
     TraceEvent* end;
     int64_t valToFilter;    
     bool started;
+    Utf8String m_logDirectory; 
+    bool m_outputObjLog; 
 
     CachedDataEventTracer();
     
@@ -70,6 +72,10 @@ private:
 public:
 
     BENTLEY_SM_EXPORT static CachedDataEventTracer* GetInstance();
+
+    BENTLEY_SM_EXPORT void setLogDirectory(const Utf8String& logDir);
+
+    BENTLEY_SM_EXPORT void setOutputObjLog(bool outputObjLog);
     
     BENTLEY_SM_EXPORT void start();
         

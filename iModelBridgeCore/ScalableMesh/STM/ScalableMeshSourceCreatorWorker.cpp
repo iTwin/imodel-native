@@ -120,7 +120,9 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName)
     SetThreadingOptions(false, true, false);    
     SetShareable(true);
     ScalableMeshDb::SetEnableSharedDatabase(true);
-#ifdef TRACE_ON	
+#ifdef TRACE_ON	    
+    CachedDataEventTracer::GetInstance()->setOutputObjLog(false);
+    CachedDataEventTracer::GetInstance()->setLogDirectory("D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\");    
     CachedDataEventTracer::GetInstance()->start();
 #endif	
     }
@@ -132,7 +134,9 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr)
     SetThreadingOptions(false, true, false);
     SetShareable(true);
     ScalableMeshDb::SetEnableSharedDatabase(true);
-#ifdef TRACE_ON		
+#ifdef TRACE_ON		    
+    CachedDataEventTracer::GetInstance()->setOutputObjLog(false);
+    CachedDataEventTracer::GetInstance()->setLogDirectory("D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\");    
     CachedDataEventTracer::GetInstance()->start();
 #endif	
     }
@@ -575,6 +579,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
 
     HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
 
+    meshNode->Unload();
     meshNode->NeedToLoadNeighbors(false);
     meshNode->Load();
 
@@ -585,7 +590,10 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
 
     if (subNodeNoSplit != nullptr)
         {
-        subNodeNoSplit->Unload();        
+        assert(!subNodeNoSplit->IsDirty());
+        subNodeNoSplit->Unload();
+        subNodeNoSplit->RemoveNonDisplayPoolData();
+        subNodeNoSplit->Load();        
         }
     else
         {
@@ -593,7 +601,10 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
 
         for (auto& node : childrenNodes)
             {
+            assert(!node->IsDirty());
             node->Unload();
+            node->RemoveNonDisplayPoolData();
+            node->Load();            
             }
         }
     
@@ -654,7 +665,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ExecuteNextTaskInTaskPlan()
 
     FILE* file = nullptr;
 
-    _wfopen_s(&file, taskPlanFileName.c_str(), L"abN+");
+    file = _wfsopen(taskPlanFileName.c_str(), L"ab+", _SH_DENYRW);
     
     if (file == nullptr)
         { 
