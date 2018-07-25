@@ -132,6 +132,10 @@ public:
 
         BENTLEY_SM_EXPORT StatusInt  SetTextureStreamFromUrl(WString url);
 
+        BENTLEY_SM_EXPORT bool IsShareable();
+
+        BENTLEY_SM_EXPORT void SetShareable(bool isShareable);
+
        /* BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const WChar*              filePath);
 
         BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const IScalableMeshPtr&   scmPtr);*/

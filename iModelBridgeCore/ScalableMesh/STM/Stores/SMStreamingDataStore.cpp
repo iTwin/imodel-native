@@ -20,7 +20,7 @@ bool s_stream_using_cesium_3d_tiles_format = true;
 bool s_import_from_bim_exported_cesium_3d_tiles = false;
 bool s_is_virtual_grouping = false;
 bool s_use_qa_azure = false;
-
+   
 
 template class SMStreamingStore<DRange3d>;
 

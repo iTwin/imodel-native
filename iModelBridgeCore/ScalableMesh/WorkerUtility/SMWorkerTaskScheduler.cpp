@@ -344,39 +344,59 @@ void TaskScheduler::Start()
 
         BeFileName name;
         bool isDir;
-                    
-        while (SUCCESS == dirIter.GetCurrentEntry(name, isDir))
+        
+        for (; SUCCESS == dirIter.GetCurrentEntry(name, isDir); dirIter.ToNext())        
             {                                
             if (isDir == false && 0 == name.GetExtension().CompareTo(L"xml"))
-                {
-                isThereTaskAvailable = true;
-
+                {                
                 struct _stat64i32 buffer;
 
                 if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
 
-                FILE* file = _wfopen(name, L"ab+");                    
-                                    
-                ProcessTask(file);
+                isThereTaskAvailable = true;
 
-                file = _wfreopen(name, L"w", file);
+                FILE* file = nullptr;
+                
+                errno_t err = _wfopen_s(&file, name, L"abN+");
+                
+                if (file == nullptr) continue;
+
+                if (err != 0)
+                    {
+                    assert(file == nullptr);
+                    continue;
+                    }
+
+                //If first char is equal to 0 the file has already been process
+                char startingChar = 0;
+                size_t readSize = fread(&startingChar, 1, 1, file);
+                //assert(readSize == 1);
+
+                if (startingChar == 0 || readSize == 0)
+                    {
+                    fclose(file);
+                    continue;
+                    }
+
+                ProcessTask(file);
+             
 
                 fclose(file);
 
                 while (0 != _wremove(name))
                     {
+                    //If file doesn't exist anymore, break.
                     if (_wstat(name.c_str(), &buffer) != 0) break;
                     }
                 }
 
-            dirIter.ToNext();
             }                   
 
         if (!isThereTaskAvailable)
             {
             StatusInt status = GetSourceCreatorWorker()->ExecuteNextTaskInTaskPlan();        
             
-            if (status == ERROR)
+            if (status == SUCCESS_TASK_PLAN_COMPLETE)
                 break;
 
             isThereTaskAvailable = true;
@@ -455,7 +475,7 @@ bool TaskScheduler::ProcessTask(FILE* file)
 
     if (pXmlDom == 0)
         {
-        //assert(false && "Invalid test plan filename");
+        assert(false && "Invalid test plan filename");
         return false;
         }
 
@@ -511,6 +531,15 @@ bool TaskScheduler::ProcessTask(FILE* file)
             fclose(pResultFile);
             }
 */
+
+    //Write 0 at the beginning of the task file to ensue no other worker processes this task.
+    fseek(file, 0, SEEK_SET);
+
+    xmlFileContent[0] = 0;
+    size_t writeSize = fwrite(&xmlFileContent[0], 1, 1, file);
+    assert(writeSize == 1);    
+    fflush(file);
+
     return true;
 
     }
@@ -547,7 +576,7 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
         return;
         }
    
-
+    creatorPtr->SetShareable(true);
     ScalableMeshCreationMethod creationMethod = SCM_CREATION_METHOD_ONE_SPLIT;
 
     creatorPtr->SetCreationMethod(creationMethod);
@@ -627,7 +656,7 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
 #endif
 
             bool isSingleFile = true;
-
+            creatorPtr->SetShareable(true);
             StatusInt status = creatorPtr->Create(isSingleFile);
 
 #if 0
@@ -640,7 +669,7 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
             
 
             IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker());
-                        
+
             status = creatorWorkerPtr->CreateMeshTasks();
 
             assert(status == SUCCESS);

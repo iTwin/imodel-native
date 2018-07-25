@@ -365,8 +365,10 @@ void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         return;
         }
 
-    BeFileName::EmptyAndRemoveDirectory(outputDir.c_str());
-    BeFileName::CreateNewDirectory(outputDir.c_str());
+    BeFileNameStatus dirStatus = BeFileName::EmptyAndRemoveDirectory(outputDir.c_str());
+    assert(dirStatus == BeFileNameStatus::Success || dirStatus == BeFileNameStatus::FileNotFound);
+    dirStatus = BeFileName::CreateNewDirectory(outputDir.c_str());
+    assert(dirStatus == BeFileNameStatus::Success);
     
     StatusInt openStatus;
     BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshPtr scalableMeshPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::GetFor(smFileName.c_str(), Utf8String(outputDir.c_str()), false, false, false, openStatus));
@@ -2141,10 +2143,7 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
         StatusInt status;
         IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
-
-        //Line in lns file are in meters, apply scaling if required.    
-        SetReprojectionMatrixForMeterData(stmFile);
-
+        
         uint64_t pointCount = 0;
         WString result;
 
@@ -2156,7 +2155,12 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         else
         {
             result = L"FAILURE";
+            return;
         }
+
+        //Line in lns file are in meters, apply scaling if required.    
+        SetReprojectionMatrixForMeterData(stmFile);
+
         //parse dgn file name
         if (pTestNode->GetAttributeStringValue(linesFileName, "linesFileName") != BEXML_Success)
         {
@@ -5089,18 +5093,18 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
         // Create clip based on mesh extent
         if (allTestPass = DTM_SUCCESS == myScalableMesh->GetRange(range))
             {
-            range.scaleAboutCenter(&range, 0.75);
+            range.ScaleAboutCenter(range, 0.75);
 
             // Create clip
-            auto clipPrimitive = DgnPlatform::ClipPrimitive::CreateFromBlock(range.low, range.high, clipType == ClipType::MASK /*isMask*/, DgnPlatform::ClipMask::None, &tr, false /*invisible*/);
-            clipP = DgnPlatform::ClipVector::CreateFromPrimitive(clipPrimitive);
+            auto clipPrimitive = DGN_NAMESPACE::ClipPrimitive::CreateFromBlock(range.low, range.high, clipType == ClipType::MASK /*isMask*/, DGN_NAMESPACE::ClipMask::None, &tr, false /*invisible*/);
+            clipP = DGN_NAMESPACE::ClipVector::CreateFromPrimitive(clipPrimitive.get());
 
             if (clipType == ClipType::BOTH)
                 {
                 double length = range.XLength() *0.5;
                 range.low.x += length; range.high.x += length;
-                range.scaleAboutCenter(&range, 0.75);
-                auto clipPrimitive = DgnPlatform::ClipPrimitive::CreateFromBlock(range.low, range.high, true /*isMask*/, DgnPlatform::ClipMask::None, &tr, false /*invisible*/);
+                range.ScaleAboutCenter(range, 0.75);
+                auto clipPrimitive = DGN_NAMESPACE::ClipPrimitive::CreateFromBlock(range.low, range.high, true /*isMask*/, DGN_NAMESPACE::ClipMask::None, &tr, false /*invisible*/);
                 clipP->push_back(clipPrimitive);
                 }
             }

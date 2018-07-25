@@ -96,7 +96,7 @@ typedef vuVectorDPoint3d& vuVectorDPoint3dR;
 //    -----------------------------------------------------------------------------------
 // Usage notes:
 //    Polygons with holes may be entered by "disconnect" points
-//   (Use bsiDPoint3d_initDisconnect(&xyz) or xyz.initDisconnect to initialize).
+//   (Use xyz.InitDisconnect () or xyz.initDisconnect to initialize).
 //
 //    A polygon with n edges is passed as n+1 point array, with first point duplicated at end.
 //
@@ -125,7 +125,7 @@ void InsertLoopsWithDisconnects (vuVectorDPoint3dR xyzIn, VuMask extraMask = 0)
     for (int i0 = 0; i0 < numXYZ - 1; i0 = ++i1)
         {
         i1 = i0;
-        while (i1 < numXYZ && !bsiDPoint3d_isDisconnect (&xyzIn[i1]))
+        while (i1 < numXYZ && !xyzIn[i1].IsDisconnect ())
             i1++;
 //        int numThisLoop = i1 - i0;
         VuP pFirstA = NULL;
@@ -153,7 +153,7 @@ void InsertLoopsWithDisconnects (vuVectorDPoint3dR xyzIn, VuMask extraMask = 0)
             DPoint3d xyzEnd, xyzStart;
             vu_getDPoint3d (&xyzStart, pFirstA);
             vu_getDPoint3d (&xyzEnd, pPreviousB);            
-            if (bsiDPoint3d_pointEqual (&xyzEnd, &xyzStart))
+            if (xyzEnd.IsEqual (xyzStart))
                 {
                 // First, last points match.  Just twist the dangling edges together..
                 vu_vertexTwist (mpGraph, pPreviousB, pFirstA);
@@ -183,8 +183,8 @@ void InsertEdgesWithDisconnects (DPoint3d *pXYZArray, void **pEdgeData, int numX
         int i1 = i0 + 1;
         DPoint3d xyz0 = pXYZArray[i0];
         DPoint3d xyz1 = pXYZArray[i1];
-        if (!bsiDPoint3d_isDisconnect (&xyz0)
-            && !bsiDPoint3d_isDisconnect (&xyz1))
+        if (!xyz0.IsDisconnect ()
+            && !xyz1.IsDisconnect ())
             {
             VuP pStart, pEnd;
             vu_makePair (mpGraph, &pStart, &pEnd);

@@ -365,6 +365,16 @@ IScalableMeshProgress* IScalableMeshCreator::GetProgress()
     return &*m_implP->GetProgress();
     }
 
+bool  IScalableMeshCreator::IsShareable()
+    {
+    return m_implP->IsShareable();
+    }
+
+void  IScalableMeshCreator::SetShareable(bool isShareable)
+    {
+    return m_implP->SetShareable(isShareable);
+    }
+
 /*----------------------------------------------------------------------------+
 |ScalableMeshCreator class
 +----------------------------------------------------------------------------*/
@@ -544,6 +554,24 @@ StatusInt IScalableMeshCreator::Impl::SetTextureProvider(ITextureProviderPtr pro
     return SUCCESS;
     }
 
+bool  IScalableMeshCreator::Impl::IsShareable()
+{
+    return m_isShareable;
+}
+
+void  IScalableMeshCreator::Impl::SetShareable(bool isShareable)
+{
+    if (m_smSQLitePtr.IsValid())
+        return;
+    m_isShareable = isShareable;    
+}
+
+ScalableMeshDb* IScalableMeshCreator::Impl::GetDatabaseFile()
+{
+    if (!m_smSQLitePtr.IsValid())
+        return nullptr;
+    return m_smSQLitePtr->GetDb();
+}
 
 /*
 ScalableMeshFilterType scm_getFilterType ()
@@ -672,6 +700,13 @@ void IScalableMeshCreator::Impl::ConfigureMesherFilter(ISMPointIndexFilter<Point
 {
 
 }
+
+void IScalableMeshCreator::Impl::SetThreadingOptions(bool useThreadsInMeshing, bool useThreadsInStitching, bool useThreadsInFiltering)
+    {    
+    s_useThreadsInMeshing = useThreadsInMeshing;
+    s_useThreadsInStitching = useThreadsInStitching;
+    s_useThreadsInFiltering = useThreadsInFiltering;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @description
@@ -819,13 +854,14 @@ SMSQLiteFilePtr IScalableMeshCreator::Impl::GetFile(bool fileExists)
             if (!fileExists)
                 success = m_smSQLitePtr->Create(m_scmFileName);
             else
-                success = m_smSQLitePtr->Open(m_scmFileName, false); // open in read/write
+                success = m_smSQLitePtr->Open(m_scmFileName, false, m_isShareable); // open in read/write
         }
         else
            m_smSQLitePtr = dynamic_cast<const ScalableMeshBase&>(*m_scmPtr).GetDbFile();
     }
     else
-        assert(m_smSQLitePtr->IsOpen());
+        assert(m_smSQLitePtr->IsOpen() || m_smSQLitePtr->IsShared());
+
     return m_smSQLitePtr;
 }
 
@@ -924,13 +960,23 @@ int IScalableMeshCreator::Impl::SaveGCS()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt IScalableMeshCreator::Impl::LoadFromFile  ()
     {
-
-
-        m_smSQLitePtr = GetFile(fileExist(m_scmFileName.c_str()));
+    m_smSQLitePtr = GetFile(fileExist(m_scmFileName.c_str()));
         
+    if (!Load())
+        return BSIERROR;
 
-        if (!Load())
-            return BSIERROR;
+#ifndef VANCOUVER_API
+    if (m_isShareable)
+        {
+        ScalableMeshDb* smDb(m_smSQLitePtr->GetDb());
+        assert(smDb != nullptr);
+
+        bool wasTransactionAbandoned;
+        smDb->CommitTransaction();
+        smDb->CloseShared(wasTransactionAbandoned);
+        }
+#endif
+
 
     return BSISUCCESS;
     }

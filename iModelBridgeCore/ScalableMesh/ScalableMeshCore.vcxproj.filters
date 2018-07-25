@@ -276,12 +276,6 @@
     <ClInclude Include="STM\ScalableMeshMoniker.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
-    <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.hpp">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
     <ClInclude Include="STM\ScalableMeshQuadTreeQueries.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
@@ -297,9 +291,6 @@
     <ClInclude Include="STM\ScalableMeshRasterDraping.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
-    <ClInclude Include="STM\ScalableMeshRelevanceDistribution.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
     <ClInclude Include="STM\ScalableMeshSourcePersistance.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
@@ -313,9 +304,6 @@
       <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshStorage.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshTilingOptions.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshPCH.h">
@@ -543,9 +531,6 @@
     <ClInclude Include="PrivateAPI\STMInternal\Foundations\PrivateStringTools.h">
       <Filter>Includes\PrivateAPI</Filter>
     </ClInclude>
-    <ClInclude Include="STM\ImportPlugins\CivilDTMHelpers.h">
-      <Filter>Includes\Core\ImportPlugins</Filter>
-    </ClInclude>
     <ClInclude Include="STM\Plugins\ScalableMeshClipMaskFilterFactory.h">
       <Filter>Includes\Core\Plugins</Filter>
     </ClInclude>
@@ -563,12 +548,6 @@
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshClipContainer.h">
       <Filter>Includes\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshMesher.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshMesher.hpp">
-      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\3dDelaunay\DTetrahedron3d.h">
       <Filter>Source\Core\ScalableMesh\3dDelaunay</Filter>
@@ -726,12 +705,6 @@
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshNodeCreator.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="STM\ScalableMeshSourceCreator.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshNodeCreator.h">
-      <Filter>Source\Core</Filter>
-    </ClInclude>
     <ClInclude Include="STM\Edits\DifferenceSet.h">
       <Filter>Includes\Core\Edits</Filter>
     </ClInclude>
@@ -752,9 +725,6 @@
     </ClInclude>
     <ClInclude Include="STM\Threading\LightThreadPool.h">
       <Filter>Includes\Core\Threading</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\CGALEdgeCollapse.h">
-      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ImagePPHeaders.h">
       <Filter>Includes\Core</Filter>
@@ -912,9 +882,6 @@
     <ClInclude Include="PublicAPI\ScalableMesh\Import\ScalableMeshData.h">
       <Filter>Includes\PublicAPI\Import</Filter>
     </ClInclude>
-    <ClInclude Include="STM\ScalableMeshFeature.h">
-      <Filter>Includes\PublicAPI\Import</Filter>
-    </ClInclude>
     <ClInclude Include="STM\ScalableMeshFileMoniker.h">
       <Filter>Includes\PublicAPI\Import</Filter>
     </ClInclude>
@@ -937,9 +904,6 @@
       <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshProgressiveQuery.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\MeshingFunctions.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\Stores\SMStreamingDataStore.h">
@@ -978,12 +942,6 @@
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshGroundExtractor.h">
       <Filter>Includes\PublicAPI\AutomaticGroundDetection</Filter>
     </ClInclude>
-    <ClInclude Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.h">
-      <Filter>Includes\AutomaticGroundDetection</Filter>
-    </ClInclude>
-    <ClInclude Include="AutomaticGroundDetection\ScalableMeshPointsProvider.h">
-      <Filter>Includes\AutomaticGroundDetection</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshTextureGenerator.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
@@ -991,9 +949,6 @@
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="STM\MosaicTextureProvider.h" />
-    <ClInclude Include="GeneratorTextureProvider.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
     <ClInclude Include="stm\Stores\SMStreamedSourceStore.h">
       <Filter>Includes\Core\Stores</Filter>
     </ClInclude>
@@ -1014,9 +969,6 @@
     </ClInclude>
     <ClInclude Include="GeoCoords\ReprojectionUtils.h">
       <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshFrom3MX.h">
-      <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshAnalysis.h">
       <Filter>Includes\PublicAPI</Filter>
@@ -1158,24 +1110,6 @@
     <ClCompile Include="Memory\PacketAccess.cpp">
       <Filter>Source\Memory</Filter>
     </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\CivilDTMFileImporter.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\CivilDTMHelpers.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\IDTMFileImporter.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\LandXMLFileImporter.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\XYZAsciiFileImporter.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\XYZFileImporter.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
     <ClCompile Include="STM\Plugins\ScalableMeshClipMaskFilterFactory.cpp">
       <Filter>Source\Core\Plugins</Filter>
     </ClCompile>
@@ -1224,16 +1158,10 @@
     <ClCompile Include="STM\ScalableMeshPolicy.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="STM\ScalableMeshQuadTreeBCLIBFilters.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
     <ClCompile Include="STM\ScalableMeshQuery.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshRasterDraping.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMeshRelevanceDistribution.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshSourceCollection.cpp">
@@ -1260,9 +1188,6 @@
     <ClCompile Include="STM\ScalableMeshStream.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="STM\ScalableMeshTilingOptions.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
     <ClCompile Include="STM\ScalableMeshTime.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -1275,13 +1200,7 @@
     <ClCompile Include="STM\ScalableTerrainModelPCH.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="STM\ScalableMeshFeature.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
     <ClCompile Include="STM\ScalableMeshClipContainer.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMeshMesher.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\3dDelaunay\ScalableMeshCao.cpp">
@@ -1311,9 +1230,6 @@
     <ClCompile Include="STM\ScalableMeshSourceImporter.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\GDALFileImporter.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
     <ClCompile Include="AutomaticGroundDetection\PointCloudEditGroundDetection.cpp">
       <Filter>Source\AutomaticGroundDetection</Filter>
     </ClCompile>
@@ -1326,35 +1242,8 @@
     <ClCompile Include="AutomaticGroundDetection\PointCloudSisterFileManager.cpp">
       <Filter>Source\AutomaticGroundDetection</Filter>
     </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\PODImporter.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\DGNModelUtilities.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
     <ClCompile Include="GeoCoords\DGNModelGeoref.cpp">
       <Filter>Source\GeoCoords</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\DGNLevelImporter.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\ElemSourceRef.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\ElementType.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\DEMRasterImporter.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\CivilElemSource.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\STMSource.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\XYZAsciiSource.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshDraping.cpp">
       <Filter>Source\Core\Analysis</Filter>
@@ -1374,9 +1263,6 @@
     <ClCompile Include="AutomaticGroundDetection\AutomaticGroundDetectionInternalConfig.cpp">
       <Filter>Includes\AutomaticGroundDetection</Filter>
     </ClCompile>
-    <ClCompile Include="STM\ScalableMeshNodeCreator.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
     <ClCompile Include="STM\Edits\DifferenceSet.cpp">
       <Filter>Source\Core\Edits</Filter>
     </ClCompile>
@@ -1388,9 +1274,6 @@
     </ClCompile>
     <ClCompile Include="STM\Threading\LightThreadPool.cpp">
       <Filter>Source\Core\Threading</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\CGALEdgeCollapse.cpp">
-      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\SMSQLiteFile.cpp">
       <Filter>Source\Core</Filter>
@@ -1434,9 +1317,6 @@
     <ClCompile Include="STM\ScalableMeshTexture.cpp">
       <Filter>Includes\Core</Filter>
     </ClCompile>
-    <ClCompile Include="STM\MeshingFunctions.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
     <ClCompile Include="stm\importplugins\DGNdbImporter.cpp" />
     <ClCompile Include="STM\Stores\SMStreamingDataStore.cpp">
       <Filter>Source\Core\Stores</Filter>
@@ -1448,9 +1328,6 @@
       <Filter>Source\Core\Edits</Filter>
     </ClCompile>
     <ClCompile Include="STM\Stores\SMSQLiteSisterFile.cpp" />
-    <ClCompile Include="STM\ScalableMeshSourceCreator.cpp">
-      <Filter>Source\Core\Stores</Filter>
-    </ClCompile>
     <ClCompile Include="STM\SMSQLiteDiffsetFile.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -1460,20 +1337,11 @@
     <ClCompile Include="STM\SMSQLiteFeatureFile.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.cpp">
-      <Filter>Source\AutomaticGroundDetection</Filter>
-    </ClCompile>
-    <ClCompile Include="AutomaticGroundDetection\ScalableMeshPointsProvider.cpp">
-      <Filter>Source\AutomaticGroundDetection</Filter>
-    </ClCompile>
     <ClCompile Include="STM\ScalableMeshTextureGenerator.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\MosaicTextureProvider.cpp" />
     <ClCompile Include="STM\TextureProvider.cpp" />
-    <ClCompile Include="GeneratorTextureProvider.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
     <ClCompile Include="stm\RasterUtilities.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -1485,12 +1353,6 @@
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshAnalysis.cpp">
       <Filter>Source\Core\Analysis</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ImportPlugins\TextureImporter.cpp">
-      <Filter>Source\Core\ImportPlugins</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMeshFrom3MX.cpp">
-      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\Stores\SMExternalProviderDataStore.cpp" />
     <ClCompile Include="STM\ScalableMeshAnalysis_Ecef.cpp">

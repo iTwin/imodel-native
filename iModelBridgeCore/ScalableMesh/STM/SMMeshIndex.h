@@ -184,7 +184,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual void Unload() override;
 
-	virtual void RemoveNonDisplayPoolData() override;
+    BENTLEY_SM_EXPORT virtual void RemoveNonDisplayPoolData() override;
 
     virtual bool InvalidateFilteringMeshing(bool becauseDataRemoved = false) override;
 
@@ -884,7 +884,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     private:
 
-		bool ClipIntersectsBox(uint64_t clipId, EXTENT ext, Transform tr = Transform::FromIdentity());
+		bool ClipIntersectsBox(uint64_t clipId, EXTENT ext, Transform tr = Transform::FromIdentity(), bool skirtIntersects = false);
 
         mutable std::mutex m_graphInflateMutex;
         mutable std::mutex m_graphMutex;
@@ -1005,7 +1005,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         //NEEDS_WORK_SM : Why the same 2 functions in point index?
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode = false);
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);        
-        virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
+        virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false, bool useNodeMap = false);
 
         int64_t  AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes);
 

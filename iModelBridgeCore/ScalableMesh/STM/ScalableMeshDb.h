@@ -15,6 +15,9 @@ enum class SQLDatabaseType
     };
 
 
+
+class SMSQLiteFile;
+
 USING_NAMESPACE_BENTLEY_SQLITE
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -71,24 +74,58 @@ public:
 #ifdef VANCOUVER_API
     #define BESQL_VERSION_STRUCT SchemaVersion
 #else
-    #define BESQL_VERSION_STRUCT ProfileVersion
+    #define BESQL_VERSION_STRUCT ProfileVersion    
 #endif
+
+
+class InfiniteRetries : public BeSQLite::BusyRetry
+{
+	virtual int _OnBusy(int count) const;
+};
 
 class ScalableMeshDb : public BeSQLite::Db
     {
     private:
         SQLDatabaseType m_type;
+        SMSQLiteFile*   m_smFile; 
         BESQL_VERSION_STRUCT GetCurrentVersion() const;
+        Savepoint* m_currentSavepoint;
+
+#ifndef VANCOUVER_API
+        BENTLEY_NAMESPACE_NAME::Utf8String m_path;
+#endif
+
+        static bool s_enableSharedDatabase;
 
     protected:
 #ifndef VANCOUVER_API    
        ProfileState _CheckProfileVersion() const override;
+
+       virtual DbResult _UpgradeProfile() override;
 #endif
     virtual DbResult _OnDbCreated(CreateParams const& params) override;
 
     public:
-        ScalableMeshDb(SQLDatabaseType type) : m_type(type) {}
+
+        ScalableMeshDb(SQLDatabaseType type, SMSQLiteFile* smFile) : m_type(type), m_smFile(smFile), m_currentSavepoint(nullptr){}
+
+#ifndef VANCOUVER_API   
+        //Offer functions to more explicitly deal with shared db's; open/close after specific transactions, allow implicit transactions, busy-retry
+
+        DbResult OpenShared(BENTLEY_NAMESPACE_NAME::Utf8CP path, bool readonly, bool allowBusyRetry);
+        BENTLEY_SM_EXPORT bool ReOpenShared(bool readonly, bool allowBusyRetry);
+        BENTLEY_SM_EXPORT bool StartTransaction();
+        BENTLEY_SM_EXPORT bool CommitTransaction();
+        BENTLEY_SM_EXPORT void CloseShared(bool& wasTransactionAbandoned);
+
+        void GetSharedDbFileName(BENTLEY_NAMESPACE_NAME::Utf8String& path);        
+#endif
+
         static const BESQL_VERSION_STRUCT CURRENT_VERSION;
+
+        BENTLEY_SM_EXPORT static bool GetEnableSharedDatabase();
+
+        BENTLEY_SM_EXPORT static void  SetEnableSharedDatabase(bool isShared);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

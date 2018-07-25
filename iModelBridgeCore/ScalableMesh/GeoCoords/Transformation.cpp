@@ -427,7 +427,7 @@ TransfoMatrix& TransfoMatrix::operator*= (const TransfoMatrix& rhs)
     const Transform rhsGeom(ToTransform3d(rhs));
 
 
-    bsiTransform_multiplyTransformTransform(&lhsGeom, &lhsGeom, &rhsGeom);
+    lhsGeom.InitProduct (lhsGeom, rhsGeom);
 
     *this = FromTransform3d(lhsGeom);
     return *this;
@@ -479,7 +479,7 @@ TransfoMatrix   operator*  (const TransfoMatrix&    lhs,
     const Transform rhsGeom(ToTransform3d(rhs));
 
 
-    bsiTransform_multiplyTransformTransform(&lhsGeom, &lhsGeom, &rhsGeom);
+    lhsGeom.InitProduct (lhsGeom, rhsGeom);
 
     return FromTransform3d(lhsGeom);
     }

@@ -62,8 +62,12 @@ extern bool   GET_HIGHEST_RES;
 #include "MosaicTextureProvider.h"
 #include "ScalableMeshGroup.h"
 #include "ScalableMeshMesher.h"
+#include "ScalableMeshDb.h"
 #include <ScalableMesh/IScalableMeshPublisher.h>
-#include "Stores/SMPublisher.h"
+
+
+
+
 //#include "CGALEdgeCollapse.h"
 
 //DataSourceManager s_dataSourceManager;
@@ -702,7 +706,16 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
         (BeFileName::GetExtension(filePath).CompareToI(L"stm2") == 0))
         { // Open 3sm file
         StatusInt openStatus;
-        smSQLiteFile = SMSQLiteFile::Open(filePath, openReadOnly, openStatus);
+        
+        if (openShareable && ScalableMeshDb::GetEnableSharedDatabase())
+            {
+            smSQLiteFile = SMSQLiteFile::Open(filePath, openReadOnly, openStatus, true);
+            }
+        else
+            {
+            smSQLiteFile = SMSQLiteFile::Open(filePath, openReadOnly, openStatus);
+            }
+			
         if (smSQLiteFile == nullptr)
             {
             status = BSIERROR;
@@ -4282,7 +4295,7 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
                         {
                             bool insert = true;
                             for (auto& ptB : intersectingVertices)
-                                if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+                                if (pt.IsEqual (ptB, 1e-8)) insert = false;
                             if (insert) withoutIntersect.push_back(pt);
                         }
                     }
@@ -4292,7 +4305,7 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
                         {
                             bool insert = true;
                             for (auto& ptB : intersectingVertices)
-                                if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+                                if (pt.IsEqual (ptB, 1e-8)) insert = false;
                             if (insert) withoutIntersect.push_back(pt);
                         }
                     }
@@ -4302,7 +4315,7 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
                         poly_2d = poly2_2d;
                         range = DRange3d::From(poly);
                     }
-                    if (!withoutIntersect.empty() && !bsiDPoint3d_pointEqualTolerance(&withoutIntersect.front(), &withoutIntersect.back(), 1e-8)) withoutIntersect.push_back(withoutIntersect.front());
+                    if (!withoutIntersect.empty() && !withoutIntersect.front().IsEqual (*(&withoutIntersect.back()), 1e-8)) withoutIntersect.push_back(withoutIntersect.front());
                     if (withoutIntersect.size() > 4)
                     {
                         poly2 = withoutIntersect;
@@ -4375,7 +4388,7 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
                 {
                 bool insert = true;
                 for (auto& ptB : intersectingVertices)
-                if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+                if (pt.IsEqual (ptB, 1e-8)) insert = false;
                 if(insert) withoutIntersect.push_back(pt);
                 }
                 }
@@ -4385,13 +4398,13 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
                 {
                 bool insert = true;
                 for (auto& ptB : intersectingVertices)
-                if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+                if (pt.IsEqual (ptB, 1e-8)) insert = false;
                 if (insert) withoutIntersect.push_back(pt);
                 }
                 }
                 if (poly.size() < poly2.size()) poly = poly2;
 
-                if (!withoutIntersect.empty() && !bsiDPoint3d_pointEqualTolerance(&withoutIntersect.front(), &withoutIntersect.back(), 1e-8)) withoutIntersect.push_back(withoutIntersect.front());
+                if (!withoutIntersect.empty() && !withoutIntersect.front().IsEqual (*(&withoutIntersect.back()), 1e-8)) withoutIntersect.push_back(withoutIntersect.front());
                 if (withoutIntersect.size() > 4)
                 {
                 poly2 = withoutIntersect;
@@ -4420,7 +4433,7 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
             if (poly2.size() != poly.size()) continue;
             size_t i = 0;
             for (i = 0; i < poly.size(); ++i)
-                if (!bsiDPoint3d_pointEqualTolerance(&poly[i], &poly2[i], 1e-8))
+                if (!poly[i].IsEqual (poly2[i], 1e-8))
                     break;
             if (i == poly.size())
                 used[&poly2 - &polygons[0]] = true;

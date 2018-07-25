@@ -1300,7 +1300,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::WriteClipDataToProjectFil
 		if (!sqlFilePtr.IsValid())
 			return;
 
-		ISM3DPtDataStorePtr dataStoreTarget = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, sqlFilePtr);
+        SMSQLiteFilePtr sqlDataFilePtr;
+
+		ISM3DPtDataStorePtr dataStoreTarget = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, sqlDataFilePtr, this);
 		IClipDefinitionExtOpsPtr extOps, extOpsTarget;
 		dataStore->GetClipDefinitionExtOps(extOps);
 		dataStoreTarget->GetClipDefinitionExtOps(extOpsTarget);
@@ -1320,9 +1322,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::WriteClipDataToProjectFil
 		}
 		existingIds.clear();
 		extOps->GetAllCoverageIDs(existingIds);
-
+        
 		ISMCoverageNameDataStorePtr coverageNameSource = new SMExternalProviderDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, m_clipProvider.get());
-		ISMCoverageNameDataStorePtr coverageNameTarget = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
+		ISMCoverageNameDataStorePtr coverageNameTarget = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr, this);
 
 		for (auto& id : existingIds)
 		{
@@ -1907,7 +1909,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
     if (!sqliteFilePtr.IsValid())
         return false;
     
-    dataStore = new SMSQLiteNodeDataStore<DifferenceSet, EXTENT>(SMStoreDataType::DiffSet, nodeHeader, sqliteFilePtr);
+    dataStore = new SMSQLiteNodeDataStore<DifferenceSet, EXTENT>(SMStoreDataType::DiffSet, nodeHeader, sqliteFilePtr, this);
 
     return true;
     }
@@ -1918,8 +1920,8 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGr
 
     sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::Graph, true, true);
     assert(sqliteFilePtr.IsValid() == true);
-
-    dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, sqliteFilePtr);
+    
+    dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, sqliteFilePtr, this);
 
     return true;
     }
@@ -1954,7 +1956,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
     if (!sqlFilePtr.IsValid())
         return false;
 
-    dataStore = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
+    dataStore = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr, this);
 
     return true;
     }
@@ -1974,7 +1976,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
     if (!sqlFilePtr.IsValid())
         return false;
 
-    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
+    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr, this);
 
     return true;
     }

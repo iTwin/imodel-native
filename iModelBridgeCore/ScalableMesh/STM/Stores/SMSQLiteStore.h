@@ -5,9 +5,22 @@
 #include "SMStoreUtils.h"
 #include "../ScalableMeshSources.h"
 
+
+struct SharedTransaction
+{
+private:
+    bool m_transactionNeedsClosing;
+    bool m_dbNeedsClosing;
+    SMSQLiteFilePtr m_smSQLiteFile;
+public:
+    SharedTransaction(SMSQLiteFilePtr fileP, bool readonly, bool startTransaction = false);
+    ~SharedTransaction();
+};
+
 template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>, public SMSQLiteSisterFile
     {        
     private:
+
         SMSQLiteFilePtr m_smSQLiteFile;
         DRange3d m_totalExtent;
         GeoCoordinates::BaseGCSCPtr m_cs;
@@ -15,16 +28,15 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         HFCPtr<HRFRASTERFILE> m_streamingRasterFile;
         HFCPtr<HRARASTER> m_raster;
         SMIndexMasterHeader<EXTENT> m_masterHeader;
-        std::mutex                  m_preloadMutex;
-
-		IClipDefinitionDataProviderPtr m_clipProvider;
+        std::mutex                  m_preloadMutex;        
+        IClipDefinitionDataProviderPtr m_clipProvider;
 
 
     public : 
     
         SMSQLiteStore(SMSQLiteFilePtr database);
             
-        virtual ~SMSQLiteStore();
+        virtual ~SMSQLiteStore();       
                     
         virtual uint64_t GetNextID() const override;
             
@@ -95,9 +107,10 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
     {    
     private:
 
-        SMSQLiteFilePtr            m_smSQLiteFile;
-        SMIndexNodeHeader<EXTENT>* m_nodeHeader;
-        SMStoreDataType            m_dataType;
+        ISMDataStoreTypePtr<EXTENT> m_dataStorePtr;
+        SMSQLiteFilePtr             m_smSQLiteFile; //Could be the main file persisting the 3sm or a sister file.
+        SMIndexNodeHeader<EXTENT>*  m_nodeHeader;
+        SMStoreDataType             m_dataType;
 
         void   GetCompressedBlock(bvector<uint8_t>& nodeData, size_t& uncompressedSize, HPMBlockID blockID);
 
@@ -109,7 +122,7 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
 
     public:      
               
-        SMSQLiteNodeDataStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader,/* ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile);
+        SMSQLiteNodeDataStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, SMSQLiteFilePtr& smSQLiteFile, ISMDataStoreTypePtr<EXTENT> dataStorePtr);
             
         virtual ~SMSQLiteNodeDataStore();                      
             
