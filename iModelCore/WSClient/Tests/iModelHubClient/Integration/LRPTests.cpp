@@ -19,6 +19,14 @@ struct LRPTests : public IntegrationTestsBase
     DgnDbPtr     m_db;
 
     /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             07/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void SetUpTestCase()
+        {
+        IntegrationTestsBase::SetUpTestCase();
+        }
+
+    /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void SetUp() override

@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "Helpers.h"
+#include "RequestBehaviorOptions.h"
 #include <Bentley/BeTest.h>
 
 BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
@@ -24,7 +25,7 @@ struct IntegrationTestsBase : public ::testing::Test
         static Utf8String s_projectId;
 
     public:
-        static void SetUpTestCase();
+        static void SetUpTestCase(RequestBehaviorOptions behaviourOptions = RequestBehaviorOptions());
         static void TearDownTestCase();
         virtual void SetUp() override;
         virtual void TearDown() override;

@@ -18,12 +18,12 @@ iModelInfoPtr iModelTestsBase::s_info = nullptr;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelTestsBase::SetUpTestCase()
+void iModelTestsBase::SetUpTestCase(RequestBehaviorOptions behaviourOptions)
     {
     iModelHubHost& host = iModelHubHost::Instance();
     host.CleanOutputDirectory();
 
-    IntegrationTestsBase::SetUpTestCase();
+    IntegrationTestsBase::SetUpTestCase(behaviourOptions);
     ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, TestCaseiModelName()));
 
     //Create iModel with no changesets

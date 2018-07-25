@@ -96,13 +96,17 @@ void IntegrationTestsBase::CreateSeedDb()
     seedDb->CloseDb();
     }
 
-void IntegrationTestsBase::SetUpTestCase()
+void IntegrationTestsBase::SetUpTestCase(RequestBehaviorOptions behaviourOptions)
     {
     InitializeTests();
     CreateSeedDb();
     iModelHubHelpers::CreateClient(s_client, IntegrationTestsSettings::Instance().GetValidAdminCredentials());
     iModelHubHost::Instance().SetRepositoryAdmin(s_client->GetiModelAdmin());
     s_projectId = IntegrationTestsSettings::Instance().GetProjectId();
+
+    bmap<Utf8String, Utf8String> requestOptions = bmap<Utf8String, Utf8String>();
+    requestOptions.insert(behaviourOptions.GetBehaviorOptionsResultPair());
+    s_client->GlobalRequestOptions()->SetRequestOptions(requestOptions);
     }
 
 void IntegrationTestsBase::TearDownTestCase()
