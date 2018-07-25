@@ -1418,8 +1418,8 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 		//LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
 #endif
 
-    //LOG_SET_PATH("e:\\Elenie\\mesh\\")
-    //LOG_SET_PATH_W("e:\\Elenie\\mesh\\")
+    LOG_SET_PATH("e:\\Elenie\\stitch07\\")
+    LOG_SET_PATH_W("e:\\Elenie\\stitch07\\")
 
 		bool shouldExtractBoundary = true;
 		if (node->m_nodeHeader.m_nbFaceIndexes == 0 && node->m_nodeHeader.m_nodeCount <= 4) return true;
@@ -1945,7 +1945,7 @@ if (stitchedPoints.size() != 0 &&!isColinear)// return false; //nothing to stitc
 				auto featureCurveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, featureCurvePtr);
 
 				const CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *featureCurveVectorPtr);
-				if (!intersection.IsNull())
+				if (voidFeatures.size() > 0 && !intersection.IsNull())
 					voidsIntersectBoundary = true;
 			}
 
@@ -1977,7 +1977,7 @@ if (stitchedPoints.size() != 0 &&!isColinear)// return false; //nothing to stitc
 
     status = AddPolygonsToDTMObject(stitchedNeighborsBoundary, DTMFeatureType::Breakline, dtmObjP);
 
-#if 0//SM_OUTPUT_MESHES_STITCHING
+#if 1//SM_OUTPUT_MESHES_STITCHING
     //if (hasPtsToTrack)
         {
         WString dtmFileName(LOG_PATH_STR_W);
