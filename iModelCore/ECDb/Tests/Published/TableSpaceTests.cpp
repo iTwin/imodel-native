@@ -64,6 +64,7 @@ TEST_F(TableSpaceTestFixture, AttachedTableSpace)
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("attachedtablespace.ecdb"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive());
 
     ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM main.ts.Parent"));
@@ -82,9 +83,12 @@ TEST_F(TableSpaceTestFixture, AttachedTableSpace)
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO attached.ts.Child(ECInstanceId,Name) VALUES(201,'Child 2')"));
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_TRUE(m_ecdb.IsTransactionActive());
 
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive());
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive());
     ASSERT_EQ(ECSqlStatus::Error, GetHelper().PrepareECSql("INSERT INTO ts.Parent(Name) VALUES('Parent 2')")) << "file opened read-only which applies to attached file as well";
     ASSERT_EQ(ECSqlStatus::Error, GetHelper().PrepareECSql("INSERT INTO attached.ts.Parent(Name) VALUES('Parent 2')")) << "file opened read-only which applies to attached file as well";
     }
@@ -140,18 +144,21 @@ TEST_F(TableSpaceTestFixture, AttachWithoutApi)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM attached.ts.Parent"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
 
     ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM main.ts.Parent"));
     ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT * FROM attached.ts.Parent"));
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.DetachDb("attached"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Parent")) << "after detaching";
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM attached.ts.Parent")) << "after detaching";
 
     //now attach with plain SQL. ECDb will not be notified about the attachment. Therefore queries will not work
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, DefaultTxn::No)));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql(Utf8PrintfString("ATTACH '%s' AS attached", attachedECDbPath.GetNameUtf8().c_str()).c_str()));
+    ASSERT_FALSE(m_ecdb.IsTransactionActive()) << "Transaction is not expected to be restarted when attach is called via SQL (as BeSQLite is by-passed)";
     Savepoint sp(m_ecdb, "");
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Parent")) << "after attaching via SQL";
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM attached.ts.Parent")) << "after attaching via SQL";
@@ -219,7 +226,9 @@ TEST_F(TableSpaceTestFixture, ECDbAndNonECDbAttachedTableSpace)
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("attachedtablespace_primary.ecdb"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedDbPath.GetNameUtf8().c_str(), "attacheddb"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
 
     ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM main.ts.Parent"));
@@ -241,7 +250,9 @@ TEST_F(TableSpaceTestFixture, ECDbAndNonECDbAttachedTableSpace)
 
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly)));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedDbPath.GetNameUtf8().c_str(), "attacheddb"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_EQ(ECSqlStatus::Error, GetHelper().PrepareECSql("INSERT INTO ts.Parent(Name) VALUES('Parent 2')")) << "file opened read-only which applies to attached file as well";
     ASSERT_EQ(ECSqlStatus::Error, GetHelper().PrepareECSql("INSERT INTO attached.ts.Parent(Name) VALUES('Parent 2')")) << "file opened read-only which applies to attached file as well";
     }
@@ -488,6 +499,47 @@ TEST_F(TableSpaceTestFixture, AttachedTableSpace_PhysicalForeignKey)
     ASSERT_EQ(0, getRelCount()) << "Cascading delete after deleting Foo";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(TableSpaceTestFixture, DetachTableSpace)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("detachtablespace.ecdb"));
+
+    BeFileName attachedECDbPath;
+
+    {
+    //create attachment ECDb 
+    BeTest::GetHost().GetOutputRoot(attachedECDbPath);
+    attachedECDbPath.AppendToPath(L"attachedtablespace_attached.ecdb");
+    if (attachedECDbPath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, attachedECDbPath.BeDeleteFile());
+
+    ECDb attached;
+    ASSERT_EQ(BE_SQLITE_OK, attached.CreateNewDb(attachedECDbPath));
+    }
+    // test that the current default transaction remains active after attach/detach calls
+    // (because internally attach/detach commits and restarts the transaction)
+    ASSERT_TRUE(m_ecdb.IsTransactionActive());
+    //calling detach for a table space that doesn't exist
+    ASSERT_FALSE(GetHelper().TableSpaceExists("doesnotexist"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive());
+    ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.DetachDb("doesnotexist"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive());
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "testtablespace"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive());
+    ASSERT_TRUE(GetHelper().TableSpaceExists("testtablespace"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.DetachDb("testtablespace"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive());
+    ASSERT_FALSE(GetHelper().TableSpaceExists("testtablespace"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive());
+    ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.DetachDb("testtablespace"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive());
+    ASSERT_FALSE(GetHelper().TableSpaceExists("testtablespace"));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive());
+    }
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Krischan.Eberle                  01/18
 //+---------------+---------------+---------------+---------------+---------------+------

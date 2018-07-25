@@ -537,16 +537,37 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQua
         {
         BeAssert(presUnitJson.IsString() && presUnitJson.GetStringLength() > 0);
 
+        Utf8CP fusDescr = nullptr;
+        Utf8String fusDescrStr;
+        if (!fileUsesEC32Koqs)
+            fusDescr = presUnitJson.GetString();
+        else
+            {
+            //convert EC3.2 format string to FUS descriptor. Ignore errors (resilience contract)
+            if (ECObjectsStatus::Success != KindOfQuantity::FormatStringToFUSDescriptor(fusDescrStr, koq, presUnitJson.GetString()))
+                continue;
+
+            fusDescr = fusDescrStr.c_str();
+            }
+
         Formatting::FormatUnitSet fus;
         bool hasDummyUnit = false;
-        if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(fus, hasDummyUnit, presUnitJson.GetString(), koq, true, !fileUsesEC32Koqs) ||
-            hasDummyUnit)
+        ECObjectsStatus stat = KindOfQuantity::ParseFUSDescriptor(fus, hasDummyUnit, fusDescr, koq, !fileUsesEC32Koqs);
+        if (!fileUsesEC32Koqs)
             {
-            if (fileUsesEC32Koqs)
-                continue; //drop presentation units if file uses EC3.2 or older
-
-            LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation unit's FormatUnitSet descriptor '%s' could not be parsed.", koq.GetFullName().c_str(), presUnitJson.GetString());
-            return ERROR;
+            if (ECObjectsStatus::Success != stat || hasDummyUnit)
+                {
+                LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation unit's FormatUnitSet descriptor '%s' could not be parsed.", koq.GetFullName().c_str(), fusDescr);
+                return ERROR;
+                }
+            }
+        else
+            {
+            if (ECObjectsStatus::Success != stat)
+                {
+                LOG.infov("Dropped presentation unit for KindOfQuantity '%s'. Could not convert EC3.2 format '%s' to a FormatUnitSet.", koq.GetFullName().c_str(), fusDescr);
+                continue; // Ignore errors (resilience contract)
+                }
             }
 
         if (!koq.AddPresentationUnit(fus))

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/DbUtilities.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -140,18 +140,21 @@ Utf8String DbUtilities::GetAttachedFilePath(ECDbCR ecdb, Utf8CP tableSpace)
 // @bsimethod                                              Krischan.Eberle         11/2017
 //---------------------------------------------------------------------------------------
 //static
-ECN::ECClassId DbUtilities::QueryRowClassId(ECDbCR ecdb, Utf8StringCR tableName, Utf8StringCR classIdColName, Utf8StringCR pkColName, ECInstanceId id)
+ BentleyStatus DbUtilities::QueryRowClassId(ECN::ECClassId& classId, ECDbCR ecdb, Utf8StringCR tableName, Utf8StringCR classIdColName, Utf8StringCR pkColName, ECInstanceId id)
     {
     CachedStatementPtr statement = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT %s FROM %s WHERE %s=?", classIdColName.c_str(), tableName.c_str(), pkColName.c_str()).c_str());
-    BeAssert(statement.IsValid());
+    if (statement == nullptr)
+        return ERROR;
 
     if (BE_SQLITE_OK != statement->BindId(1, id))
-        return ECN::ECClassId();
+        return ERROR;
 
     if (BE_SQLITE_ROW != statement->Step())
-        return ECN::ECClassId();
+        classId = ECN::ECClassId();
+    else
+        classId = statement->GetValueId<ECN::ECClassId>(0);
 
-    return statement->GetValueId<ECN::ECClassId>(0);
+    return SUCCESS;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

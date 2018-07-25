@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/DbUtilities.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -88,7 +88,9 @@ private:
 
 public:
 
-    static ECN::ECClassId QueryRowClassId(ECDbCR, Utf8StringCR tableName, Utf8StringCR classIdColName, Utf8StringCR pkColName, ECInstanceId id);
+    //! If not found, returns still SUCCESS, but an invalid class id.
+    //! Returns ERROR if statement failed to execute
+    static BentleyStatus QueryRowClassId(ECN::ECClassId&, ECDbCR, Utf8StringCR tableName, Utf8StringCR classIdColName, Utf8StringCR pkColName, ECInstanceId id);
 
     template<typename TId>
     static TId GetLastInsertedId(ECDbCR ecdb)

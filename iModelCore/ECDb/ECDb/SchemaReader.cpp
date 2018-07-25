@@ -738,10 +738,10 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     //      If unknown Persistence or Presentation: fail
     //    > 3.1
     //       If unknown Pers.Or Pres.:
-    //        - Drop ':' from unit name and use ecName->newName mapping.Use newName to find unit
+    //        - Drop ':' from unit name and use EC3.2->EC3.1/3.0 Name mapping.Use EC3.1/3.0 Name to find unit
     //        - Use original name provided to find unit
     //        - If unit is still unknown:
-    //            -If Pers.: create dummy unit
+    //            - If Pers.: create dummy unit
     //            - If Pres: drop
     // if Format
     //    <= 3.1
@@ -756,7 +756,7 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
 
     Formatting::FormatUnitSet persistenceFus;
     bool hasDummyUnit = false; // unused
-    if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(persistenceFus, hasDummyUnit, persUnitStr, *koq, !fileUsesEC32Koqs, !fileUsesEC32Koqs))
+    if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(persistenceFus, hasDummyUnit, persUnitStr, *koq, !fileUsesEC32Koqs))
         {
         LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit's FormatUnitSet descriptor '%s' could not be parsed.", koq->GetFullName().c_str(), persUnitStr);
         return ERROR;

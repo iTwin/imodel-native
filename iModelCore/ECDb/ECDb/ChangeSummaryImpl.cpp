@@ -604,7 +604,7 @@ ECN::ECClassId ChangeExtractor::GetClassIdFromColumn(ChangeIterator::TableMap co
         }
 
     // Search in table itself
-    classId = DbUtilities::QueryRowClassId(m_ecdb, tableMap.GetTableName(), classIdColumn.GetName(), tableMap.GetIdColumn().GetName(), instanceId);
+    DbUtilities::QueryRowClassId(classId, m_ecdb, tableMap.GetTableName(), classIdColumn.GetName(), tableMap.GetIdColumn().GetName(), instanceId);
     BeAssert(classId.IsValid());
     return classId;
     }
@@ -889,7 +889,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const&
             return ECClassId();
             }
 
-        classId = DbUtilities::QueryRowClassId(m_ecdb, endTableName, classIdColumn->GetName(), tableMap->GetIdColumn().GetName(), relEndInstanceId);
+        DbUtilities::QueryRowClassId(classId, m_ecdb, endTableName, classIdColumn->GetName(), tableMap->GetIdColumn().GetName(), relEndInstanceId);
         BeAssert(classId.IsValid());
         return classId;
         }

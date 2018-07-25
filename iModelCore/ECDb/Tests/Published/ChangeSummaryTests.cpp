@@ -763,6 +763,7 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
 
     auto assertCache = [] (ECDbCR ecdb, bool expectedIsValidCache, Utf8CP assertMessage)
         {
+        EXPECT_TRUE(ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
         EXPECT_EQ(expectedIsValidCache, ecdb.IsChangeCacheAttached()) << assertMessage;
         EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().ContainsSchema("ECDbChange")) << assertMessage;
         EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().ContainsSchema("ECDbChange", SchemaLookupMode::ByName, "ecchange")) << assertMessage;
@@ -867,6 +868,7 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
     BeFileName cachePath = ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName());
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache(cachePath));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
     ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbChange", "InstanceChange") != nullptr);
     m_ecdb.CloseDb();
@@ -877,6 +879,7 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(ecdbPath));
     ASSERT_EQ(BE_SQLITE_OK, ecdb.AttachChangeCache(cachePath));
+    ASSERT_TRUE(ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
     ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChange", "InstanceChange") != nullptr);
     }
@@ -887,6 +890,7 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(ecdbPath));
     ASSERT_EQ(BE_SQLITE_OK, ecdb.AttachChangeCache(cachePath));
+    ASSERT_TRUE(ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
     ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChange", "InstanceChange") != nullptr);
     ecdb.ClearECDbCache();
@@ -917,6 +921,7 @@ TEST_F(ChangeSummaryTestFixture, AttachChangeCacheMethodInput)
 
     ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeCache(BeFileName())) << "Change cache path must not be empty";
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache(cachePath));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
 
     {
@@ -935,6 +940,7 @@ TEST_F(ChangeSummaryTestFixture, AttachChangeCacheMethodInput)
 
     ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache(cachePath));
+    ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
     ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
     }
 
@@ -2518,6 +2524,218 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"}])json", parentIdStr.c_str(), child2IdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete') ORDER BY TargetECInstanceId", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
 
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  07/18
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow)
+    {
+    auto resetFile = [this] (ECInstanceKey& aKey, ECInstanceKey& bKey, ECInstanceKey& relKey, TestChangeTracker& tracker)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+        tracker.EndTracking();
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.B"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
+
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aKey, "INSERT INTO ts.A(Name) VALUES('A 1')"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(bKey, "INSERT INTO ts.B(Name) VALUES('B 1')"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(relKey, Utf8PrintfString("INSERT INTO ts.Rel(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)", aKey.GetInstanceId().ToString().c_str(), bKey.GetInstanceId().ToString().c_str()).c_str()));
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+        tracker.EnableTracking(true);
+        };
+
+    // Case 1: Link table has FKs into end tables
+            { 
+            // Classes must have a class id column -> TPH and not sealed
+            ASSERT_EQ(SUCCESS, SetupECDb("DeletedLinkTableRow.ecdb", SchemaItem(
+                R"xml(<?xml version="1.0" encoding="utf-8"?> 
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+                    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="A">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="referencing">
+                        <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="A"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                            <Class class="B" />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml")));
+            ASSERT_EQ(BE_SQLITE_OK, AttachCache());
+
+            ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::No), GetHelper().GetPropertyMapColumn(AccessString("ts", "A", "ECClassId")));
+            ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::No), GetHelper().GetPropertyMapColumn(AccessString("ts", "B", "ECClassId")));
+
+            TestChangeTracker tracker(m_ecdb);
+
+            ECInstanceKey aKey, bKey, relKey;
+
+            //Scenario: Just delete the rel
+            resetFile(aKey, bKey, relKey, tracker);
+            ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
+
+            TestChangeSet changeset;
+            ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+            //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+            ECInstanceKey changeSummaryKey;
+            ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
+
+            ASSERT_EQ(JsonValue(Utf8PrintfString(R"json([{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json",relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete)),
+                      GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str())) << "After deleting just the rel";
+
+            //Scenario: Delete the rel and a
+            resetFile(aKey, bKey, relKey, tracker);
+            ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
+            ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
+
+            changeset.Free();
+            ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+            //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+            ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
+            ASSERT_EQ(JsonValue(Utf8PrintfString(R"json(
+                    [{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false},
+                     {"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json",
+                      aKey.GetInstanceId().ToString().c_str(), aKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete,
+                      relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete)),
+                      GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str())) << "After deleting A and the rel";
+
+            //Scenario: Delete just a (which should cascadingly delete the rel)
+            resetFile(aKey, bKey, relKey, tracker);
+            ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
+
+            changeset.Free();
+            ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+            //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+            ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
+            ASSERT_EQ(JsonValue(Utf8PrintfString(R"json(
+                    [{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false},
+                     {"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":true}])json",
+                                                 aKey.GetInstanceId().ToString().c_str(), aKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete,
+                                                 relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete)),
+                      GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str())) << "After deleting A (which cascading deletes rel)";
+            }
+
+   // Case 2: Link table has no FKs into end tables
+
+        {
+        ASSERT_EQ(SUCCESS, SetupECDb("DeletedLinkTableRow_NoFks.ecdb", SchemaItem(
+            R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+        <ECEntityClass typeName="A">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="B">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+        <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="referencing">
+            <ECCustomAttributes>
+                <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
+                    <CreateForeignKeyConstraints>false</CreateForeignKeyConstraints>
+                </LinkTableRelationshipMap>
+            </ECCustomAttributes>
+            <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                <Class class="A"/>
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
+                <Class class="B" />
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml")));
+        ASSERT_EQ(BE_SQLITE_OK, AttachCache());
+
+        ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::No), GetHelper().GetPropertyMapColumn(AccessString("ts", "A", "ECClassId")));
+        ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::No), GetHelper().GetPropertyMapColumn(AccessString("ts", "B", "ECClassId")));
+
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+
+        ECInstanceKey aKey, bKey, relKey;
+
+        //Scenario: Just delete the rel
+        resetFile(aKey, bKey, relKey, tracker);
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
+
+        TestChangeSet changeset;
+        ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+        //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+        ECInstanceKey changeSummaryKey;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
+
+        ASSERT_EQ(JsonValue(Utf8PrintfString(R"json([{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json", relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete)),
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str())) << "After deleting the rel";
+
+        //Scenario: delete the rel and a
+        resetFile(aKey, bKey, relKey, tracker);
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
+
+        changeset.Free();
+        ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+        //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
+        ASSERT_EQ(JsonValue(Utf8PrintfString(R"json(
+            [{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false},
+                {"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json",
+                                                aKey.GetInstanceId().ToString().c_str(), aKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete,
+                                                relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete)),
+                    GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str())) << "After deleting the rel and A";
+
+        //Scenario: delete a in one changeset and rel in second changeset
+        resetFile(aKey, bKey, relKey, tracker);
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.A"));
+
+        changeset.Free();
+        ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+        //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
+        ASSERT_EQ(JsonValue(Utf8PrintfString(R"json(
+            [{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json",
+                                                aKey.GetInstanceId().ToString().c_str(), aKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete).c_str()),
+                    GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str())) << "After deleting A in first changeset";
+
+        tracker.Restart();
+
+        //now delete rel in separate changeset
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Rel"));
+        changeset.Free();
+        ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+        //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+        ECInstanceKey changeSummary2Key;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset)));
+        ASSERT_EQ(JsonValue(Utf8PrintfString(R"json(
+            [{"ChangedInstance":{"Id":%s, "ClassId":%s},"OpCode":%d,"IsIndirect":false}])json",
+                                                relKey.GetInstanceId().ToString().c_str(), relKey.GetClassId().ToString().c_str(), (int) ChangeOpCode::Delete).c_str()),
+                    GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ChangedInstance,OpCode,IsIndirect FROM change.InstanceChange WHERE Summary.Id=%s", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str())) << "After deleting Rel in second changeset";
+        }
     }
 
 //---------------------------------------------------------------------------------------

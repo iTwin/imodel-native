@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ChangeIterator.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -167,6 +167,8 @@ struct ChangeIterator final
             RowEntry const& operator*() const { return *this; }
             bool operator==(RowEntry const& rhs) const { return m_change == rhs.m_change; }
             bool operator!=(RowEntry const& rhs) const { return !(*this == rhs); }
+
+            ECDB_EXPORT Utf8String ToString() const;
 
             ECDbCR GetDb() const { return m_ecdb; } //!< @private
             SqlChange const* GetSqlChange() const { return m_sqlChange; } //!< @private
