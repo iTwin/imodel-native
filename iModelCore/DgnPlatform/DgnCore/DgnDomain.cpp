@@ -717,7 +717,7 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
 
     if (RepositoryStatus::Success != dgndb.BriefcaseManager().LockSchemas().Result())
         {
-        BeAssert(false && "Unable to obtain the schema lock");
+        // BeAssert(false && "Unable to obtain the schema lock");
         return SchemaStatus::SchemaLockFailed;
         }
 
