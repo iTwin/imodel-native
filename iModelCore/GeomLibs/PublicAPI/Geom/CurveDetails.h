@@ -970,6 +970,19 @@ GEOMDLLIMPEXP FacetEdgeDetail (
     uint32_t _clusterIndex = UINT_MAX,
     uint32_t _numInCluster = 0
     );
+//! Apply transform to the segment coordintes
+void TransformInPlace (TransformCR transform);
+//! Apply transtform to all segment coordinates.
+static void TransformInPlace (bvector<FacetEdgeDetail> &edges, TransformCR transform);
+//! Append (push_back) all from source to dest.
+static void Append (bvector<FacetEdgeDetail> &dest, bvector<FacetEdgeDetail> const &source);
+//! Return any point in the array.  (000 if empty array)
+static DPoint3d GetAnyPoint (bvector<FacetEdgeDetail> const &source)
+    {
+    return source.size () > 0
+        ? source.front ().segment.point[0]
+        : DPoint3d::From (0,0,0);
+    }
 };
 END_BENTLEY_GEOMETRY_NAMESPACE
 

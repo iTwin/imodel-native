@@ -187,6 +187,12 @@ TEST(Clip,XYVisibilityB)
             auto panels = PolyfaceHeader::CreateVerticalPanelsBetweenSegments (segments);
             Check::Shift (0, a, 0);
             Check::SaveTransformed (panels);
+
+            Check::Shift (0, a, 0);
+            bvector<PolyfaceHeaderPtr> meshBB { meshB};
+            auto mergeMesh = PolyfaceHeader::CloneWithSidePanelsInserted (meshBB, vectorToEye);
+            Check::Shift (0, a, 0);
+            Check::SaveTransformed (mergeMesh);
             }
         }
 
@@ -319,4 +325,16 @@ TEST(Polyface,PartitionXY)
             }
         }
     Check::ClearGeometry ("Polyface.PartitionXY");
+    }
+// Compute cut fill between two meshes.
+// Both are assumed "single sheet" -- if there are double backs the results will double report.
+void TwoStepCutFill (
+PolyfaceHeaderPtr &meshA,       //!< first mesh -- e.g. DTM
+PolyfaceHeaderPtr &meshB,       //!< second mesh -- e.g. visible part of road surface
+PolyfaceHeaderPtr &volumneUnderAOverB,  //! OUTPUT
+PolyfaceHeaderPtr &volumeUnderBOverA    //! OUTPUT
+)
+    {
+    PolyfaceQuery::ComputeOverAndUnderXY (*meshA, nullptr, *meshB, nullptr, volumneUnderAOverB, volumneUnderAOverB);
+    PolyfaceQuery::ComputeOverAndUnderXY (*meshB, nullptr, *meshA, nullptr, volumeUnderBOverA, volumeUnderBOverA);
     }

@@ -1959,6 +1959,26 @@ GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateVerticalPanelsBetweenSegments
 bvector<FacetEdgeDetail> const &segments
 );
 
+//! Input an array of meshes expected to have boundary segments are separated by "missing side panels" as viewed in a certain direction.
+//! return a (separate, new) mesh with only the side panels.
+GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateSidePanelsForViewDirection
+(
+bvector<PolyfaceHeaderPtr> const &meshes,       //!< [in] array of input meshes
+DVec3dCR viewDirection                     //! view direction, e.g. (0,0,1) for usual "missing sides in xy view"
+);
+
+//! <ul>
+//! <li> Input an array of meshes expected to have boundary segments are separated by "missing side panels" as viewed in a certain direction.
+//! <li> return a (separate, new) mesh with the side panels added.   Additional midEdge vertices are inserted into the original facets if T vertices are present.
+//! <li> CreateSidePanelsForViewDirection creaates the panels
+//! <li> CloneWithTVertexFixup does touchup for extra vertices.
+//
+GEOMDLLIMPEXP static PolyfaceHeaderPtr CloneWithSidePanelsInserted
+(
+bvector<PolyfaceHeaderPtr> const &meshes,       //!< [in] array of input meshes
+DVec3dCR viewDirection                     //! view direction, e.g. (0,0,1) for usual "missing sides in xy view"
+);
+
 
 //! Create a Delauney triangulation of points as viewed in xy.  Return the triangulation and its Voronoi dual as separate polyfaces.
 //! @return true if meshes created.
@@ -2252,6 +2272,16 @@ GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithMaximalPlanarFacets
 bool mergeCoplanarFacets,   //!< [in] true to merge coplanar facets
 bool mergeColinearEdges     //!< [in] true to eliminate vertices splitting simple line edges.
 );
+
+//! Clone the meshes as a single mesh, inserting vertices along edges where vertices from other facets create T-Vertex topology
+GEOMDLLIMPEXP static PolyfaceHeaderPtr CloneWithTVertexFixup
+(
+bvector<PolyfaceHeaderPtr> const &meshes,       //!< [in] array of input meshes
+IFacetOptions *options = nullptr,             //!< [in] optional facet options.   If null, output is triangulated.
+double onEdgeTolerance = 0.0        //!< [in] tolerance for identifying T vertex.  defaults to DoubleOps::SmallMetricDistance ()
+);
+
+
 //! Decimate (in place) by simple rules that aggressively collapse short edges.
 //! This is the fastest decimation, but it does not protect boundary points.
 //! @return number of collapses.

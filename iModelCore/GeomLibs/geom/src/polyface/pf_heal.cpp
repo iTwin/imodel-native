@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
+#include <Geom/XYBucketSearch.h>
 
 
 #include <Geom/cluster.h>
@@ -959,6 +960,34 @@ void CreateVerticalPolygons (bvector<bvector<DPoint3d>> &outputPolygons)
     }
 };
 
+//! Input an array of meshes expected to have boundary segments are separated by "missing side panels" as viewed in a certain direction.
+//! return a (separate, new) mesh with the side panels.
+PolyfaceHeaderPtr PolyfaceHeader::CreateSidePanelsForViewDirection
+(
+bvector<PolyfaceHeaderPtr> const &meshes,       //!< [in] array of input meshes
+DVec3dCR viewDirection                     //! view direction, e.g. (0,0,1) for usual "missing sides in xy view"
+)
+    {
+    bvector<FacetEdgeDetail> segmentsA;
+    bvector<FacetEdgeDetail> allSegments;
+    for (auto &meshA : meshes)
+        {
+        meshA->CollectEdgeMateData (segmentsA, false, false);
+        FacetEdgeDetail::Append (allSegments, segmentsA);
+        }
+    if (allSegments.size () == 0)
+        return nullptr;
+
+    BentleyApi::Transform localFrame = Transform::From (RotMatrix::From1Vector (viewDirection, 2, true), FacetEdgeDetail::GetAnyPoint (allSegments));
+    BentleyApi::Transform worldToLocal;
+    worldToLocal.InverseOf (localFrame);
+    FacetEdgeDetail::TransformInPlace (allSegments, worldToLocal);
+    auto result = PolyfaceHeader::CreateVerticalPanelsBetweenSegments (allSegments);
+    if (result.IsValid ())
+        result->Transform (localFrame);
+    return result;
+    }
+
 //! input: array of line segments, e.g. boundary edges of a mesh with vertical facets missing.
 //! output: mesh with vertical panels to fill between segments that match  in z direction.
 PolyfaceHeaderPtr PolyfaceHeader::CreateVerticalPanelsBetweenSegments (bvector<FacetEdgeDetail> const &segments)
@@ -986,7 +1015,9 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateVerticalPanelsBetweenSegments (bvector<F
     return polyface;
     }
 
-
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                       EarlinLutz      07/18
++---------------+---------------+---------------+---------------+------*/
 FacetEdgeDetail::FacetEdgeDetail  (
     DSegment3dCR _segment,
     size_t _readIndex,
@@ -1000,6 +1031,90 @@ FacetEdgeDetail::FacetEdgeDetail  (
     {
 
     }
+//! Apply transform to the segment coordintes
+void FacetEdgeDetail::TransformInPlace (TransformCR transform)
+    {
+    transform.Multiply (segment.point[0]);
+    transform.Multiply (segment.point[1]);
+    }
+//! Apply transtform to all segment coordinates.
+void FacetEdgeDetail::TransformInPlace (bvector<FacetEdgeDetail> &edges, TransformCR transform)
+    {
+    for (auto &edge : edges)
+        edge.TransformInPlace (transform);
+    }
 
+//! Append (push_back) all from source to dest.
+void FacetEdgeDetail::Append (bvector<FacetEdgeDetail> &dest, bvector<FacetEdgeDetail> const &source)
+    {
+    for (auto &edge : source)
+        dest.push_back (edge);
+    }
 
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                       EarlinLutz      07/18
++---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr PolyfaceHeader::CloneWithTVertexFixup
+(
+bvector<PolyfaceHeaderPtr> const &meshes,      //!< [in] array of input meshes
+IFacetOptions *options,                         //!< [in] facet options.
+double onEdgeTolerance                         //!< [in] tolerance for identifying T vertex.  defaults to DoubleOps::SmallMetricDistance ()
+)
+    {
+    if (onEdgeTolerance <= 0.0)
+        onEdgeTolerance = DoubleOps::SmallMetricDistance ();
+    IFacetOptionsPtr myOptions = options == nullptr ? IFacetOptions::Create () : options;
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*myOptions);
+    auto xySearcher = XYBucketSearch::Create ();
+    // Collect all points into a single searcher.
+    size_t totalPointCount = 0;
+    for (auto &mesh : meshes)
+        {
+        bvector<DPoint3d> &meshPoints = mesh->Point ();
+        for (auto &xyz : meshPoints)
+            xySearcher->AddPoint (xyz, totalPointCount);
+        }
+
+    // Look for point-on-edge incidence while creating new facets.
+    bvector<DPoint3d> newFacetPoints;
+    bvector<DPoint3d> searchPoint;
+    bvector<size_t>   searchId;
+    InsertPointsInPolylineContext polylineContext (onEdgeTolerance);
+
+    for (auto &mesh : meshes)
+        {
+        PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*mesh, true);
+        visitor->SetNumWrap (1);
+        bvector<DPoint3d> &facetPoints = visitor->Point ();
+        DRange3d searchRange;
+        for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+            {
+            searchRange.InitFrom (facetPoints);
+            searchRange.Extend (1.5 * onEdgeTolerance);
+            xySearcher->CollectPointsInRangeXYZ (searchRange, searchPoint, searchId);
+            if (searchPoint.size () > 0)
+                {
+                polylineContext.InsertPointsInPolyline (facetPoints, newFacetPoints, searchPoint);
+                builder->AddTriangulation (newFacetPoints);
+                }
+            else
+                builder->AddTriangulation (facetPoints);
+            }
+        }
+    return builder->GetClientMeshPtr ();
+    }
+
+//! Input an array of meshes expected to have boundary segments are separated by "missing side panels" as viewed in a certain direction.
+//! return a (separate, new) mesh with the side panels added.   Additional midEdge vertices are inserted into the original facets if T vertices are present.
+PolyfaceHeaderPtr PolyfaceHeader::CloneWithSidePanelsInserted
+(
+bvector<PolyfaceHeaderPtr> const &meshes,       //!< [in] array of input meshes
+DVec3dCR viewDirection                     //! view direction, e.g. (0,0,1) for usual "missing sides in xy view"
+)
+    {
+    auto sidePanels = PolyfaceHeader::CreateSidePanelsForViewDirection (meshes, viewDirection);
+    bvector<PolyfaceHeaderPtr> allMeshes = meshes;
+    allMeshes.push_back (sidePanels);
+    return PolyfaceHeader::CloneWithTVertexFixup (allMeshes);
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE

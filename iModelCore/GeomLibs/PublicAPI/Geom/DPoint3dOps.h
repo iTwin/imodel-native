@@ -2149,4 +2149,41 @@ bool Insert (size_t i, DPoint3dCR xyz, double f, DVec3dCR vectorU, ICurvePrimiti
 
 };
 
+/*__PUBLISH_SECTION_END__*/
+
+//! class to be called for many polygons to insert points along edges.
+//! Usage patterns:
+//! <ul>
+//! <li>Create context:     InsertPointsInPolylineContext context (tolerance)
+//! <li> for each of (many) polygons, call context.InsertPointsInPolyline (source, dest, spacePoints);
+struct InsertPointsInPolylineContext
+{
+// point with sort key for sorting along edges.
+  struct DPoint3dDouble
+    {
+    DPoint3d xyz;
+    double   a;
+    GEOMDLLIMPEXP DPoint3dDouble (DPoint3dCR _xyz, double _a) : xyz(_xyz), a (_a) {}
+    GEOMDLLIMPEXP bool operator < (DPoint3dDouble const &dataB) const
+        {
+        return this->a < dataB.a;
+        }
+    };
+
+double m_tolerance;
+bvector<DPoint3dDouble> m_interiorPoints;
+//! Constructor: retain tolerance
+GEOMDLLIMPEXP InsertPointsInPolylineContext (double tolerance);
+//! Test for points within tolerance
+GEOMDLLIMPEXP bool AlmostEqual (DPoint3dCR pointA, DPoint3dCR pointB) const;
+//! Fill the m_interiorPoints array with <x,y,z,fraction> for all space points that are close to a
+//!   strict interior point of the segment.
+GEOMDLLIMPEXP void CollectInteriorPointsAlongEdge (DSegment3dCR segment, bvector<DPoint3d> const &spacePoints);
+//! For each space point which is close to the interior of a segemnt of the polyline, insert the space point
+//! into the dest polyline.
+GEOMDLLIMPEXP void InsertPointsInPolyline (bvector<DPoint3d> const &source, bvector<DPoint3d> &dest, bvector<DPoint3d> const &spacePoints);
+};
+
+/*__PUBLISH_SECTION_START__*/
+
 END_BENTLEY_GEOMETRY_NAMESPACE

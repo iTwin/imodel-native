@@ -400,6 +400,7 @@ static void PopTolerance ();
 static void SaveTransformed(bvector<IGeometryPtr> const &data);
 static void SaveTransformed(IGeometryPtr const &data);
 static void SaveTransformed(CurveVectorCR data);
+static void SaveTransformed(CurveVectorPtr &data);
 static void SaveTransformed(ICurvePrimitiveCR data);
 static void SaveTransformed(PolyfaceHeaderCR data);
 static void SaveTransformed(PolyfaceHeaderPtr &data);

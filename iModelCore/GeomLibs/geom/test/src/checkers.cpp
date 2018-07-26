@@ -1446,6 +1446,12 @@ void Check::SaveTransformed(CurveVectorCR data)
     SaveTransformed(IGeometry::Create(data.Clone()));
     }
 
+void Check::SaveTransformed(CurveVectorPtr &data)
+    {
+    if (data.IsValid ())
+        SaveTransformed(IGeometry::Create(data->Clone()));
+    }
+
 void Check::SaveTransformed(ICurvePrimitiveCR data)
     {
     SaveTransformed(IGeometry::Create (data.Clone ()));}

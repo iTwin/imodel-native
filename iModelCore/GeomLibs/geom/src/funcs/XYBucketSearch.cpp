@@ -8,7 +8,7 @@
 #include <bsibasegeomPCH.h>
 #include <float.h>
 #include <math.h>
-BEGIN_BENTLEY_GEOMETRY_INTERNAL_NAMESPACE
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 
 struct TaggedPoint
@@ -65,7 +65,7 @@ bool imp_GetPoint (unsigned int i, DPoint3dR xyz, XYBucketSearchTagType &data) c
 bool imp_ClosestPoint (double x, double y, double &xOut, double &yOut, XYBucketSearchTagType &dataOut);
 
 /// <summary>Invoke a callback for all points that fall in a specified range.</summary>
-void imp_CollectPointsInRange (double xMin, double yMin, double xMax, double yMax,
+void imp_CollectPointsInRangeXYZ (DRange3dCR range,
 bvector<DPoint3d> &searchPoint,
 bvector<XYBucketSearchTagType> &searchId
 );
@@ -135,12 +135,26 @@ bool XYBucketSearch::GetPoint (unsigned int i, DPoint3dR xyz, XYBucketSearchTagT
 bool XYBucketSearch::ClosestPoint (double x, double y, double &xOut, double &yOut, XYBucketSearchTagType &dataOut)
     {return ((XYBucketSearchImplementation*)this)->imp_ClosestPoint (x, y, xOut, yOut, dataOut);}
 
-void XYBucketSearch::CollectPointsInRange (double xMin, double yMin, double xMax, double yMax,
+void XYBucketSearch::CollectPointsInRangeXY (DRange2dCR range2d,
 bvector<DPoint3d> &searchPoint,
 bvector<XYBucketSearchTagType> &searchId
 )
     {
-    return ((XYBucketSearchImplementation*)this)->imp_CollectPointsInRange (xMin, yMin, xMax, yMax, searchPoint, searchId);}
+    static double a = 1.0e14;
+    DRange3d range3d = DRange3d::From (
+        DPoint3d::From (range2d.low, -a),
+        DPoint3d::From (range2d.high, a));
+        
+    return ((XYBucketSearchImplementation*)this)->imp_CollectPointsInRangeXYZ (range3d, searchPoint, searchId);
+    }
+
+void XYBucketSearch::CollectPointsInRangeXYZ (DRange3dCR range,
+bvector<DPoint3d> &searchPoint,
+bvector<XYBucketSearchTagType> &searchId
+)
+    {
+    return ((XYBucketSearchImplementation*)this)->imp_CollectPointsInRangeXYZ (range, searchPoint, searchId);
+    }
 
 bool XYBucketSearch::ClosestPointLinear (double x, double y, double &xOut, double &yOut, XYBucketSearchTagType &dataOut)
     {return ((XYBucketSearchImplementation*)this)->imp_ClosestPointLinear (x, y, xOut, yOut, dataOut);}
@@ -401,12 +415,8 @@ bool XYBucketSearchImplementation::imp_ClosestPoint (double x, double y, double 
     }
 
 /// <summary>Invoke a callback for all points that fall in a specified range.</summary>
-void XYBucketSearchImplementation::imp_CollectPointsInRange
-(
-double xMin,
-double yMin,
-double xMax,
-double yMax,
+void XYBucketSearchImplementation::imp_CollectPointsInRangeXYZ (
+DRange3dCR range,
 bvector<DPoint3d> &searchPoint,
 bvector<XYBucketSearchTagType> &searchId
 )
@@ -415,6 +425,10 @@ bvector<XYBucketSearchTagType> &searchId
     searchId.clear ();
     if (!m_sorted)
         Sort ();
+    double xMin = range.low.x;
+    double xMax = range.high.x;
+    double yMin = range.low.y;
+    double yMax = range.high.y;
     size_t numRow = rows.size ();
     int lowRow = SelectRow (yMin);
     for (size_t rowIndex = lowRow; rowIndex < numRow; rowIndex++)
@@ -432,7 +446,7 @@ bvector<XYBucketSearchTagType> &searchId
             TaggedPoint p = points[k];
             if (p.xyz.x > xMax)
                 break;
-            if (p.xyz.y >=yMin && p.xyz.y <= yMax && p.xyz.x >= xMin)
+            if (range.IsContained (p.xyz))
                 {
                 searchPoint.push_back (p.xyz);
                 searchId.push_back (p.data);
@@ -468,4 +482,4 @@ bool XYBucketSearchImplementation::imp_ClosestPointLinear (double x, double y, d
     }
 
 
-END_BENTLEY_GEOMETRY_INTERNAL_NAMESPACE
+END_BENTLEY_GEOMETRY_NAMESPACE

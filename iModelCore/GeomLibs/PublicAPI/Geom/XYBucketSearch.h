@@ -9,8 +9,8 @@
 
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-#include <algorithm>
-BEGIN_BENTLEY_GEOMETRY_INTERNAL_NAMESPACE
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 #define XYBucketSearchTagType size_t
 
@@ -67,7 +67,12 @@ bool GEOMDLLIMPEXP  GetPoint (unsigned int i, DPoint3dR xyz, XYBucketSearchTagTy
 bool GEOMDLLIMPEXP ClosestPoint (double x, double y, double &xOut, double &yOut, XYBucketSearchTagType &dataOut);
 
 /// <summary>Invoke a callback for all points that fall in a specified range.</summary>
-void GEOMDLLIMPEXP CollectPointsInRange (double xMin, double yMin, double xMax, double yMax,
+void GEOMDLLIMPEXP CollectPointsInRangeXY (DRange2dCR range,
+    bvector<DPoint3d> &searchPoint,
+    bvector<XYBucketSearchTagType> &searchId);
+
+/// <summary>Invoke a callback for all points that fall in a specified range.</summary>
+void GEOMDLLIMPEXP CollectPointsInRangeXYZ (DRange3dCR range,
     bvector<DPoint3d> &searchPoint,
     bvector<XYBucketSearchTagType> &searchId);
 
@@ -82,4 +87,4 @@ bool GEOMDLLIMPEXP ClosestPointLinear (double x, double y, double &xOut, double 
 };
 
 
-END_BENTLEY_GEOMETRY_INTERNAL_NAMESPACE
+END_BENTLEY_GEOMETRY_NAMESPACE
