@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/DgnLineStyles.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -10,17 +10,24 @@
 using namespace std;
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2012
-//--------------+------------------------------------------------------------------------
-BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComponentId componentId, uint32_t flags, double unitDefinition)
+// @bsimethod                                                   Shaun.Sewall    07/2018
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnLineStyles::Insert(DgnStyleId& newStyleId, DgnModelId modelId, Utf8CP name, Utf8CP description, LsComponentId componentId, uint32_t flags, double unitDefinition)
     {
+    DefinitionModelPtr model = m_dgndb.Models().Get<DefinitionModel>(modelId);
+    if (!model.IsValid())
+        {
+        newStyleId = DgnStyleId();
+        return ERROR;
+        }
+
     Json::Value jsonObj(Json::objectValue);
     LsDefinition::InitializeJsonObject(jsonObj, componentId, flags, unitDefinition);
     Utf8String data = Json::FastWriter::ToString(jsonObj);
 
-    LineStyleElementPtr lsElement = LineStyleElement::Create(m_dgndb);
+    LineStyleElementPtr lsElement = LineStyleElement::Create(*model);
     lsElement->SetName(name);
-    lsElement->SetDescription(nullptr);   //  NEEDSWORK_LINESTYLES -- add Description arg to Insert
+    lsElement->SetDescription(description);
     lsElement->SetData(data.c_str());
     LineStyleElementCPtr constLs = lsElement->Insert();
     if (!constLs.IsValid())
@@ -35,6 +42,14 @@ BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComp
     GetCache().AddIdEntry(lsDef);
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2012
+//--------------+------------------------------------------------------------------------
+BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComponentId componentId, uint32_t flags, double unitDefinition)
+    {
+    return Insert(newStyleId, DgnModel::DictionaryId(), name, nullptr, componentId, flags, unitDefinition);
     }
 
 //---------------------------------------------------------------------------------------
