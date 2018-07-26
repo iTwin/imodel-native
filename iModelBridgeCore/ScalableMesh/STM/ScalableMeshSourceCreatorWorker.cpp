@@ -326,7 +326,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
 
     HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
     
-    meshNode->NeedToLoadNeighbors(false);
+    meshNode->NeedToLoadNeighbors(true);
     meshNode->Load();
 
     assert(!meshNode->m_nodeHeader.m_arePoints3d);
@@ -623,7 +623,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
     HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
 
     meshNode->Unload();
-    meshNode->NeedToLoadNeighbors(false);
+    meshNode->NeedToLoadNeighbors(true);
     meshNode->Load();
 
     assert(!meshNode->m_nodeHeader.m_arePoints3d);
