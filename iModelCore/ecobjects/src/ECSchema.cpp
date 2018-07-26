@@ -2001,101 +2001,113 @@ ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) con
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECClassCP ECSchema::LookupClass(Utf8CP name) const
+ECClassCP ECSchema::LookupClass(Utf8CP name, bool useFullName) const
     {
-    Utf8String alias;
-    Utf8String localName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, localName, name))
+    Utf8String aliasOrSchemaName;
+    Utf8String unqualifiedName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(aliasOrSchemaName, unqualifiedName, name))
         return nullptr;
+    // Have to check !useFullName for checking alias because of the possibility of someone naming their schema the same as this schema's alias
+    // Without this the lookup would occur on this schema instead of the referenced schema it was supposed to.
+    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsI(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsI(GetName())))
+        return GetClassCP(unqualifiedName.c_str());
 
-    ECClassCP foundClass = nullptr;
-    if (alias.empty())
-        foundClass = GetClassCP(localName.c_str());
-    else
+    if (useFullName)
         {
-        ECSchemaCP resolvedSchema = GetSchemaByAliasP(alias);
-        if (nullptr == resolvedSchema)
-            return nullptr;
-
-        foundClass = resolvedSchema->GetClassCP(localName.c_str());
+        for (const auto& s : GetReferencedSchemas())
+            {
+            if (aliasOrSchemaName.EqualsI(s.second->GetName()))
+                return s.second->GetClassCP(unqualifiedName.c_str());
+            }
+        return nullptr;
         }
 
-    return foundClass;
+    ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(aliasOrSchemaName);
+    return (nullptr != resolvedUnitSchema ? resolvedUnitSchema->GetClassCP(unqualifiedName.c_str()) : nullptr);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-KindOfQuantityCP ECSchema::LookupKindOfQuantity(Utf8CP name) const
+KindOfQuantityCP ECSchema::LookupKindOfQuantity(Utf8CP name, bool useFullName) const
     {
-    Utf8String alias;
-    Utf8String localName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, localName, name))
+    Utf8String aliasOrSchemaName;
+    Utf8String unqualifiedName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(aliasOrSchemaName, unqualifiedName, name))
         return nullptr;
+    // Have to check !useFullName for checking alias because of the possibility of someone naming their schema the same as this schema's alias
+    // Without this the lookup would occur on this schema instead of the referenced schema it was supposed to.
+    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsI(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsI(GetName())))
+        return GetKindOfQuantityCP(unqualifiedName.c_str());
 
-    KindOfQuantityCP foundClass = nullptr;
-    if (alias.empty())
-        foundClass = GetKindOfQuantityCP(localName.c_str());
-    else
+    if (useFullName)
         {
-        ECSchemaCP resolvedSchema = GetSchemaByAliasP(alias);
-        if (nullptr == resolvedSchema)
-            return nullptr;
-
-        foundClass = resolvedSchema->GetKindOfQuantityCP(localName.c_str());
+        for (const auto& s : GetReferencedSchemas())
+            {
+            if (aliasOrSchemaName.EqualsI(s.second->GetName()))
+                return s.second->GetKindOfQuantityCP(unqualifiedName.c_str());
+            }
+        return nullptr;
         }
 
-    return foundClass;
+    ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(aliasOrSchemaName);
+    return (nullptr != resolvedUnitSchema ? resolvedUnitSchema->GetKindOfQuantityCP(unqualifiedName.c_str()) : nullptr);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECEnumerationCP ECSchema::LookupEnumeration(Utf8CP name) const
+ECEnumerationCP ECSchema::LookupEnumeration(Utf8CP name, bool useFullName) const
     {
-    Utf8String alias;
-    Utf8String localName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, localName, name))
+    Utf8String aliasOrSchemaName;
+    Utf8String unqualifiedName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(aliasOrSchemaName, unqualifiedName, name))
         return nullptr;
+    // Have to check !useFullName for checking alias because of the possibility of someone naming their schema the same as this schema's alias
+    // Without this the lookup would occur on this schema instead of the referenced schema it was supposed to.
+    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsI(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsI(GetName())))
+        return GetEnumerationCP(unqualifiedName.c_str());
 
-    ECEnumerationCP foundClass = nullptr;
-    if (alias.empty())
-        foundClass = GetEnumerationCP(localName.c_str());
-    else
+    if (useFullName)
         {
-        ECSchemaCP resolvedSchema = GetSchemaByAliasP(alias);
-        if (nullptr == resolvedSchema)
-            return nullptr;
-
-        foundClass = resolvedSchema->GetEnumerationCP(localName.c_str());
+        for (const auto& s : GetReferencedSchemas())
+            {
+            if (aliasOrSchemaName.EqualsI(s.second->GetName()))
+                return s.second->GetEnumerationCP(unqualifiedName.c_str());
+            }
+        return nullptr;
         }
 
-    return foundClass;
+    ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(aliasOrSchemaName);
+    return (nullptr != resolvedUnitSchema ? resolvedUnitSchema->GetEnumerationCP(unqualifiedName.c_str()) : nullptr);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-PropertyCategoryCP ECSchema::LookupPropertyCategory(Utf8CP name) const
+PropertyCategoryCP ECSchema::LookupPropertyCategory(Utf8CP name, bool useFullName) const
     {
-    Utf8String alias;
-    Utf8String localName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, localName, name))
+    Utf8String aliasOrSchemaName;
+    Utf8String unqualifiedName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(aliasOrSchemaName, unqualifiedName, name))
         return nullptr;
+    // Have to check !useFullName for checking alias because of the possibility of someone naming their schema the same as this schema's alias
+    // Without this the lookup would occur on this schema instead of the referenced schema it was supposed to.
+    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsI(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsI(GetName())))
+        return GetPropertyCategoryCP(unqualifiedName.c_str());
 
-    PropertyCategoryCP foundClass = nullptr;
-    if (alias.empty())
-        foundClass = GetPropertyCategoryCP(localName.c_str());
-    else
+    if (useFullName)
         {
-        ECSchemaCP resolvedSchema = GetSchemaByAliasP(alias);
-        if (nullptr == resolvedSchema)
-            return nullptr;
-
-        foundClass = resolvedSchema->GetPropertyCategoryCP(localName.c_str());
+        for (const auto& s : GetReferencedSchemas())
+            {
+            if (aliasOrSchemaName.EqualsI(s.second->GetName()))
+                return s.second->GetPropertyCategoryCP(unqualifiedName.c_str());
+            }
+        return nullptr;
         }
 
-    return foundClass;
+    ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(aliasOrSchemaName);
+    return (nullptr != resolvedUnitSchema ? resolvedUnitSchema->GetPropertyCategoryCP(unqualifiedName.c_str()) : nullptr);
     }
 
 //--------------------------------------------------------------------------------------
@@ -2159,26 +2171,29 @@ ECUnitP ECSchema::GetUnitP(Utf8CP name) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    04/2018
 //--------------------------------------------------------------------------------------
-ECFormatCP ECSchema::LookupFormat(Utf8CP name) const
+ECFormatCP ECSchema::LookupFormat(Utf8CP name, bool useFullName) const
     {
-    Utf8String formatAlias;
-    Utf8String formatName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(formatAlias, formatName, name))
+    Utf8String aliasOrSchemaName;
+    Utf8String unqualifiedName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(aliasOrSchemaName, unqualifiedName, name))
         return nullptr;
+    // Have to check !useFullName for checking alias because of the possibility of someone naming their schema the same as this schema's alias
+    // Without this the lookup would occur on this schema instead of the referenced schema it was supposed to.
+    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsI(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsI(GetName())))
+        return GetFormatCP(unqualifiedName.c_str());
 
-    ECFormatCP format = nullptr;
-    if (formatAlias.empty())
-        format = GetFormatCP(formatName.c_str());
-    else
+    if (useFullName)
         {
-        ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(formatAlias);
-        if (nullptr == resolvedUnitSchema)
-            return nullptr;
-
-        format = resolvedUnitSchema->GetFormatCP(formatName.c_str());
+        for (const auto& s : GetReferencedSchemas())
+            {
+            if (aliasOrSchemaName.EqualsI(s.second->GetName()))
+                return s.second->GetFormatCP(unqualifiedName.c_str());
+            }
+        return nullptr;
         }
 
-    return format;
+    ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(aliasOrSchemaName);
+    return (nullptr != resolvedUnitSchema ? resolvedUnitSchema->GetFormatCP(unqualifiedName.c_str()) : nullptr);
     }
 
 //--------------------------------------------------------------------------------------

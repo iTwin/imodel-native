@@ -51,7 +51,7 @@ bool NamedFormat::_ToJson(Json::Value& out, bool verbose) const
     {
     if (!GetNumericSpec()->ToJson(out, false))
         return false;
-    
+    // TODO: This is duplicated from Formatting::CompositeValueSpec::_ToJson. Make sure to update both
     if (HasComposite())
         {
         auto comp = GetCompositeSpec();
@@ -64,7 +64,7 @@ bool NamedFormat::_ToJson(Json::Value& out, bool verbose) const
             auto& unitElement = unitsArray.append(Json::Value(Json::objectValue));
             if(label.IsValid())
                unitElement[COMPOSITE_UNIT_LABEL_ATTRIBUTE] = label.Value().c_str();
-            unitElement[NAME_ATTRIBUTE] = ((ECUnitCP)unit)->GetQualifiedName(GetParentFormat()->GetSchema()).c_str();
+            unitElement[NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECUnitCP)unit);
             };
 
         compElement[FORMAT_COMPOSITE_UNITS_ELEMENT] = Json::Value(Json::arrayValue);

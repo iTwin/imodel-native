@@ -54,13 +54,25 @@ TEST_F(UnitSystemTest, LookupSystemTest)
     EXPECT_EQ(nullptr, shouldBeNull);
     shouldBeNull = schema->LookupUnitSystem("banana:M");
     EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = schema->LookupUnitSystem("Units:M");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = schema->LookupUnitSystem("u:M", true);
+    EXPECT_EQ(nullptr, shouldBeNull);
     auto shouldNotBeNull = schema->LookupUnitSystem("TestSystem");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("TestSystem", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupUnitSystem("ts:TestSystem");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("TestSystem", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupUnitSystem("TestSchema:TestSystem", true);
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("TestSystem", shouldNotBeNull->GetName().c_str());
     shouldNotBeNull = schema->LookupUnitSystem("u:SI");
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("SI", shouldNotBeNull->GetName().c_str());
-
+    shouldNotBeNull = schema->LookupUnitSystem("Units:SI", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("SI", shouldNotBeNull->GetName().c_str());
     bvector<Units::UnitSystemCP> systems;
     unitContext->AllSystems(systems);
     ASSERT_EQ(schema->GetUnitSystemCount(), systems.size());

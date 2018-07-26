@@ -3247,9 +3247,9 @@ protected:
         m_phenomenonContainer(m_phenomenonMap), m_unitContainer(m_unitMap) {}
 
     // Following methods fulfill IUnitsContext requirements
-    ECOBJECTS_EXPORT ECUnitP _LookupUnitP(Utf8CP name) const override;
-    ECOBJECTS_EXPORT PhenomenonP _LookupPhenomenonP(Utf8CP name) const override;
-    ECOBJECTS_EXPORT UnitSystemP _LookupUnitSystemP(Utf8CP name) const override;
+    ECOBJECTS_EXPORT ECUnitP _LookupUnitP(Utf8CP name, bool useFullName) const override;
+    ECOBJECTS_EXPORT PhenomenonP _LookupPhenomenonP(Utf8CP name, bool useFullName) const override;
+    ECOBJECTS_EXPORT UnitSystemP _LookupUnitSystemP(Utf8CP name, bool useFullName) const override;
     ECOBJECTS_EXPORT void _AllUnits(bvector<Units::UnitCP>& allUnits) const override;
     ECOBJECTS_EXPORT void _AllPhenomena(bvector<Units::PhenomenonCP>& allPhenomena) const override;
     ECOBJECTS_EXPORT void _AllSystems(bvector<Units::UnitSystemCP>& allUnitSystems) const override;
@@ -3267,8 +3267,10 @@ public:
     //! Looks up an ECUnit by within this. If the name is fully qualified it will search reference
     //! schemas.
     //! @param[in]  name     The name of the unit to lookup.  Can be either an unqualified (short) name or a qualified name.
+    //! @param[in]  useFullName If true, name must be fully qualified ([schema name]:[item name]). The lookup will treat the part to the
+    //!                         the left of the separator (:) as a schema name and not an alias
     //! @return   A pointer to the an ECUnit if the named unit exists within the current schema or one of its reference schemas; otherwise, nullptr.
-    ECUnitCP LookupUnit(Utf8CP name) const override {return _LookupUnitP(name);}
+    ECUnitCP LookupUnit(Utf8CP name, bool useFullName = false) const override {return _LookupUnitP(name, useFullName);}
 };
 
 //=======================================================================================
@@ -3732,9 +3734,11 @@ public:
     ECClassP GetClassP(Utf8CP name) {return GetSchemaChild<ECClass, ClassMap>(name, &m_classMap);}
 
     //! Get an ECClass by name within the context of this schema and all schemas referenced by this schema.
-    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @param[in]  name        The name of schema item to lookup.  This can be either an qualified or unqualified (short) name (qualified name: [alias]:[item name])
+    //! @param[in]  useFullName useFullName If true, name must be fully qualified ([schema name]:[item name]). The lookup will treat the part to the
+    //!                         the left of the separator (:) as a schema name and not an alias
     //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
-    ECOBJECTS_EXPORT ECClassCP LookupClass(Utf8CP name) const;
+    ECOBJECTS_EXPORT ECClassCP LookupClass(Utf8CP name, bool useFullName = false) const;
 
     //! Get an enumeration by name within the context of this schema.
     //! @param[in]  name     The name of the enumeration to lookup.  This must be an unqualified (short) name.
@@ -3747,9 +3751,11 @@ public:
     ECEnumerationP GetEnumerationP(Utf8CP name) {return GetSchemaChild<ECEnumeration, EnumerationMap>(name, &m_enumerationMap);}
 
     //! Get an ECENumeration by name within the context of this schema and all schemas referenced by this schema.
-    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @param[in]  name        The name of schema item to lookup.  This can be either an qualified or unqualified (short) name (qualified name: [alias]:[item name])
+    //! @param[in]  useFullName useFullName If true, name must be fully qualified ([schema name]:[item name]). The lookup will treat the part to the
+    //!                         the left of the separator (:) as a schema name and not an alias
     //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
-    ECOBJECTS_EXPORT ECEnumerationCP LookupEnumeration(Utf8CP name) const;
+    ECOBJECTS_EXPORT ECEnumerationCP LookupEnumeration(Utf8CP name, bool useFullName = false) const;
 
     //! Get a kind of quantity by name within the context of this schema.
     //! @param[in]  name     The name of the kind of quantity to lookup.  This must be an unqualified (short) name.
@@ -3762,9 +3768,11 @@ public:
     KindOfQuantityP GetKindOfQuantityP(Utf8CP name) {return GetSchemaChild<KindOfQuantity, KindOfQuantityMap>(name, &m_kindOfQuantityMap);}
     
     //! Get a KindOfQuantity by name within the context of this schema and all schemas referenced by this schema.
-    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @param[in]  name        The name of schema item to lookup.  This can be either an qualified or unqualified (short) name (qualified name: [alias]:[item name])
+    //! @param[in]  useFullName useFullName If true, name must be fully qualified ([schema name]:[item name]). The lookup will treat the part to the
+    //!                         the left of the separator (:) as a schema name and not an alias
     //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
-    ECOBJECTS_EXPORT KindOfQuantityCP LookupKindOfQuantity(Utf8CP name) const;
+    ECOBJECTS_EXPORT KindOfQuantityCP LookupKindOfQuantity(Utf8CP name, bool useFullName = false) const;
 
     //! Get a property category by name within the context of this schema.
     //! @param[in]  name     The name of the property category to lookup.  This must be an unqualified (short) name.
@@ -3777,9 +3785,11 @@ public:
     PropertyCategoryP GetPropertyCategoryP(Utf8CP name) {return GetSchemaChild<PropertyCategory, PropertyCategoryMap>(name, &m_propertyCategoryMap);}
 
     //! Get a PropertyCategory by name within the context of this schema and all schemas referenced by this schema.
-    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @param[in]  name        The name of schema item to lookup.  This can be either an qualified or unqualified (short) name (qualified name: [alias]:[item name])
+    //! @param[in]  useFullName useFullName If true, name must be fully qualified ([schema name]:[item name]). The lookup will treat the part to the
+    //!                         the left of the separator (:) as a schema name and not an alias
     //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
-    ECOBJECTS_EXPORT PropertyCategoryCP LookupPropertyCategory(Utf8CP name) const;
+    ECOBJECTS_EXPORT PropertyCategoryCP LookupPropertyCategory(Utf8CP name, bool useFullName = false) const;
 
     //! Get a unit system by name within the context of this schema.
     //! @param[in]  name     The name of the unit system to lookup.  This must be an unqualified (short) name.
@@ -3792,9 +3802,11 @@ public:
     ECOBJECTS_EXPORT UnitSystemP GetUnitSystemP(Utf8CP name) const;
 
     //! Get a UnitSystem by name within the context of this schema and all schemas referenced by this schema.
-    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @param[in]  name        The name of schema item to lookup.  This can be either an qualified or unqualified (short) name (qualified name: [alias]:[item name])
+    //! @param[in]  useFullName useFullName If true, name must be fully qualified ([schema name]:[item name]). The lookup will treat the part to the
+    //!                         the left of the separator (:) as a schema name and not an alias
     //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
-    UnitSystemCP LookupUnitSystem(Utf8CP name) const {return (UnitSystemCP)GetUnitsContext().LookupUnitSystem(name);}
+    UnitSystemCP LookupUnitSystem(Utf8CP name, bool useFullName = false) const {return (UnitSystemCP)GetUnitsContext().LookupUnitSystem(name, useFullName);}
 
     //! Get a Phenomenon by name within the context of this schema.
     //! @param[in]  name     The name of the phenomenon to lookup.  This must be an unqualified (short) name.
@@ -3807,9 +3819,11 @@ public:
     ECOBJECTS_EXPORT PhenomenonP GetPhenomenonP(Utf8CP name) const;
 
     //! Get a Phenomenon by name within the context of this schema and all schemas referenced by this schema.
-    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @param[in]  name        The name of schema item to lookup.  This can be either an qualified or unqualified (short) name (qualified name: [alias]:[item name])
+    //! @param[in]  useFullName useFullName If true, name must be fully qualified ([schema name]:[item name]). The lookup will treat the part to the
+    //!                         the left of the separator (:) as a schema name and not an alias
     //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
-    PhenomenonCP LookupPhenomenon(Utf8CP name) const {return (PhenomenonCP)GetUnitsContext().LookupPhenomenon(name);}
+    PhenomenonCP LookupPhenomenon(Utf8CP name, bool useFullName = false) const {return (PhenomenonCP)GetUnitsContext().LookupPhenomenon(name, useFullName);}
 
     //! Get an ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
@@ -3822,9 +3836,11 @@ public:
     ECOBJECTS_EXPORT ECUnitP GetUnitP(Utf8CP name) const;
 
     //! Get an ECUnit by name within the context of this schema and all schemas referenced by this schema.
-    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @param[in]  name        The name of schema item to lookup.  This can be either an qualified or unqualified (short) name (qualified name: [alias]:[item name])
+    //! @param[in]  useFullName useFullName If true, name must be fully qualified ([schema name]:[item name]). The lookup will treat the part to the
+    //!                         the left of the separator (:) as a schema name and not an alias
     //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
-    ECUnitCP LookupUnit(Utf8CP name) const {return (ECUnitCP)GetUnitsContext().LookupUnit(name);}
+    ECUnitCP LookupUnit(Utf8CP name, bool useFullName = false) const {return (ECUnitCP)GetUnitsContext().LookupUnit(name, useFullName);}
 
     //! Get an inverted ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
@@ -3857,9 +3873,11 @@ public:
     ECFormatP GetFormatP(Utf8CP name) {return GetSchemaChild<ECFormat, FormatMap>(name, &m_formatMap);}
 
     //! Get a Format by name within the context of this schema and all schemas referenced by this schema.
-    //! @param[in]  name     The name of the format to lookup.  This can be either an qualified or unqualified (short) name
+    //! @param[in]  name        The name of schema item to lookup.  This can be either an qualified or unqualified (short) name (qualified name: [alias]:[item name])
+    //! @param[in]  useFullName useFullName If true, name must be fully qualified ([schema name]:[item name]). The lookup will treat the part to the
+    //!                         the left of the separator (:) as a schema name and not an alias
     //! @return   A pointer to an ECN::Format if the named format exists in within the current schema; otherwise, nullptr
-    ECOBJECTS_EXPORT ECFormatCP LookupFormat(Utf8CP name) const;
+    ECOBJECTS_EXPORT ECFormatCP LookupFormat(Utf8CP name, bool useFullName = false) const;
 
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,

@@ -17,19 +17,19 @@
     "includeZero": true,
     "units": [
       {
-        "name": "u:MILE",
+        "name": "Units.MILE",
         "label": "mile(s)"
       },
       {
-        "name": "u:YRD",
+        "name": "Units.YRD",
         "label": "yrd(s)"
       },
       {
-        "name": "u:FT",
+        "name": "Units.FT",
         "label": "'"
       },
       {
-        "name": "u:IN",
+        "name": "Units.IN",
         "label": "\""
       }
     ]

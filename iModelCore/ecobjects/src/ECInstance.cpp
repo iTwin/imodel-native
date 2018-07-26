@@ -2871,11 +2871,7 @@ struct  InstanceXmlReader
                 Utf8CP ecName = Units::UnitNameMappings::TryGetECNameFromOldName(oldUnitName);
                 if (nullptr != ecName)
                     {
-                    Utf8String alias;
-                    Utf8String unitName;
-                    ECClass::ParseClassName(alias, unitName, ecName);
-
-                    ECUnitCP oldUnit = koq->GetSchema().LookupUnit(("u:" + unitName).c_str());
+                    ECUnitCP oldUnit = koq->GetSchema().LookupUnit(ecName, true);
                     if (nullptr == oldUnit)
                         {
                         LOG.warningv("Failed to lookup unit '%s' for property '%s'. Cannot convert value. Skipping.", ecName, propertyName.c_str());

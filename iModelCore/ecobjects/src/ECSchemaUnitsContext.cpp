@@ -71,26 +71,29 @@ template<> ECUnitP SchemaUnitContext::Get<ECUnit>(Utf8CP name) const {return Get
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-ECUnitP SchemaUnitContext::_LookupUnitP(Utf8CP name) const
+ECUnitP SchemaUnitContext::_LookupUnitP(Utf8CP name, bool useFullName) const
     {
-    Utf8String unitAlias;
-    Utf8String unitName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(unitAlias, unitName, name))
+    Utf8String aliasOrSchemaName;
+    Utf8String unqualifiedName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(aliasOrSchemaName, unqualifiedName, name))
         return nullptr;
+    // Have to check !useFullName for checking alias because of the possibility of someone naming their schema the same as this schema's alias
+    // Without this the lookup would occur on this schema instead of the referenced schema it was supposed to.
+    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsI(m_schema.GetAlias())) || (useFullName && aliasOrSchemaName.EqualsI(m_schema.GetName())))
+        return m_schema.GetUnitP(unqualifiedName.c_str());
 
-    ECUnitP unit = nullptr;
-    if (unitAlias.empty())
-        unit = m_schema.GetUnitP(unitName.c_str());
-    else
+    if (useFullName)
         {
-        ECSchemaCP resolvedUnitSchema = m_schema.GetSchemaByAliasP(unitAlias);
-        if (nullptr == resolvedUnitSchema)
-            return nullptr;
-
-        unit = resolvedUnitSchema->GetUnitP(unitName.c_str());
+        for (const auto& s : m_schema.GetReferencedSchemas())
+            {
+            if (aliasOrSchemaName.EqualsI(s.second->GetName()))
+                return s.second->GetUnitP(unqualifiedName.c_str());
+            }
+        return nullptr;
         }
 
-    return unit;
+    ECSchemaCP resolvedUnitSchema = m_schema.GetSchemaByAliasP(aliasOrSchemaName);
+    return (nullptr != resolvedUnitSchema ? resolvedUnitSchema->GetUnitP(unqualifiedName.c_str()) : nullptr);
     }
 
 //--------------------------------------------------------------------------------------
@@ -105,26 +108,29 @@ void SchemaUnitContext::_AllUnits(bvector<Units::UnitCP>& allUnits) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-PhenomenonP SchemaUnitContext::_LookupPhenomenonP(Utf8CP name) const
+PhenomenonP SchemaUnitContext::_LookupPhenomenonP(Utf8CP name, bool useFullName) const
     {
-    Utf8String phenomAlias;
-    Utf8String phenomName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(phenomAlias, phenomName, name))
+    Utf8String aliasOrSchemaName;
+    Utf8String unqualifiedName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(aliasOrSchemaName, unqualifiedName, name))
         return nullptr;
+    // Have to check !useFullName for checking alias because of the possibility of someone naming their schema the same as this schema's alias
+    // Without this the lookup would occur on this schema instead of the referenced schema it was supposed to.
+    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsI(m_schema.GetAlias())) || (useFullName && aliasOrSchemaName.EqualsI(m_schema.GetName())))
+        return m_schema.GetPhenomenonP(unqualifiedName.c_str());
 
-    PhenomenonP phenom = nullptr;
-    if (phenomAlias.empty())
-        phenom = m_schema.GetPhenomenonP(phenomName.c_str());
-    else
+    if (useFullName)
         {
-        ECSchemaCP resolvedPhenomSchema = m_schema.GetSchemaByAliasP(phenomAlias);
-        if (nullptr == resolvedPhenomSchema)
-            return nullptr;
-
-        phenom = resolvedPhenomSchema->GetPhenomenonP(phenomName.c_str());
+        for (const auto& s : m_schema.GetReferencedSchemas())
+            {
+            if (aliasOrSchemaName.EqualsI(s.second->GetName()))
+                return s.second->GetPhenomenonP(unqualifiedName.c_str());
+            }
+        return nullptr;
         }
 
-    return phenom;
+    ECSchemaCP resolvedUnitSchema = m_schema.GetSchemaByAliasP(aliasOrSchemaName);
+    return (nullptr != resolvedUnitSchema ? resolvedUnitSchema->GetPhenomenonP(unqualifiedName.c_str()) : nullptr);
     }
 
 //--------------------------------------------------------------------------------------
@@ -139,26 +145,29 @@ void SchemaUnitContext::_AllPhenomena(bvector<Units::PhenomenonCP>& allPhenomena
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-UnitSystemP SchemaUnitContext::_LookupUnitSystemP(Utf8CP name) const
+UnitSystemP SchemaUnitContext::_LookupUnitSystemP(Utf8CP name, bool useFullName) const
     {
-    Utf8String systemAlias;
-    Utf8String systemName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(systemAlias, systemName, name))
+    Utf8String aliasOrSchemaName;
+    Utf8String unqualifiedName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(aliasOrSchemaName, unqualifiedName, name))
         return nullptr;
+    // Have to check !useFullName for checking alias because of the possibility of someone naming their schema the same as this schema's alias
+    // Without this the lookup would occur on this schema instead of the referenced schema it was supposed to.
+    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsI(m_schema.GetAlias())) || (useFullName && aliasOrSchemaName.EqualsI(m_schema.GetName())))
+        return m_schema.GetUnitSystemP(unqualifiedName.c_str());
 
-    UnitSystemP system = nullptr;
-    if (systemAlias.empty())
-        system = m_schema.GetUnitSystemP(systemName.c_str());
-    else
+    if (useFullName)
         {
-        ECSchemaCP resolvedSchema = m_schema.GetSchemaByAliasP(systemAlias);
-        if (nullptr == resolvedSchema)
-            return nullptr;
-
-        system = resolvedSchema->GetUnitSystemP(systemName.c_str());
+        for (const auto& s : m_schema.GetReferencedSchemas())
+            {
+            if (aliasOrSchemaName.EqualsI(s.second->GetName()))
+                return s.second->GetUnitSystemP(unqualifiedName.c_str());
+            }
+        return nullptr;
         }
 
-    return system;
+    ECSchemaCP resolvedUnitSchema = m_schema.GetSchemaByAliasP(aliasOrSchemaName);
+    return (nullptr != resolvedUnitSchema ? resolvedUnitSchema->GetUnitSystemP(unqualifiedName.c_str()) : nullptr);
     }
 
 //--------------------------------------------------------------------------------------

@@ -246,13 +246,27 @@ TEST_F(FormatTest, LookupFormatTest)
     EXPECT_EQ(nullptr, shouldBeNull);
     shouldBeNull = schema->LookupFormat("banana");
     EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = schema->LookupFormat("Formats:AmerFI");
+    ASSERT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = schema->LookupFormat("f:AmerFI", true);
+    ASSERT_EQ(nullptr, shouldBeNull);
     auto shouldNotBeNull = schema->LookupFormat("myformat");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("myformat", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupFormat("ts:myformat");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("myformat", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupFormat("TestSchema:myformat", true);
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("myformat", shouldNotBeNull->GetName().c_str());
     shouldNotBeNull = schema->LookupFormat("f:AmerFI");
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("AmerFI", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupFormat("Formats:AmerFI", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("AmerFI", shouldNotBeNull->GetName().c_str());
     ASSERT_EQ(1, schema->GetFormatCount());
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -706,16 +720,82 @@ TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyStationSeparator)
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Kyle.Abramowitz                     03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatJsonTests, FromJsonTest)
+TEST_F(FormatJsonTests, FromJson)
     {
-    Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"u:FT"}]},"formatTraits":"KeepSingleZero|KeepDecimalPoint|ShowUnitLabel","precision":4,"type":"Decimal","uomSeparator":""})json";
+    Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"Units.FT"}]},"formatTraits":"KeepSingleZero|KeepDecimalPoint|ShowUnitLabel","precision":4,"type":"Decimal","uomSeparator":""})json";
 
     auto jsonValue = Json::Value::From(json);
     ECSchemaPtr out;
     ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
     out->AddReferencedSchema(*GetUnitsSchema());
     NamedFormat format;
-    NamedFormat::FromJson(format, jsonValue, &out->GetUnitsContext());
+    ASSERT_TRUE(NamedFormat::FromJson(format, jsonValue, &out->GetUnitsContext()));
+    ASSERT_TRUE(format.HasCompositeMajorUnit());
+    EXPECT_STRCASEEQ("FT", format.GetCompositeMajorUnit()->GetName().c_str());
+    EXPECT_STRCASEEQ("Units.FT", ECJsonUtilities::ECNameToJsonName(*(ECUnitCP)format.GetCompositeMajorUnit()).c_str());
+    EXPECT_EQ(Formatting::PresentationType::Decimal, format.GetNumericSpec()->GetPresentationType());
+    EXPECT_EQ(Formatting::DecimalPrecision::Precision4, format.GetNumericSpec()->GetDecimalPrecision());
+    EXPECT_STRCASEEQ("", format.GetNumericSpec()->GetUomSeparator());
+    EXPECT_TRUE(format.GetNumericSpec()->IsKeepSingleZero());
+    EXPECT_TRUE(format.GetNumericSpec()->IsKeepDecimalPoint());
+    EXPECT_TRUE(format.GetNumericSpec()->IsShowUnitLabel());
+    EXPECT_TRUE(format.GetCompositeSpec()->IsIncludeZero());
+    EXPECT_STRCASEEQ(" ", format.GetCompositeSpec()->GetSpacer().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                     07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatJsonTests, JsonRoundTrip)
+    {
+    Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"Units.FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
+    auto original = Json::Value::From(json);
+    ECSchemaPtr out;
+    ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
+    out->AddReferencedSchema(*GetUnitsSchema());
+    NamedFormat format;
+    ASSERT_TRUE(NamedFormat::FromJson(format, original, &out->GetUnitsContext()));
+    Json::Value roundTripped;
+    format.ToJson(roundTripped, false);
+    Json::Reader::Parse(json, original);
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(original, roundTripped)) << ECTestUtility::JsonSchemasComparisonString(roundTripped, original);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                     07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatJsonTests, InvalidJson)
+    {
+
+    {
+    Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"u.FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
+    auto original = Json::Value::From(json);
+    ECSchemaPtr out;
+    ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
+    out->AddReferencedSchema(*GetUnitsSchema());
+    NamedFormat format;
+    ASSERT_FALSE(NamedFormat::FromJson(format, original, &out->GetUnitsContext()));
+    }
+
+    {
+    Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"Units:FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
+    auto original = Json::Value::From(json);
+    ECSchemaPtr out;
+    ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
+    out->AddReferencedSchema(*GetUnitsSchema());
+    NamedFormat format;
+    ASSERT_FALSE(NamedFormat::FromJson(format, original, &out->GetUnitsContext()));
+    }
+
+    {
+    Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"u:FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
+    auto original = Json::Value::From(json);
+    ECSchemaPtr out;
+    ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
+    out->AddReferencedSchema(*GetUnitsSchema());
+    NamedFormat format;
+    ASSERT_FALSE(NamedFormat::FromJson(format, original, &out->GetUnitsContext()));
+    }
 
     }
 
