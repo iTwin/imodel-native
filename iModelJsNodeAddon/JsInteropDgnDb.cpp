@@ -438,6 +438,35 @@ BeSQLite::EC::ECInstanceKey parseECRelationshipInstanceKeyKey(DgnDbR dgndb, Json
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECN::StandaloneECRelationshipInstancePtr getRelationshipProperties(ECN::ECRelationshipClassCP relClass, JsonValueR inJson)
+    {
+    ECN::StandaloneECRelationshipEnablerPtr relationshipEnabler = ECN::StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
+    ECN::StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
+
+    int count = 0;
+    for (auto const& jsPropName : inJson.getMemberNames())
+        {
+        ECPropertyP ecprop = relClass->GetPropertyP(jsPropName.c_str());            // will be null for system properties, such as sourceId, targetId, classFullName, id
+        if (nullptr == ecprop || !ecprop->GetIsPrimitive())
+            continue; // TODO: support other property types
+
+        ++count;
+
+        ECN::ECValue value;
+        ECUtils::ConvertJsonToECValue(value, inJson[jsPropName], ecprop->GetAsPrimitiveProperty()->GetType());
+
+        relationshipInstance->SetValue(jsPropName.c_str(), value);
+        }
+
+    // NB: don't include the sourceId and targetId properties. They are specified directly by insert
+    //      and are not relevant to update
+    
+    return relationshipInstance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult JsInterop::InsertLinkTableRelationship(JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson)
@@ -450,10 +479,10 @@ DbResult JsInterop::InsertLinkTableRelationship(JsonValueR outJson, DgnDbR dgndb
     sourceId.FromJson(inJson["sourceId"]);
     targetid.FromJson(inJson["targetId"]);
 
-    ECN::IECRelationshipInstanceCP props = nullptr;
+    ECN::StandaloneECRelationshipInstancePtr props = getRelationshipProperties(relClass, inJson);
 
     BeSQLite::EC::ECInstanceKey relKey;
-    auto rc = dgndb.InsertLinkTableRelationship(relKey, *relClass, sourceId, targetid, props);
+    auto rc = dgndb.InsertLinkTableRelationship(relKey, *relClass, sourceId, targetid, props.get());
     if (BE_SQLITE_OK != rc)
         return rc;
 
@@ -471,19 +500,9 @@ DbResult JsInterop::UpdateLinkTableRelationship(DgnDbR dgndb, JsonValueR inJson)
     auto relClass = parseRelClass(dgndb, inJson);
     if (nullptr == relClass)
         return BE_SQLITE_NOTFOUND;
-    // ECN::IECRelationshipInstanceP
-    auto props = relClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    for (auto const& jsPropName : inJson.getMemberNames())
-        {
-        ECPropertyP ecprop = relClass->GetPropertyP(jsPropName.c_str());
-        if (nullptr == ecprop || !ecprop->GetIsPrimitive())
-            continue; // TODO: support other property types
+    
+    ECN::StandaloneECRelationshipInstancePtr props = getRelationshipProperties(relClass, inJson);
 
-        ECN::ECValue value;
-        ECUtils::ConvertJsonToECValue(value, inJson[jsPropName], ecprop->GetAsPrimitiveProperty()->GetType());
-
-        props->SetValue(jsPropName.c_str(), value);
-        }
     return dgndb.UpdateLinkTableRelationshipProperties(relKey, *props);
     }
 
