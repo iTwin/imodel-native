@@ -212,13 +212,13 @@ private:
         }
 
 protected:
-    PhenomenonP _LookupPhenomenonP(Utf8CP name) const override {auto val_iter = m_phenomena.find(name); return val_iter == m_phenomena.end() ? nullptr : (*val_iter).second;}
+    PhenomenonP _LookupPhenomenonP(Utf8CP name, bool = false) const override {auto val_iter = m_phenomena.find(name); return val_iter == m_phenomena.end() ? nullptr : (*val_iter).second;}
     void _AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const override;
 
-    UnitP _LookupUnitP(Utf8CP name) const override {auto val_iter = m_units.find(name); return val_iter == m_units.end() ? nullptr : (*val_iter).second;}
+    UnitP _LookupUnitP(Utf8CP name, bool = false) const override {auto val_iter = m_units.find(name); return val_iter == m_units.end() ? nullptr : (*val_iter).second;}
     void _AllUnits(bvector<UnitCP>& allUnits) const override;
 
-    UnitSystemP _LookupUnitSystemP(Utf8CP name) const override {auto val_iter = m_systems.find(name); return val_iter == m_systems.end() ? nullptr : (*val_iter).second;}
+    UnitSystemP _LookupUnitSystemP(Utf8CP name, bool = false) const override {auto val_iter = m_systems.find(name); return val_iter == m_systems.end() ? nullptr : (*val_iter).second;}
     void _AllSystems(bvector<UnitSystemCP>& allUnitSystems) const override;
 
     bool NamedItemExists(Utf8CP name) {return HasUnit(name) || HasPhenomenon(name) || HasSystem(name);}
@@ -323,9 +323,6 @@ public:
     UNITS_EXPORT UnitCP LookupUnitUsingOldName(Utf8CP oldName) const;
 
     UnitCP GetPlatformLengthUnit() {return LookupUnit("M");}
-    UNITS_EXPORT size_t LoadSynonyms(Json::Value jval) const;
-    UNITS_EXPORT PhenomenonCP LoadSynonym(Utf8CP unitName, Utf8CP synonym) const;
-    UNITS_EXPORT Json::Value SynonymsToJson() const;
 };
 
 /** @endGroup */

@@ -478,7 +478,8 @@ bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU
         for (Json::ValueIterator iter = unitsJson.begin(); iter != unitsJson.end(); iter++)
             {
             UnitProxy upp;
-            upp.FromJson(*iter, context);
+            if (!upp.FromJson(*iter, context))
+                return false;
             units.push_back(upp.GetUnit());
             labels.push_back(upp.GetLabel());
             }
@@ -506,17 +507,17 @@ bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, bve
         else if (BeStringUtilities::StricmpAscii(paramName, json_spacer()) == 0)
             out.SetSpacer(val.asCString());
         }
-
+    // Fallthrough intentional
     switch (unitLabels.size())
         {
-            case 4:
-                out.SetSubLabel(unitLabels[3]);
-            case 3:
-                out.SetMinorLabel(unitLabels[2]);
-            case 2:
-                out.SetMiddleLabel(unitLabels[1]);
-            case 1:
-                out.SetMajorLabel(unitLabels[0]);
+        case 4:
+            out.SetSubLabel(unitLabels[3]);
+        case 3:
+            out.SetMinorLabel(unitLabels[2]);
+        case 2:
+            out.SetMiddleLabel(unitLabels[1]);
+        case 1:
+            out.SetMajorLabel(unitLabels[0]);
         }
 
     return true;
@@ -559,9 +560,12 @@ bool CompositeValueSpec::UnitProxy::FromJson(Json::Value const& jval, BEU::IUnit
         JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_name()) == 0)
             {
-            Utf8CP str = val.asCString();
-            if (nullptr != str)
-                m_unit = context->LookupUnit(str);
+            Utf8String str = val.asString();
+            if (!str.empty() && !str.Contains(":"))
+                {
+                str.ReplaceAll(".", ":"); // To handle the json case where . is used instead of :
+                m_unit = context->LookupUnit(str.c_str(), true);
+                }
             if (nullptr == m_unit)
                 return false;
             }
