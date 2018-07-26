@@ -260,9 +260,13 @@ Utf8String CurveTopologyId::GetDebugString () const
                                      "Polyface Cut",            // 22
                                      "Polyface Edge",           // 23
                                      "Mesh Edge Vertices",      // 24
+                                     "BRep Planar Face",        // 25
+                                     "Triangulation Boundary",  // 26
+                                     "BRep UnIdentified Edge",  // 27
                                      };
-
-    Utf8String string = m_type < Type::Max ? Utf8String(s_typeStrings[(uint8_t)m_type]) : Utf8String("Error: m_type > Type::Max");
+    // When a type is added ... 1) add the string above, 2) change the Type::XXX below to agree
+    
+    Utf8String string = m_type <= Type::BRepUnIdentifiedEdge ? Utf8String(s_typeStrings[(uint8_t)m_type]) : Utf8String("Error: m_type > Type::Max");
 
     if (0 == GetCount())
         return string + "Null";
