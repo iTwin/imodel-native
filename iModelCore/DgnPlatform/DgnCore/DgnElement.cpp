@@ -1239,8 +1239,14 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
         return;
         }
         
-    JsonECSqlSelectAdapter adapter(*stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
-    adapter.GetRow(elementJson, true);
+
+    JsonECSqlSelectAdapter const* adapter = elem.GetDgnDb().Elements().GetJsonSelectAdapter(eclass->GetId());
+    if (adapter == nullptr)
+        adapter = &elem.GetDgnDb().Elements().GetJsonSelectAdapter(eclass->GetId(), *stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
+    else
+        adapter->SetStatement(*stmt);
+        
+    adapter->GetRow(elementJson, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1259,29 +1265,6 @@ void DgnElement::AddBisClassName(JsonValueR val, ECClassCP ecClass)
         }
 
     val[json_bisBaseClass()] = ecClass->GetName();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                      05/18
-//---------------+---------------+---------------+---------------+---------------+------
-void DgnElement::_ToJsValue(Js::Object out, Js::Object opts) const
-    {    
-    Json::Value aOpts;
-    if (!opts.IsEmpty())
-        aOpts = opts.ToJson();
-
-    Json::Value aVal = ToJson(aOpts);
-    for (auto it = aVal.begin(); it != aVal.end(); ++it)
-        out[it.memberName()] = Js::Value::FromJson(out.Factory(), *it);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                      05/18
-//---------------+---------------+---------------+---------------+---------------+------
-void DgnElement::_FromJsValue(Js::Object props)
-    {
-    Json::Value p = props.ToJson();
-    FromJson(p);
     }
 
 /*---------------------------------------------------------------------------------**//**

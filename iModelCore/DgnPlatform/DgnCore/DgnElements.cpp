@@ -877,6 +877,29 @@ ECSqlClassInfo& DgnElements::FindClassInfo(DgnClassId classId) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+JsonECSqlSelectAdapter const* DgnElements::GetJsonSelectAdapter(DgnClassId classId) const
+    {
+    auto it = m_jsonSelectAdaptors.find(classId);
+    if (it != m_jsonSelectAdaptors.end())
+        return it->second.get();
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      06/2018
++---------------+---------------+---------------+---------------+---------------+------*/    
+JsonECSqlSelectAdapter const& DgnElements::GetJsonSelectAdapter(DgnClassId classId, BeSQLite::EC::ECSqlStatement const& stmt, BeSQLite::EC::JsonECSqlSelectAdapter::FormatOptions const& formatOptions) const
+    {
+    JsonECSqlSelectAdapter* adapter = new BeSQLite::EC::JsonECSqlSelectAdapter(stmt, formatOptions, true /*force adaptor to use static string for caching*/);
+    auto adapterPtr = std::unique_ptr<BeSQLite::EC::JsonECSqlSelectAdapter>(adapter);
+    m_jsonSelectAdaptors[classId] = std::move(adapterPtr);
+    return *adapter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
