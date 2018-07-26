@@ -273,7 +273,11 @@ void RootModelConverter::CorrectSpatialTransforms()
     m_rootTrans = m_rootModelMapping.GetTransform();
 
     for (auto& rmm : m_v8ModelMappings)
+        {
+        if (!IsFileAssignedToBridge(*rmm.GetV8Model().GetDgnFileP()))
+            continue;
         CorrectSpatialTransform(rmm);
+        }
 
     m_spatialTransformCorrectionsApplied = true;
     }
@@ -462,7 +466,7 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File, Utf8StringP bridgeNam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::FindSpatialV8Models(DgnV8ModelRefR thisModelRef, bool haveFoundSpatialRoot)
+void RootModelConverter::FindSpatialV8Models(DgnV8ModelRefR thisModelRef)
     {
     DgnV8ModelR thisV8Model = *thisModelRef.GetDgnModelP();
 
@@ -472,21 +476,6 @@ void RootModelConverter::FindSpatialV8Models(DgnV8ModelRefR thisModelRef, bool h
     DgnV8FileR thisV8File = *thisV8Model.GetDgnFileP();
 
     GetV8FileSyncInfoId(thisV8File); // Register this FILE in syncinfo. Also populates m_v8files
-
-    Utf8String  bridgeName;
-    bool isThisMyFile = IsFileAssignedToBridge(thisV8File, &bridgeName);
-
-    if (haveFoundSpatialRoot && !isThisMyFile)
-        {
-        // we only go through another bridge's territory in order to find our own spatial root. don't follow any references from my spatial root into another bridge's file.
-        // log the info before skip the file.
-        Utf8PrintfString msg("Skipped %ls per %s affinity", thisV8File.GetFileName().c_str(), bridgeName.c_str());
-        ReportIssue(IssueSeverity::Info, IssueCategory::Filtering(), Issue::Message(), msg.c_str());
-        return;
-        }
-
-    if (isThisMyFile)
-        haveFoundSpatialRoot = true;
 
     m_spatialModelsSeen.insert(&thisV8Model);   // Note that we may very well encounter the same model via more than one attachment path. Each path may have a different setting for nesting depth, so keep going.
 
@@ -505,7 +494,7 @@ void RootModelConverter::FindSpatialV8Models(DgnV8ModelRefR thisModelRef, bool h
         if (nullptr == attachment->GetDgnModelP() || !_WantAttachment(*attachment))
             continue; // missing reference 
 
-        FindSpatialV8Models(*attachment, haveFoundSpatialRoot);
+        FindSpatialV8Models(*attachment);
         }
     }
 
@@ -555,9 +544,6 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
         {
         if (nullptr == attachment->GetDgnModelP() || !_WantAttachment(*attachment))
             continue; // missing reference 
-
-        if (haveFoundSpatialRoot && !IsFileAssignedToBridge(*attachment->GetDgnModelP()->GetDgnFileP()))
-            continue; // this leads to models in another bridge's territory. Stay out.
 
         if (!hasPushedReferencesSubject)
             {
@@ -793,6 +779,9 @@ void RootModelConverter::DoConvertSpatialElements()
     bmultiset<ResolvedModelMapping> spatialModels;
     for (auto v8mm : m_v8ModelMappings)
         {
+        if (!IsFileAssignedToBridge(*v8mm.GetV8Model().GetDgnFileP()))
+            continue;
+
         if (v8mm.GetDgnModel().Is3dModel())
             spatialModels.insert(v8mm);
         }
@@ -949,6 +938,9 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationships()
 
     for (auto const& modelMapping : m_v8ModelMappings)
         {
+        if (!IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
+            continue;
+
         if (BentleyApi::SUCCESS != ConvertNamedGroupsRelationshipsInModel(modelMapping.GetV8Model()))
             return BSIERROR;
         }
@@ -1211,6 +1203,9 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships()
     bvector<DgnV8ModelP> visitedModels;
     for (auto& modelMapping : m_v8ModelMappings)
         {
+        if (!IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
+            continue;
+
         ConvertECRelationshipsInModel(modelMapping.GetV8Model());
         if (WasAborted())
             return BentleyApi::ERROR;
@@ -1282,10 +1277,38 @@ void RootModelConverter::_BeginConversion()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::UnmapModelsNotAssignedToBridge()
+    {
+    // TFS#922840 - work around the fact that a bridge will create empty models as it traverses
+    //                  references that belong to other bridges.
+    bvector<ResolvedModelMapping> mappingsToRemove;
+    bvector<BentleyApi::Dgn::DgnModelPtr> keepAlive;
+    for (auto& modelMapping : m_v8ModelMappings)
+        {
+        if (!IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
+            {
+            BentleyApi::Dgn::DgnModelPtr mref = &modelMapping.GetDgnModel();
+            keepAlive.push_back(mref);
+            mref->Delete();
+            GetSyncInfo().DeleteModel(modelMapping.GetV8ModelSyncInfoId());
+            mappingsToRemove.push_back(modelMapping);
+            }
+        }
+    for (auto const& mappingToRemove : mappingsToRemove)
+        {
+        m_v8ModelMappings.erase(mappingToRemove);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_FinishConversion()
     {
+    UnmapModelsNotAssignedToBridge(); // just in case any snuck back in
+
     ConvertNamedGroupsAndECRelationships();   // Now that we know all elements, work on the relationships between elements.
     if (WasAborted())
         return;
@@ -1429,6 +1452,8 @@ BentleyStatus  RootModelConverter::Process()
     if (WasAborted())
         return ERROR;
 
+    UnmapModelsNotAssignedToBridge();
+
     ConverterLogging::LogPerformance(timer, "Convert Models");
 
     
@@ -1446,6 +1471,9 @@ BentleyStatus  RootModelConverter::Process()
         {
         if (WasAborted())
             return ERROR;
+
+        if (!IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
+            continue;
 
         SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MATERIALS(), modelMapping.GetDgnModel().GetName().c_str());
         ConvertModelMaterials(modelMapping.GetV8Model());

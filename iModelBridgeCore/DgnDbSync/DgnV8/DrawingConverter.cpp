@@ -136,6 +136,8 @@ void RootModelConverter::_ConvertDrawings()
     bmultiset<ResolvedModelMapping> drawings;
     for (auto v8mm : m_v8ModelMappings)
         {
+        if (!IsFileAssignedToBridge(*v8mm.GetV8Model().GetDgnFileP()))
+            continue;
         if (v8mm.GetDgnModel().IsDrawingModel())
             drawings.insert(v8mm);
         }

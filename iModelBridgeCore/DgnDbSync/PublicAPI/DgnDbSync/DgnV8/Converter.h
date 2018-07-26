@@ -2498,7 +2498,7 @@ protected:
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) override;
     DGNDBSYNC_EXPORT bvector<ResolvedModelMapping> FindMappingsToV8Model(DgnV8ModelR v8Model);
     bool IsLessInMappingOrder(DgnV8ModelP a, DgnV8ModelP b);
-
+    void UnmapModelsNotAssignedToBridge();
 
     // in the RootModelConverter, treatment of normal 2d models depends the user's input parameters.
     DGNDBSYNC_EXPORT bool _ConsiderNormal2dModelsSpatial() override;
@@ -2557,7 +2557,7 @@ protected:
     //! @private
     void CreatePresentationRules();
 
-    void FindSpatialV8Models(DgnV8ModelRefR rootModelRef, bool haveFoundSpatialRoot = false);
+    void FindSpatialV8Models(DgnV8ModelRefR rootModelRef);
     void FindV8DrawingsAndSheets();
     void RegisterNonSpatialModel(DgnV8ModelR);
     void RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
