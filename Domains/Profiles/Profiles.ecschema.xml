@@ -45,7 +45,6 @@
         <ECProperty propertyName="MirrorProfileAboutYAxis" typeName="boolean" description="The profile used by the component is actually a mirror image of Profile. The mirroring is done about the profile's y-axis and is done before rotation and before determining the PlacementPoint."/>
         <ECProperty propertyName="OffsetPoint" typeName="point2d" description="The offset in BuiltUpProfile coordinates from 0,0 to the PlacementPoint."/>
         <ECProperty propertyName="Rotation" typeName="double" description="The rotation of this component's profile relative to the BuiltUpProfile's axes. Rotation are positive ccw (acw). A value of zero implies that the profile's x- and y- axes are parallel to those of the BuiltUpProfile. All rotation is done about the PlacementPoint."/>
-        <!--<ECProperty propertyName="Placement3d" typeName="SpatialLocationElement" description="Placement of profile component instance"/>-->     
         <ECNavigationProperty propertyName="Profile" relationshipName="BuiltUpProfileComponentUsesConstantProfile" direction="Forward" description="The using MultiAspect">
             <ECCustomAttributes>
             </ECCustomAttributes>
