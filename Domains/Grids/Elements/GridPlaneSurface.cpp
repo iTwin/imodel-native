@@ -596,35 +596,6 @@ DgnDbStatus      ElevationGridSurface::_Validate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnDbStatus    ElevationGridSurface::_SetPlacement
-(
-Placement3dCR placement
-)
-    {
-    GridCPtr grid = GetDgnDb ().Elements ().Get<Grid> (GetGridId ());
-
-    Placement3dCR currPlacement = grid->GetPlacement ();
-
-    Transform currTransInv, thatTrans, diffTrans;
-    currTransInv.InverseOf(currPlacement.GetTransform ());
-    thatTrans = placement.GetTransform ();
-    diffTrans.InitProduct (currTransInv, thatTrans);
-
-    DPlane3d diffPlane;
-    diffPlane.origin = diffTrans.Origin();
-    diffPlane.normal = diffTrans.ColumnZ();
-
-    if (!DoubleOps::AlmostEqualFraction(abs(diffPlane.normal.z), 1.0))
-        return Dgn::DgnDbStatus::ValidationFailed;   //if the elevationsurface is rotated from Z axis, fail
-
-    //else recompute the elevation
-    SetElevation (diffPlane.origin.z);
-    return T_Super::_SetPlacement (placement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::DgnDbStatus                ElevationGridSurface::RecomputeGeometryStream
 (
 )

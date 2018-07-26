@@ -336,7 +336,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface :
 
         GRIDELEMENTS_EXPORT  Dgn::DgnDbStatus RecomputeGeometryStream();
 
-        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _SetPlacement (Dgn::Placement3dCR placement) override;
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
         
