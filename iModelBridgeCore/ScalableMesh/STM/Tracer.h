@@ -7,7 +7,7 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-#define TRACE_ON 1
+//#define TRACE_ON 1
 enum EventType
 {
     LOAD_MESH_CREATE_0 = 0,
