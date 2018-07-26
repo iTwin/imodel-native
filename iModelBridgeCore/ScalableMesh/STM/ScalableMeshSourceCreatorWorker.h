@@ -31,7 +31,9 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         HFCPtr<MeshIndexType> GetDataIndex();
 
-        void GetTaskPlanFileName(BeFileName& taskPlanFileName);
+        void GetTaskPlanFileName(BeFileName& taskPlanFileName) const;
+
+        void GetSisterMainLockFileName(BeFileName& lockFileName) const;
 
         StatusInt CreateFilterTasks(uint32_t resolutionInd);
 
