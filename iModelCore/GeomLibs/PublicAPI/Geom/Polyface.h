@@ -1972,7 +1972,7 @@ DVec3dCR viewDirection                     //! view direction, e.g. (0,0,1) for 
 //! <li> return a (separate, new) mesh with the side panels added.   Additional midEdge vertices are inserted into the original facets if T vertices are present.
 //! <li> CreateSidePanelsForViewDirection creaates the panels
 //! <li> CloneWithTVertexFixup does touchup for extra vertices.
-//
+//! </ul>
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CloneWithSidePanelsInserted
 (
 bvector<PolyfaceHeaderPtr> const &meshes,       //!< [in] array of input meshes

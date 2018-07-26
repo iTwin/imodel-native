@@ -345,7 +345,7 @@ static DRange3d From (bvector<bvector<bvector<DPoint3d>>> const &points);
 
 //! Return a range of points in segments.
 //! @param [in] segments segments to search.
-static DRange3d From (bvector<DSegment3d> const &points);
+static DRange3d From (bvector<DSegment3d> const &segments);
 
 //! Initialize a range to include points
 //! @param [in] points new points to be included in minmax ranges
