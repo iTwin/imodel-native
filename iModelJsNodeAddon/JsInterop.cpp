@@ -64,6 +64,13 @@ struct IModelJsTileAdmin : DgnPlatformLib::Host::TileAdmin
     bool _WantCachedHiResTiles(DgnDbR) const override { return true; }
     bool _WantEmbedMaterials() const override { return true; }
     bool _WantWaitOnSave(DgnDbR) const override { return true; }
+    BeFileName _GetElementCacheFileName(DgnDbCR db) const override
+        {
+        // Do not share tile cache with DgnClientFx - we are diverging.
+        BeFileName filename = db.GetFileName();
+        filename.AppendExtension(L"Tiles");
+        return filename;
+        }
 };
 
 //=======================================================================================
