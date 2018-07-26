@@ -68,3 +68,35 @@ Geometry.ConvexHullManyPoints
     # 2018-02-15 11:57:15.110569+0500 BeTestiOS[3440:6191977] TestRunner: Geometry.ConvexHullManyPoints FAILED
     # Feb 15 11:57:15  Be[3440] <Emergency>: TestRunner: Geometry.ConvexHullManyPoints FAILED
     # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/GeomLibs/XCodeProject/BeTestiOSTests/UnitTests.mm:2292: error: -[GeomLibsstructsTest_Geometry testConvexHullManyPoints] : ((0 == BETEST_TEST_RUNNER_FUNC(Geometry,ConvexHullManyPoints) ()) is true) failed
+
+CurveTopologyId.Hello
+
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 07/20/2018
+    # Debug String BRep Isoline (1, 2, 3)
+    # Debug String B-Rep Shared Edge (1, 2, 1, 2)
+    # Debug String B-Rep Sheet Edge (1, 2)
+    # Debug String B-Rep Silhouette Edge (1, 2)
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [21] _C_specific_handler (0x7ffb529cbff0)
+    # [20] _chkstk (0x7ffb5e709ec0)
+    # [19] RtlLookupFunctionEntry (0x7ffb5e694710)
+    # [18] KiUserExceptionDispatcher (0x7ffb5e709030)
+    # [17] BentleyB0200::CurveTopologyId::GetDebugString (0x7ffb35dee610)
+    # [16] testTopologyId (0x7ff73844d580)
+    # [15] CurveTopologyId_Hello_Test::TestBody (0x7ff73844cfa0)
+    # [14] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff7385a8720)
+    # [13] testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void> (0x7ff7385a85b0)
+    # [12] testing::Test::Run (0x7ff7385b81f0)
+    # [11] testing::TestInfo::Run (0x7ff7385b8500)
+    # [10] testing::TestCase::Run (0x7ff7385b8310)
+    # [9] testing::internal::UnitTestImpl::RunAllTests (0x7ff7385b87c0)
+    # [8] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7385a87c0)
+    # [7] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7385a86a0)
+    # [6] testing::UnitTest::Run (0x7ff7385b86a0)
+    # [5] <lambda_7a9a7085d3df21961d5208ec67fe5359>::operator() (0x7ff7383b9dc0)
+    # [4] std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> >,std::default_delete<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> > > > >::_Run (0x7ff7383bb670)
+    # [3] std::_Pad::_Call_func (0x7ff7383baeb0)
+    # [2] rand (0x7ffb5ad60210)
+    # [1] BaseThreadInitThunk (0x7ffb5e232770)
+    # [0] RtlUserThreadStart (0x7ffb5e6b0c10)
