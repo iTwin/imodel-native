@@ -18,8 +18,40 @@ ChildCurveVectorManipulationStrategyPtr ChildCurveVectorManipulationStrategy::Cr
 )
     {
     ChildCurveVectorManipulationStrategyPtr strategy = Create();
-    strategy->m_cvManipulationStrategy->Init(cv);
-    strategy->m_boundaryType = cv.GetBoundaryType();
+    strategy->Init(cv);
+    return strategy;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ChildCurveVectorManipulationStrategyPtr ChildCurveVectorManipulationStrategy::Create() 
+    { 
+    return new ChildCurveVectorManipulationStrategy(); 
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::Init
+(
+    CurveVectorCR cv
+)
+    {
+    m_cvManipulationStrategy = _InitCurveVectorManipulationStrategy(cv);
+    m_boundaryType = cv.GetBoundaryType();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurveVectorManipulationStrategyPtr ChildCurveVectorManipulationStrategy::_InitCurveVectorManipulationStrategy
+(
+    CurveVectorCR cv
+) const
+    {
+    CurveVectorManipulationStrategyPtr strategy = CurveVectorManipulationStrategy::Create();
+    strategy->Init(cv);
     return strategy;
     }
 
