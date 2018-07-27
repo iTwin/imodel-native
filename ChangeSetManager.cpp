@@ -20,31 +20,6 @@ USING_NAMESPACE_BENTLEY_SQLITE
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
 //=======================================================================================
-//! Utility to stream the contents of a file to LZMA routines from multiple "block" files.
-// @bsiclass                                                    Sam.Wilson  08/2018
-//=======================================================================================
-struct BlockFilesLzmaInStream : ILzmaInputStream
-{
-private:
-  uint32_t m_nextFile;
-  bvector<BeFileName> m_files;
-  BeFile m_file;
-  uint64_t m_fileSize;
-  uint64_t m_bytesRead;
-
-  BeFileStatus OpenNextFile();
-
-public:
-  BlockFilesLzmaInStream(bvector<BeFileName> const &files) : m_files(files), m_nextFile(0) { OpenNextFile(); }
-  virtual ~BlockFilesLzmaInStream() {}
-  bool IsReady() const { return m_file.IsOpen(); }
-  ZipErrors _Read(void *data, uint32_t size, uint32_t &actuallyRead) override;
-  uint64_t _GetSize() override { return m_fileSize; }
-  uint64_t GetBytesRead() { return m_bytesRead; }
-  BeFile &GetBeFile() { return m_file; }
-};
-
-//=======================================================================================
 //! Streams the contents of a file containing serialized change streams
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
@@ -77,58 +52,6 @@ public:
 };
 
 END_BENTLEY_SQLITE_NAMESPACE
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    03/2013
-//---------------------------------------------------------------------------------------
-BeFileStatus BlockFilesLzmaInStream::OpenNextFile()
-{
-  if (m_file.IsOpen())
-    m_file.Close();
-
-  if (m_nextFile == m_files.size())
-    return BeFileStatus::ReadError;
-
-  BeFileName fileName = m_files[m_nextFile];
-
-  m_bytesRead = 0;
-  BeFileStatus result = m_file.Open(fileName.GetName(), BeFileAccess::Read);
-  if (BeFileStatus::Success != result)
-    return result;
-
-  ++m_nextFile;
-
-  BeFileName::GetFileSize(m_fileSize, fileName.GetName());
-  m_file.SetPointer(0, BeFileSeekOrigin::Begin);
-
-  return BeFileStatus::Success;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    03/2013
-//---------------------------------------------------------------------------------------
-ZipErrors BlockFilesLzmaInStream::_Read(void *data, uint32_t size, uint32_t &actuallyRead)
-{
-  BeFileStatus result = m_file.Read(data, &actuallyRead, size);
-  if ((BeFileStatus::Success == result) && (actuallyRead == 0))
-  {
-    if (BeFileStatus::Success != OpenNextFile())
-    {
-      actuallyRead = 0;
-      return ZIP_SUCCESS; // It is normal for _InputPage to be called one more time after all data has been read. In fact, returning 0 here is what tells SQLite that the stream is done.
-    }
-    result = m_file.Read(data, &actuallyRead, size);
-  }
-
-  m_bytesRead += actuallyRead;
-
-  if (BeFileStatus::Success != result)
-  {
-    // LOG.errorv("BeFileLzmaInStream::_Read result = %d, m_bytesRead = %lld, filesize = %lld, error = %x", result, m_bytesRead, m_fileSize, m_file.GetLastError());
-  }
-
-  return BeFileStatus::Success != result ? ZIP_ERROR_READ_ERROR : ZIP_SUCCESS;
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2017
