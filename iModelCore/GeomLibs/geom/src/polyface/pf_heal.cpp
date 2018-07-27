@@ -1022,12 +1022,12 @@ FacetEdgeDetail::FacetEdgeDetail  (
     DSegment3dCR _segment,
     size_t _readIndex,
     uint32_t _clusterIndex,
-    uint32_t numInCluster
+    uint32_t _numInCluster
     ) :
     segment (_segment),
     readIndex (_readIndex),
-    clusterIndex (clusterIndex),
-    numInCluster (numInCluster)
+    clusterIndex (_clusterIndex),
+    numInCluster (_numInCluster)
     {
 
     }
