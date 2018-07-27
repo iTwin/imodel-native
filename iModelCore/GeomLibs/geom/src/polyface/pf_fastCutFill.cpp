@@ -123,9 +123,18 @@ bvector<ZPlaneDescriptor> m_facePlanes;
 MeshAnnotationVector &m_messages;
 VuSetP m_graph;
 double m_divideByZTolerance;
+Transform m_localToWorld;
+Transform m_worldToLocal;
 
-SingleSheetCutFillContext (MeshAnnotationVector &messages)
-    : m_messages (messages)
+SingleSheetCutFillContext
+(
+MeshAnnotationVector &messages,
+TransformCR localToWorld,
+TransformCR worldToLocal
+)
+    : m_messages (messages),
+    m_localToWorld (localToWorld),
+    m_worldToLocal (worldToLocal)
     {
     m_graph = vu_newVuSet (0);
     vu_setDefaultUserData1 (m_graph, -1, false, true);
@@ -262,6 +271,7 @@ ValidatedDouble LoadPolyface (PolyfaceQueryCR mesh, VuMask edgeMask, VuMask exte
         {
         if (filter != nullptr && !filter->TestFacet (*visitor))
             continue;
+        m_worldToLocal.Multiply (points, points);
         DPoint3d centroid;
         DVec3d normal;
         double area;
@@ -631,9 +641,11 @@ struct CutFillFacetSplitter : IScanProcessor
 UsageSums m_overlapArea, m_roadArea, m_dtmArea, m_positiveArea, m_negativeArea;
 FacetCutFillHandler &m_handler;
 MeshAnnotationVector &m_messages;
-CutFillFacetSplitter (FacetCutFillHandler &handler, MeshAnnotationVector &messages)
+Transform m_localToWorld;
+CutFillFacetSplitter (FacetCutFillHandler &handler, MeshAnnotationVector &messages, TransformCR localToWorld)
     : m_handler(handler),
-    m_messages(messages)
+    m_messages(messages),
+    m_localToWorld (localToWorld)
     {
     }
 
@@ -725,6 +737,8 @@ size_t roadFace
         if (context.PlaneIndexToClipPlane (dtmFace, clipper))
             {
             clipper.ConvexPolygonSplitInsideOutside (m_roadVerticalPanel, m_xyzIn, m_xyzOut, altitudeRange);
+            ApplyLocalToWorld (m_xyzOut);
+            ApplyLocalToWorld (m_xyzIn);
             if (m_xyzIn.size () > 2)
                 m_handler.ProcessSideFacet (m_xyzIn, false);
             if (m_xyzOut.size () > 2)
@@ -742,6 +756,8 @@ size_t roadFace
         if (context.PlaneIndexToClipPlane (roadFace, clipper))
             {
             clipper.ConvexPolygonSplitInsideOutside (m_dtmVerticalPanel, m_xyzIn, m_xyzOut, altitudeRange);
+            ApplyLocalToWorld (m_xyzOut);
+            ApplyLocalToWorld (m_xyzIn);
             if (m_xyzIn.size () > 2)
                 m_handler.ProcessSideFacet (m_xyzIn, true);
             if (m_xyzOut.size () > 2)
@@ -832,6 +848,7 @@ void ProcessFace (SingleSheetCutFillContext &context, VuSetP graph, VuP faceSeed
 
             auto dtmReadIndex = context.PlaneIndexToReadIndex (dtmFace);
             auto roadReadIndex = context.PlaneIndexToReadIndex (roadFace);
+            ApplyLocalToWorld ();
             if (m_roadAbove.size () > 1)
                 {
                 m_handler.ProcessCutFillFacet (m_dtmBelow, dtmReadIndex, m_roadAbove, roadReadIndex, m_isFillBoundary, false);
@@ -843,7 +860,18 @@ void ProcessFace (SingleSheetCutFillContext &context, VuSetP graph, VuP faceSeed
             }
         }
     }
-
+// apply the m_localToWorld transform to various m_xxxAbove and m_xxxBelow
+void ApplyLocalToWorld ()
+    {
+    m_localToWorld.Multiply (m_dtmBelow, m_dtmBelow);
+    m_localToWorld.Multiply (m_dtmAbove, m_dtmAbove);
+    m_localToWorld.Multiply (m_roadBelow, m_roadBelow);
+    m_localToWorld.Multiply (m_roadAbove,m_roadAbove);
+    }
+void ApplyLocalToWorld (bvector<DPoint3d> &data)
+    {
+    m_localToWorld.Multiply (data, data);
+    }
 void PrintAreaSummary ()
     {
     printf ("\n cut fill area summary \n");
@@ -878,11 +906,19 @@ IPolyfaceVisitorFilter *roadFilter  //!< [in] optional filter for road  //!< [in
 )
     {
     messages.clear ();
-    SingleSheetCutFillContext context (messages);
+    DRange3d dtmRange = dtm.PointRange ();
+    DRange3d roadRange = road.PointRange ();
+    // Let's get local coordinates.
+    // 1) xy centered
+    // 2) scale?
+    DPoint3d center = dtmRange.LocalToGlobal (0.5, 0.5, 0.0);
+    Transform localToWorld = Transform::From (center);
+    Transform worldToLocal = Transform::From (-center.x, -center.y, -center.z);
+    SingleSheetCutFillContext context (messages, localToWorld, worldToLocal);
     auto dtmArea = context.LoadDTM (dtm, dtmFilter);
     auto roadArea = context.LoadRoad (road, roadFilter);
     context.Merge ();
-    CutFillFacetSplitter faceProcessor (handler, messages);
+    CutFillFacetSplitter faceProcessor (handler, messages, localToWorld);
     SingleSheetCutFillFloodContext::RunScan (context, faceProcessor);
     if (s_cutFillNoisy > 0)
         {
