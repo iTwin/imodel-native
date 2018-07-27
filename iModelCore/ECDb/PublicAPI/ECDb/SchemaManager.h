@@ -283,21 +283,20 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         ECDB_EXPORT BentleyStatus CreateClassViewsInDb(bvector<ECN::ECClassId> const& ecclassids) const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
-        //! Truncates and repopulates ECDb's cache tables. 
+        //! Truncates and repopulates ECDb's cache tables.
         //! @remarks ECDb maintains a few cache tables that cache meta data for performance reasons.
-        //! @note In regular workflows (e.g. when calling SchemaManager::ImportECSchemas) 
+        //! @note In regular workflows (e.g. when calling SchemaManager::ImportECSchemas)
         //! <b>this method does not have to be called</b>. ECDb maintains the cache tables autonomously.
         //! @return SUCCESS or ERROR
-        ECDB_EXPORT BentleyStatus RepopulateCacheTables() const;
-
-        //! Automatically upgrade any existing ECInstance if required after ECSchema import. 
-        //! @note In regular workflows (e.g. when calling SchemaManager::ImportECSchemas) 
+        BentleyStatus RepopulateCacheTables() const;
+        
+        //! Automatically upgrade any existing ECInstance if required after ECSchema import.
+        //! @note In regular workflows (e.g. when calling SchemaManager::ImportECSchemas)
         //! <b>this method does not have to be called</b>.
         //! @return SUCCESS or ERROR
-        ECDB_EXPORT BentleyStatus UpgradeECInstances() const;
+        BentleyStatus UpgradeECInstances() const;
 
         void ClearCache() const;
-
         ECN::ECDerivedClassesList const* GetDerivedClassesInternal(ECN::ECClassCR baseClass, Utf8CP tableSpace = nullptr) const;
         Dispatcher const& GetDispatcher() const;
         struct MainSchemaManager const& Main() const;

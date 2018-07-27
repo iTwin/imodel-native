@@ -134,4 +134,10 @@ Utf8CP ECSqlStatement::GetNativeSql() const { return m_pimpl->GetNativeSql(); }
 //---------------------------------------------------------------------------------------
 ECDb const* ECSqlStatement::GetECDb() const { return m_pimpl->GetECDb(); }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan        07/2018
+//---------------------------------------------------------------------------------------
+uint64_t ECSqlStatement::GetHashCode() const { return m_pimpl->GetHashCode(); }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

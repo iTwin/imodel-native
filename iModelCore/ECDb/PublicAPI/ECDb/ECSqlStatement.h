@@ -460,6 +460,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @remarks Only call this for a prepared statement!
         //! @return ECDb handle used to prepare this statement or nullptr if statement is not prepared.
         ECDB_EXPORT ECDb const* GetECDb() const;
+
+        //! Return hash code for the ECSql
+        //! @remarks Can be safely use to see if two ECSqlStatement have been prepared with same ECSql. Its case-insensitive hash of ECSql text. Its faster then using GetECSql() to compare to ECSqlStatements.
+        //! @return Runtime hash which can change depending on platform and should be not persisted on disk for any later comparision or indexing.
+        ECDB_EXPORT uint64_t GetHashCode() const;
+
+
+
 #endif
     };
 
