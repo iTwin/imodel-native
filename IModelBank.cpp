@@ -11,6 +11,7 @@
 #include <imodel-bank-package-version.h>
 #include <BeSQLite/ChangeSet.h>
 #include "ChangeSetManager.h"
+#include "DgnSqlFuncsForTriggers.h"
 
 #define PROPERTY_ATTRIBUTES static_cast<napi_property_attributes>(napi_enumerable | napi_configurable)
 
@@ -286,6 +287,7 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
         REQUIRE_ARGUMENT_INTEGER(1, mode);
         RETURN_IF_HAD_EXCEPTION
         DbResult status = GetDb().OpenBeSQLiteDb(BeFileName(dbName.c_str(), true), BeSQLite::Db::OpenParams((Db::OpenMode)mode));
+        DgnSqlFuncsForTriggers::Register(GetDb());
         return Napi::Number::New(Env(), (int)status);
     }
 
@@ -322,7 +324,6 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
     }
 
     Napi::Value IsOpen(const Napi::CallbackInfo &info) { return Napi::Boolean::New(Env(), GetDb().IsDbOpen()); }
-
 
     // To catch any SQLite error when it happens, put a BP on sqlite3ErrorMsg
 

@@ -14,7 +14,7 @@ appName     = imodel-bank
 
 baseDir     = $(_MakeFilePath)
 
-cDefs + -DBUILDING_NODE_EXTENSION
+cDefs + -DBUILDING_NODE_EXTENSION -DEXTERNAL_NAPI
 
 %if $(TARGET_PLATFORM) == "MacOS"
   cDefs + -D_DARWIN_USE_64_BIT_INODE=1
@@ -52,6 +52,10 @@ $(o)IModelBankLoggingInterop$(oext) : $(baseDir)IModelBankLoggingInterop.cpp $(b
 
 $(o)ChangeSetManager$(oext) : $(baseDir)ChangeSetManager.cpp $(baseDir)ChangeSetManager.h ${MultiCompileDepends}
 
+$(o)DgnSqlFuncsForTriggers$(oext) : $(baseDir)DgnSqlFuncsForTriggers.cpp $(baseDir)DgnSqlFuncsForTriggers.h $(baseDir)MissingStructs.h ${MultiCompileDepends}
+
+$(o)MissingStructs$(oext) : $(baseDir)MissingStructs.cpp $(baseDir)MissingStructs.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 #----------------------------------------------------------------------
@@ -69,7 +73,7 @@ DLM_NO_CONTEXT_LINK = 1
 
 %ifdef __unix
 
-    THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libnode-addon-api.a
+    THIN_ARCHIVE_INPUTS = $(IMODEL_BANK_LIBS)
 
     THIN_ARCHIVE_NAME = libIModelBank.inputs.a
 
@@ -90,9 +94,13 @@ DLM_NO_CONTEXT_LINK = 1
 
 %else
 
-    LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)node-addon-api$(libext)
+    DLM_OBJECT_FILES  + $(IMODEL_BANK_LIBS)
 
-    %include $(sharedMki)linkLibrary.mki
+    LINKER_LIBRARIES +  $(ContextSubpartsLibs)$(stlibprefix)node$(stlibext)
+
+    # Always produce a .SO (even though this is a static build)
+    %undef CREATE_STATIC_LIBRARIES
+    %include dlmlink.mki
 
 %endif
 

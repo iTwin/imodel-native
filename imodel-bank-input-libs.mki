@@ -5,16 +5,11 @@
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
-%ifdef __unix
-
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentley.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeJsonCpp.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSQLite.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libsnappy.a
-
-%else
-
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext)
-
-%endif
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(stlibprefix)Bentley$(stlibext)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(stlibprefix)BeSQLite$(stlibext)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(stlibprefix)BeIcu4c$(stlibext)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(stlibprefix)snappy$(stlibext)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(stlibprefix)lzma$(stlibext)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(stlibprefix)BentleyGeom$(stlibext)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(stlibprefix)node-addon-api$(stlibext)
