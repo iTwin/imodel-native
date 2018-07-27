@@ -37,7 +37,7 @@ struct HierarchyManager
         };
 
     private:
-        BentleyStatus HierarchyManager::GetRelatedKeys
+        BentleyStatus GetRelatedKeys
             (
             ECRelationshipClassCP relationshipClass,
             ECInstanceKeyCR instance,
