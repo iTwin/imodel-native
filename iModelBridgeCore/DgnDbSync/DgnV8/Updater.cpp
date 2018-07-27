@@ -426,9 +426,14 @@ void ChangeDetector::_DetectDeletedViews(Converter& converter)
         auto viewId = entry.GetId();
         if (m_viewsSeen.find(viewId) == m_viewsSeen.end())
             {
-            // don't delete views not created by us:
             auto view = entry.GetSpatialViewDefinition();
-            if (view.IsValid() && view->GetModel()->GetModelId() != jobModelId)
+
+            // don't delete drawing and sheet views. That is handled elsewhere(?).
+            if (!view.IsValid())
+                continue;
+
+            // don't delete views not created by us:
+            if (view->GetModel()->GetModelId() != jobModelId)
                 continue;
 
             // a special case for a SpatialView: if attached to a Sheet::ViewAttachment, do not delete it:
