@@ -986,17 +986,28 @@ bool ContentDescriptor::ECPropertiesFieldKey::operator<(ECPropertiesFieldKey con
             return false;
         return *GetEditor() < *rhs.GetEditor();
         }
+
     bool areSimilar = (rhs.IsRelated() == IsRelated()) && (GetClass() == rhs.GetClass() || !IsRelated());
     if (!areSimilar)
         return m_relatedClassPath < rhs.m_relatedClassPath;
-    if (strcmp(GetType(), rhs.GetType()) < 0)
+
+    if (GetValueKind() < rhs.GetValueKind())
         return true;
-    if (strcmp(GetType(), rhs.GetType()) > 0)
+    if (GetValueKind() > rhs.GetValueKind())
         return false;
-    if (strcmp(GetName(), rhs.GetName()) < 0)
+
+    int typeCmp = strcmp(GetType(), rhs.GetType());
+    if (typeCmp < 0)
         return true;
-    if (strcmp(GetName(), rhs.GetName()) > 0)
+    if (typeCmp > 0)
         return false;
+
+    int nameCmp = strcmp(GetName(), rhs.GetName());
+    if (nameCmp < 0)
+        return true;
+    if (nameCmp > 0)
+        return false;
+
     return GetKoq() < rhs.GetKoq();
     }
 
