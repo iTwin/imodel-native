@@ -6,11 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelTestsBase.h"
+#include "../Helpers/Domains/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_DPTEST
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Karolis.Dziedzelis              11/2017
@@ -152,4 +154,29 @@ TEST_F(SchemaLockTests, ModifySchema)
 
     // Second briefcase should be able to get lock
     EXPECT_EQ(RepositoryStatus::Success, db2Ptr->BriefcaseManager().LockSchemas().Result());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas             07/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaLockTests, ImportSchemaAcquiresLock)
+    {
+    auto briefcase1 = AcquireAndOpenBriefcase();
+    DgnDbR db1 = briefcase1->GetDgnDb();
+    auto briefcase2 = AcquireAndOpenBriefcase();
+    DgnDbR db2 = briefcase2->GetDgnDb();
+
+    // Import domain and schema, schema lock should be acquired automatically
+    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+    EXPECT_EQ(SchemaStatus::Success, DgnPlatformTestDomain::GetDomain().ImportSchema(db1));
+    db1.SaveChanges();
+
+    // Second briefcase should fail to get lock
+    EXPECT_EQ(SchemaStatus::SchemaLockFailed, DgnPlatformTestDomain::GetDomain().ImportSchema(db2));
+
+    // Push changes
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true));
+
+    // Second briefcase should fail to get lock since it does not have changeset
+    EXPECT_EQ(SchemaStatus::SchemaLockFailed, DgnPlatformTestDomain::GetDomain().ImportSchema(db2));
     }
