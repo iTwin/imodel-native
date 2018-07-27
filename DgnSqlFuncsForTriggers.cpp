@@ -131,6 +131,7 @@ void DgnSqlFuncsForTriggers::Register(Db &db)
       {
           ADD_FUNC(angles),
           ADD_FUNC(bbox),
+          ADD_FUNC(bbox_value),
           ADD_FUNC(placement_aabb),
           ADD_FUNC(point),
           ADD_FUNC(placement),
