@@ -459,6 +459,9 @@ void ConnectSignInManager::StartConnectionClientListener()
     BeMutexHolder lock(m_mutex);
     InitializeConnectionClientInterface();
 
+    if (nullptr != m_connectionClientListener)
+        return;
+
     if (!IsConnectionClientInstalled())
         return;
 
