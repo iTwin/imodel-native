@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbInternalTypes.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -84,4 +84,36 @@ struct CompareIUtf8Ascii
     bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0;  }
     bool operator()(Utf8StringCP s1, Utf8StringCP s2) const { BeAssert(s1 != nullptr && s2 != nullptr); return BeStringUtilities::StricmpAscii(s1->c_str(), s2->c_str()) < 0; }
     };
+
+
+
+///=======================================================================================
+// FNVa1 hash 
+// @bsistruct
+//+===============+===============+===============+===============+===============+======
+struct basic_fnv_1a
+    {
+    uint64_t operator()(const unsigned char* bytes, size_t sz, uint64_t hash = 14695981039346656037u) const
+        {
+        for (size_t i = 0; i< sz; ++i)
+            {
+            hash ^= (uint64_t)bytes[i];
+            hash *= 1099511628211u;
+            }
+
+        return hash;
+        }
+
+    uint64_t operator()(Utf8StringCR str) const
+        {
+        return this->operator()((const unsigned char*)str.c_str(), str.size());
+        }
+
+    uint64_t operator()(Utf8CP str) const
+        {
+        return this->operator()((const unsigned char*) str, strlen(str));
+        }
+    };
+
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

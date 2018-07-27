@@ -23,6 +23,7 @@ NativeLogging::ILogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger = nullp
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb, Utf8CP ecsql, ECCrudWriteToken const* writeToken, bool logErrors)
     {
+    m_hash64 = 0u;
     ScopedIssueReporter issues(ecdb, logErrors);
     //Verify that dataSourceECDb meets all necessary conditions
     if (dataSourceECDb != nullptr && dataSourceECDb != &ecdb)
@@ -85,6 +86,9 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb,
     ECSqlStatus stat = preparedStatement.Prepare(ctx, *exp, ecsql);
     if (!stat.IsSuccess())
         Finalize();
+
+    if (ecsql != nullptr)
+        m_hash64 = basic_fnv_1a()(ecsql);
 
     return stat;
     }
