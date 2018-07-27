@@ -117,8 +117,8 @@ void SyncCachedDataTask::CacheInitialInstances(CacheTransactionCR txn, const bse
         {
         m_syncedInitialInstances = synced;
 
-        for (auto instance : handled)
-            PrepareCachingQueries(txn, instance, true);
+        for (auto instance : instanceKeys)            
+            PrepareCachingQueries(txn, instance.key, true);
 
         if (0 != synced)
             ReportProgress();
