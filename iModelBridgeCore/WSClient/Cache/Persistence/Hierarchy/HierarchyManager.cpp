@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/HierarchyManager.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -251,8 +251,7 @@ bset<ECInstanceKey>& deletedInstancesSetOut
         relationshipClass,
         relationshipClass->GetTarget().GetMultiplicity(),
         source,
-        //Function to find related instance keys with regards to given instance
-        std::bind(&ECDbAdapter::GetRelatedTargetKeys, m_dbAdapter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+        LookupKeys::TargetKeys,
         std::bind(deleteFunction, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4),
         target,
         deletedInstanceOut
@@ -269,7 +268,7 @@ bset<ECInstanceKey>& deletedInstancesSetOut
         relationshipClass,
         relationshipClass->GetSource().GetMultiplicity(),
         target,
-        std::bind(&ECDbAdapter::GetRelatedSourceKeys, m_dbAdapter, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+        LookupKeys::SourceKeys,
         //Reverse deletion function to correctly delete found source instance and given target instance
         std::bind(deleteFunction, this, std::placeholders::_2, std::placeholders::_1, std::placeholders::_3, std::placeholders::_4),
         source,
@@ -283,6 +282,56 @@ bset<ECInstanceKey>& deletedInstancesSetOut
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 Julius.Senkus        07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HierarchyManager::GetRelatedKeys
+(
+ECRelationshipClassCP relationshipClass,
+ECInstanceKeyCR instance,
+LookupKeys type,
+ECInstanceKeyMultiMap& keysOut
+)
+    {
+    if (!instance.IsValid())
+        return ERROR;
+    
+    Utf8PrintfString key("GetRelatedKeys:SelectIds:%lld:%lld", type, relationshipClass->GetId().GetValue());
+    ECSqlStatementPtr statement = m_statementCache.GetPreparedStatement(key, [=]()
+        {
+        if (type == TargetKeys)
+            return Utf8PrintfString(
+                "SELECT rel.TargetECClassId, rel.TargetECInstanceId "
+                "FROM ONLY %s rel "
+                "WHERE rel.SourceECClassId = ? AND rel.SourceECInstanceId = ?",
+                relationshipClass->GetECSqlName().c_str()
+                );
+
+        return Utf8PrintfString(
+            "SELECT rel.SourceECClassId, rel.SourceECInstanceId "
+            "FROM ONLY %s rel "
+            "WHERE rel.TargetECClassId = ? AND rel.TargetECInstanceId = ?",
+            relationshipClass->GetECSqlName().c_str()
+            );
+        });
+
+    statement->BindId(1, instance.GetClassId());
+    statement->BindId(2, instance.GetInstanceId());
+
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement->Step()))
+        {
+        ECClassId relatedClassId = statement->GetValueId<ECClassId>(0);
+        ECInstanceId relatedInstanceId = statement->GetValueId<ECInstanceId>(1);
+        keysOut.insert({ relatedClassId, relatedInstanceId });
+        }
+
+    if (BE_SQLITE_DONE != status)
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas    09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus HierarchyManager::DeleteForCardinalityViolatingRelate
@@ -290,7 +339,7 @@ BentleyStatus HierarchyManager::DeleteForCardinalityViolatingRelate
 ECRelationshipClassCP relationshipClass,
 RelationshipMultiplicityCR relatedInstanceCardinality,
 ECInstanceKeyCR instance,
-std::function<BentleyStatus(ECRelationshipClassCP, ECInstanceKeyCR, ECInstanceKeyMultiMap&)> getRelatedKeysFunction,
+LookupKeys type,
 std::function<BentleyStatus(ECInstanceKeyCR, ECInstanceKeyCR, ECRelationshipClassCP, ECInstanceKeyR)> deleteRelathionshipFunction,
 ECInstanceKeyCR newRelatedInstance,
 ECInstanceKeyR deletedInstanceOut
@@ -301,7 +350,8 @@ ECInstanceKeyR deletedInstanceOut
         return SUCCESS;
 
     ECInstanceKeyMultiMap keysOut;
-    if (SUCCESS != getRelatedKeysFunction(relationshipClass, instance, keysOut))
+
+    if (SUCCESS != GetRelatedKeys(relationshipClass, instance, type, keysOut))
         return ERROR;
 
     if (1 < keysOut.size())

@@ -258,3 +258,51 @@ TEST_F(DataSourceCachePerformanceTests, CacheResponse_DifferentInstancesWithDiff
         };
     RunTest(onResetForRun, onNewIteration, onIterationTest, getTestedCount);
     }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Julius.Senkus
+//---------------------------------------------------------------------------------------
+TEST_F(DataSourceCachePerformanceTests, CacheResponse_RelationshipInstances_ConstantPerformance)
+    {
+    IDataSourceCachePtr cache;
+    CachedResponseKey key;
+    bset<ObjectId> rejected;
+    WSQuery query("TestSchema", "TestClassA");
+    query.AddSelect("*,TestRelationshipClass!poly-forward-TestClass!poly.*");
+    size_t totalInstances = 0;
+    StubInstances rootInstances;
+
+    auto onResetForRun = [&]
+        {
+        totalInstances = 0;
+        cache = CreatePerformanceTestCache();
+        };
+    auto onNewIteration = [&]
+        {
+        rootInstances = StubInstances();
+        StubInstances::StubRelationshipInstances relationship = 
+            rootInstances.Add(ObjectId({ "TestSchema.TestClassA", BeGuid(true).ToString() }), { { "TestProperty", "RootFolder" } });
+
+        for (size_t i = 0; i < instancesPerIteration; i++)
+            {
+            relationship.AddRelated({ "TestSchema.TestManyToOneRelationshipClass", "" },
+                { "TestSchema.TestClassB", BeGuid(true).ToString() },
+                { { "TestProperty", Utf8String("Child"+BeGuid(true).ToString()) } },
+                ECRelatedInstanceDirection::Backward,
+                {});
+            }
+
+        totalInstances += instancesPerIteration;
+        key = StubCachedResponseKey(*cache, BeGuid(true).ToString());
+        };
+    auto onIterationTest = [&]
+        {
+        ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, rootInstances.ToWSObjectsResponse(), &rejected, &query));
+        ASSERT_TRUE(rejected.empty());
+        };
+    auto getTestedCount = [&]
+        {
+        return totalInstances;
+        };
+    RunTest(onResetForRun, onNewIteration, onIterationTest, getTestedCount);
+    }
