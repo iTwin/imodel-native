@@ -907,7 +907,7 @@ IPolyfaceVisitorFilter *roadFilter  //!< [in] optional filter for road  //!< [in
     {
     messages.clear ();
     DRange3d dtmRange = dtm.PointRange ();
-    DRange3d roadRange = road.PointRange ();
+    // unused - DRange3d roadRange = road.PointRange ();
     // Let's get local coordinates.
     // 1) xy centered
     // 2) scale?
