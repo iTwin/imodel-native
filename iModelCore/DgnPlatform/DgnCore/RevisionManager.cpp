@@ -896,6 +896,18 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extrac
     {
     LockRequest lockRequest;
 
+    if (ContainsSchemaChanges(dgndb))
+        {
+        // The briefcase *must* hold the Schemas lock.
+        LockableId schemasLock(dgndb.Schemas());
+        if (dgndb.GetExistingBriefcaseManager()->QueryLockLevel(schemasLock) != LockLevel::Exclusive)
+            {
+            BeAssert(false && "If a revision contains schema changes, then the briefcase must hold the Schemas lock");
+            LOG.fatalv("Briefcase has made schema changes but does not hold the Schemas lock");
+            }
+        lockRequest.InsertLock(schemasLock, LockLevel::Exclusive);
+        }
+
     ECClassCP elemClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
     BeAssert(elemClass != nullptr);
     ECClassCP modelClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Model);
