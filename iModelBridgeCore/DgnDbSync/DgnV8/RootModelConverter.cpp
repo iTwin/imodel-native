@@ -1343,10 +1343,11 @@ void RootModelConverter::_FinishConversion()
                     continue;
 
                 GetChangeDetector()._DetectDeletedElementsInFile(*this, *v8File);
+                GetChangeDetector()._DetectDeletedViewsInFile(*this, *v8File);
                 GetChangeDetector()._DetectDeletedModelsInFile(*this, *v8File);    // NB: call this *after* DetectDeletedElements!
                 }
-            GetChangeDetector()._DetectDeletedViews(*this);
             GetChangeDetector()._DetectDeletedElementsEnd(*this);
+            GetChangeDetector()._DetectDeletedViewsEnd(*this);
             GetChangeDetector()._DetectDeletedModelsEnd(*this);
             }
 
