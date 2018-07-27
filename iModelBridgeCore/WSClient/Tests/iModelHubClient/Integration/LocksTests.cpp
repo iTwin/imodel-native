@@ -788,7 +788,7 @@ TEST_F(LocksTests, IndirectChangesShouldNotBeExtractedAsRequiredLocks)
 
     // Import domain and schema
     DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
-    SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(db);
+    EXPECT_EQ(SchemaStatus::Success, DgnPlatformTestDomain::GetDomain().ImportSchema(db));
 
     auto createdModel = CreateModel(TestCodeName().c_str(), db);
 
