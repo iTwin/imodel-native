@@ -6,13 +6,13 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 std::string typeDesc[(int)EventType::TYPE_QTY] = { "LOAD (CREATE) MESH", " ACQUIRE CACHED MESH ", " LOAD (CREATE) TEX ", " ACQUIRE CACHED TEX " ,
 "RELEASE CACHED MESH", "RELEASE CACHED TEX" ,"SWITCH TO VRAM(MESH)" ," SWITCH TO VRAM(TEX)", "LOAD NODE", "UNLOAD NODE", "OVERVIEW 1", "LOADNODEDISPLAYDATA", "PRELOADOVERVIEW",
-"ADDITEM", "REMOVEITEM", "GETITEM", "INCREMENT", "DECREMENT", "BEFORE_SWITCH_VIDEO_TEX", "DELETEITEM","GRAPH_STORE", "POOL_REPLACEITEM", "WORKER_MESH_TASK", "WORKER_FILTER_TASK"};
+"ADDITEM", "REMOVEITEM", "GETITEM", "INCREMENT", "DECREMENT", "BEFORE_SWITCH_VIDEO_TEX", "DELETEITEM","GRAPH_STORE", "POOL_REPLACEITEM", "WORKER_MESH_TASK", "WORKER_FILTER_TASK", "WORKER_STITCH_TASK", "WORKER_STITCH_TASK_NEIGHBOR" };
 
 
 bool typeToFilter[(int)EventType::TYPE_QTY] = { false, false, false, false,
 false, false, false, false,
 false, false, false, false,
-false, false, false, false, false, false, false, false, false, false, true, true };
+false, false, false, false, false, false, false, false, false, false, true, true, true, true };
    
 
 CachedDataEventTracer* CachedDataEventTracer::s_instance;
