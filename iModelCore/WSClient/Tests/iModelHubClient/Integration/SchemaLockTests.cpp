@@ -92,7 +92,13 @@ TEST_F(SchemaLockTests, ModifySchema)
     auto briefcase2 = AcquireAndOpenBriefcase();
     DgnDbR db1 = briefcase1->GetDgnDb();
     DgnDbR db2 = briefcase2->GetDgnDb();
-    
+
+    // Before changing schemas briefcase has to get Schemas lock
+    EXPECT_EQ(RepositoryStatus::Success, db1.BriefcaseManager().LockSchemas().Result());
+
+    // Second briefcase should not be able to get lock
+    EXPECT_EQ(RepositoryStatus::LockAlreadyHeld, db2.BriefcaseManager().LockSchemas().Result());
+
     // Modify schema
     db1.CreateTable("TestTable1", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
     ASSERT_TRUE(db1.Txns().HasDbSchemaChanges());
@@ -106,6 +112,9 @@ TEST_F(SchemaLockTests, ModifySchema)
     ASSERT_SUCCESS(changeSetResult);
     ASSERT_EQ(1, changeSetResult.GetValue()->GetContainingChanges());
 
+    // Second briefcase does not have pushed changeset, so it should not be able to get lock
+    EXPECT_EQ(RepositoryStatus::RevisionRequired, db2.BriefcaseManager().LockSchemas().Result());
+
     auto model4 = CreateModel(TestCodeName().c_str(), db2);
     ASSERT_FALSE(db2.TableExists("TestTable1"));
 
@@ -113,20 +122,18 @@ TEST_F(SchemaLockTests, ModifySchema)
     auto pushResult = briefcase2->PullMergeAndPush(nullptr, true)->GetResult();
     EXPECT_EQ(Error::Id::MergeSchemaChangesOnOpen, pushResult.GetError().GetId());
     
-    // Reload DB with upgrade options
+    // Get changesets to merge
     TestsProgressCallback callback;
     ChangeSetsResult changeSetsResult = briefcase2->GetiModelConnection().DownloadChangeSetsAfterId(briefcase2->GetLastChangeSetPulled(), briefcase2->GetDgnDb().GetDbGuid(), callback.Get())->GetResult();
     ASSERT_SUCCESS(changeSetsResult);
     callback.Verify();
     ChangeSets changeSets = changeSetsResult.GetValue();
-    bvector<DgnRevisionCP> changeSetsToMerge;
-    iModelHubHelpers::ConvertToChangeSetPointersVector(changeSets, changeSetsToMerge);
     auto filePath = db2.GetFileName();
     db2.CloseDb();
 
     // Reload db with changesets
     BeSQLite::DbResult status;
-    auto db2Ptr = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(changeSetsToMerge)));
+    auto db2Ptr = s_client->OpenWithSchemaUpgrade(&status, filePath, changeSets);
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, status);
     
     auto briefcase2Result = s_client->OpenBriefcase(db2Ptr, false)->GetResult();
@@ -142,4 +149,7 @@ TEST_F(SchemaLockTests, ModifySchema)
     ASSERT_TRUE(changeSetResult.IsSuccess());
     EXPECT_EQ(0, changeSetResult.GetValue()->GetContainingChanges());
     EXPECT_TRUE(db2Ptr->TableExists("TestTable1"));
+
+    // Second briefcase should be able to get lock
+    EXPECT_EQ(RepositoryStatus::Success, db2Ptr->BriefcaseManager().LockSchemas().Result());
     }
