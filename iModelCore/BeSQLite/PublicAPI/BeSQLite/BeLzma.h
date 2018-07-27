@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/BeLzma.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,6 +29,32 @@ struct ILzmaInputStream
 {
     virtual ZipErrors _Read(void* data, uint32_t size, uint32_t& actuallyRead) = 0;
     virtual uint64_t _GetSize() = 0;
+};
+
+//=======================================================================================
+//! Utility to stream the contents of a file to LZMA routines from multiple 
+//! sequential "block" files.
+// @bsiclass                                                    Sam.Wilson  08/2018
+//=======================================================================================
+struct BlockFilesLzmaInStream : ILzmaInputStream
+{
+private:
+    uint32_t m_nextFile;
+    bvector<BeFileName> m_files;
+    BeFile m_file;
+    uint64_t m_fileSize;
+    uint64_t m_bytesRead;
+
+    BE_SQLITE_EXPORT BeFileStatus OpenNextFile();
+
+public:
+    BlockFilesLzmaInStream(bvector<BeFileName> const &files) : m_files(files), m_nextFile(0) { OpenNextFile(); }
+    virtual ~BlockFilesLzmaInStream() {}
+    bool IsReady() const { return m_file.IsOpen(); }
+    BE_SQLITE_EXPORT ZipErrors _Read(void *data, uint32_t size, uint32_t &actuallyRead) override;
+    uint64_t _GetSize() override { return m_fileSize; }
+    uint64_t GetBytesRead() { return m_bytesRead; }
+    BeFile &GetBeFile() { return m_file; }
 };
 
 //=======================================================================================

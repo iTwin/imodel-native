@@ -2,7 +2,7 @@
 |
 |     $Source: BeLzma.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // lzma stuff includes Windows.h! Include it first!
@@ -167,6 +167,58 @@ static uint32_t getDictionarySize(uint32_t dictionarySize)
         }
 
     return dictionarySize;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson    07/2018
+//---------------------------------------------------------------------------------------
+BeFileStatus BlockFilesLzmaInStream::OpenNextFile()
+    {
+    if (m_file.IsOpen())
+        m_file.Close();
+
+    if (m_nextFile == m_files.size())
+        return BeFileStatus::ReadError;
+
+    BeFileName fileName = m_files[m_nextFile];
+
+    m_bytesRead = 0;
+    BeFileStatus result = m_file.Open(fileName.GetName(), BeFileAccess::Read);
+    if (BeFileStatus::Success != result)
+        return result;
+
+    ++m_nextFile;
+
+    BeFileName::GetFileSize(m_fileSize, fileName.GetName());
+    m_file.SetPointer(0, BeFileSeekOrigin::Begin);
+
+    return BeFileStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson    07/2018
+//---------------------------------------------------------------------------------------
+ZipErrors BlockFilesLzmaInStream::_Read(void *data, uint32_t size, uint32_t &actuallyRead)
+    {
+    BeFileStatus result = m_file.Read(data, &actuallyRead, size);
+    if ((BeFileStatus::Success == result) && (actuallyRead == 0))
+        {
+        if (BeFileStatus::Success != OpenNextFile())
+            {
+            actuallyRead = 0;
+            return ZIP_SUCCESS; // It is normal for _InputPage to be called one more time after all data has been read. In fact, returning 0 here is what tells SQLite that the stream is done.
+            }
+        result = m_file.Read(data, &actuallyRead, size);
+        }
+
+    m_bytesRead += actuallyRead;
+
+    if (BeFileStatus::Success != result)
+        {
+        // LOG.errorv("BeFileLzmaInStream::_Read result = %d, m_bytesRead = %lld, filesize = %lld, error = %x", result, m_bytesRead, m_fileSize, m_file.GetLastError());
+        }
+
+    return BeFileStatus::Success != result ? ZIP_ERROR_READ_ERROR : ZIP_SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
