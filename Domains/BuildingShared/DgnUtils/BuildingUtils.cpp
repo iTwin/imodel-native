@@ -175,6 +175,8 @@ CategorySelectorPtr  BuildingUtils::CreateDefaultCategorySelector (DgnDbR db)
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Story));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Space));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Building));
+    categories.insert(DgnClientFx::DgnClientApp::App().GetDefaultDrawingCategoryId(db));
+    categories.insert(DgnClientFx::DgnClientApp::App().GetDefaultSpatialCategoryId(db));
 
     CategorySelector catSel (db.GetDictionaryModel (), DEFAULT_BUILDING_CATEGORY_SELECTOR_NAME);
     catSel.SetCategories (categories);
@@ -197,6 +199,8 @@ void addParkingCategories (DgnCategoryIdSet& categories, DgnDbR db)
     categories.insert (SpatialCategory::QueryCategoryId (db.GetDictionaryModel (), BUILDING_SPACEPLANNING_CATEGORY_CODE_ParkingIsland));
     categories.insert (SpatialCategory::QueryCategoryId (db.GetDictionaryModel (), BUILDING_SPACEPLANNING_CATEGORY_CODE_SpaceDivider));
     categories.insert (SpatialCategory::QueryCategoryId (db.GetDictionaryModel (), BUILDING_SPACEPLANNING_CATEGORY_CODE_ParkingSpace));
+    categories.insert(DgnClientFx::DgnClientApp::App().GetDefaultDrawingCategoryId(db));
+    categories.insert(DgnClientFx::DgnClientApp::App().GetDefaultSpatialCategoryId(db));
     }
 
 //---------------------------------------------------------------------------------------
@@ -208,6 +212,8 @@ CategorySelectorPtr  BuildingUtils::CreateSiteViewCategorySelector (DgnDbR db)
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Site));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_BuildableVolume));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Building));
+    categories.insert(DgnClientFx::DgnClientApp::App().GetDefaultDrawingCategoryId(db));
+    categories.insert(DgnClientFx::DgnClientApp::App().GetDefaultSpatialCategoryId(db));
     addParkingCategories (categories, db);
     categories.insert (RoadRailPhysical::RoadRailCategory::GetRoadway(db));
 
@@ -234,6 +240,8 @@ CategorySelectorPtr BuildingUtils::CreateEgressPathViewCategorySelector(DgnDbR d
     categories.insert(SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_EgressPath));
     categories.insert(SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Story));
     categories.insert(SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_EgressPathSection));
+    categories.insert(DgnClientFx::DgnClientApp::App().GetDefaultDrawingCategoryId(db));
+    categories.insert(DgnClientFx::DgnClientApp::App().GetDefaultSpatialCategoryId(db));
 
     CategorySelector catSel(db.GetDictionaryModel(), EGRESS_VIEW_CATEGORY_SELECTOR_NAME);
     catSel.SetCategories(categories);
@@ -282,6 +290,8 @@ CategorySelectorPtr  BuildingUtils::CreateBuildingViewCategorySelector (DgnDbR d
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Story));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Building));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), GRIDS_CATEGORY_CODE_GridSurface));
+    categories.insert(DgnClientFx::DgnClientApp::App().GetDefaultDrawingCategoryId(db));
+    categories.insert(DgnClientFx::DgnClientApp::App().GetDefaultSpatialCategoryId(db));
 
     CategorySelector catSel (db.GetDictionaryModel (), BUILDING_VIEW_CATEGORY_SELECTOR_NAME);
     catSel.SetCategories (categories);
@@ -338,6 +348,8 @@ CategorySelectorPtr  BuildingUtils::CreateAndInsertFloorViewCategorySelector (Dg
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_EgressPath));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_EgressPathSection));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), GRIDS_CATEGORY_CODE_GridCurve));
+    categories.insert(DgnClientFx::DgnClientApp::App().GetDefaultDrawingCategoryId(db));
+    categories.insert(DgnClientFx::DgnClientApp::App().GetDefaultSpatialCategoryId(db));
 
     CategorySelector catSel (db.GetDictionaryModel (), FLOOR_VIEW_CATEGORY_SELECTOR_NAME);
     catSel.SetCategories (categories);
