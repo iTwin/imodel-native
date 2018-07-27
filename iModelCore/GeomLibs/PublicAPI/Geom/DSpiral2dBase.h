@@ -653,8 +653,8 @@ static void ApplyCCWRotation (
 */
 struct GEOMDLLIMPEXP DSpiral2dFractionOfNominalLengthCurve: DSpiral2dBase
 {
-    double m_nominalLength;       // arbitrary parameter for evaluation.  (The base spiral data is also available)
-DSpiral2dFractionOfNominalLengthCurve::DSpiral2dFractionOfNominalLengthCurve (double nominalLength);
+double m_nominalLength;       // arbitrary parameter for evaluation.  (The base spiral data is also available)
+DSpiral2dFractionOfNominalLengthCurve (double nominalLength);
 public:
 
 //! Evaluate the spiral and derivatives at specified fractional position
