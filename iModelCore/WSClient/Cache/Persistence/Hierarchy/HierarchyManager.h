@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/HierarchyManager.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -30,14 +30,27 @@ struct HierarchyManager
         ECDbAdapter&            m_dbAdapter;
         ECSqlStatementCache&    m_statementCache;
 
+    enum LookupKeys
+        {
+        TargetKeys,
+        SourceKeys
+        };
+
     private:
+        BentleyStatus HierarchyManager::GetRelatedKeys
+            (
+            ECRelationshipClassCP relationshipClass,
+            ECInstanceKeyCR instance,
+            LookupKeys type,
+            ECInstanceKeyMultiMap& keysOut
+            );
         BentleyStatus DeleteRelationships(ECInstanceKeyCR source, const bvector<ECInstanceKey>& targets, ECRelationshipClassCP relationshipClass);
         BentleyStatus DeleteForCardinalityViolatingRelate
             (
             ECRelationshipClassCP relationshipClass,
             RelationshipMultiplicityCR relatedInstanceCardinality,
             ECInstanceKeyCR instance,
-            std::function <BentleyStatus(ECRelationshipClassCP, ECInstanceKeyCR, ECInstanceKeyMultiMap&) > getRelatedKeysFunction,
+            LookupKeys type,
             std::function <BentleyStatus(ECInstanceKeyCR, ECInstanceKeyCR, ECRelationshipClassCP, ECInstanceKeyR) > deleteRelathionshipFunction,
             ECInstanceKeyCR newRelatedInstance,
             ECInstanceKeyR deletedInstanceOut
