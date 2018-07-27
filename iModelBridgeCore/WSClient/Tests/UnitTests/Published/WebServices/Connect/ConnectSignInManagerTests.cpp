@@ -1410,4 +1410,23 @@ TEST_F(ConnectSignInManagerTests, GetConnectionClientToken_CantStartClient_Retur
     ASSERT_FALSE(result->GetResult().IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Daumantas.Kojelis    7/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectSignInManagerTests, StartConnectionClientListener_StartsTwoTimes_OnlyOneListener)
+    {
+    auto connectionClient = std::make_shared<MockConnectionClientInterface>();
+    auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore, connectionClient);
+
+    ON_CALL(*connectionClient, IsInstalled()).WillByDefault(Return(true));
+    ON_CALL(*connectionClient, IsRunning()).WillByDefault(Return(true)); 
+
+    EXPECT_CALL(*connectionClient, AddClientEventListener(_)).Times(1);
+    EXPECT_CALL(*connectionClient, IsInstalled()).Times(1);
+    EXPECT_CALL(*connectionClient, IsRunning()).Times(1);
+
+    manager->StartConnectionClientListener();
+    manager->StartConnectionClientListener();
+    }
+
 #endif
