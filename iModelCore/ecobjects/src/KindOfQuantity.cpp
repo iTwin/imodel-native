@@ -703,9 +703,12 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         BeStringUtilities::Split(value.c_str(), ";", presentationFormats);
     bvector<Utf8String> formatStrings;
 
+    Utf8String originalPersFus = persUnit;
+    bool upgraded = false;
     // If version < 3.2. We have to upgrade our desriptors before we parse them.
     if (GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_2))
         {
+        upgraded = true;
         // Add schema references. Always need units for the persistence unit.
         SchemaKey key("Units", 1, 0, 0);
         auto unitsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
@@ -778,7 +781,32 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     for(auto const& presValue : formatStrings)
         {
         if (ECObjectsStatus::Success != AddPresentationFormatByString(presValue, formatLookerUpper, unitLookerUpper))
+            {
+            if (upgraded)
+                {
+                LOG.warningv("Upgrading a (< EC 3.2) presentation FUS Descriptor for KindOfQuantity '%s' resulted in Format String '%s' which is invalid for >= EC 3.2 due to stricter checking of Input unit and format composite major unit compatibility with the persistence unit. Dropping this presentation format", GetFullName().c_str(), presValue.c_str());
+                continue;
+                }
             return SchemaReadStatus::InvalidECSchemaXml; // Logging in AddPresentationUnit
+            }
+        }
+
+    // This handles the case where we didn't previously create a format string for the old persistence fus because there were already presentation formats,
+    // but those presentation formats ended up getting dropped later on because of incompatibilities between their units and the persistence unit
+    if (upgraded && GetPresentationFormats().empty())
+        {
+        Utf8String unit;
+        bvector<Utf8String> formatStrings;
+        bvector<Utf8CP> presFuses;
+        auto key = SchemaKey("Formats", 1, 0, 0);
+        auto formatsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
+        if (ECObjectsStatus::Success == UpdateFUSDescriptors(unit, formatStrings, originalPersFus.c_str(), presFuses, *formatsSchema) && !formatStrings.empty())
+            {
+            if (ECObjectsStatus::Success != AddPresentationFormatByString(formatStrings[0], formatLookerUpper, unitLookerUpper))
+                {
+                LOG.warningv("KindOfQuantity '%s' failed to upgrade persistence FUS because the format '%s' is incompatible with the persistence unit '%s'. This was valid in EC3.1 but is no longer allowed. Dropping format, but keeping persistence unit.", GetFullName().c_str(), originalPersFus.c_str(), GetPersistenceUnit()->GetFullName().c_str());
+                }
+            }
         }
 
     return SchemaReadStatus::Success;
