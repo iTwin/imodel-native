@@ -450,10 +450,13 @@ void RootModelConverter::_ConvertModels()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
+bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File, Utf8StringP bridgeName) const
     {
     BeFileName fn(v8File.GetFileName().c_str());
-    return _GetParams().IsFileAssignedToBridge(fn);
+    bool isMyFile = _GetParams().IsFileAssignedToBridge(fn);
+    if (nullptr != bridgeName)
+        bridgeName->Assign (_GetParams().GetBridgeRegSubKey().c_str());
+    return  isMyFile;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -470,10 +473,17 @@ void RootModelConverter::FindSpatialV8Models(DgnV8ModelRefR thisModelRef, bool h
 
     GetV8FileSyncInfoId(thisV8File); // Register this FILE in syncinfo. Also populates m_v8files
 
-    bool isThisMyFile = IsFileAssignedToBridge(thisV8File);
+    Utf8String  bridgeName;
+    bool isThisMyFile = IsFileAssignedToBridge(thisV8File, &bridgeName);
 
     if (haveFoundSpatialRoot && !isThisMyFile)
-        return; // we only go through another bridge's territory in order to find our own spatial root. don't follow any references from my spatial root into another bridge's file.
+        {
+        // we only go through another bridge's territory in order to find our own spatial root. don't follow any references from my spatial root into another bridge's file.
+        // log the info before skip the file.
+        Utf8PrintfString msg("Skipped %ls per %s affinity", thisV8File.GetFileName().c_str(), bridgeName.c_str());
+        ReportIssue(IssueSeverity::Info, IssueCategory::Filtering(), Issue::Message(), msg.c_str());
+        return;
+        }
 
     if (isThisMyFile)
         haveFoundSpatialRoot = true;
