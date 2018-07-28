@@ -142,8 +142,8 @@ bvector<XYBucketSearchTagType> &searchId
     {
     static double a = 1.0e14;
     DRange3d range3d = DRange3d::From (
-        DPoint3d::From (range2d.low, -a),
-        DPoint3d::From (range2d.high, a));
+        DPoint3d::From (range2d.low.x, range2d.low.y, -a),
+        DPoint3d::From (range2d.high.x, range2d.high.y, a));
         
     return ((XYBucketSearchImplementation*)this)->imp_CollectPointsInRangeXYZ (range3d, searchPoint, searchId);
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/pf_undercut.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -92,7 +92,7 @@ TaggedPolygonVectorR surfaceBbelowA
                         {
                         counts.Record(4);
                         CompressCyclicPointsAndZingers (xyzAClip, pointTolerance);
-                        surfaceAaboveB.push_back (TaggedPolygon (xyzAClip));
+                        PolygonVectorOps::AddPolygon (surfaceAaboveB, xyzAClip);
                         xyzWork.clear ();
                         // project in reverse order to plane of B
                         for (size_t kA = xyzAClip.size (); kA-- > 0;)
@@ -103,7 +103,7 @@ TaggedPolygonVectorR surfaceBbelowA
                             if (ray.Intersect (xyzBi, fB, planeB))
                                 xyzWork.push_back (xyzBi);
                             }
-                        surfaceBbelowA.push_back (TaggedPolygon (xyzWork));
+                        PolygonVectorOps::AddPolygon (surfaceBbelowA, xyzWork);
                         }
                     }
                 }
@@ -173,12 +173,12 @@ IPolyfaceVisitorFilter *filterA,
 PolyfaceHeaderCR polyfaceB,
 IPolyfaceVisitorFilter *filterB,
 PolyfaceHeaderPtr &polyfaceAOverB,
-PolyfaceHeaderPtr &polyfaceBOverA,
+PolyfaceHeaderPtr &polyfaceBUnderA,
 bool computeAndApplyTransform
 )
     {
     polyfaceAOverB = nullptr;
-    polyfaceBOverA = nullptr;
+    polyfaceBUnderA = nullptr;
     DRange3d rangeA = polyfaceA.PointRange ();
     DRange3d rangeB = polyfaceB.PointRange ();
 
@@ -216,19 +216,32 @@ bool computeAndApplyTransform
     PolygonVectorOps::TriangulateNonPlanarPolygons (polygonA, planarityAbsTol);
     PolygonVectorOps::TriangulateNonPlanarPolygons (polygonB, planarityAbsTol);
     bvector <TaggedPolygonVector> debugPolygons;
-    TaggedPolygonVector out1, out2;
-    PolygonVectorOps__ComputeUndercut_direct (polygonA, polygonB, out1, out2);
-
-    PolygonVectorOps::Multiply (out1, localToWorld);
-    PolygonVectorOps::Multiply (out2, localToWorld);
-    bvector<PolyfaceHeaderPtr> result;
-    SavePolygons (result, out1, nullptr); // We know (really?) that there will only be at most polyface back.
-    if (result.size () > 0)
+    if (&polyfaceAOverB == & polyfaceBUnderA)
+        {
+        TaggedPolygonVector out1;
+        PolygonVectorOps__ComputeUndercut_direct (polygonA, polygonB, out1, out1);
+        PolygonVectorOps::Multiply (out1, localToWorld);
+        bvector<PolyfaceHeaderPtr> result;
+        SavePolygons (result, out1, nullptr);
         polyfaceAOverB = result[0];
-    result.clear ();
-    SavePolygons(result, out2, nullptr);
-    if (result.size () > 0)
-        polyfaceBOverA = result[0];
+        }
+    else
+        {
+        TaggedPolygonVector out1, out2;
+        PolygonVectorOps__ComputeUndercut_direct (polygonA, polygonB, out1, out2);
+
+        PolygonVectorOps::Multiply (out1, localToWorld);
+        PolygonVectorOps::Multiply (out2, localToWorld);
+        bvector<PolyfaceHeaderPtr> result;
+
+        SavePolygons (result, out1, nullptr); // We know (really?) that there will only be at most polyface back.
+        if (result.size () > 0)
+            polyfaceAOverB = result[0];
+        result.clear ();
+        SavePolygons(result, out2, nullptr);
+        if (result.size () > 0)
+            polyfaceBUnderA = result[0];
+        }
     }
 
 
