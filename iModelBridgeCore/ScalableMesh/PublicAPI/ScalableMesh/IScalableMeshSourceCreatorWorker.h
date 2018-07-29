@@ -23,6 +23,23 @@ typedef RefCountedPtr<IScalableMeshSourceCreatorWorker>            IScalableMesh
 
 #define SUCCESS_TASK_PLAN_COMPLETE SUCCESS + 1
 
+struct WorkerTimer
+    {
+    WorkerTimer()
+        {
+        m_indexingTime = 0;
+        m_meshingTime = 0;
+        m_stitchingTime = 0;
+        m_filteringTime = 0;
+        }
+        
+
+    double m_indexingTime;
+    double m_meshingTime;
+    double m_stitchingTime;
+    double m_filteringTime;
+    };
+
 //This is the creator interface to use when providing a series of source files to import data to the Scalable Mesh. All details of indexing, etc are handled
 //automatically. At the moment, it is not possible to import data from source files and also manually create nodes in the index.
 struct IScalableMeshSourceCreatorWorker : public IScalableMeshSourceCreator

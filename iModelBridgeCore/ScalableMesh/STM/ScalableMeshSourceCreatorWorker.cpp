@@ -117,7 +117,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName)
     : IScalableMeshSourceCreator::Impl(scmFileName) 
     {        
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
-    SetThreadingOptions(false, true, false);    
+    SetThreadingOptions(false, true, false);
     SetShareable(true);
     ScalableMeshDb::SetEnableSharedDatabase(true);
 #ifdef TRACE_ON	    

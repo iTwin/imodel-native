@@ -2,6 +2,8 @@
 #include "ScalableMeshWorker.h"
 #include "SMWorkerTaskScheduler.h"
 
+#include <process.h>
+
 #include <Bentley\BeDirectoryIterator.h>
 #include <BeXml\BeXml.h>
 
@@ -20,6 +22,7 @@
 #include <ScalableMesh\IScalableMeshSourceCreatorWorker.h>
 
 #include "SMWorkerDefinitions.h"
+
 
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
@@ -331,8 +334,10 @@ void TaskScheduler::Start()
         //! Move to the next directory entry
         BENTLEYDLL_EXPORT StatusInt ToNext();
 */            
+
+    clock_t duration = clock();
     
-    BeDuration sleeper(BeDuration::FromSeconds(0.5));
+    BeDuration sleeper(BeDuration::FromSeconds(0.1);
     
     
     bool isThereTaskAvailable = true;
@@ -456,6 +461,22 @@ void TaskScheduler::Start()
         }
 
     m_sourceCreatorWorkerPtr = nullptr;
+    
+    double totalDuration = (double)(clock() - duration) / CLOCKS_PER_SEC;
+
+    BeFileName durationFileName(L"D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\duration");    
+    durationFileName.AppendString(std::to_wstring(::_getpid()).c_str());
+    durationFileName.AppendString(L".csv");
+
+    FILE* durationFile = _wfsopen(durationFileName.c_str(), L"ab+", _SH_DENYRW);
+
+        /*
+        fwprintf(pResultFile,
+            L"%s,%s,%s,%s,%I64d,%I64d,%.5f%%,%.5f,%s,%.5f,%.5f,%.5f,%.5f,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%s\n",
+            */
+
+    fwprintf(durationFile, L"Duration : %.5f\n", totalDuration);
+    fclose(durationFile);
     }
     
 void TaskScheduler::GetScalableMeshFileName(BeFileName& smFileName) const
