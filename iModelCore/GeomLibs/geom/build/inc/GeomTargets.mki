@@ -499,7 +499,11 @@ $(OUT_DIR)pf_cutFill$(OUT_EXT)            : $(geomSrcPolyface)pf_cutFill.cpp $(g
 
 $(OUT_DIR)MeshAnnotationVector$(OUT_EXT)            : $(geomSrcPolyface)MeshAnnotationVector.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)pf_fastCutFill$(OUT_EXT)            : $(geomSrcPolyface)pf_fastCutFill.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+# This worked well for clean road surfaces but gets too complicated when there are vertical drops.
+#$(OUT_DIR)pf_fastCutFill$(OUT_EXT)            : $(geomSrcPolyface)pf_fastCutFill.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+$(OUT_DIR)pf_singleSheetCutFill$(OUT_EXT)            : $(geomSrcPolyface)pf_singleSheetCutFill.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)pf_boreVolume$(OUT_EXT)            : $(geomSrcPolyface)pf_boreVolume.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
