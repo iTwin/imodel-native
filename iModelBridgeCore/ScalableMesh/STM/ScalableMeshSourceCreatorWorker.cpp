@@ -330,7 +330,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
 
     HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
     
-    meshNode->NeedToLoadNeighbors(true);
+    meshNode->NeedToLoadNeighbors(false);
     meshNode->Load();
 
     assert(!meshNode->m_nodeHeader.m_arePoints3d);
@@ -634,7 +634,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
     HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
 
     meshNode->Unload();
-    meshNode->NeedToLoadNeighbors(true);
+    meshNode->NeedToLoadNeighbors(false);
     meshNode->Load();
 
     assert(!meshNode->m_nodeHeader.m_arePoints3d);
@@ -647,7 +647,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
         assert(!subNodeNoSplit->IsDirty());
         subNodeNoSplit->Unload();
         subNodeNoSplit->RemoveNonDisplayPoolData();
-        meshNode->NeedToLoadNeighbors(true);
+        meshNode->NeedToLoadNeighbors(false);
         subNodeNoSplit->Load();        
         }
     else
@@ -659,7 +659,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
             assert(!node->IsDirty());
             node->Unload();
             node->RemoveNonDisplayPoolData();
-            meshNode->NeedToLoadNeighbors(true);    
+            meshNode->NeedToLoadNeighbors(false);    
             node->Load();            
             }
         }
