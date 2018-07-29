@@ -529,6 +529,11 @@ extern std::mutex s_createdNodeMutex;
 
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load() const
     {
+    SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS = const_cast<SMPointIndexNode<POINT, EXTENT>* >(this);
+
+    if (m_SMIndex->m_forceReload && m_loaded)
+        UNCONSTTHIS->Unload();
+
     HPRECONDITION (!IsLoaded());        
 
     if (0 == (((SMPointIndexNode<POINT, EXTENT>*)this)->GetDataStore())->LoadNodeHeader (&m_nodeHeader, GetBlockID()))
@@ -539,8 +544,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
         }
    
     m_wasBalanced = true;
-
-    SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS =  const_cast<SMPointIndexNode<POINT, EXTENT>* >(this);
+    
     if (this == m_SMIndex->GetRootNode())
         {
 
@@ -618,6 +622,9 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
         {
         for (size_t neighborPosIndex = 0; neighborPosIndex < MAX_NEIGHBORNODES_COUNT; neighborPosIndex++)
             {
+            //Clear up the neighbor nodes if there was a load/unload done previsouly on that node.
+            UNCONSTTHIS->m_apNeighborNodes[neighborPosIndex].clear();
+
             for (size_t neigborIndex = 0; neigborIndex < UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex].size(); neigborIndex++)
                 {
                 assert(UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex].m_integerInitialized == true && UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neigborIndex].m_alternateID == 0);
@@ -832,8 +839,8 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Discon
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::IsLoaded() const
-    {
-    return m_loaded;
+    {    
+    return m_loaded && (m_SMIndex == nullptr || !m_SMIndex->m_forceReload);
     }
 
 //=======================================================================================
@@ -3982,19 +3989,21 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
         bool needStoreHeader = m_isDirty;
         
         if (needStoreHeader && IsLoaded())
-            {
+        {
             //RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
-            
+
             //NEEDS_WORK_SM : During partial update some synchro problem can occur.
             //NEEDS_WORK_SM : Should not be required now that ID is attributed during node creation.
-                
-            for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
-                {
-                m_nodeHeader.m_apNeighborNodeID[neighborPosInd].resize(m_apNeighborNodes[neighborPosInd].size());
+            if (m_loadNeighbors)
+                {                
+                for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
+                    {                    
+                    m_nodeHeader.m_apNeighborNodeID[neighborPosInd].resize(m_apNeighborNodes[neighborPosInd].size());
 
-                for (size_t neighborInd = 0; neighborInd < m_apNeighborNodes[neighborPosInd].size(); neighborInd++)
-                    {
-                    m_nodeHeader.m_apNeighborNodeID[neighborPosInd][neighborInd] = m_apNeighborNodes[neighborPosInd][neighborInd]->GetBlockID();
+                    for (size_t neighborInd = 0; neighborInd < m_apNeighborNodes[neighborPosInd].size(); neighborInd++)
+                        {
+                        m_nodeHeader.m_apNeighborNodeID[neighborPosInd][neighborInd] = m_apNeighborNodes[neighborPosInd][neighborInd]->GetBlockID();
+                        }
                     }
                 }
 
@@ -4425,7 +4434,8 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SetSub
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SetNeighborNodes()
     {  
     HINVARIANTS;
-        
+       
+    assert(m_loadNeighbors == true);
 
     size_t neighborPosIndex;
     for (neighborPosIndex = 0 ; neighborPosIndex < MAX_NEIGHBORNODES_COUNT; neighborPosIndex++)

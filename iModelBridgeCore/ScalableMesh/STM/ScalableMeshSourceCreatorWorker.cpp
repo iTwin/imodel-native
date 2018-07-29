@@ -233,7 +233,11 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateStitchTasks(uint32_t res
 
     vector<SMMeshIndexNode<DPoint3d, DRange3d>*> nodesToStitchInfo;
 
+    pDataIndex->SetForceReload(true);
+
     pDataIndex->Stitch(resolutionInd, false, &nodesToStitchInfo);
+
+    pDataIndex->SetForceReload(false);
 
     for (auto& meshNode : nodesToStitchInfo)
         {
@@ -382,14 +386,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
     BeFileName lockFileName;
     GetSisterMainLockFileName(lockFileName);
 
-    FILE* lockFile;
-
-    while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
-        {
-        sleeper.Sleep();
-        }
-
-
+ 
     HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
 
     assert(!meshNode->IsDirty());
@@ -419,6 +416,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
 
     SMSQLiteFilePtr sisterFilePtr(pSqliteStore->GetSisterSQLiteFile(SMStoreDataType::LinearFeature, false, true));
     
+    FILE* lockFile;
+
+    while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+        {
+        sleeper.Sleep();
+        }
 
     ScalableMeshDb* smDb(sqliteFilePtr->GetDb());
     assert(smDb != nullptr);
@@ -426,7 +429,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
     bool dbOpResult = true;
    
     if (!smDb->IsDbOpen() || !smDb->IsReadonly())
-        dbOpResult = smDb->ReOpenShared(false, true);
+        dbOpResult = smDb->ReOpenShared(true, true);
     
     assert(dbOpResult == true);
     
@@ -435,9 +438,11 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
     assert(smSisterDb != nullptr);    
 
     if (!smSisterDb->IsDbOpen() || !smSisterDb->IsReadonly())
-        dbOpResult = smSisterDb->ReOpenShared(false, true);
+        dbOpResult = smSisterDb->ReOpenShared(true, true);
 
     assert(dbOpResult == true);
+
+    fclose(lockFile);
 
         
     vector<SMPointIndexNode<DPoint3d, DRange3d>*> neighborNodes;
@@ -453,8 +458,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
     bvector<RefCountedPtr<SMMemoryPoolVectorItem<DPoint3d>>>      ptsNeighbors;
     bvector<RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>>       ptsIndicesNeighbors;
     bvector<RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>>> graphNeighbors;
-    
-    
+        
     for (auto node : neighborNodes)
         {                
         TRACEPOINT(THREAD_ID(), EventType::WORKER_STITCH_TASK_NEIGHBOR, node->GetBlockID().m_integerID, (uint64_t)-1, -1, -1, 0, 0)
@@ -462,6 +466,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
         assert(!node->IsDirty());
         node->Unload(); 
         node->RemoveNonDisplayPoolData();
+        meshNode->NeedToLoadNeighbors(true);
         node->Load();
                 
         SMMeshIndexNode<DPoint3d, DRange3d>* pMeshIndexNode(dynamic_cast<SMMeshIndexNode<DPoint3d, DRange3d>*>(node));
@@ -511,13 +516,20 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
         }
       */          
 
+
+    
+    while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+        {
+        sleeper.Sleep();
+        }
+
     if (!smDb->IsDbOpen() || !smDb->IsReadonly())
         dbOpResult = smDb->ReOpenShared(false, true);
 
     if (!smSisterDb->IsDbOpen() || !smSisterDb->IsReadonly())
         dbOpResult = smSisterDb->ReOpenShared(false, true);
-   
-
+        
+  
     ptsNeighbors.clear();
     ptsIndicesNeighbors.clear();
     graphNeighbors.clear();
@@ -593,8 +605,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
         smSisterDb->CloseShared(wasTransactionAbandoned);
         assert(wasTransactionAbandoned == false);
         }
-
-
+    
     fclose(lockFile);
     
     return SUCCESS;
@@ -636,6 +647,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
         assert(!subNodeNoSplit->IsDirty());
         subNodeNoSplit->Unload();
         subNodeNoSplit->RemoveNonDisplayPoolData();
+        meshNode->NeedToLoadNeighbors(true);
         subNodeNoSplit->Load();        
         }
     else
@@ -647,6 +659,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
             assert(!node->IsDirty());
             node->Unload();
             node->RemoveNonDisplayPoolData();
+            meshNode->NeedToLoadNeighbors(true);    
             node->Load();            
             }
         }

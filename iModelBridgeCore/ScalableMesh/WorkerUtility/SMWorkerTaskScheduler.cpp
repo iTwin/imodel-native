@@ -350,12 +350,12 @@ void TaskScheduler::Start()
             {                                
             if (isDir == false && 0 == name.GetExtension().CompareTo(L"xml"))
                 {                
+                isThereTaskAvailable = true;
+                
                 struct _stat64i32 buffer;
 
                 if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
-
-                isThereTaskAvailable = true;
-                
+                                
                 BeFileName lockFileName(name);
                 lockFileName.AppendString(L".lock");
 
@@ -414,10 +414,40 @@ void TaskScheduler::Start()
         
         if (!isThereTaskAvailable)
             {
-            StatusInt status = GetSourceCreatorWorker()->ExecuteNextTaskInTaskPlan();        
+            BeFileName testPlanLockFile(m_taskFolderName);
+
+            testPlanLockFile.AppendString(L"\\Tasks.xml.Plan.lock");
+
+            FILE* lockFile = _wfsopen(testPlanLockFile.c_str(), L"ab+", _SH_DENYRW);
+
+            if (lockFile == nullptr)
+                continue;
+
+            BeDirectoryIterator dirIter(m_taskFolderName);
+
+            BeFileName name;
+            bool isDir;
+
+            bool needExecuteTaskPlan = true;
+
+            for (; SUCCESS == dirIter.GetCurrentEntry(name, isDir); dirIter.ToNext())
+                {
+                if (isDir == false && 0 == name.GetExtension().CompareTo(L"xml"))
+                    {
+                    needExecuteTaskPlan = false;
+                    break;
+                    }
+                }
+
+            StatusInt status = SUCCESS;
+            
+            if (needExecuteTaskPlan)            
+                status = GetSourceCreatorWorker()->ExecuteNextTaskInTaskPlan();        
+
+            fclose(lockFile);
             
             if (status == SUCCESS_TASK_PLAN_COMPLETE)
-                break;
+                break;           
 
             isThereTaskAvailable = true;
             }

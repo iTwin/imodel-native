@@ -822,7 +822,7 @@ public:
     bool m_isGrid;
     bool m_needsNeighborSetting = true;
     //NEEDS_WORK_SM : Need to be set even if SMMeshIndexNode are not used (point cloud)
-    SMPointIndex<POINT, EXTENT>* m_SMIndex;
+    SMPointIndex<POINT, EXTENT>* m_SMIndex = nullptr;
 
     virtual void                ValidateInvariants() const
         {
@@ -1614,6 +1614,11 @@ public:
         m_loadNeighbors = needsNeighbors;
         }
 
+    void SetForceReload(bool forceReload)
+        {
+        m_forceReload = forceReload;
+        }
+
     void SetCanceled(bool isCanceled)
         {
         m_isCanceled = isCanceled;
@@ -1666,6 +1671,9 @@ protected:
     std::atomic<uint64_t>       m_nextNodeID;
 
     static uint64_t             m_nextSMID;
+
+    //For nodes to reload during access. 
+    bool                        m_forceReload = false;
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;    
     typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap m_createdNodeMap;
