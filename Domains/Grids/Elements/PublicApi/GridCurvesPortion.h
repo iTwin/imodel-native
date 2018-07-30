@@ -12,9 +12,9 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 //! Physical building element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GridCurvesPortion : Dgn::SpatialLocationPortion
+struct EXPORT_VTABLE_ATTRIBUTE GridCurvesPortion : Dgn::SpatialLocationElement
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridCurvesPortion, Dgn::SpatialLocationPortion);
+    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridCurvesPortion, Dgn::SpatialLocationElement);
 
 protected:
     explicit GRIDELEMENTS_EXPORT GridCurvesPortion (CreateParams const& params);

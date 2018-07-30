@@ -11,8 +11,9 @@
     <ECSchemaReference name="AecUnits" version="01.00.00" alias="AECU" />
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
 
-    <ECEntityClass typeName="GridCurvesPortion" description="a portion which holds GridCurves" >
-      <BaseClass>bis:SpatialLocationPortion</BaseClass>
+    <ECEntityClass typeName="GridCurvesPortion" description="a portion which holds GridCurves">
+      <BaseClass>bis:SpatialLocationElement</BaseClass>
+      <BaseClass>bis:ISubModeledElement</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
@@ -200,7 +201,8 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="Grid" modifier="Abstract"  description="A grid is a collection of gridsurfaces.">
-      <BaseClass>bis:SpatialLocationPortion</BaseClass>
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
     </ECEntityClass>
 
 

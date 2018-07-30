@@ -16,9 +16,9 @@ static const double PLACEMENT_TOLERANCE = 1.0E-9;
 //=======================================================================================
 //! Physical building element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Grid : Dgn::SpatialLocationPortion
+struct EXPORT_VTABLE_ATTRIBUTE Grid : Dgn::SpatialLocationElement
 {
-    DEFINE_T_SUPER (Dgn::SpatialLocationPortion);
+    DEFINE_T_SUPER (Dgn::SpatialLocationElement);
 
 public:
     struct CreateParams : T_Super::CreateParams
