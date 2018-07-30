@@ -82,7 +82,7 @@ DgnElementPtr Create3dElement(DgnModelR model, DgnCodeCR code)
         BeAssert(false);
         return nullptr;
         }
-    GenericPhysicalObject::CreateParams createParams(db, model.GetModelId(), classId, catId, Dgn::Placement3d(), code);
+    GenericPhysicalObject::CreateParams createParams(db, model.GetModelId(), classId, catId, Placement3d(), code);
     return GenericPhysicalObject::Create(createParams);
     }
 
@@ -96,7 +96,7 @@ DgnElementPtr Create2dElement(DgnModelR model, DgnCodeCR code)
         BeAssert(false);
         return nullptr;
         }
-    AnnotationElement2d::CreateParams createParams(db, model.GetModelId(), classId, catId, Dgn::Placement2d(), code);
+    AnnotationElement2d::CreateParams createParams(db, model.GetModelId(), classId, catId, Placement2d(), code);
     return AnnotationElement2d::Create(createParams);
     }
 
