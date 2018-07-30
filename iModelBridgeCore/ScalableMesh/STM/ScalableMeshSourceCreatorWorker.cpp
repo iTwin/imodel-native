@@ -18,6 +18,8 @@
 #include "ImagePPHeaders.h"
 #include "ScalableMeshSourceCreatorWorker.h"
 
+#define TASK_PER_WORKER 10
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -54,7 +56,8 @@ StatusInt IScalableMeshSourceCreatorWorker::ProcessFilterTask(BeXmlNodeP pXmlTas
 
 
 IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(const WChar*  filePath,
-                                                                       StatusInt&      status)
+                                                                             uint32_t      nbWorkers,
+                                                                             StatusInt&    status)
     {
     RegisterDelayedImporters();
 
@@ -71,7 +74,7 @@ IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(con
         return 0;
     }
     
-    IScalableMeshSourceCreatorWorkerPtr pCreatorWorker = new IScalableMeshSourceCreatorWorker(new IScalableMeshSourceCreatorWorker::Impl(filePath));
+    IScalableMeshSourceCreatorWorkerPtr pCreatorWorker = new IScalableMeshSourceCreatorWorker(new IScalableMeshSourceCreatorWorker::Impl(filePath, nbWorkers));
     
     status = pCreatorWorker->m_implP->LoadFromFile();
     if (BSISUCCESS != status)
@@ -82,13 +85,14 @@ IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(con
 
 
 IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(const IScalableMeshPtr& scmPtr,
+                                                                             uint32_t                nbWorkers,
                                                                              StatusInt&              status)
     {
     using namespace ISMStore;
 
     RegisterDelayedImporters();
 
-    IScalableMeshSourceCreatorWorkerPtr pCreatorWorker = new IScalableMeshSourceCreatorWorker(new IScalableMeshSourceCreatorWorker::Impl(scmPtr));
+    IScalableMeshSourceCreatorWorkerPtr pCreatorWorker = new IScalableMeshSourceCreatorWorker(new IScalableMeshSourceCreatorWorker::Impl(scmPtr, nbWorkers));
 
     status = pCreatorWorker->m_implP->LoadFromFile();
     if (BSISUCCESS != status)
@@ -113,9 +117,11 @@ IScalableMeshSourceCreatorWorker::~IScalableMeshSourceCreatorWorker()
         }
     }
 
-IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName)
+IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName, uint32_t nbWorkers)
     : IScalableMeshSourceCreator::Impl(scmFileName) 
     {        
+    m_nbWorkers = nbWorkers;
+
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
     SetThreadingOptions(false, true, false);
     SetShareable(true);
@@ -127,9 +133,11 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName)
 #endif	
     }
 
-IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr)
+IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr, uint32_t nbWorkers)
     : IScalableMeshSourceCreator::Impl(scmPtr)
     {      
+    m_nbWorkers = nbWorkers;
+
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
     SetThreadingOptions(false, true, false);
     SetShareable(true);
@@ -183,6 +191,19 @@ void IScalableMeshSourceCreatorWorker::Impl::GetTaskPlanFileName(BeFileName& tas
     taskPlanFileName.AppendString(L"Tasks.xml.Plan");
     }
 
+uint32_t IScalableMeshSourceCreatorWorker::Impl::GetNbNodesPerTask(size_t nbNodes) const
+    {
+    uint32_t nbTasks = m_nbWorkers * TASK_PER_WORKER;
+    uint32_t nbNodesPerTask = max(1.0, ceil((double)nbNodes / nbTasks));
+
+    if (nbNodesPerTask == 1)
+        {
+        nbNodesPerTask = max(1.0, ceil((double)nbNodes / m_nbWorkers));
+        }
+
+    return nbNodesPerTask;
+    }
+
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateMeshTasks()
     {
     BeFileName taskDirectory(m_scmFileName);
@@ -194,22 +215,31 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateMeshTasks()
     bvector<uint64_t> nodesToMesh;
 
     wchar_t stringBuffer[100000];
+        
+    pDataIndex->Mesh(&nodesToMesh);    
 
-    pDataIndex->Mesh(&nodesToMesh);
-    
-    for (auto& nodeId : nodesToMesh)
-        { 
+    uint32_t nbNodesPerTask = GetNbNodesPerTask(nodesToMesh.size());
+        
+    for (size_t ind = 0; ind < nodesToMesh.size();)
+        {         
         BeFileName meshTaskFile(taskDirectory);
 
-        swprintf(stringBuffer, L"Mesh%zi.xml", nodeId);
+        swprintf(stringBuffer, L"Mesh%zi.xml", ind);
         meshTaskFile.AppendString(stringBuffer);
-
         BeXmlDomPtr xmlDomPtr(BeXmlDom::CreateEmpty());
+
         BeXmlNodeP workerNode(xmlDomPtr->AddNewElement("workerTask", nullptr, nullptr));
         workerNode->AddAttributeStringValue("type", "mesh");
 
-        BeXmlNodeP tileNode(xmlDomPtr->AddNewElement("tile", nullptr, workerNode));
-        tileNode->AddAttributeUInt64Value("id", nodeId);
+        for (size_t nodeInd  = 0; nodeInd < nbNodesPerTask; nodeInd++)
+            {           
+            BeXmlNodeP tileNode(xmlDomPtr->AddNewElement("tile", nullptr, workerNode));
+            tileNode->AddAttributeUInt64Value("id", nodesToMesh[ind]);
+            ind++;
+
+            if (ind >= nodesToMesh.size())
+                break;
+            }                        
 
         BeXmlDom::ToStringOption toStrOption = (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent);
                     
@@ -239,21 +269,30 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateStitchTasks(uint32_t res
 
     pDataIndex->SetForceReload(false);
 
-    for (auto& meshNode : nodesToStitchInfo)
-        {
+    uint32_t nbNodesPerTask = GetNbNodesPerTask(nodesToStitchInfo.size());
+
+    for (size_t ind = 0; ind < nodesToStitchInfo.size();)
+        {        
         BeFileName meshTaskFile(taskDirectory);
-
-        uint64_t nodeId = meshNode->GetBlockID().m_integerID;
-
-        swprintf(stringBuffer, L"Stitch%zi.xml", nodeId);
+        
+        swprintf(stringBuffer, L"Stitch%zi.xml", ind);
         meshTaskFile.AppendString(stringBuffer);
 
         BeXmlDomPtr xmlDomPtr(BeXmlDom::CreateEmpty());
         BeXmlNodeP workerNode(xmlDomPtr->AddNewElement("workerTask", nullptr, nullptr));
         workerNode->AddAttributeStringValue("type", "stitch");
+        
+        for (size_t nodeInd = 0; nodeInd < nbNodesPerTask; nodeInd++)
+            {
+            uint64_t nodeId = nodesToStitchInfo[ind]->GetBlockID().m_integerID;
 
-        BeXmlNodeP tileNode(xmlDomPtr->AddNewElement("tile", nullptr, workerNode));
-        tileNode->AddAttributeUInt64Value("id", nodeId);
+            BeXmlNodeP tileNode(xmlDomPtr->AddNewElement("tile", nullptr, workerNode));
+            tileNode->AddAttributeUInt64Value("id", nodeId);
+            ind++;
+
+            if (ind >= nodesToStitchInfo.size())
+                break;
+            }
 
         BeXmlDom::ToStringOption toStrOption = (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent);
 
@@ -280,11 +319,13 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateFilterTasks(uint32_t res
 
     pDataIndex->Filter(resolutionInd, &nodesToFilter);
 
-    for (auto& meshNode : nodesToFilter)
-    {
+    uint32_t nbNodesPerTask = GetNbNodesPerTask(nodesToFilter.size());
+
+    for (size_t ind = 0; ind < nodesToFilter.size();)
+        {
         BeFileName meshTaskFile(taskDirectory);
 
-        uint64_t nodeId = meshNode->GetBlockID().m_integerID;
+        uint64_t nodeId = nodesToFilter[ind]->GetBlockID().m_integerID;
 
         swprintf(stringBuffer, L"Filter%zi.xml", nodeId);
         meshTaskFile.AppendString(stringBuffer);
@@ -293,9 +334,18 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateFilterTasks(uint32_t res
         BeXmlNodeP workerNode(xmlDomPtr->AddNewElement("workerTask", nullptr, nullptr));
         workerNode->AddAttributeStringValue("type", "filter");
 
-        BeXmlNodeP tileNode(xmlDomPtr->AddNewElement("tile", nullptr, workerNode));
-        tileNode->AddAttributeUInt64Value("id", nodeId);
+        for (size_t nodeInd = 0; nodeInd < nbNodesPerTask; nodeInd++)
+            {
+            uint64_t nodeId = nodesToFilter[ind]->GetBlockID().m_integerID;
 
+            BeXmlNodeP tileNode(xmlDomPtr->AddNewElement("tile", nullptr, workerNode));
+            tileNode->AddAttributeUInt64Value("id", nodeId);
+            ind++;
+
+            if (ind >= nodesToFilter.size())
+                break;
+            }
+    
         BeXmlDom::ToStringOption toStrOption = (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent);
 
         BeXmlStatus status = xmlDomPtr->ToFile(meshTaskFile, toStrOption, BeXmlDom::FILE_ENCODING_Utf8);
@@ -313,46 +363,52 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
     {
     BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
 
-    assert(pChildNode != nullptr);
-    assert(Utf8String(pChildNode->GetName()).CompareTo("tile") == 0);
-    
-    uint64_t tileId;
-
-    BeXmlStatus xmlStatus = pChildNode->GetAttributeUInt64Value(tileId, "id");    
-    assert(xmlStatus == BEXML_Success);
-    assert(pChildNode->GetNextSibling() == nullptr);
-
-    TRACEPOINT(THREAD_ID(), EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
-
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
-    
-    HPMBlockID blockID(tileId);    
 
-    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
-    
-    meshNode->NeedToLoadNeighbors(false);
-    meshNode->Load();
-
-    assert(!meshNode->m_nodeHeader.m_arePoints3d);
-
-    bool isMeshed = pDataIndex->GetMesher2_5d()->Mesh(meshNode);
-
-    if (isMeshed)
+    do
         {
-        meshNode->SetDirty(true);
-        }
+        assert(pChildNode != nullptr);
+        assert(Utf8String(pChildNode->GetName()).CompareTo("tile") == 0);
 
-    meshNode->Discard();
-   // pDataIndex->ClearNodeMap();
+        uint64_t tileId;
+
+        BeXmlStatus xmlStatus = pChildNode->GetAttributeUInt64Value(tileId, "id");
+        assert(xmlStatus == BEXML_Success);
+        //assert(pChildNode->GetNextSibling() == nullptr);
+
+        TRACEPOINT(THREAD_ID(), EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
+       
+        HPMBlockID blockID(tileId);
+
+        HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
+
+        meshNode->NeedToLoadNeighbors(false);
+        meshNode->Load();
+
+        assert(!meshNode->m_nodeHeader.m_arePoints3d);
+
+        bool isMeshed = pDataIndex->GetMesher2_5d()->Mesh(meshNode);
+
+        if (isMeshed)
+            {
+            meshNode->SetDirty(true);
+            }
+
+        meshNode->Discard();
+        // pDataIndex->ClearNodeMap();
+
+        meshNode->Unload();
+        meshNode = nullptr;
+
+        pChildNode = pChildNode->GetNextSibling();
+        } while (pChildNode != nullptr);
+
     pDataIndex->Store();
     m_smSQLitePtr->Save();
 
     SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
     assert(pSqliteStore != nullptr);
     pSqliteStore->SaveSisterFiles();
-
-    meshNode->Unload();
-    meshNode = nullptr;
 
     return SUCCESS;    
     }
@@ -365,174 +421,175 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
     {
     BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
 
-    assert(pChildNode != nullptr);
-    assert(Utf8String(pChildNode->GetName()).CompareTo("tile") == 0);
+    do
+        {
+        assert(pChildNode != nullptr);
+        assert(Utf8String(pChildNode->GetName()).CompareTo("tile") == 0);
 
-    uint64_t tileId;
+        uint64_t tileId;
 
-    BeXmlStatus xmlStatus = pChildNode->GetAttributeUInt64Value(tileId, "id");
-    assert(xmlStatus == BEXML_Success);
-    assert(pChildNode->GetNextSibling() == nullptr);
+        BeXmlStatus xmlStatus = pChildNode->GetAttributeUInt64Value(tileId, "id");
+        assert(xmlStatus == BEXML_Success);
+        
+        HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
-    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
-
-    TRACEPOINT(THREAD_ID(), EventType::WORKER_STITCH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
+        TRACEPOINT(THREAD_ID(), EventType::WORKER_STITCH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
                 
-    HPMBlockID blockID(tileId);
+        HPMBlockID blockID(tileId);
 
 
-    BeDuration sleeper(BeDuration::FromSeconds(0.5));
+        BeDuration sleeper(BeDuration::FromSeconds(0.5));
 
-    BeFileName lockFileName;
-    GetSisterMainLockFileName(lockFileName);
+        BeFileName lockFileName;
+        GetSisterMainLockFileName(lockFileName);
 
  
-    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
+        HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
 
-    assert(!meshNode->IsDirty());
-    meshNode->Unload();
-    meshNode->RemoveNonDisplayPoolData();
-
-    /*
-    if (!meshNode->IsNeighborsLoaded())
-        {
+        assert(!meshNode->IsDirty());
         meshNode->Unload();
-        }  
-        */
+        meshNode->RemoveNonDisplayPoolData();
 
-    meshNode->NeedToLoadNeighbors(true);    
-    meshNode->Load();
-    assert(!meshNode->m_nodeHeader.m_arePoints3d);
-
-    //Ensure that loaded neighbor node and data are in sync with each other.
-
-    SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
-    assert(pSqliteStore != nullptr);
-    
-
-
-    
-    SMSQLiteFilePtr sqliteFilePtr(GetFile(true));
-
-    SMSQLiteFilePtr sisterFilePtr(pSqliteStore->GetSisterSQLiteFile(SMStoreDataType::LinearFeature, false, true));
-    
-    FILE* lockFile;
-
-    while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
-        {
-        sleeper.Sleep();
-        }
-
-    ScalableMeshDb* smDb(sqliteFilePtr->GetDb());
-    assert(smDb != nullptr);
-    
-    bool dbOpResult = true;
-   
-    if (!smDb->IsDbOpen() || !smDb->IsReadonly())
-        dbOpResult = smDb->ReOpenShared(true, true);
-    
-    assert(dbOpResult == true);
-    
-
-    ScalableMeshDb* smSisterDb(sisterFilePtr->GetDb());
-    assert(smSisterDb != nullptr);    
-
-    if (!smSisterDb->IsDbOpen() || !smSisterDb->IsReadonly())
-        dbOpResult = smSisterDb->ReOpenShared(true, true);
-
-    assert(dbOpResult == true);
-
-    fclose(lockFile);
-
-        
-    vector<SMPointIndexNode<DPoint3d, DRange3d>*> neighborNodes;
-
-    meshNode->GetAllNeighborNodes(neighborNodes);    
-    dbOpResult = smDb->StartTransaction();
-    assert(dbOpResult == true);
-
-    dbOpResult = smSisterDb->StartTransaction();
-    assert(dbOpResult == true);
-
-        
-    bvector<RefCountedPtr<SMMemoryPoolVectorItem<DPoint3d>>>      ptsNeighbors;
-    bvector<RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>>       ptsIndicesNeighbors;
-    bvector<RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>>> graphNeighbors;
-        
-    for (auto node : neighborNodes)
-        {                
-        TRACEPOINT(THREAD_ID(), EventType::WORKER_STITCH_TASK_NEIGHBOR, node->GetBlockID().m_integerID, (uint64_t)-1, -1, -1, 0, 0)
-
-        assert(!node->IsDirty());
-        node->Unload(); 
-        node->RemoveNonDisplayPoolData();
-        meshNode->NeedToLoadNeighbors(true);
-        node->Load();
-                
-        SMMeshIndexNode<DPoint3d, DRange3d>* pMeshIndexNode(dynamic_cast<SMMeshIndexNode<DPoint3d, DRange3d>*>(node));
-        assert(pMeshIndexNode != nullptr);
-
-        RefCountedPtr<SMMemoryPoolVectorItem<DPoint3d>> pointPtr(pMeshIndexNode->GetPointsPtr());
-        size_t nbPoints = node->GetNbPoints();
-
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndices(pMeshIndexNode->GetPtsIndicePtr());
-
-        if (nbPoints == 0 || ptsIndices->size() == 0)
+        /*
+        if (!meshNode->IsNeighborsLoaded())
             {
-            int i = 0;
-            i = i;
-            }
-               
-        assert(nbPoints == pointPtr->size());
-                
-        ptsNeighbors.push_back(pMeshIndexNode->GetPointsPtr());
-        ptsIndicesNeighbors.push_back(pMeshIndexNode->GetPtsIndicePtr());
-        graphNeighbors.push_back(pMeshIndexNode->GetGraphPtr());
-        }
+            meshNode->Unload();
+            }  
+            */
 
-    bool isMeshed = pDataIndex->GetMesher2_5d()->Stitch(meshNode);
+        meshNode->NeedToLoadNeighbors(true);    
+        meshNode->Load();
+        assert(!meshNode->m_nodeHeader.m_arePoints3d);
+
+        //Ensure that loaded neighbor node and data are in sync with each other.
+
+        SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
+        assert(pSqliteStore != nullptr);
+    
+
+
+    
+        SMSQLiteFilePtr sqliteFilePtr(GetFile(true));
+
+        SMSQLiteFilePtr sisterFilePtr(pSqliteStore->GetSisterSQLiteFile(SMStoreDataType::LinearFeature, false, true));
+    
+        FILE* lockFile;
+
+        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+            {
+            sleeper.Sleep();
+            }
+
+        ScalableMeshDb* smDb(sqliteFilePtr->GetDb());
+        assert(smDb != nullptr);
+    
+        bool dbOpResult = true;
+   
+        if (!smDb->IsDbOpen() || !smDb->IsReadonly())
+            dbOpResult = smDb->ReOpenShared(true, true);
+    
+        assert(dbOpResult == true);
+    
+
+        ScalableMeshDb* smSisterDb(sisterFilePtr->GetDb());
+        assert(smSisterDb != nullptr);    
+
+        if (!smSisterDb->IsDbOpen() || !smSisterDb->IsReadonly())
+            dbOpResult = smSisterDb->ReOpenShared(true, true);
+
+        assert(dbOpResult == true);
+
+        fclose(lockFile);
+
+        
+        vector<SMPointIndexNode<DPoint3d, DRange3d>*> neighborNodes;
+
+        meshNode->GetAllNeighborNodes(neighborNodes);    
+        dbOpResult = smDb->StartTransaction();
+        assert(dbOpResult == true);
+
+        dbOpResult = smSisterDb->StartTransaction();
+        assert(dbOpResult == true);
+
+        
+        bvector<RefCountedPtr<SMMemoryPoolVectorItem<DPoint3d>>>      ptsNeighbors;
+        bvector<RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>>       ptsIndicesNeighbors;
+        bvector<RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>>> graphNeighbors;
+        
+        for (auto node : neighborNodes)
+            {                
+            TRACEPOINT(THREAD_ID(), EventType::WORKER_STITCH_TASK_NEIGHBOR, node->GetBlockID().m_integerID, (uint64_t)-1, -1, -1, 0, 0)
+
+            assert(!node->IsDirty());
+            node->Unload(); 
+            node->RemoveNonDisplayPoolData();
+            meshNode->NeedToLoadNeighbors(true);
+            node->Load();
+                
+            SMMeshIndexNode<DPoint3d, DRange3d>* pMeshIndexNode(dynamic_cast<SMMeshIndexNode<DPoint3d, DRange3d>*>(node));
+            assert(pMeshIndexNode != nullptr);
+
+            RefCountedPtr<SMMemoryPoolVectorItem<DPoint3d>> pointPtr(pMeshIndexNode->GetPointsPtr());
+            size_t nbPoints = node->GetNbPoints();
+
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndices(pMeshIndexNode->GetPtsIndicePtr());
+
+            if (nbPoints == 0 || ptsIndices->size() == 0)
+                {
+                int i = 0;
+                i = i;
+                }
+               
+            assert(nbPoints == pointPtr->size());
+                
+            ptsNeighbors.push_back(pMeshIndexNode->GetPointsPtr());
+            ptsIndicesNeighbors.push_back(pMeshIndexNode->GetPtsIndicePtr());
+            graphNeighbors.push_back(pMeshIndexNode->GetGraphPtr());
+            }
+
+        bool isMeshed = pDataIndex->GetMesher2_5d()->Stitch(meshNode);
 
    
-    bool wasTransactionAbandoned;
+        bool wasTransactionAbandoned;
 
-    dbOpResult = smDb->CommitTransaction();
-    assert(dbOpResult == true);    
-    smDb->CloseShared(wasTransactionAbandoned);
-    assert(wasTransactionAbandoned == false);
+        dbOpResult = smDb->CommitTransaction();
+        assert(dbOpResult == true);    
+        smDb->CloseShared(wasTransactionAbandoned);
+        assert(wasTransactionAbandoned == false);
 
-    dbOpResult = smSisterDb->CommitTransaction();
-    assert(dbOpResult == true);
-    smSisterDb->CloseShared(wasTransactionAbandoned);
-    assert(wasTransactionAbandoned == false);
+        dbOpResult = smSisterDb->CommitTransaction();
+        assert(dbOpResult == true);
+        smSisterDb->CloseShared(wasTransactionAbandoned);
+        assert(wasTransactionAbandoned == false);
     
 
-    //Ensure that loaded neighbor node and data are in sync with each other - END    
-    /*
-    fclose(lockFile);
+        //Ensure that loaded neighbor node and data are in sync with each other - END    
+        /*
+        fclose(lockFile);
 
-    while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
-        {
-        sleeper.Sleep();
-        }
-      */          
+        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+            {
+            sleeper.Sleep();
+            }
+          */          
 
 
     
-    while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
-        {
-        sleeper.Sleep();
-        }
+        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+            {
+            sleeper.Sleep();
+            }
 
-    if (!smDb->IsDbOpen() || !smDb->IsReadonly())
-        dbOpResult = smDb->ReOpenShared(false, true);
+        if (!smDb->IsDbOpen() || !smDb->IsReadonly())
+            dbOpResult = smDb->ReOpenShared(false, true);
 
-    if (!smSisterDb->IsDbOpen() || !smSisterDb->IsReadonly())
-        dbOpResult = smSisterDb->ReOpenShared(false, true);
+        if (!smSisterDb->IsDbOpen() || !smSisterDb->IsReadonly())
+            dbOpResult = smSisterDb->ReOpenShared(false, true);
         
   
-    ptsNeighbors.clear();
-    ptsIndicesNeighbors.clear();
-    graphNeighbors.clear();
+        ptsNeighbors.clear();
+        ptsIndicesNeighbors.clear();
+        graphNeighbors.clear();
 
     /*
     if (!smDb->IsDbOpen() || smDb->IsReadonly())
@@ -559,55 +616,59 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
         */
 
     
-    if (isMeshed)
+        if (isMeshed)
+            {
+            meshNode->SetDirty(true);
+            }
+
+        for (auto node : neighborNodes)
+            {
+            assert(!node->IsDirty());        
+            }
+
         {
-        meshNode->SetDirty(true);
+            size_t nbPoints = meshNode->GetNbPoints();
+
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndices(meshNode->GetPtsIndicePtr());
+
+            if (nbPoints == 0 || ptsIndices->size() == 0)
+            {
+                int i = 0;
+                i = i;
+            }
         }
 
-    for (auto node : neighborNodes)
-        {
-        assert(!node->IsDirty());        
-        }
-
-    {
-        size_t nbPoints = meshNode->GetNbPoints();
-
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndices(meshNode->GetPtsIndicePtr());
-
-        if (nbPoints == 0 || ptsIndices->size() == 0)
-        {
-            int i = 0;
-            i = i;
-        }
-    }
-
-    meshNode->Discard();    
-    meshNode->Unload();
+        meshNode->Discard();    
+        meshNode->Unload();
     
-   // pDataIndex->ClearNodeMap();
-    pDataIndex->Store();
-    sqliteFilePtr->Save();
-    sisterFilePtr->Save();
+       // pDataIndex->ClearNodeMap();
+        pDataIndex->Store();
+        sqliteFilePtr->Save();
+        sisterFilePtr->Save();
   
-    pSqliteStore->SaveSisterFiles();
+        pSqliteStore->SaveSisterFiles();
     
     
-    meshNode = nullptr;
+        meshNode = nullptr;
 
-    if (smDb->IsDbOpen())
-        {
-        smDb->CloseShared(wasTransactionAbandoned);
-        assert(wasTransactionAbandoned == false);
-        }
+        if (smDb->IsDbOpen())
+            {
+            smDb->CloseShared(wasTransactionAbandoned);
+            assert(wasTransactionAbandoned == false);
+            }
 
-    if (smSisterDb->IsDbOpen())
-        {
-        smSisterDb->CloseShared(wasTransactionAbandoned);
-        assert(wasTransactionAbandoned == false);
-        }
+        if (smSisterDb->IsDbOpen())
+            {
+            smSisterDb->CloseShared(wasTransactionAbandoned);
+            assert(wasTransactionAbandoned == false);
+            }
     
-    fclose(lockFile);
-    
+        fclose(lockFile);
+
+        pChildNode = pChildNode->GetNextSibling();
+
+        } while (pChildNode != nullptr);
+            
     return SUCCESS;
     }
 
@@ -616,65 +677,71 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
     {
     BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
 
-    assert(pChildNode != nullptr);
-    assert(Utf8String(pChildNode->GetName()).CompareTo("tile") == 0);
-
-    uint64_t tileId;
-
-    BeXmlStatus xmlStatus = pChildNode->GetAttributeUInt64Value(tileId, "id");
-    assert(xmlStatus == BEXML_Success);
-    assert(pChildNode->GetNextSibling() == nullptr);
-            
-    TRACEPOINT(THREAD_ID(), EventType::WORKER_FILTER_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)    
-
-    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
-
-    HPMBlockID blockID(tileId);
-
-    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
-
-    meshNode->Unload();
-    meshNode->NeedToLoadNeighbors(false);
-    meshNode->Load();
-
-    assert(!meshNode->m_nodeHeader.m_arePoints3d);
-
-    //Ensure that all children nodes are reloaded so that it the contains the latest data which might have been generated by another worker.    
-    HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> subNodeNoSplit(meshNode->GetSubNodeNoSplit());
-
-    if (subNodeNoSplit != nullptr)
+    do
         {
-        assert(!subNodeNoSplit->IsDirty());
-        subNodeNoSplit->Unload();
-        subNodeNoSplit->RemoveNonDisplayPoolData();
+        assert(pChildNode != nullptr);
+        assert(Utf8String(pChildNode->GetName()).CompareTo("tile") == 0);
+
+        uint64_t tileId;
+
+        BeXmlStatus xmlStatus = pChildNode->GetAttributeUInt64Value(tileId, "id");
+        assert(xmlStatus == BEXML_Success);
+                    
+        TRACEPOINT(THREAD_ID(), EventType::WORKER_FILTER_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)    
+
+        HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
+
+        HPMBlockID blockID(tileId);
+
+        HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false, true).GetPtr());
+
+        meshNode->Unload();
         meshNode->NeedToLoadNeighbors(false);
-        subNodeNoSplit->Load();        
-        }
-    else
-        {
-        vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> childrenNodes(meshNode->GetSubNodes());
+        meshNode->Load();
 
-        for (auto& node : childrenNodes)
+        assert(!meshNode->m_nodeHeader.m_arePoints3d);
+
+        //Ensure that all children nodes are reloaded so that it the contains the latest data which might have been generated by another worker.    
+        HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> subNodeNoSplit(meshNode->GetSubNodeNoSplit());
+
+        if (subNodeNoSplit != nullptr)
             {
-            assert(!node->IsDirty());
-            node->Unload();
-            node->RemoveNonDisplayPoolData();
-            meshNode->NeedToLoadNeighbors(false);    
-            node->Load();            
+            assert(!subNodeNoSplit->IsDirty());
+            subNodeNoSplit->Unload();
+            subNodeNoSplit->RemoveNonDisplayPoolData();
+            meshNode->NeedToLoadNeighbors(false);
+            subNodeNoSplit->Load();        
             }
-        }
+        else
+            {
+            vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> childrenNodes(meshNode->GetSubNodes());
+
+            for (auto& node : childrenNodes)
+                {
+                assert(!node->IsDirty());
+                node->Unload();
+                node->RemoveNonDisplayPoolData();
+                meshNode->NeedToLoadNeighbors(false);    
+                node->Load();            
+                }
+            }
     
-    meshNode->Filter((int)meshNode->GetLevel(), nullptr);
+        meshNode->Filter((int)meshNode->GetLevel(), nullptr);
         
-    meshNode->SetDirty(true);
+        meshNode->SetDirty(true);
 
-    meshNode->Discard();        
-   // pDataIndex->ClearNodeMap();
-    pDataIndex->Store();
-    m_smSQLitePtr->Save();
-    meshNode->Unload();
+        meshNode->Discard();        
+       // pDataIndex->ClearNodeMap();
+        pDataIndex->Store();
+        m_smSQLitePtr->Save();
+        meshNode->Unload();
 
-    meshNode = nullptr;
+        meshNode = nullptr;
+
+        pChildNode = pChildNode->GetNextSibling();
+
+        } while (pChildNode != nullptr);
+
 
     return SUCCESS;
     }

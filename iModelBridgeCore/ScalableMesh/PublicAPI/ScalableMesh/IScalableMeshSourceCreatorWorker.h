@@ -58,11 +58,13 @@ struct IScalableMeshSourceCreatorWorker : public IScalableMeshSourceCreator
     public:
         BENTLEY_SM_IMPORT_EXPORT virtual                 ~IScalableMeshSourceCreatorWorker();
 
-        BENTLEY_SM_IMPORT_EXPORT static IScalableMeshSourceCreatorWorkerPtr GetFor(const WChar*              filePath,
-                                                                             StatusInt&                status);
+        BENTLEY_SM_IMPORT_EXPORT static IScalableMeshSourceCreatorWorkerPtr GetFor(const WChar* filePath,
+                                                                                   uint32_t     nbWorkers,
+                                                                                   StatusInt&   status);
 
-        BENTLEY_SM_IMPORT_EXPORT static IScalableMeshSourceCreatorWorkerPtr GetFor(const IScalableMeshPtr&     scmPtr,
-                                                                             StatusInt&                  status);
+        BENTLEY_SM_IMPORT_EXPORT static IScalableMeshSourceCreatorWorkerPtr GetFor(const IScalableMeshPtr& scmPtr,
+                                                                                   uint32_t                nbWorkers,
+                                                                                   StatusInt&              status);
         
         BENTLEY_SM_IMPORT_EXPORT StatusInt                    CreateTaskPlan() const;
 

@@ -316,9 +316,10 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pXml
 /*---------------------------------------------------NEEDS_WORK_MST : Duplicate from ATP Code - END-----------------------------------------------------------*/
 
 
-TaskScheduler::TaskScheduler(BeFileName& taskFolderName)
+TaskScheduler::TaskScheduler(BeFileName& taskFolderName, uint32_t nbWorkers)
     {
     m_taskFolderName = taskFolderName;
+    m_nbWorkers = nbWorkers;
     }
 
 TaskScheduler::~TaskScheduler()
@@ -337,7 +338,7 @@ void TaskScheduler::Start()
 
     clock_t duration = clock();
     
-    BeDuration sleeper(BeDuration::FromSeconds(0.1);
+    BeDuration sleeper(BeDuration::FromSeconds(0.1));
     
     
     bool isThereTaskAvailable = true;
@@ -426,7 +427,10 @@ void TaskScheduler::Start()
             FILE* lockFile = _wfsopen(testPlanLockFile.c_str(), L"ab+", _SH_DENYRW);
 
             if (lockFile == nullptr)
+                {
+                isThereTaskAvailable = true;
                 continue;
+                }
 
             BeDirectoryIterator dirIter(m_taskFolderName);
 
@@ -495,7 +499,7 @@ IScalableMeshSourceCreatorWorkerPtr TaskScheduler::GetSourceCreatorWorker()
 
         StatusInt status;
         
-        m_sourceCreatorWorkerPtr = IScalableMeshSourceCreatorWorker::GetFor(smFileName.c_str(), status);
+        m_sourceCreatorWorkerPtr = IScalableMeshSourceCreatorWorker::GetFor(smFileName.c_str(), m_nbWorkers, status);
 
         assert(m_sourceCreatorWorkerPtr.IsValid());            
         }
@@ -517,7 +521,7 @@ bool TaskScheduler::ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType&
                 t = WorkerTaskType::FILTER;
             else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"index"))
                 t = WorkerTaskType::INDEX;
-            else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"mesh"))
+            else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"mesh")) 
                 t = WorkerTaskType::MESH;
             else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"stitch"))
                 t = WorkerTaskType::STITCH;            

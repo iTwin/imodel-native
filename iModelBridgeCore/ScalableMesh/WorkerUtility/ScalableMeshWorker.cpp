@@ -1,12 +1,15 @@
 #include "ScalableMeshWorker.h"
 
 
+#include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #include <ImagePP/all/h/HFCMacros.h>
 #include <ImagePP\all\h\HRFFileFormats.h>
 #include <ImagePP/all/h/HRFRasterFileFactory.h>
 #include "Initialize.h"
 #include "SMWorkerDefinitions.h"
 #include "SMWorkerTaskScheduler.h"
+
+
 
 
 
@@ -307,7 +310,22 @@ void ScalableMeshWorker::Start()
         }
 
 
-    TaskScheduler taskScheduler(m_taskFolderName);
+    WString cfgValue;
+    uint16_t nbWorkers = 1;
+
+    if (SUCCESS == ConfigurationManager::GetVariable(cfgValue, L"SM_WORKER_NB_WORKERS"))
+        {
+        uint64_t value;
+
+        BentleyStatus status = BeStringUtilities::ParseUInt64(value, Utf8String(cfgValue.c_str()).c_str());
+
+        if (status == SUCCESS)
+            {
+            nbWorkers = (uint16_t)value;
+            }
+        }    
+
+    TaskScheduler taskScheduler(m_taskFolderName, nbWorkers);
 
     taskScheduler.Start();
     }

@@ -27,6 +27,8 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
     {
     private:
 
+        uint32_t m_nbWorkers;            
+
         HFCPtr<MeshIndexType> m_pDataIndex;
 
         HFCPtr<MeshIndexType> GetDataIndex();
@@ -38,13 +40,17 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         StatusInt CreateFilterTasks(uint32_t resolutionInd);
 
         StatusInt CreateStitchTasks(uint32_t resolutionInd);
+
+        uint32_t GetNbNodesPerTask(size_t nbNodes) const;
         
       
     protected:
     
     public:
-        explicit                            Impl(const WChar*            scmFileName);
-        explicit                            Impl(const IScalableMeshPtr& iDTMFilePtr);
+        explicit                            Impl(const WChar*            scmFileName, uint32_t nbWorkers);
+        explicit                            Impl(const IScalableMeshPtr& iDTMFilePtr, uint32_t nbWorkers);
+
+        
 
         virtual                             ~Impl();
         
