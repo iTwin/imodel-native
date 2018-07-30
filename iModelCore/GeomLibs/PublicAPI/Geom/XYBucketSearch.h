@@ -112,8 +112,7 @@ bool GEOMDLLIMPEXP  GetPoint (unsigned int i, DPoint3dR xyz, XYBucketSearchTagTy
 /// <summary>Fast search for the closest point</summary>
 /// <param name="x">x coordinate of search</param>
 /// <param name="y">y coordinate of search</param>
-/// <param name="xOut">returned closest point x</param>
-/// <param name="yOut">returned closest point y</param>
+/// <param name="xyz">returned closest point</param>
 /// <param name="dataOut">returned tag</param>
 bool GEOMDLLIMPEXP ClosestPoint (double x, double y, DPoint3dR xyz, XYBucketSearchTagType &dataOut);
 
