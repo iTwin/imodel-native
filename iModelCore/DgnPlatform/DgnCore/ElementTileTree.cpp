@@ -10,7 +10,7 @@
 #include <DgnPlatform/TileReader.h>
 #include <folly/BeFolly.h>
 #include <DgnPlatform/RangeIndex.h>
-#include <DgnPlatform/JsonUtils.h>
+#include <GeomJsonWireFormat/JsonUtils.h>
 #include <numeric>
 #include <inttypes.h>
 #if defined (BENTLEYCONFIG_PARASOLID) 

@@ -11,6 +11,7 @@
 #include "DgnDb.h"
 #include "TxnManager.h"
 #include <BeSQLite/BeLzma.h>
+#include <BeSQLite/RevisionChangesFile.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -108,32 +109,13 @@ public:
 //! Streams the contents of a file containing serialized change streams
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RevisionChangesFileReader : BeSQLite::ChangeStream
+struct EXPORT_VTABLE_ATTRIBUTE RevisionChangesFileReader : BeSQLite::RevisionChangesFileReaderBase
 {
 private:
-    DgnDbCR m_dgndb; // Used only for debugging
-    BeFileName m_pathname;
-    Utf8String m_prefix;
-
-    BeSQLite::LzmaDecoder m_lzmaDecoder;
-    BeSQLite::BeFileLzmaInStream* m_inLzmaFileStream;
-    
-    BeSQLite::DbResult StartInput();
-    BeSQLite::DbResult ReadPrefix();
-    void FinishInput();
-    
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
-    DGNPLATFORM_EXPORT void _Reset() override;
-    DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter) override;
+    DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
 
 public:
-    RevisionChangesFileReader(BeFileNameCR pathname, DgnDbCR dgndb) : m_pathname(pathname), m_dgndb(dgndb), m_inLzmaFileStream(nullptr), m_prefix("") {}
-
-    Utf8StringCR GetPrefix(BeSQLite::DbResult& result);
-
-    BeSQLite::DbResult GetSchemaChanges(bool& containsSchemaChanges, BeSQLite::DbSchemaChangeSetR dbSchemaChanges);
-
-    ~RevisionChangesFileReader() { _Reset(); }
+    RevisionChangesFileReader(BeFileNameCR pathname, DgnDbCR dgndb) : BeSQLite::RevisionChangesFileReaderBase({pathname}, dgndb) {}
 };
 
 //=======================================================================================
