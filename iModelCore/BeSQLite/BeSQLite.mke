@@ -65,6 +65,8 @@ $(o)BeSQLite$(oext) : $(baseDir)BeSQLite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQL
 
 $(o)ChangeSet$(oext) : $(baseDir)ChangeSet.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
 
+$(o)RevisionChangesFile$(oext) : $(baseDir)RevisionChangesFile.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/RevisionChangesFile.h ${MultiCompileDepends}
+
 $(o)BeSQLiteProfileManager$(oext) : $(baseDir)BeSQLiteProfileManager.cpp $(baseDir)/BeSQLiteProfileManager.h  $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
 
 $(o)EncryptedDbVfs$(oext) : $(SQLiteDir)EncryptedDbVfs.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
@@ -92,6 +94,7 @@ objs + $(o)bentley-sqlite$(oext)
 BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)BeJsonCpp$(libext)
 
 DLM_OBJECT_FILES    = $(objs)
 DLM_NAME            = $(appName)
