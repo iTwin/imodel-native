@@ -12,8 +12,6 @@
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
-struct RevisionChangesFileReader;
-
 struct ChangeSetManager
 {
 private:
