@@ -10,7 +10,7 @@
 #include <node-addon-api/napi.h>
 #include <imodel-bank-package-version.h>
 #include <BeSQLite/ChangeSet.h>
-#include "ChangeSetManager.h"
+#include <BeSQLite/RevisionChangesFile.h>
 #include "DgnSqlFuncsForTriggers.h"
 
 #define PROPERTY_ATTRIBUTES static_cast<napi_property_attributes>(napi_enumerable | napi_configurable)
@@ -184,6 +184,34 @@ struct ConversionUtils
     }
 };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                       07/2018
+//---------------------------------------------------------------------------------------
+static DbResult applyChangeSet(Db &db, bvector<BeFileName> const &blockFileNames)
+{
+    RevisionChangesFileReaderBase changesetReader(blockFileNames, db);
+
+    // Apply DDL, if any
+    DbSchemaChangeSet dbSchemaChanges;
+    bool containsSchemaChanges;
+    DbResult result = changesetReader.GetSchemaChanges(containsSchemaChanges, dbSchemaChanges);
+    if (result != BE_SQLITE_OK)
+    {
+        BeAssert(false);
+        return result;
+    }
+
+    if (containsSchemaChanges && !dbSchemaChanges.IsEmpty())
+    {
+        DbResult status = db.ExecuteSql(dbSchemaChanges.ToString().c_str());
+        if (BE_SQLITE_OK != status)
+            return status;
+    }
+
+    // Apply normal/data changes (including ec_ table data changes)
+    return changesetReader.ApplyChanges(db);
+}
+
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -344,8 +372,7 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
             blockFileNames.push_back(BeFileName(item.ToString().Utf8Value().c_str(), true));
         }
 
-        ChangeSetManager mgr(GetDb());
-        auto status = mgr.ApplyChangeSet(blockFileNames);
+        auto status = applyChangeSet(GetDb(), blockFileNames);
         return Napi::Number::New(Env(), (int)status);
     }
 

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/BeSQLite.h>
 #include <Geom/GeomApi.h>
-#include "MissingStructs.h"
+#include <PlacementOnEarth/Placement.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 

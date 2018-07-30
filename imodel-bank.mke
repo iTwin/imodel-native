@@ -50,11 +50,7 @@ $(o)IModelBank$(oext) : $(baseDir)IModelBank.cpp $(baseDir)IModelBank.h ${MultiC
 
 $(o)IModelBankLoggingInterop$(oext) : $(baseDir)IModelBankLoggingInterop.cpp $(baseDir)IModelBank.h ${MultiCompileDepends}
 
-$(o)ChangeSetManager$(oext) : $(baseDir)ChangeSetManager.cpp $(baseDir)ChangeSetManager.h ${MultiCompileDepends}
-
-$(o)DgnSqlFuncsForTriggers$(oext) : $(baseDir)DgnSqlFuncsForTriggers.cpp $(baseDir)DgnSqlFuncsForTriggers.h $(baseDir)MissingStructs.h ${MultiCompileDepends}
-
-$(o)MissingStructs$(oext) : $(baseDir)MissingStructs.cpp $(baseDir)MissingStructs.h ${MultiCompileDepends}
+$(o)DgnSqlFuncsForTriggers$(oext) : $(baseDir)DgnSqlFuncsForTriggers.cpp $(baseDir)DgnSqlFuncsForTriggers.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
