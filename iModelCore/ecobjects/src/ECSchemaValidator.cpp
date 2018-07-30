@@ -249,6 +249,25 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
             status = ECObjectsStatus::Error;
             }
         }
+    
+    // RULE: Entity classes within the same schema should not have the same display label
+    bvector<ECClassCP> entityClasses;
+    for (ECClassCP ecClass : schema.GetClasses())
+        {
+        if (ecClass->IsEntityClass() && !ecClass->GetEntityClassCP()->IsMixin())
+            {
+            for (ECClassCP prevClass : entityClasses)
+                {
+                if (ecClass->GetDisplayLabel().EqualsIAscii(prevClass->GetDisplayLabel()))
+                    {
+                    LOG.errorv("Failed to validate '%s'. Entity classes '%s' and '%s' have the same display label '%s'",
+                               schema.GetFullSchemaName().c_str(), prevClass->GetFullName(), ecClass->GetFullName(), ecClass->GetDisplayLabel().c_str());
+                    status = ECObjectsStatus::Error;
+                    }
+                }
+            entityClasses.push_back(ecClass);
+            }
+        }
 
     return status;
     }
@@ -329,31 +348,54 @@ ECObjectsStatus StructValidator::Validate(ECClassCR structClass) const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Dan.Perlman                  06/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus checkPropertiesForLongType(ECClassCR ecClass)
-    {
-    ECObjectsStatus status = ECObjectsStatus::Success;
-    for (ECPropertyP prop : ecClass.GetProperties(false))
-        {
-        if (prop->GetTypeName() == "long" && !prop->GetIsNavigation())
-            {
-            LOG.errorv("Warning treated as error. Property '%s.%s' is of type 'long' and long properties are not allowed.  Use int, double or if this represents a FK use a navigiation property", ecClass.GetFullName(), prop->GetName().c_str());
-            status = ECObjectsStatus::Error;
-            }
-        }
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                  09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus AllClassValidator::Validate(ECClassCR ecClass) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
 
-    // Validate no properties are of type long
-    status = checkPropertiesForLongType(ecClass);
+    // RULE: Properties should not be of type long.
+    for (ECPropertyP prop : ecClass.GetProperties(false))
+        {
+        if (prop->GetTypeName().Equals("long") && !prop->GetIsNavigation())
+            {
+            LOG.errorv("Warning treated as error. Property '%s.%s' is of type 'long' and long properties are not allowed. Use int, double or if this represents a FK use a navigiation property",
+                ecClass.GetFullName(), prop->GetName().c_str());
+            status = ECObjectsStatus::Error;
+            }
+        }
+
+    // RULE: No properties can have the same display label and category
+    bvector<ECPropertyP> propertiesList;
+    for (ECPropertyP prop : ecClass.GetProperties(true))
+        {
+        Utf8StringCR displayLabel = prop->GetDisplayLabel();
+        PropertyCategoryCP category = prop->GetCategory();
+
+        for (ECPropertyP prevProp : propertiesList)
+            {
+            if (prevProp->GetDisplayLabel().EqualsIAscii(displayLabel))
+                {
+                PropertyCategoryCP prevCategory = prevProp->GetCategory();
+                if (prevCategory == nullptr && category == nullptr) // neither have defined category
+                    {
+                    LOG.errorv("Class '%s' has properties '%s' and '%s' with the same display label '%s'",
+                               ecClass.GetFullName(), prevProp->GetName().c_str(), prop->GetName().c_str(), displayLabel.c_str());
+                    status = ECObjectsStatus::Error;
+                    }
+
+                if (prevCategory == nullptr || category == nullptr)
+                    continue;
+                if (prevCategory->GetFullName().EqualsIAscii(category->GetFullName()))
+                    {
+                    LOG.errorv("Class '%s' has properties '%s' and '%s' with the same display label '%s' and category '%s'",
+                               ecClass.GetFullName(), prop->GetName().c_str(), prevProp->GetName().c_str(), displayLabel.c_str(), category->GetFullName().c_str());
+                    status = ECObjectsStatus::Error;
+                    }
+                }
+            }
+        propertiesList.push_back(prop);
+        }
 
     return status;
     }
@@ -382,6 +424,19 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
             foundIParentElement = true;
         if (strcmp(baseClass->GetFullName(), BISCORE_CLASS_ISubModeledElement) == 0)
             foundISubModelElement = true;
+
+        // Class may not subclass bis:SpatialLocationModel
+        if (baseClass->Is("BisCore", "SpatialLocationModel"))
+            {
+            LOG.errorv("Entity class '%s' may not subclass bis:SpatialLocationModel.", entity.GetFullName());
+            status = ECObjectsStatus::Error;
+            }
+        // Class may not subclass bis:PhysicalModel
+        if (baseClass->Is("BisCore", "PhysicalModel"))
+            {
+            LOG.errorv("Entity class '%s' may not subclass bis:PhysicalModel.", entity.GetFullName());
+            status = ECObjectsStatus::Error;
+            }
         }
     if (foundIParentElement && foundISubModelElement)
         {
