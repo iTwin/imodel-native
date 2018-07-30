@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/DimensionTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -300,7 +300,7 @@ TEST_F(DimensionTests, NotetoSheet)
         ASSERT_EQ(1, idlist.size());
         BentleyApi::RefCountedCPtr<DrawingGraphic> Dragraphic1 = db->Elements().Get<DrawingGraphic>(idlist[0]);
         ASSERT_TRUE(Dragraphic1.IsValid());
-        ASSERT_TRUE(Dragraphic1->GetPlacement().GetElementBox().IsEqual(ElementAlignedBox2d(0, 0, 1, 0)));
+        ASSERT_TRUE(Dragraphic1->GetPlacement().GetElementBox().IsEqual(BentleyApi::ElementAlignedBox2d(0, 0, 1, 0)));
 
         Sheet::ElementCPtr sheet = db->Elements().Get<Sheet::Element>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Sheet)));
         ASSERT_TRUE(sheet.IsValid());
