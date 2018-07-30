@@ -529,6 +529,7 @@ public:
     static ECN::ECClassCR GetECClass(Dgn::DgnDbR db) {return *db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME);}
 
     static ECInstanceKey Insert(Dgn::DgnDbR db, Dgn::DgnElementId root, Dgn::DgnElementId dependent);
+    static BeSQLite::DbResult Delete(Dgn::DgnDbR db, ECInstanceKeyCR key);
     };
 
 //=======================================================================================
