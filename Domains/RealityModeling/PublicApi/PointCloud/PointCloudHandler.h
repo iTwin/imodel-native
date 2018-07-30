@@ -109,7 +109,7 @@ protected:
     void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
-    Dgn::AxisAlignedBox3d _QueryModelRange() const override;
+    AxisAlignedBox3d _QueryModelRange() const override;
     POINTCLOUD_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP) override;
     Dgn::TileTree::RootPtr _GetTileTree(Dgn::RenderContextR) override;
 

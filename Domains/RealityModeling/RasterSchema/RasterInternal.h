@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterInternal.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __RASTERINTERNAL_H__
@@ -19,7 +19,7 @@
 #include <DgnPlatform/DgnDomain.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/image.h>
-#include <DgnPlatform/JsonUtils.h>
+#include <GeomJsonWireFormat/JsonUtils.h>
 #include <DgnPlatform/TileTree.h>
 #include <folly/BeFolly.h>
 

@@ -201,7 +201,7 @@ public:
     ChildTiles const* _GetChildren(bool load) const override; 
 
 
-    Dgn::ElementAlignedBox3d ComputeRange();
+    ElementAlignedBox3d ComputeRange();
 
     virtual Dgn::TileTree::Tile::SelectParent _SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selected, Dgn::TileTree::DrawArgsR args) const override;
 
@@ -387,7 +387,7 @@ public: //MST_TEMP
     Transform                               m_smToModelUorTransform;
     Transform                               m_modelUorToSmTransform;
     mutable bool                            m_tryOpen;
-    mutable BentleyApi::Dgn::AxisAlignedBox3d       m_range;
+    mutable BentleyApi::AxisAlignedBox3d       m_range;
     mutable bool                                    m_displayTexture;       
 	mutable IScalableMeshTextureInfoPtr             m_textureInfo;
     mutable IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;
@@ -464,8 +464,8 @@ protected:
     void _OnLoadedJsonProperties() override;
 
     virtual bool _IsMultiResolution() const { return true; };
-    BentleyApi::Dgn::AxisAlignedBox3d _GetRange() const override;
-    SCALABLEMESH_SCHEMA_EXPORT BentleyApi::Dgn::AxisAlignedBox3d _QueryModelRange() const override;
+    BentleyApi::AxisAlignedBox3d _GetRange() const override;
+    SCALABLEMESH_SCHEMA_EXPORT BentleyApi::AxisAlignedBox3d _QueryModelRange() const override;
 
     BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;
     BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const override;

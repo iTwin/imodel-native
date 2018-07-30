@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudInternal.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __POINTCLOUDINTERNAL_H__
@@ -15,7 +15,7 @@
 #include <folly/BeFolly.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnDomain.h>
-#include <DgnPlatform/JsonUtils.h>
+#include <GeomJsonWireFormat/JsonUtils.h>
 #include <BePointCloud/BePointCloudApi.h>
 #include <BePointCloud/PointCloudTypes.h>
 #include <BePointCloud/BePointCloudCommon.h>

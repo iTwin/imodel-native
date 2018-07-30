@@ -100,7 +100,7 @@ public:
     Node(Dgn::TileTree::TriMeshTree::Root& root, NodeP parent) : T_Super(root, parent) {}
     Utf8String GetFilePath(SceneR) const;
     bool _HasChildren() const override {return !m_childPath.empty();}
-    Dgn::ElementAlignedBox3d ComputeRange();
+    ElementAlignedBox3d ComputeRange();
 };
 
 /*=================================================================================**//**
@@ -188,7 +188,7 @@ public:
     THREEMX_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
     THREEMX_EXPORT void _OnSaveJsonProperties() override;
     THREEMX_EXPORT void _OnLoadedJsonProperties() override;
-    THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
+    THREEMX_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
     // ###TODO_TILE_PUBLISH THREEMX_EXPORT BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const override;
 

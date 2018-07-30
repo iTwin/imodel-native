@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/Raster/RasterHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -91,7 +91,7 @@ protected:
 
     virtual void _OnFitView(Dgn::FitContextR) override;
 
-    virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
+    virtual AxisAlignedBox3d _QueryModelRange() const override;
 
     //This how we make our raster pick-able
 //    virtual void _DrawModel(Dgn::ViewContextR) override;

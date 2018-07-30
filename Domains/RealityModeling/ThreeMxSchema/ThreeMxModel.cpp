@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
-#include <DgnPlatform/JsonUtils.h>
+#include <GeomJsonWireFormat/JsonUtils.h>
 
 DOMAIN_DEFINE_MEMBERS(ThreeMxDomain)
 HANDLER_DEFINE_MEMBERS(ModelHandler)
