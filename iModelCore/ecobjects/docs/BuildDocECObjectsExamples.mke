@@ -34,7 +34,9 @@ always:
     !~@mkdir ${PublishApiOutput}
 
 always:
-    ~linkfile "$(PublishApiInput)KindOfQuantityExamples.doxpage             = $(_MakeFilePath)source/KindOfQuantityExamples.doxpage                                       
+    ~linkfile "$(PublishApiInput)KindOfQuantityExamples.doxpage             = $(_MakeFilePath)source/KindOfQuantityExamples.doxpage
+    ~linkfile "$(PublishApiInput)FormatsExamples.doxpage                    = $(_MakeFilePath)source/FormatsExamples.doxpage   
+    ~linkfile "$(PublishApiInput)UnitsExamples.doxpage                      = $(_MakeFilePath)source/UnitsExamples.doxpage   
 
 
 $(PublishApiStamp) : $[@wildcard $(PublishApiInput)*]
