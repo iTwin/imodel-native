@@ -1264,19 +1264,24 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveN
 {
 	SMPointIndexNode<POINT, EXTENT>::RemoveNonDisplayPoolData();
 	GetMemoryPool()->RemoveItem(m_triIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex);
-	m_triIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    GetMemoryPool()->RemoveItem(m_triIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Cesium3DTiles, (uint64_t)m_SMIndex);
+    m_triIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
 	GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::Texture, (uint64_t)m_SMIndex);
-	m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::Cesium3DTiles, (uint64_t)m_SMIndex);
+    m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
 	GetMemoryPool()->RemoveItem(m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex);
-	m_triUvIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    GetMemoryPool()->RemoveItem(m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Cesium3DTiles, (uint64_t)m_SMIndex);
+    m_triUvIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
 	GetMemoryPool()->RemoveItem(m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex);
-	m_uvCoordsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    GetMemoryPool()->RemoveItem(m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Cesium3DTiles, (uint64_t)m_SMIndex);
+    m_uvCoordsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
 	GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)m_SMIndex);
-	m_graphPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Cesium3DTiles, (uint64_t)m_SMIndex);
+    m_graphPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 }
 
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveMultiTextureData() 

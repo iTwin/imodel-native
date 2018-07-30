@@ -60,6 +60,8 @@ template <class EXTENT> SMIndexNodeHeader<EXTENT>::SMIndexNodeHeader(const SMInd
     m_graphID = smNodeHeader.m_graphID;
     m_filtered = smNodeHeader.m_filtered;
     m_level = smNodeHeader.m_level;
+    m_IsLeaf = smNodeHeader.m_IsLeaf;
+    m_IsBranched = smNodeHeader.m_IsBranched;
     m_nbFaceIndexes = smNodeHeader.m_nbFaceIndexes;
     m_nbTextures = smNodeHeader.m_nbTextures;
     m_nbUvIndexes = smNodeHeader.m_nbUvIndexes;
