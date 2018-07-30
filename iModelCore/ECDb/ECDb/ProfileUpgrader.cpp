@@ -19,14 +19,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
     {
-    /* WIP_PERSIST_ECVERSION
-    DbResult stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN ECVersion INTEGER");
-    if (BE_SQLITE_OK != stat)
-        {
-        LOG.errorv("ECDb profile upgrade failed: Could not add column ECVersion to table " TABLE_Schema ": %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-        */
     DbResult stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECXmlVersionMajor INTEGER");
     if (BE_SQLITE_OK != stat)
         {
@@ -76,21 +68,11 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    // WIP_PERSIST_ECVERSION LOG.debug("ECDb profile upgrade: Added columns ECVersion, OriginalECXmlVersionMajor and OriginalECXmlVersionMinor to table " TABLE_Schema ". Added tables " TABLE_Unit ", " TABLE_Phenomenon ", " TABLE_UnitSystem ", " TABLE_Format ", and " TABLE_FormatCompositeUnit ".");
     LOG.debug("ECDb profile upgrade: Added columns OriginalECXmlVersionMajor and OriginalECXmlVersionMinor to table " TABLE_Schema ". Added tables " TABLE_Unit ", " TABLE_Phenomenon ", " TABLE_UnitSystem ", " TABLE_Format ", and " TABLE_FormatCompositeUnit ".");
 
     stat = FixMetaSchemaClassMapCAXml(ecdb);
     if (BE_SQLITE_OK != stat)
         return stat;
-
-    /* WIP_PERSIST_ECVERSION
-    // Populate new ECVersion column. Set to EC3.2 because ECDb only supports this latest ECObjects API version
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("UPDATE main." TABLE_Schema " SET ECVersion=" SQLVAL_ECVersion_V3_2))
-        {
-        LOG.error("ECDb profile upgrade failed: Could not update ECVersion to 3.2 for the upgraded ECSchema.");
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-        */
 
     stat = UpgradeECEnums(ecdb);
     if (BE_SQLITE_OK != stat)

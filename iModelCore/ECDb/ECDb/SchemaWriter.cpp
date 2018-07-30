@@ -1276,7 +1276,6 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECDbCR ecdb, ECSchemaCR schema)
     {
     BeAssert(!schema.HasId());
 
-    // WIP_PERSIST_ECVERSION CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3,ECVersion,OriginalECXmlVersionMajor,OriginalECXmlVersionMinor) VALUES(?,?,?,?,?,?,?,?,?,?)");
     CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3,OriginalECXmlVersionMajor,OriginalECXmlVersionMinor) VALUES(?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
@@ -1310,22 +1309,14 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECDbCR ecdb, ECSchemaCR schema)
     //Persist uint32_t as int64 to not lose unsigned-ness
     if (BE_SQLITE_OK != stmt->BindInt64(7, (int64_t) schema.GetVersionMinor()))
         return ERROR;
-
-    /* WIP_PERSIST_ECVERSION
-    if (BE_SQLITE_OK != stmt->BindInt64(8, (int64_t) schema.GetECVersion()))
-        return ERROR;
-    */
-
     //original version of 0.0 is considered an unset version
     if (schema.GetOriginalECXmlVersionMajor() > 0 || schema.GetOriginalECXmlVersionMinor() > 0)
         {
         //Persist uint32_t as int64 to not lose unsigned-ness
-        // WIP_PERSIST_ECVERSION if (BE_SQLITE_OK != stmt->BindInt64(9, (int64_t) schema.GetOriginalECXmlVersionMajor()))
         if (BE_SQLITE_OK != stmt->BindInt64(8, (int64_t) schema.GetOriginalECXmlVersionMajor()))
             return ERROR;
 
         //Persist uint32_t as int64 to not lose unsigned-ness
-        // WIP_PERSIST_ECVERSION if (BE_SQLITE_OK != stmt->BindInt64(10, (int64_t) schema.GetOriginalECXmlVersionMinor()))
         if (BE_SQLITE_OK != stmt->BindInt64(9, (int64_t) schema.GetOriginalECXmlVersionMinor()))
             return ERROR;
         }
@@ -3932,8 +3923,6 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
                              oldSchema.GetName().c_str());
             return ERROR;
             }
-
-        // WIP_PERSIST_ECVERSION updateBuilder.AddSetExp("ECVersion", schemaChange.ECVersion().GetNew().Value());
         }
 
     const bool originalVersionMajorHasChanged = schemaChange.OriginalECXmlVersionMajor().IsChanged();

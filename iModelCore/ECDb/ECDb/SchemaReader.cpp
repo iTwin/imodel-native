@@ -1703,7 +1703,6 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
     const bool hasECVersionsAndUnits = FeatureManager::IsAvailable(GetECDb(), {Feature::ECVersions, Feature::UnitsAndFormats});
     if (hasECVersionsAndUnits)
         {
-        // WIP_PERSIST_ECVERSION stmt = GetCachedStatement(Utf8PrintfString("SELECT s.Name,s.DisplayLabel,s.Description,s.Alias,s.VersionDigit1,s.VersionDigit2,s.VersionDigit3,s.ECVersion,s.OriginalECXmlVersionMajor,s.OriginalECXmlVersionMinor,"
         stmt = GetCachedStatement(Utf8PrintfString("SELECT s.Name,s.DisplayLabel,s.Description,s.Alias,s.VersionDigit1,s.VersionDigit2,s.VersionDigit3,s.OriginalECXmlVersionMajor,s.OriginalECXmlVersionMinor,"
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Class "  c WHERE s.Id = c.SchemaId) + "
                                                    "(SELECT COUNT(*) FROM [%s]." TABLE_Enumeration " e WHERE s.Id = e.SchemaId) + "
@@ -1756,16 +1755,9 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
     colIx++;
     uint32_t versionMinor = (uint32_t) stmt->GetValueInt64(colIx);
 
-    // WIP_PERSIST_ECVERSION ECVersion ecVersion = ECVersion::V3_1; // default for files that did not persist the ECVersion yet
     Nullable<uint32_t> originalECVersionMajor, originalECVersionMinor;
     if (hasECVersionsAndUnits)
         {
-        /* WIP_PERSIST_ECVERSION
-        colIx++;
-        if (!stmt->IsColumnNull(colIx))
-            ecVersion = (ECVersion) stmt->GetValueInt(colIx);
-        */
-
         colIx++;
         if (!stmt->IsColumnNull(colIx))
             originalECVersionMajor = (uint32_t) stmt->GetValueInt64(colIx);

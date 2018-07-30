@@ -209,7 +209,6 @@ DbResult ProfileManager::CreateProfileTables() const
                                     "VersionDigit1 INTEGER NOT NULL,"
                                     "VersionDigit2 INTEGER NOT NULL,"
                                     "VersionDigit3 INTEGER NOT NULL,"
-                              // WIP_PERSIST_ECVERSION      "ECVersion INTEGER,"
                                     "OriginalECXmlVersionMajor INTEGER,"
                                     "OriginalECXmlVersionMinor INTEGER)");
     if (BE_SQLITE_OK != stat)

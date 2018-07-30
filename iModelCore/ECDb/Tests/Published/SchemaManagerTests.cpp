@@ -106,54 +106,6 @@ TEST_F(SchemaManagerTests, ImportDifferentInMemorySchemaVersions)
     importSchema(m_ecdb, ECVersion::V3_2, true);
     }
 
-/* WIP_PERSIST_ECVERSION 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaManagerTests, SchemaECVersion)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("SchemaECVersion.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                     <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-                                       <ECClass typeName="Foo" isDomainClass="True">
-                                        <ECProperty propertyName="Pet" typeName="string"/>
-                                       </ECClass>
-                                     </ECSchema>)xml")));
-
-    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("TestSchema"));
-    ASSERT_EQ(BeVersion(2, 0), GetHelper().GetOriginalECXmlVersion("TestSchema"));
-
-    ASSERT_EQ(SUCCESS, SetupECDb("SchemaECVersion.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                     <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-                                       <ECEntityClass typeName="Foo">
-                                        <ECProperty propertyName="Pet" typeName="string"/>
-                                       </ECEntityClass>
-                                     </ECSchema>)xml")));
-
-    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("TestSchema"));
-    ASSERT_EQ(BeVersion(3, 0), GetHelper().GetOriginalECXmlVersion("TestSchema"));
-
-    ASSERT_EQ(SUCCESS, SetupECDb("SchemaECVersion.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                                       <ECEntityClass typeName="Foo">
-                                        <ECProperty propertyName="Pet" typeName="string"/>
-                                       </ECEntityClass>
-                                     </ECSchema>)xml")));
-
-    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("TestSchema"));
-    ASSERT_EQ(BeVersion(3, 1), GetHelper().GetOriginalECXmlVersion("TestSchema"));
-
-    ASSERT_EQ(SUCCESS, SetupECDb("SchemaECVersion.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                       <ECEntityClass typeName="Foo">
-                                        <ECProperty propertyName="Pet" typeName="string"/>
-                                       </ECEntityClass>
-                                     </ECSchema>)xml")));
-
-    ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("TestSchema"));
-    ASSERT_EQ(BeVersion(3, 2), GetHelper().GetOriginalECXmlVersion("TestSchema"));
-    }
-    */
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  12/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1702,7 +1654,6 @@ TEST_F(SchemaManagerTests, GetEnumeration)
                                      "  </ECEntityClass>"
                                      "</ECSchema>")));
 
-    // WIP_PERSIST_ECVERSION  ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("TestSchema"));
     ASSERT_EQ(BeVersion(3, 0), GetHelper().GetOriginalECXmlVersion("TestSchema"));
 
     {
@@ -1818,9 +1769,7 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
     ASSERT_EQ(SUCCESS, SetupECDb("getkindofquantity.ecdb", testSchemas[0]));
     ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema("Units"));
     ASSERT_EQ(SUCCESS, ImportSchema(testSchemas[1]));
-    // WIP_PERSIST_ECVERSION   ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("Schema1"));
     ASSERT_EQ(BeVersion(3, 2), GetHelper().GetOriginalECXmlVersion("Schema1"));
-    // WIP_PERSIST_ECVERSION  ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("Schema2"));
     ASSERT_EQ(BeVersion(3, 2), GetHelper().GetOriginalECXmlVersion("Schema2"));
 
     {
@@ -2042,9 +1991,7 @@ TEST_F(SchemaManagerTests, GetPreEC32KindOfQuantity)
     ASSERT_EQ(SUCCESS, SetupECDb("getkindofquantity.ecdb", testSchemas[0]));
     ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema("Units"));
     ASSERT_EQ(SUCCESS, ImportSchema(testSchemas[1]));
-    // WIP_PERSIST_ECVERSION  ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("Schema1"));
     ASSERT_EQ(BeVersion(3,1), GetHelper().GetOriginalECXmlVersion("Schema1"));
-    // WIP_PERSIST_ECVERSION  ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("Schema2"));
     ASSERT_EQ(BeVersion(3, 1), GetHelper().GetOriginalECXmlVersion("Schema2"));
 
     {
@@ -2195,9 +2142,7 @@ TEST_F(SchemaManagerTests, GetPropertyCategory)
                                      </ECSchema>)xml")));
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-    // WIP_PERSIST_ECVERSION  ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("Schema1"));
     ASSERT_EQ(BeVersion(3, 1), GetHelper().GetOriginalECXmlVersion("Schema1"));
-    // WIP_PERSIST_ECVERSION  ASSERT_EQ(Nullable<ECVersion>(ECVersion::Latest), GetHelper().GetECVersion("Schema2"));
     ASSERT_EQ(BeVersion(3, 1), GetHelper().GetOriginalECXmlVersion("Schema2"));
 
 
