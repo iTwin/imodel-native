@@ -10,7 +10,6 @@
 
 #include <Bentley/BeAssert.h>
 #include "RepositoryManager.h"
-#include <JS/Value.h>
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 struct Graphic;
@@ -1179,13 +1178,6 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_FromJson()
     DGNPLATFORM_EXPORT virtual void _FromJson(JsonValueR props);
 
-    //! Convert this DgnElement to a Js::Value.
-    //! @note If you override this method, you @em must call T_Super::_ToJsValue()
-    DGNPLATFORM_EXPORT virtual void _ToJsValue(Js::Object out, Js::Object opts) const;
-
-    //! Update this DgnElement from a Js::Value.
-    //! @note If you override this method, you @em must call T_Super::_FromJson()
-    DGNPLATFORM_EXPORT virtual void _FromJsValue(Js::Object props);
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
     //! @note If you override this method, you @em must call T_Super::_LoadFromDb() first, forwarding its status
@@ -1950,13 +1942,6 @@ public:
     Json::Value ToJson(JsonValueCR opts = Json::Value()) const { Json::Value val; _ToJson(val, opts); return val; }
 
     void FromJson(JsonValueR props) {_FromJson(props);}
-
-    //! Create a Json::Value that represents the state of this element.
-    //! @param[in] factory Factory that allow manipulating JsValue
-    //! @param[in] opts options for customizing the value. If opts["wantGeometry"] != true, geometry stream Json::Value is not included.
-    Js::Object ToJsValue(Js::IFactory& factory, Js::Object opts) const { Js::Object val = Js::Object::New(factory) ; _ToJsValue(val, opts); return val; }
-
-    void FromJsValue(Js::Object props) { _FromJsValue(props); }
     //! @}
 
     //! Make an iterator over all ElementAspects owned by this element
@@ -3469,7 +3454,7 @@ private:
     };
     typedef bmap<DgnClassId, ECSqlClassInfo> ClassInfoMap;
     typedef bmap<DgnClassId, ECSqlClassParams> T_ClassParamsMap;
-
+    typedef std::map<DgnClassId, std::unique_ptr<BeSQLite::EC::JsonECSqlSelectAdapter>> JsonSelectAdaptorMap;
     std::unique_ptr<struct ElementMRU> m_mruCache;
     uint64_t m_extant = 0;
     BeSQLite::StatementCache m_stmts;
@@ -3481,7 +3466,7 @@ private:
     mutable ClassInfoMap m_classInfos;      // information about custom-handled properties 
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
     mutable AutoHandledPropertyUpdaterCache m_updaterCache;
-
+    mutable JsonSelectAdaptorMap m_jsonSelectAdaptors;
     void Destroy();
     void AddToPool(DgnElementCR) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
@@ -3519,6 +3504,11 @@ public:
     //! @private
     ECSqlClassInfo& FindClassInfo(DgnClassId classId) const;
     
+    //! @private
+    BeSQLite::EC::JsonECSqlSelectAdapter const* GetJsonSelectAdapter(DgnClassId) const;
+    //! @private
+    BeSQLite::EC::JsonECSqlSelectAdapter const& GetJsonSelectAdapter(DgnClassId, BeSQLite::EC::ECSqlStatement const& stmt, BeSQLite::EC::JsonECSqlSelectAdapter::FormatOptions const& formatOptions = BeSQLite::EC::JsonECSqlSelectAdapter::FormatOptions()) const;
+
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //!< @private
     DgnDbStatus LoadGeometryStream(GeometryStreamR geom, void const* blob, int blobSize); //!< @private

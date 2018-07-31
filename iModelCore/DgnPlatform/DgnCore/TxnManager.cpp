@@ -1131,10 +1131,11 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
          * DgnDb is opened, and the Element caches haven't had a chance to get initialized.
          */
         m_dgndb.ClearECDbCache();
-        m_dgndb.Schemas().RepopulateCacheTables();
-        m_dgndb.Schemas().UpgradeECInstances();
+        m_dgndb.OnAfterChangesetApplied(true);
         m_dgndb.Domains().SyncWithSchemas();
         }
+    else
+        m_dgndb.OnAfterChangesetApplied(false);
 
     BeAssert(result == BE_SQLITE_OK);
     if (result == BE_SQLITE_OK)

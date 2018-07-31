@@ -245,10 +245,15 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
                         testDb.AssertKindOfQuantity("PreEC32Koqs", "ANGLE", "Angle", nullptr, "RAD(DefaultReal)", JsonValue(R"json(["ARC_DEG(Real2U)", "ARC_DEG(AngleDMS)"])json"), 0.0001);
                         testDb.AssertKindOfQuantity("PreEC32Koqs", "POWER", "Power", nullptr, "W(DefaultReal)", JsonValue(R"json(["W(Real4U)", "KW(Real4U)", "MEGAW(Real4U)", "BTU/HR(Real4U)", "KILOBTU/HR(Real4U)", "HP(Real4U)"])json"), 0.001);
                         testDb.AssertKindOfQuantity("PreEC32Koqs", "LIQUID_VOLUME", "Liquid Volume", nullptr, "CUB.M(DefaultReal)", JsonValue(R"json(["LITRE(Real4U)", "GALLON(Real4U)"])json"), 0.0001);
-                        //A bug in bim02dev persisted a format along with the unit. This will be obsolete once EC32 is avaialable
+                        //A bug in bim02dev persisted a format along with the unit. This will be obsolete once EC32 is available
                         testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_NoPresUnit", nullptr, nullptr, "W/(M*K)(DefaultReal)", JsonValue(), 0.4);
                         testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormat_NoPresUnit", nullptr, nullptr, "W/(M*K)(DefaultReal)", JsonValue(), 0.5);
                         testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormatWithUnit_NoPresUnit", nullptr, nullptr, "FT(AmerFI8)", JsonValue(), 0.6);
+
+                        testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_Mfi8", nullptr, nullptr, "M(DefaultReal)", JsonValue(R"json(["M(AmerFI8)"])json"), 0.7);
+                        testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_Mfi8", nullptr, nullptr, "M(AmerFI8)", JsonValue(), 0.8);
+                        testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_SQFTfi8", nullptr, nullptr, "SQ.FT(AmerFI8)", JsonValue(), 0.9);
+                        testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_SQFTfi8_SQFTreal4u", nullptr, nullptr, "SQ.FT(AmerFI8)", JsonValue(R"json(["SQ.FT(Real4U)"])json"), 1.0);
                         break;
 
                     case ProfileState::Age::Newer:
@@ -267,6 +272,10 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
 
                     testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormat_NoPresUnit", nullptr, nullptr, "W/(M*K)(DefaultReal)", JsonValue(R"json(["W/(M*K)(DefaultReal)"])json"), 0.5);
                     testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormatWithUnit_NoPresUnit", nullptr, nullptr, "FT(DefaultReal)", JsonValue(R"json(["FT(AmerFI8)"])json"), 0.6);
+                    testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_Mfi8", nullptr, nullptr, "M(DefaultReal)", JsonValue(R"json(["M(AmerFI8)"])json"), 0.7);
+                    testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_Mfi8", nullptr, nullptr, "M(AmerFI8)", JsonValue(), 0.8);
+                    testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_SQFTfi8", nullptr, nullptr, "SQ.FT(AmerFI8)", JsonValue(), 0.9);
+                    testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_SQFTfi8_SQFTreal4u", nullptr, nullptr, "SQ.FT(AmerFI8)", JsonValue(R"json(["SQ.FT(Real4U)"])json"), 1.0);
                     break;
                     }
                 }
