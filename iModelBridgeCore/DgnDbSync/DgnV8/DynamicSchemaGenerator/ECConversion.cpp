@@ -3586,14 +3586,33 @@ BentleyStatus RootModelConverter::MakeSchemaChanges()
     {
     StopWatch timer(true);
 
-    bvector<DgnV8ModelP> modelsInFMOrder;   // models in file, modelid order - that matches the order in which the older converter processed models.
-    modelsInFMOrder.assign(m_spatialModelsInAttachmentOrder.begin(), m_spatialModelsInAttachmentOrder.end());
-    modelsInFMOrder.insert(modelsInFMOrder.end(), m_nonSpatialModelsInModelIndexOrder.begin(), m_nonSpatialModelsInModelIndexOrder.end());
+    // Get the list of all models that are assigned to this bridge.
+    bvector<DgnV8ModelP> modelsInFMOrder;
+    std::copy_if(m_spatialModelsInAttachmentOrder.begin(), m_spatialModelsInAttachmentOrder.end(), std::back_inserter(modelsInFMOrder),
+      [&](DgnV8ModelP model)
+        {
+        return IsFileAssignedToBridge(*model->GetDgnFileP());
+        });
+    std::copy_if(m_nonSpatialModelsInModelIndexOrder.begin(), m_nonSpatialModelsInModelIndexOrder.end(), std::back_inserter(modelsInFMOrder),
+      [&](DgnV8ModelP model)
+        {
+        return IsFileAssignedToBridge(*model->GetDgnFileP());
+        });
 
+    // sort the models in file, modelid order - that matches the order in which the older converter processed models.
     auto cmp = [&](DgnV8ModelP a, DgnV8ModelP b) { return IsLessInMappingOrder(a,b); };
     std::sort(modelsInFMOrder.begin(), modelsInFMOrder.end(), cmp);
 
-    auto status = T_Super::MakeSchemaChanges(m_v8Files, modelsInFMOrder);
+    // Get the list of all files (in original discovery order) that are assigned to this bridge.
+    bvector<DgnV8FileP> filesInOrder;
+    std::copy_if(m_v8Files.begin(), m_v8Files.end(), std::back_inserter(filesInOrder),
+      [&](DgnV8FileP file)
+        {
+        return IsFileAssignedToBridge(*file);
+        });
+
+    // Processed V8 schemas
+    auto status = T_Super::MakeSchemaChanges(filesInOrder, modelsInFMOrder);
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas (total)");
 

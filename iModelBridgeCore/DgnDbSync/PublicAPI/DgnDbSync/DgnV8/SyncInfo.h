@@ -542,6 +542,29 @@ struct SyncInfo
         const_iterator end() const {return Entry (NULL, false);}
         };
 
+    struct ViewIterator : BeSQLite::DbTableIterator
+        {
+        DGNDBSYNC_EXPORT ViewIterator(DgnDbCR db, Utf8CP where);
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+            private:
+                friend struct ViewIterator;
+                Entry(BeSQLite::StatementP sql, bool IsValid) : DbTableIterator::Entry(sql, IsValid) {}
+
+            public:
+                DGNDBSYNC_EXPORT DgnViewId GetId();
+                DGNDBSYNC_EXPORT V8FileSyncInfoId GetV8FileSyncInfoId();
+                DGNDBSYNC_EXPORT uint64_t GetV8ElementId();
+
+                Entry const& operator* () const { return *this; }
+            };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNDBSYNC_EXPORT const_iterator begin() const;
+        const_iterator end() const { return Entry(NULL, false); }
+        };
+
     enum class ECSchemaMappingType
         {
         Identity = 1, //!< Mapped as is

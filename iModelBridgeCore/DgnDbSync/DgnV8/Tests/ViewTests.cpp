@@ -83,12 +83,19 @@ TEST_F(ViewTests, SavedViewsCRUD)
 
     DoUpdate(m_dgnDbFileName, m_v8FileName);
     DgnViewId view2Id;
+    DgnElementId modelSelectorId;
+    DgnElementId categorySelectorId;
+    DgnElementId displayStyleId;
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         ASSERT_EQ(3, GetViewCount(*db)); // default view + 2 saved views
         DefinitionModelPtr definitionModel = GetJobDefinitionModel(*db);
         view2Id = ViewDefinition::QueryViewId(*definitionModel, "View2");
         ASSERT_TRUE(view2Id.IsValid());
+        SpatialViewDefinitionCPtr tempView = db->Elements().Get<SpatialViewDefinition>(view2Id);
+        modelSelectorId = tempView->GetModelSelectorId();
+        categorySelectorId = tempView->GetCategorySelectorId();
+        displayStyleId = tempView->GetDisplayStyleId();
         }
 
     // Delete view
@@ -102,6 +109,12 @@ TEST_F(ViewTests, SavedViewsCRUD)
         DefinitionModelPtr definitionModel = GetJobDefinitionModel(*db);
         auto viewId = ViewDefinition::QueryViewId(*definitionModel, "View2");
         ASSERT_FALSE(viewId.IsValid());
+        auto cat = db->Elements().GetElement(categorySelectorId);
+        ASSERT_FALSE(cat.IsValid());
+        auto display = db->Elements().GetElement(displayStyleId);
+        ASSERT_FALSE(display.IsValid());
+        auto model = db->Elements().GetElement(modelSelectorId);
+        ASSERT_FALSE(model.IsValid());
         }
 
     // Updates
@@ -122,5 +135,26 @@ TEST_F(ViewTests, SavedViewsCRUD)
         ASSERT_TRUE(viewId == view1Id);
         }
 
+    BentleyApi::BeFileName secondV8File = GetOutputFileName(L"SecondV8.dgn");
+    BentleyApi::BeFileName seedFile = GetInputFileName(L"Test3d.dgn");
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(seedFile, secondV8File)) << "Unable to copy file \nSource: [" << Utf8String(seedFile.c_str()).c_str() << "]\nDestination: [" << Utf8String(secondV8File
+                                                                                                                                                                                                                                   .c_str()).c_str() << "]";
+    V8FileEditor v8editor2;
+    v8editor2.Open(secondV8File);
+    DgnV8Api::NamedViewPtr view13 = CreateAndWriteSavedView(*v8editor2.m_file, L"View 3", 0);
+    DoConvert(m_dgnDbFileName, secondV8File);
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        ASSERT_EQ(4, GetViewCount(*db)); // default view + 1 saved views for each file
+        auto temp = db->Elements().GetElement(view1Id);
+        ASSERT_TRUE(temp.IsValid()); // Ensure the view from the first file still exists
+
+        }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ViewTests, SavedViewsInDrawings)
+    { }
 

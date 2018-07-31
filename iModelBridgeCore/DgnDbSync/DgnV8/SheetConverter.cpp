@@ -32,6 +32,9 @@ void RootModelConverter::_ConvertSheets()
     bmultiset<ResolvedModelMapping> sheets;
     for (auto v8mm : m_v8ModelMappings)
         {
+        if (!IsFileAssignedToBridge(*v8mm.GetV8Model().GetDgnFileP()))
+            continue;
+
         if (v8mm.GetDgnModel().IsSheetModel())
             sheets.insert(v8mm);
         }

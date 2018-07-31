@@ -487,7 +487,9 @@ struct IChangeDetector
     virtual void _DetectDeletedModels(Converter&, SyncInfo::ModelIterator&) = 0;        //!< don't forget to call _DetectDeletedModelsEnd when done
     virtual void _DetectDeletedModelsInFile(Converter&, DgnV8FileR) = 0;                //!< don't forget to call _DetectDeletedModelsEnd when done
     virtual void _DetectDeletedModelsEnd(Converter&) = 0;
-    virtual void _DetectDeletedViews(Converter&) = 0;
+    virtual void _DetectDeletedViews(Converter&, SyncInfo::ViewIterator&) = 0;         //!< don't forget to call _DetectDeletedViewsEnd when done
+    virtual void _DetectDeletedViewsInFile(Converter&, DgnV8FileR) = 0;                //!< don't forget to call _DetectDeletedViewsEnd when done
+    virtual void _DetectDeletedViewsEnd(Converter&) = 0;
     //! @}
 
 };
@@ -2094,7 +2096,9 @@ struct CreatorChangeDetector : IChangeDetector
     void _DetectDeletedModels(Converter&, SyncInfo::ModelIterator&) override {}
     void _DetectDeletedModelsInFile(Converter&, DgnV8FileR) override {}
     void _DetectDeletedModelsEnd(Converter&) override {}
-    void _DetectDeletedViews(Converter&) override {}
+    void _DetectDeletedViews(Converter&, SyncInfo::ViewIterator&) override {}
+    void _DetectDeletedViewsInFile(Converter&, DgnV8FileR) override {}
+    void _DetectDeletedViewsEnd(Converter&) override {}
     
     DGNDBSYNC_EXPORT bool _IsElementChanged(SearchResults&, Converter&, DgnV8EhCR, ResolvedModelMapping const&, T_SyncInfoElementFilter* filter) override; // fills in element MD5 and returns true
 
@@ -2143,7 +2147,9 @@ struct ChangeDetector : IChangeDetector
     DGNDBSYNC_EXPORT void _DetectDeletedModelsInFile(Converter&, DgnV8FileR) override;                //!< don't forget to call _DetectDeletedModelsEnd when done
     DGNDBSYNC_EXPORT void _DetectDeletedModelsEnd(Converter&) override {m_v8ModelsSeen.clear();}
 
-    DGNDBSYNC_EXPORT void _DetectDeletedViews(Converter&) override;
+    DGNDBSYNC_EXPORT void _DetectDeletedViews(Converter&, SyncInfo::ViewIterator&) override;          //!< don't forget to call _DetectDeletedViewsEnd when done
+    DGNDBSYNC_EXPORT void _DetectDeletedViewsInFile(Converter&, DgnV8FileR) override;                 //!< don't forget to call _DetectDeletedViewsEnd when done
+    DGNDBSYNC_EXPORT void _DetectDeletedViewsEnd(Converter&) override { m_viewsSeen.clear(); }
     //! @}
 
     ChangeDetector() : m_byIdIter(nullptr), m_byHashIter(nullptr) {}
@@ -2498,7 +2504,7 @@ protected:
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) override;
     DGNDBSYNC_EXPORT bvector<ResolvedModelMapping> FindMappingsToV8Model(DgnV8ModelR v8Model);
     bool IsLessInMappingOrder(DgnV8ModelP a, DgnV8ModelP b);
-
+    void UnmapModelsNotAssignedToBridge();
 
     // in the RootModelConverter, treatment of normal 2d models depends the user's input parameters.
     DGNDBSYNC_EXPORT bool _ConsiderNormal2dModelsSpatial() override;
@@ -2557,7 +2563,7 @@ protected:
     //! @private
     void CreatePresentationRules();
 
-    void FindSpatialV8Models(DgnV8ModelRefR rootModelRef, bool haveFoundSpatialRoot = false);
+    void FindSpatialV8Models(DgnV8ModelRefR rootModelRef);
     void FindV8DrawingsAndSheets();
     void RegisterNonSpatialModel(DgnV8ModelR);
     void RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
