@@ -76,6 +76,9 @@ $(OUT_DIR)dconic4d$(OUT_EXT)        : $(geomSrcStructs)dconic4d.cpp         $(OT
 
 
 # (end structs_sources_pubinc.mki)
+
+$(OUT_DIR)Placement$(OUT_EXT)        : $(geomSrcPlacementOnEarth)Placement.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
 # (begin structs_sources_bsiinc.mki)
 
 #$(OUT_DIR)dellipse4d$(OUT_EXT)      : $(geomSrcStructs)dellipse4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 

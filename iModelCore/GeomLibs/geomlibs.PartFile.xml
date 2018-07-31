@@ -28,6 +28,8 @@
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
         <Bindings>
             <PublicAPI Domain="Geom" />
+            <PublicAPI Domain="PlacementOnEarth" />
+            <PublicAPI Domain="GeomJsonWireFormat" />
             <PublicAPI Domain="Mtg" />
             <PublicAPI Domain="Vu" />
             <PublicAPI Domain="Regions" />
@@ -38,6 +40,7 @@
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
     <Part Name="GeomDlls" BentleyBuildMakeFile="geom/build/BentleyGeom/BentleyGeom.mke" ApiNumber="B02">
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
+        <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="PublicAPI" />
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)BentleyGeom$(ApiNumber)$(shlibext)</Assemblies>

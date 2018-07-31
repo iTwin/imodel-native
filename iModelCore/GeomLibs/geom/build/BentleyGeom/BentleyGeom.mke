@@ -100,6 +100,8 @@ DLM_SYMB_DEST       = $(baseGeom_symbols)
 # Temporary while working on static; it probably shouldn't be needed.
 LIB_PDB_SOURCE_DIR = $(DLM_OBJECT_DEST)
 
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(stlibprefix)BeJsonCpp$(stlibext)
+
 %include $(sharedMki)linkLibrary.mki
 
 %if defined (PRG) || defined (BUILD_DOC)
