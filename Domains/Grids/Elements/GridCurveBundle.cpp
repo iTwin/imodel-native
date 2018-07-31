@@ -27,7 +27,7 @@ GridCurveBundlePtr GridCurveBundle::CreateAndInsert
     {
     CreateParams params = CreateParams(db, db.GetRepositoryModel()->GetModelId(), QueryClassId(db));
     GridCurveBundlePtr bundle = new GridCurveBundle(params);
-    bundle->SetCurvesPortion(portion);
+    bundle->SetCurvesSet(portion);
 
     Dgn::DgnDbStatus status;
     bundle->Insert(&status);
@@ -46,7 +46,7 @@ GridCurveBundlePtr GridCurveBundle::CreateAndInsert
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
-ECN::ECClassId GridCurveBundle::GetCurvesPortionRelClassId
+ECN::ECClassId GridCurveBundle::GetCurvesSetRelClassId
 (
     Dgn::DgnDbR db
 )
@@ -57,21 +57,21 @@ ECN::ECClassId GridCurveBundle::GetCurvesPortionRelClassId
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void GridCurveBundle::SetCurvesPortion
+void GridCurveBundle::SetCurvesSet
 (
     GridCurvesSetCR portion
 )
     {
-    ECN::ECClassId relClassId = GetCurvesPortionRelClassId(GetDgnDb());
-    SetPropertyValue(prop_CurvesPortion(), portion.GetElementId(), relClassId);
+    ECN::ECClassId relClassId = GetCurvesSetRelClassId(GetDgnDb());
+    SetPropertyValue(prop_CurvesSet(), portion.GetElementId(), relClassId);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
-Dgn::DgnElementId GridCurveBundle::GetCurvesPortionId() const
+Dgn::DgnElementId GridCurveBundle::GetCurvesSetId() const
     {
-    return GetPropertyValueId<Dgn::DgnElementId>(prop_CurvesPortion());
+    return GetPropertyValueId<Dgn::DgnElementId>(prop_CurvesSet());
     }
 
 //--------------------------------------------------------------------------------------
@@ -84,8 +84,8 @@ Dgn::ElementIterator GridCurveBundle::MakeGridCurveBundleIterator
     {
     Dgn::DgnDbR db = portion.GetDgnDb();
 
-    Dgn::ElementIterator bundleIterator = db.Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_GridCurveBundle), "WHERE CurvesPortion=?");
-    ECN::ECClassId relClassId = GetCurvesPortionRelClassId(db);
+    Dgn::ElementIterator bundleIterator = db.Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_GridCurveBundle), "WHERE CurvesSet=?");
+    ECN::ECClassId relClassId = GetCurvesSetRelClassId(db);
     if (BeSQLite::EC::ECSqlStatement* pStmnt = bundleIterator.GetStatement())
         {
         pStmnt->BindNavigationValue(1, portion.GetElementId(), relClassId);
@@ -193,7 +193,7 @@ void GridCurveBundle::UpdateGridCurve()
         if (intersection.IsNull())
             return;
 
-        Dgn::DgnElementId portionId = GetPropertyValueId<Dgn::DgnElementId>(prop_CurvesPortion());
+        Dgn::DgnElementId portionId = GetPropertyValueId<Dgn::DgnElementId>(prop_CurvesSet());
         GridCurvesSetCPtr portion = GridCurvesSet::Get(GetDgnDb(), portionId);
         BeAssert(portion.IsValid());
 
