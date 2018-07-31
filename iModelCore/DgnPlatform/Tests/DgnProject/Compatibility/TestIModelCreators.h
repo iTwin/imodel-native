@@ -238,6 +238,10 @@ struct PreEC32KoqsTestIModelCreator final : TestIModelCreator
  <KindOfQuantity typeName="TestKoq_NoPresUnit"  persistenceUnit="W/(M*K)" relativeError="0.4"/>
  <KindOfQuantity typeName="TestKoq_PersUnitWithFormat_NoPresUnit"  persistenceUnit="W/(M*K)(DefaultReal)" relativeError="0.5"/>
  <KindOfQuantity typeName="TestKoq_PersUnitWithFormatWithUnit_NoPresUnit"  persistenceUnit="FT(AmerFI8)" relativeError="0.6"/>
+ <KindOfQuantity typeName="TestKoq_M_Mfi8" persistenceUnit="M" presentationUnits="M(fi8)" relativeError="0.7"/>
+ <KindOfQuantity typeName="TestKoq_Mfi8" persistenceUnit="M(fi8)" relativeError="0.8"/>
+ <KindOfQuantity typeName="TestKoq_SQFTfi8" persistenceUnit="SQ.FT(fi8)" relativeError="0.9"/>
+ <KindOfQuantity typeName="TestKoq_SQFTfi8_SQFTreal4u" persistenceUnit="SQ.FT(fi8)" presentationUnits="SQ.FT(real4u)" relativeError="1.0"/>
 
 </ECSchema>)xml"));
             }
