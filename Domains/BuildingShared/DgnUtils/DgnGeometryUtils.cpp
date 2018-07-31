@@ -321,7 +321,7 @@ CurveVectorPtr& topProfile
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              06/2017
 //---------------------------------------------------------------------------------------
-void DgnGeometryUtils::RotatePlacementXY(Dgn::Placement3dR placement, double theta)
+void DgnGeometryUtils::RotatePlacementXY(Placement3dR placement, double theta)
     {
     //Create rotation matrix
     RotMatrix rotationMatrix = RotMatrix::FromAxisAndRotationAngle(2, theta);
@@ -344,7 +344,7 @@ void DgnGeometryUtils::RotatePlacementXY(Dgn::Placement3dR placement, double the
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              10/2017
 //---------------------------------------------------------------------------------------
-void DgnGeometryUtils::RotatePlacementAroundPointXY(Dgn::Placement3dR placement, DPoint3d origin, double theta)
+void DgnGeometryUtils::RotatePlacementAroundPointXY(Placement3dR placement, DPoint3d origin, double theta)
     {
     DVec3d translation = DVec3d::FromStartEnd(placement.GetOrigin(), origin);
     
@@ -360,7 +360,7 @@ void DgnGeometryUtils::RotatePlacementAroundPointXY(Dgn::Placement3dR placement,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              06/2017
 //---------------------------------------------------------------------------------------
-void DgnGeometryUtils::TranslatePlacementXY(Dgn::Placement3dR placement, DVec3d translation)
+void DgnGeometryUtils::TranslatePlacementXY(Placement3dR placement, DVec3d translation)
     {
     translation.z = 0;
     TranslatePlacement(placement, translation);
@@ -369,7 +369,7 @@ void DgnGeometryUtils::TranslatePlacementXY(Dgn::Placement3dR placement, DVec3d 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              06/2017
 //---------------------------------------------------------------------------------------
-void DgnGeometryUtils::TranslatePlacement(Dgn::Placement3dR placement, DVec3d translation)
+void DgnGeometryUtils::TranslatePlacement(Placement3dR placement, DVec3d translation)
     {
     Transform translationTransform = Transform::From(translation);
     translationTransform.Multiply(placement.GetOriginR());
@@ -378,7 +378,7 @@ void DgnGeometryUtils::TranslatePlacement(Dgn::Placement3dR placement, DVec3d tr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              06/2017
 //---------------------------------------------------------------------------------------
-double DgnGeometryUtils::PlacementToAngleXY(Dgn::Placement3d placement)
+double DgnGeometryUtils::PlacementToAngleXY(Placement3d placement)
     {
     YawPitchRollAngles angles = placement.GetAngles();
     RotMatrix rotMatrix = angles.ToRotMatrix();
