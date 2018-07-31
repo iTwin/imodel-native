@@ -109,7 +109,7 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::GetOrCreateGridAndAxis(Sket
             if (sketchGrid.IsNull())
                 return BentleyStatus::ERROR; // Failed to create grid
 
-            Dgn::Placement3d planePlacement = Dgn::Placement3d();
+            Placement3d planePlacement = Placement3d();
             planePlacement.TryApplyTransform
             (
                 GeometryUtils::FindTransformBetweenPlanes
@@ -170,7 +170,7 @@ void SketchGridSurfaceManipulationStrategy::_OnWorkingPlaneChanged(DPlane3d cons
         GridPtr grid = m_axis->GetDgnDb().Elements().GetForEdit<SketchGrid>(m_axis->GetGridId());
         BeAssert(grid.IsValid() && "Axis' grid should be valid");
 
-        Dgn::Placement3d planePlacement = Dgn::Placement3d();
+        Placement3d planePlacement = Placement3d();
         planePlacement.TryApplyTransform
         (
             GeometryUtils::FindTransformBetweenPlanes
