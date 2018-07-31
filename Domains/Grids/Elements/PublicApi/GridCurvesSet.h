@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Grids/Elements/PublicApi/GridCurvesPortion.h $
+|     $Source: Grids/Elements/PublicApi/GridCurvesSet.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,13 +12,13 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 //! Physical building element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GridCurvesPortion : Dgn::SpatialLocationElement
+struct EXPORT_VTABLE_ATTRIBUTE GridCurvesSet : Dgn::SpatialLocationElement
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridCurvesPortion, Dgn::SpatialLocationElement);
+    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridCurvesSet, Dgn::SpatialLocationElement);
 
 protected:
-    explicit GRIDELEMENTS_EXPORT GridCurvesPortion (CreateParams const& params);
-    friend struct GridCurvesPortionHandler;
+    explicit GRIDELEMENTS_EXPORT GridCurvesSet (CreateParams const& params);
+    friend struct GridCurvesSetHandler;
 
     virtual Dgn::DgnDbStatus _OnDelete() const override;
 
@@ -29,9 +29,9 @@ protected:
 
     static  GRIDELEMENTS_EXPORT Dgn::GeometricElement3d::CreateParams        CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
 public:
-    DECLARE_GRIDS_ELEMENT_BASE_METHODS(GridCurvesPortion, GRIDELEMENTS_EXPORT)
+    DECLARE_GRIDS_ELEMENT_BASE_METHODS(GridCurvesSet, GRIDELEMENTS_EXPORT)
 
-    GRIDELEMENTS_EXPORT static GridCurvesPortionPtr Create (Dgn::DgnModelCR model);
+    GRIDELEMENTS_EXPORT static GridCurvesSetPtr Create (Dgn::DgnModelCR model);
 };
 
 END_GRIDS_NAMESPACE

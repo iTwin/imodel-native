@@ -21,7 +21,7 @@ struct GridCurveBundle : Dgn::DriverBundleElement, Dgn::IDependencyGraphNode
         ICurvePrimitivePtr ComputeIntersection(GridSurfaceCR thisSurface, GridSurfaceCR otherSurface);
 
         static ECN::ECClassId GetCurvesPortionRelClassId(Dgn::DgnDbR);
-        void SetCurvesPortion(GridCurvesPortionCR portion);
+        void SetCurvesPortion(GridCurvesSetCR portion);
 
         BE_PROP_NAME(CurvesPortion)
 
@@ -43,8 +43,8 @@ struct GridCurveBundle : Dgn::DriverBundleElement, Dgn::IDependencyGraphNode
         GRIDELEMENTS_EXPORT GridCurveCPtr GetGridCurve() const;
         static BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::ElementIdIterator MakeDrivingSurfaceIterator(GridCurveCR curve);
 
-        static GridCurveBundlePtr CreateAndInsert(Dgn::DgnDbR db, GridCurvesPortionCR portion, GridSurfaceCR surface1, GridSurfaceCR surface2);
-        static Dgn::ElementIterator MakeGridCurveBundleIterator(GridCurvesPortionCR portion);
+        static GridCurveBundlePtr CreateAndInsert(Dgn::DgnDbR db, GridCurvesSetCR portion, GridSurfaceCR surface1, GridSurfaceCR surface2);
+        static Dgn::ElementIterator MakeGridCurveBundleIterator(GridCurvesSetCR portion);
     };
 
 END_GRIDS_NAMESPACE

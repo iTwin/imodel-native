@@ -34,11 +34,11 @@ public:
     // Creation
     //---------------------------------------------------------------------------------------
     //! Creates a grid line
-    //! @param[in]  gridCurvesPortion   portion for the gridline
+    //! @param[in]  GridCurvesSet   portion for the gridline
     //! @param[in]  curve   curve geometry
     //! @return             Grid line
-    //! @note GridCurvesPortion must be inserted
-    GRIDELEMENTS_EXPORT static GridLinePtr Create (GridCurvesPortionCR gridCurvesPortion, ICurvePrimitivePtr curve);
+    //! @note GridCurvesSet must be inserted
+    GRIDELEMENTS_EXPORT static GridLinePtr Create (GridCurvesSetCR GridCurvesSet, ICurvePrimitivePtr curve);
 };
 
 END_GRIDS_NAMESPACE

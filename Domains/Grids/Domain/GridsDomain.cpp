@@ -28,7 +28,7 @@ DOMAIN_DEFINE_MEMBERS(GridsDomain)
 //---------------------------------------------------------------------------------------
 GridsDomain::GridsDomain () : DgnDomain(GRIDS_SCHEMA_NAME, "Grids Domain", 1)
     {
-    RegisterHandler(GridCurvesPortionHandler::GetHandler());
+    RegisterHandler(GridCurvesSetHandler::GetHandler());
 
     RegisterHandler(PlanCircumferentialGridSurfaceHandler::GetHandler());
     RegisterHandler(ElevationGridSurfaceHandler::GetHandler ());
@@ -144,7 +144,7 @@ void GridsDomain::InsertDomainAuthorities (DgnDbR db) const
     {
     InsertCodeSpec(db, GRIDS_AUTHORITY_Grid);
     InsertCodeSpec(db, GRIDS_AUTHORITY_GridCurve);
-    InsertCodeSpec(db, GRIDS_AUTHORITY_GridCurvesPortion);
+    InsertCodeSpec(db, GRIDS_AUTHORITY_GridCurvesSet);
     }
 
 //---------------------------------------------------------------------------------------
@@ -160,9 +160,9 @@ void GridsDomain::EnsureDomainAuthoritiesExist (Dgn::DgnDbR db)
         {
         InsertCodeSpec (db, GRIDS_AUTHORITY_GridCurve);
         }
-    if (!db.CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_GridCurvesPortion).IsValid())
+    if (!db.CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_GridCurvesSet).IsValid())
         {
-        InsertCodeSpec(db, GRIDS_AUTHORITY_GridCurvesPortion);
+        InsertCodeSpec(db, GRIDS_AUTHORITY_GridCurvesSet);
         }
     }
 

@@ -50,7 +50,7 @@ $(o)GridArcSurface$(oext) : $(_MakeFilePath)GridArcSurface.cpp ${MultiCompileDep
 
 $(o)GridSplineSurface$(oext) : $(_MakeFilePath)GridSplineSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSplineSurface.h
 
-$(o)GridCurvesPortion$(oext) : $(_MakeFilePath)GridCurvesPortion.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurvesPortion.h
+$(o)GridCurvesSet$(oext) : $(_MakeFilePath)GridCurvesSet.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurvesSet.h
 
 $(o)GridCurve$(oext) : $(_MakeFilePath)GridCurve.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurve.h
 

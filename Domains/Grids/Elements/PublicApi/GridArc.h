@@ -31,11 +31,11 @@ public:
     // Creation
     //---------------------------------------------------------------------------------------
     //! Creates a grid arc
-    //! @param[in]  gridCurvesPortion   portion for the grid arc
+    //! @param[in]  GridCurvesSet   portion for the grid arc
     //! @param[in]  curve   curve geometry
     //! @return             Grid arc
-    //! @note GridCurvesPortion must be inserted
-    GRIDELEMENTS_EXPORT static GridArcPtr Create (GridCurvesPortionCR gridCurvesPortion, ICurvePrimitivePtr curve);
+    //! @note GridCurvesSet must be inserted
+    GRIDELEMENTS_EXPORT static GridArcPtr Create (GridCurvesSetCR GridCurvesSet, ICurvePrimitivePtr curve);
 };
 
 END_GRIDS_NAMESPACE

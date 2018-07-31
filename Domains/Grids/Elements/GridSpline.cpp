@@ -37,7 +37,7 @@ ICurvePrimitivePtr  curve
 +---------------+---------------+---------------+---------------+---------------+------*/
 GridSplinePtr                 GridSpline::Create 
 (
-GridCurvesPortionCR portion,
+GridCurvesSetCR portion,
 ICurvePrimitivePtr  curve
 )
     {

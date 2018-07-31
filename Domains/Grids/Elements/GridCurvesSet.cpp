@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Grids/Elements/GridCurvesPortion.cpp $
+|     $Source: Grids/Elements/GridCurvesSet.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,12 +12,12 @@ BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BUILDING_SHARED
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS(GridCurvesPortion)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(GridCurvesSet)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridCurvesPortion::GridCurvesPortion
+GridCurvesSet::GridCurvesSet
 (
 CreateParams const& params
 ) : T_Super(params) 
@@ -33,7 +33,7 @@ CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::GeometricElement3d::CreateParams           GridCurvesPortion::CreateParamsFromModel
+Dgn::GeometricElement3d::CreateParams           GridCurvesSet::CreateParamsFromModel
 (
 Dgn::DgnModelCR model,
 DgnClassId classId
@@ -49,18 +49,18 @@ DgnClassId classId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridCurvesPortionPtr                 GridCurvesPortion::Create 
+GridCurvesSetPtr                 GridCurvesSet::Create 
 (
 Dgn::DgnModelCR model
 )
     {
-    return new GridCurvesPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
+    return new GridCurvesSet (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  11/17
 //---------------------------------------------------------------------------------------
-Dgn::DgnDbStatus GridCurvesPortion::_OnDelete() const
+Dgn::DgnDbStatus GridCurvesSet::_OnDelete() const
     {
     Dgn::DgnModelPtr subModel = GetSubModel();
     
@@ -94,7 +94,7 @@ Dgn::DgnDbStatus GridCurvesPortion::_OnDelete() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                     02/18
 //---------------------------------------------------------------------------------------
-Dgn::DgnDbStatus GridCurvesPortion::_InsertInDb()
+Dgn::DgnDbStatus GridCurvesSet::_InsertInDb()
     {
     DgnDbStatus status = T_Super::_InsertInDb();
     if (DgnDbStatus::Success != status)

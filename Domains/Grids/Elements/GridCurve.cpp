@@ -70,7 +70,7 @@ Dgn::DgnDbStatus      GridCurve::CheckDependancyToModel
 ) const 
 { 
     DgnModelPtr model = GetModel();
-    GridCurvesPortionCPtr portion = GetDgnDb().Elements().Get<GridCurvesPortion>(model->GetModeledElementId());
+    GridCurvesSetCPtr portion = GetDgnDb().Elements().Get<GridCurvesSet>(model->GetModeledElementId());
     if (portion.IsNull()) //pointer must not be null
         return DgnDbStatus::ValidationFailed;
 

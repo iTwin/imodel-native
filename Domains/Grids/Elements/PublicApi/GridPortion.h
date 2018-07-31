@@ -104,10 +104,10 @@ public:
     //---------------------------------------------------------------------------------------
     //! intersects this grid with the given surface, creates gridcurves
     //! @param[in] surface      surface to intersect
-    //! @param[in] gridCurvesPortion   portion to create new gridcurves in
+    //! @param[in] GridCurvesSet   portion to create new gridcurves in
     //! @return BentleyStatus for the operation result
-    //! @note GridCurvesPortion must be inserted
-    GRIDELEMENTS_EXPORT BentleyStatus   IntersectGridSurface(GridSurfaceCPtr surface, GridCurvesPortionCR targetPortion) const;
+    //! @note GridCurvesSet must be inserted
+    GRIDELEMENTS_EXPORT BentleyStatus   IntersectGridSurface(GridSurfaceCPtr surface, GridCurvesSetCR targetPortion) const;
     };
     
 //=======================================================================================

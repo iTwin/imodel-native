@@ -20,7 +20,7 @@ DEFINE_GRIDS_ELEMENT_BASE_METHODS(GridCurveBundle)
 GridCurveBundlePtr GridCurveBundle::CreateAndInsert
 (
     Dgn::DgnDbR db,
-    GridCurvesPortionCR portion,
+    GridCurvesSetCR portion,
     GridSurfaceCR surface1,
     GridSurfaceCR surface2
 )
@@ -51,7 +51,7 @@ ECN::ECClassId GridCurveBundle::GetCurvesPortionRelClassId
     Dgn::DgnDbR db
 )
     {
-    return db.Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridCurveBundleRefersToGridCurvesPortion);
+    return db.Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridCurveBundleRefersToGridCurvesSet);
     }
 
 //--------------------------------------------------------------------------------------
@@ -59,7 +59,7 @@ ECN::ECClassId GridCurveBundle::GetCurvesPortionRelClassId
 //---------------+---------------+---------------+---------------+---------------+------
 void GridCurveBundle::SetCurvesPortion
 (
-    GridCurvesPortionCR portion
+    GridCurvesSetCR portion
 )
     {
     ECN::ECClassId relClassId = GetCurvesPortionRelClassId(GetDgnDb());
@@ -79,7 +79,7 @@ Dgn::DgnElementId GridCurveBundle::GetCurvesPortionId() const
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::ElementIterator GridCurveBundle::MakeGridCurveBundleIterator
 (
-    GridCurvesPortionCR portion
+    GridCurvesSetCR portion
 )
     {
     Dgn::DgnDbR db = portion.GetDgnDb();
@@ -194,7 +194,7 @@ void GridCurveBundle::UpdateGridCurve()
             return;
 
         Dgn::DgnElementId portionId = GetPropertyValueId<Dgn::DgnElementId>(prop_CurvesPortion());
-        GridCurvesPortionCPtr portion = GridCurvesPortion::Get(GetDgnDb(), portionId);
+        GridCurvesSetCPtr portion = GridCurvesSet::Get(GetDgnDb(), portionId);
         BeAssert(portion.IsValid());
 
         if (intersection->GetLineCP())

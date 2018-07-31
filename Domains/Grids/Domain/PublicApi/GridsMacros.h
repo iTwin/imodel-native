@@ -82,9 +82,9 @@
 
 #define GRIDS_REL_GridSurfaceDrivesGridCurveBundle              "GridSurfaceDrivesGridCurveBundle"
 #define GRIDS_REL_GridCurveBundleCreatesGridCurve               "GridCurveBundleCreatesGridCurve"
-#define GRIDS_REL_GridCurveBundleRefersToGridCurvesPortion      "GridCurveBundleRefersToGridCurvesPortion"
+#define GRIDS_REL_GridCurveBundleRefersToGridCurvesSet      "GridCurveBundleRefersToGridCurvesSet"
 
-#define GRIDS_CLASS_GridCurvesPortion                    "GridCurvesPortion"
+#define GRIDS_CLASS_GridCurvesSet                    "GridCurvesSet"
 #define GRIDS_CLASS_Grid                                 "Grid"
 #define GRIDS_CLASS_ElevationGrid                        "ElevationGrid"
 #define GRIDS_CLASS_PlanGrid                             "PlanGrid"
@@ -129,7 +129,7 @@
 //Authorities
 #define GRIDS_AUTHORITY_GridCurve                       GRIDS_CODESPEC_CODE(GRIDS_CLASS_GridCurve)
 #define GRIDS_AUTHORITY_Grid                            GRIDS_CODESPEC_CODE(GRIDS_CLASS_Grid)
-#define GRIDS_AUTHORITY_GridCurvesPortion               GRIDS_CODESPEC_CODE(GRIDS_CLASS_GridCurvesPortion)
+#define GRIDS_AUTHORITY_GridCurvesSet               GRIDS_CODESPEC_CODE(GRIDS_CLASS_GridCurvesSet)
 
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types

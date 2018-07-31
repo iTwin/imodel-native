@@ -9,9 +9,9 @@
 
 BEGIN_GRIDS_NAMESPACE
 
-struct GridCurvesPortionHandler : Dgn::dgn_ElementHandler::SpatialLocation
+struct GridCurvesSetHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_GridCurvesPortion, GridCurvesPortion, GridCurvesPortionHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_GridCurvesSet, GridCurvesSet, GridCurvesSetHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
 struct OrthogonalAxisXHandler : Dgn::dgn_ElementHandler::GroupInformation

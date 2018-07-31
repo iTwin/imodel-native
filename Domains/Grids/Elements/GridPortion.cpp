@@ -197,7 +197,7 @@ Dgn::DgnDbStatus Grid::_OnDelete() const
 BentleyStatus   Grid::IntersectGridSurface 
 (
 GridSurfaceCPtr surface,
-GridCurvesPortionCR targetPortion
+GridCurvesSetCR targetPortion
 ) const
     {
     Dgn::DgnModelPtr model = GetSubModel ();

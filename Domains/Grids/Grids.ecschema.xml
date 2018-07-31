@@ -11,7 +11,7 @@
     <ECSchemaReference name="AecUnits" version="01.00.00" alias="AECU" />
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
 
-    <ECEntityClass typeName="GridCurvesPortion" description="a portion which holds GridCurves">
+    <ECEntityClass typeName="GridCurvesSet" description="a portion which holds GridCurves">
       <BaseClass>bis:SpatialLocationElement</BaseClass>
       <BaseClass>bis:ISubModeledElement</BaseClass>
       <ECCustomAttributes>
@@ -24,15 +24,15 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
-        <ECNavigationProperty propertyName="CurvesPortion" relationshipName="GridCurveBundleRefersToGridCurvesPortion" direction="Forward" description="Created GridCurves will be put into this GridCurvesPortion" />
+        <ECNavigationProperty propertyName="CurvesPortion" relationshipName="GridCurveBundleRefersToGridCurvesSet" direction="Forward" description="Created GridCurves will be put into this GridCurvesSet" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="GridCurveBundleRefersToGridCurvesPortion" strength="embedding" strengthDirection="Backward" modifier="None" description="Maps GridCurveBundle to a GridCurvesPortion">
+    <ECRelationshipClass typeName="GridCurveBundleRefersToGridCurvesSet" strength="embedding" strengthDirection="Backward" modifier="None" description="Maps GridCurveBundle to a GridCurvesSet">
         <Source multiplicity="(1..1)" roleLabel="puts GridCurves into" polymorphic="true">
             <Class class="GridCurveBundle"/>
         </Source>
         <Target multiplicity="(1..1)" roleLabel="contains GridCurves created by" polymorphic="true">
-            <Class class="GridCurvesPortion"/>
+            <Class class="GridCurvesSet"/>
         </Target>
     </ECRelationshipClass>
 

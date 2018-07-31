@@ -12,7 +12,7 @@
 #include <Grids/Domain/GridsMacros.h>
 
 #include "ForwardDeclarations.h"
-#include "GridCurvesPortion.h"
+#include "GridCurvesSet.h"
 #include "GridSurface.h"
 #include "GridCurve.h"
 #include "GridPortion.h"

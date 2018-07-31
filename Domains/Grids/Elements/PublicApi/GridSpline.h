@@ -32,11 +32,11 @@ public:
     // Creation
     //---------------------------------------------------------------------------------------
     //! Creates a grid spline
-    //! @param[in]  gridCurvesPortion   portion for the grid spline
+    //! @param[in]  GridCurvesSet   portion for the grid spline
     //! @param[in]  curve   curve geometry
     //! @return             Grid spline
-    //! @note GridCurvesPortion must be inserted
-    GRIDELEMENTS_EXPORT static GridSplinePtr Create (GridCurvesPortionCR gridCurvesPortion, ICurvePrimitivePtr curve);
+    //! @note GridCurvesSet must be inserted
+    GRIDELEMENTS_EXPORT static GridSplinePtr Create (GridCurvesSetCR GridCurvesSet, ICurvePrimitivePtr curve);
 };
 
 END_GRIDS_NAMESPACE

@@ -2708,7 +2708,7 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     OrthogonalGridPtr orthogonalGrid = OrthogonalGrid::CreateAndInsertWithSurfaces(orthogonalParams, 2, 1);
     ASSERT_TRUE(orthogonalGrid.IsValid()) << "Failed to create orthogonal grid";
 
-    GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
+    GridCurvesSetPtr curvesPortion = GridCurvesSet::Create(*m_model);
 
     curvesPortion->Insert();
 
@@ -2852,7 +2852,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(radialParams, 2, 2);
     ASSERT_TRUE(radialGrid.IsValid()) << "Failed to create radial grid";
 
-    GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
+    GridCurvesSetPtr curvesPortion = GridCurvesSet::Create(*m_model);
     curvesPortion->Insert();
     db.SaveChanges();
     db.BriefcaseManager().StartBulkOperation();
@@ -3016,7 +3016,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
 
     spline->Insert();
 
-    GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
+    GridCurvesSetPtr curvesPortion = GridCurvesSet::Create(*m_model);
 
     curvesPortion->Insert();
 
@@ -3115,7 +3115,7 @@ TEST_F(GridsTestFixture, GridArc_Created)
     double arcAngle = DVec3d::FromStartEnd(DPoint3d::From( 0, 0, 0 ), DPoint3d::From(5, 0, 0 )).AngleToXY(DVec3d::FromStartEnd(DPoint3d::From(0, 0, 0 ), DPoint3d::From(0, 5, 0 )));
     ASSERT_EQ(arcEllipse.ArcLength(), arcAngle * 5) << "Created arcCurve's length is incorrect";
 
-    GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
+    GridCurvesSetPtr curvesPortion = GridCurvesSet::Create(*m_model);
 
     curvesPortion->Insert();
 
@@ -3182,7 +3182,7 @@ TEST_F(GridsTestFixture, GridLine_Created)
         return linePoint.AlmostEqual({ 5, 0, 0 });
         })) << "Created line curve geometry is incorrect";
 
-    GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
+    GridCurvesSetPtr curvesPortion = GridCurvesSet::Create(*m_model);
 
     curvesPortion->Insert();
     // Try creating the grid line
@@ -3228,7 +3228,7 @@ TEST_F(GridsTestFixture, GridSpline_Created)
     DgnDbR db = *DgnClientApp::App().Project();
     db.BriefcaseManager().StartBulkOperation();
 
-    GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
+    GridCurvesSetPtr curvesPortion = GridCurvesSet::Create(*m_model);
 
     curvesPortion->Insert();
     /////////////////////////////////////////////////////////////
@@ -3579,13 +3579,13 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     //---------------------------------------------------------------------------------------
     // @betest                                      Martynas.Saulius                02/2018
     //--------------+---------------+---------------+---------------+---------------+-------- 
-    TEST_F(GridsTestFixture, GridCurvesPortionTests) {
+    TEST_F(GridsTestFixture, GridCurvesSetTests) {
 
         DgnDbR db = *DgnClientApp::App().Project();
         db.BriefcaseManager().StartBulkOperation();
 
         { //Creation, Insertion, Update validity
-            GridCurvesPortionPtr portion = GridCurvesPortion::Create(*m_model);
+            GridCurvesSetPtr portion = GridCurvesSet::Create(*m_model);
             ASSERT_TRUE(portion.IsValid()) << "Failed to create grid curves portion";
 
             ASSERT_TRUE(portion->Insert().IsValid()) << "Failed to insert grid curves portion";
@@ -3597,19 +3597,19 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
 
         DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), GRIDS_CATEGORY_CODE_Uncategorized);
         { // Check grid curves portion created from handler
-            GridCurvesPortionHandler& portionHandler = GridCurvesPortionHandler::GetHandler();
+            GridCurvesSetHandler& portionHandler = GridCurvesSetHandler::GetHandler();
             DgnClassId portionClassId = db.Domains().GetClassId(portionHandler);
             DgnElement::CreateParams portionParams(db, m_model->GetModelId(), portionClassId);
 
-            GridCurvesPortionPtr invalidGridCurvesPortion_FromHandler = dynamic_cast<GridCurvesPortion *>(portionHandler.Create(portionParams).get());
-            ASSERT_TRUE(invalidGridCurvesPortion_FromHandler.IsValid()) << "Grid curves portion element created from handler shouldn't be a nullptr";
+            GridCurvesSetPtr invalidGridCurvesSet_FromHandler = dynamic_cast<GridCurvesSet *>(portionHandler.Create(portionParams).get());
+            ASSERT_TRUE(invalidGridCurvesSet_FromHandler.IsValid()) << "Grid curves portion element created from handler shouldn't be a nullptr";
 
 
-            invalidGridCurvesPortion_FromHandler->SetCategoryId(categoryId);
+            invalidGridCurvesSet_FromHandler->SetCategoryId(categoryId);
 
-            ASSERT_TRUE(invalidGridCurvesPortion_FromHandler->Insert().IsValid()) << "Grid curves portion element via handler insertion failed";
+            ASSERT_TRUE(invalidGridCurvesSet_FromHandler->Insert().IsValid()) << "Grid curves portion element via handler insertion failed";
 
-            ASSERT_TRUE(invalidGridCurvesPortion_FromHandler->GetElementId().IsValid()) << "Grid curves portion element id via handler is invalid";
+            ASSERT_TRUE(invalidGridCurvesSet_FromHandler->GetElementId().IsValid()) << "Grid curves portion element id via handler is invalid";
         }
         db.SaveChanges();
     }
