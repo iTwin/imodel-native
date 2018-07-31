@@ -283,27 +283,6 @@ void AddExternalDataModels (DgnDbR db)
         BeAssert (false);
         }
 
-    RepositoryLinkPtr aerialLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), nullptr, "Bing Aerial");
-    if (aerialLink.IsValid() && aerialLink->Insert().IsValid())
-        {
-        // set up the Bing Aerial map properties Json.
-        BentleyApi::Json::Value jsonParameters;
-        jsonParameters[WebMercatorModel::json_providerName()] = BingImageryProvider::prop_BingProvider();
-        jsonParameters[WebMercatorModel::json_groundBias()] = -1.0;
-        jsonParameters[WebMercatorModel::json_transparency()] = 0.0;
-        BentleyApi::Json::Value& bingAerialJson = jsonParameters[WebMercatorModel::json_providerData()];
-
-        bingAerialJson[WebMercatorModel::json_mapType()] = (int)MapType::Aerial;
-        WebMercatorModel::CreateParams createParams (db, aerialLink->GetElementId(), jsonParameters);
-
-        WebMercatorModelPtr model = new WebMercatorModel (createParams);
-        DgnDbStatus insertStatus = model->Insert();
-        BeAssert (DgnDbStatus::Success == insertStatus);
-        }
-    else
-        {
-        BeAssert (false);
-        }
 
 #if defined (INSERT_MAPBOX_ALSO)
     RepositoryLinkPtr mapBoxStreetsLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), nullptr, "Mapbox Streets");
@@ -564,7 +543,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
         }
 
     DgnElementId dgnDbElementId;
-    Placement3d wasPlacement;
+    BentleyApi::Placement3d wasPlacement;
     SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
     SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
     if (true)
@@ -625,7 +604,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
         DgnElementCPtr dgnDbElement = syncInfo.m_dgndb->Elements().GetElement(dgnDbElementId);
         GeometrySource3dCP geomElement = dgnDbElement->ToGeometrySource3d();
         ASSERT_NE(nullptr, geomElement);
-        Placement3d placementAfter = geomElement->GetPlacement();
+        BentleyApi::Placement3d placementAfter = geomElement->GetPlacement();
         ASSERT_FALSE(placementAfter.GetOrigin().IsEqual(wasPlacement.GetOrigin())) << L"Expected placement origin to change";
         checkEqualAngles(placementAfter.GetAngles(), wasPlacement.GetAngles());
         ASSERT_TRUE(wasPlacement.GetElementBox().IsEqual(placementAfter.GetElementBox(), 1.0e-10)) << L"Did not expect geometry to change";
