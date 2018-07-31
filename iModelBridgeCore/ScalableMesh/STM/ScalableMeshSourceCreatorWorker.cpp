@@ -18,7 +18,7 @@
 #include "ImagePPHeaders.h"
 #include "ScalableMeshSourceCreatorWorker.h"
 
-#define TASK_PER_WORKER 10
+#define TASK_PER_WORKER 3
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 
@@ -586,7 +586,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
         if (!smSisterDb->IsDbOpen() || !smSisterDb->IsReadonly())
             dbOpResult = smSisterDb->ReOpenShared(false, true);
         
-  
+        fclose(lockFile);
+
         ptsNeighbors.clear();
         ptsIndicesNeighbors.clear();
         graphNeighbors.clear();
@@ -638,6 +639,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
             }
         }
 
+
+        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+            {
+            sleeper.Sleep();
+            }
+
         meshNode->Discard();    
         meshNode->Unload();
     
@@ -650,7 +657,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
     
     
         meshNode = nullptr;
-
+      
         if (smDb->IsDbOpen())
             {
             smDb->CloseShared(wasTransactionAbandoned);
