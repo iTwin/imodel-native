@@ -253,6 +253,14 @@ struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
  <KindOfQuantity typeName="TestKoq_SQFTfi8" persistenceUnit="SQ.FT(fi8)" relativeError="0.9"/>
  <KindOfQuantity typeName="TestKoq_SQFTfi8_SQFTreal4u" persistenceUnit="SQ.FT(fi8)" presentationUnits="SQ.FT(real4u)" relativeError="1.0"/>
 
+ <!-- KOQs which fail to deserialize with EC3.1 and are just dropped in EC3.2 -->
+ <KindOfQuantity typeName="TestKoq_LUX_M" persistenceUnit="LUX" presentationUnits="M" relativeError="1.1"/>
+ <KindOfQuantity typeName="TestKoq_M_LUX" persistenceUnit="M" presentationUnits="LUX" relativeError="1.2"/>
+ <KindOfQuantity typeName="TestKoq_M_SQFTreal4u" persistenceUnit="M" presentationUnits="SQ.FT(real4u)" relativeError="1.3"/>
+ <KindOfQuantity typeName="TestKoq_M_CM_LUX" persistenceUnit="M" presentationUnits="CM;LUX" relativeError="1.4"/>
+ <KindOfQuantity typeName="TestKoq_LUX_CM_MM" persistenceUnit="LUX" presentationUnits="CM;MM" relativeError="1.5"/>
+ <KindOfQuantity typeName="TestKoq_LUXreal4u_CM_MM" persistenceUnit="LUX(real4u)" presentationUnits="CM;MM" relativeError="1.6"/>
+
 </ECSchema>)xml"));
             }
     public:

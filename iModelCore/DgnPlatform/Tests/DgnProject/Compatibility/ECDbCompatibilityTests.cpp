@@ -310,6 +310,18 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
             
             testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormat_NoPresUnit", nullptr, nullptr, "u:W_PER_M_K", JsonValue(R"json(["f:DefaultReal[u:W_PER_M_K]"])json"), 0.5);
             testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormatWithUnit_NoPresUnit", nullptr, nullptr, "u:FT", JsonValue(R"json(["f:AmerFI"])json"), 0.6);
+            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_Mfi8", nullptr, nullptr, "u:M", JsonValue(R"json(["f:AmerFI"])json"), 0.7);
+            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_Mfi8", nullptr, nullptr, "u:M", JsonValue(R"json(["f:AmerFI"])json"), 0.8);
+            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_SQFTfi8", nullptr, nullptr, "u:SQ_FT", JsonValue(), 0.9);
+            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_SQFTfi8_SQFTreal4u", nullptr, nullptr, "u:SQ_FT", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_FT]"])json"), 1.0);
+
+            // KOQs which are actually invalid in EC3.1, but the ECObjects upgrade path just drops the invalid presentation formats in that case instead of dropping the entire KOQ
+            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_LUX_M", nullptr, nullptr, "u:LUX", JsonValue(), 1.1);
+            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_LUX", nullptr, nullptr, "u:M", JsonValue(), 1.2);
+            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_SQFTreal4u", nullptr, nullptr, "u:M", JsonValue(), 1.3);
+            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_CM_LUX", nullptr, nullptr, "u:M", JsonValue(R"json(["f:DefaultReal[u:CM]"])json"), 1.4);
+            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_LUX_CM_MM", nullptr, nullptr, "u:M", JsonValue(), 1.5);
+            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_LUXreal4u_CM_MM", nullptr, nullptr, "u:LUX", JsonValue(R"json(["f:DefaultRealU(4)[u:LUX]"])json"), 1.6);
 
             if (!testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
                 {
