@@ -379,7 +379,7 @@ bvector<PresentationRuleSetPtr> DirectoryRuleSetLocater::_LocateRuleSets(Utf8CP 
     {
     bvector<PresentationRuleSetPtr> rulesets;
     bvector<BeFileName> files = _GetRuleSetFileNames();
-    for (BeFileName& file : files)
+    for (BeFileNameCR file : files)
         {
         if (!file.DoesPathExist())
             continue;
@@ -392,7 +392,7 @@ bvector<PresentationRuleSetPtr> DirectoryRuleSetLocater::_LocateRuleSets(Utf8CP 
             }
         else
             {
-            ruleset = PresentationRuleSet::ReadFromXmlFile(file.c_str());
+            ruleset = PresentationRuleSet::ReadFromXmlFile(file);
             if (ruleset.IsValid())
                 {
                 m_cache[file] = ruleset;
@@ -477,7 +477,7 @@ bvector<PresentationRuleSetPtr> FileRuleSetLocater::_LocateRuleSets(Utf8CP rules
     if (m_path.IsEmpty() || !m_path.DoesPathExist())
         return rulesets;
 
-    PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromXmlFile(m_path.c_str());
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromXmlFile(m_path);
     if (ruleset.IsValid() && (nullptr == rulesetId || ruleset->GetRuleSetId().Equals(rulesetId)))
         {
         m_path.GetFileTime(nullptr, nullptr, &m_cachedLastModifiedTime);

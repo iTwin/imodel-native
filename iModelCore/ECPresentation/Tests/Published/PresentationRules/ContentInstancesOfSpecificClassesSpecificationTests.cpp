@@ -23,9 +23,10 @@ struct ContentInstancesOfSpecificClassesSpecificationTests : PresentationRulesTe
 TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-	    "classNames": "TestSchema:TestClass",
-	    "arePolymorphic": true,
-	    "instanceFilter": "filter"
+        "specType": "ContentInstancesOfSpecificClasses",
+        "classes": {"schemaName": "TestSchema", "classNames": ["TestClass"]},
+        "arePolymorphic": true,
+        "instanceFilter": "filter"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -42,7 +43,9 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadFromJsonFailsWhenClassNamesAreNotSpecified)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "specType": "ContentInstancesOfSpecificClasses"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
 
@@ -56,7 +59,8 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadFromJsonFailsWhe
 TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = R"({
-	    "classNames": "TestSchema:TestClass"
+        "specType": "ContentInstancesOfSpecificClasses",
+        "classes": {"schemaName": "TestSchema", "classNames": ["TestClass"]}
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -67,6 +71,26 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJsonWithDef
     EXPECT_STREQ("TestSchema:TestClass", spec.GetClassNames().c_str());
     EXPECT_FALSE(spec.GetArePolymorphic());
     EXPECT_STREQ("", spec.GetInstanceFilter().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, WriteToJson)
+    {
+    ContentInstancesOfSpecificClassesSpecification spec(123, "filter", "s1:c1,c2;s2:c3;E:s2:c4", true);
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "specType": "ContentInstancesOfSpecificClasses",
+        "priority": 123,
+        "instanceFilter": "filter",
+        "classes": [
+            {"schemaName": "s1", "classNames": ["c1", "c2"]},
+            {"schemaName": "s2", "classNames": ["c3", "E:c4"]}
+        ],
+        "arePolymorphic": true
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

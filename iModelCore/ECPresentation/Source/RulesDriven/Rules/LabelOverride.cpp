@@ -16,10 +16,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-LabelOverride::LabelOverride ()
-    : m_label (L""), m_description (L"")
-    {
-    }
+LabelOverride::LabelOverride() {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -32,7 +29,7 @@ LabelOverride::LabelOverride (Utf8StringCR condition, int priority, Utf8StringCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP LabelOverride::_GetXmlElementName () const
+Utf8CP LabelOverride::_GetXmlElementName () const
     {
     return LABEL_OVERRIDE_XML_NODE_NAME;
     }
@@ -42,24 +39,16 @@ CharCP LabelOverride::_GetXmlElementName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool LabelOverride::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (!ConditionalCustomizationRule::_ReadXml(xmlNode))
+        return false;
+
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_label, LABEL_OVERRIDE_XML_ATTRIBUTE_LABEL))
         m_label = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_description, LABEL_OVERRIDE_XML_ATTRIBUTE_DESCRIPTION))
         m_description = "";
 
-    return ConditionalCustomizationRule::_ReadXml (xmlNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool LabelOverride::_ReadJson(JsonValueCR json)
-    {
-    m_label = json[LABEL_OVERRIDE_JSON_ATTRIBUTE_LABEL].asCString("");
-    m_description = json[LABEL_OVERRIDE_JSON_ATTRIBUTE_DESCRIPTION].asCString("");
-
-    return ConditionalCustomizationRule::_ReadJson(json);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -67,10 +56,41 @@ bool LabelOverride::_ReadJson(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LabelOverride::_WriteXml (BeXmlNodeP xmlNode) const
     {
+    ConditionalCustomizationRule::_WriteXml (xmlNode);
     xmlNode->AddAttributeStringValue (LABEL_OVERRIDE_XML_ATTRIBUTE_LABEL, m_label.c_str ());
     xmlNode->AddAttributeStringValue (LABEL_OVERRIDE_XML_ATTRIBUTE_DESCRIPTION, m_description.c_str ());
+    }
 
-    ConditionalCustomizationRule::_WriteXml (xmlNode);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP LabelOverride::_GetJsonElementType() const
+    {
+    return LABEL_OVERRIDE_JSON_TYPE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LabelOverride::_ReadJson(JsonValueCR json)
+    {
+    if (!ConditionalCustomizationRule::_ReadJson(json))
+        return false;
+    m_label = json[LABEL_OVERRIDE_JSON_ATTRIBUTE_LABEL].asCString("");
+    m_description = json[LABEL_OVERRIDE_JSON_ATTRIBUTE_DESCRIPTION].asCString("");
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void LabelOverride::_WriteJson(JsonValueR json) const
+    {
+    ConditionalCustomizationRule::_WriteJson(json);
+    if (!m_label.empty())
+        json[LABEL_OVERRIDE_JSON_ATTRIBUTE_LABEL] = m_label;
+    if (!m_description.empty())
+        json[LABEL_OVERRIDE_JSON_ATTRIBUTE_DESCRIPTION] = m_description;
     }
 
 /*---------------------------------------------------------------------------------**//**

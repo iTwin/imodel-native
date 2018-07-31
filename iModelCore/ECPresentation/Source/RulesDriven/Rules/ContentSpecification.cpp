@@ -9,10 +9,28 @@
 
 #include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
-#include <ECPresentation/RulesDriven/Rules/CommonTools.h>
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentSpecificationP ContentSpecification::Create(JsonValueCR json)
+    {
+    Utf8CP type = json[COMMON_JSON_ATTRIBUTE_SPECTYPE].asCString("");
+    ContentSpecificationP spec = nullptr;
+    if (0 == strcmp(SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_TYPE, type))
+        spec = new SelectedNodeInstancesSpecification();
+    else if (0 == strcmp(CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_TYPE, type))
+        spec = new ContentInstancesOfSpecificClassesSpecification();
+    else if (0 == strcmp(CONTENT_RELATED_INSTANCES_SPECIFICATION_JSON_TYPE, type))
+        spec = new ContentRelatedInstancesSpecification();
+    if (!spec || !spec->ReadJson(json))
+        DELETE_AND_CLEAR(spec);
+    return spec;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -33,12 +51,11 @@ ContentSpecification::ContentSpecification(int priority, bool showImages)
 ContentSpecification::ContentSpecification(ContentSpecificationCR other)
     : m_priority(other.m_priority), m_showImages(other.m_showImages)
     {
-    CommonTools::CopyRules(m_relatedPropertiesSpecification, other.m_relatedPropertiesSpecification);
-    CommonTools::CopyRules(m_propertiesDisplaySpecification, other.m_propertiesDisplaySpecification);
-    CommonTools::CopyRules(m_displayRelatedItemsSpecification, other.m_displayRelatedItemsSpecification);
-    CommonTools::CopyRules(m_calculatedPropertiesSpecification, other.m_calculatedPropertiesSpecification);
-    CommonTools::CopyRules(m_propertyEditorsSpecification, other.m_propertyEditorsSpecification);
-    CommonTools::CopyRules(m_relatedInstances, other.m_relatedInstances);
+    CommonToolsInternal::CopyRules(m_relatedPropertiesSpecification, other.m_relatedPropertiesSpecification);
+    CommonToolsInternal::CopyRules(m_propertiesDisplaySpecification, other.m_propertiesDisplaySpecification);
+    CommonToolsInternal::CopyRules(m_calculatedPropertiesSpecification, other.m_calculatedPropertiesSpecification);
+    CommonToolsInternal::CopyRules(m_propertyEditorsSpecification, other.m_propertyEditorsSpecification);
+    CommonToolsInternal::CopyRules(m_relatedInstances, other.m_relatedInstances);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -46,19 +63,21 @@ ContentSpecification::ContentSpecification(ContentSpecificationCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentSpecification::~ContentSpecification ()
     {
-    CommonTools::FreePresentationRules (m_relatedPropertiesSpecification);
-    CommonTools::FreePresentationRules (m_propertiesDisplaySpecification);
-    CommonTools::FreePresentationRules (m_displayRelatedItemsSpecification);
-    CommonTools::FreePresentationRules (m_calculatedPropertiesSpecification);
-    CommonTools::FreePresentationRules (m_propertyEditorsSpecification);
-    CommonTools::FreePresentationRules (m_relatedInstances);
+    CommonToolsInternal::FreePresentationRules (m_relatedPropertiesSpecification);
+    CommonToolsInternal::FreePresentationRules (m_propertiesDisplaySpecification);
+    CommonToolsInternal::FreePresentationRules (m_calculatedPropertiesSpecification);
+    CommonToolsInternal::FreePresentationRules (m_propertyEditorsSpecification);
+    CommonToolsInternal::FreePresentationRules (m_relatedInstances);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentSpecification::ReadXml (BeXmlNodeP xmlNode)
+bool ContentSpecification::_ReadXml(BeXmlNodeP xmlNode)
     {
+    if (!PresentationRuleSpecification::_ReadXml(xmlNode))
+        return false;
+
     //Optional:
     if (BEXML_Success != xmlNode->GetAttributeInt32Value(m_priority, COMMON_XML_ATTRIBUTE_PRIORITY))
         m_priority = 1000;
@@ -66,72 +85,104 @@ bool ContentSpecification::ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_showImages, CONTENT_SPECIFICATION_XML_ATTRIBUTE_SHOWIMAGES))
         m_showImages = false;
 
-    CommonTools::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_relatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
-    CommonTools::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList> (xmlNode, m_propertiesDisplaySpecification, HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
-    CommonTools::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList> (xmlNode, m_propertiesDisplaySpecification, DISPLAYED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
-    CommonTools::LoadSpecificationsFromXmlNode<DisplayRelatedItemsSpecification, DisplayRelatedItemsSpecificationList> (xmlNode, m_displayRelatedItemsSpecification, DISPLAYRELATEDITEMS_SPECIFICATION_XML_NODE_NAME);
-    CommonTools::LoadSpecificationsFromXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList> (xmlNode, m_relatedInstances, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_relatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList> (xmlNode, m_propertiesDisplaySpecification, HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList> (xmlNode, m_propertiesDisplaySpecification, DISPLAYED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList> (xmlNode, m_relatedInstances, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME);
     BeXmlNodeP xmlPropertyNode = xmlNode->SelectSingleNode(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
     if (xmlPropertyNode)
-        CommonTools::LoadSpecificationsFromXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList> (xmlPropertyNode, m_calculatedPropertiesSpecification, CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME);
+        CommonToolsInternal::LoadSpecificationsFromXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList> (xmlPropertyNode, m_calculatedPropertiesSpecification, CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME);
     xmlPropertyNode = xmlNode->SelectSingleNode(PROPERTY_EDITORS_SPECIFICATION_XML_NODE_NAME);
     if (xmlPropertyNode)
-        CommonTools::LoadSpecificationsFromXmlNode<PropertyEditorsSpecification, PropertyEditorsSpecificationList>(xmlPropertyNode, m_propertyEditorsSpecification, PROPERTY_EDITORS_SPECIFICATION_XML_CHILD_NAME);
+        CommonToolsInternal::LoadSpecificationsFromXmlNode<PropertyEditorsSpecification, PropertyEditorsSpecificationList>(xmlPropertyNode, m_propertyEditorsSpecification, PROPERTY_EDITORS_SPECIFICATION_XML_CHILD_NAME);
 
-    return _ReadXml (xmlNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas               04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentSpecification::ReadJson(JsonValueCR json)
-    {
-    m_priority = json[COMMON_JSON_ATTRIBUTE_PRIORITY].asInt(1000);
-    m_showImages = json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_SHOWIMAGES].asBool(false);
-
-    CommonTools::LoadSpecificationsFromJson<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>
-        (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_RELATEDPROPERTIESSPECIFICATION], m_relatedPropertiesSpecification);
-    CommonTools::LoadSpecificationsFromJson<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>
-        (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIESDISPLAYSPECIFICATION], m_propertiesDisplaySpecification);
-    CommonTools::LoadSpecificationsFromJson<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>
-        (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_CALCULATEDPROPERTIESSPECIFICATION], m_calculatedPropertiesSpecification);
-    CommonTools::LoadSpecificationsFromJson<PropertyEditorsSpecification, PropertyEditorsSpecificationList>
-        (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYEDITORSSPECIFICATION], m_propertyEditorsSpecification);
-    CommonTools::LoadSpecificationsFromJson<RelatedInstanceSpecification, RelatedInstanceSpecificationList>
-        (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCESSPECIFICATION], m_relatedInstances);
-
-
-    return _ReadJson(json);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
+void ContentSpecification::_WriteXml (BeXmlNodeP specificationNode) const
     {
-    BeXmlNodeP specificationNode = parentXmlNode->AddEmptyElement (_GetXmlElementName ());
+    PresentationRuleSpecification::_WriteXml(specificationNode);
 
     specificationNode->AddAttributeInt32Value(COMMON_XML_ATTRIBUTE_PRIORITY, m_priority);
     specificationNode->AddAttributeBooleanValue(CONTENT_SPECIFICATION_XML_ATTRIBUTE_SHOWIMAGES, m_showImages);
 
-    CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (specificationNode, m_relatedPropertiesSpecification);
-    CommonTools::WriteRulesToXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList> (specificationNode, m_propertiesDisplaySpecification);
-    CommonTools::WriteRulesToXmlNode<DisplayRelatedItemsSpecification, DisplayRelatedItemsSpecificationList> (specificationNode, m_displayRelatedItemsSpecification);
-    CommonTools::WriteRulesToXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList> (specificationNode, m_relatedInstances);
+    CommonToolsInternal::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (specificationNode, m_relatedPropertiesSpecification);
+    CommonToolsInternal::WriteRulesToXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList> (specificationNode, m_propertiesDisplaySpecification);
+    CommonToolsInternal::WriteRulesToXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList> (specificationNode, m_relatedInstances);
     if (!m_calculatedPropertiesSpecification.empty())
         {
         BeXmlNodeP calculatedPropertiesNode = specificationNode->AddEmptyElement(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
-        CommonTools::WriteRulesToXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>(calculatedPropertiesNode, m_calculatedPropertiesSpecification);
+        CommonToolsInternal::WriteRulesToXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>(calculatedPropertiesNode, m_calculatedPropertiesSpecification);
         }
     if (!m_propertyEditorsSpecification.empty())
         {
         BeXmlNodeP propertyEditorsNode = specificationNode->AddEmptyElement(PROPERTY_EDITORS_SPECIFICATION_XML_NODE_NAME);
-        CommonTools::WriteRulesToXmlNode<PropertyEditorsSpecification, PropertyEditorsSpecificationList>(propertyEditorsNode, m_propertyEditorsSpecification);
+        CommonToolsInternal::WriteRulesToXmlNode<PropertyEditorsSpecification, PropertyEditorsSpecificationList>(propertyEditorsNode, m_propertyEditorsSpecification);
         }
-
-    //Make sure we call protected override
-    _WriteXml (specificationNode);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentSpecification::_ReadJson(JsonValueCR json)
+    {
+    if (!PresentationRuleSpecification::_ReadJson(json))
+        return false;
+
+    m_priority = json[COMMON_JSON_ATTRIBUTE_PRIORITY].asInt(1000);
+    m_showImages = json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_SHOWIMAGES].asBool(false);
+    CommonToolsInternal::LoadFromJson(json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_RELATEDPROPERTIESSPECIFICATION], 
+        m_relatedPropertiesSpecification, CommonToolsInternal::LoadRuleFromJson<RelatedPropertiesSpecification>);
+    CommonToolsInternal::LoadFromJson(json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIESDISPLAYSPECIFICATION], 
+        m_propertiesDisplaySpecification, CommonToolsInternal::LoadRuleFromJson<PropertiesDisplaySpecification>);
+    CommonToolsInternal::LoadFromJson(json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_CALCULATEDPROPERTIESSPECIFICATION], 
+        m_calculatedPropertiesSpecification, CommonToolsInternal::LoadRuleFromJson<CalculatedPropertiesSpecification>);
+    CommonToolsInternal::LoadFromJson(json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYEDITORSSPECIFICATION], 
+        m_propertyEditorsSpecification, CommonToolsInternal::LoadRuleFromJson<PropertyEditorsSpecification>);
+    CommonToolsInternal::LoadFromJson(json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCESSPECIFICATION], 
+        m_relatedInstances, CommonToolsInternal::LoadRuleFromJson<RelatedInstanceSpecification>);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentSpecification::_WriteJson(JsonValueR json) const
+    {
+    PresentationRuleSpecification::_WriteJson(json);
+    if (1000 != m_priority)
+        json[COMMON_JSON_ATTRIBUTE_PRIORITY] = m_priority;
+    if (m_showImages)
+        json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_SHOWIMAGES] = m_showImages;
+    if (!m_relatedPropertiesSpecification.empty())
+        {
+        CommonToolsInternal::WriteRulesToJson<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>
+            (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_RELATEDPROPERTIESSPECIFICATION], m_relatedPropertiesSpecification);
+        }
+    if (!m_propertiesDisplaySpecification.empty())
+        {
+        CommonToolsInternal::WriteRulesToJson<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>
+            (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIESDISPLAYSPECIFICATION], m_propertiesDisplaySpecification);
+        }
+    if (!m_calculatedPropertiesSpecification.empty())
+        {
+        CommonToolsInternal::WriteRulesToJson<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>
+            (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_CALCULATEDPROPERTIESSPECIFICATION], m_calculatedPropertiesSpecification);
+        }
+    if (!m_propertyEditorsSpecification.empty())
+        {
+        CommonToolsInternal::WriteRulesToJson<PropertyEditorsSpecification, PropertyEditorsSpecificationList>
+            (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYEDITORSSPECIFICATION], m_propertyEditorsSpecification);
+        }
+    if (!m_relatedInstances.empty())
+        {
+        CommonToolsInternal::WriteRulesToJson<RelatedInstanceSpecification, RelatedInstanceSpecificationList>
+            (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCESSPECIFICATION], m_relatedInstances);
+        }
+    } 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -157,21 +208,6 @@ void ContentSpecification::AddRelatedProperty(RelatedPropertiesSpecificationR sp
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecificationList const& ContentSpecification::GetRelatedProperties() const {return m_relatedPropertiesSpecification;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentSpecification::AddDisplayRelatedItem(DisplayRelatedItemsSpecificationR specification)
-    {
-    InvalidateHash();
-    specification.SetParent(this);
-    m_displayRelatedItemsSpecification.push_back(&specification);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Andrew.Menzies                          07/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DisplayRelatedItemsSpecificationList const& ContentSpecification::GetDisplayRelatedItems(void) const { return m_displayRelatedItemsSpecification; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
@@ -221,7 +257,7 @@ MD5 ContentSpecification::_ComputeHash(Utf8CP parentHash) const
     MD5 md5 = PresentationRuleSpecification::_ComputeHash(parentHash);
     md5.Add(&m_priority, sizeof(m_priority));
     md5.Add(&m_showImages, sizeof(m_showImages));
-    CharCP name = _GetXmlElementName();
+    Utf8CP name = _GetXmlElementName();
     md5.Add(name, strlen(name));
 
     Utf8String currentHash = md5.GetHashString();
@@ -236,11 +272,6 @@ MD5 ContentSpecification::_ComputeHash(Utf8CP parentHash) const
         md5.Add(specHash.c_str(), specHash.size());
         }
     for (CalculatedPropertiesSpecificationP spec : m_calculatedPropertiesSpecification)
-        {
-        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
-        md5.Add(specHash.c_str(), specHash.size());
-        }
-    for (DisplayRelatedItemsSpecificationP spec : m_displayRelatedItemsSpecification)
         {
         Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
         md5.Add(specHash.c_str(), specHash.size());

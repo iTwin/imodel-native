@@ -9,7 +9,7 @@
 
 #include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
-#include <ECPresentation/RulesDriven/Rules/CommonTools.h>
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
@@ -17,9 +17,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentRule::ContentRule () : m_customControl ("")
-    {
-    }
+ContentRule::ContentRule() {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -35,7 +33,7 @@ ContentRule::ContentRule (Utf8StringCR condition, int priority, bool onlyIfNotHa
 ContentRule::ContentRule(ContentRuleCR other)
     : ConditionalPresentationRule(other), m_customControl(other.m_customControl)
     {
-    CommonTools::CloneRules(m_specifications, other.m_specifications);
+    CommonToolsInternal::CloneRules(m_specifications, other.m_specifications);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -43,13 +41,13 @@ ContentRule::ContentRule(ContentRuleCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentRule::~ContentRule ()
     {
-    CommonTools::FreePresentationRules (m_specifications);
+    CommonToolsInternal::FreePresentationRules (m_specifications);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP ContentRule::_GetXmlElementName () const
+Utf8CP ContentRule::_GetXmlElementName () const
     {
     return CONTENT_RULE_XML_NODE_NAME;
     }
@@ -65,30 +63,14 @@ bool ContentRule::_ReadXml (BeXmlNodeP xmlNode)
     for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
         {
         if (0 == BeStringUtilities::Stricmp(child->GetName(), CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<ContentInstancesOfSpecificClassesSpecification, ContentSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<ContentInstancesOfSpecificClassesSpecification, ContentSpecificationList>(child, m_specifications);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), CONTENT_RELATED_INSTANCES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<ContentRelatedInstancesSpecification, ContentSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<ContentRelatedInstancesSpecification, ContentSpecificationList>(child, m_specifications);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), SELECTED_NODE_INSTANCES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<SelectedNodeInstancesSpecification, ContentSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<SelectedNodeInstancesSpecification, ContentSpecificationList>(child, m_specifications);
         }
 
     return ConditionalPresentationRule::_ReadXml (xmlNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentRule::_ReadJson(JsonValueCR json)
-    {
-    JsonValueCR specificationsJson = json[CONTENT_RULE_JSON_ATTRIBUTE_SPECIFICATIONS];
-    CommonTools::LoadRulesFromJson<ContentInstancesOfSpecificClassesSpecification, ContentSpecificationList>
-        (specificationsJson, m_specifications, CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_TYPE);
-    CommonTools::LoadRulesFromJson<ContentRelatedInstancesSpecification, ContentSpecificationList>
-        (specificationsJson, m_specifications, CONTENT_RELATED_INSTANCES_SPECIFICATION_JSON_TYPE);
-    CommonTools::LoadRulesFromJson<SelectedNodeInstancesSpecification, ContentSpecificationList>
-        (specificationsJson, m_specifications, SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_TYPE);
-
-    return ConditionalPresentationRule::_ReadJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -98,9 +80,40 @@ void ContentRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue (CONTENT_RULE_XML_ATTRIBUTE_CUSTOMCONTROL, m_customControl.c_str ());
 
-    CommonTools::WriteRulesToXmlNode<ContentSpecification, ContentSpecificationList> (xmlNode, m_specifications);
+    CommonToolsInternal::WriteRulesToXmlNode<ContentSpecification, ContentSpecificationList> (xmlNode, m_specifications);
 
     ConditionalPresentationRule::_WriteXml (xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP ContentRule::_GetJsonElementType() const
+    {
+    return CONTENT_RULE_JSON_TYPE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentRule::_ReadJson(JsonValueCR json)
+    {
+    if (!ConditionalPresentationRule::_ReadJson(json))
+        return false;
+
+    CommonToolsInternal::LoadFromJsonByPriority(json[CONTENT_RULE_JSON_ATTRIBUTE_SPECIFICATIONS], m_specifications, ContentSpecification::Create);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentRule::_WriteJson(JsonValueR json) const
+    {
+    ConditionalPresentationRule::_WriteJson(json);
+    Json::Value specificationsJson(Json::arrayValue);
+    CommonToolsInternal::WriteRulesToJson<ContentSpecification, ContentSpecificationList>(specificationsJson, m_specifications);
+    json[CONTENT_RULE_JSON_ATTRIBUTE_SPECIFICATIONS] = specificationsJson;
     }
 
 /*---------------------------------------------------------------------------------**//**

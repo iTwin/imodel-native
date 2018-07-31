@@ -29,7 +29,7 @@ struct PropertiesDisplaySpecification : HashableBase
         ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
-        PropertiesDisplaySpecification() {}
+        PropertiesDisplaySpecification(): m_priority(1000), m_isDisplayed(true) {}
         PropertiesDisplaySpecification(Utf8String propertyNames, int priority, bool isDisplayed)
             : m_propertyNames(propertyNames), m_priority(priority), m_isDisplayed(isDisplayed)
             {}
@@ -37,11 +37,14 @@ struct PropertiesDisplaySpecification : HashableBase
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
 
+        //! Writes rule information to given XmlNode.
+        ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+
         //! Reads rule information from Json, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
 
-        //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT Json::Value WriteJson() const;
         
         //! Get the property names.
         Utf8StringCR GetPropertyNames() const {return m_propertyNames;}

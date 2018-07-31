@@ -16,24 +16,20 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StyleOverride::StyleOverride ()
-    : m_foreColor (""), m_backColor (""), m_fontStyle ("")
-    {
-    }
+StyleOverride::StyleOverride() {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 StyleOverride::StyleOverride (Utf8StringCR condition, int priority, Utf8StringCR foreColor, Utf8StringCR backColor, Utf8StringCR fontStyle)
-    : ConditionalCustomizationRule(condition, priority, false),
-        m_foreColor (foreColor), m_backColor (backColor), m_fontStyle (fontStyle)
+    : ConditionalCustomizationRule(condition, priority, false), m_foreColor (foreColor), m_backColor (backColor), m_fontStyle (fontStyle)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP StyleOverride::_GetXmlElementName () const
+Utf8CP StyleOverride::_GetXmlElementName () const
     {
     return STYLE_OVERRIDE_XML_NODE_NAME;
     }
@@ -43,6 +39,9 @@ CharCP StyleOverride::_GetXmlElementName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool StyleOverride::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (!ConditionalCustomizationRule::_ReadXml(xmlNode))
+        return false;
+
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_foreColor, STYLE_OVERRIDE_XML_ATTRIBUTE_FORECOLOR))
         m_foreColor = "";
 
@@ -52,7 +51,7 @@ bool StyleOverride::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_fontStyle, STYLE_OVERRIDE_XML_ATTRIBUTE_FONTSTYLE))
         m_fontStyle = "";
 
-    return ConditionalCustomizationRule::_ReadXml (xmlNode);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -60,11 +59,18 @@ bool StyleOverride::_ReadXml (BeXmlNodeP xmlNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void StyleOverride::_WriteXml (BeXmlNodeP xmlNode) const
     {
+    ConditionalCustomizationRule::_WriteXml (xmlNode);
     xmlNode->AddAttributeStringValue (STYLE_OVERRIDE_XML_ATTRIBUTE_FORECOLOR, m_foreColor.c_str ());
     xmlNode->AddAttributeStringValue (STYLE_OVERRIDE_XML_ATTRIBUTE_BACKCOLOR, m_backColor.c_str ());
     xmlNode->AddAttributeStringValue (STYLE_OVERRIDE_XML_ATTRIBUTE_FONTSTYLE, m_fontStyle.c_str ());
+    }
 
-    ConditionalCustomizationRule::_WriteXml (xmlNode);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP StyleOverride::_GetJsonElementType() const
+    {
+    return STYLE_OVERRIDE_JSON_TYPE;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -72,11 +78,27 @@ void StyleOverride::_WriteXml (BeXmlNodeP xmlNode) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool StyleOverride::_ReadJson(JsonValueCR json)
     {
+    if (!ConditionalCustomizationRule::_ReadJson(json))
+        return false;
+
     m_foreColor = json[STYLE_OVERRIDE_JSON_ATTRIBUTE_FORECOLOR].asCString("");
     m_backColor = json[STYLE_OVERRIDE_JSON_ATTRIBUTE_BACKCOLOR].asCString("");
     m_fontStyle = json[STYLE_OVERRIDE_JSON_ATTRIBUTE_FONTSTYLE].asCString("");
+    return true;
+    }
 
-    return ConditionalCustomizationRule::_ReadJson(json);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void StyleOverride::_WriteJson(JsonValueR json) const
+    {
+    ConditionalCustomizationRule::_WriteJson(json);
+    if (!m_foreColor.empty())
+        json[STYLE_OVERRIDE_JSON_ATTRIBUTE_FORECOLOR] = m_foreColor;
+    if (!m_backColor.empty())
+        json[STYLE_OVERRIDE_JSON_ATTRIBUTE_BACKCOLOR] = m_backColor;
+    if (!m_fontStyle.empty())
+        json[STYLE_OVERRIDE_JSON_ATTRIBUTE_FONTSTYLE] = m_fontStyle;
     }
 
 /*---------------------------------------------------------------------------------**//**

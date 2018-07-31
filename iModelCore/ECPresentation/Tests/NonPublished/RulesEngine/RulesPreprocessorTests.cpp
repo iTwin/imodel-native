@@ -133,12 +133,12 @@ static void AddRulesToRuleset(PresentationRuleSetR ruleset)
     ruleset.AddPresentationRule(*new ContentRule());
     ruleset.AddPresentationRule(*new ImageIdOverride());
     ruleset.AddPresentationRule(*new LabelOverride());
+    ruleset.AddPresentationRule(*new InstanceLabelOverride());
     ruleset.AddPresentationRule(*new StyleOverride());
     ruleset.AddPresentationRule(*new GroupingRule());
     ruleset.AddPresentationRule(*new LocalizationResourceKeyDefinition());
     ruleset.AddPresentationRule(*new UserSettingsGroup());
     ruleset.AddPresentationRule(*new CheckBoxRule());
-    ruleset.AddPresentationRule(*new RenameNodeRule());
     ruleset.AddPresentationRule(*new SortingRule());
     }
 
@@ -161,12 +161,12 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_MergesRul
     EXPECT_EQ(2, rules->GetContentRules().size());
     EXPECT_EQ(2, rules->GetImageIdOverrides().size());
     EXPECT_EQ(2, rules->GetLabelOverrides().size());
+    EXPECT_EQ(2, rules->GetInstanceLabelOverrides().size());
     EXPECT_EQ(2, rules->GetStyleOverrides().size());
     EXPECT_EQ(2, rules->GetGroupingRules().size());
     EXPECT_EQ(2, rules->GetLocalizationResourceKeyDefinitions().size());
     EXPECT_EQ(2, rules->GetUserSettings().size());
     EXPECT_EQ(2, rules->GetCheckBoxRules().size());
-    EXPECT_EQ(2, rules->GetRenameNodeRules().size());
     EXPECT_EQ(2, rules->GetSortingRules().size());
     }
 
@@ -193,12 +193,12 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_MergesRul
     EXPECT_EQ(3, rules->GetContentRules().size());
     EXPECT_EQ(3, rules->GetImageIdOverrides().size());
     EXPECT_EQ(3, rules->GetLabelOverrides().size());
+    EXPECT_EQ(3, rules->GetInstanceLabelOverrides().size());
     EXPECT_EQ(3, rules->GetStyleOverrides().size());
     EXPECT_EQ(3, rules->GetGroupingRules().size());
     EXPECT_EQ(3, rules->GetLocalizationResourceKeyDefinitions().size());
     EXPECT_EQ(3, rules->GetUserSettings().size());
     EXPECT_EQ(3, rules->GetCheckBoxRules().size());
-    EXPECT_EQ(3, rules->GetRenameNodeRules().size());
     EXPECT_EQ(3, rules->GetSortingRules().size());
     }
 
@@ -229,12 +229,12 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_UsesOnlyS
     EXPECT_EQ(1, rules->GetContentRules().size());
     EXPECT_EQ(1, rules->GetImageIdOverrides().size());
     EXPECT_EQ(2, rules->GetLabelOverrides().size());
+    EXPECT_EQ(1, rules->GetInstanceLabelOverrides().size());
     EXPECT_EQ(2, rules->GetStyleOverrides().size());
     EXPECT_EQ(1, rules->GetGroupingRules().size());
     EXPECT_EQ(1, rules->GetLocalizationResourceKeyDefinitions().size());
     EXPECT_EQ(1, rules->GetUserSettings().size());
     EXPECT_EQ(1, rules->GetCheckBoxRules().size());
-    EXPECT_EQ(1, rules->GetRenameNodeRules().size());
     EXPECT_EQ(1, rules->GetSortingRules().size());
     }
 

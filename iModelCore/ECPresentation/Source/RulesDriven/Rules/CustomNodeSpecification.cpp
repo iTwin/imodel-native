@@ -17,10 +17,9 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CustomNodeSpecification::CustomNodeSpecification ()
-    : ChildNodeSpecification (), m_type (L""), m_label (L""), m_description (L""), m_imageId (L"")
-    {
-    }
+CustomNodeSpecification::CustomNodeSpecification()
+    : ChildNodeSpecification()
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -28,8 +27,7 @@ CustomNodeSpecification::CustomNodeSpecification ()
 CustomNodeSpecification::CustomNodeSpecification (int priority, bool hideIfNoChildren, Utf8StringCR type, Utf8StringCR label, Utf8StringCR description, Utf8StringCR imageId)
     : ChildNodeSpecification (priority, true, false, hideIfNoChildren), 
     m_type (type), m_label (label), m_description (description), m_imageId (imageId)
-    {
-    }
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
@@ -39,7 +37,7 @@ void CustomNodeSpecification::_Accept(PresentationRuleSpecificationVisitor& visi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP CustomNodeSpecification::_GetXmlElementName () const
+Utf8CP CustomNodeSpecification::_GetXmlElementName () const
     {
     return CUSTOM_NODE_SPECIFICATION_XML_NODE_NAME;
     }
@@ -49,13 +47,17 @@ CharCP CustomNodeSpecification::_GetXmlElementName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CustomNodeSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (!ChildNodeSpecification::_ReadXml(xmlNode))
+        return false;
+
+    //Required:
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_type, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_TYPE))
+        return false;
+
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_label, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_LABEL))
+        return false;
+    
     //Optional:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_type, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_TYPE))
-        m_type = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_label, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_LABEL))
-        m_label = "";
-
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_description, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_DESCRIPTION))
         m_description = "";
 
@@ -66,27 +68,64 @@ bool CustomNodeSpecification::_ReadXml (BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CustomNodeSpecification::_ReadJson(JsonValueCR json)
-    {
-    m_type = json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_TYPE].asCString("");
-    m_label = json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_LABEL].asCString("");
-    m_description = json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_DESCRIPTION].asCString("");
-    m_imageId = json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_IMAGEID].asCString("");
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CustomNodeSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
+    ChildNodeSpecification::_WriteXml(xmlNode);
     xmlNode->AddAttributeStringValue (CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_TYPE, m_type.c_str ());
     xmlNode->AddAttributeStringValue (CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_LABEL, m_label.c_str ());
     xmlNode->AddAttributeStringValue (CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_DESCRIPTION, m_description.c_str ());
     xmlNode->AddAttributeStringValue (CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_IMAGEID, m_imageId.c_str ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP CustomNodeSpecification::_GetJsonElementType() const
+    {
+    return CUSTOM_NODE_SPECIFICATION_JSON_TYPE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CustomNodeSpecification::_ReadJson(JsonValueCR json)
+    {
+    if (!ChildNodeSpecification::_ReadJson(json))
+        return false;
+
+    m_type = json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_TYPE].asCString("");
+    if (m_type.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "CustomNodeSpecification", CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_TYPE);
+        return false;
+        }
+
+    m_label = json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_LABEL].asCString("");
+    if (m_label.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "CustomNodeSpecification", CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_LABEL);
+        return false;
+        }
+
+    m_description = json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_DESCRIPTION].asCString("");
+    m_imageId = json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_IMAGEID].asCString("");
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CustomNodeSpecification::_WriteJson(JsonValueR json) const
+    {
+    ChildNodeSpecification::_WriteJson(json);
+    json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_TYPE] = m_type;
+    json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_LABEL] = m_label;
+    if (!m_description.empty())
+        json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_DESCRIPTION] = m_description;
+    if (!m_imageId.empty())
+        json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_IMAGEID] = m_imageId;
     }
 
 /*---------------------------------------------------------------------------------**//**

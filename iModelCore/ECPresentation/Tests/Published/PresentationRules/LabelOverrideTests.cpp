@@ -24,6 +24,7 @@ struct LabelOverrideTests : PresentationRulesTests
 TEST_F(LabelOverrideTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
+        "ruleType": "LabelOverride",
         "label":"label",
         "description":"description"
     })";
@@ -41,7 +42,9 @@ TEST_F(LabelOverrideTests, LoadsFromJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LabelOverrideTests, LoadsFromJsonWithDefaultValues)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "ruleType": "LabelOverride"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
 
@@ -49,6 +52,23 @@ TEST_F(LabelOverrideTests, LoadsFromJsonWithDefaultValues)
     EXPECT_TRUE(override.ReadJson(json));
     EXPECT_STREQ("", override.GetLabel().c_str());
     EXPECT_STREQ("", override.GetDescription().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LabelOverrideTests, WriteToJson)
+    {
+    LabelOverride rule("cond", 123, "label", "descr");
+    Json::Value json = rule.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "ruleType": "LabelOverride",
+        "priority": 123,
+        "condition": "cond",
+        "label": "label",
+        "description": "descr"
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -101,7 +121,7 @@ TEST_F(LabelOverrideTests, WriteToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<LabelOverride Priority="1000" Label="label" Description="description" Condition="" OnlyIfNotHandled="false"/>)"
+            R"(<LabelOverride Priority="1000" OnlyIfNotHandled="false" Condition="" Label="label" Description="description"/>)"
         "</Root>";
     EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
     }

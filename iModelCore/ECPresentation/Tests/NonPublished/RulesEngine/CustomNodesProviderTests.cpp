@@ -43,13 +43,6 @@ TEST_F(CustomNodesProviderTests, InvalidSpecification_DoesntReturnNodes)
     EXPECT_EQ(0, provider2->GetNodesCount());
     EXPECT_FALSE(provider2->GetNode(node, 0));
     EXPECT_TRUE(node.IsNull());
-    
-
-    CustomNodeSpecification specNoImageId(1, false, "type", "label", "", "");
-    NavNodesProviderPtr provider3 = CustomNodesProvider::Create(*m_context, specNoImageId);
-    EXPECT_EQ(0, provider3->GetNodesCount());
-    EXPECT_FALSE(provider3->GetNode(node, 0));
-    EXPECT_TRUE(node.IsNull());
 
     BeTest::SetFailOnAssert(true);
     }

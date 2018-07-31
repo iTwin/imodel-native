@@ -37,11 +37,14 @@ struct PropertyEditorsSpecification : HashableBase
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
 
+        //! Writes rule information to given XmlNode.
+        ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+
         //! Reads rule information from Json, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
 
-        //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+        //! Writes rule information to json.
+        ECPRESENTATION_EXPORT Json::Value WriteJson() const;
 
         //! Get property name.
         Utf8StringCR GetPropertyName() const {return m_propertyName;}
@@ -79,12 +82,15 @@ struct PropertyEditorParametersSpecification : HashableBase
 protected:
     virtual Utf8CP _GetXmlElementName() const = 0;
     virtual bool _ReadXml(BeXmlNodeP xmlNode) = 0;
+    virtual void _WriteXml(BeXmlNodeP xmlNode) const = 0;
+    virtual Utf8CP _GetJsonElementType() const = 0;
     virtual bool _ReadJson(JsonValueCR json) = 0;
-    virtual void _WriteXml(BeXmlNodeP parentXmlNode) const = 0;
+    virtual void _WriteJson(JsonValueR json) const = 0;
     virtual void _Accept(Visitor&) const = 0;
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
 public:
+    static PropertyEditorParametersSpecification* Create(JsonValueCR);
     virtual ~PropertyEditorParametersSpecification() {}
 
     //! Accepts a visitor.
@@ -93,11 +99,14 @@ public:
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
     bool ReadXml(BeXmlNodeP xmlNode) {return _ReadXml(xmlNode);}
 
-    //! Reads rule information from Json, returns true if it can read it successfully.
-    bool ReadJson(JsonValueCR json) { return _ReadJson(json); }
-
     //! Writes rule information to given XmlNode.
-    void WriteXml(BeXmlNodeP parentXmlNode) const {_WriteXml(parentXmlNode);}
+    ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+
+    //! Reads rule information from Json, returns true if it can read it successfully.
+    ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
+
+    //! Writes rule information to json.
+    ECPRESENTATION_EXPORT Json::Value WriteJson() const;
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -111,8 +120,10 @@ private:
 protected:
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
     ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
+    ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 public:
@@ -133,8 +144,10 @@ private:
 protected:
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
     ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
+    ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 public:
@@ -158,8 +171,10 @@ private:
 protected:
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
     ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
+    ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 public:
@@ -185,8 +200,10 @@ private:
 protected:
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
     ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
+    ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 public:

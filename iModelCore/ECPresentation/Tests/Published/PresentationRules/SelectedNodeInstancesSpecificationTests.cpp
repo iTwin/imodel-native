@@ -23,10 +23,11 @@ struct SelectedNodeInstancesSpecificationTests : PresentationRulesTests
 TEST_F(SelectedNodeInstancesSpecificationTests, LoadFromJson)
     {
     static Utf8CP jsonString = R"({
-	    "onlyIfNotHandled": true,
-	    "acceptableSchemaName": "TestSchema",
-	    "acceptableClassNames": "ClassA",
-	    "acceptablePolymorphically": true
+        "specType": "SelectedNodeInstances",
+        "onlyIfNotHandled": true,
+        "acceptableSchemaName": "TestSchema",
+        "acceptableClassNames": ["ClassA", "B"],
+        "acceptablePolymorphically": true
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -36,7 +37,7 @@ TEST_F(SelectedNodeInstancesSpecificationTests, LoadFromJson)
     EXPECT_TRUE(spec.GetOnlyIfNotHandled());
     EXPECT_TRUE(spec.GetAcceptablePolymorphically());
     EXPECT_STREQ("TestSchema", spec.GetAcceptableSchemaName().c_str());
-    EXPECT_STREQ("ClassA", spec.GetAcceptableClassNames().c_str());
+    EXPECT_STREQ("ClassA,B", spec.GetAcceptableClassNames().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -44,7 +45,9 @@ TEST_F(SelectedNodeInstancesSpecificationTests, LoadFromJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SelectedNodeInstancesSpecificationTests, LoadFromJsonWithDefaultValues)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "specType": "SelectedNodeInstances"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
     
@@ -56,6 +59,23 @@ TEST_F(SelectedNodeInstancesSpecificationTests, LoadFromJsonWithDefaultValues)
     EXPECT_STREQ("", spec.GetAcceptableClassNames().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SelectedNodeInstancesSpecificationTests, WriteToJson)
+    {
+    SelectedNodeInstancesSpecification spec(123, true, "schema", "a, b", true);
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "specType": "SelectedNodeInstances",
+        "priority": 123,
+        "onlyIfNotHandled": true,
+        "acceptableSchemaName": "schema",
+        "acceptableClassNames": ["a", "b"],
+        "acceptablePolymorphically": true
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Aidas.Vaiksnoras                12/2017

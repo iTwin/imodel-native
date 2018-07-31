@@ -29,7 +29,7 @@ struct CalculatedPropertiesSpecification : HashableBase
         ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
-        CalculatedPropertiesSpecification() {}
+        CalculatedPropertiesSpecification(): m_priority(1000) {}
         CalculatedPropertiesSpecification(Utf8String label, int priority, Utf8String value)
             : m_label(label), m_priority(priority), m_value(value)
             {}
@@ -37,11 +37,14 @@ struct CalculatedPropertiesSpecification : HashableBase
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
 
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
-
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
+    
+        //! Writes specification to json.
+        ECPRESENTATION_EXPORT Json::Value WriteJson() const;
 
         //! Get label expression.
         Utf8StringCR GetLabel() const {return m_label;}

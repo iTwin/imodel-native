@@ -42,8 +42,8 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, CopyConstructorCopiesSpecifi
 TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-        "schemaName": "TestSchema",
-        "className": "TestClass",
+        "specType": "String",
+        "class": {"schemaName": "TestSchema", "className": "TestClass"},
         "query": "QueryString"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
@@ -54,6 +54,72 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_Loa
     EXPECT_STREQ("TestSchema", spec.GetSchemaName().c_str());
     EXPECT_STREQ("TestClass", spec.GetClassName().c_str());
     EXPECT_STREQ("QueryString", spec.GetQuery().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_LoadFromJsonFailsWhenSpecTypeIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "class": {"schemaName": "TestSchema", "className": "TestClass"},
+        "query": "QueryString"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    StringQuerySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_LoadFromJsonFailsWhenSchemaNameIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "specType": "String",
+        "class": {"className": "TestClass"},
+        "query": "QueryString"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    StringQuerySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_LoadFromJsonFailsWhenClassNameIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "specType": "String",
+        "class": {"schemaName": "TestSchema"},
+        "query": "QueryString"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    StringQuerySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_LoadFromJsonFailsWhenQueryStringIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "specType": "String",
+        "class": {"schemaName": "TestSchema", "className": "TestClass"}
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    ASSERT_FALSE(json.isNull());
+
+    StringQuerySpecification spec;
+    ASSERT_FALSE(spec.ReadJson(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -73,54 +139,6 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_Loa
     EXPECT_STREQ("TestSchema", spec.GetSchemaName().c_str());
     EXPECT_STREQ("TestClass", spec.GetClassName().c_str());
     EXPECT_STREQ("QueryString", spec.GetQuery().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_LoadFromJsonFailsWhenSchemaNameIsNotSpecified)
-    {
-    static Utf8CP jsonString = R"({
-        "className": "TestClass",
-        "query": "QueryString"
-    })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
-
-    StringQuerySpecification spec;
-    EXPECT_FALSE(spec.ReadJson(json));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_LoadFromJsonFailsWhenClassNameIsNotSpecified)
-    {
-    static Utf8CP jsonString = R"({
-        "schemaName": "TestSchema",
-        "query": "QueryString"
-    })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
-
-    StringQuerySpecification spec;
-    EXPECT_FALSE(spec.ReadJson(json));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_LoadFromJsonFailsWhenQueryStringIsNotSpecified)
-    {
-    static Utf8CP jsonString = R"({
-        "schemaName": "TestSchema",
-        "className": "TestClass"
-    })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
-
-    StringQuerySpecification spec;
-    EXPECT_FALSE(spec.ReadJson(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -177,8 +195,8 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_Loa
 TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecification_LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-        "schemaName": "TestSchema",
-        "className": "TestClass",
+        "specType": "ECPropertyValue",
+        "class": {"schemaName": "TestSchema", "className": "TestClass"},
         "parentPropertyName": "parent"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
@@ -189,6 +207,72 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecific
     EXPECT_STREQ("TestSchema", spec.GetSchemaName().c_str());
     EXPECT_STREQ("TestClass", spec.GetClassName().c_str());
     EXPECT_STREQ("parent", spec.GetParentPropertyName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecification_LoadFromJsonFailsWhenSpecTypeIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "class": {"className": "TestClass"},
+        "parentPropertyName": "parent"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ECPropertyValueQuerySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecification_LoadFromJsonFailsWhenSchemaNameIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "specType": "ECPropertyValue",
+        "class": {"className": "TestClass"},
+        "parentPropertyName": "parent"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ECPropertyValueQuerySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecification_LoadFromJsonFailsWhenClassNameIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "specType": "ECPropertyValue",
+        "class": {"schemaName": "TestSchema"},
+        "parentPropertyName": "parent"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ECPropertyValueQuerySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecification_LoadFromJsonFailsWhenParentNameIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "specType": "ECPropertyValue",
+        "class": {"schemaName": "TestSchema", "className": "TestClass"}
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ECPropertyValueQuerySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -208,54 +292,6 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecific
     EXPECT_STREQ("TestSchema", spec.GetSchemaName().c_str());
     EXPECT_STREQ("TestClass", spec.GetClassName().c_str());
     EXPECT_STREQ("parent", spec.GetParentPropertyName().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecification_LoadFromJsonFailsWhenSchemaNameIsNotSpecified)
-    {
-    static Utf8CP jsonString = R"({
-        "className": "TestClass",
-        "parentPropertyName": "parent"
-    })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
-
-    ECPropertyValueQuerySpecification spec;
-    EXPECT_FALSE(spec.ReadJson(json));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecification_LoadFromJsonFailsWhenClassNameIsNotSpecified)
-    {
-    static Utf8CP jsonString = R"({
-        "schemaName": "TestSchema",
-        "parentPropertyName": "parent"
-    })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
-
-    ECPropertyValueQuerySpecification spec;
-    EXPECT_FALSE(spec.ReadJson(json));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecification_LoadFromJsonFailsWhenParentNameIsNotSpecified)
-    {
-    static Utf8CP jsonString = R"({
-        "schemaName": "TestSchema",
-        "className": "TestClass"
-    })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
-
-    ECPropertyValueQuerySpecification spec;
-    EXPECT_FALSE(spec.ReadJson(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -312,29 +348,24 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecific
 TEST_F(SearchResultInstanceNodesSpecificationTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
+        "specType": "CustomQueryInstanceNodes",
         "groupByClass": false,
         "groupByLabel": false,
-        "queries": [
-            {
-                "type": "StringQuery",
-                "schemaName": "TestSchema",
-                "className": "TestClass",
-                "query": "QueryString"
-            },
-            {
-                "type": "ECPropertyQuery",
-                "schemaName": "TestSchema",
-                "className": "TestClass",
-                "parentPropertyName": "parent"
-            }
-        ]
+        "queries": [{
+            "specType": "String",
+            "class": {"schemaName": "TestSchema", "className": "TestClass"},
+            "query": "QueryString"
+        }, {
+            "specType": "ECPropertyValue",
+            "class": {"schemaName": "TestSchema", "className": "TestClass"},
+            "parentPropertyName": "parent"
+        }]
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
+    ASSERT_FALSE(json.isNull());
 
-    
     SearchResultInstanceNodesSpecification spec;
-    EXPECT_TRUE(spec.ReadJson(json));
+    ASSERT_TRUE(spec.ReadJson(json));
     EXPECT_FALSE(spec.GetGroupByClass());
     EXPECT_FALSE(spec.GetGroupByLabel());
     EXPECT_EQ(2, spec.GetQuerySpecifications().size());
@@ -345,7 +376,9 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, LoadsFromJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SearchResultInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "specType": "CustomQueryInstanceNodes"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
     
@@ -354,6 +387,36 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValu
     EXPECT_TRUE(spec.GetGroupByClass());
     EXPECT_TRUE(spec.GetGroupByLabel());
     EXPECT_TRUE(spec.GetQuerySpecifications().empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, WriteToJson)
+    {
+    SearchResultInstanceNodesSpecification spec(123, true, true, true, false, false);
+    spec.AddQuerySpecification(*new StringQuerySpecification("query", "schema", "class"));
+    spec.AddQuerySpecification(*new ECPropertyValueQuerySpecification("schema", "class", "prop"));
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "specType": "CustomQueryInstanceNodes",
+        "priority": 123,
+        "alwaysReturnsChildren": true,
+        "hideNodesInHierarchy": true,
+        "hideIfNoChildren": true,
+        "groupByClass": false,
+        "groupByLabel": false,
+        "queries": [{
+            "specType": "String",
+            "class": {"schemaName": "schema", "className": "class"},
+            "query": "query"
+        }, {
+            "specType": "ECPropertyValue",
+            "class": {"schemaName": "schema", "className": "class"},
+            "parentPropertyName": "prop"
+        }]
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

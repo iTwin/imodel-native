@@ -9,6 +9,7 @@
 
 #include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 
@@ -18,9 +19,8 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentInstancesOfSpecificClassesSpecification::ContentInstancesOfSpecificClassesSpecification () 
-    : ContentSpecification (), m_instanceFilter (""), m_classNames (""), m_arePolymorphic (false)
-    {
-    }
+    : ContentSpecification(), m_arePolymorphic(false)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -38,7 +38,7 @@ void ContentInstancesOfSpecificClassesSpecification::_Accept(PresentationRuleSpe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP ContentInstancesOfSpecificClassesSpecification::_GetXmlElementName () const
+Utf8CP ContentInstancesOfSpecificClassesSpecification::_GetXmlElementName () const
     {
     return CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME;
     }
@@ -48,6 +48,9 @@ CharCP ContentInstancesOfSpecificClassesSpecification::_GetXmlElementName () con
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (!ContentSpecification::_ReadXml(xmlNode))
+        return false;
+
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_classNames, COMMON_XML_ATTRIBUTE_CLASSNAMES))
         {
@@ -66,15 +69,37 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNod
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentInstancesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
+    {
+    ContentSpecification::_WriteXml(xmlNode);
+    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_CLASSNAMES, m_classNames.c_str ());
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC, m_arePolymorphic);
+    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP ContentInstancesOfSpecificClassesSpecification::_GetJsonElementType() const
+    {
+    return CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_TYPE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                 04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentInstancesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
     {
+    if (!ContentSpecification::_ReadJson(json))
+        return false;
+
     //Required
-    m_classNames = json[COMMON_JSON_ATTRIBUTE_CLASSNAMES].asCString("");
+    m_classNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_CLASSES]);
     if (m_classNames.empty())
         {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_NAME, COMMON_JSON_ATTRIBUTE_CLASSNAMES);
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "ContentInstancesOfSpecificClassesSpecification", COMMON_JSON_ATTRIBUTE_CLASSES);
         return false;
         }
 
@@ -86,13 +111,16 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
+* @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentInstancesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
+void ContentInstancesOfSpecificClassesSpecification::_WriteJson(JsonValueR json) const
     {
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_CLASSNAMES, m_classNames.c_str ());
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC, m_arePolymorphic);
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
+    ContentSpecification::_WriteJson(json);
+    json[COMMON_JSON_ATTRIBUTE_CLASSES] = CommonToolsInternal::SchemaAndClassNamesToJson(m_classNames);
+    if (m_arePolymorphic)
+        json[COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC] = m_arePolymorphic;
+    if (!m_instanceFilter.empty())
+        json[COMMON_JSON_ATTRIBUTE_INSTANCEFILTER] = m_instanceFilter;
     }
 
 /*---------------------------------------------------------------------------------**//**

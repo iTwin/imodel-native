@@ -9,6 +9,7 @@
 
 #include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 
@@ -65,7 +66,7 @@ void SearchResultInstanceNodesSpecification::_Accept(PresentationRuleSpecificati
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP SearchResultInstanceNodesSpecification::_GetXmlElementName () const
+Utf8CP SearchResultInstanceNodesSpecification::_GetXmlElementName () const
     {
     return SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME;
     }
@@ -75,32 +76,17 @@ CharCP SearchResultInstanceNodesSpecification::_GetXmlElementName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SearchResultInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (!ChildNodeSpecification::_ReadXml(xmlNode))
+        return false;
+
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByClass, COMMON_XML_ATTRIBUTE_GROUPBYCLASS))
         m_groupByClass = true;
 
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByLabel, COMMON_XML_ATTRIBUTE_GROUPBYLABEL))
         m_groupByLabel = true;
 
-    CommonTools::LoadSpecificationsFromXmlNode<StringQuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications, STRING_QUERY_SPECIFICATION_XML_NODE_NAME);
-    CommonTools::LoadSpecificationsFromXmlNode<ECPropertyValueQuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications, ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME);
-    return true;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SearchResultInstanceNodesSpecification::_ReadJson(JsonValueCR json)
-    {
-    m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
-    m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
-    
-    JsonValueCR queriesJson = json[SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_JSON_ATTRIBUTE_QUERIES];
-    CommonTools::LoadSpecificationsFromJson<StringQuerySpecification, QuerySpecificationList>
-        (queriesJson, m_querySpecifications, STRING_QUERY_SPECIFICATION_JSON_TYPE);
-    CommonTools::LoadSpecificationsFromJson<ECPropertyValueQuerySpecification, QuerySpecificationList>
-        (queriesJson, m_querySpecifications, ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_TYPE);
-
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<StringQuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications, STRING_QUERY_SPECIFICATION_XML_NODE_NAME);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<ECPropertyValueQuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications, ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME);
     return true;
     }
 
@@ -109,10 +95,46 @@ bool SearchResultInstanceNodesSpecification::_ReadJson(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SearchResultInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
+    ChildNodeSpecification::_WriteXml(xmlNode);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
-    
-    CommonTools::WriteRulesToXmlNode<QuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications);
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);    
+    CommonToolsInternal::WriteRulesToXmlNode<QuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP SearchResultInstanceNodesSpecification::_GetJsonElementType() const
+    {
+    return SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_JSON_TYPE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SearchResultInstanceNodesSpecification::_ReadJson(JsonValueCR json)
+    {
+    if (!ChildNodeSpecification::_ReadJson(json))
+        return false;
+
+    m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
+    m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
+    CommonToolsInternal::LoadFromJson(json[SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_JSON_ATTRIBUTE_QUERIES], m_querySpecifications, QuerySpecification::Create);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void SearchResultInstanceNodesSpecification::_WriteJson(JsonValueR json) const
+    {
+    ChildNodeSpecification::_WriteJson(json);
+    if (!m_groupByClass)
+        json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS] = m_groupByClass;
+    if (!m_groupByLabel)
+        json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL] = m_groupByLabel;
+    if (!m_querySpecifications.empty())
+        CommonToolsInternal::WriteRulesToJson<QuerySpecification, QuerySpecificationList>(json[SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_JSON_ATTRIBUTE_QUERIES], m_querySpecifications);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -164,6 +186,22 @@ MD5 SearchResultInstanceNodesSpecification::_ComputeHash(Utf8CP parentHash) cons
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+QuerySpecification* QuerySpecification::Create(JsonValueCR json)
+    {
+    Utf8CP type = json[COMMON_JSON_ATTRIBUTE_SPECTYPE].asCString("");
+    QuerySpecification* spec = nullptr;
+    if (0 == strcmp(STRING_QUERY_SPECIFICATION_JSON_TYPE, type))
+        spec = new StringQuerySpecification();
+    else if (0 == strcmp(ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_TYPE, type))
+        spec = new ECPropertyValueQuerySpecification();
+    if (!spec || !spec->ReadJson(json))
+        DELETE_AND_CLEAR(spec);
+    return spec;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
@@ -184,22 +222,31 @@ bool QuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void QuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
+    {
+    xmlNode->AddAttributeStringValue(SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME, m_schemaName.c_str());
+    xmlNode->AddAttributeStringValue(SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME, m_className.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                  04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QuerySpecification::_ReadJson(JsonValueCR json)
     {
-    //Required
-    m_schemaName = json[SEARCH_QUERY_SPECIFICATION_JSON_ATTRIBUTE_SCHEMA_NAME].asCString("");
-    if (m_schemaName.empty())
+    if (!json.isMember(COMMON_JSON_ATTRIBUTE_SPECTYPE) || !json[COMMON_JSON_ATTRIBUTE_SPECTYPE].isString())
         {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, SEARCH_QUERY_SPECIFICATION_JSON_NAME, SEARCH_QUERY_SPECIFICATION_JSON_ATTRIBUTE_SCHEMA_NAME);
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "QuerySpecification", COMMON_JSON_ATTRIBUTE_SPECTYPE);
         return false;
         }
+    if (0 != strcmp(json[COMMON_JSON_ATTRIBUTE_SPECTYPE].asCString(), _GetJsonElementType()))
+        return false;
 
-    m_className = json[SEARCH_QUERY_SPECIFICATION_JSON_ATTRIBUTE_CLASS_NAME].asCString("");
-    if (m_className.empty())
+    CommonToolsInternal::ParseSchemaAndClassName(m_schemaName, m_className, json[COMMON_JSON_ATTRIBUTE_CLASS]);
+    if (m_schemaName.empty() || m_className.empty())
         {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, SEARCH_QUERY_SPECIFICATION_JSON_NAME, SEARCH_QUERY_SPECIFICATION_JSON_ATTRIBUTE_CLASS_NAME);
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "QuerySpecification", COMMON_JSON_ATTRIBUTE_CLASS);
         return false;
         }
 
@@ -207,12 +254,12 @@ bool QuerySpecification::_ReadJson(JsonValueCR json)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                01/2016
+* @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
+void QuerySpecification::_WriteJson(JsonValueR json) const
     {
-    xmlNode->AddAttributeStringValue(SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME, m_schemaName.c_str());
-    xmlNode->AddAttributeStringValue(SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME, m_className.c_str());
+    json[COMMON_JSON_ATTRIBUTE_SPECTYPE] = _GetJsonElementType();
+    json[COMMON_JSON_ATTRIBUTE_CLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_schemaName, m_className);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -223,7 +270,7 @@ MD5 QuerySpecification::_ComputeHash(Utf8CP parentHash) const
     MD5 md5;
     md5.Add(m_schemaName.c_str(), m_schemaName.size());
     md5.Add(m_className.c_str(), m_className.size());
-    CharCP name = _GetXmlElementName();
+    Utf8CP name = _GetXmlElementName();
     md5.Add(name, strlen(name));
     if (nullptr != parentHash)
         md5.Add(parentHash, strlen(parentHash));
@@ -252,6 +299,24 @@ bool StringQuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void StringQuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
+    {
+    BeXmlNodeP ruleNode = xmlNode->AddEmptyElement(_GetXmlElementName());
+    QuerySpecification::_WriteXml(ruleNode);
+    ruleNode->SetContent(WString(m_query.c_str(), true).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP StringQuerySpecification::_GetJsonElementType() const
+    {
+    return STRING_QUERY_SPECIFICATION_JSON_TYPE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                 04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool StringQuerySpecification::_ReadJson(JsonValueCR json)
@@ -263,20 +328,19 @@ bool StringQuerySpecification::_ReadJson(JsonValueCR json)
     m_query = json[STRING_QUERY_SPECIFICATION_JSON_ATTRIBUTE_QUERY].asCString("");
     if (m_query.empty())
         {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, STRING_QUERY_SPECIFICATION_JSON_NAME, STRING_QUERY_SPECIFICATION_JSON_ATTRIBUTE_QUERY);
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "StringQuerySpecification", STRING_QUERY_SPECIFICATION_JSON_ATTRIBUTE_QUERY);
         return false;
         }
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2016
+* @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StringQuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
+void StringQuerySpecification::_WriteJson(JsonValueR json) const
     {
-    BeXmlNodeP ruleNode = xmlNode->AddEmptyElement(_GetXmlElementName());
-    QuerySpecification::_WriteXml(ruleNode);
-    ruleNode->SetContent(WString(m_query.c_str(), true).c_str());
+    QuerySpecification::_WriteJson(json);
+    json[STRING_QUERY_SPECIFICATION_JSON_ATTRIBUTE_QUERY] = m_query;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -310,6 +374,23 @@ bool ECPropertyValueQuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECPropertyValueQuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
+    {
+    BeXmlNodeP ruleNode = xmlNode->AddEmptyElement(_GetXmlElementName());
+    QuerySpecification::_WriteXml(ruleNode);
+    ruleNode->AddAttributeStringValue(ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME, m_parentPropertyName.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP ECPropertyValueQuerySpecification::_GetJsonElementType() const
+    {
+    return ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_TYPE;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                 04/2018
@@ -323,20 +404,19 @@ bool ECPropertyValueQuerySpecification::_ReadJson(JsonValueCR json)
     m_parentPropertyName = json[ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_ATTRIBUTE_PARENT_PROPERTY_NAME].asCString("");
     if (m_parentPropertyName.empty())
         {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_NAME, ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_ATTRIBUTE_PARENT_PROPERTY_NAME);
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "ECPropertyValueQuerySpecification", ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_ATTRIBUTE_PARENT_PROPERTY_NAME);
         return false;
         }
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2016
+* @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPropertyValueQuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
+void ECPropertyValueQuerySpecification::_WriteJson(JsonValueR json) const
     {
-    BeXmlNodeP ruleNode = xmlNode->AddEmptyElement(_GetXmlElementName());
-    QuerySpecification::_WriteXml(ruleNode);
-    ruleNode->AddAttributeStringValue(ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME, m_parentPropertyName.c_str());
+    QuerySpecification::_WriteJson(json);
+    json[ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_ATTRIBUTE_PARENT_PROPERTY_NAME] = m_parentPropertyName;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -60,16 +60,19 @@ struct RelatedPropertiesSpecification : HashableBase
             RelationshipMeaning relationshipMeaning, bool polymorphic = false);
 
         //! Destructor.
-        ECPRESENTATION_EXPORT                              ~RelatedPropertiesSpecification (void);
+        ECPRESENTATION_EXPORT ~RelatedPropertiesSpecification (void);
 
         //! Reads specification from XML.
-        ECPRESENTATION_EXPORT bool                         ReadXml (BeXmlNodeP xmlNode);
-
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT bool                         ReadJson(JsonValueCR json);
+        ECPRESENTATION_EXPORT bool ReadXml (BeXmlNodeP xmlNode);
 
         //! Writes related properties to xml node.
-        ECPRESENTATION_EXPORT void                         WriteXml (BeXmlNodeP parentXmlNode) const;
+        ECPRESENTATION_EXPORT void WriteXml (BeXmlNodeP parentXmlNode) const;
+
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
+
+        //! Writes rule information to json.
+        ECPRESENTATION_EXPORT Json::Value WriteJson() const;
 
         //! Returns direction of relationship that should be selected in the query.
         ECPRESENTATION_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;

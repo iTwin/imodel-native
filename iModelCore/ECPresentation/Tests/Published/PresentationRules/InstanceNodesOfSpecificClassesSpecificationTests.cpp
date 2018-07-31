@@ -23,11 +23,12 @@ struct InstanceNodesOfSpecificClassesSpecificationTests : PresentationRulesTests
 TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-	    "classNames": "TestSchema:TestClass",
-	    "arePolymorphic": true,
-	    "groupByClass": false,
-	    "groupByLabel": false,
-	    "instanceFilter": "filter"
+        "specType": "InstanceNodesOfSpecificClasses",
+        "classes": {"schemaName": "TestSchema", "classNames": ["TestClass"]},
+        "arePolymorphic": true,
+        "groupByClass": false,
+        "groupByLabel": false,
+        "instanceFilter": "filter"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -47,13 +48,14 @@ TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, LoadsFromJson)
 TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, LoadsFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = R"({
-	    "classNames": "TestSchema:TestClass"
+        "specType": "InstanceNodesOfSpecificClasses",
+        "classes": {"schemaName": "TestSchema", "classNames": ["TestClass"]}
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
+    ASSERT_FALSE(json.isNull());
 
     InstanceNodesOfSpecificClassesSpecification spec;
-    EXPECT_TRUE(spec.ReadJson(json));
+    ASSERT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("TestSchema:TestClass", spec.GetClassNames().c_str());
     EXPECT_FALSE(spec.GetArePolymorphic());
     EXPECT_TRUE(spec.GetGroupByClass());
@@ -64,14 +66,40 @@ TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, LoadsFromJsonWithDefaul
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, LoadsFromJsonFailsWhenClassNamesAttributeIsNotSpecified)
+TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, LoadsFromJsonFailsWhenClassesAttributeIsNotSpecified)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "specType": "InstanceNodesOfSpecificClasses"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
 
     InstanceNodesOfSpecificClassesSpecification spec;
     EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, WriteToJson)
+    {
+    InstanceNodesOfSpecificClassesSpecification spec(456, true, true, true, true, true,
+        true, "filter", "s1:c1,c2;s2:c3", true);
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "specType": "InstanceNodesOfSpecificClasses",
+        "priority": 456,
+        "alwaysReturnsChildren": true,
+        "hideNodesInHierarchy": true,
+        "hideIfNoChildren": true,
+        "classes": [
+            {"schemaName": "s1", "classNames": ["c1", "c2"]},
+            {"schemaName": "s2", "classNames": ["c3"]}
+        ],
+        "arePolymorphic": true,
+        "instanceFilter": "filter"
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -42,7 +42,6 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         GroupingRuleList                       m_groupingRules;
         LocalizationResourceKeyDefinitionList  m_localizationResourceKeyDefinitions;
         CheckBoxRuleList                       m_checkBoxRules;
-        RenameNodeRuleList                     m_renameNodeRules;
         SortingRuleList                        m_sortingRules;
         UserSettingsGroupList                  m_userSettings;
         ContentModifierList                    m_contentModifiers;
@@ -65,11 +64,14 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         //Reads PresentationRuleSet from XML. Returns false if it is not able to load it.
         bool ReadXml (BeXmlDomR xmlDom);
 
+        //Writes PresentationRuleSet to XML.
+        void WriteXml (BeXmlDomR xmlDom) const;
+
         //Reads PresentationRuleSet from Json. Returns false if it is not able to load it.
         bool ReadJson(JsonValueCR json);
 
-        //Writes PresentationRuleSet to XML.
-        void WriteXml (BeXmlDomR xmlDom);
+        //Writes PresentationRuleSet to JSON.
+        void WriteJson(JsonValueR json) const;
 
     protected:
         //! Computes rules set hash.
@@ -99,6 +101,25 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
             bool         isSearchEnabled
             );
 
+        //! Creates an instance of PresentationRuleSet.
+        ECPRESENTATION_EXPORT static PresentationRuleSetPtr CreateInstance 
+            (
+            Utf8StringCR id,
+            int          versionMajor = 1,
+            int          versionMinor = 0,
+            Utf8StringCR supportedSchemas = ""
+            );
+        
+        //! Creates an instance of supplemental PresentationRuleSet.
+        ECPRESENTATION_EXPORT static PresentationRuleSetPtr CreateInstance 
+            (
+            Utf8StringCR id,
+            Utf8StringCR supplementationPurpose,
+            int          versionMajor = 1,
+            int          versionMinor = 0,
+            Utf8StringCR supportedSchemas = ""
+            );
+
         //! Adds a presentation rule to this rule set.
         template<typename RuleType> void AddPresentationRule(RuleType& rule)
             {
@@ -126,19 +147,28 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromXmlString (Utf8CP xmlString);
 
         //! Reads PresentationRuleSet from XmlFile.
-        ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromXmlFile (WCharCP xmlFilePath);
+        ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromXmlFile (BeFileNameCR xmlFilePath);
+
+        //! Writes PresentationRuleSet to XmlString.
+        ECPRESENTATION_EXPORT Utf8String                     WriteToXmlString () const;
+
+        //! Writes PresentationRuleSet to XmlFile.
+        ECPRESENTATION_EXPORT bool                           WriteToXmlFile (BeFileNameCR xmlFilePath) const;
         
         //! Reads PresentationRuleSet from Json::Value.
         ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromJsonValue(JsonValueCR json);
 
-        //! Reads PresentationRuleSet from JsonString.
+        //! Reads PresentationRuleSet from JSON string.
         ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromJsonString(Utf8StringCR jsonString);
 
-        //! Writes PresentationRuleSet to XmlString.
-        ECPRESENTATION_EXPORT Utf8String                     WriteToXmlString ();
+        //! Reads PresentationRuleSet from JSON file.
+        ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromJsonFile(BeFileNameCR jsonFilePath);
+        
+        //! Writes PresentationRuleSet to Json::Value.
+        ECPRESENTATION_EXPORT Json::Value                    WriteToJsonValue() const;
 
-        //! Writes PresentationRuleSet to XmlFile.
-        ECPRESENTATION_EXPORT bool                           WriteToXmlFile (WCharCP xmlFilePath);
+        //! Writes PresentationRuleSet to JSON file.
+        ECPRESENTATION_EXPORT bool                           WriteToJsonFile(BeFileNameCR jsonFilePath) const;
 
         //! PresentationRuleSet identification.
         ECPRESENTATION_EXPORT Utf8StringCR                   GetRuleSetId (void) const;
@@ -212,9 +242,6 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         //! Collection of rules, which should be used when check boxes for particular nodes should be displayed.
         ECPRESENTATION_EXPORT CheckBoxRuleList const&        GetCheckBoxRules (void) const;
 
-        //! Collection of rules, which should be used when particular nodes can be renamed.
-        ECPRESENTATION_EXPORT RenameNodeRuleList const&      GetRenameNodeRules (void) const;
-
         //! Collection of rules, which should be used for configuring sorting of ECInstances.
         ECPRESENTATION_EXPORT SortingRuleList const&         GetSortingRules (void) const;
 
@@ -233,7 +260,6 @@ template<> ECPRESENTATION_EXPORT LabelOverrideList* PresentationRuleSet::GetRule
 template<> ECPRESENTATION_EXPORT StyleOverrideList* PresentationRuleSet::GetRules<StyleOverride>();
 template<> ECPRESENTATION_EXPORT GroupingRuleList* PresentationRuleSet::GetRules<GroupingRule>();
 template<> ECPRESENTATION_EXPORT CheckBoxRuleList* PresentationRuleSet::GetRules<CheckBoxRule>();
-template<> ECPRESENTATION_EXPORT RenameNodeRuleList* PresentationRuleSet::GetRules<RenameNodeRule>();
 template<> ECPRESENTATION_EXPORT SortingRuleList* PresentationRuleSet::GetRules<SortingRule>();
 template<> ECPRESENTATION_EXPORT UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>();
 template<> ECPRESENTATION_EXPORT ContentModifierList* PresentationRuleSet::GetRules<ContentModifier>();

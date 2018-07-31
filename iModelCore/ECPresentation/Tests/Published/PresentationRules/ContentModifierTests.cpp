@@ -60,24 +60,24 @@ TEST_F(ContentModifierTests, CopyConstructorCopiesProperties)
 TEST_F(ContentModifierTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-        "schemaName": "TestSchema",
-        "className": "TestClassName",
+        "ruleType": "ContentModifier",
+        "class": {"schemaName": "TestSchema", "className": "TestClassName"},
         "relatedProperties": [
-            { }
+            {}
         ],
         "propertyDisplaySpecifications": [
-            { "propertyNames": "property names" }
+            {"propertyNames": ["property names"]}
         ],
         "calculatedProperties": [
             {
-                "value": "value",
-                "label": "label"
+            "value": "value",
+            "label": "label"
             }
         ],
         "propertyEditors": [
             {
-                "propertyName": "property names",
-                "editorName": "editor"
+            "propertyName": "property names",
+            "editorName": "editor"
             }
         ]
     })";
@@ -100,7 +100,9 @@ TEST_F(ContentModifierTests, LoadsFromJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentModifierTests, LoadsFromJsonWithDefaultValues)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "ruleType": "ContentModifier"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
 
@@ -113,6 +115,36 @@ TEST_F(ContentModifierTests, LoadsFromJsonWithDefaultValues)
     EXPECT_EQ(0, modifier.GetRelatedProperties().size());
     EXPECT_EQ(0, modifier.GetPropertiesDisplaySpecifications().size());
     EXPECT_EQ(0, modifier.GetPropertyEditors().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentModifierTests, WriteToJson)
+    {
+    ContentModifier rule("schema", "class");
+    rule.AddCalculatedProperty(*new CalculatedPropertiesSpecification());
+    rule.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification());
+    rule.AddPropertyEditor(*new PropertyEditorsSpecification());
+    rule.AddRelatedProperty(*new RelatedPropertiesSpecification());
+    Json::Value json = rule.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "ruleType": "ContentModifier",
+        "class": {"schemaName": "schema", "className": "class"},
+        "calculatedProperties": [{
+            "label": "",
+            "value": ""
+        }],
+        "propertyEditors": [{
+            "editorName": "",
+            "propertyName": ""
+        }],
+        "relatedProperties": [{
+        }],
+        "propertyDisplaySpecifications": [{
+        }]
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

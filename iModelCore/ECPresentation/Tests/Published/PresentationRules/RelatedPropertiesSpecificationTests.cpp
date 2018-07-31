@@ -24,19 +24,19 @@ struct RelatedPropertiesSpecificationsTests : PresentationRulesTests
 TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-	    "relationshipClassNames": "Relationship:Names",
-	    "relatedClassNames": "Related:Class,Names",
-	    "requiredDirection": "Backward",
-	    "propertyNames": "Property,Names",
-	    "relationshipMeaning": "SameInstance",
-	    "isPolymorphic": true,
-	    "nestedRelatedProperties": [{}]
+        "relationships": {"schemaName": "Relationship", "classNames": ["Names"]},
+        "relatedClasses": [{"schemaName": "Related", "classNames": ["Class", "Names"]}],
+        "requiredDirection": "Backward",
+        "propertyNames": ["Property","Names"],
+        "relationshipMeaning": "SameInstance",
+        "isPolymorphic": true,
+        "nestedRelatedProperties": [{}]
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
+    ASSERT_FALSE(json.isNull());
     
     RelatedPropertiesSpecification spec;
-    EXPECT_TRUE(spec.ReadJson(json));
+    ASSERT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("Related:Class,Names", spec.GetRelatedClassNames().c_str());
     EXPECT_STREQ("Relationship:Names", spec.GetRelationshipClassNames().c_str());
     EXPECT_STREQ("Property,Names", spec.GetPropertyNames().c_str());
@@ -64,6 +64,24 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithDefaultValues)
     EXPECT_EQ(RelationshipMeaning::RelatedInstance, spec.GetRelationshipMeaning());
     EXPECT_FALSE(spec.IsPolymorphic());
     EXPECT_EQ(0, spec.GetNestedRelatedProperties().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedPropertiesSpecificationsTests, WriteToJson)
+    {
+    RelatedPropertiesSpecification spec(RequiredRelationDirection_Backward, "s1:c1", "s2:c2,c3", "p1,p2", RelationshipMeaning::SameInstance, true);
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "requiredDirection": "Backward",
+        "relationships": {"schemaName": "s1", "classNames": ["c1"]},
+        "relatedClasses": {"schemaName": "s2", "classNames": ["c2", "c3"]},
+        "relationshipMeaning": "SameInstance",
+        "propertyNames": ["p1", "p2"],
+        "isPolymorphic": true
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

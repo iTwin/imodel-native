@@ -9,7 +9,7 @@
 
 #include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
-#include <ECPresentation/RulesDriven/Rules/CommonTools.h>
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
@@ -17,10 +17,9 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserSettingsGroup::UserSettingsGroup ()
-    : PresentationKey (), m_categoryLabel ("")
-    {
-    }
+UserSettingsGroup::UserSettingsGroup() 
+    : PresentationKey()
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
@@ -36,8 +35,8 @@ UserSettingsGroup::UserSettingsGroup (Utf8StringCR categoryLabel)
 UserSettingsGroup::UserSettingsGroup(UserSettingsGroupCR other)
     : PresentationKey(other)
     {
-    CommonTools::CopyRules(m_nestedSettings, other.m_nestedSettings);
-    CommonTools::CopyRules(m_settingsItems, other.m_settingsItems);
+    CommonToolsInternal::CopyRules(m_nestedSettings, other.m_nestedSettings);
+    CommonToolsInternal::CopyRules(m_settingsItems, other.m_settingsItems);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -45,14 +44,14 @@ UserSettingsGroup::UserSettingsGroup(UserSettingsGroupCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 UserSettingsGroup::~UserSettingsGroup (void)
     {
-    CommonTools::FreePresentationRules (m_nestedSettings);
-    CommonTools::FreePresentationRules (m_settingsItems);
+    CommonToolsInternal::FreePresentationRules (m_nestedSettings);
+    CommonToolsInternal::FreePresentationRules (m_settingsItems);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP UserSettingsGroup::_GetXmlElementName () const
+Utf8CP UserSettingsGroup::_GetXmlElementName () const
     {
     return USER_SETTINGS_XML_NODE_NAME;
     }
@@ -62,23 +61,14 @@ CharCP UserSettingsGroup::_GetXmlElementName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UserSettingsGroup::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (!PresentationKey::_ReadXml(xmlNode))
+        return false;
+
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_categoryLabel, USER_SETTINGS_XML_ATTRIBUTE_CATEGORY_LABEL))
         m_categoryLabel = "";
 
-    CommonTools::LoadSpecificationsFromXmlNode<UserSettingsItem, UserSettingsItemList> (xmlNode, m_settingsItems, USER_SETTINGS_ITEM_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode<UserSettingsGroup, UserSettingsGroupList> (xmlNode, m_nestedSettings, USER_SETTINGS_XML_NODE_NAME);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool UserSettingsGroup::_ReadJson(JsonValueCR json)
-    {
-    m_categoryLabel = json[USER_SETTINGS_JSON_ATTRIBUTE_CATEGORY_LABEL].asCString("");
-    CommonTools::LoadSpecificationsFromJson<UserSettingsItem>(json[USER_SETTINGS_JSON_ATTRIBUTE_SETTINGS_ITEMS], m_settingsItems);
-    CommonTools::LoadRulesFromJson<UserSettingsGroup>(json[USER_SETTINGS_JSON_ATTRIBUTE_NESTED_SETTINGS], m_nestedSettings);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<UserSettingsItem, UserSettingsItemList> (xmlNode, m_settingsItems, USER_SETTINGS_ITEM_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode<UserSettingsGroup, UserSettingsGroupList> (xmlNode, m_nestedSettings, USER_SETTINGS_XML_NODE_NAME);
 
     return true;
     }
@@ -88,16 +78,50 @@ bool UserSettingsGroup::_ReadJson(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UserSettingsGroup::_WriteXml (BeXmlNodeP xmlNode) const
     {
+    PresentationKey::_WriteXml(xmlNode);
     xmlNode->AddAttributeStringValue (USER_SETTINGS_XML_ATTRIBUTE_CATEGORY_LABEL, m_categoryLabel.c_str ());
+    CommonToolsInternal::WriteRulesToXmlNode<UserSettingsItem, UserSettingsItemList> (xmlNode, m_settingsItems);
+    CommonToolsInternal::WriteRulesToXmlNode<UserSettingsGroup, UserSettingsGroupList> (xmlNode, m_nestedSettings);
+    }
 
-    CommonTools::WriteRulesToXmlNode<UserSettingsItem, UserSettingsItemList> (xmlNode, m_settingsItems);
-    CommonTools::WriteRulesToXmlNode<UserSettingsGroup, UserSettingsGroupList> (xmlNode, m_nestedSettings);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP UserSettingsGroup::_GetJsonElementType() const
+    {
+    return USER_SETTINGS_JSON_ATTRIBUTE_NESTED_SETTINGS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UserSettingsGroup::_ReadJson(JsonValueCR json)
+    {
+    if (!PresentationKey::_ReadJson(json))
+        return false;
+
+    m_categoryLabel = json[USER_SETTINGS_JSON_ATTRIBUTE_CATEGORY_LABEL].asCString("");
+    CommonToolsInternal::LoadFromJson(json[USER_SETTINGS_JSON_ATTRIBUTE_SETTINGS_ITEMS], m_settingsItems, CommonToolsInternal::LoadRuleFromJson<UserSettingsItem>);
+    CommonToolsInternal::LoadFromJsonByPriority(json[USER_SETTINGS_JSON_ATTRIBUTE_NESTED_SETTINGS], m_nestedSettings, CommonToolsInternal::LoadRuleFromJson<UserSettingsGroup>);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void UserSettingsGroup::_WriteJson(JsonValueR json) const
+    {
+    PresentationKey::_WriteJson(json);
+    json[USER_SETTINGS_JSON_ATTRIBUTE_CATEGORY_LABEL] = m_categoryLabel;
+    if (!m_settingsItems.empty())
+        CommonToolsInternal::WriteRulesToJson<UserSettingsItem, UserSettingsItemList>(json[USER_SETTINGS_JSON_ATTRIBUTE_SETTINGS_ITEMS], m_settingsItems);
+    if (!m_nestedSettings.empty())
+        CommonToolsInternal::WriteRulesToJson<UserSettingsGroup, UserSettingsGroupList>(json[USER_SETTINGS_JSON_ATTRIBUTE_NESTED_SETTINGS], m_nestedSettings);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
-+---------------+---------------+---------------+-------
---------+---------------+------*/
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR UserSettingsGroup::GetCategoryLabel (void) const { return m_categoryLabel; }
 
 /*---------------------------------------------------------------------------------**//**
@@ -157,10 +181,7 @@ MD5 UserSettingsGroup::_ComputeHash(Utf8CP parentHash) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserSettingsItem::UserSettingsItem ()
-    : m_id (""), m_label (""), m_options (""), m_defaultValue ("")
-    {
-    }
+UserSettingsItem::UserSettingsItem() {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
@@ -199,6 +220,19 @@ bool UserSettingsItem::ReadXml (BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void UserSettingsItem::WriteXml (BeXmlNodeP parentXmlNode) const
+    {
+    BeXmlNodeP xmlNode = parentXmlNode->AddEmptyElement (USER_SETTINGS_ITEM_XML_NODE_NAME);
+
+    xmlNode->AddAttributeStringValue (USER_SETTINGS_ITEM_XML_ATTRIBUTE_ID,            m_id.c_str ());
+    xmlNode->AddAttributeStringValue (USER_SETTINGS_ITEM_XML_ATTRIBUTE_LABEL,         m_label.c_str ());
+    xmlNode->AddAttributeStringValue (USER_SETTINGS_ITEM_XML_ATTRIBUTE_OPTIONS,       m_options.c_str ());
+    xmlNode->AddAttributeStringValue (USER_SETTINGS_ITEM_XML_ATTRIBUTE_DEFAULT_VALUE, m_defaultValue.c_str ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                 04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UserSettingsItem::ReadJson (JsonValueCR json)
@@ -207,7 +241,7 @@ bool UserSettingsItem::ReadJson (JsonValueCR json)
     JsonValueCR idJson = json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_ID];
     if (idJson.isNull() || !idJson.isConvertibleTo(Json::ValueType::stringValue))
         {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, USER_SETTINGS_ITEM_JSON_NAME, USER_SETTINGS_ITEM_JSON_ATTRIBUTE_ID);
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "UserSettingsItem", USER_SETTINGS_ITEM_JSON_ATTRIBUTE_ID);
         return false;
         }
     m_id = idJson.asCString("");
@@ -215,7 +249,7 @@ bool UserSettingsItem::ReadJson (JsonValueCR json)
     JsonValueCR labelJson = json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_LABEL];
     if (labelJson.isNull() || !labelJson.isConvertibleTo(Json::ValueType::stringValue))
         {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, USER_SETTINGS_ITEM_JSON_NAME, USER_SETTINGS_ITEM_JSON_ATTRIBUTE_LABEL);
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "UserSettingsItem", USER_SETTINGS_ITEM_JSON_ATTRIBUTE_LABEL);
         return false;
         }
     m_label = labelJson.asCString("");
@@ -228,16 +262,16 @@ bool UserSettingsItem::ReadJson (JsonValueCR json)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               01/2013
+* @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UserSettingsItem::WriteXml (BeXmlNodeP parentXmlNode) const
+Json::Value UserSettingsItem::WriteJson() const
     {
-    BeXmlNodeP xmlNode = parentXmlNode->AddEmptyElement (USER_SETTINGS_ITEM_XML_NODE_NAME);
-
-    xmlNode->AddAttributeStringValue (USER_SETTINGS_ITEM_XML_ATTRIBUTE_ID,            m_id.c_str ());
-    xmlNode->AddAttributeStringValue (USER_SETTINGS_ITEM_XML_ATTRIBUTE_LABEL,         m_label.c_str ());
-    xmlNode->AddAttributeStringValue (USER_SETTINGS_ITEM_XML_ATTRIBUTE_OPTIONS,       m_options.c_str ());
-    xmlNode->AddAttributeStringValue (USER_SETTINGS_ITEM_XML_ATTRIBUTE_DEFAULT_VALUE, m_defaultValue.c_str ());
+    Json::Value json(Json::objectValue);
+    json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_ID] = m_id;
+    json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_LABEL] = m_label;
+    json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_OPTIONS] = m_options;
+    json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_DEFAULT_VALUE] = m_defaultValue;
+    return json;
     }
 
 /*---------------------------------------------------------------------------------**//**

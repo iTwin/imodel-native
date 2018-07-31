@@ -23,15 +23,16 @@ struct ContentRelatedInstancesSpecificationTests : PresentationRulesTests
 TEST_F(ContentRelatedInstancesSpecificationTests, LoadFromJson)
     {
     static Utf8CP jsonString = R"({
-	    "relationshipClassNames": "MySchemaName:ClassA,ClassB",
-	    "relatedClassNames": "MySchemaName:ClassA,ClassB",
-	    "requiredDirection": "Both",
-	    "skipRelatedLevel": 321,
-	    "instanceFilter": "this.PropertyName = 10",
-	    "isRecursive": true
+        "specType": "ContentRelatedInstances",
+        "relationships": {"schemaName":"MySchemaName", "classNames": ["ClassA","ClassB"]},
+        "relatedClasses": [{"schemaName": "MySchemaName", "classNames": ["ClassA","ClassB"]}],
+        "requiredDirection": "Both",
+        "skipRelatedLevel": 321,
+        "instanceFilter": "this.PropertyName = 10",
+        "isRecursive": true
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
+    ASSERT_FALSE(json.isNull());
     
     ContentRelatedInstancesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
@@ -48,7 +49,9 @@ TEST_F(ContentRelatedInstancesSpecificationTests, LoadFromJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentRelatedInstancesSpecificationTests, LoadsFromJsonWithDefaultValues)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "specType": "ContentRelatedInstances"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
     
@@ -60,6 +63,26 @@ TEST_F(ContentRelatedInstancesSpecificationTests, LoadsFromJsonWithDefaultValues
     EXPECT_TRUE(spec.GetRelatedClassNames().empty());
     EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
     EXPECT_TRUE(spec.GetInstanceFilter().empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentRelatedInstancesSpecificationTests, WriteToJson)
+    {
+    ContentRelatedInstancesSpecification spec(123, 3, true, "filter", RequiredRelationDirection_Backward, "s1:c1", "E:s2:c2");
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "specType": "ContentRelatedInstances",
+        "priority": 123,
+        "skipRelatedLevel": 3,
+        "isRecursive": true,
+        "instanceFilter": "filter",
+        "requiredDirection": "Backward",
+        "relationships": {"schemaName": "s1", "classNames": ["c1"]},
+        "relatedClasses": {"schemaName": "s2", "classNames": ["E:c2"]}
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -24,6 +24,7 @@ struct StyleOverrideTests : PresentationRulesTests
 TEST_F(StyleOverrideTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
+        "ruleType": "StyleOverride",
         "foreColor": "fore",
         "backColor": "back",
         "fontStyle": "font"
@@ -43,7 +44,9 @@ TEST_F(StyleOverrideTests, LoadsFromJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(StyleOverrideTests, LoadsFromJsonWithDefaultValues)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "ruleType": "StyleOverride"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
 
@@ -52,6 +55,24 @@ TEST_F(StyleOverrideTests, LoadsFromJsonWithDefaultValues)
     EXPECT_STREQ("", override.GetForeColor().c_str());
     EXPECT_STREQ("", override.GetBackColor().c_str());
     EXPECT_STREQ("", override.GetFontStyle().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(StyleOverrideTests, WriteToJson)
+    {
+    StyleOverride rule("cond", 123, "f", "b", "fs");
+    Json::Value json = rule.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "ruleType": "StyleOverride",
+        "priority": 123,
+        "condition": "cond",
+        "foreColor": "f",
+        "backColor": "b",
+        "fontStyle": "fs"
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -105,7 +126,7 @@ TEST_F(StyleOverrideTests, WriteToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<StyleOverride Priority="1000" ForeColor="fore" BackColor="back" FontStyle="font" Condition="condition" OnlyIfNotHandled="false"/>)"
+            R"(<StyleOverride Priority="1000" OnlyIfNotHandled="false" Condition="condition" ForeColor="fore" BackColor="back" FontStyle="font"/>)"
         "</Root>";
     EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
     }

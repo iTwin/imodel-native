@@ -9,6 +9,7 @@
 
 #include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRule.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
@@ -19,13 +20,13 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 InstanceLabelOverride::InstanceLabelOverride(int priority, bool onlyIfNotHandled, Utf8String className, Utf8StringCR propertyNames)
     : CustomizationRule(priority, onlyIfNotHandled), m_className(className)
     {
-    m_properties = CommonTools::ParsePropertiesNames(propertyNames);
+    m_properties = CommonToolsInternal::ParsePropertiesNames(propertyNames);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP InstanceLabelOverride::_GetXmlElementName() const
+Utf8CP InstanceLabelOverride::_GetXmlElementName() const
     {
     return INSTANCE_LABEL_OVERRIDE_XML_NODE_NAME;
     }
@@ -35,31 +36,18 @@ CharCP InstanceLabelOverride::_GetXmlElementName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceLabelOverride::_ReadXml(BeXmlNodeP xmlNode)
     {
+    if (!CustomizationRule::_ReadXml(xmlNode))
+        return false;
+
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_className, INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_CLASSNAME))
-        m_className = "";
+        return false;
 
     Utf8String propertyNames;
     if (BEXML_Success != xmlNode->GetAttributeStringValue(propertyNames, INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_PROPERTYNAMES))
-        propertyNames = "";
-    m_properties = CommonTools::ParsePropertiesNames(propertyNames);
-    return CustomizationRule::_ReadXml(xmlNode);
-    }
+        return false;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverride::_ReadJson(JsonValueCR json)
-    {
-    m_className = json[INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_CLASSNAME].asCString("");
-
-    JsonValueCR propertyNames = json[INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_PROPERTYNAMES];
-    for (unsigned int i = 0; i < propertyNames.size(); i++)
-        {
-        Utf8CP prop = propertyNames[i].asCString(nullptr);
-        if (prop != nullptr)
-            m_properties.push_back(((Utf8String) prop).Trim());
-        }
-    return CustomizationRule::_ReadJson(json);
+    m_properties = CommonToolsInternal::ParsePropertiesNames(propertyNames);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -67,10 +55,59 @@ bool InstanceLabelOverride::_ReadJson(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceLabelOverride::_WriteXml(BeXmlNodeP xmlNode) const
     {
+    CustomizationRule::_WriteXml(xmlNode);
     xmlNode->AddAttributeStringValue(INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_CLASSNAME, m_className.c_str());
     xmlNode->AddAttributeStringValue(INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_PROPERTYNAMES, BeStringUtilities::Join(m_properties, ",").c_str());
+    }
 
-    CustomizationRule::_WriteXml(xmlNode);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP InstanceLabelOverride::_GetJsonElementType() const
+    {
+    return INSTANCE_LABEL_OVERRIDE_JSON_TYPE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceLabelOverride::_ReadJson(JsonValueCR json)
+    {
+    if (!CustomizationRule::_ReadJson(json))
+        return false;
+
+    m_className = CommonToolsInternal::SchemaAndClassNameToString(json[INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_CLASS]);
+    if (m_className.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "InstanceLabelOverride", INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_CLASS);
+        return false;
+        }
+
+    JsonValueCR propertyNames = json[INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_PROPERTYNAMES];
+    for (Json::ArrayIndex i = 0; i < propertyNames.size(); i++)
+        {
+        Utf8CP prop = propertyNames[i].asCString(nullptr);
+        if (prop != nullptr)
+            m_properties.push_back(Utf8String(prop).Trim());
+        }
+    if (m_properties.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "InstanceLabelOverride", INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_PROPERTYNAMES);
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceLabelOverride::_WriteJson(JsonValueR json) const
+    {
+    CustomizationRule::_WriteJson(json);
+    json[INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_CLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_className);
+    for (size_t i = 0; i < m_properties.size(); i++)
+        json[INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_PROPERTYNAMES].append(m_properties[i]);
     }
 
 /*---------------------------------------------------------------------------------**//**

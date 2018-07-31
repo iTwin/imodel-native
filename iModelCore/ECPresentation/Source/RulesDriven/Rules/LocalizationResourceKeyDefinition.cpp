@@ -31,7 +31,7 @@ LocalizationResourceKeyDefinition::LocalizationResourceKeyDefinition (int priori
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP LocalizationResourceKeyDefinition::_GetXmlElementName () const
+Utf8CP LocalizationResourceKeyDefinition::_GetXmlElementName () const
     {
     return LOCALIZATION_DEFINITION_XML_NODE_NAME;
     }
@@ -52,15 +52,6 @@ bool LocalizationResourceKeyDefinition::_ReadXml (BeXmlNodeP xmlNode)
 
     return true;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool LocalizationResourceKeyDefinition::_ReadJson(JsonValueCR json)
-    {
-    return false;
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

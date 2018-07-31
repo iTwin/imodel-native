@@ -74,7 +74,6 @@ void UsedClassesHelper::NotifyListenerWithRulesetClasses(IUsedClassesListener& l
     NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetImageIdOverrides());
     NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetStyleOverrides());
     NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetCheckBoxRules());
-    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetRenameNodeRules());
     }
 
 /*---------------------------------------------------------------------------------**//**

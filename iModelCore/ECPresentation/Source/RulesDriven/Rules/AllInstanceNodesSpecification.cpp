@@ -9,6 +9,7 @@
 
 #include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
@@ -19,9 +20,8 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 AllInstanceNodesSpecification::AllInstanceNodesSpecification ()
-    : ChildNodeSpecification (), m_groupByClass (true), m_groupByLabel (true), m_supportedSchemas ("")
-    {
-    }
+    : ChildNodeSpecification(), m_groupByClass(true), m_groupByLabel(true)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -48,7 +48,7 @@ void AllInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP AllInstanceNodesSpecification::_GetXmlElementName () const
+Utf8CP AllInstanceNodesSpecification::_GetXmlElementName () const
     {
     return ALL_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME;
     }
@@ -58,6 +58,9 @@ CharCP AllInstanceNodesSpecification::_GetXmlElementName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AllInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (!ChildNodeSpecification::_ReadXml(xmlNode))
+        return false;
+
     //Optional:
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByClass, COMMON_XML_ATTRIBUTE_GROUPBYCLASS))
         m_groupByClass = true;
@@ -72,25 +75,49 @@ bool AllInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool AllInstanceNodesSpecification::_ReadJson(JsonValueCR json)
-    {
-    m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
-    m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
-    m_supportedSchemas = json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS].asCString("");
-
-    return true;
-    } 
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AllInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
+    ChildNodeSpecification::_WriteXml(xmlNode);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS, m_supportedSchemas.c_str ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP AllInstanceNodesSpecification::_GetJsonElementType() const
+    {
+    return ALL_INSTANCE_NODES_SPECIFICATION_JSON_TYPE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AllInstanceNodesSpecification::_ReadJson(JsonValueCR json)
+    {
+    if (!ChildNodeSpecification::_ReadJson(json))
+        return false;
+    m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
+    m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
+    m_supportedSchemas = CommonToolsInternal::SupportedSchemasToString(json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS]);
+    return true;
+    } 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllInstanceNodesSpecification::_WriteJson(JsonValueR json) const
+    {
+    ChildNodeSpecification::_WriteJson(json);
+    if (!m_groupByClass)
+        json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS] = m_groupByClass;
+    if (!m_groupByLabel)
+        json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL] = m_groupByLabel;
+    if (!m_supportedSchemas.empty())
+        json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS] = CommonToolsInternal::SupportedSchemasToJson(m_supportedSchemas);
     }
 
 /*---------------------------------------------------------------------------------**//**

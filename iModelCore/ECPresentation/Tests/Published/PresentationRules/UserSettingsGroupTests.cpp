@@ -14,19 +14,19 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct UserSettingsGroupTests : PresentationRulesTests
+struct UserSettingsItemTests : PresentationRulesTests
     {
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadsFromJson)
+TEST_F(UserSettingsItemTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
         "id": "id",
         "label": "label",
-        "options": "options",
+        "type": "options",
         "defaultValue": "defaultValue"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
@@ -43,7 +43,7 @@ TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadsFromJson)
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadsFromJsonWithDefaultValues)
+TEST_F(UserSettingsItemTests, LoadsFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = R"({
         "id": "id",
@@ -61,9 +61,25 @@ TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadsFromJsonWithDefaultValues)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UserSettingsItemTests, WriteToJson)
+    {
+    UserSettingsItem item("id", "label", "opts", "default");
+    Json::Value json = item.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "id": "id",
+        "label": "label",
+        "type": "opts",
+        "defaultValue": "default"
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadsFromXml)
+TEST_F(UserSettingsItemTests, LoadsFromXml)
     {
     static Utf8CP xmlString = R"(
         <UserSettingsItem Id="id" Label="label" Options="options" DefaultValue="defaultValue"/>
@@ -83,7 +99,7 @@ TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadsFromXml)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadsFromXmlWithDefaultValues)
+TEST_F(UserSettingsItemTests, LoadsFromXmlWithDefaultValues)
     {
     static Utf8CP xmlString = R"(
         <UserSettingsItem Id="id" Label="label"/>
@@ -103,7 +119,7 @@ TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadsFromXmlWithDefaultValues)
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadFromJsonFailsWhenIdIsNotSpecified)
+TEST_F(UserSettingsItemTests, LoadFromJsonFailsWhenIdIsNotSpecified)
     {
     static Utf8CP jsonString = R"({
         "label": "label"
@@ -118,7 +134,7 @@ TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadFromJsonFailsWhenIdIsNotSpec
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadFromJsonFailsWhenLabelIsNotSpecified)
+TEST_F(UserSettingsItemTests, LoadFromJsonFailsWhenLabelIsNotSpecified)
     {
     static Utf8CP jsonString = R"({
         "id": "id"
@@ -133,7 +149,7 @@ TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadFromJsonFailsWhenLabelIsNotS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadFromXmlFailsWhenIdIsNotSpecified)
+TEST_F(UserSettingsItemTests, LoadFromXmlFailsWhenIdIsNotSpecified)
     {
     static Utf8CP xmlString = R"(
         <UserSettingsItem Label="label"/>
@@ -149,7 +165,7 @@ TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadFromXmlFailsWhenIdIsNotSpeci
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadFromXmlFailsWhenLabelIsNotSpecified)
+TEST_F(UserSettingsItemTests, LoadFromXmlFailsWhenLabelIsNotSpecified)
     {
     static Utf8CP xmlString = R"(
         <UserSettingsItem Id="id"/>
@@ -163,29 +179,52 @@ TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadFromXmlFailsWhenLabelIsNotSp
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras               12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UserSettingsItemTests, WriteToXml)
+    {
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
+    xml->AddNewElement("Root", nullptr, nullptr);
+
+    UserSettingsItem item("id", "label", "options", "defaultValue");
+    item.WriteXml(xml->GetRootElement());
+
+    static Utf8CP expected = ""
+        "<Root>"
+            R"(<UserSettingsItem Id="id" Label="label" Options="options" DefaultValue="defaultValue"/>)"
+        "</Root>";
+    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras               12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+struct UserSettingsGroupTests : PresentationRulesTests
+    {
+    };
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsGroup_LoadsFromJson)
+TEST_F(UserSettingsGroupTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-        "categoryLabel": "category",
-        "settingsItems": [
-            {
-                "id": "id",
-                "label": "label"
-            }
-        ],
-        "nestedSettings": [
-            {
-                "categoryLabel": "nestedCategory"
-            }
-        ]
+        "label": "category",
+        "vars": [{
+            "id": "id",
+            "label": "label"
+        }],
+        "nestedGroups": [{
+            "label": "nestedCategory",
+            "vars": []
+        }]
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
+    ASSERT_FALSE(json.isNull());
 
     UserSettingsGroup group;
-    EXPECT_TRUE(group.ReadJson(json));
+    ASSERT_TRUE(group.ReadJson(json));
     EXPECT_STREQ("category", group.GetCategoryLabel().c_str());
     EXPECT_EQ(1, group.GetSettingsItems().size());
     EXPECT_STREQ("id", group.GetSettingsItems()[0]->GetId().c_str());
@@ -199,7 +238,7 @@ TEST_F(UserSettingsGroupTests, UserSettingsGroup_LoadsFromJson)
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsGroup_LoadsFromJsonWithDefaultValues)
+TEST_F(UserSettingsGroupTests, LoadsFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = "{}";
     Json::Value json = Json::Reader::DoParse(jsonString);
@@ -213,9 +252,33 @@ TEST_F(UserSettingsGroupTests, UserSettingsGroup_LoadsFromJsonWithDefaultValues)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UserSettingsGroupTests, WriteToJson)
+    {
+    UserSettingsGroup group("label");
+    group.AddNestedSettings(*new UserSettingsGroup("nested"));
+    group.AddSettingsItem(*new UserSettingsItem("id", "label", "opts", "default"));
+    Json::Value json = group.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "label": "label",
+        "nestedGroups": [{
+            "label": "nested"
+        }],
+        "vars": [{
+            "id": "id",
+            "label": "label",
+            "type": "opts",
+            "defaultValue": "default"
+        }]
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsGroup_LoadsFromXml)
+TEST_F(UserSettingsGroupTests, LoadsFromXml)
     {
     static Utf8CP xmlString = R"(
         <UserSettings CategoryLabel="category">
@@ -242,7 +305,7 @@ TEST_F(UserSettingsGroupTests, UserSettingsGroup_LoadsFromXml)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsGroup_LoadsFromXmlWithDefaultValues)
+TEST_F(UserSettingsGroupTests, LoadsFromXmlWithDefaultValues)
     {
     static Utf8CP xmlString = "<UserSettings/>";
     BeXmlStatus xmlStatus;
@@ -257,26 +320,7 @@ TEST_F(UserSettingsGroupTests, UserSettingsGroup_LoadsFromXmlWithDefaultValues)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsItem_WriteToXml)
-    {
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
-    xml->AddNewElement("Root", nullptr, nullptr);
-
-    UserSettingsItem item("id", "label", "options", "defaultValue");
-    item.WriteXml(xml->GetRootElement());
-
-    static Utf8CP expected = ""
-        "<Root>"
-            R"(<UserSettingsItem Id="id" Label="label" Options="options" DefaultValue="defaultValue"/>)"
-        "</Root>";
-    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras               12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UserSettingsGroupTests, UserSettingsGroup_WriteToXml)
+TEST_F(UserSettingsGroupTests, WriteToXml)
     {
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateEmpty();

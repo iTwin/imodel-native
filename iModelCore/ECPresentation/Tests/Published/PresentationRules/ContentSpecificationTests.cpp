@@ -24,9 +24,11 @@ struct ContentSpecificationsTests : PresentationRulesTests
 struct TestContentSpecification : ContentSpecification
     {
     CharCP _GetXmlElementName() const override {return "TestSpecification";}
-    bool _ReadXml(BeXmlNodeP xmlNode) override {return true;}
-    void _WriteXml(BeXmlNodeP xmlNode) const override {}
-    bool _ReadJson(JsonValueCR json) override {return true;}
+    bool _ReadXml(BeXmlNodeP xmlNode) override {return ContentSpecification::_ReadXml(xmlNode);}
+    void _WriteXml(BeXmlNodeP xmlNode) const override {ContentSpecification::_WriteXml(xmlNode);}
+    Utf8CP _GetJsonElementType() const override {return "testSpecification";}
+    bool _ReadJson(JsonValueCR json) override {return ContentSpecification::_ReadJson(json);}
+    void _WriteJson(JsonValueR json) const override {ContentSpecification::_WriteJson(json);}
     ContentSpecification* _Clone() const override {return new TestContentSpecification(*this);}
     };
 
@@ -36,48 +38,37 @@ struct TestContentSpecification : ContentSpecification
 TEST_F(ContentSpecificationsTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
+        "specType": "testSpecification",
         "priority": 123,
         "showImages": true,
-        "relatedPropertiesSpecification": [
-            { }
-        ],
-        "propertiesDisplaySpecification": [
-            {
-                "propertyNames": "property names"
-            },
-            {
-                "propertyNames": "property names"
-            }
-        ],
-        "calculatedPropertiesSpecification": [
-            {
-                "value": "value",
-                "label": "label"
-            },
-            {
-                "value": "value",
-                "label": "label"
-            }
-        ],
-        "propertyEditorsSpecification": [
-            {
-                "propertyName": "property names",
-                "editorName": "editor"
-            }
-        ],
-        "relatedInstancesSpecification": [
-           { 
-                "relationshipName":"TestRelName",
-                "className":"TestClassName",
-                "alias":"TestAlias"
-           }
-        ]
+        "relatedProperties": [{}],
+        "propertiesDisplay": [{
+            "propertyNames": ["property"]
+        }, {
+            "propertyNames": ["names"]
+        }],
+        "calculatedProperties": [{
+            "value": "value",
+            "label": "label"
+        }, {
+            "value": "value",
+            "label": "label"
+        }],
+        "propertyEditors": [{
+            "propertyName": "property names",
+            "editorName": "editor"
+        }],
+        "relatedInstances": [{ 
+            "relationship": {"schemaName": "TestSchema", "className": "TestRelName"},
+            "class": {"schemaName": "TestSchema", "className": "TestClassName"},
+            "alias":"TestAlias"
+        }]
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
+    ASSERT_FALSE(json.isNull());
     
     TestContentSpecification spec;
-    EXPECT_TRUE(spec.ReadJson(json));
+    ASSERT_TRUE(spec.ReadJson(json));
     EXPECT_EQ(123, spec.GetPriority());
     EXPECT_TRUE(spec.GetShowImages());
     EXPECT_EQ(2, spec.GetCalculatedProperties().size());
@@ -85,6 +76,51 @@ TEST_F(ContentSpecificationsTests, LoadsFromJson)
     EXPECT_EQ(1, spec.GetRelatedProperties().size());
     EXPECT_EQ(1, spec.GetPropertyEditors().size());   
     EXPECT_EQ(1, spec.GetRelatedInstances().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentSpecificationsTests, WriteToJson)
+    {
+    TestContentSpecification spec;
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 456, "value"));
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("prop1,prop2", 456, false));
+    spec.AddPropertyEditor(*new PropertyEditorsSpecification("prop", "editor"));
+    spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Both, "s1:c1", "s2:c2", "alias", true));
+    spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Both, "s3:c3", "s4:c4", "p1,p2", RelationshipMeaning::SameInstance, true));
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "specType": "testSpecification",
+        "calculatedProperties": [{
+            "priority": 456,
+            "value": "value",
+            "label": "label"
+        }],
+        "propertiesDisplay": [{
+            "priority": 456,
+            "propertyNames": ["prop1", "prop2"],
+            "isDisplayed": false
+        }],
+        "propertyEditors": [{
+            "propertyName": "prop",
+            "editorName": "editor"
+        }],
+        "relatedInstances": [{
+            "relationship": {"schemaName": "s1", "className": "c1"},
+            "class": {"schemaName": "s2", "className": "c2"},
+            "alias": "alias",
+            "isRequired": true
+        }],
+        "relatedProperties": [{ 
+            "relationships": {"schemaName": "s3", "classNames": ["c3"]},
+            "relatedClasses": {"schemaName": "s4", "classNames": ["c4"]},
+            "propertyNames": ["p1", "p2"],
+            "relationshipMeaning": "SameInstance",
+            "isPolymorphic": true
+        }]
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -218,7 +254,6 @@ TEST_F(ContentSpecificationsTests, CopiedSpecificationHasSameNestedSpecification
     spec1.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", 
         "RelatedClassNames", "Properties", RelationshipMeaning::SameInstance));
     spec1.AddPropertyEditor(*new PropertyEditorsSpecification("Property1", "Editor1"));
-    spec1.AddDisplayRelatedItem(*new DisplayRelatedItemsSpecification(true, 1, "TestSchema:TestClass"));
     spec1.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
 
     // Validate spec1
@@ -226,7 +261,6 @@ TEST_F(ContentSpecificationsTests, CopiedSpecificationHasSameNestedSpecification
     EXPECT_EQ(1, spec1.GetRelatedProperties().size());
     EXPECT_EQ(1, spec1.GetCalculatedProperties().size());
     EXPECT_EQ(1, spec1.GetPropertiesDisplaySpecifications().size());
-    EXPECT_EQ(1, spec1.GetDisplayRelatedItems().size());   
     EXPECT_EQ(1, spec1.GetPropertyEditors().size()); 
 
     // Create spec2 via copy consstructor
@@ -237,14 +271,12 @@ TEST_F(ContentSpecificationsTests, CopiedSpecificationHasSameNestedSpecification
     EXPECT_EQ(1, spec2.GetRelatedProperties().size());
     EXPECT_EQ(1, spec2.GetCalculatedProperties().size());
     EXPECT_EQ(1, spec2.GetPropertiesDisplaySpecifications().size());
-    EXPECT_EQ(1, spec2.GetDisplayRelatedItems().size());   
     EXPECT_EQ(1, spec2.GetPropertyEditors().size());   
 
     // Validate specifications pointers
     EXPECT_NE(spec1.GetRelatedProperties()[0], spec2.GetRelatedProperties()[0]);
     EXPECT_NE(spec1.GetCalculatedProperties()[0], spec2.GetCalculatedProperties()[0]);
     EXPECT_NE(spec1.GetPropertiesDisplaySpecifications()[0], spec2.GetPropertiesDisplaySpecifications()[0]);
-    EXPECT_NE(spec1.GetDisplayRelatedItems()[0], spec2.GetDisplayRelatedItems()[0]);   
     EXPECT_NE(spec1.GetPropertyEditors()[0], spec2.GetPropertyEditors()[0]);   
     }
 
@@ -259,7 +291,6 @@ TEST_F(ContentSpecificationsTests, ComputesCorrectHashes)
     spec1.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", 
         "RelatedClassNames", "Properties", RelationshipMeaning::SameInstance));
     spec1.AddPropertyEditor(*new PropertyEditorsSpecification("Property1", "Editor1"));
-    spec1.AddDisplayRelatedItem(*new DisplayRelatedItemsSpecification(true, 1, "TestSchema:TestClass"));
     spec1.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
     spec1.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Both, "TestRelName", "TestClassName", "TestAlias"));
     TestContentSpecification spec2;
@@ -268,7 +299,6 @@ TEST_F(ContentSpecificationsTests, ComputesCorrectHashes)
     spec2.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", 
         "RelatedClassNames", "Properties", RelationshipMeaning::SameInstance));
     spec2.AddPropertyEditor(*new PropertyEditorsSpecification("Property1", "Editor1"));
-    spec2.AddDisplayRelatedItem(*new DisplayRelatedItemsSpecification(true, 1, "TestSchema:TestClass"));
     spec2.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
     spec2.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Both, "TestRelName", "TestClassName", "TestAlias"));
     TestContentSpecification spec3;
