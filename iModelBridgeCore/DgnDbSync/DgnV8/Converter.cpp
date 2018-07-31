@@ -1613,9 +1613,14 @@ void Converter::OnCreateComplete()
     // else
     //  ensureAUserView
 
-
+    StopWatch timer(true);
     GenerateThumbnails();
+    ConverterLogging::LogPerformance(timer, "Creating thumbnails");
+
+    timer.Start();
     GenerateRealityModelTilesets();
+    ConverterLogging::LogPerformance(timer, "Creating reality model tilesets");
+
     if (nullptr != m_dgndb->GeoLocation().GetDgnGCS() && !IsUpdating())
         GenerateWebMercatorModel();
 
