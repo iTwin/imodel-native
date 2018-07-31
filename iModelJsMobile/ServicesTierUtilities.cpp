@@ -536,16 +536,25 @@ Uv::Request::~Request()
     if (m_request != nullptr)
         free (m_request);
     }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
-Uv::WriteRequest::WriteRequest (IoStreamCR handle, unsigned char* data, size_t length, Write_Callback_T const& callback, int& status)
+Uv::WriteRequest::~WriteRequest ()
+    {
+    if (m_buf.base != nullptr )
+        free(m_buf.base);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Steve.Wilson                    6/17
+//---------------------------------------------------------------------------------------
+Uv::WriteRequest::WriteRequest (uv_stream_t* handle, unsigned char* data, size_t length, Write_Callback_T const& callback, int& status)
     : Request    (reinterpret_cast<uv_req_t*>(malloc (sizeof (uv_write_t)))),
       m_callback (callback)
     {
-    auto buf = ::uv_buf_init ((char*) data, length);
-    status = ::uv_write (GetPointerUnchecked<uv_write_t>(), handle.GetPointer(), &buf, 1, &Handler);
+    char* ptr = reinterpret_cast<char*>(malloc(length));
+    memcpy(ptr, data, length);
+    m_buf = ::uv_buf_init (ptr, length);
+    status = ::uv_write (GetPointerUnchecked<uv_write_t>(), handle, &m_buf, 1, &Handler);
     if (status >= 0)
         AddRef();
     else
@@ -563,7 +572,7 @@ void Uv::WriteRequest::Handler (uv_write_t* req, int status)
     
     if (!Host::GetInstance().IsStopped())
         instance.m_callback (Status (status));
-
+        
     instance.Release();
     }
 
@@ -572,7 +581,7 @@ void Uv::WriteRequest::Handler (uv_write_t* req, int status)
 //---------------------------------------------------------------------------------------
 Uv::WriteRequestPtr Uv::WriteRequest::Create (IoStreamCR handle, unsigned char* data, size_t length, Write_Callback_T const& callback, int& status)
     {
-    return new WriteRequest (handle, data, length, callback, status);
+    return new WriteRequest (handle.GetPointer(), data, length, callback, status);
     }
 
 //---------------------------------------------------------------------------------------
@@ -909,8 +918,9 @@ MobileGateway::MobileGateway()
 
         auto acceptResult = m_server->Accept (*connection);
         BeAssert (!acceptResult.IsError());
-
         m_client = connection;
+
+
 #if defined(BENTLEYCONFIG_OS_APPLE_IOS)
         m_connection = m_endpoint.CreateConnection ([](WebSockets::Event event, WebSockets::websocketpp_server_t::message_ptr message)
 #else
@@ -933,13 +943,57 @@ MobileGateway::MobileGateway()
                 }
             }, [this](const std::streambuf::char_type* s, std::streamsize c)
             {
-            auto writeResult = m_client->Write (s, c, [](Uv::StatusCR status) { BeAssert (!status.IsError()); });
-            BeAssert (!writeResult.IsError());
+            const size_t packe_size = 1024 * 1024;
+            if(c > packe_size)
+                {
+                const size_t sz = c / packe_size;
+                const size_t left_over = c - sz * packe_size;
+                for(size_t i = 0 ; i < sz ; ++i)
+                    {
+                    auto writeResult = m_client->Write( s + i * packe_size, packe_size,
+                        [&] (Uv::StatusCR status)
+                           {
+                               if (status.IsError())
+                               {
+                                   BeAssert (!status.IsError());
+                               }
+                           });
+                        
+                    BeAssert (!writeResult.IsError());
+                    }
+                    
+                if (left_over > 0)
+                    {
+                    auto writeResult = m_client->Write( s + sz * packe_size, left_over,
+                        [&] (Uv::StatusCR status)
+                            {
+                                if (status.IsError())
+                                {
+                                    BeAssert (!status.IsError());
+                                }
+                            });
+                    
+                    BeAssert (!writeResult.IsError());
+                    }
+                }
+            else
+                {
+                auto writeResult = m_client->Write (s, c, [&] (Uv::StatusCR status)
+                    {
+                    if (status.IsError())
+                        {
+                        printf("after queue size = %zu %d\n", m_client->GetStreamPointer()->write_queue_size, UV_EAGAIN);
+                        BeAssert (!status.IsError());
+                        }
+                    });
+                    
+                BeAssert (!writeResult.IsError());
+                }
+                
             return c;
             });
 
         BeAssert (m_connection.IsValid());
-
         auto readResult = m_client->Read ([this](Uv::StatusCR status, uv_buf_t const& buffer, size_t nread)
             {
             if (status.GetCode() == UV_EOF)
@@ -976,7 +1030,10 @@ Napi::Value MobileGateway::ExportJsModule (Js::RuntimeR runtime)
 
         auto arg = JS_CALLBACK_GET_STRING (0);
         auto payload = arg.Utf8Value();
-        m_connection->Send (payload.c_str(), payload.length(), websocketpp::frame::opcode::value::text);
+        if(!m_connection->Send (payload.c_str(), payload.length(), websocketpp::frame::opcode::value::text))
+            {
+            BeAssert(false);
+            }
 
         return info.Env().Undefined();
         }));
@@ -990,7 +1047,7 @@ MobileGatewayPtr MobileGateway::s_instance;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                    01/2018
 //---------------------------------------------------------------------------------------
-void NodeWorkAlike::Globals::Install(Js::RuntimeR runtime)
+void NodeWorkAlike::Globals::Install(Js::RuntimeR runActime)
     {
 	auto& env = runtime.Env();
 

@@ -125,6 +125,15 @@
 		4161BC4421078B69001830CF /* libDgnPlatform.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libDgnPlatform.a; path = ../../../../out/debug/iOSARM64/static/build/DgnPlatform/DgnPlatformDLL/DgnPlatform/libDgnPlatform.a; sourceTree = "<group>"; };
 		4161BC4521078B69001830CF /* libBentley.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentley.a; path = ../../../../out/debug/iOSARM64/static/build/Bentley/BentleyDll/libBentley.a; sourceTree = "<group>"; };
 		4161BC4621078B69001830CF /* libBeLibJpegTurbo.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeLibJpegTurbo.a; path = ../../../nuget/JpegTurboNuget_iosarm64.2.0.2.24/native/lib/static/libBeLibJpegTurbo.a; sourceTree = "<group>"; };
+		4161BC69210A117D001830CF /* iModelJs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJs.h; path = ../../PublicAPI/iModelJs/iModelJs.h; sourceTree = "<group>"; };
+		4161BC6A210A117E001830CF /* iModelJsServicesTier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJsServicesTier.h; path = ../../PublicAPI/iModelJs/iModelJsServicesTier.h; sourceTree = "<group>"; };
+		4161BC6B210A117E001830CF /* iModelJsUtilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJsUtilities.h; path = ../../PublicAPI/iModelJs/iModelJsUtilities.h; sourceTree = "<group>"; };
+		4161BC6C210A117E001830CF /* iModelJsApp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJsApp.h; path = ../../PublicAPI/iModelJs/iModelJsApp.h; sourceTree = "<group>"; };
+		4161BC70210A6B60001830CF /* getaddrinfo.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = getaddrinfo.c; path = ../../../thirdparty/libuv/src/win/getaddrinfo.c; sourceTree = "<group>"; };
+		41E94100210B76500089D2A6 /* libuv */ = {isa = PBXFileReference; lastKnownFileType = folder; name = libuv; path = ../../../thirdparty/libuv; sourceTree = "<group>"; };
+		41E94101210B766A0089D2A6 /* websocketpp */ = {isa = PBXFileReference; lastKnownFileType = folder; name = websocketpp; path = ../../../libsrc/websocketpp; sourceTree = "<group>"; };
+		41E94102210B76880089D2A6 /* iModelJsNodeAddon */ = {isa = PBXFileReference; lastKnownFileType = folder; name = iModelJsNodeAddon; path = ../../../iModelJsNodeAddon; sourceTree = "<group>"; };
+		41E94103210FAC8A0089D2A6 /* PublicAPI */ = {isa = PBXFileReference; lastKnownFileType = folder; name = PublicAPI; path = ../../PublicAPI; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -260,6 +269,15 @@
 		4161BC1820FE83E5001830CF /* Src */ = {
 			isa = PBXGroup;
 			children = (
+				41E94103210FAC8A0089D2A6 /* PublicAPI */,
+				41E94102210B76880089D2A6 /* iModelJsNodeAddon */,
+				41E94101210B766A0089D2A6 /* websocketpp */,
+				41E94100210B76500089D2A6 /* libuv */,
+				4161BC70210A6B60001830CF /* getaddrinfo.c */,
+				4161BC69210A117D001830CF /* iModelJs.h */,
+				4161BC6C210A117E001830CF /* iModelJsApp.h */,
+				4161BC6A210A117E001830CF /* iModelJsServicesTier.h */,
+				4161BC6B210A117E001830CF /* iModelJsUtilities.h */,
 				4161BC2221026FB0001830CF /* ECPresentationUtils.cpp */,
 				4161BC1C21026FAF001830CF /* ECPresentationUtils.h */,
 				4161BC2321026FB0001830CF /* ECSchemaXmlContextUtils.cpp */,

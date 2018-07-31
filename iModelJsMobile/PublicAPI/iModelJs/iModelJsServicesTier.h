@@ -1,4 +1,4 @@
-﻿/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicAPI/iModelJs/iModelJsServicesTier.h $
 |
@@ -479,7 +479,7 @@ public:
         T* GetPointerUnchecked() const { return reinterpret_cast<T*>(m_request); }
 
     public:
-        IMODELJS_EXPORT ~Request();
+        IMODELJS_EXPORT virtual ~Request();
 
         IMODELJS_EXPORT uv_req_t* GetPointer() const { return m_request; }
         };
@@ -491,14 +491,14 @@ public:
         {
     private:
         Write_Callback_T m_callback;
-
+        uv_buf_t m_buf;
         static void Handler (uv_write_t* req, int status);
 
-        WriteRequest (IoStreamCR handle, unsigned char* data, size_t length, Write_Callback_T const& callback, int& status);
+        WriteRequest (uv_stream_t* handle, unsigned char* data, size_t length, Write_Callback_T const& callback, int& status);
 
     public:
         IMODELJS_EXPORT static WriteRequestPtr Create (IoStreamCR handle, unsigned char* data, size_t length, Write_Callback_T const& callback, int& status);
-
+        IMODELJS_EXPORT virtual ~WriteRequest();
         IMODELJS_EXPORT uv_write_t* GetPointer() const;
         };
 
