@@ -43,8 +43,8 @@ struct BoundingBox3d : DRange3d
   BoundingBox3d() { DRange3d::Init(); }
   explicit BoundingBox3d(DRange2dCR range2d) { DRange3d::InitFrom(&range2d.low, 2, 0.0); }
   bool IsValid() const { return !IsEmpty(); }
-  GEOMDLLIMPEXP void ToJson(JsonValueR value) const;
-  GEOMDLLIMPEXP void FromJson(JsonValueCR value);
+  void ToJson(JsonValueR value) const { JsonUtils::DRange3dToJson(value, *this); }
+  void FromJson(JsonValueCR value) { JsonUtils::DRange3dFromJson(*this, value); }
 };
 
 //=======================================================================================
