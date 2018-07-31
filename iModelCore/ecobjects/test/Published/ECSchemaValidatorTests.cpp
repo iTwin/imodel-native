@@ -1933,10 +1933,10 @@ TEST_F(SchemaValidatorTests, NoClassShouldSubclassSpatialLocationModel)
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "GoodEntity"));
     ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
 
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class does not subclass bis:SpatialLocationModel, so validation should succeed";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class does not subclass bis:SpatialLocationModel, so validation should succeed";
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "BadEntity"));
     ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisSpatialLocationModel));
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class subclasses bis:SpatialLocationModel, so validation should fail";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Entity class subclasses bis:SpatialLocationModel, so validation should fail";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
