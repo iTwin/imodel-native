@@ -1687,17 +1687,143 @@ double GeometryUtils::GetCorrectedPathLength(DPoint3d source, DPoint3d target, b
 //---------------+---------------+---------------+---------------+---------------+------
 void GeometryUtils::AddVertex(CurveVectorR cv, DPoint3d const& vertex)
     {
-    CurveLocationDetail locationOnCurveVector;
-    cv.ClosestPointBounded(vertex, locationOnCurveVector);
-
-    CurveVectorPtr parts = cv.GenerateAllParts(static_cast<int>(locationOnCurveVector.componentIndex), locationOnCurveVector.fraction, static_cast<int>(locationOnCurveVector.componentIndex), locationOnCurveVector.fraction);
-    if (parts->size() == 2)
+    if (CurveVector::BOUNDARY_TYPE_ParityRegion == cv.GetBoundaryType() ||
+        CurveVector::BOUNDARY_TYPE_UnionRegion == cv.GetBoundaryType())
         {
-        cv.clear();
-        cv.AddPrimitives(*parts->at(1)->GetChildCurveVectorCP());
-        cv.AddPrimitives(*parts->at(0)->GetChildCurveVectorCP());
-        cv.ConsolidateAdjacentPrimitives(false);
+        for (ICurvePrimitivePtr& inner : cv)
+            {
+            AddVertex(*inner->GetChildCurveVectorP(), vertex);
+            }
+
+        return;
         }
+
+    CurveVectorPtr openCV = cv.Clone();
+    openCV->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
+
+    CurveLocationDetail locationOnCurveVector;
+    openCV->ClosestPointBounded(vertex, locationOnCurveVector);
+    if (!locationOnCurveVector.point.AlmostEqual(vertex))
+        return;
+
+    if (DoubleOps::AlmostEqual(locationOnCurveVector.componentFraction, 0) ||
+        DoubleOps::AlmostEqual(locationOnCurveVector.componentFraction, 1))
+        return; // there should already be vertices at these points.
+
+    size_t indexOfPrimitive = openCV->FindIndexOfPrimitive(locationOnCurveVector.curve);
+    if (SIZE_MAX == indexOfPrimitive)
+        return;
+
+    CurveVectorPtr parts = openCV->GenerateAllParts(static_cast<int>(indexOfPrimitive), locationOnCurveVector.fraction, static_cast<int>(indexOfPrimitive), locationOnCurveVector.fraction);
+    if (parts.IsNull())
+        return;
+
+    //BOUNDARY_TYPE_Open - (A B), (B to end), (start to A)
+    // (A B) is null, so it is skipped.
+    if (parts->size() != 2)
+        {
+        BeAssert(false);
+        return;
+        }
+
+    cv.clear();
+    cv.AddPrimitives(*parts->at(1)->GetChildCurveVectorCP());
+    cv.AddPrimitives(*parts->at(0)->GetChildCurveVectorCP());
+
+    cv = *ConsolidateAdjacentLinestrings(cv);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurveVectorPtr GeometryUtils::ConsolidateAdjacentLinestrings
+(
+    CurveVectorCR inCV
+)
+    {
+    CurveVectorPtr outCV = CurveVector::Create(inCV.GetBoundaryType());
+
+    if (inCV.size() == 1)
+        return inCV.Clone();
+
+    for (auto iter = inCV.begin(); iter != inCV.end(); ++iter)
+        {
+        ICurvePrimitivePtr currentPrimitive = (*iter);
+        ICurvePrimitive::CurvePrimitiveType currentType = currentPrimitive->GetCurvePrimitiveType();
+
+        if (outCV->empty())
+            {
+            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == currentType)
+                {
+                outCV->Add(ConsolidateAdjacentLinestrings(*(*iter)->GetChildCurveVectorCP()));
+                }
+            else
+                {
+                outCV->Add(*iter);
+                }
+            continue;
+            }
+
+        if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line != currentType &&
+            ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString != currentType)
+            {
+            outCV->Add(*iter);
+            continue;
+            }
+
+        ICurvePrimitivePtr lastPrimitive = outCV->back();
+        ICurvePrimitive::CurvePrimitiveType lastType = lastPrimitive->GetCurvePrimitiveType();
+
+        if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line != lastType &&
+            ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString != lastType)
+            {
+            outCV->Add(*iter);
+            continue;
+            }
+
+        bvector<DPoint3d> lastLineStringPoints;
+        bvector<DPoint3d> currentLineStringPoints;
+
+        if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line == lastType)
+            {
+            DSegment3d line = *lastPrimitive->GetLineCP();
+            DPoint3d start, end;
+            line.GetEndPoints(start, end);
+            lastLineStringPoints.push_back(start);
+            lastLineStringPoints.push_back(end);
+            }
+        else if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString == lastType)
+            {
+            lastLineStringPoints = *lastPrimitive->GetLineStringCP();
+            }
+
+        if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line == currentType)
+            {
+            DSegment3d line = *currentPrimitive->GetLineCP();
+            DPoint3d start, end;
+            line.GetEndPoints(start, end);
+            currentLineStringPoints.push_back(start);
+            currentLineStringPoints.push_back(end);
+            }
+        else if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString == currentType)
+            {
+            currentLineStringPoints = *currentPrimitive->GetLineStringCP();
+            }
+
+        if (lastLineStringPoints.back().AlmostEqual(currentLineStringPoints.front()))
+            {
+            lastLineStringPoints.pop_back();
+            lastLineStringPoints.insert(lastLineStringPoints.end(), currentLineStringPoints.begin(), currentLineStringPoints.end());
+            outCV->pop_back();
+            outCV->Add(ICurvePrimitive::CreateLineString(lastLineStringPoints));
+            }
+        else
+            {
+            outCV->Add(currentPrimitive);
+            }
+        }
+
+    return outCV;
     }
 
 //---------------------------------------------------------------------------------------

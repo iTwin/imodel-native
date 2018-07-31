@@ -186,6 +186,65 @@ TEST_F(GeometryUtilsTests, AddVertex_LinearCurveVector_VertexAlreadyExists)
     ASSERT_TRUE(cv->IsSameStructureAndGeometry(*expectedCV));
     }
 
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryUtilsTests, AddVertex_OnArc)
+    {
+    CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    cv->Add(ICurvePrimitive::CreateArc(DEllipse3d::FromVectors({0,0,0}, DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0), 0, Angle::DegreesToRadians(270))));
+
+    GeometryUtils::AddVertex(*cv, {-1,0,0});
+
+    CurveVectorPtr expectedCV = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    expectedCV->Add(ICurvePrimitive::CreateArc(DEllipse3d::FromVectors({0,0,0}, DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0), 0, Angle::DegreesToRadians(180))));
+    expectedCV->Add(ICurvePrimitive::CreateArc(DEllipse3d::FromVectors({0,0,0}, DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0), Angle::DegreesToRadians(180), Angle::DegreesToRadians(90))));
+    ASSERT_TRUE(cv->IsSameStructureAndGeometry(*expectedCV));
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryUtilsTests, AddVertex_OpenType_ClosedShape)
+    {
+    CurveVectorPtr cv = CurveVector::CreateLinear({{0,0,0}, {0,200,0}, {200,200,0}, {200,0,0}, {0,0,0}}, CurveVector::BOUNDARY_TYPE_Open);
+
+    GeometryUtils::AddVertex(*cv, {100,0,0});
+
+    CurveVectorPtr expectedCV = CurveVector::CreateLinear({{0,0,0},{0,200,0},{200,200,0},{200,0,0},{100,0,0},{0,0,0}}, CurveVector::BOUNDARY_TYPE_Open);
+    ASSERT_TRUE(cv->IsSameStructureAndGeometry(*expectedCV));
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryUtilsTests, AddVertex_OnInnerShape)
+    {
+    CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+    cv->Add(CurveVector::CreateLinear({{0,0,0}, {300,0,0}, {300,300,0}, {0,300,0}, {0,0,0}}, CurveVector::BOUNDARY_TYPE_Outer));
+    cv->Add(CurveVector::CreateLinear({{100,100,0}, {100,200,0}, {200,200,0}, {200,100,0}, {100,100,0}}, CurveVector::BOUNDARY_TYPE_Inner));
+
+    GeometryUtils::AddVertex(*cv, {150,100,0});
+
+    CurveVectorPtr expectedCV = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+    expectedCV->Add(CurveVector::CreateLinear({{0,0,0}, {300,0,0}, {300,300,0}, {0,300,0}, {0,0,0}}, CurveVector::BOUNDARY_TYPE_Outer));
+    expectedCV->Add(CurveVector::CreateLinear({{100,100,0}, {100,200,0}, {200,200,0}, {200,100,0}, {150,100,0}, {100,100,0}}, CurveVector::BOUNDARY_TYPE_Inner));
+    ASSERT_TRUE(cv->IsSameStructureAndGeometry(*expectedCV));
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryUtilsTests, AddVertex_OuterCurveVector)
+    {
+    CurveVectorPtr cv = CurveVector::CreateLinear({{0,0,0},{200,0,0},{200,200,0},{0,200,0},{0,0,0}}, CurveVector::BOUNDARY_TYPE_Outer);
+
+    GeometryUtils::AddVertex(*cv, {100,0,0});
+
+    CurveVectorPtr expectedCV = CurveVector::CreateLinear({{0,0,0},{100,0,0},{200,0,0},{200,200,0},{0,200,0},{0,0,0}}, CurveVector::BOUNDARY_TYPE_Outer);
+    ASSERT_TRUE(cv->IsSameStructureAndGeometry(*expectedCV));
+    }
+
 //---------------------------------------------------------------------------------------
 // @betest                                      Mindaugas.Butkus                10/2017
 //--------------+---------------+---------------+---------------+---------------+--------
