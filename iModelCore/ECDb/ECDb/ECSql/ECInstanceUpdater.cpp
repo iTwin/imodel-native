@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceUpdater.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -307,7 +307,7 @@ DbResult ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
 
     // ECSql does not support modifying the endpoints of a relationship instance.  First need to verify that.
     IECRelationshipInstanceCP relationshipInstance = dynamic_cast<IECRelationshipInstanceCP> (&instance);
-    if (nullptr != relationshipInstance)
+    if ((nullptr != relationshipInstance) && (relationshipInstance->GetSource().IsValid()))
         {
         ECInstanceId newSourceInstanceId;
         if (SUCCESS != ECInstanceId::FromString(newSourceInstanceId, relationshipInstance->GetSource()->GetInstanceId().c_str()))
