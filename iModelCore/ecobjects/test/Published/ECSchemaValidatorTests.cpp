@@ -1914,6 +1914,29 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotSubclassPhysicalModel)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, NoClassShouldSubclassSpatialLocationModel)
+    {
+    // Test that an entity class may not subclass bis:SpatialLocationModel
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity, bisSpatialLocationModel;
+    ECSchemaPtr schema;
+    ECEntityClassP entity0, entity1;
 
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisSpatialLocationModel, "SpatialLocationModel"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "GoodEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
+
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class does not subclass bis:SpatialLocationModel, so validation should succeed";
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "BadEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisSpatialLocationModel));
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class subclasses bis:SpatialLocationModel, so validation should fail";
+    }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

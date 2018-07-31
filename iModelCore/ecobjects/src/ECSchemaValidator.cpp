@@ -380,6 +380,19 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
             foundIParentElement = true;
         if (strcmp(baseClass->GetFullName(), BISCORE_CLASS_ISubModeledElement) == 0)
             foundISubModelElement = true;
+
+        // Class may not subclass bis:SpatialLocationModel
+        if (baseClass->Is("BisCore", "SpatialLocationModel"))
+            {
+            LOG.errorv("Entity class '%s' may not subclass bis:SpatialLocationModel.", entity.GetFullName());
+            status = ECObjectsStatus::Error;
+            }
+        // Class may not subclass bis:PhysicalModel
+        if (baseClass->Is("BisCore", "PhysicalModel"))
+            {
+            LOG.errorv("Entity class '%s' may not subclass bis:PhysicalModel.", entity.GetFullName());
+            status = ECObjectsStatus::Error;
+            }
         }
     if (foundIParentElement && foundISubModelElement)
         {
