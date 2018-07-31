@@ -1549,7 +1549,10 @@ public:
 
 //__PUBLISH_SECTION_START__
 public:
-    //! Adds a new line style to the project. If a style already exists by-name, no action is performed.
+    //! Inserts a new line style into the specified DefinitionModel.
+    DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, DgnModelId modelId, Utf8CP name, Utf8CP description, LsComponentId id, uint32_t flags, double unitDefinition);
+
+    //! Inserts a new line style into the DictionaryModel.
     DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, Utf8CP name, LsComponentId id, uint32_t flags, double unitDefinition);
 
     //! Updates an a Line Style in the styles table..
@@ -1571,6 +1574,12 @@ struct EXPORT_VTABLE_ATTRIBUTE LineStyleElement : DefinitionElement
 
 private:
     static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return CodeSpec::CreateCode(BIS_CODESPEC_LineStyle, db.GetDictionaryModel(), name); }
+    static DgnCode CreateCode(DefinitionModelCR model, Utf8StringCR name) { return CodeSpec::CreateCode(BIS_CODESPEC_LineStyle, model, name); }
+    static DgnCode CreateCode(DgnDbR db, DgnModelId modelId, Utf8StringCR name) 
+        { 
+        DefinitionModelPtr model = db.Models().Get<DefinitionModel>(modelId);
+        return model.IsValid() ? CodeSpec::CreateCode(BIS_CODESPEC_LineStyle, *model, name) : DgnCode();
+        }
 
 protected:
     DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
@@ -1582,19 +1591,23 @@ public:
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
 
     explicit LineStyleElement(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
+    explicit LineStyleElement(DefinitionModelR model) : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryDgnClassId(model.GetDgnDb()), DgnCode())) {}
     explicit LineStyleElement(CreateParams const& params) : T_Super(params) {}
     static LineStyleElementPtr Create(DgnDbR db) { return new LineStyleElement(db); }
+    static LineStyleElementPtr Create(DefinitionModelR model) { return new LineStyleElement(model); }
     LineStyleElementPtr CreateCopy() const { return MakeCopy<LineStyleElement>(); }
 
     Utf8String GetName() const { return GetCode().GetValue().GetUtf8(); }
-    void SetName(Utf8CP value) { T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
+    void SetName(Utf8CP value) { T_Super::SetCode(CreateCode(GetDgnDb(), GetModelId(), value)); /* Only SetName is allowed to SetCode. */ }
     Utf8String GetDescription() const { return GetPropertyValueString(LINESTYLE_PROP_Description); }
     void SetDescription(Utf8CP value) { SetPropertyValue(LINESTYLE_PROP_Description, value); }
     Utf8String GetData() const { return GetPropertyValueString(LINESTYLE_PROP_Data); }
     void SetData(Utf8CP value) { SetPropertyValue(LINESTYLE_PROP_Data, value); }
 
     static DgnStyleId QueryId(DgnDbR db, Utf8CP name) { return DgnStyleId(db.Elements().QueryElementIdByCode(CreateCode(db, name)).GetValueUnchecked()); }
+    static DgnStyleId QueryId(DefinitionModelR model, Utf8CP name) { return DgnStyleId(model.GetDgnDb().Elements().QueryElementIdByCode(CreateCode(model, name)).GetValueUnchecked()); }
     static LineStyleElementCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }
+    static LineStyleElementCPtr Get(DefinitionModelR model, Utf8CP name) { return Get(model.GetDgnDb(), QueryId(model, name)); }
     static LineStyleElementCPtr Get(DgnDbR db, DgnStyleId id) { return db.Elements().Get<LineStyleElement>(id); }
     static LineStyleElementPtr GetForEdit(DgnDbR db, DgnStyleId id) { return db.Elements().GetForEdit<LineStyleElement>(id); }
     static LineStyleElementPtr GetForEdit(DgnDbR db, Utf8CP name) { return GetForEdit(db, QueryId(db, name)); }
