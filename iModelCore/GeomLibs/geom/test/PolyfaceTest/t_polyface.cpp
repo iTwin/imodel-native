@@ -1009,34 +1009,33 @@ TEST (Polyface, ClipCube_TwoPlanesCut)
     //varunused double mySize = SetTransformToNewGridSpot (*builder, true);
 
 
-    PolyfaceHeader & header0 = builder->GetClientMeshR ();
 
     builder->AddSweptNGon (4, 2.0, 0.0, 1.0, true, true);
 
     DPoint3d xyz0 = builder->MultiplyByLocalToWorld (DPoint3d::FromXYZ (0.5,0.5,0));
     DPoint3d xyz1 = builder->MultiplyByLocalToWorld (DPoint3d::FromXYZ (3,3,0));
 
-    ClipPlaneSet clipper;
-    clipper.push_back ( ConvexClipPlaneSet::FromXYBox (xyz0.x, xyz0.y, xyz1.x, xyz1.y));
-
-    PolyfaceHeaderPtr header1Ptr = PolyfaceHeader::CreateVariableSizeIndexed ();
-    PolyfaceHeader & header1 = *header1Ptr;
-
-    PolyfaceCoordinateMapPtr map1Ptr = PolyfaceCoordinateMap::Create (*header1Ptr);
-    //varunused PolyfaceCoordinateMap &map1 = *map1Ptr;
+    PolyfaceHeader & header0 = builder->GetClientMeshR ();
     Check::True (header0.IsClosedByEdgePairing ());
     CheckCounts (header0, 24, 12,0,12,0,0,0);
     ExaminePolyface (header0, "DiamondFrustumC");
-    bool badCuts;
-    // AddClippedPolyfaceA does not do the "outside" clip ...
-    PolyfaceCoordinateMap::AddClippedPolyface (header0, map1Ptr.get (), NULL, badCuts, &clipper, true);
-    Transform outputShift = Transform::From (0,0,1.5);
-    header1.Transform (outputShift);
-    ExaminePolyface (header1, "AfterTwoPlaneCut");
-#ifdef NEEDS_WORK_TWOPLANE_CUT_FAILURE
-    CheckCounts (header1, 18, 9,0,9,0,0,0);
-    Check::True (header1.IsClosedByEdgePairing ());
-#endif
+
+
+    ClipPlaneSet clipper;
+    clipper.push_back ( ConvexClipPlaneSet::FromXYBox (xyz0.x, xyz0.y, xyz1.x, xyz1.y));
+
+    Check::SaveTransformed (header0);
+   
+    Check::Shift (0, 10, 0);
+    PolyfaceHeaderPtr insideClip, outsideClip;
+    ClipPlaneSet::ClipPlaneSetIntersectPolyface (
+            header0, clipper, true,
+            &insideClip, &outsideClip);
+    Check::SaveTransformed (*insideClip);
+    Check::Shift (10,0, 0);
+    Check::SaveTransformed (*outsideClip);
+
+    Check::ClearGeometry ("Polyface.ClipCube_TwoPlanesCut");
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
 
@@ -1067,17 +1066,22 @@ TEST(Polyface, ClipSphere)
 
     ClipPlaneSet clipper;
     clipper.push_back (ConvexClipPlaneSet::FromXYBox (-1, -5, 1, 5));
-    PolyfaceHeaderPtr header1Ptr = PolyfaceHeader::CreateVariableSizeIndexed ();
-    PolyfaceHeader & header1 = *header1Ptr;
 
-    PolyfaceCoordinateMapPtr map1Ptr = PolyfaceCoordinateMap::Create (*header1Ptr);
-    //varunused PolyfaceCoordinateMap &map1 = *map1Ptr;
 
-    //Check::True (header0.IsClosedByEdgePairing ());
-    bool badCuts;
-    PolyfaceCoordinateMap::AddClippedPolyface (header0, map1Ptr.get (), NULL, badCuts, &clipper, true);
-    //Check::True (header1.IsClosedByEdgePairing ());
-    ExaminePolyface (header1, "Cut");
+    Check::SaveTransformed (header0);
+   
+    Check::Shift (0, 10, 0);
+    PolyfaceHeaderPtr insideClip, outsideClip;
+    ClipPlaneSet::ClipPlaneSetIntersectPolyface (
+            header0, clipper, true,
+            &insideClip, &outsideClip);
+    Check::SaveTransformed (*insideClip);
+    Check::Shift (10,0, 0);
+    Check::SaveTransformed (*outsideClip);
+    Check::ClearGeometry ("Polyface.ClipSphere");
+
+
+
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
 
@@ -2758,14 +2762,17 @@ TEST(Polyface, ClipPlaneSet1)
     xyz.push_back (DPoint3d::From (1,1,0));
     hiddenEdge.push_back (false);
     clipper.push_back (ConvexClipPlaneSet::FromXYPolyLine (xyz, hiddenEdge, true));
-    PolyfaceHeaderPtr clippedMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
 
-    PolyfaceCoordinateMapPtr map1Ptr = PolyfaceCoordinateMap::Create (*clippedMesh);
-    //varunused PolyfaceCoordinateMap &map1 = *map1Ptr;
+    Check::SaveTransformed (box);
+    Check::Shift (0, 10, 0);
+    PolyfaceHeaderPtr insideClip, outsideClip;
+    ClipPlaneSet::ClipPlaneSetIntersectPolyface (
+            *box, clipper, true,
+            &insideClip, &outsideClip);
+    Check::SaveTransformed (*insideClip);
+    Check::SaveTransformed (*outsideClip);
 
-    bool badCuts;
-    PolyfaceCoordinateMap::AddClippedPolyface (*box, map1Ptr.get (), NULL, badCuts, &clipper, true);
-    PrintPolyfaceXYZ (*clippedMesh, "CubeClippedBy2XYSquares", s_maxPolyfacePrint);
+    Check::ClearGeometry ("Polyface.ClipPlaneSet1");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2793,14 +2800,16 @@ TEST(Polyface, ClipPlaneSet2)
     hiddenEdge.push_back (true);
     clipper.push_back (ConvexClipPlaneSet::FromXYPolyLine (xyz, hiddenEdge, true));
 
-    PolyfaceHeaderPtr clippedMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+    Check::SaveTransformed (box);
+    Check::Shift (0, 10, 0);
+    PolyfaceHeaderPtr insideClip, outsideClip;
+    ClipPlaneSet::ClipPlaneSetIntersectPolyface (
+            *box, clipper, true,
+            &insideClip, &outsideClip);
+    Check::SaveTransformed (*insideClip);
+    Check::SaveTransformed (*outsideClip);
 
-    PolyfaceCoordinateMapPtr map1Ptr = PolyfaceCoordinateMap::Create (*clippedMesh);
-    //varunused PolyfaceCoordinateMap &map1 = *map1Ptr;
-
-    bool badCuts;
-    PolyfaceCoordinateMap::AddClippedPolyface (*box, map1Ptr.get (), NULL, badCuts, &clipper, true);
-    PrintPolyfaceXYZ (*clippedMesh, "CubeClippedBy2XYSquares", s_maxPolyfacePrint);
+    Check::ClearGeometry ("Polyface.ClipPlaneSet2");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2834,17 +2843,26 @@ TEST(Polyface,ClipRoadSurface)
         clipper.push_back (ConvexClipPlaneSet::FromXYPolyLine (stripe1, isHidden, true));
         }
 
-    // This filter object picks out only the upward-facing facets from the road ...
-    PolyfaceVisitorNormalOrientationFilter filter (true, false, false);
     // Create a mesh and supporting CoordinateMap to catch the output . . .
     PolyfaceHeaderPtr clippedMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
-    PolyfaceCoordinateMapPtr map1Ptr = PolyfaceCoordinateMap::Create (*clippedMesh);
 
-    // pull out the stripe surface ..
-    bool badCuts;
-    PolyfaceCoordinateMap::AddClippedPolyface (*road, map1Ptr.get (), NULL, badCuts, &clipper, false, &filter);
-    PrintPolyfaceXYZ (*clippedMesh, "stripe on road", 100);
-    
+
+    bvector<bvector<ptrdiff_t>> readIndices;
+    road->PartitionReadIndicesByNormal (DVec3d::From (0,0,1), readIndices);
+    bvector<PolyfaceHeaderPtr> upSideDown;
+    road->CopyPartitions (readIndices, upSideDown);
+    Check::SaveTransformed (road);
+    Check::Shift (0, 30, 0);
+    PolyfaceHeaderPtr insideClip, outsideClip;
+    ClipPlaneSet::ClipPlaneSetIntersectPolyface (
+            *upSideDown[0], clipper, false,
+            &insideClip, &outsideClip);
+    Check::SaveTransformed (*insideClip);
+    Check::Shift (0, 15, 0);
+    Check::SaveTransformed (*outsideClip);
+
+
+    Check::ClearGeometry ("Polyface.StripeOnRoad");    
     }
 #ifdef TestPolygonDecomp
 template<typename T>
@@ -3546,18 +3564,17 @@ TEST(Polyface,ConvexSetPunch)
     clipper1.push_back (clipper0);
 
     Check::SaveTransformed (*solidFacets);
-
-    
-    PolyfaceHeaderPtr insideMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
-    PolyfaceHeaderPtr outsideMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
-    PolyfaceCoordinateMapPtr insideMap = PolyfaceCoordinateMap::Create (*insideMesh);
-    PolyfaceCoordinateMapPtr outsideMap = PolyfaceCoordinateMap::Create (*outsideMesh);
-    bool badCuts;
-    PolyfaceCoordinateMap::AddClippedPolyface (*dtm, insideMap.get (), outsideMap.get (), badCuts, &clipper1, false);
+   
+    Check::Shift (0, (double)numY, 0);
+    PolyfaceHeaderPtr insideClip, outsideClip;
+    ClipPlaneSet::ClipPlaneSetIntersectPolyface (
+            *solidFacets, clipper0, true,
+            &insideClip, &outsideClip);
     Check::Shift ((double)numX, 0,0);
-    Check::SaveTransformed (*insideMesh);
+    Check::SaveTransformed (*insideClip);
     Check::Shift (0, (double)numY,0);
-    Check::SaveTransformed (*outsideMesh);
+    Check::SaveTransformed (*outsideClip);
+
     Check::ClearGeometry ("Polyface.ConvexSetPunch");
 
     }
