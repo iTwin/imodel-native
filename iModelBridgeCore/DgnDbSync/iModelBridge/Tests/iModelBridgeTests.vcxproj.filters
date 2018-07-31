@@ -14,4 +14,7 @@
   <ItemGroup>
     <None Include="BuildTests.mke" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
 </Project>
