@@ -36,6 +36,7 @@ struct JsInterop
     BE_JSON_NAME(globalOrigin)
     BE_JSON_NAME(guid)
     BE_JSON_NAME(id)
+    BE_JSON_NAME(modelExtents)
     BE_JSON_NAME(name)
     BE_JSON_NAME(namespace)
     BE_JSON_NAME(orientation)
@@ -76,6 +77,7 @@ public:
     static DgnDbStatus UpdateModel(DgnDbR db, Json::Value &props);
     static DgnDbStatus DeleteModel(DgnDbR db, Utf8StringCR idStr);
     static DgnDbStatus GetModel(JsonValueR results, DgnDbR db, Json::Value const &inOpts);
+    static DgnDbStatus QueryModelExtents(JsonValueR extents, DgnDbR db, JsonValueCR options);
     static void UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtents);
     static void UpdateIModelProps(DgnDbR dgndb, JsonValueCR);
 
