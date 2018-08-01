@@ -11,17 +11,6 @@
 #include <Licensing/Licensing.h>
 #include <Licensing/Utils/JWToken.h>
 
-// API GetPolicy request
-#define WEBAPI_GetPolicy                           "/GetPolicy"
-#define GETPOLICY_RequestData_RequestedSecurable    "RequestedSecurables"
-#define GETPOLICY_RequestData_ProductId             "ProductId"
-#define GETPOLICY_RequestData_FeatureString         "FeatureString"
-#define GETPOLICY_RequestData_Version               "Version"
-#define GETPOLICY_RequestData_MachineName           "MachineName"
-#define GETPOLICY_RequestData_ClientDateTime        "ClientDateTime"
-#define GETPOLICY_RequestData_Locale                "Locale"
-#define GETPOLICY_RequestData_AppliesTo             "AppliesTo"
-
 // AppliesTo Url
 #if defined(DEBUG)
 #define GETPOLICY_RequestData_AppliesTo_Url         "https://qa-entitlement-search.bentley.com/"
@@ -62,12 +51,11 @@ struct PolicyToken
 {
 private:
     Json::Value m_policy;
-
-private:
     PolicyToken(JsonValueCR policy);
 
 public:
     LICENSING_EXPORT static std::shared_ptr<PolicyToken> Create(std::shared_ptr<JWToken> jwToken);
+    LICENSING_EXPORT static std::shared_ptr<PolicyToken> PolicyToken::Create(Json::Value policy);
 
     LICENSING_EXPORT JsonValueCR GetDefaultQualifier(Utf8StringCR qualifierName) const;
     LICENSING_EXPORT Json::Value GetPolicyFile() const;

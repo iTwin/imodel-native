@@ -25,6 +25,12 @@
 
 #define LICENSE_CLIENT_SCHEMA_VERSION       1.0
 
+#define LICCLIENT_NO_PROJECT_ID_STR         "00000000-0000-0000-0000-000000000000"
+
+#define USAGE_HEARTBEAT_INTERVAL_MS         5*1000     //60*1000
+#define POLICY_HEARTBEAT_INTERVAL_MS        30*60*1000 //60*60*1000
+#define LOG_POSTING_HEARTBEAT_INTERVAL_MS   30*60*1000 //60*60*1000
+
 // Log Posting Sources
 #define LOGPOSTINGSOURCE_REALTIME           "RealTime"
 #define LOGPOSTINGSOURCE_OFFLINE            "Offline"
@@ -42,52 +48,49 @@ typedef std::shared_ptr<struct ClientImpl> ClientImplPtr;
 struct ClientImpl
 {
 private:
-    typedef enum
-        {
-        RealTime,
-        Offline,
-        Checkout
-        } LogPostingSource;
+    enum LogPostingSource { RealTime, Offline, Checkout };
 
-private:
+    ClientInfoPtr m_clientInfo;
+    Utf8String m_userName;
     BeFileName m_dbPath;
     std::shared_ptr<IConnectAuthenticationProvider> m_authProvider;
-    ClientInfoPtr m_clientInfo;
-    ConnectSignInManager::UserInfo m_userInfo;
     IHttpHandlerPtr m_httpHandler;
     ITimeRetrieverPtr m_timeRetriever;
     IDelayedExecutorPtr m_delayedExecutor;
-
-    int64_t m_heartbeatInterval;
-    int64_t m_lastRunningheartbeatStartTime = 0;
-
+    int64_t m_lastRunningUsageheartbeatStartTime = 0;
+    int64_t m_lastRunningPolicyheartbeatStartTime = 0;
+    int64_t m_lastRunningLogPostingheartbeatStartTime = 0;
     std::unique_ptr<UsageDb> m_usageDb;
-
     Utf8String m_featureString;
     Utf8String m_projectId;
     Utf8String m_correlationId;
+    std::shared_ptr<PolicyToken> m_policyToken;
 
-private:
-    Utf8String GetLoggingPostSource(LogPostingSource lps) const;
+    void UsageHeartbeat(int64_t currentTime);
+    void PolicyHeartbeat(int64_t currentTime);
+    void LogPostingHeartbeat(int64_t currentTime);
+
+    BentleyStatus RecordUsage();
+    std::shared_ptr<PolicyToken> GetPolicyToken();
+    BentleyStatus PostUsageLogs();
     folly::Future<Utf8String> PerformGetPolicyRequest();
-    void HeartbeatUsage(int64_t currentTime);
-
+    Utf8String GetLoggingPostSource(LogPostingSource lps) const;
 
 public:
     LICENSING_EXPORT ClientImpl
         (
-        BeFileNameCR dbPath,
-        std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+        Utf8String userName,
         ClientInfoPtr clientInfo,
-        const ConnectSignInManager::UserInfo& userInfo,
-        IHttpHandlerPtr httpHandler,
-        uint64_t heartbeatInterval,
-        ITimeRetrieverPtr timeRetriever = TimeRetriever::Get(),
-        IDelayedExecutorPtr delayedExecutor = DelayedExecutor::Get()
+        std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+        BeFileNameCR db_path,
+        IHttpHandlerPtr httpHandler
         );
 
-    LICENSING_EXPORT BentleyStatus StartApplication(); 
+    LICENSING_EXPORT LicenseStatus StartApplication(); 
     LICENSING_EXPORT BentleyStatus StopApplication();
+
+    LICENSING_EXPORT void SetProjectId(Utf8String projectId);
+    LICENSING_EXPORT void SetFeatureString(Utf8String featureString);
 
     // usageSCV usage file to send
     // The company ID in SAP. // TODO: figure out where to get this one from.

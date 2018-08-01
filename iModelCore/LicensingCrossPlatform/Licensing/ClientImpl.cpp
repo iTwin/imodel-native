@@ -25,119 +25,117 @@ USING_NAMESPACE_BENTLEY_LICENSING
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientImpl::ClientImpl
 (
-BeFileNameCR dbPath, 
-std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+Utf8String userName,
 ClientInfoPtr clientInfo,
-const ConnectSignInManager::UserInfo& userInfo,
-IHttpHandlerPtr httpHandler,
-uint64_t heartbeatInterval, 
-ITimeRetrieverPtr timeRetriever,
-IDelayedExecutorPtr delayedExecutor
+std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+BeFileNameCR dbPath,
+IHttpHandlerPtr httpHandler
 ) :
-m_dbPath (dbPath),
-m_authProvider (authenticationProvider),
-m_clientInfo (clientInfo),
-m_userInfo (userInfo),
-m_httpHandler (httpHandler),
-m_heartbeatInterval(heartbeatInterval),
-m_timeRetriever(timeRetriever),
-m_delayedExecutor(delayedExecutor)
+m_userName(userName),
+m_clientInfo(clientInfo),
+m_authProvider(authenticationProvider),
+m_dbPath(dbPath),
+m_httpHandler(httpHandler)
     {
     m_usageDb = std::make_unique<UsageDb>();
     m_correlationId = BeGuid(true).ToString();
+    m_projectId = LICCLIENT_NO_PROJECT_ID_STR;
+    m_featureString = "";
+    m_timeRetriever = TimeRetriever::Get();
+    m_delayedExecutor = DelayedExecutor::Get();
     }
    
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClientImpl::StartApplication()
+LicenseStatus ClientImpl::StartApplication()
     {
     if (SUCCESS != m_usageDb->OpenOrCreate(m_dbPath))
-        return ERROR;
+        return LicenseStatus::LICENSE_STATUS_Error;
 
-    Utf8String versionString;
-    GenerateSID gsid;
+    // Get policy token
+    m_policyToken = GetPolicyToken();
 
-    // Check for policy
-    auto policyToken = GetPolicy().get();
+    //TODO: Get product status
 
-    m_usageDb->AddOrUpdatePolicyFile(policyToken->GetPolicyId(),
-                                     policyToken->GetExpirationDate(),
-                                     policyToken->GetLastUpdateTime(),
-                                     policyToken->GetPolicyFile());
-
-    // Check for entitlement
-
-    // Create usage record
-    m_featureString = "";
-    m_projectId = "";
-    
-    versionString.Sprintf("%d%.4d%.4d%.4d", m_clientInfo->GetApplicationVersion().GetMajor(), m_clientInfo->GetApplicationVersion().GetMinor(),
-                          m_clientInfo->GetApplicationVersion().GetSub1(), m_clientInfo->GetApplicationVersion().GetSub2());
-
-    m_usageDb->RecordUsage(policyToken->GetUltimateSAPId(),
-                           policyToken->GetPrincipalId(),
-                           policyToken->GetUserId(),
-                           m_clientInfo->GetDeviceId(),
-                           gsid.GetMachineSID(m_clientInfo->GetDeviceId()),
-                           m_userInfo.username,
-                           gsid.GetUserSID(m_userInfo.username, m_clientInfo->GetDeviceId()),
-                           policyToken->GetPolicyId(),
-                           policyToken->GetSecurableId(),
-                           atoi(m_clientInfo->GetApplicationProductId().c_str()),
-                           m_featureString,
-                           atoll(versionString.c_str()),
-                           m_projectId,
-                           m_correlationId,
-                           DateTime::GetCurrentTimeUtc().ToString(),
-                           LICENSE_CLIENT_SCHEMA_VERSION,
-                           GetLoggingPostSource(LogPostingSource::RealTime),
-                           policyToken->GetCountry(),
-                           policyToken->GetUsageType());
-
+    if (RecordUsage() == ERROR)
+        return LicenseStatus::LICENSE_STATUS_Error;
+     
     // Begin licensing heartbeat
-
-    auto lastRecEndTime = m_usageDb->GetLastRecordEndTime();
     int64_t curentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-
-    if (lastRecEndTime == 0 || lastRecEndTime < curentTimeUnixMs)
-        {
-        if (SUCCESS != m_usageDb->InsertNewRecord(curentTimeUnixMs, curentTimeUnixMs + m_heartbeatInterval))
-            return ERROR;
-        }
-    else
-        {
-        if (SUCCESS != m_usageDb->UpdateLastRecordEndTime(curentTimeUnixMs + m_heartbeatInterval))
-            return ERROR;
-        }
+    UsageHeartbeat(curentTimeUnixMs);
+    LogPostingHeartbeat(curentTimeUnixMs);
+    //TODO: PolicyHeartbeat(curentTimeUnixMs);
 
     // This is only a logging example
     LOG.info("StartApplication");
-    
-    HeartbeatUsage(curentTimeUnixMs);
 
-    return SUCCESS;
+    return LicenseStatus::LICENSE_STATUS_Ok;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::HeartbeatUsage(int64_t currentTime)
+void ClientImpl::UsageHeartbeat(int64_t currentTime)
     {
-    m_lastRunningheartbeatStartTime = currentTime;
-    m_delayedExecutor->Delayed(m_heartbeatInterval).then([this, currentTime]
+    m_lastRunningUsageheartbeatStartTime = currentTime;
+    m_delayedExecutor->Delayed(USAGE_HEARTBEAT_INTERVAL_MS).then([this, currentTime]
         {
-        if (currentTime != m_lastRunningheartbeatStartTime)
+        if (currentTime != m_lastRunningUsageheartbeatStartTime)
             return;
 
         if (!m_usageDb->IsDbOpen())
             return;
 
         int64_t curentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-        if (SUCCESS != m_usageDb->UpdateLastRecordEndTime(curentTimeUnixMs + m_heartbeatInterval))
+        if (SUCCESS != RecordUsage())
             return;
 
-        HeartbeatUsage(curentTimeUnixMs);
+        UsageHeartbeat(curentTimeUnixMs);
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientImpl::PolicyHeartbeat(int64_t currentTime)
+    {
+    m_lastRunningPolicyheartbeatStartTime = currentTime;
+    m_delayedExecutor->Delayed(POLICY_HEARTBEAT_INTERVAL_MS).then([this, currentTime]
+        {
+        if (currentTime != m_lastRunningPolicyheartbeatStartTime)
+            return;
+
+        if (!m_usageDb->IsDbOpen())
+            return;
+
+        int64_t curentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+        if (nullptr != GetPolicyToken())
+            return;
+
+        PolicyHeartbeat(curentTimeUnixMs);
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientImpl::LogPostingHeartbeat(int64_t currentTime)
+    {
+    m_lastRunningLogPostingheartbeatStartTime = currentTime;
+    m_delayedExecutor->Delayed(LOG_POSTING_HEARTBEAT_INTERVAL_MS).then([this, currentTime]
+        {
+        if (currentTime != m_lastRunningLogPostingheartbeatStartTime)
+            return;
+
+        if (!m_usageDb->IsDbOpen())
+            return;
+
+        int64_t curentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+        if (SUCCESS != PostUsageLogs())
+            return;
+
+        LogPostingHeartbeat(curentTimeUnixMs);
         });
     }
 
@@ -146,17 +144,111 @@ void ClientImpl::HeartbeatUsage(int64_t currentTime)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ClientImpl::StopApplication()
     {
-    m_lastRunningheartbeatStartTime = 0; // This will stop Usage heartbeat
-
-    if (!m_usageDb->IsDbOpen())
-        return SUCCESS;
-
-    int64_t curentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-
-    if (SUCCESS != m_usageDb->UpdateLastRecordEndTime(curentTimeUnixMs))
-        return ERROR;
+    m_lastRunningPolicyheartbeatStartTime = 0; // This will stop Policy heartbeat
+    m_lastRunningUsageheartbeatStartTime = 0; // This will stop Usage heartbeat
+    m_lastRunningLogPostingheartbeatStartTime = 0; // This will stop log posting heartbeat
 
     m_usageDb->Close();
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientImpl::SetProjectId(Utf8String projectId)
+    {
+    m_projectId = projectId;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientImpl::SetFeatureString(Utf8String featureString)
+    {
+    m_featureString = featureString;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ClientImpl::RecordUsage()
+    {
+    if (!m_usageDb->IsDbOpen())
+        return ERROR;
+
+    Utf8String versionString;
+    GenerateSID gsid;
+
+    //TODO: Check product status
+
+    // Create usage record
+
+    versionString.Sprintf("%d%.4d%.4d%.4d", m_clientInfo->GetApplicationVersion().GetMajor(), m_clientInfo->GetApplicationVersion().GetMinor(),
+                          m_clientInfo->GetApplicationVersion().GetSub1(), m_clientInfo->GetApplicationVersion().GetSub2());
+
+    m_usageDb->RecordUsage(m_policyToken->GetUltimateSAPId(),
+                           m_policyToken->GetPrincipalId(),
+                           m_policyToken->GetUserId(),
+                           m_clientInfo->GetDeviceId(),
+                           gsid.GetMachineSID(m_clientInfo->GetDeviceId()),
+                           m_userName,
+                           gsid.GetUserSID(m_userName, m_clientInfo->GetDeviceId()),
+                           m_policyToken->GetPolicyId(),
+                           m_policyToken->GetSecurableId(),
+                           atoi(m_clientInfo->GetApplicationProductId().c_str()),
+                           m_featureString,
+                           atoll(versionString.c_str()),
+                           m_projectId,
+                           m_correlationId,
+                           DateTime::GetCurrentTimeUtc().ToString(),
+                           LICENSE_CLIENT_SCHEMA_VERSION,
+                           GetLoggingPostSource(LogPostingSource::RealTime),
+                           m_policyToken->GetCountry(),
+                           m_policyToken->GetUsageType());
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::shared_ptr<PolicyToken> ClientImpl::GetPolicyToken()
+    {
+    auto policyToken = GetPolicy().get();
+
+    m_usageDb->AddOrUpdatePolicyFile(policyToken->GetPolicyId(),
+                                     policyToken->GetExpirationDate(),
+                                     policyToken->GetLastUpdateTime(),
+                                     policyToken->GetPolicyFile());
+    
+    return policyToken;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ClientImpl::PostUsageLogs()
+    {
+    Utf8String fileName;
+    
+    BeFileName usageLogPath(m_dbPath.GetDirectoryName());
+
+    fileName.Sprintf("LicUsageLog.%s.csv", BeGuid(true).ToString());
+    
+    usageLogPath.AppendToPath(BeFileName(fileName));
+
+    if (SUCCESS != m_usageDb->WriteUsageToCSVFile(usageLogPath))
+        return ERROR;
+
+    Utf8String ultimateId;
+
+    ultimateId.Sprintf("%ld", m_policyToken->GetUltimateSAPId());
+
+    //SendUsage(usageLogPath, ultimateId);
+    
+    //TODO: if send usage is successful, clean up the database.
+    m_usageDb->CleanUpUsages();
+
     return SUCCESS;
     }
 
@@ -200,7 +292,7 @@ folly::Future<folly::Unit> ClientImpl::SendUsage(BeFileNameCR usageSCV, Utf8Stri
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<Utf8String> ClientImpl::PerformGetPolicyRequest()
     {
-    auto url = UrlProvider::Urls::EntitlementPolicyService.Get() + WEBAPI_GetPolicy;
+    auto url = UrlProvider::Urls::EntitlementPolicyService.Get() + "/GetPolicy";
 
     auto authHandler = m_authProvider->GetAuthenticationHandler(url, m_httpHandler, IConnectAuthenticationProvider::HeaderPrefix::Saml);
 
@@ -208,20 +300,20 @@ folly::Future<Utf8String> ClientImpl::PerformGetPolicyRequest()
 
     auto request = client.CreatePostRequest(url);
     Json::Value requestJson(Json::objectValue);
-    requestJson[GETPOLICY_RequestData_MachineName] = m_clientInfo->GetDeviceId();
-    requestJson[GETPOLICY_RequestData_ClientDateTime] = DateTime::GetCurrentTimeUtc().ToString();
-    requestJson[GETPOLICY_RequestData_Locale] = m_clientInfo->GetLanguage();
-    requestJson[GETPOLICY_RequestData_AppliesTo] = GETPOLICY_RequestData_AppliesTo_Url;
+    requestJson["MachineName"] = m_clientInfo->GetDeviceId();
+    requestJson["ClientDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
+    requestJson["Locale"] = m_clientInfo->GetLanguage();
+    requestJson["AppliesTo"] = GETPOLICY_RequestData_AppliesTo_Url;
 
     Json::Value requestedSecurable(Json::objectValue);
-    requestedSecurable[GETPOLICY_RequestData_ProductId] = m_clientInfo->GetApplicationProductId();
-    requestedSecurable[GETPOLICY_RequestData_FeatureString] = "";
-    requestedSecurable[GETPOLICY_RequestData_Version] = m_clientInfo->GetApplicationVersion().ToString();
+    requestedSecurable["ProductId"] = m_clientInfo->GetApplicationProductId();
+    requestedSecurable["FeatureString"] = "";
+    requestedSecurable["Version"] = m_clientInfo->GetApplicationVersion().ToString();
 
     Json::Value requestedSecurables(Json::arrayValue);
     requestedSecurables[0] = requestedSecurable;
 
-    requestJson[GETPOLICY_RequestData_RequestedSecurable] = requestedSecurables;
+    requestJson["RequestedSecurables"] = requestedSecurables;
 
     request.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(requestJson)));
 

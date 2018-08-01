@@ -2,7 +2,7 @@
 |
 |     $Source: LicensingCrossPlatform/Licensing/Client.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Client.h>
@@ -15,15 +15,14 @@ USING_NAMESPACE_BENTLEY_LICENSING
 +---------------+---------------+---------------+---------------+---------------+------*/
 Client::Client
 (
-BeFileNameCR dbPath, 
-std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+Utf8String userName,
 ClientInfoPtr clientInfo,
-const ConnectSignInManager::UserInfo& userInfo,
-IHttpHandlerPtr httpHandler,
-uint64_t heartbeatInterval
+std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+BeFileNameCR dbPath,
+IHttpHandlerPtr httpHandler
 )
     {
-    m_impl = std::make_unique<ClientImpl>(dbPath, authenticationProvider, clientInfo, userInfo, httpHandler, heartbeatInterval);
+    m_impl = std::make_unique<ClientImpl>(userName, clientInfo, authenticationProvider, dbPath, httpHandler);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -31,21 +30,20 @@ uint64_t heartbeatInterval
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr Client::Create
 (
-BeFileNameCR dbPath, 
-std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+Utf8String userName,
 ClientInfoPtr clientInfo,
-const ConnectSignInManager::UserInfo& userInfo,
-IHttpHandlerPtr httpHandler,
-uint64_t heartbeatInterval
+std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+BeFileNameCR dbPath,
+IHttpHandlerPtr httpHandler
 )
     {
-    return std::shared_ptr<Client>(new Client(dbPath, authenticationProvider, clientInfo, userInfo, httpHandler, heartbeatInterval));
+    return std::shared_ptr<Client>(new Client(userName, clientInfo, authenticationProvider, dbPath, httpHandler));
     }
    
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Client::StartApplication()
+LicenseStatus Client::StartApplication()
     {
     return m_impl->StartApplication();
     }
@@ -56,4 +54,20 @@ BentleyStatus Client::StartApplication()
 BentleyStatus Client::StopApplication()
     {
     return m_impl->StopApplication();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void Client::SetProjectId(Utf8String projectId)
+    {
+    m_impl->SetProjectId(projectId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void Client::SetFeatureString(Utf8String featureString)
+    {
+    m_impl->SetFeatureString(featureString);
     }

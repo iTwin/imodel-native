@@ -5,8 +5,10 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "UsageDb.h"
 #include <Licensing/Utils/SCVWritter.h>
+
+#include "UsageDb.h"
+#include "Logging.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 
@@ -73,7 +75,7 @@ BentleyStatus UsageDb::SetUpTables()
                          "PolicyId NVARCHAR(20) PRIMARY KEY, "
                          "ExpirationDate NVARCHAR(20), "
                          "LastUpdateTime NVARCHAR(20), "
-                         "PolicyFile BLOB") != DbResult::BE_SQLITE_OK)
+                         "PolicyFile NVARCHAR(900)") != DbResult::BE_SQLITE_OK)
         {
         return ERROR;
         }
@@ -200,20 +202,41 @@ int64_t UsageDb::GetRecordCount()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::WriteUsageToSCVFile(BeFileNameCR path)
+BentleyStatus UsageDb::WriteUsageToCSVFile(BeFileNameCR path)
     {
     SCVWritter writter;
-    writter.AddRow("EventTime");
 
     Statement stmt;
-    stmt.Prepare(m_db, "SELECT EventTime FROM Usage");
+    stmt.Prepare(m_db, "SELECT * FROM Usage");
+
 
     DbResult result = stmt.Step();
+
     while (result == DbResult::BE_SQLITE_ROW)
-        {
-        //writter.AddRow(stmt.GetValueInt64(0), stmt.GetValueInt64(1));
+        {        
+        writter.AddRow(stmt.GetValueInt64(0),
+                       stmt.GetValueText(1),
+                       stmt.GetValueText(2),
+                       stmt.GetValueText(3),
+                       stmt.GetValueText(4),
+                       stmt.GetValueText(5),
+                       stmt.GetValueText(6),
+                       stmt.GetValueText(7),
+                       stmt.GetValueText(8),
+                       stmt.GetValueInt(9),
+                       stmt.GetValueText(10),
+                       stmt.GetValueInt64(11),
+                       stmt.GetValueText(12),
+                       stmt.GetValueText(13),
+                       stmt.GetValueText(14),
+                       stmt.GetValueDouble(15),
+                       stmt.GetValueText(16),
+                       stmt.GetValueText(17),
+                       stmt.GetValueText(18));
+
         result = stmt.Step();
         }
+
     if (result != DbResult::BE_SQLITE_DONE)
         return ERROR;
 
@@ -233,13 +256,59 @@ BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR
         stmt.BindText(1, policyId, Statement::MakeCopy::No);
         stmt.BindText(2, expirationDate, Statement::MakeCopy::No);
         stmt.BindText(3, lastUpdateTime, Statement::MakeCopy::No);
-        stmt.BindBlob(4, &policyToken, policyToken.size(), Statement::MakeCopy::No);
+        //TODO: stmt.BindText(4, policyToken.asString().c_str(), Statement::MakeCopy::No);
 
         DbResult result = stmt.Step();
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
         }
     return ERROR;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value UsageDb::GetPolicyFile()
+    {
+    Statement stmt;
+
+    stmt.Prepare(m_db, "SELECT * FROM Policy");
+
+    DbResult result = stmt.Step();
+
+    if (result != DbResult::BE_SQLITE_ROW)
+        return Json::Value::GetNull();
+    
+    Utf8CP policy = stmt.GetValueText(3);
+    
+    auto jv = Json::Value(policy);
+
+    return jv;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus UsageDb::CleanUpUsages()
+    {
+    if (!m_db.IsDbOpen())
+        return ERROR;
+
+    auto maxRowId = GetLastRowId();
+
+    Statement stmt;
+    Utf8String sqlDeleteStatement;
+
+    sqlDeleteStatement.Sprintf("DELETE FROM Usage WHERE rowid <= %lld", maxRowId);
+
+    stmt.Prepare(m_db, sqlDeleteStatement.c_str());
+
+    DbResult result = stmt.Step();
+
+    if (result != DbResult::BE_SQLITE_DONE)
+        return ERROR;
+
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -277,8 +346,10 @@ BentleyStatus UsageDb::RecordUsage(int64_t ultimateSAPId, Utf8StringCR principal
         stmt.BindText(19, usageType, Statement::MakeCopy::No);
         
         DbResult result = stmt.Step();
+
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
         }
+
     return ERROR;
     }

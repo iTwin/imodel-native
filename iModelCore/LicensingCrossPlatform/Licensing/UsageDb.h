@@ -28,6 +28,7 @@ private:
 	BentleyStatus OpenDb(BeFileNameCR filePath);
 
 	BentleyStatus CreateDb(BeFileNameCR filePath);
+
     BentleyStatus SetUpTables();
 
     int64_t GetLastRowId();
@@ -40,15 +41,20 @@ public:
     LICENSING_EXPORT bool IsDbOpen();
 
     LICENSING_EXPORT BentleyStatus InsertNewRecord(int64_t startTime, int64_t endTime);
-
+    
     LICENSING_EXPORT int64_t GetLastRecordEndTime();
+
     LICENSING_EXPORT BentleyStatus UpdateLastRecordEndTime(int64_t unixMilis);
 
     LICENSING_EXPORT int64_t GetRecordCount();
 
-    LICENSING_EXPORT BentleyStatus WriteUsageToSCVFile(BeFileNameCR path);
+    LICENSING_EXPORT BentleyStatus WriteUsageToCSVFile(BeFileNameCR path);
 
     LICENSING_EXPORT BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken);
+
+    LICENSING_EXPORT Json::Value GetPolicyFile();
+
+    LICENSING_EXPORT BentleyStatus CleanUpUsages();
 
     LICENSING_EXPORT BentleyStatus RecordUsage(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
                                                Utf8StringCR machineSID, Utf8StringCR userName, Utf8StringCR userSID, Utf8StringCR policyId,

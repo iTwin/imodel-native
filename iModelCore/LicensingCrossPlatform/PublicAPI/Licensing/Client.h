@@ -14,8 +14,6 @@
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
-#define DEFAULT_HEARTBEAT_INTERVAL_MS 1*60*1000
-
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -23,6 +21,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 * @bsiclass                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct Client> ClientPtr;
+
 struct Client
 {
 private:
@@ -30,28 +29,29 @@ private:
 
     Client
         (
-        BeFileNameCR dbPath,
-        std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+        Utf8String userName,
         ClientInfoPtr clientInfo,
-        const ConnectSignInManager::UserInfo& userInfo,
-        IHttpHandlerPtr httpHandler,
-        uint64_t heartbeatInterval
+        std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+        BeFileNameCR dbPath,
+        IHttpHandlerPtr httpHandler
         );
 
 public:
     LICENSING_EXPORT static ClientPtr Create
         (
-        BeFileNameCR dbPath,
-        std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+        Utf8String userName,
         ClientInfoPtr clientInfo,
-        const ConnectSignInManager::UserInfo& userInfo,
-        IHttpHandlerPtr customHttpHandler = nullptr,
-        uint64_t heartbeatIntervalMs = DEFAULT_HEARTBEAT_INTERVAL_MS
+        std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+        BeFileNameCR dbPath,
+        IHttpHandlerPtr customHttpHandler = nullptr
         );
 
     // TODO: Return more than BentleyStatus to indicate to the app if the user has rights to use this app or it's crippled etc...
-    LICENSING_EXPORT BentleyStatus StartApplication(); 
+    LICENSING_EXPORT LicenseStatus StartApplication(); 
     LICENSING_EXPORT BentleyStatus StopApplication();
+
+    LICENSING_EXPORT void SetProjectId(Utf8String projectId);
+    LICENSING_EXPORT void SetFeatureString(Utf8String featureString);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

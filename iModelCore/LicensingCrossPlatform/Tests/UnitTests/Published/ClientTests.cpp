@@ -97,16 +97,13 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
         }
 
     BeFileName dbPath = GetUsageDbPath();
-
+    
     return std::make_shared<ClientImpl>(
-        dbPath, 
-        manager,
+        manager->GetUserInfo().username,
         clientInfo,
-        manager->GetUserInfo(),
-        proxy,
-        heartbeatInterval, 
-        timeRetriever,
-        delayedExecutor);
+        manager,
+        dbPath, 
+        proxy);
     }
 
 ClientImplPtr CreateTestClient(bool signIn)
@@ -273,18 +270,18 @@ void ClientTests::SetUpTestCase()
 //    EXPECT_EQ(25+10, client->GetUsageDb().GetLastRecordEndTime());
 //    }
 
-TEST_F(ClientTests, StopApplication_CalledBeforeStartApplication_DoesNothing)
-    {
-    auto client = CreateTestClient(false);
-    EXPECT_NE(nullptr, client);
-
-    EXPECT_SUCCESS(client->StopApplication());
-
-    // After stopping application db will be closed, so we open it again for inspection.
-    EXPECT_SUCCESS(client->GetUsageDb().OpenOrCreate(GetUsageDbPath()));
-
-    EXPECT_EQ(0, client->GetUsageDb().GetRecordCount());
-    }
+//TEST_F(ClientTests, StopApplication_CalledBeforeStartApplication_DoesNothing)
+//    {
+//    auto client = CreateTestClient(false);
+//    EXPECT_NE(nullptr, client);
+//
+//    EXPECT_SUCCESS(client->StopApplication());
+//
+//    // After stopping application db will be closed, so we open it again for inspection.
+//    EXPECT_SUCCESS(client->GetUsageDb().OpenOrCreate(GetUsageDbPath()));
+//
+//    EXPECT_EQ(0, client->GetUsageDb().GetRecordCount());
+//    }
 
 //TEST_F(ClientTests, StopApplication_CalledAfterStartApplication_UpdatesLastRecordEndTime)
 //    {
@@ -327,21 +324,21 @@ TEST_F(ClientTests, StopApplication_CalledBeforeStartApplication_DoesNothing)
 //    }
 
 // TODO: Create separate Project for Integration tests.
-TEST_F (ClientTests, GetPolicy_InegrationTest)
-    {
-    auto client = CreateTestClient(true);
-
-    // Test code can be written like this:
-    auto policyToken = client->GetPolicy().get(); // This will re throw exeptions occured and they will be catched by gtest.
-    ASSERT_FALSE(policyToken->GetDefaultQualifier("HeartbeatInterval").isNull()); // Check if qualifier is in PolicyToken
-
-    JsonValueCR hbi = policyToken->GetDefaultQualifier("HeartbeatInterval");
-    auto nameText = hbi["Name"].asString();
-    auto valueInt = hbi["Value"].asInt();
-    
-    JsonValueCR ut = policyToken->GetDefaultQualifier("UsageType");
-    nameText = ut["Name"].asString();
-    auto valueText = ut["Value"].asString();
+//TEST_F (ClientTests, GetPolicy_InegrationTest)
+//    {
+//    auto client = CreateTestClient(true);
+//
+//    // Test code can be written like this:
+//    auto policyToken = client->GetPolicy().get(); // This will re throw exeptions occured and they will be catched by gtest.
+//    ASSERT_FALSE(policyToken->GetDefaultQualifier("HeartbeatInterval").isNull()); // Check if qualifier is in PolicyToken
+//
+//    JsonValueCR hbi = policyToken->GetDefaultQualifier("HeartbeatInterval");
+//    auto nameText = hbi["Name"].asString();
+//    auto valueInt = hbi["Value"].asInt();
+//    
+//    JsonValueCR ut = policyToken->GetDefaultQualifier("UsageType");
+//    nameText = ut["Name"].asString();
+//    auto valueText = ut["Value"].asString();
 
     /*JsonValueCR polid = policyToken->GetPolicyId();
     auto policyId = polid.ToString();
@@ -370,7 +367,7 @@ TEST_F (ClientTests, GetPolicy_InegrationTest)
     //    {
     //    // Error handling.
     //    });
-    }
+    //}
 
 //TEST_F(ClientTests, SendUsage_InegrationTest)
 //    {
@@ -386,4 +383,16 @@ TEST_F (ClientTests, GetPolicy_InegrationTest)
 //
 //    client->SendUsage(path, "1004175881").get();
 //    // TODO: how to check if sending was successfull?
+//    }
+
+//TEST_F(ClientTests, CreateDemoClient_StartAndStopApplication_Succeeds)
+//    {
+//    auto client = CreateTestClient(true);
+//    using namespace std::chrono_literals;
+//
+//    EXPECT_EQ(client->StartApplication(), LICENSE_STATUS_Ok);
+//
+//    std::this_thread::sleep_for(5min);
+//
+//    EXPECT_SUCCESS(client->StopApplication());
 //    }
