@@ -104,22 +104,23 @@ TEST(XYHatch,WithArcs)
         auto lastTransform = Check::GetTransform ();
         for (auto spacing : {1.0, 2.0, 5.0})
             {
-            SaveAndRestoreCheckTransform shifter (0, 200, 0);
+            SaveAndRestoreCheckTransform shifter (0, 500, 0);
 
             for (auto degrees : {0.0, 30.0, 120.0, 0.0, 90.0})
                 {
+                auto regionB = SampleGeometryCreator::CreateBoundaryWithAllCurveTypes (10.0);
+                ExerciseHatch (*regionB, degrees, spacing, 0,0,asBspline);
+                Check::Shift (100,0,0);  // regionA messes up spacing
+
                 auto regionA = SampleGeometryCreator::CircleInRectangle (0,0, 10,
                             -11,-15, 18, 8);
                 ExerciseHatch (*regionA, degrees, spacing, 0,0, asBspline);
-                Check::Shift (20,0,0);  // regionA messes up spacing
-
-                auto regionB = SampleGeometryCreator::CreateBoundaryWithAllCurveTypes (10.0);
-                ExerciseHatch (*regionB, degrees, spacing, 0,0,asBspline);
-
+                Check::Shift (100,0,0);  // regionA messes up spacing
 
                 auto regionC = SampleGeometryCreator::CreateAnnulusWithManyArcSectors (5, 3);
                 ExerciseHatch (*regionC, degrees, spacing, 0,0, asBspline);
                 lastTransform = Check::GetTransform ();
+                Check::Shift (40,0,0);  // regionA messes up spacing
                 }
             }
         // scruffy way to get the x out of the last transform but back to 0 y ...

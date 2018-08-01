@@ -656,7 +656,6 @@ struct GEOMDLLIMPEXP DSpiral2dFractionOfNominalLengthCurve: DSpiral2dBase
 double m_nominalLength;       // arbitrary parameter for evaluation.  (The base spiral data is also available)
 DSpiral2dFractionOfNominalLengthCurve (double nominalLength);
 public:
-
 //! Evaluate the spiral and derivatives at specified fractional position
 //! return true if valid evaluation.
 //! DSpiral2dDirectEvaluation default implementation returns false.
@@ -669,13 +668,13 @@ virtual bool EvaluateAtFraction
     DVec2dP d3XYZ    //!< [out] third derivative wrt fraction
     ) const = 0;
 
-//! Return the true curvature at fractional position.  Implemented in DSpiral2dDirectEvaluation, not individual classes.
+//! Return the true curvature at fractional position.  Implemented in DSpiral2dFractionOfNominalLengthCurve, not individual classes.
 //! Assume EvaluateAtFraction.
 double FractionToCurvature (double fraction) const;
-//! Return the true curvature derivative wrt fraction.  Implemented in DSpiral2dDirectEvaluation, not individual classes.
+//! Return the true curvature derivative wrt fraction.  Implemented in DSpiral2dFractionOfNominalLengthCurve, not individual classes.
 //! Assume EvaluateAtFraction.
 bool FractionToDCurvatureDFraction (double fraction, double &curvature, double &dCurvatureDFraction) const;
-//! Return the magnitude of the true derivative of position wrt fraction.  Implemented in DSpiral2dDirectEvaluation, not individual classes.
+//! Return the magnitude of the true derivative of position wrt fraction.  Implemented in DSpiral2dFractionOfNominalLengthCurve, not individual classes.
 //! Assume EvaluateAtFraction.
 double FractionToVelocity(double fraction) const;
 //! Return the tangent angle (in radians) in local coordinates
@@ -888,6 +887,9 @@ DSpiral2dPlacement (DSpiral2dBaseCR source, TransformCR frame, double fractionA,
 
 //! Constructor -- copies the pointer.
 DSpiral2dPlacement (DSpiral2dBaseP _spiral, TransformCR frame, double fractionA, double fractionB);
+
+//! Constructor -- copies the pointer.
+void InitCapturePointer (DSpiral2dBaseP _spiral, TransformCR frame, double fractionA, double fractionB);
 
 //! Return a clone.
 DSpiral2dPlacementP Clone (DSpiral2dPlacementCR source) const;

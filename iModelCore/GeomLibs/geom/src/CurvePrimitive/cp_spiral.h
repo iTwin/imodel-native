@@ -402,6 +402,11 @@ double fractionB,
 double maxStrokeLength = DEFAULT_SPIRAL_MAX_STROKE_LENGTH
 )
     {
+    DSpiral2dFractionOfNominalLengthCurve const *nominalLengthSpiral = dynamic_cast <DSpiral2dFractionOfNominalLengthCurve const *> (&spiral);
+    if (nominalLengthSpiral != nullptr)
+        {
+        return new CurvePrimitiveDirectSpiral (*nominalLengthSpiral, frame, fractionA, fractionB);
+        }
     return new CurvePrimitiveSpiralCurve1 (spiral, frame, fractionA, fractionB, maxStrokeLength);
     }
 
