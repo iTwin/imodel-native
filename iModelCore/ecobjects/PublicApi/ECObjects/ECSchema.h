@@ -1400,7 +1400,7 @@ friend struct SchemaXmlWriter; // needed for WriteXml() method
 friend struct SchemaXmlReaderImpl; // needed for ReadXml() method
 friend struct SchemaJsonWriter; // needed for the ToJson() method
 
-typedef bvector<bpair<ECUnitCP, Utf8CP>> UnitAndLabelPairs;
+typedef bvector<bpair<ECUnitCP, Nullable<Utf8String>>> UnitAndLabelPairs;
 private:
     ECSchemaCR m_schema;
     mutable Utf8String m_fullName; //cached nsprefix:name representation
@@ -1438,7 +1438,8 @@ private:
     //! Gets the cached persistence format. Creates one based on Formatting::NumericFormatSpec::DefaultFormat() if it does not exist.
     ECOBJECTS_EXPORT NamedFormatCP GetCachedPersistenceFormat() const;
     ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, UnitAndLabelPairs const* unitsAndLabels = nullptr) const;
-
+    ECOBJECTS_EXPORT static bool ValidatePresentationFormat(ECFormatCR parent, ECUnitCP persistenceUnit, Nullable<int32_t> precisionOverride, KindOfQuantity::UnitAndLabelPairs const* unitsAndLabels);
+    ECOBJECTS_EXPORT static ECObjectsStatus TransformFormatString(ECFormatCP& outFormat, Nullable<int32_t>& outPrec, UnitAndLabelPairs& outPairs, Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper);
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this kind of quantity is defined in.
 
@@ -1488,6 +1489,16 @@ public:
     NamedFormatCP GetDefaultPresentationFormat() const {return HasPresentationFormats() ? &m_presentationFormats[0] : GetCachedPersistenceFormat();}
     bvector<NamedFormat> const& GetPresentationFormats() const {return m_presentationFormats;} //!< Gets a list of all presentation formats available for this KoQ.
     bool HasPresentationFormats() const {return m_presentationFormats.size() > 0;} //!< Returns true if one or more presentation formats exist
+
+    //! Given a format string and persistence unit, determine if the format string is valid.
+    //! Check that it's units are consistent with each other, the persistenceUnit and make sure formats and units all exist.
+    //!
+    //! @param[in] formatString     The descriptor for the format override. format: (format name)[unit and label overrides]
+    //! @param[in] persistenceUnit  The persistence unit of the KoQ this format string belongs to
+    //! @param[in] formats          Reference to standard formats schema use to locate formats and verify if they have a composite or not and for validation
+    //! @param[in] units            Reference to standard units schema use to locate units for validation purposes
+    //! @return                     false on validation error, true otherwise
+    ECOBJECTS_EXPORT static bool ValidatePresentationFormat(Utf8StringCR formatString, ECUnitCP persistenceUnit, ECSchemaCR formats, ECSchemaCR units);
 
     //! Adds a NamedFormat to this KoQ's list of presentation formats. If the format has any units,
     //! they must be compatible with the persistence unit and each other.
@@ -1545,9 +1556,10 @@ public:
     //!                             format: {unitName}({formatName}), where the format part is optional.
     //! @param[in] presFuses        List of presentation FUS descriptors
     //! @param[in] formatSchema     Reference to standard formats schema use to locate formats and verify if they have a composite or not
+    //! @param[in] unitsSchema      Reference to standard units schema use to locate units for validation purposes
     //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName
     //! if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
-    ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptors(Utf8StringR persUnitName, bvector<Utf8String>& presFormatStrings, Utf8CP persFus, bvector<Utf8CP> const& presFuses, ECSchemaCR formatSchema);
+    ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptors(Utf8StringR persUnitName, bvector<Utf8String>& presFormatStrings, Utf8CP persFus, bvector<Utf8CP> const& presFuses, ECSchemaCR formatSchema, ECSchemaCR unitsSchema);
 };
 
 //=======================================================================================
