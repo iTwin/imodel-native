@@ -536,6 +536,9 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
         << "Should succeed if the persistenceFUS has a valid unit.";
     EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("MM", cache.first.c_str());
+    EXPECT_TRUE(cache.second.empty());
     }
     {
     // old persistenceFUS: MM
@@ -553,7 +556,11 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("MM", presFUSes, formatsSchema, unitsSchema))
         << "Should succeed if the persistenceFUS has a valid unit.";
     EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
-    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("MM", cache.first.c_str());
+    EXPECT_FALSE(cache.second.empty());
+    EXPECT_EQ(1, cache.second.size());
+    EXPECT_STRCASEEQ("LUX", cache.second.front().c_str());
     }
     {
     // old persistenceFUS: badUnit
@@ -588,6 +595,9 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
         << "Should succeed if the persistenceFUS has a valid unit.";
     EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("MM(SillyFormat)", cache.first.c_str());
+    EXPECT_TRUE(cache.second.empty());
     }
     {
     // old persistenceFUS: DM(fi8)
@@ -606,6 +616,9 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EXPECT_STRCASEEQ("u:DM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("f:AmerFI", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("DM(fi8)", cache.first.c_str());
+    EXPECT_TRUE(cache.second.empty());
     }
     {
     // old persistenceFUS: MM(real)
@@ -624,6 +637,9 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("f:DefaultReal[u:MM]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str()) << "A presentation format should have been created from the persistenceFUS' format.";
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("MM(real)", cache.first.c_str());
+    EXPECT_TRUE(cache.second.empty());
     }
     {
     // old persistenceFUS: W/(M*K)
@@ -641,6 +657,9 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
         << "Should succeed if persistenceFUS has a valid unit and format";
     EXPECT_STRCASEEQ("u:W_PER_M_K", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("W/(M*K)", cache.first.c_str());
+    EXPECT_TRUE(cache.second.empty());
     }
     {
     // old persistenceFUS: MM
@@ -675,6 +694,11 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
         << "Should drop a presentation FUS if it has an invalid Format.";
     EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("MM", cache.first.c_str());
+    EXPECT_FALSE(cache.second.empty());
+    EXPECT_EQ(1, cache.second.size());
+    EXPECT_STRCASEEQ("MM(KindOfFormat)", cache.second.front().c_str());
     }
     {
     // old persistenceFUS: MM(KindOfFormat)
@@ -694,6 +718,11 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("f:DefaultReal[u:MM]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("MM(KindOfFormat)", cache.first.c_str());
+    EXPECT_FALSE(cache.second.empty());
+    EXPECT_EQ(1, cache.second.size());
+    EXPECT_STRCASEEQ("MM", cache.second.front().c_str());
     }
     {
     // old persistenceFUS: MM(realu)
@@ -712,6 +741,11 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("f:DefaultReal[u:CM]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("MM(realu)", cache.first.c_str());
+    EXPECT_FALSE(cache.second.empty());
+    EXPECT_EQ(1, cache.second.size());
+    EXPECT_STRCASEEQ("CM", cache.second.front().c_str());
     }
     {
     // old persistenceFUS: MM(real)
@@ -730,6 +764,11 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("MM(real)", cache.first.c_str());
+    EXPECT_FALSE(cache.second.empty());
+    EXPECT_EQ(1, cache.second.size());
+    EXPECT_STRCASEEQ("CM(real4u)", cache.second.front().c_str());
     }
     {
     // old persistenceFUS: MM
@@ -748,6 +787,11 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("MM", cache.first.c_str());
+    EXPECT_FALSE(cache.second.empty());
+    EXPECT_EQ(1, cache.second.size());
+    EXPECT_STRCASEEQ("CM(real4u)", cache.second.front().c_str());
     }
     {
     // old persistenceFUS: MM(real)
@@ -768,6 +812,12 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EXPECT_EQ(2, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("f:DefaultReal[u:DM]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
     EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM]", koq->GetPresentationFormats()[1].GetQualifiedFormatString(*schema).c_str());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("MM(real)", cache.first.c_str());
+    EXPECT_FALSE(cache.second.empty());
+    EXPECT_EQ(2, cache.second.size());
+    EXPECT_STRCASEEQ("DM(real)", cache.second.front().c_str());
+    EXPECT_STRCASEEQ("CM(real4u)", cache.second[1].c_str());
     }
     {
     // old persistenceFUS: MM(fi8)
@@ -786,6 +836,11 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("f:AmerFI", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("MM(fi8)", cache.first.c_str());
+    EXPECT_FALSE(cache.second.empty());
+    EXPECT_EQ(1, cache.second.size());
+    EXPECT_STRCASEEQ("DM(fi8)", cache.second.front().c_str());
     }
     {
     // old persistenceFUS: MM(fi8)
@@ -803,6 +858,9 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("f:AmerFI", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("MM(fi8)", cache.first.c_str());
+    EXPECT_TRUE(cache.second.empty());
     }
     {
     // old persistenceFUS: SQ.FT(fi8)
@@ -819,6 +877,9 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("SQ.FT(fi8)", presFUSes, formatsSchema, unitsSchema));
     EXPECT_STRCASEEQ("u:SQ_FT", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("SQ.FT(fi8)", cache.first.c_str());
+    EXPECT_TRUE(cache.second.empty());
     }
     {
     // old persistenceFUS: M(meters4u)
@@ -836,6 +897,9 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EXPECT_STRCASEEQ("u:M", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("f:DefaultRealUNS(4)[u:M|m]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("M(meters4u)", cache.first.c_str());
+    EXPECT_TRUE(cache.second.empty());
     }
     {
     // old persistenceFUS: M(meters4u)
@@ -854,6 +918,11 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EXPECT_STRCASEEQ("u:M", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("f:DefaultRealUNS(4)[u:IN|&quot;]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("M(meters4u)", cache.first.c_str());
+    EXPECT_FALSE(cache.second.empty());
+    EXPECT_EQ(1, cache.second.size());
+    EXPECT_STRCASEEQ("IN(inches4u)", cache.second.front().c_str());
     }
     {
     // old persistenceFUS: IN
@@ -872,6 +941,11 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EXPECT_STRCASEEQ("u:IN", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_EQ(1, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("f:AmerFI", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("IN", cache.first.c_str());
+    EXPECT_FALSE(cache.second.empty());
+    EXPECT_EQ(1, cache.second.size());
+    EXPECT_STRCASEEQ("IN(fi8)", cache.second.front().c_str());
     }
     {
     ECSchemaPtr schema;
@@ -884,6 +958,9 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
     EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("IN", presFUSes, formatsSchema, unitsSchema));
     EXPECT_STRCASEEQ("u:IN", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
     EXPECT_EQ(0, koq->GetPresentationFormats().size());
+    const auto& cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("IN", cache.first.c_str());
+    EXPECT_TRUE(cache.second.empty());
     }
     }
 
@@ -893,12 +970,12 @@ TEST_F(KindOfQuantityTest, FromFUSDescriptor)
 TEST_F(KindOfQuantityTest, AddPersistenceUnitByNameTest)
     {
     KindOfQuantityP koq;
-    static const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name)
+    const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name)
         {
         return koq->GetSchema().GetUnitsContext().LookupUnit((alias + ":" + name).c_str());
         };
 
-    static const auto formatLookerUpper = [&](Utf8StringCR alias, Utf8String name)
+    const auto formatLookerUpper = [&](Utf8StringCR alias, Utf8String name)
         {
         return koq->GetSchema().LookupFormat((alias + ":" + name).c_str());
         };
@@ -928,12 +1005,12 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     {
     KindOfQuantityP koq;
 
-    static const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name)
+    const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name)
         {
         return koq->GetSchema().GetUnitsContext().LookupUnit((alias + ":" + name).c_str());
         };
 
-    static const auto formatLookerUpper = [&](Utf8StringCR alias, Utf8String name)
+    const auto formatLookerUpper = [&](Utf8StringCR alias, Utf8String name)
         {
         return koq->GetSchema().LookupFormat((alias + ":" + name).c_str());
         };

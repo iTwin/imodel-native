@@ -914,7 +914,7 @@ ECObjectsStatus KindOfQuantity::FromFUSDescriptors(Utf8CP persFUS, const bvector
     SetPersistenceUnit(*persUnitCP);
 
     // lookup units on this KoQs schema. All references must be already added.
-    static const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
+    const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
         {
         if (alias == GetSchema().GetAlias())
             return GetSchema().LookupUnit(name.c_str());
@@ -923,7 +923,7 @@ ECObjectsStatus KindOfQuantity::FromFUSDescriptors(Utf8CP persFUS, const bvector
         };
 
     // lookup units on this KoQs schema. All references must be already added.
-    static const auto formatLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
+    const auto formatLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
         {
         if (alias == GetSchema().GetAlias())
             return GetSchema().LookupFormat(name.c_str());
