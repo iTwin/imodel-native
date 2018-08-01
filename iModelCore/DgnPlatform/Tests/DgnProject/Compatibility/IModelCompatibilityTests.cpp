@@ -380,7 +380,7 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32KindOfQuantities)
             testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_LUX", nullptr, nullptr, "u:M", JsonValue(), 1.2);
             testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_SQFTreal4u", nullptr, nullptr, "u:M", JsonValue(), 1.3);
             testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_CM_LUX", nullptr, nullptr, "u:M", JsonValue(R"json(["f:DefaultReal[u:CM]"])json"), 1.4);
-            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_LUX_CM_MM", nullptr, nullptr, "u:M", JsonValue(), 1.5);
+            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_LUX_CM_MM", nullptr, nullptr, "u:LUX", JsonValue(), 1.5);
             testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_LUXreal4u_CM_MM", nullptr, nullptr, "u:LUX", JsonValue(R"json(["f:DefaultRealU(4)[u:LUX]"])json"), 1.6);
 
             if (!testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
