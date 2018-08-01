@@ -9,6 +9,7 @@
   <ItemGroup>
     <ClCompile Include="Published\ClientTests.cpp" />
     <ClCompile Include="Published\GenerateSIDTests.cpp" />
+    <ClCompile Include="Published\PolicyTests.cpp" />
     <ClCompile Include="Published\PolicyTokenTests.cpp" />
     <ClCompile Include="Published\TestsHelper.cpp" />
     <ClCompile Include="Published\UsageDbTests.cpp" />
@@ -20,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="Published\ClientTests.h" />
     <ClInclude Include="Published\GenerateSIDTests.h" />
+    <ClInclude Include="Published\PolicyTests.h" />
     <ClInclude Include="Published\PolicyTokenTests.h" />
     <ClInclude Include="Published\TestsHelper.h" />
     <ClInclude Include="Published\UsageDbTests.h" />
@@ -66,7 +68,7 @@
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx64\Product\Licensing-Gtest\LicensingTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)licensing\LicensingCrossPlatform\Tests\UnitTests\Published\;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath)</IncludePath>
+    <IncludePath>$(SrcRoot)licensing\LicensingCrossPlatform\Tests\UnitTests\Published\;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);D:\dev\crossDev\src\licensing\LicensingCrossPlatform\Tests\UnitTests\Published\;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <BuildLog>

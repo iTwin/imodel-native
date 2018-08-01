@@ -10,6 +10,8 @@
 
 #include <Licensing/Licensing.h>
 
+#include "LicenseStatus.h"
+
 #include <WebServices/Connect/IConnectAuthenticationProvider.h>
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency

@@ -9,18 +9,21 @@
 %include MultiCppCompileRule.mki
 
 Headers =
-Headers + $(SourceDir)UsageDb.h
-Headers + $(SourceDir)PolicyToken.h
 Headers + $(SourceDir)ClientImpl.h
 Headers + $(SourceDir)GenerateSID.h
-Headers + $(PublicApiDir)Licensing.h
+Headers + $(SourceDir)Policy.h
+Headers + $(SourceDir)PolicyToken.h
+Headers + $(SourceDir)UsageDb.h
 Headers + $(PublicApiDir)Client.h
-Headers + $(PublicApiDir)Utils/SCVWritter.h
-Headers + $(PublicApiDir)Utils/JWToken.h
-Headers + $(PublicApiDir)Utils/InMemoryJsonLocalState.h
-Headers + $(PublicApiDir)Utils/UrlSafeBase64Utilities.h
+Headers + $(PublicApiDir)LicenseStatus.h
+Headers + $(PublicApiDir)Licensing.h
 Headers + $(PublicApiDir)Utils/DelayedExecutor.h
+Headers + $(PublicApiDir)Utils/InMemoryJsonLocalState.h
+Headers + $(PublicApiDir)Utils/JWToken.h
+Headers + $(PublicApiDir)Utils/SCVWritter.h
 Headers + $(PublicApiDir)Utils/TimeRetriever.h
+Headers + $(PublicApiDir)Utils/UrlSafeBase64Utilities.h
+
 
 #---------------------------------------------------------------------------------------+
 #   Files to compile 
@@ -32,6 +35,8 @@ $(o)ClientImpl$(oext)                : $(SourceDir)ClientImpl.cpp $(Headers) ${M
 $(o)UsageDb$(oext)                   : $(SourceDir)UsageDb.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)PolicyToken$(oext)               : $(SourceDir)PolicyToken.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)Policy$(oext)                    : $(SourceDir)Policy.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)GenerateSID$(oext)               : $(SourceDir)GenerateSID.cpp $(Headers) ${MultiCompileDepends}
 

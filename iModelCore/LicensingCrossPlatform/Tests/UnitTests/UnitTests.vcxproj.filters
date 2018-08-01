@@ -42,6 +42,9 @@
     <ClCompile Include="Published\GenerateSIDTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Published\PolicyTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\TestsHelper.h">
@@ -69,6 +72,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Published\GenerateSIDTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\PolicyTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

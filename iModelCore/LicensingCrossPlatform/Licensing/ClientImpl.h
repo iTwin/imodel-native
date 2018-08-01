@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <Licensing/Licensing.h>
+#include <Licensing/LicenseStatus.h>
 
 #include "UsageDb.h"
 #include "PolicyToken.h"
@@ -88,6 +89,7 @@ public:
 
     LICENSING_EXPORT LicenseStatus StartApplication(); 
     LICENSING_EXPORT BentleyStatus StopApplication();
+    LICENSING_EXPORT LicenseStatus GetProductStatus();
 
     LICENSING_EXPORT void SetProjectId(Utf8String projectId);
     LICENSING_EXPORT void SetFeatureString(Utf8String featureString);

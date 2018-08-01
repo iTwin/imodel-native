@@ -51,26 +51,30 @@ m_httpHandler(httpHandler)
 LicenseStatus ClientImpl::StartApplication()
     {
     if (SUCCESS != m_usageDb->OpenOrCreate(m_dbPath))
-        return LicenseStatus::LICENSE_STATUS_Error;
+        return LicenseStatus::Error;
 
     // Get policy token
     m_policyToken = GetPolicyToken();
 
     //TODO: Get product status
+    LicenseStatus licStatus = GetProductStatus();
 
-    if (RecordUsage() == ERROR)
-        return LicenseStatus::LICENSE_STATUS_Error;
-     
-    // Begin licensing heartbeat
-    int64_t curentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-    UsageHeartbeat(curentTimeUnixMs);
-    LogPostingHeartbeat(curentTimeUnixMs);
-    //TODO: PolicyHeartbeat(curentTimeUnixMs);
+    if (LicenseStatus::Ok == licStatus)
+        {
+        if (RecordUsage() == ERROR)
+            return LicenseStatus::Error;
+
+        // Begin licensing heartbeat
+        int64_t curentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+        UsageHeartbeat(curentTimeUnixMs);
+        LogPostingHeartbeat(curentTimeUnixMs);
+        //TODO: PolicyHeartbeat(curentTimeUnixMs);
+        }
 
     // This is only a logging example
     LOG.info("StartApplication");
 
-    return LicenseStatus::LICENSE_STATUS_Ok;
+    return licStatus;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -395,3 +399,20 @@ Utf8String ClientImpl::GetLoggingPostSource(LogPostingSource lps) const
                 return "Unknown";
         }
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LicenseStatus ClientImpl::GetProductStatus()
+	{
+	return LicenseStatus::Ok;
+	// Cases for Ok:
+	//   
+	// Cases for Offline:
+	// Cases for Expired:
+	// Cases for AccessDenied:
+	// Cases for DisabledByLogSend:
+	// Cases for DisabledByPolicy:
+	// Cases for Trial:
+	// Cases for NotEntitled:
+	}
