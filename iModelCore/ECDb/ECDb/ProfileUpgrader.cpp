@@ -257,7 +257,7 @@ BentleyStatus ProfileUpgrader_4002::ConvertKoqFuses(KoqConversionContext& ctx)
             }
 
         BeAssert(ctx.m_formatsSchema != nullptr);
-        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptors(unitFormatStrings.m_persistenceUnit, unitFormatStrings.m_presentationFormats, stmt.GetValueText(2), oldPresFuses, *ctx.m_formatsSchema))
+        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptors(unitFormatStrings.m_persistenceUnit, unitFormatStrings.m_presentationFormats, stmt.GetValueText(2), oldPresFuses, *ctx.m_formatsSchema, *ctx.m_unitsSchema))
             {
             LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ctx.m_ecdb.GetLastError().c_str());
             return ERROR;

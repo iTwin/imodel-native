@@ -2772,7 +2772,7 @@ BentleyStatus SchemaReader::LegacyKindOfQuantityHelper::AssignPersistenceUnitAnd
 
     Utf8String persUnitName;
     bvector<Utf8String> presFormatNames;
-    if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatNames, legacyPersUnit, legacyPresUnits, *m_formatsSchema))
+    if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatNames, legacyPersUnit, legacyPresUnits, *m_formatsSchema, *m_unitsSchema))
         {
         LOG.errorv("Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
                    "Could not convert the legacy persistence and presentation units.", koq.GetFullName().c_str());
