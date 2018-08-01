@@ -2172,6 +2172,7 @@ MeshClipper::MeshClipper()
 
 void MeshClipper::SetSourceMesh(const PolyfaceQuery* meshSourceData, bool is25dData)
     {
+    m_sourceData = meshSourceData;
     m_is25dData = is25dData;
     }
 
@@ -2505,22 +2506,34 @@ MeshClipper::RegionResult MeshClipper::GetRegions(bvector<uint64_t>& ids, bvecto
     return MeshClipper::RegionResult::Success;
 }
 
-MeshClipper::RegionResult MeshClipper::GetExteriorRegion(PolyfaceHeaderPtr& mesh)
-{
+MeshClipper::RegionResult MeshClipper::GetInOrOutRegion(PolyfaceHeaderPtr& mesh, const bool getInside)
+    {
     if (!WasClipped())
         return MeshClipper::RegionResult::ClippingNotComputed;
 
     if (computedRegions.size() == 0)
         return MeshClipper::RegionResult::NoData;
 
-    PolyfaceHeaderPtr pt = PolyfaceHeader::CreateFixedBlockIndexed(3);
-    auto reg = std::find_if(computedRegions.begin(), computedRegions.end(), [](ClippedRegion& r) { return r.isExterior == 0; });
-    pt->CopyFrom(*reg->meshes[0]);
+    mesh = PolyfaceHeader::CreateFixedBlockIndexed(3);
+    auto reg = std::find_if(computedRegions.begin(), computedRegions.end(), [&getInside](ClippedRegion& r) { return r.isExterior == getInside; });
+    if (reg == computedRegions.end() || reg->meshes.empty() || reg->meshes[0] == nullptr)
+        return RegionResult::NoData;
+    mesh->CopyFrom(*reg->meshes[0]);
 
     for (size_t i = 1; i < reg->meshes.size(); ++i)
-        pt->AddIfMatchedLayout(*reg->meshes[i]);
+        mesh->AddIfMatchedLayout(*reg->meshes[i]);
     return MeshClipper::RegionResult::Success;
-}
+    }
+
+MeshClipper::RegionResult MeshClipper::GetExteriorRegion(PolyfaceHeaderPtr& mesh)
+    {
+    return GetInOrOutRegion(mesh, false);
+    }
+
+MeshClipper::RegionResult MeshClipper::GetInteriorRegion(PolyfaceHeaderPtr& mesh)
+    {
+    return GetInOrOutRegion(mesh, true);
+    }
 
 bool MeshClipper::WasClipped()
 {
@@ -2694,5 +2707,9 @@ bvector<bpair<uint64_t, PolyfaceHeaderPtr>>&& MeshClipper::GetSelectedRegions(Me
     return std::move(vec);
 }
 
+void MeshClipper::ClearSelection()
+    {
+    selectedRegions.clear();
+    }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

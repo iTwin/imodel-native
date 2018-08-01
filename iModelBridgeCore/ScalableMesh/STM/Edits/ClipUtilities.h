@@ -163,7 +163,7 @@ private:
 
     struct ClipVectorInfo :ClipInfo
     {
-        ClipVectorCP clip;
+        ClipVectorCP clip = nullptr;
         bvector<bool> arePrimitivesMasks;
         DRange3d clipExt;
         ClipVectorInfo() { type = Type::Vector; }
@@ -224,6 +224,8 @@ private:
     void GetClipsAsVectors(bvector<ClipVectorPtr>& outVectors);
     void GetClipsAsSingleVector(ClipVectorPtr& outVector);
 
+    RegionResult GetInOrOutRegion(PolyfaceHeaderPtr& mesh, const bool getInside);
+
     ClipInfo* FindMatchingClip(uint64_t id);
 public:
 
@@ -253,6 +255,7 @@ public:
 
     BENTLEY_SM_EXPORT RegionResult GetRegions(bvector<uint64_t>& ids, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces);
     BENTLEY_SM_EXPORT RegionResult GetExteriorRegion(PolyfaceHeaderPtr& mesh);
+    BENTLEY_SM_EXPORT RegionResult GetInteriorRegion(PolyfaceHeaderPtr& mesh);
     BENTLEY_SM_EXPORT bool WasClipped();
 
     BENTLEY_SM_EXPORT void SelectRegions(RegionFilter filter, RegionFilterMode mode);
