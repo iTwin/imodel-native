@@ -1406,6 +1406,7 @@ private:
     mutable Utf8String m_fullName; //cached nsprefix:name representation
     ECValidatedName m_validatedName; //wraps name and displaylabel
     Utf8String m_description;
+    bpair<Utf8String, bvector<Utf8String>> m_descriptorCache;
 
     //! Unit used for persistence. Will be formatted with a default format if no formats are provided.
     ECUnitCP m_persistenceUnit;
@@ -1439,8 +1440,10 @@ private:
     ECOBJECTS_EXPORT NamedFormatCP GetCachedPersistenceFormat() const;
     ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, UnitAndLabelPairs const* unitsAndLabels = nullptr) const;
     ECOBJECTS_EXPORT static bool ValidatePresentationFormat(ECFormatCR parent, ECUnitCP persistenceUnit, Nullable<int32_t> precisionOverride, KindOfQuantity::UnitAndLabelPairs const* unitsAndLabels);
-    ECOBJECTS_EXPORT static ECObjectsStatus TransformFormatString(ECFormatCP& outFormat, Nullable<int32_t>& outPrec, UnitAndLabelPairs& outPairs, Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper);
+    ECOBJECTS_EXPORT static ECObjectsStatus TransformFormatString(ECFormatCP& outFormat, Nullable<int32_t>& outPrec, UnitAndLabelPairs& outPairs, Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper, ECSchemaCR koqSchema);
+    ECOBJECTS_EXPORT static bool ValidatePresentationFormat(Utf8StringCR formatString, ECUnitCP persistenceUnit, ECSchemaCR formats, ECSchemaCR units);
 public:
+    const bpair<Utf8String, bvector<Utf8String>>& GetDescriptorCache() {return m_descriptorCache;} //!< Get the cache of FUS descriptors
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this kind of quantity is defined in.
 
     void SetId(KindOfQuantityId id) { BeAssert(!m_kindOfQuantityId.IsValid()); m_kindOfQuantityId = id; } //!< Intended to be called by ECDb or a similar system
@@ -1490,16 +1493,6 @@ public:
     bvector<NamedFormat> const& GetPresentationFormats() const {return m_presentationFormats;} //!< Gets a list of all presentation formats available for this KoQ.
     bool HasPresentationFormats() const {return m_presentationFormats.size() > 0;} //!< Returns true if one or more presentation formats exist
 
-    //! Given a format string and persistence unit, determine if the format string is valid.
-    //! Check that it's units are consistent with each other, the persistenceUnit and make sure formats and units all exist.
-    //!
-    //! @param[in] formatString     The descriptor for the format override. format: (format name)[unit and label overrides]
-    //! @param[in] persistenceUnit  The persistence unit of the KoQ this format string belongs to
-    //! @param[in] formats          Reference to standard formats schema use to locate formats and verify if they have a composite or not and for validation
-    //! @param[in] units            Reference to standard units schema use to locate units for validation purposes
-    //! @return                     false on validation error, true otherwise
-    ECOBJECTS_EXPORT static bool ValidatePresentationFormat(Utf8StringCR formatString, ECUnitCP persistenceUnit, ECSchemaCR formats, ECSchemaCR units);
-
     //! Adds a NamedFormat to this KoQ's list of presentation formats. If the format has any units,
     //! they must be compatible with the persistence unit and each other.
     //! @param[in]  parent              The format to base this override off of
@@ -1544,7 +1537,18 @@ public:
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT bool ToJson(Json::Value& outValue, bool includeSchemaVersion = true) const { return ToJson(outValue, true, includeSchemaVersion); };
     ECOBJECTS_EXPORT Json::Value GetPresentationFormatsJson() const; //!< Return Json array of allowable presentation formats.
-
+    //! Given an old EC3.1 persistence FUS descriptor as well as the semi-colon separated string of
+    //! presentation FUS descriptors in the format: {unitName}({formatName}), it will extract and convert
+    //! the persistence unit to a new unit name. If the persistence FUS has a format, it will be added to the end of the
+    //! formatString that is returned. This method also caches the FUS descriptors within the koq
+    //!
+    //! @param[out] persFUS         The descriptor for the persistence FUS that is of the format for the old FUS descriptor,
+    //!                             format: {unitName}({formatName}), where the format part is optional.
+    //! @param[out] presFuses       List of presentation FUSes
+    //! @param[in] formatSchema     Reference to standard formats schema use to locate formats and verify if they have a composite or not
+    //! @param[in] unitsSchema      Reference to standard units schema use to locate units for validation purposes
+    //! @return ECObjectsStatus::Success if successfully updates the descriptor
+    ECOBJECTS_EXPORT ECObjectsStatus FromFUSDescriptors(Utf8CP persFUS, const bvector<Utf8CP>& presFuses, ECSchemaCR formatSchema, ECSchemaCR unitsSchema);
     //! Given an old EC3.1 persistence FUS descriptor as well as the semi-colon separated string of
     //! presentation FUS descriptors in the format: {unitName}({formatName}), it will extract and convert
     //! the persistence unit to a new unit name. If the persistence FUS has a format, it will be added to the end of the

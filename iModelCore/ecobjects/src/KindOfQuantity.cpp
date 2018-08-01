@@ -324,7 +324,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatSingleUnitOverride(ECFormat
 // @bsimethod                                  Kyle.Abramowitz                  07/2018
 //--------------------------------------------------------------------------------------
 // static
-ECObjectsStatus KindOfQuantity::TransformFormatString(ECFormatCP& outFormat, Nullable<int32_t>& outPrec, UnitAndLabelPairs& outPairs, Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper)
+ECObjectsStatus KindOfQuantity::TransformFormatString(ECFormatCP& outFormat, Nullable<int32_t>& outPrec, UnitAndLabelPairs& outPairs, Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper, ECSchemaCR koqSchema)
     {
     Utf8String formatName;
     Nullable<int32_t> prec;
@@ -339,6 +339,10 @@ ECObjectsStatus KindOfQuantity::TransformFormatString(ECFormatCP& outFormat, Nul
     Utf8String alias;
     Utf8String unqualifiedName;
     ECClass::ParseClassName(alias, unqualifiedName, formatName);
+
+    if (alias.empty())
+        alias = koqSchema.GetAlias();
+
     auto format = nameToFormatMapper(alias, unqualifiedName);
 
     if (nullptr == format)
@@ -353,6 +357,9 @@ ECObjectsStatus KindOfQuantity::TransformFormatString(ECFormatCP& outFormat, Nul
         for (const auto& u : unitNames)
             {
             ECClass::ParseClassName(alias, unqualifiedName, u);
+            if (alias.empty())
+                alias = koqSchema.GetAlias();
+
             auto unit = nameToUnitMapper(alias, unqualifiedName);
             if (nullptr == unit)
                 {
@@ -377,7 +384,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatByString(Utf8StringCR forma
     ECFormatCP format = nullptr;
     Nullable<int32_t> prec = nullptr;
     UnitAndLabelPairs units;
-    if (ECObjectsStatus::Success != TransformFormatString(format, prec, units, formatString, nameToFormatMapper, nameToUnitMapper))
+    if (ECObjectsStatus::Success != TransformFormatString(format, prec, units, formatString, nameToFormatMapper, nameToUnitMapper, GetSchema()))
         return ECObjectsStatus::Error;
 
     if (!units.empty())
@@ -514,7 +521,10 @@ bool KindOfQuantity::ValidatePresentationFormat(Utf8StringCR formatString, ECUni
         return formats.LookupFormat((alias + ":" + name).c_str());
         };
 
-    if (ECObjectsStatus::Success != TransformFormatString(format, prec, pairs, formatString, formatLookerUpper, unitLookerUpper))
+    // HACK. TransformFormatString takes a schema to get an alias for the KoQs schema, but in this case it will never be used because
+    // this function is private and only used to validate upgraded old units which can never be defined in the same schema as the KoQ so this code path will never
+    // be hit. TODO make this better
+    if (ECObjectsStatus::Success != TransformFormatString(format, prec, pairs, formatString, formatLookerUpper, unitLookerUpper, units))
         return false;
 
     return ValidatePresentationFormat(*format, persistenceUnit, prec, &pairs);
@@ -829,7 +839,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     // lookup units on this KoQs schema. All references must be already added.
     const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
         {
-        if (alias == GetSchema().GetAlias() || alias.empty())
+        if (alias == GetSchema().GetAlias())
             return GetSchema().LookupUnit(name.c_str());
 
         return GetSchema().LookupUnit((alias + ":" + name).c_str());
@@ -838,7 +848,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     // lookup units on this KoQs schema. All references must be already added.
     const auto formatLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
         {
-        if (alias == GetSchema().GetAlias() || alias.empty())
+        if (alias == GetSchema().GetAlias())
             return GetSchema().LookupFormat(name.c_str());
 
         return GetSchema().LookupFormat((alias + ":" + name).c_str());
@@ -886,6 +896,56 @@ static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR
         Utf8String name;
         SchemaParseUtils::ParseName(alias, name, mappedName);
         formatName = ("f:" + name).c_str();
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::FromFUSDescriptors(Utf8CP persFUS, const bvector<Utf8CP>& presFuses, ECSchemaCR formatSchema, ECSchemaCR unitsSchema)
+    {
+    Utf8String persUnit;
+    bvector<Utf8String> formatStrings;
+    auto status = KindOfQuantity::UpdateFUSDescriptors(persUnit, formatStrings, persFUS, presFuses, unitsSchema, formatSchema);
+    
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    auto persUnitCP = GetSchema().LookupUnit(persUnit.c_str());
+    SetPersistenceUnit(*persUnitCP);
+
+    // lookup units on this KoQs schema. All references must be already added.
+    static const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
+        {
+        if (alias == GetSchema().GetAlias())
+            return GetSchema().LookupUnit(name.c_str());
+
+        return GetSchema().LookupUnit((alias + ":" + name).c_str());
+        };
+
+    // lookup units on this KoQs schema. All references must be already added.
+    static const auto formatLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
+        {
+        if (alias == GetSchema().GetAlias())
+            return GetSchema().LookupFormat(name.c_str());
+
+        return GetSchema().LookupFormat((alias + ":" + name).c_str());
+        };
+
+    for (const auto& pres : formatStrings)
+        {
+        if (ECObjectsStatus::Success != AddPresentationFormatByString(pres, formatLookerUpper, unitLookerUpper))
+            return ECObjectsStatus::Error;
+        }
+
+    // Cache old descriptors
+    m_descriptorCache.first = persFUS;
+    m_descriptorCache.second = {};
+    for (const auto& pres : presFuses)
+        {
+        m_descriptorCache.second.push_back(pres);
         }
 
     return ECObjectsStatus::Success;

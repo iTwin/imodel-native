@@ -230,6 +230,20 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_TRUE(presFormatStrings.empty());
     }
     {
+    // old persistenceFUS: MM
+    // old presentationFUS': LUX
+    // new persistenceUnit: u:MM
+    // new presentationFormats: -
+    persUnitName.clear();
+    presFormatStrings.clear();
+    presFUSes.clear();
+    presFUSes.push_back("LUX");
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM", presFUSes, schema, unitsSchema))
+        << "Should succeed if the persistenceFUS has a valid unit.";
+    EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
+    EXPECT_TRUE(presFormatStrings.empty());
+    }
+    {
     // old persistenceFUS: badUnit
     // old presentationFUS': -
     // new persistenceUnit: -
