@@ -45,22 +45,25 @@ public:
     BEHTTP_EXPORT HttpClient(IHttpHeaderProviderPtr defaultHeadersProvider = nullptr, IHttpHandlerPtr customHandler = nullptr);
     
     //! Initialize platform specific HTTP framework elements. Call once when starting up application.
-    //! [Android] - Required for SSL support. Initialize with JNIEnv*
-    //! [Windows/iOS/etc.] - Not required, does nothing.
+    //! NOTE: Android - required for SSL support. Initialize with JNIEnv*
+    //! NOTE: Other platforms - does nothing.
     //! @param[in] arg initialization argument
     BEHTTP_EXPORT static void InitializePlatform(void* arg);
 
-    // Initialize HttpClient before using any function related to http requests 
+    //! Initialize HTTP framework with options. Call once when starting up application.
     BEHTTP_EXPORT static void Initialize(const Options& options);
 
-    //! Reinitialize HTTP framework with original options after uninitialization.
+    //! Uninitialize HTTP framework when shutting down application.
+    //! This eleases all resources, cancels any pending requests and prepares for clean exit.
+    //! NOTE: It is recommended to call this from main thread.
+    //! NOTE: Should never be called from web threads or callbacks.
+    //! NOTE: New requests will fail as cancelled unless Reinitialize() is called.
+    BEHTTP_EXPORT static void Uninitialize();
+
+    //! Reinitialize HTTP framework after Uninitialize() was called.
+    //! NOTE: this is mostly used in testing where multiple sessions might be needed.
     BEHTTP_EXPORT static void Reinitialize();
 
-    //! Uninitialize HTTP framework before process is shutting down to release any resources.
-    //! It is recommended to call this from main thread. Should never be called from web threads or callbacks.
-    //! New requests will fail as cancelled unless Reinitialize() is called.
-    BEHTTP_EXPORT static void Uninitialize();
-    
     BEHTTP_EXPORT static BeFileNameCR GetAssetsDirectoryPath();
 
     //! Options provided at initialization
