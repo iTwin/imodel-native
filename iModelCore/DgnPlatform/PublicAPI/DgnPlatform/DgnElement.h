@@ -10,7 +10,7 @@
 
 #include <Bentley/BeAssert.h>
 #include "RepositoryManager.h"
-#include <JS/Value.h>
+#include <PlacementOnEarth/Placement.h>
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 struct Graphic;
@@ -1179,13 +1179,6 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_FromJson()
     DGNPLATFORM_EXPORT virtual void _FromJson(JsonValueR props);
 
-    //! Convert this DgnElement to a Js::Value.
-    //! @note If you override this method, you @em must call T_Super::_ToJsValue()
-    DGNPLATFORM_EXPORT virtual void _ToJsValue(Js::Object out, Js::Object opts) const;
-
-    //! Update this DgnElement from a Js::Value.
-    //! @note If you override this method, you @em must call T_Super::_FromJson()
-    DGNPLATFORM_EXPORT virtual void _FromJsValue(Js::Object props);
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
     //! @note If you override this method, you @em must call T_Super::_LoadFromDb() first, forwarding its status
@@ -1950,13 +1943,6 @@ public:
     Json::Value ToJson(JsonValueCR opts = Json::Value()) const { Json::Value val; _ToJson(val, opts); return val; }
 
     void FromJson(JsonValueR props) {_FromJson(props);}
-
-    //! Create a Json::Value that represents the state of this element.
-    //! @param[in] factory Factory that allow manipulating JsValue
-    //! @param[in] opts options for customizing the value. If opts["wantGeometry"] != true, geometry stream Json::Value is not included.
-    Js::Object ToJsValue(Js::IFactory& factory, Js::Object opts) const { Js::Object val = Js::Object::New(factory) ; _ToJsValue(val, opts); return val; }
-
-    void FromJsValue(Js::Object props) { _FromJsValue(props); }
     //! @}
 
     //! Make an iterator over all ElementAspects owned by this element
@@ -1975,158 +1961,6 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize); //!< @private
     static DgnDbStatus WriteGeometryStream(BeSQLite::SnappyToBlob&, DgnDbR, DgnElementId, Utf8CP className, Utf8CP propertyName); //!< @private
     DgnDbStatus BindGeometryStream(bool& multiChunkGeometryStream, BeSQLite::SnappyToBlob&, BeSQLite::EC::ECSqlStatement&, Utf8CP parameterName) const; //!< @private
-};
-
-//=======================================================================================
-//! The position, orientation, and size of a 3d element.
-// @bsiclass                                                    Keith.Bentley   06/14
-//=======================================================================================
-struct Placement3d
-{
-protected:
-    DPoint3d m_origin;
-    YawPitchRollAngles m_angles;
-    ElementAlignedBox3d m_boundingBox;
-
-public:
-    BE_JSON_NAME(origin)
-    BE_JSON_NAME(angles)
-    BE_JSON_NAME(bbox)
-
-    Placement3d() : m_origin(DPoint3d::FromZero())  {}
-    Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box = ElementAlignedBox3d()): m_origin(origin), m_angles(angles), m_boundingBox(box) {}
-    Placement3d(Placement3d const& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox) {}
-    Placement3d(Placement3d&& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox) {}
-    Placement3d& operator=(Placement3d&& rhs) {m_origin=rhs.m_origin; m_angles=rhs.m_angles; m_boundingBox=rhs.m_boundingBox; return *this;}
-    Placement3d& operator=(Placement3d const& rhs) {m_origin=rhs.m_origin; m_angles=rhs.m_angles; m_boundingBox=rhs.m_boundingBox; return *this;}
-
-    //! Get the origin of this Placement3d.
-    DPoint3dCR GetOrigin() const {return m_origin;}
-
-    //! Get a writable reference to the origin of this Placement3d.
-    DPoint3dR GetOriginR() {return m_origin;}
-    void SetOrigin(DPoint3dCR origin) {m_origin=origin;}
-
-    //! Get the YawPitchRollAngles of this Placement3d.
-    YawPitchRollAnglesCR GetAngles() const {return m_angles;}
-
-    //! Get a writable reference to the YawPitchRollAngles of this Placement3d.
-    YawPitchRollAnglesR GetAnglesR() {return m_angles;}
-    void SetAngles(YawPitchRollAnglesCR angles) {m_angles=angles;}
-
-    //! Get the ElementAlignedBox3d of this Placement3d.
-    ElementAlignedBox3d const& GetElementBox() const {return m_boundingBox;}
-
-    //! Get a writable reference to the ElementAlignedBox3d of this Placement3d.
-    ElementAlignedBox3d& GetElementBoxR() {return m_boundingBox;}
-    void SetElementBox(ElementAlignedBox3d const& box) {m_boundingBox = box;}
-
-    //! Convert the origin and YawPitchRollAngles of this Placement3d into a Transform.
-    Transform GetTransform() const {return m_angles.ToTransform(m_origin);}
-
-    //! Calculate the AxisAlignedBox3d of this Placement3d.
-    DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
-
-    DGNPLATFORM_EXPORT Json::Value ToJson() const;
-    DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
-
-    //! Modify the origin and angles of this Placement3d by applying the specified transform.
-    //! @param trans The transform to apply
-    //! @return false if the operation failed
-    DGNPLATFORM_EXPORT bool TryApplyTransform(TransformCR trans);
-
-    //! Determine whether this Placement3d is valid.
-    bool IsValid() const
-        {
-        if (!m_boundingBox.IsValid())
-            return false;
-
-        double maxCoord = DgnUnits::CircumferenceOfEarth();
-
-        if (m_boundingBox.low.x < -maxCoord || m_boundingBox.low.y < -maxCoord || m_boundingBox.low.z < -maxCoord ||
-            m_boundingBox.high.x > maxCoord || m_boundingBox.high.y > maxCoord || m_boundingBox.high.z > maxCoord)
-            return false;
-
-        if (fabs(m_origin.x) > maxCoord || fabs(m_origin.y) > maxCoord || fabs(m_origin.z) > maxCoord)
-            return false;
-
-        return true;
-        }
-
-    static bool IsMinimumRange(FPoint3dCR low, FPoint3dCR high, bool is2d); //!< @private
-};
-
-//=======================================================================================
-//! The position, rotation angle, and bounding box for a 2-dimensional element.
-// @bsiclass                                                    Keith.Bentley   06/14
-//=======================================================================================
-struct Placement2d
-{
-protected:
-    DPoint2d            m_origin;
-    AngleInDegrees      m_angle;
-    ElementAlignedBox2d m_boundingBox;
-
-public:
-    BE_JSON_NAME(origin)
-    BE_JSON_NAME(angle)
-    BE_JSON_NAME(bbox)
-
-    Placement2d() : m_origin(DPoint2d::FromZero()) {}
-    Placement2d(DPoint2dCR origin, AngleInDegrees const& angle, ElementAlignedBox2dCR box = ElementAlignedBox2d()) : m_origin(origin), m_angle(angle), m_boundingBox(box){}
-    Placement2d(Placement2d const& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
-    Placement2d(Placement2d&& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
-    Placement2d& operator=(Placement2d&& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; return *this;}
-    Placement2d& operator=(Placement2d const& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; return *this;}
-
-    //! Get the origin of this Placement2d.
-    DPoint2dCR GetOrigin() const {return m_origin;}
-    void SetOrigin(DPoint2dCR origin) {m_origin=origin;}
-
-    //! Get a writable reference to the origin of this Placement2d.
-    DPoint2dR GetOriginR() {return m_origin;}
-
-    //! Get the angle of this Placement2d
-    AngleInDegrees GetAngle() const {return m_angle;}
-    void SetAngle(AngleInDegrees const& angle) {m_angle=angle;}
-
-    //! Get a writable reference to the angle of this Placement2d.
-    AngleInDegrees& GetAngleR() {return m_angle;}
-
-    //! Get the ElementAlignedBox2d of this Placement2d.
-    ElementAlignedBox2d const& GetElementBox() const {return m_boundingBox;}
-
-    //! Get a writable reference to the ElementAlignedBox2d of this Placement2d.
-    ElementAlignedBox2d& GetElementBoxR() {return m_boundingBox;}
-    void SetElementBox(ElementAlignedBox2dCR box) {m_boundingBox = box;}
-
-    //! Convert the origin and angle of this Placement2d into a Transform.
-    Transform GetTransform() const {Transform t; t.InitFromOriginAngleAndLengths(m_origin, m_angle.Radians(), 1.0, 1.0); return t;}
-
-    //! Calculate an AxisAlignedBox3d for this Placement2d.
-    //! @note the z values are set to +-1m
-    DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
-
-    DGNPLATFORM_EXPORT Json::Value ToJson() const;
-    DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
-
-    //! Determine whether this Placement2d is valid
-    bool IsValid() const
-        {
-        if (!m_boundingBox.IsValid())
-            return false;
-
-        double maxCoord = DgnUnits::CircumferenceOfEarth();
-
-        if (m_boundingBox.low.x < -maxCoord || m_boundingBox.low.y < -maxCoord ||
-            m_boundingBox.high.x > maxCoord || m_boundingBox.high.y > maxCoord)
-            return false;
-
-        if (fabs(m_origin.x) > maxCoord || fabs(m_origin.y) > maxCoord)
-            return false;
-
-        return true;
-        }
 };
 
 //=======================================================================================
@@ -3469,7 +3303,7 @@ private:
     };
     typedef bmap<DgnClassId, ECSqlClassInfo> ClassInfoMap;
     typedef bmap<DgnClassId, ECSqlClassParams> T_ClassParamsMap;
-
+    typedef std::map<DgnClassId, std::unique_ptr<BeSQLite::EC::JsonECSqlSelectAdapter>> JsonSelectAdaptorMap;
     std::unique_ptr<struct ElementMRU> m_mruCache;
     uint64_t m_extant = 0;
     BeSQLite::StatementCache m_stmts;
@@ -3481,7 +3315,7 @@ private:
     mutable ClassInfoMap m_classInfos;      // information about custom-handled properties 
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
     mutable AutoHandledPropertyUpdaterCache m_updaterCache;
-
+    mutable JsonSelectAdaptorMap m_jsonSelectAdaptors;
     void Destroy();
     void AddToPool(DgnElementCR) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
@@ -3519,6 +3353,11 @@ public:
     //! @private
     ECSqlClassInfo& FindClassInfo(DgnClassId classId) const;
     
+    //! @private
+    BeSQLite::EC::JsonECSqlSelectAdapter const* GetJsonSelectAdapter(DgnClassId) const;
+    //! @private
+    BeSQLite::EC::JsonECSqlSelectAdapter const& GetJsonSelectAdapter(DgnClassId, BeSQLite::EC::ECSqlStatement const& stmt, BeSQLite::EC::JsonECSqlSelectAdapter::FormatOptions const& formatOptions = BeSQLite::EC::JsonECSqlSelectAdapter::FormatOptions()) const;
+
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //!< @private
     DgnDbStatus LoadGeometryStream(GeometryStreamR geom, void const* blob, int blobSize); //!< @private

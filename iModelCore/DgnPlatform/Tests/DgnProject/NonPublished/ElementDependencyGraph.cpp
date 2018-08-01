@@ -155,6 +155,7 @@ struct ElementDependencyGraph : DgnDbTestFixture
     CachedECSqlStatementPtr GetSelectElementDrivesElementById();
     void SetUpForRelationshipTests();
     ECInstanceKey InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent);
+    DbResult DeleteElementDrivesElementRelationship(ECInstanceKeyCR key);
 
     void TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_t ntimes);
     void TestOverlappingOrder(DgnElementCPtr r1, ECInstanceKeyCR r1_d3, ECInstanceKeyCR r2_d3, bool r1First);
@@ -401,6 +402,14 @@ void ElementDependencyGraph::SetUpForRelationshipTests()
 ECInstanceKey ElementDependencyGraph::InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent)
     {
     return TestElementDrivesElementHandler::Insert(*m_db, root->GetElementId(), dependent->GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ElementDependencyGraph::DeleteElementDrivesElementRelationship(ECInstanceKeyCR key)
+    {
+    return TestElementDrivesElementHandler::Delete(*m_db, key);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1295,5 +1304,181 @@ TEST_F(ElementDependencyGraph, DeleteDependent_OnBeforeOutputsHandledCalled)
         ASSERT_EQ(recorder.m_sequence[3].first, b2->GetElementId());
         ASSERT_TRUE(b2_e3 == recorder.m_sequence[4].first || b2_e4 == recorder.m_sequence[4].first);
         ASSERT_TRUE(b2_e3 == recorder.m_sequence[5].first || b2_e4 == recorder.m_sequence[5].first);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, ReverseDependency)
+    {
+    SetUpForRelationshipTests();
+
+    //---
+    // e1-o->e2
+    //---
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+
+    ECInstanceKey e1_e2_Key = InsertElementDrivesElementRelationship(e1, e2);
+    m_db->SaveChanges();
+
+    CachedECSqlStatementPtr selectDepRel = GetSelectElementDrivesElementById();
+    selectDepRel->BindId(1, e1_e2_Key.GetInstanceId());
+    ASSERT_EQ(selectDepRel->Step(), BE_SQLITE_ROW);
+
+    EDECallbackSequenceMonitor monitor;
+    CallbackSequenceRecorder const& recorder = monitor.GetRecorder();
+
+    //---
+    // e1<-o-e2
+    //---
+    ASSERT_EQ(DeleteElementDrivesElementRelationship(e1_e2_Key), BE_SQLITE_DONE);
+    ECInstanceKey e2_e1_Key = InsertElementDrivesElementRelationship(e2, e1);
+    ASSERT_TRUE(e2_e1_Key.IsValid());
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    m_db->SaveChanges();
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ(rels.size(), 1);
+        auto i_e2_e1 = findRelId(rels, e2_e1_Key); ASSERT_NE(i_e2_e1, rels.end());
+        }
+
+    selectDepRel->Reset();
+    selectDepRel->ClearBindings();
+    selectDepRel->BindId(1, e2_e1_Key.GetInstanceId());
+    ASSERT_EQ(selectDepRel->Step(), BE_SQLITE_ROW);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, ReverseDependency2)
+    {
+    SetUpForRelationshipTests();
+
+    //---
+    //      ->e1
+    //     /
+    // b1-o
+    //     \
+    //      ->e2
+    //---
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+    DgnElementCPtr b1 = InsertBundle();
+
+    ECInstanceKey b1_e1_Key = InsertElementDrivesElementRelationship(b1, e1);
+    ECInstanceKey b1_e2_Key = InsertElementDrivesElementRelationship(b1, e2);
+
+    m_db->SaveChanges();
+
+    //---
+    // e2-o->b1-o->e1
+    //---
+    ASSERT_EQ(DeleteElementDrivesElementRelationship(b1_e2_Key), BE_SQLITE_DONE);
+    ECInstanceKey e2_b1_Key = InsertElementDrivesElementRelationship(e2, b1);
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    m_db->SaveChanges();
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ(rels.size(), 2);
+        auto i_e2_b1 = findRelId(rels, e2_b1_Key); ASSERT_NE(i_e2_b1, rels.end());
+        auto i_b1_e1 = findRelId(rels, b1_e1_Key); ASSERT_NE(i_b1_e1, rels.end());
+        }
+
+    CachedECSqlStatementPtr selectDepRel = GetSelectElementDrivesElementById();
+    selectDepRel->BindId(1, e2_b1_Key.GetInstanceId());
+    ASSERT_EQ(selectDepRel->Step(), BE_SQLITE_ROW);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, ReverseDependency3_DownstreamDependenciesAreHandled)
+    {
+    SetUpForRelationshipTests();
+
+    //---
+    //                *
+    // e1-o->e2-o->e3-o->e4-o->e5-o->e6
+    //---
+
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+    DgnElementCPtr e3 = InsertElement("E3");
+    DgnElementCPtr e4 = InsertElement("E4");
+    DgnElementCPtr e5 = InsertElement("E5");
+    DgnElementCPtr e6 = InsertElement("E6");
+
+    ECInstanceKey e1_e2_Key = InsertElementDrivesElementRelationship(e1, e2);
+    ECInstanceKey e2_e3_Key = InsertElementDrivesElementRelationship(e2, e3);
+    ECInstanceKey e3_e4_Key = InsertElementDrivesElementRelationship(e3, e4);
+    ECInstanceKey e4_e5_Key = InsertElementDrivesElementRelationship(e4, e5);
+    ECInstanceKey e5_e6_Key = InsertElementDrivesElementRelationship(e5, e6);
+    
+    m_db->SaveChanges();
+
+    //---
+    //                 *
+    // e1-o->e2-o->e3<-o-e4-o->e5-o->e6
+    //---
+    ASSERT_EQ(DeleteElementDrivesElementRelationship(e3_e4_Key), BE_SQLITE_DONE);
+    ECInstanceKey e4_e3_Key = InsertElementDrivesElementRelationship(e4, e3);
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    m_db->SaveChanges();
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ(rels.size(), 3);
+        auto i_e4_e3 = findRelId(rels, e4_e3_Key); ASSERT_NE(i_e4_e3, rels.end());
+        auto i_e4_e5 = findRelId(rels, e4_e5_Key); ASSERT_NE(i_e4_e5, rels.end());
+        auto i_e5_e6 = findRelId(rels, e5_e6_Key); ASSERT_NE(i_e5_e6, rels.end());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, ReverseDependencyAndUpdateRoot)
+    {
+    SetUpForRelationshipTests();
+
+    //---
+    // e1-o->e2-o->e3-o->e4
+    //---
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+    DgnElementCPtr e3 = InsertElement("E3");
+    DgnElementCPtr e4 = InsertElement("E4");
+
+    ECInstanceKey e1_e2_Key = InsertElementDrivesElementRelationship(e1, e2);
+    ECInstanceKey e2_e3_Key = InsertElementDrivesElementRelationship(e2, e3);
+    ECInstanceKey e3_e4_Key = InsertElementDrivesElementRelationship(e3, e4);
+    m_db->SaveChanges();
+
+    //---
+    // Reverse e3_e4 and update e1
+    //  *              *
+    // e1-o->e2-o->e3<-o-e4
+    //---
+    ASSERT_EQ(DeleteElementDrivesElementRelationship(e3_e4_Key), BE_SQLITE_DONE);
+    ECInstanceKey e4_e3_Key = InsertElementDrivesElementRelationship(e4, e3);
+    TwiddleTime(e1);
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    m_db->SaveChanges();
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ(rels.size(), 3);
+        auto i_e1_e2 = findRelId(rels, e1_e2_Key); ASSERT_NE(i_e1_e2, rels.end());
+        auto i_e2_e3 = findRelId(rels, e2_e3_Key); ASSERT_NE(i_e2_e3, rels.end());
+        auto i_e4_e3 = findRelId(rels, e4_e3_Key); ASSERT_NE(i_e4_e3, rels.end());
         }
     }

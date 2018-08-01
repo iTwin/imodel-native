@@ -471,7 +471,7 @@ public:
             virtual bool _WantWaitOnSave(DgnDbR) const { return false; } //!< @private
 
             //! Return the full path to a .tilecache file for caching generated element tiles.
-            DGNPLATFORM_EXPORT BeFileName _GetElementCacheFileName(DgnDbCR db) const;
+            DGNPLATFORM_EXPORT virtual BeFileName _GetElementCacheFileName(DgnDbCR db) const;
 
             //! Return the full path to a .tilecache file for caching downloaded reality data tiles.
             DGNPLATFORM_EXPORT BeFileName _GetRealityDataCacheFileName(Utf8CP realityCacheName) const;

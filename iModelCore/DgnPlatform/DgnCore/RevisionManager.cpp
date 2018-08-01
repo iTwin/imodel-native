@@ -7,23 +7,18 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <Bentley/SHA1.h>
-#include <BeSQLite/BeLzma.h>
 #include <DgnPlatform/DgnChangeSummary.h>
 #include <ECDb/ChangeIterator.h>
 #include <folly/ProducerConsumerQueue.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#define CHANGESET_LZMA_MARKER   "ChangeSetLzma"
 #define CURRENT_CS_END_TXN_ID   "CurrentChangeSetEndTxnId"
 #define LAST_REBASE_ID          "LastRebaseId"
 #define INITIAL_PARENT_CS_ID    "InitialParentChangeSetId"
 #define PARENT_CS_ID           "ParentChangeSetId"
 #define REVERSED_CS_ID         "ReversedChangeSetId"
 #define CONTAINS_SCHEMA_CHANGES "ContainsSchemaChanges"
-#define REVISION_FORMAT_VERSION  0x10
-#define JSON_PROP_DDL                   "DDL"
-#define JSON_PROP_ContainsSchemaChanges "ContainsSchemaChanges"
 #define CHANGESET_REL_DIR L"DgnDbChangeSets"
 #define CHANGESET_FILE_EXT L"cs"
 
@@ -32,396 +27,13 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/2017
-//---------------------------------------------------------------------------------------
-void UIntToByteArray(Byte bytes[], uint32_t size)
-    {
-    // Note: Not using a union to convert since it may not be portable
-    bytes[0] = (size >> 24) & 0xFF;
-    bytes[1] = (size >> 16) & 0xFF;
-    bytes[2] = (size >> 8) & 0xFF;
-    bytes[3] = size & 0xFF;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/2017
-//---------------------------------------------------------------------------------------
-uint32_t ByteArrayToUInt(Byte bytes[])
-    {
-    return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | (bytes[3]);
-    }
-
-//=======================================================================================
-// LZMA Header written to the top of the revision file
-// @bsiclass                                                 Ramanujam.Raman   10/15
-//=======================================================================================
-struct RevisionLzmaHeader
-{
-private:
-    uint16_t m_sizeOfHeader;
-    char    m_idString[15];
-    uint16_t m_formatVersionNumber;
-    uint16_t m_compressionType;
-
-public:
-    static const int formatVersionNumber = REVISION_FORMAT_VERSION;
-    enum CompressionType
-        {
-        LZMA2 = 2
-        };
-
-    RevisionLzmaHeader()
-        {
-        CharCP idString = CHANGESET_LZMA_MARKER;
-        BeAssert((strlen(idString) + 1) <= sizeof(m_idString));
-        memset(this, 0, sizeof(*this));
-        m_sizeOfHeader = (uint16_t)sizeof(RevisionLzmaHeader);
-        strcpy(m_idString, idString);
-        m_compressionType = CompressionType::LZMA2;
-        m_formatVersionNumber = formatVersionNumber;
-        }
-
-    int GetVersion() { return m_formatVersionNumber; }
-
-    bool IsValid()
-        {
-        if (m_sizeOfHeader != sizeof(RevisionLzmaHeader))
-            return false;
-
-        if (strcmp(m_idString, CHANGESET_LZMA_MARKER))
-            return false;
-
-        if (formatVersionNumber != m_formatVersionNumber)
-            return false;
-
-        return m_compressionType == LZMA2;
-        }
-};
-
-//=======================================================================================
-//! Writes the contents of a change stream to a file
-// @bsiclass                                                 Ramanujam.Raman   10/15
-//=======================================================================================
-struct RevisionChangesFileWriter : ChangeStream
-{
-private:
-    BeSQLite::LzmaEncoder m_lzmaEncoder;
-    BeFileName m_pathname;
-    BeFileLzmaOutStream* m_outLzmaFileStream;
-    Utf8String m_prefix;
-    DgnDbCR m_dgndb; // Only for debugging
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    11/2016
-    //---------------------------------------------------------------------------------------
-    DbResult StartOutput()
-        {
-        BeAssert(m_outLzmaFileStream == nullptr);
-        m_outLzmaFileStream = new BeFileLzmaOutStream();
-
-        BeFileName::CreateNewDirectory(m_pathname.GetDirectoryName());
-        BeFileStatus fileStatus = m_outLzmaFileStream->CreateOutputFile(m_pathname, true /* createAlways */);
-        if (fileStatus != BeFileStatus::Success)
-            {
-            LOG.fatalv(L"%ls - OutLzmaFileStream::CreateOutputFile failed", m_pathname.c_str());
-            BeAssert(false);
-            return BE_SQLITE_ERROR;
-            }
-
-        RevisionLzmaHeader header;
-        uint32_t bytesWritten;
-        ZipErrors zipStatus = m_outLzmaFileStream->_Write(&header, sizeof(header), bytesWritten);
-        if (zipStatus != ZIP_SUCCESS)
-            {
-            BeAssert(false);
-            return BE_SQLITE_ERROR;
-            }
-
-        zipStatus = m_lzmaEncoder.StartCompress(*m_outLzmaFileStream);
-        if (zipStatus != ZIP_SUCCESS)
-            {
-            BeAssert(false);
-            return BE_SQLITE_ERROR;
-            }
-
-        return WritePrefix();
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    11/2016
-    //---------------------------------------------------------------------------------------
-    void FinishOutput()
-        {
-        if (m_outLzmaFileStream == nullptr)
-            return;
-
-        m_lzmaEncoder.FinishCompress();
-
-        delete m_outLzmaFileStream;
-        m_outLzmaFileStream = nullptr;
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    10/2015
-    //---------------------------------------------------------------------------------------
-    DbResult _OutputPage(const void *pData, int nData) override
-        {
-        if (nullptr == m_outLzmaFileStream)
-            {
-            BeAssert(false && "Call initialize before streaming the contents of a change set/summary");
-            return BE_SQLITE_ERROR;
-            }
-
-        ZipErrors zipErrors = m_lzmaEncoder.CompressNextPage(pData, nData);
-        return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    10/2015
-    //---------------------------------------------------------------------------------------
-    void _Reset() override
-        {
-        FinishOutput();
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    10/2015
-    //---------------------------------------------------------------------------------------
-    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override
-        {
-        iter.Dump(m_dgndb, false, 1);
-        BeAssert(false);
-        return ChangeSet::ConflictResolution::Abort;
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    01/2017
-    //---------------------------------------------------------------------------------------
-    DbResult WritePrefix()
-        {
-        uint32_t size = m_prefix.empty() ? 0 : (uint32_t) m_prefix.SizeInBytes();
-        Byte sizeBytes[4];
-        UIntToByteArray(sizeBytes, size);
-
-        ZipErrors zipErrors = m_lzmaEncoder.CompressNextPage(sizeBytes, 4);
-        if (zipErrors != ZIP_SUCCESS)
-            return BE_SQLITE_ERROR;
-
-        if (size == 0)
-            return BE_SQLITE_OK;
-
-        zipErrors = m_lzmaEncoder.CompressNextPage(m_prefix.c_str(), size);
-        return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    05/2017
-    //---------------------------------------------------------------------------------------
-    void InitPrefix(bool containsSchemaChanges, DbSchemaChangeSetCR dbSchemaChanges)
-        {
-        m_prefix = "";
-        if (!containsSchemaChanges)
-            return;
-
-        Json::Value jsonPrefix = Json::objectValue;
-        jsonPrefix[JSON_PROP_ContainsSchemaChanges] = true;
-        if (dbSchemaChanges.GetSize() > 0)
-            jsonPrefix[JSON_PROP_DDL] = dbSchemaChanges.ToString();
-
-        m_prefix = Json::FastWriter().write(jsonPrefix);
-        }
-
-public:
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    10/2015
-    //---------------------------------------------------------------------------------------
-    RevisionChangesFileWriter(BeFileNameCR pathname, bool containsSchemaChanges, DbSchemaChangeSetCR dbSchemaChanges, DgnDbCR dgnDb) : m_pathname(pathname), m_prefix(""), m_dgndb(dgnDb), m_outLzmaFileStream(nullptr) 
-        {
-        InitPrefix(containsSchemaChanges, dbSchemaChanges);
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    01/2017
-    //---------------------------------------------------------------------------------------
-    DbResult Initialize()
-        {
-        if (m_outLzmaFileStream != nullptr)
-            {
-            BeAssert(false && "Call initialize only once");
-            return BE_SQLITE_ERROR;
-            }
-
-        return StartOutput();
-        }
-
-    ~RevisionChangesFileWriter() { _Reset(); }
-
-    DbResult CallOutputPage(const void* pData, int nData) {return _OutputPage(pData, nData);}
-
-};
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    11/2015
-//---------------------------------------------------------------------------------------
-DbResult RevisionChangesFileReader::StartInput()
-    {
-    BeAssert(m_inLzmaFileStream == nullptr);
-    m_inLzmaFileStream = new BeFileLzmaInStream();
-    m_prefix = "";
-
-    StatusInt status = m_inLzmaFileStream->OpenInputFile(m_pathname);
-    if (status != SUCCESS)
-        {
-        BeAssert(false);
-        return BE_SQLITE_ERROR;
-        }
-
-    RevisionLzmaHeader  header;
-    uint32_t actuallyRead;
-    m_inLzmaFileStream->_Read(&header, sizeof(header), actuallyRead);
-    if (actuallyRead != sizeof(header) || !header.IsValid())
-        {
-        BeAssert(false && "Attempt to read an invalid revision version");
-        return BE_SQLITE_ERROR_InvalidRevisionVersion;
-        }
-
-    ZipErrors zipStatus = m_lzmaDecoder.StartDecompress(*m_inLzmaFileStream);
-    if (zipStatus != ZIP_SUCCESS)
-        {
-        BeAssert(false);
-        return BE_SQLITE_ERROR;
-        }
-
-    return ReadPrefix();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    11/2015
-//---------------------------------------------------------------------------------------
-void RevisionChangesFileReader::FinishInput()
-    {
-    if (m_inLzmaFileStream == nullptr)
-        return;
-
-    m_lzmaDecoder.FinishDecompress();
-    delete m_inLzmaFileStream;
-    m_inLzmaFileStream = nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
-//---------------------------------------------------------------------------------------
-DbResult RevisionChangesFileReader::_InputPage(void *pData, int *pnData)
-    {
-    if (nullptr == m_inLzmaFileStream)
-        {
-        DbResult result = StartInput();
-        if (result != BE_SQLITE_OK)
-            return result;
-        }
-
-    ZipErrors zipErrors = m_lzmaDecoder.DecompressNextPage((Byte*) pData, pnData);
-    return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/2017
-//---------------------------------------------------------------------------------------
-Utf8StringCR RevisionChangesFileReader::GetPrefix(DbResult& result)
-    {
-    result = BE_SQLITE_OK;
-    if (nullptr == m_inLzmaFileStream)
-        result = StartInput();
-    
-    return m_prefix;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/2017
-//---------------------------------------------------------------------------------------
-DbResult RevisionChangesFileReader::GetSchemaChanges(bool& containsSchemaChanges, DbSchemaChangeSetR dbSchemaChanges)
-    {
-    DbResult result;
-    /* unused - Utf8StringCR prefix = */GetPrefix(result);
-    if (result != BE_SQLITE_OK)
-        return result;
-
-    containsSchemaChanges = false;
-    dbSchemaChanges.Clear();
-
-    if (m_prefix.empty())
-        return BE_SQLITE_OK;
-
-    Json::Value prefixJson;
-    if (!Json::Reader::Parse(m_prefix.c_str(), prefixJson))
-        {
-        BeAssert(false && "Prefix seems corrupted");
-        return BE_SQLITE_ERROR;
-        }
-
-    if (prefixJson.isMember(JSON_PROP_ContainsSchemaChanges))
-        containsSchemaChanges = prefixJson[JSON_PROP_ContainsSchemaChanges].asBool();
-
-    if (prefixJson.isMember(JSON_PROP_DDL))
-        dbSchemaChanges.AddDDL(prefixJson[JSON_PROP_DDL].asCString());
-
-    return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/2017
-//---------------------------------------------------------------------------------------
-BeSQLite::DbResult RevisionChangesFileReader::ReadPrefix()
-    {
-    Byte sizeBytes[4];
-    int readSizeBytes = 4;
-    ZipErrors zipErrors = m_lzmaDecoder.DecompressNextPage((Byte*) sizeBytes, &readSizeBytes);
-    if (zipErrors != ZIP_SUCCESS || readSizeBytes != 4)
-        {
-        BeAssert(false && "Couldn't read size of the schema changes");
-        return BE_SQLITE_ERROR;
-        }
-
-    int size = (int) ByteArrayToUInt(sizeBytes);
-    if (size == 0)
-        return BE_SQLITE_OK;
-
-    ScopedArray<Byte> prefixBytes(size);
-    int bytesRead = 0;
-    while (bytesRead < size)
-        {
-        int readSize = size - bytesRead;
-        zipErrors = m_lzmaDecoder.DecompressNextPage((Byte*) prefixBytes.GetData() + bytesRead, &readSize);
-        if (zipErrors != ZIP_SUCCESS)
-            {
-            BeAssert(false && "Error reading revision prefix stream");
-            return BE_SQLITE_ERROR;
-            }
-
-        bytesRead += readSize;
-        }
-    BeAssert(bytesRead == size);
-
-    m_prefix = (Utf8CP) prefixBytes.GetData();
-    return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
-//---------------------------------------------------------------------------------------
-void RevisionChangesFileReader::_Reset()
-    {
-    FinishInput();
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2017
 //---------------------------------------------------------------------------------------
 ChangeSet::ConflictResolution RevisionChangesFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
     {
-    return RevisionManager::ConflictHandler(m_dgndb, cause, iter);
+    DgnDb const* dgndb = dynamic_cast<DgnDb const*>(&GetDb());
+    return RevisionManager::ConflictHandler(*dgndb, cause, iter);
     }
 
 //---------------------------------------------------------------------------------------
@@ -505,6 +117,13 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
         // if we have a concurrency control, then we allow it to decide how to handle conflicts with local changes.
         // (We don't call the control in the case where there are no local changes. As explained below, we always want the incoming changes in that case.)
         return control->_OnConflict(dgndb, cause, iter);
+        }
+
+    if (ChangeSet::ConflictCause::Constraint == cause)
+        {
+        LOG.warning("Constraint conflict handled by rejecting incoming change. Constraint conflicts are NOT expected. These happen most often when two clients both insert elements with the same code. That indicates a bug in the client or the code server.");
+        iter.Dump(dgndb, false, 1);
+        return ChangeSet::ConflictResolution::Skip;
         }
 
     /*
@@ -895,6 +514,18 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
 void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extractInserted, bool avoidExclusiveModelElements) const
     {
     LockRequest lockRequest;
+
+    if (ContainsSchemaChanges(dgndb))
+        {
+        // The briefcase *must* hold the Schemas lock.
+        LockableId schemasLock(dgndb.Schemas());
+        if (dgndb.GetExistingBriefcaseManager()->QueryLockLevel(schemasLock) != LockLevel::Exclusive)
+            {
+            BeAssert(false && "If a revision contains schema changes, then the briefcase must hold the Schemas lock");
+            LOG.fatalv("Briefcase has made schema changes but does not hold the Schemas lock");
+            }
+        lockRequest.InsertLock(schemasLock, LockLevel::Exclusive);
+        }
 
     ECClassCP elemClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
     BeAssert(elemClass != nullptr);

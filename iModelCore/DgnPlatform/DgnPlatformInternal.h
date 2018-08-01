@@ -19,6 +19,7 @@
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeDebugLog.h>
 #include <Geom/GeoPoint.h>
+#include <PlacementOnEarth/Placement.h>
 #include <valarray>
 #include <math.h>
 #include "DgnCore/DgnCoreLog.h"
@@ -47,7 +48,7 @@
 #include <DgnPlatform/ElementGraphics.h>
 #include <DgnPlatform/GenericDomain.h>
 #include <DgnPlatform/IGeoCoordServices.h>
-#include <DgnPlatform/JsonUtils.h>
+#include <GeomJsonWireFormat/JsonUtils.h>
 #include <DgnPlatform/MeasureGeom.h>
 #include <DgnPlatform/NullContext.h>
 #include <DgnPlatform/RealityDataCache.h>

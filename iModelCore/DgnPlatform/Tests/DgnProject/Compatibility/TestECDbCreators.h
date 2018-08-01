@@ -209,9 +209,13 @@ struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
  <KindOfQuantity typeName="ANGULAR_VELOCITY"                     displayLabel="Angular Velocity"                     persistenceUnit="RAD/SEC(DefaultReal)"                  presentationUnits="RAD/SEC(real4u);DEG/SEC(real4u);RPM(real4u)" relativeError="0.001"/>
  <KindOfQuantity typeName="THERMAL_CONDUCTIVITY"                 displayLabel="Thermal Conductivity"                 persistenceUnit="W/(M*K)(DefaultReal)"                  presentationUnits="W/(M*K)(real4u);W/(M*C)(real4u);(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)(real4u)" relativeError="0.001"/>
 
- <KindOfQuantity typeName="TestKoq_NoPresUnit"  persistenceUnit="W/(M*K)" relativeError="0.4"/>
- <KindOfQuantity typeName="TestKoq_PersUnitWithFormat_NoPresUnit"  persistenceUnit="W/(M*K)(DefaultReal)" relativeError="0.5"/>
- <KindOfQuantity typeName="TestKoq_PersUnitWithFormatWithUnit_NoPresUnit"  persistenceUnit="FT(AmerFI8)" relativeError="0.6"/>
+ <KindOfQuantity typeName="TestKoq_NoPresUnit" persistenceUnit="W/(M*K)" relativeError="0.4"/>
+ <KindOfQuantity typeName="TestKoq_PersUnitWithFormat_NoPresUnit" persistenceUnit="W/(M*K)(DefaultReal)" relativeError="0.5"/>
+ <KindOfQuantity typeName="TestKoq_PersUnitWithFormatWithUnit_NoPresUnit" persistenceUnit="FT(AmerFI8)" relativeError="0.6"/>
+ <KindOfQuantity typeName="TestKoq_M_Mfi8" persistenceUnit="M" presentationUnits="M(fi8)" relativeError="0.7"/>
+ <KindOfQuantity typeName="TestKoq_Mfi8" persistenceUnit="M(fi8)" relativeError="0.8"/>
+ <KindOfQuantity typeName="TestKoq_SQFTfi8" persistenceUnit="SQ.FT(fi8)" relativeError="0.9"/>
+ <KindOfQuantity typeName="TestKoq_SQFTfi8_SQFTreal4u" persistenceUnit="SQ.FT(fi8)" presentationUnits="SQ.FT(real4u)" relativeError="1.0"/>
 
 </ECSchema>)xml"));
             }

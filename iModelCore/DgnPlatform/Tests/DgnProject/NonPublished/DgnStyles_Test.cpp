@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnStyles_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -116,6 +116,34 @@ TEST_F(DgnLineStyleTest, InsertReadLineStyles)
         ++iterLineStyles_begin;
         ++i;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Insert a new LineStyle into a DefinitionModel other than the DictionaryModel.
+* @bsimethod                                    Shaun.Sewall                    07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnLineStyleTest, InsertLineStyleIntoDefinitionModel)
+    {
+    SetupSeedProject();
+    DefinitionModelPtr definitionModel = DgnDbTestUtils::InsertDefinitionModel(*m_db, "OtherDefinitionModel");
+    ASSERT_TRUE(definitionModel.IsValid());
+
+    // Create new component.
+    LsComponentId componentId(LsComponentType::LineCode, 10);
+    ASSERT_TRUE(componentId.IsValid());
+    Json::Value componentJson(Json::objectValue);
+    LsComponent::AddComponentAsJsonProperty(componentId, *m_db, LsComponentType::LineCode, componentJson);
+
+    // Insert LineStyle
+    DgnStyleId styleId;
+    Utf8CP styleName = "TestLineStyle";
+    Utf8CP styleDescription = "TestLineStyleDescription";
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_db->LineStyles().Insert(styleId, definitionModel->GetModelId(), styleName, styleDescription, componentId, 53, 0.0)) << "Insert LineStyle should return SUCCESS";
+    ASSERT_TRUE(styleId.IsValid());
+
+    // Query for the newly inserted LineStyle
+    ASSERT_TRUE(LineStyleElement::QueryId(*definitionModel, styleName).IsValid()) << "Expect to find LineStyle in OtherDefinitionModel";
+    ASSERT_FALSE(LineStyleElement::QueryId(*m_db, styleName).IsValid()) << "Do not expect to find LineStyle in DictionaryModel";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -332,8 +360,9 @@ TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
     // Add new line style
     DgnLineStyles& styleTable = project->LineStyles();
     static Utf8CP STYLE_NAME = "RidhaTestLineStyle";
+    static Utf8CP STYLE_DESCRIPTION = "TestDescription";
     DgnStyleId newStyleId;
-    EXPECT_EQ(SUCCESS, styleTable.Insert(newStyleId, STYLE_NAME, componentId, 53, 0.0)) << "Insert line style return value should be SUCCESS";
+    EXPECT_EQ(SUCCESS, styleTable.Insert(newStyleId, DgnModel::DictionaryId(), STYLE_NAME, STYLE_DESCRIPTION, componentId, 53, 0.0)) << "Insert line style return value should be SUCCESS";
     ASSERT_TRUE(newStyleId.IsValid());
     EXPECT_TRUE(DbResult::BE_SQLITE_OK == project->SaveChanges());
     ASSERT_TRUE(1 == LineStyleElement::QueryCount(*project));
