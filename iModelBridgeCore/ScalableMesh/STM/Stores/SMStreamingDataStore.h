@@ -436,9 +436,8 @@ SMStreamingNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Valu
         Transform                     m_transform;
 
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
-        typedef std::map<ISMStore::NodeID, std::unique_ptr<StreamingDataBlock>> DataCache;
+        typedef std::unique_ptr<StreamingDataBlock> DataCache;
         mutable DataCache m_dataCache;
-        mutable std::mutex m_dataCacheMutex;
 
         StreamingDataBlock &   GetBlock(HPMBlockID blockID) const;
 
