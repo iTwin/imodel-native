@@ -407,6 +407,24 @@ ECObjectsStatus ECEnumeration::CreateEnumerator(ECEnumeratorP& enumerator, Utf8S
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECEnumeration::CreateEnumerator(ECEnumeratorP& enumerator, Utf8CP value)
+    {
+    auto name = ECEnumerator::DetermineName(GetName(), value, nullptr);
+    return CreateEnumerator(enumerator, name, value);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECEnumeration::CreateEnumerator(ECEnumeratorP& enumerator, int32_t value)
+    {
+    const auto& name = ECEnumerator::DetermineName(GetName(), nullptr, &value);
+    return CreateEnumerator(enumerator, name, value);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                 01/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 ECEnumeratorP ECEnumeration::FindEnumeratorByName(Utf8CP name) const
