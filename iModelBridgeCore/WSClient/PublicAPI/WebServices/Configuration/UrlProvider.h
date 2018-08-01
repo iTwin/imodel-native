@@ -115,7 +115,7 @@ struct UrlProvider
         WSCLIENT_EXPORT static Environment GetEnvironment();
 
         //! Set connectEnvironment
-        //! @param connect environment
+        //! @param env environment
         WSCLIENT_EXPORT static void SetEnvironment(Environment env);
 
         //! Get previous connect environment
