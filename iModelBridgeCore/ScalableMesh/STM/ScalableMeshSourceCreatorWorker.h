@@ -27,7 +27,14 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
     {
     private:
 
+        ScalableMeshDb* m_smDb;
+        ScalableMeshDb* m_smSisterDb;
+        SMSQLiteFilePtr m_mainFilePtr;
+        SMSQLiteFilePtr m_sisterFilePtr;
+
+
         uint32_t m_nbWorkers;            
+        BeDuration m_lockSleeper;  
 
         HFCPtr<MeshIndexType> m_pDataIndex;
 
@@ -42,6 +49,10 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         StatusInt CreateStitchTasks(uint32_t resolutionInd);
 
         uint32_t GetNbNodesPerTask(size_t nbNodes) const;
+
+        StatusInt CloseSqlFiles();
+
+        StatusInt OpenSqlFiles(bool readOnly, bool needSisterMainLockFile);
         
       
     protected:
