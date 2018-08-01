@@ -29,7 +29,10 @@ struct VersionsTests : public iModelTestsBase
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void SetUpTestCase()
         {
-        iModelTestsBase::SetUpTestCase();
+        auto behaviourOptions = RequestBehaviorOptions();
+        behaviourOptions.DisableOption(RequestBehaviorOptionsEnum::DoNotScheduleRenderThumbnailJob);
+
+        iModelTestsBase::SetUpTestCase(behaviourOptions);
         iModelHubHelpers::AcquireAndAddChangeSets(s_client, s_info, 15);
         iModelHubHelpers::CreateNamedVersion(s_version5, s_connection, "VersionsTests5", 5);
         iModelHubHelpers::CreateNamedVersion(s_version10, s_connection, "VersionsTests10", 10);
