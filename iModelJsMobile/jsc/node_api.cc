@@ -1293,7 +1293,7 @@ napi_status napi_get_value_string_utf8(napi_env env,
 
     if (buf == nullptr) {
     if (result != nullptr)
-      *result = JSStringGetLength(valueString);
+      *result = JSStringGetMaximumUTF8CStringSize(valueString);
     } else {
     size_t returnSize = JSStringGetUTF8CString(valueString, buf, bufsize);
     if (result != nullptr)

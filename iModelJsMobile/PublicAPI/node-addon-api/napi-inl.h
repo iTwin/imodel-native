@@ -566,7 +566,9 @@ inline std::string String::Utf8Value() const {
   std::string value;
   value.reserve(length + 1);
   value.resize(length);
-  status = napi_get_value_string_utf8(_env, _value, &value[0], value.capacity(), nullptr);
+  size_t returnSize; //This in bytes including null. the length we recieved was maximum size for utf8string now we need to trim it down to actull size.
+  status = napi_get_value_string_utf8(_env, _value, &value[0], value.capacity(), &returnSize);
+  value.resize(returnSize);
   NAPI_THROW_IF_FAILED(_env, status, "");
   return value;
 }
