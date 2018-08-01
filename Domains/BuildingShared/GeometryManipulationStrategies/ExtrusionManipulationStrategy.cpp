@@ -382,6 +382,7 @@ void ExtrusionManipulationStrategy::_SetProperty
         m_useFixedSweepDirection = value;
         }
 
+    m_baseShapeManipulationStrategy->SetProperty(key, value);
     T_Super::_SetProperty(key, value);
     }
 
@@ -410,6 +411,7 @@ void ExtrusionManipulationStrategy::_SetProperty
             }
         }
 
+    m_baseShapeManipulationStrategy->SetProperty(key, value);
     T_Super::_SetProperty(key, value);
     }
 
@@ -465,6 +467,7 @@ void ExtrusionManipulationStrategy::_SetProperty
         SetFixedHeight(value);
         }
 
+    m_baseShapeManipulationStrategy->SetProperty(key, value);
     T_Super::_SetProperty(key, value);
     }
 
@@ -482,6 +485,7 @@ void ExtrusionManipulationStrategy::_SetProperty
         SetFixedHeight(value);
         }
 
+    m_baseShapeManipulationStrategy->SetProperty(key, value);
     T_Super::_SetProperty(key, value);
     }
 
@@ -499,6 +503,7 @@ void ExtrusionManipulationStrategy::_SetProperty
         SetFixedSweepDirection(value);
         }
 
+    m_baseShapeManipulationStrategy->SetProperty(key, value);
     T_Super::_SetProperty(key, value);
     }
 
@@ -528,6 +533,10 @@ BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
         value = m_fixedHeight;
         return BentleyStatus::SUCCESS;
         }
+
+    BentleyStatus baseShapeRetVal = m_baseShapeManipulationStrategy->TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == baseShapeRetVal)
+        return baseShapeRetVal;
 
     return T_Super::_TryGetProperty(key, value);
     }
@@ -577,6 +586,10 @@ BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
         return BentleyStatus::SUCCESS;
         }
 
+    BentleyStatus baseShapeRetVal = m_baseShapeManipulationStrategy->TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == baseShapeRetVal)
+        return baseShapeRetVal;
+
     return T_Super::_TryGetProperty(key, value);
     }
 
@@ -606,6 +619,10 @@ BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
         value = m_fixedSweepDirection;
         return BentleyStatus::SUCCESS;
         }
+
+    BentleyStatus baseShapeRetVal = m_baseShapeManipulationStrategy->TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == baseShapeRetVal)
+        return baseShapeRetVal;
 
     return T_Super::_TryGetProperty(key, value);
     }
@@ -679,4 +696,181 @@ DynamicStateBaseCPtr ExtrusionManipulationStrategy::_GetDynamicState() const
 bvector<IGeometryPtr> ExtrusionManipulationStrategy::_FinishConstructionGeometry() const
     {
     return m_baseShapeManipulationStrategy->FinishConstructionGeometry();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ExtrusionManipulationStrategy::_SetProperty
+(
+    Utf8CP key, 
+    DPlane3d const& value
+)
+    {
+    m_baseShapeManipulationStrategy->SetProperty(key, value);
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ExtrusionManipulationStrategy::_SetProperty
+(
+    Utf8CP key, 
+    RotMatrix const& value
+)
+    {
+    m_baseShapeManipulationStrategy->SetProperty(key, value);
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ExtrusionManipulationStrategy::_SetProperty
+(
+    Utf8CP key, 
+    Utf8String const& value
+)
+    {
+    m_baseShapeManipulationStrategy->SetProperty(key, value);
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ExtrusionManipulationStrategy::_SetProperty
+(
+    Utf8CP key, 
+    bvector<double> const& value
+)
+    {
+    m_baseShapeManipulationStrategy->SetProperty(key, value);
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ExtrusionManipulationStrategy::_SetProperty
+(
+    Utf8CP key, 
+    bvector<Utf8String> const& value
+)
+    {
+    m_baseShapeManipulationStrategy->SetProperty(key, value);
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key, 
+    DPlane3d& value
+) const
+    {
+    BentleyStatus baseShapeRetVal = m_baseShapeManipulationStrategy->TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == baseShapeRetVal)
+        return baseShapeRetVal;
+
+    return T_Super::_TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key,
+    int& value
+) const
+    {
+    BentleyStatus baseShapeRetVal = m_baseShapeManipulationStrategy->TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == baseShapeRetVal)
+        return baseShapeRetVal;
+
+    return T_Super::_TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key, 
+    RotMatrix& value
+) const
+    {
+    BentleyStatus baseShapeRetVal = m_baseShapeManipulationStrategy->TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == baseShapeRetVal)
+        return baseShapeRetVal;
+
+    return T_Super::_TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key,
+    Utf8String& value
+) const
+    {
+    BentleyStatus baseShapeRetVal = m_baseShapeManipulationStrategy->TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == baseShapeRetVal)
+        return baseShapeRetVal;
+
+    return T_Super::_TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key,
+    bvector<double>& value
+) const
+    {
+    BentleyStatus baseShapeRetVal = m_baseShapeManipulationStrategy->TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == baseShapeRetVal)
+        return baseShapeRetVal;
+
+    return T_Super::_TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key,
+    bvector<Utf8String>& value
+) const
+    {
+    BentleyStatus baseShapeRetVal = m_baseShapeManipulationStrategy->TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == baseShapeRetVal)
+        return baseShapeRetVal;
+
+    return T_Super::_TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key,
+    GeometryManipulationStrategyProperty& value
+) const
+    {
+    BentleyStatus baseShapeRetVal = m_baseShapeManipulationStrategy->TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == baseShapeRetVal)
+        return baseShapeRetVal;
+
+    return T_Super::_TryGetProperty(key, value);
     }
