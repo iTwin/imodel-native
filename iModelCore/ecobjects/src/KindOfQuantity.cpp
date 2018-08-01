@@ -905,7 +905,7 @@ ECObjectsStatus KindOfQuantity::FromFUSDescriptors(Utf8CP persFUS, const bvector
     {
     Utf8String persUnit;
     bvector<Utf8String> formatStrings;
-    auto status = KindOfQuantity::UpdateFUSDescriptors(persUnit, formatStrings, persFUS, presFuses, unitsSchema, formatSchema);
+    auto status = KindOfQuantity::UpdateFUSDescriptors(persUnit, formatStrings, persFUS, presFuses, formatSchema, unitsSchema);
     
     if (ECObjectsStatus::Success != status)
         return status;

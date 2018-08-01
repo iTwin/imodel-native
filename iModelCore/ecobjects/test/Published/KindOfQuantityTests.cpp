@@ -272,7 +272,7 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     {
     // old persistenceFUS: DM(fi8)
     // old presentationFUS': -
-    // new persistenceUnit: u:MM
+    // new persistenceUnit: u:DM
     // new presentationFormats: f:AmerFI
     persUnitName.clear();
     presFormatStrings.clear();
@@ -498,6 +498,392 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "IN", presFUSes, schema, unitsSchema));
     EXPECT_STRCASEEQ("u:IN", persUnitName.c_str());
     EXPECT_EQ(0, presFormatStrings.size());
+    }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                 04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityTest, FromFUSDescriptor)
+    {
+    bvector<Utf8CP> presFUSes;
+    auto& formatsSchema = *GetFormatsSchema();
+    auto& unitsSchema = *GetUnitsSchema();
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    EXPECT_EQ(ECObjectsStatus::NullPointerValue, koq->FromFUSDescriptors(nullptr, presFUSes, formatsSchema, unitsSchema));
+    EXPECT_EQ(ECObjectsStatus::NullPointerValue, koq->FromFUSDescriptors("", presFUSes, formatsSchema, unitsSchema));
+    }
+    {
+    // old persistenceFUS: MM
+    // old presentationFUS': -
+    // new persistenceUnit: u:MM
+    // new presentationFormats: -
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("MM", presFUSes, formatsSchema, unitsSchema))
+        << "Should succeed if the persistenceFUS has a valid unit.";
+    EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+    {
+    // old persistenceFUS: MM
+    // old presentationFUS': LUX
+    // new persistenceUnit: u:MM
+    // new presentationFormats: -
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    presFUSes.push_back("LUX");
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("MM", presFUSes, formatsSchema, unitsSchema))
+        << "Should succeed if the persistenceFUS has a valid unit.";
+    EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+    {
+    // old persistenceFUS: badUnit
+    // old presentationFUS': -
+    // new persistenceUnit: -
+    // new presentationFormats: -
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    EXPECT_EQ(ECObjectsStatus::InvalidUnitName, koq->FromFUSDescriptors("badUnit", presFUSes, formatsSchema, unitsSchema))
+        << "Should fail if the persistenceFUS has an invalid Unit.";
+    EXPECT_EQ(nullptr, koq->GetPersistenceUnit());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+    {
+    // old persistenceFUS: MM(SillyFormat)
+    // old presentationFUS': -
+    // new persistenceUnit: u:MM
+    // new presentationFormats: -
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("MM(SillyFormat)", presFUSes, formatsSchema, unitsSchema))
+        << "Should succeed if the persistenceFUS has a valid unit.";
+    EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+    {
+    // old persistenceFUS: DM(fi8)
+    // old presentationFUS': -
+    // new persistenceUnit: u:DM
+    // new presentationFormats: f:AmerFI
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("DM(fi8)", presFUSes, formatsSchema, unitsSchema))
+        << "Should succeed if the persistenceFUS has a valid unit.";
+    EXPECT_STRCASEEQ("u:DM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("f:AmerFI", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    }
+    {
+    // old persistenceFUS: MM(real)
+    // old presentationFUS': -
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:defaultReal[u:MM]
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("MM(real)", presFUSes, formatsSchema, unitsSchema))
+        << "Should succeed if persistenceFUS has a valid unit and format";
+    EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("f:DefaultReal[u:MM]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str()) << "A presentation format should have been created from the persistenceFUS' format.";
+    }
+    {
+    // old persistenceFUS: W/(M*K)
+    // old presentationFUS': -
+    // new persistenceUnit: u:W_PER_M_K
+    // new presentationFormats: -
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("W/(M*K)", presFUSes, formatsSchema, unitsSchema))
+        << "Should succeed if persistenceFUS has a valid unit and format";
+    EXPECT_STRCASEEQ("u:W_PER_M_K", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+    {
+    // old persistenceFUS: MM
+    // old presentationFUS': badUnit
+    // new persistenceUnit: -
+    // new presentationFormats: -
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    presFUSes.push_back("badUnit");
+    EXPECT_EQ(ECObjectsStatus::InvalidUnitName, koq->FromFUSDescriptors("MM", presFUSes, formatsSchema, unitsSchema))
+        << "Should fail if a presentation FUS has an invalid Unit";
+    }
+    {
+    // old persistenceFUS: MM
+    // old presentationFUS': MM(KindOfFormat)
+    // new persistenceUnit: u:MM
+    // new presentationFormats: -
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    presFUSes.push_back("MM(KindOfFormat)");
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("MM", presFUSes, formatsSchema, unitsSchema))
+        << "Should drop a presentation FUS if it has an invalid Format.";
+    EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+    {
+    // old persistenceFUS: MM(KindOfFormat)
+    // old presentationFUS': MM
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:DefaultReal[u:MM]
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    presFUSes.push_back("MM");
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("MM(KindOfFormat)", presFUSes, formatsSchema, unitsSchema))
+        << "Should drop the format from the persistence FUS if it cannot be found.";
+    EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("f:DefaultReal[u:MM]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    }
+    {
+    // old persistenceFUS: MM(realu)
+    // old presentationFUS': CM
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:DefaultReal[u:CM]
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    presFUSes.push_back("CM");
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("MM(realu)", presFUSes, formatsSchema, unitsSchema));
+    EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("f:DefaultReal[u:CM]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    }
+    {
+    // old persistenceFUS: MM(real)
+    // old presentationFUS': CM(real4u)
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:DefaultRealU(4)[u:CM]
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    presFUSes.push_back("CM(real4u)");
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("MM(real)", presFUSes, formatsSchema, unitsSchema));
+    EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    }
+    {
+    // old persistenceFUS: MM
+    // old presentationFUS': CM(real4u)
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:DefaultRealU(4)[u:CM]
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    presFUSes.push_back("CM(real4u)");
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("MM", presFUSes, formatsSchema, unitsSchema));
+    EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    }
+    {
+    // old persistenceFUS: MM(real)
+    // old presentationFUS': DM(real);CM(real4u)
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:DefaultRealU[u:DM];f:DefaultRealU(4)[u:CM]
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    presFUSes.push_back("DM(real)");
+    presFUSes.push_back("CM(real4u)");
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("MM(real)", presFUSes, formatsSchema, unitsSchema));
+    EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_EQ(2, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("f:DefaultReal[u:DM]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM]", koq->GetPresentationFormats()[1].GetQualifiedFormatString(*schema).c_str());
+    }
+    {
+    // old persistenceFUS: MM(fi8)
+    // old presentationFUS': DM(fi8)
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:AmerFI
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    presFUSes.push_back("DM(fi8)");
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("MM(fi8)", presFUSes, formatsSchema, unitsSchema));
+    EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("f:AmerFI", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    }
+    {
+    // old persistenceFUS: MM(fi8)
+    // old presentationFUS': -
+    // new persistenceUnit: u:MM
+    // new presentationFormats: f:AmerFI
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("MM(fi8)", presFUSes, formatsSchema, unitsSchema));
+    EXPECT_STRCASEEQ("u:MM", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("f:AmerFI", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    }
+    {
+    // old persistenceFUS: SQ.FT(fi8)
+    // old presentationFUS': -
+    // new persistenceUnit: u:SQ_FT
+    // new presentationFormats: -
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("SQ.FT(fi8)", presFUSes, formatsSchema, unitsSchema));
+    EXPECT_STRCASEEQ("u:SQ_FT", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+    {
+    // old persistenceFUS: M(meters4u)
+    // old presentationFUS': IN(inches4u)
+    // new persistenceUnit: u:M
+    // new presentationFormats: f:DefaultRealUNS(4)[u:M|m]
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("M(meters4u)", presFUSes, formatsSchema, unitsSchema));
+    EXPECT_STRCASEEQ("u:M", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("f:DefaultRealUNS(4)[u:M|m]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    }
+    {
+    // old persistenceFUS: M(meters4u)
+    // old presentationFUS': IN(inches4u)
+    // new persistenceUnit: u:M
+    // new presentationFormats: f:DefaultRealUNS(4)[u:IN|&quot;]
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    presFUSes.push_back("IN(inches4u)");
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("M(meters4u)", presFUSes, formatsSchema, unitsSchema));
+    EXPECT_STRCASEEQ("u:M", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("f:DefaultRealUNS(4)[u:IN|&quot;]", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    }
+    {
+    // old persistenceFUS: IN
+    // old presentationFUS': IN(fi8)
+    // new persistenceUnit: u:IN
+    // new presentationFormats: f:AmerFI
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    presFUSes.push_back("IN(fi8)");
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("IN", presFUSes, formatsSchema, unitsSchema));
+    EXPECT_STRCASEEQ("u:IN", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("f:AmerFI", koq->GetPresentationFormats()[0].GetQualifiedFormatString(*schema).c_str());
+    }
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "test", "t", 1, 0, 1);
+    schema->AddReferencedSchema(formatsSchema);
+    schema->AddReferencedSchema(unitsSchema);
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKoq");
+    presFUSes.clear();
+    EC_EXPECT_SUCCESS(koq->FromFUSDescriptors("IN", presFUSes, formatsSchema, unitsSchema));
+    EXPECT_STRCASEEQ("u:IN", koq->GetPersistenceUnit()->GetQualifiedName(*schema).c_str());
+    EXPECT_EQ(0, koq->GetPresentationFormats().size());
     }
     }
 
