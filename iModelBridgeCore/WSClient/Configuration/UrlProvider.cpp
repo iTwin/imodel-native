@@ -16,6 +16,11 @@
 #define RECORD_Url              "URL"
 #define RECORD_TimeCached       "TimeCached"
 
+#define Environment_Release "Release"
+#define Environment_Qa      "Qa"
+#define Environment_Dev     "Dev"
+#define Environment_Perf    "Perf"
+
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -492,6 +497,51 @@ void UrlProvider::SetHttpHandler(IHttpHandlerPtr customHandler)
     {
     s_customHandler = customHandler;
     s_buddi = std::make_shared<BuddiClient>(s_customHandler, nullptr, s_thread);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+UrlProvider::Environment UrlProvider::GetEnvironment()
+    {
+    return s_env;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void UrlProvider::SetEnvironment(UrlProvider::Environment env)
+    {
+    s_env = env;
+
+    Json::Value jsonPreviousEnv = s_localState->GetJsonValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT);
+
+    CleanUpUrlCache();
+
+    if (jsonPreviousEnv.isNull() || env != jsonPreviousEnv.asUInt())
+        {
+        s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT, env);
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String UrlProvider::GetEnvironmentString()
+    {
+    switch (s_env)
+        {
+        case UrlProvider::Environment::Release:
+            return Environment_Release;
+        case UrlProvider::Environment::Qa:
+            return Environment_Qa;
+        case UrlProvider::Environment::Dev:
+            return Environment_Dev;
+        case UrlProvider::Environment::Perf:
+            return Environment_Perf;
+        }
+
+    return "";
     }
 
 /*--------------------------------------------------------------------------------------+
