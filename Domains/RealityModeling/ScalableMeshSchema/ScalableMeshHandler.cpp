@@ -16,6 +16,8 @@
 #include <DgnPlatform\LinkElement.h>
 #include <Bentley\BeDirectoryIterator.h>
 #include <ScalableMesh/ScalableMeshLib.h>
+#include <ScalableMesh/IScalableMeshSaveAs.h>
+#include <ScalableMesh/IScalableMeshProgress.h>
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 #include <DgnPlatform\TextString.h>
 #include <DgnPlatform\DgnGeoCoord.h>
@@ -1878,6 +1880,23 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         { 
         if (&DgnViewLib::GetHost() != nullptr)
             ViewManager::GetManager().DropViewDecoration(&s_viewDecoration);
+        }
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Richard.Bois     08/2018
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir) const
+    {
+    if (_AllowPublishing())
+        {
+        if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir))
+            {
+            BeFileName oldRootFile = outputDir;
+            oldRootFile.AppendToPath(L"n_0.json");
+            BeFileName::BeMoveFile(oldRootFile, outFileName);
+            }
         }
     }
 

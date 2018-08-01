@@ -588,6 +588,8 @@ public:
 
         SCALABLEMESH_SCHEMA_EXPORT void CreateBreaklines(const BeFileName& extraLinearFeatureAbsFileName, bvector<DSegment3d> const& breaklines);
 
+        SCALABLEMESH_SCHEMA_EXPORT void WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir) const;
+
         uint64_t GetAssociatedRegionId() const { return m_associatedRegion; }
 
 
