@@ -12,7 +12,7 @@
 BEGIN_UNNAMED_NAMESPACE
 static const double halfMillimeter() {return .5 * PlacementOnEarth::OneMillimeter();}
 static void fixRange(double& low, double& high) {if (low==high) {low-=halfMillimeter(); high+=halfMillimeter();}}
-static bool isFixedRange(float low, float high) {return abs((high-low) - PlacementOnEarth::OneMillimeter()) <= 0.0001;}
+static bool isFixedRange(float low, float high) {return std::abs((high-low) - PlacementOnEarth::OneMillimeter()) <= 0.0001;}
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**/ /**
