@@ -111,6 +111,16 @@ struct UrlProvider
         //! Get available UrlDescriptors
         WSCLIENT_EXPORT static bset<const UrlProvider::UrlDescriptor*> GetUrlRegistry();
 
+        //! Get current connect environment
+        WSCLIENT_EXPORT static Environment GetEnvironment();
+
+        //! Set connectEnvironment
+        //! @param connect environment
+        WSCLIENT_EXPORT static void SetEnvironment(Environment env);
+
+        //! Get previous connect environment
+        WSCLIENT_EXPORT static Utf8String GetEnvironmentString();
+
         //! Resolve UrlDescriptor by its BUDDI URI.
         //! @param uri - BUDDI URI retrieved from UrlDescriptor::GetBuddiUri call
         //! @return If succeeds, returns a pointer to UrlDescriptor. Otherwise, nullptr.
