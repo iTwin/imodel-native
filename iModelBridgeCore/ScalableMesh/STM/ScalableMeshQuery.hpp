@@ -1633,7 +1633,8 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                 bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
                 bvector<bool> isMask;
                 map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
-                if (!GetRegionsFromClipVector3D(polyfaces, clips.get(), meshPtr->GetPolyfaceQuery(), isMask))
+                bvector<size_t> polyfaceIndices;
+                if (!GetRegionsFromClipVector3D(polyfaces, polyfaceIndices, clips.get(), meshPtr->GetPolyfaceQuery(), isMask))
                 {
                     meshP = meshPtr.get();
                     return meshP;

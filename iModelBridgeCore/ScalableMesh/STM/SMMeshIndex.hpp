@@ -1101,8 +1101,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveW
     flags->SetLoadTexture(true);
     IScalableMeshMeshPtr meshP = nodeP->GetMesh(flags);
     bvector<bool> isMask;
+    bvector<size_t> polyfaceIndices;
     if (meshP.get() != nullptr)
-        GetRegionsFromClipVector3D(polyfaces, boundariesToRemoveWithin, meshP->GetPolyfaceQuery(), isMask);
+        GetRegionsFromClipVector3D(polyfaces, polyfaceIndices, boundariesToRemoveWithin, meshP->GetPolyfaceQuery(), isMask);
 
     map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
     if (polyfaces[0][0]->GetPointCount() > 0)
@@ -4630,8 +4631,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                     isMaskPrimitive.push_back(isMask[&clip - clips.data()]);
                 clipComplete->Append(*clip);
             }
+            bvector<size_t> polyfaceIndices;
             if (meshP.get() != nullptr)
-                hasClip = GetRegionsFromClipVector3D(polyfaces, clipComplete.get(), m_SMIndex->IsFromCesium() ? polyHeader.get() : polyfaceQuery, isMaskPrimitive);
+                hasClip = GetRegionsFromClipVector3D(polyfaces, polyfaceIndices, clipComplete.get(), m_SMIndex->IsFromCesium() ? polyHeader.get() : polyfaceQuery, isMaskPrimitive);
         }
 
         if (hasClip) 
