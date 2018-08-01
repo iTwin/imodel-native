@@ -179,6 +179,8 @@ public:
         for (auto& id : m_apSubNodeID) if (nodeHeader.m_apSubNodeID[&id - &m_apSubNodeID.front()] != SQLiteNodeHeader::NO_NODEID) id = HPMBlockID(nodeHeader.m_apSubNodeID[&id - &m_apSubNodeID.front()]);
         for (size_t i = 0; i < 26; ++i)
             {
+            m_apNeighborNodeID[i].clear();
+
             for (auto& id : nodeHeader.m_apNeighborNodeID[i])
                 if (id != SQLiteNodeHeader::NO_NODEID)
                     m_apNeighborNodeID[i].push_back(HPMBlockID(id));

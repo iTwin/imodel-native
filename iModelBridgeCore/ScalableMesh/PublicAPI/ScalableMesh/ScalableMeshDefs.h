@@ -226,7 +226,6 @@ enum class SMGenerateOperation
     };
 
 
-
 #define MEAN_SCREEN_PIXELS_PER_POINT 100
 
 

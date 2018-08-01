@@ -6,13 +6,13 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 std::string typeDesc[(int)EventType::TYPE_QTY] = { "LOAD (CREATE) MESH", " ACQUIRE CACHED MESH ", " LOAD (CREATE) TEX ", " ACQUIRE CACHED TEX " ,
 "RELEASE CACHED MESH", "RELEASE CACHED TEX" ,"SWITCH TO VRAM(MESH)" ," SWITCH TO VRAM(TEX)", "LOAD NODE", "UNLOAD NODE", "OVERVIEW 1", "LOADNODEDISPLAYDATA", "PRELOADOVERVIEW",
-"ADDITEM", "REMOVEITEM", "GETITEM", "INCREMENT", "DECREMENT", "BEFORE_SWITCH_VIDEO_TEX", "DELETEITEM","GRAPH_STORE", "POOL_REPLACEITEM", "WORKER_MESH_TASK", "WORKER_FILTER_TASK"};
+"ADDITEM", "REMOVEITEM", "GETITEM", "INCREMENT", "DECREMENT", "BEFORE_SWITCH_VIDEO_TEX", "DELETEITEM","GRAPH_STORE", "POOL_REPLACEITEM", "WORKER_MESH_TASK", "WORKER_FILTER_TASK", "WORKER_STITCH_TASK", "WORKER_STITCH_TASK_NEIGHBOR" };
 
 
 bool typeToFilter[(int)EventType::TYPE_QTY] = { false, false, false, false,
 false, false, false, false,
 false, false, false, false,
-false, false, false, false, false, false, false, false, false, false, true, true };
+false, false, false, false, false, false, false, false, false, false, true, true, true, true };
    
 
 CachedDataEventTracer* CachedDataEventTracer::s_instance;
@@ -25,6 +25,8 @@ CachedDataEventTracer::CachedDataEventTracer()
     end = ring.data() + ring.size();
     started = false;
     valToFilter = -1;
+    m_logDirectory = "c:\\";
+    m_outputObjLog = true;
     }
 
 bool CachedDataEventTracer::filter(TraceEvent& e)
@@ -44,6 +46,16 @@ CachedDataEventTracer* CachedDataEventTracer::GetInstance()
     if (s_instance == nullptr)
         s_instance = new CachedDataEventTracer();
     return s_instance;
+    }
+
+void CachedDataEventTracer::setLogDirectory(const Utf8String& logDir)
+    {
+    m_logDirectory = logDir;
+    }
+
+void CachedDataEventTracer::setOutputObjLog(bool outputObjLog)
+    {
+    m_outputObjLog = outputObjLog;
     }
 
 void CachedDataEventTracer::start()
@@ -68,15 +80,11 @@ void CachedDataEventTracer::analyze(int processId)
     {
     std::ostringstream fileNameStr;
     std::ostringstream fileNameObjStr;
+    
+    fileNameStr << m_logDirectory.c_str() << "trace";
+    fileNameObjStr << m_logDirectory.c_str() << "traceByObj";
 
-    fileNameStr << "c:\\trace";
-    fileNameObjStr << "c:\\traceByObj";
-
-    /*
-    fileNameStr << "D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\trace";
-    fileNameObjStr << "D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\traceByObj";    
-    */
-
+    
     if (processId != -1)
         {
         fileNameStr << std::to_string(processId);
@@ -98,15 +106,19 @@ void CachedDataEventTracer::analyze(int processId)
         eventsByVal[init->objVal].push_back(str.str());
         }
     traceFile.close();
-    traceFile.open(fileNameObjStr.str(), std::ios_base::app);
-    for (auto& obj : eventsByVal)
-        {
-        for (auto& str : obj.second)
-            traceFile << str;
 
-        traceFile << " ----------------- " << std::endl;
+    if (m_outputObjLog)
+        {
+        traceFile.open(fileNameObjStr.str(), std::ios_base::app);
+        for (auto& obj : eventsByVal)
+            {
+            for (auto& str : obj.second)
+                traceFile << str;
+
+            traceFile << " ----------------- " << std::endl;
+            }
+        traceFile.close();
         }
-    traceFile.close();
     }
 
 
