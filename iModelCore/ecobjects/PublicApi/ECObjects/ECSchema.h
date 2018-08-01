@@ -1440,8 +1440,9 @@ private:
     ECOBJECTS_EXPORT NamedFormatCP GetCachedPersistenceFormat() const;
     ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, UnitAndLabelPairs const* unitsAndLabels = nullptr) const;
     ECOBJECTS_EXPORT static bool ValidatePresentationFormat(ECFormatCR parent, ECUnitCP persistenceUnit, Nullable<int32_t> precisionOverride, KindOfQuantity::UnitAndLabelPairs const* unitsAndLabels);
-    ECOBJECTS_EXPORT static ECObjectsStatus TransformFormatString(ECFormatCP& outFormat, Nullable<int32_t>& outPrec, UnitAndLabelPairs& outPairs, Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper, ECSchemaCR koqSchema);
     ECOBJECTS_EXPORT static bool ValidatePresentationFormat(Utf8StringCR formatString, ECUnitCP persistenceUnit, ECSchemaCR formats, ECSchemaCR units);
+    ECOBJECTS_EXPORT static ECObjectsStatus TransformFormatString(ECFormatCP& outFormat, Nullable<int32_t>& outPrec, UnitAndLabelPairs& outPairs, Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper, ECSchemaCP koqSchema = nullptr);
+
 public:
     const bpair<Utf8String, bvector<Utf8String>>& GetDescriptorCache() {return m_descriptorCache;} //!< Get the cache of FUS descriptors
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this kind of quantity is defined in.

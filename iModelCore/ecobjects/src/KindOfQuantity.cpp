@@ -324,7 +324,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatSingleUnitOverride(ECFormat
 // @bsimethod                                  Kyle.Abramowitz                  07/2018
 //--------------------------------------------------------------------------------------
 // static
-ECObjectsStatus KindOfQuantity::TransformFormatString(ECFormatCP& outFormat, Nullable<int32_t>& outPrec, UnitAndLabelPairs& outPairs, Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper, ECSchemaCR koqSchema)
+ECObjectsStatus KindOfQuantity::TransformFormatString(ECFormatCP& outFormat, Nullable<int32_t>& outPrec, UnitAndLabelPairs& outPairs, Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper, ECSchemaCP koqSchema)
     {
     Utf8String formatName;
     Nullable<int32_t> prec;
@@ -340,8 +340,8 @@ ECObjectsStatus KindOfQuantity::TransformFormatString(ECFormatCP& outFormat, Nul
     Utf8String unqualifiedName;
     ECClass::ParseClassName(alias, unqualifiedName, formatName);
 
-    if (alias.empty())
-        alias = koqSchema.GetAlias();
+    if (alias.empty() && (nullptr != koqSchema))
+        alias = koqSchema->GetAlias();
 
     auto format = nameToFormatMapper(alias, unqualifiedName);
 
@@ -357,8 +357,8 @@ ECObjectsStatus KindOfQuantity::TransformFormatString(ECFormatCP& outFormat, Nul
         for (const auto& u : unitNames)
             {
             ECClass::ParseClassName(alias, unqualifiedName, u);
-            if (alias.empty())
-                alias = koqSchema.GetAlias();
+            if (alias.empty() && (nullptr != koqSchema))
+                alias = koqSchema->GetAlias();
 
             auto unit = nameToUnitMapper(alias, unqualifiedName);
             if (nullptr == unit)
@@ -384,7 +384,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatByString(Utf8StringCR forma
     ECFormatCP format = nullptr;
     Nullable<int32_t> prec = nullptr;
     UnitAndLabelPairs units;
-    if (ECObjectsStatus::Success != TransformFormatString(format, prec, units, formatString, nameToFormatMapper, nameToUnitMapper, GetSchema()))
+    if (ECObjectsStatus::Success != TransformFormatString(format, prec, units, formatString, nameToFormatMapper, nameToUnitMapper, &GetSchema()))
         return ECObjectsStatus::Error;
 
     if (!units.empty())
@@ -521,10 +521,7 @@ bool KindOfQuantity::ValidatePresentationFormat(Utf8StringCR formatString, ECUni
         return formats.LookupFormat((alias + ":" + name).c_str());
         };
 
-    // HACK. TransformFormatString takes a schema to get an alias for the KoQs schema, but in this case it will never be used because
-    // this function is private and only used to validate upgraded old units which can never be defined in the same schema as the KoQ so this code path will never
-    // be hit. TODO make this better
-    if (ECObjectsStatus::Success != TransformFormatString(format, prec, pairs, formatString, formatLookerUpper, unitLookerUpper, units))
+    if (ECObjectsStatus::Success != TransformFormatString(format, prec, pairs, formatString, formatLookerUpper, unitLookerUpper))
         return false;
 
     return ValidatePresentationFormat(*format, persistenceUnit, prec, &pairs);
