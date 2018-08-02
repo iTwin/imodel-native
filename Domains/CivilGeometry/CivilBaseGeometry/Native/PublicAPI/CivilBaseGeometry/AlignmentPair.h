@@ -77,8 +77,8 @@ public:
     CIVILBASEGEOMETRY_EXPORT void UpdateHorizontalCurveVector(CurveVectorCP pHorizontalAlignment);
     CIVILBASEGEOMETRY_EXPORT void UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment);
 
-    bool IsValidHorizontal() const { return m_horizontalCurveVector.IsValid(); }
-    bool IsValidVertical() const { return m_verticalCurveVector.IsValid(); }
+    CIVILBASEGEOMETRY_EXPORT bool IsValidHorizontal() const { return m_horizontalCurveVector.IsValid(); }
+    CIVILBASEGEOMETRY_EXPORT bool IsValidVertical() const { return m_verticalCurveVector.IsValid(); }
     //! Returns true if the AlignmentPair has spirals
     CIVILBASEGEOMETRY_EXPORT bool HasSpirals() const;
     //! Returns the length of the hz alignment
