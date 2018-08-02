@@ -1194,7 +1194,12 @@ ECPresentationResult ECPresentationUtils::GetRulesets(SimpleRuleSetLocater& loca
     bvector<PresentationRuleSetPtr> rulesets = locater.LocateRuleSets(rulesetId.c_str());
     Json::Value json(Json::arrayValue);
     for (PresentationRuleSetPtr const& ruleset : rulesets)
-        json.append(ruleset->WriteToJsonValue());
+        {
+        Json::Value hashedRulesetJson;
+        hashedRulesetJson["ruleset"] = ruleset->WriteToJsonValue();
+        hashedRulesetJson["hash"] = ruleset->GetHash();
+        json.append(hashedRulesetJson);
+        }
     return ECPresentationResult(std::move(json));
     }
 
@@ -1207,16 +1212,26 @@ ECPresentationResult ECPresentationUtils::AddRuleset(SimpleRuleSetLocater& locat
     if (ruleset.IsNull())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "Failed to create rule set from serialized JSON");
     locater.AddRuleSet(*ruleset);
-    return ECPresentationResult();
+    rapidjson::Document result;
+    result.SetString(ruleset->GetHash().c_str(), result.GetAllocator());
+    return ECPresentationResult(std::move(result));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kililnskas                 05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::RemoveRuleset(SimpleRuleSetLocater& locater, Utf8StringCR rulesetId)
+ECPresentationResult ECPresentationUtils::RemoveRuleset(SimpleRuleSetLocater& locater, Utf8StringCR rulesetId, Utf8StringCR hash)
     {
-    locater.RemoveRuleSet(rulesetId);
-    return ECPresentationResult();
+    bvector<PresentationRuleSetPtr> rulesets = locater.LocateRuleSets(rulesetId.c_str());
+    for (PresentationRuleSetPtr const& ruleset : rulesets)
+        {
+        if (ruleset->GetHash().Equals(hash))
+            {
+            locater.RemoveRuleSet(rulesetId);
+            return ECPresentationResult(rapidjson::Value(true));
+            }
+        }
+    return ECPresentationResult(rapidjson::Value(false));
     }
 
 /*---------------------------------------------------------------------------------**//**

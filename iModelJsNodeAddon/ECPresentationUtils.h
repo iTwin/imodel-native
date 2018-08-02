@@ -73,7 +73,7 @@ struct ECPresentationUtils
 
     static ECPresentationResult GetRulesets(SimpleRuleSetLocater&, Utf8StringCR ruleSetId);
     static ECPresentationResult AddRuleset(SimpleRuleSetLocater&, Utf8StringCR rulesetJsonString);
-    static ECPresentationResult RemoveRuleset(SimpleRuleSetLocater&, Utf8StringCR ruleSetId);
+    static ECPresentationResult RemoveRuleset(SimpleRuleSetLocater&, Utf8StringCR ruleSetId, Utf8StringCR hash);
     static ECPresentationResult ClearRulesets(SimpleRuleSetLocater&);
 
     static folly::Future<ECPresentationResult> GetRootNodesCount(IECPresentationManagerR, ECDbR, JsonValueCR params);

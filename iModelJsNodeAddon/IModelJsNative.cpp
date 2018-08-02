@@ -3624,7 +3624,8 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
     Napi::Value RemoveRuleset(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
-        ECPresentationResult result = ECPresentationUtils::RemoveRuleset(*m_ruleSetLocater, rulesetId);
+        REQUIRE_ARGUMENT_STRING(1, hash, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "hash")));
+        ECPresentationResult result = ECPresentationUtils::RemoveRuleset(*m_ruleSetLocater, rulesetId, hash);
         return CreateReturnValue(result);
         }
 
