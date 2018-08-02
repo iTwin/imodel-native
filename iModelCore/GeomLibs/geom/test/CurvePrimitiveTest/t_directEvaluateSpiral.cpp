@@ -14,6 +14,9 @@ TEST(PseudoSpiral,Serialize)
     //bvector<double> pseudoLengthMeters {100.02506262460328, 100.15873011778872, 100.66666663992606};
     //bvector<double> edgeCount {15, 25, 35};
     double smallYShift = 1.0;
+    auto options = IFacetOptions::CreateForCurves ();
+    double strokeShiftX = 500.0;
+    double strokeShiftY = 0;
     for (int spiralType : {
                 DSpiral2dBase::TransitionType_Clothoid,
 #ifdef doAll
@@ -34,7 +37,7 @@ TEST(PseudoSpiral,Serialize)
                 })
         {
         Check::SetTransform (Transform::FromIdentity ());
-        double xShift = 500.0;
+        double xShift = 1500.0;
         SaveAndRestoreCheckTransform typeShift (xShift, 0, 0);
         double yShift = 200.0;
         for (double spiralLength : {100.0, 200.0})
@@ -42,6 +45,9 @@ TEST(PseudoSpiral,Serialize)
             SaveAndRestoreCheckTransform shifter (0, yShift, 0);
             for (double radius1 : {800.0, 400.0, 200.0})
                 {
+                if (spiralType == DSpiral2dBase::TransitionType_AustralianRailCorp
+                    && radius1 <= 1.8 * spiralLength)
+                        continue;
                 for (double fraction0 : {0.0, 0.6})
                     {
                     for (double bearing0 : {0.0,  Angle::DegreesToRadians (10), Angle::DegreesToRadians (135)})
@@ -57,6 +63,7 @@ TEST(PseudoSpiral,Serialize)
                                     frame,
                                     fraction0, 1.0
                                     );
+
                             if (spiral.IsValid ())
                                 {
                                 Check::SaveTransformed (*spiral);
@@ -66,6 +73,23 @@ TEST(PseudoSpiral,Serialize)
                                     auto bprim = ICurvePrimitive::CreateBsplineCurve (bcurve);
                                     Check::SaveTransformed (*bprim);
                                     }
+                                bvector<DPoint3d> strokes;
+                                spiral->AddStrokes (strokes, *options, true, 0.0, 1.0);
+                                int errors = 0;
+                                if (strokes.size () == 0)
+                                    errors++;
+                                else
+                                    {
+                                    for (auto &xyz : strokes)
+                                        {
+                                        if (_isnan (xyz.x) || _isnan (xyz.y) || _isnan (xyz.z))
+                                            errors++;
+                                        }
+                                    }
+                                Check::Shift (strokeShiftX, strokeShiftY, 0);
+                                if (errors == 0)
+                                    Check::SaveTransformed (strokes);
+                                Check::Shift (-strokeShiftX, -strokeShiftY, 0);
                                 }
                             }
                         }
@@ -80,6 +104,110 @@ TEST(PseudoSpiral,Serialize)
         Check::ClearGeometry (fileName);
         }
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PseudoSpiral,ExerciseDistances)
+    {
+    //bvector<double> pseudoLengthMeters {100.02506262460328, 100.15873011778872, 100.66666663992606};
+    //bvector<double> edgeCount {15, 25, 35};
+    double smallYShift = 1.0;
+    auto options = IFacetOptions::CreateForCurves ();
+    bvector<double> breakFractions {0.25, 0.54, 0.98, 1.0}; // implied 0 at start
+    for (int spiralType : {
+                DSpiral2dBase::TransitionType_Clothoid,
+#ifdef doAll
+                DSpiral2dBase::TransitionType_Bloss,
+                DSpiral2dBase::TransitionType_Biquadratic,
+                DSpiral2dBase::TransitionType_Cosine,
+                DSpiral2dBase::TransitionType_Sine,
+#endif
+                //DSpiral2dBase::TransitionType_Viennese,
+                //DSpiral2dBase::TransitionType_WeightedViennese,
+                //-----------DSpiral2dBase::TransitionType_WesternAustralian,
+                //DSpiral2dBase::TransitionType_Czech,
+                //-----------DSpiral2dBase::TransitionType_AustralianRailCorp,
+                //DSpiral2dBase::TransitionType_Italian,
+                //DSpiral2dBase::TransitionType_Polish
+                //-----------DSpiral2dBase::TransitionType_MXCubic,
+                DSpiral2dBase::TransitionType_DirectHalfCosine
+                })
+        {
+        Check::SetTransform (Transform::FromIdentity ());
+        double xShift = 1500.0;
+        SaveAndRestoreCheckTransform typeShift (xShift, 0, 0);
+        double yShift = 200.0;
+        for (double spiralLength : {100.0, 200.0})
+            {
+            SaveAndRestoreCheckTransform shifter (0, yShift, 0);
+            for (double radius1 : {800.0, 400.0, 200.0})
+                {
+                if (spiralType == DSpiral2dBase::TransitionType_AustralianRailCorp
+                    && radius1 <= 1.8 * spiralLength)
+                        continue;
+                for (double fraction0 : {0.0, 0.6})
+                    {
+                    for (double bearing0 : {0.0,  Angle::DegreesToRadians (10), Angle::DegreesToRadians (135)})
+                        {
+                        for (double radiusFactor : {-1.0, 1.0})
+                            {
+                            // This shift moves the partial curves away from the full curve, in the vertical direction inward curve.
+                            auto frame = Transform::From (0, smallYShift * radiusFactor * fraction0, 0);
+
+                            auto spiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (
+                                    spiralType,
+                                    bearing0, 0.0, spiralLength, radiusFactor / radius1,
+                                    frame,
+                                    fraction0, 1.0
+                                    );
+
+                            if (spiral.IsValid ())
+                                {
+                                Check::SaveTransformed (*spiral);
+                                auto bcurve = spiral->GetProxyBsplineCurvePtr ();
+                                if (bcurve.IsValid ())
+                                    {
+                                    auto bprim = ICurvePrimitive::CreateBsplineCurve (bcurve);
+                                    Check::SaveTransformed (*bprim);
+                                    }
+                                double accumulatedDistance = 0.0;
+                                double totalDistance;
+                                if (Check::True (spiral->Length (totalDistance)))
+                                    {
+                                    double f0 = 0.0;
+                                    for (auto f1 : breakFractions)
+                                        {
+                                        double d01;
+                                        if (Check::True (spiral->SignedDistanceBetweenFractions (f0, f1, d01)))
+                                            {
+                                            accumulatedDistance += d01;
+                                            CurveLocationDetail detail;
+                                            if (Check::True (spiral->PointAtSignedDistanceFromFraction (f0, d01, true, detail)))
+                                                {
+                                                Check::Near (f1, detail.fraction, "Signed distance inversion");
+                                                }
+                                            }
+                                        f0 = f1;
+                                        }
+                                    Check::Near (totalDistance, accumulatedDistance, "Confirm split distance sum");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        char fileName[1024];
+        Utf8String typeName;
+        DSpiral2dBase::TransitionTypeToString (spiralType, typeName);
+        // add 1000 to ensure alphabetic sort maintains numeric order
+        sprintf (fileName, "Spiral.Exercise.%d%s", 1000+(int)spiralType, typeName.c_str());
+        Check::ClearGeometry (fileName);
+        }
+    }
+
 #endif
 
 ICurvePrimitivePtr ConstructSpiralRadiusRadiusLength (int typeCode, Angle bearingA, double radiusA, double radiusB, double lengthAB)

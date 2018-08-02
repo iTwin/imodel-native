@@ -355,10 +355,10 @@ double aecAlg_computeAustralianXcFromRL( double L, double R )
         xc = ( L / l ) * xc;
 
         if( fabs( L - l ) < 0.00001 )
-            break;
+            return xc;
     }
-
-    return( xc );
+    // um .. failed for small radius!!!
+    return aecAlg_computeAustralianXcFromRL_fast (L, R );
 }
 
 DSpiral2dAustralianRailCorp::DSpiral2dAustralianRailCorp () : DSpiral2dDirectEvaluation () {}

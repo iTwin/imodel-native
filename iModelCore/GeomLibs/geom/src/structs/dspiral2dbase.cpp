@@ -1727,6 +1727,12 @@ DVec3d DSpiral2dPlacement::DisplacementBetweenActiveFractions (double g0, double
             );
     }
 
+double DSpiral2dPlacement::GlobalFractionToActiveFraction (double globalFraction) const
+    {
+    auto result = DoubleOps::InverseInterpolate (fractionA, globalFraction, fractionB);
+    return result.Value ();
+    }
+
 double DSpiral2dPlacement::ActiveFractionToGlobalFraction (double activeFraction) const
     {
     return DoubleOps::Interpolate (fractionA, activeFraction, fractionB);

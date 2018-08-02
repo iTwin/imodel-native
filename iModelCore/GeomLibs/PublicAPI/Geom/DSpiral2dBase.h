@@ -914,6 +914,7 @@ DRay3d ActiveFractionToPointAndDerivative (double fraction) const;
 DRay3d ActiveFractionToPointAndUnitTangent (double fraction) const;
 
 double ActiveFractionToGlobalFraction (double activeFraction) const;
+double GlobalFractionToActiveFraction (double globalFraction) const;
 
 //! return xyz first, second, third derivatives as columns.
 RotMatrix FractionToDerivatives (double fraction) const;

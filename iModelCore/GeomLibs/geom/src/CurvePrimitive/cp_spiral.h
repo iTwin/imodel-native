@@ -499,7 +499,7 @@ bool _AddStrokes (bvector <DPoint3d> &points, IFacetOptionsCR options,
             && m_strokes.m_xyz[0].AlmostEqual (points.back ())
             )
             i0 = 1;
-#ifndef NDEBUG
+#ifdef DEBUG_LENGTH_MATCH
         double dSpiral = m_placement.spiral->mLength;
         double dStrokes = PolylineOps::Length (m_strokes.m_xyz, false);
         BeAssert (dStrokes <= dSpiral);

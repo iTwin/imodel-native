@@ -11,6 +11,7 @@
 
 #define DEFAULT_DIRECT_SPIRAL_STROKE_RADIANS (0.02)
 #define DEFAULT_DIRECT_SPIRAL_MIN_STROKES (4)
+#define DEFAULT_DIRECT_SPIRAL_MAX_STROKES (100)
 // Vector integrands for testing
 struct NominalLengthSpiralArcLengthIntegrands : BSIIncrementalVectorIntegrand
 {
@@ -28,20 +29,50 @@ void EvaluateVectorIntegrand (double t, double *pF) override
     m_directSpiral.EvaluateAtFraction (t, uv, &d1uv, nullptr, nullptr);
     pF[0] = d1uv.Magnitude ();
     }
-bvector<double> fraction;
-bvector<double> summedDistance;
+bvector<double> m_globalFraction;
+bvector<double> m_localFraction;
+bvector<double> m_summedDistance;
+bvector<DPoint3d> m_xyz;
+bvector<DPoint2d> m_uv;
 bool AnnounceIntermediateIntegral (double t, double *pIntegrals) override
     {
-    fraction.push_back (t);
-    summedDistance.push_back (pIntegrals[0]);
+    m_globalFraction.push_back (t);
+    m_summedDistance.push_back (pIntegrals[0]);
+    DPoint2d uv;
+    m_directSpiral.EvaluateAtFraction (t, uv, nullptr, nullptr, nullptr);
+    m_uv.push_back (uv);
     return true;
     }
 void clear ()
     {
-    fraction.clear ();
-    summedDistance.clear ();
+    m_globalFraction.clear ();
+    m_localFraction.clear ();
+    m_summedDistance.clear ();
+    m_uv.clear ();
+    m_xyz.clear ();
     }
-double LastDistance () const { return summedDistance.empty () ? 0.0 : summedDistance.back ();}
+double LastDistance () const { return m_summedDistance.empty () ? 0.0 : m_summedDistance.back ();}
+void Integrate (double startFraction, double endFraction, TransformCR frame, uint32_t numInterval)
+    {
+    clear ();
+    double localError;
+    BSIQuadraturePoints quadraturePoints;
+    quadraturePoints.InitGauss (5);
+    // accumulate <globalFraction, uv, trueDistance> arrays ...
+    if (numInterval < 1)
+        numInterval = 1;
+    quadraturePoints.IntegrateWithRombergExtrapolation (*this, startFraction, endFraction, numInterval, localError);
+    // apply transform and fraction mapping
+    double intervalDivisor;
+    DoubleOps::SafeDivide (intervalDivisor, 1.0, (endFraction - startFraction), 0.0);
+    DPoint3d xyz;
+    for (size_t i = 0; i < m_uv.size (); i++)
+        {
+        frame.Multiply (xyz, m_uv[i].x, m_uv[i].y, 0);
+        m_xyz.push_back (xyz);
+        m_localFraction.push_back (startFraction + (m_globalFraction[i] - startFraction) * intervalDivisor);
+        }
+    }
 };
 /*=================================================================================**//**
 * @bsiclass                                                      EarlinLutz   12/2015
@@ -57,9 +88,36 @@ mutable MSBsplineCurvePtr m_curve;
 DSpiral2dPlacement m_placement;    // for outside use
 DSpiral2dFractionOfNominalLengthCurve *m_directSpiral;    // same pointer bits, but strongly typed.
 mutable bvector<DPoint3d> m_strokes;
-mutable bvector<double>   m_fraction;
+mutable bvector<double>   m_localFraction;
 mutable bvector<double>   m_trueDistance;
 mutable double m_cachedStrokeFraction;
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+uint32_t StrokeCountBetweenLocalFractions (double chordTol, double angleTol, double maxEdgeLength, double startFraction, double endFraction) const
+    {
+    double dBeta = fabs (m_directSpiral->mTheta1 - m_directSpiral->mTheta0) * fabs (endFraction - startFraction);
+    double dNumStroke = ceil (dBeta / DEFAULT_DIRECT_SPIRAL_STROKE_RADIANS);
+    uint32_t iNumStroke = (uint32_t)dNumStroke;
+    if (iNumStroke < DEFAULT_DIRECT_SPIRAL_MIN_STROKES)
+        iNumStroke = DEFAULT_DIRECT_SPIRAL_MIN_STROKES;
+    if (iNumStroke > DEFAULT_DIRECT_SPIRAL_MAX_STROKES)
+        iNumStroke = DEFAULT_DIRECT_SPIRAL_MAX_STROKES;
+    return iNumStroke;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+size_t _GetStrokeCount (IFacetOptionsCR options, double startFraction, double endFraction) const
+    {
+    return StrokeCountBetweenLocalFractions (
+        options.GetChordTolerance (), options.GetAngleTolerance (), options.GetMaxEdgeLength (),
+        startFraction, endFraction);
+    }
+
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      12/2015
@@ -69,40 +127,16 @@ void CreateCachedCurve() const
     // hm.. user stroker to get point count ... the strokes are thrown away
     bvector<double> fractions;
     bvector<DPoint3d> points;
-    double dBeta = fabs (m_directSpiral->mTheta1 - m_directSpiral->mTheta0);
-    double dNumStroke = ceil (dBeta / DEFAULT_DIRECT_SPIRAL_STROKE_RADIANS);
-    uint32_t iNumStroke = (uint32_t)dNumStroke;
-    if (iNumStroke < DEFAULT_DIRECT_SPIRAL_MIN_STROKES)
-        iNumStroke = DEFAULT_DIRECT_SPIRAL_MIN_STROKES;
+    uint32_t iNumStroke = StrokeCountBetweenLocalFractions (0,0,0, m_placement.fractionA, m_placement.fractionB);
     m_strokes.clear ();
-    m_fraction.clear ();
+    m_localFraction.clear ();
     m_trueDistance.clear ();
     m_cachedStrokeFraction = 1.0 / (double)iNumStroke;
-    for (uint32_t i = 0; i <= iNumStroke; i++)
-        {
-        double fraction = ((double)i / (double)iNumStroke);
-        m_fraction.push_back (fraction);
-        DPoint2d xy;
-        m_directSpiral->EvaluateAtFraction (fraction, xy, nullptr, nullptr, nullptr);
-        DPoint3d xyz = DPoint3d::From (xy);
-        m_placement.frame.Multiply (xyz);
-        m_strokes.push_back (xyz);
-        }
-
-    BSIQuadraturePoints quadraturePoints;
-    quadraturePoints.InitGauss (5);
-
-    m_trueDistance.push_back (0.0);
     NominalLengthSpiralArcLengthIntegrands integrand (*m_directSpiral);
-    double localError;
-    double currentDistance = 0.0;
-    for (uint32_t i = 1; i < m_fraction.size (); i++)
-        {
-        integrand.clear ();
-        quadraturePoints.IntegrateWithRombergExtrapolation (integrand, m_fraction[i-1], m_fraction[i], 1, localError);
-        currentDistance += integrand.LastDistance ();
-        m_trueDistance.push_back (currentDistance);
-        }
+    integrand.Integrate (m_placement.fractionA, m_placement.fractionB, m_placement.frame, iNumStroke);
+    m_trueDistance = integrand.m_summedDistance;
+    m_strokes = integrand.m_xyz;
+    m_localFraction = integrand.m_localFraction;
     m_curve = MSBsplineCurve::CreateFromInterpolationAtBasisFunctionPeaks (m_strokes, 4, 0);
     }
 
@@ -213,22 +247,81 @@ bool _Length(RotMatrixCP worldToLocal, double &length) const override
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-bool _PointAtSignedDistanceFromFraction (double startFraction, double signedDistance, bool allowExtension, CurveLocationDetailR location) const override
+bool _PointAtSignedDistanceFromFraction (double localStartFraction, double signedDistance, bool allowExtension, CurveLocationDetailR location) const override
     {
-    // NEEDS WORK -- integrate on true curve
-        double endFraction;
-        double actualDistance;
-        m_curve->FractionAtSignedDistance (startFraction, signedDistance, endFraction, actualDistance);
-        location = CurveLocationDetail (this, 1);
-        location.SetSingleComponentFractionAndA (endFraction, actualDistance);
-        m_curve->FractionToPoint (location.point, endFraction);
-        return true;
+    double startFraction = m_placement.ActiveFractionToGlobalFraction (localStartFraction);
+    double localDelta = signedDistance / m_trueDistance.back (); // first approximation !!!
+    double localFractionDelta = m_placement.fractionB - m_placement.fractionA;
+    static double s_relTol = 1.0e-10;
+    double distanceTolerance = m_trueDistance.back () * s_relTol;   // um.. maybe it should be the full length?
+    NominalLengthSpiralArcLengthIntegrands integrand (*m_directSpiral);
+    DPoint2d uv;
+    DVec2d d1uv;
+    static uint32_t s_maxIteration = 10;
+    uint32_t convergedCount = 0;
+    uint32_t numStroke;
+    double actualDistance = 0.0;
+    double approximateDelta = localDelta * localFractionDelta;
+    // dS / df for global fraction is nearly constant.   This should not happen many times . . .
+    // TODO:  For internal points, use the cached fractions and distances to get within a single integration step
+    for (uint32_t count = 0; count< s_maxIteration; count++)
+        {
+        double endFraction = startFraction + approximateDelta;
+        if (fabs (startFraction - endFraction) < m_cachedStrokeFraction)
+            numStroke = 1;
+        else
+            numStroke = StrokeCountBetweenLocalFractions (0, 0, 0, startFraction, endFraction);
+
+        integrand.Integrate (startFraction, endFraction, m_placement.frame, numStroke);
+        actualDistance += integrand.LastDistance ();
+        // Get the final velocity ...
+        m_directSpiral->EvaluateAtFraction (endFraction, uv, &d1uv, nullptr, nullptr);
+        double dSdGlobal = d1uv.Magnitude ();   // This is GLOBAL fraction velocity
+        double distanceError = actualDistance - signedDistance;
+        if (fabs (distanceError) < distanceTolerance)
+            {
+            convergedCount++;
+            if (convergedCount > 1)
+                {
+                location = CurveLocationDetail (this, 1);
+                double localEndFraction = m_placement.GlobalFractionToActiveFraction (endFraction);
+                _FractionToPoint (localEndFraction, location.point);
+                location.SetSingleComponentFractionAndA (localEndFraction, actualDistance);
+                return true;
+                }
+            // else -- fall through to confirm with a short step !!!
+            }
+        else
+            {
+            convergedCount = 0;
+            }
+        approximateDelta = -distanceError / dSdGlobal;
+        startFraction = endFraction;
+        }
+    return false;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+bool _SignedDistanceBetweenFractions (double startFraction, double endFraction, double &signedDistance) const override
+    {
+    NominalLengthSpiralArcLengthIntegrands integrand (*m_directSpiral);
+    uint32_t numStroke = StrokeCountBetweenLocalFractions (0, 0, 0, startFraction, endFraction);
+    double globalA = m_placement.ActiveFractionToGlobalFraction (startFraction);
+    double globalB = m_placement.ActiveFractionToGlobalFraction (endFraction);
+    integrand.Integrate (globalA, globalB, m_placement.frame, numStroke);
+    double integral = integrand.LastDistance ();
+    if (endFraction < startFraction)
+        integral = - integral;
+    signedDistance = integral;
+    return true;
+    }
 bool _FractionToPoint (double f, DPoint3dR point) const override
     {
     DPoint2d xy;
-    m_directSpiral->EvaluateAtFraction (f, xy, nullptr, nullptr, nullptr);
+    double globalFraction = m_placement.ActiveFractionToGlobalFraction (f);
+    m_directSpiral->EvaluateAtFraction (globalFraction, xy, nullptr, nullptr, nullptr);
     point = m_placement.frame * DPoint3d::From (xy);
     return true;
     }
@@ -237,7 +330,11 @@ bool _FractionToPoint (double f, DPoint3dR point, DVec3dR tangent) const overrid
     {
     DPoint2d xy;
     DVec2d   dxy;
-    m_directSpiral->EvaluateAtFraction (f, xy, &dxy, nullptr, nullptr);
+    double globalFraction = m_placement.ActiveFractionToGlobalFraction (f);
+    double intervalScale = m_placement.fractionB - m_placement.fractionA;
+    m_directSpiral->EvaluateAtFraction (globalFraction, xy, &dxy, nullptr, nullptr);
+    dxy.Scale (intervalScale);
+
     point = m_placement.frame * DPoint3d::From (xy);
     m_placement.frame.MultiplyMatrixOnly (tangent, dxy.x, dxy.y, 0.0);
     return true;
@@ -247,7 +344,12 @@ bool _FractionToPoint (double f, DPoint3dR point, DVec3dR tangent, DVec3dR deriv
     {
     DPoint2d xy;
     DVec2d   d1xy, d2xy;
-    m_directSpiral->EvaluateAtFraction (f, xy, &d1xy, &d2xy, nullptr);
+    double globalFraction = m_placement.ActiveFractionToGlobalFraction (f);
+    double intervalScale = m_placement.fractionB - m_placement.fractionA;
+    m_directSpiral->EvaluateAtFraction (globalFraction, xy, &d1xy, &d2xy, nullptr);
+    d1xy.Scale (intervalScale);
+    d2xy.Scale (intervalScale * intervalScale);
+
     point = m_placement.frame * DPoint3d::From (xy);
     m_placement.frame.MultiplyMatrixOnly (tangent, d1xy.x, d1xy.y, 0.0);
     m_placement.frame.MultiplyMatrixOnly (tangent, d2xy.x, d2xy.y, 0.0);
@@ -258,7 +360,13 @@ bool _FractionToPoint (double f, DPoint3dR point, DVec3dR tangent, DVec3dR deriv
     {
     DPoint2d xy;
     DVec2d   d1xy, d2xy, d3xy;
-    m_directSpiral->EvaluateAtFraction (f, xy, &d1xy, &d2xy, &d3xy);
+    double globalFraction = m_placement.ActiveFractionToGlobalFraction (f);
+    double intervalScale = m_placement.fractionB - m_placement.fractionA;
+    m_directSpiral->EvaluateAtFraction (globalFraction, xy, &d1xy, &d2xy, &d3xy);
+
+    d1xy.Scale (intervalScale);
+    d2xy.Scale (intervalScale * intervalScale);
+    d3xy.Scale (intervalScale * intervalScale * intervalScale);
     point = m_placement.frame * DPoint3d::From (xy);
     m_placement.frame.MultiplyMatrixOnly (tangent, d1xy.x, d1xy.y, 0.0);
     m_placement.frame.MultiplyMatrixOnly (tangent, d2xy.x, d2xy.y, 0.0);
@@ -409,6 +517,14 @@ bool _AddStrokes (bvector <DPoint3d> &points, IFacetOptionsCR options,
                 double endFraction
                 ) const override
     {
+    if (DoubleOps::AlmostEqualFraction (startFraction, 0.0)
+        && DoubleOps::AlmostEqualFraction (endFraction, 1.0))
+        {
+        for (size_t i = includeStartPoint ? 0 : 1; i < m_strokes.size (); i++)
+            points.push_back (m_strokes[i]);
+        return true;
+        }
+
     bvector<double> fractions;      // These are global fractions !!!
     uint32_t numStrokes = NumStrokeBetweenActiveFractions (startFraction, endFraction, &options);
     double globalA = m_placement.ActiveFractionToGlobalFraction (startFraction);
