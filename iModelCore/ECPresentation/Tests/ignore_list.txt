@@ -10,3 +10,19 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 
+
+GroupingRuleTests.PropertyGroup_WriteToJson
+
+    # TFS#927237
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/03/2018
+    # c:\build\src\mds06t\ECPresentation\Tests\Published\PresentationRules\GroupingRuleTests.cpp(515): error:       Expected: ToPrettyString(expected).c_str()
+    # Which is: "{\n   \"createGroupForSingleItem\" : true,\n   \"createGroupForUnspecifiedValues\" : true,\n   \"defaultLabel\" : \"label\",\n   \"groupingValue\" : \"PropertyValue\",\n   \"imageId\" : \"imageid\",\n   \"propertyName\" : \"prop\",\n   \"ranges\" : [\n      {\n         \"fromValue\" : \"f\",\n         \"label\" : \"range\",\n         \"toValue\" : \"t\"\n      }\n   ],\n   \"specType\" : \"Property\"\n}\n"
+    # To be equal to: ToPrettyString(json).c_str()
+    # Which is: "{\n   \"createGroupForSingleItem\" : true,\n   \"defaultLabel\" : \"label\",\n   \"groupingValue\" : \"PropertyValue\",\n   \"imageId\" : \"imageid\",\n   \"propertyName\" : \"prop\",\n   \"ranges\" : [\n      {\n         \"fromValue\" : \"f\",\n         \"label\" : \"range\",\n         \"toValue\" : \"t\"\n      }\n   ],\n   \"specType\" : \"Property\"\n}\n"
+    # With diff:
+    # @@ -1,5 @@
+    # {
+    # \"createGroupForSingleItem\" : true,
+    # -   \"createGroupForUnspecifiedValues\" : true,
+    # \"defaultLabel\" : \"label\",
+    # \"groupingValue\" : \"PropertyValue\",
