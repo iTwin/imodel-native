@@ -48,6 +48,7 @@ BENTLEY_RENDER_TYPEDEFS(ColorIndexMap);
 BENTLEY_RENDER_TYPEDEFS(IGetTileTreeForPublishing);
 BENTLEY_RENDER_TYPEDEFS(TileTreePublishRenderSystem);
 BENTLEY_RENDER_TYPEDEFS(IGetPublishedTilesetInfo);
+BENTLEY_RENDER_TYPEDEFS(ICustomTilesetPublisher);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshPart);
@@ -1016,6 +1017,8 @@ struct TileGenerator
         //! Invoked when a model which exposes a direct URL to a published tileset is processed.
         //! _Begin/_EndProcessModel() will not be invoked. Neither will _AcceptTile() as these models generate no tiles (the tiles already exist elsewhere).
         virtual TileGeneratorStatus _AcceptPublishedTilesetInfo(DgnModelCR model, IGetPublishedTilesetInfoR url) = 0;
+        //! Invoked when a model implements its own tileset publisher
+        virtual TileGeneratorStatus _AcceptCustomTilesetPublisher(DgnModelCR model, ICustomTilesetPublisherR customPublisher) = 0;
         //! Invoked before a model is processed.
         virtual TileGeneratorStatus _BeginProcessModel(DgnModelCR model) { return TileGeneratorStatus::Success; }
         //! Invoked after a model is processed, with the result of processing.
@@ -1139,6 +1142,16 @@ struct IGetPublishedTilesetInfo
 {
     virtual PublishedTilesetInfo _GetPublishedTilesetInfo() = 0;
 };
+
+//=======================================================================================
+// Interface for models which provide their own tileset publishing methods.
+// @bsistruct                                                   Richard.Bois   04/18
+//=======================================================================================
+struct ICustomTilesetPublisher
+    {
+    virtual void _DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range) = 0;
+    };
+
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
 #define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
 
