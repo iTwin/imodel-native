@@ -1187,9 +1187,21 @@ ECPresentationResult ECPresentationUtils::SetupLocaleDirectories(bvector<Utf8Str
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPresentationResult ECPresentationUtils::GetRulesets(SimpleRuleSetLocater& locater, Utf8StringCR rulesetId)
+    {
+    bvector<PresentationRuleSetPtr> rulesets = locater.LocateRuleSets(rulesetId.c_str());
+    Json::Value json(Json::arrayValue);
+    for (PresentationRuleSetPtr const& ruleset : rulesets)
+        json.append(ruleset->WriteToJsonValue());
+    return ECPresentationResult(std::move(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kililnskas                 05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::AddRuleSet(SimpleRuleSetLocater& locater, Utf8StringCR rulesetJsonString)
+ECPresentationResult ECPresentationUtils::AddRuleset(SimpleRuleSetLocater& locater, Utf8StringCR rulesetJsonString)
     {
     PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromJsonString(rulesetJsonString);
     if (ruleset.IsNull())
@@ -1201,16 +1213,16 @@ ECPresentationResult ECPresentationUtils::AddRuleSet(SimpleRuleSetLocater& locat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kililnskas                 05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::RemoveRuleSet(SimpleRuleSetLocater& locater, Utf8StringCR ruleSetId)
+ECPresentationResult ECPresentationUtils::RemoveRuleset(SimpleRuleSetLocater& locater, Utf8StringCR rulesetId)
     {
-    locater.RemoveRuleSet(ruleSetId);
+    locater.RemoveRuleSet(rulesetId);
     return ECPresentationResult();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kililnskas                 05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::ClearRuleSets(SimpleRuleSetLocater& locater)
+ECPresentationResult ECPresentationUtils::ClearRulesets(SimpleRuleSetLocater& locater)
     {
     locater.Clear();
     return ECPresentationResult();
