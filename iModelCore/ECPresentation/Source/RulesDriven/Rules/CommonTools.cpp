@@ -219,7 +219,7 @@ static void ParseSchemaAndClassNames(JsonValueCR json, Utf8StringR schemaName, b
     for (Json::ArrayIndex i = 0; i < json[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES].size(); ++i)
         {
         Utf8CP className = json[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES][i].asCString();
-        if (0 == strnicmp("E:", className, 2))
+        if (0 == BeStringUtilities::Strnicmp("E:", className, 2))
             excludedClassNames.push_back(className + 2);
         else
             includedClassNames.push_back(className);
