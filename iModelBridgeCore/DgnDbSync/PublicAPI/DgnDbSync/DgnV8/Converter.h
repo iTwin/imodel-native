@@ -1696,6 +1696,7 @@ public:
     DGNDBSYNC_EXPORT void ConvertMaterialTextureMaps(Json::Value& renderMaterial, DgnV8Api::DgnFile& v8File, DgnV8Api::DgnModelRef& modelRef);
     DGNDBSYNC_EXPORT BentleyStatus ConvertMaterialTextureMap(Json::Value& dbMapsMap, Json::Value const& v8Map, DgnV8Api::DgnFile& v8File, DgnV8Api::DgnModelRef& modelRef);
     DGNDBSYNC_EXPORT BentleyStatus ConvertMaterialTextureMapImage(Json::Value& textureMap, DgnV8Api::DgnFile& v8File, bool pseudoBackgroundTransparency);
+    DGNDBSYNC_EXPORT DgnTextureId FindOrInsertTextureImage(WCharCP filename, DgnV8Api::DgnFile& v8File, bool pseudoBackgroundTransparency = false);
     DGNDBSYNC_EXPORT void SetMaterialUsed(RenderMaterialId id);
     DGNDBSYNC_EXPORT bool GetMaterialUsed(RenderMaterialId id) const;
     virtual void _RemoveUnusedMaterials() {RemoveUnusedMaterials();}

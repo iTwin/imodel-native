@@ -1514,7 +1514,6 @@ BentleyStatus DisplayStyleReader::_Read(Json::Value& object)
                 {
                 auto& skyBox = env["Skybox"];
                 envDisplay.m_skybox.m_enabled = true;
-                envDisplay.m_skybox.m_jpegFile.AssignOrClear(skyBox["jpegFile"].asCString());
                 envDisplay.m_skybox.m_zenithColor = ColorDef(skyBox["zenithColor"].asUInt());
                 envDisplay.m_skybox.m_nadirColor = ColorDef(skyBox["nadirColor"].asUInt());
                 envDisplay.m_skybox.m_groundColor = ColorDef(skyBox["groundColor"].asUInt());
