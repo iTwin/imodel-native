@@ -133,10 +133,11 @@ void                                                                   AppHost::
 DgnPlatformLib::Host::NotificationAdmin&         AppHost::_SupplyNotificationAdmin() { return *new AppNotificationAdmin(); }
 DgnPlatformLib::Host::GeoCoordinationAdmin&      AppHost::_SupplyGeoCoordinationAdmin()
     {
-    BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
 #ifndef VANCOUVER_API  
+    BeFileName geocoordinateDataPath(L".\\Assets\\DgnGeoCoord\\");
     return *DgnGeoCoordinationAdmin::Create(geocoordinateDataPath);
 #else    
+    BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
     return *DgnGeoCoordinationAdmin::Create(geocoordinateDataPath, IACSManager::GetManager());
 #endif
     }

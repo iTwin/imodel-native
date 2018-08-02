@@ -380,7 +380,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
 
 
 
-    OpenSqlFiles(true, false);
+    OpenSqlFiles(true, true);
 
     do
         {
@@ -430,7 +430,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
         }
 
 
-    OpenSqlFiles(false, false);
+    OpenSqlFiles(false, true);
 
     ptsNeighbors.clear();
 
@@ -445,15 +445,28 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
     nodesToMesh.clear();
 
     pDataIndex->Store();
-    m_smSQLitePtr->Save();
 
+    CloseSqlFiles();
+
+    FILE* lockFile;
+    BeFileName lockFileName;
+    GetSisterMainLockFileName(lockFileName);
+
+    while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+        {
+        m_lockSleeper.Sleep();
+        }
+
+    m_smSQLitePtr->Save();
 
     SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(m_pDataIndex->GetDataStore().get()));
     assert(pSqliteStore != nullptr);
     pSqliteStore->SaveSisterFiles();
 
-    CloseSqlFiles();
+    fclose(lockFile);
 
+    
+    
     return SUCCESS;
     }
 

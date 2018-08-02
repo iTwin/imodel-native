@@ -464,10 +464,11 @@ void TaskScheduler::Start()
         sleeper.Sleep();
         }
 
-    m_sourceCreatorWorkerPtr = nullptr;
-    
+
     double totalDuration = (double)(clock() - duration) / CLOCKS_PER_SEC;
 
+    m_sourceCreatorWorkerPtr = nullptr;
+        
     BeFileName durationFileName(L"D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\duration");    
     durationFileName.AppendString(std::to_wstring(::_getpid()).c_str());
     durationFileName.AppendString(L".csv");
