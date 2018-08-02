@@ -407,21 +407,21 @@ bool KindOfQuantity::ValidatePresentationFormat(ECFormatCR parent, ECUnitCP pers
 
     if (parent.IsOverride())
         {
-        LOG.error("KOQ '%s' cannot create an override using another override as a parent");
+        LOG.error("Cannot create an override using another override as a parent");
         return false;
         }
 
     // Parent has no units and we don't provide any overrides
     if (!parent.HasCompositeMajorUnit() && (nullptr == unitsAndLabels || unitsAndLabels->empty()))
         {
-        LOG.error("KOQ '%s' cannot have a format without composite units and no unit overrides.");
+        LOG.error("Cannot have a format without composite units and no unit overrides.");
         return false;
         }
 
     // Parent has unit and verify they are compatible
     if (parent.HasCompositeMajorUnit() && nullptr != persistenceUnit && !Units::Unit::AreCompatible(parent.GetCompositeMajorUnit(), persistenceUnit))
         {
-        LOG.error("KOQ '%s' cannot have a format with a major unit that is incompatible with KOQ's persistence unit");
+        LOG.error("Cannot have a format with a major unit that is incompatible with KOQ's persistence unit");
         return false;
         }
 
@@ -465,7 +465,7 @@ bool KindOfQuantity::ValidatePresentationFormat(ECFormatCR parent, ECUnitCP pers
             {
             if (!Units::Unit::AreEqual(overrides[i].first, compUnits[i]))
                 {
-                LOG.error("KOQ '%s' cannot change UOM in an override when one is already defined by the format");
+                LOG.error("Cannot change UOM in an override when one is already defined by the format");
                 return false;
                 }
             }
