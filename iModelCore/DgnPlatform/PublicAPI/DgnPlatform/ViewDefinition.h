@@ -177,18 +177,33 @@ public:
             ColorDef m_aboveColor;      //!< the color to draw the ground plane if the view shows the ground from above
             ColorDef m_belowColor;      //!< the color to draw the ground plane if the view shows the ground from below
         };
+            
         struct SkyBox
         {
+            struct Image
+            {
+                enum class Type
+                {
+                    None,
+                    Spherical,
+                    Cylindrical,
+                };
+
+                DgnTextureId    m_textureId;
+                Type            m_type = Type::None;
+            };
+
+            ColorDef m_zenithColor; //!< if no image, the color of the zenith part of the sky gradient (shown when looking straight up.)
+            ColorDef m_nadirColor;  //!< if no image, the color of the nadir part of the ground gradient (shown when looking straight down.)
+            ColorDef m_groundColor; //!< if no image, the color of the ground part of the ground gradient
+            ColorDef m_skyColor;    //!< if no image, the color of the sky part of the sky gradient
+            double m_groundExponent=4.0; //!< if no image, the cutoff between ground and nadir
+            double m_skyExponent=4.0;    //!< if no image, the cutoff between sky and zenith
+            Image m_image;
             bool m_enabled = false;
             bool m_twoColor = false;
-            Utf8String m_jpegFile;  //!< the name of a jpeg file with a spherical skybox
-            ColorDef m_zenithColor; //!< if no jpeg file, the color of the zenith part of the sky gradient (shown when looking straight up.)
-            ColorDef m_nadirColor;  //!< if no jpeg file, the color of the nadir part of the ground gradient (shown when looking straight down.)
-            ColorDef m_groundColor; //!< if no jpeg file, the color of the ground part of the ground gradient
-            ColorDef m_skyColor;    //!< if no jpeg file, the color of the sky part of the sky gradient
-            double m_groundExponent=4.0; //!< if no jpeg file, the cutoff between ground and nadir
-            double m_skyExponent=4.0;    //!< if no jpeg file, the cutoff between sky and zenith
         };
+
         GroundPlane m_groundPlane;
         SkyBox m_skybox;
 

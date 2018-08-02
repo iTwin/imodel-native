@@ -97,32 +97,6 @@ void SpatialViewController::DrawGroundPlane(DecorateContextR context)
     context.AddWorldDecoration(*graphic->Finish());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::TexturePtr loadTexture(Utf8CP fileName, Render::SystemCR system, DgnDbR dgndb)
-    {
-#if defined (NEEDS_WORK_GROUND_PLANE)
-    bool isHttp = (0 == strncmp("http:", fileName, 5) || 0 == strncmp("https:", fileName, 6));
-
-    if (isHttp)
-        {
-        m_rootDir = m_rootUrl.substr(0, m_rootUrl.find_last_of("/"));
-        }
-#endif
-
-    BeFile skyFile;
-    if (BeFileStatus::Success != skyFile.Open(fileName, BeFileAccess::Read))
-        return nullptr;
-
-    ByteStream jpegData;
-    if (BeFileStatus::Success != skyFile.ReadEntireFile(jpegData))
-        return nullptr;
-
-    ImageSource jpeg(ImageSource::Format::Jpeg, std::move(jpegData));
-    return system._CreateTexture(jpeg, Image::BottomUp::No, dgndb);
-    }
-
 static Byte lerp(double t, Byte a, Byte b) {return a + t * double(b - a);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -136,8 +110,8 @@ void DisplayStyle3d::LoadSkyBoxMaterial(Render::SystemCR system)
     Render::TexturePtr texture;
 
     auto& env = GetEnvironmentDisplay();
-    if (!env.m_skybox.m_jpegFile.empty())
-        texture = loadTexture(env.m_skybox.m_jpegFile.c_str(), system, GetDgnDb());
+    if (env.m_skybox.m_image.m_type != EnvironmentDisplay::SkyBox::Image::Type::None)
+        texture = system._GetTexture(env.m_skybox.m_image.m_textureId, GetDgnDb());
 
     // we didn't get a jpeg sky, just create a gradient
     if (!texture.IsValid())
@@ -356,7 +330,6 @@ namespace EnvironmentJson
     };
     namespace SkyBoxJson
     {
-        BE_JSON_NAME(file);
         BE_JSON_NAME(twoColor);
         BE_JSON_NAME(skyColor);
         BE_JSON_NAME(zenithColor);
@@ -364,6 +337,12 @@ namespace EnvironmentJson
         BE_JSON_NAME(groundColor);
         BE_JSON_NAME(skyExponent);
         BE_JSON_NAME(groundExponent);
+        BE_JSON_NAME(image);
+    };
+    namespace SkyBoxImageJson
+    {
+        BE_JSON_NAME(type);
+        BE_JSON_NAME(texture);
     };
 
     static ColorDef GetColor(JsonValueCR in, Utf8CP name, ColorDef defaultVal) {return ColorDef(in[name].asInt(defaultVal.GetValue()));}
@@ -401,13 +380,19 @@ void DisplayStyle3d::_OnLoadedJsonProperties()
 
     m_environment.m_skybox.m_enabled = sky[json_display()].asBool();
     m_environment.m_skybox.m_twoColor= sky[SkyBoxJson::json_twoColor()].asBool();
-    m_environment.m_skybox.m_jpegFile = sky[SkyBoxJson::json_file()].asString();
     m_environment.m_skybox.m_groundExponent = sky[SkyBoxJson::json_groundExponent()].asDouble(4.0);
     m_environment.m_skybox.m_skyExponent = sky[SkyBoxJson::json_skyExponent()].asDouble(4.0);
     m_environment.m_skybox.m_groundColor = GetColor(sky, SkyBoxJson::json_groundColor(), ColorDef(120,143,125));
     m_environment.m_skybox.m_zenithColor = GetColor(sky, SkyBoxJson::json_zenithColor(), ColorDef(54,117,255));
     m_environment.m_skybox.m_nadirColor = GetColor(sky, SkyBoxJson::json_nadirColor(), ColorDef(40,15,0));
     m_environment.m_skybox.m_skyColor = GetColor(sky, SkyBoxJson::json_skyColor(), ColorDef(143,205,255));
+
+    JsonValueCR image = sky[SkyBoxJson::json_image()];
+    if (!image.isNull())
+        {
+        m_environment.m_skybox.m_image.m_type = static_cast<EnvironmentDisplay::SkyBox::Image::Type>(image[SkyBoxImageJson::json_type()].asUInt(static_cast<uint32_t>(EnvironmentDisplay::SkyBox::Image::Type::None)));
+        m_environment.m_skybox.m_image.m_textureId = DgnTextureId(image[SkyBoxImageJson::json_texture()].asUInt64());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -426,9 +411,10 @@ void DisplayStyle3d::_OnSaveJsonProperties()
 
     Json::Value sky = env[json_sky()];
     sky[json_display()] = m_environment.m_skybox.m_enabled;
-    sky[SkyBoxJson::json_file()] = m_environment.m_skybox.m_jpegFile;
     sky[SkyBoxJson::json_groundExponent()] = m_environment.m_skybox.m_groundExponent;
     sky[SkyBoxJson::json_skyExponent()] = m_environment.m_skybox.m_skyExponent;
+    sky[SkyBoxJson::json_image()][SkyBoxImageJson::json_type()] = static_cast<uint32_t>(m_environment.m_skybox.m_image.m_type);
+    sky[SkyBoxJson::json_image()][SkyBoxImageJson::json_texture()] = m_environment.m_skybox.m_image.m_textureId.GetValueUnchecked();
 
     sky[SkyBoxJson::json_groundColor()] = m_environment.m_skybox.m_groundColor.GetValue();
     sky[SkyBoxJson::json_zenithColor()] = m_environment.m_skybox.m_zenithColor.GetValue();
