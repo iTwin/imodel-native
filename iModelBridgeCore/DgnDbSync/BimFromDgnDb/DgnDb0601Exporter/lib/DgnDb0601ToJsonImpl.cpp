@@ -15,6 +15,7 @@
 #include <DgnDb06Api/Planning/PlanningApi.h>
 #include <DgnDb06Api/ECObjects/ECJsonUtilities.h>
 #include <DgnDb06Api/PointCloudSchema/PointCloudSchemaApi.h>
+#include <DgnDb06Api/ThreeMx/ThreeMxApi.h>
 #include <DgnDb06Api/DgnPlatform/JsonUtils.h>
 
 DGNDB06_USING_NAMESPACE_BENTLEY
@@ -60,6 +61,7 @@ static Utf8CP const JSON_TYPE_Baseline = "Baseline";
 static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
 static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
 static Utf8CP const JSON_TYPE_PointCloudModel = "PointCloudModel";
+static Utf8CP const JSON_TYPE_ThreeMxModel = "ThreeMxModel";
 
 static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec="CodeSpec";
 static Utf8CP const  BIS_ELEMENT_PROP_CodeScope="CodeScope";
@@ -385,6 +387,7 @@ bool DgnDb0601ToJsonImpl::OpenDgnDb()
     m_timeSpanClass = m_dgndb->Schemas().GetECClass("Planning", "TimeSpan");
     m_cameraKeyFrameClass = m_dgndb->Schemas().GetECClass("Planning", "CameraKeyFrame");
     m_pointCloudModelClass = m_dgndb->Schemas().GetECClass("PointCloud", "PointCloudModel");
+    m_threeMxModelClass = m_dgndb->Schemas().GetECClass("ThreeMx", "ThreeMxModel");
 
     return true;
     }
@@ -1511,6 +1514,7 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportModel(Utf8CP schemaName, Utf8CP classNa
 
         DgnModelPtr model = m_dgndb->Models().GetModel(DgnModelId(actualElementId.GetValue()));
         bool isPointCloud = nullptr != m_pointCloudModelClass && m_dgndb->Schemas().GetECClass(model->GetClassId())->Is(m_pointCloudModelClass);
+        bool isThreeMx = nullptr != m_threeMxModelClass && m_dgndb->Schemas().GetECClass(model->GetClassId())->Is(m_threeMxModelClass);
 
         DgnElementId modeledElementId;
         if (model->IsSheetModel())
@@ -1559,6 +1563,21 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportModel(Utf8CP schemaName, Utf8CP classNa
             Transform stw;
             JsonUtils::TransformFromJson(stw, pcOld["PointCloudModel"]["SceneToWorld"]);
             JsonUtils::TransformToJson(pc["SceneToWorld"], stw);
+            }
+        else if (isThreeMx)
+            {
+            entry[JSON_TYPE_KEY] = JSON_TYPE_ThreeMxModel;
+            Json::Value properties;
+            Json::Reader::Parse(obj["Properties"].asCString(), properties);
+            obj["SceneFile"] = properties["SceneFile"].asCString();
+            obj["SceneName"] = model->GetName();
+
+            if (properties.isMember("Location"))
+                {
+                Transform location;
+                JsonUtils::TransformFromJson(location, properties["Location"]);
+                JsonUtils::TransformToJson(obj["Location"], location);
+                }
             }
         else if (model->IsSpatialModel())
             {

@@ -19,6 +19,7 @@
 #include <Planning/PlanningApi.h>
 #include <PointCloud/PointCloudApi.h>
 #include <PointCloud/PointCloudHandler.h>
+#include <ThreeMx/ThreeMxApi.h>
 #include "SyncInfo.h"
 #include "Readers.h"
 #include "BimFromJsonImpl.h"
@@ -1403,6 +1404,7 @@ BentleyStatus CopyResourceToBimLocation(BeFileNameR outputFileName, DgnDbCR db, 
         }
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2018
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1459,6 +1461,40 @@ BentleyStatus PointCloudModelReader::_Read(Json::Value& model)
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ThreeMxModelReader::_Read(Json::Value& model)
+    {
+    DgnModelId ecInstanceId = ECJsonUtilities::JsonToId<DgnModelId>(model[ECJsonSystemNames::Id()]);
+    if (!ecInstanceId.IsValid())
+        return ERROR;
+
+    Transform location;
+    if (model.isMember("Location"))
+        JsonUtils::TransformFromJson(location, model["Location"]);
+    else
+        location.InitIdentity();
+
+    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*GetDgnDb()->GetRealityDataSourcesModel(), model["SceneFile"].asCString(), model["SceneName"].asCString());
+    if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
+        return ERROR;
+
+    // R3 doesn't have a clip vector
+    DgnModelId threeMxId = ThreeMx::ModelHandler::CreateModel(*repositoryLink, model["SceneFile"].asCString(), &location, nullptr);
+    if (!threeMxId.IsValid())
+        {
+        GetLogger().errorv("Failed to create ThreeMx model for ModelId %s with URL %s", ecInstanceId.ToString().c_str(), model["SceneFile"].asCString());
+        return ERROR;
+        }
+
+    SyncInfo::ModelMapping mapping;
+    GetSyncInfo()->InsertModel(mapping, threeMxId, ecInstanceId, nullptr);
+
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1533,6 +1569,11 @@ BentleyStatus ModelSelectorReader::_Read(Json::Value& object)
         Json::Value& member = *iter;
         DgnModelId id = ECJsonUtilities::JsonToId<DgnModelId>(member);
         DgnModelId lookup = GetSyncInfo()->LookupModel(DgnModelId(id));
+        if (!lookup.IsValid())
+            {
+            GetLogger().errorv("Could not remap model %s to add to model selector.", id.ToString().c_str());
+            continue;
+            }
         selector.AddModel(lookup);
         }
 
