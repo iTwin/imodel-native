@@ -387,11 +387,14 @@ void DisplayStyle3d::_OnLoadedJsonProperties()
     m_environment.m_skybox.m_nadirColor = GetColor(sky, SkyBoxJson::json_nadirColor(), ColorDef(40,15,0));
     m_environment.m_skybox.m_skyColor = GetColor(sky, SkyBoxJson::json_skyColor(), ColorDef(143,205,255));
 
+    m_environment.m_skybox.m_image.m_type = EnvironmentDisplay::SkyBox::Image::Type::None;
+    m_environment.m_skybox.m_image.m_textureId.Invalidate();
     JsonValueCR image = sky[SkyBoxJson::json_image()];
     if (!image.isNull())
         {
+        auto textureId = BeInt64Id::FromString(image[SkyBoxImageJson::json_texture()].asCString());
+        m_environment.m_skybox.m_image.m_textureId = DgnTextureId(textureId.GetValueUnchecked());
         m_environment.m_skybox.m_image.m_type = static_cast<EnvironmentDisplay::SkyBox::Image::Type>(image[SkyBoxImageJson::json_type()].asUInt(static_cast<uint32_t>(EnvironmentDisplay::SkyBox::Image::Type::None)));
-        m_environment.m_skybox.m_image.m_textureId = DgnTextureId(image[SkyBoxImageJson::json_texture()].asUInt64());
         }
     }
 
@@ -414,7 +417,7 @@ void DisplayStyle3d::_OnSaveJsonProperties()
     sky[SkyBoxJson::json_groundExponent()] = m_environment.m_skybox.m_groundExponent;
     sky[SkyBoxJson::json_skyExponent()] = m_environment.m_skybox.m_skyExponent;
     sky[SkyBoxJson::json_image()][SkyBoxImageJson::json_type()] = static_cast<uint32_t>(m_environment.m_skybox.m_image.m_type);
-    sky[SkyBoxJson::json_image()][SkyBoxImageJson::json_texture()] = m_environment.m_skybox.m_image.m_textureId.GetValueUnchecked();
+    sky[SkyBoxJson::json_image()][SkyBoxImageJson::json_texture()] = m_environment.m_skybox.m_image.m_textureId.ToHexStr();
 
     sky[SkyBoxJson::json_groundColor()] = m_environment.m_skybox.m_groundColor.GetValue();
     sky[SkyBoxJson::json_zenithColor()] = m_environment.m_skybox.m_zenithColor.GetValue();
