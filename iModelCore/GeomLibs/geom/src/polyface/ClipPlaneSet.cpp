@@ -590,7 +590,7 @@ ConvexClipPlaneSet ConvexClipPlaneSet::FromXYPolyLine (bvector<DPoint3d> const &
         if (interior.size () > i0)
             hidden = interior[i0];
         if (perp.Normalize ())
-            convexSet.push_back (ClipPlane (perp, points[i0], false, false));
+            convexSet.push_back (ClipPlane (perp, points[i0], hidden, false));
         }
 
     return convexSet;

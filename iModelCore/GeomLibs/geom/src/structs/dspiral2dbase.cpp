@@ -1611,6 +1611,13 @@ DSpiral2dPlacement::DSpiral2dPlacement (DSpiral2dBaseP _spiral, TransformCR _fra
     fractionB = _fractionB;
     }
 
+void DSpiral2dPlacement::InitCapturePointer (DSpiral2dBaseP _spiral, TransformCR _frame, double _fractionA, double _fractionB)
+    {
+    spiral = _spiral;
+    frame  = _frame;
+    fractionA = _fractionA;
+    fractionB = _fractionB;
+    }
 //! Return a clone.
 DSpiral2dPlacementP DSpiral2dPlacement::Clone (DSpiral2dPlacementCR source) const
     {
@@ -1718,6 +1725,12 @@ DVec3d DSpiral2dPlacement::DisplacementBetweenActiveFractions (double g0, double
             ActiveFractionToGlobalFraction (g0),
             ActiveFractionToGlobalFraction (g1)
             );
+    }
+
+double DSpiral2dPlacement::GlobalFractionToActiveFraction (double globalFraction) const
+    {
+    auto result = DoubleOps::InverseInterpolate (fractionA, globalFraction, fractionB);
+    return result.Value ();
     }
 
 double DSpiral2dPlacement::ActiveFractionToGlobalFraction (double activeFraction) const

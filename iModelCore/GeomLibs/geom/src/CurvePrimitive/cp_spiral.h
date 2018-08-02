@@ -402,6 +402,11 @@ double fractionB,
 double maxStrokeLength = DEFAULT_SPIRAL_MAX_STROKE_LENGTH
 )
     {
+    DSpiral2dFractionOfNominalLengthCurve const *nominalLengthSpiral = dynamic_cast <DSpiral2dFractionOfNominalLengthCurve const *> (&spiral);
+    if (nominalLengthSpiral != nullptr)
+        {
+        return new CurvePrimitiveDirectSpiral (*nominalLengthSpiral, frame, fractionA, fractionB);
+        }
     return new CurvePrimitiveSpiralCurve1 (spiral, frame, fractionA, fractionB, maxStrokeLength);
     }
 
@@ -494,7 +499,7 @@ bool _AddStrokes (bvector <DPoint3d> &points, IFacetOptionsCR options,
             && m_strokes.m_xyz[0].AlmostEqual (points.back ())
             )
             i0 = 1;
-#ifndef NDEBUG
+#ifdef DEBUG_LENGTH_MATCH
         double dSpiral = m_placement.spiral->mLength;
         double dStrokes = PolylineOps::Length (m_strokes.m_xyz, false);
         BeAssert (dStrokes <= dSpiral);

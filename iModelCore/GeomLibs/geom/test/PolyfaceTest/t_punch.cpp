@@ -131,3 +131,28 @@ TEST(Polyface,PunchThickSurface)
     
     Check::ClearGeometry ("Polyface.PunchThickSurface");
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface,PunchSymmetric)
+    {
+    bvector<DPoint3d> targetPoints {{2,0,0},{0,2,0},{-2,0,0},{0,-2,0}};
+    bvector<DPoint3d> punchPoints {{5,0,0},{3,2,0},{1,0,0},{3,-2,0}};
+
+    PolyfaceHeaderPtr punch = PolyfaceHeader::CreateVariableSizeIndexed();
+    PolyfaceHeaderPtr target = PolyfaceHeader::CreateVariableSizeIndexed();
+
+    target->AddPolygon(targetPoints);
+    punch->AddPolygon(punchPoints);
+
+    PolyfaceHeaderPtr outside, inside;
+    PolyfaceHeader::ComputePunchXYByPlaneSets(*punch, *target, &inside, &outside);
+    Check::SaveTransformed (target);
+    Check::SaveTransformed (punch);
+    Check::Shift (0, 5, 0);
+    Check::SaveTransformed (inside);
+    Check::SaveTransformed (outside);
+    Check::ClearGeometry ("Polyface.PunchSymmetric");
+    }

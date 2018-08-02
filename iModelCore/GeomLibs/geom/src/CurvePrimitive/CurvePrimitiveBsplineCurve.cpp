@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/CurvePrimitiveBsplineCurve.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -535,6 +535,7 @@ void _AppendCurvePlaneIntersections(DPlane3dCR plane, bvector<CurveLocationDetai
 }; // CurvePrimitiveBsplineCurve
 //#define CREATE_SPIRAL_CURVE CurvePrimitiveSpiralCurve::Create
 #define CREATE_SPIRAL_CURVE CurvePrimitiveSpiralCurve1::Create
+#include "cp_directSpiral.h"
 #include "cp_spiral.h"
 #include "cp_catenary.h"
 

@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_section.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -1938,6 +1938,7 @@ bool oneCall = true     // true ==> one call to MultiMeshVisiblePartsXYByPlaneSe
         }
     return false;
     }
+#ifdef CompileLongMultiMeshTests
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz     10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1998,7 +1999,7 @@ TEST(Polyface,MultiMeshVisibilityE)
         Check::ClearGeometry ("Polyface.MultiMeshVisibilityE");
         }
     }
-
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz     10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2017,6 +2018,7 @@ TEST(Polyface,MultiMeshVisibilityF)
     }
 
 
+#ifdef CompileLongMultiMeshTests
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz     10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2072,3 +2074,4 @@ TEST(Polyface,MultiMeshVisibilityCS4)
         true
         );
     }
+#endif

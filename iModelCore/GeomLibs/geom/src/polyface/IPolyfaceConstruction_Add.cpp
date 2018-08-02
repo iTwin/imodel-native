@@ -3971,6 +3971,7 @@ void IPolyfaceConstruction::AddTriangles (bvector<DTriangle3d> const &triangles,
     {
     bool needNormals = NeedNormals ();
     bool needParams = NeedParams ();
+    SynchOptions();
     if (reverse)
         ToggleIndexOrderAndNormalReversal ();
     for (size_t i = 0; i < triangles.size (); i++)
@@ -4017,12 +4018,16 @@ void IPolyfaceConstruction::AddTriangles (bvector<DTriangle3d> const &triangles,
 +--------------------------------------------------------------------------------------*/
 IPolyfaceConstructionPtr IPolyfaceConstruction::New (IFacetOptionsR options, double pointMatchTolerance, double paramMatchTolerance, double normalMatchTolerance)
     {
-    return new PolyfaceConstruction (options, pointMatchTolerance, paramMatchTolerance, normalMatchTolerance);
+    auto instance = new PolyfaceConstruction (options, pointMatchTolerance, paramMatchTolerance, normalMatchTolerance);
+    instance->SynchOptions();
+    return instance;
     }
 
 IPolyfaceConstructionPtr IPolyfaceConstruction::Create (IFacetOptionsR options, double pointMatchTolerance, double paramMatchTolerance, double normalMatchTolerance)
     {
-    return new PolyfaceConstruction (options, pointMatchTolerance, paramMatchTolerance, normalMatchTolerance);
+    auto instance = new PolyfaceConstruction (options, pointMatchTolerance, paramMatchTolerance, normalMatchTolerance);
+    instance->SynchOptions();
+    return instance;
     }
 
 

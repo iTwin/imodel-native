@@ -77,9 +77,7 @@ void ExerciseSingleSheetCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, 
     {
     MeshAnnotationVector messages (false);
     PolyfaceHeaderPtr cutMesh, fillMesh;
-    double cutVolume0, fillVolume0;
-    PolyfaceQuery::ComputeSingleSheetCutFillVolumes (*dtm, *road, cutVolume0, fillVolume0, messages);
-    PolyfaceQuery::ComputeSingleSheetCutFillMeshes (*dtm, *road, cutMesh, fillMesh, messages);
+    PolyfaceHeader::ComputeSingleSheetCutFill (*dtm, *road, DVec3d::From (0,0,1), cutMesh, fillMesh);
     Check::SaveTransformed (*dtm);
     Check::SaveTransformed (*road);
     auto range = dtm->PointRange ();
@@ -92,11 +90,6 @@ void ExerciseSingleSheetCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, 
 
     auto cutVolume1 = GetVolume (cutMesh);
     auto fillVolume1 = GetVolume (fillMesh);
-
-    if (cutVolume1)
-        Check::Near (cutVolume1.Value (), fabs (cutVolume0), "Cut Volume from mesh vs direct");
-    if (fillVolume1)
-        Check::Near (fillVolume1.Value (), fillVolume0, "Fill Volume from mesh vs direct");
 
     bvector<PolyfaceHeaderPtr> polyfaceA, polyfaceB, fill2, cut2;
     polyfaceA.push_back (dtm);
@@ -142,7 +135,6 @@ void ExerciseSingleSheetCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, 
             PrintPolyface (*cutMesh, "cut", stdout, 1000, false);
         if (fillMesh.IsValid ())
             PrintPolyface (*fillMesh, "fill", stdout, 1000, false);
-        printf (" new method volumes from sweep %g %g \n", fillVolume0, cutVolume0);
         printf (" new method volumes from mesh  %g %g \n", fillVolume1.Value (), cutVolume1.Value ());
         printf (" old method volumes            %g %g (closure errors %d)\n", cutVolume2, fillVolume2, errors);
 

@@ -972,8 +972,11 @@ DVec3dCR viewDirection                     //! view direction, e.g. (0,0,1) for 
     bvector<FacetEdgeDetail> allSegments;
     for (auto &meshA : meshes)
         {
-        meshA->CollectEdgeMateData (segmentsA, false, false);
-        FacetEdgeDetail::Append (allSegments, segmentsA);
+        if (meshA.IsValid())
+            {
+            meshA->CollectEdgeMateData (segmentsA, false, false);
+            FacetEdgeDetail::Append (allSegments, segmentsA);
+            }
         }
     if (allSegments.size () == 0)
         return nullptr;
@@ -1070,11 +1073,17 @@ double onEdgeTolerance                         //!< [in] tolerance for identifyi
     size_t totalPointCount = 0;
     for (auto &mesh : meshes)
         {
-        bvector<DPoint3d> &meshPoints = mesh->Point ();
-        for (auto &xyz : meshPoints)
-            xySearcher->AddPoint (xyz, totalPointCount);
+        if (mesh.IsValid ())
+            {
+            bvector<DPoint3d> &meshPoints = mesh->Point ();
+            for (auto &xyz : meshPoints)
+                xySearcher->AddPoint (xyz, totalPointCount);
+            }
         }
-
+    DRange3d range = xySearcher->GetRange ();
+    static double s_relTol = 1.0e-11;
+    onEdgeTolerance = DoubleOps::Max (onEdgeTolerance,
+            range.LargestCoordinate () * s_relTol);
     // Look for point-on-edge incidence while creating new facets.
     bvector<DPoint3d> newFacetPoints;
     bvector<DPoint3d> searchPoint;
@@ -1083,25 +1092,30 @@ double onEdgeTolerance                         //!< [in] tolerance for identifyi
 
     for (auto &mesh : meshes)
         {
-        PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*mesh, true);
-        visitor->SetNumWrap (1);
-        bvector<DPoint3d> &facetPoints = visitor->Point ();
-        DRange3d searchRange;
-        for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+        if (mesh.IsValid ())
             {
-            searchRange.InitFrom (facetPoints);
-            searchRange.Extend (1.5 * onEdgeTolerance);
-            xySearcher->CollectPointsInRangeXYZ (searchRange, searchPoint, searchId);
-            if (searchPoint.size () > 0)
+            PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*mesh, true);
+            visitor->SetNumWrap (1);
+            bvector<DPoint3d> &facetPoints = visitor->Point ();
+            DRange3d searchRange;
+            for (visitor->Reset (); visitor->AdvanceToNextFace ();)
                 {
-                polylineContext.InsertPointsInPolyline (facetPoints, newFacetPoints, searchPoint);
-                builder->AddTriangulation (newFacetPoints);
+                searchRange.InitFrom (facetPoints);
+                searchRange.Extend (1.5 * onEdgeTolerance);
+                xySearcher->CollectPointsInRangeXYZ (searchRange, searchPoint, searchId);
+                if (searchPoint.size () > 0)
+                    {
+                    polylineContext.InsertPointsInPolyline (facetPoints, newFacetPoints, searchPoint);
+                    builder->AddTriangulation (newFacetPoints);
+                    }
+                else
+                    builder->AddTriangulation (facetPoints);
                 }
-            else
-                builder->AddTriangulation (facetPoints);
             }
         }
-    return builder->GetClientMeshPtr ();
+    auto result = builder->GetClientMeshPtr ();
+    result->Compress ();
+    return result;
     }
 
 //! Input an array of meshes expected to have boundary segments are separated by "missing side panels" as viewed in a certain direction.

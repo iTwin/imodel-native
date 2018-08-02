@@ -55,13 +55,13 @@ TEST(XYPointSearch,HelloWorld)
     for (size_t i = 0; i < points.size (); i++)
         {
         DPoint3d xyz = points[i];
-        double xx, yy;
+        DPoint3d xyzA;
         size_t id;
-        if (Check::True (searcher->ClosestPoint (xyz.x, xyz.y, xx, yy, id)))
+        if (Check::True (searcher->ClosestPoint (xyz.x, xyz.y, xyzA, id)))
             {
             Check::Size (i, id, "Direct Point match");
-            Check::Near (xyz.x, xx);
-            Check::Near (xyz.y, yy);
+            Check::Near (xyz.x, xyzA.x);
+            Check::Near (xyz.y, xyzA.y);
             }
         }
 

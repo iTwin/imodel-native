@@ -1145,8 +1145,7 @@ size_t numWrap,
 IPolyfaceVisitorFilter *filter
 ) const;
 
-
-//! @description Compute volumes "between" primary and barrier facets
+//! @description  (DEPRECATED) Compute volumes "between" primary and barrier facets
 //! @param [in] polyfaceA first facet set (e.g. road surface)
 //! @param [in] polyfaceB second facet set (e.g. ground dtm)
 //! @param [out] resultAaboveB volume where polyfaceA is above polyfaceB 
@@ -1183,29 +1182,6 @@ struct AnnotatedMesh
 PolyfaceHeaderPtr mesh;
 T data;
 };
-
-//! @description Compute volumes "between" two meshes.
-//! <ul>
-//! <li> The "dtm" mesh is assumed to be completely z as a function of x and y (no cutbacks)
-//! <li> The "imposed" is assumed to be completely z as a function of x andy (no cutbacks)
-//! <li> the imposedMesh is assumed to be defined completely "within" the dtm.
-//! <li> If the bool flags are all false, the output contains only the volumes (i.e. no meshes constructed)
-//! </ul>
-//! @param [in] dtmMesh 
-//! @param [in] imposedMesh
-//! @param [in] buildTop true to build the upward facing parts of output meshes
-//! @param [in] buildBottom true to build the downward facing parts of output meshes
-//! @param [in] buildSides true to build facets on the side of the output meshes (i.e. closed volumes)
-//! @param [out] output array of meshes with volumess as their annotation data.
-static GEOMDLLIMPEXP bool ComputeSimpleSurfaceCutAndFill
-(
-PolyfaceHeaderCR dtmMesh,
-PolyfaceHeaderCR imposedMesh,
-bool buildTop,
-bool buildBottom,
-bool buildSides,
-bvector<AnnotatedMesh<double>> &output
-);
 
 
 //! @description Compute volumes "between" primary and barrier facets
@@ -1465,59 +1441,6 @@ MeshAnnotationVector &description    //!< array to receive error descriptions.
 );
 //! Apply various tests for indexing structure (but with no returned descriptions.)
 GEOMDLLIMPEXP bool HasIndexErrors ();
-
-//! Compute CutFill volumes for strict single surface, road-within-dtm.
-//! Send individual facet messages to a handler.
-//!<ul>
-//!<li> dtm and road must be strictly single-valued Z
-//!<!li> dtm must be strictly larger than road
-//!<li> both must be convex facets.
-//!</ul>
-static GEOMDLLIMPEXP void ComputeSingleSheetCutFill
-(
-PolyfaceQueryCR dtm,            //!< [in] dtm mesh
-PolyfaceQueryCR road,           //!< [in] road mesh
-FacetCutFillHandler &handler,   //!< [in] caller's handler object to receive coordinates top & bottom pairs of facets.
-MeshAnnotationVector &messages,     //!< [out] messages about errors.
-IPolyfaceVisitorFilter *dtmFilter = nullptr,  //!< [in] optional filter for dtm
-IPolyfaceVisitorFilter *roadFilter = nullptr  //!< [in] optional filter for road  //!< [in,out] message logging structure.
-);
-
-//! Compute CutFill volumes for strict single surface, road-within-dtm.
-//! Return as closed volume meshes.
-//!<ul>
-//!<li> dtm and road must be strictly single-valued Z
-//!<!li> dtm must be strictly larger than road
-//!<li> both must be convex facets.
-//!</ul>
-static GEOMDLLIMPEXP void ComputeSingleSheetCutFillMeshes
-(
-PolyfaceQueryCR dtm,                //!< [in] dtm mesh
-PolyfaceQueryCR road,               //!< [in] "road" mesh.  Must be contained in dtm mesh in xy
-PolyfaceHeaderPtr &cutMesh,         //!< [out] facets for cut volumes (road below dtm)
-PolyfaceHeaderPtr &fillMesh,        //!< [out] facets for fill volumes (road above dtm)
-MeshAnnotationVector &messages,     //!< [out] messages about errors.
-IPolyfaceVisitorFilter *dtmFilter = nullptr,  //!< [in] optional filter for dtm
-IPolyfaceVisitorFilter *roadFilter = nullptr  //!< [in] optional filter for road  //!< [in,out] message logging structure.
-);
-
-//! Compute CutFill volumes for strict single surface, road-within-dtm.
-//! Return just the volumes sums (no Polyface is constructed)
-//!<ul>
-//!<li> dtm and road must be strictly single-valued Z
-//!<!li> dtm must be strictly larger than road
-//!<li> both must be convex facets.
-//!</ul>
-static GEOMDLLIMPEXP void ComputeSingleSheetCutFillVolumes
-(
-PolyfaceQueryCR dtm,            //!< [in] dtm mesh
-PolyfaceQueryCR road,           //!< [in] "road" mesh.  Must be contained in dtm mesh in xy
-double &cutVolume,              //!< [out] sum of all cut volumes
-double &fillVolume,             //!< [out] sum of all fill volumes
-MeshAnnotationVector &messages,     //!< [out] messages about errors.
-IPolyfaceVisitorFilter *dtmFilter = nullptr,  //!< [in] optional filter for dtm
-IPolyfaceVisitorFilter *roadFilter = nullptr  //!< [in] optional filter for road  //!< [in,out] message logging structure.
-);
 
 //! Return blocks of read indices for grouping components with vertex connectivity
 //! @param [out] blockedReadIndexArray read indices for individual faces, separated by (-1).
@@ -2281,6 +2204,20 @@ IFacetOptions *options = nullptr,             //!< [in] optional facet options. 
 double onEdgeTolerance = 0.0        //!< [in] tolerance for identifying T vertex.  defaults to DoubleOps::SmallMetricDistance ()
 );
 
+//! Compute meshes "between" road and dtm.
+//! Return as closed volume meshes.
+//!<ul>
+//!<li> dtm and road must be strictly single-valued Z
+//!<li> both must be convex facets.
+//!</ul>
+static GEOMDLLIMPEXP void ComputeSingleSheetCutFill
+(
+PolyfaceHeaderCR dtm,                //!< [in] dtm mesh
+PolyfaceHeaderCR road,               //!< [in] "road" mesh.
+DVec3dCR viewVector,                 //!< [in]  viewDirection
+PolyfaceHeaderPtr &cutMesh,         //!< [out] facets for cut volumes (road below dtm)
+PolyfaceHeaderPtr &fillMesh        //!< [out] facets for fill volumes (road above dtm)
+);
 
 //! Decimate (in place) by simple rules that aggressively collapse short edges.
 //! This is the fastest decimation, but it does not protect boundary points.
