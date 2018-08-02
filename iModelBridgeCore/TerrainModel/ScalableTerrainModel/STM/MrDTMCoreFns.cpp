@@ -6,7 +6,7 @@
 |       $Date: 2012/11/14 18:20:56 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -210,7 +210,7 @@ int bcdtmMultiResolution_tinDecimateRandomSpotsDtmObject
     bcdtmWrite_message(0,0,0,"filterOption      = %8ld",filterOption) ;
     bcdtmWrite_message(0,0,0,"boundaryOption    = %8ld",boundaryOption) ;
     bcdtmWrite_message(0,0,0,"numFilteredPtsP   = %8ld",*numFilteredPtsP) ;
-    bcdtmWrite_message(0,0,0,"filteredPtsP      = %p",*filteredPtsP) ;
+    bcdtmWrite_message(0,0,0,"filteredPtsP      = %p",filteredPtsP) ;
    }
 /*
 ** Initialise
@@ -943,7 +943,7 @@ int bcdtmMultiResolution_tinZToleranceFilterRandomSpotsDtmObject
     bcdtmWrite_message(0,0,0,"boundaryOption    = %8ld",boundaryOption) ;
     bcdtmWrite_message(0,0,0,"filterTolerance   = %8.3lf",filterTolerance) ;
     bcdtmWrite_message(0,0,0,"numFilteredPtsP   = %8ld",*numFilteredPtsP) ;
-    bcdtmWrite_message(0,0,0,"filteredPtsP      = %p",*filteredPtsP) ;
+    bcdtmWrite_message(0,0,0,"filteredPtsP      = %p",filteredPtsP) ;
    }
 /*
 ** Initialise
