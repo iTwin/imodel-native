@@ -877,9 +877,19 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, optsJsonStr, Env().Undefined());
         Json::Value opts = Json::Value::From(optsJsonStr);
-        Json::Value modelJson;;  // ouput
-        auto status = JsInterop::GetModel(modelJson, GetDgnDb(), opts);
+        Json::Value modelJson; // output
+        DgnDbStatus status = JsInterop::GetModel(modelJson, GetDgnDb(), opts);
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), modelJson.ToString().c_str()));
+        }
+
+    Napi::Value QueryModelExtents(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, optionsJsonStr, Env().Undefined());
+        Json::Value options = Json::Value::From(optionsJsonStr);
+        Json::Value extentsJson; // output
+        DgnDbStatus status = JsInterop::QueryModelExtents(extentsJson, GetDgnDb(), options);
+        return CreateBentleyReturnObject(status, Napi::String::New(Env(), extentsJson.ToString().c_str()));
         }
 
     Napi::Value DumpChangeSet(Napi::CallbackInfo const& info)
@@ -1780,6 +1790,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
+            InstanceMethod("queryModelExtents", &NativeDgnDb::QueryModelExtents),
             InstanceMethod("queryNextAvailableFileProperty", &NativeDgnDb::QueryNextAvailableFileProperty),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
             InstanceMethod("removePendingChangeSet", &NativeDgnDb::RemovePendingChangeSet),

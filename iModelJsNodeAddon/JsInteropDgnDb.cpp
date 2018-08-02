@@ -640,6 +640,31 @@ DgnDbStatus JsInterop::GetModel(JsonValueR modelJson, DgnDbR dgndb, JsonValueCR 
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                               Shaun.Sewall                  07/18
+//---------------------------------------------------------------------------------------
+DgnDbStatus JsInterop::QueryModelExtents(JsonValueR extentsJson, DgnDbR db, JsonValueCR options)
+    {
+    DgnModelId modelId(options[json_id()].asUInt64());
+    if (!modelId.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnModelPtr model = db.Models().GetModel(modelId);
+    if (!model.IsValid())
+        return DgnDbStatus::NotFound;
+
+    GeometricModelCP geometricModel = model->ToGeometricModel();
+    if (!geometricModel)
+        return DgnDbStatus::WrongModel;
+
+    AxisAlignedBox3d extents = geometricModel->QueryModelRange();
+    if (!extents.IsValid())
+        return DgnDbStatus::NoGeometry;
+
+    extents.ToJson(extentsJson[json_modelExtents()]);
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 09/17
 //---------------------------------------------------------------------------------------
 void JsInterop::CloseDgnDb(DgnDbR dgndb)
