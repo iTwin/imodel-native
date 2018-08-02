@@ -45,6 +45,10 @@ typedef DwgImporter::ElementImportInputs&           ElementInputsR;
 
 
 /*=================================================================================**//**
+//! @brief A data context passed in an object protocal extension that converts a DWG entity 
+//! in the modelspace or a paperspace to DgnDb.  It contains the input context for a DWG
+//! entity and the output context for DgnDb elements.
+*
 * @bsiclass                                                     Don.Fu          06/16
 +===============+===============+===============+===============+===============+======*/
 struct ProtocalExtensionContext
@@ -93,8 +97,12 @@ public:
     DGNDBSYNC_EXPORT static DwgProtocalExtension*   Cast (DWG_TypeCP(RxObject) obj);
     DGNDBSYNC_EXPORT static void                    RxInit ();
 
-    //! Must implement this method to either create a new or update an existing element from the input entity:
+    //! Must implement this method to either create a new or update an existing element from the input entity.
+    //! This method is called only when an entity is in the modelspace or a paperspace.
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) = 0;
+    //! Optional method to create a geometry from an entity in a block.
+    //! This method is called only when an entity is in a block definition.
+    DGNDBSYNC_EXPORT virtual GeometricPrimitivePtr _ConvertToGeometry (DwgDbEntityCP entity, DwgImporter& importer) { return nullptr; }
     };  // DwgProtocalExtension
 
 /*=================================================================================**//**
@@ -188,6 +196,34 @@ private:
     uint32_t GetGlyphWeight () const;
     DgnStyleId GetGlyphLinestyle () const;
     };  // DwgLightExt
+
+/*=================================================================================**//**
+* A shared protocal extension for solid3d, region, body and surface entities.
+* @bsiclass                                                     Don.Fu          07/18
++===============+===============+===============+===============+===============+======*/
+class DwgBrepExt : public DwgProtocalExtension
+    {
+public:
+    DEFINE_T_SUPER (DwgProtocalExtension)
+    DWGRX_DECLARE_MEMBERS (DwgBrepExt)
+    DWG_PROTOCALEXT_DECLARE_MEMBERS (DwgBrepExt)
+
+    virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
+    virtual GeometricPrimitivePtr _ConvertToGeometry (DwgDbEntityCP entity, DwgImporter& importer) override;
+
+private:
+    mutable ProtocalExtensionContext*   m_toBimContext;
+    mutable DwgImporter*                m_importer;
+    mutable DwgDbEntityCP               m_entity;
+
+    BentleyStatus   CreateElement (GeometricPrimitiveR geometry, DwgImporter::ElementCreateParams& params);
+    ColorDef    GetEffectiveColor () const;
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    GeometricPrimitivePtr CreateGeometry (PK_BODY_create_topology_2_r_t& brep);
+    void        FreeBrep (PK_BODY_create_topology_2_r_t& brep) const;
+#endif
+    };  // DwgBrep
 
 
 END_DGNDBSYNC_DWG_NAMESPACE

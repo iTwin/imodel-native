@@ -74,7 +74,6 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (Issue, dwg_issue)
     L10N_STRING(MissingCategory)             // =="Missing category for layer [%s]"==
     L10N_STRING(LinetypeError)               // =="Linetype import error %s: "==
     L10N_STRING(Message)                     // =="%s"==
-    L10N_STRING(MissingLayer)                // =="Missing Layer %d"==
     L10N_STRING(MissingLinetype)             // =="Could not find linetype [%s]. Some elements may not display properly."==
     L10N_STRING(MaterialError)               // =="Material import error [%s]"==
     L10N_STRING(ModelAlreadyImported)        // =="Model [%s] has already been converted."==

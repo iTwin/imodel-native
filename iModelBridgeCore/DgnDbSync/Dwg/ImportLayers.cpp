@@ -241,7 +241,7 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
             if (LOG_LAYER_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
                 LOG_LAYER.tracev("failed to insert layer %ls (%llx) as %s", layer.GetName().c_str(), layer.GetObjectId().GetHandle().AsUInt64(), name.c_str());
 
-            this->ReportIssueV (IssueSeverity::Warning, IssueCategory::CorruptData(), Issue::InvalidLayer(), name.c_str());
+            this->ReportIssueV (IssueSeverity::Warning, IssueCategory::CorruptData(), Issue::InvalidLayer(), nullptr, name.c_str());
             BeAssert(false);
             return BSIERROR;
             }
@@ -476,7 +476,7 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
         if (LOG_LAYER_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
             LOG_LAYER.tracev("failed to insert layer %ls (%llx) as a DrawingCategory", name.c_str(), layerId.ToUInt64());
 
-        this->ReportIssueV (IssueSeverity::Warning, IssueCategory::CorruptData(), Issue::InvalidLayer(), name.c_str());
+        this->ReportIssueV (IssueSeverity::Warning, IssueCategory::CorruptData(), Issue::InvalidLayer(), nullptr, name.c_str());
         }
 
     return  categoryId;
@@ -520,7 +520,7 @@ DgnCategoryId   DwgImporter::GetSpatialCategory (DgnSubCategoryId& subCategoryId
         DwgDbLayerTableRecordPtr    layer(layerId, DwgDbOpenMode::ForRead);
         if (layer.OpenStatus() == DwgDbStatus::Success)
             layerName.Assign (layer->GetName().c_str());
-        this->ReportIssueV (IssueSeverity::Warning, IssueCategory::InconsistentData(), Issue::MissingCategory(), layerName.c_str());
+        this->ReportIssueV (IssueSeverity::Warning, IssueCategory::InconsistentData(), Issue::MissingCategory(), nullptr, layerName.c_str());
 
         // fallback to the default category:
         categoryId = this->GetUncategorizedCategory ();

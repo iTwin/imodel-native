@@ -475,8 +475,12 @@ void            ViewportFactory::ComputeEnvironment (DisplayStyle3dR displayStyl
             environmentDisplay.m_skybox.m_enabled = true;
 
             BeFileName  imageFile(ibl->GetIBLImageName().c_str());
-            if (this->FindEnvironmentImageFile(imageFile))
-                environmentDisplay.m_skybox.m_jpegFile.Assign (imageFile.c_str());
+            auto textureId = this->FindEnvironmentImageFile (imageFile);
+            if (textureId.IsValid())
+                {
+                environmentDisplay.m_skybox.m_image.m_type = DisplayStyle3d::EnvironmentDisplay::SkyBox::Image::Type::Spherical;
+                environmentDisplay.m_skybox.m_image.m_textureId = textureId;
+                }
             return;
             }
 
@@ -493,8 +497,12 @@ void            ViewportFactory::ComputeEnvironment (DisplayStyle3dR displayStyl
         environmentDisplay.m_skybox.m_enabled = true;
 
         BeFileName  imageFile(image->GetImageFileName().c_str());
-        if (this->FindEnvironmentImageFile(imageFile))
-            environmentDisplay.m_skybox.m_jpegFile.Assign (imageFile.c_str());
+        auto textureId = this->FindEnvironmentImageFile (imageFile);
+        if (textureId.IsValid())
+            {
+            environmentDisplay.m_skybox.m_image.m_type = DisplayStyle3d::EnvironmentDisplay::SkyBox::Image::Type::Spherical;
+            environmentDisplay.m_skybox.m_image.m_textureId = textureId;
+            }
         return;
         }
 
@@ -578,20 +586,22 @@ void            ViewportFactory::ComputeEnvironment (DisplayStyle3dR displayStyl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ViewportFactory::FindEnvironmentImageFile (BeFileNameR filename) const
+DgnTextureId    ViewportFactory::FindEnvironmentImageFile (BeFileNameCR filenameIn) const
     {
+    BeFileName  filename = filenameIn;
     if (m_importer._FindTextureFile(filename))
         {
         // warn about a none-JPEG file
         if (!filename.GetExtension().EqualsI(L"jpg"))
             m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::Unsupported(), Issue::ImageNotAJpeg(), filename.GetNameUtf8().c_str());
-        return  true;
+
+        return m_importer.GetDgnMaterialTextureFor(filename.GetNameUtf8());
         }
     
     // warn about the missing background file:
     Utf8PrintfString    context("Background \"%ls\"", filename.c_str());
     m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::MissingData(), Issue::FileNotFound(), filename.GetNameUtf8().c_str(), context.c_str());
-    return  false;
+    return  DgnTextureId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -728,7 +738,7 @@ bool    ViewportFactory::UpdateViewName (ViewDefinitionR view, Utf8StringCR prop
     auto status = view.SetCode (DgnCode::From(code.GetCodeSpecId(), code.GetScopeString(), newName));
     if (status != DgnDbStatus::Success)
         {
-        m_importer.ReportIssueV (DwgImporter::IssueSeverity::Error, IssueCategory::Briefcase(), Issue::CannotUpdateName(), view.GetName().c_str(), newName.c_str());
+        m_importer.ReportIssueV (DwgImporter::IssueSeverity::Error, IssueCategory::Briefcase(), Issue::CannotUpdateName(), "View", view.GetName().c_str(), newName.c_str());
         return  false;
         }
 
