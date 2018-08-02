@@ -53,6 +53,7 @@ static Utf8CP const JSON_TYPE_Baseline = "Baseline";
 static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
 static Utf8CP const JSON_TYPE_GenericElementAspect = "GenericElementAspect";
 static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
+static Utf8CP const JSON_TYPE_PointCloudModel = "PointCloudModel";
 
 static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec = "CodeSpec";
 static Utf8CP const  BIS_ELEMENT_PROP_CodeScope = "CodeScope";
@@ -143,6 +144,19 @@ struct ModelReader : Reader
 
     public:
         ModelReader(BimFromJsonImpl* importer, bool isDictionary) : Reader(importer), m_isDictionary(isDictionary) {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct PointCloudModelReader : Reader
+    {
+    DEFINE_T_SUPER(Reader);
+    protected:
+        BentleyStatus _Read(Json::Value& object) override;
+
+    public:
+        using Reader::Reader;
     };
 
 //---------------------------------------------------------------------------------------

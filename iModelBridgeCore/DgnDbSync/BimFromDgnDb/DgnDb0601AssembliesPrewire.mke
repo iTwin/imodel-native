@@ -75,6 +75,12 @@ $(Delivery)BeFolly$(ApiNumber).dll : $(DgnDbDlls)BeFolly$(ApiNumber).dll
 %if "x64" == $(TARGET_PROCESSOR_ARCHITECTURE)
 $(Delivery)bentleylog4cxx$(ApiNumber).dll : $(DgnDbDlls)bentleylog4cxx$(ApiNumber).dll
 
+$(Delivery)PointCloudSchema$(ApiNumber).dll : $(DgnDbDlls)PointCloudSchema$(ApiNumber).dll
+
+$(Delivery)RasterSchema$(ApiNumber).dll : $(DgnDbDlls)RasterSchema$(ApiNumber).dll
+
+$(Delivery)ThreeMx$(ApiNumber).dll : $(DgnDbDlls)ThreeMx$(ApiNumber).dll
+
 %endif
 
 #$(Delivery)BeSecurity$(ApiNumber).dll : $(DgnDbDlls)BeSecurity$(ApiNumber).dll
@@ -82,6 +88,7 @@ $(Delivery)bentleylog4cxx$(ApiNumber).dll : $(DgnDbDlls)bentleylog4cxx$(ApiNumbe
 $(Delivery)Units$(ApiNumber).dll : $(DgnDbDlls)Units$(ApiNumber).dll
 
 $(Delivery)Planning$(ApiNumber).dll : $(DgnDbDlls)Planning$(ApiNumber).dll
+
 %endif
 
 always:
@@ -105,6 +112,14 @@ $(DeliveryDgnDbPlatformLibs)$(stlibprefix)BaseGeoCoord$(stlibext) : $(DgnDbDlls)
 
 $(DeliveryDgnDbPlatformLibs)$(stlibprefix)Planning$(stlibext) : $(DgnDbDlls)$(stlibprefix)Planning$(stlibext)
 
+%if "x64" == $(TARGET_PROCESSOR_ARCHITECTURE)
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)PointCloudSchema$(stlibext) : $(DgnDbDlls)$(stlibprefix)PointCloudSchema$(stlibext)
+
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)RasterSchema$(stlibext) : $(DgnDbDlls)$(stlibprefix)RasterSchema$(stlibext)
+
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)ThreeMx$(stlibext) : $(DgnDbDlls)$(stlibprefix)ThreeMx$(stlibext)
+%endif 
+
 $(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeXml$(stlibext) : $(DgnDbDlls)$(stlibprefix)BeXml$(stlibext)
 
 $(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeLibXml2$(stlibext) : $(DgnDbDlls)$(stlibprefix)BeLibXml2$(stlibext)
@@ -121,7 +136,7 @@ always:
    !~@mkdir ${DeliveryDgnDbPlatformAssets}
    CreateSymLinks.py -d"$(DeliveryDgnDbPlatformAssets)ECSchemas=$(SourceAssets)ECSchemas"
    CreateSymLinks.py -d"$(DeliveryDgnDbPlatformAssets)sqlang=$(SourceAssets)sqlang"
-   CreateSymLinks.py -f"$(DeliveryDgnDbPlatformAssets)icudt55l.dat=$(SourceAssets)icudt55l.dat"
+   CreateSymLinks.py -f"$(DeliveryDgnDbPlatformAssets)icudt61l.dat=$(SourceAssets)icudt61l.dat"
 %if "x64" == $(TARGET_PROCESSOR_ARCHITECTURE)
    CreateSymLinks.py -f"$(DeliveryDgnDbPlatformAssets)lastresortfonts=$(SourceAssets)lastresortfonts"
    CreateSymLinks.py -f"$(DeliveryDgnDbPlatformLibs)BeJsonCpp.pdb=$(DgnDbDlls)BeJsonCpp.pdb"

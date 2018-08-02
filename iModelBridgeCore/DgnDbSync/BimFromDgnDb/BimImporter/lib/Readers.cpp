@@ -17,6 +17,8 @@
 #include <DgnPlatform/Annotations/TextAnnotationPersistence.h>
 #include <Bentley/Base64Utilities.h>
 #include <Planning/PlanningApi.h>
+#include <PointCloud/PointCloudApi.h>
+#include <PointCloud/PointCloudHandler.h>
 #include "SyncInfo.h"
 #include "Readers.h"
 #include "BimFromJsonImpl.h"
@@ -26,7 +28,6 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_PLANNING
 
 BEGIN_BIM_FROM_DGNDB_NAMESPACE
 
@@ -773,7 +774,7 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
         }
     else if (partitionType.Equals("PlanningPartition"))
         {
-        PlanningPartitionCPtr pp = PlanningPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asCString());
+        Planning::PlanningPartitionCPtr pp = Planning::PlanningPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asCString());
         if (!pp.IsValid())
             {
             GetLogger().errorv("Failed to create PlanningPartition for %s", oldInstanceId.ToString().c_str());
@@ -1385,6 +1386,79 @@ BentleyStatus ModelReader::_Read(Json::Value& model)
     return SUCCESS;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                   Eric.Paquet         10/2016
+//-----------------------------------------------------------------------------------------
+BentleyStatus CopyResourceToBimLocation(BeFileNameR outputFileName, DgnDbCR db, BeFileNameCR sourceFileName)
+    {
+    // Copy the point cloud at the same location than the Bim file
+    BeFileName dbFileName(db.GetDbFileName());
+    WString fileName = sourceFileName.GetFileNameAndExtension();
+    outputFileName = dbFileName.GetDirectoryName();
+    outputFileName.AppendToPath(fileName.c_str());
+    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(sourceFileName, outputFileName);
+    if (fileStatus != BeFileNameStatus::Success && fileStatus != BeFileNameStatus::AlreadyExists)
+        {
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus PointCloudModelReader::_Read(Json::Value& model)
+    {
+    DgnModelId ecInstanceId = ECJsonUtilities::JsonToId<DgnModelId>(model[ECJsonSystemNames::Id()]);
+    if (!ecInstanceId.IsValid())
+        return ERROR;
+
+    auto& props = model["PointCloudModel"];
+
+    WString relativePath;
+    BeFileName pod(WString(props["FileUri"].asCString(), BentleyCharEncoding::Utf8));
+    BeFileName outputFilename;
+    CopyResourceToBimLocation(outputFilename, *GetDgnDb(), pod);
+
+    Utf8String fileUri(outputFilename.GetFileNameAndExtension().c_str());
+    Utf8String description = props["Description"].asString();
+
+    Transform stw;
+    JsonUtils::TransformFromJson(stw, props["SceneToWorld"]);
+    Utf8String wkt = props["Wkt"].asString();
+    float density = props["Density"].asFloat();
+
+    ColorDef color = ColorDef(props["Color"].asUInt());
+    uint32_t weight = props["Weight"].asUInt();
+
+    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*GetDgnDb()->GetRealityDataSourcesModel(), fileUri.c_str(), fileUri.c_str());
+    if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
+        return ERROR;
+
+    PointCloud::PointCloudModelPtr pc = PointCloud::PointCloudModelHandler::CreatePointCloudModel(PointCloud::PointCloudModel::CreateParams(*GetDgnDb(), repositoryLink->GetElementId(), fileUri));
+    if (pc.IsNull())
+        {
+        GetLogger().errorv("Failed to create point cloud model for ModelId %s with fileUri %s", ecInstanceId.ToString().c_str(), fileUri.c_str());
+        return ERROR;
+        }
+    pc->SetDescription(description.c_str());
+    if (!Utf8String::IsNullOrEmpty(wkt.c_str()))
+        pc->SetSpatialReferenceWkt(wkt.c_str());
+    pc->SetViewDensity(density);
+    pc->SetSceneToWorld(stw);
+    pc->SetColor(color);
+    pc->SetWeight(weight);
+
+    auto modelStatus = pc->Insert();
+    if (modelStatus != DgnDbStatus::Success)
+        {
+        GetLogger().errorv("Failed to insert point cloud model for ModelId %s with fileUri %s", ecInstanceId.ToString().c_str(), fileUri.c_str());
+        return ERROR;
+        }
+    SyncInfo::ModelMapping mapping;
+    GetSyncInfo()->InsertModel(mapping, pc->GetModelId(), ecInstanceId, nullptr);
+
+    return SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -2519,7 +2593,7 @@ BentleyStatus ElementHasLinksReader::_Read(Json::Value& hasLinks)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus BaselineReader::_Read(Json::Value& baseline)
     {
-    PlanId id = ECJsonUtilities::JsonToId<PlanId>(baseline["Plan"]["id"]);
+    Planning::PlanId id = ECJsonUtilities::JsonToId<Planning::PlanId>(baseline["Plan"]["id"]);
     DgnElementId mappedPlan = GetSyncInfo()->LookupElement(DgnElementId(id.GetValue()));
     if (!mappedPlan.IsValid())
         {
@@ -2528,7 +2602,7 @@ BentleyStatus BaselineReader::_Read(Json::Value& baseline)
         return ERROR;
         }
     
-    PlanPtr plan = Plan::GetForEdit(*GetDgnDb(), mappedPlan);
+    Planning::PlanPtr plan = Planning::Plan::GetForEdit(*GetDgnDb(), mappedPlan);
     if (!plan.IsValid())
         {
         Utf8PrintfString error("Failed to get Plan for mapped id %s.", mappedPlan.ToString().c_str());

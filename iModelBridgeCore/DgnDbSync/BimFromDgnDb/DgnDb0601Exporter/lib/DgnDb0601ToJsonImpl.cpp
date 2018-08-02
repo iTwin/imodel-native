@@ -14,6 +14,8 @@
 #include <DgnDb06Api/DgnPlatform/DgnGeoCoord.h>
 #include <DgnDb06Api/Planning/PlanningApi.h>
 #include <DgnDb06Api/ECObjects/ECJsonUtilities.h>
+#include <DgnDb06Api/PointCloudSchema/PointCloudSchemaApi.h>
+#include <DgnDb06Api/DgnPlatform/JsonUtils.h>
 
 DGNDB06_USING_NAMESPACE_BENTLEY
 DGNDB06_USING_NAMESPACE_BENTLEY_SQLITE
@@ -57,6 +59,7 @@ static Utf8CP const JSON_TYPE_Activity = "Activity";
 static Utf8CP const JSON_TYPE_Baseline = "Baseline";
 static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
 static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
+static Utf8CP const JSON_TYPE_PointCloudModel = "PointCloudModel";
 
 static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec="CodeSpec";
 static Utf8CP const  BIS_ELEMENT_PROP_CodeScope="CodeScope";
@@ -381,6 +384,7 @@ bool DgnDb0601ToJsonImpl::OpenDgnDb()
     m_activityClass = m_dgndb->Schemas().GetECClass("Planning", "Activity");
     m_timeSpanClass = m_dgndb->Schemas().GetECClass("Planning", "TimeSpan");
     m_cameraKeyFrameClass = m_dgndb->Schemas().GetECClass("Planning", "CameraKeyFrame");
+    m_pointCloudModelClass = m_dgndb->Schemas().GetECClass("PointCloud", "PointCloudModel");
 
     return true;
     }
@@ -1506,12 +1510,14 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportModel(Utf8CP schemaName, Utf8CP classNa
             continue;
 
         DgnModelPtr model = m_dgndb->Models().GetModel(DgnModelId(actualElementId.GetValue()));
+        bool isPointCloud = nullptr != m_pointCloudModelClass && m_dgndb->Schemas().GetECClass(model->GetClassId())->Is(m_pointCloudModelClass);
+
         DgnElementId modeledElementId;
         if (model->IsSheetModel())
             modeledElementId = CreateSheetElement(*model);
         else if (model->Is2dModel())
             modeledElementId = CreateDrawingElement(model->GetName().c_str());
-        else if (!model->IsDictionaryModel())
+        else if (!model->IsDictionaryModel() && !isPointCloud)
             modeledElementId = CreatePartitionElement(*model, DgnElementId());
         
         auto entry = Json::Value(Json::ValueType::objectValue);
@@ -1532,6 +1538,28 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportModel(Utf8CP schemaName, Utf8CP classNa
         // Certain classes are now abstract in BisCore, so they need to be converted to the derived concrete classes
         if (model->IsGroupInformationModel())
             obj[JSON_CLASSNAME] = "Generic.GroupModel";
+        else if (isPointCloud)
+            {
+            entry[JSON_TYPE_KEY] = JSON_TYPE_PointCloudModel;
+            obj["PointCloudModel"] = Json::Value(Json::ValueType::objectValue);
+            auto& pc = obj["PointCloudModel"];
+            Json::Value pcOld;
+            Json::Reader::Parse(obj["Properties"].asCString(), pcOld);
+            pc["Color"] = pcOld["PointCloudModel"]["Color"].asUInt();
+            pc["Density"] = pcOld["PointCloudModel"]["Density"].asFloat();
+
+            Json::Value fileId;
+            Json::Reader::Parse(pcOld["PointCloudModel"]["FileId"].asCString(), fileId);
+
+            pc["FileUri"] = fileId["localFile"]["fullPath"].asCString();
+            if (pcOld["PointCloudModel"].isMember("Description"))
+                pc["Description"] = pcOld["PointCloudModel"]["Description"].asCString();
+            if (pcOld["PointCloudModel"].isMember("Wkt"))
+                pc["Wkt"] = pcOld["PointCloudModel"]["Wkt"].asCString();
+            Transform stw;
+            JsonUtils::TransformFromJson(stw, pcOld["PointCloudModel"]["SceneToWorld"]);
+            JsonUtils::TransformToJson(pc["SceneToWorld"], stw);
+            }
         else if (model->IsSpatialModel())
             {
             Utf8String tmp(obj["$ECClassKey"].asString());

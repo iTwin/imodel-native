@@ -269,6 +269,8 @@ BentleyStatus BimFromJsonImpl::ImportJson(Json::Value& entry)
         reader = new GenericElementAspectReader(this);
     else if (objectType.Equals(JSON_TYPE_TextAnnotationData))
         reader = new TextAnnotationDataReader(this);
+    else if (objectType.Equals(JSON_TYPE_PointCloudModel))
+        reader = new PointCloudModelReader(this);
 
     if (nullptr == reader)
         return ERROR;
