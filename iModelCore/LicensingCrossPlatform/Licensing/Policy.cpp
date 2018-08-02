@@ -139,6 +139,7 @@ Policy::Qualifier::Qualifier(Json::Value json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::Qualifier> Policy::Qualifier::Create(const Json::Value& json)
 	{
+	if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::Qualifier>(new Policy::Qualifier(json));
 	}
 
@@ -158,6 +159,7 @@ Policy::RequestedSecurable::RequestedSecurable(Json::Value json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::RequestedSecurable> Policy::RequestedSecurable::Create(const Json::Value& json)
 	{
+	if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::RequestedSecurable>(new Policy::RequestedSecurable(json));
 	}
 
@@ -183,6 +185,7 @@ Policy::RequestData::RequestData(const Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::RequestData> Policy::RequestData::Create(const Json::Value& json)
 	{
+	if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::RequestData>(new Policy::RequestData(json));
 	}
 
@@ -222,6 +225,7 @@ Policy::ACL::ACL(const Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::ACL> Policy::ACL::Create(const Json::Value& json)
 	{
+	if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::ACL>(new Policy::ACL(json));
 	}
 
@@ -261,6 +265,7 @@ Policy::SecurableData::SecurableData(const Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::SecurableData> Policy::SecurableData::Create(const Json::Value& json)
 	{
+	if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::SecurableData>(new Policy::SecurableData(json));
 	}
 
@@ -301,5 +306,6 @@ Policy::UserData::UserData(const Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::UserData> Policy::UserData::Create(const Json::Value& json)
 	{
+	if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::UserData>(new Policy::UserData(json));
 	}

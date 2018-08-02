@@ -375,22 +375,41 @@ TEST_F(ClientTests, GetProductStatus_Test)
 	{
 	auto client = CreateTestClient(true);
 	client->StartApplication();
-	// Test policy obtained should result in AccessDenied
 	// Add policies with unique ProductIds for testing multiple cases
 	Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+	Utf8String userIdBad = "00000000-0000-0000-0000-000000000000";
 	auto jsonPolicyValid = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
 	auto jsonPolicyValidTrial = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9901, "", 1, true);
 	auto jsonPolicyValidTrialExpired = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(-1), userId, 9902, "", 1, true);
+	auto jsonPolicyExpired = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(-1), DateHelper::AddDaysToCurrentTime(7), userId, 9903, "", 1, false);
+	auto jsonPolicyNoSecurables = DummyJsonHelper::CreatePolicyNoSecurables(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9904, "", 1, false);
+	auto jsonPolicyNoACLs = DummyJsonHelper::CreatePolicyNoACLs(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9905, "", 1, false);
+	auto jsonPolicyNoUserData = DummyJsonHelper::CreatePolicyNoUserData(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9906, "", 1, false);
+	auto jsonPolicyNoRequestData = DummyJsonHelper::CreatePolicyNoRequestData(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9907, "", 1, false);
+	auto jsonPolicyIdBad = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userIdBad, 9908, "", 1, false);
 
 	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValid));
 	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValidTrial));
 	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValidTrialExpired));
+	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyExpired));
+	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyNoSecurables));
+	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyNoACLs));
+	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyNoUserData));
+	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyNoRequestData));
+	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyIdBad));
 	
 	// NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
-	ASSERT_EQ((int)client->GetProductStatus(), (int)LicenseStatus::AccessDenied);
+	ASSERT_EQ((int)client->GetProductStatus(), (int)LicenseStatus::AccessDenied); // Obtained test policy should result in AccessDenied
 	ASSERT_EQ((int)client->GetProductStatus(9900), (int)LicenseStatus::Ok);
 	ASSERT_EQ((int)client->GetProductStatus(9901), (int)LicenseStatus::Trial);
 	ASSERT_EQ((int)client->GetProductStatus(9902), (int)LicenseStatus::Expired);
+	ASSERT_EQ((int)client->GetProductStatus(9903), (int)LicenseStatus::NotEntitled); // Policy is not valid due to expiration, therefore no entitlement
+	ASSERT_EQ((int)client->GetProductStatus(9904), (int)LicenseStatus::NotEntitled);
+	ASSERT_EQ((int)client->GetProductStatus(9905), (int)LicenseStatus::Expired);
+	ASSERT_EQ((int)client->GetProductStatus(9906), (int)LicenseStatus::NotEntitled);
+	ASSERT_EQ((int)client->GetProductStatus(9907), (int)LicenseStatus::NotEntitled);
+	ASSERT_EQ((int)client->GetProductStatus(9908), (int)LicenseStatus::NotEntitled);
+	ASSERT_EQ((int)client->GetProductStatus(9999), (int)LicenseStatus::NotEntitled); // Policy with productId does not exist
 	}
 
 //TEST_F(ClientTests, SendUsage_InegrationTest)

@@ -18,6 +18,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 struct DummyJsonHelper
 {
 private:
+	enum class PolicyType { Full, NoSecurables, NoACLs, NoUserData, NoRequestData };
 	static std::string PolicyStart() { return "{"; };
 	static std::string PolicyEnd() { return "}"; };
 	static std::string PolicyNext() { return ","; };
@@ -147,9 +148,8 @@ private:
 		return Utf8String(idstring.c_str());
 		};
 
-public:
-	static Json::Value CreatePolicyFull(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
-	{
+	static Json::Value CreatePolicySpecific(PolicyType type, time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+		{
 		// Create string
 		std::ostringstream stream;
 		stream << PolicyStart();
@@ -157,18 +157,44 @@ public:
 		stream << PolicyVersion() << PN();
 		stream << PolicyCreatedOn(DateHelper::TimeToString(createdOn).c_str()) << PN();
 		stream << PolicyExpiresOn(DateHelper::TimeToString(expiresOn).c_str()) << PN();
-		stream << RequestData(productId, featureString, userId) << PN();
+		if (type != PolicyType::NoRequestData) stream << RequestData(productId, featureString, userId) << PN();
 		stream << MachineSignature() << PN();
 		stream << AppliesToUserId(userId) << PN();
 		stream << AppliesToSecurableIds() << PN();
-		stream << ACLs(DateHelper::TimeToString(aclExpiresOn).c_str(), accessKind, userId, isTrial) << PN();
-		stream << SecurableData(productId, featureString) << PN();
-		stream << UserData(userId) << PN();
+		if (type != PolicyType::NoACLs) stream << ACLs(DateHelper::TimeToString(aclExpiresOn).c_str(), accessKind, userId, isTrial) << PN();
+		if (type != PolicyType::NoSecurables) stream << SecurableData(productId, featureString) << PN();
+		if (type != PolicyType::NoUserData) stream << UserData(userId) << PN();
 		stream << DefaultQualifiers(); // no PN needed here; last subitem
 		stream << PolicyEnd();
 		// Return json created from string
 		auto json = Json::Reader::DoParse(Utf8String(stream.str().c_str()));
 		return json;
+		}
+
+public:
+	static Json::Value CreatePolicyFull(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+	{
+		return CreatePolicySpecific(PolicyType::Full, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
+	};
+
+	static Json::Value CreatePolicyNoSecurables(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+	{
+		return CreatePolicySpecific(PolicyType::NoSecurables, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
+	};
+
+	static Json::Value CreatePolicyNoACLs(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+	{
+		return CreatePolicySpecific(PolicyType::NoACLs, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
+	};
+
+	static Json::Value CreatePolicyNoUserData(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+	{
+		return CreatePolicySpecific(PolicyType::NoUserData, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
+	};
+
+	static Json::Value CreatePolicyNoRequestData(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+	{
+		return CreatePolicySpecific(PolicyType::NoRequestData, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
 	};
 };
 
