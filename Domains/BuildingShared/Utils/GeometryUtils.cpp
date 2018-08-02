@@ -2201,6 +2201,27 @@ bool GeometryUtils::IsSameGeometry
             if (arc1.IsAlmostEqual(arc2, tolerance))
                 return true;
 
+            if (!arc1.center.AlmostEqual(arc2.center))
+                return false;
+
+            if (arc1.IsCircular() != arc2.IsCircular())
+                return false;
+
+            if (arc1.IsCircular())
+                {
+                if (DoubleOps::AlmostEqual(arc1.sweep, Angle::TwoPi())
+                    && DoubleOps::AlmostEqual(arc2.sweep, Angle::TwoPi()))
+                    return true;
+                }
+            else
+                {
+                if (arc1.vector0.AlmostEqual(arc2.vector0)
+                    && arc1.vector90.AlmostEqual(arc2.vector90)
+                    && DoubleOps::AlmostEqual(arc1.sweep, Angle::TwoPi())
+                    && DoubleOps::AlmostEqual(arc2.sweep, Angle::TwoPi()))
+                    return true;
+                }
+
             if (!arc1.FractionToPoint(0).AlmostEqual(arc2.FractionToPoint(0), tolerance))
                 return false;
             if (!arc1.FractionToPoint(0.5).AlmostEqual(arc2.FractionToPoint(0.5), tolerance))

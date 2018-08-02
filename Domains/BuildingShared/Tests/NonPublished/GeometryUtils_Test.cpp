@@ -492,6 +492,48 @@ TEST_F(GeometryUtilsTests, IsSameSingleLoopGeometry_DifferentGeometry)
     }
 
 //--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryUtilsTests, IsSameSingleLoopGeometry_FullArcsWithDifferentStarts)
+    {
+    DEllipse3d arc1 = DEllipse3d::FromVectors({0,0,0}, DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0), 0, Angle::TwoPi());
+    DEllipse3d arc2 = DEllipse3d::FromVectors({0,0,0}, DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0), Angle::Pi(), Angle::TwoPi());
+
+    CurveVectorPtr cv1 = CurveVector::Create(ICurvePrimitive::CreateArc(arc1), CurveVector::BOUNDARY_TYPE_Outer);
+    CurveVectorPtr cv2 = CurveVector::Create(ICurvePrimitive::CreateArc(arc2), CurveVector::BOUNDARY_TYPE_Outer);
+
+    ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*cv1, *cv2));
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryUtilsTests, IsSameSingleLoopGeometry_DifferentEllipses)
+    {
+    DEllipse3d ellipse1 = DEllipse3d::FromVectors({0,0,0}, DVec3d::From(1, 0, 0), DVec3d::From(0, 2, 0), 0, Angle::TwoPi());
+    DEllipse3d ellipse2 = DEllipse3d::FromVectors({0,0,0}, DVec3d::From(2, 0, 0), DVec3d::From(0, 1, 0), 0, Angle::TwoPi());
+
+    CurveVectorPtr cv1 = CurveVector::Create(ICurvePrimitive::CreateArc(ellipse1), CurveVector::BOUNDARY_TYPE_Outer);
+    CurveVectorPtr cv2 = CurveVector::Create(ICurvePrimitive::CreateArc(ellipse2), CurveVector::BOUNDARY_TYPE_Outer);
+
+    ASSERT_FALSE(GeometryUtils::IsSameSingleLoopGeometry(*cv1, *cv2));
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryUtilsTests, IsSameSingleLoopGeometry_EqualEllipsesWithDifferentStarts)
+    {
+    DEllipse3d ellipse1 = DEllipse3d::FromVectors({0,0,0}, DVec3d::From(1, 0, 0), DVec3d::From(0, 2, 0), 0, Angle::TwoPi());
+    DEllipse3d ellipse2 = DEllipse3d::FromVectors({0,0,0}, DVec3d::From(1, 0, 0), DVec3d::From(0, 2, 0), Angle::Pi(), Angle::TwoPi());
+
+    CurveVectorPtr cv1 = CurveVector::Create(ICurvePrimitive::CreateArc(ellipse1), CurveVector::BOUNDARY_TYPE_Outer);
+    CurveVectorPtr cv2 = CurveVector::Create(ICurvePrimitive::CreateArc(ellipse2), CurveVector::BOUNDARY_TYPE_Outer);
+
+    ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*cv1, *cv2));
+    }
+
+//--------------------------------------------------------------------------------------
 // @betest                                       Mindaugas Butkus                07/2018
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(GeometryUtilsTests, GetBodySlice)
