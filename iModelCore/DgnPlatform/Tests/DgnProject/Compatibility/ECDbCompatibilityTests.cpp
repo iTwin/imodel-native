@@ -300,7 +300,19 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
             testDb.AssertKindOfQuantity("PreEC32Koqs", "LIQUID_VOLUME", "Liquid Volume", nullptr, "u:CUB_M", JsonValue(R"json(["f:DefaultRealU(4)[u:LITRE]", "f:DefaultRealU(4)[u:GALLON]"])json"), 0.0001);
 
             if (TestDb::VersionSupportsFeature(testDb.GetECDbInitialVersion(), ECDbFeature::UnitsAndFormats))
+                {
                 testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_NoPresUnit", nullptr, nullptr, "u:W_PER_M_K", JsonValue(), 0.4);
+
+                // KOQs which are actually invalid in EC3.1 and could not be deserialized in pre EC3.2 code. In EC3.2 code this is tolerated
+                // but invalid pres formats are dropped.
+                // So these tests may only be run if the file was created with code that supports EC3.2 or later
+                testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_LUX_M", nullptr, nullptr, "u:LUX", JsonValue(), 1.1);
+                testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_LUX", nullptr, nullptr, "u:M", JsonValue(), 1.2);
+                testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_SQFTreal4u", nullptr, nullptr, "u:M", JsonValue(), 1.3);
+                testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_CM_LUX", nullptr, nullptr, "u:M", JsonValue(R"json(["f:DefaultReal[u:CM]"])json"), 1.4);
+                testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_LUX_CM_MM", nullptr, nullptr, "u:LUX", JsonValue(), 1.5);
+                testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_LUXreal4u_CM_MM", nullptr, nullptr, "u:LUX", JsonValue(R"json(["f:DefaultRealU(4)[u:LUX]"])json"), 1.6);
+                }
             else
                 {
                 //The original KOQ was serialized to disk in bim02dev in a wrong way, where it did persist the format along with the unit,
@@ -315,13 +327,6 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
             testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_SQFTfi8", nullptr, nullptr, "u:SQ_FT", JsonValue(), 0.9);
             testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_SQFTfi8_SQFTreal4u", nullptr, nullptr, "u:SQ_FT", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_FT]"])json"), 1.0);
 
-            // KOQs which are actually invalid in EC3.1, but the ECObjects upgrade path just drops the invalid presentation formats in that case instead of dropping the entire KOQ
-            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_LUX_M", nullptr, nullptr, "u:LUX", JsonValue(), 1.1);
-            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_LUX", nullptr, nullptr, "u:M", JsonValue(), 1.2);
-            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_SQFTreal4u", nullptr, nullptr, "u:M", JsonValue(), 1.3);
-            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_CM_LUX", nullptr, nullptr, "u:M", JsonValue(R"json(["f:DefaultReal[u:CM]"])json"), 1.4);
-            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_LUX_CM_MM", nullptr, nullptr, "u:LUX", JsonValue(), 1.5);
-            testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_LUXreal4u_CM_MM", nullptr, nullptr, "u:LUX", JsonValue(R"json(["f:DefaultRealU(4)[u:LUX]"])json"), 1.6);
 
             if (!testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
                 {
