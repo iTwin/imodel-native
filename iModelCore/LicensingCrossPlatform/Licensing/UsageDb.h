@@ -50,6 +50,7 @@ public:
 
     LICENSING_EXPORT BentleyStatus WriteUsageToCSVFile(BeFileNameCR path);
 
+	LICENSING_EXPORT std::list<Json::Value> GetPolicyFiles();
     LICENSING_EXPORT BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken);
 
     LICENSING_EXPORT Json::Value GetPolicyFile();

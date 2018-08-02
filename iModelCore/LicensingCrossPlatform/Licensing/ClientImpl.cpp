@@ -10,7 +10,6 @@
 #include "UsageDb.h"
 #include "PolicyToken.h"
 #include "GenerateSID.h"
-
 #include <WebServices/Configuration/UrlProvider.h>
 
 #include "Logging.h"
@@ -25,13 +24,13 @@ USING_NAMESPACE_BENTLEY_LICENSING
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientImpl::ClientImpl
 (
-Utf8String userName,
+const ConnectSignInManager::UserInfo& userInfo,
 ClientInfoPtr clientInfo,
 std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
 IHttpHandlerPtr httpHandler
 ) :
-m_userName(userName),
+m_userInfo(userInfo),
 m_clientInfo(clientInfo),
 m_authProvider(authenticationProvider),
 m_dbPath(dbPath),
@@ -58,7 +57,6 @@ LicenseStatus ClientImpl::StartApplication()
 
     //TODO: Get product status
     LicenseStatus licStatus = GetProductStatus();
-
     if (LicenseStatus::Ok == licStatus)
         {
         if (RecordUsage() == ERROR)
@@ -195,8 +193,8 @@ BentleyStatus ClientImpl::RecordUsage()
                            m_policyToken->GetUserId(),
                            m_clientInfo->GetDeviceId(),
                            gsid.GetMachineSID(m_clientInfo->GetDeviceId()),
-                           m_userName,
-                           gsid.GetUserSID(m_userName, m_clientInfo->GetDeviceId()),
+                           m_userInfo.username,
+                           gsid.GetUserSID(m_userInfo.username, m_clientInfo->GetDeviceId()),
                            m_policyToken->GetPolicyId(),
                            m_policyToken->GetSecurableId(),
                            atoi(m_clientInfo->GetApplicationProductId().c_str()),
@@ -403,16 +401,158 @@ Utf8String ClientImpl::GetLoggingPostSource(LogPostingSource lps) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LicenseStatus ClientImpl::GetProductStatus()
+std::list<std::shared_ptr<Policy>> ClientImpl::GetPolicies()
 	{
-	return LicenseStatus::Ok;
-	// Cases for Ok:
-	//   
-	// Cases for Offline:
-	// Cases for Expired:
-	// Cases for AccessDenied:
-	// Cases for DisabledByLogSend:
-	// Cases for DisabledByPolicy:
-	// Cases for Trial:
-	// Cases for NotEntitled:
+	std::list<std::shared_ptr<Policy>> policyList;
+	auto jsonpolicies = m_usageDb->GetPolicyFiles();
+	for (auto json : jsonpolicies)
+		{
+		auto policy = Policy::Create(json);
+		policyList.push_back(policy);
+		}
+	return policyList;
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::list<std::shared_ptr<Policy>> ClientImpl::GetUserPolicies()
+	{
+	std::list<std::shared_ptr<Policy>> policyList;
+	// get all policies
+	auto allPolicies = GetPolicies();
+	// filter out policies that don't match userId
+	for (auto policy : allPolicies)
+		{
+		if (policy->GetAppliesToUserId().Equals(m_userInfo.userId))
+			{
+			policyList.push_back(policy);
+			}
+		}
+	return policyList;
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::shared_ptr<Policy> ClientImpl::SearchForOrRequestPolicy(Utf8String requestedProductId)
+	{
+	std::shared_ptr<Policy> matchingPolicy = nullptr;
+	// get all of user's policies
+	auto policies = GetUserPolicies();
+	// find policy that contains appropriate productId and featureString
+	Utf8String productId;
+	if (requestedProductId.Equals(""))
+		productId = m_clientInfo->GetApplicationProductId();
+	else
+		productId = requestedProductId;
+
+	for (auto policy : policies)
+		{
+		// check if policy is valid
+		if (!PolicyHelper::IsValid(policy))
+			continue;
+		// look for a securable that matches productId and featureString
+		for (auto securable : policy->GetSecurableData())
+			{
+			if (Utf8String(std::to_string(securable->GetProductId()).c_str()).Equals(productId) &&
+				securable->GetFeatureString().Equals(m_featureString))
+				{
+				// if matches, return this policy
+				return policy;
+				}
+			}
+		}
+	// if a matching policy was not found in DB, make a request for another
+	if (matchingPolicy == nullptr)
+		{
+		matchingPolicy = Policy::Create(GetPolicyToken());
+		/*auto token = GetPolicy().get();
+		auto policy = Policy::Create(token);
+		if (PolicyHelper::IsValid(policy))
+			{
+			matchingPolicy = policy;
+			StorePolicyTokenInUsageDb(token);
+			// TODO: begin heartbeat to refresh user's policy?
+			}*/
+		}
+
+	return matchingPolicy;
+	}
+
+void ClientImpl::StorePolicyTokenInUsageDb(std::shared_ptr<PolicyToken> policyToken)
+	{
+	m_usageDb->AddOrUpdatePolicyFile(policyToken->GetPolicyId(),
+		policyToken->GetExpirationDate(),
+		policyToken->GetLastUpdateTime(),
+		policyToken->GetPolicyFile());
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LicenseStatus ClientImpl::GetProductStatus(int requestedProductId)
+	{
+	// productId to look for; allow custom product to be searched for
+	Utf8String productId;
+	if (requestedProductId < 0)
+	{
+		 productId = m_clientInfo->GetApplicationProductId();
+	}
+	else
+	{
+		productId = Utf8String(std::to_string(requestedProductId).c_str());
+	}
+	// get valid policy for user
+	auto policy = SearchForOrRequestPolicy(productId);
+	// if null, NotEntitled
+	if (policy == nullptr)
+		{
+		return LicenseStatus::NotEntitled;
+		}
+	// get PolicyStatus
+	auto policyStatus = PolicyHelper::GetPolicyStatus(policy);
+	// if not valid, return LicenseStatus::DisabledByPolicy
+	if (policyStatus != PolicyHelper::PolicyStatus::Valid)
+		{
+		return LicenseStatus::DisabledByPolicy;
+		}
+	// get GetProductLicenseStatus
+	auto productStatus = PolicyHelper::GetProductStatus(policy, productId, m_featureString);
+	// if prodStatus is TrialExpired
+	//     return LicenseStatus::Expired
+	if (productStatus == PolicyHelper::ProductStatus::TrialExpired)
+		{
+		return LicenseStatus::Expired;
+		}
+	// if prodStatus is Denied
+	//     return LicenseStatus::AccessDenied
+	if (productStatus == PolicyHelper::ProductStatus::Denied)
+		{
+		return LicenseStatus::AccessDenied;
+		}
+	// if prodStatus is NoLicense
+	//     check preactivation maybe? if preactivated, return LicenseStatus::PreActivation
+	//     return LicenseStatus::Expired
+	if (productStatus == PolicyHelper::ProductStatus::NoLicense)
+		{
+		return LicenseStatus::Expired;
+		}
+	// if prodStatus is Allowed
+	if (productStatus == PolicyHelper::ProductStatus::Allowed)
+		{
+		//     if (IsTrial) return LicenseStatus::Trial
+		if (PolicyHelper::IsTrial(policy, productId, m_featureString))
+			{
+			return LicenseStatus::Trial;
+			}
+		//     hasOfflineGracePeriodStarted = HasOfflineGracePeriodStarted()
+		//     daysLeftInOfflineGracePeriod = GetDaysLeftInOfflineGracePeriod()
+		//     if (hasOfflineGracePeriodStarted && daysLeftInOfflineGracePeriod > 0
+		//         return LicenseStatus::Offline
+		//     else return LicenseStatus::Ok
+		return LicenseStatus::Ok;
+		}
+	// return DisabledByPolicy
+	return LicenseStatus::DisabledByPolicy;
 	}

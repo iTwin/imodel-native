@@ -13,9 +13,8 @@ USING_NAMESPACE_BENTLEY_LICENSING
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Policy::Policy(std::shared_ptr<PolicyToken> policyToken)
+Policy::Policy(const Json::Value& json)
 	{
-	auto json = policyToken->GetPolicyFile();
 	m_PolicyId = json["PolicyId"].asString();
 	m_PolicyVersion = json["PolicyVersion"].asDouble();
 	m_PolicyCreatedOn = DateHelper::StringToTime(json["PolicyCreatedOn"].asCString());
@@ -39,6 +38,16 @@ std::shared_ptr<Policy> Policy::Create(std::shared_ptr<PolicyToken> policyToken)
 		return nullptr;
 	return std::shared_ptr<Policy>(new Policy(policyToken));
 	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::shared_ptr<Policy> Policy::Create(const Json::Value& json)
+{
+	if (json.isNull() || !json.isObject())
+		return nullptr;
+	return std::shared_ptr<Policy>(new Policy(json));
+}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -156,7 +165,7 @@ std::shared_ptr<Policy::RequestedSecurable> Policy::RequestedSecurable::Create(c
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Policy::RequestData::RequestData(Json::Value json)
+Policy::RequestData::RequestData(const Json::Value& json)
 	{
 	m_MachineSID = json["MachineSID"].asString();
 	m_AccessKey = json["AccessKey"].asString();
@@ -180,7 +189,7 @@ std::shared_ptr<Policy::RequestData> Policy::RequestData::Create(const Json::Val
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<std::shared_ptr<Policy::RequestedSecurable>> Policy::RequestData::CreateRequestedSecurables(Json::Value json)
+std::list<std::shared_ptr<Policy::RequestedSecurable>> Policy::RequestData::CreateRequestedSecurables(const Json::Value& json)
 	{
 	std::list<std::shared_ptr<Policy::RequestedSecurable>> reqSecItems;
 	
@@ -199,7 +208,7 @@ std::list<std::shared_ptr<Policy::RequestedSecurable>> Policy::RequestData::Crea
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Policy::ACL::ACL(Json::Value json)
+Policy::ACL::ACL(const Json::Value& json)
 	{
 	m_PrincipalId = json["PrincipalId"].asString();
 	m_SecurableId = json["SecurableId"].asString();
@@ -219,7 +228,7 @@ std::shared_ptr<Policy::ACL> Policy::ACL::Create(const Json::Value& json)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<std::shared_ptr<Policy::Qualifier>> Policy::ACL::CreateQualifierOverrides(Json::Value json)
+std::list<std::shared_ptr<Policy::Qualifier>> Policy::ACL::CreateQualifierOverrides(const Json::Value& json)
 {
 	std::list<std::shared_ptr<Policy::Qualifier>> reqSecItems;
 
@@ -238,7 +247,7 @@ std::list<std::shared_ptr<Policy::Qualifier>> Policy::ACL::CreateQualifierOverri
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Policy::SecurableData::SecurableData(Json::Value json)
+Policy::SecurableData::SecurableData(const Json::Value& json)
 	{
 	m_SecurableId = json["SecurableId"].asString();
 	m_ProductId = json["ProductId"].asInt64();
@@ -258,7 +267,7 @@ std::shared_ptr<Policy::SecurableData> Policy::SecurableData::Create(const Json:
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<std::shared_ptr<Policy::Qualifier>> Policy::SecurableData::CreateQualifierOverrides(Json::Value json)
+std::list<std::shared_ptr<Policy::Qualifier>> Policy::SecurableData::CreateQualifierOverrides(const Json::Value& json)
 	{
 	std::list<std::shared_ptr<Policy::Qualifier>> reqSecItems;
 
@@ -277,7 +286,7 @@ std::list<std::shared_ptr<Policy::Qualifier>> Policy::SecurableData::CreateQuali
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Policy::UserData::UserData(Json::Value json)
+Policy::UserData::UserData(const Json::Value& json)
 	{
 	m_UserId = json["UserId"].asString();
 	m_OrganizationId = json["OrganizationId"].asString();

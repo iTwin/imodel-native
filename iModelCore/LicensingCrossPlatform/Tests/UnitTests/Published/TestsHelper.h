@@ -2,7 +2,7 @@
 |
 |     $Source: LicensingCrossPlatform/Tests/UnitTests/Published/TestsHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,6 +19,5 @@
 #define EXPECT_ERROR(EXPR) EXPECT_EQ(ERROR, (EXPR))
 
 BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
-
 
 END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE

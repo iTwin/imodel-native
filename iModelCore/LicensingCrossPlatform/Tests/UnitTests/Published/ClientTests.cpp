@@ -12,6 +12,8 @@
 #include "../../../Licensing/ClientImpl.h"
 #include "../../../Licensing/UsageDb.h"
 #include "../../../Licensing/PolicyToken.h"
+#include "../../../Licensing/DummyJsonHelper.h"
+#include "../../../Licensing/DateHelper.h"
 
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
@@ -99,7 +101,7 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
     BeFileName dbPath = GetUsageDbPath();
     
     return std::make_shared<ClientImpl>(
-        manager->GetUserInfo().username,
+        manager->GetUserInfo(),
         clientInfo,
         manager,
         dbPath, 
@@ -324,7 +326,7 @@ void ClientTests::SetUpTestCase()
 //    }
 
 // TODO: Create separate Project for Integration tests.
-//TEST_F (ClientTests, GetPolicy_InegrationTest)
+// TEST_F (ClientTests, GetPolicy_IntegrationTest)
 //    {
 //    auto client = CreateTestClient(true);
 //
@@ -368,6 +370,28 @@ void ClientTests::SetUpTestCase()
     //    // Error handling.
     //    });
     //}
+
+TEST_F(ClientTests, GetProductStatus_Test)
+	{
+	auto client = CreateTestClient(true);
+	client->StartApplication();
+	// Test policy obtained should result in AccessDenied
+	// Add policies with unique ProductIds for testing multiple cases
+	Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+	auto jsonPolicyValid = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
+	auto jsonPolicyValidTrial = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9901, "", 1, true);
+	auto jsonPolicyValidTrialExpired = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(-1), userId, 9902, "", 1, true);
+
+	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValid));
+	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValidTrial));
+	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValidTrialExpired));
+	
+	// NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
+	ASSERT_EQ((int)client->GetProductStatus(), (int)LicenseStatus::AccessDenied);
+	ASSERT_EQ((int)client->GetProductStatus(9900), (int)LicenseStatus::Ok);
+	ASSERT_EQ((int)client->GetProductStatus(9901), (int)LicenseStatus::Trial);
+	ASSERT_EQ((int)client->GetProductStatus(9902), (int)LicenseStatus::Expired);
+	}
 
 //TEST_F(ClientTests, SendUsage_InegrationTest)
 //    {

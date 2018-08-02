@@ -49,6 +49,9 @@ std::shared_ptr<PolicyToken> PolicyToken::Create(std::shared_ptr<JWToken> jwToke
     return std::shared_ptr<PolicyToken>(new PolicyToken(policyJson));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<PolicyToken> PolicyToken::Create(Json::Value policy)
     {
     if (policy == Json::Value::GetNull())

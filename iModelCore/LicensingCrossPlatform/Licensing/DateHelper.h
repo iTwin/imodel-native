@@ -8,7 +8,7 @@
 #pragma once
 
 #include <Licensing/Licensing.h>
-//#include <ctime>
+#include <ctime>
 #include <iomanip>
 #include <sstream>
 
@@ -25,17 +25,40 @@ private:
 		
 		}*/
 public:
+	static time_t GetCurrentTime()
+		{
+		time_t ct = time(0);
+		time_t currentTime = mktime(gmtime(&ct));
+		return currentTime;
+		}
+
+	static time_t AddDaysToTime(const time_t& time, int daysToAdd)
+		{
+		struct tm* tm = localtime(&time);
+		tm->tm_mday += daysToAdd;
+		time_t newTime = mktime(tm);
+		return newTime;
+		}
+
+	static time_t AddDaysToCurrentTime(int daysToAdd)
+		{
+		return AddDaysToTime(GetCurrentTime(),daysToAdd);
+		}
+
 	static time_t StringToTime(const std::string& string)
 		{
 		std::tm tm;
 		std::istringstream ss(string);
-		ss >> std::get_time(&tm, "%Y-%m-%dT%H%M%S");
+		ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
 		return std::mktime(&tm);
 		}
 
 	static std::string TimeToString(const time_t& time)
 		{
-		return "";
+		std::tm* tmtime = (time < 0) ? gmtime(&time) : localtime(&time);
+		char buffer[64];
+		strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%S", tmtime);
+		return buffer;
 		}
 };
 

@@ -31,7 +31,7 @@ private:
 
     Client
         (
-        Utf8String userName,
+		const ConnectSignInManager::UserInfo& userInfo,
         ClientInfoPtr clientInfo,
         std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
         BeFileNameCR dbPath,
@@ -41,7 +41,7 @@ private:
 public:
     LICENSING_EXPORT static ClientPtr Create
         (
-        Utf8String userName,
+		const ConnectSignInManager::UserInfo& userInfo,
         ClientInfoPtr clientInfo,
         std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
         BeFileNameCR dbPath,

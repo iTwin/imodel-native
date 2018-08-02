@@ -246,18 +246,44 @@ BentleyStatus UsageDb::WriteUsageToCSVFile(BeFileNameCR path)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+std::list<Json::Value> UsageDb::GetPolicyFiles()
+	{
+	std::list<Json::Value> policyList;
+
+	Statement stmt;
+	stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy");
+	bool isDone = false;
+	while (!isDone)
+		{
+		DbResult result = stmt.Step();
+		if (result == DbResult::BE_SQLITE_ROW)
+			{
+			Utf8String policyUtf8 = stmt.GetValueText(0);
+			auto policyJson = Json::Reader::DoParse(policyUtf8);
+			policyList.push_back(policyJson);
+			}
+		else
+			{
+			isDone = true;
+			}
+		}
+	return policyList;
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken)
     {
     Statement stmt;
-    
+
     if (m_db.IsDbOpen())
         {
         stmt.Prepare(m_db, "INSERT INTO Policy VALUES (?, ?, ?, ?)");
         stmt.BindText(1, policyId, Statement::MakeCopy::No);
         stmt.BindText(2, expirationDate, Statement::MakeCopy::No);
         stmt.BindText(3, lastUpdateTime, Statement::MakeCopy::No);
-        //TODO: stmt.BindText(4, policyToken.asString().c_str(), Statement::MakeCopy::No);
-
+	stmt.BindText(4, Json::FastWriter::ToString(policyToken), Statement::MakeCopy::Yes);
         DbResult result = stmt.Step();
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;

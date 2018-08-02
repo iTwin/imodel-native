@@ -15,14 +15,14 @@ USING_NAMESPACE_BENTLEY_LICENSING
 +---------------+---------------+---------------+---------------+---------------+------*/
 Client::Client
 (
-Utf8String userName,
+const ConnectSignInManager::UserInfo& userInfo,
 ClientInfoPtr clientInfo,
 std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
 IHttpHandlerPtr httpHandler
 )
     {
-    m_impl = std::make_unique<ClientImpl>(userName, clientInfo, authenticationProvider, dbPath, httpHandler);
+    m_impl = std::make_unique<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, httpHandler);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -30,14 +30,14 @@ IHttpHandlerPtr httpHandler
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr Client::Create
 (
-Utf8String userName,
+const ConnectSignInManager::UserInfo& userInfo,
 ClientInfoPtr clientInfo,
 std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
 IHttpHandlerPtr httpHandler
 )
     {
-    return std::shared_ptr<Client>(new Client(userName, clientInfo, authenticationProvider, dbPath, httpHandler));
+    return std::shared_ptr<Client>(new Client(userInfo, clientInfo, authenticationProvider, dbPath, httpHandler));
     }
    
 /*--------------------------------------------------------------------------------------+

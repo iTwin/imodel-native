@@ -18,6 +18,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
+
 struct Policy
 {
 public:
@@ -25,7 +26,6 @@ public:
 	struct Qualifier
 	{
 	private:
-		Json::Value m_qualifier;
 		Utf8String m_Name;
 		Utf8String m_Value;
 		Utf8String m_Type;
@@ -42,7 +42,6 @@ public:
 	struct RequestedSecurable
 	{
 	private:
-		Json::Value m_requestedSecurable;
 		int64_t m_ProductId;
 		Utf8String m_FeatureString;
 		Utf8String m_Version;
@@ -57,7 +56,6 @@ public:
 	struct RequestData
 	{
 	private:
-		Json::Value m_requestData;
 		Utf8String m_MachineSID;
 		Utf8String m_AccessKey;
 		Utf8String m_UserId;
@@ -68,8 +66,8 @@ public:
 		Utf8String m_Locale;
 		Utf8String m_AppliesTo;
 		// helper functions
-		std::list<std::shared_ptr<RequestedSecurable>> CreateRequestedSecurables(Json::Value json);
-		RequestData(Json::Value json);
+		std::list<std::shared_ptr<RequestedSecurable>> CreateRequestedSecurables(const Json::Value& json);
+		RequestData(const Json::Value& json);
 	public:
 		static std::shared_ptr<RequestData> Create(const Json::Value& json);
 		Utf8String GetMachineSID() const { return m_MachineSID; };
@@ -94,15 +92,14 @@ public:
 			TrialExpired = 4
 		};
 	private:
-		Json::Value m_acl;
 		Utf8String m_PrincipalId;
 		Utf8String m_SecurableId;
 		AccessKind m_AccessKind;
 		time_t m_ExpiresOn;
 		std::list<std::shared_ptr<Qualifier>> m_QualifierOverrides;
 		// helper functions
-		std::list<std::shared_ptr<Qualifier>> CreateQualifierOverrides(Json::Value json);
-		ACL(Json::Value json);
+		std::list<std::shared_ptr<Qualifier>> CreateQualifierOverrides(const Json::Value& json);
+		ACL(const Json::Value& json);
 	public:
 		static std::shared_ptr<ACL> Create(const Json::Value& json);
 		Utf8String GetPrincipalId() const { return m_PrincipalId; };
@@ -115,15 +112,14 @@ public:
 	struct SecurableData
 	{
 	private:
-		Json::Value m_securableData;
 		Utf8String m_SecurableId;
 		int64_t m_ProductId;
 		Utf8String m_FeatureString;
 		Utf8String m_Version;
 		std::list<std::shared_ptr<Qualifier>> m_QualifierOverrides;
 		// helper functions
-		std::list<std::shared_ptr<Qualifier>> CreateQualifierOverrides(Json::Value json);
-		SecurableData(Json::Value json);
+		std::list<std::shared_ptr<Qualifier>> CreateQualifierOverrides(const Json::Value& json);
+		SecurableData(const Json::Value& json);
 	public:
 		static std::shared_ptr<SecurableData> Create(const Json::Value& json);
 		Utf8String GetSecurableId() const { return m_SecurableId; };
@@ -136,14 +132,13 @@ public:
 	struct UserData
 	{
 	private:
-		Json::Value m_userData;
 		Utf8String m_UserId;
 		Utf8String m_OrganizationId;
 		Utf8String m_UsageCountryISO;
 		Utf8String m_UltimateSAPId;
 		Utf8String m_UltimadeId;
 		Utf8String m_UltimateCountryId;
-		UserData(Json::Value json);
+		UserData(const Json::Value& json);
 	public:
 		static std::shared_ptr<UserData> Create(const Json::Value& json);
 		Utf8String GetUserId() const { return m_UserId; };
@@ -173,9 +168,11 @@ private:
 	std::list<std::shared_ptr<ACL>> CreateACLs(const Json::Value& json);
 	std::list<std::shared_ptr<SecurableData>> CreateSecurableData(const Json::Value& json);
 	std::list<std::shared_ptr<Qualifier>> CreateDefaultQualifiers(const Json::Value& json);
-	Policy(std::shared_ptr<PolicyToken> policyToken);
+	Policy(std::shared_ptr<PolicyToken> policyToken) : Policy(policyToken->GetPolicyFile()) {};
+	Policy(const Json::Value& json);
 public:
 	LICENSING_EXPORT static std::shared_ptr<Policy> Create(std::shared_ptr<PolicyToken> policyToken);
+	LICENSING_EXPORT static std::shared_ptr<Policy> Create(const Json::Value& json); // for testing purposes
 	LICENSING_EXPORT Utf8String GetPolicyId() const { return m_PolicyId; };
 	LICENSING_EXPORT double GetPolicyVersion() const { return m_PolicyVersion; };
 	LICENSING_EXPORT time_t GetPolicyCreatedOn() const { return m_PolicyCreatedOn; };

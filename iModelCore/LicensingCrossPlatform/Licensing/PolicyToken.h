@@ -55,7 +55,7 @@ private:
 
 public:
     LICENSING_EXPORT static std::shared_ptr<PolicyToken> Create(std::shared_ptr<JWToken> jwToken);
-    LICENSING_EXPORT static std::shared_ptr<PolicyToken> PolicyToken::Create(Json::Value policy);
+    LICENSING_EXPORT static std::shared_ptr<PolicyToken> Create(Json::Value policy);
 
     LICENSING_EXPORT JsonValueCR GetDefaultQualifier(Utf8StringCR qualifierName) const;
     LICENSING_EXPORT Json::Value GetPolicyFile() const;

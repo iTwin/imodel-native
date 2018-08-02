@@ -13,6 +13,8 @@
 
 #include "UsageDb.h"
 #include "PolicyToken.h"
+#include "Policy.h"
+#include "PolicyHelper.h"
 
 #include <Licensing/Utils/TimeRetriever.h>
 #include <Licensing/Utils/DelayedExecutor.h>
@@ -52,7 +54,7 @@ private:
     enum LogPostingSource { RealTime, Offline, Checkout };
 
     ClientInfoPtr m_clientInfo;
-    Utf8String m_userName;
+	ConnectSignInManager::UserInfo m_userInfo;
     BeFileName m_dbPath;
     std::shared_ptr<IConnectAuthenticationProvider> m_authProvider;
     IHttpHandlerPtr m_httpHandler;
@@ -71,6 +73,10 @@ private:
     void PolicyHeartbeat(int64_t currentTime);
     void LogPostingHeartbeat(int64_t currentTime);
 
+    std::list<std::shared_ptr<Policy>> GetPolicies();
+    std::list<std::shared_ptr<Policy>> GetUserPolicies();
+    std::shared_ptr<Policy> SearchForOrRequestPolicy(Utf8String requestedProductId="");
+    void StorePolicyTokenInUsageDb(std::shared_ptr<PolicyToken> policyToken);
     BentleyStatus RecordUsage();
     std::shared_ptr<PolicyToken> GetPolicyToken();
     BentleyStatus PostUsageLogs();
@@ -80,7 +86,7 @@ private:
 public:
     LICENSING_EXPORT ClientImpl
         (
-        Utf8String userName,
+		const ConnectSignInManager::UserInfo& userInfo,
         ClientInfoPtr clientInfo,
         std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
         BeFileNameCR db_path,
@@ -89,7 +95,7 @@ public:
 
     LICENSING_EXPORT LicenseStatus StartApplication(); 
     LICENSING_EXPORT BentleyStatus StopApplication();
-    LICENSING_EXPORT LicenseStatus GetProductStatus();
+    LICENSING_EXPORT LicenseStatus GetProductStatus(int requestedProductId=-1);
 
     LICENSING_EXPORT void SetProjectId(Utf8String projectId);
     LICENSING_EXPORT void SetFeatureString(Utf8String featureString);
@@ -104,6 +110,7 @@ public:
 
     // Used in tests
     LICENSING_EXPORT UsageDb& GetUsageDb();
+    LICENSING_EXPORT void AddPolicyTokenToDb(std::shared_ptr<PolicyToken> policyToken) { StorePolicyTokenInUsageDb(policyToken); };
 };
 
 END_BENTLEY_LICENSING_NAMESPACE
