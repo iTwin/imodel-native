@@ -125,6 +125,17 @@ PublishedTilesetInfo ScalableMeshModel::_GetPublishedTilesetInfo()
     return PublishedTilesetInfo(Utf8String(GetPath()), m_smPtr->GetRootNode()->GetContentExtent());
     }
 
+//*---------------------------------------------------------------------------------**//**
+/* @bsimethod                                                    Richard.Bois   05/18
+/+---------------+---------------+---------------+---------------+---------------+------*/
+void ScalableMeshModel::_DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range)
+    {
+    BeFileName rootPath = outDir;
+    rootPath.AppendToPath(rootName.c_str());
+    WriteCesiumTileset(rootPath, outDir);
+    m_smPtr->GetRange(range);
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Mathieu.St-Pierre     8/2017
 //----------------------------------------------------------------------------------------

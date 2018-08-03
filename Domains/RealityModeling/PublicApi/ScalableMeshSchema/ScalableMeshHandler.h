@@ -361,7 +361,7 @@ struct SMClipProvider : public ScalableMesh::IClipDefinitionDataProvider
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetTileTreeForPublishing, Dgn::Render::IGetPublishedTilesetInfo
+struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetTileTreeForPublishing, Dgn::Render::IGetPublishedTilesetInfo, Dgn::Render::ICustomTilesetPublisher
 {
     DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
@@ -439,6 +439,8 @@ private:
     uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
     
     Dgn::Render::PublishedTilesetInfo _GetPublishedTilesetInfo();
+
+    void _DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range);
 
 protected:
     struct Properties
