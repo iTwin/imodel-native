@@ -272,10 +272,11 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
 
                     testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormat_NoPresUnit", nullptr, nullptr, "W/(M*K)(DefaultReal)", JsonValue(R"json(["W/(M*K)(DefaultReal)"])json"), 0.5);
                     testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_PersUnitWithFormatWithUnit_NoPresUnit", nullptr, nullptr, "FT(DefaultReal)", JsonValue(R"json(["FT(AmerFI8)"])json"), 0.6);
-                    testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_Mfi8", nullptr, nullptr, "M(DefaultReal)", JsonValue(R"json(["M(AmerFI8)"])json"), 0.7);
-                    testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_Mfi8", nullptr, nullptr, "M(AmerFI8)", JsonValue(), 0.8);
-                    testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_SQFTfi8", nullptr, nullptr, "SQ.FT(AmerFI8)", JsonValue(), 0.9);
-                    testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_SQFTfi8_SQFTreal4u", nullptr, nullptr, "SQ.FT(AmerFI8)", JsonValue(R"json(["SQ.FT(Real4U)"])json"), 1.0);
+
+                    testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_M_Mfi8", nullptr, nullptr, "M(DefaultReal)", JsonValue(R"json(["FT(AmerFI8)"])json"), 0.7);
+                    testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_Mfi8", nullptr, nullptr, "M(DefaultReal)", JsonValue(R"json(["FT(AmerFI8)"])json"), 0.8);
+                    testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_SQFTfi8", nullptr, nullptr, "SQ.FT(DefaultReal)", JsonValue(), 0.9);
+                    testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_SQFTfi8_SQFTreal4u", nullptr, nullptr, "SQ.FT(DefaultReal)", JsonValue(R"json(["SQ.FT(Real4U)"])json"), 1.0);
                     break;
                     }
                 }
