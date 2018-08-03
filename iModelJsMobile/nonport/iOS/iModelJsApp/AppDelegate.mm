@@ -30,8 +30,20 @@ extern void imodeljs_addon_setMobileTempDir(Utf8CP d);
     imodeljs_addon_setMobileResourcesDir(iModelJsNativePath.UTF8String);
     imodeljs_addon_setMobileTempDir(iTempFolder.UTF8String);
     m_host = new ServicesTier::UvHost;
+    
+    // Copy document folders
+    NSString *documentsDirectory = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents/sample_documents"];
+    if (![[NSFileManager defaultManager] fileExistsAtPath:documentsDirectory isDirectory:NULL])
+        {
+        NSString *sampleDocuments = [appFolderPath stringByAppendingPathComponent:@"Assets/assets/sample_documents"];
+        NSError *copyError = nil;
+        if (![[NSFileManager defaultManager] copyItemAtPath:sampleDocuments toPath:documentsDirectory error:&copyError])
+            {
+            NSLog(@"Error copying files: %@", [copyError localizedDescription]);
+            }
+        }
+    
     while (!m_host->IsReady()) { ; }
-
     m_host->PostToEventLoop([]()
         {
         auto& runtime = ServicesTier::Host::GetInstance().GetJsRuntime();

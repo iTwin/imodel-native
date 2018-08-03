@@ -559,12 +559,12 @@ void Uv::WriteRequest::Handler (uv_write_t* req, int status)
     {
     BeAssert (req->data != nullptr);
     auto& instance = *reinterpret_cast<WriteRequestP>(req->data);
-
+#if defined(PRINT_STAT)
     if (status < 0)
         {
         printf("Error: %s\n ", uv_strerror(status));
         }
-        
+#endif
     if (!Host::GetInstance().IsStopped())
         instance.m_callback (Status (status));
         
@@ -938,12 +938,13 @@ MobileGateway::MobileGateway()
                 }
             }, [this](const std::streambuf::char_type* s, std::streamsize c)
             {
+#if defined(PRINT_STAT)
                 int count = 40;
                 int charCount = c < count?c:count;
                 std::string str1(s, charCount);
                 std::string str2(s+c-charCount,charCount);
                 printf("SEND> [%zu] |%s|...|%s|\n",c, str1.c_str(),str2.c_str());
-        
+#endif
             const size_t packe_size = 1024 * 100;
             if(c > packe_size && false)
                 {
@@ -956,9 +957,12 @@ MobileGateway::MobileGateway()
                            {
                                if (status.IsError())
                                {
+#if defined(PRINT_STAT)
                                    printf("Error: %s\n ", uv_strerror(status.GetCode()));
                                    printf("after queue size = %zu \n", m_client->GetStreamPointer()->write_queue_size);
+#endif
                                    BeAssert (!status.IsError());
+
                                }
                            });
                         
@@ -972,8 +976,10 @@ MobileGateway::MobileGateway()
                             {
                                 if (status.IsError())
                                 {
+#if defined(PRINT_STAT)
                                     printf("Error: %s\n ", uv_strerror(status.GetCode()));
                                     printf("after queue size = %zu \n", m_client->GetStreamPointer()->write_queue_size);
+#endif
                                     BeAssert (!status.IsError());
                                 }
                             });
@@ -987,9 +993,11 @@ MobileGateway::MobileGateway()
                     {
                     if (status.IsError())
                         {
+#if defined(PRINT_STAT)
                          printf("Error: %s\n ", uv_strerror(status.GetCode()));
                          printf("after queue size = %zu \n", m_client->GetStreamPointer()->write_queue_size);
-                         BeAssert (!status.IsError());
+#endif
+                            BeAssert (!status.IsError());
                         }
                     });
                     

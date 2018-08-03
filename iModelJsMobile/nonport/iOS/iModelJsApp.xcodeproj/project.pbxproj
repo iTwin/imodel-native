@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2699BBA020779C4200F763EE /* iModelJsApp.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */; };
 		2699BBA220779DAF00F763EE /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA120779DAF00F763EE /* CFNetwork.framework */; };
 		2699BBA420779DB500F763EE /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA320779DB500F763EE /* JavaScriptCore.framework */; };
 		2699BBA620779DBF00F763EE /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA520779DBE00F763EE /* CoreFoundation.framework */; };
@@ -52,10 +51,10 @@
 		4161BC6621078B69001830CF /* libDgnPlatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4161BC4421078B69001830CF /* libDgnPlatform.a */; };
 		4161BC6721078B69001830CF /* libBentley.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4161BC4521078B69001830CF /* libBentley.a */; };
 		4161BC6821078B69001830CF /* libBeLibJpegTurbo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4161BC4621078B69001830CF /* libBeLibJpegTurbo.a */; };
+		41A8E09A211245DB00B3FB1E /* iModelJsApp.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 41A8E0982112444000B3FB1E /* iModelJsApp.xcconfig */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = iModelJsApp.xcconfig; sourceTree = "<group>"; };
 		2699BBA120779DAF00F763EE /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		2699BBA320779DB500F763EE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		2699BBA520779DBE00F763EE /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
@@ -130,6 +129,7 @@
 		4161BC6B210A117E001830CF /* iModelJsUtilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJsUtilities.h; path = ../../PublicAPI/iModelJs/iModelJsUtilities.h; sourceTree = "<group>"; };
 		4161BC6C210A117E001830CF /* iModelJsApp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJsApp.h; path = ../../PublicAPI/iModelJs/iModelJsApp.h; sourceTree = "<group>"; };
 		4161BC70210A6B60001830CF /* getaddrinfo.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = getaddrinfo.c; path = ../../../thirdparty/libuv/src/win/getaddrinfo.c; sourceTree = "<group>"; };
+		41A8E0982112444000B3FB1E /* iModelJsApp.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = iModelJsApp.xcconfig; sourceTree = "<group>"; };
 		41E94100210B76500089D2A6 /* libuv */ = {isa = PBXFileReference; lastKnownFileType = folder; name = libuv; path = ../../../thirdparty/libuv; sourceTree = "<group>"; };
 		41E94101210B766A0089D2A6 /* websocketpp */ = {isa = PBXFileReference; lastKnownFileType = folder; name = websocketpp; path = ../../../libsrc/websocketpp; sourceTree = "<group>"; };
 		41E94102210B76880089D2A6 /* iModelJsNodeAddon */ = {isa = PBXFileReference; lastKnownFileType = folder; name = iModelJsNodeAddon; path = ../../../iModelJsNodeAddon; sourceTree = "<group>"; };
@@ -206,8 +206,8 @@
 		26E6C0B32076B63E0031769D /* iModelJsApp */ = {
 			isa = PBXGroup;
 			children = (
+				41A8E0982112444000B3FB1E /* iModelJsApp.xcconfig */,
 				3B3F6FD1208FBF4A00F27DF1 /* JsInterop.cpp */,
-				2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */,
 				26E6C0B42076B63E0031769D /* AppDelegate.h */,
 				26E6C0B52076B63E0031769D /* AppDelegate.mm */,
 				26E6C0B72076B63E0031769D /* ViewController.h */,
@@ -361,9 +361,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				26E6C0C12076B63F0031769D /* LaunchScreen.storyboard in Resources */,
-				2699BBA020779C4200F763EE /* iModelJsApp.xcconfig in Resources */,
 				26E6C0BE2076B63F0031769D /* Assets.xcassets in Resources */,
 				26E6C0BC2076B63E0031769D /* Main.storyboard in Resources */,
+				41A8E09A211245DB00B3FB1E /* iModelJsApp.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -421,7 +421,6 @@
 /* Begin XCBuildConfiguration section */
 		26E6C0C52076B63F0031769D /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -473,14 +472,13 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
 				MTL_ENABLE_DEBUG_INFO = YES;
-				ONLY_ACTIVE_ARCH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = iphoneos;
 			};
 			name = Debug;
 		};
 		26E6C0C62076B63F0031769D /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -526,6 +524,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
+				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -533,7 +532,7 @@
 		};
 		26E6C0C82076B63F0031769D /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */;
+			baseConfigurationReference = 41A8E0982112444000B3FB1E /* iModelJsApp.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
@@ -559,7 +558,7 @@
 		};
 		26E6C0C92076B63F0031769D /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */;
+			baseConfigurationReference = 41A8E0982112444000B3FB1E /* iModelJsApp.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
