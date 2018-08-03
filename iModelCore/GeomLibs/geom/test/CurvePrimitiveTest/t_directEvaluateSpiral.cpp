@@ -490,18 +490,19 @@ TEST(Spiral,ClothoidCosineApproximation)
 
     Check::ClearGeometry ("Spiral.ClothoidCosineApproximation");
     }
-
+struct RadiusAndCount
+{
+double R1;
+double L1;
+uint32_t stepCount;
+RadiusAndCount (double radius1, double length1, uint32_t count) : R1(radius1), L1(length1), stepCount (count) {}
+};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,DocCheck)
     {
-    double R1 = 800.0;
     double R0 = 0.0;
-    double L = 200.0;
-    double expectedTurnDegrees = 
-        // 9.0 + 51.0/60.0 + 23.9/3600.0;
-        8.0964973;
     double startRadians = 0.0;
     for (auto spiralType :
         {
@@ -512,59 +513,67 @@ TEST(Spiral,DocCheck)
         DSpiral2dBase::TransitionType_AustralianRailCorp,
         })
         {
-        SaveAndRestoreCheckTransform shifter (0, 20, 0);
-        Check::SaveTransformed (
-            bvector<DPoint3d> {
-                        DPoint3d::From (0,0),
-                        DPoint3d::From ((double)spiralType, 0),
-                        DPoint3d::From ((double)spiralType, -2),
-                        });
-        ICurvePrimitivePtr curve1 = nullptr;
-        if (spiralType >= DSpiral2dBase::TransitionType_FirstDirectEvaluate)
-            curve1 = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (
-                    spiralType,
-                    DPoint3d::From (0,0,0),
-                    startRadians,
-                    R0,
-                    L,
-                    R1
-                    );
-        else
-            curve1 = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius (
-                    spiralType,
-                    startRadians,
-                    R0,
-                    L,
-                    R1,
-                    Transform::FromIdentity (),
-                    0.0, 1.0
-                    );
-        // QUIET skip ... 
-        if (curve1 == nullptr)
-            continue;
+        Check::Shift (0, 40, 0);
         Utf8String typeName;
         DSpiral2dBase::TransitionTypeToString (spiralType, typeName);
-        double stationStep = 10.0;
-        DPoint3d xyz;
-        DVec3d   tangent;
-        printf ("\n\n **** SPIRAL TYPE %d (%s) *********\n", spiralType, typeName.c_str ());
-        bvector<DPoint3d> strokes;
-        for (double stationDistance = 0.0; stationDistance < 1.001 * L; stationDistance += stationStep)
+        for (RadiusAndCount radiusAndCount : {
+                RadiusAndCount(800, 200, 35),
+                RadiusAndCount(500, 200, 44),
+                RadiusAndCount(300, 300, 86)
+                }
+                )
             {
-            double f = stationDistance / L;
-            curve1->FractionToPoint (f, xyz, tangent);
-            strokes.push_back (xyz);
-            printf ("    %10.4lf     %20.4f   %20.4lf    %20.5lf\n", stationDistance, xyz.x, xyz.y,
-                Angle::RadiansToDegrees (atan2 (tangent.y, tangent.x)));
-            }
-         Check::SaveTransformed (strokes);
-         Utf8String fileName;
-         fileName.Sprintf ("Spiral.DocCheck.%s", typeName.c_str ());
-         Check::ClearGeometry (fileName.c_str());
-         curve1->FractionToPoint (1.0, xyz, tangent);
-         auto degrees1 = Angle::RadiansToDegrees (atan2 (tangent.y, tangent.x));
-         printf ("Final angles (expected %20.6lf) (actual %20.6lf)\n", expectedTurnDegrees, degrees1);
-         }
+            double R1 = radiusAndCount.R1;
+            double L  = radiusAndCount.L1   ;
+            SaveAndRestoreCheckTransform shifter (0, 20, 0);
+            Check::SaveTransformed (
+                bvector<DPoint3d> {
+                            DPoint3d::From (0,0),
+                            DPoint3d::From ((double)spiralType, 0),
+                            DPoint3d::From ((double)spiralType, -2),
+                            });
+            ICurvePrimitivePtr curve1 = nullptr;
+            if (spiralType >= DSpiral2dBase::TransitionType_FirstDirectEvaluate)
+                curve1 = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (
+                        spiralType,
+                        DPoint3d::From (0,0,0),
+                        startRadians,
+                        R0,
+                        L,
+                        R1
+                        );
+            else
+                curve1 = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius (
+                        spiralType,
+                        startRadians,
+                        R0,
+                        L,
+                        R1,
+                        Transform::FromIdentity (),
+                        0.0, 1.0
+                        );
+            // QUIET skip ... 
+            if (curve1 == nullptr)
+                continue;
+            double stationStep = L / (double)radiusAndCount.stepCount;
+            DPoint3d xyz;
+            DVec3d   tangent;
+            printf ("\n\n **** SPIRAL TYPE %d (%s) *********\n", spiralType, typeName.c_str ());
+            bvector<DPoint3d> strokes;
+            for (double stationDistance = 0.0; stationDistance < 1.001 * L; stationDistance += stationStep)
+                {
+                double f = stationDistance / L;
+                curve1->FractionToPoint (f, xyz, tangent);
+                strokes.push_back (xyz);
+                printf ("    %10.4lf     %20.4f   %20.4lf    %20.5lf\n", stationDistance, xyz.x, xyz.y,
+                    Angle::RadiansToDegrees (atan2 (tangent.y, tangent.x)));
+                }
+             Check::SaveTransformed (strokes);
+             }
+        Utf8String fileName;
+        fileName.Sprintf ("Spiral.DocCheck.%s", typeName.c_str ());
+        Check::ClearGeometry (fileName.c_str());
+        }
     }
 #ifdef TestLangham
 /*---------------------------------------------------------------------------------**//**

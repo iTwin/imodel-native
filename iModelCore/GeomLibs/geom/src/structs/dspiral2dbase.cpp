@@ -66,8 +66,6 @@ DSpiral2dBaseP DSpiral2dBase::Create (int transitionType)
         return new DSpiral2dItalian ();
     if (transitionType == TransitionType_AustralianRailCorp)
         return new DSpiral2dAustralianRailCorp ();
-    if (transitionType == TransitionType_MXCubic)
-        return new DSpiral2dMXCubic ();
     return NULL;
     }
 
@@ -75,6 +73,8 @@ DSpiral2dBaseP DSpiral2dBase::CreateWithNominalLength(int transitionType, double
     {
     if (transitionType == TransitionType_DirectHalfCosine)
         return new DSpiral2dDirectHalfCosine (parameter);
+    if (transitionType == TransitionType_MXCubic)
+        return new DSpiral2dMXCubic (parameter);
     return NULL;
     }
 

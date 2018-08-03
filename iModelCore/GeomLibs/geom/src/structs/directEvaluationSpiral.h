@@ -438,19 +438,20 @@ DSpiral2dBaseP DSpiral2dAustralianRailCorp::Clone () const
 
 
 // Specialize spiral for MXCubic ....
-DSpiral2dMXCubic::DSpiral2dMXCubic () : DSpiral2dDirectEvaluation () {}
+DSpiral2dMXCubic::DSpiral2dMXCubic (double nominalLength) : DSpiral2dFractionOfNominalLengthCurve (nominalLength) {}
 // STATIC method
-bool DSpiral2dMXCubic::EvaluateAtDistanceInStandardOrientation
+bool DSpiral2dMXCubic::EvaluateAtFractionInStandardOrientation
     (
-    double s, //!< [in] distance for evaluation
+    double fraction, //!< [in] fraction for evaluation
     double length,  //!< [in] nominal length.   ASSUMED NONZERO
     double curvature1, //!< [in] exit curvature.  ASSUMED NONZERO
     DPoint2dR xy,          //!< [out] coordinates on spiral
-    DVec2dP d1XY,   //!< [out] first derivative wrt distance
-    DVec2dP d2XY,   //!< [out] second derivative wrt distance
-    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    DVec2dP d1XY,   //!< [out] first derivative wrt fraction
+    DVec2dP d2XY,   //!< [out] second derivative wrt fraction
+    DVec2dP d3XY   //!< [out] third derivative wrt fraction
     )
     {
+    double s = fraction * length;
     double alpha = -curvature1 * curvature1;
     double axisLength = ClothoidCosineApproximation::Evaluate40R2L2Map (alpha, 1.0, length, length);
     double dx1, dx2, dx3;   // derivatives of x wrt s.
@@ -468,20 +469,33 @@ bool DSpiral2dMXCubic::EvaluateAtDistanceInStandardOrientation
         double dy1 = 3.0 * factorY * x2;
         double dy2 = 6.0 * factorY * x;
         double dy3 = 6.0 * factorY;
+
+        double LL = length * length;
+        double LLL = LL * length;
+
         if (d1XY)
+            {
             d1XY->Init (dx1, dy1 * dx1);
+            d1XY->Scale (length);
+            }
 
         if (d2XY)
+            {
             d2XY->Init (dx2, dy2 * dx1 * dx1 + dy1 * dx2);
+            d2XY->Scale (LL);
+            }
 
         if (d3XY)
+            {
             d3XY->Init (dx3,  dy3 * dx1 * dx1 * dx1 + 3.0 * dy2 * dx1 * dx2 + dy1 * dx3);
+            d3XY->Scale (LLL);
+            }
         }
     return true;
     }
-bool DSpiral2dMXCubic::EvaluateAtDistance
+bool DSpiral2dMXCubic::EvaluateAtFraction
     (
-    double s, //!< [in] distance for evaluation
+    double fraction, //!< [in] distance for evaluation
     DPoint2dR xy,          //!< [out] coordinates on spiral
     DVec2dP d1XY,   //!< [out] first derivative wrt distance
     DVec2dP d2XY,   //!< [out] second derivative wrt distance
@@ -490,17 +504,16 @@ bool DSpiral2dMXCubic::EvaluateAtDistance
     {
     if (mCurvature0 == 0.0)
         {
-        static bool s_applyRotation = true;
-        bool stat = EvaluateAtDistanceInStandardOrientation (s, mLength, mCurvature1, xy, d1XY, d2XY, d3XY);
-        if (stat && s_applyRotation)
-            ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
+        bool stat = EvaluateAtFractionInStandardOrientation (fraction, mLength, mCurvature1, xy, d1XY, d2XY, d3XY);
+        if (stat)
+            DSpiral2dDirectEvaluation::ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
         return stat;
-        }
+        }       
     return false;
     }
 DSpiral2dBaseP DSpiral2dMXCubic::Clone () const
     {
-    DSpiral2dMXCubic *pClone = new DSpiral2dMXCubic ();
+    DSpiral2dMXCubic *pClone = new DSpiral2dMXCubic (m_nominalLength);
     pClone->CopyBaseParameters (this);
     return pClone;
     }
@@ -684,7 +697,7 @@ DSpiral2dDirectHalfCosine::DSpiral2dDirectHalfCosine (double projectedLength) : 
 // STATIC method ...
 bool DSpiral2dDirectHalfCosine::EvaluateAtFractionInStandardOrientation
     (
-    double u,           //!< [in] distance along x axis
+    double u,           //!< [in] fraction along x axis
     double length,      //! [in] strictly nonzero length along spiral.
     double radius1,  //! [in] strictly nonzero exit radius
     DPoint2dR xy,      //!< [out] coordinates on spiral

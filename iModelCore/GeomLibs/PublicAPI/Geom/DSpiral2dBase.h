@@ -765,32 +765,33 @@ static bool EvaluateAtDistanceInStandardOrientation
 
 // MX approximate Spiral
 // In local coordinates, with specific constants  a1,a2,a3,a4 and m based on length and final radius  . . .
+// s = nominal distance along spiral
 // x = s (1 - a1 m^2 s^4 + a2 m^4 s^8 - a3 m^6 s^12 + a4 m^8 s^16)
 // y = m * s^3
-struct GEOMDLLIMPEXP DSpiral2dMXCubic : DSpiral2dDirectEvaluation
+struct GEOMDLLIMPEXP DSpiral2dMXCubic : DSpiral2dFractionOfNominalLengthCurve
 {
     DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
 public:
-    DSpiral2dMXCubic ();
+    DSpiral2dMXCubic (double nominalLength);
 
-//! Evaluate the spiral and optional derivatives at specified distance along.
+//! Evaluate the spiral and derivatives at specified fractional position
 //! return true if valid evaluation.
-//! (Any trailing subset of the pointer args may be omitted.)
-bool EvaluateAtDistance
+//! DSpiral2dDirectEvaluation default implementation returns false.
+bool EvaluateAtFraction
     (
-    double distanceAlong, //!< [in] distance for evaluation
-    DPoint2dR xy,          //!< [out] coordinates on spiral
-    DVec2dP d1XY,   //!< [out] first derivative wrt distance
-    DVec2dP d2XY,   //!< [out] second derivative wrt distance
-    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    double fraction, //!< [in] fraction for evaluation
+    DPoint2dR xyz,          //!< [out] coordinates on spiral
+    DVec2dP d1XYZ,   //!< [out] first derivative wrt fraction
+    DVec2dP d2XYZ,   //!< [out] second derivative wrt fraction
+    DVec2dP d3XYZ    //!< [out] third derivative wrt fraction
     ) const override;
-//! Evaluate at distance a spiral in standard orientation -- zero curvature at origin.
-static bool EvaluateAtDistanceInStandardOrientation
+//! Evaluate at fraction standard orientation -- zero curvature at origin.
+static bool EvaluateAtFractionInStandardOrientation
     (
-    double s,           //!< [in] distance for evaluation
-    double length,      //! [in] strictly nonzero length along spiral.
-    double curvature1,  //! [in] strictly nonzero exit curvature
-    DPoint2dR xy,      //!< [out] coordinates on spiral
+    double fraction, //!< [in] fraction for evaluation
+    double length,  //!< [in] nominal length.   ASSUMED NONZERO
+    double curvature1, //!< [in] exit curvature.  ASSUMED NONZERO
+    DPoint2dR xy,          //!< [out] coordinates on spiral
     DVec2dP d1XY,   //!< [out] first derivative wrt distance
     DVec2dP d2XY,   //!< [out] second derivative wrt distance
     DVec2dP d3XY   //!< [out] third derivative wrt distance
