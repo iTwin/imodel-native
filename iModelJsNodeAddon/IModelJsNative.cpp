@@ -3477,11 +3477,12 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         Napi::Function t = DefineClass(env, "NativeECPresentationManager", {
           InstanceMethod("setupRulesetDirectories", &NativeECPresentationManager::SetupRulesetDirectories),
           InstanceMethod("setupLocaleDirectories", &NativeECPresentationManager::SetupLocaleDirectories),
-          InstanceMethod("setUserSetting", &NativeECPresentationManager::SetUserSetting),
-          InstanceMethod("getUserSetting", &NativeECPresentationManager::GetUserSetting),
-          InstanceMethod("addRuleSet", &NativeECPresentationManager::AddRuleSet),
-          InstanceMethod("removeRuleSet", &NativeECPresentationManager::RemoveRuleSet),
-          InstanceMethod("clearRuleSets", &NativeECPresentationManager::ClearRuleSets),
+          InstanceMethod("setRulesetVariableValue", &NativeECPresentationManager::SetRulesetVariableValue),
+          InstanceMethod("getRulesetVariableValue", &NativeECPresentationManager::GetRulesetVariableValue),
+          InstanceMethod("getRulesets", &NativeECPresentationManager::GetRulesets),
+          InstanceMethod("addRuleset", &NativeECPresentationManager::AddRuleset),
+          InstanceMethod("removeRuleset", &NativeECPresentationManager::RemoveRuleset),
+          InstanceMethod("clearRulesets", &NativeECPresentationManager::ClearRulesets),
           InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
           InstanceMethod("dispose", &NativeECPresentationManager::Terminate)
         });
@@ -3497,10 +3498,21 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
 
     static Napi::Value CreateReturnValue(Napi::Env const& env, ECPresentationResult const& result, bool serializeResponse = false)
         {
+        // error
         if (result.IsError())
             {
             return NapiUtils::CreateBentleyReturnErrorObject(result.GetStatus(), result.GetErrorMessage().c_str(), env);
             }
+
+        // success / jsoncpp response
+        if (result.IsJsonCppResponse())
+            {
+            if (serializeResponse)
+                return NapiUtils::CreateBentleyReturnSuccessObject(Napi::String::New(env, result.GetJsonCppSuccessResponse().ToString().c_str()), env);
+            return NapiUtils::CreateBentleyReturnSuccessObject(NapiUtils::Convert(env, result.GetJsonCppSuccessResponse()), env);
+            }
+
+        // success / rapidjson response
         if (serializeResponse)
             {
             rapidjson::StringBuffer buffer;
@@ -3595,41 +3607,51 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         return CreateReturnValue(result);
         }
     
-    Napi::Value AddRuleSet(Napi::CallbackInfo const& info)
+    Napi::Value GetRulesets(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, rulesetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
+        ECPresentationResult result = ECPresentationUtils::GetRulesets(*m_ruleSetLocater, rulesetId);
+        return CreateReturnValue(result, true);
+        }
+    
+    Napi::Value AddRuleset(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetJsonString, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetJsonString")));
-        ECPresentationResult result = ECPresentationUtils::AddRuleSet(*m_ruleSetLocater, rulesetJsonString);
+        ECPresentationResult result = ECPresentationUtils::AddRuleset(*m_ruleSetLocater, rulesetJsonString);
         return CreateReturnValue(result);
         }
 
-    Napi::Value RemoveRuleSet(Napi::CallbackInfo const& info)
+    Napi::Value RemoveRuleset(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, rulesetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
+        REQUIRE_ARGUMENT_STRING(1, hash, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "hash")));
+        ECPresentationResult result = ECPresentationUtils::RemoveRuleset(*m_ruleSetLocater, rulesetId, hash);
+        return CreateReturnValue(result);
+        }
+
+    Napi::Value ClearRulesets(Napi::CallbackInfo const& info)
+        {
+        ECPresentationResult result = ECPresentationUtils::ClearRulesets(*m_ruleSetLocater);
+        return CreateReturnValue(result);
+        }
+
+    Napi::Value GetRulesetVariableValue(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, rulesetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
+        REQUIRE_ARGUMENT_STRING(1, variableId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "variableId")));
+        REQUIRE_ARGUMENT_STRING(2, type, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "type")));
+        ECPresentationResult result = ECPresentationUtils::GetRulesetVariableValue(*m_presentationManager, rulesetId, variableId, type);
+        return CreateReturnValue(result);
+        }
+
+    Napi::Value SetRulesetVariableValue(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, ruleSetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
-        ECPresentationResult result = ECPresentationUtils::RemoveRuleSet(*m_ruleSetLocater, ruleSetId);
-        return CreateReturnValue(result);
-        }
-
-    Napi::Value ClearRuleSets(Napi::CallbackInfo const& info)
-        {
-        ECPresentationResult result = ECPresentationUtils::ClearRuleSets(*m_ruleSetLocater);
-        return CreateReturnValue(result);
-        }
-
-    Napi::Value GetUserSetting(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, ruleSetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
-        REQUIRE_ARGUMENT_STRING(1, settingId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "settingId")));
-        REQUIRE_ARGUMENT_STRING(2, settingType, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "settingType")));
-        ECPresentationResult result = ECPresentationUtils::GetUserSetting(*m_presentationManager, ruleSetId, settingId, settingType);
-        return CreateReturnValue(result);
-        }
-
-    Napi::Value SetUserSetting(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, ruleSetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
-        REQUIRE_ARGUMENT_STRING(1, settingId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "settingId")));
-        REQUIRE_ARGUMENT_STRING(2, value, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "value")));
-        ECPresentationResult result = ECPresentationUtils::SetUserSetting(*m_presentationManager, ruleSetId, settingId, value);
+        REQUIRE_ARGUMENT_STRING(1, variableId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "variableId")));
+        REQUIRE_ARGUMENT_STRING(2, variableType, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "type")));
+        REQUIRE_ARGUMENT_ANY_OBJ(3, value, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "value")));
+        Json::Value jsonValue = NapiUtils::Convert(value);
+        ECPresentationResult result = ECPresentationUtils::SetRulesetVariableValue(*m_presentationManager, ruleSetId, variableId, variableType, jsonValue);
         return CreateReturnValue(result);
         }
 
