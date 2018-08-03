@@ -1142,10 +1142,10 @@ public:
 * - Setting ID
 * @bsiclass                                     Grigas.Petraitis                04/2016
 +===============+===============+===============+===============+===============+======*/
-struct GetSettingValueScalar : ECPresentation::ScalarFunction
+struct GetStringVariableValueScalar : ECPresentation::ScalarFunction
     {
-    GetSettingValueScalar(CustomFunctionsManager const& manager)
-        : ScalarFunction(FUNCTION_NAME_GetSettingValue, 1, DbValueType::TextVal, manager)
+    GetStringVariableValueScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_GetVariableStringValue, 1, DbValueType::TextVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -1164,10 +1164,10 @@ struct GetSettingValueScalar : ECPresentation::ScalarFunction
 * - Setting ID
 * @bsiclass                                     Grigas.Petraitis                04/2016
 +===============+===============+===============+===============+===============+======*/
-struct GetSettingIntValueScalar : ECPresentation::ScalarFunction
+struct GetIntVariableValueScalar : ECPresentation::ScalarFunction
     {
-    GetSettingIntValueScalar(CustomFunctionsManager const& manager)
-        : ScalarFunction(FUNCTION_NAME_GetSettingIntValue, 1, DbValueType::IntegerVal, manager)
+    GetIntVariableValueScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_GetVariableIntValue, 1, DbValueType::IntegerVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -1185,10 +1185,10 @@ struct GetSettingIntValueScalar : ECPresentation::ScalarFunction
 * - Setting ID
 * @bsiclass                                     Grigas.Petraitis                04/2016
 +===============+===============+===============+===============+===============+======*/
-struct GetSettingBoolValueScalar : ECPresentation::ScalarFunction
+struct GetBoolVariableValueScalar : ECPresentation::ScalarFunction
     {
-    GetSettingBoolValueScalar(CustomFunctionsManager const& manager)
-        : ScalarFunction(FUNCTION_NAME_GetSettingBoolValue, 1, DbValueType::IntegerVal, manager)
+    GetBoolVariableValueScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_GetVariableBoolValue, 1, DbValueType::IntegerVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -1207,10 +1207,10 @@ struct GetSettingBoolValueScalar : ECPresentation::ScalarFunction
 * - Integer value to find
 * @bsiclass                                     Grigas.Petraitis                04/2017
 +===============+===============+===============+===============+===============+======*/
-struct InSettingIntValuesScalar : CachingScalarFunction<bmap<Utf8String, bvector<int64_t>>>
+struct InIntVariableValuesScalar : CachingScalarFunction<bmap<Utf8String, bvector<int64_t>>>
     {
-    InSettingIntValuesScalar(CustomFunctionsManager const& manager)
-        : CachingScalarFunction(FUNCTION_NAME_InSettingIntValues, 2, DbValueType::IntegerVal, manager)
+    InIntVariableValuesScalar(CustomFunctionsManager const& manager)
+        : CachingScalarFunction(FUNCTION_NAME_InVariableIntValues, 2, DbValueType::IntegerVal, manager)
         {}
     void _OnUserSettingChanged(Utf8CP settingId) override {GetCache().erase(settingId);}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
@@ -1245,10 +1245,10 @@ struct InSettingIntValuesScalar : CachingScalarFunction<bmap<Utf8String, bvector
 * - Setting ID
 * @bsiclass                                     Grigas.Petraitis                05/2016
 +===============+===============+===============+===============+===============+======*/
-struct HasSettingScalar : ECPresentation::ScalarFunction
+struct HasVariableScalar : ECPresentation::ScalarFunction
     {
-    HasSettingScalar(CustomFunctionsManager const& manager)
-        : ScalarFunction(FUNCTION_NAME_HasSetting, 1, DbValueType::IntegerVal, manager)
+    HasVariableScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_HasVariable, 1, DbValueType::IntegerVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -1721,11 +1721,11 @@ void CustomFunctionsInjector::CreateFunctions()
     m_scalarFunctions.push_back(new GetRangeImageIdScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new IsOfClassScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new GetECClassIdScalar(CustomFunctionsManager::GetManager()));
-    m_scalarFunctions.push_back(new GetSettingValueScalar(CustomFunctionsManager::GetManager()));
-    m_scalarFunctions.push_back(new GetSettingIntValueScalar(CustomFunctionsManager::GetManager()));
-    m_scalarFunctions.push_back(new GetSettingBoolValueScalar(CustomFunctionsManager::GetManager()));
-    m_scalarFunctions.push_back(new InSettingIntValuesScalar(CustomFunctionsManager::GetManager()));
-    m_scalarFunctions.push_back(new HasSettingScalar(CustomFunctionsManager::GetManager()));
+    m_scalarFunctions.push_back(new GetStringVariableValueScalar(CustomFunctionsManager::GetManager()));
+    m_scalarFunctions.push_back(new GetIntVariableValueScalar(CustomFunctionsManager::GetManager()));
+    m_scalarFunctions.push_back(new GetBoolVariableValueScalar(CustomFunctionsManager::GetManager()));
+    m_scalarFunctions.push_back(new InIntVariableValuesScalar(CustomFunctionsManager::GetManager()));
+    m_scalarFunctions.push_back(new HasVariableScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new EvaluateECExpressionScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new IsRecursivelyRelatedScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new GetECEnumerationValueScalar(CustomFunctionsManager::GetManager()));

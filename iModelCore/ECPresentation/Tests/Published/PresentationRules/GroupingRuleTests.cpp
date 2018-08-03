@@ -501,7 +501,6 @@ TEST_F(GroupingRuleTests, PropertyGroup_WriteToJson)
     Json::Value expected = Json::Reader::DoParse(R"({
         "specType": "Property",
         "createGroupForSingleItem": true,
-        "createGroupForUnspecifiedValues": true,
         "propertyName": "prop",
         "imageId": "imageid",
         "groupingValue": "PropertyValue",
