@@ -3,6 +3,14 @@
  *--------------------------------------------------------------------------------------------*/
 import { BentleyStatus, DbResult, OpenMode, StatusCodeWithMessage } from "@bentley/bentleyjs-core";
 
+declare interface NativeApplyResult {
+  status: DbResult;
+  containsSchemaChanges: boolean;
+  inserts: number;
+  deletes: number;
+  modifies: number;
+}
+
 /* The NativeSQLiteDb class that is projected by the addon. */
 declare class NativeSQLiteDb {
   constructor();
@@ -44,7 +52,7 @@ declare class NativeSQLiteDb {
   abandonChanges(): DbResult;
 
   /** Apply a changeset, which is contained in a series of "block" files. */
-  applyChangeSet(blockFileNames: string[]): DbResult;
+  applyChangeSet(blockFileNames: string[]): NativeApplyResult;
 
 }
 

@@ -184,10 +184,46 @@ struct ConversionUtils
     }
 };
 
+struct ChangeSetStats
+{
+    bool containsSchemaChanges{};
+    uint32_t inserts{};
+    uint32_t modifies{};
+    uint32_t deletes{};
+};
+
+static void countChanges(ChangeSetStats &stats, Changes const &changes)
+{
+    for (auto change : changes)
+    {
+        Utf8CP tableName;
+        int nCols, indirect;
+        DbOpcode opcode;
+        if (BE_SQLITE_OK == change.GetOperation(&tableName, &nCols, &opcode, &indirect))
+        {
+            if (0 == strcmp(tableName, "bis_Element"))
+            {
+                switch (opcode)
+                {
+                case DbOpcode::Delete:
+                    ++stats.deletes;
+                    break;
+                case DbOpcode::Insert:
+                    ++stats.inserts;
+                    break;
+                default:
+                    ++stats.modifies;
+                    break;
+                }
+            }
+        }
+    }
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                       07/2018
 //---------------------------------------------------------------------------------------
-static DbResult applyChangeSet(Db &db, bvector<BeFileName> const &blockFileNames)
+static DbResult applyChangeSet(ChangeSetStats &stats, Db &db, bvector<BeFileName> const &blockFileNames)
 {
     RevisionChangesFileReaderBase changesetReader(blockFileNames, db);
 
@@ -203,10 +239,14 @@ static DbResult applyChangeSet(Db &db, bvector<BeFileName> const &blockFileNames
 
     if (containsSchemaChanges && !dbSchemaChanges.IsEmpty())
     {
+        stats.containsSchemaChanges = true;
+
         DbResult status = db.ExecuteSql(dbSchemaChanges.ToString().c_str());
         if (BE_SQLITE_OK != status)
             return status;
     }
+
+    countChanges(stats, changesetReader.GetChanges());
 
     // Apply normal/data changes (including ec_ table data changes)
     return changesetReader.ApplyChanges(db);
@@ -372,8 +412,15 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
             blockFileNames.push_back(BeFileName(item.ToString().Utf8Value().c_str(), true));
         }
 
-        auto status = applyChangeSet(GetDb(), blockFileNames);
-        return Napi::Number::New(Env(), (int)status);
+        ChangeSetStats stats;
+        auto status = applyChangeSet(stats, GetDb(), blockFileNames);
+        auto statsJs = Napi::Object::New(Env());
+        statsJs["containsSchemaChanges"] = Napi::Boolean::New(Env(), stats.containsSchemaChanges);
+        statsJs["inserts"] = Napi::Number::New(Env(), stats.inserts);
+        statsJs["deletes"] = Napi::Number::New(Env(), stats.deletes);
+        statsJs["modifies"] = Napi::Number::New(Env(), stats.modifies);
+        statsJs["status"] = Napi::Number::New(Env(), (int)status);
+        return statsJs;
     }
 
     static void Init(Napi::Env env, Napi::Object exports)
