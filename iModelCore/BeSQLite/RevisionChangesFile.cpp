@@ -415,11 +415,13 @@ BeSQLite::ChangeSet::ConflictResolution RevisionChangesFileReaderBase::_OnConfli
         }
     if (ChangeSet::ConflictCause::Constraint == cause)
         {
-        BeAssert(false && "Constraint conflict not expected!");
-        return ChangeSet::ConflictResolution::Skip;
+        LOG.errorv("Unexpected Constraint conflict - opcode=%d, table=%s", opcode, tableName);
+        iter.Dump(GetDb(), false, 1);
+        return ChangeSet::ConflictResolution::Abort;
         }
 
     // All other conflicts
-    BeAssert(false && "conflicts not expected");
-    return ChangeSet::ConflictResolution::Replace;
+    LOG.errorv("Unexpected conflict - opcode=%d, cause=%d, table=%s", opcode, cause, tableName);
+    iter.Dump(GetDb(), false, 1);
+    return ChangeSet::ConflictResolution::Abort;
     }
