@@ -170,6 +170,7 @@
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="PublicApi"/>
+        <SubPart PartName="cxxopts" PartFile ="cxxopts" Repository="Libsrc-cxxopts"/>
         <Bindings>
             <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeAssign$(exeext)</Files>
         </Bindings>
