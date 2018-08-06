@@ -184,37 +184,59 @@ struct ConversionUtils
     }
 };
 
-struct ChangeSetStats
+struct ChangeSetCounts
 {
-    bool containsSchemaChanges{};
     uint32_t inserts{};
-    uint32_t modifies{};
     uint32_t deletes{};
+    uint32_t updates{};
 };
 
-static void countChanges(ChangeSetStats &stats, Changes const &changes)
+struct ChangeSetApplyStats
+{
+    bool containsSchemaChanges{};
+    ChangeSetCounts element;
+    ChangeSetCounts aspect;
+    ChangeSetCounts model;
+};
+
+static bool isElementTable(Utf8CP n)
+{
+    return (0 == strcmp(n, "bis_Element"));
+}
+
+static bool isModelTable(Utf8CP n)
+{
+    return (0 == strcmp(n, "bis_Model"));
+}
+
+static bool isAspectTable(Utf8CP n)
+{
+    return ((0 == strcmp(n, "bis_ElementMultiAspect")) || (0 == strcmp(n, "bis_ElementUniqueAspect")));
+}
+
+static void countChanges(ChangeSetApplyStats &stats, Changes const &changes)
 {
     for (auto change : changes)
     {
-        Utf8CP tableName;
+        Utf8CP tn;
         int nCols, indirect;
         DbOpcode opcode;
-        if (BE_SQLITE_OK == change.GetOperation(&tableName, &nCols, &opcode, &indirect))
+        if (BE_SQLITE_OK == change.GetOperation(&tn, &nCols, &opcode, &indirect))
         {
-            if (0 == strcmp(tableName, "bis_Element"))
+            ChangeSetCounts *counts = isElementTable(tn) ? &stats.element : isModelTable(tn) ? &stats.model : isAspectTable(tn) ? &stats.aspect : nullptr;
+            if (nullptr == counts)
+                continue;
+            switch (opcode)
             {
-                switch (opcode)
-                {
-                case DbOpcode::Delete:
-                    ++stats.deletes;
-                    break;
-                case DbOpcode::Insert:
-                    ++stats.inserts;
-                    break;
-                default:
-                    ++stats.modifies;
-                    break;
-                }
+            case DbOpcode::Delete:
+                ++counts->deletes;
+                break;
+            case DbOpcode::Insert:
+                ++counts->inserts;
+                break;
+            default:
+                ++counts->updates;
+                break;
             }
         }
     }
@@ -223,7 +245,7 @@ static void countChanges(ChangeSetStats &stats, Changes const &changes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                       07/2018
 //---------------------------------------------------------------------------------------
-static DbResult applyChangeSet(ChangeSetStats &stats, Db &db, bvector<BeFileName> const &blockFileNames)
+static DbResult applyChangeSet(ChangeSetApplyStats &stats, Db &db, bvector<BeFileName> const &blockFileNames)
 {
     RevisionChangesFileReaderBase changesetReader(blockFileNames, db);
 
@@ -400,6 +422,15 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
         Define SQLite functions: DGN_bbox, DGN_bbox_value, DGN_placement_aabb, DGN_placement, DGN_point, DGN_angles
     */
 
+    Napi::Object countsToJs(ChangeSetCounts &counts)
+    {
+        auto countsJs = Napi::Object::New(Env());
+        countsJs["inserts"] = Napi::Number::New(Env(), counts.inserts);
+        countsJs["deletes"] = Napi::Number::New(Env(), counts.deletes);
+        countsJs["updates"] = Napi::Number::New(Env(), counts.updates);
+        return countsJs;
+    }
+
     Napi::Value ApplyChangeset(const Napi::CallbackInfo &info)
     {
         if (info.Length() < 1 || !info[0].IsArray())
@@ -412,14 +443,15 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
             blockFileNames.push_back(BeFileName(item.ToString().Utf8Value().c_str(), true));
         }
 
-        ChangeSetStats stats;
+        ChangeSetApplyStats stats;
         auto status = applyChangeSet(stats, GetDb(), blockFileNames);
+
         auto statsJs = Napi::Object::New(Env());
         statsJs["containsSchemaChanges"] = Napi::Boolean::New(Env(), stats.containsSchemaChanges);
-        statsJs["inserts"] = Napi::Number::New(Env(), stats.inserts);
-        statsJs["deletes"] = Napi::Number::New(Env(), stats.deletes);
-        statsJs["modifies"] = Napi::Number::New(Env(), stats.modifies);
         statsJs["status"] = Napi::Number::New(Env(), (int)status);
+        statsJs["element"] = countsToJs(stats.element);
+        statsJs["model"] = countsToJs(stats.model);
+        statsJs["aspect"] = countsToJs(stats.aspect);
         return statsJs;
     }
 

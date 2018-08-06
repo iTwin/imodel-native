@@ -3,12 +3,18 @@
  *--------------------------------------------------------------------------------------------*/
 import { BentleyStatus, DbResult, OpenMode, StatusCodeWithMessage } from "@bentley/bentleyjs-core";
 
+declare interface NativeChangeSetCounts {
+  inserts: number;
+  deletes: number;
+  updates: number;
+}
+
 declare interface NativeApplyResult {
   status: DbResult;
   containsSchemaChanges: boolean;
-  inserts: number;
-  deletes: number;
-  modifies: number;
+  element: NativeChangeSetCounts;
+  model: NativeChangeSetCounts;
+  aspect: NativeChangeSetCounts;
 }
 
 /* The NativeSQLiteDb class that is projected by the addon. */
