@@ -29,7 +29,7 @@ int DSPiral2dViennese::GetTransitionTypeCode () const { return TransitionType_Vi
 int DSpiral2dWesternAustralian::GetTransitionTypeCode () const { return TransitionType_WesternAustralian;}
 int DSpiral2dAustralianRailCorp::GetTransitionTypeCode () const { return TransitionType_AustralianRailCorp;}
 int DSpiral2dDirectHalfCosine::GetTransitionTypeCode () const { return TransitionType_DirectHalfCosine;}
-
+int DSpiral2dChinese::GetTransitionTypeCode () const { return TransitionType_ChineseCubic;}
 int DSpiral2dMXCubicAlongArc::GetTransitionTypeCode () const { return TransitionType_MXCubicAlongArc;}
 int DSpiral2dItalian::GetTransitionTypeCode () const { return TransitionType_Italian;}
 
@@ -56,25 +56,27 @@ DSpiral2dBaseP DSpiral2dBase::Create (int transitionType)
         return new DSpiral2dCosine ();
     if (transitionType == TransitionType_Sine)
         return new DSpiral2dSine ();
-    if (transitionType == TransitionType_WesternAustralian)
-        return new DSpiral2dWesternAustralian ();
+    if (transitionType == TransitionType_ChineseCubic)
+        return new DSpiral2dChinese ();
 #ifdef CompileCZECH
     if (transitionType == TransitionType_Czech)
         return new DSpiral2dCzech ();
 #endif
     if (transitionType == TransitionType_Italian)
         return new DSpiral2dItalian ();
-    if (transitionType == TransitionType_AustralianRailCorp)
-        return new DSpiral2dAustralianRailCorp ();
     return NULL;
     }
 
 DSpiral2dBaseP DSpiral2dBase::CreateWithNominalLength(int transitionType, double parameter)
     {
+    if (transitionType == TransitionType_WesternAustralian)
+        return new DSpiral2dWesternAustralian (parameter);
     if (transitionType == TransitionType_DirectHalfCosine)
         return new DSpiral2dDirectHalfCosine (parameter);
     if (transitionType == TransitionType_MXCubicAlongArc)
         return new DSpiral2dMXCubicAlongArc (parameter);
+    if (transitionType == TransitionType_AustralianRailCorp)
+        return new DSpiral2dAustralianRailCorp (parameter);
     return NULL;
     }
 
@@ -101,7 +103,8 @@ static SpiralTagName s_spiralNames [] =
         {DSpiral2dBase::TransitionType_AremaCubic, "AremaCubic"},
         {DSpiral2dBase::TransitionType_MXCubicAlongArc, "MXCubicAlongArc"},
         {DSpiral2dBase::TransitionType_MXCubicAlongTangent, "MXCubicAlongTangent"},
-        {DSpiral2dBase::TransitionType_DirectHalfCosine, "HalfCosine"}
+        {DSpiral2dBase::TransitionType_DirectHalfCosine, "HalfCosine"},
+        {DSpiral2dBase::TransitionType_ChineseCubic, "ChineseCubic"}		
     };
 int DSpiral2dBase::StringToTransitionType (Utf8CP name)
     {

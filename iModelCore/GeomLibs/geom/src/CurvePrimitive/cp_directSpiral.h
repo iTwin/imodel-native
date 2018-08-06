@@ -312,7 +312,7 @@ bool _SignedDistanceBetweenFractions (double startFraction, double endFraction, 
     double globalB = m_placement.ActiveFractionToGlobalFraction (endFraction);
     integrand.Integrate (globalA, globalB, m_placement.frame, numStroke);
     double integral = integrand.LastDistance ();
-    if (endFraction < startFraction)
+    if (globalB < globalA)
         integral = - integral;
     signedDistance = integral;
     return true;

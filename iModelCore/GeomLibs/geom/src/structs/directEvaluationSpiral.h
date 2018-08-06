@@ -213,7 +213,7 @@ void DSpiral2dDirectEvaluation::EvaluateVectorIntegrand (double distance, double
 
 
 // Specialize spiral for NEWSOUTHWALES ....
-DSpiral2dWesternAustralian::DSpiral2dWesternAustralian () : DSpiral2dDirectEvaluation () {}
+DSpiral2dWesternAustralian::DSpiral2dWesternAustralian (double nominalLength) : DSpiral2dFractionOfNominalLengthCurve (nominalLength) {}
 // STATIC method
 bool DSpiral2dWesternAustralian::EvaluateAtDistanceInStandardOrientation
     (
@@ -244,29 +244,104 @@ bool DSpiral2dWesternAustralian::EvaluateAtDistanceInStandardOrientation
         d3XY->Init (-60.0 * factorX, 6.0 * factorY);
     return true;
     }
-bool DSpiral2dWesternAustralian::EvaluateAtDistance
+bool DSpiral2dWesternAustralian::EvaluateAtFraction
     (
-    double s, //!< [in] distance for evaluation
-    DPoint2dR xy,          //!< [out] coordinates on spiral
-    DVec2dP d1XY,   //!< [out] first derivative wrt distance
-    DVec2dP d2XY,   //!< [out] second derivative wrt distance
-    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    double fraction, //!< [in] fraction for evaluation
+    DPoint2dR xy,    //!< [out] coordinates on spiral
+    DVec2dP d1XY,    //!< [out] first derivative wrt distance
+    DVec2dP d2XY,    //!< [out] second derivative wrt distance
+    DVec2dP d3XY     //!< [out] third derivative wrt distance
     ) const
     {
     if (mCurvature0 == 0.0)
         {
         static bool s_applyRotation = true;
-        bool stat = EvaluateAtDistanceInStandardOrientation (s, mLength, mCurvature1, xy, d1XY, d2XY, d3XY);
+        double L = m_nominalLength;
+        double nominalDistance = fraction * L;
+
+        bool stat = EvaluateAtDistanceInStandardOrientation (nominalDistance, L, mCurvature1, xy, d1XY, d2XY, d3XY);
+        if (d1XY)
+            d1XY->Scale (L);
+        if (d2XY)
+            d2XY->Scale (L * L);
+        if (d3XY)
+            d3XY->Scale (L * L * L);
         if (stat && s_applyRotation)
-            ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
+            DSpiral2dDirectEvaluation::ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
         return stat;
         }
     return false;
     }
 DSpiral2dBaseP DSpiral2dWesternAustralian::Clone () const
     {
-    DSpiral2dWesternAustralian *pClone = new DSpiral2dWesternAustralian ();
+    DSpiral2dWesternAustralian *pClone = new DSpiral2dWesternAustralian (m_nominalLength);
     pClone->CopyBaseParameters (this);
+    return pClone;
+    }
+
+// Specialize spiral for Chinese cubic ....
+DSpiral2dChinese::DSpiral2dChinese() : DSpiral2dDirectEvaluation()
+    {
+    }
+// STATIC method
+bool DSpiral2dChinese::EvaluateAtDistanceInStandardOrientation
+(
+    double s, //!< [in] distance for evaluation
+    double length,  //!< [in] nominal length.   ASSUMED NONZERO
+    double curvature1, //!< [in] exit curvature.  ASSUMED NONZERO
+    DPoint2dR xy,          //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt distance
+    DVec2dP d2XY,   //!< [out] second derivative wrt distance
+    DVec2dP d3XY   //!< [out] third derivative wrt distance
+)
+    {
+    double factorX = curvature1 * curvature1 / (40.0 * length * length);
+    double s2 = s * s;
+    double s3 = s2 * s;
+    double s4 = s2 * s2;
+    double s5 = s * s4;
+    double s6 = s * s5;
+    double s7 = s * s6;
+
+    double factorY = curvature1 / (6.0 * length);
+    double factorY1 = curvature1 * curvature1 * curvature1 / (336.0 * length * length * length);
+
+    xy.Init(s * (1.0 - s4 *  factorX), s3 * factorY - s7 * factorY1);
+
+    if (d1XY)
+        d1XY->Init(1.0 - 5.0 * s4 * factorX, 3.0 * s2 * factorY - 7 * s6 * factorY1);
+
+    if (d2XY)
+        d2XY->Init(-20.0 * s3 * factorX, 6.0 * s * factorY - 42 * s5 *factorY1);
+
+    if (d3XY)
+        d3XY->Init(-60.0 * factorX, 6.0 * factorY - 210 * s4 * factorY1);
+    return true;
+    }
+
+bool DSpiral2dChinese::EvaluateAtDistance
+(
+    double s, //!< [in] distance for evaluation
+    DPoint2dR xy,          //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt distance
+    DVec2dP d2XY,   //!< [out] second derivative wrt distance
+    DVec2dP d3XY   //!< [out] third derivative wrt distance
+) const
+    {
+    if (mCurvature0 == 0.0)
+        {
+        static bool s_applyRotation = true;
+        bool stat = EvaluateAtDistanceInStandardOrientation(s, mLength, mCurvature1, xy, d1XY, d2XY, d3XY);
+        if (stat && s_applyRotation)
+            ApplyCCWRotation(mTheta0, xy, d1XY, d2XY, d3XY);;
+        return stat;
+        }
+    return false;
+    }
+DSpiral2dBaseP DSpiral2dChinese::Clone() const
+    {
+    DSpiral2dChinese *pClone = new DSpiral2dChinese();
+    pClone->CopyBaseParameters(this);
     return pClone;
     }
 
@@ -361,7 +436,7 @@ double aecAlg_computeAustralianXcFromRL( double L, double R )
     return aecAlg_computeAustralianXcFromRL_fast (L, R );
 }
 
-DSpiral2dAustralianRailCorp::DSpiral2dAustralianRailCorp () : DSpiral2dDirectEvaluation () {}
+DSpiral2dAustralianRailCorp::DSpiral2dAustralianRailCorp (double nominalLength) : DSpiral2dFractionOfNominalLengthCurve (nominalLength) {}
 // STATIC method ...
 bool DSpiral2dAustralianRailCorp::EvaluateAtDistanceInStandardOrientation
     (
@@ -411,9 +486,9 @@ bool DSpiral2dAustralianRailCorp::EvaluateAtDistanceInStandardOrientation
         
     return true;
     }
-bool DSpiral2dAustralianRailCorp::EvaluateAtDistance
+bool DSpiral2dAustralianRailCorp::EvaluateAtFraction
     (
-    double s, //!< [in] distance for evaluation
+    double fraction, //!< [in] fraction for evaluation
     DPoint2dR xy,          //!< [out] coordinates on spiral
     DVec2dP d1XY,   //!< [out] first derivative wrt distance
     DVec2dP d2XY,   //!< [out] second derivative wrt distance
@@ -422,16 +497,25 @@ bool DSpiral2dAustralianRailCorp::EvaluateAtDistance
     {
     if (mCurvature0 == 0.0)
         {
-        bool stat = EvaluateAtDistanceInStandardOrientation (s, mLength, mCurvature1, xy, d1XY, d2XY, d3XY);
-        if (stat)
-            ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
+        static bool s_applyRotation = true;
+        double L = m_nominalLength;
+        double nominalDistance = fraction * L;
+        bool stat = EvaluateAtDistanceInStandardOrientation (nominalDistance, L, mCurvature1, xy, d1XY, d2XY, d3XY);
+        if (d1XY)
+            d1XY->Scale (L);
+        if (d2XY)
+            d2XY->Scale (L * L);
+        if (d3XY)
+            d3XY->Scale (L * L * L);
+        if (stat && s_applyRotation)
+            DSpiral2dDirectEvaluation::ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
         return stat;
         }       
     return false;
     }
 DSpiral2dBaseP DSpiral2dAustralianRailCorp::Clone () const
     {
-    DSpiral2dAustralianRailCorp *pClone = new DSpiral2dAustralianRailCorp ();
+    DSpiral2dAustralianRailCorp *pClone = new DSpiral2dAustralianRailCorp (m_nominalLength);
     pClone->CopyBaseParameters (this);
     return pClone;
     }

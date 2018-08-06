@@ -33,7 +33,8 @@ TEST(PseudoSpiral,Serialize)
                 //DSpiral2dBase::TransitionType_Italian,
                 //DSpiral2dBase::TransitionType_Polish
                 DSpiral2dBase::TransitionType_MXCubicAlongArc,
-                DSpiral2dBase::TransitionType_DirectHalfCosine
+                DSpiral2dBase::TransitionType_DirectHalfCosine,
+                DSpiral2dBase::TransitionType_ChineseCubic,
                 })
         {
         Check::SetTransform (Transform::FromIdentity ());
@@ -132,7 +133,8 @@ TEST(PseudoSpiral,ExerciseDistances)
                 //DSpiral2dBase::TransitionType_Italian,
                 //DSpiral2dBase::TransitionType_Polish
                 //-----------DSpiral2dBase::TransitionType_MXCubicAlongArc,
-                DSpiral2dBase::TransitionType_DirectHalfCosine
+                DSpiral2dBase::TransitionType_DirectHalfCosine,
+                DSpiral2dBase::TransitionType_ChineseCubic
                 })
         {
         Check::SetTransform (Transform::FromIdentity ());
