@@ -339,8 +339,10 @@ CurveVectorPtr CurveVectorManipulationStrategy::_Finish
             if (!cv->empty() && cv->GetBoundaryType() != CurveVector::BOUNDARY_TYPE_ParityRegion)
                 {
                 CurveVectorPtr child = cv->Clone();
+                child->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
                 cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
                 cv->Add(child);
+                primitive->GetChildCurveVectorP()->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Inner);
                 }
             else
                 {
@@ -718,6 +720,22 @@ template <typename T> void CurveVectorManipulationStrategy::UpdateKeyPoint
     T updateFn
 )
     {
+    bvector<DPoint3d> keyPoints = _GetKeyPoints();
+    
+    if ((keyPoints.size() > 1) &&
+        (0 == index || keyPoints.size() - 1 == index) &&
+        (keyPoints.front().AlmostEqual(keyPoints.back())))
+        {
+        bvector<PrimitiveStrategyWithKeyPointIndexRange> primitiveStrategiesFront = m_primitiveStrategyContainer.GetStrategies(0);
+        bvector<PrimitiveStrategyWithKeyPointIndexRange> primitiveStrategiesBack = m_primitiveStrategyContainer.GetStrategies(keyPoints.size() - 1);
+        BeAssert(primitiveStrategiesFront.size() == 1);
+        BeAssert(primitiveStrategiesBack.size() == 1);
+
+        updateFn(primitiveStrategiesFront.front(), 0);
+        updateFn(primitiveStrategiesBack.front(), keyPoints.size() - 1 - primitiveStrategiesBack.front().second.first);
+        return;
+        }
+
     bvector<PrimitiveStrategyWithKeyPointIndexRange> primitiveStrategies = m_primitiveStrategyContainer.GetStrategies(index);
     for (PrimitiveStrategyWithKeyPointIndexRange const& strategyWithRange : primitiveStrategies)
         {
@@ -729,7 +747,7 @@ template <typename T> void CurveVectorManipulationStrategy::UpdateKeyPoint
             return;
             }
 
-        updateFn(strategyWithRange, index - strategyWithRange.second.first);
+        updateFn(strategyWithRange, index - indexRange.first);
         }
     }
 
@@ -776,6 +794,42 @@ IGeometryPtr CurveVectorManipulationStrategy::_FinishGeometry() const
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LineStringManipulationStrategyPtr CurveVectorManipulationStrategy::_InitLineStringManipulationStrategy
+(
+    ICurvePrimitiveCR primitive
+) const
+    {
+    BeAssert(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString == primitive.GetCurvePrimitiveType());
+    return LineStringManipulationStrategy::Create(primitive);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ChildCurveVectorManipulationStrategyPtr CurveVectorManipulationStrategy::_InitChildCurveVectorManipulationStrategy
+(
+    ICurvePrimitiveCR primitive
+) const
+    {
+    BeAssert(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == primitive.GetCurvePrimitiveType());
+    return ChildCurveVectorManipulationStrategy::Create(*primitive.GetChildCurveVectorCP());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcManipulationStrategyPtr CurveVectorManipulationStrategy::_InitArcManipulationStrategy
+(
+    ICurvePrimitiveCR primitive
+) const
+    {
+    BeAssert(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc == primitive.GetCurvePrimitiveType());
+    return ArcManipulationStrategy::Create(primitive);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                03/2018
 //---------------+---------------+---------------+---------------+---------------+------
 void CurveVectorManipulationStrategy::Init
@@ -794,19 +848,19 @@ void CurveVectorManipulationStrategy::Init
             {
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
                 {
-                LineStringManipulationStrategyPtr primitiveStrategy = LineStringManipulationStrategy::Create(*primitive);
+                LineStringManipulationStrategyPtr primitiveStrategy = _InitLineStringManipulationStrategy(*primitive);
                 m_primitiveStrategyContainer.Append(*primitiveStrategy);
                 break;
                 }
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
                 {
-                ChildCurveVectorManipulationStrategyPtr primitiveStrategy = ChildCurveVectorManipulationStrategy::Create(*primitive->GetChildCurveVectorCP());
+                ChildCurveVectorManipulationStrategyPtr primitiveStrategy = _InitChildCurveVectorManipulationStrategy(*primitive);
                 m_primitiveStrategyContainer.Append(*primitiveStrategy);
                 break;
                 }
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
                 {
-                ArcManipulationStrategyPtr primitiveStrategy = ArcManipulationStrategy::Create(*primitive);
+                ArcManipulationStrategyPtr primitiveStrategy = _InitArcManipulationStrategy(*primitive);
                 m_primitiveStrategyContainer.Append(*primitiveStrategy);
                 break;
                 }

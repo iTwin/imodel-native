@@ -28,6 +28,7 @@ ArcManipulationStrategy::ArcManipulationStrategy()
 
 #define KEY_POINT_ACCESSOR_IMPL(name, index) \
     bool ArcManipulationStrategy::Is##name##Set() const {return !GetKeyPoints()[index].AlmostEqual(INVALID_POINT);} \
+    size_t ArcManipulationStrategy::Get##name##Index() const {return index;} \
     DPoint3d ArcManipulationStrategy::Get##name() const {BeAssert(Is##name##Set()); return GetKeyPoints()[index];} \
     void ArcManipulationStrategy::Set##name(DPoint3dCR newValue) {ReplaceKeyPoint(newValue, index);} \
     void ArcManipulationStrategy::Reset##name() {ReplaceKeyPoint(INVALID_POINT, index);} \
@@ -52,12 +53,37 @@ ArcManipulationStrategyPtr ArcManipulationStrategy::Create
         return nullptr;
 
     ArcManipulationStrategyPtr strategy = Create();
-    strategy->SetCenter(arc.center);
-    strategy->SetStart(arc.FractionToPoint(0));
-    strategy->SetMid(arc.FractionToPoint(0.5));
-    strategy->SetEnd(arc.FractionToPoint(1));
+    strategy->Init(arcPrimitive);
 
     return strategy;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcManipulationStrategyPtr ArcManipulationStrategy::Create() 
+    { 
+    return new ArcManipulationStrategy(); 
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcManipulationStrategy::Init
+(
+    ICurvePrimitiveCR arcPrimitive
+)
+    {
+    BeAssert(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc == arcPrimitive.GetCurvePrimitiveType());
+
+    DEllipse3d arc;
+    if (!arcPrimitive.TryGetArc(arc))
+        return;
+
+    SetCenter(arc.center);
+    SetStart(arc.FractionToPoint(0));
+    SetMid(arc.FractionToPoint(0.5));
+    SetEnd(arc.FractionToPoint(1));
     }
 
 //--------------------------------------------------------------------------------------
@@ -458,8 +484,14 @@ BentleyStatus ArcManipulationStrategy::_TryGetProperty
 void ArcManipulationStrategy::UpdateLastArc()
     {
     ICurvePrimitivePtr arc = _FinishPrimitive();
-    if (arc.IsValid())
-        m_lastArc = arc;
+    
+    if (arc.IsNull())
+        return;
+
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != arc->GetCurvePrimitiveType())
+        return;
+
+    m_lastArc = arc;
     }
 
 //--------------------------------------------------------------------------------------

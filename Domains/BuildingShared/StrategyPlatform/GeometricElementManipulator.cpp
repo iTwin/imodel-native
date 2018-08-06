@@ -105,7 +105,10 @@ bool GeometricElementManipulator::_DoCreateControls()
     m_controls.ClearControls();
     T_Super::_DoCreateControls();
 
-    bvector<DPoint3d> const& keyPoints = _GetStrategy().GetKeyPoints();
+    bvector<DPoint3d> keyPoints = _GetStrategy().GetKeyPoints();
+    if (keyPoints.size() > 1 && keyPoints.front().AlmostEqual(keyPoints.back()))
+        keyPoints.pop_back();
+        
     for (size_t index = 0; index < keyPoints.size(); ++index)
         {
         m_controls.m_locations.push_back(new ControlPoint(_GetStrategy(), index, keyPoints[index]));

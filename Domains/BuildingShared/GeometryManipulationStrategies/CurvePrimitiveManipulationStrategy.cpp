@@ -147,7 +147,6 @@ void CurvePrimitiveManipulationStrategy::_AppendDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
     m_keyPointsWithDynamicKeyPoint.push_back(newDynamicKeyPoint);
     m_dynamicKeyPointSet = true;
     }
@@ -163,7 +162,6 @@ void CurvePrimitiveManipulationStrategy::_AppendDynamicKeyPoints
     if (newDynamicKeyPoints.empty())
         return;
 
-    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
     for (DPoint3dCR newDynamicKeyPoint : newDynamicKeyPoints)
         m_keyPointsWithDynamicKeyPoint.push_back(newDynamicKeyPoint);
     m_dynamicKeyPointSet = true;
@@ -178,19 +176,18 @@ void CurvePrimitiveManipulationStrategy::_InsertDynamicKeyPoint
     size_t index
 )
     {
-    if (m_keyPoints.size() < index)
+    if (m_keyPointsWithDynamicKeyPoint.size() < index)
         {
         BeAssert(false);
         return;
         }
 
-    if (m_keyPoints.size() == index)
+    if (m_keyPointsWithDynamicKeyPoint.size() == index)
         {
         _AppendDynamicKeyPoint(newDynamicKeyPoint);
         return;
         }
 
-    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
     m_keyPointsWithDynamicKeyPoint.insert(&m_keyPointsWithDynamicKeyPoint[index], newDynamicKeyPoint);
     m_dynamicKeyPointSet = true;
     }
@@ -207,19 +204,18 @@ void CurvePrimitiveManipulationStrategy::_InsertDynamicKeyPoints
     if (newDynamicKeyPoints.empty())
         return;
 
-    if (m_keyPoints.size() < index)
+    if (m_keyPointsWithDynamicKeyPoint.size() < index)
         {
         BeAssert(false);
         return;
         }
 
-    if (m_keyPoints.size() == index)
+    if (m_keyPointsWithDynamicKeyPoint.size() == index)
         {
         _AppendDynamicKeyPoints(newDynamicKeyPoints);
         return;
         }
 
-    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
     for (size_t i = index; i - index < newDynamicKeyPoints.size(); ++i)
         {
         if (m_keyPointsWithDynamicKeyPoint.size() == i)
@@ -239,7 +235,7 @@ void CurvePrimitiveManipulationStrategy::_UpsertDynamicKeyPoint
     size_t index
 )
     {
-    if (m_keyPoints.size() == index)
+    if (m_keyPointsWithDynamicKeyPoint.size() == index)
         _AppendDynamicKeyPoint(newDynamicKeyPoint);
     else
         _UpdateDynamicKeyPoint(newDynamicKeyPoint, index);
@@ -257,7 +253,7 @@ void CurvePrimitiveManipulationStrategy::_UpsertDynamicKeyPoints
     if (newDynamicKeyPoints.empty())
         return;
 
-    if (index > m_keyPoints.size())
+    if (index > m_keyPointsWithDynamicKeyPoint.size())
         {
         BeAssert(false);
         return;
@@ -269,7 +265,6 @@ void CurvePrimitiveManipulationStrategy::_UpsertDynamicKeyPoints
         return;
         }
 
-    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
     for (size_t i = index; i - index < newDynamicKeyPoints.size(); ++i)
         {
         if (m_keyPointsWithDynamicKeyPoint.size() == i)
@@ -289,7 +284,7 @@ void CurvePrimitiveManipulationStrategy::_UpdateDynamicKeyPoint
     size_t index
 )
     {
-    if (m_keyPoints.size() <= index)
+    if (m_keyPointsWithDynamicKeyPoint.size() <= index)
         {
         BeAssert(false);
         return;
@@ -311,13 +306,12 @@ void CurvePrimitiveManipulationStrategy::_UpdateDynamicKeyPoints
     if (newDynamicKeyPoints.empty())
         return;
 
-    if (m_keyPoints.size() < index + newDynamicKeyPoints.size())
+    if (m_keyPointsWithDynamicKeyPoint.size() < index + newDynamicKeyPoints.size())
         {
         BeAssert(false);
         return;
         }
 
-    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
     for (size_t i = 0; i < newDynamicKeyPoints.size(); ++i)
         m_keyPointsWithDynamicKeyPoint[i + index] = newDynamicKeyPoints[i];
     m_dynamicKeyPointSet = true;

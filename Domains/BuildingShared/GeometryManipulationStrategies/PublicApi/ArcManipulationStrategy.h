@@ -10,7 +10,8 @@
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 #define KEY_POINT_ACCESSOR_DECL(name, index) \
-    DPoint3d Get##name() const; \
+    GEOMETRYMANIPULATIONSTRATEGIES_EXPORT DPoint3d Get##name() const; \
+    GEOMETRYMANIPULATIONSTRATEGIES_EXPORT size_t Get##name##Index() const; \
     GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool Is##name##Set() const; \
     void Set##name(DPoint3dCR newValue); \
     void Reset##name(); \
@@ -38,39 +39,39 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
 
         ICurvePrimitivePtr m_lastArc;
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcManipulationStrategy();
-
         static bool PointsOnLine(DPoint3dCR, DPoint3dCR, DPoint3dCR);
         void UpdateLastArc();
 
     protected:
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcManipulationStrategy();
+
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
-        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
 
-        virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
-        virtual ArcPlacementStrategyPtr _CreateArcPlacementStrategy(ArcPlacementMethod method) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ArcPlacementStrategyPtr _CreateArcPlacementStrategy(ArcPlacementMethod method) override;
 
-        virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
-        virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
-        virtual void _ResetDynamicKeyPoint() override;
-        virtual void _OnKeyPointsChanged() override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _ResetDynamicKeyPoint() override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _OnKeyPointsChanged() override;
 
-        virtual bool _IsComplete() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsComplete() const override;
 
-        virtual bool _IsEmpty() const override;
-        virtual bool _IsSingleKeyPointLeft() const override;
-        virtual DPoint3d _GetLastKeyPoint() const override;
-        virtual DPoint3d _GetFirstKeyPoint() const override;
-        virtual void _Clear() override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsEmpty() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsSingleKeyPointLeft() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual DPoint3d _GetLastKeyPoint() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual DPoint3d _GetFirstKeyPoint() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _Clear() override;
 
-        CurvePrimitiveManipulationStrategyPtr _Clone() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override;
 
-        virtual void _SetProperty(Utf8CP key, bool const& value) override;
-        virtual BentleyStatus _TryGetProperty(Utf8CP key, bool& value) const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, bool const& value) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, bool& value) const override;
 
-        virtual void _SetProperty(Utf8CP key, int const& value) override;
-        virtual void _SetProperty(Utf8CP key, double const& value) override;
-        virtual BentleyStatus _TryGetProperty(Utf8CP key, double& value) const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, int const& value) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, double const& value) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, double& value) const override;
 
         using T_Super::_SetProperty;
         using T_Super::_TryGetProperty;
@@ -81,8 +82,10 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
         static constexpr Utf8CP prop_UseRadius() { return "UseRadius"; }
         static constexpr Utf8CP prop_Radius() { return "Radius"; }
 
-        static ArcManipulationStrategyPtr Create() { return new ArcManipulationStrategy(); }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static ArcManipulationStrategyPtr Create();
         static ArcManipulationStrategyPtr Create(ICurvePrimitiveCR arc);
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void Init(ICurvePrimitiveCR arc);
 
         KEY_POINT_ACCESSOR_DECL(Start, s_startIndex)
         KEY_POINT_ACCESSOR_DECL(Center, s_centerIndex)

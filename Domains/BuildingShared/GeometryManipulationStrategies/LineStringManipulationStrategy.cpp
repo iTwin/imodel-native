@@ -84,3 +84,56 @@ bvector<IGeometryPtr> LineStringManipulationStrategy::_FinishConstructionGeometr
     {
     return bvector<IGeometryPtr>();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+template <typename T> void LineStringManipulationStrategy::UpdateKeyPoint
+(
+    size_t index, 
+    T updateFn
+)
+    {
+    bvector<DPoint3d> const& keyPoints = _GetKeyPoints();
+    if ((keyPoints.size() > 1) &&
+        (0 == index || keyPoints.size() - 1 == index) &&
+        (keyPoints.front().AlmostEqual(keyPoints.back())))
+        {
+        updateFn(0);
+        updateFn(keyPoints.size() - 1);
+        }
+    else
+        {
+        updateFn(index);
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LineStringManipulationStrategy::_UpdateDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint, 
+    size_t index
+)
+    {
+    UpdateKeyPoint(index, [&] (size_t i)
+        {
+        T_Super::_UpdateDynamicKeyPoint(newDynamicKeyPoint, i);
+        });
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                07/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LineStringManipulationStrategy::_ReplaceKeyPoint
+(
+    DPoint3dCR newKeyPoint, 
+    size_t index
+)
+    {
+    UpdateKeyPoint(index, [&] (size_t i)
+        {
+        T_Super::_ReplaceKeyPoint(newKeyPoint, i);
+        });
+    }

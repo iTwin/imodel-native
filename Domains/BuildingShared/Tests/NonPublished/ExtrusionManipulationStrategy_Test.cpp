@@ -311,3 +311,55 @@ TEST_F(ExtrusionManipulationStrategyTestFixture, SetProperty_ToBaseSplinePrimiti
     ASSERT_EQ(BentleyStatus::SUCCESS, baseStrategy->TryGetProperty(SplineControlPointsPlacementStrategy::prop_Order(), actualOrder));
     ASSERT_EQ(actualOrder, expectedOrder);
     }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ExtrusionManipulationStrategyTestFixture, SetProperty_BaseWorkingPlane)
+    {
+    CurveVectorManipulationStrategyPtr baseStrategy = CurveVectorManipulationStrategy::Create();
+    baseStrategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::LineString);
+    baseStrategy->ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType::Points);
+    ExtrusionManipulationStrategyPtr sut = ExtrusionManipulationStrategy::Create(*baseStrategy);
+
+    DPlane3d defaultWorkingPlane;
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(CurveVectorManipulationStrategy::prop_WorkingPlane(), defaultWorkingPlane));
+
+    DPlane3d updatedWorkingPlane = defaultWorkingPlane;
+    updatedWorkingPlane.origin.z += 5;
+
+    sut->SetProperty(CurveVectorManipulationStrategy::prop_WorkingPlane(), updatedWorkingPlane);
+    DPlane3d actualWorkingPlane;
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(CurveVectorManipulationStrategy::prop_WorkingPlane(), actualWorkingPlane));
+    ASSERT_TRUE(actualWorkingPlane.origin.AlmostEqual(updatedWorkingPlane.origin));
+    actualWorkingPlane.normal.Normalize();
+    updatedWorkingPlane.normal.Normalize();
+    ASSERT_TRUE(actualWorkingPlane.normal.AlmostEqual(updatedWorkingPlane.normal));
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ExtrusionManipulationStrategyTestFixture, ChangedWorkingPlane)
+    {
+    CurveVectorManipulationStrategyPtr baseStrategy = CurveVectorManipulationStrategy::Create();
+    baseStrategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::LineString);
+    baseStrategy->ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType::Points);
+    ExtrusionManipulationStrategyPtr sut = ExtrusionManipulationStrategy::Create(*baseStrategy);
+
+    sut->SetProperty(CurveVectorManipulationStrategy::prop_WorkingPlane(), DPlane3d::FromOriginAndNormal({0,0,5}, DVec3d::From(0, 0, 1)));
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_FixedHeight(), 5);
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_FixedSweepDirection(), DVec3d::From(0, 0, 1));
+
+    sut->AppendKeyPoint({0,0,0});
+    sut->AppendKeyPoint({5,0,0});
+
+    ISolidPrimitivePtr solid = sut->FinishExtrusion(false, false);
+    ASSERT_TRUE(solid.IsValid());
+    DgnExtrusionDetail extrusion;
+    ASSERT_TRUE(solid->TryGetDgnExtrusionDetail(extrusion));
+    ASSERT_TRUE(extrusion.m_baseCurve.IsValid());
+
+    CurveVectorPtr expectedBaseCurve = CurveVector::CreateLinear({{0,0,5},{5,0,5}}, CurveVector::BOUNDARY_TYPE_Open);
+    ASSERT_TRUE(extrusion.m_baseCurve->IsSameStructureAndGeometry(*expectedBaseCurve));
+    }

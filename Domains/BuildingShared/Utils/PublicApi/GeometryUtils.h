@@ -373,6 +373,10 @@ public:
 
     //! Rotates line point around plane normal by given angle
     BUILDINGSHAREDUTILS_EXPORT static void RotateLineEndPointToAngleOnPlane(DPoint3dR rotatedEndPoint, DPoint3dCR fixedEndPoint, double angle, DPlane3d plane);
+
+    //! Joins all connected linestrings (opposite of CurveVector::CloneWithExplodedLinestrings)
+    //! @return CurveVector with all adjacent linestrings connected into a single linestring.
+    BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr ConsolidateAdjacentLinestrings(CurveVectorCR);
 };
 
 END_BUILDING_SHARED_NAMESPACE

@@ -88,33 +88,37 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurveVectorPtr _Finish(bool connectEndStart) const;
 
-        virtual bvector<DPoint3d> _GetKeyPoints() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> _GetKeyPoints() const override;
 
-        virtual bool _IsComplete() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsComplete() const override;
         virtual bool _CanAcceptMorePoints() const override { return true; }
 
-        virtual bool _IsDynamicKeyPointSet() const override;
-        virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
-        virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsDynamicKeyPointSet() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
         virtual void _InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _InsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override { BeAssert(false && "Not implemented"); }
-        virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
         virtual void _UpdateDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _UpsertDynamicKeyPoint(DPoint3d newDynamicKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _UpsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override { BeAssert(false && "Not implemented"); }
-        virtual void _ResetDynamicKeyPoint() override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _ResetDynamicKeyPoint() override;
 
-        virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
         virtual void _AppendKeyPoints(bvector<DPoint3d> const& newKeyPoints) override { BeAssert(false && "Not implemented"); }
         virtual void _InsertKeyPoint(DPoint3dCR newKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
-        virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
-        virtual void _PopKeyPoint() override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint() override;
         virtual void _RemoveKeyPoint(size_t index) override { BeAssert(false && "Not implemented"); }
-        virtual void _Clear() override;
-        virtual DPoint3d _AdjustPoint(DPoint3d keyPoint) const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _Clear() override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual DPoint3d _AdjustPoint(DPoint3d keyPoint) const override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
-        virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual LineStringManipulationStrategyPtr _InitLineStringManipulationStrategy(ICurvePrimitiveCR) const;
+        virtual ChildCurveVectorManipulationStrategyPtr _InitChildCurveVectorManipulationStrategy(ICurvePrimitiveCR) const;
+        virtual ArcManipulationStrategyPtr _InitArcManipulationStrategy(ICurvePrimitiveCR) const;
 
         // IRessetableDynamic
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetDynamicState(DynamicStateBaseCR state) override;

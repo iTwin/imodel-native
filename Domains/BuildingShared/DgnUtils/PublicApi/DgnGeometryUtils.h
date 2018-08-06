@@ -37,28 +37,28 @@ struct DgnGeometryUtils
         //! Rotates placement by given angle in radians in XY plane
         //! @param[in/out] placement    placement to rotate
         //! @param[in] theta            angle in radians
-        BUILDINGSHAREDDGNUTILS_EXPORT static void RotatePlacementXY(Dgn::Placement3dR placement, double theta);
+        BUILDINGSHAREDDGNUTILS_EXPORT static void RotatePlacementXY(Placement3dR placement, double theta);
 
         //! Rotates placement around point by given angle in radians in XY plane
         //! @param[in/out] placement    placement to rotate
         //! @param[in] origin           point to rotate around
         //! @param[in] theta            angle in radians
-        BUILDINGSHAREDDGNUTILS_EXPORT static void RotatePlacementAroundPointXY(Dgn::Placement3dR placement, DPoint3d origin, double theta);
+        BUILDINGSHAREDDGNUTILS_EXPORT static void RotatePlacementAroundPointXY(Placement3dR placement, DPoint3d origin, double theta);
 
         //! Translates placement by given vector in XY plane
         //! @param[in/out] placement    placement to translate
         //! @param[in] translation      vector to translate by
-        BUILDINGSHAREDDGNUTILS_EXPORT static void TranslatePlacementXY(Dgn::Placement3dR placement, DVec3d translation);
+        BUILDINGSHAREDDGNUTILS_EXPORT static void TranslatePlacementXY(Placement3dR placement, DVec3d translation);
 
         //! Translates placement by given vector
         //! @param[in/out] placement    placement to translate
         //! @param[in] translation      vector to translate by
-        BUILDINGSHAREDDGNUTILS_EXPORT static void TranslatePlacement(Dgn::Placement3dR placement, DVec3d translation);
+        BUILDINGSHAREDDGNUTILS_EXPORT static void TranslatePlacement(Placement3dR placement, DVec3d translation);
 
         //! Finds angle in XY plane from placement
         //! @param[in] placement    placement with rotation angle
         //! @return                 rotation angle aroud z axis
-        BUILDINGSHAREDDGNUTILS_EXPORT static double PlacementToAngleXY(Dgn::Placement3d placement);
+        BUILDINGSHAREDDGNUTILS_EXPORT static double PlacementToAngleXY(Placement3d placement);
 
         //! Get's the cross section that is parallel to the XY plane at a given Z.
         //! @param[in] solid The body to get the cross section of
