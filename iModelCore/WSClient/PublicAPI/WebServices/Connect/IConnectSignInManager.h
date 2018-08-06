@@ -23,6 +23,7 @@ USING_NAMESPACE_BENTLEY_SECURITY
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
+typedef std::shared_ptr<struct IConnectSignInManager> IConnectSignInManagerPtr;
 struct IConnectSignInManager : IConnectAuthenticationProvider
     {
     public:
