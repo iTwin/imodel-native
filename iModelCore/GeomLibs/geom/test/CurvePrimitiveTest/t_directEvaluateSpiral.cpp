@@ -32,7 +32,7 @@ TEST(PseudoSpiral,Serialize)
                 DSpiral2dBase::TransitionType_AustralianRailCorp,
                 //DSpiral2dBase::TransitionType_Italian,
                 //DSpiral2dBase::TransitionType_Polish
-                DSpiral2dBase::TransitionType_MXCubic,
+                DSpiral2dBase::TransitionType_MXCubicAlongArc,
                 DSpiral2dBase::TransitionType_DirectHalfCosine
                 })
         {
@@ -131,7 +131,7 @@ TEST(PseudoSpiral,ExerciseDistances)
                 //-----------DSpiral2dBase::TransitionType_AustralianRailCorp,
                 //DSpiral2dBase::TransitionType_Italian,
                 //DSpiral2dBase::TransitionType_Polish
-                //-----------DSpiral2dBase::TransitionType_MXCubic,
+                //-----------DSpiral2dBase::TransitionType_MXCubicAlongArc,
                 DSpiral2dBase::TransitionType_DirectHalfCosine
                 })
         {
@@ -508,7 +508,7 @@ TEST(Spiral,DocCheck)
         {
         DSpiral2dBase::TransitionType_Clothoid,
         DSpiral2dBase::TransitionType_WesternAustralian,
-        DSpiral2dBase::TransitionType_MXCubic,
+        DSpiral2dBase::TransitionType_MXCubicAlongArc,
         DSpiral2dBase::TransitionType_DirectHalfCosine,
         DSpiral2dBase::TransitionType_AustralianRailCorp,
         })

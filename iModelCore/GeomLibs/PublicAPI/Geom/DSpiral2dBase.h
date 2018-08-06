@@ -89,8 +89,8 @@ static const int TransitionType_AustralianRailCorp          = 52; // IMPLEMENTED
 static const int TransitionType_Italian             = 53; // NOT IMPLEMENTED
 static const int TransitionType_PolishCubic         = 54; // NOT IMPLEMENTED
 static const int TransitionType_AremaCubic          = 55; // NOT IMPLEMENTED
-static const int TransitionType_MXCubic             = 56; // IMPLEMENTED 01/18
-static const int TransitionType_MXCubicArc          = 57; // NOT IMPLEMENTED
+static const int TransitionType_MXCubicAlongArc             = 56; // IMPLEMENTED 01/18
+static const int TransitionType_MXCubicAlongTangent          = 57; // NOT IMPLEMENTED
 // convention: spirals with nominal length parameter start at 60
 static const int TransitionType_DirectHalfCosine    = 60; // IN DEVELOPMENT 7/18
 
@@ -768,11 +768,11 @@ static bool EvaluateAtDistanceInStandardOrientation
 // s = nominal distance along spiral
 // x = s (1 - a1 m^2 s^4 + a2 m^4 s^8 - a3 m^6 s^12 + a4 m^8 s^16)
 // y = m * s^3
-struct GEOMDLLIMPEXP DSpiral2dMXCubic : DSpiral2dFractionOfNominalLengthCurve
+struct GEOMDLLIMPEXP DSpiral2dMXCubicAlongArc : DSpiral2dFractionOfNominalLengthCurve
 {
     DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
 public:
-    DSpiral2dMXCubic (double nominalLength);
+    DSpiral2dMXCubicAlongArc (double nominalLength);
 
 //! Evaluate the spiral and derivatives at specified fractional position
 //! return true if valid evaluation.

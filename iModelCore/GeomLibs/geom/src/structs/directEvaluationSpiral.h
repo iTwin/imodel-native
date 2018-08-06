@@ -438,9 +438,9 @@ DSpiral2dBaseP DSpiral2dAustralianRailCorp::Clone () const
 
 
 // Specialize spiral for MXCubic ....
-DSpiral2dMXCubic::DSpiral2dMXCubic (double nominalLength) : DSpiral2dFractionOfNominalLengthCurve (nominalLength) {}
+DSpiral2dMXCubicAlongArc::DSpiral2dMXCubicAlongArc (double nominalLength) : DSpiral2dFractionOfNominalLengthCurve (nominalLength) {}
 // STATIC method
-bool DSpiral2dMXCubic::EvaluateAtFractionInStandardOrientation
+bool DSpiral2dMXCubicAlongArc::EvaluateAtFractionInStandardOrientation
     (
     double fraction, //!< [in] fraction for evaluation
     double length,  //!< [in] nominal length.   ASSUMED NONZERO
@@ -493,7 +493,7 @@ bool DSpiral2dMXCubic::EvaluateAtFractionInStandardOrientation
         }
     return true;
     }
-bool DSpiral2dMXCubic::EvaluateAtFraction
+bool DSpiral2dMXCubicAlongArc::EvaluateAtFraction
     (
     double fraction, //!< [in] distance for evaluation
     DPoint2dR xy,          //!< [out] coordinates on spiral
@@ -511,9 +511,9 @@ bool DSpiral2dMXCubic::EvaluateAtFraction
         }       
     return false;
     }
-DSpiral2dBaseP DSpiral2dMXCubic::Clone () const
+DSpiral2dBaseP DSpiral2dMXCubicAlongArc::Clone () const
     {
-    DSpiral2dMXCubic *pClone = new DSpiral2dMXCubic (m_nominalLength);
+    DSpiral2dMXCubicAlongArc *pClone = new DSpiral2dMXCubicAlongArc (m_nominalLength);
     pClone->CopyBaseParameters (this);
     return pClone;
     }

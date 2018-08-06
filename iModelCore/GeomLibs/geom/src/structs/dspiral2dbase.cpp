@@ -30,7 +30,7 @@ int DSpiral2dWesternAustralian::GetTransitionTypeCode () const { return Transiti
 int DSpiral2dAustralianRailCorp::GetTransitionTypeCode () const { return TransitionType_AustralianRailCorp;}
 int DSpiral2dDirectHalfCosine::GetTransitionTypeCode () const { return TransitionType_DirectHalfCosine;}
 
-int DSpiral2dMXCubic::GetTransitionTypeCode () const { return TransitionType_MXCubic;}
+int DSpiral2dMXCubicAlongArc::GetTransitionTypeCode () const { return TransitionType_MXCubicAlongArc;}
 int DSpiral2dItalian::GetTransitionTypeCode () const { return TransitionType_Italian;}
 
 
@@ -73,8 +73,8 @@ DSpiral2dBaseP DSpiral2dBase::CreateWithNominalLength(int transitionType, double
     {
     if (transitionType == TransitionType_DirectHalfCosine)
         return new DSpiral2dDirectHalfCosine (parameter);
-    if (transitionType == TransitionType_MXCubic)
-        return new DSpiral2dMXCubic (parameter);
+    if (transitionType == TransitionType_MXCubicAlongArc)
+        return new DSpiral2dMXCubicAlongArc (parameter);
     return NULL;
     }
 
@@ -99,8 +99,8 @@ static SpiralTagName s_spiralNames [] =
         {DSpiral2dBase::TransitionType_Italian, "Italian"},
         {DSpiral2dBase::TransitionType_PolishCubic, "PolishCubic"},
         {DSpiral2dBase::TransitionType_AremaCubic, "AremaCubic"},
-        {DSpiral2dBase::TransitionType_MXCubic, "MXCubic"},
-        {DSpiral2dBase::TransitionType_MXCubicArc, "MXCubicArc"},
+        {DSpiral2dBase::TransitionType_MXCubicAlongArc, "MXCubicAlongArc"},
+        {DSpiral2dBase::TransitionType_MXCubicAlongTangent, "MXCubicAlongTangent"},
         {DSpiral2dBase::TransitionType_DirectHalfCosine, "HalfCosine"}
     };
 int DSpiral2dBase::StringToTransitionType (Utf8CP name)
