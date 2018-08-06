@@ -2120,7 +2120,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
             return ERROR;
             }
 
-        if (!toImport->Validate(true) || !toImport->IsECVersion(ECN::ECVersion::V3_1))
+        if (!toImport->Validate(true) || !(toImport->GetECVersion() >= ECN::ECVersion::V3_1))
             {
             GetLogger().fatalv("Failed to validate schema %s as EC3.1.  Unable to continue.", toImport->GetName().c_str());
             return ERROR;
