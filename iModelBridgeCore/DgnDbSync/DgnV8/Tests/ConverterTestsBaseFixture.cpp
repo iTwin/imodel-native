@@ -543,7 +543,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
         }
 
     DgnElementId dgnDbElementId;
-    Placement3d wasPlacement;
+    BentleyApi::Placement3d wasPlacement;
     SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
     SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
     if (true)
@@ -604,7 +604,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
         DgnElementCPtr dgnDbElement = syncInfo.m_dgndb->Elements().GetElement(dgnDbElementId);
         GeometrySource3dCP geomElement = dgnDbElement->ToGeometrySource3d();
         ASSERT_NE(nullptr, geomElement);
-        Placement3d placementAfter = geomElement->GetPlacement();
+        BentleyApi::Placement3d placementAfter = geomElement->GetPlacement();
         ASSERT_FALSE(placementAfter.GetOrigin().IsEqual(wasPlacement.GetOrigin())) << L"Expected placement origin to change";
         checkEqualAngles(placementAfter.GetAngles(), wasPlacement.GetAngles());
         ASSERT_TRUE(wasPlacement.GetElementBox().IsEqual(placementAfter.GetElementBox(), 1.0e-10)) << L"Did not expect geometry to change";

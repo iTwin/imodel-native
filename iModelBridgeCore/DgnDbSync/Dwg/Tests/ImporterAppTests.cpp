@@ -173,7 +173,7 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
             {
             size_t  elemCount = model->MakeIterator().BuildIdList<DgnElementId>().size ();
             // PRG & firebugs do not have RealDWG registries - subtract 7 AEC objects from the total count.
-            EXPECT_GE(elemCount, 2011) << "Model[budweiser2018] should have 2011 or more elements!";
+            EXPECT_GE(elemCount, 2010) << "Model[budweiser2018] should have 2010 or more elements!";
             }
         count++;
         }

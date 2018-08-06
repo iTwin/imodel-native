@@ -398,6 +398,8 @@ struct PartitionReader : Reader
 //---------------+---------------+---------------+---------------+---------------+-------
 struct LinkTableReader : Reader
     {
+    private:
+        void SetNavigationProperty(DgnElementId sourceId, DgnElementId targetId, ECN::ECRelationshipClassCP relClass);
     protected:
         BentleyStatus _Read(Json::Value& relationship) override;
     public:

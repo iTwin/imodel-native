@@ -57,7 +57,7 @@ BentleyApi::RefCountedPtr<Model_T> RasterTests::FindModel(DgnDbCR db, Utf8String
 void RasterTests::ValidateModelRange(GeometricModel3dCR geomModel, Utf8StringCR name, double x0, double y0, double z0, double x1, double y1, double z1, double tol)
     {
     BentleyApi::DRange3d expectedRange = BentleyApi::DRange3d::From(x0, y0, z0, x1, y1, z1);
-    AxisAlignedBox3d modelRange = geomModel.QueryModelRange();
+    BentleyApi::AxisAlignedBox3d modelRange = geomModel.QueryModelRange();
 
     // Compare ranges. Ignore z values because QueryModelRange adds some depth (z = 1.0 or -1.0), which is irrelevant for us.
     bool areEqual = true;

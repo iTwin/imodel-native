@@ -179,7 +179,7 @@ void V8FileEditor::CreateArc(EditElementHandleR eeh, bool addToModel, DgnV8Model
     RotMatrix rot;
     rot.InitIdentity();
 
-    DgnV8Api::ArcHandler::CreateArcElement(eeh, NULL, center, 0.5, 1.0, rot, 0.5, 1.0, v8model->Is3d(), *v8model);
+    DgnV8Api::ArcHandler::CreateArcElement(eeh, NULL, center, 150, 100, rot, 0.5, 1.0, v8model->Is3d(), *v8model);
     SetActiveLevel(eeh);
     if (addToModel)
         ASSERT_EQ(BentleyApi::SUCCESS, eeh.AddToModel());

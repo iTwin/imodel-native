@@ -1514,7 +1514,6 @@ BentleyStatus DisplayStyleReader::_Read(Json::Value& object)
                 {
                 auto& skyBox = env["Skybox"];
                 envDisplay.m_skybox.m_enabled = true;
-                envDisplay.m_skybox.m_jpegFile.AssignOrClear(skyBox["jpegFile"].asCString());
                 envDisplay.m_skybox.m_zenithColor = ColorDef(skyBox["zenithColor"].asUInt());
                 envDisplay.m_skybox.m_nadirColor = ColorDef(skyBox["nadirColor"].asUInt());
                 envDisplay.m_skybox.m_groundColor = ColorDef(skyBox["groundColor"].asUInt());
@@ -2262,6 +2261,162 @@ BentleyStatus ElementGroupsMembersReader::_Read(Json::Value& groups)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool isCoreSchema(Utf8String schemaName)
+    {
+    return ECN::ECSchema::IsStandardSchema(schemaName) || schemaName.EqualsI(BIS_ECSCHEMA_NAME) ||
+        schemaName.EqualsIAscii("Generic") || schemaName.EqualsIAscii("Functional") ||
+        schemaName.StartsWithI("ecdb") || schemaName.EqualsIAscii("ECv3ConversionAttributes");
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP findRootRelationshipName(ECN::ECClassCP relClass)
+    {
+    if (relClass->GetBaseClasses().size() > 0)
+        {
+        for (ECN::ECClassCP baseClass : relClass->GetBaseClasses())
+            {
+            if (isCoreSchema(baseClass->GetSchema().GetName()))
+                continue;
+            return findRootRelationshipName(baseClass);
+            }
+        }
+    return relClass->GetName().c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void LinkTableReader::SetNavigationProperty(DgnElementId sourceId, DgnElementId targetId, ECRelationshipClassCP relClass)
+    {
+    DgnElementPtr targetElement = GetDgnDb()->Elements().GetForEdit<DgnElement>(DgnElementId(targetId.GetValue()));
+    if (!targetElement.IsValid())
+        {
+        Utf8PrintfString error("Failed to get target element %s for ECRelationship %s.\n", targetId.ToString().c_str(), relClass->GetName().c_str());
+        GetLogger().warning(error.c_str());
+        return;
+        }
+
+    DgnElementPtr sourceElement = GetDgnDb()->Elements().GetForEdit<DgnElement>(DgnElementId(sourceId.GetValue()));
+    if (!targetElement.IsValid())
+        {
+        Utf8PrintfString error("Failed to get target element %s for ECRelationship %s.\n", targetId.ToString().c_str(), relClass->GetName().c_str());
+        GetLogger().warning(error.c_str());
+        return;
+        }
+    ECClassCP targetClass = targetElement->GetElementClass();
+    ECClassCP sourceClass = sourceElement->GetElementClass();
+
+    ECPropertyP prop = nullptr;
+    Utf8CP navName = findRootRelationshipName(relClass);
+
+    // If the class is an ElementOwnsMultiAspects base, then need to use the NavigationProperty 'Element' that is defined on the base MultiAspect class.
+    bool navPropOnSource = false;
+    if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects))
+        {
+        prop = targetClass->GetPropertyP("Element");
+        }
+    else
+        {
+        prop = targetClass->GetPropertyP(navName);
+        if (nullptr == prop)
+            {
+            prop = sourceClass->GetPropertyP(navName);
+            navPropOnSource = true;
+            }
+        }
+
+    if (nullptr == prop)
+        {
+        Utf8String errorMsg;
+        errorMsg.Sprintf("Unable to find NavigationECProperty '%s' on Target-Constraint ECClass '%s'.  This relationship is not derived from a BisCore link table relationship "
+                         "and therefore the conversion process should have created a NavigationECProperty on the ECClass."
+                         "Failed to insert ECRelationship '%s' from source element %s to target element %s.",
+                         navName, targetClass->GetFullName(), relClass->GetName().c_str(),
+                         sourceId.ToString().c_str(), targetId.ToString().c_str());
+        GetLogger().warning(errorMsg.c_str());
+        return;
+        }
+    ECN::NavigationECPropertyP navProp = prop->GetAsNavigationPropertyP();
+    if (nullptr == navProp)
+        {
+        Utf8String errorMsg;
+        errorMsg.Sprintf("Unable to find NavigationECProperty '%s' on Target-Constraint ECClass '%s'.  This relationship is not derived from a BisCore link table relationship "
+                         "and therefore the conversion process should have created a NavigationECProperty on the ECClass."
+                         "Failed to insert ECRelationship '%s' from source element %s to target element %s.",
+                         navName, targetClass->GetFullName(), relClass->GetName().c_str(),
+                         sourceId.ToString().c_str(), targetId.ToString().c_str());
+        GetLogger().warning(errorMsg.c_str());
+        return;
+        }
+    ECN::ECValue val;
+    val.SetNavigationInfo((BeInt64Id) targetId.GetValue(), relClass->GetRelationshipClassCP());
+
+    if (targetClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect) && !navPropOnSource)
+        {
+        DgnElementPtr element = sourceElement;
+        DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*element, *targetClass, ECInstanceId(targetId.GetValue()));
+        if (nullptr == aspect)
+            {
+            Utf8String errorMsg;
+            errorMsg.Sprintf("Unable to get ElementAspect from Element."
+                             "Failed to insert ECRelationship '%s' from source element %s to target element %s.",
+                             relClass->GetName().c_str(), sourceId.ToString().c_str(), targetId.ToString().c_str());
+            GetLogger().warning(errorMsg.c_str());
+            return;
+            }
+        if (DgnDbStatus::Success != aspect->SetPropertyValue(navProp->GetName().c_str(), val))
+            {
+            Utf8String errorMsg;
+            errorMsg.Sprintf("Failed to set NavigationECProperty on Target ElementAspect ECInstance for ECRelationship '%s' from source element %s to target element %s.",
+                             relClass->GetName().c_str(), sourceId.ToString().c_str(), targetId.ToString().c_str());
+            GetLogger().warning(errorMsg.c_str());
+            return;
+            }
+        element->Update();
+        }
+    else if (sourceClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect) && navPropOnSource)
+        {
+        DgnElementPtr element = targetElement;
+        DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*element, *sourceClass, ECInstanceId(sourceId.GetValue()));
+        if (nullptr == aspect)
+            {
+            Utf8String errorMsg;
+            errorMsg.Sprintf("Unable to get ElementAspect from Element."
+                             "Failed to insert ECRelationship '%s' from source element %s to target element %s.",
+                             relClass->GetName().c_str(), sourceId.ToString().c_str(), targetId.ToString().c_str());
+            GetLogger().warning(errorMsg.c_str());
+            return;
+            }
+        if (DgnDbStatus::Success != aspect->SetPropertyValue(navProp->GetName().c_str(), val))
+            {
+            Utf8String errorMsg;
+            errorMsg.Sprintf("Failed to set NavigationECProperty on Target ElementAspect ECInstance for ECRelationship '%s' from source element %s to target element %s.",
+                             relClass->GetName().c_str(), sourceId.ToString().c_str(), targetId.ToString().c_str());
+            GetLogger().warning(errorMsg.c_str());
+            return;
+            }
+        element->Update();
+        }
+
+    else
+        {
+        DgnElementPtr element = targetElement;
+        if (DgnDbStatus::Success != element->SetPropertyValue(navProp->GetName().c_str(), val))
+            {
+            Utf8String errorMsg;
+            errorMsg.Sprintf("Failed to set NavigationECProperty on Target Element ECInstance for ECRelationship '%s' from source element %s to target element %s.",
+                             relClass->GetName().c_str(), sourceId.ToString().c_str(), targetId.ToString().c_str());
+            GetLogger().warning(errorMsg.c_str());
+            return;
+            }
+        element->Update();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus LinkTableReader::_Read(Json::Value& relationships)
@@ -2295,11 +2450,20 @@ BentleyStatus LinkTableReader::_Read(Json::Value& relationships)
             continue;
             }
 
+        // Not all relationships that were previously a link table relationship are now still link tables.  Some use nav properties instead.
         ECN::ECRelationshipClassCP relClass = GetDgnDb()->Schemas().GetClass(member["Schema"].asString(), member["Class"].asString())->GetRelationshipClassCP();
         ECInstanceKey relKey;
-        GetDgnDb()->InsertLinkTableRelationship(relKey, *relClass, mappedSource, mappedTarget);
+        if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements))
+            {
+            GetDgnDb()->InsertLinkTableRelationship(relKey, *relClass, mappedSource, mappedTarget);
+            }
+        else
+            {
+            SetNavigationProperty(mappedSource, mappedTarget, relClass);
+            }
         m_importer->SetTaskName(BimFromDgnDb::TASK_IMPORTING_RELATIONSHIP(), relName.c_str());
         m_importer->ShowProgress();
+
         }
 
     return SUCCESS;

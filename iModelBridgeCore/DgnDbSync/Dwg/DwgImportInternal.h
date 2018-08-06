@@ -30,6 +30,7 @@
 #include <DgnPlatform/LineStyle.h>
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
+#include <DgnPlatform/DgnBrep/PSolidUtil.h>
 
 #include <Raster/RasterApi.h>
 #include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
@@ -282,7 +283,7 @@ private:
     void ApplyViewportClipping (Sheet::ViewAttachmentR viewAttachment);
     bool ComputeClipperTransformation (TransformR toClipper, RotMatrixCR viewRotation);
     void ComputeEnvironment (DisplayStyle3dR displayStyle);
-    bool FindEnvironmentImageFile (BeFileNameR filename) const;
+    DgnTextureId FindEnvironmentImageFile (BeFileNameCR filename) const;
     bool UpdateViewName (ViewDefinitionR view, Utf8StringCR proposedName);
 
 public:

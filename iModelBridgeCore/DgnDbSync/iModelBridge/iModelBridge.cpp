@@ -9,7 +9,7 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <BeSQLite/L10N.h>
 #include <Bentley/BeTextFile.h>
-#include <DgnPlatform/JsonUtils.h>
+#include <GeomJsonWireFormat/JsonUtils.h>
 #include "iModelBridgeHelpers.h"
 
 USING_NAMESPACE_BENTLEY_DGN

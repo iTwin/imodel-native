@@ -556,7 +556,7 @@ static void ValidateModelRange (DgnDbR db, Utf8Char* modelName, double x0, doubl
     
     RefCountedPtr<GeometricModel3d> model = FindModel (db, modelName);
     ASSERT_TRUE (model.IsValid());
-    AxisAlignedBox3d modelRange = model->QueryModelRange();
+    BentleyApi::AxisAlignedBox3d modelRange = model->QueryModelRange();
 
     // Compare ranges. Ignore z values because QueryModelRange adds some depth (z = 1.0 or -1.0), which is irrelevant for us.
     bool areEqual = true;
@@ -1022,7 +1022,12 @@ TEST_F(ConverterTests, UpdateWithDeletedParent)
     BentleyStatus status = ERROR;
     DgnV8Api::EditElementHandle arcEEH1, arcEEH2;
     v8editor.CreateArc(arcEEH1, false, v8editor.m_defaultModel);
-    v8editor.CreateArc(arcEEH2, false, v8editor.m_defaultModel);
+
+    DPoint3d center = DPoint3d::FromXYZ(4, 4, 0);
+    RotMatrix rot;
+    rot.InitIdentity();
+    DgnV8Api::ArcHandler::CreateArcElement(arcEEH2, NULL, center, 150, 100, rot, 0.5, 1.0, v8editor.m_defaultModel->Is3d(), *v8editor.m_defaultModel);
+    arcEEH2.GetElementP()->ehdr.level = v8editor.GetActiveLevel();
 
     DgnV8Api::EditElementHandle cellEEH;
     v8editor.CreateCell(cellEEH, L"UserCell", false, v8editor.m_defaultModel);

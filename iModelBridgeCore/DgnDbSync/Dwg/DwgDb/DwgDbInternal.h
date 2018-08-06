@@ -28,6 +28,7 @@
 #include    <Teigha/Drawing/Include/DbSymUtl.h>
 #include    <Teigha/Drawing/Include/XRefMan.h>
 
+// Geometry modules
 #include    <Teigha/Kernel/Include/Ge/GeCircArc2d.h>
 #include    <Teigha/Kernel/Include/Ge/GeCircArc3d.h>
 #include    <Teigha/Kernel/Include/Ge/GeEllipArc2d.h>
@@ -42,6 +43,27 @@
 #include    <Teigha/Kernel/Include/Ge/GeExternalCurve3d.h>
 #include    <Teigha/Kernel/Include/Ge/GeLine2d.h>
 #include    <Teigha/Kernel/Include/Ge/GeLine3d.h>
+#include    <Teigha/Kernel/Include/Ge/GeCone.h>
+#include    <Teigha/Kernel/Include/Ge/GeCylinder.h>
+#include    <Teigha/Kernel/Include/Ge/GeSphere.h>
+#include    <Teigha/Kernel/Include/Ge/GeTorus.h>
+#include    <Teigha/Kernel/Include/Ge/GeExternalSurface.h>
+#include    <Teigha/Kernel/Include/Ge/GeExternalBoundedSurface.h>
+#include    <Teigha/Kernel/Include/Ge/GeVoidPointerArray.h>
+
+// BRep modules
+#include    <Teigha/Kernel/Include/Br/BrEnums.h>
+#include    <Teigha/Kernel/Include/Br/BrBrep.h>
+#include    <Teigha/Kernel/Include/Br/BrLoop.h>
+#include    <Teigha/Kernel/Include/Br/BrFace.h>
+#include    <Teigha/Kernel/Include/Br/BrEdge.h>
+#include    <Teigha/Kernel/Include/Br/BrVertex.h>
+#include    <Teigha/Kernel/Include/Br/BrBrepComplexTraverser.h>
+#include    <Teigha/Kernel/Include/Br/BrComplexShellTraverser.h>
+#include    <Teigha/Kernel/Include/Br/BrBrepShellTraverser.h>
+#include    <Teigha/Kernel/Include/Br/BrShellFaceTraverser.h>
+#include    <Teigha/Kernel/Include/Br/BrFaceLoopTraverser.h>
+#include    <Teigha/Kernel/Include/Br/BrLoopEdgeTraverser.h>
 
 #include    <Teigha/Drawing/Include/GiContextForDbDatabase.h>
 #include    <Teigha/Kernel/Include/Gi/GiBaseVectorizer.h>
@@ -61,30 +83,48 @@
 #include    <RealDwg/Base/dbObjectContextInterface.h>
 
 // AcGe modules
-#include    <RealDwg/base/gemat3d.h>
-#include    <RealDwg/base/geell2d.h>
-#include    <RealDwg/base/geell3d.h>
-#include    <RealDwg/base/gecomp2d.h>
-#include    <RealDwg/base/gecomp3d.h>
-#include    <RealDwg/base/genurb2d.h>
-#include    <RealDwg/base/genurb3d.h>
-#include    <RealDwg/base/geextc2d.h>
-#include    <RealDwg/base/geextc3d.h>
-#include    <RealDwg/base/geoffc2d.h>
-#include    <RealDwg/base/geoffc3d.h>
-#include    <RealDwg/base/geextsf.h>
-#include    <RealDwg/base/gekvec.h>
-#include    <RealDwg/base/gecone.h>
-#include    <RealDwg/base/gecylndr.h>
-#include    <RealDwg/base/genurbsf.h>
-#include    <RealDwg/base/gesphere.h>
-#include    <RealDwg/base/getorus.h>
-#include    <RealDwg/base/gexbndsf.h>
+#include    <RealDwg/Base/gemat3d.h>
+#include    <RealDwg/Base/geell2d.h>
+#include    <RealDwg/Base/geell3d.h>
+#include    <RealDwg/Base/gecomp2d.h>
+#include    <RealDwg/Base/gecomp3d.h>
+#include    <RealDwg/Base/genurb2d.h>
+#include    <RealDwg/Base/genurb3d.h>
+#include    <RealDwg/Base/geextc2d.h>
+#include    <RealDwg/Base/geextc3d.h>
+#include    <RealDwg/Base/geoffc2d.h>
+#include    <RealDwg/Base/geoffc3d.h>
+#include    <RealDwg/Base/geextsf.h>
+#include    <RealDwg/Base/gekvec.h>
+#include    <RealDwg/Base/gecone.h>
+#include    <RealDwg/Base/gecylndr.h>
+#include    <RealDwg/Base/genurbsf.h>
+#include    <RealDwg/Base/gesphere.h>
+#include    <RealDwg/Base/getorus.h>
+#include    <RealDwg/Base/gexbndsf.h>
 
 // Util modules
-#include    <RealDwg/base/dbxutil.h>
-#include    <RealDwg/base/textengine.h>
-#include    <RealDwg/base/acgiutil.h>
+#include    <RealDwg/Base/dbxutil.h>
+#include    <RealDwg/Base/textengine.h>
+#include    <RealDwg/Base/acgiutil.h>
+
+// BRep modules
+#include    <RealDwg/Brep/brgbl.h>
+#include    <RealDwg/Brep/brbrep.h>
+#include    <RealDwg/Brep/brcplx.h>
+#include    <RealDwg/Brep/bredge.h>
+#include    <RealDwg/Brep/brloop.h>
+#include    <RealDwg/Brep/brface.h>
+#include    <RealDwg/Brep/brshell.h>
+#include    <RealDwg/Brep/brbctrav.h>
+#include    <RealDwg/Brep/brcstrav.h>
+#include    <RealDwg/Brep/brbetrav.h>
+#include    <RealDwg/Brep/brbftrav.h>
+#include    <RealDwg/Brep/brfltrav.h>
+#include    <RealDwg/Brep/brletrav.h>
+#include    <RealDwg/Brep/brlvtrav.h>
+#include    <RealDwg/Brep/brsftrav.h>
+#include    <RealDwg/Brep/brvtx.h>
 
 #endif  // DWGTOOLKIT_
 

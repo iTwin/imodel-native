@@ -392,7 +392,7 @@ bool    LayoutXrefFactory::UpdateViewName ()
     auto status = m_spatialView->SetCode (DgnCode::From(code.GetCodeSpecId(), code.GetScopeString(), m_viewName));
     if (status != DgnDbStatus::Success)
         {
-        m_importer.ReportIssueV (DwgImporter::IssueSeverity::Error, IssueCategory::Briefcase(), Issue::CannotUpdateName(), m_spatialView->GetName().c_str(), m_viewName.c_str());
+        m_importer.ReportIssueV (DwgImporter::IssueSeverity::Error, IssueCategory::Briefcase(), Issue::CannotUpdateName(), "Layout View", m_spatialView->GetName().c_str(), m_viewName.c_str());
         return  false;
         }
 
