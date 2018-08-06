@@ -23,13 +23,17 @@ struct RelatedInstanceNodesSpecificationTests : PresentationRulesTests
 TEST_F(RelatedInstanceNodesSpecificationTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
+        "specType": "RelatedInstanceNodes",
         "groupByClass": false,
         "groupByLabel": false,
         "skipRelatedLevel": 3,
         "instanceFilter": "filter",
-        "supportedSchemas": "TestSchema",
-        "relationshipClassNames": "ClassAHasClassB",
-        "relatedClassNames": "ClassB",
+        "supportedSchemas": {"schemaNames": ["TestSchema"]},
+        "relationships": [
+            {"schemaName": "a", "classNames": ["b", "c", "E:d", "E:e"]},
+            {"schemaName": "f", "classNames": ["g", "E:h"]}
+        ],
+        "relatedClasses": {"schemaName": "q", "classNames": ["w"]},
         "requiredDirection": "Backward"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
@@ -37,15 +41,13 @@ TEST_F(RelatedInstanceNodesSpecificationTests, LoadsFromJson)
     
     RelatedInstanceNodesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
-    // EXPECT_TRUE(spec.GetGroupByRelationship());
     EXPECT_FALSE(spec.GetGroupByClass());
     EXPECT_FALSE(spec.GetGroupByLabel());
-    // EXPECT_TRUE(spec.GetShowEmptyGroups());
     EXPECT_EQ(3, spec.GetSkipRelatedLevel());
     EXPECT_STREQ("filter", spec.GetInstanceFilter().c_str());
     EXPECT_STREQ("TestSchema", spec.GetSupportedSchemas().c_str());
-    EXPECT_STREQ("ClassAHasClassB", spec.GetRelationshipClassNames().c_str());
-    EXPECT_STREQ("ClassB", spec.GetRelatedClassNames().c_str());
+    EXPECT_STREQ("a:b,c;f:g;E:a:d,e;f:h", spec.GetRelationshipClassNames().c_str());
+    EXPECT_STREQ("q:w", spec.GetRelatedClassNames().c_str());
     EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Backward, spec.GetRequiredRelationDirection());
     }
 
@@ -54,22 +56,44 @@ TEST_F(RelatedInstanceNodesSpecificationTests, LoadsFromJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelatedInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultvalues)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "specType": "RelatedInstanceNodes"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
     
     RelatedInstanceNodesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
-    // EXPECT_FALSE(spec.GetGroupByRelationship());
     EXPECT_TRUE(spec.GetGroupByClass());
     EXPECT_TRUE(spec.GetGroupByLabel());
-    // EXPECT_FALSE(spec.GetShowEmptyGroups());
     EXPECT_EQ(0, spec.GetSkipRelatedLevel());
     EXPECT_STREQ("", spec.GetInstanceFilter().c_str());
     EXPECT_STREQ("", spec.GetSupportedSchemas().c_str());
     EXPECT_STREQ("", spec.GetRelationshipClassNames().c_str());
     EXPECT_STREQ("", spec.GetRelatedClassNames().c_str());
     EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedInstanceNodesSpecificationTests, WriteToJson)
+    {
+    RelatedInstanceNodesSpecification spec(1000, true, true, true, true, true, true, true,
+        3, "filter", RequiredRelationDirection_Both, "s1,s2", "s3:c1", "s4:c2");
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "specType": "RelatedInstanceNodes",
+        "alwaysReturnsChildren": true,
+        "hideNodesInHierarchy": true,
+        "hideIfNoChildren": true,
+        "supportedSchemas": {"schemaNames": ["s1", "s2"]},
+        "relationships": {"schemaName": "s3", "classNames": ["c1"]},
+        "relatedClasses": {"schemaName": "s4", "classNames": ["c2"]},
+        "skipRelatedLevel": 3,
+        "instanceFilter": "filter"
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

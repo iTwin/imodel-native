@@ -24,7 +24,7 @@ struct PropertiesDisplaySpecificationsTests : PresentationRulesTests
 TEST_F(PropertiesDisplaySpecificationsTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-        "propertyNames":"Properties",
+        "propertyNames": ["p1", "p2"],
         "priority":1,
         "isDisplayed":false
     })";
@@ -33,7 +33,7 @@ TEST_F(PropertiesDisplaySpecificationsTests, LoadsFromJson)
 
     PropertiesDisplaySpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
-    EXPECT_STREQ("Properties", spec.GetPropertyNames().c_str());
+    EXPECT_STREQ("p1,p2", spec.GetPropertyNames().c_str());
     EXPECT_FALSE(spec.IsDisplayed());
     EXPECT_EQ(1,spec.GetPriority());
     }
@@ -44,14 +44,14 @@ TEST_F(PropertiesDisplaySpecificationsTests, LoadsFromJson)
 TEST_F(PropertiesDisplaySpecificationsTests, LoadsFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = R"({
-        "propertyNames":"Properties"
+        "propertyNames": ["p1","p2"]
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
+    ASSERT_FALSE(json.isNull());
 
     PropertiesDisplaySpecification spec;
-    EXPECT_TRUE(spec.ReadJson(json));
-    EXPECT_STREQ("Properties", spec.GetPropertyNames().c_str());
+    ASSERT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("p1,p2", spec.GetPropertyNames().c_str());
     EXPECT_TRUE(spec.IsDisplayed());
     EXPECT_EQ(1000, spec.GetPriority());
     }
@@ -67,6 +67,20 @@ TEST_F(PropertiesDisplaySpecificationsTests, LoadFromJsonFailsIfPropertyNamesNot
 
     PropertiesDisplaySpecification spec;
     EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertiesDisplaySpecificationsTests, WriteToJson)
+    {
+    PropertiesDisplaySpecification spec("p1, p2", 123, true);
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "priority": 123,
+        "propertyNames": ["p1", "p2"]
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -646,18 +646,18 @@ TEST_F(CustomFunctionTests, GetGroupedInstanceIds)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetSettingValue)
+TEST_F(CustomFunctionTests, GetVariableStringValue)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSettingValue('test') FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetVariableStringValue "('test') FROM RET.Widget"));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("", stmt.GetValueText(0));
 
     m_userSettings.SetSettingValue("test", "test value");
     stmt.Finalize();
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSettingValue('test') FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetVariableStringValue "('test') FROM RET.Widget"));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("test value", stmt.GetValueText(0));
     }
@@ -665,18 +665,18 @@ TEST_F(CustomFunctionTests, GetSettingValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetSettingIntValue)
+TEST_F(CustomFunctionTests, GetVariableIntValue)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSettingIntValue('test') FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetVariableIntValue "('test') FROM RET.Widget"));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_EQ(0, stmt.GetValueInt(0));
 
     m_userSettings.SetSettingIntValue("test", 999);
     stmt.Finalize();
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSettingIntValue('test') FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetVariableIntValue "('test') FROM RET.Widget"));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_EQ(999, stmt.GetValueInt(0));
     }
@@ -684,18 +684,18 @@ TEST_F(CustomFunctionTests, GetSettingIntValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetSettingBoolValue)
+TEST_F(CustomFunctionTests, GetVariableBoolValue)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSettingBoolValue('test') FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetVariableBoolValue "('test') FROM RET.Widget"));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_FALSE(stmt.GetValueBoolean(0));
 
     m_userSettings.SetSettingBoolValue("test", true);
     stmt.Finalize();
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSettingBoolValue('test') FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetVariableBoolValue "('test') FROM RET.Widget"));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_TRUE(stmt.GetValueBoolean(0));
     }
@@ -703,12 +703,12 @@ TEST_F(CustomFunctionTests, GetSettingBoolValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, InSettingIntValues)
+TEST_F(CustomFunctionTests, InVariableIntValues)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT InSettingIntValues('test', 2) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_InVariableIntValues "('test', 2) FROM RET.Widget"));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_FALSE(stmt.GetValueBoolean(0));
 
@@ -723,12 +723,12 @@ TEST_F(CustomFunctionTests, InSettingIntValues)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, HasSetting)
+TEST_F(CustomFunctionTests, HasVariable)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT HasSetting('test') FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_HasVariable "('test') FROM RET.Widget"));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_FALSE(stmt.GetValueBoolean(0));
 

@@ -34,6 +34,16 @@ bool CalculatedPropertiesSpecification::ReadXml(BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Tautvydas.Zinys                 10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void CalculatedPropertiesSpecification::WriteXml(BeXmlNodeP parentXmlNode) const
+    {
+    BeXmlNodeP relatedPropertiesNode = parentXmlNode->AddElementStringValue(CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME, m_value.c_str());
+    relatedPropertiesNode->AddAttributeStringValue(CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_LABEL, m_label.c_str());
+    relatedPropertiesNode->AddAttributeInt32Value(CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PRIORITY, m_priority);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                  04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CalculatedPropertiesSpecification::ReadJson(JsonValueCR json)
@@ -42,14 +52,14 @@ bool CalculatedPropertiesSpecification::ReadJson(JsonValueCR json)
     m_value = json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE].asCString("");
     if (m_value.empty())
         {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, CALCULATED_PROPERTIES_SPECIFICATION_JSON_NAME, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE);
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "CalculatedPropertiesSpecification", CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE);
         return false;
         }
 
     JsonValueCR jsonValue = json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_LABEL];
     if (jsonValue.isNull() || !jsonValue.isConvertibleTo(Json::ValueType::stringValue))
         {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, CALCULATED_PROPERTIES_SPECIFICATION_JSON_NAME, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_LABEL);
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "CalculatedPropertiesSpecification", CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_LABEL);
         return false;
         }
     m_label = jsonValue.asCString("");
@@ -61,13 +71,16 @@ bool CalculatedPropertiesSpecification::ReadJson(JsonValueCR json)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Tautvydas.Zinys                 10/2016
+* @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CalculatedPropertiesSpecification::WriteXml(BeXmlNodeP parentXmlNode) const
+Json::Value CalculatedPropertiesSpecification::WriteJson() const
     {
-    BeXmlNodeP relatedPropertiesNode = parentXmlNode->AddElementStringValue(CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME, m_value.c_str());
-    relatedPropertiesNode->AddAttributeStringValue(CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_LABEL, m_label.c_str());
-    relatedPropertiesNode->AddAttributeInt32Value(CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PRIORITY, m_priority);
+    Json::Value json(Json::objectValue);
+    json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE] = m_value;
+    json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_LABEL] = m_label;
+    if (1000 != m_priority)
+        json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PRIORITY] = m_priority;
+    return json;
     }
 
 /*---------------------------------------------------------------------------------**//**

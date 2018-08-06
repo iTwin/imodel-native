@@ -22,9 +22,7 @@
 #include <ECPresentation/RulesDriven/Rules/LocalizationResourceKeyDefinition.h>
 #include <ECPresentation/RulesDriven/Rules/UserSettingsGroup.h>
 #include <ECPresentation/RulesDriven/Rules/CheckBoxRule.h>
-#include <ECPresentation/RulesDriven/Rules/RenameNodeRule.h>
 #include <ECPresentation/RulesDriven/Rules/SortingRule.h>
-#include <ECPresentation/RulesDriven/Rules/DisplayRelatedItemsSpecification.h>
 #include <ECPresentation/RulesDriven/Rules/GroupingRule.h>
 #include <ECPresentation/RulesDriven/Rules/AllInstanceNodesSpecification.h>
 #include <ECPresentation/RulesDriven/Rules/AllRelatedInstanceNodesSpecification.h>

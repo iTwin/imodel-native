@@ -107,7 +107,19 @@ void PresentationKey::WriteXml (BeXmlNodeP parentXmlNode) const
 bool PresentationKey::ReadJson (JsonValueCR json)
     {
     m_priority = json[COMMON_JSON_ATTRIBUTE_PRIORITY].asInt(1000);
-    return _ReadJson (json);
+    return _ReadJson(json);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PresentationKey::WriteJson() const
+    {
+    Json::Value json(Json::objectValue);
+    if (1000 != m_priority)
+        json[COMMON_JSON_ATTRIBUTE_PRIORITY] = m_priority;
+    _WriteJson(json);
+    return json;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -122,7 +134,7 @@ MD5 PresentationKey::_ComputeHash(Utf8CP parentHash) const
     {
     MD5 md5;
     md5.Add(&m_priority, sizeof(m_priority));
-    CharCP name = _GetXmlElementName();
+    Utf8CP name = _GetXmlElementName();
     md5.Add(name, strlen(name));
     if (parentHash != nullptr)
         md5.Add(parentHash, strlen(parentHash));
@@ -157,20 +169,43 @@ bool PresentationRule::_ReadXml (BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationRule::_ReadJson (JsonValueCR json)
-    {
-    m_onlyIfNotHandled = json[COMMON_JSON_ATTRIBUTE_ONLYIFNOTHANDLED].asBool(false);
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PresentationRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED, m_onlyIfNotHandled);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PresentationRule::_ReadJson (JsonValueCR json)
+    {
+    if (!PresentationKey::_ReadJson(json))
+        return false;
+
+    if (!json.isMember(COMMON_JSON_ATTRIBUTE_RULETYPE) || !json[COMMON_JSON_ATTRIBUTE_RULETYPE].isString())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "PresentationRule", COMMON_JSON_ATTRIBUTE_RULETYPE);
+        return false;
+        }
+    if (nullptr != _GetJsonElementType() && 0 != strcmp(json[COMMON_JSON_ATTRIBUTE_RULETYPE].asCString(), _GetJsonElementType()))
+        return false;
+
+    m_onlyIfNotHandled = json[COMMON_JSON_ATTRIBUTE_ONLYIFNOTHANDLED].asBool(false);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void PresentationRule::_WriteJson(JsonValueR json) const
+    {
+    PresentationKey::_WriteJson(json);
+    if (nullptr != _GetJsonElementType())
+        json[COMMON_JSON_ATTRIBUTE_RULETYPE] = _GetJsonElementType();
+    if (m_onlyIfNotHandled)
+        json[COMMON_JSON_ATTRIBUTE_ONLYIFNOTHANDLED] = m_onlyIfNotHandled;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -210,22 +245,33 @@ bool ConditionalPresentationRule::_ReadXml(BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ConditionalPresentationRule::_ReadJson(JsonValueCR json)
-    {
-    m_condition = json[PRESENTATION_RULE_JSON_ATTRIBUTE_CONDITION].asCString("");
-
-    return PresentationRule::_ReadJson(json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConditionalPresentationRule::_WriteXml(BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue(PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION, m_condition.c_str());
     PresentationRule::_WriteXml(xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConditionalPresentationRule::_ReadJson(JsonValueCR json)
+    {
+    if (!PresentationRule::_ReadJson(json))
+        return false;
+    m_condition = json[PRESENTATION_RULE_JSON_ATTRIBUTE_CONDITION].asCString("");
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConditionalPresentationRule::_WriteJson(JsonValueR json) const
+    {
+    PresentationRule::_WriteJson(json);
+    if (!m_condition.empty())
+        json[PRESENTATION_RULE_JSON_ATTRIBUTE_CONDITION] = m_condition;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -253,3 +299,46 @@ MD5 PresentationRuleSpecification::_ComputeHash(Utf8CP parentHash) const
         md5.Add(parentHash, strlen(parentHash));
     return md5;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PresentationRuleSpecification::ReadXml (BeXmlNodeP xmlNode)
+    {
+    return _ReadXml (xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void PresentationRuleSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
+    {
+    BeXmlNodeP specificationNode = parentXmlNode->AddEmptyElement(_GetXmlElementName());
+    _WriteXml(specificationNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PresentationRuleSpecification::ReadJson(JsonValueCR json)
+    {
+    if (!json.isMember(COMMON_JSON_ATTRIBUTE_SPECTYPE) || !json[COMMON_JSON_ATTRIBUTE_SPECTYPE].isString())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "PresentationRuleSpecification", COMMON_JSON_ATTRIBUTE_SPECTYPE);
+        return false;
+        }
+    if (0 != strcmp(json[COMMON_JSON_ATTRIBUTE_SPECTYPE].asCString(), _GetJsonElementType()))
+        return false;
+    return _ReadJson(json);
+    } 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PresentationRuleSpecification::WriteJson() const
+    {
+    Json::Value json(Json::objectValue);
+    json[COMMON_JSON_ATTRIBUTE_SPECTYPE] = _GetJsonElementType();
+    _WriteJson(json);
+    return json;
+    } 

@@ -24,18 +24,15 @@ struct ContentRuleTests : PresentationRulesTests
 TEST_F(ContentRuleTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-        "specifications": [
-            {
-                "classNames": "TestSchema:ClassA",
-                "type": "ContentInstancesOfSpecificClasses"
-            },
-            {
-                "type": "ContentRelatedInstances"
-            },
-            {
-                "type": "SelectedNodeInstances"
-            }
-        ]
+        "ruleType": "Content",
+        "specifications": [{
+            "specType": "ContentInstancesOfSpecificClasses",
+            "classes": {"schemaName": "TestSchema", "classNames": ["ClassA"]}
+        }, {
+            "specType": "ContentRelatedInstances"
+        }, {
+            "specType": "SelectedNodeInstances"
+        }]
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -50,13 +47,42 @@ TEST_F(ContentRuleTests, LoadsFromJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentRuleTests, LoadsFromJsonWithDefaultValues)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "ruleType": "Content"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
     
     ContentRule rule;
     EXPECT_TRUE(rule.ReadJson(json));
     EXPECT_EQ(0, rule.GetSpecifications().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentRuleTests, WriteToJson)
+    {
+    ContentRule rule("cond", 123, true);
+    rule.AddSpecification(*new SelectedNodeInstancesSpecification());
+    rule.AddSpecification(*new ContentRelatedInstancesSpecification());
+    rule.AddSpecification(*new ContentInstancesOfSpecificClassesSpecification());
+    Json::Value json = rule.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "ruleType": "Content",
+        "priority": 123,
+        "onlyIfNotHandled": true,
+        "condition": "cond",
+        "specifications": [{
+            "specType": "SelectedNodeInstances"
+        }, {
+            "specType": "ContentRelatedInstances"
+        }, {
+            "specType": "ContentInstancesOfSpecificClasses",
+            "classes": []
+        }]
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -83,14 +83,7 @@
 #define CHECKBOX_RULE_XML_ATTRIBUTE_DEFAULTVALUE                                      "DefaultValue"
 #define CHECKBOX_RULE_XML_ATTRIBUTE_ISENABLED                                         "IsEnabled"
 
-#define RENAMENODE_RULE_XML_NODE_NAME                                                 "RenameNodeRule"
-
-#define SAMEL_LABEL_INSTANCE_GROUP_XML_NODE_NAME                                      "SameLabelInstanceGroup"
-
-#define DISPLAYRELATEDITEMS_SPECIFICATION_XML_NODE_NAME                               "DisplayRelatedItems"
-#define DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_LOGICALCHILDREN               "LogicalChildren"
-#define DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_NESTINGDEPTH                  "NestingDepth"
-#define DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPCLASSES           "RelationshipClasses"
+#define SAME_LABEL_INSTANCE_GROUP_XML_NODE_NAME                                       "SameLabelInstanceGroup"
 
 #define CONTENTMODIEFIER_XML_NODE_NAME                                                "ContentModifier"
 #define CONTENTMODIEFIER_XML_ATTRIBUTE_SCHEMANAME                                     "SchemaName"

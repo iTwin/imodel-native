@@ -9,7 +9,7 @@
 
 #include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
-#include <ECPresentation/RulesDriven/Rules/CommonTools.h>
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 
@@ -19,10 +19,8 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecification::RelatedPropertiesSpecification ()
-    : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (""), m_relatedClassNames (""), m_propertyNames (""),
-    m_relationshipMeaning(RelationshipMeaning::RelatedInstance), m_polymorphic(false)
-    {
-    }
+    : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipMeaning(RelationshipMeaning::RelatedInstance), m_polymorphic(false)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -52,7 +50,7 @@ RelatedPropertiesSpecification::RelatedPropertiesSpecification(RelatedProperties
     m_relatedClassNames(other.m_relatedClassNames), m_propertyNames(other.m_propertyNames), 
     m_relationshipMeaning(other.m_relationshipMeaning), m_polymorphic(other.m_polymorphic)
     {
-    CommonTools::CopyRules(m_nestedRelatedPropertiesSpecification, other.m_nestedRelatedPropertiesSpecification);
+    CommonToolsInternal::CopyRules(m_nestedRelatedPropertiesSpecification, other.m_nestedRelatedPropertiesSpecification);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -60,7 +58,7 @@ RelatedPropertiesSpecification::RelatedPropertiesSpecification(RelatedProperties
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecification::~RelatedPropertiesSpecification ()
     {
-    CommonTools::FreePresentationRules (m_nestedRelatedPropertiesSpecification);
+    CommonToolsInternal::FreePresentationRules (m_nestedRelatedPropertiesSpecification);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -81,37 +79,19 @@ bool RelatedPropertiesSpecification::ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION))
         requiredDirectionString = "";
     else
-        m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString.c_str ());
+        m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString (requiredDirectionString.c_str ());
 
     Utf8String relationshipMeaningString = "";
     if (BEXML_Success != xmlNode->GetAttributeStringValue(relationshipMeaningString, COMMON_XML_ATTRIBUTE_RELATIONSHIPMEANING))
         relationshipMeaningString = "";
     else
-        m_relationshipMeaning = CommonTools::ParseRelationshipMeaningString(relationshipMeaningString.c_str());
+        m_relationshipMeaning = CommonToolsInternal::ParseRelationshipMeaningString(relationshipMeaningString.c_str());
     
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_polymorphic, COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC))
         m_polymorphic = false;
 
-    CommonTools::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_nestedRelatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_nestedRelatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
 
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                  04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedPropertiesSpecification::ReadJson(JsonValueCR json)
-    {
-    m_relationshipClassNames = json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPCLASSNAMES].asCString("");
-    m_relatedClassNames = json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSNAMES].asCString("");
-    m_propertyNames = json[COMMON_JSON_ATTRIBUTE_PROPERTYNAMES].asCString("");
-    m_polymorphic = json[COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC].asBool(false);
-    m_relationshipMeaning = CommonTools::ParseRelationshipMeaningString(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPMEANING].asCString(""));
-    m_requiredDirection = CommonTools::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
-
-    CommonTools::LoadSpecificationsFromJson<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>
-        (json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRELATEDPROPERTIES], m_nestedRelatedPropertiesSpecification);
-    
     return true;
     }
 
@@ -125,11 +105,67 @@ void RelatedPropertiesSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES, m_relationshipClassNames.c_str ());
     relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES, m_relatedClassNames.c_str ());
     relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_PROPERTYNAMES, m_propertyNames.c_str ());
-    relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonTools::FormatRequiredDirectionString (m_requiredDirection));
-    relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPMEANING, CommonTools::FormatRelationshipMeaningString(m_relationshipMeaning));
+    relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonToolsInternal::FormatRequiredDirectionString (m_requiredDirection));
+    relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPMEANING, CommonToolsInternal::FormatRelationshipMeaningString(m_relationshipMeaning));
     relatedPropertiesNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC, m_polymorphic);
 
-    CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (relatedPropertiesNode, m_nestedRelatedPropertiesSpecification);
+    CommonToolsInternal::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (relatedPropertiesNode, m_nestedRelatedPropertiesSpecification);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RelatedPropertiesSpecification::ReadJson(JsonValueCR json)
+    {
+    m_relationshipClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPS]);
+    m_relatedClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES]);
+    m_polymorphic = json[COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC].asBool(false);
+    m_relationshipMeaning = CommonToolsInternal::ParseRelationshipMeaningString(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPMEANING].asCString(""));
+    m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
+    
+    JsonValueCR propertyNamesJson = json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES];
+    for (Json::ArrayIndex i = 0; i < propertyNamesJson.size(); ++i)
+        {
+        if (!m_propertyNames.empty())
+            m_propertyNames.append(",");
+        m_propertyNames.append(propertyNamesJson[i].asCString());
+        }
+
+    CommonToolsInternal::LoadFromJson(json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRELATEDPROPERTIES], 
+        m_nestedRelatedPropertiesSpecification, CommonToolsInternal::LoadRuleFromJson<RelatedPropertiesSpecification>);
+    
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value RelatedPropertiesSpecification::WriteJson() const
+    {
+    Json::Value json(Json::objectValue);
+    if (m_polymorphic)
+        json[COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC] = m_polymorphic;
+    if (RelationshipMeaning::RelatedInstance != m_relationshipMeaning)
+        json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPMEANING] = CommonToolsInternal::FormatRelationshipMeaningString(m_relationshipMeaning);
+    if (RequiredRelationDirection_Both != m_requiredDirection)
+        json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION] = CommonToolsInternal::FormatRequiredDirectionString(m_requiredDirection);
+    if (!m_relationshipClassNames.empty())
+        json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPS] = CommonToolsInternal::SchemaAndClassNamesToJson(m_relationshipClassNames);
+    if (!m_relatedClassNames.empty())
+        json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES] = CommonToolsInternal::SchemaAndClassNamesToJson(m_relatedClassNames);
+
+    bvector<Utf8String> propertyNames;
+    BeStringUtilities::Split(m_propertyNames.c_str(), ",", propertyNames);
+    for (Utf8StringR propertyName : propertyNames)
+        json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES].append(propertyName.Trim());
+
+    if (!m_nestedRelatedPropertiesSpecification.empty())
+        {
+        CommonToolsInternal::WriteRulesToJson<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>
+            (json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRELATEDPROPERTIES], m_nestedRelatedPropertiesSpecification);
+        }
+
+    return json;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -63,7 +63,6 @@
     <ClCompile Include="Published\PresentationRules\ContentRuleTests.cpp" />
     <ClCompile Include="Published\PresentationRules\ContentSpecificationTests.cpp" />
     <ClCompile Include="Published\PresentationRules\CustomNodeSpecificationTests.cpp" />
-    <ClCompile Include="Published\PresentationRules\DisplayRelatedItemsSpecificationTests.cpp" />
     <ClCompile Include="Published\PresentationRules\GroupingRuleTests.cpp" />
     <ClCompile Include="Published\PresentationRules\ImageIdOverrideTests.cpp" />
     <ClCompile Include="Published\PresentationRules\InstanceNodesOfSpecificClassesSpecificationTests.cpp" />

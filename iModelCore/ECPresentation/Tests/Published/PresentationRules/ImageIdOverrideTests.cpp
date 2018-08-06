@@ -24,7 +24,8 @@ struct ImageIdOverrideTests : PresentationRulesTests
 TEST_F(ImageIdOverrideTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-	    "imageIdExpression": "imgId"
+        "ruleType": "ImageIdOverride",
+        "imageIdExpression": "imgId"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -39,13 +40,31 @@ TEST_F(ImageIdOverrideTests, LoadsFromJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImageIdOverrideTests, LoadsFromJsonWithDefaultValues)
     {
-    static Utf8CP jsonString ="{}";
+    static Utf8CP jsonString = R"({
+        "ruleType": "ImageIdOverride"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ImageIdOverride override;
     EXPECT_TRUE(override.ReadJson(json));
     EXPECT_STREQ("", override.GetImageId().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ImageIdOverrideTests, WriteToJson)
+    {
+    ImageIdOverride rule("cond", 123, "imageid");
+    Json::Value json = rule.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "ruleType": "ImageIdOverride",
+        "priority": 123,
+        "condition": "cond",
+        "imageIdExpression": "imageid"
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -95,7 +114,7 @@ TEST_F(ImageIdOverrideTests, WriteToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<ImageIdOverride Priority="1000" ImageId="imgId" Condition="" OnlyIfNotHandled="false"/>)"
+            R"(<ImageIdOverride Priority="1000" OnlyIfNotHandled="false" Condition="" ImageId="imgId"/>)"
         "</Root>";
     EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
     }

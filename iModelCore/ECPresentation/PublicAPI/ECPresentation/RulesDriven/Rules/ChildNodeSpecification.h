@@ -41,17 +41,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         //! Copy constructor.
         ECPRESENTATION_EXPORT ChildNodeSpecification(ChildNodeSpecificationCR);
 
-        //! Returns XmlElement name that is used to read/save this rule information.
-        virtual CharCP _GetXmlElementName () const = 0;
+        ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
 
-        //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        virtual bool _ReadXml (BeXmlNodeP xmlNode) = 0;
-
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        virtual bool _ReadJson(JsonValueCR json) = 0;
-
-        //! Writes rule information to given XmlNode.
-        virtual void _WriteXml (BeXmlNodeP xmlNode) const = 0;
+        ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
+        ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const override;
         
         //! Clones this specification.
         virtual ChildNodeSpecification* _Clone() const = 0;
@@ -60,17 +54,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
+        ECPRESENTATION_EXPORT static ChildNodeSpecificationP Create(JsonValueCR);
+
         //! Destructor.
-        ECPRESENTATION_EXPORT virtual                      ~ChildNodeSpecification (void);
-
-        //! Reads specification from XML.
-        ECPRESENTATION_EXPORT bool                         ReadXml (BeXmlNodeP xmlNode);
-
-        //! Reads specification from Json.
-        ECPRESENTATION_EXPORT bool                         ReadJson(JsonValueCR json);
-
-        //! Writes specification to xml node.
-        ECPRESENTATION_EXPORT void                         WriteXml (BeXmlNodeP parentXmlNode) const;
+        ECPRESENTATION_EXPORT virtual ~ChildNodeSpecification (void);
         
         //! Clones this specification.
         ChildNodeSpecification* Clone() const {return _Clone();}

@@ -45,34 +45,30 @@ Presentation rule for child nodes advanced grouping in the hierarchy.
 struct GroupingRule : public ConditionalCustomizationRule
     {
     private:
-        Utf8String            m_schemaName;
-        Utf8String            m_className;
-        Utf8String            m_contextMenuCondition;
-        Utf8String            m_contextMenuLabel;
-        Utf8String            m_settingsId;
-        GroupList             m_groups;
+        Utf8String m_schemaName;
+        Utf8String m_className;
+        Utf8String m_contextMenuCondition;
+        Utf8String m_contextMenuLabel;
+        Utf8String m_settingsId;
+        GroupList m_groups;
 
     protected:
-        //! Returns XmlElement name that is used to read/save this rule information.
-        ECPRESENTATION_EXPORT virtual CharCP      _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
-        //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool        _ReadXml (BeXmlNodeP xmlNode) override;
-
-        //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) const override;
-
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool        _ReadJson(JsonValueCR json) override;
+        ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+        ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+        ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
         //!Accepts customization rule visitor
-        ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor)const override;
+        ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
 
         //! Computes rule hash.
         ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
         //! Clones rule.
-        ECPRESENTATION_EXPORT virtual CustomizationRule* _Clone() const override {return new GroupingRule(*this);}
+        CustomizationRule* _Clone() const override {return new GroupingRule(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -132,18 +128,14 @@ protected:
 
     //! Constructor.
     ECPRESENTATION_EXPORT GroupSpecification (Utf8StringCR contextMenuLabel, Utf8CP defaultLabel = NULL);
+    
+    ECPRESENTATION_EXPORT virtual Utf8CP _GetXmlElementName() const = 0;
+    ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) {return true;}
+    ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const {}
 
-    //! Returns XmlElement name that is used to read/save this rule information.
-    virtual CharCP _GetXmlElementName () const = 0;
-
-    //! Reads rule information from XmlNode, returns true if it can read it successfully.
-    virtual bool _ReadXml (BeXmlNodeP xmlNode) = 0;
-
-    //! Reads rule information from Json, returns true if it can read it successfully.
-    virtual bool _ReadJson(JsonValueCR json) = 0;
-
-    //! Writes rule information to given XmlNode.
-    virtual void _WriteXml (BeXmlNodeP xmlNode) const = 0;
+    ECPRESENTATION_EXPORT virtual Utf8CP _GetJsonElementType() const = 0;
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) {return true;}
+    ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const {}
     
     //! Allows the visitor to visit this group specification.
     virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const = 0;
@@ -159,6 +151,8 @@ public:
     virtual ~GroupSpecification(){}
 
 public:
+    static GroupSpecification* Create(JsonValueCR);
+
     //! Clones this specification.
     GroupSpecification* Clone() const {return _Clone();}
 
@@ -166,13 +160,16 @@ public:
     ECPRESENTATION_EXPORT void Accept(GroupingRuleSpecificationVisitor& visitor) const;
 
     //! Reads group specification from xml node.
-    ECPRESENTATION_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
-
-    //! Reads group specification from json.
-    ECPRESENTATION_EXPORT bool                     ReadJson(JsonValueCR json);
+    ECPRESENTATION_EXPORT bool ReadXml (BeXmlNodeP xmlNode);
 
     //! Writes group specification to xml node.
-    ECPRESENTATION_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode) const;
+    ECPRESENTATION_EXPORT void WriteXml (BeXmlNodeP parentXmlNode) const;
+
+    //! Reads group specification from json.
+    ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR);
+
+    //! Reads group specification from json.
+    ECPRESENTATION_EXPORT Json::Value WriteJson() const;
 
     //! ContextMenu label of this particular grouping option. If not set ECClass or ECProperty DisplayLabel will be used.
     ECPRESENTATION_EXPORT Utf8StringCR             GetContextMenuLabel (void) const;
@@ -189,26 +186,17 @@ of the same label.
 struct EXPORT_VTABLE_ATTRIBUTE SameLabelInstanceGroup : public GroupSpecification
     {
     protected:
-        //! Returns XmlElement name that is used to read/save this rule information.
-        ECPRESENTATION_EXPORT virtual CharCP           _GetXmlElementName () const override;
-
-        //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
-
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool             _ReadJson(JsonValueCR json) override;
-
-        //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
         
         //! Allows the visitor to visit this group specification.
-        ECPRESENTATION_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
+        ECPRESENTATION_EXPORT void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
     
         //! Clones this specification.
-        virtual GroupSpecification* _Clone() const override {return new SameLabelInstanceGroup(*this);}
+        GroupSpecification* _Clone() const override {return new SameLabelInstanceGroup(*this);}
 
         //! Computes specification hash.
-        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -231,26 +219,22 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassGroup : public GroupSpecification
         Utf8String   m_baseClassName;
 
     protected:
-        //! Returns XmlElement name that is used to read/save this rule information.
-        ECPRESENTATION_EXPORT virtual CharCP           _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
-        //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
-
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool             _ReadJson(JsonValueCR json) override;
-
-        //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+        ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+        ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
         
         //! Allows the visitor to visit this group specification.
-        ECPRESENTATION_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
+        ECPRESENTATION_EXPORT void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
     
         //! Clones this specification.
-        virtual GroupSpecification* _Clone() const override {return new ClassGroup(*this);}
+        GroupSpecification* _Clone() const override {return new ClassGroup(*this);}
 
         //! Computes specification hash.
-        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -296,26 +280,22 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
         PropertyRangeGroupList  m_ranges;
 
     protected:
-        //! Returns XmlElement name that is used to read/save this rule information.
-        ECPRESENTATION_EXPORT virtual CharCP           _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
-        //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
-
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool             _ReadJson(JsonValueCR json) override;
-
-        //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+        ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+        ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
         
         //! Allows the visitor to visit this group specification.
-        ECPRESENTATION_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
+        ECPRESENTATION_EXPORT void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
     
         //! Clones this specification.
-        virtual GroupSpecification* _Clone() const override {return new PropertyGroup(*this);}
+        GroupSpecification* _Clone() const override {return new PropertyGroup(*this);}
 
         //! Computes specification hash.
-        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -387,25 +367,28 @@ struct PropertyRangeGroupSpecification : HashableBase
         ECPRESENTATION_EXPORT PropertyRangeGroupSpecification (Utf8StringCR label, Utf8StringCR imageId, Utf8StringCR fromValue, Utf8StringCR toValue);
 
         //! Reads specification from xml.
-        ECPRESENTATION_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
-
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool             ReadJson(JsonValueCR json);
+        ECPRESENTATION_EXPORT bool ReadXml (BeXmlNodeP xmlNode);
 
         //! Writes specification to xml node.
-        ECPRESENTATION_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode) const;
+        ECPRESENTATION_EXPORT void WriteXml (BeXmlNodeP parentXmlNode) const;
+
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
+
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT Json::Value WriteJson() const;
 
         //! ImageId of the grouping range node. If not set ECProperty ImageId will be used.
-        ECPRESENTATION_EXPORT Utf8StringCR             GetLabel (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR GetLabel (void) const;
 
         //! ImageId of the grouping node. Can be ECExpression. If not set ECProperty ImageId will be used.
-        ECPRESENTATION_EXPORT Utf8StringCR             GetImageId (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR GetImageId (void) const;
 
         //! Property that defines the range starting point. It is string for being able to define Units.
-        ECPRESENTATION_EXPORT Utf8StringCR             GetFromValue (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR GetFromValue (void) const;
 
         //! Property that defines the range end point. It is string for being able to define Units.
-        ECPRESENTATION_EXPORT Utf8StringCR             GetToValue (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR GetToValue (void) const;
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

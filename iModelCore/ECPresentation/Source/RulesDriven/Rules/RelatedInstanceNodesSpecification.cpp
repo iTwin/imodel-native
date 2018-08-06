@@ -9,7 +9,7 @@
 
 #include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
-#include <ECPresentation/RulesDriven/Rules/CommonTools.h>
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 
@@ -20,8 +20,8 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification ()
     : ChildNodeSpecification (), m_groupByClass (true), m_groupByRelationship (false), m_groupByLabel (true), m_showEmptyGroups (false),
-    m_skipRelatedLevel (0), m_instanceFilter (L""), m_requiredDirection (RequiredRelationDirection_Both),
-    m_supportedSchemas (L""), m_relationshipClassNames (L""), m_relatedClassNames (L"")
+    m_skipRelatedLevel (0), m_instanceFilter (""), m_requiredDirection (RequiredRelationDirection_Both),
+    m_supportedSchemas (""), m_relationshipClassNames (""), m_relatedClassNames ("")
     {
     }
 
@@ -59,7 +59,7 @@ void RelatedInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP RelatedInstanceNodesSpecification::_GetXmlElementName () const
+Utf8CP RelatedInstanceNodesSpecification::_GetXmlElementName () const
     {
     return RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME;
     }
@@ -69,6 +69,9 @@ CharCP RelatedInstanceNodesSpecification::_GetXmlElementName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RelatedInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (!ChildNodeSpecification::_ReadXml(xmlNode))
+        return false;
+
     //Optional:
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByClass, COMMON_XML_ATTRIBUTE_GROUPBYCLASS))
         m_groupByClass = true;
@@ -101,26 +104,7 @@ bool RelatedInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION))
         requiredDirectionString = "";
     else
-        m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString.c_str ());
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedInstanceNodesSpecification::_ReadJson(JsonValueCR json)
-    {
-    m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
-    m_groupByRelationship = json[COMMON_JSON_ATTRIBUTE_GROUPBYRELATIONSHIP].asBool(false);
-    m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
-    m_showEmptyGroups = json[COMMON_JSON_ATTRIBUTE_SHOWEMPTYGROUPS].asBool(false);
-    m_skipRelatedLevel = json[COMMON_JSON_ATTRIBUTE_SKIPRELATEDLEVEL].asInt(0);
-    m_instanceFilter = json[COMMON_JSON_ATTRIBUTE_INSTANCEFILTER].asCString("");
-    m_supportedSchemas = json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS].asCString("");
-    m_relationshipClassNames = json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPCLASSNAMES].asCString("");
-    m_relatedClassNames = json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSNAMES].asCString("");
-    m_requiredDirection = CommonTools::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
+        m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString (requiredDirectionString.c_str ());
 
     return true;
     }
@@ -130,6 +114,7 @@ bool RelatedInstanceNodesSpecification::_ReadJson(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RelatedInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
+    ChildNodeSpecification::_WriteXml(xmlNode);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYRELATIONSHIP, m_groupByRelationship);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
@@ -139,7 +124,58 @@ void RelatedInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS, m_supportedSchemas.c_str ());
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES, m_relationshipClassNames.c_str ());
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES, m_relatedClassNames.c_str ());
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonTools::FormatRequiredDirectionString (m_requiredDirection));
+    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonToolsInternal::FormatRequiredDirectionString (m_requiredDirection));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP RelatedInstanceNodesSpecification::_GetJsonElementType() const
+    {
+    return RELATED_INSTANCE_NODES_SPECIFICATION_JSON_TYPE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RelatedInstanceNodesSpecification::_ReadJson(JsonValueCR json)
+    {
+    if (!ChildNodeSpecification::_ReadJson(json))
+        return false;
+
+    m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
+    m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
+    m_skipRelatedLevel = json[COMMON_JSON_ATTRIBUTE_SKIPRELATEDLEVEL].asInt(0);
+    m_instanceFilter = json[COMMON_JSON_ATTRIBUTE_INSTANCEFILTER].asCString("");
+    m_supportedSchemas = CommonToolsInternal::SupportedSchemasToString(json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS]);
+    m_relationshipClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPS]);
+    m_relatedClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES]);
+    m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedInstanceNodesSpecification::_WriteJson(JsonValueR json) const
+    {
+    ChildNodeSpecification::_WriteJson(json);
+    if (!m_groupByClass)
+        json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS] = m_groupByClass;
+    if (!m_groupByLabel)
+        json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL] = m_groupByLabel;
+    if (0 != m_skipRelatedLevel)
+        json[COMMON_JSON_ATTRIBUTE_SKIPRELATEDLEVEL] = m_skipRelatedLevel;
+    if (!m_instanceFilter.empty())
+        json[COMMON_JSON_ATTRIBUTE_INSTANCEFILTER] = m_instanceFilter;
+    if (!m_supportedSchemas.empty())
+        json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS] = CommonToolsInternal::SupportedSchemasToJson(m_supportedSchemas);
+    if (!m_relationshipClassNames.empty())
+        json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPS] = CommonToolsInternal::SchemaAndClassNamesToJson(m_relationshipClassNames);
+    if (!m_relatedClassNames.empty())
+        json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES] = CommonToolsInternal::SchemaAndClassNamesToJson(m_relatedClassNames);
+    if (RequiredRelationDirection_Both != m_requiredDirection)
+        json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION] = CommonToolsInternal::FormatRequiredDirectionString(m_requiredDirection);
     }
 
 /*---------------------------------------------------------------------------------**//**

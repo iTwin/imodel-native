@@ -17,14 +17,9 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SelectedNodeInstancesSpecification::SelectedNodeInstancesSpecification () :
-ContentSpecification (),
-m_onlyIfNotHandled (false),
-m_acceptableSchemaName (L""),
-m_acceptableClassNames (L""),
-m_acceptablePolymorphically (false)
-    {
-    }
+SelectedNodeInstancesSpecification::SelectedNodeInstancesSpecification()
+    : ContentSpecification(), m_onlyIfNotHandled(false), m_acceptablePolymorphically(false)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -53,7 +48,7 @@ void SelectedNodeInstancesSpecification::_Accept(PresentationRuleSpecificationVi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP SelectedNodeInstancesSpecification::_GetXmlElementName () const
+Utf8CP SelectedNodeInstancesSpecification::_GetXmlElementName () const
     {
     return SELECTED_NODE_INSTANCES_SPECIFICATION_XML_NODE_NAME;
     }
@@ -63,6 +58,9 @@ CharCP SelectedNodeInstancesSpecification::_GetXmlElementName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SelectedNodeInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (!ContentSpecification::_ReadXml(xmlNode))
+        return false;
+
     //Optional:
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_onlyIfNotHandled, COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED))
         m_onlyIfNotHandled = false;
@@ -80,27 +78,69 @@ bool SelectedNodeInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SelectedNodeInstancesSpecification::_ReadJson(JsonValueCR json)
-    {
-    m_onlyIfNotHandled = json[COMMON_JSON_ATTRIBUTE_ONLYIFNOTHANDLED].asBool(false);
-    m_acceptableSchemaName = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLESCHEMANAME].asCString("");
-    m_acceptableClassNames = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES].asCString("");
-    m_acceptablePolymorphically = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLEPOLYMORPHICALLY].asBool(false);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SelectedNodeInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
+    ContentSpecification::_WriteXml(xmlNode);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED, m_onlyIfNotHandled);
     xmlNode->AddAttributeStringValue (SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLESCHEMANAME, m_acceptableSchemaName.c_str ());
     xmlNode->AddAttributeStringValue (SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLECLASSNAMES, m_acceptableClassNames.c_str ());
     xmlNode->AddAttributeBooleanValue (SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLEPOLYMORPHICALLY, m_acceptablePolymorphically);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP SelectedNodeInstancesSpecification::_GetJsonElementType() const
+    {
+    return SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_TYPE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SelectedNodeInstancesSpecification::_ReadJson(JsonValueCR json)
+    {
+    if (!ContentSpecification::_ReadJson(json))
+        return false;
+
+    m_onlyIfNotHandled = json[COMMON_JSON_ATTRIBUTE_ONLYIFNOTHANDLED].asBool(false);
+    m_acceptableSchemaName = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLESCHEMANAME].asCString("");
+    m_acceptablePolymorphically = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLEPOLYMORPHICALLY].asBool(false);
+
+    if (json.isMember(SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES))
+        {
+        JsonValueCR acceptableClassNamesJson = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES];
+        for (Json::ArrayIndex i = 0; i < acceptableClassNamesJson.size(); ++i)
+            {
+            if (!m_acceptableClassNames.empty())
+                m_acceptableClassNames.append(",");
+            m_acceptableClassNames.append(acceptableClassNamesJson[i].asCString());
+            }
+        }
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void SelectedNodeInstancesSpecification::_WriteJson(JsonValueR json) const
+    {
+    ContentSpecification::_WriteJson(json);
+    if (m_onlyIfNotHandled)
+        json[COMMON_JSON_ATTRIBUTE_ONLYIFNOTHANDLED] = m_onlyIfNotHandled;
+    if (!m_acceptableSchemaName.empty())
+        json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLESCHEMANAME] = m_acceptableSchemaName;
+    if (m_acceptablePolymorphically)
+        json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLEPOLYMORPHICALLY] = m_acceptablePolymorphically;
+    if (!m_acceptableClassNames.empty())
+        {
+        bvector<Utf8String> names;
+        BeStringUtilities::Split(m_acceptableClassNames.c_str(), ",", names);
+        for (Utf8StringCR name : names)
+            json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES].append(name);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

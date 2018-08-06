@@ -54,14 +54,15 @@ TEST_F(GroupingRuleTests, PropertyGroup_CopyConstructorCopiesRanges)
         EXPECT_NE(group1.GetRanges()[i], group2.GetRanges()[i]);
     }
 
+#ifdef wip_no_attributes
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GroupingRuleTests, SameLabelInstanceGroup_LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-	    "contextMenuLabel": "TestMenuLabel",
-	    "defaultLabel": "defaultGroupLabel"
+        "contextMenuLabel": "TestMenuLabel",
+        "defaultLabel": "defaultGroupLabel"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -71,13 +72,16 @@ TEST_F(GroupingRuleTests, SameLabelInstanceGroup_LoadsFromJson)
     EXPECT_STREQ("TestMenuLabel", rule.GetContextMenuLabel().c_str());
     EXPECT_STREQ("defaultGroupLabel", rule.GetDefaultLabel().c_str());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GroupingRuleTests, SameLabelInstanceGroup_LoadsFromJsonWithDefaultValues)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "specType": "SameLabelInstance"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
     
@@ -85,6 +89,19 @@ TEST_F(GroupingRuleTests, SameLabelInstanceGroup_LoadsFromJsonWithDefaultValues)
     EXPECT_TRUE(rule.ReadJson(json));
     EXPECT_STREQ("", rule.GetContextMenuLabel().c_str());
     EXPECT_STREQ("", rule.GetDefaultLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GroupingRuleTests, SameLabelInstanceGroup_WriteToJson)
+    {
+    SameLabelInstanceGroup rule;
+    Json::Value json = rule.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "specType": "SameLabelInstance"
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -127,9 +144,9 @@ TEST_F(GroupingRuleTests, SameLabelInstanceGroup_LoadsFromXmlWithDefaultValues)
 TEST_F(GroupingRuleTests, ClassGroup_LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
+        "specType": "Class",
         "createGroupForSingleItem": true,
-        "schemaName": "TestSchema",
-        "baseClassName": "TestClass"
+        "baseClass": {"schemaName": "TestSchema", "className": "TestClass"}
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -148,7 +165,9 @@ TEST_F(GroupingRuleTests, ClassGroup_LoadsFromJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GroupingRuleTests, ClassGroup_LoadsFromJsonWithDefaultValues)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "specType": "Class"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
 
@@ -159,6 +178,21 @@ TEST_F(GroupingRuleTests, ClassGroup_LoadsFromJsonWithDefaultValues)
     EXPECT_STREQ("", rule.GetDefaultLabel().c_str());
     EXPECT_STREQ("", rule.GetContextMenuLabel().c_str());
     EXPECT_STREQ("", rule.GetDefaultLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GroupingRuleTests, ClassGroup_WriteToJson)
+    {
+    ClassGroup rule("", "true", "s", "c");
+    Json::Value json = rule.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "specType": "Class",
+        "createGroupForSingleItem": true,
+        "baseClass": {"schemaName": "s", "className": "c"}
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -207,10 +241,10 @@ TEST_F(GroupingRuleTests, ClassGroup_LoadsFromXmlWithDefaultValues)
 TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-	    "fromValue": "fromValue",
-	    "toValue": "toValue",
-	    "label": "label",
-	    "imageId": "imgId"
+        "fromValue": "fromValue",
+        "toValue": "toValue",
+        "label": "label",
+        "imageId": "imgId"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -229,8 +263,8 @@ TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadsFromJson)
 TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadsFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = R"({
-	    "fromValue": "fromValue",
-	    "toValue": "toValue"
+        "fromValue": "fromValue",
+        "toValue": "toValue"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -241,6 +275,52 @@ TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadsFromJsonWithDefau
     EXPECT_STREQ("toValue", rule.GetToValue().c_str());
     EXPECT_STREQ("", rule.GetLabel().c_str());
     EXPECT_STREQ("", rule.GetImageId().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadFromJsonFailsWhenFromValueIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "toValue": "toValue"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    PropertyRangeGroupSpecification rule;
+    EXPECT_FALSE(rule.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadFromJsonFailsWhenToValueIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "fromValue": "fromValue"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    PropertyRangeGroupSpecification rule;
+    EXPECT_FALSE(rule.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_WriteToJson)
+    {
+    PropertyRangeGroupSpecification rule("label", "imageid", "f", "t");
+    Json::Value json = rule.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "label": "label",
+        "imageId": "imageid",
+        "fromValue": "f",
+        "toValue": "t"
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -284,36 +364,6 @@ TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadsFromXmlWithDefaul
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadFromJsonFailsWhenFromValueIsNotSpecified)
-    {
-    static Utf8CP jsonString = R"({
-	    "toValue": "toValue"
-    })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
-
-    PropertyRangeGroupSpecification rule;
-    EXPECT_FALSE(rule.ReadJson(json));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadFromJsonFailsWhenToValueIsNotSpecified)
-    {
-    static Utf8CP jsonString = R"({
-	    "fromValue": "fromValue"
-    })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
-
-    PropertyRangeGroupSpecification rule;
-    EXPECT_FALSE(rule.ReadJson(json));
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadFromXmlFailsWhenFromValueIsNotSpecified)
@@ -351,20 +401,19 @@ TEST_F(GroupingRuleTests, PropertyRangeGroupSpecification_LoadFromXmlFailsWhenTo
 TEST_F(GroupingRuleTests, PropertyGroup_LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
+        "specType": "Property",
         "propertyName": "property",
         "imageId": "imgId",
         "createGroupForSingleItem": true,
         "createGroupForUnspecifiedValues": false,
         "groupingValue": "DisplayLabel",
         "sortingValue": "PropertyValue",
-        "ranges": [
-            {
-                "fromValue": "fromValue",
-                "toValue": "toValue",
-                "label": "label",
-                "imageId": "imgId"
-            }
-        ]
+        "ranges": [{
+            "fromValue": "fromValue",
+            "toValue": "toValue",
+            "label": "label",
+            "imageId": "imgId"
+        }]
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -386,7 +435,8 @@ TEST_F(GroupingRuleTests, PropertyGroup_LoadsFromJson)
 TEST_F(GroupingRuleTests, PropertyGroup_LoadsFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = R"({
-	    "propertyName": "property"
+        "specType": "Property",
+        "propertyName": "property"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -401,6 +451,67 @@ TEST_F(GroupingRuleTests, PropertyGroup_LoadsFromJsonWithDefaultValues)
     EXPECT_EQ(PropertyGroupingValue::DisplayLabel, rule.GetPropertyGroupingValue());
     EXPECT_EQ(PropertyGroupingValue::DisplayLabel, rule.GetSortingValue());
     EXPECT_EQ(0, rule.GetRanges().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GroupingRuleTests, PropertyGroup_LoadFromJsonFailsWhenPropertyNameIsNorSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "specType": "Property"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    PropertyGroup rule;
+    EXPECT_FALSE(rule.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GroupingRuleTests, PropertyGroup_LoadFromJsonAssertsWhenPropertyGroupingValueIsInvalidAndReturnsDefault)
+    {
+    static Utf8CP jsonString = R"({
+        "specType": "Property",
+        "propertyName": "property",
+        "groupingValue": "InvalidValue"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    PropertyGroup rule;
+    IGNORE_BE_ASSERT();
+    EXPECT_TRUE(rule.ReadJson(json));
+    EXPECT_STREQ("property", rule.GetPropertyName().c_str());
+    EXPECT_EQ(PropertyGroupingValue::DisplayLabel, rule.GetPropertyGroupingValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GroupingRuleTests, PropertyGroup_WriteToJson)
+    {
+    PropertyGroup rule("", "imageid", true, "prop", "label");
+    rule.SetCreateGroupForUnspecifiedValues(true);
+    rule.SetPropertyGroupingValue(PropertyGroupingValue::PropertyValue);
+    rule.AddRange(*new PropertyRangeGroupSpecification("range", "", "f", "t"));
+    Json::Value json = rule.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "specType": "Property",
+        "createGroupForSingleItem": true,
+        "propertyName": "prop",
+        "imageId": "imageid",
+        "groupingValue": "PropertyValue",
+        "defaultLabel": "label",
+        "ranges": [{
+            "label": "range",
+            "fromValue": "f",
+            "toValue": "t"
+        }]
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -448,38 +559,6 @@ TEST_F(GroupingRuleTests, PropertyGroup_LoadsFromXmlWithDefaultValues)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GroupingRuleTests, PropertyGroup_LoadFromJsonFailsWhenPropertyNameIsNorSpecified)
-    {
-    static Utf8CP jsonString = "{}";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
-
-    PropertyGroup rule;
-    EXPECT_FALSE(rule.ReadJson(json));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GroupingRuleTests, PropertyGroup_LoadFromJsonAssertsWhenPropertyGroupingValueIsInvalidAndReturnsDefault)
-    {
-    static Utf8CP jsonString = R"({
-	    "propertyName": "property",
-	    "groupingValue": "InvalidValue"
-    })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
-
-    PropertyGroup rule;
-    IGNORE_BE_ASSERT();
-    EXPECT_TRUE(rule.ReadJson(json));
-    EXPECT_STREQ("property", rule.GetPropertyName().c_str());
-    EXPECT_EQ(PropertyGroupingValue::DisplayLabel, rule.GetPropertyGroupingValue());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GroupingRuleTests, PropertyGroup_LoadFromXmlFailsWhenPropertyNameIsNorSpecified)
@@ -518,41 +597,29 @@ TEST_F(GroupingRuleTests, PropertyGroup_LoadFromXmlAssertsWhenPropertyGroupingVa
 TEST_F(GroupingRuleTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-        "schemaName": "TestSchema",
-        "className": "TestClass",
-        "contextMenuCondition": "TestMenuCondition",
-        "contextMenuLabel": "TestLabel",
-        "settingsId": "TestID",
-        "groups": [
-            {
-                "type": "Property",
-                "propertyName": "property",
-                "imageId": "imgId",
-                "createGroupForSingleItem": "true",
-                "createGroupForUnspecifiedValues": "false",
-                "groupingValue": "DisplayLabel",
-                "sortingValue": "PropertyValue",
-                "ranges": [
-                    {
-                        "fromValue": "fromValue",
-                        "toValue": "toValue",
-                        "label": "label",
-                        "imageId": "imgId"
-                    }
-                ]
-            },
-            {
-                "type": "SameLabelInstance",
-                "contextMenuLabel": "TestMenuLabel",
-                "defaultLabel": "defaultGroupLabel"
-            },
-            {
-                "type": "Class",
-                "createGroupForSingleItem": true,
-                "schemaName": "TestSchema",
-                "baseClassName": "TestClass"
-            }
-        ]
+        "ruleType": "Grouping",
+        "class": {"schemaName": "TestSchema", "className": "TestClass"},
+        "groups": [{
+            "specType": "Property",
+            "propertyName": "property",
+            "imageId": "imgId",
+            "createGroupForSingleItem": "true",
+            "createGroupForUnspecifiedValues": "false",
+            "groupingValue": "DisplayLabel",
+            "sortingValue": "PropertyValue",
+            "ranges": [{
+                "fromValue": "fromValue",
+                "toValue": "toValue",
+                "label": "label",
+                "imageId": "imgId"
+            }]
+        }, {
+            "specType": "SameLabelInstance"
+        }, {
+            "specType": "Class",
+            "createGroupForSingleItem": true,
+            "baseClass": {"schemaName": "TestSchema", "className": "TestClass"}
+        }]
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -561,9 +628,6 @@ TEST_F(GroupingRuleTests, LoadsFromJson)
     EXPECT_TRUE(rule.ReadJson(json));
     EXPECT_STREQ("TestSchema", rule.GetSchemaName().c_str());
     EXPECT_STREQ("TestClass", rule.GetClassName().c_str());
-    EXPECT_STREQ("TestMenuCondition", rule.GetContextMenuCondition().c_str());
-    EXPECT_STREQ("TestLabel", rule.GetContextMenuLabel().c_str());
-    EXPECT_STREQ("TestID", rule.GetSettingsId().c_str());
     EXPECT_EQ(3, rule.GetGroups().size());
     }
 
@@ -573,11 +637,11 @@ TEST_F(GroupingRuleTests, LoadsFromJson)
 TEST_F(GroupingRuleTests, LoadFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = R"({
-	    "schemaName": "TestSchema",
-	    "className": "TestClass"
+        "ruleType": "Grouping",
+        "class": {"schemaName": "TestSchema", "className": "TestClass"}
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
+    ASSERT_FALSE(json.isNull());
     
     GroupingRule rule;
     EXPECT_TRUE(rule.ReadJson(json));
@@ -595,7 +659,8 @@ TEST_F(GroupingRuleTests, LoadFromJsonWithDefaultValues)
 TEST_F(GroupingRuleTests, LoadFromJsonFailsWhenClassNameIsNotSpecified)
     {
     static Utf8CP jsonString = R"({
-	    "schemaName": "TestSchema"
+        "ruleType": "Grouping",
+        "class": {"schemaName": "TestSchema"}
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -610,13 +675,42 @@ TEST_F(GroupingRuleTests, LoadFromJsonFailsWhenClassNameIsNotSpecified)
 TEST_F(GroupingRuleTests, LoadFromJsonFailsWhenSchemaNameIsNotSpecified)
     {
     static Utf8CP jsonString = R"({
-	    "className": "TestClass"
+        "ruleType": "Grouping",
+        "class": {"className": "TestClass"}
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
 
     GroupingRule rule;
     EXPECT_FALSE(rule.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GroupingRuleTests, WriteToJson)
+    {
+    GroupingRule rule("cond", 123, true, "s", "c", "", "", "");
+    rule.AddGroup(*new SameLabelInstanceGroup());
+    rule.AddGroup(*new ClassGroup());
+    rule.AddGroup(*new PropertyGroup());
+    Json::Value json = rule.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "ruleType": "Grouping",
+        "priority": 123,
+        "onlyIfNotHandled": true,
+        "condition": "cond",
+        "class": {"schemaName":"s", "className":"c"},
+        "groups": [{
+            "specType": "SameLabelInstance"
+        }, {
+            "specType": "Class"
+        }, {
+            "specType": "Property",
+            "propertyName": ""
+        }]
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -799,7 +893,7 @@ TEST_F(GroupingRuleTests, WriteToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<GroupingRule Priority="1000" SchemaName="TestSchema" ClassName="TestClass" ContextMenuCondition="TestMenuCondition" ContextMenuLabel="TestLabel" SettingsId="TestID" Condition="condition" OnlyIfNotHandled="true">)"
+            R"(<GroupingRule Priority="1000" OnlyIfNotHandled="true" Condition="condition" SchemaName="TestSchema" ClassName="TestClass" ContextMenuCondition="TestMenuCondition" ContextMenuLabel="TestLabel" SettingsId="TestID">)"
                 R"(<ClassGroup ContextMenuLabel="TestMenuLabel" DefaultGroupLabel="" CreateGroupForSingleItem="true" SchemaName="TestSchema" BaseClassName="TestClass"/>)"
                 R"(<SameLabelInstanceGroup ContextMenuLabel="label" DefaultGroupLabel=""/>)"
                 R"(<PropertyGroup ContextMenuLabel="menuLabel" DefaultGroupLabel="defaultLabel" ImageId="imgId" CreateGroupForSingleItem="true" CreateGroupForUnspecifiedValues="true" PropertyName="testProperty" GroupingValue="DisplayLabel" SortingValue="DisplayLabel">)"

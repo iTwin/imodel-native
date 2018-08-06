@@ -26,23 +26,18 @@ TEST_F(PropertyEditorRulesTests, LoadsFromJson)
     static Utf8CP jsonString = R"({
         "propertyName": "TestProperty",
         "editorName": "TestEditor",
-        "parameters": [
-            {
-                "type": "Multiline"
-            },
-            {
-                "type": "Json",
-                "json": { }
-            },
-            {
-                "type": "Range"
-            },
-            {
-                "type": "Slider",
-                "min": 1,
-                "max": 4.56
-            }
-        ]
+        "parameters": [{
+            "paramsType": "Multiline"
+        }, {
+            "paramsType": "Json",
+            "json": { }
+        }, {
+            "paramsType": "Range"
+        }, {
+            "paramsType": "Slider",
+            "min": 1,
+            "max": 4.56
+        }]
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -82,6 +77,20 @@ TEST_F(PropertyEditorRulesTests, LoadFromJsonFailsWhenEditorNameIsNotSpecified)
 
     PropertyEditorsSpecification spec;
     EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyEditorRulesTests, WriteToJson)
+    {
+    PropertyEditorsSpecification spec("prop", "editor");
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "propertyName": "prop",
+        "editorName": "editor"
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -167,7 +176,10 @@ TEST_F(PropertyEditorRulesTests, WritesToXml)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PropertyEditorRulesTests, JsonParams_LoadsFromJson)
     {
-    static Utf8CP jsonString = R"({"json":{"Custom": "Json"}})";
+    static Utf8CP jsonString = R"({
+        "paramsType": "Json",
+        "json": {"Custom": "Json"}
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
 
@@ -238,6 +250,7 @@ TEST_F(PropertyEditorRulesTests, WritesJsonParamsToXml)
 TEST_F(PropertyEditorRulesTests, MultilineParams_LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
+        "paramsType": "Multiline",
         "height":999
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
@@ -290,8 +303,9 @@ TEST_F(PropertyEditorRulesTests, WritesMultilineParamsToXml)
 TEST_F(PropertyEditorRulesTests, RangeParams_LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-	    "min": 1.23,
-	    "max": 4.56
+        "paramsType": "Range",
+        "min": 1.23,
+        "max": 4.56
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -328,7 +342,9 @@ TEST_F(PropertyEditorRulesTests, LoadsRangeParamsFromXml)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PropertyEditorRulesTests, RangeParams_LoadsFromJsonWithDefaultValues)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "paramsType": "Range"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
     
@@ -400,11 +416,11 @@ TEST_F(PropertyEditorRulesTests, WritesDefaultRangeParamsToXml)
 TEST_F(PropertyEditorRulesTests, SliderParams_LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-	    "min": 1.23,
-	    "max": 4.56,
-	    "intervalsCount": 5,
-	    "valueFactor": 100,
-	    "isVertical": true
+        "paramsType": "Slider",
+        "min": 1.23,
+        "max": 4.56,
+        "intervalsCount": 5,
+        "isVertical": true
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -414,18 +430,19 @@ TEST_F(PropertyEditorRulesTests, SliderParams_LoadsFromJson)
     EXPECT_DOUBLE_EQ(1.23, spec.GetMinimumValue());
     EXPECT_DOUBLE_EQ(4.56, spec.GetMaximumValue());
     EXPECT_EQ(5, spec.GetIntervalsCount());
-    EXPECT_EQ(100, spec.GetValueFactor());
+    EXPECT_EQ(1, spec.GetValueFactor());
     EXPECT_TRUE(spec.IsVertical());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyEditorRulesTests, SliderParams_loadsFromJsonWithDefaultValues)
+TEST_F(PropertyEditorRulesTests, SliderParams_LoadsFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = R"({
-	    "min": 1.23,
-	    "max": 4.56
+        "paramsType": "Slider",
+        "min": 1.23,
+        "max": 4.56
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -487,6 +504,7 @@ TEST_F(PropertyEditorRulesTests, LoadsDefaultSliderParamsFromXml)
 TEST_F(PropertyEditorRulesTests, SliderParams_LoadFromJsonFailsWhenMinimumAtributeIsNotSpecified)
     {
     static Utf8CP jsonString = R"({
+        "paramsType": "Slider",
         "max":4.56
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
@@ -501,6 +519,7 @@ TEST_F(PropertyEditorRulesTests, SliderParams_LoadFromJsonFailsWhenMinimumAtribu
 TEST_F(PropertyEditorRulesTests, SliderParams_LoadFromJsonFailsWhenMaximumAtributeIsNotSpecified)
     {
     static Utf8CP jsonString = R"({
+        "paramsType": "Slider",
         "min":4.56
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);

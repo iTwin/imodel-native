@@ -32,7 +32,7 @@ struct SubCondition : HashableBase
         ChildNodeSpecificationList m_specifications;
 
     protected:
-        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -45,22 +45,25 @@ struct SubCondition : HashableBase
         ECPRESENTATION_EXPORT SubCondition(SubConditionCR);
 
         //! Destructor.
-        ECPRESENTATION_EXPORT                                ~SubCondition (void);
+        ECPRESENTATION_EXPORT ~SubCondition (void);
 
         //! Reads SubCondition from xml node.
-        ECPRESENTATION_EXPORT bool                           ReadXml (BeXmlNodeP xmlNode);
-
-        //! Reads SubCondition from json.
-        ECPRESENTATION_EXPORT bool                           ReadJson(JsonValueCR json);
+        ECPRESENTATION_EXPORT bool ReadXml (BeXmlNodeP xmlNode);
 
         //! Writes SubCondition to xml node.
-        ECPRESENTATION_EXPORT void                           WriteXml (BeXmlNodeP parentXmlNode) const;
+        ECPRESENTATION_EXPORT void WriteXml (BeXmlNodeP parentXmlNode) const;
+
+        //! Reads SubCondition from json.
+        ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
+
+        //! Writes SubCondition to json.
+        ECPRESENTATION_EXPORT Json::Value WriteJson() const;
 
         //! Returns sub-condition string.
-        ECPRESENTATION_EXPORT Utf8StringCR                   GetCondition (void);
+        ECPRESENTATION_EXPORT Utf8StringCR GetCondition (void);
 
         //! Collection of sub-conditions that can be used to separate specifications.
-        ECPRESENTATION_EXPORT SubConditionList const&        GetSubConditions (void) const;
+        ECPRESENTATION_EXPORT SubConditionList const& GetSubConditions (void) const;
 
         //! Add sub-condition.
         ECPRESENTATION_EXPORT void AddSubCondition(SubConditionR subCondition);
@@ -86,17 +89,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public ConditionalPresentationRul
         bool                       m_stopFurtherProcessing;
 
     protected:
-        //! Returns XmlElement name that is used to read/save this rule information.
-        ECPRESENTATION_EXPORT virtual CharCP                 _GetXmlElementName () const override;
-
-        //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool                   _ReadXml (BeXmlNodeP xmlNode) override;
-
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool                   _ReadJson(JsonValueCR json) override;
-
-        //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT virtual Utf8CP _GetXmlElementName() const override;
+        ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
+        
+        ECPRESENTATION_EXPORT virtual Utf8CP _GetJsonElementType() const override;
+        ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
+        ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const override;
 
         //! Computes rule hash.
         ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
@@ -156,20 +155,16 @@ struct EXPORT_VTABLE_ATTRIBUTE RootNodeRule : public ChildNodeRule
         bool m_autoExpand;
 
     protected:
-        //! Returns XmlElement name that is used to read/save this rule information.
-        ECPRESENTATION_EXPORT virtual CharCP                 _GetXmlElementName () const override;
-
-        //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool                   _ReadXml (BeXmlNodeP xmlNode) override;
-
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool                   _ReadJson(JsonValueCR json) override;
-
-        //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
+        
+        ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+        ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+        ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
         //! Computes rule hash.
-        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

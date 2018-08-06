@@ -213,15 +213,36 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase_StructProp
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, FunctionNameSubstitution)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("GetSettingValue(\"setting_id\")");
+    EXPECT_STREQ(FUNCTION_NAME_GetVariableStringValue "('setting_id')", ecsql.c_str());
+
+    ecsql = m_helper.ConvertToECSql("GetSettingIntValue(\"setting_id\")");
+    EXPECT_STREQ(FUNCTION_NAME_GetVariableIntValue "('setting_id')", ecsql.c_str());
+
+    ecsql = m_helper.ConvertToECSql("GetSettingBoolValue(\"setting_id\")");
+    EXPECT_STREQ(FUNCTION_NAME_GetVariableBoolValue "('setting_id')", ecsql.c_str());
+    
+    ecsql = m_helper.ConvertToECSql("HasSetting(\"setting_id\")");
+    EXPECT_STREQ(FUNCTION_NAME_HasVariable "('setting_id')", ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECExpressionsToECSqlConverterTests, UserSettingIntValuesSpecialCase)
+TEST_F(ECExpressionsToECSqlConverterTests, VariableIntValuesSpecialCase)
     {
-    Utf8String ecsql = m_helper.ConvertToECSql("GetUserSettingIntValues(\"setting_id\").AnyMatch(x => x = this.SomeProperty)");
-    EXPECT_STREQ(FUNCTION_NAME_InSettingIntValues "('setting_id', [this].[SomeProperty])", ecsql.c_str());
+    Utf8String ecsql = m_helper.ConvertToECSql("GetSettingIntValues(\"setting_id\").AnyMatch(x => x = this.SomeProperty)");
+    EXPECT_STREQ(FUNCTION_NAME_InVariableIntValues "('setting_id', [this].[SomeProperty])", ecsql.c_str());
 
-    ecsql = m_helper.ConvertToECSql("GetUserSettingIntValues(\"setting_id\").AnyMatch(x => this.SomeProperty = x)");
-    EXPECT_STREQ(FUNCTION_NAME_InSettingIntValues "('setting_id', [this].[SomeProperty])", ecsql.c_str());
+    ecsql = m_helper.ConvertToECSql("GetSettingIntValues(\"setting_id\").AnyMatch(x => this.SomeProperty = x)");
+    EXPECT_STREQ(FUNCTION_NAME_InVariableIntValues "('setting_id', [this].[SomeProperty])", ecsql.c_str());
+    
+    ecsql = m_helper.ConvertToECSql("GetVariableIntValues(\"setting_id\").AnyMatch(x => this.SomeProperty = x)");
+    EXPECT_STREQ(FUNCTION_NAME_InVariableIntValues "('setting_id', [this].[SomeProperty])", ecsql.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

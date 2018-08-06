@@ -16,10 +16,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImageIdOverride::ImageIdOverride ()
-    : m_imageIdExpression ("")
-    {
-    }
+ImageIdOverride::ImageIdOverride() {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -32,7 +29,7 @@ ImageIdOverride::ImageIdOverride (Utf8StringCR condition, int priority, Utf8Stri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP ImageIdOverride::_GetXmlElementName () const
+Utf8CP ImageIdOverride::_GetXmlElementName () const
     {
     return IMAGE_ID_OVERRIDE_XML_NODE_NAME;
     }
@@ -42,19 +39,13 @@ CharCP ImageIdOverride::_GetXmlElementName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ImageIdOverride::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (!ConditionalCustomizationRule::_ReadXml(xmlNode))
+        return false;
+
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_imageIdExpression, IMAGE_ID_OVERRIDE_XML_ATTRIBUTE_IMAGEID))
         m_imageIdExpression = "";
 
-    return ConditionalCustomizationRule::_ReadXml (xmlNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ImageIdOverride::_ReadJson(JsonValueCR json)
-    {
-    m_imageIdExpression = json[IMAGE_ID_OVERRIDE_JSON_ATTRIBUTE_IMAGEID].asCString("");
-    return ConditionalCustomizationRule::_ReadJson(json);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -62,9 +53,37 @@ bool ImageIdOverride::_ReadJson(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ImageIdOverride::_WriteXml (BeXmlNodeP xmlNode) const
     {
-    xmlNode->AddAttributeStringValue (IMAGE_ID_OVERRIDE_XML_ATTRIBUTE_IMAGEID, m_imageIdExpression.c_str ());
-
     ConditionalCustomizationRule::_WriteXml (xmlNode);
+    xmlNode->AddAttributeStringValue (IMAGE_ID_OVERRIDE_XML_ATTRIBUTE_IMAGEID, m_imageIdExpression.c_str ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP ImageIdOverride::_GetJsonElementType() const
+    {
+    return IMAGE_ID_OVERRIDE_JSON_TYPE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ImageIdOverride::_ReadJson(JsonValueCR json)
+    {
+    if (!ConditionalCustomizationRule::_ReadJson(json))
+        return false;
+    m_imageIdExpression = json[IMAGE_ID_OVERRIDE_JSON_ATTRIBUTE_IMAGEID].asCString("");
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ImageIdOverride::_WriteJson(JsonValueR json) const
+    {
+    ConditionalCustomizationRule::_WriteJson(json);
+    if (!m_imageIdExpression.empty())
+        json[IMAGE_ID_OVERRIDE_JSON_ATTRIBUTE_IMAGEID] = m_imageIdExpression;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -9,6 +9,7 @@
 
 #include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
@@ -17,7 +18,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 SortingRule::SortingRule()
-    : m_schemaName(""), m_className(""), m_propertyName(""), m_sortAscending(true), m_doNotSort(false), m_isPolymorphic(false)
+    : m_sortAscending(true), m_doNotSort(false), m_isPolymorphic(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -31,7 +32,7 @@ SortingRule::SortingRule(Utf8StringCR condition, int priority, Utf8StringCR sche
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP SortingRule::_GetXmlElementName() const
+Utf8CP SortingRule::_GetXmlElementName() const
     {
     return SORTING_RULE_XML_NODE_NAME;
     }
@@ -63,21 +64,6 @@ bool SortingRule::_ReadXml(BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SortingRule::_ReadJson(JsonValueCR json)
-    {
-    m_schemaName = json[COMMON_JSON_ATTRIBUTE_SCHEMANAME].asCString("");
-    m_className = json[COMMON_JSON_ATTRIBUTE_CLASSNAME].asCString("");
-    m_propertyName = json[COMMON_JSON_ATTRIBUTE_PROPERTYNAME].asCString("");
-    m_sortAscending = json[SORTING_RULE_JSON_ATTRIBUTE_SORTASCENDING].asBool(true);
-    m_doNotSort = json[SORTING_RULE_JSON_ATTRIBUTE_DONOTSORT].asBool(false);
-    m_isPolymorphic = json[COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC].asBool(false);
-
-    return ConditionalCustomizationRule::_ReadJson(json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SortingRule::_WriteXml(BeXmlNodeP xmlNode) const
@@ -90,6 +76,71 @@ void SortingRule::_WriteXml(BeXmlNodeP xmlNode) const
     xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC, m_isPolymorphic);
 
     ConditionalCustomizationRule::_WriteXml(xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP SortingRule::_GetJsonElementType() const
+    {
+    // note: SortingRule handled JSON element type itself
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SortingRule::_ReadJson(JsonValueCR json)
+    {
+    if (!ConditionalCustomizationRule::_ReadJson(json))
+        return false;
+    
+    bool ruleIdentified = false;
+    if (0 == strcmp(json[COMMON_JSON_ATTRIBUTE_RULETYPE].asCString(), SORTING_RULE_PROPERTYSORTING_JSON_TYPE))
+        {
+        m_propertyName = json[COMMON_JSON_ATTRIBUTE_PROPERTYNAME].asCString("");
+        m_sortAscending = json[SORTING_RULE_JSON_ATTRIBUTE_SORTASCENDING].asBool(true);
+        ruleIdentified = true;
+        }
+
+    if (0 == strcmp(json[COMMON_JSON_ATTRIBUTE_RULETYPE].asCString(), SORTING_RULE_DISABLEDSORTING_JSON_TYPE))
+        {
+        m_doNotSort = true;
+        ruleIdentified = true;
+        }
+
+    if (ruleIdentified)
+        {
+        CommonToolsInternal::ParseSchemaAndClassName(m_schemaName, m_className, json[COMMON_JSON_ATTRIBUTE_CLASS]);
+        m_isPolymorphic = json[COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC].asBool(false);
+        }
+
+    return ruleIdentified;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void SortingRule::_WriteJson(JsonValueR json) const
+    {
+    ConditionalCustomizationRule::_WriteJson(json);
+    
+    if (!m_schemaName.empty() && !m_className.empty())
+        json[COMMON_JSON_ATTRIBUTE_CLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_schemaName, m_className);
+    if (m_isPolymorphic)
+        json[COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC] = m_isPolymorphic;
+
+    if (m_doNotSort)
+        {
+        json[COMMON_JSON_ATTRIBUTE_RULETYPE] = SORTING_RULE_DISABLEDSORTING_JSON_TYPE;
+        }
+    else
+        {
+        json[COMMON_JSON_ATTRIBUTE_RULETYPE] = SORTING_RULE_PROPERTYSORTING_JSON_TYPE;
+        json[COMMON_JSON_ATTRIBUTE_PROPERTYNAME] = m_propertyName;
+        if (!m_sortAscending)
+            json[SORTING_RULE_JSON_ATTRIBUTE_SORTASCENDING] = m_sortAscending;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

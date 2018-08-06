@@ -587,9 +587,9 @@ void CustomNodesProvider::Initialize()
         SetDataSourceInfo(CreateDataSourceInfo(GetContext()));
         GetContext().GetNodesCache().Cache(GetDataSourceInfo(), DataSourceFilter(), bmap<ECClassId, bool>(), GetContext().GetRelatedSettings(), GetContext().IsUpdatesDisabled());
 
-        if (m_specification.GetNodeType().empty() || m_specification.GetLabel().empty() || m_specification.GetImageId().empty())
+        if (m_specification.GetNodeType().empty() || m_specification.GetLabel().empty())
             {
-            LoggingHelper::LogMessage(Log::Navigation, "Type, Label and ImageId are required properties for CustomNode specification");
+            LoggingHelper::LogMessage(Log::Navigation, "Type and Label are required properties for CustomNode specification");
             BeAssert(false);
             return;
             }

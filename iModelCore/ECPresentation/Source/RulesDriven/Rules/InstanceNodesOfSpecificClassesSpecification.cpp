@@ -9,6 +9,7 @@
 
 #include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 
@@ -52,7 +53,7 @@ void InstanceNodesOfSpecificClassesSpecification::_Accept(PresentationRuleSpecif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP InstanceNodesOfSpecificClassesSpecification::_GetXmlElementName () const
+Utf8CP InstanceNodesOfSpecificClassesSpecification::_GetXmlElementName () const
     {
     return INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME;
     }
@@ -62,6 +63,9 @@ CharCP InstanceNodesOfSpecificClassesSpecification::_GetXmlElementName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceNodesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (!ChildNodeSpecification::_ReadXml(xmlNode))
+        return false;
+
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_classNames, COMMON_XML_ATTRIBUTE_CLASSNAMES))
         {
@@ -89,15 +93,40 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceNodesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
+    {
+    ChildNodeSpecification::_WriteXml(xmlNode);
+    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_CLASSNAMES, m_classNames.c_str ());
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC, m_arePolymorphic);
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_SHOWEMPTYGROUPS, m_showEmptyGroups);
+    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP InstanceNodesOfSpecificClassesSpecification::_GetJsonElementType() const
+    {
+    return INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_TYPE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                 04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceNodesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
     {
+    if (!ChildNodeSpecification::_ReadJson(json))
+        return false;
+
     //Required:
-    m_classNames = json[COMMON_JSON_ATTRIBUTE_CLASSNAMES].asCString("");
+    m_classNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_CLASSES]);
     if (m_classNames.empty())
         {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_NAME, COMMON_JSON_ATTRIBUTE_CLASSNAMES);
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "InstanceNodesOfSpecificClassesSpecification", COMMON_JSON_ATTRIBUTE_CLASSES);
         return false;
         }
 
@@ -105,23 +134,27 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
     m_arePolymorphic = json[COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC].asBool(false);
     m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
     m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
-    m_showEmptyGroups = json[COMMON_JSON_ATTRIBUTE_SHOWEMPTYGROUPS].asBool(false);
     m_instanceFilter = json[COMMON_JSON_ATTRIBUTE_INSTANCEFILTER].asCString("");
 
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
+* @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceNodesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
+void InstanceNodesOfSpecificClassesSpecification::_WriteJson(JsonValueR json) const
     {
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_CLASSNAMES, m_classNames.c_str ());
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC, m_arePolymorphic);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_SHOWEMPTYGROUPS, m_showEmptyGroups);
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
+    ChildNodeSpecification::_WriteJson(json);
+    if (!m_classNames.empty())
+        json[COMMON_JSON_ATTRIBUTE_CLASSES] = CommonToolsInternal::SchemaAndClassNamesToJson(m_classNames);
+    if (m_arePolymorphic)
+        json[COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC] = m_arePolymorphic;
+    if (!m_groupByClass)
+        json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS] = m_groupByClass;
+    if (!m_groupByLabel)
+        json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL] = m_groupByLabel;
+    if (!m_instanceFilter.empty())
+        json[COMMON_JSON_ATTRIBUTE_INSTANCEFILTER] = m_instanceFilter;
     }
 
 /*---------------------------------------------------------------------------------**//**

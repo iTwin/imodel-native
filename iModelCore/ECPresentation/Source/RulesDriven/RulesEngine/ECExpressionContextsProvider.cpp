@@ -425,10 +425,10 @@ public:
 };
 
 //=======================================================================================
-//! Provides functions to access user settings
+//! Provides functions to access user settings / ruleset variables
 // @bsiclass                                                Grigas.Petraitis    03/2015
 //=======================================================================================
-struct UserSettingsSymbolsProvider : IECSymbolProvider
+struct RulesetVariablesSymbolsProvider : IECSymbolProvider
 {
     struct Context : ProviderContext
         {
@@ -442,78 +442,78 @@ private:
     Context const& m_context;
 
 private:
-    static void OnSettingUsed(Context const& context, Utf8CP settingId)
+    static void OnVariableUsed(Context const& context, Utf8CP variableId)
         {
         if (nullptr != context.m_usedSettingsListener)
-            context.m_usedSettingsListener->_OnUserSettingUsed(settingId);
+            context.m_usedSettingsListener->_OnUserSettingUsed(variableId);
         }
-    static ExpressionStatus GetSettingValue(EvaluationResult& evalResult, void* methodContext, EvaluationResultVector& arguments)
+    static ExpressionStatus GetStringVariableValue(EvaluationResult& evalResult, void* methodContext, EvaluationResultVector& arguments)
         {
         if (1 != arguments.size())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("UserSettingsSymbolsProvider::GetSettingValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::GetStringVariableValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
         if (!arguments[0].IsECValue() || !arguments[0].GetECValue()->IsString())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "UserSettingsSymbolsProvider::GetSettingValue: Wrong argument type (first argument is not ECValue, or is not a string)");
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "RulesetVariablesSymbolsProvider::GetStringVariableValue: Wrong argument type (first argument is not ECValue, or is not a string)");
             return ExpressionStatus::WrongType;
             }
 
-        Utf8CP settingId = arguments[0].GetECValue()->GetUtf8CP();
+        Utf8CP variableId = arguments[0].GetECValue()->GetUtf8CP();
         Context const& context = *static_cast<Context*>(methodContext);
-        evalResult.InitECValue().SetUtf8CP(context.m_settings.GetSettingValue(settingId).c_str());
+        evalResult.InitECValue().SetUtf8CP(context.m_settings.GetSettingValue(variableId).c_str());
 
-        OnSettingUsed(context, settingId);
+        OnVariableUsed(context, variableId);
 
         return ExpressionStatus::Success;
         }
-    static ExpressionStatus GetSettingIntValue(EvaluationResult& evalResult, void* methodContext, EvaluationResultVector& arguments)
+    static ExpressionStatus GetIntVariableValue(EvaluationResult& evalResult, void* methodContext, EvaluationResultVector& arguments)
         {
         if (1 != arguments.size())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("UserSettingsSymbolsProvider::GetSettingIntValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::GetIntVariableValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
         if (!arguments[0].IsECValue() || !arguments[0].GetECValue()->IsString())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "UserSettingsSymbolsProvider::GetSettingIntValue: Wrong argument type (first argument is not ECValue, or is not a string)");
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "RulesetVariablesSymbolsProvider::GetIntVariableValue: Wrong argument type (first argument is not ECValue, or is not a string)");
             return ExpressionStatus::WrongType;
             }
         
-        Utf8CP settingId = arguments[0].GetECValue()->GetUtf8CP();
+        Utf8CP variableId = arguments[0].GetECValue()->GetUtf8CP();
         Context const& context = *static_cast<Context*>(methodContext);
-        evalResult.InitECValue().SetLong(context.m_settings.GetSettingIntValue(settingId));
+        evalResult.InitECValue().SetLong(context.m_settings.GetSettingIntValue(variableId));
         
-        OnSettingUsed(context, settingId);
+        OnVariableUsed(context, variableId);
 
         return ExpressionStatus::Success;
         }
-    static ExpressionStatus GetSettingIntValues(EvaluationResult& evalResult, void* methodContext, EvaluationResultVector& arguments)
+    static ExpressionStatus GetIntArrayVariableValue(EvaluationResult& evalResult, void* methodContext, EvaluationResultVector& arguments)
         {
         if (1 != arguments.size())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("UserSettingsSymbolsProvider::GetSettingIntValues: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::GetIntArrayVariableValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
         if (!arguments[0].IsECValue() || !arguments[0].GetECValue()->IsString())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "UserSettingsSymbolsProvider::GetSettingIntValues: Wrong argument type (first argument is not ECValue, or is not a string)");
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "RulesetVariablesSymbolsProvider::GetIntArrayVariableValue: Wrong argument type (first argument is not ECValue, or is not a string)");
             return ExpressionStatus::WrongType;
             }
 
         if (nullptr == methodContext)
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "UserSettingsSymbolsProvider::GetSettingIntValues: UnknownError (nullptr == methodContext)");
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "RulesetVariablesSymbolsProvider::GetIntArrayVariableValue: UnknownError (nullptr == methodContext)");
             return ExpressionStatus::UnknownError;
             }
 
-        Utf8CP settingId = arguments[0].GetECValue()->GetUtf8CP();
+        Utf8CP variableId = arguments[0].GetECValue()->GetUtf8CP();
         Context const& context = *static_cast<Context*>(methodContext);
-        bvector<int64_t> values = context.m_settings.GetSettingIntValues(settingId);
+        bvector<int64_t> values = context.m_settings.GetSettingIntValues(variableId);
         bvector<EvaluationResult> resultValues;
         for (int64_t value : values)
             {
@@ -523,65 +523,74 @@ private:
             }
         evalResult.SetValueList(*IValueListResult::Create(resultValues));
         
-        OnSettingUsed(context, settingId);
+        OnVariableUsed(context, variableId);
 
         return ExpressionStatus::Success;
         }
-    static ExpressionStatus GetSettingBoolValue(EvaluationResult& evalResult, void* methodContext, EvaluationResultVector& arguments)
+    static ExpressionStatus GetBoolVariableValue(EvaluationResult& evalResult, void* methodContext, EvaluationResultVector& arguments)
         {
         if (1 != arguments.size())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("UserSettingsSymbolsProvider::GetSettingBoolValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::GetBoolVariableValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
         if (!arguments[0].IsECValue() || !arguments[0].GetECValue()->IsString())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "UserSettingsSymbolsProvider::GetSettingBoolValue: Wrong argument type (first argument is not ECValue, or is not a string)");
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "RulesetVariablesSymbolsProvider::GetBoolVariableValue: Wrong argument type (first argument is not ECValue, or is not a string)");
             return ExpressionStatus::WrongType;
             }
 
-        Utf8CP settingId = arguments[0].GetECValue()->GetUtf8CP();
+        Utf8CP variableId = arguments[0].GetECValue()->GetUtf8CP();
         Context const& context = *static_cast<Context*>(methodContext);
-        evalResult.InitECValue().SetBoolean(context.m_settings.GetSettingBoolValue(settingId));
+        evalResult.InitECValue().SetBoolean(context.m_settings.GetSettingBoolValue(variableId));
 
-        OnSettingUsed(context, settingId);
+        OnVariableUsed(context, variableId);
         return ExpressionStatus::Success;
         }
-    static ExpressionStatus HasSetting(EvaluationResult& evalResult, void* methodContext, EvaluationResultVector& arguments)
+    static ExpressionStatus HasVariable(EvaluationResult& evalResult, void* methodContext, EvaluationResultVector& arguments)
         {
         if (1 != arguments.size())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("UserSettingsSymbolsProvider::HasSetting: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("RulesetVariablesSymbolsProvider::HasVariable: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
         if (!arguments[0].IsECValue() || !arguments[0].GetECValue()->IsString())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "UserSettingsSymbolsProvider::HasSetting: Wrong argument type (first argument is not ECValue, or is not a string)");
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "RulesetVariablesSymbolsProvider::HasVariable: Wrong argument type (first argument is not ECValue, or is not a string)");
             return ExpressionStatus::WrongType;
             }
 
-        Utf8CP settingId = arguments[0].GetECValue()->GetUtf8CP();
+        Utf8CP variableId = arguments[0].GetECValue()->GetUtf8CP();
         Context const& context = *static_cast<Context*>(methodContext);
-        evalResult.InitECValue().SetBoolean(context.m_settings.GetSettingBoolValue(settingId));
+        evalResult.InitECValue().SetBoolean(context.m_settings.GetSettingBoolValue(variableId));
 
-        OnSettingUsed(context, settingId);
+        OnVariableUsed(context, variableId);
         return ExpressionStatus::Success;
         }
 protected:
-    Utf8CP _GetName() const override {return "UserSettings";}
+    Utf8CP _GetName() const override {return "RulesetVariables";}
     void _PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override
         {
         void* methodContext = const_cast<Context*>(&m_context);
-        context.AddSymbol(*MethodSymbol::Create("GetSettingValue", &UserSettingsSymbolsProvider::GetSettingValue, nullptr, methodContext));
-        context.AddSymbol(*MethodSymbol::Create("GetSettingIntValue", &UserSettingsSymbolsProvider::GetSettingIntValue, nullptr, methodContext));
-        context.AddSymbol(*MethodSymbol::Create("GetSettingIntValues", &UserSettingsSymbolsProvider::GetSettingIntValues, nullptr, methodContext));
-        context.AddSymbol(*MethodSymbol::Create("GetSettingBoolValue", &UserSettingsSymbolsProvider::GetSettingBoolValue, nullptr, methodContext));
-        context.AddSymbol(*MethodSymbol::Create("HasSetting", &UserSettingsSymbolsProvider::HasSetting, nullptr, methodContext));
+
+        // deprecated / DgnClientSdk
+        context.AddSymbol(*MethodSymbol::Create("GetSettingValue", &RulesetVariablesSymbolsProvider::GetStringVariableValue, nullptr, methodContext));
+        context.AddSymbol(*MethodSymbol::Create("GetSettingIntValue", &RulesetVariablesSymbolsProvider::GetIntVariableValue, nullptr, methodContext));
+        context.AddSymbol(*MethodSymbol::Create("GetSettingIntValues", &RulesetVariablesSymbolsProvider::GetIntArrayVariableValue, nullptr, methodContext));
+        context.AddSymbol(*MethodSymbol::Create("GetSettingBoolValue", &RulesetVariablesSymbolsProvider::GetBoolVariableValue, nullptr, methodContext));
+        context.AddSymbol(*MethodSymbol::Create("HasSetting", &RulesetVariablesSymbolsProvider::HasVariable, nullptr, methodContext));
+
+        // current / iModelJS
+        context.AddSymbol(*MethodSymbol::Create("GetVariableStringValue", &RulesetVariablesSymbolsProvider::GetStringVariableValue, nullptr, methodContext));
+        context.AddSymbol(*MethodSymbol::Create("GetVariableIntValue", &RulesetVariablesSymbolsProvider::GetIntVariableValue, nullptr, methodContext));
+        context.AddSymbol(*MethodSymbol::Create("GetVariableIntValues", &RulesetVariablesSymbolsProvider::GetIntArrayVariableValue, nullptr, methodContext));
+        context.AddSymbol(*MethodSymbol::Create("GetVariableBoolValue", &RulesetVariablesSymbolsProvider::GetBoolVariableValue, nullptr, methodContext));
+        context.AddSymbol(*MethodSymbol::Create("HasVariable", &RulesetVariablesSymbolsProvider::HasVariable, nullptr, methodContext));
         }
 public:
-    UserSettingsSymbolsProvider(Context const& context) : m_context(context) {}
+    RulesetVariablesSymbolsProvider(Context const& context) : m_context(context) {}
 };
 
 //=======================================================================================
@@ -735,9 +744,9 @@ ExpressionContextPtr ECExpressionContextsProvider::GetNodeRulesContext(NodeRules
     {
     RulesEngineRootSymbolsContextPtr rootCtx = RulesEngineRootSymbolsContext::Create();
 
-    // UserSettings
-    UserSettingsSymbolsProvider userSettingsSymbols(rootCtx->AddContext(*new UserSettingsSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
-    userSettingsSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
+    // Ruleset variables
+    RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
+    rulesetVariablesSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     // ParentNode
     NodeSymbolsProvider nodeSymbols(rootCtx->AddContext(*new NodeSymbolsProvider::Context(params.GetConnection(), params.GetParentNode())));
@@ -759,9 +768,9 @@ ExpressionContextPtr ECExpressionContextsProvider::GetContentRulesContext(Conten
     {
     RulesEngineRootSymbolsContextPtr rootCtx = RulesEngineRootSymbolsContext::Create();
 
-    // UserSettings
-    UserSettingsSymbolsProvider userSettingsSymbols(rootCtx->AddContext(*new UserSettingsSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
-    userSettingsSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
+    // Ruleset variables
+    RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
+    rulesetVariablesSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
     
     // SelectedNode
     rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("SelectedNode", *NodeContextEvaluator::Create(*rootCtx, params.GetConnection(), params.GetLocale(), params.GetNodeLocater(), params.GetSelectedNodeKey())));
@@ -785,9 +794,9 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(
     {
     RulesEngineRootSymbolsContextPtr rootCtx = RulesEngineRootSymbolsContext::Create();
     
-    // UserSettings
-    UserSettingsSymbolsProvider userSettingsSymbols(rootCtx->AddContext(*new UserSettingsSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
-    userSettingsSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
+    // Ruleset variables
+    RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
+    rulesetVariablesSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
     
     // ParentNode
     NodeSymbolsProvider parentNodeSymbols(rootCtx->AddContext(*new NodeSymbolsProvider::Context(params.GetConnection(), params.GetParentNode())));
@@ -834,9 +843,9 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCalculatedPropertyContext(
     {
     RulesEngineRootSymbolsContextPtr rootCtx = RulesEngineRootSymbolsContext::Create();
 
-    // UserSettings
-    UserSettingsSymbolsProvider userSettingsSymbols(rootCtx->AddContext(*new UserSettingsSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
-    userSettingsSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
+    // Ruleset variables
+    RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
+    rulesetVariablesSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     // this
     rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("this", *NodeECInstanceContextEvaluator::Create(params.GetConnection(), params.GetNode())));
@@ -881,7 +890,7 @@ struct ECExpressionToECSqlConverter : NodeVisitor
 private:
     bvector<Utf8String> m_usedClasses;
     Utf8String m_ecsql;
-    CallNodeCP m_currentValueListMethodNode;
+    RefCountedPtr<CallNode const> m_currentValueListMethodNode;
     bool m_inArguments;
     bool m_ignoreArguments;
     bool m_inStructProperty;
@@ -1226,18 +1235,18 @@ private:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            03/2017
     +---------------+---------------+---------------+---------------+---------------+--*/
-    bool HandleGetUserSettingIntValuesSpecialCase(CallNodeCR node)
+    bool HandleGetVariableIntValuesSpecialCase(CallNodeCR node)
         {
         ArgumentTreeNodeCP args = node.GetArguments();
         if (nullptr == args || 1 != args->GetArgumentCount())
             {
-            BeAssert(false && "Only a single argument (setting ID) is allowed for GetUserSettingIntValues function");
+            BeAssert(false && "Only a single argument (setting ID) is allowed for GetVariableIntValues function");
             return false;
             }
 
         m_currentValueListMethodNode = &node;
 
-        Append(FUNCTION_NAME_InSettingIntValues);
+        Append(FUNCTION_NAME_InVariableIntValues);
         StartArguments(*args);
         args->GetArgument(0)->Traverse(*this);
         m_ignoreArguments = true;
@@ -1249,7 +1258,7 @@ private:
     +---------------+---------------+---------------+---------------+---------------+--*/
     bool HandleAnyMatchSpecialCase(CallNodeCR node)
         {
-        if (nullptr == m_currentValueListMethodNode)
+        if (m_currentValueListMethodNode.IsNull())
             {
             BeAssert(false);
             return false;
@@ -1262,7 +1271,7 @@ private:
             return false;
             }
         
-        bool isGetUserSettingIntValuesSpecialCase = (0 == strcmp("GetUserSettingIntValues", m_currentValueListMethodNode->GetMethodName()));
+        bool isGetUserSettingIntValuesSpecialCase = (0 == strcmp("GetVariableIntValues", m_currentValueListMethodNode->GetMethodName()));
         if (!isGetUserSettingIntValuesSpecialCase)
             {
             m_ignoreArguments = true;
@@ -1278,23 +1287,41 @@ private:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void HandleCallNode(CallNodeCR node)
         {
+        static bmap<Utf8String, Utf8String> renames;
+        if (renames.empty())
+            {
+            renames.Insert("GetSettingValue", FUNCTION_NAME_GetVariableStringValue);
+            renames.Insert("GetSettingIntValue", FUNCTION_NAME_GetVariableIntValue);
+            renames.Insert("GetSettingIntValues", "GetVariableIntValues");
+            renames.Insert("GetSettingBoolValue", FUNCTION_NAME_GetVariableBoolValue);
+            renames.Insert("HasSetting", FUNCTION_NAME_HasVariable);
+            }
+
+        // apply renames
+        Utf8CP methodName = node.GetMethodName();
+        auto renameIter = renames.find(methodName);
+        if (renames.end() != renameIter)
+            methodName = renameIter->second.c_str();
+
+        CallNodePtr nodeCopy = CallNode::Create(const_cast<ArgumentTreeNodeR>(*node.GetArguments()), methodName, node.ToString().StartsWith("."));
+
         // handle special cases
-        if (0 == strcmp("IsOfClass", node.GetMethodName()) && HandleIsOfClassSpecialCase(node))
+        if (0 == strcmp("IsOfClass", nodeCopy->GetMethodName()) && HandleIsOfClassSpecialCase(*nodeCopy))
             return;
-        if (0 == strcmp("GetECClassId", node.GetMethodName()) && HandleGetECClassIdSpecialCase(node))
+        if (0 == strcmp("GetECClassId", nodeCopy->GetMethodName()) && HandleGetECClassIdSpecialCase(*nodeCopy))
             return;
-        if (0 == strcmp("HasRelatedInstance", node.GetMethodName()) && HandleHasRelatedInstanceSpecialCase(node))
+        if (0 == strcmp("HasRelatedInstance", nodeCopy->GetMethodName()) && HandleHasRelatedInstanceSpecialCase(*nodeCopy))
             return;
-        if (0 == strcmp("GetRelatedValue", node.GetMethodName()) && HandleGetRelatedValueSpecialCase(node))
+        if (0 == strcmp("GetRelatedValue", nodeCopy->GetMethodName()) && HandleGetRelatedValueSpecialCase(*nodeCopy))
             return;
-        if (0 == strcmp("GetUserSettingIntValues", node.GetMethodName()) && HandleGetUserSettingIntValuesSpecialCase(node))
+        if (0 == strcmp("GetVariableIntValues", nodeCopy->GetMethodName()) && HandleGetVariableIntValuesSpecialCase(*nodeCopy))
             return;
-        if (0 == strcmp("Set", node.GetMethodName()) && HandleValueListMethodSpecialCase(node))
+        if (0 == strcmp("Set", nodeCopy->GetMethodName()) && HandleValueListMethodSpecialCase(*nodeCopy))
             return;
-        if (0 == strcmp("AnyMatch", node.GetMethodName()) && HandleAnyMatchSpecialCase(node))
+        if (0 == strcmp("AnyMatch", nodeCopy->GetMethodName()) && HandleAnyMatchSpecialCase(*nodeCopy))
             return;
 
-        Append(node.ToString());
+        Append(nodeCopy->ToString());
         m_inArguments = false;
         }
     
@@ -1303,7 +1330,7 @@ private:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void HandleLambdaNode(LambdaNodeCR node)
         {
-        if (!m_currentValueListMethodNode)
+        if (m_currentValueListMethodNode.IsNull())
             {
             BeAssert(false && "Lamba node is only expected after a value list node");
             return;
@@ -1317,7 +1344,7 @@ private:
             return;
             }
 
-        bool isGetUserSettingIntValuesSpecialCase = (0 == strcmp("GetUserSettingIntValues", m_currentValueListMethodNode->GetMethodName()));
+        bool isGetUserSettingIntValuesSpecialCase = (0 == strcmp("GetVariableIntValues", m_currentValueListMethodNode->GetMethodName()));
 
         NodeCP propertyAccessNode;
         if (expressionNode->GetLeftCP()->ToExpressionString().Equals(symbolName))

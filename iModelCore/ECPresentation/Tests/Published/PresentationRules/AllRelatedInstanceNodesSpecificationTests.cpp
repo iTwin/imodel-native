@@ -24,17 +24,18 @@ struct AllRelatedInstanceNodesSpecificationTests : PresentationRulesTests
 TEST_F(AllRelatedInstanceNodesSpecificationTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
+        "specType": "AllRelatedInstanceNodes",
         "groupByClass": false, 
         "groupByLabel": false,
         "skipRelatedLevel": 3, 
-        "supportedSchemas": "TestSchema", 
+        "supportedSchemas": {"schemaNames":["TestSchema"]},
         "requiredDirection": "Forward"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
+    ASSERT_FALSE(json.isNull());
     
     AllRelatedInstanceNodesSpecification spec;
-    EXPECT_TRUE(spec.ReadJson(json));
+    ASSERT_TRUE(spec.ReadJson(json));
     EXPECT_FALSE(spec.GetGroupByClass());
     EXPECT_FALSE(spec.GetGroupByLabel());
     EXPECT_EQ(3, spec.GetSkipRelatedLevel());
@@ -47,7 +48,9 @@ TEST_F(AllRelatedInstanceNodesSpecificationTests, LoadsFromJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AllRelatedInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "specType": "AllRelatedInstanceNodes"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
     
@@ -59,6 +62,28 @@ TEST_F(AllRelatedInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues
     EXPECT_EQ(0, spec.GetSkipRelatedLevel());
     EXPECT_STREQ("", spec.GetSupportedSchemas().c_str());
     EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AllRelatedInstanceNodesSpecificationTests, WriteToJson)
+    {
+    AllRelatedInstanceNodesSpecification spec(123, true, true, true, true, true, false, 5, "schema1, schema2");
+    spec.SetRequiredRelationDirection(RequiredRelationDirection::RequiredRelationDirection_Forward);
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "specType": "AllRelatedInstanceNodes",
+        "priority": 123,
+        "alwaysReturnsChildren": true,
+        "hideNodesInHierarchy": true,
+        "hideIfNoChildren": true,
+        "groupByLabel": false,
+        "requiredDirection": "Forward",
+        "skipRelatedLevel": 5,
+        "supportedSchemas": {"schemaNames": ["schema1", "schema2"]}
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

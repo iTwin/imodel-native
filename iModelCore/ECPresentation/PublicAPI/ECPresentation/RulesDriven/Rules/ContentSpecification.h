@@ -14,7 +14,6 @@
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 typedef bvector<RelatedPropertiesSpecificationP>    RelatedPropertiesSpecificationList;
-typedef bvector<DisplayRelatedItemsSpecificationP>  DisplayRelatedItemsSpecificationList;
 typedef bvector<PropertiesDisplaySpecificationP>    PropertiesDisplaySpecificationList;
 typedef bvector<CalculatedPropertiesSpecificationP> CalculatedPropertiesSpecificationList;
 typedef bvector<PropertyEditorsSpecificationP>      PropertyEditorsSpecificationList;
@@ -31,7 +30,6 @@ private:
     RelatedPropertiesSpecificationList   m_relatedPropertiesSpecification;
     PropertiesDisplaySpecificationList    m_propertiesDisplaySpecification;
     CalculatedPropertiesSpecificationList m_calculatedPropertiesSpecification;
-    DisplayRelatedItemsSpecificationList m_displayRelatedItemsSpecification;
     PropertyEditorsSpecificationList     m_propertyEditorsSpecification;
     RelatedInstanceSpecificationList     m_relatedInstances;
 
@@ -44,46 +42,33 @@ protected:
 
     //! Copy constructor.
     ECPRESENTATION_EXPORT ContentSpecification(ContentSpecificationCR);
-
-    //! Returns XmlElement name that is used to read/save this rule information.
-    virtual CharCP                       _GetXmlElementName () const = 0;
-
-    //! Reads rule information from XmlNode, returns true if it can read it successfully.
-    virtual bool                         _ReadXml (BeXmlNodeP xmlNode) = 0;
-
-    //! Reads rule information from Json, returns true if it can read it successfully.
-    virtual bool                         _ReadJson(JsonValueCR json) = 0;
-
-    //! Writes rule information to given XmlNode.
-    virtual void                         _WriteXml (BeXmlNodeP xmlNode) const = 0;
+    
+    ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
+    ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
+        
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const override;
 
     //! Clones this content specification.
-    virtual ContentSpecification*        _Clone() const = 0;
+    virtual ContentSpecification* _Clone() const = 0;
 
     //! Computes specification hash.
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
 public:
+    ECPRESENTATION_EXPORT static ContentSpecificationP Create(JsonValueCR);
+
     //! Destructor.
-    ECPRESENTATION_EXPORT virtual                              ~ContentSpecification (void);
+    ECPRESENTATION_EXPORT virtual ~ContentSpecification();
     
     //! Clones this content specification.
-    ContentSpecification*                                 Clone() const {return _Clone();}
-
-    //! Reads specification from XML.
-    ECPRESENTATION_EXPORT bool                                 ReadXml (BeXmlNodeP xmlNode);
-
-    //! Reads specification from Json.
-    ECPRESENTATION_EXPORT bool                                 ReadJson(JsonValueCR json);
-
-    //! Writes specification to xml node.
-    ECPRESENTATION_EXPORT void                                 WriteXml (BeXmlNodeP parentXmlNode) const;
+    ContentSpecification* Clone() const {return _Clone();}
 
     //! Priority of the specification, defines the order in which specifications are evaluated and executed.
-    ECPRESENTATION_EXPORT int                                  GetPriority (void) const;
+    ECPRESENTATION_EXPORT int GetPriority (void) const;
 
     //! Sets the priority of the specification.
-    ECPRESENTATION_EXPORT void                                 SetPriority (int value);
+    ECPRESENTATION_EXPORT void SetPriority (int value);
 
     //! Should ImageIds be determined for the content.
     bool GetShowImages() const {return m_showImages;}
@@ -114,12 +99,6 @@ public:
 
     //! Add custom editor for properties
     ECPRESENTATION_EXPORT void AddPropertyEditor(PropertyEditorsSpecificationR specification);
-
-    //! Include related items with current instances when display commands are executed.
-    ECPRESENTATION_EXPORT DisplayRelatedItemsSpecificationList const& GetDisplayRelatedItems(void) const;    
-
-    //! Include related items with current instances when display commands are executed.
-    ECPRESENTATION_EXPORT void AddDisplayRelatedItem(DisplayRelatedItemsSpecificationR specification);
 
     //! A writable list of related instance specifications.
     ECPRESENTATION_EXPORT void AddRelatedInstance(RelatedInstanceSpecificationR relatedInstance);

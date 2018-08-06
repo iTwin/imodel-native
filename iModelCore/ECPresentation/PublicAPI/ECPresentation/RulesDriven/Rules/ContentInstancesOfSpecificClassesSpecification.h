@@ -27,22 +27,18 @@ struct EXPORT_VTABLE_ATTRIBUTE  ContentInstancesOfSpecificClassesSpecification :
 
     protected:
         //! Allows the visitor to visit this specification.
-        ECPRESENTATION_EXPORT virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
-
-        //! Returns XmlElement name that is used to read/save this rule information.
-        ECPRESENTATION_EXPORT virtual CharCP               _GetXmlElementName () const override;
-
-        //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
         
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool                 _ReadJson(JsonValueCR json) override;
+        ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
-        //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+        ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+        ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
         
         //! Clones this content specification.
-        virtual ContentSpecification* _Clone() const override {return new ContentInstancesOfSpecificClassesSpecification(*this);}
+        ContentSpecification* _Clone() const override {return new ContentInstancesOfSpecificClassesSpecification(*this);}
 
         //! Compute specification hash.
         ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;

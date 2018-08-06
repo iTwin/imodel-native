@@ -9,7 +9,7 @@
 
 #include "PresentationRuleXmlConstants.h"
 #include "PresentationRuleJsonConstants.h"
-#include <ECPresentation/RulesDriven/Rules/CommonTools.h>
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
@@ -46,20 +46,19 @@ bool         isSearchEnabled
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSet::~PresentationRuleSet ()
     {
-    CommonTools::FreePresentationRules (m_rootNodesRules);
-    CommonTools::FreePresentationRules (m_childNodesRules);
-    CommonTools::FreePresentationRules (m_contentRules);
-    CommonTools::FreePresentationRules (m_imageIdRules);
-    CommonTools::FreePresentationRules (m_labelOverrides);
-    CommonTools::FreePresentationRules (m_styleOverrides);
-    CommonTools::FreePresentationRules (m_groupingRules);
-    CommonTools::FreePresentationRules (m_localizationResourceKeyDefinitions);
-    CommonTools::FreePresentationRules (m_userSettings);
-    CommonTools::FreePresentationRules (m_checkBoxRules);
-    CommonTools::FreePresentationRules (m_renameNodeRules);
-    CommonTools::FreePresentationRules (m_sortingRules);
-    CommonTools::FreePresentationRules (m_contentModifiers);
-    CommonTools::FreePresentationRules (m_instanceLabelOverrides);
+    CommonToolsInternal::FreePresentationRules (m_rootNodesRules);
+    CommonToolsInternal::FreePresentationRules (m_childNodesRules);
+    CommonToolsInternal::FreePresentationRules (m_contentRules);
+    CommonToolsInternal::FreePresentationRules (m_imageIdRules);
+    CommonToolsInternal::FreePresentationRules (m_labelOverrides);
+    CommonToolsInternal::FreePresentationRules (m_styleOverrides);
+    CommonToolsInternal::FreePresentationRules (m_groupingRules);
+    CommonToolsInternal::FreePresentationRules (m_localizationResourceKeyDefinitions);
+    CommonToolsInternal::FreePresentationRules (m_userSettings);
+    CommonToolsInternal::FreePresentationRules (m_checkBoxRules);
+    CommonToolsInternal::FreePresentationRules (m_sortingRules);
+    CommonToolsInternal::FreePresentationRules (m_contentModifiers);
+    CommonToolsInternal::FreePresentationRules (m_instanceLabelOverrides);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -78,6 +77,35 @@ bool         isSearchEnabled
 )
     {
     return new PresentationRuleSet (ruleSetId, versionMajor, versionMinor, isSupplemental, supplementationPurpose, supportedSchemas, preferredImage, isSearchEnabled);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationRuleSetPtr PresentationRuleSet::CreateInstance
+(
+Utf8StringCR id,
+int          versionMajor,
+int          versionMinor,
+Utf8StringCR supportedSchemas
+)
+    {
+    return PresentationRuleSet::CreateInstance(id, versionMajor, versionMinor, false, "", supportedSchemas, "", false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationRuleSetPtr PresentationRuleSet::CreateInstance
+(
+Utf8StringCR id,
+Utf8StringCR supplementationPurpose,
+int          versionMajor,
+int          versionMinor,
+Utf8StringCR supportedSchemas
+)
+    {
+    return PresentationRuleSet::CreateInstance(id, versionMajor, versionMinor, true, supplementationPurpose, supportedSchemas, "", false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -142,67 +170,27 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_extendedData, PRESENTATION_RULE_SET_XML_ATTRIBUTE_EXTENDEDDATA))
         m_extendedData = "";
 
-    CommonTools::LoadRulesFromXmlNode <RootNodeRule>      (ruleSetNode, m_rootNodesRules,   ROOT_NODE_RULE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <ChildNodeRule>     (ruleSetNode, m_childNodesRules,  CHILD_NODE_RULE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <ContentRule>       (ruleSetNode, m_contentRules,     CONTENT_RULE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <ImageIdOverride>   (ruleSetNode, m_imageIdRules,     IMAGE_ID_OVERRIDE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <LabelOverride>     (ruleSetNode, m_labelOverrides,   LABEL_OVERRIDE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <StyleOverride>     (ruleSetNode, m_styleOverrides,   STYLE_OVERRIDE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <GroupingRule>      (ruleSetNode, m_groupingRules,    GROUPING_RULE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <LocalizationResourceKeyDefinition> (ruleSetNode, m_localizationResourceKeyDefinitions, LOCALIZATION_DEFINITION_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <UserSettingsGroup> (ruleSetNode, m_userSettings,     USER_SETTINGS_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <CheckBoxRule>      (ruleSetNode, m_checkBoxRules,    CHECKBOX_RULE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <RenameNodeRule>    (ruleSetNode, m_renameNodeRules,  RENAMENODE_RULE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <SortingRule>       (ruleSetNode, m_sortingRules,     SORTING_RULE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <ContentModifier>   (ruleSetNode, m_contentModifiers, CONTENTMODIEFIER_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <InstanceLabelOverride> (ruleSetNode, m_instanceLabelOverrides, INSTANCE_LABEL_OVERRIDE_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <RootNodeRule>      (ruleSetNode, m_rootNodesRules,   ROOT_NODE_RULE_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <ChildNodeRule>     (ruleSetNode, m_childNodesRules,  CHILD_NODE_RULE_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <ContentRule>       (ruleSetNode, m_contentRules,     CONTENT_RULE_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <ImageIdOverride>   (ruleSetNode, m_imageIdRules,     IMAGE_ID_OVERRIDE_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <LabelOverride>     (ruleSetNode, m_labelOverrides,   LABEL_OVERRIDE_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <StyleOverride>     (ruleSetNode, m_styleOverrides,   STYLE_OVERRIDE_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <GroupingRule>      (ruleSetNode, m_groupingRules,    GROUPING_RULE_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <LocalizationResourceKeyDefinition> (ruleSetNode, m_localizationResourceKeyDefinitions, LOCALIZATION_DEFINITION_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <UserSettingsGroup> (ruleSetNode, m_userSettings,     USER_SETTINGS_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <CheckBoxRule>      (ruleSetNode, m_checkBoxRules,    CHECKBOX_RULE_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <SortingRule>       (ruleSetNode, m_sortingRules,     SORTING_RULE_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <ContentModifier>   (ruleSetNode, m_contentModifiers, CONTENTMODIEFIER_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <InstanceLabelOverride> (ruleSetNode, m_instanceLabelOverrides, INSTANCE_LABEL_OVERRIDE_XML_NODE_NAME);
     
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas               04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationRuleSet::ReadJson(JsonValueCR json)
-    {
-    //Required
-    m_ruleSetId = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESETID].asCString("");
-    if (m_ruleSetId.empty())
-        {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, PRESENTATION_RULE_SET_JSON_NAME, PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESETID);
-        return false;
-        }
-
-    //Optional
-    m_supportedSchemas = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS].asCString("");
-    m_isSupplemental = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_ISSUPPLEMENTAL].asBool(false);
-    m_supplementationPurpose = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPLEMENTATIONPURPOSE].asCString("");
-    m_versionMajor = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_VERSIONMAJOR].asInt(1);
-    m_versionMinor = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_VERSIONMINOR].asInt(0);
-
-    CommonTools::LoadRulesFromJson<ContentModifier>(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_CONTENTMODIFIERS], m_contentModifiers);
-    CommonTools::LoadRulesFromJson<UserSettingsGroup>(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_USERSETTINGS], m_userSettings);
-
-    JsonValueCR rulesJson = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES];
-    CommonTools::LoadRulesFromJson<CheckBoxRule>(rulesJson, m_checkBoxRules, CHECKBOX_RULE_JSON_TYPE);
-    CommonTools::LoadRulesFromJson<GroupingRule>(rulesJson, m_groupingRules, GROUPING_RULE_JSON_TYPE);
-    CommonTools::LoadRulesFromJson<ImageIdOverride>(rulesJson, m_imageIdRules, IMAGE_ID_OVERRIDE_JSON_TYPE);
-    CommonTools::LoadRulesFromJson<LabelOverride>(rulesJson, m_labelOverrides, LABEL_OVERRIDE_JSON_TYPE);
-    CommonTools::LoadRulesFromJson<SortingRule>(rulesJson, m_sortingRules, SORTING_RULE_JSON_TYPE);
-    CommonTools::LoadRulesFromJson<StyleOverride>(rulesJson, m_styleOverrides, STYLE_OVERRIDE_JSON_TYPE);
-    CommonTools::LoadRulesFromJson<ChildNodeRule>(rulesJson, m_childNodesRules, CHILD_NODE_RULE_JSON_TYPE);
-    CommonTools::LoadRulesFromJson<RootNodeRule>(rulesJson, m_rootNodesRules, ROOT_NODE_RULE_JSON_TYPE);
-    CommonTools::LoadRulesFromJson<ContentRule>(rulesJson, m_contentRules, CONTENT_RULE_JSON_TYPE);
-    CommonTools::LoadRulesFromJson<InstanceLabelOverride>(rulesJson, m_instanceLabelOverrides, INSTANCE_LABEL_OVERRIDE_JSON_TYPE);
-
-
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom)
+void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom) const
     {
     BeXmlNodeP ruleSetNode = xmlDom.AddNewElement (PRESENTATION_RULE_SET_XML_NODE_NAME, NULL, NULL);
 
@@ -217,20 +205,19 @@ void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom)
     ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_SEARCHCLASSES,          m_searchClasses.c_str ());
     ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_EXTENDEDDATA,           m_extendedData.c_str ());
 
-    CommonTools::WriteRulesToXmlNode<RootNodeRule,      RootNodeRuleList>      (ruleSetNode, m_rootNodesRules);
-    CommonTools::WriteRulesToXmlNode<ChildNodeRule,     ChildNodeRuleList>     (ruleSetNode, m_childNodesRules);
-    CommonTools::WriteRulesToXmlNode<ContentRule,       ContentRuleList>       (ruleSetNode, m_contentRules);
-    CommonTools::WriteRulesToXmlNode<ImageIdOverride,   ImageIdOverrideList>   (ruleSetNode, m_imageIdRules);
-    CommonTools::WriteRulesToXmlNode<LabelOverride,     LabelOverrideList>     (ruleSetNode, m_labelOverrides);
-    CommonTools::WriteRulesToXmlNode<StyleOverride,     StyleOverrideList>     (ruleSetNode, m_styleOverrides);
-    CommonTools::WriteRulesToXmlNode<GroupingRule,      GroupingRuleList>      (ruleSetNode, m_groupingRules);
-    CommonTools::WriteRulesToXmlNode<LocalizationResourceKeyDefinition, LocalizationResourceKeyDefinitionList> (ruleSetNode, m_localizationResourceKeyDefinitions);
-    CommonTools::WriteRulesToXmlNode<UserSettingsGroup, UserSettingsGroupList> (ruleSetNode, m_userSettings);
-    CommonTools::WriteRulesToXmlNode<CheckBoxRule,      CheckBoxRuleList>      (ruleSetNode, m_checkBoxRules);
-    CommonTools::WriteRulesToXmlNode<RenameNodeRule,    RenameNodeRuleList>    (ruleSetNode, m_renameNodeRules);
-    CommonTools::WriteRulesToXmlNode<SortingRule,       SortingRuleList>       (ruleSetNode, m_sortingRules);
-    CommonTools::WriteRulesToXmlNode<ContentModifier,   ContentModifierList>   (ruleSetNode, m_contentModifiers);
-    CommonTools::WriteRulesToXmlNode<InstanceLabelOverride,InstanceLabelOverrideList> (ruleSetNode, m_instanceLabelOverrides);
+    CommonToolsInternal::WriteRulesToXmlNode<RootNodeRule,      RootNodeRuleList>      (ruleSetNode, m_rootNodesRules);
+    CommonToolsInternal::WriteRulesToXmlNode<ChildNodeRule,     ChildNodeRuleList>     (ruleSetNode, m_childNodesRules);
+    CommonToolsInternal::WriteRulesToXmlNode<ContentRule,       ContentRuleList>       (ruleSetNode, m_contentRules);
+    CommonToolsInternal::WriteRulesToXmlNode<ImageIdOverride,   ImageIdOverrideList>   (ruleSetNode, m_imageIdRules);
+    CommonToolsInternal::WriteRulesToXmlNode<LabelOverride,     LabelOverrideList>     (ruleSetNode, m_labelOverrides);
+    CommonToolsInternal::WriteRulesToXmlNode<StyleOverride,     StyleOverrideList>     (ruleSetNode, m_styleOverrides);
+    CommonToolsInternal::WriteRulesToXmlNode<GroupingRule,      GroupingRuleList>      (ruleSetNode, m_groupingRules);
+    CommonToolsInternal::WriteRulesToXmlNode<LocalizationResourceKeyDefinition, LocalizationResourceKeyDefinitionList> (ruleSetNode, m_localizationResourceKeyDefinitions);
+    CommonToolsInternal::WriteRulesToXmlNode<UserSettingsGroup, UserSettingsGroupList> (ruleSetNode, m_userSettings);
+    CommonToolsInternal::WriteRulesToXmlNode<CheckBoxRule,      CheckBoxRuleList>      (ruleSetNode, m_checkBoxRules);
+    CommonToolsInternal::WriteRulesToXmlNode<SortingRule,       SortingRuleList>       (ruleSetNode, m_sortingRules);
+    CommonToolsInternal::WriteRulesToXmlNode<ContentModifier,   ContentModifierList>   (ruleSetNode, m_contentModifiers);
+    CommonToolsInternal::WriteRulesToXmlNode<InstanceLabelOverride,InstanceLabelOverrideList> (ruleSetNode, m_instanceLabelOverrides);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -261,15 +248,15 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (Utf8CP xmlString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlFile (WCharCP xmlFilePath)
+PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlFile (BeFileNameCR xmlFilePath)
     {
-    ECPRENSETATION_RULES_LOG.debugv (L"About to read PrsentationRuleSet from file: fileName='%ls'", xmlFilePath);
+    ECPRENSETATION_RULES_LOG.debugv (L"About to read PrsentationRuleSet from file: fileName='%ls'", xmlFilePath.c_str());
         
     BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, xmlFilePath);
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, xmlFilePath.c_str());
     if (xmlStatus != BEXML_Success || !xmlDom.IsValid ())
         {
-        ECPRENSETATION_RULES_LOG.errorv (L"Failed to load PresentationRuleSet from file: fileName='%ls'", xmlFilePath);
+        ECPRENSETATION_RULES_LOG.errorv (L"Failed to load PresentationRuleSet from file: fileName='%ls'", xmlFilePath.c_str());
         return NULL;
         }
     
@@ -277,16 +264,16 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlFile (WCharCP xmlFilePath
     if (ruleSet->ReadXml (*xmlDom.get ()))
         return ruleSet;
 
-    ECPRENSETATION_RULES_LOG.errorv (L"Failed to load PresentationRuleSet from file: fileName='%ls'", xmlFilePath);
+    ECPRENSETATION_RULES_LOG.errorv (L"Failed to load PresentationRuleSet from file: fileName='%ls'", xmlFilePath.c_str());
     return NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String PresentationRuleSet::WriteToXmlString ()
+Utf8String PresentationRuleSet::WriteToXmlString () const
     {
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty ();        
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();
     WriteXml (*xmlDom.get());
 
     Utf8String presentationRuleSetXml;
@@ -298,12 +285,78 @@ Utf8String PresentationRuleSet::WriteToXmlString ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationRuleSet::WriteToXmlFile (WCharCP xmlFilePath)
+bool PresentationRuleSet::WriteToXmlFile (BeFileNameCR xmlFilePath) const
     {
     BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
     WriteXml (*xmlDom.get());
 
-    return BEXML_Success == xmlDom->ToFile(xmlFilePath, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), BeXmlDom::FILE_ENCODING_Utf8);
+    return BEXML_Success == xmlDom->ToFile(xmlFilePath.c_str(), (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), BeXmlDom::FILE_ENCODING_Utf8);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PresentationRuleSet::ReadJson(JsonValueCR json)
+    {
+    //Required
+    m_ruleSetId = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESETID].asCString("");
+    if (m_ruleSetId.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "Ruleset", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESETID);
+        return false;
+        }
+
+    //Optional
+    m_supportedSchemas = CommonToolsInternal::SupportedSchemasToString(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS]);
+    m_versionMajor = 1;
+    m_versionMinor = 0;
+    if (json.isMember(PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPLEMENTATIONINFO))
+        {
+        m_isSupplemental = true;
+        m_supplementationPurpose = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPLEMENTATIONINFO][PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPLEMENTATIONINFO_PURPOSE].asCString("");
+        }
+
+    JsonValueCR rulesJson = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES];
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_childNodesRules, CommonToolsInternal::LoadRuleFromJson<ChildNodeRule>);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_rootNodesRules, CommonToolsInternal::LoadRuleFromJson<RootNodeRule>);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_contentRules, CommonToolsInternal::LoadRuleFromJson<ContentRule>);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_contentModifiers, CommonToolsInternal::LoadRuleFromJson<ContentModifier>);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_checkBoxRules, CommonToolsInternal::LoadRuleFromJson<CheckBoxRule>);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_groupingRules, CommonToolsInternal::LoadRuleFromJson<GroupingRule>);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_imageIdRules, CommonToolsInternal::LoadRuleFromJson<ImageIdOverride>);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_labelOverrides, CommonToolsInternal::LoadRuleFromJson<LabelOverride>);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_sortingRules, CommonToolsInternal::LoadRuleFromJson<SortingRule>);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_styleOverrides, CommonToolsInternal::LoadRuleFromJson<StyleOverride>);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_instanceLabelOverrides, CommonToolsInternal::LoadRuleFromJson<InstanceLabelOverride>);
+    CommonToolsInternal::LoadFromJsonByPriority(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_USERSETTINGS], m_userSettings, CommonToolsInternal::LoadRuleFromJson<UserSettingsGroup>);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void PresentationRuleSet::WriteJson(JsonValueR json) const
+    {
+    json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESETID] = m_ruleSetId;
+    if (!m_supportedSchemas.empty())
+        json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS] = CommonToolsInternal::SupportedSchemasToJson(m_supportedSchemas);
+    if (m_isSupplemental)
+        json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPLEMENTATIONINFO][PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPLEMENTATIONINFO_PURPOSE] = m_supplementationPurpose;
+
+    Json::Value rulesJson(Json::arrayValue);
+    CommonToolsInternal::WriteRulesToJson<RootNodeRule, RootNodeRuleList>(rulesJson, m_rootNodesRules);
+    CommonToolsInternal::WriteRulesToJson<ChildNodeRule, ChildNodeRuleList>(rulesJson, m_childNodesRules);
+    CommonToolsInternal::WriteRulesToJson<ContentRule, ContentRuleList>(rulesJson, m_contentRules);
+    CommonToolsInternal::WriteRulesToJson<ContentModifier, ContentModifierList>(rulesJson, m_contentModifiers);
+    CommonToolsInternal::WriteRulesToJson<ImageIdOverride, ImageIdOverrideList>(rulesJson, m_imageIdRules);
+    CommonToolsInternal::WriteRulesToJson<InstanceLabelOverride,InstanceLabelOverrideList>(rulesJson, m_instanceLabelOverrides);
+    CommonToolsInternal::WriteRulesToJson<LabelOverride, LabelOverrideList>(rulesJson, m_labelOverrides);
+    CommonToolsInternal::WriteRulesToJson<StyleOverride, StyleOverrideList>(rulesJson, m_styleOverrides);
+    CommonToolsInternal::WriteRulesToJson<GroupingRule, GroupingRuleList>(rulesJson, m_groupingRules);
+    CommonToolsInternal::WriteRulesToJson<UserSettingsGroup, UserSettingsGroupList>(rulesJson, m_userSettings);
+    CommonToolsInternal::WriteRulesToJson<CheckBoxRule, CheckBoxRuleList>(rulesJson, m_checkBoxRules);
+    CommonToolsInternal::WriteRulesToJson<SortingRule, SortingRuleList>(rulesJson, m_sortingRules);
+    json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES] = rulesJson;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -311,12 +364,15 @@ bool PresentationRuleSet::WriteToXmlFile (WCharCP xmlFilePath)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonValue(JsonValueCR json)
     {
-    ECPRENSETATION_RULES_LOG.debugv("About to read PrsentationRuleSet from Json::Value.");
-
+    ECPRENSETATION_RULES_LOG.debug("About to read PrsentationRuleSet from Json::Value");
     PresentationRuleSetPtr ruleSet = new PresentationRuleSet();
-    if (json != Json::nullValue && ruleSet->ReadJson(json))
+    if (!json.isNull() && ruleSet->ReadJson(json))
+        {
+        ECPRENSETATION_RULES_LOG.debug("Successfully read PresentationRuleSet from Json::Value");
         return ruleSet;
-    ECPRENSETATION_RULES_LOG.errorv("Failed to load PresentationRuleSet from json string.");
+        }
+
+    ECPRENSETATION_RULES_LOG.error("Failed to load PresentationRuleSet from Json::Value");
     return nullptr;
     }
 
@@ -325,14 +381,85 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonValue(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonString(Utf8StringCR jsonString)
     {
-    ECPRENSETATION_RULES_LOG.debugv("About to read PrsentationRuleSet from json string.");
+    ECPRENSETATION_RULES_LOG.debug("About to read PrsentationRuleSet from json string");
     Json::Value json = Json::Reader::DoParse(jsonString);
-
     PresentationRuleSetPtr ruleSet = new PresentationRuleSet();
-    if (json != Json::nullValue && ruleSet->ReadJson(json))
+    if (!json.isNull() && ruleSet->ReadJson(json))
+        {
+        ECPRENSETATION_RULES_LOG.debug("Successfully read PresentationRuleSet from json string");
         return ruleSet;
-    ECPRENSETATION_RULES_LOG.errorv("Failed to load PresentationRuleSet from json string.");
+        }
+
+    ECPRENSETATION_RULES_LOG.error("Failed to load PresentationRuleSet from json string");
     return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonFile(BeFileNameCR jsonFilePath)
+    {
+    ECPRENSETATION_RULES_LOG.debugv(L"About to read PresentationRuleSet from json file: %s", jsonFilePath.c_str());
+
+    BeFile f;
+    if (BeFileStatus::Success != f.Open(jsonFilePath.c_str(), BeFileAccess::Read))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(L"Failed to open json file for read: %s", jsonFilePath.c_str());
+        return nullptr;
+        }
+    bvector<Byte> fileContents;
+    if (BeFileStatus::Success != f.ReadEntireFile(fileContents))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(L"Failed to read json file: %s", jsonFilePath.c_str());
+        f.Close();
+        return nullptr;
+        }
+    f.Close();
+
+    Utf8String serializedJson((Utf8CP)fileContents.begin(), (Utf8CP)fileContents.end());
+    PresentationRuleSetPtr ruleset = ReadFromJsonString(serializedJson);
+    if (ruleset.IsValid())
+        {
+        ECPRENSETATION_RULES_LOG.debugv("Successfully read PresentationRuleSet '%s' from json file", ruleset->GetRuleSetId().c_str());
+        return ruleset;
+        }
+
+    ECPRENSETATION_RULES_LOG.errorv("Failed to load PresentationRuleSet from json file: %s", jsonFilePath.c_str());
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PresentationRuleSet::WriteToJsonValue() const
+    {
+    Json::Value json;
+    WriteJson(json);
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PresentationRuleSet::WriteToJsonFile(BeFileNameCR jsonFilePath) const
+    {
+    Json::Value json = WriteToJsonValue();
+    Utf8String serializedJson = json.toStyledString();
+
+    BeFile f;
+    BeFileStatus status = BeFileStatus::UnknownError;
+    if (BeFileStatus::Success != (status = f.Create(jsonFilePath.c_str())))
+        return false;
+
+    if (BeFileStatus::Success != (status = f.Write(nullptr, &serializedJson[0], serializedJson.size())))
+        {
+        f.Close();
+        return false;
+        }
+
+    status = f.Close();
+    BeAssert(BeFileStatus::Success == status);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -453,11 +580,6 @@ CheckBoxRuleList const& PresentationRuleSet::GetCheckBoxRules (void) const    { 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RenameNodeRuleList const& PresentationRuleSet::GetRenameNodeRules (void) const { return m_renameNodeRules;  }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 SortingRuleList const& PresentationRuleSet::GetSortingRules (void) const      { return m_sortingRules;     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -533,11 +655,6 @@ MD5 PresentationRuleSet::_ComputeHash(Utf8CP) const
         Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
         md5.Add(ruleHash.c_str(), ruleHash.size());
         }
-    for (RenameNodeRuleP rule : m_renameNodeRules)
-        {
-        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
-        md5.Add(ruleHash.c_str(), ruleHash.size());
-        }
     for (SortingRuleP rule : m_sortingRules)
         {
         Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
@@ -570,7 +687,6 @@ template<> LabelOverrideList* PresentationRuleSet::GetRules<LabelOverride>() {re
 template<> StyleOverrideList* PresentationRuleSet::GetRules<StyleOverride>() {return &m_styleOverrides;}
 template<> GroupingRuleList* PresentationRuleSet::GetRules<GroupingRule>() {return &m_groupingRules;}
 template<> CheckBoxRuleList* PresentationRuleSet::GetRules<CheckBoxRule>() {return &m_checkBoxRules;}
-template<> RenameNodeRuleList* PresentationRuleSet::GetRules<RenameNodeRule>() {return &m_renameNodeRules;}
 template<> SortingRuleList* PresentationRuleSet::GetRules<SortingRule>() {return &m_sortingRules;}
 template<> ContentModifierList* PresentationRuleSet::GetRules<ContentModifier>() {return &m_contentModifiers;}
 template<> UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>() {return &m_userSettings;}

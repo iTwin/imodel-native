@@ -26,33 +26,29 @@ struct UserSettingsGroup : public PresentationKey
         UserSettingsItemList  m_settingsItems;
 
     protected:
-        //! Returns XmlElement name that is used to read/save this rule information.
-        ECPRESENTATION_EXPORT virtual CharCP  _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
-        //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool    _ReadXml (BeXmlNodeP xmlNode) override;
-
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool    _ReadJson(JsonValueCR json) override;
-
-        //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT virtual void    _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+        ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+        ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
         //! Computes rule hash.
         ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECPRESENTATION_EXPORT UserSettingsGroup ();
+        ECPRESENTATION_EXPORT UserSettingsGroup();
 
         //! Constructor.
-        ECPRESENTATION_EXPORT UserSettingsGroup (Utf8StringCR categoryLabel);
+        ECPRESENTATION_EXPORT UserSettingsGroup(Utf8StringCR categoryLabel);
 
         //! Constructor.
         ECPRESENTATION_EXPORT UserSettingsGroup(UserSettingsGroupCR);
 
         //! Desctructor.
-        ECPRESENTATION_EXPORT                             ~UserSettingsGroup (void);
+        ECPRESENTATION_EXPORT ~UserSettingsGroup (void);
 
         //! Label of category that is used to group all the settings. If it is null, no category will be created.
         ECPRESENTATION_EXPORT Utf8StringCR                GetCategoryLabel (void) const;
@@ -95,25 +91,28 @@ struct UserSettingsItem : HashableBase
         ECPRESENTATION_EXPORT UserSettingsItem (Utf8StringCR id, Utf8StringCR label, Utf8StringCR options, Utf8StringCR defaultValue);
 
         //! Reads specification from xml.
-        ECPRESENTATION_EXPORT bool            ReadXml (BeXmlNodeP xmlNode);
+        ECPRESENTATION_EXPORT bool ReadXml (BeXmlNodeP xmlNode);
 
         //! Writes specification to xml node.
-        ECPRESENTATION_EXPORT void            WriteXml (BeXmlNodeP parentXmlNode) const;
+        ECPRESENTATION_EXPORT void WriteXml (BeXmlNodeP parentXmlNode) const;
 
         //! Reads specification from json.
-        ECPRESENTATION_EXPORT bool            ReadJson(JsonValueCR json);
+        ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
+        
+        //! Writes specification to json.
+        ECPRESENTATION_EXPORT Json::Value WriteJson() const;
 
         //! Id of the user setting that will be used to save and access settings value.
-        ECPRESENTATION_EXPORT Utf8StringCR    GetId (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR GetId (void) const;
 
         //! Label of the user settings that will be shown for the user in UserSettingsDialog.
-        ECPRESENTATION_EXPORT Utf8StringCR    GetLabel (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR GetLabel (void) const;
 
         //! Options for the user setting value.
-        ECPRESENTATION_EXPORT Utf8StringCR    GetOptions (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR GetOptions (void) const;
 
         //! Default user settings value.
-        ECPRESENTATION_EXPORT Utf8StringCR    GetDefaultValue (void) const;
+        ECPRESENTATION_EXPORT Utf8StringCR GetDefaultValue (void) const;
 
     };
 

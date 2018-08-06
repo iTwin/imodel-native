@@ -18,128 +18,104 @@ struct PresentationRuleSetTests : PresentationRulesTests
     };
     
 Utf8CP RuleSetJsonString = R"({
-        "ruleSetId": "Items",
-        "versionMajor": 5,
-        "versionMinor": 3,
-        "supportedSchemas": "supportedSchema",
-        "isSupplemental": false,
-        "supplementalPurpose": "supplementalPurpose",
-        "rules": [
-            {
-                "type": "RootNode",
-                "specifications": [
-                    {
-                        "type": "AllInstanceNodes",
-                        "groupByClass": true,
-                        "groupByLabel": true
-                    }
-                ]
-            },
-            {
-                "type": "RootNode",
-                "condition": "TestCondition",
-                "priority": 12,
-                "onlyIfNotHandled": true,
-                "specifications": [
-                    {
-                        "type": "AllInstanceNodes",
-                        "groupByClass": true,
-                        "groupByLabel": true
-                    }
-                ]
-            },
-            {
-                "type": "ChildNode",
-                "specifications": [
-                    {
-                        "type": "AllInstanceNodes",
-                        "groupByClass": true,
-                        "groupByLabel": true
-                    }
-                ]
-            },
-            {
-                "type": "ChildNode",
-                "condition": "ParentNode.IsSearchNode",
-                "priority": 58,
-                "onlyIfNotHandled": true,
-                "specifications": [
-                    {
-                        "type": "SearchResultInstanceNodes",
-                        "groupByClass": true,
-                        "groupByLabel": true
-                    }
-                ]
-            },
-            {
-                "type": "Content",
-                "specifications": [
-                    {
-                        "type": "ContentInstancesOfSpecificClasses",
-                        "classNames": "dgn:Model",
-                        "arePolymorphic": true,
-                        "showImages": true,
-                        "calculatedPropertiesSpecification": [
-                            {
-                                "label": "Label1",
-                                "priority": 1000,
-                                "value": "Value1"
-                            },
-                            {
-                                "label": "Label2",
-                                "priority": 2000,
-                                "value": "Value2"
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                "type": "Content",
-                "condition": "ParentNode.IsClassNode",
-                "priority": 97,
-                "onlyIfNotHandled": true
-            },
-            {
-                "type": "ImageId",
-                "imageIdExpression": "NewImageId1"
-            },
-            {
-                "type": "ImageId",
-                "condition": "ParentNode.IsClassGroupingNode",
-                "imageIdExpression": "NewImageId2",
-                "priority": 0
-            },
-            {
-                "type": "CheckBox"
-            },
-            {
-                "type": "Grouping",
-                "schemaName": "schemaName",
-                "className": "className"
-            },
-            {
-                "type": "InstanceLabel"
-            },
-            {
-                "type": "Label"
-            },
-            {
-                "type": "Sorting"
-            },
-            {
-                "type": "Style"
-            }
-        ],
-        "contentModifiers": [
-            { },
-            { }
-        ],
-        "userSettings": [
-            { },
-            { }
-        ]
-    })";
+    "id": "Items",
+    "supportedSchemas": {"schemaNames": ["supportedSchema"]},
+    "supplementationInfo": {
+        "supplementationPurpose": "supplementationPurpose"
+    },
+    "rules": [{
+        "ruleType": "RootNodes",
+        "specifications": [{
+            "specType": "AllInstanceNodes",
+            "groupByClass": true,
+            "groupByLabel": true
+        }]
+    }, {
+        "ruleType": "RootNodes",
+        "condition": "TestCondition",
+        "priority": 12,
+        "onlyIfNotHandled": true,
+        "specifications": [{
+            "specType": "AllInstanceNodes",
+            "groupByClass": true,
+            "groupByLabel": true
+        }]
+    }, {
+        "ruleType": "ChildNodes",
+        "specifications": [{
+            "specType": "AllInstanceNodes",
+            "groupByClass": true,
+            "groupByLabel": true
+        }]
+    }, {
+        "ruleType": "ChildNodes",
+        "condition": "ParentNode.IsSearchNode",
+        "priority": 58,
+        "onlyIfNotHandled": true,
+        "specifications": [{
+            "specType": "CustomQueryInstanceNodes",
+            "groupByClass": true,
+            "groupByLabel": true
+        }]
+    }, {
+        "ruleType": "Content",
+        "specifications": [{
+            "specType": "ContentInstancesOfSpecificClasses",
+            "classes": {"schemaName": "dgn", "classNames": ["Model"]},
+            "arePolymorphic": true,
+            "showImages": true,
+            "calculatedProperties": [{
+                "label": "Label1",
+                "priority": 1000,
+                "value": "Value1"
+            }, {
+                "label": "Label2",
+                "priority": 2000,
+                "value": "Value2"
+            }]
+        }]
+    }, {
+        "ruleType": "Content",
+        "condition": "ParentNode.IsClassNode",
+        "priority": 97,
+        "onlyIfNotHandled": true,
+        "specifications": []
+    }, {
+        "ruleType": "ContentModifier"
+    }, {
+        "ruleType": "ContentModifier"
+    }, {
+        "ruleType": "ImageIdOverride",
+        "imageIdExpression": "NewImageId1"
+    }, {
+        "ruleType": "ImageIdOverride",
+        "condition": "ParentNode.IsClassGroupingNode",
+        "imageIdExpression": "NewImageId2",
+        "priority": 0
+    }, {
+        "ruleType": "CheckBox"
+    }, {
+        "ruleType": "Grouping",
+        "class": {"schemaName": "schemaName", "className": "className"}
+    }, {
+        "ruleType": "InstanceLabelOverride",
+        "class": {"schemaName": "schemaName", "className": "className"},
+        "propertyNames": ["a"]
+    }, {
+        "ruleType": "LabelOverride"
+    }, {
+        "ruleType": "DisabledSorting"
+    }, {
+        "ruleType": "StyleOverride"
+    }],
+    "vars": [ {
+        "label": "vars group 1",
+        "vars": []
+    }, {
+        "label": "vars group 2",
+        "vars": []
+    }]
+})";
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
@@ -148,12 +124,13 @@ TEST_F(PresentationRuleSetTests, LoadsFromJsonString)
     {
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(RuleSetJsonString);
 
-    EXPECT_FALSE(ruleSet.IsNull());
+    ASSERT_FALSE(ruleSet.IsNull());
     EXPECT_STREQ("Items", ruleSet->GetRuleSetId().c_str());
     EXPECT_STREQ("supportedSchema", ruleSet->GetSupportedSchemas().c_str());
-    EXPECT_FALSE(ruleSet->GetIsSupplemental());
-    EXPECT_EQ(5, ruleSet->GetVersionMajor());
-    EXPECT_EQ(3, ruleSet->GetVersionMinor());
+    EXPECT_TRUE(ruleSet->GetIsSupplemental());
+    EXPECT_STREQ("supplementationPurpose", ruleSet->GetSupplementationPurpose().c_str());
+    EXPECT_EQ(1, ruleSet->GetVersionMajor());
+    EXPECT_EQ(0, ruleSet->GetVersionMinor());
 
     EXPECT_EQ(1, ruleSet->GetCheckBoxRules().size());
     EXPECT_EQ(1, ruleSet->GetGroupingRules().size());
@@ -183,12 +160,12 @@ TEST_F(PresentationRuleSetTests, LoadsFromJsonString)
     EXPECT_TRUE(ruleSet->GetChildNodesRules()[1]->GetOnlyIfNotHandled());
 
     // Check for content rules
-    EXPECT_EQ(2, ruleSet->GetContentRules().size());    
+    ASSERT_EQ(2, ruleSet->GetContentRules().size());    
     EXPECT_STREQ("", ruleSet->GetContentRules()[0]->GetCondition().c_str());
     EXPECT_EQ(1000, ruleSet->GetContentRules()[0]->GetPriority());
     EXPECT_FALSE(ruleSet->GetContentRules()[0]->GetOnlyIfNotHandled());
-    EXPECT_EQ(1, ruleSet->GetContentRules()[0]->GetSpecifications().size()); 
-    EXPECT_EQ(2, ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties().size()); 
+    ASSERT_EQ(1, ruleSet->GetContentRules()[0]->GetSpecifications().size()); 
+    ASSERT_EQ(2, ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties().size()); 
     CalculatedPropertiesSpecificationP specification1 = ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties()[0];
     EXPECT_EQ("Label1", specification1->GetLabel());
     EXPECT_EQ(1000, specification1->GetPriority());
@@ -198,13 +175,13 @@ TEST_F(PresentationRuleSetTests, LoadsFromJsonString)
     EXPECT_EQ(2000, specification2->GetPriority());
     EXPECT_EQ("Value2", specification2->GetValue());
 
-    EXPECT_EQ(2, ruleSet->GetContentRules().size());    
+    ASSERT_EQ(2, ruleSet->GetContentRules().size());    
     EXPECT_STREQ("ParentNode.IsClassNode", ruleSet->GetContentRules()[1]->GetCondition().c_str());
     EXPECT_EQ(97, ruleSet->GetContentRules()[1]->GetPriority());
     EXPECT_TRUE(ruleSet->GetContentRules()[1]->GetOnlyIfNotHandled());
 
     // Check for ImageIdOverride rules
-    EXPECT_EQ(2, ruleSet->GetImageIdOverrides().size());
+    ASSERT_EQ(2, ruleSet->GetImageIdOverrides().size());
     EXPECT_STREQ("", ruleSet->GetImageIdOverrides()[0]->GetCondition().c_str());
     EXPECT_STREQ("NewImageId1", ruleSet->GetImageIdOverrides()[0]->GetImageId().c_str());
     EXPECT_EQ(1000, ruleSet->GetImageIdOverrides()[0]->GetPriority());
@@ -224,12 +201,13 @@ TEST_F(PresentationRuleSetTests, LoadsFromJsonValue)
 
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonValue(json);
 
-    EXPECT_FALSE(ruleSet.IsNull());
+    ASSERT_FALSE(ruleSet.IsNull());
     EXPECT_STREQ("Items", ruleSet->GetRuleSetId().c_str());
     EXPECT_STREQ("supportedSchema", ruleSet->GetSupportedSchemas().c_str());
-    EXPECT_FALSE(ruleSet->GetIsSupplemental());
-    EXPECT_EQ(5, ruleSet->GetVersionMajor());
-    EXPECT_EQ(3, ruleSet->GetVersionMinor());
+    EXPECT_TRUE(ruleSet->GetIsSupplemental());
+    EXPECT_STREQ("supplementationPurpose", ruleSet->GetSupplementationPurpose().c_str());
+    EXPECT_EQ(1, ruleSet->GetVersionMajor());
+    EXPECT_EQ(0, ruleSet->GetVersionMinor());
 
     EXPECT_EQ(1, ruleSet->GetCheckBoxRules().size());
     EXPECT_EQ(1, ruleSet->GetGroupingRules().size());
@@ -290,6 +268,90 @@ TEST_F(PresentationRuleSetTests, LoadsFromJsonValue)
     EXPECT_EQ(0, ruleSet->GetImageIdOverrides()[1]->GetPriority());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @betest                                    Aidas.Kilinskas                   04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRuleSetTests, LoadsFromJsonStringWithDefaultValues)
+    {
+    Utf8CP jsonString = R"({"id":"Items"})";
+
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(jsonString);
+    EXPECT_FALSE(ruleSet.IsNull());
+    EXPECT_STREQ("Items", ruleSet->GetRuleSetId().c_str());
+    EXPECT_STREQ("", ruleSet->GetSupportedSchemas().c_str());
+    EXPECT_STREQ("", ruleSet->GetSupplementationPurpose().c_str());
+    EXPECT_STREQ("", ruleSet->GetPreferredImage().c_str());
+    EXPECT_STREQ("", ruleSet->GetSearchClasses().c_str());
+    EXPECT_STREQ("", ruleSet->GetExtendedData().c_str());
+    EXPECT_FALSE(ruleSet->GetIsSupplemental());
+    EXPECT_TRUE(ruleSet->GetIsSearchEnabled());
+    EXPECT_EQ(1, ruleSet->GetVersionMajor());
+    EXPECT_EQ(0, ruleSet->GetVersionMinor());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                    Aidas.Kilinskas                   04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRuleSetTests, LoadsFromJsonValueWithDefaultValues)
+    {
+    Utf8CP jsonString = R"({"id":"Items"})";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonValue(json);
+    EXPECT_FALSE(ruleSet.IsNull());
+    EXPECT_STREQ("Items", ruleSet->GetRuleSetId().c_str());
+    EXPECT_STREQ("", ruleSet->GetSupportedSchemas().c_str());
+    EXPECT_STREQ("", ruleSet->GetSupplementationPurpose().c_str());
+    EXPECT_STREQ("", ruleSet->GetPreferredImage().c_str());
+    EXPECT_STREQ("", ruleSet->GetSearchClasses().c_str());
+    EXPECT_STREQ("", ruleSet->GetExtendedData().c_str());
+    EXPECT_FALSE(ruleSet->GetIsSupplemental());
+    EXPECT_TRUE(ruleSet->GetIsSearchEnabled());
+    EXPECT_EQ(1, ruleSet->GetVersionMajor());
+    EXPECT_EQ(0, ruleSet->GetVersionMinor());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                    Aidas.Kilinskas                   04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRuleSetTests, LoadsFromJsonStringFailsWhenJsonIsInvalid)
+    {
+    Utf8CP jsonString ="{";
+
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(jsonString);
+    EXPECT_TRUE(ruleSet.IsNull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRuleSetTests, LoadsFromJsonFailsWhenRuleSetIdIsNotSpecified)
+    {
+    Utf8CP jsonString = "{}";
+
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(jsonString);
+    EXPECT_TRUE(ruleSet.IsNull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRuleSetTests, ReadWriteToJsonFileRoundtrip)
+    {
+    BeFileName path;
+    BeTest::GetHost().GetOutputRoot(path);
+    path.AppendToPath(L"PresentationRuleSetTests.ReadWriteToJsonFileRoundtrip.Ruleset.json");
+    path.BeDeleteFile();
+
+    PresentationRuleSetPtr ruleset1 = PresentationRuleSet::CreateInstance("TestRuleSet", 1, 0, true, "Supplemental", "schema1,schema2", "", true);
+    ASSERT_TRUE(ruleset1->WriteToJsonFile(path));
+    ASSERT_TRUE(path.DoesPathExist());
+
+    PresentationRuleSetPtr ruleset2 = PresentationRuleSet::ReadFromJsonFile(path);
+    ASSERT_TRUE(ruleset2.IsValid());
+    EXPECT_STREQ(ruleset1->GetHash().c_str(), ruleset2->GetHash().c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               06/2012
@@ -390,50 +452,6 @@ TEST_F(PresentationRuleSetTests, LoadsFromXml)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @betest                                    Aidas.Kilinskas                   04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRuleSetTests, LoadsFromJsonStringWithDefaultValues)
-    {
-    Utf8CP jsonString = R"({"ruleSetId":"Items"})";
-
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(jsonString);
-    EXPECT_FALSE(ruleSet.IsNull());
-    EXPECT_STREQ("Items", ruleSet->GetRuleSetId().c_str());
-    EXPECT_STREQ("", ruleSet->GetSupportedSchemas().c_str());
-    EXPECT_STREQ("", ruleSet->GetSupplementationPurpose().c_str());
-    EXPECT_STREQ("", ruleSet->GetPreferredImage().c_str());
-    EXPECT_STREQ("", ruleSet->GetSearchClasses().c_str());
-    EXPECT_STREQ("", ruleSet->GetExtendedData().c_str());
-    EXPECT_FALSE(ruleSet->GetIsSupplemental());
-    EXPECT_TRUE(ruleSet->GetIsSearchEnabled());
-    EXPECT_EQ(1, ruleSet->GetVersionMajor());
-    EXPECT_EQ(0, ruleSet->GetVersionMinor());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                    Aidas.Kilinskas                   04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRuleSetTests, LoadsFromJsonValueWithDefaultValues)
-    {
-    Utf8CP jsonString = R"({"ruleSetId":"Items"})";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
-
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonValue(json);
-    EXPECT_FALSE(ruleSet.IsNull());
-    EXPECT_STREQ("Items", ruleSet->GetRuleSetId().c_str());
-    EXPECT_STREQ("", ruleSet->GetSupportedSchemas().c_str());
-    EXPECT_STREQ("", ruleSet->GetSupplementationPurpose().c_str());
-    EXPECT_STREQ("", ruleSet->GetPreferredImage().c_str());
-    EXPECT_STREQ("", ruleSet->GetSearchClasses().c_str());
-    EXPECT_STREQ("", ruleSet->GetExtendedData().c_str());
-    EXPECT_FALSE(ruleSet->GetIsSupplemental());
-    EXPECT_TRUE(ruleSet->GetIsSearchEnabled());
-    EXPECT_EQ(1, ruleSet->GetVersionMajor());
-    EXPECT_EQ(0, ruleSet->GetVersionMinor());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PresentationRuleSetTests, LoadsFromXmlWithDefaultValues)
@@ -458,17 +476,6 @@ TEST_F(PresentationRuleSetTests, LoadsFromXmlWithDefaultValues)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @betest                                    Aidas.Kilinskas                   04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRuleSetTests, LoadsFromJsonStringFailsWhenJsonIsInvalid)
-    {
-    Utf8CP jsonString ="{";
-
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(jsonString);
-    EXPECT_TRUE(ruleSet.IsNull());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PresentationRuleSetTests, LoadsFromXmlFailsWhenXmlIsInvalid)
@@ -478,17 +485,6 @@ TEST_F(PresentationRuleSetTests, LoadsFromXmlFailsWhenXmlIsInvalid)
         )";
 
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromXmlString(ruleSetXmlString);
-    EXPECT_TRUE(ruleSet.IsNull());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PresentationRuleSetTests, LoadsFromJsonFailsWhenRuleSetIdIsNotSpecified)
-    {
-    Utf8CP jsonString = "{}";
-
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(jsonString);
     EXPECT_TRUE(ruleSet.IsNull());
     }
 
@@ -541,10 +537,7 @@ TEST_F(PresentationRuleSetTests, WritesToXml)
 
     CheckBoxRuleP checkBoxRule = new CheckBoxRule("checkBoxCondition", 9, true, "checkBoxProperty", false, false, "");
     ASSERT_TRUE(nullptr != checkBoxRule);
-
-    RenameNodeRuleP renameNodeRule = new RenameNodeRule("RenameRuleCondition", 10);
-    ASSERT_TRUE(nullptr != renameNodeRule);
-
+    
     SortingRuleP sortingRule = new SortingRule("SortingCondition", 11, "DummySchemaName", "DummyClassName", "DummyPropertyName", false, true, false);
     ASSERT_TRUE(nullptr != sortingRule);
 
@@ -555,7 +548,6 @@ TEST_F(PresentationRuleSetTests, WritesToXml)
     ASSERT_TRUE(nullptr != sortingRule);
 
     ruleSet->AddPresentationRule(*checkBoxRule);
-    ruleSet->AddPresentationRule(*renameNodeRule);
     ruleSet->AddPresentationRule(*sortingRule);
     ruleSet->AddPresentationRule(*userSettingsGroup);
     ruleSet->AddPresentationRule(*instanceLabelOverride);
@@ -574,14 +566,14 @@ TEST_F(PresentationRuleSetTests, WritesToXml)
          R"(IsSearchEnabled="true" )"
          R"(SearchClasses="" )"
          R"(ExtendedData="">)"
-            R"(<RootNodeRule Priority="1" AutoExpand="false" TargetTree="Both" StopFurtherProcessing="false" Condition="TestCondition1" OnlyIfNotHandled="true"/>)"
-            R"(<ChildNodeRule Priority="2" TargetTree="SelectionTree" StopFurtherProcessing="false" Condition="TestCondition2" OnlyIfNotHandled="true"/>)"
+            R"(<RootNodeRule Priority="1" Condition="TestCondition1" OnlyIfNotHandled="true" TargetTree="Both" StopFurtherProcessing="false" AutoExpand="false"/>)"
+            R"(<ChildNodeRule Priority="2" Condition="TestCondition2" OnlyIfNotHandled="true" TargetTree="SelectionTree" StopFurtherProcessing="false"/>)"
             R"(<ContentRule Priority="3" CustomControl="" Condition="TestCondition3" OnlyIfNotHandled="true"/>)"
-            R"(<ImageIdOverride Priority="4" ImageId="ImageIdOverrideTestValue" Condition="TestCondition4" OnlyIfNotHandled="false"/>)"
-            R"(<LabelOverride Priority="5" Label="LabelOverrideLabelValue" Description="LabelOverrideDescriptionValue" Condition="TestCondition5" OnlyIfNotHandled="false"/>)"
-            R"(<StyleOverride Priority="6" ForeColor="Blue" BackColor="Red" FontStyle="Bold" Condition="TestCondition6" OnlyIfNotHandled="false"/>)"
-            R"(<GroupingRule Priority="8" SchemaName="DummySchemaName" ClassName="DummyClassName" ContextMenuCondition="ContextMenuCondition" )"
-             R"(ContextMenuLabel="ContextMenuLabel" SettingsId="SettingsId" Condition="TestCondition7" OnlyIfNotHandled="true">)"
+            R"(<ImageIdOverride Priority="4" OnlyIfNotHandled="false" Condition="TestCondition4" ImageId="ImageIdOverrideTestValue"/>)"
+            R"(<LabelOverride Priority="5" OnlyIfNotHandled="false" Condition="TestCondition5" Label="LabelOverrideLabelValue" Description="LabelOverrideDescriptionValue"/>)"
+            R"(<StyleOverride Priority="6" OnlyIfNotHandled="false" Condition="TestCondition6" ForeColor="Blue" BackColor="Red" FontStyle="Bold"/>)"
+            R"(<GroupingRule Priority="8" OnlyIfNotHandled="true" Condition="TestCondition7" SchemaName="DummySchemaName" ClassName="DummyClassName" )"
+             R"(ContextMenuCondition="ContextMenuCondition" ContextMenuLabel="ContextMenuLabel" SettingsId="SettingsId">)"
                 R"(<ClassGroup ContextMenuLabel="ContextMenuLabel" DefaultGroupLabel="" CreateGroupForSingleItem="true" SchemaName="SchemaName" BaseClassName="BaseClassName"/>)"
                 R"(<PropertyGroup ContextMenuLabel="ImageId" DefaultGroupLabel="" ImageId="ContextMenuLabel" CreateGroupForSingleItem="true" )"
                  R"(CreateGroupForUnspecifiedValues="true" PropertyName="PropertyName" GroupingValue="DisplayLabel" SortingValue="DisplayLabel">)"
@@ -589,12 +581,11 @@ TEST_F(PresentationRuleSetTests, WritesToXml)
                 R"(</PropertyGroup>)"
             R"(</GroupingRule>)"
             R"(<LocalizationResourceKeyDefinition Priority="7" Id="UniqueId" Key="LocalizedStringAccessKey" DefaultValue="ThisIsTheValueIfItFails"/>)"
-            R"(<UserSettings Priority="1000" CategoryLabel="UserCategoryLabel"/><CheckBoxRule Priority="9" PropertyName="checkBoxProperty" UseInversedPropertyValue="false" )"
-             R"(DefaultValue="false" IsEnabled="" Condition="checkBoxCondition" OnlyIfNotHandled="true"/>)"
-            R"(<RenameNodeRule Priority="10" Condition="RenameRuleCondition" OnlyIfNotHandled="false"/>)"
+            R"(<UserSettings Priority="1000" CategoryLabel="UserCategoryLabel"/>)"
+            R"(<CheckBoxRule Priority="9" OnlyIfNotHandled="true" Condition="checkBoxCondition" PropertyName="checkBoxProperty" UseInversedPropertyValue="false" DefaultValue="false" IsEnabled=""/>)"
             R"(<SortingRule Priority="11" SchemaName="DummySchemaName" ClassName="DummyClassName" PropertyName="DummyPropertyName" SortAscending="false" DoNotSort="true" )"
-             R"(IsPolymorphic="false" Condition="SortingCondition" OnlyIfNotHandled="false"/>)"
-            R"(<InstanceLabelOverride Priority="100" ClassName="TestClassName" PropertyNames="TestProperties" OnlyIfNotHandled="true"/>)"
+             R"(IsPolymorphic="false" OnlyIfNotHandled="false" Condition="SortingCondition"/>)"
+            R"(<InstanceLabelOverride Priority="100" OnlyIfNotHandled="true" ClassName="TestClassName" PropertyNames="TestProperties"/>)"
         R"(</PresentationRuleSet>)";
     EXPECT_STREQ(expected, serializedRuleSet.c_str());
     }
@@ -614,7 +605,6 @@ TEST_F(PresentationRuleSetTests, ComputesCorrectHashes)
     ruleset1->AddPresentationRule(*new GroupingRule());
     ruleset1->AddPresentationRule(*new LocalizationResourceKeyDefinition());
     ruleset1->AddPresentationRule(*new CheckBoxRule());
-    ruleset1->AddPresentationRule(*new RenameNodeRule());
     ruleset1->AddPresentationRule(*new SortingRule());
     ruleset1->AddPresentationRule(*new UserSettingsGroup());
     ruleset1->AddPresentationRule(*new ContentModifier());
@@ -629,7 +619,6 @@ TEST_F(PresentationRuleSetTests, ComputesCorrectHashes)
     ruleset2->AddPresentationRule(*new GroupingRule());
     ruleset2->AddPresentationRule(*new LocalizationResourceKeyDefinition());
     ruleset2->AddPresentationRule(*new CheckBoxRule());
-    ruleset2->AddPresentationRule(*new RenameNodeRule());
     ruleset2->AddPresentationRule(*new SortingRule());
     ruleset2->AddPresentationRule(*new UserSettingsGroup());
     ruleset2->AddPresentationRule(*new ContentModifier());
@@ -779,20 +768,20 @@ TEST_F(PresentationRuleSetTests, TestNestedCustomizationRulesWriteToXml)
     Utf8String expectedRuleSet = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
         "<PresentationRuleSet RuleSetId=\"TestRuleSet\" SupportedSchemas=\"\" IsSupplemental=\"true\" SupplementationPurpose=\"\" "
         "VersionMajor=\"2\" VersionMinor=\"1\" PreferredImage=\"\" IsSearchEnabled=\"true\" SearchClasses=\"\" ExtendedData=\"\">"
-            "<RootNodeRule Priority=\"1\" AutoExpand=\"false\" TargetTree=\"Both\" StopFurtherProcessing=\"false\" Condition=\"TestCondition1\" OnlyIfNotHandled=\"true\">"
-                "<ImageIdOverride Priority=\"4\" ImageId=\"ImageIdOverrideTestValue\" Condition=\"TestCondition3\" OnlyIfNotHandled=\"false\"/>"
+            "<RootNodeRule Priority=\"1\" Condition=\"TestCondition1\" OnlyIfNotHandled=\"true\" TargetTree=\"Both\" StopFurtherProcessing=\"false\" AutoExpand=\"false\">"
+                "<ImageIdOverride Priority=\"4\" OnlyIfNotHandled=\"false\" Condition=\"TestCondition3\" ImageId=\"ImageIdOverrideTestValue\"/>"
             "</RootNodeRule>"
-            "<ChildNodeRule Priority=\"2\" TargetTree=\"Both\" StopFurtherProcessing=\"false\" Condition=\"TestCondition2\" OnlyIfNotHandled=\"true\">"
+            "<ChildNodeRule Priority=\"2\" Condition=\"TestCondition2\" OnlyIfNotHandled=\"true\" TargetTree=\"Both\" StopFurtherProcessing=\"false\">"
                 "<AllInstances Priority=\"1\" AlwaysReturnsChildren=\"false\" HideNodesInHierarchy=\"false\" HideIfNoChildren=\"false\" ExtendedData=\"\" DoNotSort=\"false\" GroupByClass=\"false\" GroupByLabel=\"false\" SupportedSchemas=\"one\">"
-                    "<ChildNodeRule Priority=\"1\" TargetTree=\"MainTree\" StopFurtherProcessing=\"false\" Condition=\"\" OnlyIfNotHandled=\"false\">"
-                        "<GroupingRule Priority=\"2\" SchemaName=\"TestSchemaName2\" ClassName=\"\" ContextMenuCondition=\"\" ContextMenuLabel=\"\" SettingsId=\"\" Condition=\"\" OnlyIfNotHandled=\"false\"/>"
+                    "<ChildNodeRule Priority=\"1\" Condition=\"\" OnlyIfNotHandled=\"false\" TargetTree=\"MainTree\" StopFurtherProcessing=\"false\">"
+                        "<GroupingRule Priority=\"2\" OnlyIfNotHandled=\"false\" Condition=\"\" SchemaName=\"TestSchemaName2\" ClassName=\"\" ContextMenuCondition=\"\" ContextMenuLabel=\"\" SettingsId=\"\"/>"
                     "</ChildNodeRule>"
                 "</AllInstances>"
-                "<ImageIdOverride Priority=\"4\" ImageId=\"ImageIdOverrideTestValue\" Condition=\"TestCondition4\" OnlyIfNotHandled=\"false\"/>"
-                "<LabelOverride Priority=\"5\" Label=\"LabelOverrideLabelValue\" Description=\"LabelOverrideDescriptionValue\" Condition=\"TestCondition5\" OnlyIfNotHandled=\"false\"/>"
-                "<StyleOverride Priority=\"6\" ForeColor=\"Blue\" BackColor=\"Red\" FontStyle=\"Bold\" Condition=\"TestCondition6\" OnlyIfNotHandled=\"false\"/>"
+                "<ImageIdOverride Priority=\"4\" OnlyIfNotHandled=\"false\" Condition=\"TestCondition4\" ImageId=\"ImageIdOverrideTestValue\"/>"
+                "<LabelOverride Priority=\"5\" OnlyIfNotHandled=\"false\" Condition=\"TestCondition5\" Label=\"LabelOverrideLabelValue\" Description=\"LabelOverrideDescriptionValue\"/>"
+                "<StyleOverride Priority=\"6\" OnlyIfNotHandled=\"false\" Condition=\"TestCondition6\" ForeColor=\"Blue\" BackColor=\"Red\" FontStyle=\"Bold\"/>"
             "</ChildNodeRule>"
-            "<StyleOverride Priority=\"7\" ForeColor=\"Blue\" BackColor=\"Red\" FontStyle=\"Bold\" Condition=\"TestCondition7\" OnlyIfNotHandled=\"false\"/>"
+            "<StyleOverride Priority=\"7\" OnlyIfNotHandled=\"false\" Condition=\"TestCondition7\" ForeColor=\"Blue\" BackColor=\"Red\" FontStyle=\"Bold\"/>"
         "</PresentationRuleSet>";
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
     }

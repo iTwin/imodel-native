@@ -27,10 +27,6 @@ $(o)CheckBoxRule$(oext)                                    : $(PresentationRules
 
 $(o)CustomizationRule$(oext)                               : $(PresentationRulesSourceDirectory)CustomizationRule.cpp $(PresentationRulesDependencies)
 
-$(o)DisplayRelatedItemsSpecification$(oext)                : $(PresentationRulesSourceDirectory)DisplayRelatedItemsSpecification.cpp $(PresentationRulesDependencies)
-
-$(o)RenameNodeRule$(oext)                                  : $(PresentationRulesSourceDirectory)RenameNodeRule.cpp $(PresentationRulesDependencies)
-
 $(o)ImageIdOverride$(oext)                                 : $(PresentationRulesSourceDirectory)ImageIdOverride.cpp $(PresentationRulesDependencies)
 
 $(o)PresentationRule$(oext)                                : $(PresentationRulesSourceDirectory)PresentationRule.cpp $(PresentationRulesDependencies)

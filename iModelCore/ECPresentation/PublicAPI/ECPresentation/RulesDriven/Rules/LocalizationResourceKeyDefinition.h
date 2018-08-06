@@ -24,17 +24,11 @@ struct LocalizationResourceKeyDefinition : public PresentationKey
         Utf8String m_defaultValue;
 
     protected:
-        //! Returns XmlElement name that is used to read/save this rule information.
-        ECPRESENTATION_EXPORT virtual CharCP  _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
+        ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
-        //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool    _ReadXml (BeXmlNodeP xmlNode) override;
-
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool    _ReadJson(JsonValueCR json) override;
-
-        //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT virtual void    _WriteXml (BeXmlNodeP xmlNode) const override;
+        Utf8CP _GetJsonElementType() const override {return "LocalizationResourceKeyDefinition";}
 
         //! Computes rule hash.
         ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;

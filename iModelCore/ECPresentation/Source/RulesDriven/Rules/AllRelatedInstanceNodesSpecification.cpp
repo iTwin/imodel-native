@@ -9,7 +9,7 @@
 
 #include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
-#include <ECPresentation/RulesDriven/Rules/CommonTools.h>
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 
@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 +---------------+---------------+---------------+---------------+---------------+------*/
 AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification ()
     : ChildNodeSpecification (), m_groupByClass (true), m_groupByRelationship (false), m_groupByLabel (true), 
-      m_skipRelatedLevel (0), m_supportedSchemas (L""), m_requiredDirection (RequiredRelationDirection_Both)
+      m_skipRelatedLevel (0), m_requiredDirection (RequiredRelationDirection_Both)
     {
     }
 
@@ -52,7 +52,7 @@ void AllRelatedInstanceNodesSpecification::_Accept(PresentationRuleSpecification
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP AllRelatedInstanceNodesSpecification::_GetXmlElementName () const
+Utf8CP AllRelatedInstanceNodesSpecification::_GetXmlElementName () const
     {
     return ALL_RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME;
     }
@@ -62,6 +62,9 @@ CharCP AllRelatedInstanceNodesSpecification::_GetXmlElementName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AllRelatedInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (!ChildNodeSpecification::_ReadXml(xmlNode))
+        return false;
+
     //Optional:
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByClass, COMMON_XML_ATTRIBUTE_GROUPBYCLASS))
         m_groupByClass = true;
@@ -82,9 +85,31 @@ bool AllRelatedInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION))
         requiredDirectionString = "";
     else
-        m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString.c_str ());
+        m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString (requiredDirectionString.c_str ());
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllRelatedInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
+    {
+    ChildNodeSpecification::_WriteXml(xmlNode);
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYRELATIONSHIP, m_groupByRelationship);
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
+    xmlNode->AddAttributeInt32Value   (COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL, m_skipRelatedLevel);
+    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS, m_supportedSchemas.c_str ());
+    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonToolsInternal::FormatRequiredDirectionString (m_requiredDirection));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP AllRelatedInstanceNodesSpecification::_GetJsonElementType() const
+    {
+    return ALL_RELATED_INSTANCE_NODES_SPECIFICATION_JSON_TYPE;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -92,27 +117,32 @@ bool AllRelatedInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AllRelatedInstanceNodesSpecification::_ReadJson(JsonValueCR json)
     {
-
+    if (!ChildNodeSpecification::_ReadJson(json))
+        return false;
     m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
     m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
     m_skipRelatedLevel = json[COMMON_JSON_ATTRIBUTE_SKIPRELATEDLEVEL].asInt(0);
-    m_supportedSchemas = json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS].asCString("");
-    m_requiredDirection = CommonTools::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
-
+    m_supportedSchemas = CommonToolsInternal::SupportedSchemasToString(json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS]);
+    m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
     return true;
     } 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
+* @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AllRelatedInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
+void AllRelatedInstanceNodesSpecification::_WriteJson(JsonValueR json) const
     {
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYRELATIONSHIP, m_groupByRelationship);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
-    xmlNode->AddAttributeInt32Value   (COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL, m_skipRelatedLevel);
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS, m_supportedSchemas.c_str ());
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonTools::FormatRequiredDirectionString (m_requiredDirection));
+    ChildNodeSpecification::_WriteJson(json);
+    if (!m_groupByClass)
+        json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS] = m_groupByClass;
+    if (!m_groupByLabel)
+        json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL] = m_groupByLabel;
+    if (0 != m_skipRelatedLevel)
+        json[COMMON_JSON_ATTRIBUTE_SKIPRELATEDLEVEL] = m_skipRelatedLevel;
+    if (!m_supportedSchemas.empty())
+        json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS] = CommonToolsInternal::SupportedSchemasToJson(m_supportedSchemas);
+    if (RequiredRelationDirection_Both != m_requiredDirection)
+        json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION] = CommonToolsInternal::FormatRequiredDirectionString(m_requiredDirection);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -73,18 +73,13 @@ protected:
     //! Constructor.
     ECPRESENTATION_EXPORT PresentationKey (int priority);
 
-    //! Returns XmlElement name that is used to read/save this rule information.
-    virtual CharCP _GetXmlElementName () const = 0;
-
-    //! Reads rule information from XmlNode, returns true if it can read it successfully.
-    virtual bool _ReadXml (BeXmlNodeP xmlNode) = 0;
-
-
-    //! Reads rule information from Json, returns true if it can read it successfully.
-    virtual bool _ReadJson(JsonValueCR json) = 0;
-
-    //! Writes rule information to given XmlNode.
-    virtual void _WriteXml (BeXmlNodeP xmlNode) const = 0;
+    virtual Utf8CP _GetXmlElementName () const = 0;
+    virtual bool _ReadXml(BeXmlNodeP xmlNode) {return true;}
+    virtual void _WriteXml(BeXmlNodeP xmlNode) const {}
+    
+    virtual Utf8CP _GetJsonElementType() const = 0;
+    virtual bool _ReadJson(JsonValueCR json) {return true;}
+    virtual void _WriteJson(JsonValueR) const {}
 
     //! Computes rule hash.
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
@@ -94,16 +89,19 @@ public:
     virtual ~PresentationKey(){}
     
     //! Reads PresentationRule from xml node.
-    ECPRESENTATION_EXPORT bool                   ReadXml (BeXmlNodeP xmlNode);
-
-    //! Reads rule information from Json, returns true if it can read it successfully.
-    ECPRESENTATION_EXPORT bool                   ReadJson(JsonValueCR json);
+    ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
 
     //! Writes PresentationRule to xml node.
-    ECPRESENTATION_EXPORT void                   WriteXml (BeXmlNodeP parentXmlNode) const;
+    ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+
+    //! Reads rule information from json, returns true if it can read it successfully.
+    ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
+
+    //! Writes rule information to json
+    ECPRESENTATION_EXPORT Json::Value WriteJson() const;
 
     //! Priority of the rule, defines the order in which rules are evaluated and executed.
-    ECPRESENTATION_EXPORT int                    GetPriority (void) const;
+    ECPRESENTATION_EXPORT int GetPriority() const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -122,14 +120,12 @@ protected:
     //! Constructor.
     ECPRESENTATION_EXPORT PresentationRule (int priority, bool onlyIfNotHandled);
 
-    //! Reads rule information from XmlNode, returns true if it can read it successfully.
     ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
-
-    //! Reads rule information from Json, returns true if it can read it successfully.
-    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
-
-    //! Writes rule information to given XmlNode.
     ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
+    
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR) const override;
+
     //! Compute rule hash.
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
@@ -156,14 +152,11 @@ protected:
         : PresentationRule(priority, onlyIfNotHandled), m_condition(condition)
         {}
 
-    //! Reads rule information from XmlNode, returns true if it can read it successfully.
     ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
-
-    //! Reads rule information from Json, returns true if it can read it successfully.
-    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
-
-    //! Writes rule information to given XmlNode.
     ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
+
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR) const override;
 
     //! Compute rule hash.
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
@@ -187,9 +180,29 @@ protected:
     virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const {}
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
+    virtual Utf8CP _GetXmlElementName() const = 0;
+    virtual bool _ReadXml(BeXmlNodeP xmlNode) {return true;}
+    virtual void _WriteXml(BeXmlNodeP xmlNode) const {}
+
+    virtual Utf8CP _GetJsonElementType() const = 0;
+    virtual bool _ReadJson(JsonValueCR json) {return true;}
+    virtual void _WriteJson(JsonValueR json) const {}
+
 public:
     //! Allows the visitor to visit this specification.
     ECPRESENTATION_EXPORT void Accept(PresentationRuleSpecificationVisitor& visitor) const;
+
+    //! Reads specification from XML.
+    ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
+
+    //! Writes specification to xml node.
+    ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+
+    //! Reads specification from json
+    ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
+
+    //! Writes specification to json
+    ECPRESENTATION_EXPORT Json::Value WriteJson() const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

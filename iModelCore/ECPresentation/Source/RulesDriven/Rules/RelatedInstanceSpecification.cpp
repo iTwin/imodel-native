@@ -9,7 +9,7 @@
 
 #include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
-#include <ECPresentation/RulesDriven/Rules/CommonTools.h>
+#include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
@@ -42,44 +42,7 @@ bool RelatedInstanceSpecification::ReadXml(BeXmlNodeP xmlNode)
     Utf8String requiredDirectionString;
     if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION))
         requiredDirectionString = "";
-    m_direction = CommonTools::ParseRequiredDirectionString(requiredDirectionString.c_str());
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                   04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedInstanceSpecification::ReadJson(JsonValueCR json)
-    {
-    //Required
-    JsonValueCR classNameJson = json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_CLASSNAME];
-    if (classNameJson.isNull() || !classNameJson.isConvertibleTo(Json::ValueType::stringValue))
-        {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, RELATED_INSTANCE_SPECIFICATION_JSON_NAME, RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_CLASSNAME);
-        return false;
-        }
-    m_className = classNameJson.asCString();
-
-    JsonValueCR relationshipNameJson = json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPNAME];
-    if (relationshipNameJson.isNull() || !relationshipNameJson.isConvertibleTo(Json::ValueType::stringValue))
-        {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, RELATED_INSTANCE_SPECIFICATION_JSON_NAME, RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPNAME);
-        return false;
-        }
-    m_relationshipName = relationshipNameJson.asCString();
-
-    JsonValueCR aliasJson = json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ALIAS];
-    if (aliasJson.isNull() || !aliasJson.isConvertibleTo(Json::ValueType::stringValue))
-        {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, RELATED_INSTANCE_SPECIFICATION_JSON_NAME, RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPNAME);
-        return false;
-        }
-    m_alias = aliasJson.asCString();
-
-    //Optional
-    m_isRequired = json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ISREQUIRED].asBool(false);
-    m_direction = CommonTools::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
+    m_direction = CommonToolsInternal::ParseRequiredDirectionString(requiredDirectionString.c_str());
 
     return true;
     }
@@ -92,9 +55,62 @@ void RelatedInstanceSpecification::WriteXml(BeXmlNodeP parentXmlNode) const
     BeXmlNodeP node = parentXmlNode->AddEmptyElement(RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME);
     node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME, m_className.c_str());
     node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME, m_relationshipName.c_str());
-    node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION, CommonTools::FormatRequiredDirectionString(m_direction));
+    node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION, CommonToolsInternal::FormatRequiredDirectionString(m_direction));
     node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ALIAS, m_alias.c_str());
     node->AddAttributeBooleanValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ISREQUIRED, m_isRequired);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                   04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RelatedInstanceSpecification::ReadJson(JsonValueCR json)
+    {
+    //Required
+    m_className = CommonToolsInternal::SchemaAndClassNameToString(json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_CLASS]);
+    if (m_className.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "RelatedInstanceSpecification", RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_CLASS);
+        return false;
+        }
+
+    m_relationshipName = CommonToolsInternal::SchemaAndClassNameToString(json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIP]);
+    if (m_relationshipName.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "RelatedInstanceSpecification", RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIP);
+        return false;
+        }
+
+    JsonValueCR aliasJson = json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ALIAS];
+    if (aliasJson.isNull() || !aliasJson.isConvertibleTo(Json::ValueType::stringValue))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "RelatedInstanceSpecification", RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ALIAS);
+        return false;
+        }
+    m_alias = aliasJson.asCString();
+
+    //Optional
+    m_isRequired = json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ISREQUIRED].asBool(false);
+    m_direction = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value RelatedInstanceSpecification::WriteJson() const
+    {
+    Json::Value json(Json::objectValue);
+    if (!m_className.empty())
+        json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_CLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_className);
+    if (!m_relationshipName.empty())
+        json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIP] = CommonToolsInternal::SchemaAndClassNameToJson(m_relationshipName);
+    json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ALIAS] = m_alias;
+    if (m_isRequired)
+        json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ISREQUIRED] = m_isRequired;
+    if (RequiredRelationDirection_Both != m_direction)
+        json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION] = CommonToolsInternal::FormatRequiredDirectionString(m_direction);
+    return json;
     }
 
 /*---------------------------------------------------------------------------------**//**

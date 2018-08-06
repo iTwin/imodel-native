@@ -24,9 +24,10 @@ struct AllInstanceNodesSpecificationTests : PresentationRulesTests
 TEST_F(AllInstanceNodesSpecificationTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
+        "specType": "AllInstanceNodes",
         "groupByClass": false,
         "groupByLabel": false,
-        "supportedSchemas": "TestSchema"
+        "supportedSchemas": {"schemaNames": ["TestSchema"]}
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -43,7 +44,9 @@ TEST_F(AllInstanceNodesSpecificationTests, LoadsFromJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AllInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues)
     {
-    static Utf8CP jsonString = "{}";
+    static Utf8CP jsonString = R"({
+        "specType": "AllInstanceNodes"
+    })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
     
@@ -52,6 +55,23 @@ TEST_F(AllInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues)
     EXPECT_TRUE(spec.GetGroupByClass());
     EXPECT_TRUE(spec.GetGroupByLabel());
     EXPECT_STREQ("", spec.GetSupportedSchemas().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AllInstanceNodesSpecificationTests, WriteToJson)
+    {
+    AllInstanceNodesSpecification spec(1000, true, true, true, true, true, "SupportedSchema");
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "specType": "AllInstanceNodes",
+        "alwaysReturnsChildren": true,
+        "hideNodesInHierarchy": true,
+        "hideIfNoChildren": true,
+        "supportedSchemas": {"schemaNames": ["SupportedSchema"]}
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

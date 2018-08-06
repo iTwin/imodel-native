@@ -16,10 +16,9 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CheckBoxRule::CheckBoxRule ()
-    : m_propertyName (""), m_useInversedPropertyValue (false), m_defaultValue (false), m_isEnabled ("")
-    {
-    }
+CheckBoxRule::CheckBoxRule()
+    : m_useInversedPropertyValue(false), m_defaultValue(false)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   11/2012
@@ -41,7 +40,7 @@ Utf8StringCR isEnabled
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP CheckBoxRule::_GetXmlElementName () const
+Utf8CP CheckBoxRule::_GetXmlElementName () const
     {
     return CHECKBOX_RULE_XML_NODE_NAME;
     }
@@ -51,6 +50,9 @@ CharCP CheckBoxRule::_GetXmlElementName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CheckBoxRule::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (!ConditionalCustomizationRule::_ReadXml(xmlNode))
+        return false;
+
     if (BEXML_Success != xmlNode->GetAttributeStringValue  (m_propertyName, COMMON_XML_ATTRIBUTE_PROPERTYNAME))
         m_propertyName = "";
 
@@ -63,20 +65,7 @@ bool CheckBoxRule::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_isEnabled, CHECKBOX_RULE_XML_ATTRIBUTE_ISENABLED))
         m_isEnabled = "";
 
-    return ConditionalCustomizationRule::_ReadXml (xmlNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CheckBoxRule::_ReadJson(JsonValueCR json)
-    {
-    m_propertyName = json[CHECKBOX_RULE_JSON_ATTRIBUTE_PROPERTYNAME].asCString("");
-    m_useInversedPropertyValue = json[CHECKBOX_RULE_JSON_ATTRIBUTE_USEINVERSEDPROPERTYVALUE].asBool(false);
-    m_isEnabled = json[CHECKBOX_RULE_JSON_ATTRIBUTE_ISENABLED].asCString("");
-    m_defaultValue = json[CHECKBOX_RULE_JSON_ATTRIBUTE_DEFAULTVALUE].asBool(false);
-
-    return ConditionalCustomizationRule::_ReadJson(json);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -84,11 +73,72 @@ bool CheckBoxRule::_ReadJson(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CheckBoxRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
+    ConditionalCustomizationRule::_WriteXml (xmlNode);
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_PROPERTYNAME, m_propertyName.c_str ());
     xmlNode->AddAttributeBooleanValue (CHECKBOX_RULE_XML_ATTRIBUTE_USEINVERSEDPROPERTYVALUE, m_useInversedPropertyValue);
     xmlNode->AddAttributeBooleanValue (CHECKBOX_RULE_XML_ATTRIBUTE_DEFAULTVALUE, m_defaultValue);
     xmlNode->AddAttributeStringValue (CHECKBOX_RULE_XML_ATTRIBUTE_ISENABLED, m_isEnabled.c_str());
-    ConditionalCustomizationRule::_WriteXml (xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP CheckBoxRule::_GetJsonElementType() const
+    {
+    return CHECKBOX_RULE_JSON_TYPE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String GetIsEnabledExpression(JsonValueCR json)
+    {
+    if (json.isBool())
+        return json.asBool() ? "true" : "false";
+    return json.asCString("");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value GetIsEnabledJsonValue(Utf8StringCR expr)
+    {
+    if (expr.EqualsI("true"))
+        return Json::Value(true);
+    if (expr.EqualsI("false"))
+        return Json::Value(false);
+    return Json::Value(expr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CheckBoxRule::_ReadJson(JsonValueCR json)
+    {
+    if (!ConditionalCustomizationRule::_ReadJson(json))
+        return false;
+
+    m_propertyName = json[CHECKBOX_RULE_JSON_ATTRIBUTE_PROPERTYNAME].asCString("");
+    m_useInversedPropertyValue = json[CHECKBOX_RULE_JSON_ATTRIBUTE_USEINVERSEDPROPERTYVALUE].asBool(false);
+    m_isEnabled = GetIsEnabledExpression(json[CHECKBOX_RULE_JSON_ATTRIBUTE_ISENABLED]);
+    m_defaultValue = json[CHECKBOX_RULE_JSON_ATTRIBUTE_DEFAULTVALUE].asBool(false);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CheckBoxRule::_WriteJson(JsonValueR json) const
+    {
+    ConditionalCustomizationRule::_WriteJson(json);
+    if (!m_propertyName.empty())
+        json[CHECKBOX_RULE_JSON_ATTRIBUTE_PROPERTYNAME] = m_propertyName;
+    if (m_useInversedPropertyValue)
+        json[CHECKBOX_RULE_JSON_ATTRIBUTE_USEINVERSEDPROPERTYVALUE] = m_useInversedPropertyValue;
+    if (!m_isEnabled.empty())
+        json[CHECKBOX_RULE_JSON_ATTRIBUTE_ISENABLED] = GetIsEnabledJsonValue(m_isEnabled);
+    if (m_defaultValue)
+        json[CHECKBOX_RULE_JSON_ATTRIBUTE_DEFAULTVALUE] = m_defaultValue;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -20,8 +20,6 @@ PresentationRulesPublicHeaders    = $(PresentationRulesPublicApiDirectory)Presen
                                     $(PresentationRulesPublicApiDirectory)ChildNodeSpecification.h \
                                     $(PresentationRulesPublicApiDirectory)ChildNodeRule.h \
                                     $(PresentationRulesPublicApiDirectory)CheckBoxRule.h \
-                                    $(PresentationRulesPublicApiDirectory)DisplayRelatedItemsSpecification.h \
-                                    $(PresentationRulesPublicApiDirectory)RenameNodeRule.h \
                                     $(PresentationRulesPublicApiDirectory)ContentRule.h \
                                     $(PresentationRulesPublicApiDirectory)ImageIdOverride.h \
                                     $(PresentationRulesPublicApiDirectory)PresentationRule.h \
@@ -51,7 +49,9 @@ PresentationRulesPublicHeaders    = $(PresentationRulesPublicApiDirectory)Presen
                                     $(PresentationRulesPublicApiDirectory)PropertyEditorsSpecification.h
 
 
-PresentationRulesInternalHeaders  = $(PresentationRulesSourceDirectory)PresentationRuleXmlConstants.h
+PresentationRulesInternalHeaders  = $(PresentationRulesSourceDirectory)PresentationRuleXmlConstants.h \
+                                    $(PresentationRulesSourceDirectory)PresentationRuleJsonConstants.h \
+                                    $(PresentationRulesSourceDirectory)CommonToolsInternal.h
                                     
 PresentationRulesHeaders          = $(PresentationRulesPublicHeaders) $(PresentationRulesInternalHeaders) $(RulesDrivenECPresentationHeaders)
 

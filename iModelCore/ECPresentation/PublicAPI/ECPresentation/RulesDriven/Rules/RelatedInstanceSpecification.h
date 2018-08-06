@@ -29,7 +29,7 @@ struct RelatedInstanceSpecification : HashableBase
 
     public:
         //! Constructor.
-        RelatedInstanceSpecification() : m_isRequired(false) {}
+        RelatedInstanceSpecification() : m_isRequired(false), m_direction(RequiredRelationDirection_Both) {}
         
         //! Constructor.
         RelatedInstanceSpecification(RequiredRelationDirection direction, Utf8String relationshipName, Utf8String className, Utf8String alias, bool isRequired = false)
@@ -39,11 +39,14 @@ struct RelatedInstanceSpecification : HashableBase
         //! Reads specification from XML.
         ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
 
+        //! Writes the specification to xml node.
+        ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+
         //! Reads specification from Json.
         ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
 
-        //! Writes the specification to xml node.
-        ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+        //! Reads specification from Json.
+        ECPRESENTATION_EXPORT Json::Value WriteJson() const;
 
         //! Returns direction of relationship that should be selected in the query.
         RequiredRelationDirection GetRelationshipDirection() const {return m_direction;}
