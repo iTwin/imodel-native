@@ -27,7 +27,8 @@
 #include <BeSQLite/ChangeSet.h>
 #include <BeSQLite/RTreeMatch.h>
 #include <ECDb/ECDbApi.h>
-#include "JsonUtils.h"
+#include <GeomJsonWireFormat/JsonUtils.h>
+#include <PlacementOnEarth/Placement.h>
 
 #define USING_NAMESPACE_BENTLEY_DGN         using namespace BentleyApi::Dgn;
 #define USING_NAMESPACE_BENTLEY_RENDER      using namespace BentleyApi::Dgn::Render;
@@ -61,10 +62,6 @@ DGNPLATFORM_TYPEDEFS(AuxCoordSystem)
 DGNPLATFORM_TYPEDEFS(AuxCoordSystem2d)
 DGNPLATFORM_TYPEDEFS(AuxCoordSystem3d)
 DGNPLATFORM_TYPEDEFS(AuxCoordSystemSpatial)
-DGNPLATFORM_TYPEDEFS(AxisAlignedBox2d)
-DGNPLATFORM_TYPEDEFS(AxisAlignedBox3d)
-DGNPLATFORM_TYPEDEFS(BoundingBox2d)
-DGNPLATFORM_TYPEDEFS(BoundingBox3d)
 DGNPLATFORM_TYPEDEFS(Caret)
 DGNPLATFORM_TYPEDEFS(CategorySelector)
 DGNPLATFORM_TYPEDEFS(ChangeAnnotationScale)
@@ -123,8 +120,6 @@ DGNPLATFORM_TYPEDEFS(DrawingViewController)
 DGNPLATFORM_TYPEDEFS(DrawingViewDefinition)
 DGNPLATFORM_TYPEDEFS(DynamicsContext)
 DGNPLATFORM_TYPEDEFS(ECSqlClassParams)
-DGNPLATFORM_TYPEDEFS(ElementAlignedBox2d)
-DGNPLATFORM_TYPEDEFS(ElementAlignedBox3d)
 DGNPLATFORM_TYPEDEFS(ElementAspectIteratorEntry)
 DGNPLATFORM_TYPEDEFS(ElementIteratorEntry)
 DGNPLATFORM_TYPEDEFS(ElementLocateManager)
@@ -196,8 +191,6 @@ DGNPLATFORM_TYPEDEFS(PhysicalModel)
 DGNPLATFORM_TYPEDEFS(PhysicalPartition)
 DGNPLATFORM_TYPEDEFS(PhysicalType)
 DGNPLATFORM_TYPEDEFS(PickContext)
-DGNPLATFORM_TYPEDEFS(Placement2d)
-DGNPLATFORM_TYPEDEFS(Placement3d)
 DGNPLATFORM_TYPEDEFS(RecipeDefinitionElement)
 DGNPLATFORM_TYPEDEFS(Redline)
 DGNPLATFORM_TYPEDEFS(RedlineModel)
@@ -508,107 +501,6 @@ public:
     void SetActive(bool enable) {if (m_partId.IsValid()) {if (!enable) SetGeometryPartId(DgnGeometryPartId()); return;} Init();}
     void SetActiveGeometryPart(DgnGeometryPartId partId) {SetGeometryPartId(partId);}
     void Increment() {if (m_partId.IsValid()) IncrementPartIndex(); else IncrementIndex();}
-};
-
-//=======================================================================================
-//! A DRange3d that holds min/max values for an object in each of x,y,z in some coordinate system.
-//! @note A BoundingBox3d makes no guarantee that the box is the minimum (smallest) box possible, just that no portion of the object
-//! described by it will extend beyond its values.
-// @bsiclass                                                    Keith.Bentley   03/14
-//=======================================================================================
-struct BoundingBox3d : DRange3d
-{
-    BoundingBox3d() {DRange3d::Init();}
-    explicit BoundingBox3d(DRange2dCR range2d) {DRange3d::InitFrom(&range2d.low, 2, 0.0);}
-    bool IsValid() const {return !IsEmpty();}
-    void ToJson(JsonValueR value) const {JsonUtils::DRange3dToJson(value, *this);}
-	void FromJson(JsonValueCR value) { JsonUtils::DRange3dFromJson(*this, value); }
-};
-
-//=======================================================================================
-//! A BoundingBox3d that is aligned with the axes of a CoordinateSpace.
-// @bsiclass                                                    Keith.Bentley   03/14
-//=======================================================================================
-struct AxisAlignedBox3d : BoundingBox3d
-{
-    AxisAlignedBox3d() {}
-    explicit AxisAlignedBox3d(DRange3dCR range) {DRange3d::InitFrom(range.low, range.high);}
-    explicit AxisAlignedBox3d(DRange2dCR range2d) {DRange3d::InitFrom(&range2d.low, 2, 0.0);}
-    AxisAlignedBox3d(DPoint3dCR lowPt, DPoint3dCR highPt) {DRange3d::InitFrom(lowPt, highPt);}
-    DPoint3d GetCenter() const {return DPoint3d::FromInterpolate(low, .5, high);}
-};
-
-//=======================================================================================
-//! A BoundingBox3d that is aligned with the local coordinate system of a DgnElement.
-// @bsiclass                                                    Keith.Bentley   03/14
-//=======================================================================================
-struct ElementAlignedBox3d : BoundingBox3d
-{
-    ElementAlignedBox3d() {}
-    explicit ElementAlignedBox3d(DRange2dCR range2d) {DRange3d::InitFrom(&range2d.low, 2, 0.0);}
-    ElementAlignedBox3d(double left, double front, double bottom, double right, double back, double top) {DRange3d::InitFrom(left, front, bottom, right, back, top);}
-    explicit ElementAlignedBox3d(DRange3dCR range) {DRange3d::InitFrom(range.low, range.high);}
-
-    double GetLeft() const {return low.x;}
-    double GetBottom() const {return low.y;}
-    double GetFront() const {return low.z;}
-    double GetRight() const {return high.x;}
-    double GetTop() const {return high.y;}
-    double GetBack() const {return high.z;}
-    double GetWidth() const {return XLength();}
-    double GetDepth() const {return YLength();}
-    double GetHeight() const {return ZLength();}
-    void SetLeft(double left) {low.x = left;}
-    void SetFront(double front) {low.y = front;}
-    void SetBottom(double bottom) {low.z = bottom;}
-    void SetRight(double right) {high.x = right;}
-    void SetBack(double back) {high.y = back;}
-    void SetTop(double top) {high.z = top;}
-};
-
-//=======================================================================================
-//! A DRange2d that holds min/max values for an object in each of x and y in some coordinate system.
-//! @note A BoundingBox2d makes no guarantee that the box is the minimum (smallest) box possible, just that no portion of the object
-//! described by it will extend beyond its values.
-// @bsiclass                                                    Keith.Bentley   03/14
-//=======================================================================================
-struct BoundingBox2d : DRange2d
-{
-    BoundingBox2d() {DRange2d::Init();}
-    bool IsValid() const {return !IsEmpty();}
-};
-
-//=======================================================================================
-//! A BoundingBox2d that is aligned with the axes of a CoordinateSpace.
-// @bsiclass                                                    Keith.Bentley   03/14
-//=======================================================================================
-struct AxisAlignedBox2d : BoundingBox2d
-{
-    AxisAlignedBox2d() {}
-    AxisAlignedBox2d(DRange2dCR range) {DRange2d::InitFrom(range.low, range.high);}
-    AxisAlignedBox2d(DPoint2dCR low, DPoint2dCR high) {DRange2d::InitFrom(low, high);}
-};
-
-//=======================================================================================
-//! A BoundingBox2d that is aligned with the local coordinate system of a DgnElement.
-// @bsiclass                                                    Keith.Bentley   03/14
-//=======================================================================================
-struct ElementAlignedBox2d : BoundingBox2d
-{
-    ElementAlignedBox2d() {}
-    ElementAlignedBox2d(double left, double bottom, double right, double top) {DRange2d::InitFrom(left, bottom, right, top);}
-
-    double GetLeft() const {return low.x;}
-    double GetBottom() const {return low.y;}
-    double GetRight() const {return high.x;}
-    double GetTop() const {return high.y;}
-    double GetWidth() const {return XLength();}
-    double GetHeight() const {return YLength();}
-    double GetAspectRatio() const {return XLength() / YLength();}
-    void SetLeft(double left) {low.x = left;}
-    void SetBottom(double bottom) {low.y = bottom;}
-    void SetRight(double right) {high.x = right;}
-    void SetTop(double top) {high.y = top;}
 };
 
 //=======================================================================================

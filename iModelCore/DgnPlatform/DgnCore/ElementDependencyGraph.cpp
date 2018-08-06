@@ -1128,6 +1128,19 @@ void DgnElementDependencyGraph::DiscoverEdges()
     // Find and schedule the EDEs which where deleted.
     for (auto deletedRel : m_txnMgr.ElementDependencies().m_deletedRels)
         {
+        auto reversedEdge = std::find_if(fringe.begin(), fringe.end(), [deletedRel] (Edge const& edge) { return edge.m_ein == deletedRel.m_target && edge.m_eout == deletedRel.m_source; });
+        if (fringe.end() != reversedEdge)
+            {
+            // Add deleted relationship's downstream dependencies
+            elementDrivesElement.BindSelectByRoot(deletedRel.m_target);
+            Edge affected;
+            while (elementDrivesElement.StepSelectByRoot(affected) == BE_SQLITE_ROW)
+                {
+                fringe.push_back(affected);
+                }
+            continue;
+            }
+
         Edge deletedEdge;
         deletedEdge.m_ein = deletedRel.m_source;
         deletedEdge.m_eout = deletedRel.m_target;

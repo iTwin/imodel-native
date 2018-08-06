@@ -2643,7 +2643,7 @@ TEST_F(ImodelJsTest, MeasureInsertPerformance)
     for (int i=0; i<elementCount; ++i)
         {
         DgnClassId ecClassId(m_db->Schemas().GetClassId("DgnPlatformTest", "ImodelJsTestElement").GetValue());
-        DgnElementPtr el = new ImodelJsTestElement(ImodelJsTestElement::CreateParams(*m_db, modelId, ecClassId, defaultCategoryId, Dgn::Placement3d()));
+        DgnElementPtr el = new ImodelJsTestElement(ImodelJsTestElement::CreateParams(*m_db, modelId, ecClassId, defaultCategoryId, Placement3d()));
         el->SetPropertyValue("IntegerProperty1", i);
         el->SetPropertyValue("IntegerProperty2", i);
         el->SetPropertyValue("IntegerProperty3", i);

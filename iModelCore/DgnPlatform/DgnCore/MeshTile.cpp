@@ -1918,6 +1918,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
     auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model); // ###TODO: empty interface; remove this once no longer needed
     auto                getPublishedURL = dynamic_cast<IGetPublishedTilesetInfo*>(&model);
+    auto                customPublisher = dynamic_cast<ICustomTilesetPublisher*>(&model);
     GeometricModelP     geometricModel = model.ToGeometricModelP();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
     
@@ -1938,7 +1939,10 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         {
         // ###TODO: Change point clouds to go through this path instead of _GenerateMeshTiles below.
         if (getTileTree->_AllowPublishing())
-            return GenerateTilesFromTileTree(&collector, leafTolerance, surfacesOnly, geometricModel);
+            if (nullptr != customPublisher)
+                return collector._AcceptCustomTilesetPublisher(model, *customPublisher);
+            else
+                return GenerateTilesFromTileTree(&collector, leafTolerance, surfacesOnly, geometricModel);
         else if (nullptr != getPublishedURL)
             return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
         else

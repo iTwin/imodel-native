@@ -669,6 +669,14 @@ ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId ro
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult TestElementDrivesElementHandler::Delete(Dgn::DgnDbR db, ECInstanceKeyCR key)
+    {
+    return db.DeleteLinkTableRelationship(key);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "DgnPlatform Test Schema", 1)
