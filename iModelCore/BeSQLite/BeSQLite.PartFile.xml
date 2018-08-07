@@ -22,7 +22,6 @@
         <Bindings>
             <Libs>Delivery/$(libprefix)BeSQLite$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)BeSQLite$(ApiNumber)$(shlibext)</Assemblies>
-            <Files Required="false" SubPartDirectory="mki">Delivery/mki/BeSQLiteRequiredLibs.mki</Files>
         </Bindings>
     </Part>
 
