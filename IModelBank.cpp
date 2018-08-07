@@ -44,6 +44,13 @@
     }                                                                                                   \
     int32_t var = info[i].As<Napi::Number>().Int32Value();
 
+#define REQUIRE_ARGUMENT_BOOLEAN(i, var)                                                               \
+    if (info.Length() <= (i) || !info[i].IsBoolean())                                                  \
+    {                                                                                                  \
+        Napi::TypeError::New(Env(), "Argument " #i " must be a boolean").ThrowAsJavaScriptException(); \
+    }                                                                                                  \
+    bool var = info[i].As<Napi::Boolean>().Value();
+
 #define REQUIRE_ARGUMENT_ANY_OBJ(i, var, retval)                                     \
     if (info.Length() <= (i))                                                        \
     {                                                                                \
@@ -366,8 +373,11 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
     Napi::Value CreateDb(const Napi::CallbackInfo &info)
     {
         REQUIRE_ARGUMENT_STRING(0, dbName);
+        REQUIRE_ARGUMENT_INTEGER(1, defaultTxn);
         RETURN_IF_HAD_EXCEPTION
-        DbResult status = GetDb().CreateNewDb(BeFileName(dbName.c_str(), true));
+        BeSQLite::Db::CreateParams params;
+        params.SetStartDefaultTxn((BeSQLite::DefaultTxn)defaultTxn);
+        DbResult status = GetDb().CreateNewDb(BeFileName(dbName.c_str(), true), BeGuid(), params);
         return Napi::Number::New(Env(), (int)status);
     }
 
@@ -375,8 +385,9 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
     {
         REQUIRE_ARGUMENT_STRING(0, dbName);
         REQUIRE_ARGUMENT_INTEGER(1, mode);
+        REQUIRE_ARGUMENT_INTEGER(2, defaultTxn);
         RETURN_IF_HAD_EXCEPTION
-        DbResult status = GetDb().OpenBeSQLiteDb(BeFileName(dbName.c_str(), true), BeSQLite::Db::OpenParams((Db::OpenMode)mode));
+        DbResult status = GetDb().OpenBeSQLiteDb(BeFileName(dbName.c_str(), true), BeSQLite::Db::OpenParams((Db::OpenMode)mode, (BeSQLite::DefaultTxn)defaultTxn));
         DgnSqlFuncsForTriggers::Register(GetDb());
         return Napi::Number::New(Env(), (int)status);
     }
