@@ -72,7 +72,6 @@ $(Delivery)BeHttp$(ApiNumber).dll : $(DgnDbDlls)BeHttp$(ApiNumber).dll
 
 $(Delivery)BeFolly$(ApiNumber).dll : $(DgnDbDlls)BeFolly$(ApiNumber).dll
 
-%if "x64" == $(TARGET_PROCESSOR_ARCHITECTURE)
 $(Delivery)bentleylog4cxx$(ApiNumber).dll : $(DgnDbDlls)bentleylog4cxx$(ApiNumber).dll
 
 $(Delivery)PointCloudSchema$(ApiNumber).dll : $(DgnDbDlls)PointCloudSchema$(ApiNumber).dll
@@ -80,8 +79,6 @@ $(Delivery)PointCloudSchema$(ApiNumber).dll : $(DgnDbDlls)PointCloudSchema$(ApiN
 $(Delivery)RasterSchema$(ApiNumber).dll : $(DgnDbDlls)RasterSchema$(ApiNumber).dll
 
 $(Delivery)ThreeMx$(ApiNumber).dll : $(DgnDbDlls)ThreeMx$(ApiNumber).dll
-
-%endif
 
 #$(Delivery)BeSecurity$(ApiNumber).dll : $(DgnDbDlls)BeSecurity$(ApiNumber).dll
 
