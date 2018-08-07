@@ -7,10 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
 #include <RealityPlatformTools/SimpleRDSApi.h>
+#include <ScalableMeshSchema/ScalableMeshHandler.h>
 #include "DgnPlatform/WebMercator.h"
 
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
+USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
@@ -148,11 +150,18 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
                 return ERROR;
                 }
             }
-
         BeFileName  rootJsonFile(nullptr, modelDir.c_str(), L"TileRoot", L"json");
-        static double   s_leafTolerance = .01;      // TBD. make this a setting.
-        TileTree::IO::ICesiumPublisher::WriteCesiumTileset(rootJsonFile, modelDir, *geometricModel, dbToEcefTransform, s_leafTolerance);
-        
+        auto smModel = dynamic_cast<ScalableMeshModelCP>(geometricModel);
+        if (smModel != nullptr)
+            {
+            smModel->WriteCesiumTileset(rootJsonFile, modelDir);
+            }
+        else
+            {
+            static double   s_leafTolerance = .01;      // TBD. make this a setting.
+            TileTree::IO::ICesiumPublisher::WriteCesiumTileset(rootJsonFile, modelDir, *geometricModel, dbToEcefTransform, s_leafTolerance);
+            }
+
         Utf8String url;
         if (doUpload)
             {

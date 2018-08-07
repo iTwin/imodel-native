@@ -173,7 +173,7 @@ DgnDbStatus     DwgImporter::UpdateElementName (DgnElementR editElement, Utf8Str
             editElement.Update (&status);
         }
     if (status != DgnDbStatus::Success)
-        this->ReportIssueV (IssueSeverity::Error, IssueCategory::Briefcase(), Issue::CannotUpdateName(), code.GetValueUtf8().c_str(), newValue.c_str());
+        this->ReportIssueV (IssueSeverity::Error, IssueCategory::Briefcase(), Issue::CannotUpdateName(), "Element", code.GetValueUtf8().c_str(), newValue.c_str());
     return  status;
     }
 
@@ -2072,6 +2072,8 @@ void            DwgImporter::ParseConfigurationFile (T_Utf8StringVectorR userObj
                 m_options.SetSyncBlockChanges (boolValue);
             else if (str.EqualsI("PreferRenderableGeometry"))
                 m_options.SetPreferRenderableGeometry (boolValue);
+            else if (str.EqualsI("ConvertAsmAsParasolid"))
+                m_options.SetAsmAsParasolid (boolValue);
             else if (str.EqualsI("SyncDwgVersionGuid"))
                 m_options.SetSyncDwgVersionGuid (boolValue);
             else if (str.EqualsI("SyncAsmBodyInFull"))

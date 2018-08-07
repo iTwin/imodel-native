@@ -128,7 +128,53 @@ static ColorDef toColorDef(UInt32 val, DgnFileR dgnFile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void convertSkyboxDisplay(DisplayStyle3dR dstyle3d, DgnV8Api::DisplayStyle const& v8displayStyle, DgnFileR dgnFile)
+void convertGradientSkybox(DisplayStyle3d::EnvironmentDisplay& env, LxoEnvironmentGradientLayerR gradLayer)
+    {
+    env.m_skybox.m_zenithColor = toColorDef(gradLayer.GetZenithColor());
+    env.m_skybox.m_skyColor = toColorDef(gradLayer.GetSkyColor());
+    env.m_skybox.m_groundColor = toColorDef(gradLayer.GetGroundColor());
+    env.m_skybox.m_nadirColor = toColorDef(gradLayer.GetNadirColor());
+    env.m_skybox.m_skyExponent = gradLayer.GetSkyExponent();
+    env.m_skybox.m_groundExponent = gradLayer.GetGroundExponent();
+    env.m_skybox.m_twoColor = gradLayer.Is2Color();
+    env.m_skybox.m_enabled = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void convertImageSkybox(DisplayStyle3d::EnvironmentDisplay& env, LxoEnvironmentImageLayerR layer, DgnFileR v8File, Converter& converter)
+    {
+    using ImageType = DisplayStyle3d::EnvironmentDisplay::SkyBox::Image::Type;
+
+    ImageType imageType = ImageType::None;
+    auto projection = layer.GetProjectionType();
+    switch (projection)
+        {
+        case DgnV8Api::LxoEnvironmentImageLayer::LXO_ENVPROJECT_Spherical:
+            imageType = ImageType::Spherical;
+            break;
+        case DgnV8Api::LxoEnvironmentImageLayer::LXO_ENVPROJECT_Cylindrical:
+            imageType = ImageType::Cylindrical;
+            break;
+        default:
+            return; // ###TODO: Image Cube apparently soon to be supported by MicroStation; any others we can support?
+        }
+
+    WCharCP imageFileName = layer.GetFileName();
+    DgnTextureId textureId = converter.FindOrInsertTextureImage(imageFileName, v8File);
+    if (!textureId.IsValid())
+        return;
+
+    env.m_skybox.m_image.m_type = imageType;
+    env.m_skybox.m_image.m_textureId = textureId;
+    env.m_skybox.m_enabled = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void convertSkyboxDisplay(DisplayStyle3dR dstyle3d, DgnV8Api::DisplayStyle const& v8displayStyle, DgnFileR dgnFile, Converter& converter)
     {
     auto v8env = DgnV8Api::LxoEnvironmentManager::GetManagerR().FindLxoEnvironmentByName(v8displayStyle.GetEnvironmentName().c_str(), dgnFile);
 
@@ -139,21 +185,16 @@ void convertSkyboxDisplay(DisplayStyle3dR dstyle3d, DgnV8Api::DisplayStyle const
         return;
 
     auto layer = v8env->GetCurrentLayer();
-    if (layer->GetType() != DgnV8Api::LxoEnvironmentLayerType::Gradient)
-        return;
-
-    auto gradLayer = (LxoEnvironmentGradientLayerP) layer;
-
-    auto env = dstyle3d.GetEnvironmentDisplay();
-    env.m_skybox.m_zenithColor = toColorDef(gradLayer->GetZenithColor());
-    env.m_skybox.m_skyColor = toColorDef(gradLayer->GetSkyColor());
-    env.m_skybox.m_groundColor = toColorDef(gradLayer->GetGroundColor());
-    env.m_skybox.m_nadirColor = toColorDef(gradLayer->GetNadirColor());
-    env.m_skybox.m_skyExponent = gradLayer->GetSkyExponent();
-    env.m_skybox.m_groundExponent = gradLayer->GetSkyExponent();
-    env.m_skybox.m_twoColor = gradLayer->Is2Color();
-    env.m_skybox.m_enabled = true;
-    dstyle3d.SetEnvironmentDisplay(env);
+    auto& env = dstyle3d.GetEnvironmentDisplayR();
+    switch (layer->GetType())
+        {
+        case DgnV8Api::LxoEnvironmentLayerType::Gradient:
+            convertGradientSkybox(env, *(LxoEnvironmentGradientLayerP)layer);
+            break;
+        case DgnV8Api::LxoEnvironmentLayerType::Image:
+            convertImageSkybox(env, *(LxoEnvironmentImageLayerP)layer, dgnFile, converter);
+            break;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -179,7 +220,7 @@ void Converter::ConvertDisplayStyle(DisplayStyleR style, DgnV8Api::DisplayStyle 
                 style.SetBackgroundColor(toColorDef(overrides.m_backgroundColor, dgnFile));
             else
                 {
-                convertSkyboxDisplay(*style3d, v8displayStyle, dgnFile);
+                convertSkyboxDisplay(*style3d, v8displayStyle, dgnFile, *this);
 
                 // due to a bug in MS, when this flag is on, viewInfo.ResolveBGColor returns the wrong answer. 
                 // It matters for transparency with QV. 255 is the right bg color. 

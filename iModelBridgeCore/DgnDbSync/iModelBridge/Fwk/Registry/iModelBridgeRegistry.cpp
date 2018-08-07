@@ -18,6 +18,7 @@
 #include <Logging/bentleylogging.h>
 #include <BeXml/BeXml.h>
 #include "cpl_spawn.h"
+#include <cxxopts/cxxopts.hpp>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -478,17 +479,18 @@ void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocumentsInDir(BeFileNa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeRegistryBase::SearchForBridgesToAssignToFile(BeFileNameCR fileName, WStringCR parentBridgeName)
+BentleyStatus   iModelBridgeRegistryBase::SearchForBridgesToAssignToFile(BeFileNameCR fileName, WStringCR parentBridgeName, bset<BeFileName>& currentContext)
     {
     if (fileName.empty())
         return ERROR;
 
     //Assign the incoming file
     WString bridgeName;
-    //Skip already assigned files to prevent circural reference cases
-    BeFileName a;
-    if (BSISUCCESS == QueryBridgeAssignedToDocument(a, bridgeName, fileName)) // If we have already assigned a bridge to this document, then stick with that.
+    //Skip already visited files to prevent circural reference cases
+    if (currentContext.end() != currentContext.find(fileName))
         return BSISUCCESS;
+    else
+        currentContext.insert(fileName);
 
     SearchForBridgeToAssignToDocument(bridgeName, fileName, parentBridgeName);
 
@@ -501,7 +503,7 @@ BentleyStatus   iModelBridgeRegistryBase::SearchForBridgesToAssignToFile(BeFileN
         {
         IDmsFileLocator::DmsInfo refDocInfo;
         if (SUCCESS == locator.GetDocumentInfo(refDocInfo, refInfo.m_id, m_stagingDir))
-            SearchForBridgesToAssignToFile(refDocInfo.m_fileName, bridgeName);
+            SearchForBridgesToAssignToFile(refDocInfo.m_fileName, bridgeName, currentContext);
         }
 
     return SUCCESS;
@@ -514,7 +516,8 @@ void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocuments()
     {
     if (!m_masterFilePath.empty())
         {
-        SearchForBridgesToAssignToFile(m_masterFilePath, L"");
+        bset<BeFileName> currentContext;
+        SearchForBridgesToAssignToFile(m_masterFilePath, L"", currentContext);
         }
     else
         {
@@ -693,7 +696,7 @@ BentleyStatus iModelBridgeRegistry::_FindBridgeInRegistry(BeFileNameR bridgeLibr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus readEntireFile(WStringR contents, BeFileNameCR fileName)
+static BentleyStatus readEntireFile(Utf8StringR contents, BeFileNameCR fileName)
     {
     BeFile errfile;
     if (BeFileStatus::Success != errfile.Open(fileName.c_str(), BeFileAccess::Read))
@@ -710,9 +713,9 @@ static BentleyStatus readEntireFile(WStringR contents, BeFileNameCR fileName)
 
     const Byte utf8BOM[] = {0xef, 0xbb, 0xbf};
     if (bytes[0] == utf8BOM[0] || bytes[1] == utf8BOM[1] || bytes[2] == utf8BOM[2])
-        contents.AssignUtf8((Utf8CP) (bytes.data() + 3));
+        contents.assign((Utf8CP) (bytes.data() + 3));
     else
-        contents.AssignA((char*) bytes.data());
+        contents.assign((char*) bytes.data());
 
     return BSISUCCESS;
     }
@@ -720,21 +723,49 @@ static BentleyStatus readEntireFile(WStringR contents, BeFileNameCR fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString getArgValueW(WCharCP arg)
+static void AssignCxxOptsResult(cxxopts::ParseResult& result, CharCP option, BeFileNameR fileNameResult)
     {
-    WString argValue(arg);
-    argValue = argValue.substr(argValue.find_first_of('=', 0) + 1);
-    argValue.Trim(L"\"");
-    argValue.Trim();
-    return argValue;
+    if (result.count(option) > 0)
+        {
+        WString fileName(result[option].as<std::string>().c_str(), true);
+        fileName.DropQuotes();
+        BeFileName::FixPathName(fileNameResult, fileName.c_str());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String getArgValue(WCharCP arg)
+static void  ParseCxxOptsResult(cxxopts::ParseResult& result, iModelBridgeRegistryBase::AssignCmdLineArgs& args)
     {
-    return Utf8String(getArgValueW(arg));
+    AssignCxxOptsResult(result, "fwk-input", args.m_inputFileName);
+    AssignCxxOptsResult(result, "fwk-staging-dir", args.m_stagingDir);
+    AssignCxxOptsResult(result, "registry-dir", args.m_registryDir);
+    AssignCxxOptsResult(result, "fwk-logging-config-file", args.m_loggingConfigFileName);
+
+    if (result.count("server-repository") > 0)
+        {
+        args.m_repositoryName = result["server-repository"].as<std::string>().c_str();
+        args.m_repositoryName.DropQuotes();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static cxxopts::Options GetCmdLineOptions()
+    {
+    cxxopts::Options options("iModelBridgeAssign", "iModelBridgeAssign creates an SQL database where bridge Assignments are stored");
+    options.add_options()
+        ("o,options-file", "FileName containing command line options", cxxopts::value<std::string>(),"<Optional>")
+        ("f,fwk-input", "The input Master model for assignment scanning", cxxopts::value<std::string>(),"eg.\"Mastermodel.dgn\"")
+        ("d,fwk-staging-dir", "Optional input staging directory for assignment scanning. Ignored if --fwk-input is specified.", cxxopts::value<std::string>(),"eg.\"c:\\BAS_WORKDIR\\1\"")
+        ("s,server-repository", "The iModel for the conversion job.", cxxopts::value<std::string>(),"<Required>")
+        ("r,registry-dir", "The directory to store assignments.", cxxopts::value<std::string>(),"<Optional>")
+        ("l,fwk-logging-config-file", "The configuration file to be used for logging.", cxxopts::value<std::string>(), "<Optional>")
+        ("h,help", "Print help")
+        ;
+    return options;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -742,81 +773,62 @@ static Utf8String getArgValue(WCharCP arg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeRegistryBase::AssignCmdLineArgs::ParseCommandLine(int argc, WCharCP argv[])
     {
-    for (int iArg = 1; iArg < argc; ++iArg)
+    std::vector<Utf8String> args;
+
+    char** argPtrs = (char**)malloc(argc * sizeof(char*));
+
+    for (int index = 0; index < argc; ++index)
         {
-        if (argv[iArg][0] == '@')
-            {
-            BeFileName rspFileName(argv[iArg]+1);
-            WString wargs;
-            if (BSISUCCESS != readEntireFile(wargs, rspFileName))
-                {
-                fwprintf(stderr, L"%ls - response file not found\n", rspFileName.c_str());
-                return BSIERROR;
-                }
-
-            bvector<WString> strings;
-            bvector<WCharCP> ptrs;
-            BeStringUtilities::ParseArguments(strings, wargs.c_str(), L"\n\r");
-
-            if (!strings.empty())
-                {
-                ptrs.push_back(argv[0]);
-                for (auto const& str: strings)
-                    {
-                    if (!str.empty())
-                        ptrs.push_back(str.c_str());
-                    }
-
-                if (BSISUCCESS != ParseCommandLine((int)ptrs.size(), &ptrs.front()))
-                    return BSIERROR;
-                }
-
-            continue;
-            }
-
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-staging-dir="))
-            {
-            if (!m_stagingDir.empty())
-                {
-                fwprintf(stderr, L"The --fwk-staging-dir= option may appear only once.\n");
-                return BSIERROR;
-                }
-            m_stagingDir.SetName(getArgValueW(argv[iArg]));
-            continue;
-            }
-
-        if (argv[iArg] == wcsstr(argv[iArg], L"--registry-dir="))
-            {
-            m_registryDir.SetName(getArgValueW(argv[iArg]));
-            continue;
-            }
-
-        if (argv[iArg] == wcsstr(argv[iArg], L"--server-repository="))
-            {
-            m_repositoryName = getArgValue(argv[iArg]);
-            continue;
-            }
-
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-logging-config-file="))
-            {
-            m_loggingConfigFileName.SetName(getArgValueW(argv[iArg]));
-            continue;
-            }
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-input="))
-            {
-            if (!m_inputFileName.empty())
-                {
-                fwprintf(stderr, L"The --fwk-input= option may appear only once.\n");
-                return BSIERROR;
-                }
-            BeFileName::FixPathName(m_inputFileName, getArgValueW(argv[iArg]).c_str());
-            continue;
-            }
-        BeAssert(false);
-        fwprintf(stderr, L"%ls: unrecognized assign argument\n", argv[iArg]);
-        return BSIERROR;
+        Utf8String val(argv[index]);
+        args.push_back(val);
         }
 
+    for (int index =0; index <argc; ++index)
+        argPtrs[index] = &args[index][0];
+
+    cxxopts::Options options = GetCmdLineOptions();
+    auto result = options.parse(argc, argPtrs);
+    
+    
+    if (result.count("options-file") > 0)
+        {
+        Utf8String contents;
+        BeFileName optionsFileName;
+        AssignCxxOptsResult(result, "options-file", optionsFileName);
+        readEntireFile(contents, optionsFileName);
+
+        if (!contents.empty())
+        {
+            bvector<Utf8String> fileOptions;
+            BeStringUtilities::Split(contents.c_str(), "\r\n", NULL, fileOptions);
+            for (Utf8StringCR opt : fileOptions)
+            {
+                if (opt.empty())
+                    continue;
+
+                args.push_back(opt);
+            }
+            free(argPtrs);
+            argPtrs = (char**)malloc(args.size() * sizeof(char*));
+            argc = (int)args.size();
+            for (int index = 0; index < argc; ++index)
+                argPtrs[index] = &args[index][0];
+            auto finalResult = options.parse(argc, argPtrs);
+            ParseCxxOptsResult(finalResult, *this);
+        }
+        else
+            ParseCxxOptsResult(result, *this);
+        }
+    else
+        ParseCxxOptsResult(result, *this);
+
+    if (result.count("help"))
+        {
+        std::cout << options.help({ "", "Group" }) << std::endl;
+        exit(0);
+        }
+
+    free(argPtrs);
     return BSISUCCESS;
     }
 
@@ -850,10 +862,19 @@ int iModelBridgeRegistryBase::AssignMain(int argc, WCharCP argv[])
     if (BSISUCCESS != args.ParseCommandLine(argc, argv))
         return -1;
 
-    if (args.m_stagingDir.empty() || !args.m_stagingDir.DoesPathExist()
-     || args.m_repositoryName.empty())
+    initLoggingForAssignMain(args.m_loggingConfigFileName);
+
+
+    if (args.m_stagingDir.empty() || !args.m_stagingDir.DoesPathExist())
         {
-        fwprintf(stderr, L"syntax: %ls --server-repository=<reponame> --fwk-staging-dir=<dirname> [--registry-dir]\n", argv[0]);
+        LOG.fatal(L"Staging directory specified must exist.");
+        fprintf(stderr, GetCmdLineOptions().help({ "" }).c_str());
+        return -1;
+        }
+     if (args.m_repositoryName.empty())
+        {
+        LOG.fatal(L"iModel name should be specified.");
+        fprintf(stderr, GetCmdLineOptions().help({ "" }).c_str());
         return -1;
         }
 

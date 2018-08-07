@@ -69,7 +69,7 @@ private:
     
     bool QueryAnyInstalledBridges();
   
-    BentleyStatus SearchForBridgesToAssignToFile(BeFileNameCR fileName, WStringCR parentBridgeName);
+    BentleyStatus SearchForBridgesToAssignToFile(BeFileNameCR fileName, WStringCR parentBridgeName, bset<BeFileName>& currentContext);
     void SearchForBridgesToAssignToDocumentsInDir(BeFileNameCR);
     
     BentleyStatus QueryBridgeAssignedToDocument(BeFileNameR libPath, WStringR name, BeFileNameCR docName);

@@ -253,6 +253,7 @@ struct DwgImporter
     friend class DwgPointCloudExExt;
     friend class DwgViewportExt;
     friend class DwgLightExt;
+    friend class DwgBrepExt;
 
 public:
     //! Configuration for the conversion process
@@ -324,6 +325,7 @@ public:
         bool                m_importPointClouds;
         uint16_t            m_pointCloudLevelOfDetails;
         bool                m_preferRenderableGeometry;
+        bool                m_asmAsParasolid;
         Utf8String          m_namePrefix;
         bool                m_includeDwgPathInMaterialSearchPaths;
         bool                m_runAsStandaloneApp;
@@ -344,6 +346,7 @@ public:
             m_importPointClouds = false;
             m_pointCloudLevelOfDetails = 1;
             m_preferRenderableGeometry = false;
+            m_asmAsParasolid = false;
             m_includeDwgPathInMaterialSearchPaths = false;
             m_runAsStandaloneApp = false;
             }
@@ -367,6 +370,7 @@ public:
         void SetImportPointClouds (bool allow) { m_importPointClouds = allow; }
         void SetPointCloudLevelOfDetails (uint16_t lod) { if (lod <= 100) m_pointCloudLevelOfDetails = lod; }
         void SetPreferRenderableGeometry (bool forRendering) { m_preferRenderableGeometry = forRendering; }
+        void SetAsmAsParasolid (bool toBrep) { m_asmAsParasolid = toBrep; }
         void SetNamePrefix (Utf8CP prefix) { m_namePrefix.assign(prefix); }
         void SetDwgPathInMaterialSearch (bool v) { m_includeDwgPathInMaterialSearchPaths = v; }
         void SetRunAsStandaloneApp (bool v) { m_runAsStandaloneApp = v; }
@@ -395,6 +399,7 @@ public:
         bool GetImportPointClouds () const { return m_importPointClouds; }
         uint16_t GetPointCloudLevelOfDetails () const { return m_pointCloudLevelOfDetails; }
         bool IsRenderableGeometryPrefered () const { return m_preferRenderableGeometry; }
+        bool IsAsmAsParasolid () const { return m_asmAsParasolid; }
         Utf8StringCR GetNamePrefix () const { return m_namePrefix; }
         bool IsDwgPathInMaterialSearch () const { return m_includeDwgPathInMaterialSearchPaths; }
         bool IsRunAsStandaloneApp () const { return m_runAsStandaloneApp; }
@@ -567,6 +572,7 @@ public:
     typedef bpair<DgnViewId,DwgDbObjectId>  T_PaperspaceView;
     typedef bmap<DgnViewId,DwgDbObjectId>   T_PaperspaceViewMap;
 
+    //! A data context for a modelspace or paperspace entity ready to be imported into a target DgnDb model.
     struct ElementImportInputs
         {
     public:
@@ -601,6 +607,7 @@ public:
         DwgSyncInfo::DwgModelSyncInfoId GetModelSyncInfoId () const { return m_modelMapping.GetModelSyncInfoId(); }
         };  // ElementImportInputs
 
+    //! A data context for output DgnElement's imported from a modelspace or paperspace DWG entity.
     struct ElementImportResults
         {
     public:

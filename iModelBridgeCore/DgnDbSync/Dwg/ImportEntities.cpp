@@ -882,8 +882,10 @@ private:
     Transform                           m_worldToElement;
     DwgDbSpatialFilterCP                m_spatialFilter;
     bvector<BlockInfo>                  m_blockStack;
+    bvector<int64_t>                    m_parasolidBodies;
     
 public:
+// the constructor
 GeometryFactory (DwgImporter::ElementCreateParams& createParams, DrawParameters& drawParams, DwgImporter::GeometryOptions& opts, DwgDbEntityCP ent) : m_drawParams(drawParams), m_createParams(createParams)
     {
     m_geometryOptions = &opts;
@@ -895,11 +897,22 @@ GeometryFactory (DwgImporter::ElementCreateParams& createParams, DrawParameters&
     m_currentTransform = m_baseTransform;
     m_worldToElement.InitIdentity ();
     m_spatialFilter = nullptr;
+    m_parasolidBodies.clear ();
 
     // start block stack by input entity's block
     auto dwg = nullptr == ent ? m_drawParams.GetDatabase() : ent->GetDatabase();
     auto blockId = nullptr == ent ? dwg->GetModelspaceId() : ent->GetOwnerId();
     m_blockStack.push_back (BlockInfo(blockId, L"ModelSpace", DwgSyncInfo::GetDwgFileId(*dwg)));
+    }
+
+// the destructor
+~GeometryFactory ()
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    auto nBreps = m_parasolidBodies.size ();
+    if (nBreps > 0)
+        ::PK_ENTITY_delete ((int)nBreps, reinterpret_cast<PK_ENTITY_t*>(&m_parasolidBodies.front()));
+#endif
     }
 
 DwgImporter::T_BlockGeometryMap& GetOutputGeometryMap () { return m_outputGeometryMap; }
@@ -1635,6 +1648,11 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
         // trivial reject the entity if it is clipped away as a whole
         if (nullptr != m_spatialFilter && m_spatialFilter->IsEntityFilteredOut(*child.get()))
             return;
+
+        // give protocal extensions a chance to create their own geometry:
+        if (this->CreateBlockChildGeometry(child.get()) == BSISUCCESS)
+            return;
+
         m_drawParams.Initialize (*child.get(), &savedParams);
 
         // gradient fill causes world/viewportDraw to create mesh - remove gradient by setting the hatch as a solid fill:
@@ -1664,6 +1682,36 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
 
     if (!child.IsNull())
         m_drawParams.CopyFrom (savedParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   CreateBlockChildGeometry (DwgDbEntityCP entity)
+    {
+    auto* objExt = DwgProtocalExtension::Cast (entity->QueryX(DwgProtocalExtension::Desc()));
+    if (nullptr == objExt)
+        return  BSIERROR;
+
+    auto geom = objExt->_ConvertToGeometry (entity, m_drawParams.GetDwgImporter());
+    if (!geom.IsValid())
+        return  BSIERROR;
+
+    this->AppendGeometry (*geom.get());
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    // should the protocol extension create a Parasolid body, save the tag to be freed after all elements created.
+    auto brep = geom->GetAsIBRepEntity ();
+    if (brep.IsValid())
+        {
+        bool owned = false;
+        auto tag = PSolidUtil::GetEntityTag (*brep, &owned);
+        if (!owned)
+            m_parasolidBodies.push_back (tag);
+        }
+#endif
+    
+    return  BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2096,7 +2144,7 @@ void    ElementFactory::ApplyBasePartScale (TransformR transform, bool invert) c
     {
     // valid only for building parts - m_basePartScale should have been set to 0 for individual elements.
     auto scale = fabs (m_basePartScale);
-    if (scale > 0.001 && fabs(scale - 1.0) > 0.001)
+    if (scale > 1.0e-10 && fabs(scale - 1.0) > 0.001)
         {
         if (invert)
             scale = 1.0 / scale;
@@ -2647,6 +2695,10 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
     // prepare for import
     PrepareEntityForImport (drawParams, geomFactory, entity);
 
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PSolidKernelManager::StartSession ();
+#endif
+
     // draw entity and create geometry from it in our factory:
     try
         {
@@ -2667,6 +2719,10 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
     // create elements from collected geometries
     ElementFactory  elemFactory(results, inputs, createParams, *this);
     status = elemFactory.CreateElements (&geometryMap);
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PSolidKernelManager::StopSession ();
+#endif
 
     if (BSISUCCESS == status)
         m_entitiesImported++;
