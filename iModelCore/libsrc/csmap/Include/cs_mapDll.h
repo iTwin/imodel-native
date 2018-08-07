@@ -240,6 +240,10 @@ typedef int long32_t;
 #define cs_PRJCOD_MRCATPV  69		/* Psuedo Mercator, Popular Visualization. */
 #define cs_PRJCOD_LMMICH   70		/* Lambert Conformal Conic,.Michigan Variation */
 
+#ifdef GEOCOORD_ENHANCEMENT
+#define cs_PRJCOD_KROVAKMOD 71      /* Krovak Modified for Czech republic */
+#endif
+
 /* Variations of the basic Oblique Mercator concept. */
 #define cs_PRJCOD_HOM1UV   ((cs_PRJCOD_OBLQM << 8) + 1)
 #define cs_PRJCOD_HOM1XY   ((cs_PRJCOD_OBLQM << 8) + 2)	/* Hotine Oblique Mercator, Single Point Form */

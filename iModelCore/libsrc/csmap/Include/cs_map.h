@@ -1309,6 +1309,10 @@ typedef long32_t cs_magic_t;
 #define cs_PRJCOD_MRCATPV  69		/* Psuedo Mercator, Popular Visualization. */
 #define cs_PRJCOD_LMMICH   70		/* Lambert Conformal Conic,.Michigan Variation */
 
+#ifdef GEOCOORD_ENHANCEMENT
+#define cs_PRJCOD_KROVAKMOD 71      /* Krovak Modified for Czech republic */
+#endif
+
 #define cs_PRJCOD_HOM1UV   ((cs_PRJCOD_OBLQM << 8) + 1)
 #define cs_PRJCOD_HOM1XY   ((cs_PRJCOD_OBLQM << 8) + 2)
 #define cs_PRJCOD_HOM2UV   ((cs_PRJCOD_OBLQM << 8) + 3)
@@ -1736,7 +1740,9 @@ enum EcsWktParameter {	csWktPrmNone = 0,
 #define cs_PJPRMBMP_WINKL		(cs_PRMBMP_UNIT   | cs_PRMBMP_ORGLNG   | cs_PRMBMP_PRJPRM1  | cs_PRMBMP_XXXOFF   | cs_PRMBMP_YYYOFF )UL
 #define cs_PJPRMBMP_NRTHSRT		(cs_PRMBMP_UNIT   | cs_PRMBMP_PRJPRM1  | cs_PRMBMP_PRJPRM2  | cs_PRMBMP_PRJPRM3  | cs_PRMBMP_PRJPRM4  | cs_PRMBMP_XXXOFF   | cs_PRMBMP_YYYOFF )UL
 #define cs_PJPRMBMP_LMMICH		(cs_PRMBMP_UNIT   | cs_PRMBMP_PRJPRM1  | cs_PRMBMP_PRJPRM2  | cs_PRMBMP_ORGLNG   | cs_PRMBMP_ORGLAT   | cs_PRMBMP_XXXOFF   | cs_PRMBMP_YYYOFF | cs_PRMBMP_ELPSCL)UL
-
+#if defined (GEOCOORD_ENHANCEMENT)
+#define cs_PJPRMBMP_KROVAKMOD	(cs_PRMBMP_UNIT   | cs_PRMBMP_PRJPRM1  | cs_PRMBMP_PRJPRM2  | cs_PRMBMP_PRJPRM3  | cs_PRMBMP_ORGLNG   | cs_PRMBMP_ORGLAT   | cs_PRMBMP_SCLRED   | cs_PRMBMP_XXXOFF   | cs_PRMBMP_YYYOFF )UL
+#endif
 #if defined(GEOCOORD_ENHANCEMENT)
 /* Same as HOM1XY except there is the additional parameter 4 which contains the above ellipsoid height */
 #define cs_PJPRMBMP_MNDOTOBL	(cs_PRMBMP_UNIT   | cs_PRMBMP_PRJPRM1  | cs_PRMBMP_PRJPRM2  | cs_PRMBMP_PRJPRM3  | cs_PRMBMP_PRJPRM4  | cs_PRMBMP_SCLRED   | cs_PRMBMP_XXXOFF   | cs_PRMBMP_YYYOFF )UL
@@ -5272,6 +5278,10 @@ struct cs_Krovk_
 							   surface of the earth. */
 	short apply95;			/* Non-zero indicates that the 95 adjustment should
 							   be applied. */
+#if defined (GEOCOORD_ENHANCEMENT)
+    short applyKrovakMod;   /* Non zero indicates that the Czech Republic 
+							   pseudo-polynomial adjustment must be applied */
+#endif
 	short quad;				/* Non-zero specifies a cartesian system
 							   other than the standard right handed
 							   system. */
@@ -7289,6 +7299,9 @@ int			EXP_LVL9	CSkrovkQ (Const struct cs_Csdef_ *cs_def,unsigned short prj_code,
 void		EXP_LVL9	CSkrovkS (struct cs_Csprm_ *csprm);
 int			EXP_LVL9	CSkrovkX (Const struct cs_Krovk_ *krovk,int cnt,Const double pnts [][3]);
 void		EXP_LVL9	CSkrovk95 (double deltaXY [2],Const double xy [2]);
+#if defined (GEOCOORD_ENHANCEMENT)
+void		EXP_LVL9	CSkrovkMod (double deltaXY [2],Const double xy [2]);
+#endif
 
 int			EXP_LVL9	CSllCsFromDt (char* csKeyName,int csKeySize,Const char* dtKeyName);
 void		EXP_LVL7	CSllnrml (Const double oll [2],Const double ll  [2],double ll1 [2],double ll2 [2]);

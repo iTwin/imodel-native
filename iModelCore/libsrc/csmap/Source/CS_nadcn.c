@@ -644,6 +644,9 @@ struct cs_NadconFile_* CSnewNadconFile (Const char* filePath,long32_t bufferSize
 
 	/* Is it an HPGN file? */
 	hpgn = !CS_stristr (cp1,cs_HPGN_TAG);
+#ifdef GEOCOORD_ENHANCEMENT
+    int slovak = (CS_stristr(cp1, cs_SLOVAK_TAG) ? 1 : 0);
+#endif
 	if (!CS_stricmp (cp2,cs_NADCON_LAS))
 	{
 		if (hpgn) thisPtr->type = nadconTypeHarnLAS;
@@ -727,10 +730,25 @@ struct cs_NadconFile_* CSnewNadconFile (Const char* filePath,long32_t bufferSize
 		number, but especially on the island of St. George.  Note that
 		the compiler that I'm using as I write, converts a "float" of
 		0.0166667 (1 minute) to 0.0166699 something. */
-	lngTmp = (long32_t)(((double)nadconFileHdr.del_lng * 3600.0) + 0.4);
-	thisPtr->deltaLng = ((double)lngTmp / 3600.0);
-	lngTmp = (long32_t)(((double)nadconFileHdr.del_lat * 3600.0) + 0.4);
-	thisPtr->deltaLat = ((double)lngTmp / 3600.0);
+#ifdef GEOCOORD_ENHANCEMENT
+    if (!slovak)
+    {
+        lngTmp = (long32_t)(((double)nadconFileHdr.del_lng * 3600.0) + 0.4);
+        thisPtr->deltaLng = ((double)lngTmp / 3600.0);
+        lngTmp = (long32_t)(((double)nadconFileHdr.del_lat * 3600.0) + 0.4);
+        thisPtr->deltaLat = ((double)lngTmp / 3600.0);
+    }
+    else /* Slovak process prefers direct conversion of float to double */
+    {
+        thisPtr->deltaLng = nadconFileHdr.del_lng;
+        thisPtr->deltaLat = nadconFileHdr.del_lat;
+    }
+#else
+    lngTmp = (long32_t)(((double)nadconFileHdr.del_lng * 3600.0) + 0.4);
+    thisPtr->deltaLng = ((double)lngTmp / 3600.0);
+    lngTmp = (long32_t)(((double)nadconFileHdr.del_lat * 3600.0) + 0.4);
+    thisPtr->deltaLat = ((double)lngTmp / 3600.0);
+#endif
 
 	/* Now we can do the rest of this stuff. */
 	thisPtr->coverage.southWest [LNG] = nadconFileHdr.min_lng;

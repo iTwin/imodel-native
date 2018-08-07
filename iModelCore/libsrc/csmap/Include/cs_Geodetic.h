@@ -62,6 +62,9 @@
 #define cs_HPGN_LOS    "LOS"
 #define cs_HPGN_LAS    "LAS"
 #define cs_HPGN_TAG    "HPGN"
+#ifdef GEOCOORD_ENHANCEMENT
+#define cs_SLOVAK_TAG  "SLOVAK"
+#endif
 #define cs_GEOID96_TAG "GEO"
 #define cs_VERTCON_TAG "94"
 #define cs_CANNT_DAC   "DAC"

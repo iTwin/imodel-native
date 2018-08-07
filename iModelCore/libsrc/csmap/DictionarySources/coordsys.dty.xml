@@ -6240,6 +6240,27 @@
                     <KeyName>Czech/JTSK.Krovak</KeyName>
                   </Member>
                   <Member>
+                    <KeyName>Czech/JTSK-A.Krovak</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Slov/JTSK03.Krovak</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Slov/JTSK.Krovak</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Slov/JTSK-A.Krovak</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Slov/JTSK-B.Krovak</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>S-JTSK/gc.Krovak</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>S-JTSK/gc.Krovak-Prec</KeyName>
+                  </Member>
+                  <Member>
                     <KeyName>Pulkovo42/83b.GK3d-3/EN</KeyName>
                   </Member>
                   <Member>
@@ -29835,14 +29856,6 @@
             </Members>
             <Groups>
               <Group>
-                <Name>Czechoslovakia</Name>
-                <Members>
-                  <Member>
-                    <KeyName>CzechJTSK/5b.Krovak</KeyName>
-                  </Member>
-                </Members>
-              </Group>
-              <Group>
                 <Name>South Africa</Name>
                 <Members>
                   <Member>
@@ -30379,6 +30392,9 @@
                   </Member>
                   <Member>
                     <KeyName>Krovak S-JTSK/95</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>CzechJTSK/5b.Krovak</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -34102,6 +34118,24 @@
                   </Member>
                   <Member>
                     <KeyName>Czech/JTSK.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Czech/JTSK-A.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Slov/JTSK.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Slov/JTSK-A.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Slov/JTSK-B.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Slov/JTSK03.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>S-JTSK/gc.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
