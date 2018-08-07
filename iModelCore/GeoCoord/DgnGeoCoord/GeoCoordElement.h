@@ -417,6 +417,7 @@ typedef struct Proj_hueov
 // COORDSYS_KRVKG       Czech Krovak, with fields for generalized params
 // COORDSYS_KRVKP       Czech Krovak, with precise origin
 // COORDSYS_KRVKR       Czech Krovak, with rounded origin
+// COORDSYS_KRVMO       Czech Krovak modified 
 typedef struct Proj_krvak
     {
     GCDomain       gcDom;

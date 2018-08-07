@@ -952,7 +952,7 @@ Proj_Hueov          &params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            KrovakToCsDef                   // COORDSYS_KRVKG,COORDSYS_KRVKP, COORDSYS_KRVK
+void            KrovakToCsDef                   // COORDSYS_KRVKG,COORDSYS_KRVKP, COORDSYS_KRVK, COORDSYS_KRVMO
 (
 CSDefinition        &csDef,
 Proj_Krvak          &params,
@@ -2090,6 +2090,10 @@ ProjectionParams    &params
 
        case COORDSYS_LMMICH:    // Lambert Conformal Conic Projection, Michigan variation
             LambertConformalConicMichiganToCsDef (csDef, params.lmmich);
+            break;
+
+        case COORDSYS_KRVMO:    // Krovak Modified Oblique Conformal Conic
+            KrovakToCsDef (csDef, params.krvkg, CS_KRVMO);
             break;
 
         default:
@@ -3871,6 +3875,10 @@ const CSDefinition  &csDef
 
         case COORDSYS_LMMICH:
             LambertConformalConicMichiganFromCsDef (params.lmmich, csDef);
+            break;
+
+        case COORDSYS_KRVMO:    // Krovak Modified Oblique Conformal Conic
+            KrovakFromCsDef (params.krvkg, csDef);
             break;
 
         default:
