@@ -44,6 +44,9 @@ declare class NativeSQLiteDb {
   */
   closeDb(): void;
 
+  /** Query the DbGuid property of this Db. */
+  getDbGuid(): string;
+
   createTable(tableName: string, ddl: string): DbResult;
 
   /** Save changes to SQLiteDb
