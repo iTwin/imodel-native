@@ -28,6 +28,13 @@ private:
     static Utf8String GetTemplateFromName(Utf8String name, int &index);
 
     static Dgn::CategorySelectorPtr CreateAndInsertFloorViewCategorySelector(Dgn::DgnDbR db);
+    
+    static Dgn::DefinitionModelPtr CreateDefinitionModel (Dgn::DgnDbR db, Utf8CP partitionName);
+    static Dgn::DefinitionModelCPtr GetDefinitionModel (Dgn::DgnDbR db, Utf8CP partitionName);
+
+    static Dgn::DgnCode GetDefinitionPartitionCode (Dgn::DgnDbR db, Utf8CP partitionName);
+    static Dgn::DefinitionPartitionCPtr CreateDefinitionPartition (Dgn::DgnDbR db, Utf8CP partitionName);
+    static Dgn::DefinitionPartitionCPtr GetDefinitionPartition (Dgn::DgnDbR db, Utf8CP partitionName);
 
 public:
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::CategorySelectorPtr GetDefaultCategorySelector(Dgn::DgnDbR db);
@@ -64,6 +71,9 @@ public:
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::DgnCode GetNamedElementCode(Dgn::DgnDbR db, Dgn::CodeSpecId codeSpecId, Utf8String baseName, Dgn::DgnElementId modeledElementId, int startIndex = 0);
 
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::DgnModelCR GetGroupInformationModel(Dgn::DgnDbR db);
+    
+    BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::DefinitionModelCPtr GetOrCreateDefinitionModel (Dgn::DgnDbR db, Utf8CP partitionName);
+    BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::DefinitionPartitionCPtr GetOrCreateDefinitionPartition (Dgn::DgnDbR db, Utf8CP partitionName);
 };
 
 class BuildingElementsUtils

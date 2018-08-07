@@ -756,6 +756,113 @@ Dgn::IBriefcaseManager::Response* pResponse
     Dgn::NotifyMessageDetails nmd (Dgn::OutputMessagePriority::Error, notify.c_str ());
     Dgn::NotificationManager::OutputMessage (nmd);
     }
+
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Mindaugas.Butkus                06/2017
+//--------------+---------------+---------------+---------------+---------------+--------
+Dgn::DefinitionPartitionCPtr BuildingUtils::CreateDefinitionPartition
+(
+    Dgn::DgnDbR db,
+    Utf8CP partitionName
+)
+    {
+    DgnCode partitionCode = GetDefinitionPartitionCode (db, partitionName);
+    DefinitionPartitionPtr partitionPtr = DefinitionPartition::Create (*db.Elements ().GetRootSubject (), partitionName);
+    partitionPtr->Insert ();
+    return partitionPtr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Mindaugas.Butkus                06/2017
+//--------------+---------------+---------------+---------------+---------------+--------
+Dgn::DefinitionPartitionCPtr BuildingUtils::GetDefinitionPartition
+(
+    Dgn::DgnDbR db,
+    Utf8CP partitionName
+)
+    {
+    DgnCode partitionCode = GetDefinitionPartitionCode (db, partitionName);
+    DgnElementId partitionId = db.Elements ().QueryElementIdByCode (partitionCode);
+    return db.Elements ().Get<DefinitionPartition> (partitionId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Mindaugas.Butkus                06/2017
+//--------------+---------------+---------------+---------------+---------------+--------
+Dgn::DgnCode BuildingUtils::GetDefinitionPartitionCode
+(
+    Dgn::DgnDbR db,
+    Utf8CP partitionName
+)
+    {
+    return DefinitionPartition::CreateCode (*db.Elements ().GetRootSubject (), partitionName);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Mindaugas.Butkus                06/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+Dgn::DefinitionPartitionCPtr BuildingUtils::GetOrCreateDefinitionPartition
+(
+    Dgn::DgnDbR db,
+    Utf8CP partitionName
+)
+    {
+    DefinitionPartitionCPtr partition = GetDefinitionPartition (db, partitionName);
+    if (partition.IsValid ())
+        return partition;
+
+    partition = CreateDefinitionPartition (db, partitionName);
+    return partition;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Mindaugas.Butkus                06/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+Dgn::DefinitionModelPtr BuildingUtils::CreateDefinitionModel
+(
+    Dgn::DgnDbR db,
+    Utf8CP partitionName
+)
+    {
+    DefinitionPartitionCPtr partition = GetOrCreateDefinitionPartition (db, partitionName);
+    DefinitionModelPtr definitionModel = DefinitionModel::Create (*partition);
+    Dgn::IBriefcaseManager::Request definitionReq;
+    db.BriefcaseManager ().PrepareForModelInsert (definitionReq, *definitionModel, Dgn::IBriefcaseManager::PrepareAction::Acquire);
+    definitionModel->Insert ();
+    return definitionModel;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Mindaugas.Butkus                06/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+Dgn::DefinitionModelCPtr BuildingUtils::GetDefinitionModel
+(
+    Dgn::DgnDbR db,
+    Utf8CP partitionName
+)
+    {
+    DgnModelId modelId = db.Models ().QuerySubModelId (GetDefinitionPartitionCode (db, partitionName));
+    return db.Models ().Get<DefinitionModel> (modelId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Mindaugas.Butkus                06/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+Dgn::DefinitionModelCPtr BuildingUtils::GetOrCreateDefinitionModel
+(
+    Dgn::DgnDbR db,
+    Utf8CP partitionName
+)
+    {
+    DefinitionModelCPtr model = GetDefinitionModel (db, partitionName);
+    if (model.IsValid ())
+        return model;
+
+    model = CreateDefinitionModel (db, partitionName);
+    return model;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                03/2017
 //---------------------------------------------------------------------------------------
