@@ -9,3 +9,52 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
+
+RulesDrivenECPresentationManagerContentTests.ContentRelatedInstancesSpecification_GetsRelatedValueThroughCalculatedProperty
+
+    # TFS#928653
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/07/2018
+    # c:\build\src\mds06t\ECPresentation\Tests\Published\RulesEngine\PresentationManagerContentTests.cpp(3741): error:       Expected: "GadgetID"
+    # To be equal to: jsonValues["CalculatedProperty_0"].GetString()
+    # Which is: ""
+
+RulesDrivenECPresentationManagerContentTests.SelectingClassInstanceLabelUsingInstanceLabelOverrideAndGetRelatedInstanceLabelExpression
+
+    # TFS#928651
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/07/2018
+    # c:\build\src\mds06t\ECPresentation\Tests\Published\RulesEngine\PresentationManagerContentTests.cpp(10739): error:       Expected: "ClassB_UserLabel"
+    # To be equal to: contentSet.Get(0)->GetDisplayLabel().c_str()
+    # Which is: "ClassA-0-1"
+
+RulesDrivenECPresentationManagerContentTests.SelectingClassInstanceLabelUsingGetRelatedInstanceLabelExpression_NoRelatedLabelOverrideRulesFound
+
+    # TFS#928651
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/07/2018
+    # c:\build\src\mds06t\ECPresentation\Tests\Published\RulesEngine\PresentationManagerContentTests.cpp(10930): error:       Expected: CommonTools::GetDefaultDisplayLabel(*instanceB).c_str()
+    # Which is: "ClassB-0-2"
+    # To be equal to: contentSet.Get(0)->GetDisplayLabel().c_str()
+    # Which is: "ClassA-0-1"
+
+HierarchyUpdateTests.SameLabelInstanceGroupIsCreatedWhenAdditionalInstancesAreInserted
+
+    # TFS#928655
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/07/2018
+    # c:\build\src\mds06t\ECPresentation\Tests\NonPublished\RulesEngine\UpdateTests.cpp(1733): error:       Expected: 2
+    # To be equal to: m_updateRecordsHandler->GetRecords().size()
+    # Which is: 1
+
+RulesDrivenECPresentationManagerContentTests.SelectingClassInstanceLabelBackwardUsingLabelOverrideAndGetRelatedInstanceLabelExpression
+
+    # TFS#928651
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/07/2018
+    # c:\build\src\mds06t\ECPresentation\Tests\Published\RulesEngine\PresentationManagerContentTests.cpp(10867): error:       Expected: "ClassA_UserLabel"
+    # To be equal to: contentSet.Get(0)->GetDisplayLabel().c_str()
+    # Which is: "ClassB-0-2"
+
+RulesDrivenECPresentationManagerContentTests.SelectingClassInstanceLabelUsingLabelOverrideAndGetRelatedInstanceLabelExpression
+
+    # TFS#928651
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/07/2018
+    # c:\build\src\mds06t\ECPresentation\Tests\Published\RulesEngine\PresentationManagerContentTests.cpp(10803): error:       Expected: "ClassB_UserLabel"
+    # To be equal to: contentSet.Get(0)->GetDisplayLabel().c_str()
+    # Which is: "ClassA-0-1"
