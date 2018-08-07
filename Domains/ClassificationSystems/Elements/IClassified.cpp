@@ -40,8 +40,8 @@ ClassificationCPtr IClassified::GetClassification(ClassificationSystemCR system)
     {
     Dgn::DgnDbR db = _GetAsDgnElement().GetDgnDb();
 
-    Dgn::DgnModelId modelId = system.GetSubModelId();
-    BeAssert(modelId.IsValid());
+    Dgn::DgnElementId elemId = system.GetElementId();
+    BeAssert(elemId.IsValid());
 
     for (ElementIdIteratorEntry classificationEntry : MakeClassificationsIterator())
         {
@@ -49,7 +49,7 @@ ClassificationCPtr IClassified::GetClassification(ClassificationSystemCR system)
         if (classification.IsNull())
             continue;
 
-        if (classification->GetModelId() == modelId)
+        if (classification->GetClassificationSystemId() == elemId)
             return classification;
         }
 
@@ -67,7 +67,7 @@ void IClassified::AddClassification(ClassificationCR classification)
     if (IsClassifiedAs(classification))
         return;
 
-    ClassificationSystemCPtr system = dynamic_cast<ClassificationSystemCP>(classification.GetModel()->GetModeledElement().get());
+    ClassificationSystemCPtr system = classification.GetDgnDb().Elements().Get<ClassificationSystem>(classification.GetClassificationSystemId());
     BeAssert(system.IsValid());
     if (GetClassification(*system).IsValid())
         return;

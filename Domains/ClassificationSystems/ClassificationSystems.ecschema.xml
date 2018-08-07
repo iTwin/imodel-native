@@ -17,7 +17,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="ClassificationSystem" displayLabel="ClassificationSystem">
+    <ECEntityClass typeName="ClassificationSystem" modifier="Sealed" displayLabel="ClassificationSystem">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <BaseClass>bis:ISubModeledElement</BaseClass>
         <ECCustomAttributes>
@@ -25,18 +25,17 @@
         </ECCustomAttributes>
     </ECEntityClass>
   
-    <ECEntityClass typeName="Classification" displayLabel="ClassificationSystem ClassDefinition" description="The ClassDefinition used to store classificationSystem data.">
+    <ECEntityClass typeName="Classification" modifier="Sealed" displayLabel="ClassificationSystem ClassDefinition" description="The ClassDefinition used to store classificationSystem data.">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
         <ECProperty propertyName="Description" typeName="string" displayLabel="Description"/>
         <ECNavigationProperty propertyName="Group" relationshipName="ClassificationIsInClassificationGroup" direction="Forward" description="Group this definition belong to" />
         <ECNavigationProperty propertyName="Specialization" relationshipName="ClassificationSpecializesClassification" direction="Forward" description="Classification this Specializes in" />
     </ECEntityClass>
     
-    <ECEntityClass typeName="ClassificationGroup" displayLabel="ClassificationSystem ClassDefinition group" description="The ClassDefinition group element">
+    <ECEntityClass typeName="ClassificationGroup" modifier="Sealed" displayLabel="ClassificationSystem ClassDefinition group" description="The ClassDefinition group element">
         <BaseClass>bis:GroupInformationElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
@@ -50,6 +49,26 @@
         </Source>
         <Target multiplicity="(0..*)" roleLabel="classifies" polymorphic="true">
             <Class class="Classification"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ClassificationSystemHasClassifications" modifier="Sealed" strength="embedding" description="a relationship to map Classificationsystem to its Classifications">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
+            <Class class="ClassificationSystem"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Classification"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ClassificationSystemHasClassificationGroups" modifier="Sealed" strength="embedding" description="a relationship to map Classificationsystem to its ClassificationGroups">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
+            <Class class="ClassificationSystem"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="ClassificationGroup"/>
         </Target>
     </ECRelationshipClass>
 

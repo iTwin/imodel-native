@@ -7,9 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "PublicApi/ClassificationSystemsElements.h"
+#include <BuildingShared/BuildingSharedApi.h>
 
   
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
+
+namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystem)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(Classification)
@@ -58,6 +61,34 @@ Dgn::ElementIterator ClassificationSystem::MakeIterator(Dgn::DgnDbR dgnDbR)
     {
     return dgnDbR.Elements().MakeIterator(CLASSIFICATIONSYSTEMS_SCHEMA(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem));
     }
+    
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::ElementIterator ClassificationSystem::MakeClassificationIterator() const
+    {
+    BeAssert(GetElementId().IsValid());
+
+    Utf8String where("WHERE Parent.Id=?");
+
+    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(CLASSIFICATIONSYSTEMS_SCHEMA(CLASSIFICATIONSYSTEMS_CLASS_Classification), where.c_str());
+    iterator.GetStatement()->BindId(1, GetElementId());
+    return iterator;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::ElementIterator ClassificationSystem::MakeClassificationGroupIterator() const
+    {
+    BeAssert(GetElementId().IsValid());
+
+    Utf8String where("WHERE Parent.Id=?");
+
+    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(CLASSIFICATIONSYSTEMS_SCHEMA(CLASSIFICATIONSYSTEMS_CLASS_ClassificationGroup), where.c_str());
+    iterator.GetStatement()->BindId(1, GetElementId());
+    return iterator;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aurimas.Laureckis               07/2018
@@ -66,29 +97,35 @@ void ClassificationSystem::GetClassificationDataVerbose
 (
 Json::Value& elementData
 ) const
-    {
+    { 
     Dgn::DgnDbR db = GetDgnDb();
     elementData["name"] = GetName();
     elementData["id"] = GetElementId().GetValueUnchecked();
     elementData["classifications"] = Json::Value(Json::arrayValue);
     elementData["groups"] = Json::Value(Json::arrayValue);
-    for (auto element : GetSubModel()->MakeIterator())
+    for (Dgn::ElementIteratorEntry elementIter : MakeClassificationGroupIterator())
         {
-            Json::Value elementValue;
-            elementValue["id"] = element.GetElementId().GetValueUnchecked();
+        Json::Value elementValue;
+        elementValue["id"] = elementIter.GetElementId().GetValueUnchecked();
 
-            auto classification = db.Elements().Get<ClassificationSystems::Classification>(element.GetElementId());
-            if (classification.IsValid()) 
-                {
-                elementValue["label"] = classification->GetName();
-                elementValue["groupId"] = classification->GetGroupId().GetValueUnchecked();
-                elementData["classifications"].append(elementValue);
-                }
-            else
-                {
-                elementValue["label"] = db.Elements().Get<ClassificationSystems::ClassificationGroup>(element.GetElementId())->GetName();
-                elementData["groups"].append(elementValue);
-                }
+        ClassificationGroupCPtr classificationGroup = db.Elements().Get<ClassificationGroup>(elementIter.GetElementId());
+        BeAssert (classificationGroup.IsValid());
+            
+        elementValue["label"] = classificationGroup->GetName();
+        elementData["groups"].append(elementValue);
+        }
+
+    for (Dgn::ElementIteratorEntry elementIter : MakeClassificationIterator())
+        {
+        Json::Value elementValue;
+        elementValue["id"] = elementIter.GetElementId().GetValueUnchecked();
+
+        ClassificationCPtr classification = db.Elements().Get<Classification>(elementIter.GetElementId());
+        BeAssert (classification.IsValid());
+        
+        elementValue["label"] = classification->GetName();
+        elementValue["groupId"] = classification->GetGroupId().GetValueUnchecked();
+        elementData["classifications"].append(elementValue);
         }
     }
 
@@ -113,24 +150,11 @@ ClassificationSystemPtr ClassificationSystem::Create
 )
     {
     Dgn::DgnClassId classId = QueryClassId(db);
-    Dgn::DgnElement::CreateParams params(db, db.GetDictionaryModel().GetModelId(), classId);
+    Dgn::DgnElement::CreateParams params(db, BS::BuildingUtils::GetOrCreateDefinitionModel(db, "ClassificationSystems")->GetModelId(), classId);
     ClassificationSystemPtr system = new ClassificationSystem(params, name);
     return system;
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Martynas.Saulius               04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ClassificationSystem::_OnInserted(Dgn::DgnElementP copiedFrom) const 
-    {
-        T_Super::_OnInserted(copiedFrom);
-        Dgn::DefinitionModelPtr model = Dgn::DefinitionModel::Create(*this);
-        if (!model.IsValid()) 
-            return;
-        Dgn::IBriefcaseManager::Request req;
-        GetDgnDb().BriefcaseManager().PrepareForModelInsert(req, *model, Dgn::IBriefcaseManager::PrepareAction::Acquire);
-        if (Dgn::DgnDbStatus::Success != model->Insert())
-            return;
-    }
+    
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              04/2018
 //---------------------------------------------------------------------------------------
@@ -187,7 +211,7 @@ ClassificationCP specializes
 ) : T_Super(params) 
     {
     Dgn::DgnElementId elemid;
-    SetName(name);
+    SetUserLabel(name);
     SetDescription(description);
     if(group != nullptr) 
         {
@@ -200,6 +224,7 @@ ClassificationCP specializes
         }
     Dgn::DgnCode code = GetClassificationCode(params.m_dgndb, id, elemid);
     SetCode(code);
+    SetClassificationSystem(system);
     if(specializes != nullptr) 
         SetSpecializationId(specializes->GetElementId());
     }
@@ -218,7 +243,7 @@ ClassificationCP specializes
 )
     {
     Dgn::DgnClassId classId = QueryClassId(system.GetDgnDb());
-    Dgn::DgnElement::CreateParams params(system.GetDgnDb(), system.GetSubModelId(), classId);
+    Dgn::DgnElement::CreateParams params(system.GetDgnDb(), system.GetModelId(), classId);
     ClassificationPtr classification = new Classification(params, system, name, id, description, group, specializes);
     return classification;
     }
@@ -244,9 +269,20 @@ Utf8CP name
 )
     {
     Dgn::DgnClassId classId = QueryClassId(system.GetDgnDb());
-    Dgn::DgnElement::CreateParams params(system.GetDgnDb(), system.GetSubModelId(), classId);
+    Dgn::DgnElement::CreateParams params(system.GetDgnDb(), system.GetModelId(), classId);
     ClassificationGroupPtr group = new ClassificationGroup(params, name);
     return group;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassificationGroup::SetClassificationSystem
+(
+ClassificationSystemCR system
+)
+    {
+    SetParentId(system.GetElementId(), GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationSystemHasClassificationGroups));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -258,6 +294,17 @@ Dgn::DgnElementId groupId
 )
     {
     SetPropertyValue(prop_Group(), groupId, GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationIsInClassificationGroup));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void Classification::SetClassificationSystem
+(
+ClassificationSystemCR system
+)
+    {
+    SetParentId(system.GetElementId(), GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationSystemHasClassifications));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -289,6 +336,16 @@ Dgn::DgnElementId Classification::GetSpecializationId
 ) const
     {
     return GetPropertyValueId<Dgn::DgnElementId>(prop_Specialization());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnElementId Classification::GetClassificationSystemId
+(
+) const
+    {
+    return GetParentId();
     }
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE

@@ -36,7 +36,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem : Dgn::DefinitionElement, BE
         friend struct ClassificationSystemHandler;
         friend struct ClassificationSystemsDomain;
 
-        virtual void _OnInserted(Dgn::DgnElementP copiedFrom) const override;
         virtual void _SerializeProperties(Json::Value& elementData) const override;
         virtual void _FormatSerializedProperties(Json::Value& elementData) const override;
 
@@ -55,6 +54,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem : Dgn::DefinitionElement, BE
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemCPtr TryGet(Dgn::DgnDbR db, Utf8CP name);
 
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static Dgn::ElementIterator MakeIterator(Dgn::DgnDbR dgnDbR);
+
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::ElementIterator MakeClassificationIterator() const;
+
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::ElementIterator MakeClassificationGroupIterator() const;
 
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT void GetClassificationDataVerbose (Json::Value& elementData) const;
 
@@ -82,14 +85,13 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification : Dgn::DefinitionElement
         friend struct ClassificationHandler;
         friend struct ClassificationSystemsDomain;
 
-        //! Sets the name of this Classification
-        //! @param[in]  name   new name for this Classification
-        void SetName(Utf8CP name) { SetPropertyValue(prop_Name(), name); }
-
-
         //! Sets the Description of this Classification
         //! @param[in] description   new Description for this Classificatio
         void SetDescription(Utf8CP description) { SetPropertyValue(prop_Description(), description); }
+
+        //! Sets ClassificationSystem. ClassificationSystem needs to be inserted.
+        //! @param[in] system to set
+        void SetClassificationSystem(ClassificationSystemCR system);
 
         //! Sets Classification group Id
         //! @param[in] groupId to set
@@ -116,11 +118,15 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification : Dgn::DefinitionElement
 
         //!Returns this Classification Name property
         //! @return Name property of the Classification
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetUserLabel(); }
         
         //!Returns this Classification Id property
         //! @return Id property of the Classification
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetClassificationId() const { return GetCode().GetValueUtf8CP(); }
+
+        //!Returns Id property of the parent ClassificationSystem
+        //! @return Id property of the parent ClassificationSystem
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::DgnElementId GetClassificationSystemId() const;
 
         //!Returns this Classification Description property
         //! @return Description property of the Classification
@@ -149,6 +155,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationGroup : Dgn::GroupInformationElemen
         friend struct ClassificationGroupHandler;
         friend struct ClassificationSystemsDomain;
 
+        //! Sets ClassificationSystem. ClassificationSystem needs to be inserted.
+        //! @param[in] system to set
+        void SetClassificationSystem(ClassificationSystemCR system);
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationGroup, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
         
@@ -161,6 +170,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationGroup : Dgn::GroupInformationElemen
         //! @return     a ptr to created ClassificationGroup
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationGroupPtr Create(ClassificationSystemCR system, Utf8CP name);
        
+
         //! Gets the name of this ClassificationGroup
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetUserLabel(); }
     };
