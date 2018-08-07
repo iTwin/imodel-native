@@ -235,3 +235,12 @@ NamedGroupTests.NamedGroupOf2dElement
     #   Actual: false
     # Expected: true
     # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)
+
+ECConversionTests.ImportInstanceWithCalculatedSpecUsingRelated
+
+    # TFS#928654
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/07/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ECTests.cpp(1444): error: Value of: found
+    # Actual: false
+    # Expected: true
+    # Should have found an instance using a WHERE criteria after update
