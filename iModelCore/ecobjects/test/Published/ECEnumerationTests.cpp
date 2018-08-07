@@ -828,8 +828,12 @@ TEST_F(ECEnumeratorTest, CreateEnumeratorWithoutExplicitName)
     ASSERT_NE(nullptr, strEnumeration);
     ECEnumeratorP strEnumerator;
     EC_ASSERT_SUCCESS(strEnumeration->CreateEnumerator(strEnumerator, "foo"));
+    ECEnumeratorP strEnumeratorB;
+    ASSERT_EQ(ECObjectsStatus::NamedItemAlreadyExists, strEnumeration->CreateEnumerator(strEnumeratorB, "foo"));
+    EC_ASSERT_SUCCESS(strEnumeration->CreateEnumerator(strEnumeratorB, "bar"));
 
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, strEnumerator->SetInteger(9)) << "Setting a type-mismatched enumerator should fail.";
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, strEnumeratorB->SetString(strEnumerator->GetString().c_str())) << "Setting a type-matched enumerator to a non-unique value should fail.";
     }
 
 
