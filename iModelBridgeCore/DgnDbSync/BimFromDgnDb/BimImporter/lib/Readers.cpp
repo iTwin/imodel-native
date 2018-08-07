@@ -19,6 +19,9 @@
 #include <Planning/PlanningApi.h>
 #include <PointCloud/PointCloudApi.h>
 #include <PointCloud/PointCloudHandler.h>
+#include <Raster/RasterApi.h>
+#include <Raster/RasterFileHandler.h>
+#include <Raster/RasterTypes.h>
 #include <ThreeMx/ThreeMxApi.h>
 #include "SyncInfo.h"
 #include "Readers.h"
@@ -1424,14 +1427,6 @@ BentleyStatus PointCloudModelReader::_Read(Json::Value& model)
     Utf8String fileUri(outputFilename.GetFileNameAndExtension().c_str());
     Utf8String description = props["Description"].asString();
 
-    Transform stw;
-    JsonUtils::TransformFromJson(stw, props["SceneToWorld"]);
-    Utf8String wkt = props["Wkt"].asString();
-    float density = props["Density"].asFloat();
-
-    ColorDef color = ColorDef(props["Color"].asUInt());
-    uint32_t weight = props["Weight"].asUInt();
-
     RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*GetDgnDb()->GetRealityDataSourcesModel(), fileUri.c_str(), fileUri.c_str());
     if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
         return ERROR;
@@ -1442,6 +1437,15 @@ BentleyStatus PointCloudModelReader::_Read(Json::Value& model)
         GetLogger().errorv("Failed to create point cloud model for ModelId %s with fileUri %s", ecInstanceId.ToString().c_str(), fileUri.c_str());
         return ERROR;
         }
+
+    Transform stw;
+    JsonUtils::TransformFromJson(stw, props["SceneToWorld"]);
+    Utf8String wkt = props["Wkt"].asString();
+    float density = props["Density"].asFloat();
+
+    ColorDef color = ColorDef(props["Color"].asUInt());
+    uint32_t weight = props["Weight"].asUInt();
+
     pc->SetDescription(description.c_str());
     if (!Utf8String::IsNullOrEmpty(wkt.c_str()))
         pc->SetSpatialReferenceWkt(wkt.c_str());
@@ -1491,6 +1495,64 @@ BentleyStatus ThreeMxModelReader::_Read(Json::Value& model)
 
     SyncInfo::ModelMapping mapping;
     GetSyncInfo()->InsertModel(mapping, threeMxId, ecInstanceId, nullptr);
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus RasterFileModelReader::_Read(Json::Value& model)
+    {
+    DgnModelId ecInstanceId = ECJsonUtilities::JsonToId<DgnModelId>(model[ECJsonSystemNames::Id()]);
+    if (!ecInstanceId.IsValid())
+        return ERROR;
+
+    WString relativePath;
+    BeFileName raster(WString(model["FileUri"].asCString(), BentleyCharEncoding::Utf8));
+    BeFileName outputFilename;
+    CopyResourceToBimLocation(outputFilename, *GetDgnDb(), raster);
+
+    Utf8String fileUri(outputFilename.GetFileNameAndExtension().c_str());
+    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*GetDgnDb()->GetRealityDataSourcesModel(), fileUri.c_str(), fileUri.c_str());
+    if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
+        return ERROR;
+
+    DMatrix4d transform = JsonUtils::ToDMatrix4d(model["transform"]);
+
+    Raster::RasterFileModelPtr rasterModel = Raster::RasterFileModelHandler::CreateRasterFileModel(Raster::RasterFileModel::CreateParams(*GetDgnDb(), *repositoryLink, &transform));
+
+    if (rasterModel.IsNull())
+        {
+        GetLogger().errorv("Failed to create raster file model for ModelId %s with fileUri %s", ecInstanceId.ToString().c_str(), fileUri.c_str());
+        return ERROR;
+        }
+
+    DRange2d bbox;
+    JsonUtils::DRange2dFromJson(bbox, model["bbox"]);
+
+    IECInstancePtr ecInstance = _CreateInstance(model);
+    if (!ecInstance.IsValid())
+        return ERROR;
+
+    ECValue clipValue;
+    size_t size = 0;
+    ecInstance->GetValue(clipValue, "Clip");
+    if (!clipValue.IsNull())
+        {
+        ByteCP clipBlob = clipValue.GetBinary(size);
+        rasterModel->SetClip(clipBlob, size);
+        }
+
+    auto modelStatus = rasterModel->Insert();
+    if (modelStatus != DgnDbStatus::Success)
+        {
+        GetLogger().errorv("Failed to insert raster file model for ModelId %s with fileUri %s", ecInstanceId.ToString().c_str(), fileUri.c_str());
+        return ERROR;
+        }
+    SyncInfo::ModelMapping mapping;
+    GetSyncInfo()->InsertModel(mapping, rasterModel->GetModelId(), ecInstanceId, nullptr);
+
 
     return SUCCESS;
     }

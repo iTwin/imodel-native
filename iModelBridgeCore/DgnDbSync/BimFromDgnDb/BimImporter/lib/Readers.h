@@ -55,6 +55,7 @@ static Utf8CP const JSON_TYPE_GenericElementAspect = "GenericElementAspect";
 static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
 static Utf8CP const JSON_TYPE_PointCloudModel = "PointCloudModel";
 static Utf8CP const JSON_TYPE_ThreeMxModel = "ThreeMxModel";
+static Utf8CP const JSON_TYPE_RasterFileModel = "RasterFileModel";
 
 static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec = "CodeSpec";
 static Utf8CP const  BIS_ELEMENT_PROP_CodeScope = "CodeScope";
@@ -164,6 +165,19 @@ struct PointCloudModelReader : Reader
 // @bsimethod                                   Carole.MacDonald            08/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 struct ThreeMxModelReader : Reader
+    {
+    DEFINE_T_SUPER(Reader);
+    protected:
+        BentleyStatus _Read(Json::Value& object) override;
+
+    public:
+        using Reader::Reader;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct RasterFileModelReader : Reader
     {
     DEFINE_T_SUPER(Reader);
     protected:

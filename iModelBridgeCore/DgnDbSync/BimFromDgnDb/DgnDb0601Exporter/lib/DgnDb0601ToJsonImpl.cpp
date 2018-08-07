@@ -16,6 +16,8 @@
 #include <DgnDb06Api/ECObjects/ECJsonUtilities.h>
 #include <DgnDb06Api/PointCloudSchema/PointCloudSchemaApi.h>
 #include <DgnDb06Api/ThreeMx/ThreeMxApi.h>
+#include <DgnDb06Api/RasterSchema/RasterSchemaApi.h>
+#include <DgnDb06Api/RasterSchema/RasterFileHandler.h>
 #include <DgnDb06Api/DgnPlatform/JsonUtils.h>
 
 DGNDB06_USING_NAMESPACE_BENTLEY
@@ -62,6 +64,7 @@ static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
 static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
 static Utf8CP const JSON_TYPE_PointCloudModel = "PointCloudModel";
 static Utf8CP const JSON_TYPE_ThreeMxModel = "ThreeMxModel";
+static Utf8CP const JSON_TYPE_RasterFileModel = "RasterFileModel";
 
 static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec="CodeSpec";
 static Utf8CP const  BIS_ELEMENT_PROP_CodeScope="CodeScope";
@@ -388,6 +391,7 @@ bool DgnDb0601ToJsonImpl::OpenDgnDb()
     m_cameraKeyFrameClass = m_dgndb->Schemas().GetECClass("Planning", "CameraKeyFrame");
     m_pointCloudModelClass = m_dgndb->Schemas().GetECClass("PointCloud", "PointCloudModel");
     m_threeMxModelClass = m_dgndb->Schemas().GetECClass("ThreeMx", "ThreeMxModel");
+    m_rasterFileModelClass = m_dgndb->Schemas().GetECClass("Raster", "RasterFileModel");
 
     return true;
     }
@@ -1515,13 +1519,14 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportModel(Utf8CP schemaName, Utf8CP classNa
         DgnModelPtr model = m_dgndb->Models().GetModel(DgnModelId(actualElementId.GetValue()));
         bool isPointCloud = nullptr != m_pointCloudModelClass && m_dgndb->Schemas().GetECClass(model->GetClassId())->Is(m_pointCloudModelClass);
         bool isThreeMx = nullptr != m_threeMxModelClass && m_dgndb->Schemas().GetECClass(model->GetClassId())->Is(m_threeMxModelClass);
+        bool isRaster = nullptr != m_rasterFileModelClass && m_dgndb->Schemas().GetECClass(model->GetClassId())->Is(m_rasterFileModelClass);
 
         DgnElementId modeledElementId;
         if (model->IsSheetModel())
             modeledElementId = CreateSheetElement(*model);
         else if (model->Is2dModel())
             modeledElementId = CreateDrawingElement(model->GetName().c_str());
-        else if (!model->IsDictionaryModel() && !isPointCloud)
+        else if (!model->IsDictionaryModel() && !isPointCloud && !isThreeMx && !isRaster)
             modeledElementId = CreatePartitionElement(*model, DgnElementId());
         
         auto entry = Json::Value(Json::ValueType::objectValue);
@@ -1578,6 +1583,27 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportModel(Utf8CP schemaName, Utf8CP classNa
                 JsonUtils::TransformFromJson(location, properties["Location"]);
                 JsonUtils::TransformToJson(obj["Location"], location);
                 }
+            }
+        else if (isRaster)
+            {
+            entry[JSON_TYPE_KEY] = JSON_TYPE_RasterFileModel;
+            Json::Value properties;
+            Json::Reader::Parse(obj["Properties"].asCString(), properties);
+
+            Json::Value fileId;
+            Json::Reader::Parse(properties["fileId"].asCString(), fileId);
+            obj["FileUri"] = fileId["localFile"]["fullPath"].asCString();
+
+            Transform transform;
+            JsonUtils::TransformFromJson(transform, properties["transform"]);
+            JsonUtils::TransformToJson(obj["transform"], transform);
+
+            DRange2d range;
+            JsonUtils::DPoint2dFromJson(range.low, properties["bbox"]["low"]);
+            JsonUtils::DPoint2dFromJson(range.high, properties["bbox"]["high"]);
+            JsonUtils::DPoint2dToJson(obj["bbox"]["low"], range.low);
+            JsonUtils::DPoint2dToJson(obj["bbox"]["high"], range.high);
+            obj[JSON_CLASSNAME] = "Raster.RasterFileModel";
             }
         else if (model->IsSpatialModel())
             {
