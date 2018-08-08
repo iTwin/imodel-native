@@ -6,7 +6,7 @@
 |       $Date: 2011/08/08 19:02:26 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -92,9 +92,26 @@ struct LinearFeatureTypeInfo
     size_t                          m_linearCount;
     size_t                          m_pointCount;
     };
+
 typedef vector<LinearFeatureTypeInfo>        
                                     LinearFeatureTypeInfoList;
 
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Mathieu.St-Pierre   09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct MeshFeatureTypeInfo 
+    {
+    explicit                    MeshFeatureTypeInfo(size_t                  pi_PointCount,
+                                                    size_t                  pi_ptIndicesCount)
+        : m_pointCount(pi_PointCount), m_ptIndicesCount(pi_ptIndicesCount)
+    {}
+
+    size_t                          m_pointCount;
+    size_t                          m_ptIndicesCount;
+    };
+
+typedef vector<MeshFeatureTypeInfo>MeshFeatureTypeInfoList;
 
 /*---------------------------------------------------------------------------------**//**
 * @description   
@@ -113,6 +130,7 @@ public:
     TypeIdList                      points;
     TypeIdList                      linears;
     TypeIdList                      tinLinears;
+    TypeIdList                      mesh;
     };
 
 
@@ -187,8 +205,46 @@ public:
                                                                 IDTMFeatureArray<DPoint3d>&     po_featureArray) const;
     };
 
-
 typedef LinearHandler               TINAsLinearHandler;
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Mathieu.St-Pierre   09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+class MeshHandler
+    {
+    const BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM&     m_rDTM;
+    const CivilImportedTypes::TypeIdList&
+        m_typeIDList;
+    bool                    m_initialized;
+    MeshFeatureTypeInfoList m_typesInfo;
+    size_t                  m_maxPtCount;
+    size_t                  m_maxPtIndicesCount;
+
+
+public:
+    /*
+    typedef MeshFeatureTypeInfoList::const_iterator
+        TypeInfoCIter;
+        */
+
+    explicit                        MeshHandler(const BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM& dtm,
+                                                const CivilImportedTypes::TypeIdList&              typeIDList);
+
+    bool                            ComputeCounts();
+
+    /*
+    TypeInfoCIter                   TypesInfoBegin() const;
+    TypeInfoCIter                   TypesInfoEnd() const;
+    */
+
+    size_t                          GetMaxPointCount() const;
+    size_t                          GetMaxPtIndicesCount() const;
+
+    bool                            Copy(//TypeInfoCIter         pi_typeInfoIter,
+                                         HPU::Array<DPoint3d>& po_pointArray, 
+                                         HPU::Array<int32_t>&  po_ptIndicesArray) const;
+    };
 
 
 } // END namespace Plugin

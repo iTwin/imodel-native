@@ -6,7 +6,7 @@
 //:>       $Date: 2011/06/27 14:53:05 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -35,6 +35,6 @@ template class ScalableMeshQuadTreeBCLIBProgressiveFilter1<DPoint3d, DRange3d>;
 
 template class ScalableMeshQuadTreeBCLIB_CGALMeshFilter<DPoint3d, DRange3d>;
 
-#ifdef WIP_MESH_IMPORT
+//#ifdef WIP_MESH_IMPORT
 template class ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, DRange3d>;
-#endif
+//#endif

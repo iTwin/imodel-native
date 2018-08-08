@@ -736,7 +736,7 @@ bb -ax64 -p ScalableMeshCreator  -f  ScalableMeshCore -r  ScalableMesh  re  Scal
     </Xml>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ScalableMeshImportersLib_Vancouver.mke" />
+    <None Include="ScalableMeshCreator_Vancouver.mke" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

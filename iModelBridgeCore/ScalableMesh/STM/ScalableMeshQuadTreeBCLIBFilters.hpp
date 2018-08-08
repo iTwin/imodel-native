@@ -843,7 +843,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
     return true;
     }
 
-#ifdef WIP_MESH_IMPORT
+//#ifdef WIP_MESH_IMPORT
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 07/16
 //=======================================================================================
@@ -852,6 +852,10 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_UserMeshFilte
     std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>&  subNodes,
     size_t numSubNodes) const
     {
+    assert(!"not yet implemented");
+    return false;
+
+#ifdef WIP_MESH_IMPORT
     HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);    
     DRange3d extent = DRange3d::NullRange();
     bvector<IScalableMeshMeshPtr> subMeshes;
@@ -954,5 +958,6 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_UserMeshFilte
         }
 
     return true;
-    }
 #endif
+    }
+//#endif

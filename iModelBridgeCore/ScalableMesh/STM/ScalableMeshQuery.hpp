@@ -2272,6 +2272,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                 if (val["texId"].size() > 0)
                     textureIDs.push_back((*val["texId"].begin()).asUInt64());
                 }
+
             for(auto& texId: textureIDs)
                 {
                 RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> displayTextureDataPtr = meshNode->GetDisplayTexture(texId);
@@ -2284,7 +2285,13 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                         memcpy(&width, texPtr->GetData(), sizeof(int));
                         memcpy(&height, texPtr->GetData() + sizeof(int), sizeof(int));
                         SmCachedDisplayTexture* cachedDisplayTexture;
+
+                        size_t usedMemInBytes = 0;
+                        bool isStoredOnGpu = false;
+                        
                         displayCacheManagerPtr->_CreateCachedTexture(cachedDisplayTexture,
+                                                                     usedMemInBytes,
+                                                                     isStoredOnGpu,
                                                                      width,
                                                                      height,
                                                                      false,

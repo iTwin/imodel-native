@@ -119,8 +119,6 @@ bool s_useSQLFormat = true;
 
 #define USE_CODE_FOR_ERROR_DETECTION
 
-ISMPointIndexFilter<DPoint3d, Extent3dType>* s_filterClass = nullptr;
-
 namespace {
 #if 0
 /*----------------------------------------------------------------------------+
@@ -627,14 +625,6 @@ int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, cons
     }
 #endif
 
-void IScalableMesh::SetUserFilterCallback(MeshUserFilterCallback callback)
-    {
-   // return _SetUserFilterCallback(callback);
-#ifdef WIP_MESH_IMPORT
-    if (s_filterClass == nullptr) s_filterClass = new ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, DRange3d>();
-    ((ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, DRange3d>*)s_filterClass)->SetCallback(callback);
-#endif
-    }
 void IScalableMesh::ReFilter()
     {
     return _ReFilter();
@@ -3693,16 +3683,8 @@ template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WS
 #endif
     return SUCCESS;
     }
-#endif
-
-
-template <class POINT> void ScalableMesh<POINT>::_SetUserFilterCallback(MeshUserFilterCallback callback)
-    {/*
-#ifdef WIP_MESH_IMPORT
-    if (s_filterClass == nullptr) s_filterClass = new ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>();
-    ((ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>*)s_filter)->SetCallback(callback);
-#endif*/
-    }
+#endif  
+ 
 template <class POINT> void ScalableMesh<POINT>::_ReFilter()
     {
     size_t depth = m_scmIndexPtr->GetDepth();

@@ -27,6 +27,8 @@
 #include <DgnPlatform/ClipVector.h>
 #include <Bentley/bset.h>
 
+#include <BeJsonCpp/BeJsonUtilities.h>
+
 #ifdef VANCOUVER_API
     USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME

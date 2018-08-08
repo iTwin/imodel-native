@@ -108,7 +108,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIB_CGALMeshFilt
             }
     };
 
-#ifdef WIP_MESH_IMPORT
+//#ifdef WIP_MESH_IMPORT
 template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIB_UserMeshFilter : public ISMMeshIndexFilter<POINT, EXTENT>
     {
     public:
@@ -132,6 +132,6 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIB_UserMeshFilt
     private:
         MeshUserFilterCallback     m_callback;
     };
-#endif
+//#endif
 
 
