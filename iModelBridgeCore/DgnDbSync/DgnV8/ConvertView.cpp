@@ -621,6 +621,35 @@ void Converter::ConvertViewACS(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo,
         }
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool convertBackgroundMap(DisplayStyle& displayStyle, DgnV8ViewInfoCR viewInfo, DgnFileR dgnFile)
+    {
+    auto        elementRef = dgnFile.FindByElementId(viewInfo.GetElementId(), true);
+    size_t      stringLength = 0;
+    static      uint32_t   STRING_LINKAGE_KEY_BackgroundMapJson = 89;
+
+    if (nullptr == elementRef)
+        return false;
+
+    DgnV8Api::ElementHandle       eeh(elementRef);
+
+    if (BSISUCCESS != DgnV8Api::StringXAttribute::Extract(nullptr, 0, &stringLength, eeh, 0, STRING_LINKAGE_KEY_BackgroundMapJson) ||
+        0 == stringLength)
+        return false;
+
+    WChar*      wBackgroundMapJson = (WChar*) _alloca ((1+stringLength) * sizeof (WChar));
+    DgnV8Api::StringXAttribute::Extract (wBackgroundMapJson, stringLength, nullptr, eeh, 0, STRING_LINKAGE_KEY_BackgroundMapJson);
+    Json::Value     value = Json::Reader::DoParse(Utf8String(wBackgroundMapJson));
+
+    if (value.isObject())
+        displayStyle.SetStyle(DisplayStyle::json_backgroundMap(), value);
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -700,6 +729,9 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 
     // DisplayStyle
     ViewFlags flags = ConvertV8Flags(viewInfo.GetViewFlags());
+
+    flags.SetShowBackgroundMap(convertBackgroundMap(*parms.m_dstyle, parms.m_viewInfo, *v8File));
+
     parms.m_dstyle->SetViewFlags(flags);
     ColorDef bgColor(DgnV8Api::IntColorDef(viewInfo.ResolveBGColor()).m_int); // Always set view's background color to "resolved" background color from V8.
     parms.m_dstyle->SetBackgroundColor(bgColor);

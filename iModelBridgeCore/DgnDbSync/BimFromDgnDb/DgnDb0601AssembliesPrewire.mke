@@ -72,7 +72,9 @@ $(Delivery)BeHttp$(ApiNumber).dll : $(DgnDbDlls)BeHttp$(ApiNumber).dll
 
 $(Delivery)BeFolly$(ApiNumber).dll : $(DgnDbDlls)BeFolly$(ApiNumber).dll
 
+%if "x64" == $(TARGET_PROCESSOR_ARCHITECTURE)
 $(Delivery)bentleylog4cxx$(ApiNumber).dll : $(DgnDbDlls)bentleylog4cxx$(ApiNumber).dll
+%endif
 
 $(Delivery)PointCloudSchema$(ApiNumber).dll : $(DgnDbDlls)PointCloudSchema$(ApiNumber).dll
 
@@ -109,13 +111,13 @@ $(DeliveryDgnDbPlatformLibs)$(stlibprefix)BaseGeoCoord$(stlibext) : $(DgnDbDlls)
 
 $(DeliveryDgnDbPlatformLibs)$(stlibprefix)Planning$(stlibext) : $(DgnDbDlls)$(stlibprefix)Planning$(stlibext)
 
-%if "x64" == $(TARGET_PROCESSOR_ARCHITECTURE)
+
 $(DeliveryDgnDbPlatformLibs)$(stlibprefix)PointCloudSchema$(stlibext) : $(DgnDbDlls)$(stlibprefix)PointCloudSchema$(stlibext)
 
 $(DeliveryDgnDbPlatformLibs)$(stlibprefix)RasterSchema$(stlibext) : $(DgnDbDlls)$(stlibprefix)RasterSchema$(stlibext)
 
 $(DeliveryDgnDbPlatformLibs)$(stlibprefix)ThreeMx$(stlibext) : $(DgnDbDlls)$(stlibprefix)ThreeMx$(stlibext)
-%endif 
+
 
 $(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeXml$(stlibext) : $(DgnDbDlls)$(stlibprefix)BeXml$(stlibext)
 
