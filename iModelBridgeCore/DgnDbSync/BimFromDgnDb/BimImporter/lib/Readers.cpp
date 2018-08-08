@@ -17,6 +17,12 @@
 #include <DgnPlatform/Annotations/TextAnnotationPersistence.h>
 #include <Bentley/Base64Utilities.h>
 #include <Planning/PlanningApi.h>
+#include <PointCloud/PointCloudApi.h>
+#include <PointCloud/PointCloudHandler.h>
+#include <Raster/RasterApi.h>
+#include <Raster/RasterFileHandler.h>
+#include <Raster/RasterTypes.h>
+#include <ThreeMx/ThreeMxApi.h>
 #include "SyncInfo.h"
 #include "Readers.h"
 #include "BimFromJsonImpl.h"
@@ -26,7 +32,6 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_PLANNING
 
 BEGIN_BIM_FROM_DGNDB_NAMESPACE
 
@@ -773,7 +778,7 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
         }
     else if (partitionType.Equals("PlanningPartition"))
         {
-        PlanningPartitionCPtr pp = PlanningPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asCString());
+        Planning::PlanningPartitionCPtr pp = Planning::PlanningPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asCString());
         if (!pp.IsValid())
             {
             GetLogger().errorv("Failed to create PlanningPartition for %s", oldInstanceId.ToString().c_str());
@@ -1385,6 +1390,173 @@ BentleyStatus ModelReader::_Read(Json::Value& model)
     return SUCCESS;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                   Eric.Paquet         10/2016
+//-----------------------------------------------------------------------------------------
+BentleyStatus CopyResourceToBimLocation(BeFileNameR outputFileName, DgnDbCR db, BeFileNameCR sourceFileName)
+    {
+    // Copy the point cloud at the same location than the Bim file
+    BeFileName dbFileName(db.GetDbFileName());
+    WString fileName = sourceFileName.GetFileNameAndExtension();
+    outputFileName = dbFileName.GetDirectoryName();
+    outputFileName.AppendToPath(fileName.c_str());
+    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(sourceFileName, outputFileName);
+    if (fileStatus != BeFileNameStatus::Success && fileStatus != BeFileNameStatus::AlreadyExists)
+        {
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus PointCloudModelReader::_Read(Json::Value& model)
+    {
+    DgnModelId ecInstanceId = ECJsonUtilities::JsonToId<DgnModelId>(model[ECJsonSystemNames::Id()]);
+    if (!ecInstanceId.IsValid())
+        return ERROR;
+
+    auto& props = model["PointCloudModel"];
+
+    WString relativePath;
+    BeFileName pod(WString(props["FileUri"].asCString(), BentleyCharEncoding::Utf8));
+    BeFileName outputFilename;
+    CopyResourceToBimLocation(outputFilename, *GetDgnDb(), pod);
+
+    Utf8String fileUri(outputFilename.GetFileNameAndExtension().c_str());
+    Utf8String description = props["Description"].asString();
+
+    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*GetDgnDb()->GetRealityDataSourcesModel(), fileUri.c_str(), fileUri.c_str());
+    if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
+        return ERROR;
+
+    PointCloud::PointCloudModelPtr pc = PointCloud::PointCloudModelHandler::CreatePointCloudModel(PointCloud::PointCloudModel::CreateParams(*GetDgnDb(), repositoryLink->GetElementId(), fileUri));
+    if (pc.IsNull())
+        {
+        GetLogger().errorv("Failed to create point cloud model for ModelId %s with fileUri %s", ecInstanceId.ToString().c_str(), fileUri.c_str());
+        return ERROR;
+        }
+
+    Transform stw;
+    JsonUtils::TransformFromJson(stw, props["SceneToWorld"]);
+    Utf8String wkt = props["Wkt"].asString();
+    float density = props["Density"].asFloat();
+
+    ColorDef color = ColorDef(props["Color"].asUInt());
+    uint32_t weight = props["Weight"].asUInt();
+
+    pc->SetDescription(description.c_str());
+    if (!Utf8String::IsNullOrEmpty(wkt.c_str()))
+        pc->SetSpatialReferenceWkt(wkt.c_str());
+    pc->SetViewDensity(density);
+    pc->SetSceneToWorld(stw);
+    pc->SetColor(color);
+    pc->SetWeight(weight);
+
+    auto modelStatus = pc->Insert();
+    if (modelStatus != DgnDbStatus::Success)
+        {
+        GetLogger().errorv("Failed to insert point cloud model for ModelId %s with fileUri %s", ecInstanceId.ToString().c_str(), fileUri.c_str());
+        return ERROR;
+        }
+    SyncInfo::ModelMapping mapping;
+    GetSyncInfo()->InsertModel(mapping, pc->GetModelId(), ecInstanceId, nullptr);
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ThreeMxModelReader::_Read(Json::Value& model)
+    {
+    DgnModelId ecInstanceId = ECJsonUtilities::JsonToId<DgnModelId>(model[ECJsonSystemNames::Id()]);
+    if (!ecInstanceId.IsValid())
+        return ERROR;
+
+    Transform location;
+    if (model.isMember("Location"))
+        JsonUtils::TransformFromJson(location, model["Location"]);
+    else
+        location.InitIdentity();
+
+    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*GetDgnDb()->GetRealityDataSourcesModel(), model["SceneFile"].asCString(), model["SceneName"].asCString());
+    if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
+        return ERROR;
+
+    // R3 doesn't have a clip vector
+    DgnModelId threeMxId = ThreeMx::ModelHandler::CreateModel(*repositoryLink, model["SceneFile"].asCString(), &location, nullptr);
+    if (!threeMxId.IsValid())
+        {
+        GetLogger().errorv("Failed to create ThreeMx model for ModelId %s with URL %s", ecInstanceId.ToString().c_str(), model["SceneFile"].asCString());
+        return ERROR;
+        }
+
+    SyncInfo::ModelMapping mapping;
+    GetSyncInfo()->InsertModel(mapping, threeMxId, ecInstanceId, nullptr);
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus RasterFileModelReader::_Read(Json::Value& model)
+    {
+    DgnModelId ecInstanceId = ECJsonUtilities::JsonToId<DgnModelId>(model[ECJsonSystemNames::Id()]);
+    if (!ecInstanceId.IsValid())
+        return ERROR;
+
+    WString relativePath;
+    BeFileName raster(WString(model["FileUri"].asCString(), BentleyCharEncoding::Utf8));
+    BeFileName outputFilename;
+    CopyResourceToBimLocation(outputFilename, *GetDgnDb(), raster);
+
+    Utf8String fileUri(outputFilename.GetFileNameAndExtension().c_str());
+    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*GetDgnDb()->GetRealityDataSourcesModel(), fileUri.c_str(), fileUri.c_str());
+    if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
+        return ERROR;
+
+    DMatrix4d transform = JsonUtils::ToDMatrix4d(model["transform"]);
+
+    Raster::RasterFileModelPtr rasterModel = Raster::RasterFileModelHandler::CreateRasterFileModel(Raster::RasterFileModel::CreateParams(*GetDgnDb(), *repositoryLink, &transform));
+
+    if (rasterModel.IsNull())
+        {
+        GetLogger().errorv("Failed to create raster file model for ModelId %s with fileUri %s", ecInstanceId.ToString().c_str(), fileUri.c_str());
+        return ERROR;
+        }
+
+    DRange2d bbox;
+    JsonUtils::DRange2dFromJson(bbox, model["bbox"]);
+
+    IECInstancePtr ecInstance = _CreateInstance(model);
+    if (!ecInstance.IsValid())
+        return ERROR;
+
+    ECValue clipValue;
+    size_t size = 0;
+    ecInstance->GetValue(clipValue, "Clip");
+    if (!clipValue.IsNull())
+        {
+        ByteCP clipBlob = clipValue.GetBinary(size);
+        rasterModel->SetClip(clipBlob, size);
+        }
+
+    auto modelStatus = rasterModel->Insert();
+    if (modelStatus != DgnDbStatus::Success)
+        {
+        GetLogger().errorv("Failed to insert raster file model for ModelId %s with fileUri %s", ecInstanceId.ToString().c_str(), fileUri.c_str());
+        return ERROR;
+        }
+    SyncInfo::ModelMapping mapping;
+    GetSyncInfo()->InsertModel(mapping, rasterModel->GetModelId(), ecInstanceId, nullptr);
+
+
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1459,6 +1631,11 @@ BentleyStatus ModelSelectorReader::_Read(Json::Value& object)
         Json::Value& member = *iter;
         DgnModelId id = ECJsonUtilities::JsonToId<DgnModelId>(member);
         DgnModelId lookup = GetSyncInfo()->LookupModel(DgnModelId(id));
+        if (!lookup.IsValid())
+            {
+            GetLogger().errorv("Could not remap model %s to add to model selector.", id.ToString().c_str());
+            continue;
+            }
         selector.AddModel(lookup);
         }
 
@@ -2518,7 +2695,7 @@ BentleyStatus ElementHasLinksReader::_Read(Json::Value& hasLinks)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus BaselineReader::_Read(Json::Value& baseline)
     {
-    PlanId id = ECJsonUtilities::JsonToId<PlanId>(baseline["Plan"]["id"]);
+    Planning::PlanId id = ECJsonUtilities::JsonToId<Planning::PlanId>(baseline["Plan"]["id"]);
     DgnElementId mappedPlan = GetSyncInfo()->LookupElement(DgnElementId(id.GetValue()));
     if (!mappedPlan.IsValid())
         {
@@ -2527,7 +2704,7 @@ BentleyStatus BaselineReader::_Read(Json::Value& baseline)
         return ERROR;
         }
     
-    PlanPtr plan = Plan::GetForEdit(*GetDgnDb(), mappedPlan);
+    Planning::PlanPtr plan = Planning::Plan::GetForEdit(*GetDgnDb(), mappedPlan);
     if (!plan.IsValid())
         {
         Utf8PrintfString error("Failed to get Plan for mapped id %s.", mappedPlan.ToString().c_str());
