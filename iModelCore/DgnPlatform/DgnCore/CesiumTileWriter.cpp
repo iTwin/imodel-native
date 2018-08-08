@@ -254,6 +254,27 @@ struct CesiumTileWriter : TileTree::IO::Writer
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+void AddTextureSampler(Utf8StringCR sampler, TileTextureCR texture)
+    {
+    if (!m_json.isMember("samplers"))
+        m_json["samplers"] = Json::objectValue;
+
+    if (!m_json["samplers"].isMember(sampler))
+        {
+        m_json["samplers"][sampler] = Json::objectValue;
+        m_json["samplers"][sampler]["minFilter"] = Gltf::Linear;
+        m_json["samplers"][sampler]["magFilter"] = Gltf::Linear;
+        if (!texture.m_repeat)
+            {
+            m_json["samplers"][sampler]["wrapS"] = Gltf::ClampToEdge;
+            m_json["samplers"][sampler]["wrapT"] = Gltf::ClampToEdge;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String AddTextureImage (TileTextureCR texture, Utf8StringCR idStr)
     {
     Render::ImageSourceCR   imageSource = texture.m_imageSource;
@@ -262,12 +283,15 @@ Utf8String AddTextureImage (TileTextureCR texture, Utf8StringCR idStr)
     Utf8String  textureId = Utf8String ("texture_") + idStr;
     Utf8String  imageId   = Utf8String ("image_")   + idStr;
     Utf8String  bvImageId = Utf8String ("imageBufferView") + idStr;
+    Utf8String  samplerName = texture.m_repeat ? "sampler_0" : "sampler_2";
 
     m_json["textures"][textureId] = Json::objectValue;
     m_json["textures"][textureId]["format"] = hasAlpha ? static_cast<int32_t>(Gltf::DataType::Rgba) : static_cast<int32_t>(Gltf::DataType::Rgb);
     m_json["textures"][textureId]["internalFormat"] = hasAlpha ? static_cast<int32_t>(Gltf::DataType::Rgba) : static_cast<int32_t>(Gltf::DataType::Rgb);
-    m_json["textures"][textureId]["sampler"] = texture.m_repeat ? "sampler_0" : "sampler_2";
+    m_json["textures"][textureId]["sampler"] = samplerName;
     m_json["textures"][textureId]["source"] = imageId;
+
+    AddTextureSampler(samplerName, texture);
 
     m_json["images"][imageId] = Json::objectValue;
 
