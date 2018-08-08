@@ -24,10 +24,3 @@ JsonUpdaterTests.Options
     # at com.bentley.unittest.BeAndroidTestRunner.runTest(BeAndroidTestRunner.java:63)
     # at android.test.InstrumentationTestRunner.onStart(InstrumentationTestRunner.java:560)
     # at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:1932)
-
-#SQLite change UNION order which make these test fial. @affan
-ECSqlStatementTestFixture.UnionTests
-JoinedTableECSqlStatementsTests.UnionTests
-
-#Sqlite stop adding BLOB where it was not specified in source DDL . @affan
-FileFormatCompatibilityTests.CompareDdl_NewFile

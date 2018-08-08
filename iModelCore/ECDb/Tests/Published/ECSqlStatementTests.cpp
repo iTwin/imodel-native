@@ -296,12 +296,12 @@ TEST_F(ECSqlStatementTestFixture, UnionTests)
     //Get Row one
     ASSERT_TRUE(stmt.Step() == BE_SQLITE_ROW);
     ASSERT_EQ(3, stmt.GetValueInt(0));
-    ASSERT_EQ(1300, stmt.GetValueDouble(1));
+    ASSERT_EQ(1100, stmt.GetValueDouble(1));
 
     //Get Row two
     ASSERT_TRUE(stmt.Step() == BE_SQLITE_ROW);
     ASSERT_EQ(4, stmt.GetValueInt(0));
-    ASSERT_EQ(1700, stmt.GetValueDouble(1));
+    ASSERT_EQ(1400, stmt.GetValueDouble(1));
 
     ASSERT_TRUE(stmt.Step() == BE_SQLITE_DONE);
     }
