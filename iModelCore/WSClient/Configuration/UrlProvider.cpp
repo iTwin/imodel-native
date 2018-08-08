@@ -16,10 +16,10 @@
 #define RECORD_Url              "URL"
 #define RECORD_TimeCached       "TimeCached"
 
-#define Environment_Release "Release"
-#define Environment_Qa      "Qa"
-#define Environment_Dev     "Dev"
-#define Environment_Perf    "Perf"
+#define Environment_Release     "PROD"
+#define Environment_Qa          "QA"
+#define Environment_Dev         "DEV"
+#define Environment_Perf        "PERF"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -377,19 +377,10 @@ ITaskSchedulerPtr customScheduler
     s_localState = localState;
     s_customHandler = customHandler;
     s_buddi = customBuddi ? customBuddi : std::make_shared<BuddiClient>(s_customHandler, nullptr, s_thread);
-    s_env = env;
     s_cacheTimeoutMs = cacheTimeoutMs;
     s_isInitialized = true;
 
-    Json::Value jsonPreviousEnv = s_localState->GetJsonValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT);
-    if (!jsonPreviousEnv.isNull() && env != jsonPreviousEnv.asUInt())
-        {
-        CleanUpUrlCache();
-        }
-    if (jsonPreviousEnv.isNull() || env != jsonPreviousEnv.asUInt())
-        {
-        s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT, env);
-        }
+    SetEnvironment(env);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -515,21 +506,20 @@ void UrlProvider::SetEnvironment(UrlProvider::Environment env)
     s_env = env;
 
     Json::Value jsonPreviousEnv = s_localState->GetJsonValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT);
-
-    CleanUpUrlCache();
+    if (!jsonPreviousEnv.isNull() && env != jsonPreviousEnv.asUInt())
+        CleanUpUrlCache();
 
     if (jsonPreviousEnv.isNull() || env != jsonPreviousEnv.asUInt())
-        {
         s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT, env);
-        }
+
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UrlProvider::GetEnvironmentString()
+Utf8String UrlProvider::ToEnvironmentString(UrlProvider::Environment env)
     {
-    switch (s_env)
+    switch (env)
         {
         case UrlProvider::Environment::Release:
             return Environment_Release;
@@ -541,7 +531,7 @@ Utf8String UrlProvider::GetEnvironmentString()
             return Environment_Perf;
         }
 
-    return "";
+    return Utf8String();
     }
 
 /*--------------------------------------------------------------------------------------+
