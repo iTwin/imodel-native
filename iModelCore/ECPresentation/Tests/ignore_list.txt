@@ -9,12 +9,3 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-
-    
-HierarchyUpdateTests.SameLabelInstanceGroupIsCreatedWhenAdditionalInstancesAreInserted
-
-    # TFS#928655
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/07/2018
-    # c:\build\src\mds06t\ECPresentation\Tests\NonPublished\RulesEngine\UpdateTests.cpp(1733): error:       Expected: 2
-    # To be equal to: m_updateRecordsHandler->GetRecords().size()
-    # Which is: 1
