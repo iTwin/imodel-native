@@ -1,6 +1,7 @@
 {
   "Environment": "DEV",
   "ProjectId": "52a2af9e-1430-4a09-8b77-f168762863e6",
+  "ServerUrl": "",
   "Users": [
     {
       "Username": "admin_password_please_change",

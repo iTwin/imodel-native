@@ -19,6 +19,7 @@ struct IntegrationTestsSettings
         Http::Credentials m_serviceAccountCredentials;
 
         Utf8String m_projectId;
+        Utf8String m_url;
         WebServices::UrlProvider::Environment m_environment;
         void ReadSettings(BeFileNameCR settingsFile);
         IntegrationTestsSettings();
@@ -30,6 +31,7 @@ struct IntegrationTestsSettings
         Http::Credentials GetWrongUsername() const;
         Http::Credentials GetWrongPassword() const;
         Utf8String GetProjectId() const;
+        Utf8String GetServerUrl() const;
         WebServices::UrlProvider::Environment GetEnvironment() const;
         WebServices::ClientInfoPtr GetClientInfo() const;
     };

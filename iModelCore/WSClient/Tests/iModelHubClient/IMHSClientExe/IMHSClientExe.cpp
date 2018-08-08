@@ -40,6 +40,7 @@ BentleyStatus IMHSClientExe::Initialize(Utf8String exePath)
     WebServices::ClientInfoPtr clientInfo = IntegrationTestsSettings::Instance().GetClientInfo();
 
     auto clientHelper = ClientHelper::Initialize(clientInfo);
+    clientHelper->SetUrl(IntegrationTestsSettings::Instance().GetServerUrl());
 
     auto manager = ConnectSignInManager::Create(clientInfo, ProxyHttpHandler::GetFiddlerProxyIfReachable());
     SignInResult signInResult = manager->SignInWithCredentials(IntegrationTestsSettings::Instance().GetValidAdminCredentials())->GetResult();

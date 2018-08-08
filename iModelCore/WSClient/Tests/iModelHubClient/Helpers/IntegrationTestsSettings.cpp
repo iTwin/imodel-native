@@ -62,6 +62,9 @@ void IntegrationTestsSettings::ReadSettings(BeFileNameCR settingsFile)
         m_nonAdminCredentials = Credentials(user["Username"].asString(), user["Password"].asString());
         }
 
+    m_url = settings["ServerUrl"].asString();
+    if (Utf8String::IsNullOrEmpty(m_url.c_str()))
+        m_url = UrlProvider::Urls::iModelHubApi.Get();
     m_projectId = settings["ProjectId"].asString();
     Utf8String environment = settings["Environment"].asString();
     if ("DEV" == environment)
@@ -100,6 +103,11 @@ Credentials IntegrationTestsSettings::GetWrongPassword() const
 Utf8String IntegrationTestsSettings::GetProjectId() const
     {
     return m_projectId;
+    }
+
+Utf8String IntegrationTestsSettings::GetServerUrl() const
+    {
+    return m_url;
     }
 
 ClientInfoPtr IntegrationTestsSettings::GetClientInfo() const

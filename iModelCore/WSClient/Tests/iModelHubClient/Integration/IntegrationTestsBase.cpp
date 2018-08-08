@@ -75,6 +75,7 @@ void InitializeTests()
     //UrlProvider::SetHttpHandler(mockHandler);
     //ClientHelper::Initialize(IntegrationTestsSettings::Instance().GetClientInfo(), StubLocalState::Instance(), mockHandler);
     ClientHelper::Initialize(IntegrationTestsSettings::Instance().GetClientInfo(), StubLocalState::Instance(), ProxyHttpHandler::GetFiddlerProxyIfReachable());
+    ClientHelper::GetInstance()->SetUrl(IntegrationTestsSettings::Instance().GetServerUrl());
 
     s_initialized = true;
     }
