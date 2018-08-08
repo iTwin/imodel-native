@@ -44,11 +44,27 @@ struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
     friend struct ViewElementHandler::ViewDisplayStyle;
     friend struct ViewDefinition;
 
+public:
+    //! The background map.  Generally supplied through a web mercator provider.
+    struct BackgroundMap
+    {
+        Utf8String  m_provider;     // Provider name (bing, mapbox etc.).
+        double      m_groundBias = 0.0;
+        double      m_transparency = 0.0;
+        Utf8String  m_providerData;
+        Utf8String  m_bingProvider;
+
+        bool IsValid() const { return !m_provider.empty(); }
+        Json::Value   ToJson() const;
+        void FromJson(JsonValueCR value);  
+    };
+
 protected:
     mutable BeMutex m_mutex;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
     Render::ViewFlags m_viewFlags;
+    BackgroundMap m_backgroundMap;
 
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
@@ -72,6 +88,7 @@ public:
     BE_JSON_NAME(monochromeColor);
     BE_JSON_NAME(subCategory);
     BE_JSON_NAME(subCategoryOvr);
+    BE_JSON_NAME(backgroundMap);
 
     DisplayStyle2dCP ToDisplayStyle2d() const {return _ToDisplayStyle2d();}
     DisplayStyle2dP ToDisplayStyle2dP() {return const_cast<DisplayStyle2dP>(_ToDisplayStyle2d());}
@@ -127,6 +144,10 @@ public:
     //! Get the appearance of a SubCategory, taking into consideration any overrides from this DisplayStyle. If the SubCategory
     //! is not overridden, this will return the default appearance of the SubCategory.
     DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
+
+    //! Get the background map.
+    BackgroundMap const& GetBackgroundMap() const { return m_backgroundMap; }
+    void SetBackgroundMap(BackgroundMap const& backgroundMap) { m_backgroundMap = backgroundMap; }
 
     //! Create a DgnCode for a DisplayStyle given a name that is meant to be unique within the scope of the specified DefinitionModel
     static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_DisplayStyle, scope, name);}
@@ -203,7 +224,7 @@ public:
             bool m_enabled = false;
             bool m_twoColor = false;
         };
-
+       
         GroundPlane m_groundPlane;
         SkyBox m_skybox;
 
@@ -212,6 +233,7 @@ public:
 
         DGNPLATFORM_EXPORT void Initialize();
     };
+
 
 protected:
     EnvironmentDisplay m_environment;
@@ -410,7 +432,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition : DefinitionElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ViewDefinition, DefinitionElement);
     friend struct ViewElementHandler::View;
-    friend struct ViewController;
+    friend struct ViewController;                
     friend struct DgnViewport;
 
 public:
