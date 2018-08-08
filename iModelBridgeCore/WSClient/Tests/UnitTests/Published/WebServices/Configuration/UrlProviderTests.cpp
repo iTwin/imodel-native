@@ -405,6 +405,50 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsVali
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsitest                                                  Daumantas.Kojelis   08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithReleaseAndSetToQa_DoesNotSetValidateCertificate)
+    {
+    StubLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Environment::Release, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, s_thread);
+    UrlProvider::SetEnvironment(UrlProvider::Environment::Qa);
+    ASSERT_EQ(UrlProvider::Environment::Qa, UrlProvider::GetEnvironment());
+
+    auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
+
+    GetHandler().ExpectOneRequest().ForAnyRequest([=](Http::RequestCR request)
+        {
+        EXPECT_FALSE(request.GetValidateCertificate());
+        return StubHttpResponse();
+        });
+
+    Http::Request request("foo");
+    configurator->_PerformRequest(request)->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                  Daumantas.Kojelis   08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQaAndSetToRelease_SetsValidateCertificate)
+    {
+    StubLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, s_thread);
+    UrlProvider::SetEnvironment(UrlProvider::Environment::Release);
+    ASSERT_EQ(UrlProvider::Environment::Release, UrlProvider::GetEnvironment());
+
+    auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
+
+    GetHandler().ExpectOneRequest().ForAnyRequest([=](Http::RequestCR request)
+        {
+        EXPECT_TRUE(request.GetValidateCertificate());
+        return StubHttpResponse();
+        });
+
+    Http::Request request("foo");
+    configurator->_PerformRequest(request)->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                                  Robert.Lukasonok    07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, ResolveUrlDescriptor_EmptyURI_Null)
