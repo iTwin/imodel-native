@@ -98,6 +98,7 @@ always:
     CreateSymLinks.py   -d"$(GeoCoordData)Switzerland=$(csDictionariesDir)Switzerland"
     CreateSymLinks.py   -d"$(GeoCoordData)Venezuela=$(csDictionariesDir)Venezuela"
     CreateSymLinks.py   -d"$(GeoCoordData)Portugal=$(csDictionariesDir)Portugal"
+    CreateSymLinks.py   -d"$(GeoCoordData)Slovakia=$(csDictionariesDir)Slovakia"
     CreateSymLinks.py   -d"$(GeoCoordData)UK=$(csDictionariesDir)UK"
     CreateSymLinks.py   -d"$(GeoCoordData)USA/HARN=$(csDictionariesDir)USA/HARN"
     CreateSymLinks.py   -d"$(GeoCoordData)USA/VERTCON=$(csDictionariesDir)USA/VERTCON"
