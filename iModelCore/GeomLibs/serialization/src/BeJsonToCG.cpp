@@ -310,7 +310,7 @@ bool CurrentElementNameMatch (CharCP nameA, CharCP nameB)
 // ASSUME input is confirmed as an array.
 bool TryGetDoubleAtArrayPosition (Json::Value const &source, int i, double &value)
     {
-    if (i >= 0 && source.size () > (size_t)i && source[i].isDouble ())
+    if (i >= 0 && source.size () > (size_t)i && source[i].isNumeric ())
         {
         value = source[i].asDouble ();
         return true;
@@ -327,7 +327,7 @@ bool ReadDPoint3d (Json::Value const &source, DPoint3dR value)
         Json::Value const &xValue = source[0];
         Json::Value const &yValue = source[1];
         Json::Value const &zValue = source[2];
-        if (xValue.isDouble () && yValue.isDouble () && zValue.isDouble ())
+        if (xValue.isNumeric () && yValue.isNumeric () && zValue.isNumeric ())
             {
             value.Init (xValue.asDouble (), yValue.asDouble (), zValue.asDouble ());
             return true;
@@ -345,7 +345,7 @@ bool ReadDVector3d (Json::Value const &source, DVec3dR value)
         Json::Value const &xValue = source[0];
         Json::Value const &yValue = source[1];
         Json::Value const &zValue = source[2];
-        if (xValue.isDouble () && yValue.isDouble () && zValue.isDouble ())
+        if (xValue.isNumeric () && yValue.isNumeric () && zValue.isNumeric ())
             {
             value.Init (xValue.asDouble (), yValue.asDouble (), zValue.asDouble ());
             return true;
@@ -363,7 +363,7 @@ bool ReadDPoint2d (Json::Value const &source, DPoint2dR value)
         {
         Json::Value const &xValue = source[0];
         Json::Value const &yValue = source[1];
-        if (xValue.isDouble () && yValue.isDouble ())
+        if (xValue.isNumeric () && yValue.isNumeric ())
             {
             value.Init (xValue.asDouble (), yValue.asDouble ());
             return true;
@@ -474,7 +474,7 @@ bool ReadListOfdouble (Json::Value const &source, CharCP listName, CharCP shortL
             {
             Json::Value const &entry = target[i];
             
-            if (entry.isDouble ())
+            if (entry.isNumeric ())
                 values.push_back (entry.asDouble ());
             else
                 return false;
@@ -673,6 +673,7 @@ bool ReadTagString (Json::Value const &source, CharCP name, Utf8StringR value) o
 bool ReadTagbool(Json::Value const &source, CharCP name, bool &value) override
     {
     Json::Value target;
+    value = false;
     if (FindProperty (source, name, target)
        && target.isBool ()
        )
@@ -686,8 +687,9 @@ bool ReadTagbool(Json::Value const &source, CharCP name, bool &value) override
 bool ReadTagdouble(Json::Value const &source, CharCP name, double &value) override
     {
     Json::Value target;
+    value = 0.0;
     if (FindProperty (source, name, target)
-       && target.isDouble ())
+       && target.isNumeric ())
         {
         value = target.asDouble ();
         return true;
@@ -698,6 +700,7 @@ bool ReadTagdouble(Json::Value const &source, CharCP name, double &value) overri
 bool ReadTagint(Json::Value const &source, CharCP name, int &value) override
     {
     Json::Value target;
+    value = 0;
     if (FindProperty (source, name, target)
        && target.isInt ())
         {

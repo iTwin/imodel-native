@@ -2,7 +2,7 @@
 |
 |  $Source: serialization/src/nativeCGDirectReaderH.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1838,12 +1838,14 @@ bool ReadIDgnRuledSweep (TSource const &value, IGeometryPtr &result)
 ///    &lt;StartBearing&gt;... &lt;/StartBearing&gt;
 ///    &lt;StartRadius&gt;... &lt;/StartRadius&gt;
 ///    &lt;EndBearing&gt;... &lt;/EndBearing&gt;
+///    &lt;Length&gt;... &lt;/Length&gt;
 ///    &lt;EndRadius&gt;... &lt;/EndRadius&gt;
 ///    &lt;ActiveStartFraction&gt;... &lt;/ActiveStartFraction&gt;
 ///    &lt;ActiveEndFraction&gt;... &lt;/ActiveEndFraction&gt;
 ///    &lt;Geometry&gt;... &lt;/Geometry&gt;
 ///  &lt;/TransitionSpiral&gt;
 /// </code>
+/// only one of (EndBearing, Length) should be provided.
 /// </summary>
 /// <returns></returns>
 bool ReadITransitionSpiral (TSource const &value, IGeometryPtr &result)
@@ -1858,8 +1860,9 @@ bool ReadITransitionSpiral (TSource const &value, IGeometryPtr &result)
         flags.placement_defined = ReadTagPlacementOriginZX (value, "placement", detail.placement);
         flags.startBearing_defined = ReadTagAngle (value, "startBearing", detail.startBearing);
         flags.startRadius_defined = ReadTagdouble (value, "startRadius", detail.startRadius);
-        flags.endBearing_defined = ReadTagAngle (value, "endBearing", detail.endBearing);
-        flags.endRadius_defined = ReadTagdouble (value, "endRadius", detail.endRadius);
+        flags.endBearing_defined = ReadTagAngle (value, "endBearing", detail.endBearing);   // optional !!!
+        flags.length_defined= ReadTagdouble (value, "length", detail.length);        // optional !!!
+        flags.endRadius_defined = ReadTagdouble (value, "endRadius", detail.endRadius);    
         flags.activeStartFraction_defined = ReadTagdouble (value, "activeStartFraction", detail.activeStartFraction);
         flags.activeEndFraction_defined = ReadTagdouble (value, "activeEndFraction", detail.activeEndFraction);
         flags.geometry_defined = ReadTag_AnyGeometry (value, "geometry", detail.geometry);

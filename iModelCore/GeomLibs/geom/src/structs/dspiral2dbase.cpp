@@ -31,7 +31,6 @@ int DSpiral2dAustralianRailCorp::GetTransitionTypeCode () const { return Transit
 int DSpiral2dDirectHalfCosine::GetTransitionTypeCode () const { return TransitionType_DirectHalfCosine;}
 int DSpiral2dChinese::GetTransitionTypeCode () const { return TransitionType_ChineseCubic;}
 int DSpiral2dMXCubicAlongArc::GetTransitionTypeCode () const { return TransitionType_MXCubicAlongArc;}
-int DSpiral2dItalian::GetTransitionTypeCode () const { return TransitionType_Italian;}
 
 
 
@@ -56,27 +55,33 @@ DSpiral2dBaseP DSpiral2dBase::Create (int transitionType)
         return new DSpiral2dCosine ();
     if (transitionType == TransitionType_Sine)
         return new DSpiral2dSine ();
-    if (transitionType == TransitionType_ChineseCubic)
-        return new DSpiral2dChinese ();
 #ifdef CompileCZECH
     if (transitionType == TransitionType_Czech)
         return new DSpiral2dCzech ();
 #endif
+#ifdef CompileItalian
     if (transitionType == TransitionType_Italian)
         return new DSpiral2dItalian ();
-    return NULL;
+#endif
+
+    // PROBLEM -- dgnplatform asks for nominal length types only here, doesn't know about CreateWithNominalLength.
+    // HACK
+    // Build with length 0 -- expect it to be fixed up angles and bearings.  Dicey.
+    return CreateWithNominalLength (transitionType, 0.0);
     }
 
-DSpiral2dBaseP DSpiral2dBase::CreateWithNominalLength(int transitionType, double parameter)
+DSpiral2dBaseP DSpiral2dBase::CreateWithNominalLength(int transitionType, double nominalLength)
     {
     if (transitionType == TransitionType_WesternAustralian)
-        return new DSpiral2dWesternAustralian (parameter);
+        return new DSpiral2dWesternAustralian (nominalLength);
     if (transitionType == TransitionType_DirectHalfCosine)
-        return new DSpiral2dDirectHalfCosine (parameter);
+        return new DSpiral2dDirectHalfCosine (nominalLength);
     if (transitionType == TransitionType_MXCubicAlongArc)
-        return new DSpiral2dMXCubicAlongArc (parameter);
+        return new DSpiral2dMXCubicAlongArc (nominalLength);
     if (transitionType == TransitionType_AustralianRailCorp)
-        return new DSpiral2dAustralianRailCorp (parameter);
+        return new DSpiral2dAustralianRailCorp (nominalLength);
+    if (transitionType == TransitionType_ChineseCubic)
+        return new DSpiral2dChinese (nominalLength);
     return NULL;
     }
 
@@ -155,14 +160,15 @@ DSpiral2dBaseP DSpiral2dBase::CreateBearingCurvatureLengthCurvature
       double endCurvature
       )
     {
-    DSpiral2dBaseP data = Create (transitionType);
-    if (data != NULL)
+    DSpiral2dBaseP data = CreateWithNominalLength (transitionType, length);;
+    if (data != nullptr)
         data->SetBearingCurvatureLengthCurvature
               (startRadians, startCurvature, length, endCurvature);
     else
         {
-        data = CreateWithNominalLength (transitionType, length);
-        data->SetBearingCurvatureLengthCurvature
+        data = Create (transitionType);
+        if (data != nullptr)
+            data->SetBearingCurvatureLengthCurvature
               (startRadians, startCurvature, length, endCurvature);
         }
     return data;
@@ -243,6 +249,12 @@ double curvature1
         return false;
         }
     mLength = fabs (angleChange / averageCurvature) ;
+    auto nominalLengthSpiral = dynamic_cast <DSpiral2dFractionOfNominalLengthCurve*> (this);
+    // Problem!! mstn spiral handler does not create approximate spirals correctly.
+    // ASSUME/GUESS/PRAY that the curvatures and angle were set up with the transition spiral formulas,
+    //   and pulling out the length comes up with the right number ...
+    if (nominalLengthSpiral != nullptr && nominalLengthSpiral->m_nominalLength == 0.0)
+        nominalLengthSpiral->m_nominalLength = mLength;
     return true;
     }
 

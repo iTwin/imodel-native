@@ -609,42 +609,6 @@ public:
     DECLARE_DSPIRAL2DBASE_OVERRIDES
 };
 
-/**
-* intermediate class for "spirals" that really have distance-to-xy methods but need to act like spirals that have differential properties
-* This intermediate class implements DistanceToCurvature, DistanceToLocalAngle, DistanceToCurvatureDerivatives
-* based on direct x and y data from EvaluateAtDistance.
-*/
-struct GEOMDLLIMPEXP DSpiral2dDirectEvaluation : DSpiral2dBase
-{
-    DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_MIDLEVEL_OVERRIDES
-
-public:
-//! Evaluate the spiral and derivatives at specified distance along.
-//! return true if valid evaluation.
-//! DSpiral2dDirectEvaluation default implementation returns false.
-virtual bool EvaluateAtDistance
-    (
-    double distanceAlong, //!< [in] distance for evaluation
-    DPoint2dR xyz,          //!< [out] coordinates on spiral
-    DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
-    DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
-    DVec2dP d3XYZ    //!< [out] third derivative wrt distance
-    ) const;
-
-//!
-/**
-* use results of EvaluateAtDistance to provide integrand for caller's integrals.
-*/
-void EvaluateVectorIntegrand (double distance, double *pF) override;
-//! rotate xy and optional derivatives by radians.  (To be called by derived class EvaluateAtDistance when to rotate EvaluateAtDistance results from standard position)
-static void ApplyCCWRotation (
-    double radians,
-    DPoint2dR xyz,          //!< [out] coordinates on spiral
-    DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
-    DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
-    DVec2dP d3XYZ    //!< [out] third derivative wrt distance
-    );
-};
 
 
 /**
@@ -659,7 +623,7 @@ DSpiral2dFractionOfNominalLengthCurve (double nominalLength);
 public:
 //! Evaluate the spiral and derivatives at specified fractional position
 //! return true if valid evaluation.
-//! DSpiral2dDirectEvaluation default implementation returns false.
+//! DSpiral2dFractionOfNominalLengthCurve default implementation returns false.
 virtual bool EvaluateAtFraction
     (
     double fraction, //!< [in] fraction for evaluation
@@ -689,6 +653,14 @@ GEOMAPI_VIRTUAL double DistanceToCurvature   (double distance) const override;
 // Return the derivative of curvature wrt arc length at specified distance from start ...
 GEOMAPI_VIRTUAL double DistanceToCurvatureDerivative (double distance) const override;
 
+//! rotate xy and optional derivatives by radians.  (To be called by derived class EvaluateAtDistance when to rotate EvaluateAtDistance results from standard position)
+static void ApplyCCWRotation (
+    double radians,
+    DPoint2dR xyz,          //!< [out] coordinates on spiral
+    DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
+    DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
+    DVec2dP d3XYZ    //!< [out] third derivative wrt distance
+    );
 };
 
 
@@ -706,7 +678,6 @@ public:
     DSpiral2dWesternAustralian (double nominalLength);
 
 //! return true if valid evaluation.
-//! DSpiral2dDirectEvaluation default implementation returns false.
 bool EvaluateAtFraction
     (
     double fraction, //!< [in] fraction for evaluation
@@ -740,7 +711,6 @@ public:
     DSpiral2dAustralianRailCorp (double nominalLength);
 
 //! return true if valid evaluation.
-//! DSpiral2dDirectEvaluation default implementation returns false.
 bool EvaluateAtFraction
     (
     double fraction, //!< [in] fraction for evaluation
@@ -775,7 +745,6 @@ public:
 
 //! Evaluate the spiral and derivatives at specified fractional position
 //! return true if valid evaluation.
-//! DSpiral2dDirectEvaluation default implementation returns false.
 bool EvaluateAtFraction
     (
     double fraction, //!< [in] fraction for evaluation
@@ -798,38 +767,6 @@ static bool EvaluateAtFractionInStandardOrientation
 };
 
 
-// Italian Spiral
-
-
-struct GEOMDLLIMPEXP DSpiral2dItalian : DSpiral2dDirectEvaluation
-{
-    DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
-public:
-    DSpiral2dItalian ();
-
-//! Evaluate the spiral and optional derivatives at specified distance along.
-//! return true if valid evaluation.
-bool EvaluateAtDistance
-    (
-    double distanceAlong, //!< [in] distance for evaluation
-    DPoint2dR xyz,          //!< [out] coordinates on spiral
-    DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
-    DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
-    DVec2dP d3XYZ   //!< [out] third derivative wrt distance
-    ) const override;
-
-//! Evaluate at distance a spiral in standard orientation -- zero curvature at origin.
-static bool EvaluateAtDistanceInStandardOrientation
-    (
-    double s,           //!< [in] distance for evaluation
-    double length,      //! [in] strictly nonzero length along spiral.
-    double curvature1,  //! [in] strictly nonzero exit curvature
-    DPoint2dR xy,      //!< [out] coordinates on spiral
-    DVec2dP d1XY,   //!< [out] first derivative wrt distance
-    DVec2dP d2XY,   //!< [out] second derivative wrt distance
-    DVec2dP d3XY   //!< [out] third derivative wrt distance
-    );
-};
 
 // DIRECTHALFCOSINE
 // cosine factor multiplying x^2.
@@ -863,21 +800,21 @@ static bool EvaluateAtFractionInStandardOrientation
     );
 };
 
-struct GEOMDLLIMPEXP DSpiral2dChinese : DSpiral2dDirectEvaluation
+struct GEOMDLLIMPEXP DSpiral2dChinese : DSpiral2dFractionOfNominalLengthCurve
     {
     DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
     public:
-        DSpiral2dChinese();
+        DSpiral2dChinese(double nominalLength);
 
-        //! Evaluate the spiral and optional derivatives at specified distance along.
+        //! Evaluate the spiral and optional derivatives at specified fraction along.
         //! return true if valid evaluation.
-        bool EvaluateAtDistance
+        bool EvaluateAtFraction
         (
-            double distanceAlong, //!< [in] distance for evaluation
+            double fraction, //!< [in] fractional position evaluation
             DPoint2dR xyz,          //!< [out] coordinates on spiral
-            DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
-            DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
-            DVec2dP d3XYZ   //!< [out] third derivative wrt distance
+            DVec2dP d1XYZ,   //!< [out] first derivative wrt fraction
+            DVec2dP d2XYZ,   //!< [out] second derivative wrt fraction
+            DVec2dP d3XYZ   //!< [out] third derivative wrt fraction
         ) const override;
 
         //! Evaluate at distance a spiral in standard orientation -- zero curvature at origin.

@@ -159,7 +159,7 @@ void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const 
     {
     (const_cast <CurvePrimitiveDirectSpiral *> (this))->EnsureCachedCurve ();
     processor._ProcessBsplineCurve(*this, *_GetProxyBsplineCurvePtr (), interval);
-    // we wish .... processor._ProcessCatenary (*this, m_placement, interval);
+    // We are a spiral, yes? Call _ProcessSpiral?
     }
 
 
@@ -198,7 +198,7 @@ ICurvePrimitivePtr _Clone() const override
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      12/2015
 +--------------------------------------------------------------------------------------*/
-CurvePrimitiveType _GetCurvePrimitiveType() const override {return CURVE_PRIMITIVE_TYPE_Catenary;}
+CurvePrimitiveType _GetCurvePrimitiveType() const override {return CURVE_PRIMITIVE_TYPE_Spiral;}
 
 bool _TransformInPlace (TransformCR transform) override
     {
@@ -399,11 +399,11 @@ MSBsplineCurvePtr _GetBsplineCurvePtr() const override {return NULL;}  // Users 
 
 bool _IsSameStructureAndGeometry (ICurvePrimitiveCR other, double tolerance) const override
     {
-    if (other.GetCurvePrimitiveType () != CURVE_PRIMITIVE_TYPE_Catenary)
+    if (other.GetCurvePrimitiveType () != CURVE_PRIMITIVE_TYPE_Spiral)
         return false;
 
-    CurvePrimitiveDirectSpiral const * otherCatenary = dynamic_cast <CurvePrimitiveDirectSpiral const *>(&other);
-    return   otherCatenary != nullptr && m_placement.AlmostEqual (otherCatenary->m_placement, tolerance);
+    CurvePrimitiveDirectSpiral const * otherSpiral = dynamic_cast <CurvePrimitiveDirectSpiral const *>(&other);
+    return   otherSpiral != nullptr && m_placement.AlmostEqual (otherSpiral->m_placement, tolerance);
     }
 
 ICurvePrimitivePtr _CloneAsSingleOffsetPrimitiveXY (CurveOffsetOptionsCR options) const override 
@@ -441,18 +441,9 @@ void _AppendCurvePlaneIntersections(DPlane3dCR plane, bvector<CurveLocationDetai
 
 bool _ClosestPointBounded (DPoint3dCR spacePoint, double &fraction, DPoint3dR curvePoint, bool extend0, bool extend1) const override
     {
-#ifdef CatenaryDerivesFromBspline
-    if (Super::_ClosestPointBounded (spacePoint, fraction, curvePoint, extend0, extend1))
-        {
-        ImprovePerpendicularProjection (this, spacePoint, fraction, curvePoint);   
-        return true;
-        }
-    return false;
-#else
     m_curve->ClosestPoint(curvePoint, fraction, spacePoint);
     ImprovePerpendicularProjection(this, spacePoint, fraction, curvePoint);
     return true;
-#endif
     }
 
 uint32_t NumStrokeBetweenActiveFractions (double activeA, double activeB, IFacetOptionsCP options) const

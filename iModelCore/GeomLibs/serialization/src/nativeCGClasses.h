@@ -2,7 +2,7 @@
 |
 |  $Source: serialization/src/nativeCGClasses.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1950,6 +1950,7 @@ PlacementOriginZX placement;
 Angle startBearing;
 double startRadius;
 Angle endBearing;
+double length;
 double endRadius;
 double activeStartFraction;
 double activeEndFraction;
@@ -1966,6 +1967,7 @@ CGTransitionSpiralFlags ()
     startRadius_defined = false;
     endBearing_defined = false;
     endRadius_defined = false;
+    length_defined = false;
     activeStartFraction_defined = false;
     activeEndFraction_defined = false;
     geometry_defined = false;    
@@ -1978,6 +1980,7 @@ bool startBearing_defined;
 bool startRadius_defined;
 bool endBearing_defined;
 bool endRadius_defined;
+bool length_defined;
 bool activeStartFraction_defined;
 bool activeEndFraction_defined;
 bool geometry_defined;    
@@ -2003,6 +2006,8 @@ int NumUndefined ()
     if (!activeEndFraction_defined)
         numUndefined++;
     if (!geometry_defined)
+        numUndefined++;  
+    if (!length_defined)
         numUndefined++;  
     return numUndefined;
     }

@@ -2,7 +2,7 @@
 |
 |  $Source: serialization/src/CGNativeFactoryImplementations.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // (To be inclued in BeXmlCGStreamReader.cpp)
@@ -52,13 +52,16 @@ IGeometryPtr Create (CGGroupDetail &detail) override
     CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
     for (IGeometryPtr const &member : detail.memberArray)
         {
-        CurveVectorPtr cvMember = member->GetAsCurveVector ();
-        if (cvMember.IsValid ())            
-            curves->Add (cvMember);
+        if (member.IsValid ())
+            {
+            CurveVectorPtr cvMember = member->GetAsCurveVector ();
+            if (cvMember.IsValid ())            
+                curves->Add (cvMember);
 
-        ICurvePrimitivePtr cpMember = member->GetAsICurvePrimitive ();
-        if (cpMember.IsValid ())
-            curves->Add (cpMember);
+            ICurvePrimitivePtr cpMember = member->GetAsICurvePrimitive ();
+            if (cpMember.IsValid ())
+                curves->Add (cpMember);
+            }
         }
     if (curves->size () > 0)
         {
@@ -620,16 +623,33 @@ IGeometryPtr Create (CGTransitionSpiralDetail &detail) override
     RotMatrix axes;
     detail.placement.GetFrame (origin, axes);
     Transform transform = Transform::From (axes, origin);
-    ICurvePrimitivePtr cp = ICurvePrimitive::CreateSpiralBearingRadiusBearingRadius (
-            DSpiral2dBase::StringToTransitionType (detail.spiralType.c_str ()),
-            detail.startBearing.Radians (),
-            detail.startRadius,
-            detail.endBearing.Radians (),
-            detail.endRadius,
-            transform,
-            detail.activeStartFraction,
-            detail.activeEndFraction
-            );
+    ICurvePrimitivePtr cp;
+    if (detail.length != 0.0)
+        {
+        cp = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius (
+                DSpiral2dBase::StringToTransitionType (detail.spiralType.c_str ()),
+                detail.startBearing.Radians (),
+                detail.startRadius,
+                detail.length,
+                detail.endRadius,
+                transform,
+                detail.activeStartFraction,
+                detail.activeEndFraction
+                );
+        }
+    else
+        {
+        cp = ICurvePrimitive::CreateSpiralBearingRadiusBearingRadius (
+                DSpiral2dBase::StringToTransitionType (detail.spiralType.c_str ()),
+                detail.startBearing.Radians (),
+                detail.startRadius,
+                detail.endBearing.Radians (),
+                detail.endRadius,
+                transform,
+                detail.activeStartFraction,
+                detail.activeEndFraction
+                );
+        }
     if (!cp.IsValid ())
         return nullptr;
     return IGeometry::Create (cp);

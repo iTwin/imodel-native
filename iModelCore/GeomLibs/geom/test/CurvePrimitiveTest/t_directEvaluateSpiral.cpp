@@ -44,14 +44,14 @@ TEST(PseudoSpiral,Serialize)
         for (double spiralLength : {100.0, 200.0})
             {
             SaveAndRestoreCheckTransform shifter (0, yShift, 0);
-            for (double radius1 : {800.0, 400.0, 200.0})
+            for (double radius1 : {800.0, 400.0, 200.0, 50.0})
                 {
                 if (spiralType == DSpiral2dBase::TransitionType_AustralianRailCorp
                     && radius1 <= 1.8 * spiralLength)
                         continue;
                 for (double fraction0 : {0.0, 0.6})
                     {
-                    for (double bearing0 : {0.0,  Angle::DegreesToRadians (10), Angle::DegreesToRadians (135)})
+                    for (double bearing0 : {0.0,  Angle::DegreesToRadians (60), Angle::DegreesToRadians (135)})
                         {
                         for (double radiusFactor : {-1.0, 1.0})
                             {
@@ -212,55 +212,7 @@ TEST(PseudoSpiral,ExerciseDistances)
 
 #endif
 
-ICurvePrimitivePtr ConstructSpiralRadiusRadiusLength (int typeCode, Angle bearingA, double radiusA, double radiusB, double lengthAB)
-    {
-    double curvatureA = DoubleOps::ValidatedDivideDistance (1.0, radiusA);
-    double curvatureB = DoubleOps::ValidatedDivideDistance (1.0, radiusB);
-
-    // extrapolate to inflection, assuming clothoid (linear) curvature function
-    //   (curvatureB - curvatureA) / lengthAB = curvatureB / length0B
-    double length0B = curvatureB * lengthAB / (curvatureB - curvatureA);
-    double length0A = length0B - lengthAB;
-    double fractionA = curvatureA / curvatureB;
-    double fractionB = 1.0;
-    auto referenceSpiralA = DSpiral2dBase::Create (typeCode);
-    auto referenceSpiral = dynamic_cast <DSpiral2dDirectEvaluation *>(referenceSpiralA);
-    if (referenceSpiral == nullptr)
-        return nullptr;
-    double curvature0 = 0.0;
-    referenceSpiral->SetBearingCurvatureLengthCurvature (0.0, curvature0, length0B, curvatureB);
-    DPoint2d uvA;
-    DVec2d   duvA;
-    referenceSpiral->EvaluateAtDistance (length0A, uvA, &duvA, nullptr, nullptr);
-    DVec3d unitTangentA =  DVec3d::From (uvA.x, uvA.y, 0.0).ValidatedNormalize ();
-    DVec3d unitPerpA = DVec3d::From (-unitTangentA.y, unitTangentA.x);
-    auto frameAtA = Transform::FromOriginAndVectors (DPoint3d::From (uvA), unitTangentA, unitPerpA, DVec3d::UnitZ ());
-    auto inverseA = frameAtA.ValidatedInverse ();
-    if (!inverseA.IsValid ())
-        return nullptr;
-    if (bearingA.Radians () != 0.0)
-        {
-        auto rotation = Transform::FromMatrixAndFixedPoint (RotMatrix::FromAxisAndRotationAngle (2, bearingA.Radians ()), DPoint3d::FromZero ());
-        inverseA = rotation * inverseA;
-        }
-
-    GEOMAPI_PRINTF ("RRL Spiral type %d\n", typeCode);
-    for (double curvatureTarget : { curvatureA, curvatureB})
-        {
-        double f = curvatureTarget/ curvatureB;
-        double s = referenceSpiral->FractionToDistance (f);
-        double curvatureF = referenceSpiral->DistanceToCurvature (s);
-        double radiusF = DoubleOps::ValidatedDivideDistance (1.0, curvatureF, 0.0);
-        double radiusTarget = DoubleOps::ValidatedDivideDistance (1.0, curvatureTarget, 0.0);
-        GEOMAPI_PRINTF(" (f %g) (s %g) (r %g (er %g)) (q %g)\n",
-                        f, s, radiusF, radiusF - radiusTarget, referenceSpiral->DistanceToLocalAngle (s));
-        }
-
-    auto fullSpiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (typeCode, 0.0, 0.0, length0B, curvatureB, inverseA,
-            fractionA, fractionB);
-    return fullSpiral;
-    }
-    
+   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  01/18
 +---------------+---------------+---------------+---------------+---------------+------*/

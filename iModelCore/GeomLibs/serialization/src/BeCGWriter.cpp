@@ -331,6 +331,7 @@ void BeCGWriter::WriteSpiralType (Utf8CP name, int typeCode)
 
 void BeCGWriter::WriteSpiral (struct DSpiral2dPlacement const &spiralPlacement)
     {
+    DSpiral2dFractionOfNominalLengthCurve const * nominalLengthSpiral = dynamic_cast <DSpiral2dFractionOfNominalLengthCurve const*> (spiralPlacement.spiral);
     WriteSetElementStart ("TransitionSpiral");
     //--------------------------------IPlacement placement = g.GetPlacement ();
     //--------------------------------SerializeMember (placement, "Placement");
@@ -344,7 +345,10 @@ void BeCGWriter::WriteSpiral (struct DSpiral2dPlacement const &spiralPlacement)
     WriteDouble ( "StartBearing", Angle::RadiansToDegrees (spiralPlacement.spiral->mTheta0));
     WriteDouble ("StartRadius", CurvatureToRadius (spiralPlacement.spiral->mCurvature0));
 
-    WriteDouble ("EndBearing", Angle::RadiansToDegrees (spiralPlacement.spiral->mTheta1));
+    if (nominalLengthSpiral != nullptr)
+        WriteDouble ("Length", nominalLengthSpiral->m_nominalLength);
+    else
+        WriteDouble ("EndBearing", Angle::RadiansToDegrees (spiralPlacement.spiral->mTheta1));
     WriteDouble ("EndRadius", CurvatureToRadius (spiralPlacement.spiral->mCurvature1));
 
     WriteDouble ("ActiveStartFraction", spiralPlacement.fractionA);
