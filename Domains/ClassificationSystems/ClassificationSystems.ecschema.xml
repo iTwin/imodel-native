@@ -46,7 +46,7 @@
         <Source multiplicity="(0..*)" roleLabel="is classified as" polymorphic="true">
             <Class class="IClassified"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="classifies" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="classifies" polymorphic="false">
             <Class class="Classification"/>
         </Target>
     </ECRelationshipClass>
@@ -56,7 +56,7 @@
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="ClassificationSystem"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="Classification"/>
         </Target>
     </ECRelationshipClass>
@@ -66,26 +66,26 @@
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="ClassificationSystem"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
             <Class class="ClassificationGroup"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ClassificationGroupGroupsClassifications" modifier="None" strength="referencing" description="a relationship to map Classification to its group">
         <BaseClass>bis:ElementGroupsMembers</BaseClass>
-        <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="false">
             <Class class="ClassificationGroup"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="is grouped in" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is grouped in" polymorphic="false">
             <Class class="Classification"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ClassificationSpecializesClassification" modifier="None" strength="referencing" description="a relationship">
-        <Source multiplicity="(0..*)" roleLabel="specializes" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="specializes" polymorphic="false">
             <Class class="Classification"/>
         </Source>
-        <Target multiplicity="(1..1)" roleLabel="is specialized" polymorphic="true">
+        <Target multiplicity="(1..1)" roleLabel="is specialized" polymorphic="false">
             <Class class="Classification"/>
          </Target>
     </ECRelationshipClass> 
