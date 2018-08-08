@@ -8,7 +8,6 @@
 #include "ClientInternal.h"
 #include <WebServices/Connect/ConnectSignInManager.h>
 
-#include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ImsClient.h>
 
 // These should be removed from public API in future. Currently FieldApps/MobileUtils depend on those APIs.
@@ -34,6 +33,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define LOCALSTATE_Namespace            "Connect"
 #define LOCALSTATE_AuthenticationType   "AuthenticationType"
 #define LOCALSTATE_SignedInUser         "SignedInUser"
+#define LOCALSTATE_ConnectEnvironment   "ConnectEnvironment"
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
@@ -183,6 +183,7 @@ void ConnectSignInManager::FinalizeSignIn()
     m_auth.persistence->SetCredentials(currentPersistence->GetCredentials());
 
     StoreAuthenticationType(m_auth.type);
+    StoreConnectEnvironment();
     m_mutex.Leave();
 
     OnUserSignedIn();
@@ -311,6 +312,23 @@ ConnectSignInManager::AuthenticationType ConnectSignInManager::ReadAuthenticatio
 void ConnectSignInManager::StoreAuthenticationType(AuthenticationType type)
     {
     m_localState.SaveJsonValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType, static_cast<int>(type));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+UrlProvider::Environment ConnectSignInManager::ReadConnectEnvironment()
+    {
+    return (UrlProvider::Environment) m_localState.GetJsonValue(LOCALSTATE_Namespace, LOCALSTATE_ConnectEnvironment).asInt();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::StoreConnectEnvironment()
+    {
+    auto env = UrlProvider::GetEnvironment();
+    m_localState.SaveJsonValue(LOCALSTATE_Namespace, LOCALSTATE_ConnectEnvironment, env);
     }
 
 /*--------------------------------------------------------------------------------------+

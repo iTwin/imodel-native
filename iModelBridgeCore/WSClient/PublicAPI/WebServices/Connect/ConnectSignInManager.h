@@ -12,6 +12,7 @@
 #include <WebServices/Connect/IConnectSignInManager.h>
 #include <WebServices/Connect/IImsClient.h>
 #include <WebServices/Connect/SamlToken.h>
+#include <WebServices/Configuration/UrlProvider.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -105,6 +106,7 @@ struct ConnectSignInManager : IConnectSignInManager, std::enable_shared_from_thi
 
         AuthenticationType ReadAuthenticationType() const;
         void StoreAuthenticationType(AuthenticationType type);
+        void StoreConnectEnvironment();
 
         Authentication CreateAuthentication(AuthenticationType type, IConnectAuthenticationPersistencePtr persistence = nullptr) const;
         void Configure(Authentication& auth) const;
@@ -166,6 +168,9 @@ struct ConnectSignInManager : IConnectSignInManager, std::enable_shared_from_thi
 
         //! Uses Connection Client API to listen to events fired by Connection Client
         WSCLIENT_EXPORT void StartConnectionClientListener();
+
+        //! Get token's connect environment from local state
+        WSCLIENT_EXPORT UrlProvider::Environment ReadConnectEnvironment();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
