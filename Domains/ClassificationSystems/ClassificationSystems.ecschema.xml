@@ -43,7 +43,7 @@
         
     <ECRelationshipClass typeName="IClassifiedIsClassifiedAs" modifier="None" strength="referencing" description="a relationship to map IClassified to Classifications">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="is classified as" polymorphic="true">
+        <Source multiplicity="(1..*)" roleLabel="is classified as" polymorphic="true">
             <Class class="IClassified"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="classifies" polymorphic="true">
