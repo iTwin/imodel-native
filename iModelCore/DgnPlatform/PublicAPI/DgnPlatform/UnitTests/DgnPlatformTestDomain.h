@@ -509,6 +509,7 @@ struct TestElementDrivesElementHandler : Dgn::DgnElementDependencyHandler
 private:
     DOMAINHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, TestElementDrivesElementHandler, Dgn::DgnDomain::Handler, )
     static bool s_shouldFail;
+    static bool s_shouldFailFatal;
     bvector<EC::ECInstanceId> m_relIds;
     bvector<Dgn::dgn_TxnTable::ElementDep::DepRelData> m_deletedRels;
     static Callback* s_callback;
@@ -521,6 +522,7 @@ public:
     static void SetCallback(Callback* cb) { s_callback = cb; }
 
     static void SetShouldFail(bool b) {s_shouldFail = b;}
+    static void SetShouldFailFatal(bool b) { s_shouldFailFatal = b; }
 
     static void UpdateProperty1(Dgn::DgnDbR, EC::ECInstanceKeyCR);
     static void SetProperty1(Dgn::DgnDbR, Utf8CP, EC::ECInstanceKeyCR);

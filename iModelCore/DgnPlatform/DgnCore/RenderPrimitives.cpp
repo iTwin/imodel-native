@@ -2134,12 +2134,36 @@ void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, Geome
     MeshList            meshes = ToMeshes(options, tolerance, context);
     MeshGraphicArgs     args;
 
+    // All of the meshes are quantized to the same range.
+    // If that range is small relative to the distance from the origin, quantization errors can produce display artifacts.
+    // Remove the translation from the quantization parameters and add it to the transform.
+    GraphicBranch branch;
+    DPoint3d qorigin;
+    QPoint3d::Params qparams;
     for (auto const& mesh : meshes)
         {
+        auto& verts = mesh->VertsR();
+        if (branch.m_entries.empty())
+            {
+            qparams = verts.GetParams();
+            qorigin = qparams.origin;
+            qparams.origin.Zero();
+            }
+        else
+            {
+            BeAssert(verts.GetParams().origin.AlmostEqual(qorigin));
+            BeAssert(verts.GetParams().scale.AlmostEqual(qparams.scale));
+            }
+
+        verts.SetParams(qparams);
+
         auto graphic = mesh->GetGraphics(args, GetSystem(), GetDgnDb());
         if (graphic.IsValid())
-            graphics.push_back(graphic);
+            branch.Add(*graphic);
         }
+
+    if (!branch.m_entries.empty())
+        graphics.push_back(GetSystem()._CreateBranch(std::move(branch), GetDgnDb(), Transform::From(qorigin), nullptr));
     }
 
 /*---------------------------------------------------------------------------------**//**

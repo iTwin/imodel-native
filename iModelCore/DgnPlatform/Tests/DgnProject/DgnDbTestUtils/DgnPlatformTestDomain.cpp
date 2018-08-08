@@ -31,6 +31,7 @@ HANDLER_DEFINE_MEMBERS(TestGroupHandler)
 HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
 
 bool TestElementDrivesElementHandler::s_shouldFail;
+bool TestElementDrivesElementHandler::s_shouldFailFatal;
 TestDriverBundle::Callback* TestDriverBundle::s_callback = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
@@ -610,6 +611,8 @@ void TestElementDrivesElementHandler::_OnRootChanged(DgnDbR db, ECInstanceId rel
     {
     if (s_shouldFail)
         db.Txns().ReportError(*new TxnManager::ValidationError(TxnManager::ValidationError::Severity::Warning, "ABC failed"));
+    if (s_shouldFailFatal)
+        db.Txns().ReportError(*new TxnManager::ValidationError(TxnManager::ValidationError::Severity::Fatal, "ABC failed"));
 
     m_relIds.push_back(relationshipId);
 
