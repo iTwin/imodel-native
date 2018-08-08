@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeSystemInfo.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -281,24 +281,15 @@ static StatusInt HashBytes(Utf8StringR hashedValue, Utf8StringCR unhashedValue)
     if (FALSE == ::CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, 0))
         {
         if (NTE_BAD_KEYSET == GetLastError() && FALSE == ::CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_NEWKEYSET))
-            {
-            BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv ("CryptAcquireContext failed with error code %d", ::GetLastError ());
             return ERROR;
-            }
         }
 
     HCRYPTHASH hHash;
     if (FALSE == ::CryptCreateHash(hProv, CALG_SHA1, 0, 0, &hHash))
-        {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv ("CryptCreateHash failed with error code %d", ::GetLastError ());
         return ERROR;
-        }
 
     if (FALSE == ::CryptHashData(hHash, (BYTE const*)unhashedValue.data(), (DWORD)unhashedValue.length(), 0))
-        {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv ("CryptHashData failed with error code %d", ::GetLastError ());
         return ERROR;
-        }
 
     BYTE  encryptedBuffer[SHA1_HASH_SIZE];
     DWORD bufferLength = DIM(encryptedBuffer);
@@ -340,7 +331,6 @@ static Utf8String GetHostSID(Utf8StringCR hostName)
     if (hostName.empty())
         {
         BeAssert(false);
-        BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv ("No host name when looking for SID");
         return "";
         }
 
@@ -349,9 +339,6 @@ static Utf8String GetHostSID(Utf8StringCR hostName)
     if (computerName.empty())
         computerName = hostName;
 
-    BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->infov ("Getting Host SID for full host '%s'", hostName.c_str());
-    BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->infov ("Getting Host SID for reduced host '%s'", computerName.c_str());
-    
     computerName.ToLower();
     return SidByHash(computerName);
     }
@@ -360,35 +347,23 @@ static Utf8String GetHostSID(Utf8StringCR hostName)
 * @bsimethod                                        Grigas.Petraitis            06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String GetHostName()
-    {    
-    DWORD nameLength = 0;
-    ::GetComputerNameEx(ComputerNamePhysicalDnsFullyQualified, NULL, &nameLength);
-    
+    {
     WString computerName;
-    computerName.resize(nameLength + 1);
-
-    if (TRUE == ::GetComputerNameExW (ComputerNamePhysicalDnsFullyQualified, (WCharP)computerName.data(), &nameLength))
+    DWORD nameLength = 0;
+    ::GetComputerNameExW(ComputerNamePhysicalDnsFullyQualified, NULL, &nameLength);
+    if (0 != nameLength)
         {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->infov (L"GetHostName: GetComputerName: '%ls'", computerName.c_str());
+        computerName.resize(nameLength);
+        if (TRUE != ::GetComputerNameExW(ComputerNamePhysicalDnsFullyQualified, (WCharP)computerName.data(), &nameLength))
+            BeAssert(false);
         }
-    else
-        {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv (L"Unable to get host name via GetComputerName (GLE=%d)", GetLastError());
-        }
-
     if (computerName.empty())
         {
         WCharCP computerNameP = NULL;
         if (NULL != (computerNameP = ::_wgetenv(L"COMPUTERNAME")))
-            {
             computerName.assign(computerNameP);
-            BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->infov (L"GetHostName: from COMPUTERNAME: '%ls'", computerName.c_str());
-            }
         else
-            {
             computerName.assign(L"UnknownHostName");
-            BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv (L"Unknown hostname in GetHostName");
-            }
         }
     return Utf8String(computerName.c_str());
     }
