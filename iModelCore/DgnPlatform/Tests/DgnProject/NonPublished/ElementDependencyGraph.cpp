@@ -60,6 +60,15 @@ struct TestElementDrivesElementHandlerShouldFail
     };
 
 //=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      08/18
+//=======================================================================================
+struct TestElementDrivesElementHandlerShouldFailFatal
+    {
+    TestElementDrivesElementHandlerShouldFailFatal() { TestElementDrivesElementHandler::SetShouldFailFatal(true); }
+    ~TestElementDrivesElementHandlerShouldFailFatal() { TestElementDrivesElementHandler::SetShouldFailFatal(false); }
+    };
+
+//=======================================================================================
 // @bsiclass                                               Mindaugas.Butkus      04/18
 //=======================================================================================
 struct CallbackSequenceRecorder
@@ -1730,11 +1739,32 @@ TEST_F(ElementDependencyGraph, IndirectChangesAreTrackedInTxnMonitor)
         ScopedEDEUpdaterCallback edeCallback;
         TxnMonitorVerifier monitor;
         e2 = InsertElement("E2");
-        ECInstanceKey e1_e2_Key = InsertElementDrivesElementRelationship(e1, e2);
+        e1_e2_Key = InsertElementDrivesElementRelationship(e1, e2);
         m_db->SaveChanges();
 
         ASSERT_EQ(1, monitor.m_adds.size());
         auto ie2_add = monitor.m_adds.find(e2->GetElementId());
         ASSERT_TRUE(ie2_add != monitor.m_adds.end());
+        }
+
+    ECInstanceKey e2_e3_Key;
+    if (true) // insert EDE relatinship that fails during the same transaction
+        {
+        TestElementDrivesElementHandlerShouldFailFatal fail;
+        TxnMonitorVerifier monitor;
+        e3 = InsertElement("E3");
+        e2_e3_Key = InsertElementDrivesElementRelationship(e2, e3);
+        m_db->SaveChanges();
+
+        CachedECSqlStatementPtr selectBySourceAndTarget = GetSelectElementDrivesElementBySourceAndTarget();
+        selectBySourceAndTarget->BindId(1, e2->GetElementId());
+        selectBySourceAndTarget->BindId(2, e3->GetElementId());
+        ASSERT_EQ(selectBySourceAndTarget->Step(), BE_SQLITE_DONE);
+
+        ASSERT_TRUE(m_db->Elements().Get<Dgn::DgnElement>(e3->GetElementId()).IsNull());
+
+        ASSERT_TRUE(monitor.m_adds.empty());
+        ASSERT_TRUE(monitor.m_deletes.empty());
+        ASSERT_TRUE(monitor.m_mods.empty());
         }
     }

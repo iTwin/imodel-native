@@ -2006,7 +2006,6 @@ void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, Chan
     m_stmt.BindId(2, mid);
     m_stmt.BindInt(3, (int) changeType);
     auto rc = m_stmt.Step();
-    BeAssert(rc==BE_SQLITE_DONE);
     UNUSED_VARIABLE(rc);
 
     m_stmt.Reset();
