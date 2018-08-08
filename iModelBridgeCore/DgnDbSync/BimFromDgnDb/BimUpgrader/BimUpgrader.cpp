@@ -324,6 +324,7 @@ int BimUpgrader::Run(int argc, WCharCP argv[])
         }
 
     bool converted = BentleyB0200::Dgn::BimFromDgnDb::BimFromDgnDb::Upgrade(m_inputFileName.GetName(), m_outputPath.GetName());
+    Http::HttpClient::Uninitialize();
 
     if (!converted)
         return 1;

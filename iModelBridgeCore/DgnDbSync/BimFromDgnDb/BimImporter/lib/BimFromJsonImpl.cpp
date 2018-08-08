@@ -314,8 +314,6 @@ void BimFromJsonImpl::FinalizeImport()
     m_dgndb->SaveChanges();
     m_dgndb->SaveSettings();
 
-    Http::HttpClient::Uninitialize();
-
     //BeFileName filename(m_dgndb->GetDbFileName());
     //m_dgndb->CloseDb();
     //DbResult status;
