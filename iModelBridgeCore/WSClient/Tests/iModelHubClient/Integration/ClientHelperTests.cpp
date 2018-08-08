@@ -39,7 +39,7 @@ struct ClientHelperTests : public Test
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void TearDownTestCase()
         {
-        s_helper->SetUrl("");
+        s_helper->SetUrl(IntegrationTestsSettings::Instance().GetServerUrl());
         ClientHelper::Initialize(IntegrationTestsSettings::Instance().GetClientInfo(), StubLocalState::Instance(), ProxyHttpHandler::GetFiddlerProxyIfReachable());
         }
     };

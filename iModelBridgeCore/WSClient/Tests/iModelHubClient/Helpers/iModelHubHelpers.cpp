@@ -30,6 +30,17 @@ BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
 namespace iModelHubHelpers
     {
     /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Karolis.Dziedzelis              08/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    Utf8String GetServerUrl()
+        {
+        Utf8String serverUrl = IntegrationTestsSettings::Instance().GetServerUrl();
+        if (!Utf8String::IsNullOrEmpty(serverUrl.c_str()))
+            return serverUrl;
+        return UrlProvider::Urls::iModelHubApi.Get();
+        }
+
+    /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     void CreateClient(ClientPtr& client, CredentialsCR credentials)
@@ -45,7 +56,7 @@ namespace iModelHubHelpers
     +---------------+---------------+---------------+---------------+---------------+------*/
     void CreateProjectWSClient(IWSRepositoryClientPtr& result, ClientR client, Utf8StringCR projectId)
         {
-        Utf8StringCR serverUrl = UrlProvider::Urls::iModelHubApi.Get();
+        Utf8StringCR serverUrl = GetServerUrl();
         ClientInfoPtr clientInfo = IntegrationTestsSettings::Instance().GetClientInfo();
 
         Utf8String project;
