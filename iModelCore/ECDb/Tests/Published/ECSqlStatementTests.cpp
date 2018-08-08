@@ -1969,6 +1969,39 @@ TEST_F(ECSqlStatementTestFixture, HexLiteral)
     ASSERT_EQ(expectedECInstanceId, actualKey.GetInstanceId());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                      07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, StrIds)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("strIds.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="Sample" modifier="None">
+                </ECEntityClass>
+              </ECSchema>)xml")));
+
+    ECInstanceKey i1;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(i1, "INSERT INTO ts.Sample(ECInstanceId) VALUES (100)"));
+
+    ECInstanceKey i2;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(i2, "INSERT INTO ts.Sample(ECInstanceId) VALUES (200)"));
+
+    ECInstanceKey i3;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(i3, "INSERT INTO ts.Sample(ECInstanceId) VALUES (300)"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Sample WHERE ECInstanceId = ?"));
+    stmt.BindText(1, i2.GetInstanceId().ToString().c_str(), IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ECInstanceECSqlSelectAdapter adapter(stmt);
+    IECInstancePtr inst = adapter.GetInstance();
+
+
+    ECSqlStatement stmt2;
+    ASSERT_EQ(ECSqlStatus::Success, stmt2.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Sample WHERE ECInstanceId = ?"));
+    stmt2.BindText(1, inst->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  08/15
