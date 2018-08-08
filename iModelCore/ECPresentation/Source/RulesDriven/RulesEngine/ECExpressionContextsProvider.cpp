@@ -705,7 +705,9 @@ private:
                 continue;
                 }
 
-            status = stmt.BindText(1, instance->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+            ECInstanceId id;
+            ECInstanceId::FromString(id, instance->GetInstanceId().c_str());
+            status = stmt.BindId(1, id);
             if (!status.IsSuccess())
                 {
                 BeAssert(false);
