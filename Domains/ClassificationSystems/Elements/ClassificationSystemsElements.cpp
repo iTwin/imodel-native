@@ -215,7 +215,6 @@ ClassificationCP specializes
     SetDescription(description);
     if(group != nullptr) 
         {
-        SetGroupId(group->GetElementId());
         elemid = group->GetElementId();
         }
     else 
@@ -232,7 +231,7 @@ ClassificationCP specializes
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassificationPtr Classification::Create
+ClassificationPtr Classification::CreateAndInsert
 (
 ClassificationSystemCR system,
 Utf8CP name,
@@ -245,6 +244,9 @@ ClassificationCP specializes
     Dgn::DgnClassId classId = QueryClassId(system.GetDgnDb());
     Dgn::DgnElement::CreateParams params(system.GetDgnDb(), system.GetModelId(), classId);
     ClassificationPtr classification = new Classification(params, system, name, id, description, group, specializes);
+    classification->Insert();
+    if (group != nullptr)
+        classification->SetGroupId(group->GetElementId());
     return classification;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -252,11 +254,13 @@ ClassificationCP specializes
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassificationGroup::ClassificationGroup
 (
-CreateParams const& params,
+CreateParams const& params, 
+ClassificationSystemCR system,
 Utf8CP name
 ) : T_Super(params)
     {
     SetUserLabel(name);
+    SetClassificationSystem(system);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -270,7 +274,7 @@ Utf8CP name
     {
     Dgn::DgnClassId classId = QueryClassId(system.GetDgnDb());
     Dgn::DgnElement::CreateParams params(system.GetDgnDb(), system.GetModelId(), classId);
-    ClassificationGroupPtr group = new ClassificationGroup(params, name);
+    ClassificationGroupPtr group = new ClassificationGroup(params, system, name);
     return group;
     }
     
@@ -293,7 +297,13 @@ void Classification::SetGroupId
 Dgn::DgnElementId groupId
 )
     {
-    SetPropertyValue(prop_Group(), groupId, GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationIsInClassificationGroup));
+    Dgn::DgnDbR db = GetDgnDb();
+    ECN::ECRelationshipClassCR relClass = (ECN::ECRelationshipClassCR)*db.Schemas().GetClass (CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationGroupGroupsClassifications);
+    BeSQLite::EC::ECInstanceId sourceId (groupId);
+    BeSQLite::EC::ECInstanceId targetId (GetElementId());
+
+    BeSQLite::EC::ECInstanceKey rkey;
+    db.InsertLinkTableRelationship (rkey, relClass, sourceId, targetId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -325,7 +335,21 @@ Dgn::DgnElementId Classification::GetGroupId
 (
 ) const
     {
-    return GetPropertyValueId<Dgn::DgnElementId>(prop_Group());
+    BeSQLite::EC::CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement("SELECT SourceECInstanceId FROM " CLASSIFICATIONSYSTEMS_SCHEMA(CLASSIFICATIONSYSTEMS_REL_ClassificationGroupGroupsClassifications) " WHERE TargetECInstanceId = ?");
+
+    if (!statement.IsValid())
+        {
+        BeAssert(false);
+        return Dgn::DgnElementId();
+        }
+    statement->BindId(1, GetElementId());
+
+    if (BeSQLite::DbResult::BE_SQLITE_ROW == statement->Step())
+        {
+        return statement->GetValueId<Dgn::DgnElementId>(0);
+        }
+
+    return Dgn::DgnElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**

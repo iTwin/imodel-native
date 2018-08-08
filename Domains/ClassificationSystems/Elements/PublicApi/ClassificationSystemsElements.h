@@ -72,9 +72,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification : Dgn::DefinitionElement
     {
     DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_Classification, Dgn::DefinitionElement);
     private:
-        BE_PROP_NAME(Name)
         BE_PROP_NAME(Description)
-        BE_PROP_NAME(Group)
         BE_PROP_NAME(Specialization)
         
         Dgn::DgnCode GetClassificationCode(Dgn::DgnDbR db, Utf8CP name, Dgn::DgnElementId id) const;
@@ -107,14 +105,14 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification : Dgn::DefinitionElement
         //---------------------------------------------------------------------------------------
         // Creation
         //---------------------------------------------------------------------------------------
-        //! Creates a Classification
+        //! Creates and inserts a Classification
         //! @param[in]  system      db to insert Classification in
         //! @param[in]  name        name of this Classification
         //! @param[in]  description description of this Classification
         //! @param[in]  group       Group this Classification is in
         //! @param[in]  specializes What Classification this Classification specializes in
         //! @return     a ptr to created Classification
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationPtr Create(ClassificationSystemCR system, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes);
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationPtr CreateAndInsert(ClassificationSystemCR system, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes);
 
         //!Returns this Classification Name property
         //! @return Name property of the Classification
@@ -151,7 +149,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationGroup : Dgn::GroupInformationElemen
 
     protected:
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationGroup(CreateParams const& params) : T_Super(params) {}
-        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationGroup(CreateParams const& params, Utf8CP name);
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationGroup(CreateParams const& params, ClassificationSystemCR system, Utf8CP name);
         friend struct ClassificationGroupHandler;
         friend struct ClassificationSystemsDomain;
 
@@ -169,7 +167,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationGroup : Dgn::GroupInformationElemen
         //! @param[in]  name        name of the ClassificationSystem class definition group
         //! @return     a ptr to created ClassificationGroup
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationGroupPtr Create(ClassificationSystemCR system, Utf8CP name);
-       
+
+        //!Returns Id property of the parent ClassificationSystem
+        //! @return Id property of the parent ClassificationSystem
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::DgnElementId GetClassificationSystemId() const;
 
         //! Gets the name of this ClassificationGroup
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetUserLabel(); }

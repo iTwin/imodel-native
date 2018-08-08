@@ -167,8 +167,7 @@ ClassificationGroupCP group,
 ClassificationCP specializes
 ) const
     {
-    ClassificationPtr classification = Classification::Create(system, name, id, description, group, specializes);
-    classification->Insert();
+    ClassificationPtr classification = Classification::CreateAndInsert(system, name, id, description, group, specializes);
     return classification;
     }
 

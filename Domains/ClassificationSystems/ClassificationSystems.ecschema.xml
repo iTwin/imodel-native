@@ -31,7 +31,6 @@
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
         <ECProperty propertyName="Description" typeName="string" displayLabel="Description"/>
-        <ECNavigationProperty propertyName="Group" relationshipName="ClassificationIsInClassificationGroup" direction="Forward" description="Group this definition belong to" />
         <ECNavigationProperty propertyName="Specialization" relationshipName="ClassificationSpecializesClassification" direction="Forward" description="Classification this Specializes in" />
     </ECEntityClass>
     
@@ -72,12 +71,13 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ClassificationIsInClassificationGroup" modifier="None" strength="referencing" description="a relationship to map Classification to its' group">
-        <Source multiplicity="(0..*)" roleLabel="is grouped in" polymorphic="true">
-            <Class class="Classification"/>
-        </Source>
-        <Target multiplicity="(1..1)" roleLabel="groups" polymorphic="true">
+    <ECRelationshipClass typeName="ClassificationGroupGroupsClassifications" modifier="None" strength="referencing" description="a relationship to map Classification to its group">
+        <BaseClass>bis:ElementGroupsMembers</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
             <Class class="ClassificationGroup"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is grouped in" polymorphic="true">
+            <Class class="Classification"/>
         </Target>
     </ECRelationshipClass>
 
