@@ -66,8 +66,6 @@
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
         <SubPart PartName="PsolidShim"/>
         <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
-        <SubPart PartName="nodejs"            PartFile="nodejs"       Repository="Thirdparty-nodejs" />
-        <SubPart PartName="typescript"          PartFile="typescript"   Repository="Thirdparty-typescript" />
         <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
 
       <!--
