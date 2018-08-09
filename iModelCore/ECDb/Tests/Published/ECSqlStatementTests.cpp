@@ -2655,21 +2655,35 @@ TEST_F(ECSqlStatementTestFixture, BindToNumericProps)
     selStmt.Reset();
     selStmt.ClearBindings();
 
-    //Bind as hex
+    // Bind as hex
+    // Note: SQLite cannot compare numbers to hex string literals:
+    // Assume there is a row with ECInstanceId 0x111:
+    // WHERE ECInstanceId='0x111' will not match 
+    // WHERE ECInstanceId=0x111 will match 
+    
+    // Run a plain SQLite statement to verify that SQLite behaves like this:
+    {
+    Statement sqliteStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqliteStmt.Prepare(m_ecdb, "select cast(0x2 as number), cast('0x2' as number)"));
+    ASSERT_EQ(BE_SQLITE_ROW, sqliteStmt.Step());
+    ASSERT_EQ(2, sqliteStmt.GetValueInt(0)) << "Hex decimal can be converted to number | " << sqliteStmt.GetSql();
+    ASSERT_EQ(0, sqliteStmt.GetValueInt(1)) << "Hex string cannot be converted to number | " << sqliteStmt.GetSql();
+    }
+
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, childId.ToHexStr().c_str(), IECSqlBinder::MakeCopy::Yes)) << selStmt.GetECSql();
-    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Bind ECInstanceId as hex string | " << selStmt.GetECSql() << " | SQL: " << selStmt.GetNativeSql();
+    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind ECInstanceId as hex string | " << selStmt.GetECSql() << " | SQL: " << selStmt.GetNativeSql();
 
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE Parent.Id=?"));
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, parentId.ToHexStr().c_str(), IECSqlBinder::MakeCopy::Yes)) << selStmt.GetECSql();
-    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Bind Parent.Id as hex string | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
+    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind Parent.Id as hex string | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
 
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE IntProp=?"));
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1,"0x64", IECSqlBinder::MakeCopy::No)) << selStmt.GetECSql();
-    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Bind hex string to IntProp | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
+    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind hex string to IntProp | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
 
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE IntProp=?"));
@@ -2679,7 +2693,7 @@ TEST_F(ECSqlStatementTestFixture, BindToNumericProps)
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE Int64Prop=?"));
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, "0x64", IECSqlBinder::MakeCopy::No)) << selStmt.GetECSql();
-    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Bind hex string to Int64Prop | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
+    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind hex string to Int64Prop | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
 
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE Int64Prop=?"));
