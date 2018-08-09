@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Sprites.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -14,20 +14,6 @@ SpriteLocation::SpriteLocation()
     {
     m_viewport = nullptr;
     m_sprite   = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    11/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpriteLocation::DecorateViewport(DecorateContextR context)
-    {
-    if (context.GetViewport() == m_viewport)
-        {
-        DPoint3d loc = m_viewport->WorldToView(m_location);
-        loc.z = 0;
-        DPoint3d xVec = {1.0, 0.0, 0.0};
-        context.AddSprite(*m_sprite, loc, xVec, m_transparency);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

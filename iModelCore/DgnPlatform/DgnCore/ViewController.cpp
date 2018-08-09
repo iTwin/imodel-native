@@ -245,15 +245,6 @@ Render::GraphicPtr ViewController::_StrokeGeometry(ViewContextR context, Geometr
     {
     return source.Stroke(context, pixelSize);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley  10/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewController::_StrokeHit(DecorateContextR context, GeometrySourceCR source, HitDetailCR hit)
-    {
-    return source.StrokeHit(context, hit);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -392,7 +383,9 @@ ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)
     // We need to figure out a new camera    target. To do that, we need to know where the geometry is in the view.
     // We use the depth of the center of the view for that.
     double low, high;
-    m_vp->DetermineVisibleDepthNpcRange(low, high);
+    // m_vp->DetermineVisibleDepthNpcRange(low, high);
+    low = 1.0;
+    high = 0.0;
     double middle = low + ((high - low) / 2.0);
 
     DPoint3d corners[4];
@@ -655,124 +648,6 @@ bool SpatialViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMo
 
 
 /*---------------------------------------------------------------------------------**//**
-* Show the surface normal for geometry under the cursor when snapping.
-* @bsimethod                                                    Brien.Bastings  07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDetailCR hit)
-    {
-    // NEEDSWORK: Need to decide the fate of this...when/if to show it, etc.
-    DgnViewportR vp = *context.GetViewport();
-    if (!vp.Is3dView())
-        return; // Not valuable in 2d...
-
-    if (hit.GetHitType() < HitDetailType::Snap)
-        return; // Don't display unless snapped...
-
-    if (!hit.GetGeomDetail().IsValidSurfaceHit())
-        return; // AccuSnap will flash edge/segment geometry...
-
-    if ((static_cast<SnapDetailCR>(hit)).PointWasAdjusted())
-        return; // Only display if snap point has not been adjusted...surface normal is for snap location, not adjusted location...
-
-    ColorDef    color = ColorDef(~vp.GetHiliteColor().GetValue()); // Invert hilite color for good contrast...
-    ColorDef    colorFill = color;
-    DPoint3d    pt = (static_cast<SnapDetailCR>(hit)).GetSnapPoint();
-    double      radius = (2.5 * aperture) * vp.GetPixelSizeAtPoint(&pt);
-    DVec3d      normal = hit.GetGeomDetail().GetSurfaceNormal();
-    RotMatrix   rMatrix = RotMatrix::From1Vector(normal, 2, true);
-
-    color.SetAlpha(100);
-    colorFill.SetAlpha(200);
-
-#if defined (NOT_NOW_SHOW_RECTANGLE)
-    double   length = (0.8 * radius);
-    DPoint3d pts[5];
-
-    pts[0].Init(-length, -length, 0.0);
-    pts[1].Init(length, -length, 0.0);
-    pts[2].Init(length, length, 0.0);
-    pts[3].Init(-length, length, 0.0);
-    pts[4] = pts[0];
-
-    Transform::From(rMatrix, pt).Multiply(pts, pts, 5);
-
-    GraphicBuilderPtr graphic = context.CreateGraphic();
-
-    graphic->SetSymbology(color, colorFill, 1);
-    graphic->AddShape(5, pts, true);
-    graphic->AddLineString(5, pts);
-
-    context.AddWorldOverlay(*graphic);
-#else
-    DEllipse3d  ellipse = DEllipse3d::FromScaledRotMatrix(pt, rMatrix, radius, radius, 0.0, Angle::TwoPi());
-
-    GraphicBuilderPtr graphic = context.CreateWorldOverlay();
-
-    graphic->SetSymbology(color, colorFill, 1);
-    graphic->AddArc(ellipse, true, true);
-    graphic->AddArc(ellipse, false, false);
-
-    double      length = (0.6 * radius);
-    DSegment3d  segment;
-
-    normal.Normalize(ellipse.vector0);
-    segment.point[0].SumOf(pt, normal, length);
-    segment.point[1].SumOf(pt, normal, -length);
-    graphic->AddLineString(2, segment.point);
-
-    normal.Normalize(ellipse.vector90);
-    segment.point[0].SumOf(pt, normal, length);
-    segment.point[1].SumOf(pt, normal, -length);
-    graphic->AddLineString(2, segment.point);
-    context.AddWorldOverlay(*graphic->Finish());
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* draw a filled and outlined circle to represent the size of the location tolerance in the current view.
-* @bsimethod                                                    Keith.Bentley   03/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3dCR pt)
-    {
-    double      radius = (aperture / 2.0) + .5;
-    DPoint3d    center;
-    DEllipse3d  ellipse, ellipse2;
-
-    context.GetViewport()->WorldToView(&center, &pt, 1);
-    ellipse.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius, radius, 0.0, msGeomConst_2pi, 0.0);
-    ellipse2.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius+1, radius+1, 0.0, msGeomConst_2pi, 0.0);
-
-    GraphicBuilderPtr graphic = context.CreateViewOverlay();
-    ColorDef    white = ColorDef::White();
-    ColorDef    black = ColorDef::Black();
-
-    white.SetAlpha(165);
-    graphic->SetSymbology(white, white, 1);
-    graphic->AddArc2d(ellipse, true, true, 0.0);
-
-    black.SetAlpha(100);
-    graphic->SetSymbology(black, black, 1);
-    graphic->AddArc2d(ellipse2, false, false, 0.0);
-
-    white.SetAlpha(20);
-    graphic->SetSymbology(white, white, 1);
-    graphic->AddArc2d(ellipse, false, false, 0.0);
-    context.AddViewOverlay(*graphic->Finish());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley  10/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawLocateCursor(DecorateContextR context, DPoint3dCR pt, double aperture, bool isLocateCircleOn, HitDetailCP hit)
-    {
-    if (nullptr != hit)
-        drawLocateHitDetail(context, aperture, *hit);
-
-    if (isLocateCircleOn)
-        drawLocateCircle(context, aperture, pt);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             06/86
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void roundGrid(double& num, double units)
@@ -918,40 +793,6 @@ void ViewController::PointToGrid(DPoint3dR point) const
     _GetGridSpacing(roundingDistance, gridsPerRef);
     getGridOrientation(*m_vp, origin, rMatrix, orientation);
     PointToStandardGrid(point, origin, rMatrix, roundingDistance, isoGrid);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawGrid(DecorateContextR context)
-    {
-    DgnViewportR vp = *context.GetViewport();
-
-    if (!vp.IsGridOn())
-        return;
-
-    GridOrientationType orientation = _GetGridOrientationType();
-
-    if (GridOrientationType::AuxCoord == orientation)
-        {
-        GetAuxCoordinateSystem().DrawGrid(context);
-        return;
-        }
-    else if (GridOrientationType::GeoCoord == orientation)
-        {
-        // NEEDSWORK...
-        }
-
-    bool        isoGrid = false;
-    uint32_t    gridsPerRef;
-    DPoint2d    spacing;
-    DPoint3d    origin;
-    RotMatrix   rMatrix;
-    Point2d     fixedRepsAuto = Point2d::From(0, 0);
-
-    _GetGridSpacing(spacing, gridsPerRef);
-    getGridOrientation(vp, origin, rMatrix, orientation);
-    context.DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, GridOrientationType::View != orientation ? &fixedRepsAuto : nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

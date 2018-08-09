@@ -24,11 +24,7 @@ void DgnViewport::DestroyViewport()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::SuspendViewport()
     {
-    RemoveAnimator();
-    if (m_renderTarget.IsValid())
-        RenderQueue().WaitForIdle();
 
-    SetRenderTarget(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -72,7 +68,7 @@ DRange3d DgnViewport::GetViewCorners() const
 //--------------+------------------------------------------------------------------------
 double DgnViewport::PixelsFromInches(double inches) const
     {
-    return GetRenderTarget()->GetDevice()->PixelsFromInches(inches);
+    return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1046,30 +1042,6 @@ ColorDef DgnViewport::GetBackgroundColor() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    04/2016
-//---------------------------------------------------------------------------------------
-ProgressiveTask::Completion DgnViewport::ProcessProgressiveTaskList(ProgressiveTask::WantShow& showFrame, RenderListContext& context)
-    {
-    ProgressiveTask::Completion status = ProgressiveTask::Completion::Finished;
-    for (auto entry=m_progressiveTasks.begin(); entry != m_progressiveTasks.end(); )
-        {
-        ProgressiveTask::WantShow thisShowFrame = ProgressiveTask::WantShow::No;
-        status = (*entry)->_DoProgressive(context, thisShowFrame);
-
-        if (thisShowFrame == ProgressiveTask::WantShow::Yes) // any of them can cause showframe
-            showFrame = ProgressiveTask::WantShow::Yes;
-
-        if (ProgressiveTask::Completion::Aborted == status)
-            break;
-
-        entry = m_progressiveTasks.erase(entry);
-        showFrame = ProgressiveTask::WantShow::Yes;
-        }
-
-    return status;
-    }
-
 * @bsimethod                                    Keith.Bentley                   08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::SaveViewUndo()
@@ -1095,18 +1067,6 @@ void DgnViewport::SaveViewUndo()
 
     // now update our baseline to match the current settings.
     m_currentBaseline = curr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    10/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_CallDecorators(DecorateContextR context)
-    {
-    m_viewController->_DrawDecorations(context);
-    m_viewController->_DrawGrid(context);
-
-    if (context.GetViewFlags().ShowAcsTriad())
-        m_viewController->GetAuxCoordinateSystem().Display(context, (ACSDisplayOptions::CheckVisible | ACSDisplayOptions::Active));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1154,8 +1114,6 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
 
     InvalidateScene();
     m_sync.InvalidateController();
-    if (m_renderTarget.IsValid())
-        m_renderTarget->_QueueReset();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1246,212 +1204,4 @@ DMap4d Frustum::ToDMap4d() const
     bsiDMap4d_initFromVectorFrustum(&map, &org, &xVec, &yVec, &zVec, GetFraction());
     return map;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-IViewportAnimator::RemoveMe DecorationAnimator::_Animate(DgnViewportR vp)
-    {
-    vp.InvalidateDecorations();
-    BeDuration total(m_stop - m_start);
-    BeDuration elapsed(BeTimePoint::Now() - m_start);
-    double ratio = std::min(elapsed.ToSeconds() / total.ToSeconds(), 1.0);
-    auto removeMe = _AnimateDecorations(vp, ratio);
-    return (RemoveMe::Yes == removeMe || ratio == 1.0) ? RemoveMe::Yes : RemoveMe::No;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DecorationAnimator::_OnInterrupted(DgnViewportR vp)
-    {
-    vp.InvalidateDecorations();
-    _AnimateDecorations(vp, 1.0);
-    }
-
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   08/17
-//=======================================================================================
-struct ReadPixelsTask : Render::SceneTask
-{
-    BSIRect m_rect;
-    Render::PixelData::Selector m_selector;
-    Render::IPixelDataBufferCPtr m_buffer;
-
-    ReadPixelsTask(Render::Target& target, Priority priority, BSIRectCR rect, Render::PixelData::Selector selector)
-        : SceneTask(&target, Operation::ReadPixels, priority), m_rect(rect), m_selector(selector) { }
-
-    Utf8CP _GetName() const override { return "Read Pixels"; }
-    Outcome _Process(StopWatch&) override { m_buffer = m_target->_ReadPixels(m_rect, m_selector); return Outcome::Finished; }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::IPixelDataBufferCPtr DgnViewport::ReadPixels(BSIRectCR rect, Render::PixelData::Selector selector)
-    {
-    if (!IsActive())
-        return nullptr;
-
-    BSIRect viewRect = GetViewRect();
-    BeAssert(rect.IsContained(&viewRect));
-    if (!rect.IsContained(&viewRect))
-        return nullptr;
-
-    RefCountedPtr<ReadPixelsTask> task = new ReadPixelsTask(*m_renderTarget, Task::Priority::Highest(), rect, selector);
-    RenderQueue().AddTask(*task);
-    RenderQueue().WaitForIdle();
-
-    return task->m_buffer;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnViewport::GetPixelDataNpcPoint(DPoint3dR npc, IPixelDataBufferCR pixelData, int32_t x, int32_t y)
-    {
-    if (0.0 == (npc.z = pixelData.GetPixel(x, y).GetDistanceFraction()))
-        return false;
-
-    BSIRectCR       viewRect = GetViewRect();
-
-    npc.x = ((double) x + .5 - (double) viewRect.Left()) / viewRect.Width();
-    npc.y = 1.0 - ((double) y + .5 - (double) viewRect.Top()) / viewRect.Height();
-    if (m_frustFraction < 1.0)
-        npc.z = npc.z * m_frustFraction / (1.0 + npc.z * (m_frustFraction - 1.0));  // Correct to NPC if camera on.
-
-    return true;
-    } 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnViewport::GetPixelDataWorldPoint(DPoint3dR world, IPixelDataBufferCR pixelData, int32_t x, int32_t y)
-    {
-    DPoint3d        npc;
-
-    if (!GetPixelDataNpcPoint(npc, pixelData, x, y))
-        return false;
-            
-    world = NpcToWorld(npc);
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& highNpc, BSIRectCP inViewRect)
-    {
-    BSIRect                 viewRect = GetViewRect();
-    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
-
-    lowNpc  = 1.0;
-    highNpc = 0.0;
-
-    if (nullptr != inViewRect && !viewRect.Overlap (&viewRect, inViewRect))
-        return ERROR;
-
-    Point2d     testPoint;
-    for (testPoint.x = viewRect.Left(); testPoint.x <= viewRect.Right(); testPoint.x++)
-        {
-        for (testPoint.y = viewRect.Top(); testPoint.y <= viewRect.Bottom(); testPoint.y++)
-            {
-            DPoint3d    npc;
-            
-            if (viewRect.PointInside(testPoint) &&
-                GetPixelDataNpcPoint (npc, *pixels, testPoint.x, testPoint.y))
-                {
-                lowNpc = std::min(lowNpc, npc.z);
-                highNpc = std::max(highNpc, npc.z);
-                }
-            }
-        }
-    
-    return highNpc > 0.0 ? SUCCESS : ERROR;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::DetermineVisibleDepthNpcAverage(double& aveNpc, BSIRectCP inViewRect)
-    {
-    BSIRect                 viewRect = GetViewRect();
-    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
-    size_t                  pixelCount = 0;
-
-    if (nullptr != inViewRect && !viewRect.Overlap (&viewRect, inViewRect))
-        return ERROR;
-
-    aveNpc = 0.0;
-
-    Point2d     testPoint;
-    for (testPoint.x = viewRect.Left(); testPoint.x <= viewRect.Right(); testPoint.x++)
-        {
-        for (testPoint.y = viewRect.Top(); testPoint.y <= viewRect.Bottom(); testPoint.y++)
-            {
-            DPoint3d    npc;
-            
-            if (viewRect.PointInside(testPoint) &&
-                GetPixelDataNpcPoint (npc, *pixels, testPoint.x, testPoint.y))
-                {
-                pixelCount++;
-                aveNpc += npc.z;
-                }
-            }
-        }
-    if (0 == pixelCount)
-        return ERROR;
-
-    aveNpc /= (double) pixelCount;
-    
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::DetermineNearestVisibleGeometryPoint(DPoint3dR outPoint, DPoint3dCR pickPoint, int radiusPixels)
-    {
-    DPoint3d        inView = WorldToView(pickPoint);
-    Point2d         viewCenter = { (int32_t) (inView.x + .5), (int32_t) (inView.y + .5) };
-    BSIRect         viewRect = GetViewRect(), overlapRect;
-    BSIRect         pickRect = BSIRect::From(viewCenter.x - radiusPixels, viewCenter.y - radiusPixels, viewCenter.x + radiusPixels + 1, viewCenter.y + radiusPixels + 1);
-
-    if (!pickRect.Overlap(&overlapRect, &viewRect))
-        return ERROR;
-    
-    IPixelDataBufferCPtr    pixels = ReadPixels(overlapRect, PixelData::Selector::Distance);
-
-    for (int testRadius=0; testRadius<radiusPixels; testRadius++)
-        {
-        Point2d     testPoint;
-
-        for (testPoint.x = viewCenter.x - testRadius; testPoint.x <= viewCenter.x  + testRadius; testPoint.x++)
-            {
-            for (testPoint.y = viewCenter.y - testRadius; testPoint.y <= viewCenter.y + testRadius; testPoint.y++)
-                {
-                if (overlapRect.PointInside(testPoint) &&
-                    GetPixelDataWorldPoint(outPoint, *pixels, testPoint.x, testPoint.y))
-                    return true;
-                }
-            }
-        }
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d DgnViewport::DetermineDefaultRotatePoint()
-    {
-#ifdef DEPTH_TEST
-    double npcDepthLow, npcDepthHigh;
-    if (IsActive()  && SUCCESS == DetermineVisibleDepthNpcRange (npcDepthLow, npcDepthHigh))
-        return NpcToWorld(DPoint3d::From(0.5, 0.5, (npcDepthLow + npcDepthHigh) / 2.0));
-#endif
-
-    return IsCameraOn() ? m_viewController->GetViewDefinition().GetTargetPoint() : NpcToWorld(DPoint3d::From(.5, .5, .5));
-    }
-
 

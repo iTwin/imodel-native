@@ -78,10 +78,6 @@ public:
     //! Return whether manipulator controls or dynamics should be shown in the supplied view.
     virtual bool _IsDisplayedInView(DgnViewportR vp) = 0;
 
-    //! Called to display the manipulator's controls in the supplied viewport.
-    //! This is commonly done by drawing sprites, but the manipulator can choose to draw any geometry it wants.
-    virtual void _OnDraw(DecorateContextR ) = 0;
-
     //! When multiple manipulators are active on a selection set, only the one whose control is actually
     //! selected to start the modify operation is given responsibility for setting up the modification.
     //! If called, the manipulator is responsible for setting the anchor point that will be used by all

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Annotations/TextAnnotationElement.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -92,7 +92,6 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation2d : AnnotationElement2d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation2d, AnnotationElement2d);
 
 protected:
-    BentleyStatus _StrokeHit(DecorateContextR, HitDetailCR) const override {return ERROR;} // Don't flash text box...
     SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
@@ -138,7 +137,6 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : GraphicalElement3d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation3d, GraphicalElement3d);
 
 protected:
-    BentleyStatus _StrokeHit(DecorateContextR, HitDetailCR) const override {return ERROR;} // Don't flash text box...
     SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;

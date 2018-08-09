@@ -72,9 +72,6 @@ public:
     //! Find the first SheetViewDefinition that displays the specified sheet model.
     DGNPLATFORM_EXPORT static DgnElementId FindFirstViewOfSheet(DgnDbR db, DgnModelId sheetModelId);
 
-    //! Draw border graphics (static, called during update)
-    DGNPLATFORM_EXPORT static Render::GraphicPtr CreateBorder(DecorateContextR viewContext, DPoint2dCR size);
-
     //! Get the sheet size.
     DPoint2d GetSheetSize() const;
 
@@ -292,9 +289,6 @@ namespace Attachment
         Render::GraphicListPtr m_terrain;
         ClipVectorCPtr m_clips;
 
-        DGNVIEW_EXPORT virtual State _CreateScene(UpdatePlan const& updatePlan, State currentState);
-        DGNVIEW_EXPORT virtual Render::Image _RenderImage();
-        DGNVIEW_EXPORT virtual void _RenderTexture();
         void QueueScene(SceneContextR);
         virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
         void _AdjustAspectRatio(DPoint3dR, DVec3dR) override {}
@@ -305,7 +299,6 @@ namespace Attachment
         //! Get the transfrom from sheet view coordinates to attachment view coordinates
         Transform GetTransformFromSheet(DgnViewportCR sheetVp) {Transform trans=GetTransformToSheet(sheetVp); trans.InverseOf(trans); return trans;}
 
-        DGNVIEW_EXPORT Viewport();
         ClipVectorCP GetAttachClips() const {return m_clips.get();}
         void SetSceneDepth(uint32_t depth, Root3dR tree);
     };
@@ -423,7 +416,6 @@ protected:
     void _LoadState() override;
     BentleyStatus _CreateScene(SceneContextR) override;
     FitComplete _ComputeFitRange(FitContextR context) override;
-    void _DrawDecorations(DecorateContextR context) override;
     void _OnRenderFrame() override;
 
     void DrawBorder(ViewContextR context) const;

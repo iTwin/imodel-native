@@ -71,9 +71,6 @@ public:
     };
 
 public:
-    DGNVIEW_EXPORT SnapStatus IntersectDetails(SnapDetailP* snappedPath, HitDetailCP first, HitDetailCP second, DPoint3dCP testPoint, bool allowSelfIntersections);
-    DGNVIEW_EXPORT SnapStatus SnapToPath(SnapDetailP* snappedPath, HitDetailCP thisPath, SnapMode snapMode, int snapDivisor, double hotAperture);
-
     //! Get the KeypointType for a SnapMode.
     DGNPLATFORM_EXPORT static KeypointType GetSnapKeypointType(SnapMode);
 

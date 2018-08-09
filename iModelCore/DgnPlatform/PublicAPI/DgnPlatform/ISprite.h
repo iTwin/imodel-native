@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ISprite.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -81,11 +81,6 @@ public:
     //! Deactivate an active Sprite Location. After this call, calls to #DecorateViewport for this
     //! Sprite Location will do nothing until it is re-Activated.
     DGNPLATFORM_EXPORT void Deactivate();
-
-    //! If this Sprite Location is active for the specified DgnViewport, draw its Sprite Definition at the current location.
-    //! Otherwise, this method does nothing.
-    //! @note This method is <b>ONLY</b> valid from within an IViewDecoration::DoDecoration event callback.
-    DGNPLATFORM_EXPORT void DecorateViewport(DecorateContextR);
 
     //! Determine whether this Sprite Location is currently active.
     //! @return true if this Sprite Location is currently active.

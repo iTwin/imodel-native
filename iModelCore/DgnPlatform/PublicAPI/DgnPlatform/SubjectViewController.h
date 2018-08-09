@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/SubjectViewController.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,13 +34,9 @@ struct EXPORT_VTABLE_ATTRIBUTE SubjectViewController : SpatialViewController
     DEFINE_T_SUPER(SpatialViewController)
     friend struct SpatialViewDefinition;
 
-    typedef bmap<DgnModelId, FeatureSymbologyOverrides::Appearance> SubjectColorMap;
-
 private:
-    SubjectColorMap                 m_subjectColors;
     bmap<DgnElementId, Transform>   m_transformCache;
 protected:
-    void _AddFeatureOverrides(Render::FeatureSymbologyOverrides&) const override;
     void _OnAttachedToViewport(DgnViewportR) override;
     void _OnDetachedFromViewport(DgnViewportR) override;
 public:
@@ -59,7 +55,7 @@ public:
     DGNPLATFORM_EXPORT bool     IsVisible(DgnModelId modelId) const;
 
     //! Constructor
-    DGNPLATFORM_EXPORT SubjectViewController(SpatialViewDefinition const& view, SubjectColorMap const& subjectColors);
+    DGNPLATFORM_EXPORT SubjectViewController(SpatialViewDefinition const& view);
     DGNPLATFORM_EXPORT ~SubjectViewController();
 
     //! Applies an incremental transform for dynamics of tools

@@ -476,8 +476,6 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
         return BSIERROR;
         }
 
-    textureDescr.m_texture = vp->GetRenderTarget()->CreateGeometryTexture(*graphic, range2d, stroker.GetUseTextureColors(), false);
-
     double yRange = range2d.high.y - range2d.low.y;
     BeAssert(0.0 != yRange);
     if (0.0 == yRange)

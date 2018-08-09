@@ -199,13 +199,11 @@ $(CoreObjs)Render$(oext) :                          $(DgnCoreDir)Render.cpp $(Dg
 
 $(CoreObjs)RenderPrimitives$(oext) :                $(DgnCoreDir)RenderPrimitives.cpp $(DgnPlatformAPISrc)RenderPrimitives.h $(DgnPlatformAPISrc)GeometryClipper.h ${MultiCompileDepends}
 
-$(CoreObjs)MeshTile$(oext) :                        $(DgnCoreDir)MeshTile.cpp $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}
-
-$(CoreObjs)MeshEdgeBuilder$(oext) :                 $(DgnCoreDir)MeshEdgeBuilder.cpp $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}
+$(CoreObjs)MeshEdgeBuilder$(oext) :                 $(DgnCoreDir)MeshEdgeBuilder.cpp ${MultiCompileDepends}
 
 $(CoreObjs)ElementTileTree$(oext) :                 $(DgnCoreDir)ElementTileTree.cpp $(DgnPlatformAPISrc)ElementTileTree.h ${MultiCompileDepends}
 
-$(CoreObjs)FacetCount$(oext) :                      $(DgnCoreDir)FacetCount.cpp $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}
+$(CoreObjs)FacetCount$(oext) :                      $(DgnCoreDir)FacetCount.cpp ${MultiCompileDepends}
 
 $(CoreObjs)RealityDataCache$(oext) :                $(DgnCoreDir)RealityDataCache.cpp $(RealityDataHandlerDepends) ${MultiCompileDepends}
 
@@ -331,11 +329,7 @@ $(CoreObjs)TileWriter$(oext) :                      $(DgnCoreDir)TileWriter.cpp 
 
 $(CoreObjs)CacheTileWriter$(oext) :                 $(DgnCoreDir)CacheTileWriter.cpp $(DgnPlatformAPISrc)TileTree.h $(DgnPlatformAPISrc)TileIO.h $(DgnPlatformAPISrc)TileWriter.h ${MultiCompileDepends}
 
-$(CoreObjs)CesiumTileWriter$(oext) :                $(DgnCoreDir)CesiumTileWriter.cpp $(DgnPlatformAPISrc)TileTree.h $(DgnPlatformAPISrc)TileIO.h $(DgnPlatformAPISrc)TileWriter.h ${MultiCompileDepends}
-
 $(CoreObjs)TileReader$(oext) :                      $(DgnCoreDir)TileReader.cpp $(DgnPlatformAPISrc)TileTree.h $(DgnPlatformAPISrc)TileReader.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}
-
-$(CoreObjs)TileTreePublish$(oext) :                 $(DgnCoreDir)TileTreePublish.cpp $(DgnPlatformAPISrc)MeshTile.h $(DgnPlatformAPISrc)TileTree.h ${MultiCompileDepends}
 
 $(CoreObjs)LinkElement$(oext) :                     $(DgnCoreDir)LinkElement.cpp $(DgnPlatformAPISrc)LinkElement.h ${MultiCompileDepends}
 

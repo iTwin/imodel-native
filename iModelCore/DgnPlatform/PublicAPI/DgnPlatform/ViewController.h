@@ -108,7 +108,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 
 protected:
     friend struct ViewContext;
-    friend struct DecorateContext;
     friend struct DgnViewport;
     friend struct ViewManager;
     friend struct ToolAdmin;
@@ -164,21 +163,9 @@ protected:
     //! @note Normally true for a view only when ACS context lock is enabled.
     DGNPLATFORM_EXPORT virtual bool _IsContextRotationRequired(bool contextLockEnabled) const;
 
-    //! Display locate circle and information about the current AccuSnap/auto-locate HitDetail.
-    DGNPLATFORM_EXPORT virtual void _DrawLocateCursor(DecorateContextR, DPoint3dCR, double aperture, bool isLocateCircleOn, HitDetailCP hit=nullptr);
-
     //! Grid display and point adjustment.
     virtual GridOrientationType _GetGridOrientationType() const {return m_gridOrientation;}
     DGNPLATFORM_EXPORT virtual void _GetGridSpacing(DPoint2dR, uint32_t& gridsPerRef) const;
-
-    //! Display grid for this view.
-    DGNPLATFORM_EXPORT virtual void _DrawGrid(DecorateContextR);
-
-    //! Display view controller specific view decorations.
-    virtual void _DrawDecorations(DecorateContextR) {}
-
-    //! Locate/snap to view controller decorations.
-    virtual void _PickDecorations(PickContextR) {}
 
     //! Called when the display of a category is turned on or off.
     //! @param[in] singleEnable true if just turned on one category; false if
@@ -194,11 +181,6 @@ protected:
     DGNPLATFORM_EXPORT void InvalidateScene();
     bool IsSceneReady() const;
 
-    //! Override visibility and/or symbology of features. Base implementation handles hilite color.
-    //! Note: This function is invoked just before rendering a frame, if and only if ViewController::AreFeatureOverridesDirty() returns true.
-    //! If you override this function, use SetFeatureOverridesDirty() to set this flag whenever changes are made which will affect your symbology overrides.
-    DGNPLATFORM_EXPORT virtual void _AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const;
-
     //! Invokes the _VisitGeometry on \a context for <em>each element</em> that is in the view.
     //! For normal views, this does the same thing as _DrawView.
     virtual void _VisitAllElements(ViewContextR context) {_DrawView(context);}
@@ -206,10 +188,6 @@ protected:
     //! Stroke a single GeometrySource through a ViewContext.
     //! An application can override _StrokeGeometry to change the symbology of a GeometrySource.
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double pixelSize);
-
-    //! Stroke a single HitDetail through a DecorateContext.
-    //! An application can override _StrokeHit to change how elements are flashed for auto-locate.
-    DGNPLATFORM_EXPORT virtual BentleyStatus _StrokeHit(DecorateContextR, GeometrySourceCR, HitDetailCR);
 
     //! Get the extent of the model(s) viewed by this view
     virtual AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const = 0;
@@ -232,7 +210,6 @@ public:
     Render::GraphicListPtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
-    void AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const { _AddFeatureOverrides(overrides); }
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
     virtual void _PickTerrain(PickContextR context) {}
 
@@ -594,7 +571,6 @@ protected:
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR context) override;
     DGNPLATFORM_EXPORT FitComplete _ComputeFitRange(struct FitContext&) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
-    DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff);
     DGNPLATFORM_EXPORT virtual void _SetViewedModels(DgnModelIdSet const&);
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
@@ -613,8 +589,6 @@ protected:
 
     double GetGroundElevation() const;
     AxisAlignedBox3d GetGroundExtents(DgnViewportCR) const;
-    void DrawGroundPlane(DecorateContextR);
-    DGNPLATFORM_EXPORT void DrawSkyBox(DecorateContextR);
     void BuildCopyrightInfo();
 
 public:
@@ -793,7 +767,6 @@ private:
 
     void _DrawView(ViewContextR) override;
     Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
-    BentleyStatus _StrokeHit(DecorateContextR, GeometrySourceCR, HitDetailCR) override;
     bool _Allow3dManipulations() const override;
     AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
 

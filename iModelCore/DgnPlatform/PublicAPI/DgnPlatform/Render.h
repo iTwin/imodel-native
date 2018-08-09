@@ -15,12 +15,6 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <cmath>
 
-#if defined (BENTLEYCONFIG_DISPLAY_WIN32)
-    struct HICON__;
-    struct HWND__;
-    struct HDC__;
-#endif
-
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
 //=======================================================================================
@@ -268,160 +262,6 @@ public:
 
     //! Apply these overrides to the supplied ViewFlags
     DGNPLATFORM_EXPORT void Apply(ViewFlags& base) const;
-};
-
-//=======================================================================================
-//! A rendering task to be performed on the render thread.
-// @bsiclass                                                    Keith.Bentley   07/15
-//=======================================================================================
-struct Task : RefCounted<NonCopyableClass>
-{
-    //! The rendering operation a task performs.
-    enum class Operation
-    {
-        ChangeDecorations,
-        ChangeDynamics,
-        ChangeRenderPlan,
-        ChangeScene,
-        DefineGeometryTexture,
-        DestroyTarget,
-        Idle,
-        Initialize, // Invoked synchronously; return non-zero if initialization failed.
-        OnResized,
-        OverrideFeatureSymbology,
-        ReadImage,
-        ReadPixels,
-        Redraw,
-        RenderFrame,
-        RenderTile,
-        ResetTarget,
-        SetFlash,
-        SetHiliteSet,
-    };
-
-    //! The outcome of the processing of a Task.
-    enum class Outcome
-    {
-        Waiting,   //!< in queue, pending
-        Abandoned, //!< replaced while pending
-        Started,   //!< currently processing
-        Aborted,   //!< aborted during processing
-        Finished,  //!< successfully finished processing
-    };
-
-    struct Priority
-    {
-        uint32_t m_value;
-        static Priority Highest() {return Priority(0);}
-        static Priority Lowest() {return Priority(0xffff);} // Reserved for the 'idle' task
-        Priority& operator++() {++m_value; return *this;}
-        explicit Priority(uint32_t val=0) : m_value(val) {}
-    };
-
-    friend struct Queue;
-
-protected:
-    Priority m_priority;
-    Operation m_operation;
-    TargetPtr m_target;
-    Outcome m_outcome = Outcome::Waiting;
-    double m_elapsedTime = 0.0;
-    void Perform(StopWatch&);
-
-public:
-    //! Get the name of this task. For debugging only
-    virtual Utf8CP _GetName() const = 0;
-
-    //! Perform the rendering task.
-    //! @return the Outcome of the processing of the Task.
-    virtual Outcome _Process(StopWatch&) = 0;
-
-    //! Determine whether this Task can replace a pending entry in the Queue.
-    //! @param[in] other a pending task for the same Render::Target
-    //! @return true if this Task should replace the other pending task.
-    virtual bool _Replaces(Task& other) const {return m_operation == other.m_operation;}
-
-    //! return true if this task changes the scene.
-    virtual bool _DefinesScene() const = 0;
-
-    //! called when this task is entered into the render queue
-    virtual void _OnQueued() const {}
-
-    Priority GetPriority() const {return m_priority;} //!< Get the priority of this task
-    Target* GetTarget() const {return m_target.get();} //!< Get the Target of this Task
-    Operation GetOperation() const {return m_operation;} //!< Get the Operation of this Task.
-    Outcome GetOutcome() const {return m_outcome;}   //!< The Outcome of the processing of this Task (or Waiting, if it has not been processed yet.)
-    double GetElapsedTime() const {return m_elapsedTime;} //!< Elapsed time in seconds. Only valid if m_outcome is Finished or Aborted
-
-    Task(Target* target, Operation operation, Priority priority) : m_target(target), m_operation(operation), m_priority(priority) {}
-};
-
-//=======================================================================================
-// Base class for all tasks that change the scene
-// @bsiclass                                                    Keith.Bentley   03/16
-//=======================================================================================
-struct SceneTask : Task
-{
-    bool _DefinesScene() const override {return true;}
-    bool _Replaces(Task& other) const override {return Render::Task::_Replaces(other) || !other._DefinesScene();}
-    using Task::Task;
-};
-
-//=======================================================================================
-// Base class for tasks that don't change the scene
-// @bsiclass                                                    Keith.Bentley   03/16
-//=======================================================================================
-struct NonSceneTask : Task
-{
-    bool _DefinesScene() const override {return false;}
-    using Task::Task;
-};
-
-//=======================================================================================
-//! The Render::Queue is accessed through DgnViewport::RenderQueue(). It holds an array of Render::Tasks waiting
-//! to to be processed on the render thread. Render::Tasks may be added to the Render::Queue only
-//! on the main (work) thread, and may only be processed on the Render thread.
-// @bsiclass                                                    Keith.Bentley   09/15
-//=======================================================================================
-struct Queue
-{
-    friend DgnViewport;
-private:
-    BeConditionVariable m_cv;
-    std::deque<TaskPtr> m_tasks;
-    TaskPtr m_currTask;
-
-    void WaitForWork();
-    void Process();
-    THREAD_MAIN_DECL Main(void*);
-
-    DGNPLATFORM_EXPORT bool HasActiveOrPending(Task::Operation op, Target* target) const;
-public:
-    //! Add a Render::Task to the render queue. The Task will replace any existing pending entries in the Queue
-    //! for the same Render::Target for which task._CanReplace(existing) returns true.
-    //! @param[in] task The Render::Task to add to the queue.
-    //! @note This method may only be called from the main thread.
-    DGNPLATFORM_EXPORT void AddTask(Task& task);
-
-    //! Wait for all Tasks in the Queue to be processed.
-    //! @note This method may only be called from the main thread and will wait indefinitely for the existing render tasks
-    //! to complete.
-    DGNPLATFORM_EXPORT void WaitForIdle();
-
-    //! Add a task to the Queue and wait for it (and all previously queued Tasks) to complete.
-    //! @param[in] task The Render::Task to add to the queue.
-    //! @note This method may only be called from the main thread and will wait indefinitely for the existing render tasks
-    //! to complete.
-    void AddAndWait(Task& task) {AddTask(task); WaitForIdle();}
-
-    //! @return true if the render queue is empty and no pending tasks are active.
-    //! @note This method may only be called from the main thread
-    DGNPLATFORM_EXPORT bool IsIdle() const;
-
-    DGNPLATFORM_EXPORT bool HasPending(Task::Operation op) const;
-    bool HasActiveOrPending(Task::Operation op) const { return HasActiveOrPending(op, nullptr); }
-
-    bool HasActiveOrPending(Task::Operation op, Target& target) const { return HasActiveOrPending(op, &target); }
 };
 
 //=======================================================================================
@@ -1488,58 +1328,6 @@ public:
         graphicParams.SetIsBlankingRegion(true);
         return graphicParams;
         }
-};
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct OvrGraphicParams
-{
-    enum Flags : uint32_t//! flags to indicate the parts of a GraphicParams that are to be overridden
-    {
-        FLAGS_None                   = (0),      //!< no overrides
-        FLAGS_Color                  = (1<<0),   //!< override outline color
-        FLAGS_ColorTransparency      = (1<<1),   //!< override outline color transparency
-        FLAGS_FillColor              = (1<<2) | (0x80000000), //!< override fill color, override blanking fill with bg color
-        FLAGS_FillColorTransparency  = (1<<3),   //!< override fill color transparency
-        FLAGS_RastWidth              = (1<<4),   //!< override raster width
-        FLAGS_Style                  = (1<<5),   //!< override style
-        FLAGS_TrueWidth              = (1<<6),   //!< override true width
-        FLAGS_ExtSymb                = (1<<7),   //!< override extended symbology
-        FLAGS_RenderMaterial         = (1<<8),   //!< override render material
-    };
-
-private:
-    uint32_t      m_flags;
-    GraphicParams m_matSymb;
-
-public:
-    OvrGraphicParams() : m_flags(FLAGS_None) {}
-    GraphicParamsCR GetMatSymb() const {return m_matSymb;}
-    GraphicParamsR GetMatSymbR () {return m_matSymb;}
-
-public:
-    //! Compare two OvrGraphicParams.
-    bool operator==(OvrGraphicParamsCR rhs) const {if (this == &rhs) return true; if (rhs.m_flags != m_flags) return false; return rhs.m_matSymb == m_matSymb;}
-
-    uint32_t GetFlags() const {return m_flags;}
-    ColorDef GetLineColor() const {return m_matSymb.GetLineColor();}
-    ColorDef GetFillColor() const {return m_matSymb.GetFillColor();}
-    uint32_t GetWidth() const {return m_matSymb.GetWidth();}
-    MaterialPtr GetMaterial() const {return m_matSymb.GetMaterial();}
-
-    void Clear() {SetFlags(FLAGS_None); m_matSymb.Init();};
-    void SetFlags(uint32_t flags) {m_flags = flags;}
-    void SetLineColor(ColorDef color) {m_matSymb.SetLineColor(color); m_flags |=  FLAGS_Color;}
-    void SetFillColor(ColorDef color) {m_matSymb.SetFillColor(color); m_flags |= FLAGS_FillColor;}
-    void SetLineTransparency(Byte trans) {m_matSymb.SetLineTransparency(trans); m_flags |= FLAGS_ColorTransparency;}
-    void SetFillTransparency(Byte trans) {m_matSymb.SetFillTransparency(trans); m_flags |= FLAGS_FillColorTransparency;}
-    void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= FLAGS_RastWidth;}
-    void SetLinePixels(LinePixels pixels) {m_matSymb.SetLinePixels(pixels); m_flags |= FLAGS_Style;}
-    void SetMaterial(Material* material) {m_matSymb.SetMaterial(material); m_flags |= FLAGS_RenderMaterial;}
-    void SetLineTexture(TextureP texture) {m_matSymb.SetLineTexture(texture); m_flags |= FLAGS_Style;}
-    void SetTrueWidthStart(double width) {m_matSymb.SetTrueWidthStart(width); m_flags |= FLAGS_TrueWidth;}
-    void SetTrueWidthEnd(double width) {m_matSymb.SetTrueWidthEnd(width); m_flags |= FLAGS_TrueWidth;}
 };
 
 //=======================================================================================
@@ -2793,53 +2581,6 @@ public:
 };
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   04/17
-//=======================================================================================
-struct DecorationList : RefCounted<NonCopyableClass>
-{
-    struct Node
-    {
-        GraphicPtr          m_graphic;
-        OvrGraphicParams    m_overrides;
-
-        Node(GraphicR graphic, OvrGraphicParamsCR ovr) : m_graphic(&graphic), m_overrides(ovr) { BeAssert(m_graphic.IsValid()); }
-    };
-
-    using List = bvector<Node>;
-private:
-    List    m_list;
-public:
-    typedef List::iterator iterator;
-    typedef List::const_iterator const_iterator;
-
-    iterator begin() { return m_list.begin(); }
-    iterator end() { return m_list.end(); }
-    const_iterator begin() const { return m_list.begin(); }
-    const_iterator end() const { return m_list.end(); }
-    size_t size() const { return m_list.size(); }
-    bool empty() const { return m_list.empty(); }
-    void clear() { m_list.clear(); }
-
-    void Add(GraphicR graphic, OvrGraphicParamsCR ovr) { BeAssert(GraphicPtr(&graphic).IsValid()); m_list.push_back(Node(graphic, ovr)); }
-    void Add(GraphicR graphic, OvrGraphicParamsCP ovr=nullptr) { Add(graphic, nullptr != ovr ? *ovr : OvrGraphicParams()); }
-    uint32_t GetCount() const { return static_cast<uint32_t>(size()); }
-};
-
-//=======================================================================================
-//! A set of GraphicLists of various types of Graphics that are "decorated" into the Render::Target,
-//! in addition to the Scene.
-// @bsiclass                                                    Keith.Bentley   12/15
-//=======================================================================================
-struct Decorations
-{
-    GraphicPtr          m_viewBackground;// drawn first, view units, with no zbuffer, smooth shading, default lighting. e.g., a skybox
-    GraphicListPtr      m_normal;       // drawn with zbuffer, with scene lighting
-    DecorationListPtr   m_world;        // drawn with zbuffer, with default lighting, smooth shading
-    DecorationListPtr   m_worldOverlay; // drawn in overlay mode, world units
-    DecorationListPtr   m_viewOverlay;  // drawn in overlay mode, view units
-};
-
-//=======================================================================================
 // @bsiclass                                                    Keith.Bentley   02/16
 //=======================================================================================
 struct FrustumPlanes
@@ -3025,31 +2766,6 @@ public:
 };
 
 //=======================================================================================
-//! A Render::Plan holds a Frustum and the render settings for displaying a Render::Scene into a Render::Target.
-// @bsiclass                                                    Keith.Bentley   12/15
-//=======================================================================================
-struct Plan
-{
-    enum class AntiAliasPref {Detect=0, On=1, Off=2};
-
-    bool                m_is3d;
-    ViewFlags           m_viewFlags;
-    Frustum             m_frustum;
-    double              m_fraction;
-    ColorDef            m_bgColor;
-    ColorDef            m_monoColor;
-    HiliteSettings      m_hiliteSettings;
-    bool                m_fadeOutActive;
-    AntiAliasPref       m_aaLines;
-    AntiAliasPref       m_aaText;
-    HiddenLineParams    m_hline;
-    ClipVectorPtr       m_activeVolume;
-    SceneLightsCPtr     m_lights;   //! if not valid, render with default lighting
-    DgnDbR              m_db;
-    DGNPLATFORM_EXPORT Plan(DgnViewportCR);
-};
-
-//=======================================================================================
 //! Describes a "feature" within a batched Graphic. A batched Graphic can
 //! contain multiple features. Each feature is associated with a unique combination of
 //! attributes (element ID, subcategory, geometry class). This allows geometry to be
@@ -3176,213 +2892,6 @@ public:
 };
 
 //=======================================================================================
-//! Overrides visibility and symbology based on element ID, subcategory, and/or geometry class.
-//! Overrides applied to elements take priority over those applied to subcategories.
-//! The rules for determining visibility and symbology follow a priority:
-//! Visibility:
-//!     If an element is in the "never drawn" list, it is invisible.
-//!     Else, if an element is in the "always drawn" list, it is visible.
-//!     Else, if the "always drawn" list is exclusive, it is invisible.
-//!     Else, any geometry not in the "visible subcategories" list is invisible
-//!     Else, any geometry of a DgnGeometryClass marked as invisible is invisible.
-//!     Else, it is visible.
-//! Symbology:
-//!     - Overrides defined for the element are applied, followed by any overrides defined
-//!     by the subcategory and not already overridden by the element.
-//!     - If no overrides are defined for the element, any global overrides not supplied by
-//!     the subcategory are applied.
-// @bsistruct                                                   Paul.Connelly   03/17
-//=======================================================================================
-struct FeatureSymbologyOverrides : RefCountedBase
-{
-    //! Defines symbology overrides for a single element or subcategory.
-    struct Appearance
-    {
-    private:
-        friend struct FeatureSymbologyOverrides;
-
-        struct Flags
-            {
-            uint8_t         m_rgb:1;
-            uint8_t         m_alpha:1;
-            uint8_t         m_weight:1;
-            uint8_t         m_linePixels:1;
-            uint8_t         m_ignoreMaterial:1;
-            };
-
-        ColorDef        m_color;
-        uint8_t         m_weight;
-        LinePixels      m_linePixels;
-        union
-            {
-            Flags       m_flags;
-            uint8_t     m_flagsMask;
-            };
-    public:
-        Appearance() { Init(); }
-        void Init() { m_flagsMask = 0; }
-        void InitFrom(DgnSubCategory::Override const& ovr);
-
-        static Appearance FromRgb(ColorDef rgb) { Appearance app; app.SetRgb(rgb); return app; }
-        static Appearance FromRgba(ColorDef rgb, uint8_t alpha) { Appearance app = FromRgb(rgb); app.SetAlpha(alpha); return app; }
-        static Appearance FromRgba(ColorDef rgba) { return FromRgba(rgba, rgba.GetAlpha()); }
-
-        //! Override transparency
-        void SetTransparency(double t) { SetAlpha(static_cast<uint8_t>((1.0-t)*255.0)); }
-        //! Override transparency
-        void SetAlpha(uint8_t alpha) { m_flags.m_alpha = true; m_color.SetAlpha(alpha); }
-        //! Override RGB and transparency
-        void SetRgba(ColorDef color) { SetRgb(color); SetAlpha(color.GetAlpha()); }
-        //! Override line weight
-        void SetWeight(uint8_t weight) { m_flags.m_weight = true; m_weight = weight; }
-        //! Override line code
-        void SetLinePixels(LinePixels pix) { m_flags.m_linePixels = true; m_linePixels = pix; }
-        //! Override to ignore render material (including any associated texture)
-        void SetIgnoresMaterial(bool ignore) { m_flags.m_ignoreMaterial = ignore; }
-        //! Override RGB (alpha component of color is ignored)
-        void SetRgb(ColorDef color)
-            {
-            m_flags.m_rgb = true;
-            if (m_flags.m_alpha)
-                color.SetAlpha(m_color.GetAlpha());
-
-            m_color = color;
-            }
-
-        //! Get the RGB override (alpha component ignored)
-        ColorDef GetRgb() const { return m_color; }
-        //! Get the transparency override as an alpha value from 0 (opaque) to 255 (transparent)
-        uint8_t GetAlpha() const { return m_color.GetAlpha(); }
-        //! Get the transparency override as a float value from 0.0 (transparent) to 1.0 (opaque)
-        double GetTransparency() const { return (255 - GetAlpha()) / 255.0; }
-        //! Get the line weight override
-        uint8_t GetWeight() const { return m_weight; }
-        //! Get the line code override
-        LinePixels GetLinePixels() const { return m_linePixels; }
-        //! Returns whether render material (including texture) is ignored
-        bool IgnoresMaterial() const { return m_flags.m_ignoreMaterial; }
-
-        //! Returns true if any aspect of symbology is overridden.
-        bool OverridesSymbology() const { return 0 != m_flagsMask; }
-        //! Returns true if transparency is overridden. If it is not, the return values of GetTransparency() and GetAlpha() are meaningless
-        bool OverridesAlpha() const { return m_flags.m_alpha; }
-        //! Returns true if RGB is overridden. If it is not, the return value of GetRgb() is meaningless
-        bool OverridesRgb() const { return m_flags.m_rgb; }
-        //! Returns true if line weight is overridden. If it is not, the return value of GetWeight() is meaningless
-        bool OverridesWeight() const { return m_flags.m_weight; }
-        //! Returns true if line code is overridden. If it is not, the return value of GetLinePixels() is meaningless
-        bool OverridesLinePixels() const { return m_flags.m_linePixels; }
-
-        //! Apply any overrides from this Appearance to the base Appearance, if the base Appearance does not already override them.
-        Appearance Extend(Appearance const& base) const;
-
-        OvrGraphicParams ToOvrGraphicParams() const;
-    };
-private:
-    DgnElementIdSet                     m_alwaysDrawn;
-    DgnElementIdSet                     m_neverDrawn;
-    bmap<DgnModelId, Appearance>        m_modelOverrides; // Appearance for all elements within models which have been explicitly overridden.
-    bmap<DgnElementId, Appearance>      m_elementOverrides; // Appearance for elements which have been explicitly overridden.
-    DgnSubCategoryIdSet                 m_visibleSubCategories;
-    bmap<DgnSubCategoryId, Appearance>  m_subcategoryOverrides;
-    Appearance                          m_defaultOverrides;
-    uint8_t                             m_constructions:1;
-    uint8_t                             m_dimensions:1;
-    uint8_t                             m_patterns:1;
-    uint8_t                             m_alwaysDrawnExclusive:1;
-    uint8_t                             m_lineWeights:1;
-
-    FeatureSymbologyOverrides() : m_constructions(false), m_dimensions(false), m_patterns(false), m_alwaysDrawnExclusive(false), m_lineWeights(true) { }
-    DGNPLATFORM_EXPORT explicit FeatureSymbologyOverrides(ViewControllerCR view);
-public:
-    static FeatureSymbologyOverridesPtr Create() { return new FeatureSymbologyOverrides(); }
-    static FeatureSymbologyOverridesCPtr Create(ViewControllerCR view) { return new FeatureSymbologyOverrides(view); }
-
-    // Returns false if the feature is invisible.
-    // Otherwise, populates the feature's Appearance overrides
-    DGNPLATFORM_EXPORT bool GetAppearance(Appearance&, FeatureCR, DgnModelId) const;
-    DGNPLATFORM_EXPORT bool IsFeatureVisible(FeatureCR) const;
-    DGNPLATFORM_EXPORT bool IsSubCategoryVisible(DgnSubCategoryId) const;
-    DGNPLATFORM_EXPORT bool IsClassVisible(DgnGeometryClass) const;
-
-    // NB: Appearance can override nothing, which prevents the default overrides from applying to it.
-    DGNPLATFORM_EXPORT void OverrideElement(DgnElementId, Appearance appearance, bool replaceExisting=true);
-    DGNPLATFORM_EXPORT void ClearElementOverrides(DgnElementId);
-
-    // Specify overrides for all elements within the specified model. These overrides take priority.
-    DGNPLATFORM_EXPORT void OverrideModel(DgnModelId, Appearance, bool replaceExisting=true);
-    DGNPLATFORM_EXPORT void ClearModelOverrides(DgnModelId);
-
-    DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, Appearance appearance, bool replaceExisting=true);
-    DGNPLATFORM_EXPORT void ClearSubCategoryOverrides(DgnSubCategoryId);
-
-    void SetDefaultOverrides(Appearance appearance, bool replaceExisting=true)
-        {
-        if (replaceExisting || !m_defaultOverrides.OverridesSymbology())
-            m_defaultOverrides = appearance;
-        }
-
-    bool IsAlwaysDrawnExclusive() const { return m_alwaysDrawnExclusive; }
-    void SetAlwaysDrawnExclusive(bool exclusive) { m_alwaysDrawnExclusive = exclusive; }
-
-    DgnElementIdSet& GetAlwaysDrawn()  { return m_alwaysDrawn; }
-    DgnElementIdSet const& GetAlwaysDrawn() const { return m_alwaysDrawn; }
-
-    DgnElementIdSet& GetNeverDrawn()  { return m_neverDrawn; }
-    DgnElementIdSet const& GetNeverDrawn() const { return m_neverDrawn; }
-
-    void AlwaysDraw(DgnElementId id) { m_alwaysDrawn.insert(id); }
-    void NeverDraw(DgnElementId id) { m_neverDrawn.insert(id); }
-};
-
-//=======================================================================================
-//! A Render::Window is a platform specific object that identifies a rectangular window on a screen.
-//! On Windows, for example, the default Render::Window holds an "HWND"
-// @bsiclass                                                    Keith.Bentley   11/15
-//=======================================================================================
-struct Window : RefCounted<NonCopyableClass>
-{
-    struct Rectangle {int left, top, right, bottom;};
-protected:
-    Window() {}
-public:
-    virtual Point2d _GetScreenOrigin() const = 0;
-    virtual BSIRect _GetViewRect() const = 0;
-    virtual void _OnPaint(Rectangle&) const = 0;
-    virtual void* _GetNativeWindow() const = 0;
-
-#if defined (BENTLEYCONFIG_DISPLAY_WIN32)
-    virtual HWND__* _GetHWnd() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::Target
-    HWND__* GetHWnd() const {return _GetHWnd();}
-#endif
-};
-
-//=======================================================================================
-//! A Render::Device is the platform specific object that connects a render target to a rendering system.
-//! It holds a reference to a Render::Window.
-//! On Windows, for example, the default Render::Device maps to a "DC"
-// @bsiclass                                                    Keith.Bentley   11/15
-//=======================================================================================
-struct Device : RefCounted<NonCopyableClass>
-{
-    struct PixelsPerInch {int width, height;};
-protected:
-    WindowPtr m_window;
-    Device(Window* window) : m_window(window) {}
-public:
-    virtual PixelsPerInch _GetPixelsPerInch() const = 0;
-    virtual DVec2d _GetDpiScale() const = 0;
-    virtual void* _GetNativeDevice() const = 0;
-#if defined (BENTLEYCONFIG_DISPLAY_WIN32)
-    virtual HDC__* GetDC() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::System
-#endif
-    virtual TargetPtr _CreateTarget(double tileSizeModifier) = 0;
-    virtual TargetPtr _CreateOffscreenTarget(double tileSizeModifier) = 0;
-    double PixelsFromInches(double inches) const {PixelsPerInch ppi=_GetPixelsPerInch(); return inches * (ppi.height + ppi.width)/2;}
-    Window const* GetWindow() const {return m_window.get();}
-};
-
-//=======================================================================================
 //! An array of GraphicPtrs, plus an optional ViewFlags that control how this set of graphics are to be rendered.
 //! @note All entries are closed (and therefore may never change) when they're added to this array.
 // @bsiclass                                                    Keith.Bentley   05/16
@@ -3391,25 +2900,12 @@ struct GraphicBranch
 {
     ViewFlagsOverrides m_viewFlagsOverrides;
     bvector<GraphicPtr> m_entries;
-    FeatureSymbologyOverridesCPtr m_symbologyOverrides;
 
     void Add(Graphic& graphic) {m_entries.push_back(&graphic);BeAssert(m_entries.back().IsValid());}
     void Add(bvector<GraphicPtr> const& entries) { for (auto& entry : entries) Add(*entry); }
     void SetViewFlagsOverrides(ViewFlagsOverridesCR ovr) { m_viewFlagsOverrides = ovr; }
     ViewFlags GetViewFlags(ViewFlagsCR base) const { ViewFlags flags = base; m_viewFlagsOverrides.Apply(flags); return flags; }
     void Clear() {m_entries.clear();}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   01/17
-//=======================================================================================
-struct ViewletPosition
-{
-    DPoint3d m_center;
-    double m_width;
-    double m_height;
-    ClipVectorCPtr m_clip;
-    ViewletPosition(DPoint3dCR center, double width, double height, ClipVectorCP clip) : m_center(center), m_width(width), m_height(height), m_clip(clip) {}
 };
 
 //=======================================================================================
@@ -3459,12 +2955,6 @@ struct System
     //! Initialize the rendering system. Return a non-zero value in case of error. The client thread waits for the result.
     virtual int _Initialize(void* systemWindow, bool swRendering) = 0;
 
-    //! Create a render target.
-    virtual Render::TargetPtr _CreateTarget(Render::Device& device, double tileSizeModifier) = 0;
-
-    //! Create an offscreen render target.
-    virtual Render::TargetPtr _CreateOffscreenTarget(Render::Device& device, double tileSizeModifier) = 0;
-
     //! Find a previously-created Material by key. Returns null if no such material exists.
     virtual MaterialPtr _FindMaterial(MaterialKeyCR key, DgnDbR db) const = 0;
 
@@ -3477,7 +2967,6 @@ struct System
 
     virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const = 0;
-    virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const = 0;
 
     //! Create a triangle mesh primitive
     virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const = 0;
@@ -3539,107 +3028,6 @@ struct System
 };
 
 //=======================================================================================
-//! Provides an algorithm for dynamically adjusting the tile size modifier of a
-//! Render::Target based on observed frame rate.
-// @bsistruct                                                   Paul.Connelly   06/16
-//=======================================================================================
-struct TileSizeAdjuster
-{
-private:
-    uint32_t    m_frameWindow;  // # of frames to record before performing adjustment
-    uint32_t    m_numFrames;    // # of frames recorded thus far
-    double      m_averageFrameTime;   // average # of seconds to render each frame thus far
-
-    void Record(double frameTime);
-    double Compute(Render::TargetCR target, double curModifier) const;
-public:
-    explicit TileSizeAdjuster(uint32_t frameWindow=15) : m_frameWindow(frameWindow) { Reset(); }
-
-    //! Call after each rendered frame. Returns an adjusted tile size modifier.
-    DGNPLATFORM_EXPORT double Update(Render::TargetCR target, double frameTime);
-
-    void Reset() {m_numFrames=0; m_averageFrameTime=0.0;}   //!< Reset the accumulated statistics
-    uint32_t GetFramesPerSecond() const { return 0.0 != m_averageFrameTime ? static_cast<uint32_t>(1.0/m_averageFrameTime) : 0; }
-    double GetAverageFrameTime() const { return m_averageFrameTime; }
-    uint32_t GetNumFramesRecorded() const { return m_numFrames; }
-};
-
-//=======================================================================================
-//! Describes aspects of a pixel as read from a Render::Target.
-// @bsistruct                                                   Paul.Connelly   08/17
-//=======================================================================================
-struct PixelData
-{
-    //! Describes the foremost type of geometry which produced the pixel
-    enum class GeometryType : uint8_t
-    {
-        Unknown, //!< Geometry was not selected, or type could not be determined
-        None, //!< No geometry was rendered to this pixel
-        Surface, //!< A surface
-        Linear, //!< A polyline
-        Edge, //!< The edge of a surface
-        Silhouette, //!< A silhouette of a surface
-    };
-
-    //! Describes the planarity of the foremost geometry which produced the pixel
-    enum class Planarity : uint8_t
-    {
-        Unknown, //!< Geometry was not selected, or planarity could not be determined
-        None, //!< No geometry was rendered to this pixel
-        Planar, //!< Planar geometry
-        NonPlanar, //!< Non-planar geometry
-    };
-
-    //! Bit-mask by which callers of DgnViewport::ReadPixels() specify which aspects are of interest.
-    //! Aspects not specified will be omitted from the returned data.
-    enum class Selector : uint8_t
-    {
-        None = 0,
-        ElementId = 1 << 0, //!< Select element IDs
-        Distance = 1 << 1, //!< Select distances from near plane
-        Geometry = 1 << 2, //!< Select geometry type and planarity
-
-        GeometryAndDistance = Geometry | Distance, //!< Select geometry type/planarity and distance from near plane
-        All = GeometryAndDistance | ElementId, //!< Select all aspects
-    };
-private:
-    DgnElementId    m_elementId;
-    double          m_distanceFraction;
-    GeometryType    m_type;
-    Planarity       m_planarity;
-public:
-    PixelData() : m_distanceFraction(-1.0), m_type(GeometryType::Unknown), m_planarity(Planarity::Unknown) { }
-    PixelData(DgnElementId id, double distanceFraction, GeometryType geomType, Planarity planarity)
-        : m_elementId(id), m_distanceFraction(distanceFraction), m_type(geomType), m_planarity(planarity) { }
-
-    //! Returns the ID of the foremost element which contributed to the pixel, or an invalid ID if no element or if element IDs were not selected.
-    DgnElementId GetElementId() const { return m_elementId; }
-    //! Returns the fraction between the far and near clip planes (0 = far, 1.0 = near)
-    double GetDistanceFraction() const { return m_distanceFraction; }
-    //! Returns the foremost type of geometry that produced this pixel, or Unknown if geometry was not selected
-    GeometryType GetGeometryType() const { return m_type; }
-    //! Returns the planarity of the foremost geometry that produced this pixel, or Unknown if geometry was not selected
-    Planarity GetPlanarity() const { return m_planarity; }
-
-    void SetElementId(DgnElementId elemId) { m_elementId=elemId; }
-    void SetDistanceFraction(double fraction) { m_distanceFraction = fraction; }
-    void SetGeometry(GeometryType type, Planarity planarity) { m_type=type; m_planarity=planarity; }
-};
-
-ENUM_IS_FLAGS(PixelData::Selector);
-
-//=======================================================================================
-//! A rectangular array of pixels as read from a Target's render buffers.
-// @bsistruct                                                   Paul.Connelly   08/17
-//=======================================================================================
-struct IPixelDataBuffer : RefCountedBase
-{
-    //! Retrieve the data associated with the pixel at (x,y) in view coordinates.
-    //! Results are undefined if x or y is outside the bounds of the view rect.
-    virtual PixelData GetPixel(uint32_t x, uint32_t y) const = 0;
-};
-
-//=======================================================================================
 //! A Render::Target holds the current scene, the current set of dynamic Graphics, and the current decorators.
 //! When frames are composed, all of those Graphics are rendered, as appropriate.
 //! A Render::Target holds a reference to a Render::Device, and a Render::System
@@ -3652,85 +3040,42 @@ protected:
     bool m_abort;
     int  m_id; // for debugging
     System& m_system;
-    DevicePtr m_device;
     ClipVectorCPtr m_activeVolume;
-    GraphicListPtr m_currentScene;
-    DecorationListPtr m_dynamics;
-    Decorations m_decorations;
-    double m_tileSizeModifier;
-    uint32_t m_minimumFrameRate;
 
     virtual void _OnResized() {}
     virtual Point2d _GetScreenOrigin() const = 0;
     virtual BSIRect _GetViewRect() const = 0;
     virtual DVec2d _GetDpiScale() const = 0;
 
-    DGNVIEW_EXPORT Target(SystemR, double tileSizeModifier);
-    DGNVIEW_EXPORT ~Target();
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
 
 public:
     static void RecordGraphicsStats();
     virtual void _OnDestroy() {}
-    virtual void _Reset() {VerifyRenderThread(); m_currentScene=nullptr; m_activeVolume=nullptr; m_dynamics=nullptr; m_decorations=Decorations();}
-    virtual void _ChangeScene(GraphicListR scene, ClipVectorCP activeVolume, double lowestScore) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
-    virtual void _ChangeDynamics(DecorationListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
-    virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
-    virtual void _ChangeRenderPlan(PlanCR) = 0;
-    virtual void _DrawFrame(StopWatch&, double sceneSecondsElapsed) = 0;
-    virtual Image _ReadImage(BSIRectCR viewRect, Point2dCR targetSize) = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
-    virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
-    virtual void _OverrideFeatureSymbology(FeatureSymbologyOverridesCR) = 0;
-    virtual void _SetHiliteSet(DgnElementIdSet&&) = 0;
-    virtual void _SetFlashed(DgnElementId, double) = 0;
     virtual void _SetViewRect(BSIRect rect, bool temporary=false) {}
-    virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
-    virtual IPixelDataBufferCPtr _ReadPixels(BSIRectCR rect, PixelData::Selector selector) = 0;
-    DGNVIEW_EXPORT virtual void _QueueReset();
-    virtual int _SetGatherFrameTimings(bool gather) {return 0;}
-    virtual void _GetFrameTimings(double* timings) {}
-    virtual void _GetFrameTimingNames(WCharCP* timingNames) {}
 
     int GetId() const {return m_id;}
     void SetAbortFlag() {m_abort=true;}
     Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
     BSIRect GetViewRect() const {return _GetViewRect();}
     DVec2d GetDpiScale() const {return _GetDpiScale();}
-    DeviceCP GetDevice() const {return m_device.get();}
     DGNPLATFORM_EXPORT void DestroyNow();
     void OnResized() {_OnResized();}
     GraphicBuilderPtr CreateGraphic(GraphicBuilder::CreateParams const& params) {return m_system._CreateGraphic(params);}
-    GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) {return m_system._CreateSprite(sprite, location, xVec, transparency, db);}
     MaterialPtr GetMaterial(RenderMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
     TexturePtr CreateTexture(ImageCR image, DgnDbR db) const {return m_system._CreateTexture(image, db);}
     TexturePtr CreateTexture(ImageSourceCR source, DgnDbR db, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, bottomUp, db);}
-    TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     LightPtr CreateLight(Lighting::Parameters const& params, DVec3dCP direction=nullptr, DPoint3dCP location=nullptr) {return m_system._CreateLight(params, direction, location);}
     SystemR GetSystem() {return m_system;}
 
-    static constexpr double DefaultTileSizeModifier()
-        {
-#ifdef BENTLEYCONFIG_GRAPHICS_DIRECTX // *** WIP - we are trying to predict the likely graphics performance of the box.
-        return 1.0; // Plan for the best on Windows (desktop) computers.
-#else
-        return 2.5; // Plan for the worst on mobile devices
-#endif
-        }
-
-    static constexpr uint32_t DefaultMinimumFrameRate() { return 15; }
     static constexpr double Get2dFrustumDepth() {return DgnUnits::OneMeter();}
     static constexpr int32_t GetMaxDisplayPriority() {return (1<<23)-32;}
     static constexpr int32_t GetMinDisplayPriority() {return -GetMaxDisplayPriority();}
     static constexpr double GetDisplayPriorityFactor() {return Get2dFrustumDepth() / (double) (GetMaxDisplayPriority()+1);}
     static double DepthFromDisplayPriority(int32_t priority) {return GetDisplayPriorityFactor() * (double) priority;}
-    double GetTileSizeModifier() const {return m_tileSizeModifier;}
-    void SetTileSizeModifier(double mod) {m_tileSizeModifier=mod;}
-    uint32_t GetMinimumFrameRate() const {return m_minimumFrameRate;}
-    uint32_t SetMinimumFrameRate(uint32_t minimumFrameRate) {return _SetMinimumFrameRate(minimumFrameRate);}
-    double GetMaximumTileSizeModifier() const {return 8.0;}
 
     //! Make the specified rectangle have the specified aspect ratio
     //! @param[in] requestedRect    The rectangle within the view that the caller would like to capture

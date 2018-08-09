@@ -118,7 +118,6 @@ struct Root2d : Attachment::Root
     TileTree::RootPtr                       m_viewRoot;
     Transform                               m_drawingToAttachment;
     ClipVectorPtr                           m_graphicsClip;
-    Render::FeatureSymbologyOverridesCPtr   m_symbologyOverrides;
 private:
     Root2d(Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Dgn::ViewController2dR view, TileTree::RootR viewRoot);
 public:
@@ -797,17 +796,6 @@ DRange2d Sheet::Border::GetRange() const
     return range;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr Sheet::Model::CreateBorder(DecorateContextR context, DPoint2dCR size)
-    {
-    Border border(context, size, Border::CoordSystem::View);
-    Render::GraphicBuilderPtr builder = context.CreateViewBackground();
-    border.AddToBuilder(*builder);
-    return builder->Finish();
-    }
-
 #define MAX_SHEET_REFINE_DEPTH 6
 
 /*---------------------------------------------------------------------------------**//**
@@ -906,10 +894,6 @@ void Sheet::Attachment::Tile3d::CreateGraphics(SceneContextR context)
 
         viewport->SetSceneDepth(GetDepth(), tree);
         viewport->SetupFromViewController();
-
-        // Create the scene, and if the scene is complete, mark state ready
-        currentState = viewport->_CreateScene(plan, currentState);
-        SetState(currentState);
         }
 
     switch (currentState)
@@ -945,7 +929,6 @@ void Sheet::Attachment::Tile3d::CreateGraphics(SceneContextR context)
                 rootToNpc->M1.MultiplyAndRenormalize(frustPts, frustPts, NPC_CORNER_COUNT);
                 viewport->SetupFromFrustum(frust);
 
-                viewport->_RenderTexture();
                 if (viewport->m_texture.IsNull())
                     {
                     SetNotFound();
@@ -1010,15 +993,6 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
         }
 
     return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::ViewController::_DrawDecorations(DecorateContextR context)
-    {
-    auto border = Sheet::Model::CreateBorder(context, m_size);
-    context.SetViewBackground(*border);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1224,7 +1198,6 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     args.m_location = myRoot.m_drawingToAttachment;
     args.m_viewFlagsOverrides = Render::ViewFlagsOverrides(myRoot.m_view->GetViewFlags());
     args.m_clip = GetRoot2d().m_graphicsClip.get();
-    args.m_graphics.m_symbologyOverrides = GetRoot2d().m_symbologyOverrides;
 
     myRoot.m_view->CreateScene(args);
 
@@ -1584,9 +1557,6 @@ Sheet::Attachment::Root3d::Root3d(Sheet::ViewController& sheetController, ViewAt
 Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Dgn::ViewController2dR view, TileTree::RootR viewRoot)
     : T_Super(view.GetViewedModelId(), sheetController, attach, context, view), m_view(&view), m_viewRoot(&viewRoot)
     {
-    // Ensure elements inside the view attachment are not affected to changes to category display etc for the sheet view.
-    m_symbologyOverrides = Render::FeatureSymbologyOverrides::Create(view);
-
     auto& viewDef = view.GetViewDefinitionR();
     DRange3d attachRange = attach.GetPlacement().CalculateRange();
     double attachWidth = attachRange.high.x - attachRange.low.x,

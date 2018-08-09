@@ -1015,49 +1015,6 @@ RedlineModel::ImageDef RedlineViewController::GetImageDef() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineViewController::_DrawDecorations(DecorateContextR context)
-    {
-    auto material = LoadBackgroundMaterial(context);
-    if (nullptr == material)
-        return;
-
-    auto def = GetImageDef();
-    BeAssert(def.IsValid());
-
-    double left = def.m_origin.x,
-           bottom = def.m_origin.y,
-           right = left + def.m_size.x,
-           top = bottom + def.m_size.y;
-
-    DPoint3d pts[5] =
-        {
-        DPoint3d::FromXYZ(left, bottom, 0.0),
-        DPoint3d::FromXYZ(left, top, 0.0),
-        DPoint3d::FromXYZ(right, top, 0.0),
-        DPoint3d::FromXYZ(right, bottom, 0.0),
-        DPoint3d::FromXYZ(left, bottom, 0.0)
-        };
-
-    context.GetViewportR().WorldToView(pts, pts, 5);
-
-    static const ColorDef color = ColorDef(0xfe, 0xff, 0);
-    Render::GraphicParams params;
-    params.SetMaterial(material);
-    params.SetFillColor(color);
-    params.SetIsFilled(true);
-    params.SetIsBlankingRegion(true);
-
-    auto graphic = context.CreateViewBackground();
-    graphic->ActivateGraphicParams(params);
-    graphic->AddShape(5, pts, true);
-
-    context.SetViewBackground(*graphic->Finish());
-    //context.AddViewOverlay(*graphic->Finish());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 RedlinePtr Redline::Create(DgnDbStatus* outCreateStatus, DocumentListModelCR model, Utf8StringCR name)

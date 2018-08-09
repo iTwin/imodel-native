@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/HypermodelingViewController.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -147,36 +147,6 @@ void HypermodelingViewController::PopClipsForInContextViewPass (ViewContextR con
     if (s_flatten)
         context.PopTransformClip();
 #endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus HypermodelingViewController::_StrokeHit(DecorateContextR context, GeometrySourceCR source, HitDetailCR hit)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    //  If the hit is in the drawing view, draw that view
-    for (auto drawing : m_drawings)
-        {
-        if (drawing->GetTargetModel() == &hit.GetDgnModel())
-            {
-            m_pass = PASS_ForPicking;
-            PushClipsForInContextViewPass (context, *drawing);
-            Render::GraphicPtr graphic = drawing->_StrokeHit (context, source, hit);
-            PopClipsForInContextViewPass (context, *drawing);
-            m_pass = PASS_None;
-            return graphic;
-            }
-        }
-
-    //  The hit must be in the physical view
-    PushClipsForSpatialView (context);
-    Render::GraphicPtr graphic = m_currentViewController->_StrokeHit(context, source, hit);
-    PopClipsForSpatialView (context);
-    return graphic;
-#endif
-
-    return T_Super::_StrokeHit(context, source, hit);
     }
 
 //---------------------------------------------------------------------------------------

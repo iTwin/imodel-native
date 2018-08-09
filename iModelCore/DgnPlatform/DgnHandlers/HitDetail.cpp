@@ -565,30 +565,6 @@ HitDetail::HitDetail(HitDetail const& from) : m_viewport(from.m_viewport), m_she
 HitDetail::~HitDetail() {}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_Draw(DecorateContextR context) const {context.DrawHit(*this);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::FlashGraphic(Render::GraphicR graphic, DecorateContextR context) const
-    {
-    ColorDef color = context.GetViewport()->GetHiliteColor();
-    Render::OvrGraphicParams ovrParams;
-
-    ovrParams.SetLineColor(color);
-    ovrParams.SetFillColor(color);
-    ovrParams.SetLineTransparency(0x40);
-    ovrParams.SetFillTransparency(0x40);
-
-    // NOTE: Pushing graphic towards eye was problematic depending on zoom (could end up outside project extents).
-    //       Since we're mostly trying to optimize for "edge" hits here (flashing element is handled by Viewport::SetFlashed) we're
-    //       always going to use a world overlay. Solids look ok drawn as overlay now, that wasn't the case with QVis...
-    context.AddWorldOverlay(graphic, &ovrParams);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbR HitDetail::GetDgnDb() const
@@ -877,34 +853,6 @@ bool IntersectDetail::_IsSameHit(HitDetailCP otherPath) const
     HitDetailCP o2 = ((IntersectDetail*) otherPath)->GetSecondHit();
 
     return GetSecondHit()->IsSameHit(o2);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* IntersctPaths override the "DrawInView" method to hilite/unhilte BOTH paths that are part of the
-* intersction. The "base" path is drawn using the drawmode of the call, but the "second" path
-* is drawn using a dashed symbology.
-* @bsimethod                                                    KeithBentley    06/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectDetail::_Draw(DecorateContextR context) const
-    {
-    // start by drawing the first path normally
-    T_Super::_Draw(context);
-
-    SnapDetail tmpSnapDetail(m_secondHit); // So display handlers know this is from a snap...
-
-#if defined(WIP_HILITE)
-    // NOTE: When we're flashing, the hilite flags are not necessarily set on the elements. So to get the second path
-    //       drawn hilited, we need to turn on its hilited flag temporarily, and then restore it.
-    bool currHilite = tmpSnapDetail.IsHilited();
-
-    tmpSnapDetail.SetHilited(true);
-#endif
-    tmpSnapDetail.SetSubSelectionMode(GetSubSelectionMode()); // Set correct flash mode...
-    tmpSnapDetail.Draw(context);
-
-#if defined(WIP_HILITE)
-    tmpSnapDetail.SetHilited(currHilite);
-#endif
     }
 
 /*=================================================================================**//**

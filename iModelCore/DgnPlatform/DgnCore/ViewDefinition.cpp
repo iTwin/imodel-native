@@ -1397,7 +1397,7 @@ Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
     lights->m_fstop = GetSceneBrightness();
 
 //#define IBL_TESTING
-#define ENVIRONMENT_REFLECTIONS
+// #define ENVIRONMENT_REFLECTIONS
 
 #ifdef IBL_TESTING
     static WCharP      testIbls[] = 

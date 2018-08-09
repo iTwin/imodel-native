@@ -12,41 +12,6 @@ USING_REVISION_COMPARISON_NAMESPACE
 USING_NAMESPACE_BENTLEY_SQLITE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Symbology::InitializeDefaults()
-    {
-    static const double s_backgroundElementTransparency = 0.8 * 255;
-	// static const double s_backgroundLineTransparency = 255;
-    Appearance inserted, updated, deleted;
-    updated.SetRgb(ColorDef::VersionCompareModified());
-    inserted.SetRgb(ColorDef::VersionCompareInserted());
-    deleted.SetRgb(ColorDef::VersionCompareDeleted());
-    updated.SetAlpha(0);
-    inserted.SetAlpha(0);
-    deleted.SetAlpha(0);
-    updated.SetIgnoresMaterial(true);
-    inserted.SetIgnoresMaterial(true);
-    deleted.SetIgnoresMaterial(true);
-
-    m_current.SetAppearance(DbOpcode::Insert, inserted);
-    m_current.SetAppearance(DbOpcode::Update, updated);
-    m_current.SetAppearance(DbOpcode::Delete, deleted);
-
-    inserted.SetAlpha(0x80);
-    deleted.SetAlpha(0x80);
-
-    m_target.SetAppearance(DbOpcode::Insert, inserted);
-    m_target.SetAppearance(DbOpcode::Update, updated);
-    m_target.SetAppearance(DbOpcode::Delete, deleted);
-
-    m_untouched.SetIgnoresMaterial(true);
-    m_untouched.SetRgb(ColorDef::VersionCompareBackground());
-    Byte bTransparency = (Byte) s_backgroundElementTransparency;
-    m_untouched.SetAlpha(bTransparency);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 PersistentState ComparisonData::GetPersistentState(DgnElementId id) const
@@ -94,7 +59,7 @@ StatusInt   ComparisonData::GetDbOpcode(DgnElementId elementId, BeSQLite::DbOpco
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
- RevisionComparison::Controller::Controller(SpatialViewDefinition const& view, ComparisonData const& data, Show flags, SymbologyCR symb) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(flags)//, m_label(TextString::Create())
+ RevisionComparison::Controller::Controller(SpatialViewDefinition const& view, ComparisonData const& data, Show flags) : T_Super(view), m_comparisonData(&data), m_show(flags)//, m_label(TextString::Create())
     {
     m_cnmHandler = [](RevisionComparison::ControllerPtr controller){ };
 
@@ -165,99 +130,11 @@ Render::GraphicPtr  RevisionComparison::Controller::_StrokeGeometry(ViewContextR
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) const
-    {
-    // Feature overrides are applied to the persistent elements.
-    // For the 'current revision' view, this renders inserted+updated elements with meaningful symbology, and everything else in a uniform symbology.
-    // For the 'target revision' view, this renders every persistent element in a uniform symbology.
-    // Updated+deleted elements are rendered as decorations in 'target revision' -- see Controller::_DrawDecorations()
-
-    if (m_focusedElementId.IsValid())
-        {
-        // TFS#742735: If we've set the focused element, apply special symbology only to it - draw everything else in uniform ('untouched') symbology
-        PersistentState lookupKey(m_focusedElementId, DbOpcode::Insert); // operator< only compares element IDs...
-        auto iter = m_comparisonData->GetPersistentStates().find(lookupKey);
-        if (m_comparisonData->GetPersistentStates().end() != iter)
-            ovrs.OverrideElement(m_focusedElementId, m_symbology.GetCurrentRevisionOverrides(iter->m_opcode));
-        }
-    else if (WantShowCurrent())
-        {
-        for (auto const& entry : m_comparisonData->GetPersistentStates())
-            ovrs.OverrideElement(entry.m_elementId, m_symbology.GetCurrentRevisionOverrides(entry.m_opcode));
-        }
-
-    ovrs.SetDefaultOverrides(m_symbology.GetUntouchedOverrides());
-
-    if (WantShowOnlyTarget())
-        {
-        // In 'target' view, hide persistent state of modified and inserted elements
-        for (auto const& entry : m_comparisonData->GetPersistentStates())
-            if (entry.IsInsertion() || entry.IsModified())
-                ovrs.NeverDraw(entry.m_elementId);
-        }
-
-    T_Super::_AddFeatureOverrides(ovrs);
-
-#if defined(TODO_VERSION_COMPARE_MESS)
-    /* ###TODO: To support this we need to allow the 'overrides' for an element to specify 'don't override anything' - otherwise it gets the default overrides
-    DgnElementId elementId = el->GetElementId();
-
-    // TFS#742735: Only colorize focused element if we have set this ViewController to do so
-    if (m_focusedElementId.IsValid() && m_focusedElementId != el->GetElementId())
-        {
-        m_symbology.GetUntouchedOverrides(symbologyOverrides);
-        //T_Super::_OverrideGraphicParams(symbologyOverrides, source);
-        return;
-        }
-    */
-
-    if (WantShowCurrent())
-        {
-        for (auto const& entry : m_comparisonData->GetPersistentStates())
-            ovrs.OverrideElement(entry.m_elementId, m_symbology.GetCurrentRevisionOverrides(entry.m_opcode));
-        }
-
-    bmap<DgnElementId,DbOpcode>::const_iterator persistent = m_persistentOpcodeCache.find(elementId);
-    bmap<DgnElementId,DbOpcode>::const_iterator transient = m_transientOpcodeCache.find(elementId);
-    if (WantShowTarget())
-    if (WantShowCurrent() && !m_visitingTransientElements && persistent != m_persistentOpcodeCache.end())
-        {
-        for (auto const& entry : m_comparisonData->GetTransientStates())
-        m_symbology.GetCurrentRevisionOverrides(persistentOpcode, symbologyOverrides);
-        }
-
-    ovrs.SetDefaultOverrides(m_symbology.GetUntouchedOverrides());
-
-    T_Super::_AddFeatureOverrides(ovrs);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Controller::_CreateScene(SceneContextR context)
     {
     auto status = T_Super::_CreateScene(context);
-#if defined(TODO_VERSION_COMPARE_MESS)
-    if (WantShowTarget())
-        {
-        if (transient != m_transientOpcodeCache.end() && m_visitingTransientElements)
-            {
-            m_symbology.GetTargetRevisionOverrides(transient->second, symbologyOverrides);
-            // Joe doesn't want to show the transient/updated state of a modified element
-            // if we are showing them in a single view
-        if (!WantShowBoth() && persistent != m_persistentOpcodeCache.end())
-                continue;
-
-            auto geom = entry.m_element->ToGeometrySource();
-            if (nullptr != geom)
-                context.VisitGeometry(*geom);
-            }
-        }
-#endif
-
     return status;
     }
 
@@ -358,54 +235,6 @@ Render::GraphicP TransientState::GetGraphic(ViewContextR context) const
         m_graphic = geomElem->Stroke(context, 0.0);
 
     return m_graphic.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    08/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    RevisionComparison::Controller::_DrawDecorations(DecorateContextR context)
-    {
-    T_Super::_DrawDecorations(context);
-
-    if (!WantShowTarget())
-        return;
-
-    for (auto& element : m_comparisonData->GetTransientStates())
-        {
-        // Joe doesn't want to show the transient/updated state of a modified element
-        // if we are showing them in a single view
-        if (WantShowBoth() && element.IsModified())
-            continue;
-
-        Render::GraphicP graphic = element.GetGraphic(context);
-        if (nullptr == graphic)
-            continue;
-
-        bool useUntouched = m_focusedElementId.IsValid() && m_focusedElementId != element.m_element->GetElementId();
-        Symbology::Appearance app = useUntouched ? m_symbology.GetUntouchedOverrides() : m_symbology.GetTargetRevisionOverrides(element.m_opcode);
-        OvrGraphicParams ovrs = app.ToOvrGraphicParams();
-        context.AddWorldDecoration(*graphic, app.OverridesSymbology() ? &ovrs : nullptr);
-        }
-
-#ifdef USE_LABEL
-    // We only display overlay of version numbers when we have two separate views
-    if (WantShowBoth() || !m_label.IsValid())
-        return;
-
-    auto graphic = context.CreateViewGraphic();
-
-    DPoint3d low        = DPoint3d::FromZero();
-    DPoint3d position   = DPoint3d::FromZero();
-    if (nullptr != m_vp)
-        getViewCorners(low, position, 30, *m_vp);
-
-    position.z = 0;
-    position.x = low.x;
-    m_label->SetOriginFromJustificationOrigin(position, TextString::HorizontalJustification::Left, TextString::VerticalJustification::Bottom);
-
-    graphic->AddTextString(*m_label);
-    context.AddViewOverlay(*graphic->Finish());
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

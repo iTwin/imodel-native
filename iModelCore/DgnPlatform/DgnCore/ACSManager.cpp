@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ACSManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -402,97 +402,6 @@ void AuxCoordSystem::_AddAxis(GraphicBuilderR builder, uint32_t axis, ACSDisplay
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool isOriginInView(DPoint3dR drawOrigin, DgnViewportCR viewport, bool adjustOrigin)
-    {
-    DPoint3d    testPtView, screenRange;
-    Frustum     frustum = viewport.GetFrustum(DgnCoordSystem::Screen, false);
-
-    viewport.WorldToView(&testPtView, &drawOrigin, 1);
-
-    screenRange.x = frustum.GetCorner(NPC_000).Distance(frustum.GetCorner(NPC_100));
-    screenRange.y = frustum.GetCorner(NPC_000).Distance(frustum.GetCorner(NPC_010));
-    screenRange.z = frustum.GetCorner(NPC_000).Distance(frustum.GetCorner(NPC_001));
-
-    // Check if current acs origin is outside view...
-    bool inView = (!((testPtView.x < 0 || testPtView.x > screenRange.x) || (testPtView.y < 0 || testPtView.y > screenRange.y)));
-
-    if (!adjustOrigin)
-        return inView;
-
-    if (!inView)
-        {
-        double offset = viewport.PixelsFromInches(TRIAD_SIZE_INCHES);
-
-        LIMIT_RANGE(offset, screenRange.x-offset, testPtView.x);
-        LIMIT_RANGE(offset, screenRange.y-offset, testPtView.y);
-        }
-
-    // Limit point to NPC box to prevent triad from being clipped from display...
-    DPoint3d originPtNpc;
-
-    viewport.ViewToNpc(&originPtNpc, &testPtView, 1);
-    LIMIT_RANGE(0.0, 1.0, originPtNpc.x);
-    LIMIT_RANGE(0.0, 1.0, originPtNpc.y);
-    LIMIT_RANGE(0.0, 1.0, originPtNpc.z);
-    viewport.NpcToView(&testPtView, &originPtNpc, 1);
-    viewport.ViewToWorld(&drawOrigin, &testPtView, 1);
-
-    return inView;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   01/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicBuilderPtr AuxCoordSystem::_CreateGraphic(DecorateContextR context, ACSDisplayOptions options) const
-    {
-    bool        checkOutOfView = (ACSDisplayOptions::None != (options & ACSDisplayOptions::CheckVisible));
-    DPoint3d    drawOrigin = _GetOrigin();
-
-    if (checkOutOfView && !isOriginInView(drawOrigin, *context.GetViewport(), true))
-        options = options | ACSDisplayOptions::Deemphasized;
-
-    double      pixelSize = context.GetViewport()->PixelsFromInches(TRIAD_SIZE_INCHES); // Active size...
-
-    if (ACSDisplayOptions::None != (options & ACSDisplayOptions::Deemphasized))
-        pixelSize *= 0.8;
-    else if (ACSDisplayOptions::None == (options & ACSDisplayOptions::Active))
-        pixelSize *= 0.9;
-
-    double      exagg = context.GetViewport()->GetViewController().GetViewDefinition().GetAspectRatioSkew();
-    double      scale = context.GetPixelSizeAtPoint(&drawOrigin) * pixelSize;
-    RotMatrix   rMatrix = _GetRotation();
-    Transform   transform;
-
-    rMatrix.InverseOf(rMatrix);
-    rMatrix.ScaleRows(rMatrix, scale, scale / exagg, scale);
-    transform.InitFrom(rMatrix, drawOrigin);
-
-    auto graphic = context.CreateWorldOverlay(transform);
-
-    DgnViewportR vp = *context.GetViewport();
-    _AddAxis(*graphic, 0, options, vp);
-    _AddAxis(*graphic, 1, options, vp);
-    _AddAxis(*graphic, 2, options, vp);
-
-    return graphic;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void AuxCoordSystem::_Display(DecorateContextR context, ACSDisplayOptions options) const
-    {
-    Render::GraphicBuilderPtr graphic = _CreateGraphic(context, options);
-
-    if (!graphic.IsValid())
-        return;
-
-    context.AddWorldOverlay(*graphic->Finish());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AuxCoordSystem::_Pick(PickContextR context) const
@@ -783,35 +692,6 @@ bool AuxCoordSystem::GetGridSpacing(DPoint2dR spacing, uint32_t& gridPerRef, Poi
     gridOffset.x = gridOffset.y = 0;
 
     return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void AuxCoordSystem::_DrawGrid(DecorateContextR context) const
-    {
-    // Called for active ACS when grid orientation is GridOrientationType::ACS.
-    uint32_t    gridPerRef;
-    Point2d     gridReps, gridOffset;
-    DPoint2d    spacing;
-    DPoint3d    origin = _GetOrigin();
-    RotMatrix   rMatrix = _GetRotation();
-
-    // Adjust origin for grid offset if we are displaying a fixed sized grid plane...
-    if (GetGridSpacing(spacing, gridPerRef, gridReps, gridOffset, *context.GetViewport()) && (0 != gridOffset.x || 0 != gridOffset.y))
-        {
-        DVec3d  xVec, yVec;
-
-        rMatrix.GetRow(xVec, 0);
-        rMatrix.GetRow(yVec, 1);
-
-        xVec.Scale(spacing.x);
-        yVec.Scale(spacing.y);
-
-        origin.SumOf(origin, xVec, -gridOffset.x, yVec, -gridOffset.y);
-        }
-
-    context.DrawStandardGrid(origin, rMatrix, spacing, gridPerRef, false, &gridReps);
     }
 
 /*---------------------------------------------------------------------------------**//**

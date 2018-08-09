@@ -1548,8 +1548,7 @@ double DrawArgs::ComputeTileDistance(TileCR tile) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DrawArgs::GetTileSizeModifier() const
     {
-    TargetCP target = m_context.GetViewportR().GetRenderTarget();
-    double targetMod = nullptr != target ? target->GetTileSizeModifier() : 1.0;
+    double targetMod = 1.0;
     return targetMod * m_context.GetUpdatePlan().GetTileOptions().GetScale();
     }
 

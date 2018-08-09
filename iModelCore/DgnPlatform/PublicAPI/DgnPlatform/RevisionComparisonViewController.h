@@ -27,44 +27,8 @@ using DbOpcode = BeSQLite::DbOpcode;
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Controller);
 DEFINE_REF_COUNTED_PTR(Controller);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Symbology);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ComparisonData);
 DEFINE_REF_COUNTED_PTR(ComparisonData);
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   04/17
-//=======================================================================================
-struct Symbology
-{
-    using Appearance = Render::FeatureSymbologyOverrides::Appearance;
-private:
-    struct Overrides
-    {
-        Appearance  m_appearance[3];
-
-        static constexpr size_t GetIndex(DbOpcode opcode) { return DbOpcode::Insert == opcode ? 0 : (DbOpcode::Update == opcode ? 1 : 2); }
-
-        Appearance& GetAppearance(DbOpcode opcode) { return m_appearance[GetIndex(opcode)]; }
-        Appearance const& GetAppearance(DbOpcode opcode) const { return m_appearance[GetIndex(opcode)]; }
-        void SetAppearance(DbOpcode opcode, Appearance const& app) { m_appearance[GetIndex(opcode)] = app; }
-    };
-
-    Overrides   m_current;
-    Overrides   m_target;
-    Appearance  m_untouched;
-public:
-    Symbology() { InitializeDefaults(); }
-
-    Appearance GetCurrentRevisionOverrides(DbOpcode opcode) const { return m_current.GetAppearance(opcode); }
-    Appearance GetTargetRevisionOverrides(DbOpcode opcode) const { return m_target.GetAppearance(opcode); }
-    Appearance GetUntouchedOverrides() const { return m_untouched; }
-
-    Appearance& GetCurrentRevisionOverrides(DbOpcode opcode) { return m_current.GetAppearance(opcode); }
-    Appearance& GetTargetRevisionOverrides(DbOpcode opcode) { return m_target.GetAppearance(opcode); }
-    Appearance& GetUntouchedOverrides() { return m_untouched; }
-
-    DGNPLATFORM_EXPORT void InitializeDefaults();
-};
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   04/17
@@ -156,7 +120,6 @@ struct EXPORT_VTABLE_ATTRIBUTE Controller : SpatialViewController
         kShowBoth = kShowCurrent | kShowTarget,
     };
 protected:
-    Symbology           m_symbology;
     ComparisonDataCPtr  m_comparisonData;
     Show                m_show;
     bmap<DgnElementId, DbOpcode>    m_persistentOpcodeCache;
@@ -169,23 +132,20 @@ protected:
     TextStringPtr       m_label;
 #endif
     
-    DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR context) override;
     void _OnViewOpened (Dgn::DgnViewportR) override;
 
-    DGNPLATFORM_EXPORT void _AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const override;
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
     DGNPLATFORM_EXPORT Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
 
     void _OnCategoryChange(bool singleEnable) override;
     void _ChangeModelDisplay(DgnModelId, bool onOff) override;
 public:
-    static ControllerPtr Create(SpatialViewDefinition const& view, ComparisonDataCR data, Show show=kShowBoth, SymbologyCR symb=Symbology())
+    static ControllerPtr Create(SpatialViewDefinition const& view, ComparisonDataCR data, Show show=kShowBoth)
         {
-        return new Controller(view, data, show, symb);
+        return new Controller(view, data, show);
         }
 
     void SetShow(Show show) { m_show = show; SetFeatureOverridesDirty(); }
-    void SetSymbology(SymbologyCR symb) { m_symbology = symb; SetFeatureOverridesDirty(); }
     bool WantShowBoth() const { return WantShowCurrent() && WantShowTarget(); }
     bool WantShowCurrent() const { return 0 != (m_show & kShowCurrent); }
     bool WantShowTarget() const { return 0 != (m_show & kShowTarget); }
@@ -198,7 +158,7 @@ public:
     DGNPLATFORM_EXPORT void SetCategoryDisplay(DgnCategoryIdSet& categories, bool visible);
     DGNPLATFORM_EXPORT void SetVersionLabel(Utf8String label);
     DGNPLATFORM_EXPORT void SetFocusedElementId(DgnElementId elementId) { m_focusedElementId = elementId; SetFeatureOverridesDirty(); }
-    DGNPLATFORM_EXPORT Controller(SpatialViewDefinition const& view, ComparisonDataCR data, Show flags, SymbologyCR symb=Symbology());
+    DGNPLATFORM_EXPORT Controller(SpatialViewDefinition const& view, ComparisonDataCR data, Show flags);
 };
 
 END_REVISION_COMPARISON_NAMESPACE

@@ -40,10 +40,8 @@ template<typename T> static void applyToTileTree(DgnViewportR vp, DgnModelId con
 //-------------------------------------------------------------------------------------------
 // @bsimethod                                                 Diego.Pinate     10/17
 //-------------------------------------------------------------------------------------------
-SubjectViewController::SubjectViewController(SpatialViewDefinition const& view, SubjectColorMap const& subjectColors)
-    : SpatialViewController(view)
+SubjectViewController::SubjectViewController(SpatialViewDefinition const& view) : SpatialViewController(view)
     {
-    m_subjectColors = subjectColors;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -146,21 +144,8 @@ void    SubjectViewController::SetModelsAndCategoriesVisibility(bool visible)
 //-------------------------------------------------------------------------------------------
 // @bsimethod                                                 Diego.Pinate     10/17
 //-------------------------------------------------------------------------------------------
-void    SubjectViewController::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) const
-    {
-    for (auto mapping : m_subjectColors)
-        ovrs.OverrideModel(mapping.first, mapping.second);
-    }
-
-//-------------------------------------------------------------------------------------------
-// @bsimethod                                                 Diego.Pinate     10/17
-//-------------------------------------------------------------------------------------------
 void    SubjectViewController::ToggleVisibility(DgnModelId modelId, bool isVisible)
     {
-    if (m_subjectColors.find(modelId) == m_subjectColors.end())
-        return;
-
-    ChangeModelDisplay(modelId, isVisible);
     }
 
 //-------------------------------------------------------------------------------------------
@@ -168,12 +153,6 @@ void    SubjectViewController::ToggleVisibility(DgnModelId modelId, bool isVisib
 //-------------------------------------------------------------------------------------------
 bool     SubjectViewController::IsVisible(DgnModelId modelId) const
     {
-    if (m_subjectColors.find(modelId) == m_subjectColors.end())
-        {
-        BeAssert(false && "Subject not found in View Controller.");
-        return false;
-        }
-    
     auto& models = GetSpatialViewDefinition().GetModelSelector().GetModelsR();
     return models.Contains(modelId);
     }

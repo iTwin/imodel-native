@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/IAuxCoordSys.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -70,15 +70,12 @@ protected:
     DGNPLATFORM_EXPORT virtual Utf8String _GetAxisLabel(uint32_t axis) const;
     DGNPLATFORM_EXPORT virtual void _AddAxisLabel(Render::GraphicBuilderR, uint32_t axis, ACSDisplayOptions, DgnViewportCR vp) const;
     DGNPLATFORM_EXPORT virtual void _AddAxis(Render::GraphicBuilderR, uint32_t axis, ACSDisplayOptions, DgnViewportCR vp) const;
-    DGNPLATFORM_EXPORT virtual Render::GraphicBuilderPtr _CreateGraphic(DecorateContextR, ACSDisplayOptions) const;
 
-    DGNPLATFORM_EXPORT virtual void _Display(DecorateContextR, ACSDisplayOptions) const;
     DGNPLATFORM_EXPORT virtual void _Pick(PickContextR) const;
 
     virtual StatusInt _GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, DPoint2dR spacing, uint32_t& gridPerRef) const {return ERROR;}
     virtual StatusInt _SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, DPoint2dCR spacing, uint32_t gridPerRef) {return ERROR;}
 
-    DGNPLATFORM_EXPORT virtual void _DrawGrid(DecorateContextR context) const;
     DGNPLATFORM_EXPORT virtual void _PointToGrid(DgnViewportR vp, DPoint3dR point) const;
 
     DGNPLATFORM_EXPORT virtual StatusInt _PointFromString(DPoint3dR outPoint, Utf8StringR errorMsg, Utf8CP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) const;
@@ -132,9 +129,6 @@ public:
     //! Set the description of the ACS object.
     void SetDescription(Utf8CP description) {SetPropertyValue("Description", description);}
 
-    //! Display a representation of the ACS in the given view.
-    void Display(DecorateContextR context, ACSDisplayOptions options) const {return _Display(context, options);}
-
     //! Allow snapping to ACS origin.
     void Pick(PickContextR context) const {return _Pick(context);}
 
@@ -142,9 +136,6 @@ public:
     bool GetGridSpacing(DPoint2dR spacing, uint32_t& gridPerRef, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const; //!< NOTE: Returns true when ACS overrides view's grid settings...
     StatusInt GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, DPoint2dR spacing, uint32_t& gridPerRef) const {return _GetStandardGridParams(gridReps, gridOffset, spacing, gridPerRef);}
     StatusInt SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, DPoint2dCR spacing, uint32_t gridPerRef) {return _SetStandardGridParams(gridReps, gridOffset, spacing, gridPerRef);}
-
-    //! Draw the grid to the specified context.
-    void DrawGrid(DecorateContextR context) const {return _DrawGrid(context);}
 
     //! Fix the point to the ACS's grid
     void PointToGrid(DgnViewportR viewport, DPoint3dR point) const {_PointToGrid(viewport, point);}

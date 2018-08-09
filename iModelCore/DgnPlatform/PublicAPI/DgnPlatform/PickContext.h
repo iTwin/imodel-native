@@ -159,9 +159,6 @@ public:
     void SetHitDescription(HitDescription* descr) {m_hitDescription = descr;}
     HitDescriptionPtr GetHitDescription() const {return m_hitDescription;}
 
-    DGNVIEW_EXPORT PickContext(LocateOptions const& options, StopLocateTest* stopTester=nullptr);
-    DGNVIEW_EXPORT bool PickElements(DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureDevice, HitListP hitList);
-    DGNVIEW_EXPORT TestHitStatus TestHit(HitDetailCR, DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList);
     static void InitBoresite(DRay3dR boresite, DPoint3dCR localPoint, DMatrix4dCR viewToLocal);
     static void InitBoresite(DRay3dR boresite, DPoint3dCR worldPoint, DgnViewportCR vp, TransformCP localToWorld=nullptr);
     static void InitBoresite(DRay3dR boresite, DgnButtonEventCR ev, TransformCP localToWorld=nullptr);

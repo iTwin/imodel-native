@@ -44,7 +44,6 @@
 #include "ECSqlClassParams.h"
 #include "LinkElement.h"
 #include "DgnProvenance.h"
-#include "MeshTile.h"
 #include "SnapContext.h"
 #include "NullContext.h"
 #include "Sprites.h"

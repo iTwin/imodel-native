@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCoreValueFormat.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1128,10 +1128,6 @@ Utf8String PointFormatter::ToString(DPoint3dCR point) const
 
     return outputString;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/12
-+---------------+---------------+---------------+---------------+---------------+------*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12

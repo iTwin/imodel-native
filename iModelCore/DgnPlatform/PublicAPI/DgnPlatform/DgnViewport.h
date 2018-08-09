@@ -73,34 +73,6 @@ struct IViewportAnimator : RefCountedBase
 };
 
 //=======================================================================================
-//! An IViewportAnimator which enables animated decorations. While the animator is
-//! active, decorations will be invalidated on each frame. The animator's
-//! _AnimateDecorations() function will be invoked to update any animation state; then
-//! decorations will be re-requested and rendered.
-//! decorations each frame for a set duration.
-// @bsistruct                                                   Paul.Connelly   12/17
-//=======================================================================================
-struct DecorationAnimator : IViewportAnimator
-{
-private:
-    BeTimePoint m_start;
-    BeTimePoint m_stop;
-
-protected:
-    DecorationAnimator(BeDuration duration) : m_start(BeTimePoint::Now()), m_stop(m_start + duration) { }
-
-    //! Override to update animation state, which can then be used on the next call to produce decorations.
-    //! @param[in] viewport The viewport being animated
-    //! @param[in] durationPercent The ratio of duration elapsed, in [0.0,1.0]
-    //! @returns RemoveMe::Yes to immediately remove this animator, RemoveMe::No to continue animating until duration elapsed or animator interrupted.
-    //! If this animator is interrupted, this function will be immediately invoked with durationPercent=1.0.
-    virtual RemoveMe _AnimateDecorations(DgnViewportR viewport, double durationPercent) { return RemoveMe::No; }
-
-    DGNPLATFORM_EXPORT RemoveMe _Animate(DgnViewportR) override;
-    DGNPLATFORM_EXPORT void _OnInterrupted(DgnViewportR) override;
-};
-
-//=======================================================================================
 /**
  A DgnViewport maps a set of DgnModels to an output device through a camera (a view frustum) and filters (e.g. categories, view flags, etc). 
  <p>
@@ -177,7 +149,6 @@ protected:
     Byte m_dynamicsTransparency = 64;
     Byte m_flashingTransparency = 100;
     size_t m_maxUndoSteps = 20;
-    uint32_t m_minimumFrameRate = Render::Target::DefaultMinimumFrameRate();
     DPoint3d m_viewOrg;                 // view origin, potentially expanded
     DVec3d m_viewDelta;                 // view delta, potentially expanded
     DPoint3d m_viewOrgUnexpanded;       // view origin (from ViewController, unexpanded)
@@ -209,20 +180,14 @@ protected:
     virtual double _GetCameraFrustumNearScaleLimit() const {return GetRenderTarget()->_GetCameraFrustumNearScaleLimit();}
 
     virtual bool _IsVisible() const {return true;}
-    DGNPLATFORM_EXPORT virtual void _CallDecorators(DecorateContextR);
-    virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Off;}
-    virtual Render::Plan::AntiAliasPref _WantAntiAliasText() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual void _SynchViewTitle() {}
     virtual void _Destroy() {DestroyViewport();}
     virtual void _Suspend() {SuspendViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(DPoint3dR origin, DVec3dR delta);
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
-    void ChangeScene(Render::Task::Priority);
     DGNPLATFORM_EXPORT void SaveViewUndo();
     DGNPLATFORM_EXPORT void Animate();
-    DGNVIEW_EXPORT bool ProcessFlash();
-    DGNVIEW_EXPORT void PrepareDecorations(UpdatePlan const&, Render::Decorations&);
 public:
     DgnViewport(Render::TargetP target) {SetRenderTarget(target);}
     virtual ~DgnViewport() {DestroyViewport();}
@@ -238,13 +203,7 @@ public:
 
     double GetFrustumFraction() const {return m_frustFraction;}
     bool IsVisible() {return _IsVisible();}
-    Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
-    Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     void AlignWithRootZ();
-    DGNVIEW_EXPORT bool RenderFrame(Render::Task::Priority priority, UpdatePlan const& plan, TileTree::TileRequestsR requests); // Generally, this should not be called directly
-    DGNVIEW_EXPORT bool RenderThumbnail(Render::Task::Priority priority, UpdatePlan const& plan, TileTree::TileRequestsR requests);
-    DGNVIEW_EXPORT void RenderSynchronousFrame(bool wantDecorators);
-    uint32_t GetMinimumTargetFrameRate() const {return m_minimumFrameRate;}
     DGNPLATFORM_EXPORT uint32_t SetMinimumTargetFrameRate(uint32_t frameRate);
     DGNPLATFORM_EXPORT void InvalidateScene() const;
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
@@ -261,23 +220,13 @@ public:
     DGNPLATFORM_EXPORT void ChangeViewController(ViewControllerR);
     bool Allow3dManipulations() const {return m_viewController->Allow3dManipulations();}
     void DrawToolGraphics(ViewContextR context, bool isPreUpdate);
-    DGNVIEW_EXPORT void SetViewCmdTargetCenter(DPoint3dCP newCenter);
     DPoint3dCP GetViewCmdTargetCenter() {return m_sync.IsValidRotatePoint() ? &m_viewCmdTargetCenter : nullptr;}
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNPLATFORM_EXPORT double PixelsFromInches(double inches) const;
-    DGNVIEW_EXPORT void SuspendForBackground();
-    DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
-    DGNVIEW_EXPORT void OnResized();
 
     void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps;}
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
-    void ChangeDynamics(Render::DecorationListP list, Render::Task::Priority);
-    DGNVIEW_EXPORT void ChangeRenderPlan(Render::Task::Priority);
-    DGNVIEW_EXPORT void ApplyViewState(ViewDefinitionCR val, bool saveInUndo=true, BeDuration animationTime=BeDuration::Milliseconds(250));
-    DGNVIEW_EXPORT void ApplyNext(BeDuration animationTime); 
-    DGNVIEW_EXPORT void ApplyPrevious(BeDuration animationTime);
-    DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
 
     DGNPLATFORM_EXPORT void SetFadeOutActive(bool val);
     bool IsFadeOutActive() const { return m_fadeOutActive; }
@@ -609,40 +558,6 @@ public:
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
 
     DGNPLATFORM_EXPORT void ChangeActiveVolume(ClipVectorP volume);
-
-    //! Read the current image from this viewport from the Rendering system. 
-    //! @param[in] viewRect The area of the view to read. The origin of \a viewRect must specify the upper left corner. It is an error to specify a view rectangle that lies outside the actual view. If not specified, the entire view is captured.
-    //! @param[in] targetSize The size of the Image to be returned. The size can be larger or smaller than the original view. If not specified, the returned image is full size.
-    //! @note By using a combination of \a viewRect and \a targetSize, you can tell this function to both clip and
-    //! scale the image in the view. For example, use \a viewRect to specify a rectangle within the view to get a clipped image.
-    //! Specify \a targetSize to be less than the size of the view rectangle to scale the image down. 
-    //! @note The viewRect is adjusted as necessary to preserve the aspect ratio.
-    //! The image is fitted to the smaller dimension of the viewRect and centered in the larger dimension.
-    //! @return the Image containing the RGBA pixels from the specified rectangle of the viewport. On error, image.IsValid() will return false.
-    DGNVIEW_EXPORT Render::Image ReadImage(BSIRectCR viewRect = BSIRect::From(0,0,-1,-1), Point2dCR targetSize=Point2d::From(0,0));
-
-    //! Read selected data about each pixel within a rectangular portion of the viewport.
-    //! @param[in] viewRect The area of the view to read. The origin specifies the upper-left corner. Must lie entirely within the viewport's dimensions.
-    //! @param[in] selector Specifies the type(s) of data to read.
-    //! @return an IPixelDataBuffer object from which the selected data can be retrieved, or nullptr on error.
-    DGNPLATFORM_EXPORT Render::IPixelDataBufferCPtr ReadPixels(BSIRectCR viewRect, Render::PixelData::Selector selector);
-
-    //! Return the NPC geometry point for pixel data.
-    //! @param[out] npc The npc point for visible geometry at the specified location.
-    //! @param[in] pixelData Pixel data (as returned from ReadPixels).
-    //! @param[in] x value in view coordinates.
-    //! @param[in] y value in view coordinates.
-    //! @return true if there is geometry visible at the specified location.
-    bool GetPixelDataNpcPoint(DPoint3dR npc, Render::IPixelDataBufferCR pixelData, int32_t x, int32_t y);
-
-    //! Return the world geometry point for pixel data.
-    //! @param[out] world The world point for visible geometry at the specified location.
-    //! @param[in] pixelData Pixel data (as returned from ReadPixels).
-    //! @param[in] x value in view coordinates.
-    //! @param[in] y value in view coordinates.
-    //! @return true if there is geometry visible at the specified location.
-    bool GetPixelDataWorldPoint(DPoint3dR world, Render::IPixelDataBufferCR pixelData, int32_t x, int32_t y);
-
 };
 
 
@@ -654,8 +569,6 @@ struct OffscreenViewport : DgnViewport
     BSIRect m_rect;
     BSIRect _GetViewRect() const override {return m_rect;}
     void SetRect(BSIRect rect, bool temporary=false) {m_rect=rect; m_renderTarget->_SetViewRect(rect, temporary);}
-    DGNVIEW_EXPORT OffscreenViewport();
-    DGNVIEW_EXPORT explicit OffscreenViewport(double tileSizeModifier);
 };
 
 //=======================================================================================

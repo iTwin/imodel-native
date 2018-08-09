@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnMarkupProject.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -239,7 +239,6 @@ protected:
     RedlineModel::ImageDef GetImageDef() const;
 
     void _DrawView(ViewContextR) override;
-    void _DrawDecorations(DecorateContextR) override;
 
 public:
     DGNPLATFORM_EXPORT static ViewController* Create(DgnDbStatus* openStatus, RedlineViewDefinitionR rdlViewDef);
