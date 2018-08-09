@@ -35,6 +35,9 @@ private:
         ClientInfoPtr clientInfo,
         std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
         BeFileNameCR dbPath,
+        bool offlineMode,
+        Utf8String projectId,
+        Utf8String featureString,
         IHttpHandlerPtr httpHandler
         );
 
@@ -45,15 +48,15 @@ public:
         ClientInfoPtr clientInfo,
         std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
         BeFileNameCR dbPath,
+        bool offlineMode,
+        Utf8String projectId = "",
+        Utf8String featureString = "",
         IHttpHandlerPtr customHttpHandler = nullptr
         );
 
     // TODO: Return more than BentleyStatus to indicate to the app if the user has rights to use this app or it's crippled etc...
     LICENSING_EXPORT LicenseStatus StartApplication(); 
     LICENSING_EXPORT BentleyStatus StopApplication();
-
-    LICENSING_EXPORT void SetProjectId(Utf8String projectId);
-    LICENSING_EXPORT void SetFeatureString(Utf8String featureString);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

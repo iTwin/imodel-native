@@ -19,10 +19,13 @@ const ConnectSignInManager::UserInfo& userInfo,
 ClientInfoPtr clientInfo,
 std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
+bool offlineMode,
+Utf8String projectId,
+Utf8String featureString,
 IHttpHandlerPtr httpHandler
 )
     {
-    m_impl = std::make_unique<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, httpHandler);
+    m_impl = std::make_unique<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, projectId, featureString, httpHandler);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -34,10 +37,13 @@ const ConnectSignInManager::UserInfo& userInfo,
 ClientInfoPtr clientInfo,
 std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
+bool offlineMode,
+Utf8String projectId,
+Utf8String featureString,
 IHttpHandlerPtr httpHandler
 )
     {
-    return std::shared_ptr<Client>(new Client(userInfo, clientInfo, authenticationProvider, dbPath, httpHandler));
+    return std::shared_ptr<Client>(new Client(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, projectId, featureString, httpHandler));
     }
    
 /*--------------------------------------------------------------------------------------+
@@ -54,20 +60,4 @@ LicenseStatus Client::StartApplication()
 BentleyStatus Client::StopApplication()
     {
     return m_impl->StopApplication();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Client::SetProjectId(Utf8String projectId)
-    {
-    m_impl->SetProjectId(projectId);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Client::SetFeatureString(Utf8String featureString)
-    {
-    m_impl->SetFeatureString(featureString);
     }

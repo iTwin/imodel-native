@@ -23,6 +23,7 @@ Headers + $(PublicApiDir)Licensing.h
 Headers + $(PublicApiDir)Utils/DelayedExecutor.h
 Headers + $(PublicApiDir)Utils/InMemoryJsonLocalState.h
 Headers + $(PublicApiDir)Utils/JWToken.h
+Headers + $(PublicApiDir)Utils/LogFileHelper.h
 Headers + $(PublicApiDir)Utils/SCVWritter.h
 Headers + $(PublicApiDir)Utils/TimeRetriever.h
 Headers + $(PublicApiDir)Utils/UrlSafeBase64Utilities.h
@@ -52,5 +53,7 @@ $(o)InMemoryJsonLocalState$(oext)    : $(SourceDir)Utils/InMemoryJsonLocalState.
 $(o)UrlSafeBase64Utilities$(oext)    : $(SourceDir)Utils/UrlSafeBase64Utilities.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)DelayedExecutor$(oext)           : $(SourceDir)Utils/DelayedExecutor.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)LogFileHelper$(oext)             : $(SourceDir)Utils/LogFileHelper.cpp $(Headers) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

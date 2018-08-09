@@ -28,11 +28,15 @@
 
 #define LICENSE_CLIENT_SCHEMA_VERSION       1.0
 
-#define LICCLIENT_NO_PROJECT_ID_STR         "00000000-0000-0000-0000-000000000000"
-
-#define USAGE_HEARTBEAT_INTERVAL_MS         5*1000     //60*1000
-#define POLICY_HEARTBEAT_INTERVAL_MS        30*60*1000 //60*60*1000
-#define LOG_POSTING_HEARTBEAT_INTERVAL_MS   30*60*1000 //60*60*1000
+#if defined(DEBUG)
+#define USAGE_HEARTBEAT_INTERVAL_MS         5*1000 
+#define POLICY_HEARTBEAT_INTERVAL_MS        30*60*1000
+#define LOG_POSTING_HEARTBEAT_INTERVAL_MS   30*60*1000
+#else
+#define USAGE_HEARTBEAT_INTERVAL_MS         60*1000
+#define POLICY_HEARTBEAT_INTERVAL_MS        60*60*1000
+#define LOG_POSTING_HEARTBEAT_INTERVAL_MS   60*60*1000
+#endif // DEBUG)
 
 // Log Posting Sources
 #define LOGPOSTINGSOURCE_REALTIME           "RealTime"
@@ -67,6 +71,7 @@ private:
     Utf8String m_featureString;
     Utf8String m_projectId;
     Utf8String m_correlationId;
+    bool m_offlineMode;
     std::shared_ptr<PolicyToken> m_policyToken;
 
     void UsageHeartbeat(int64_t currentTime);
@@ -90,15 +95,15 @@ public:
         ClientInfoPtr clientInfo,
         std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
         BeFileNameCR db_path,
+        bool offlineMode,
+        Utf8String projectId,
+        Utf8String featureString,
         IHttpHandlerPtr httpHandler
         );
 
     LICENSING_EXPORT LicenseStatus StartApplication(); 
     LICENSING_EXPORT BentleyStatus StopApplication();
     LICENSING_EXPORT LicenseStatus GetProductStatus(int requestedProductId=-1);
-
-    LICENSING_EXPORT void SetProjectId(Utf8String projectId);
-    LICENSING_EXPORT void SetFeatureString(Utf8String featureString);
 
     // usageSCV usage file to send
     // The company ID in SAP. // TODO: figure out where to get this one from.

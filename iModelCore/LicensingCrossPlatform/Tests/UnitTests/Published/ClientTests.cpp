@@ -104,7 +104,10 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
         manager->GetUserInfo(),
         clientInfo,
         manager,
-        dbPath, 
+        dbPath,
+        true,
+        "",
+        "",
         proxy);
     }
 
@@ -428,14 +431,14 @@ TEST_F(ClientTests, GetProductStatus_Test)
 //    // TODO: how to check if sending was successfull?
 //    }
 
-//TEST_F(ClientTests, CreateDemoClient_StartAndStopApplication_Succeeds)
-//    {
-//    auto client = CreateTestClient(true);
-//    using namespace std::chrono_literals;
-//
-//    EXPECT_EQ(client->StartApplication(), LICENSE_STATUS_Ok);
-//
-//    std::this_thread::sleep_for(5min);
-//
-//    EXPECT_SUCCESS(client->StopApplication());
-//    }
+TEST_F(ClientTests, DISABLE_CreateDemoClient_StartAndStopApplication_Succeeds)
+    {
+    auto client = CreateTestClient(true);
+    using namespace std::chrono_literals;
+
+    EXPECT_EQ(client->StartApplication(), LicenseStatus::Ok);
+
+    std::this_thread::sleep_for(5min);
+
+    EXPECT_SUCCESS(client->StopApplication());
+    }
