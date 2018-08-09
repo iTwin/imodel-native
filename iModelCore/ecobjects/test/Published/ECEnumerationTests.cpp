@@ -647,6 +647,15 @@ TEST_F(ECEnumerationTest, LookupEnumerationTest)
     shouldNotBeNull = schema->LookupEnumeration("testSchema:FoodType", true);
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("FoodType", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupEnumeration("R:FoodType");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("FoodType", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupEnumeration("REF:FoodType", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("FoodType", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupEnumeration("TESTSCHEMA:FoodType", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("FoodType", shouldNotBeNull->GetName().c_str());
     ASSERT_EQ(1, schema->GetEnumerationCount());
     }
 

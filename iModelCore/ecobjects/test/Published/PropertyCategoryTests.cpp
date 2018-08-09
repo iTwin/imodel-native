@@ -186,6 +186,18 @@ TEST_F(PropertyCategoryTest, LookupPropertyCategoryTest)
     shouldNotBeNull = schema->LookupPropertyCategory("ref:propCategory", true);
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupPropertyCategory("TS:propCategory");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupPropertyCategory("TESTSCHEMA:propCategory", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupPropertyCategory("R:propCategory");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupPropertyCategory("REF:propCategory", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
     ASSERT_EQ(1, schema->GetPropertyCategoryCount());
     }
 

@@ -265,6 +265,18 @@ TEST_F(FormatTest, LookupFormatTest)
     shouldNotBeNull = schema->LookupFormat("Formats:AmerFI", true);
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("AmerFI", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupFormat("TS:myformat");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("myformat", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupFormat("TESTSCHEMA:myformat", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("myformat", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupFormat("F:AmerFI");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("AmerFI", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupFormat("FORMATS:AmerFI", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("AmerFI", shouldNotBeNull->GetName().c_str());
     ASSERT_EQ(1, schema->GetFormatCount());
 
     }

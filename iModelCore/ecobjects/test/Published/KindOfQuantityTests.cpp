@@ -1165,6 +1165,15 @@ TEST_F(KindOfQuantityTest, LookupKindOfQuantityTest)
     shouldNotBeNull = koqSchema->LookupKindOfQuantity("koqSchema:MyKindOfQuantity", true);
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("MyKindOfQuantity", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = koqSchema->LookupKindOfQuantity("TS:MyKindOfQuantity");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("MyKindOfQuantity", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = koqSchema->LookupKindOfQuantity("TESTSCHEMA:MyKindOfQuantity", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("MyKindOfQuantity", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = koqSchema->LookupKindOfQuantity("KOQSCHEMA:MyKindOfQuantity", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("MyKindOfQuantity", shouldNotBeNull->GetName().c_str());
     ASSERT_EQ(1, koqSchema->GetKindOfQuantityCount());
     }
 

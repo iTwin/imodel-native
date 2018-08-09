@@ -1340,6 +1340,18 @@ TEST_F(ClassTest, LookupClassTest)
     shouldNotBeNull = refingSchema->LookupClass("rs:RemoteDerivedClass");
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("RemoteDerivedClass", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = refingSchema->LookupClass("TS:BaseClass");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("BaseClass", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = refingSchema->LookupClass("TESTSCHEMA:BaseClass", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("BaseClass", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = refingSchema->LookupClass("REFINGSCHEMA:RemoteDerivedClass", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("RemoteDerivedClass", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = refingSchema->LookupClass("RS:RemoteDerivedClass");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("RemoteDerivedClass", shouldNotBeNull->GetName().c_str());
     ASSERT_EQ(1, refingSchema->GetClassCount());
     }
 

@@ -136,6 +136,18 @@ TEST_F(UnitsTests, LookupUnitTest)
     shouldNotBeNull = schema->LookupUnit("Units:M", true);
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("M", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupUnit("TS:TestUnit");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("TestUnit", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupUnit("TESTSCHEMA:TestUnit", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("TestUnit", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupUnit("U:M");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("M", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupUnit("UNITS:M", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("M", shouldNotBeNull->GetName().c_str());
     bvector<Units::UnitCP> units;
     schema->GetUnitsContext().AllUnits(units);
     ASSERT_EQ(schema->GetUnitCount(), units.size());

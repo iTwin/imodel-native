@@ -73,6 +73,18 @@ TEST_F(UnitSystemTest, LookupSystemTest)
     shouldNotBeNull = schema->LookupUnitSystem("Units:SI", true);
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("SI", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupUnitSystem("TS:TestSystem");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("TestSystem", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupUnitSystem("TESTSCHEMA:TestSystem", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("TestSystem", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupUnitSystem("U:SI");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("SI", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupUnitSystem("UNITS:SI", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("SI", shouldNotBeNull->GetName().c_str());
     bvector<Units::UnitSystemCP> systems;
     unitContext->AllSystems(systems);
     ASSERT_EQ(schema->GetUnitSystemCount(), systems.size());
