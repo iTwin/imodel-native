@@ -10,7 +10,6 @@
             >
         <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest"/>
 
-        <SubPart PartName="RunGtest" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="RunGtest" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="RunGtest" PartFile="BeSQLite" Repository="BeSQLite"/>
         <SubPart PartName="RunGtest" PartFile="DgnPlatform" Repository="DgnPlatform"/>
@@ -30,7 +29,6 @@
             >
         <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest"/>
 
-        <SubPart PartName="RunAndroidJUnitTest" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="RunAndroidJUnitTest" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="RunAndroidJUnitTest" PartFile="BeSQLite" Repository="BeSQLite"/>
         <SubPart PartName="RunAndroidJUnitTest" PartFile="DgnPlatform" Repository="DgnPlatform"/>
@@ -47,7 +45,6 @@
             >
         <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest"/>
 
-        <SubPart PartName="RuniOSXCTest" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="RuniOSXCTest" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="RuniOSXCTest" PartFile="BeSQLite" Repository="BeSQLite"/>
         <SubPart PartName="RuniOSXCTest" PartFile="DgnPlatform" Repository="DgnPlatform"/>
@@ -64,7 +61,6 @@
             >
         <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest"/>
 
-        <SubPart PartName="RunUwpTest" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="RunUwpTest" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="RunUwpTest" PartFile="BeSQLite" Repository="BeSQLite"/>
         <SubPart PartName="RunUwpTest" PartFile="DgnPlatform" Repository="DgnPlatform"/>
