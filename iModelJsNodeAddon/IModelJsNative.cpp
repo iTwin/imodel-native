@@ -862,7 +862,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
     Napi::Value GetElement(Napi::CallbackInfo const& info)
         {
-        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, optsJsonStr, Env().Undefined());
         Json::Value opts = Json::Value::From(optsJsonStr);
         Json::Value elementJson;  // ouput
@@ -1660,7 +1659,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         if (stat != BE_SQLITE_ROW || size == 0)
             return Env().Undefined();
 
-        auto blob = Napi::ArrayBuffer::New(Env(), size);
+        auto blob = Napi::Uint8Array::New(Env(), size);
         db.QueryProperty(blob.Data(), size, spec, id, subId);
         return blob;
         }
@@ -1691,9 +1690,9 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             if (stat == BE_SQLITE_DONE)
                 stat = BE_SQLITE_OK;
             }
-        else if (val.IsArrayBuffer())
+        else if (val.IsTypedArray())
             {
-            auto arrayBuf = val.As<Napi::ArrayBuffer>();
+            auto arrayBuf = val.As<Napi::Uint8Array>();
             stat = db.SaveProperty(spec, arrayBuf.Data(), arrayBuf.ByteLength(), id, subId);
             }
         else
