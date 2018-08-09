@@ -706,26 +706,36 @@ BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumeratio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8StringR jsonStr, ECDbCR ecdb, KindOfQuantityCR koq)
+BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8StringR jsonStr, ECDbCR ecdb, KindOfQuantityCR koq, bool isEC32AvailableInFile)
     {
     BeAssert(!koq.GetPresentationFormats().empty());
     bvector<Utf8String> formatList;
-    for (NamedFormat const& format : koq.GetPresentationFormats())
+    if (isEC32AvailableInFile)
         {
-        if (format.IsProblem())
+        for (NamedFormat const& format : koq.GetPresentationFormats())
             {
-            ecdb.GetImpl().Issues().ReportV("Failed to import KindOfQuantity '%s'. One of its presentation formats is invalid: %s.", koq.GetFullName().c_str(), format.GetProblemDescription().c_str());
-            return ERROR;
-            }
+            if (format.IsProblem())
+                {
+                ecdb.GetImpl().Issues().ReportV("Failed to import KindOfQuantity '%s'. One of its presentation formats is invalid: %s.", koq.GetFullName().c_str(), format.GetProblemDescription().c_str());
+                return ERROR;
+                }
 
-        Utf8StringCR formatStr = format.GetQualifiedFormatString(koq.GetSchema());
-        if (formatStr.empty())
+            Utf8StringCR formatStr = format.GetQualifiedFormatString(koq.GetSchema());
+            if (formatStr.empty())
+                {
+                BeAssert(!formatStr.empty());
+                return ERROR;
+                }
+
+            formatList.push_back(formatStr);
+            }
+        }
+    else
+        {
+        for (Utf8StringCR ec32FusDescriptor : const_cast<KindOfQuantityR>(koq).GetDescriptorCache().second)
             {
-            BeAssert(!formatStr.empty());
-            return ERROR;
+            formatList.push_back(ec32FusDescriptor);
             }
-
-        formatList.push_back(formatStr);
         }
 
     return SerializeKoqPresentationFormats(jsonStr, formatList);

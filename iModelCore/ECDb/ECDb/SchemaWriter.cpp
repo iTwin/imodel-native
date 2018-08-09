@@ -31,13 +31,22 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
 
     for (ECSchemaCP schema : ctx.GetSchemasToImport())
         {
-        if (!ctx.IsEC32AvailableInFile() && schema->OriginalECXmlVersionLessThan(ECVersion::V3_2))
+        if (!ctx.IsEC32AvailableInFile())
             {
-            ctx.Issues().ReportV("Failed to import ECSchemas. Schema '%s' is an EC %" PRIu32 ".%" PRIu32 " schema. Schemas with ECVersion 3.2 or higher cannot be imported in a file that does not support EC3.2 yet.",
-                                 schema->GetFullSchemaName().c_str(), schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
-            return ERROR;
+            //If we import into pre-EC3.2 files, we must not import the units and formats schema
+            //as they are only deserialized temporarily by ECObjects
+            if (schema->GetName().EqualsIAscii("Units") ||schema->GetName().EqualsIAscii("Formats"))
+                continue;
 
+            if (schema->OriginalECXmlVersionAtLeast(ECVersion::V3_2))
+                {
+                ctx.Issues().ReportV("Failed to import ECSchemas. Schema '%s' is an EC %" PRIu32 ".%" PRIu32 " schema. Schemas with ECVersion 3.2 or higher cannot be imported in a file that does not support EC3.2 yet.",
+                                     schema->GetFullSchemaName().c_str(), schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
+                return ERROR;
+
+                }
             }
+
         if (SUCCESS != ImportSchema(ctx, *schema))
             return ERROR;
         }
@@ -130,40 +139,43 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
             }
         }
 
-    //Unit stuff must be imported before KOQs as KOQ reference them
-    for (UnitSystemCP us : ecSchema.GetUnitSystems())
+    if (ctx.IsEC32AvailableInFile())
         {
-        if (SUCCESS != ImportUnitSystem(ctx, *us))
+        //Unit stuff must be imported before KOQs as KOQ reference them
+        for (UnitSystemCP us : ecSchema.GetUnitSystems())
             {
-            ctx.Issues().ReportV("Failed to import UnitSystem '%s'.", us->GetFullName().c_str());
-            return ERROR;
+            if (SUCCESS != ImportUnitSystem(ctx, *us))
+                {
+                ctx.Issues().ReportV("Failed to import UnitSystem '%s'.", us->GetFullName().c_str());
+                return ERROR;
+                }
             }
-        }
 
-    for (PhenomenonCP ph : ecSchema.GetPhenomena())
-        {
-        if (SUCCESS != ImportPhenomenon(ctx, *ph))
+        for (PhenomenonCP ph : ecSchema.GetPhenomena())
             {
-            ctx.Issues().ReportV("Failed to import Phenomenon '%s'.", ph->GetFullName().c_str());
-            return ERROR;
+            if (SUCCESS != ImportPhenomenon(ctx, *ph))
+                {
+                ctx.Issues().ReportV("Failed to import Phenomenon '%s'.", ph->GetFullName().c_str());
+                return ERROR;
+                }
             }
-        }
 
-    for (ECUnitCP unit : ecSchema.GetUnits())
-        {
-        if (SUCCESS != ImportUnit(ctx, *unit))
+        for (ECUnitCP unit : ecSchema.GetUnits())
             {
-            ctx.Issues().ReportV("Failed to import Unit '%s'.", unit->GetFullName().c_str());
-            return ERROR;
+            if (SUCCESS != ImportUnit(ctx, *unit))
+                {
+                ctx.Issues().ReportV("Failed to import Unit '%s'.", unit->GetFullName().c_str());
+                return ERROR;
+                }
             }
-        }
 
-    for (ECFormatCP format : ecSchema.GetFormats())
-        {
-        if (SUCCESS != ImportFormat(ctx, *format))
+        for (ECFormatCP format : ecSchema.GetFormats())
             {
-            ctx.Issues().ReportV("Failed to import Format '%s'.", format->GetFullName().c_str());
-            return ERROR;
+            if (SUCCESS != ImportFormat(ctx, *format))
+                {
+                ctx.Issues().ReportV("Failed to import Format '%s'.", format->GetFullName().c_str());
+                return ERROR;
+                }
             }
         }
 
@@ -863,10 +875,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
     if (ctx.IsEC32AvailableInFile())
         persistenceUnitStr = koq.GetPersistenceUnit()->GetQualifiedName(koq.GetSchema());
     else
-        {
-        BeAssert(false && "WIP. Need ECObjects method to retrieve EC3.1 persistence unit FUS from KoQ");
-        persistenceUnitStr = "<WIP. Need ECObjects method to retrieve EC3.1 persistence unit FUS from KoQ>";
-        }
+        persistenceUnitStr = const_cast<KindOfQuantityR>(koq).GetDescriptorCache().first;
 
     BeAssert(!persistenceUnitStr.empty());
     if (BE_SQLITE_OK != stmt->BindText(6, persistenceUnitStr, Statement::MakeCopy::No))
@@ -875,7 +884,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
     Utf8String presUnitsJsonStr;
     if (!koq.GetPresentationFormats().empty())
         {
-        if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationFormats(presUnitsJsonStr, ctx.GetECDb(), koq))
+        if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationFormats(presUnitsJsonStr, ctx.GetECDb(), koq, ctx.IsEC32AvailableInFile()))
             return ERROR;
 
         if (BE_SQLITE_OK != stmt->BindText(7, presUnitsJsonStr, Statement::MakeCopy::No))
@@ -3046,7 +3055,7 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
         else
             {
             Utf8String presFormatsJson;
-            if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationFormats(presFormatsJson, ctx.GetECDb(), newKoq))
+            if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationFormats(presFormatsJson, ctx.GetECDb(), newKoq, ctx.IsEC32AvailableInFile()))
                 return ERROR;
 
             sqlUpdateBuilder.AddSetExp("PresentationUnits", presFormatsJson.c_str());

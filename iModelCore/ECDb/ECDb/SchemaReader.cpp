@@ -2770,38 +2770,11 @@ BentleyStatus SchemaReader::LegacyKindOfQuantityHelper::AssignPersistenceUnitAnd
         return ERROR;
         }
 
-    Utf8String persUnitName;
-    bvector<Utf8String> presFormatNames;
-    if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatNames, legacyPersUnit, legacyPresUnits, *m_formatsSchema, *m_unitsSchema))
+    if (ECObjectsStatus::Success != koq.FromFUSDescriptors(legacyPersUnit, legacyPresUnits, *m_formatsSchema, *m_unitsSchema))
         {
         LOG.errorv("Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
                    "Could not convert the legacy persistence and presentation units.", koq.GetFullName().c_str());
         return ERROR;
-        }
-
-    auto lookupUnit = [this] (Utf8StringCR unitAlias, Utf8StringCR unitName) { return m_unitsSchema->GetUnitCP(unitName.c_str()); };
-
-    if (ECObjectsStatus::Success != koq.AddPersistenceUnitByName(persUnitName, lookupUnit))
-        {
-        LOG.errorv("Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
-                   "Could not assign the converted persistence unit '%s'.", koq.GetFullName().c_str(), persUnitName.c_str());
-        return ERROR;
-        }
-
-    //PresentationFormats
-    if (!presFormatNames.empty())
-        {
-        auto lookupFormat = [this] (Utf8String alias, Utf8StringCR formatName) { return m_formatsSchema->GetFormatCP(formatName.c_str()); };
-
-        for (Utf8StringCR presFormatName : presFormatNames)
-            {
-            if (ECObjectsStatus::Success != koq.AddPresentationFormatByString(presFormatName, lookupFormat, lookupUnit))
-                {
-                LOG.errorv("Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
-                           "Could not assign the converted persistence format '%s'.", koq.GetFullName().c_str(), presFormatName.c_str());
-                return ERROR;
-                }
-            }
         }
 
     return SUCCESS;

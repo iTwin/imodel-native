@@ -77,7 +77,7 @@ public:
     static BentleyStatus SerializeEnumerationValues(Utf8StringR jsonStr, ECN::ECEnumerationCR, bool isEC32AvailableInFile);
     static BentleyStatus DeserializeEnumerationValues(ECN::ECEnumerationR, ECDbCR, Utf8CP jsonStr);
 
-    static BentleyStatus SerializeKoqPresentationFormats(Utf8StringR jsonStr, ECDbCR, ECN::KindOfQuantityCR);
+    static BentleyStatus SerializeKoqPresentationFormats(Utf8StringR jsonStr, ECDbCR, ECN::KindOfQuantityCR, bool isEC32AvailableInFile);
     static BentleyStatus SerializeKoqPresentationFormats(Utf8StringR jsonStr, bvector<Utf8String> const& presFormats);
 
     static Utf8String SerializeNumericSpec(Formatting::NumericFormatSpecCR);
