@@ -194,7 +194,7 @@ TEST_F(LevelTests, LevelMergeFromAttachments_Always)
 
     m_params.SetCopyLevel(Converter::Params::CopyLevel::Always);
 
-    TestLevelConversion(5, 1, 3, true);
+    TestLevelConversion(4, 1, 3, true);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
