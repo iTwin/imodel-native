@@ -985,7 +985,7 @@ struct Tile : TileTree::Tile
 
 protected:
     double m_maxDiameter;
-    double m_factor=0.5;
+    double m_factor=1.0;
 
     TriMeshList m_meshes;
 

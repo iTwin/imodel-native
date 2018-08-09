@@ -60,6 +60,15 @@ struct TestElementDrivesElementHandlerShouldFail
     };
 
 //=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      08/18
+//=======================================================================================
+struct TestElementDrivesElementHandlerShouldFailFatal
+    {
+    TestElementDrivesElementHandlerShouldFailFatal() { TestElementDrivesElementHandler::SetShouldFailFatal(true); }
+    ~TestElementDrivesElementHandlerShouldFailFatal() { TestElementDrivesElementHandler::SetShouldFailFatal(false); }
+    };
+
+//=======================================================================================
 // @bsiclass                                               Mindaugas.Butkus      04/18
 //=======================================================================================
 struct CallbackSequenceRecorder
@@ -125,6 +134,80 @@ struct EDECallbackSequenceMonitor
         CallbackSequenceRecorder const& GetRecorder() { return m_recorder; }
     };
 
+//=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      08/18
+// Callback that updates source and target of the relationship.
+//=======================================================================================
+struct ScopedEDEUpdaterCallback
+    {
+    private:
+        //=======================================================================================
+        // @bsiclass                                               Mindaugas.Butkus      08/18
+        //=======================================================================================
+        struct EDERelationshipCallback : TestElementDrivesElementHandler::Callback
+            {
+            virtual void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
+            virtual void _ProcessDeletedDependency(Dgn::DgnDbR db, T_DepRelData const& relData) override {}
+            };
+
+    private:
+        EDERelationshipCallback m_relationshipCallback;
+
+    public:
+        ScopedEDEUpdaterCallback();
+        ~ScopedEDEUpdaterCallback();
+    };
+
+//=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      08/18
+// Callback that inserts a new element and an EDE relationship.
+// Inserted relationship's source is the target of handled relationship and the target
+// is the new element.
+//=======================================================================================
+struct ScopedEDEInserterCallback
+    {
+    private:
+    //=======================================================================================
+    // @bsiclass                                               Mindaugas.Butkus      08/18
+    //=======================================================================================
+        struct EDERelationshipCallback : TestElementDrivesElementHandler::Callback
+            {
+            virtual void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
+            virtual void _ProcessDeletedDependency(Dgn::DgnDbR db, T_DepRelData const& relData) override {}
+            };
+
+    private:
+        EDERelationshipCallback m_relationshipCallback;
+
+    public:
+        ScopedEDEInserterCallback();
+        ~ScopedEDEInserterCallback();
+    };
+
+//=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      08/18
+// Callback that deletes the target element of an EDE relationship.
+//=======================================================================================
+struct ScopedEDEDeleterCallback
+    {
+    private:
+        //=======================================================================================
+        // @bsiclass                                               Mindaugas.Butkus      08/18
+        //=======================================================================================
+        struct EDERelationshipCallback : TestElementDrivesElementHandler::Callback
+            {
+            virtual void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
+            virtual void _ProcessDeletedDependency(Dgn::DgnDbR db, T_DepRelData const& relData) override {}
+            };
+
+    private:
+        EDERelationshipCallback m_relationshipCallback;
+
+    public:
+        ScopedEDEDeleterCallback();
+        ~ScopedEDEDeleterCallback();
+    };
+
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
 +===============+===============+===============+===============+===============+======*/
@@ -153,6 +236,7 @@ struct ElementDependencyGraph : DgnDbTestFixture
     ECN::ECClassCR GetElementDrivesElementClass();
 
     CachedECSqlStatementPtr GetSelectElementDrivesElementById();
+    CachedECSqlStatementPtr GetSelectElementDrivesElementBySourceAndTarget();
     void SetUpForRelationshipTests();
     ECInstanceKey InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent);
     DbResult DeleteElementDrivesElementRelationship(ECInstanceKeyCR key);
@@ -163,6 +247,94 @@ struct ElementDependencyGraph : DgnDbTestFixture
 };
 
 END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedEDEUpdaterCallback::ScopedEDEUpdaterCallback()
+    {
+    TestElementDrivesElementHandler::GetHandler().SetCallback(&m_relationshipCallback);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedEDEUpdaterCallback::~ScopedEDEUpdaterCallback()
+    {
+    TestElementDrivesElementHandler::GetHandler().SetCallback(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScopedEDEUpdaterCallback::EDERelationshipCallback::_OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target)
+    {
+    Dgn::DgnElementPtr sourceElem = db.Elements().GetForEdit<Dgn::DgnElement>(source);
+    if (sourceElem.IsValid())
+        sourceElem->Update();
+
+    Dgn::DgnElementPtr targetElem = db.Elements().GetForEdit<Dgn::DgnElement>(target);
+    if (targetElem.IsValid())
+        targetElem->Update();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedEDEInserterCallback::ScopedEDEInserterCallback()
+    {
+    TestElementDrivesElementHandler::GetHandler().SetCallback(&m_relationshipCallback);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedEDEInserterCallback::~ScopedEDEInserterCallback()
+    {
+    TestElementDrivesElementHandler::GetHandler().SetCallback(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScopedEDEInserterCallback::EDERelationshipCallback::_OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target)
+    {
+    Dgn::DgnElementPtr targetElem = db.Elements().GetForEdit<Dgn::DgnElement>(target);
+    if (targetElem.IsValid())
+        {
+        Dgn::DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), DgnDbTestFixture::s_seedFileInfo.categoryName);
+        Dgn::DgnElementPtr newElem = TestElement::Create(db, targetElem->GetModelId(), categoryId);
+        db.Elements().Insert(*newElem);
+
+        TestElementDrivesElementHandler::Insert(db, targetElem->GetElementId(), newElem->GetElementId());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedEDEDeleterCallback::ScopedEDEDeleterCallback()
+    {
+    TestElementDrivesElementHandler::GetHandler().SetCallback(&m_relationshipCallback);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedEDEDeleterCallback::~ScopedEDEDeleterCallback()
+    {
+    TestElementDrivesElementHandler::GetHandler().SetCallback(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScopedEDEDeleterCallback::EDERelationshipCallback::_OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target)
+    {
+    Dgn::DgnElementPtr targetElem = db.Elements().GetForEdit<Dgn::DgnElement>(target);
+    if (targetElem.IsValid())
+        targetElem->Delete();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mindaugas.Butkus                04/18
@@ -383,6 +555,16 @@ CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementByI
     {
     Utf8String ecsql("SELECT TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status FROM ONLY ");
     ecsql.append(GetElementDrivesElementClass().GetECSqlName()).append(" WHERE ECInstanceId=?");
+    return m_db->GetPreparedECSqlStatement(ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementBySourceAndTarget()
+    {
+    Utf8String ecsql("SELECT TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status FROM ONLY ");
+    ecsql.append(GetElementDrivesElementClass().GetECSqlName()).append(" WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
     return m_db->GetPreparedECSqlStatement(ecsql.c_str());
     }
 
@@ -1480,5 +1662,109 @@ TEST_F(ElementDependencyGraph, ReverseDependencyAndUpdateRoot)
         auto i_e1_e2 = findRelId(rels, e1_e2_Key); ASSERT_NE(i_e1_e2, rels.end());
         auto i_e2_e3 = findRelId(rels, e2_e3_Key); ASSERT_NE(i_e2_e3, rels.end());
         auto i_e4_e3 = findRelId(rels, e4_e3_Key); ASSERT_NE(i_e4_e3, rels.end());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, IndirectChangesAreTrackedInTxnMonitor)
+    {
+    SetUpForRelationshipTests();
+
+    //---
+    // e1-o->e2
+    //---
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+
+    ECInstanceKey e1_e2_Key = InsertElementDrivesElementRelationship(e1, e2);
+    m_db->SaveChanges();
+
+    if (true)
+        {
+        ScopedEDEUpdaterCallback edeCallback;
+        TxnMonitorVerifier monitor;
+        TwiddleTime(e1);
+        m_db->SaveChanges();
+
+        ASSERT_EQ(2, monitor.m_mods.size());
+        auto ie1_mod = monitor.m_mods.find(e1->GetElementId());
+        ASSERT_TRUE(ie1_mod != monitor.m_mods.end());
+        auto ie2_mod = monitor.m_mods.find(e2->GetElementId());
+        ASSERT_TRUE(ie2_mod != monitor.m_mods.end());
+        }
+
+    DgnElementCPtr e3 = nullptr;
+    if (true)
+        {
+        ScopedEDEInserterCallback edeCallback;
+        TxnMonitorVerifier monitor;
+        TwiddleTime(e1);
+        m_db->SaveChanges();
+
+        ASSERT_EQ(1, monitor.m_adds.size());
+        Dgn::DgnElementId e3Id((*monitor.m_adds.begin()).GetValueUnchecked());
+        ASSERT_NE(e3Id, e1->GetElementId());
+        ASSERT_NE(e3Id, e2->GetElementId());
+        e3 = m_db->Elements().Get<DgnElement>(e3Id);
+        ASSERT_TRUE(e3.IsValid());
+
+        CachedECSqlStatementPtr selectBySourceAndTarget = GetSelectElementDrivesElementBySourceAndTarget();
+        selectBySourceAndTarget->BindId(1, e2->GetElementId());
+        selectBySourceAndTarget->BindId(2, e3->GetElementId());
+        ASSERT_EQ(selectBySourceAndTarget->Step(), BE_SQLITE_ROW);
+        }
+    ASSERT_TRUE(e3.IsValid());
+    
+    //---
+    // e1-o->e2->e3
+    //---
+    if (true)
+        {
+        ScopedEDEDeleterCallback edeCallback;
+        TxnMonitorVerifier monitor;
+        TwiddleTime(e1);
+        m_db->SaveChanges();
+
+        ASSERT_EQ(2, monitor.m_deletes.size());
+        auto ie2_del = monitor.m_deletes.find(e2->GetElementId());
+        ASSERT_TRUE(ie2_del != monitor.m_deletes.end());
+        auto ie3_del = monitor.m_deletes.find(e3->GetElementId());
+        ASSERT_TRUE(ie3_del != monitor.m_deletes.end());
+        }
+
+    if (true) // insert new element and update it in the EDE relationship handler
+        {
+        ScopedEDEUpdaterCallback edeCallback;
+        TxnMonitorVerifier monitor;
+        e2 = InsertElement("E2");
+        e1_e2_Key = InsertElementDrivesElementRelationship(e1, e2);
+        m_db->SaveChanges();
+
+        ASSERT_EQ(1, monitor.m_adds.size());
+        auto ie2_add = monitor.m_adds.find(e2->GetElementId());
+        ASSERT_TRUE(ie2_add != monitor.m_adds.end());
+        }
+
+    ECInstanceKey e2_e3_Key;
+    if (true) // insert EDE relatinship that fails during the same transaction
+        {
+        TestElementDrivesElementHandlerShouldFailFatal fail;
+        TxnMonitorVerifier monitor;
+        e3 = InsertElement("E3");
+        e2_e3_Key = InsertElementDrivesElementRelationship(e2, e3);
+        m_db->SaveChanges();
+
+        CachedECSqlStatementPtr selectBySourceAndTarget = GetSelectElementDrivesElementBySourceAndTarget();
+        selectBySourceAndTarget->BindId(1, e2->GetElementId());
+        selectBySourceAndTarget->BindId(2, e3->GetElementId());
+        ASSERT_EQ(selectBySourceAndTarget->Step(), BE_SQLITE_DONE);
+
+        ASSERT_TRUE(m_db->Elements().Get<Dgn::DgnElement>(e3->GetElementId()).IsNull());
+
+        ASSERT_TRUE(monitor.m_adds.empty());
+        ASSERT_TRUE(monitor.m_deletes.empty());
+        ASSERT_TRUE(monitor.m_mods.empty());
         }
     }

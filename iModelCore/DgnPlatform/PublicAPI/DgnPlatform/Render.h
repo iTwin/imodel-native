@@ -65,6 +65,7 @@ private:
     uint32_t m_hLineMaterialColors:1; //!< use material colors for hidden lines
     uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
     uint32_t m_animate:1;          //!< Animate view (render continously).
+    uint32_t m_backgroundMap:1;    //!< Background (web mercator) map.
 
 public:
     BE_JSON_NAME(acs);
@@ -90,6 +91,7 @@ public:
     BE_JSON_NAME(monochrome);
     BE_JSON_NAME(edgeMask);
     BE_JSON_NAME(animate);
+    BE_JSON_NAME(backgroundMap);
 
     ViewFlags()
         {
@@ -116,6 +118,7 @@ public:
         m_hLineMaterialColors = 0;
         m_edgeMask = 0;
         m_animate = 0;
+        m_backgroundMap = 0;
         }
 
     bool ShowDimensions() const {return m_dimensions;}
@@ -164,6 +167,9 @@ public:
     void SetEdgeMask(int val) {m_edgeMask = val;}
     bool GetAnimate() const { return m_animate; }
     void SetAnimate(bool val) {m_animate = val;}
+    bool ShowBackgroundMap() const { return m_backgroundMap; }
+    void SetShowBackgroundMap(bool val) {m_backgroundMap = val;}
+    
     
     RenderMode GetRenderMode() const {return m_renderMode; }
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
@@ -220,6 +226,7 @@ private:
         kGeometryMap,
         kHlineMaterialColors,
         kEdgeMask,
+        kBackgroundMap,
     };
 
     uint32_t    m_present = 0;
