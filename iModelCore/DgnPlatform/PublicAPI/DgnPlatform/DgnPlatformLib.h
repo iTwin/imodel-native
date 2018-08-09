@@ -30,7 +30,6 @@ DGNPLATFORM_TYPEDEFS(DgnHost)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct DgnScriptThreadEnabler;
 typedef struct ::FT_LibraryRec_* FreeType_LibraryP; 
 
 /*=================================================================================**//**
@@ -76,34 +75,6 @@ public:
             virtual bool _GetACSPlaneSnapLock() const {return false;}   //!< If ACS Snap Lock is on, project snap points to the ACS plane.
             virtual bool _GetACSContextLock() const {return false;}     //!< If ACS Plane Lock is on, standard view rotations are relative to the ACS instead of global.
             virtual SelectionScope _GetActiveSelectionScope() const {return SelectionScope::Element;}     //!< Selection scope used when locating elements.
-            };
-
-        //! Provides access to a BeJsContext on threads other than the UI thread.
-        struct ScriptAdmin : IHostObject
-            {
-            DGNPLATFORM_EXPORT void CheckCleanup();
-
-            DGNPLATFORM_EXPORT ScriptAdmin();
-            DGNPLATFORM_EXPORT ~ScriptAdmin();
-
-            //! Prepare to execute scripts on the current thread. Call only once per thread!
-            //! @see DgnScriptThreadEnabler
-            DGNPLATFORM_EXPORT void InitializeOnThread();
-
-            //! Indicate that the current thread is finished executing scripts. A thread that has called InitializeOnThread must call TerminateOnThread before exiting!
-            //! @see DgnScriptThreadEnabler
-            DGNPLATFORM_EXPORT void TerminateOnThread();
-
-            //! Provide the script environment needed to evaluate script expressions on the current thread. 
-            //! All BeJsContexts that run on this thread must use this BeJsEnvironment.
-            DGNPLATFORM_EXPORT BeJsEnvironmentR GetBeJsEnvironment();
-
-            //! Get the BeJsContext to use when executing script that needs to use the Dgn script object model on the current thread.
-            //! All scripts to be evaluated on this thread must use this BeJsContext.
-            DGNPLATFORM_EXPORT BeJsContextR GetDgnScriptContext();
-
-            //! Clean up
-            DGNPLATFORM_EXPORT void _OnHostTermination(bool px) override;
             };
 
         //! Provides Exception handling capabilities
@@ -492,7 +463,6 @@ public:
         GeoCoordinationAdmin*   m_geoCoordAdmin;
         TxnAdmin*               m_txnAdmin;
         FormatterAdmin*         m_formatterAdmin;
-        ScriptAdmin*            m_scriptingAdmin;
         RepositoryAdmin*        m_repositoryAdmin;
         TileAdmin*              m_tileAdmin;
         Utf8String              m_productName;
@@ -530,9 +500,6 @@ public:
 
         //! Supply the formatter admin
         DGNPLATFORM_EXPORT virtual FormatterAdmin& _SupplyFormatterAdmin();
-
-        //! Supply the ScriptAdmin
-        DGNPLATFORM_EXPORT virtual ScriptAdmin& _SupplyScriptingAdmin();
 
         //! Supply the RepositoryAdmin
         DGNPLATFORM_EXPORT virtual RepositoryAdmin& _SupplyRepositoryAdmin();
@@ -572,7 +539,6 @@ public:
             m_geoCoordAdmin = nullptr;
             m_txnAdmin = nullptr;
             m_formatterAdmin = nullptr;
-            m_scriptingAdmin = nullptr;
             m_repositoryAdmin = nullptr;
             m_tileAdmin = nullptr;
             };
@@ -590,7 +556,6 @@ public:
         GeoCoordinationAdmin&   GetGeoCoordinationAdmin()  {return *m_geoCoordAdmin;}
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
-        ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
         RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}
         TileAdmin&              GetTileAdmin()             {return *m_tileAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
@@ -635,17 +600,6 @@ public:
     //! Forward assertion failures to the specified handler.
     DGNPLATFORM_EXPORT static void ForwardAssertionFailures(BeAssertFunctions::T_BeAssertHandler*);
 };
-
-//=======================================================================================
-//! Helper class for preparing a thread for scripts and then cleaning up.
-//! Script support is initialized on the current thread in the constructor.
-//! Script support is torn down in the destructor.
-//=======================================================================================
-struct DgnScriptThreadEnabler
-    {
-    DgnScriptThreadEnabler() {T_HOST.GetScriptAdmin().InitializeOnThread();}
-    ~DgnScriptThreadEnabler() {T_HOST.GetScriptAdmin().TerminateOnThread();}
-    };
 
 END_BENTLEY_DGN_NAMESPACE
 

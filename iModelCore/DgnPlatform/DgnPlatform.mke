@@ -40,8 +40,6 @@ DgnPlatformInternalDir          = $(PrivateApiSrc)DgnPlatformInternal/
 lineStyleDir                    = $(DgnCoreDir)linestyle/
 dimensionDir                    = $(DgnHandlersDir)Dimension/
 
-dgnScriptDir                    = $(SrcDgnPlatform)DgnScript/
-
 AnnotationsSrc                  = $(DgnCoreDir)Annotations/
 AnnotationsPrivateApi           = $(DgnPlatformInternalDir)DgnCore/Annotations/
 AnnotationsApi                  = $(DgnPlatformAPISrc)Annotations/
@@ -441,20 +439,6 @@ $(o)envvutil$(oext) :                               $(ConfigToolsDir)envvutil.cp
 
 $(o)evalcnst$(oext) :                               $(ConfigToolsDir)evalcnst.cpp ${MultiCompileDepends}
 
-#----------------------------------------------------------------------
-#   DgnScript
-#----------------------------------------------------------------------
-
-%if !defined (BENTLEYCONFIG_NO_JAVASCRIPT)
-
-$(o)DgnScript$(oext) :                              $(dgnScriptDir)DgnScript.cpp ${MultiCompileDepends}
-
-%else
-
-$(o)DgnScriptStubbedOut$(oext) :                    $(dgnScriptDir)DgnScriptStubbedOut.cpp ${MultiCompileDepends}
-
-%endif
-
 %if $(TARGET_PLATFORM) == "Windows"
 
 $(o)w32tools$(oext) :                               $(ToolsDir)nonport/winnt/w32tools.cpp  ${MultiCompileDepends}
@@ -646,9 +630,6 @@ LINKER_LIBRARIES_DELAYLOADED = \
         # LINKER_LIBRARIES       + "C:\Program Files (x86)\Intel\VTune Amplifier XE\lib64\libittnotify.lib"
     %endif
 %endif
-
-# Link in JavaScript support
-%include $(SrcRoot)bsicommon/sharedmki/AppendJavaScriptLinkerLibraries.mki
 
 %include $(sharedMki)linkLibrary.mki
 

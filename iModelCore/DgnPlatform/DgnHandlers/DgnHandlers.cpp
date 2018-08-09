@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/DgnHandlers.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -52,7 +52,6 @@ void DgnPlatformLib::Host::Terminate(bool onProgramExit)
     ON_HOST_TERMINATE(m_pointCloudAdmin, onProgramExit);
     ON_HOST_TERMINATE(m_geoCoordAdmin, onProgramExit);
     ON_HOST_TERMINATE(m_formatterAdmin, onProgramExit);
-    ON_HOST_TERMINATE(m_scriptingAdmin, onProgramExit);
     ON_HOST_TERMINATE(m_repositoryAdmin, onProgramExit);
     ON_HOST_TERMINATE(m_tileAdmin, onProgramExit);
     ON_HOST_TERMINATE(m_sessionSettingsAdmin, onProgramExit);

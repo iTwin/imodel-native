@@ -282,7 +282,6 @@ void DgnPlatformLib::Host::InitializeDgnCore()
     // establish the NotificationAdmin first, in case other _Supply methods generate errors
     BeAssert(NULL == m_notificationAdmin); m_notificationAdmin = &_SupplyNotificationAdmin();
     BeAssert(NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin();
-    BeAssert(NULL == m_scriptingAdmin); m_scriptingAdmin = &_SupplyScriptingAdmin();
 
     auto assetDir = m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory();
 
@@ -341,7 +340,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_geoCoordAdmin);
     BeAssert(NULL == m_txnAdmin);
     BeAssert(NULL == m_formatterAdmin);
-    BeAssert(NULL == m_scriptingAdmin);
     BeAssert(NULL == m_exceptionHandler);
     BeAssert(NULL == m_knownLocationsAdmin);
     BeAssert(NULL == m_repositoryAdmin);
@@ -389,7 +387,6 @@ DgnPlatformLib::Host::NotificationAdmin&    DgnPlatformLib::Host::_SupplyNotific
 DgnPlatformLib::Host::LineStyleAdmin&       DgnPlatformLib::Host::_SupplyLineStyleAdmin()       {return *new LineStyleAdmin();}
 DgnPlatformLib::Host::TxnAdmin&             DgnPlatformLib::Host::_SupplyTxnAdmin()             {return *new TxnAdmin();}
 DgnPlatformLib::Host::FormatterAdmin&       DgnPlatformLib::Host::_SupplyFormatterAdmin()       {return *new FormatterAdmin();}
-DgnPlatformLib::Host::ScriptAdmin&          DgnPlatformLib::Host::_SupplyScriptingAdmin()       {return *new ScriptAdmin();}
 DgnPlatformLib::Host::RepositoryAdmin&      DgnPlatformLib::Host::_SupplyRepositoryAdmin()      {return *new RepositoryAdmin();}
 DgnPlatformLib::Host::SessionSettingsAdmin& DgnPlatformLib::Host::_SupplySessionSettingsAdmin() {return *new SessionSettingsAdmin();}
 DgnPlatformLib::Host::TileAdmin&            DgnPlatformLib::Host::_SupplyTileAdmin()            {return *new TileAdmin();}
