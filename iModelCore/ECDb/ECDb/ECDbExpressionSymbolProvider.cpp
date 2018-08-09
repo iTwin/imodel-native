@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbExpressionSymbolProvider.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -281,8 +281,10 @@ ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResu
             BeAssert(false);
             continue;
             }
-
-        status = stmt.BindText(1, instance->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+        
+        ECInstanceId id;
+        ECInstanceId::FromString(id, instance->GetInstanceId().c_str());
+        status = stmt.BindId(1, id);
         if (!status.IsSuccess())
             {
             BeAssert(false);
@@ -333,8 +335,10 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
             BeAssert(false);
             continue;
             }
-
-        status = stmt.BindText(1, instance->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+        
+        ECInstanceId id;
+        ECInstanceId::FromString(id, instance->GetInstanceId().c_str());
+        status = stmt.BindId(1, id);
         if (!status.IsSuccess())
             {
             BeAssert(false);
@@ -425,7 +429,9 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedValue(EvaluationResult&
             continue;
             }
 
-        status = stmt.BindText(1, instance->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+        ECInstanceId id;
+        ECInstanceId::FromString(id, instance->GetInstanceId().c_str());
+        status = stmt.BindId(1, id);
         if (!status.IsSuccess())
             {
             BeAssert(false);
