@@ -732,7 +732,7 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8Strin
         }
     else
         {
-        for (Utf8StringCR ec32FusDescriptor : const_cast<KindOfQuantityR>(koq).GetDescriptorCache().second)
+        for (Utf8StringCR ec32FusDescriptor : koq.GetDescriptorCache().second)
             {
             formatList.push_back(ec32FusDescriptor);
             }

@@ -875,7 +875,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
     if (ctx.IsEC32AvailableInFile())
         persistenceUnitStr = koq.GetPersistenceUnit()->GetQualifiedName(koq.GetSchema());
     else
-        persistenceUnitStr = const_cast<KindOfQuantityR>(koq).GetDescriptorCache().first;
+        persistenceUnitStr = koq.GetDescriptorCache().first;
 
     BeAssert(!persistenceUnitStr.empty());
     if (BE_SQLITE_OK != stmt->BindText(6, persistenceUnitStr, Statement::MakeCopy::No))
