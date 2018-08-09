@@ -388,7 +388,8 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
         REQUIRE_ARGUMENT_INTEGER(2, defaultTxn);
         RETURN_IF_HAD_EXCEPTION
         DbResult status = GetDb().OpenBeSQLiteDb(BeFileName(dbName.c_str(), true), BeSQLite::Db::OpenParams((Db::OpenMode)mode, (BeSQLite::DefaultTxn)defaultTxn));
-        DgnSqlFuncsForTriggers::Register(GetDb());
+        if ((BeSQLite::BE_SQLITE_OK == status) && GetDb().IsDbOpen())
+            DgnSqlFuncsForTriggers::Register(GetDb());
         return Napi::Number::New(Env(), (int)status);
     }
 
