@@ -47,7 +47,7 @@
         <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/> 
     </Part>
 
-    <!-- NOTE: DgnDb uses "G" as a library suffix to differentiate from DgnV8 libraries -->
+    <!-- NOTE: IModel02 uses "C02" as a library suffix to differentiate from DgnV8, Graphite, and Bim02 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="B02">
 
         <SubPart PartName="PublicAPI" />
