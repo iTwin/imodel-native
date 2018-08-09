@@ -22,45 +22,13 @@ BE_JSON_NAME(tilesetUrl)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Converter::GenerateWebMercatorModel()
-    {
-    LinkModelPtr rdsModel = GetDgnDb().GetRealityDataSourcesModel();
-    Utf8String name("Bing Aerial");
-    DgnCode code = CodeSpec::CreateCode(BIS_CODESPEC_LinkElement, *rdsModel->GetModeledElement(), name);
-    DgnElementId existing = GetDgnDb().Elements().QueryElementIdByCode(code);
-    if (existing.IsValid())
-        return SUCCESS;
-
-    RepositoryLinkPtr aerialLink = RepositoryLink::Create(*rdsModel, nullptr, "Bing Aerial");
-    if (!aerialLink.IsValid() ||  !aerialLink->Insert().IsValid())
-        return ERROR;
-
-    // set up the Bing Aerial map properties Json.
-    BentleyApi::Json::Value jsonParameters;
-    jsonParameters[WebMercator::WebMercatorModel::json_providerName()] = WebMercator::BingImageryProvider::prop_BingProvider();
-    jsonParameters[WebMercator::WebMercatorModel::json_groundBias()] = -1.0;
-    jsonParameters[WebMercator::WebMercatorModel::json_transparency()] = 0.0;
-    BentleyApi::Json::Value& bingAerialJson = jsonParameters[WebMercator::WebMercatorModel::json_providerData()];
-
-    bingAerialJson[WebMercator::WebMercatorModel::json_mapType()] = (int) WebMercator::MapType::Aerial;
-    WebMercator::WebMercatorModel::CreateParams createParams (GetDgnDb(), aerialLink->GetElementId(), jsonParameters);
-
-    WebMercator::WebMercatorModelPtr model = new WebMercator::WebMercatorModel (createParams);
-    DgnDbStatus insertStatus = model->Insert();
-    BeAssert (DgnDbStatus::Success == insertStatus);
-    return DgnDbStatus::Success == insertStatus ? SUCCESS : ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     07/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::GenerateRealityModelTilesets()
     {
     bool doUpload = false, doLocal = false;
 
     Bentley::WString uploadConfigVar;
     Bentley::WString serverConfigVar;
-    if (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(uploadConfigVar, L"DGNDB_REALITY_MODEL_UPLOAD"))
+    if (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(uploadConfigVar, L"DGNDB_REALITY_MODEL_UPLOAD"))                          
         doUpload = true;
     else
         {
@@ -158,7 +126,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             }
         else
             {
-            static double   s_leafTolerance = .01;      // TBD. make this a setting.
+            static double   s_leafTolerance = 0.0;      // Use the tolerance of the input tileset.
             TileTree::IO::ICesiumPublisher::WriteCesiumTileset(rootJsonFile, modelDir, *geometricModel, dbToEcefTransform, s_leafTolerance);
             }
 

@@ -1621,9 +1621,6 @@ void Converter::OnCreateComplete()
     GenerateRealityModelTilesets();
     ConverterLogging::LogPerformance(timer, "Creating reality model tilesets");
 
-    if (nullptr != m_dgndb->GeoLocation().GetDgnGCS() && !IsUpdating())
-        GenerateWebMercatorModel();
-
     GetDgnDb().SaveSettings();
     }
 

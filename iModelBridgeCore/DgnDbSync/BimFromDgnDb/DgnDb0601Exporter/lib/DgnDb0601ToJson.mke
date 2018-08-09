@@ -49,6 +49,9 @@ LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)BaseGeoCoord$(libext)
 LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)BeJsonCpp$(stlibext)
 LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)Planning$(libext)
+LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)PointCloudSchema$(libext)
+LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)RasterSchema$(libext)
+LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)ThreeMx$(libext)
 LINKER_LIBRARIES  + user32.lib
 
 %include $(sharedMki)LinkLibrary.mki
