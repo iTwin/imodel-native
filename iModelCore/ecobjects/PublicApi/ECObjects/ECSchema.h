@@ -1445,7 +1445,7 @@ private:
     ECOBJECTS_EXPORT static ECObjectsStatus TransformFormatString(ECFormatCP& outFormat, Nullable<int32_t>& outPrec, UnitAndLabelPairs& outPairs, Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper, ECSchemaCP koqSchema = nullptr);
 
 public:
-    const bpair<Utf8String, bvector<Utf8String>>& GetDescriptorCache() {return m_descriptorCache;} //!< Get the cache of FUS descriptors
+    const bpair<Utf8String, bvector<Utf8String>>& GetDescriptorCache() const {return m_descriptorCache;} //!< Get the cache of FUS descriptors
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this kind of quantity is defined in.
 
     void SetId(KindOfQuantityId id) { BeAssert(!m_kindOfQuantityId.IsValid()); m_kindOfQuantityId = id; } //!< Intended to be called by ECDb or a similar system
