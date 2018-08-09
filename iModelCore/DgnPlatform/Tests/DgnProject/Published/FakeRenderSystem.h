@@ -41,59 +41,6 @@ protected:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   10/17
 //=======================================================================================
-struct FakeWindow : Window
-{
-protected:
-    BSIRect m_viewRect;
-
-    FakeWindow(int width, int height)
-        {
-        m_viewRect.Init(0, 0, width, height);
-        }
-
-    Point2d _GetScreenOrigin() const override { return m_viewRect.origin; }
-    BSIRect _GetViewRect() const override { return m_viewRect; }
-    void _OnPaint(Rectangle&) const override { }
-    void* _GetNativeWindow() const override { return nullptr; }
-public:
-    static WindowPtr Create(int width, int height) { return new FakeWindow(width, height); }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   10/17
-//=======================================================================================
-struct FakeDevice : Device
-{
-protected:
-    SystemR m_system;
-
-    FakeDevice(SystemR system, Window* window) : Device(window), m_system(system) { }
-
-#if defined(NEEDSWORK_TARGET)
-    TargetPtr _CreateTarget(double tileSizeMod) override { return FakeTarget::Create(m_system, tileSizeMod); }
-#else
-    TargetPtr _CreateTarget(double tileSizeMod) override { BeAssert(false); return nullptr; }
-#endif
-
-    TargetPtr _CreateOffscreenTarget(double tileSizeMod) override { return _CreateTarget(tileSizeMod); }
-    void* _GetNativeDevice() const override { return nullptr; }
-    PixelsPerInch _GetPixelsPerInch() const override { PixelsPerInch ppi = { 10, 10 }; return ppi; }
-    DVec2d _GetDpiScale() const override
-        {
-        PixelsPerInch ppi = _GetPixelsPerInch();
-
-        DVec2d scale;
-        scale.x = ppi.width / 96.0;
-        scale.y = ppi.height / 96.0;
-        return scale;
-        }
-public:
-    static DevicePtr Create(SystemR system, Window* window) { return new FakeDevice(system, window); }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   10/17
-//=======================================================================================
 struct FakeGraphic : Graphic
 {
 protected:
@@ -169,14 +116,6 @@ struct FakeSystem : System
 protected:
     int _Initialize(void*, bool) override { return SUCCESS; }
 
-#if defined(NEEDSWORK_TARGET)
-    TargetPtr _CreateTarget(Device& dev, double tileSizeMod) override { return FakeTarget::Create(*this, dev, tileSizeMod); }
-#else
-    TargetPtr _CreateTarget(Device& dev, double tileSizeMod) override { BeAssert(false); return nullptr; }
-#endif
-
-    TargetPtr _CreateOffscreenTarget(Device& dev, double tileSizeMod) { return _CreateTarget(dev, tileSizeMod); }
-
     MaterialPtr _FindMaterial(MaterialKeyCR id, DgnDbR db) const override { return nullptr; }
     MaterialPtr _CreateMaterial(Material::CreateParams const& params, DgnDbR) const override { return new FakeMaterial(params); }
     TexturePtr _FindTexture(TextureKeyCR, DgnDbR) const override { return nullptr; }
@@ -189,7 +128,6 @@ protected:
     GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParamsCR params) const override { return FakeGraphicBuilder::Create(params); }
 
     GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const { return FakeGraphic::Create(db); }
-    GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const { BeAssert(false); return nullptr; }
     GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const { return FakeGraphic::Create(dgndb); }
     GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const { return FakeGraphic::Create(dgndb); }
     GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const { return FakeGraphic::Create(dgndb); }
