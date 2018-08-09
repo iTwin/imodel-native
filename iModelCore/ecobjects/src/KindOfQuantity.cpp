@@ -782,9 +782,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     bvector<Utf8String> presentationFormats;
     if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, PRESENTATION_UNITS_ATTRIBUTE))
         BeStringUtilities::Split(value.c_str(), ";", presentationFormats);
-    bvector<Utf8String> formatStrings;
 
-    Utf8String originalPersFus = persUnit;
     // If version < 3.2. We have to upgrade our desriptors before we parse them.
     if (GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_2))
         {
@@ -804,34 +802,31 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 
         key = SchemaKey("Formats", 1, 0, 0);
         auto formatsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
-
-        Utf8String upgradedPersUnit;
-        bvector<Utf8CP> fusDescriptors;
-        formatStrings.reserve(presentationFormats.size());
-        fusDescriptors.reserve(presentationFormats.size());
-        for (const auto& str : presentationFormats) // Load pointers to match api for UpdateFusDescriptors
-            fusDescriptors.push_back(str.c_str());
-
-        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptors(upgradedPersUnit, formatStrings, persUnit.c_str(), fusDescriptors, *formatsSchema, *unitsSchema))
-            return SchemaReadStatus::InvalidECSchemaXml;
-
-        if (!formatStrings.empty())
-            {
-            if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
-                { 
-                LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve old formats.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
-                if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*formatsSchema))
-                    {
-                    LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
-                    return SchemaReadStatus::ReferencedSchemaNotFound;
-                    }
+        if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
+            { 
+            LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve old formats.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+            if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*formatsSchema))
+                {
+                LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+                return SchemaReadStatus::ReferencedSchemaNotFound;
                 }
             }
 
-        persUnit = upgradedPersUnit;
+        bvector<Utf8CP> fusDescriptors;
+        fusDescriptors.reserve(presentationFormats.size());
+        for (const auto& str : presentationFormats) // Load pointers to match api for FromFUSDescriptors
+            fusDescriptors.push_back(str.c_str());
+
+        if (ECObjectsStatus::Success != FromFUSDescriptors(persUnit.c_str(), fusDescriptors, *formatsSchema, *unitsSchema))
+            return SchemaReadStatus::InvalidECSchemaXml;
+
+        if (GetPresentationFormats().empty())
+            {
+            GetSchemaR().RemoveReferencedSchema(*formatsSchema);
+            }
+
+        return SchemaReadStatus::Success;
         }
-    else
-        formatStrings.assign(presentationFormats.begin(), presentationFormats.end());
 
     // lookup units on this KoQs schema. All references must be already added.
     const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
@@ -857,7 +852,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 
     SetPersistenceUnit(*persUnitPointer);
 
-    for(auto const& presValue : formatStrings)
+    for(auto const& presValue : presentationFormats)
         {
         if (ECObjectsStatus::Success != AddPresentationFormatByString(presValue, formatLookerUpper, unitLookerUpper))
             return SchemaReadStatus::InvalidECSchemaXml; // Logging in AddPresentationUnit

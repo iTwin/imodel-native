@@ -2471,39 +2471,58 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
             }
         }
 
+    const auto unitUsesSchema = [&](ECUnitCP unit) -> bool
+        {
+        if (nullptr == unit)
+            return false;
+        if ((nullptr != unit->GetPhenomenon()) && (unit->GetPhenomenon()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey()))
+            return true;
+        if ((nullptr != unit->GetUnitSystem()) && (unit->GetUnitSystem()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey()))
+            return true;
+        return false;
+        };
+
+    const auto formatUsesSchema = [&](NamedFormatCP format) -> bool
+        {
+        if (nullptr == format)
+            return false;
+        if ((nullptr != format->GetParentFormat()) && format->GetParentFormat()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
+            return true;
+        if (!format->HasComposite())
+            return false;
+        if (unitUsesSchema((ECUnitCP)format->GetCompositeMajorUnit()))
+            return true;
+        if (unitUsesSchema((ECUnitCP)format->GetCompositeMiddleUnit()))
+            return true;
+        if (unitUsesSchema((ECUnitCP)format->GetCompositeMinorUnit()))
+            return true;
+        if (unitUsesSchema((ECUnitCP)format->GetCompositeSubUnit()))
+            return true;
+        return false;
+        };
+
     for (auto koq : GetKindOfQuantities())
         {
         ECUnitCP persUnit = koq->GetPersistenceUnit();
         if (nullptr != persUnit && persUnit->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
             return ECObjectsStatus::SchemaInUse;
 
-        for (auto presUnit : koq->GetPresentationFormats())
+        for (auto f : koq->GetPresentationFormats())
             {
-            if ((nullptr != presUnit.GetParentFormat()) && presUnit.GetParentFormat()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
+            if (formatUsesSchema(&f))
                 return ECObjectsStatus::SchemaInUse;
             }
         }
 
     for (auto unit : GetUnits())
         {
-        if ((nullptr != unit->GetPhenomenon()) && (unit->GetPhenomenon()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey()))
-            return ECObjectsStatus::SchemaInUse;
-
-        if ((nullptr != unit->GetUnitSystem()) && (unit->GetUnitSystem()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey()))
+        if (unitUsesSchema(unit))
             return ECObjectsStatus::SchemaInUse;
         }
 
     for (auto format : GetFormats())
         {
-        if (!format->HasComposite())
-            break; // If it doesn't have a composite it cannot reference anything from another schema (only units can be from another schema)
-        if (format->HasCompositeMajorUnit() && ((ECUnitCP)format->GetCompositeMajorUnit())->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
-            return ECObjectsStatus::SchemaInUse;
-        if (format->HasCompositeMiddleUnit() && ((ECUnitCP)format->GetCompositeMinorUnit())->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
-            return ECObjectsStatus::SchemaInUse;
-        if (format->HasCompositeMinorUnit() && ((ECUnitCP)format->GetCompositeMinorUnit())->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
-            return ECObjectsStatus::SchemaInUse;
-        if (format->HasCompositeSubUnit() && ((ECUnitCP)format->GetCompositeSubUnit())->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
+        if (formatUsesSchema(format))
             return ECObjectsStatus::SchemaInUse;
         }
 
