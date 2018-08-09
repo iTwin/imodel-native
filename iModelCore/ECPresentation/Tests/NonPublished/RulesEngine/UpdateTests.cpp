@@ -1729,15 +1729,11 @@ TEST_F (HierarchyUpdateTests, SameLabelInstanceGroupIsCreatedWhenAdditionalInsta
     ASSERT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
     ASSERT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
     
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // expect 1 update record
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[1].GetNode()->GetLabel().c_str());
-    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
