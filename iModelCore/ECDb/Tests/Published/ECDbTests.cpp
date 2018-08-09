@@ -16,7 +16,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(SQLiteRegression, Test)
     {
-    BeFileName testFilePath(L"D:\\temp\\sqliteselectissue.ecdb");
+    BeFileName testFilePath(L"D:\\temp\\sqliteselectissue.db");
     if (!testFilePath.DoesPathExist())
         return;
 
