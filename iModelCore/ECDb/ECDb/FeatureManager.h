@@ -57,6 +57,8 @@ private:
     static bool IsAvailable(ProfileVersion const& actualVersion, Feature);
 
 public:
+    //! convenience method to check whether EC3.2 features (units, named enumerators) are available in the given file
+    static bool IsEC32Available(ECDbCR ecdb) { return IsAvailable(ecdb, Feature::UnitsAndFormats); }
     static bool IsAvailable(ECDbCR ecdb, Feature feature) { return IsAvailable(ecdb.GetECDbProfileVersion(), feature); }
     static bool IsAvailable(ECDbCR, std::vector<Feature> const&);
     };

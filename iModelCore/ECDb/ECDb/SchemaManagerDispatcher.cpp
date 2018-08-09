@@ -686,9 +686,11 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
         return ERROR;
         }
 
-    if (ECDb::CurrentECDbProfileVersion() != m_ecdb.GetECDbProfileVersion())
+    // Import into new files is not supported. Import into older files is only supported
+    // if the schemas to import are EC3.1 schemas. This will be checked downstream.
+    if (ECDb::CurrentECDbProfileVersion() < m_ecdb.GetECDbProfileVersion())
         {
-        m_ecdb.GetImpl().Issues().ReportV("Failed to import ECSchemas. Schema imports with this version of the software can only be done on files with profile version %s. The file's version, however, is %s.",
+        m_ecdb.GetImpl().Issues().ReportV("Failed to import ECSchemas. Cannot import schemas into a file which was created with a higher version of this softwares. The file's version, however, is %s.",
                                           ECDb::CurrentECDbProfileVersion().ToString().c_str(), m_ecdb.GetECDbProfileVersion().ToString().c_str());
         return ERROR;
         }

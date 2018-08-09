@@ -30,9 +30,12 @@ struct SchemaWriter final
             bset<ECN::ECSchemaId> m_schemasWithMajorVersionChange;
             ECN::CustomAttributeValidator m_schemaUpgradeCustomAttributeValidator;
 
+            bool m_ec32AvailableInFile = true;
+
         public:
             Context(ECDbCR ecdb, SchemaImportContext& ctx) : m_ecdb(ecdb), m_importCtx(ctx)
                 {
+                m_ec32AvailableInFile = FeatureManager::IsEC32Available(ecdb);
                 m_schemaUpgradeCustomAttributeValidator.AddRejectRule("CoreCustomAttributes:IsMixin.*");
                 m_schemaUpgradeCustomAttributeValidator.AddRejectRule("ECDbMap:*");
                 }
@@ -49,6 +52,7 @@ struct SchemaWriter final
 
             bool AreMajorSchemaVersionChangesAllowed() const { return !Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade); }
             bool IsMajorSchemaVersionChange(ECN::ECSchemaId schemaId) const { return m_schemasWithMajorVersionChange.find(schemaId) != m_schemasWithMajorVersionChange.end(); }
+            bool IsEC32AvailableInFile() const { return m_ec32AvailableInFile; }
             void AddSchemaWithMajorVersionChange(ECN::ECSchemaId schemaId) { m_schemasWithMajorVersionChange.insert(schemaId); }
             CachedStatementPtr GetCachedStatement(Utf8CP sql) { return m_ecdb.GetImpl().GetCachedSqliteStatement(sql); }
             ECDbCR GetECDb() const { return m_ecdb; }
@@ -82,7 +86,6 @@ struct SchemaWriter final
         static BentleyStatus BindPropertyKindOfQuantity(Context&, Statement&, int paramIndex, ECN::ECPropertyCR);
         static BentleyStatus BindPropertyCategory(Context&, Statement&, int paramIndex, ECN::ECPropertyCR);
 
-        static BentleyStatus InsertSchemaEntry(Context& ctx, ECN::ECSchemaCR schema) { return InsertSchemaEntry(ctx.GetECDb(), schema); }
         static BentleyStatus InsertSchemaEntry(ECDbCR, ECN::ECSchemaCR);  //!< Also used by ProfileUpgrader_4002
         static BentleyStatus InsertBaseClassEntry(Context&, ECN::ECClassId, ECN::ECClassCR baseClass, int ordinal);
         static BentleyStatus InsertRelationshipConstraintEntry(Context&, ECRelationshipConstraintId& constraintId, ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);

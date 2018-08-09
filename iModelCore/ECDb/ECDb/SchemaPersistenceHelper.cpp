@@ -547,7 +547,7 @@ ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR ecdb, DbTableSpace co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  01/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR jsonStr, ECEnumerationCR ecEnum)
+BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR jsonStr, ECEnumerationCR ecEnum, bool isEC32AvailableInFile)
     {
     BeAssert(ecEnum.GetEnumeratorCount() > 0);
     rapidjson::Document enumValuesJson(rapidjson::kArrayType);
@@ -557,9 +557,16 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
         {
         rapidjson::Value enumValueJson(rapidjson::kObjectType);
 
-        Utf8StringCR enumValueName = enumValue->GetName();
-        enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_Name, rapidjson::Value(enumValueName.c_str(), (rapidjson::SizeType) enumValueName.size(), jsonAllocator).Move(),
-                                jsonAllocator);
+        if (isEC32AvailableInFile)
+            {
+            Utf8StringCR enumValueName = enumValue->GetName();
+            enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_Name, rapidjson::Value(enumValueName.c_str(), (rapidjson::SizeType) enumValueName.size(), jsonAllocator).Move(),
+                                    jsonAllocator);
+            }
+        else
+            {
+            BeAssert(ecEnum.GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_2) && "Only EC 3.1 schemas can be imported into a file not supporting EC 3.2 yet");
+            }
 
         if (enumValue->IsInteger())
             enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_IntValue, rapidjson::Value(enumValue->GetInteger()).Move(), jsonAllocator);

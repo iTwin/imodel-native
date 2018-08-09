@@ -31,6 +31,13 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
 
     for (ECSchemaCP schema : ctx.GetSchemasToImport())
         {
+        if (!ctx.IsEC32AvailableInFile() && schema->OriginalECXmlVersionLessThan(ECVersion::V3_2))
+            {
+            ctx.Issues().ReportV("Failed to import ECSchemas. Schema '%s' is an EC %" PRIu32 ".%" PRIu32 " schema. Schemas with ECVersion 3.2 or higher cannot be imported in a file that does not support EC3.2 yet.",
+                                 schema->GetFullSchemaName().c_str(), schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
+            return ERROR;
+
+            }
         if (SUCCESS != ImportSchema(ctx, *schema))
             return ERROR;
         }
@@ -97,7 +104,7 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
     if (ctx.GetSchemaManager().ContainsSchema(ecSchema.GetName()))
         return SUCCESS;
 
-    if (SUCCESS != InsertSchemaEntry(ctx, ecSchema))
+    if (SUCCESS != InsertSchemaEntry(ctx.GetECDb(), ecSchema))
         {
         DbResult lastErrorCode;
         ctx.GetECDb().GetLastError(&lastErrorCode);
@@ -397,7 +404,7 @@ BentleyStatus SchemaWriter::ImportEnumeration(Context& ctx, ECEnumerationCR ecEn
         return ERROR;
 
     Utf8String enumValueJson;
-    if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, ecEnum))
+    if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, ecEnum, ctx.IsEC32AvailableInFile()))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindText(7, enumValueJson, Statement::MakeCopy::No))
@@ -852,7 +859,15 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
         return ERROR;
         }
 
-    Utf8String persistenceUnitStr = koq.GetPersistenceUnit()->GetQualifiedName(koq.GetSchema());
+    Utf8String persistenceUnitStr;
+    if (ctx.IsEC32AvailableInFile())
+        persistenceUnitStr = koq.GetPersistenceUnit()->GetQualifiedName(koq.GetSchema());
+    else
+        {
+        BeAssert(false && "WIP. Need ECObjects method to retrieve EC3.1 persistence unit FUS from KoQ");
+        persistenceUnitStr = "<WIP. Need ECObjects method to retrieve EC3.1 persistence unit FUS from KoQ>";
+        }
+
     BeAssert(!persistenceUnitStr.empty());
     if (BE_SQLITE_OK != stmt->BindText(6, persistenceUnitStr, Statement::MakeCopy::No))
         return ERROR;
@@ -1276,7 +1291,12 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECDbCR ecdb, ECSchemaCR schema)
     {
     BeAssert(!schema.HasId());
 
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3,OriginalECXmlVersionMajor,OriginalECXmlVersionMinor) VALUES(?,?,?,?,?,?,?,?,?)");
+    const bool supportsECVersion = FeatureManager::IsAvailable(ecdb, Feature::ECVersions);
+    BeAssert(supportsECVersion || schema.OriginalECXmlVersionLessThan(ECVersion::V3_2) && "Only EC 3.1 schemas can be imported into a file not supporting EC 3.2 yet");
+    Utf8CP sql = supportsECVersion ? "INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3,OriginalECXmlVersionMajor,OriginalECXmlVersionMinor) VALUES(?,?,?,?,?,?,?,?,?)" :
+        "INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?)";
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql);
     if (stmt == nullptr)
         return ERROR;
 
@@ -1309,16 +1329,20 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECDbCR ecdb, ECSchemaCR schema)
     //Persist uint32_t as int64 to not lose unsigned-ness
     if (BE_SQLITE_OK != stmt->BindInt64(7, (int64_t) schema.GetVersionMinor()))
         return ERROR;
-    //original version of 0.0 is considered an unset version
-    if (schema.GetOriginalECXmlVersionMajor() > 0 || schema.GetOriginalECXmlVersionMinor() > 0)
-        {
-        //Persist uint32_t as int64 to not lose unsigned-ness
-        if (BE_SQLITE_OK != stmt->BindInt64(8, (int64_t) schema.GetOriginalECXmlVersionMajor()))
-            return ERROR;
 
-        //Persist uint32_t as int64 to not lose unsigned-ness
-        if (BE_SQLITE_OK != stmt->BindInt64(9, (int64_t) schema.GetOriginalECXmlVersionMinor()))
-            return ERROR;
+    if (supportsECVersion)
+        {
+        //original version of 0.0 is considered an unset version
+        if (schema.GetOriginalECXmlVersionMajor() > 0 || schema.GetOriginalECXmlVersionMinor() > 0)
+            {
+            //Persist uint32_t as int64 to not lose unsigned-ness
+            if (BE_SQLITE_OK != stmt->BindInt64(8, (int64_t) schema.GetOriginalECXmlVersionMajor()))
+                return ERROR;
+
+            //Persist uint32_t as int64 to not lose unsigned-ness
+            if (BE_SQLITE_OK != stmt->BindInt64(9, (int64_t) schema.GetOriginalECXmlVersionMinor()))
+                return ERROR;
+            }
         }
 
     if (BE_SQLITE_DONE != stmt->Step())
@@ -3217,7 +3241,7 @@ BentleyStatus SchemaWriter::UpdateEnumeration(Context& ctx, EnumerationChange& e
             return ERROR;
     
         Utf8String enumValueJson;
-        if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, newEnum))
+        if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, newEnum, ctx.IsEC32AvailableInFile()))
             return ERROR;
 
         sqlUpdateBuilder.AddSetExp("EnumValues", enumValueJson.c_str());
@@ -3925,35 +3949,41 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
             }
         }
 
-    const bool originalVersionMajorHasChanged = schemaChange.OriginalECXmlVersionMajor().IsChanged();
-    if (originalVersionMajorHasChanged)
+    if (FeatureManager::IsAvailable(ctx.GetECDb(), Feature::ECVersions))
         {
-        uint32_t newVal = schemaChange.OriginalECXmlVersionMajor().GetNew().Value();
-        if (schemaChange.OriginalECXmlVersionMajor().GetOld().Value() > newVal)
+        const bool originalVersionMajorHasChanged = schemaChange.OriginalECXmlVersionMajor().IsChanged();
+        if (originalVersionMajorHasChanged)
             {
-            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'OriginalECXmlVersionMajor' of an ECSchema is not supported.",
-                             oldSchema.GetName().c_str());
-            return ERROR;
+            uint32_t newVal = schemaChange.OriginalECXmlVersionMajor().GetNew().Value();
+            if (schemaChange.OriginalECXmlVersionMajor().GetOld().Value() > newVal)
+                {
+                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'OriginalECXmlVersionMajor' of an ECSchema is not supported.",
+                                     oldSchema.GetName().c_str());
+                return ERROR;
+                }
+
+            updateBuilder.AddSetExp("OriginalECXmlVersionMajor", newVal);
             }
 
-        updateBuilder.AddSetExp("OriginalECXmlVersionMajor", newVal);
-        }
-
-    if (schemaChange.OriginalECXmlVersionMinor().IsChanged())
-        {
-        uint32_t newVal = schemaChange.OriginalECXmlVersionMinor().GetNew().Value();
-
-        //if the higher digits have changed, minor version may be decremented
-        if (!originalVersionMajorHasChanged && schemaChange.OriginalECXmlVersionMinor().GetOld().Value() > newVal)
+        if (schemaChange.OriginalECXmlVersionMinor().IsChanged())
             {
-            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'OriginalECXmlVersionMinor' of an ECSchema is not supported.",
-                             oldSchema.GetName().c_str());
-            return ERROR;
+            uint32_t newVal = schemaChange.OriginalECXmlVersionMinor().GetNew().Value();
+
+            //if the higher digits have changed, minor version may be decremented
+            if (!originalVersionMajorHasChanged && schemaChange.OriginalECXmlVersionMinor().GetOld().Value() > newVal)
+                {
+                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'OriginalECXmlVersionMinor' of an ECSchema is not supported.",
+                                     oldSchema.GetName().c_str());
+                return ERROR;
+                }
+
+            updateBuilder.AddSetExp("OriginalECXmlVersionMinor", newVal);
             }
-
-        updateBuilder.AddSetExp("OriginalECXmlVersionMinor", newVal);
         }
-
+    else
+        {
+        BeAssert(newSchema.OriginalECXmlVersionLessThan(ECVersion::V3_2) && "Only EC 3.1 schemas can be imported into a file not supporting EC 3.2 yet");
+        }
 
     updateBuilder.AddWhereExp("Id", schemaId.GetValue());//this could even be on name
     if (updateBuilder.IsValid())
