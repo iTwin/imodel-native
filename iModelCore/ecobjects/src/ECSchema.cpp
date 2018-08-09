@@ -1934,14 +1934,14 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
 //--------------------------------------------------------------------------------------
 ECSchemaP ECSchema::GetSchemaPByAlias(Utf8StringCR alias)
     {
-    if (alias.length() == 0)
+    if (alias.empty())
         return this;
 
     // lookup referenced schema by alias
     bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator;
     for (schemaIterator = m_referencedSchemaAliasMap.begin(); schemaIterator != m_referencedSchemaAliasMap.end(); schemaIterator++)
         {
-        if (0 == alias.compare (schemaIterator->second))
+        if (alias.EqualsIAscii(schemaIterator->second))
             return schemaIterator->first;
         }
 
@@ -1953,14 +1953,14 @@ ECSchemaP ECSchema::GetSchemaPByAlias(Utf8StringCR alias)
 //--------------------------------------------------------------------------------------
 ECSchemaCP ECSchema::GetSchemaByAliasP(Utf8StringCR alias) const
     {
-    if (alias.length() == 0)
+    if (alias.empty())
         return this;
 
     // lookup referenced schema by alias
     bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator;
     for (schemaIterator = m_referencedSchemaAliasMap.begin(); schemaIterator != m_referencedSchemaAliasMap.end(); schemaIterator++)
         {
-        if (0 == alias.compare (schemaIterator->second))
+        if (alias.EqualsIAscii(schemaIterator->second))
             return schemaIterator->first;
         }
 
@@ -2009,14 +2009,14 @@ ECClassCP ECSchema::LookupClass(Utf8CP name, bool useFullName) const
         return nullptr;
     // Have to check !useFullName for checking alias because of the possibility of someone naming their schema the same as this schema's alias
     // Without this the lookup would occur on this schema instead of the referenced schema it was supposed to.
-    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsI(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsI(GetName())))
+    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsIAscii(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsIAscii(GetName())))
         return GetClassCP(unqualifiedName.c_str());
 
     if (useFullName)
         {
         for (const auto& s : GetReferencedSchemas())
             {
-            if (aliasOrSchemaName.EqualsI(s.second->GetName()))
+            if (aliasOrSchemaName.EqualsIAscii(s.second->GetName()))
                 return s.second->GetClassCP(unqualifiedName.c_str());
             }
         return nullptr;
@@ -2037,14 +2037,14 @@ KindOfQuantityCP ECSchema::LookupKindOfQuantity(Utf8CP name, bool useFullName) c
         return nullptr;
     // Have to check !useFullName for checking alias because of the possibility of someone naming their schema the same as this schema's alias
     // Without this the lookup would occur on this schema instead of the referenced schema it was supposed to.
-    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsI(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsI(GetName())))
+    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsIAscii(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsIAscii(GetName())))
         return GetKindOfQuantityCP(unqualifiedName.c_str());
 
     if (useFullName)
         {
         for (const auto& s : GetReferencedSchemas())
             {
-            if (aliasOrSchemaName.EqualsI(s.second->GetName()))
+            if (aliasOrSchemaName.EqualsIAscii(s.second->GetName()))
                 return s.second->GetKindOfQuantityCP(unqualifiedName.c_str());
             }
         return nullptr;
@@ -2065,14 +2065,14 @@ ECEnumerationCP ECSchema::LookupEnumeration(Utf8CP name, bool useFullName) const
         return nullptr;
     // Have to check !useFullName for checking alias because of the possibility of someone naming their schema the same as this schema's alias
     // Without this the lookup would occur on this schema instead of the referenced schema it was supposed to.
-    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsI(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsI(GetName())))
+    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsIAscii(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsIAscii(GetName())))
         return GetEnumerationCP(unqualifiedName.c_str());
 
     if (useFullName)
         {
         for (const auto& s : GetReferencedSchemas())
             {
-            if (aliasOrSchemaName.EqualsI(s.second->GetName()))
+            if (aliasOrSchemaName.EqualsIAscii(s.second->GetName()))
                 return s.second->GetEnumerationCP(unqualifiedName.c_str());
             }
         return nullptr;
@@ -2093,14 +2093,14 @@ PropertyCategoryCP ECSchema::LookupPropertyCategory(Utf8CP name, bool useFullNam
         return nullptr;
     // Have to check !useFullName for checking alias because of the possibility of someone naming their schema the same as this schema's alias
     // Without this the lookup would occur on this schema instead of the referenced schema it was supposed to.
-    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsI(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsI(GetName())))
+    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsIAscii(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsIAscii(GetName())))
         return GetPropertyCategoryCP(unqualifiedName.c_str());
 
     if (useFullName)
         {
         for (const auto& s : GetReferencedSchemas())
             {
-            if (aliasOrSchemaName.EqualsI(s.second->GetName()))
+            if (aliasOrSchemaName.EqualsIAscii(s.second->GetName()))
                 return s.second->GetPropertyCategoryCP(unqualifiedName.c_str());
             }
         return nullptr;
@@ -2179,14 +2179,14 @@ ECFormatCP ECSchema::LookupFormat(Utf8CP name, bool useFullName) const
         return nullptr;
     // Have to check !useFullName for checking alias because of the possibility of someone naming their schema the same as this schema's alias
     // Without this the lookup would occur on this schema instead of the referenced schema it was supposed to.
-    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsI(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsI(GetName())))
+    if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsIAscii(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsIAscii(GetName())))
         return GetFormatCP(unqualifiedName.c_str());
 
     if (useFullName)
         {
         for (const auto& s : GetReferencedSchemas())
             {
-            if (aliasOrSchemaName.EqualsI(s.second->GetName()))
+            if (aliasOrSchemaName.EqualsIAscii(s.second->GetName()))
                 return s.second->GetFormatCP(unqualifiedName.c_str());
             }
         return nullptr;
