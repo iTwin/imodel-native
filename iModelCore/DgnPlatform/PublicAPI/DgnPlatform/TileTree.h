@@ -13,7 +13,6 @@
 #include <forward_list>
 #include <folly/futures/Future.h>
 #include <Bentley/CancellationToken.h>
-#include <BeHttp/HttpRequest.h>
 #include <DgnPlatform/RealityDataCache.h>
 #include <forward_list>
 
@@ -569,29 +568,6 @@ public:
 
     //! Perform the load asynchronously.
     folly::Future<BentleyStatus> Perform();
-};
-
-//=======================================================================================
-// @bsiclass                                                   Mathieu.Marchand  11/2016
-//=======================================================================================
-struct HttpDataQuery
-{
-    Http::HttpByteStreamBodyPtr m_responseBody;
-    Http::Request m_request;
-    TileLoadStatePtr m_loads;
-
-    DGNPLATFORM_EXPORT HttpDataQuery(Utf8StringCR url, TileLoadStatePtr loads);
-
-    Http::Request& GetRequest() {return m_request;}
-
-    //! Parse expiration date from the response. Return false if caching is not allowed.
-    DGNPLATFORM_EXPORT static bool GetCacheControlExpirationDate(uint64_t& expiration, uint64_t maxValidDuration, Http::Response const& response);
-
-    //! Valid only after 'Perform' has completed.
-    ByteStream const& GetData() const {return m_responseBody->GetByteStream();}
-    
-    //! Perform http request and wait for the result.
-    DGNPLATFORM_EXPORT folly::Future<Http::Response> Perform();
 };
 
 //=======================================================================================

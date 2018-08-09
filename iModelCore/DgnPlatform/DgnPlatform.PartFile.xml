@@ -51,7 +51,6 @@
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="B02">
 
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="BeHttp"              PartFile="BeHttp"       Repository="BeHttp"/>
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="FollyShim"/> 
         <SubPart PartName="ECDbLibrary"         PartFile="ECDb"         Repository="ECDb" />
@@ -716,7 +715,6 @@
         <!-- <SubPart Repository="DgnDisplay"            PartFile="DgnDisplay"       PartName="RunGtest" /> -->
         <SubPart Repository="BeSQLite"              PartFile="BeSQLite"         PartName="RunGtest" />
         <SubPart Repository="Bentley"               PartFile="Bentley"          PartName="RunGtest" />
-        <SubPart Repository="BeHttp"                PartFile="BeHttp"           PartName="RunGtest" />
         <SubPart Repository="BeSecurity"            PartFile="BeSecurity"       PartName="RunGtest" />
         <SubPart Repository="DgnDomains-RealityModeling" PartFile="RealityModeling" PartName="RunGtest" />
         <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunGtest" />

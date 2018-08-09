@@ -6,9 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <BeHttp/HttpRequest.h>
 
-USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_REALITYDATA
 
 /*---------------------------------------------------------------------------------**//**

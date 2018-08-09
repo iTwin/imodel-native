@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <folly/BeFolly.h>
-#include <BeHttp/HttpClient.h>
 #include <numeric>
 
 //#define WIP_SCALABLE_MESH
@@ -121,29 +120,11 @@ bool TileLoader::_WantWaitOnSave() const
 folly::Future<BentleyStatus> TileLoader::_GetFromSource()
     {
     bool isHttp = (0 == strncmp("http:", m_resourceName.c_str(), 5) || 0 == strncmp("https:", m_resourceName.c_str(), 6));
-
     if (isHttp)
         {
-        m_maxValidDuration = _GetMaxValidDuration();
-        auto query = std::make_shared<HttpDataQuery>(m_resourceName, m_loads);
-
-        TileLoaderPtr me(this);
-        return query->Perform().then([me, query] (Http::Response const& response)
-            {
-            if (Http::ConnectionStatus::OK != response.GetConnectionStatus() || Http::HttpStatus::OK != response.GetHttpStatus())
-                return ERROR;
-
-            if (!query->m_responseBody->GetByteStream().HasData())
-                return ERROR;
-
-            me->m_tileBytes = std::move(query->m_responseBody->GetByteStream()); // NEEDSWORK this is a copy not a move...
-            me->m_contentType = response.GetHeaders().GetContentType();
-            me->m_saveToCache = query->GetCacheControlExpirationDate(me->m_expirationDate, me->m_maxValidDuration, response);
-
-            return SUCCESS;
-            });
-        }                                           
-
+        BeAssert(false);
+        return ERROR;
+        }
 
     auto query = std::make_shared<FileDataQuery>(m_resourceName, m_loads);
  
@@ -470,87 +451,6 @@ BentleyStatus TileLoader::DoSaveToDb()
         }
 
     return SUCCESS;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  11/2016
-//----------------------------------------------------------------------------------------
-HttpDataQuery::HttpDataQuery(Utf8StringCR url, TileLoadStatePtr loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
-    {
-    m_request.SetResponseBody(m_responseBody);
-    m_request.SetRetryOptions(Http::Request::RetryOption::ResetTransfer, 1);
-    if (nullptr != loads)
-        m_request.SetCancellationToken(loads);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  11/2016
-//----------------------------------------------------------------------------------------
-folly::Future<Http::Response> HttpDataQuery::Perform()
-    {
-    TileLoadStatePtr loads = m_loads;
-
-    return GetRequest().Perform().then([loads] (Http::Response response)
-        {
-        return response;
-        });
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  11/2016
-//----------------------------------------------------------------------------------------
-bool HttpDataQuery::GetCacheControlExpirationDate(uint64_t& expirationDate, uint64_t maxValidDuration, Http::Response const& response)
-    {
-    expirationDate = 0;
-
-    if (!response.IsSuccess())
-        return false;
-         
-    Utf8String cacheControl = response.GetHeaders().GetCacheControl();
-    size_t offset = 0;
-    Utf8String directive;
-    while ((offset = cacheControl.GetNextToken(directive, ",", offset)) != Utf8String::npos)
-        {
-        // Not parsed:
-        // "private" : means that the cache is for a single user. This is what we have.
-        // "s-maxage": max age for shared cache(aka proxies). We have a private single-user cache, not relevant.
-
-        if (directive.StartsWith("no-cache") || directive.StartsWith("no-store"))
-            {
-            // We are not allowed to cache this response. It may contain sensitive information, requires usage tracking by the server...
-            expirationDate = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            return false;
-            }
-
-        if (directive.StartsWith("max-age="))
-            {
-            int maxAge = atoi(directive.c_str() + strlen("max-age="));
-
-            expirationDate = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + (maxAge * 1000);
-            }
-        }
-
-    // if cache-control did not provide a max-age we must use 'Expires' directive if present.
-    if (0 == expirationDate)
-        {        
-        Utf8CP expiresStr = response.GetHeaders().GetValue("Expires");
-        if (nullptr == expiresStr || SUCCESS != Http::HttpClient::HttpDateToUnixMillis(expirationDate, expiresStr))
-            {
-            // if we cannot find an expiration date we are still allowed to cache.
-            }
-        }
-       
-    // We need to check to see whether the TileTree itself sets a maximum valid duration. For example, we enforce a 3-day expiration on Bing Map tiles.
-    if (0 != maxValidDuration)
-        {
-        uint64_t maxAllowedExpirationDate = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + maxValidDuration;
-
-        // if we got no expiration date, or the furthestExpirationDate is sooner, we use that.
-        if ( (0 == expirationDate) || (maxAllowedExpirationDate < expirationDate) )
-            expirationDate = maxAllowedExpirationDate;
-        }
-
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -602,7 +602,6 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubPartsStaticLibs)$(libprefix)BeLibJpegTurbo$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BeJpeg$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext) \
-                            $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext) \
                             $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
                             $(ContextSubpartsLibs)$(UnitsLib) \
                             $(ContextSubpartsLibs)$(BentleyGeomLib) \
