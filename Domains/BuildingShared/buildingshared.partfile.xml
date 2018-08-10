@@ -73,6 +73,7 @@
         <SubPart PartName="BuildingUtils"/>
         <SubPart PartName="BuildingDgnUtils" />
         <SubPart PartName="GeometryManipulationStrategies"/>
+        <SubPart PartName="DgnElementManipulationStrategies"/>
     </Part>
 
     <Part Name="GeometryManipulationStrategies" BentleyBuildMakeFile="GeometryManipulationStrategies/GeometryManipulationStrategies.mke">
@@ -111,7 +112,6 @@
     
   <Part Name="BuildingShared-Tested">
     <SubPart PartName="BuildingSharedBundle"/>
-    <SubPart PartName="DgnElementManipulationStrategies"/>
     <SubPart PartName="Gtest-RunAggregator"/>
   </Part>
 
