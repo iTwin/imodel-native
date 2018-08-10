@@ -196,8 +196,8 @@ void DgnViewport::ViewToWorld(DPoint3dP rootPts, DPoint3dCP viewPts, int nPts) c
 * @bsimethod                                                    Brien.Bastings  03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnViewport::IsPointAdjustmentRequired() const {return GetViewController()._IsPointAdjustmentRequired();}
-bool DgnViewport::IsSnapAdjustmentRequired() const {return GetViewController()._IsSnapAdjustmentRequired(DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSPlaneSnapLock());}
-bool DgnViewport::IsContextRotationRequired() const {return GetViewController()._IsContextRotationRequired(DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSContextLock());}
+bool DgnViewport::IsSnapAdjustmentRequired() const {return false;}
+bool DgnViewport::IsContextRotationRequired() const {return false;}
 
 /*---------------------------------------------------------------------------------**//**
 * Ensure the rotation matrix for this view is aligns the root z with the view out (i.e. a "2d view").

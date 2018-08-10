@@ -692,7 +692,7 @@ void DistanceFormatter::InitModelSettings(GeometricModelCR model)
     SetUnitFormat(displayInfo.GetLinearUnitMode());
     SetPrecision(displayInfo.GetLinearPrecision());
 
-    SetIsDgnCoordReadOutCapable(T_HOST.GetFormatterAdmin()._AllowDgnCoordinateReadout());
+    SetIsDgnCoordReadOutCapable(true);
 
     m_masterUnit = displayInfo.GetMasterUnits();
     m_subUnit = displayInfo.GetSubUnits();

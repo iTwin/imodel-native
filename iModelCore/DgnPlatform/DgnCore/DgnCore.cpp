@@ -335,12 +335,10 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_notificationAdmin);
     BeAssert(NULL == m_geoCoordAdmin);
     BeAssert(NULL == m_txnAdmin);
-    BeAssert(NULL == m_formatterAdmin);
     BeAssert(NULL == m_exceptionHandler);
     BeAssert(NULL == m_knownLocationsAdmin);
     BeAssert(NULL == m_repositoryAdmin);
     BeAssert(NULL == m_tileAdmin);
-    BeAssert(NULL == m_sessionSettingsAdmin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -382,9 +380,7 @@ DgnPlatformLib::Host::FontAdmin&            DgnPlatformLib::Host::_SupplyFontAdm
 DgnPlatformLib::Host::NotificationAdmin&    DgnPlatformLib::Host::_SupplyNotificationAdmin()    {return *new NotificationAdmin();}
 DgnPlatformLib::Host::LineStyleAdmin&       DgnPlatformLib::Host::_SupplyLineStyleAdmin()       {return *new LineStyleAdmin();}
 DgnPlatformLib::Host::TxnAdmin&             DgnPlatformLib::Host::_SupplyTxnAdmin()             {return *new TxnAdmin();}
-DgnPlatformLib::Host::FormatterAdmin&       DgnPlatformLib::Host::_SupplyFormatterAdmin()       {return *new FormatterAdmin();}
 DgnPlatformLib::Host::RepositoryAdmin&      DgnPlatformLib::Host::_SupplyRepositoryAdmin()      {return *new RepositoryAdmin();}
-DgnPlatformLib::Host::SessionSettingsAdmin& DgnPlatformLib::Host::_SupplySessionSettingsAdmin() {return *new SessionSettingsAdmin();}
 DgnPlatformLib::Host::TileAdmin&            DgnPlatformLib::Host::_SupplyTileAdmin()            {return *new TileAdmin();}
 
 //---------------------------------------------------------------------------------------

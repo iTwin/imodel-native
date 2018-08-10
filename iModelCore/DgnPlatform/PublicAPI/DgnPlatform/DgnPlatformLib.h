@@ -68,14 +68,6 @@ public:
         friend class DgnPlatformLib;
 
     public:
-        struct SessionSettingsAdmin : IHostObject
-            {
-            virtual bool _GetGridLock() const {return false;}           //!< If Grid Lock is on, project data points to grid.
-            virtual bool _GetACSPlaneSnapLock() const {return false;}   //!< If ACS Snap Lock is on, project snap points to the ACS plane.
-            virtual bool _GetACSContextLock() const {return false;}     //!< If ACS Plane Lock is on, standard view rotations are relative to the ACS instead of global.
-            virtual SelectionScope _GetActiveSelectionScope() const {return SelectionScope::Element;}     //!< Selection scope used when locating elements.
-            };
-
         //! Provides Exception handling capabilities
         struct ExceptionHandler : IHostObject
             {
@@ -397,14 +389,6 @@ public:
             virtual IGeoCoordinateServicesP _GetServices() const {return nullptr;}
             };
 
-        //! Formatter preferences for units, fields, etc
-        struct FormatterAdmin : IHostObject
-            {
-
-            //! If true, display coordinates in DGN format(eg. 1:0 1/4); if false, display DWG format(eg. 1'-0 1/4").
-            virtual bool    _AllowDgnCoordinateReadout() const {return true;}
-            };
-
         //! Supplies functionality for coordinating multi-user DgnDb repositories
         struct RepositoryAdmin : IHostObject
             {
@@ -450,7 +434,6 @@ public:
         typedef bvector<DgnDomain*> T_RegisteredDomains;
 
     protected:
-        SessionSettingsAdmin*   m_sessionSettingsAdmin;
         IKnownLocationsAdmin*   m_knownLocationsAdmin;
         ExceptionHandler*       m_exceptionHandler;
         DgnProgressMeterP       m_progressMeter;
@@ -461,7 +444,6 @@ public:
         NotificationAdmin*      m_notificationAdmin;
         GeoCoordinationAdmin*   m_geoCoordAdmin;
         TxnAdmin*               m_txnAdmin;
-        FormatterAdmin*         m_formatterAdmin;
         RepositoryAdmin*        m_repositoryAdmin;
         TileAdmin*              m_tileAdmin;
         Utf8String              m_productName;
@@ -497,17 +479,11 @@ public:
         //! Supply the GeoCoordinationStateAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again..
         DGNPLATFORM_EXPORT virtual GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin();
 
-        //! Supply the formatter admin
-        DGNPLATFORM_EXPORT virtual FormatterAdmin& _SupplyFormatterAdmin();
-
         //! Supply the RepositoryAdmin
         DGNPLATFORM_EXPORT virtual RepositoryAdmin& _SupplyRepositoryAdmin();
 
         //! Supply the TileAdmin
         DGNPLATFORM_EXPORT virtual TileAdmin& _SupplyTileAdmin();
-
-        //! Supply the SessionSettingsAdmin.
-        DGNPLATFORM_EXPORT virtual SessionSettingsAdmin& _SupplySessionSettingsAdmin();
 
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
@@ -523,7 +499,6 @@ public:
 
         Host()
             {
-            m_sessionSettingsAdmin = nullptr;
             m_knownLocationsAdmin = nullptr;
             m_exceptionHandler = nullptr;
             m_progressMeter = nullptr;
@@ -534,14 +509,12 @@ public:
             m_notificationAdmin = nullptr;
             m_geoCoordAdmin = nullptr;
             m_txnAdmin = nullptr;
-            m_formatterAdmin = nullptr;
             m_repositoryAdmin = nullptr;
             m_tileAdmin = nullptr;
             };
 
         virtual ~Host() {}
 
-        SessionSettingsAdmin&   GetSessionSettingsAdmin()  {return *m_sessionSettingsAdmin;}
         IKnownLocationsAdmin&   GetIKnownLocationsAdmin()  {return *m_knownLocationsAdmin;}
         ExceptionHandler&       GetExceptionHandler()      {return *m_exceptionHandler;}
         FontAdmin&              GetFontAdmin()             {return *m_fontAdmin;}
@@ -551,7 +524,6 @@ public:
         NotificationAdmin&      GetNotificationAdmin()     {return *m_notificationAdmin;}
         GeoCoordinationAdmin&   GetGeoCoordinationAdmin()  {return *m_geoCoordAdmin;}
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
-        FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}
         TileAdmin&              GetTileAdmin()             {return *m_tileAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
