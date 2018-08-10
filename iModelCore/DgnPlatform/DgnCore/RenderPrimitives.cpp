@@ -3387,7 +3387,7 @@ struct PrimitiveBuilderContext : ViewContext
     explicit PrimitiveBuilderContext(PrimitiveBuilderR gf) : m_system(gf.GetSystem())
         {
         SetDgnDb(gf.GetDgnDb());
-        Attach(gf.GetViewport(), DrawPurpose::NotSpecified);
+        // Attach(gf.GetViewport(), DrawPurpose::NotSpecified);
         }
 
     SystemP _GetRenderSystem() const override { return &m_system; }
@@ -3430,19 +3430,10 @@ double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
         {
         return s_toleranceMult;
         }
-    else if (nullptr == params.GetViewport())
+    else // ###TODO...if (nullptr == params.GetViewport())
         {
         BeAssert(!accum.GetGeometries().ContainsCurves() && "No viewport supplied to GraphicBuilder::CreateParams - falling back to default coarse tolerance");
         return 20.0;
-        }
-    else
-        {
-        BeAssert(!accum.IsEmpty());
-        DRange3d range = accum.GetGeometries().ComputeRange(); // NB: Already multiplied by transform...
-
-        // NB: Geometry::CreateFacetOptions() will apply any scale factors from transform...no need to do it here.
-        DPoint3d pt = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
-        return params.GetViewport()->GetPixelSizeAtPoint(&pt) * s_toleranceMult;
         }
     }
 

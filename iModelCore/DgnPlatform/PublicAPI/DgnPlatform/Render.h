@@ -1390,46 +1390,25 @@ struct GraphicBuilder : RefCountedBase
     private:
         DgnDbR          m_dgndb;
         Transform       m_placement;
-        DgnViewportP    m_viewport;
         GraphicType     m_type;
 
     public:
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, TransformCR tf, DgnViewportP vp, GraphicType type);
-        DGNPLATFORM_EXPORT CreateParams(DgnViewportR vp, TransformCR tf, GraphicType type);
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, TransformCR tf, GraphicType type);
+        // ###TODO: Need an alternate way to specify the viewport for computing pixel-size/tolerance...DGNPLATFORM_EXPORT CreateParams(DgnViewportR vp, TransformCR tf, GraphicType type);
 
         //! Create params for a graphic in world coordinates, not necessarily associated with any viewport.
         //! This function is chiefly used for tile generation code as the tolerance for faceting the graphic's geometry is independent of any viewport.
         //! If this function is used outside of tile generation context, a default coarse tolerance will be used.
         //! To get a tolerance appropriate to a viewport, use the overload accepting a DgnViewport.
-        static CreateParams Scene(DgnDbR db, TransformCR placement=Transform::FromIdentity(), DgnViewportP vp=nullptr)
-            { return CreateParams(db, placement, vp, GraphicType::Scene); }
-
-        //! Create params for a graphic in world coordinates associated with a viewport.
-        //! This function is chiefly used for code which produces 'normal' decorations and dynamics.
-        static CreateParams Scene(DgnViewportR vp, TransformCR placement=Transform::FromIdentity())
-            { return CreateParams(vp, placement, GraphicType::Scene); }
-
-        //! Create params for a WorldDecoration-type Graphic
-        //! The faceting tolerance will be computed from the finished graphic's range and the viewport.
-        static CreateParams WorldDecoration(DgnViewportR vp, TransformCR placement=Transform::FromIdentity())
-            { return CreateParams(vp, placement, GraphicType::WorldDecoration); }
-
-        //! Create params for a WorldOverlay-type Graphic
-        //! The faceting tolerance will be computed from the finished graphic's range and the viewport.
-        static CreateParams WorldOverlay(DgnViewportR vp, TransformCR placement=Transform::FromIdentity())
-            { return CreateParams(vp, placement, GraphicType::WorldOverlay); }
-
-        //! Create params for a ViewOverlay-type Graphic
-        static CreateParams ViewOverlay(DgnViewportR vp, TransformCR placement=Transform::FromIdentity())
-            { return CreateParams(vp, placement, GraphicType::ViewOverlay); }
+        static CreateParams Scene(DgnDbR db, TransformCR placement=Transform::FromIdentity())
+            { return CreateParams(db, placement, GraphicType::Scene); }
 
         //! Create params for a subgraphic
         CreateParams SubGraphic(TransformCR placement=Transform::FromIdentity()) const
-            { return CreateParams(m_dgndb, placement, m_viewport, m_type); }
+            { return CreateParams(m_dgndb, placement, m_type); }
 
         DgnDbR GetDgnDb() const { return m_dgndb; }
         TransformCR GetPlacement() const { return m_placement; }
-        DgnViewportP GetViewport() const { return m_viewport; }
         GraphicType GetType() const { return m_type; }
         bool IsViewCoordinates() const { return GraphicType::ViewBackground == GetType() || GraphicType::ViewOverlay == GetType(); }
         bool IsWorldCoordinates() const { return !IsViewCoordinates(); }
@@ -1503,7 +1482,6 @@ public:
     CreateParams const& GetCreateParams() const {return m_createParams;}
     DgnDbR GetDgnDb() const {return m_createParams.GetDgnDb();}
     TransformCR GetLocalToWorldTransform() const {return m_createParams.GetPlacement();}
-    DgnViewportP GetViewport() const {return m_createParams.GetViewport();}
     bool IsWorldCoordinates() const {return m_createParams.IsWorldCoordinates();}
     bool IsViewCoordinates() const {return m_createParams.IsViewCoordinates();}
     bool WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) { return _WantStrokeLineStyle(symb, facetOptions); }

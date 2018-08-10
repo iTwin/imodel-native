@@ -359,19 +359,10 @@ bool GraphicBuilder::_WantPreBakedBody(IBRepEntityCR body)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicBuilder::CreateParams::CreateParams(DgnViewportR vp, TransformCR tf, GraphicType type)
-    : CreateParams(vp.GetViewController().GetDgnDb(), tf, &vp, type)
-    {
-    //
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicBuilder::CreateParams::CreateParams(DgnDbR db, TransformCR tf, DgnViewportP vp, GraphicType type)
-    : m_dgndb(db), m_placement(tf), m_viewport(vp), m_type(type)
+GraphicBuilder::CreateParams::CreateParams(DgnDbR db, TransformCR tf, GraphicType type)
+    : m_dgndb(db), m_placement(tf), m_type(type)
     {
     //
     }

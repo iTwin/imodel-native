@@ -194,7 +194,7 @@ public:
     void EnableStopAfterTimout(BeDuration::Milliseconds timeout) {m_endTime = BeTimePoint::FromNow(timeout); m_stopAfterTimeout=true;}
 
     Render::GraphicBuilderPtr CreateSceneGraphic(TransformCR tf=Transform::FromIdentity())
-        { return _CreateGraphic(Render::GraphicBuilder::CreateParams::Scene(GetDgnDb(), tf, GetViewport())); }
+        { return _CreateGraphic(Render::GraphicBuilder::CreateParams::Scene(GetDgnDb(), tf)); }
 
     Render::TexturePtr CreateTexture(Render::ImageCR image) const { return _CreateTexture(image); }
     Render::TexturePtr CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp=Render::Image::BottomUp::No) const
