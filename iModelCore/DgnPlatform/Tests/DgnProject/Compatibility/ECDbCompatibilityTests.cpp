@@ -476,11 +476,22 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32SchemaImport)
 
             ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                        <ECSchemaReference name="ECDbFileInfo" version="02.00.01" alias="ecdbf" />
                         <ECEntityClass typeName="Foo">
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                </ECCustomAttributes>
                                 <ECProperty propertyName="Code" typeName="int" />
                                 <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
                                 <ECProperty propertyName="Status" typeName="StatusEnum" />
-                            </ECEntityClass>
+                        </ECEntityClass>
+                        <ECEntityClass typeName="MyFileInfo">
+                            <BaseClass>ecdbf:FileInfo</BaseClass>
+                            <ECProperty propertyName="Path" typeName="string" />
+                        </ECEntityClass>
                         <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
                         <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
                         <KindOfQuantity typeName="TEMPERATURE" displayLabel="Temperature" persistenceUnit="K(DefaultReal)" presentationUnits="CELSIUS(real4u);FAHRENHEIT(real4u);K(real4u)" relativeError="0.01"/>
@@ -499,6 +510,18 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32SchemaImport)
                     {
                     EXPECT_EQ(SUCCESS, schemaImportStat) << testDb.GetDescription();
                     EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
+
+                    if (testDb.GetAge() == ProfileState::Age::Older)
+                        {
+                        EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                        EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                        }
+                    else
+                        {
+                        EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                        EXPECT_EQ(JsonValue("[{\"cnt\": 4}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                        }
+
                     ECInstanceKey fooKey;
                     ECSqlStatement stmt;
                     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "INSERT INTO ts.Foo(Code,Size,Status) VALUES(1,3.0,2)")) << testDb.GetDescription();
@@ -590,7 +613,6 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaImport)
             const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())
                 {
-                    case ProfileState::Age::Older:
                     case ProfileState::Age::UpToDate:
                     {
                     EXPECT_EQ(SUCCESS, schemaImportStat) << testDb.GetDescription();
@@ -633,6 +655,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaImport)
                     break;
                     }
 
+                    case ProfileState::Age::Older:
                     case ProfileState::Age::Newer:
                     {
                     EXPECT_EQ(ERROR, schemaImportStat) << testDb.GetDescription();
@@ -737,6 +760,17 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32SchemaUpdate)
                     case ProfileState::Age::UpToDate:
                     {
                     EXPECT_EQ(SUCCESS, schemaImportStat) << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("SchemaUpdateTest")) << testDb.GetDescription();
+                    if (testDb.GetAge() == ProfileState::Age::Older)
+                        {
+                        EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                        EXPECT_EQ(JsonValue("[{\"cnt\": 1}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                        }
+                    else
+                        {
+                        EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                        EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                        }
 
                     for (Utf8CP className : {"SubA", "SubB", "SubC"})
                         {
