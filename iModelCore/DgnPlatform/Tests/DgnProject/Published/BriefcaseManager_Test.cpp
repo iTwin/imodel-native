@@ -1970,7 +1970,6 @@ TEST_F(ExtractLocksTest, UsedLocks)
         // Trigger a change in the root which will call our Callback on this element, causing an update on an element
         DgnElementPtr rootEdit = root->CopyForEdit();
         rootEdit->SetUserLabel("New Root Label");
-        DgnDbStatus status;
         EXPECT_TRUE(db.Elements().Update<DgnElement>(*rootEdit).IsValid());
         // Calling ExtractLocks below will trigger the _OnRootChange called when saving changes to the Db and extracting necessary locks
         EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
@@ -2210,7 +2209,6 @@ TEST_F(CodesManagerTest, FilteredCodes)
     {
     DgnDbPtr pDb = SetupDb(L"FilteredCodesTest.bim", BeBriefcaseId(2));
     DgnDbR db = *pDb;
-    DictionaryModelR dictionary = db.GetDictionaryModel();
 
     // Start bulk operation
     db.BriefcaseManager().StartBulkOperation();

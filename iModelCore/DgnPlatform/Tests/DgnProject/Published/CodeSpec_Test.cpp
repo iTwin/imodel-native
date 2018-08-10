@@ -15,13 +15,13 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //========================================================================================
 struct CodeSpecTests : public DgnDbTestFixture
 {
-    void ValidateCodeFragmentSpec(CodeFragmentSpecCR, CodeFragmentSpec::Type, Utf8CP, bool, int minChars=0, int maxChars=CodeFragmentSpec::MAX_MaxChars);
+    void ValidateCodeFragmentSpec(CodeFragmentSpecCR, CodeFragmentSpec::Type, Utf8CP, bool, size_t minChars=0, size_t maxChars=CodeFragmentSpec::MAX_MaxChars);
 };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    01/2017
 //---------------------------------------------------------------------------------------
-void CodeSpecTests::ValidateCodeFragmentSpec(CodeFragmentSpecCR fragmentSpec, CodeFragmentSpec::Type type, Utf8CP prompt, bool inSequenceMask, int minChars, int maxChars)
+void CodeSpecTests::ValidateCodeFragmentSpec(CodeFragmentSpecCR fragmentSpec, CodeFragmentSpec::Type type, Utf8CP prompt, bool inSequenceMask, size_t minChars, size_t maxChars)
     {
     BeAssert(fragmentSpec.IsValid());
     BeAssert(fragmentSpec.GetType() == type);

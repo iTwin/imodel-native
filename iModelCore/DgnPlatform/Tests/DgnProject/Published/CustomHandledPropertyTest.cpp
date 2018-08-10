@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/CustomHandledPropertyTest.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -24,7 +24,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
     {
     SetupSeedProject();
     ECN::ECValue checkValue1, checkValue2;
-    uint32_t LMindex, Spindex, Mindex, Gsindex, Orgindex, fgindex, codeScopeIndex, codeSpecIndex, codeValueIndex, jsindex, uvindex;
+    uint32_t LMindex, Spindex, Mindex, fgindex, codeScopeIndex, codeSpecIndex, codeValueIndex, jsindex, uvindex;
     DateTime dateTime = DateTime(DateTime::Kind::Utc, 2016, 2, 14, 9, 58, 17, 456);
     DgnCode code = DgnCode::CreateEmpty();
     BeGuid federationGuid(true);
@@ -111,7 +111,6 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
     {
      DgnElementCPtr el= m_db->Elements().GetElement(eleid);
      ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, fgindex));
-     size_t sz=sizeof(federationGuid);
      ASSERT_TRUE(checkValue1.Equals(ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
      checkValue1.Clear();
      ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, codeSpecIndex));
@@ -136,7 +135,6 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
     {
     DgnElementPtr el = m_db->Elements().GetForEdit<DgnElement>(eleid);
 
-    size_t sz = sizeof(federationGuid);
     ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(fgindex, ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, fgindex));
     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
@@ -157,7 +155,6 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
     {
     DgnElementCPtr el = m_db->Elements().Get<DgnElement>(eleid);
 
-    size_t sz = sizeof(federationGuid);
     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, fgindex));
     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
     checkValue1.Clear();

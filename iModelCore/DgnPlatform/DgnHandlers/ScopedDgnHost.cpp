@@ -37,18 +37,6 @@ struct LoggingNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
         return SUCCESS;
         }
 
-    NotificationManager::MessageBoxValue _OpenMessageBox(NotificationManager::MessageBoxType t, Utf8CP msg, NotificationManager::MessageBoxIconType iconType) override
-        {
-        NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->warningv("MESSAGEBOX: %s\n", msg);
-        printf("<<NOTIFICATION MessageBox: %s >>\n", msg);
-        return NotificationManager::MESSAGEBOX_VALUE_Ok;
-        }
-
-    void      _OutputPrompt(Utf8CP msg) override
-        {// Log this as an error because we cannot prompt while running a unit test!
-        NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->errorv("PROMPT (IGNORED): %s\n", msg);
-        }
-
     bool _GetLogSQLiteErrors() override 
         {
         return NativeLogging::LoggingManager::GetLogger("BeSQLite")->isSeverityEnabled(NativeLogging::LOG_INFO);

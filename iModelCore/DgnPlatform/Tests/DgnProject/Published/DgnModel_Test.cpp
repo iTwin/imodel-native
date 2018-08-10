@@ -159,6 +159,7 @@ void DgnModelTests::CheckEmptyModel()
     int count = 0;
     for (auto& el : model2->MakeIterator())
         {
+        EXPECT_TRUE(el.GetElementId().IsValid()); // primarily to silence 'unused variable' warnings...
         ++count;
         }
 
@@ -231,7 +232,11 @@ static int countSheetModels(DgnDbR db)
     {
     int count = 0;
     for (ModelIteratorEntryCR sheet : db.Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SheetModel)))
+        {
+        EXPECT_TRUE(sheet.GetModelId().IsValid()); // to silence 'unused variable' warnings...
         ++count;
+        }
+
     return count;
     }
 

@@ -359,12 +359,6 @@ public:
             //! Implement this method to display messages from NotificationManager::OutputMessage.
             virtual StatusInt _OutputMessage(NotifyMessageDetails const&) {return SUCCESS;}
 
-            //! Implement this method to open/display MessageBoxes from NotificationManager::OpenMessageBox.
-            virtual NotificationManager::MessageBoxValue _OpenMessageBox(NotificationManager::MessageBoxType, Utf8CP, NotificationManager::MessageBoxIconType) {return NotificationManager::MESSAGEBOX_VALUE_Ok;}
-
-            //! Implement this method to display a prompt from NotificationManager::OutputPrompt.
-            virtual void _OutputPrompt(Utf8CP) {}
-
             //! Return true if you want SQLite to log errors. Should be used only for limited debugging purposes.
             virtual bool _GetLogSQLiteErrors() {return false;}
 
@@ -376,9 +370,6 @@ public:
 
             //! End an activity message.
             virtual StatusInt _EndActivityMessage(ActivityMessageEndReason reason) {return SUCCESS;}
-
-            //! MicroStation internal only.
-            DGNPLATFORM_EXPORT static void ChangeAdmin(NotificationAdmin&);
             };
 
         //! Supervises the processing of GeoCoordination

@@ -189,17 +189,7 @@ void DgnHost::SetHostVariable(Key& key, void* val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NotificationManager::OutputPrompt(Utf8CP prompt) {return T_HOST.GetNotificationAdmin()._OutputPrompt(prompt);}
 StatusInt NotificationManager::OutputMessage(NotifyMessageDetails const& details) {return T_HOST.GetNotificationAdmin()._OutputMessage(details);}
-void DgnPlatformLib::Host::NotificationAdmin::ChangeAdmin(NotificationAdmin& newAdmin){T_HOST.ChangeNotificationAdmin(newAdmin);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-NotificationManager::MessageBoxValue NotificationManager::OpenMessageBox(MessageBoxType mbType, Utf8CP message, MessageBoxIconType icon)
-    {
-    return T_HOST.GetNotificationAdmin()._OpenMessageBox(mbType, message, icon);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Dan.East                        10/17
@@ -247,7 +237,6 @@ void DgnPlatformLib::StaticInitialize()
     bentleyAllocator_enableLowFragmentationCRTHeap();
     s_staticInitialized = true;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/08

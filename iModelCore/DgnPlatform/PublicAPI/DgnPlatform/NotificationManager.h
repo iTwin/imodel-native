@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/NotificationManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -181,57 +181,11 @@ protected:
 struct NotificationManager
 {
 public:
-    enum MessageBoxType
-    {
-        MESSAGEBOX_TYPE_OkCancel         = -13,
-        MESSAGEBOX_TYPE_Ok               = -97,
-        MESSAGEBOX_TYPE_LargeOk          = -119,
-        MESSAGEBOX_TYPE_MediumAlert      = -112,
-        MESSAGEBOX_TYPE_YesNoCancel      = -113,
-        MESSAGEBOX_TYPE_YesNo            = -121,
-    };
-
-    enum MessageBoxIconType
-    {
-        MESSAGEBOX_ICON_NoSymbol          = 0,   // Means Don't draw Symbol
-        MESSAGEBOX_ICON_Information       = 1,   // Lower Case i
-        MESSAGEBOX_ICON_Question          = 2,   // Question Mark
-        MESSAGEBOX_ICON_Warning           = 3,   // Exclamation Point
-        MESSAGEBOX_ICON_Critical          = 4,   // Stop Sign
-    };
-
-    enum MessageBoxValue
-    {
-        MESSAGEBOX_VALUE_Apply        = 1,
-        MESSAGEBOX_VALUE_Reset        = 2,
-        MESSAGEBOX_VALUE_Ok           = 3,
-        MESSAGEBOX_VALUE_Cancel       = 4,
-        MESSAGEBOX_VALUE_Default      = 5,
-        MESSAGEBOX_VALUE_Yes          = 6,
-        MESSAGEBOX_VALUE_No           = 7,
-        MESSAGEBOX_VALUE_Retry        = 8,
-        MESSAGEBOX_VALUE_Stop         = 9,
-        MESSAGEBOX_VALUE_Help         = 10,
-        MESSAGEBOX_VALUE_YesToAll     = 11,
-        MESSAGEBOX_VALUE_NoToAll      = 12,
-    };
-
 public:
-    //! Output a prompt to the user. A 'prompt' is intended to indicate an action the user should take to proceed.
-    //! @param[in] prompt       The prompt string.
-    DGNPLATFORM_EXPORT static void OutputPrompt(Utf8CP prompt);
-
     //! Output a message and/or alert to the user.
     //! @param[in] message      The message details.
     //! @return SUCCESS if the message was displayed, ERROR if an invalid priority is specified.
     DGNPLATFORM_EXPORT static StatusInt OutputMessage(NotifyMessageDetails const& message);
-
-    //! Output a MessageBox and wait for response from the user.
-    //! @param[in] mbType       The MessageBox type.
-    //! @param[in] message      The message to display.
-    //! @param[in] icon         The MessageBox icon type.
-    //! @return the response from the user.
-    DGNPLATFORM_EXPORT static MessageBoxValue OpenMessageBox(MessageBoxType mbType, Utf8CP message, MessageBoxIconType icon);
 
     //! Set up for activity messages.
     //! @param[in] details      The activity message details.

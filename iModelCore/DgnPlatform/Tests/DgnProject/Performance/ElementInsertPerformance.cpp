@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTestFixture.h"
 #include "PerformanceElementsCRUDTests.h"
+#include <array>
 
 //=======================================================================================
 // @bsiclass                                                     Krischan.Eberle      06/15

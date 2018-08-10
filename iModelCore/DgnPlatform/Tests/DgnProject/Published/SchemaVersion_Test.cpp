@@ -476,7 +476,6 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     {
     DbResult result = BE_SQLITE_OK;
     ECPropertyCP testProperty = nullptr;
-    RevisionStatus status = RevisionStatus::Success;
 
     /* Setup baseline */
     SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/Category_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -273,7 +273,7 @@ TEST_F (CategoryTests, UpdateCategory)
 TEST_F (CategoryTests, IterateCategories)
     {
     SetupSeedProject();
-    int numCategories = SpatialCategory::MakeIterator(*m_db).BuildIdSet<DgnCategoryId>().size();
+    size_t numCategories = SpatialCategory::MakeIterator(*m_db).BuildIdSet<DgnCategoryId>().size();
     DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory1");
     DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory2");
     DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory3");

@@ -1510,7 +1510,7 @@ TEST_F(ElementDependencyGraph, ReverseDependency)
     ASSERT_EQ(selectDepRel->Step(), BE_SQLITE_ROW);
 
     EDECallbackSequenceMonitor monitor;
-    CallbackSequenceRecorder const& recorder = monitor.GetRecorder();
+    monitor.GetRecorder();
 
     //---
     // e1<-o-e2
