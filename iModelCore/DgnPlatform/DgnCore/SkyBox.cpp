@@ -8,44 +8,6 @@
 #include <DgnPlatformInternal.h>
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d SpatialViewController::GetGroundExtents(DgnViewportCR vp) const
-    {
-    auto& displayStyle = GetSpatialViewDefinition().GetDisplayStyle3d();
-    AxisAlignedBox3d extents;
-    if (!displayStyle.IsGroundPlaneEnabled())
-        return extents;
-
-    double elevation = GetGroundElevation();
-
-    DRay3d viewRay = {DPoint3d(), vp.GetZVector()};
-    DPlane3d xyPlane = DPlane3d::FromOriginAndNormal(DPoint3d::From(0,0,elevation), DVec3d::From(0, 0, 1.0));
-
-    // first determine whether the ground plane is displayed in the view
-    Frustum worldFrust = vp.GetFrustum();
-    for (DPoint3dCR pt : worldFrust.m_pts)
-        {
-        DPoint3d xyzPt;
-        viewRay.origin = pt;
-        double param;
-        if (!viewRay.Intersect(xyzPt, param, xyPlane))
-            return extents; // view does not show ground plane
-        }
-
-    extents = GetDgnDb().GeoLocation().GetProjectExtents();
-    extents.low.z = extents.high.z = elevation;
-
-    DPoint3d center = DPoint3d::FromInterpolate(extents.low, 0.5, extents.high);
-
-    double radius = extents.low.Distance(extents.high); // we need a square, not a rectangle
-    extents.InitFrom(center);
-    extents.Extend(radius);
-    extents.low.z = extents.high.z = elevation;
-    return extents;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 double SpatialViewController::GetGroundElevation() const

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ClipUtil.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 struct ClipUtil
 {
-    DGNPLATFORM_EXPORT static double ComputeFrustumOverlap(DgnViewportR viewport, FrustumCR testFrustumRootPoints);
+    DGNPLATFORM_EXPORT static double ComputeFrustumOverlap(FrustumCR thisFrustum, FrustumCR testFrustumRootPoints);
     DGNPLATFORM_EXPORT static bool IntersectClipPlaneSets(DRange3dP intersectRange, ClipPlaneCP planeSet1, size_t nPlanes1, ClipPlaneCP planeSet2, size_t nPlanes2);
 
     DGNPLATFORM_EXPORT static bool RangeInClipPlanes(bool* overlap, DRange3dCR range, bool is3d, ClipPlaneCP, int nPlanes, TransformCP localTransform = NULL);

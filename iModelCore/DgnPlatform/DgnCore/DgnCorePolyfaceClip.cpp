@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCorePolyfaceClip.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -102,9 +102,9 @@ ClipStatus clipPolyfaceByFrustum(IPolyfaceConstructionR output, PolyfaceHeaderR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-double ClipUtil::ComputeFrustumOverlap(DgnViewportR viewport, FrustumCR testFrustumRootPoints) 
+double ClipUtil::ComputeFrustumOverlap(FrustumCR thisFrustum, FrustumCR testFrustumRootPoints) 
     {
-    Frustum thisFrustumRootPoints = viewport.GetFrustum(DgnCoordSystem::World, true);
+    Frustum thisFrustumRootPoints = thisFrustum;
 
     IFacetOptionsPtr            facetOptions       = IFacetOptions::New();
     IPolyfaceConstructionPtr    thisFrustumBuilder = IPolyfaceConstruction::New(*facetOptions), 

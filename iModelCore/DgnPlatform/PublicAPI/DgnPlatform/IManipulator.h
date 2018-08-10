@@ -70,9 +70,6 @@ public:
     //! @return true if manipulator has controls selected or flashed.
     virtual bool _HasSelectedControls() = 0;
 
-    //! Return whether manipulator controls or dynamics should be shown in the supplied view.
-    virtual bool _IsDisplayedInView(DgnViewportR vp) = 0;
-
     //! When multiple manipulators are active on a selection set, only the one whose control is actually
     //! selected to start the modify operation is given responsibility for setting up the modification.
     //! If called, the manipulator is responsible for setting the anchor point that will be used by all

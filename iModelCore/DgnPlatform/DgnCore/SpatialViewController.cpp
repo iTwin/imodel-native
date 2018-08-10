@@ -45,18 +45,6 @@ SpatialViewController::SpatialViewController(SpatialViewDefinitionCR def) : T_Su
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) const
-    {
-    constexpr double s_spatialRangeMultiplier = 1.0001; // Ensure geometry lying smack up against the extents is not excluded by frustum...
-    AxisAlignedBox3d box = GetDgnDb().GeoLocation().GetProjectExtents();
-    box.ScaleAboutCenter(box, s_spatialRangeMultiplier);
-    box.Extend(GetGroundExtents(vp));
-    return box;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_OnRenderFrame()
@@ -254,10 +242,6 @@ bool SpatialViewController::_IsInSet(int nVals, DbValue const* vals) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_DrawView(ViewContextR context)
     {
-    if (m_activeVolume.IsValid())
-        context.SetActiveVolume(*m_activeVolume);
-
-    _VisitAllElements(context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -311,42 +295,6 @@ void SpatialViewController::_AddModelLights(Render::SceneLightsR lights, Render:
     {
     for (DgnModelId modelId : GetViewedModels())
         AddModelLights(lights, modelId, target);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Visit all of the elements in a SpatialViewController. This is used for picking, etc.
-* @bsimethod                                    Keith.Bentley                   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::_VisitAllElements(ViewContextR context)
-    {
-    QueryResults results;
-    RangeQuery rangeQuery(*this, context.GetFrustum(), *context.GetViewport(), RangeQuery::Plan(), &results); // NOTE: the context may have a smaller frustum than the view
-    rangeQuery.Start(*this);
-
-    if (m_noQuery)
-        {
-        for (auto& thisScore : results.m_scores)
-            {
-            if (rangeQuery.TestElement(thisScore.second))
-                context.VisitElement(thisScore.second);
-
-            if (context.CheckStop())
-                return;
-            }
-
-        return;
-        }
-
-    // the range tree will return all elements in the volume. Filter them by the view criteria
-    DgnElementId thisId;
-    while ((thisId = rangeQuery.StepRtree()).IsValid())
-        {
-        if (rangeQuery.TestElement(thisId))
-            context.VisitElement(thisId);
-
-        if (context.CheckStop())
-            return;
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -496,56 +444,6 @@ int SpatialViewController::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo 
     info.m_within = rangeTest;
 
     return BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Set the size of a filter that eliminates elements smaller than a given size (in pixels). To enable this filter, you must also call SetTestLOD.
-* For range queries, we only enable this after we've found our maximum number of hits.
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::RangeQuery::SetSizeFilter(DgnViewportCR vp, double size)
-    {
-    BSIRect screenRect = vp.GetViewRect();
-    if (screenRect.Width() > 0 && screenRect.Height() > 0)
-        {
-        double width  = size/screenRect.Width();
-        double height = size/screenRect.Height();
-
-        m_lodFilterNPCArea = width * width + height * height;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-SpatialViewController::RangeQuery::RangeQuery(SpatialViewControllerCR view, FrustumCR frustum, DgnViewportCR vp, RangeQuery::Plan const& plan, QueryResults* results) :
-        SpatialQuery(&view.m_special, view.GetActiveVolume().get()), m_view(view), m_plan(plan), m_results(results)
-    {
-    m_count = 0;
-    m_localToNpc = vp.GetWorldToNpcMap()->M0;
-    m_cameraOn   = vp.IsCameraOn();
-
-    if (m_cameraOn)
-        {
-        m_cameraPosition = vp.GetCamera().GetEyePoint();
-        }
-    else
-        {
-        DPoint3d viewDirection[2] = {{0,0,0}, {0.0, 0.0, 1.0}};
-        DPoint3d viewDirRoot[2];
-        vp.NpcToWorld(viewDirRoot, viewDirection, 2);
-        viewDirRoot[1].Subtract(viewDirRoot[0]);
-
-        m_orthogonalProjectionIndex = ((viewDirRoot[1].x < 0.0) ? 1  : 0) +
-                                      ((viewDirRoot[1].x > 0.0) ? 2  : 0) +
-                                      ((viewDirRoot[1].y < 0.0) ? 4  : 0) +
-                                      ((viewDirRoot[1].y > 0.0) ? 8  : 0) +
-                                      ((viewDirRoot[1].z < 0.0) ? 16 : 0) +
-                                      ((viewDirRoot[1].z > 0.0) ? 32 : 0);
-        }
-
-    SetFrustum(frustum);
-    AddAlwaysDrawn(view);
     }
 
 /*---------------------------------------------------------------------------------**//**

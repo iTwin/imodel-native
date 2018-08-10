@@ -36,9 +36,6 @@ struct EXPORT_VTABLE_ATTRIBUTE SubjectViewController : SpatialViewController
 
 private:
     bmap<DgnElementId, Transform>   m_transformCache;
-protected:
-    void _OnAttachedToViewport(DgnViewportR) override;
-    void _OnDetachedFromViewport(DgnViewportR) override;
 public:
     //! Turns on/off all models and categories
     //! @param[in] visible true if visible

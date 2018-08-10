@@ -132,59 +132,6 @@ Render::GraphicPtr  RevisionComparison::Controller::_StrokeGeometry(ViewContextR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void getViewCorners(DPoint3dR low, DPoint3dR high, int indent, DgnViewportCR vp)
-    {
-    DRange3d range = vp.GetViewCorners();
-
-    low = range.low;
-    high = range.high;
-
-    if (low.x > high.x)
-        std::swap(low.x, high.x);
-
-    if (low.y > high.y)
-        std::swap(low.y, high.y);
-
-#if defined (__APPLE__)
-    //  GetViewCorners does not provide correct information for iOS.
-    low.x = low.y = 4.0;
-    if (high.x > high.y)
-        {
-        if (high.x > 2040)
-            {
-            high.x = 2044;
-            high.y = 1475;
-            }
-        else
-            {
-            high.x = 1020;
-            high.y = 700;
-            }
-        }
-    else
-        {
-        if (high.y > 2000)
-            {
-            high.y = 2000;
-            high.x = 1500;
-            }
-        else
-            {
-            high.y = 1020;
-            high.x = 700;
-            }
-        }
-#endif
-
-    low.x += indent;
-    low.y += indent;
-    high.x -= indent;
-    high.y -= indent;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    08/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 void    RevisionComparison::Controller::SetVersionLabel(Utf8String label)
     {
 #ifdef USE_LABEL
@@ -228,22 +175,3 @@ Render::GraphicP TransientState::GetGraphic(ViewContextR context) const
     return m_graphic.get();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    08/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RevisionComparison::Controller::_OnViewOpened (DgnViewportR vp)
-    {
-    Render::ViewFlags viewFlags = GetViewFlags();
-    if (viewFlags.GetRenderMode() != Render::RenderMode::SmoothShade)
-        viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
-
-    viewFlags.SetShowVisibleEdges(false);
-    viewFlags.SetShowPatterns(false);
-    viewFlags.SetShowGrid(false);
-    viewFlags.SetShowClipVolume(false);
-    viewFlags.SetShowTransparency(true);
-    viewFlags.SetShowAcsTriad(false);  // Hide the indicator because it is work-in-progress.
-    vp.GetViewControllerR().GetViewDefinitionR().GetDisplayStyle().SetViewFlags(viewFlags);
-
-    T_Super::_OnViewOpened(vp);
-    }

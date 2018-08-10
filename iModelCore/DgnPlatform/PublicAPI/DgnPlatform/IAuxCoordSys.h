@@ -65,16 +65,8 @@ protected:
     virtual RotMatrix _GetRotation() const = 0;
     virtual BentleyStatus _SetRotation(RotMatrixCR) = 0;
 
-    // Allow sub-classes to override how ACS triad is displayed in the view...
-    DGNPLATFORM_EXPORT virtual ColorDef _GetAdjustedColor(ColorDef, bool isFill, DgnViewportCR, ACSDisplayOptions) const;
-    DGNPLATFORM_EXPORT virtual Utf8String _GetAxisLabel(uint32_t axis) const;
-    DGNPLATFORM_EXPORT virtual void _AddAxisLabel(Render::GraphicBuilderR, uint32_t axis, ACSDisplayOptions, DgnViewportCR vp) const;
-    DGNPLATFORM_EXPORT virtual void _AddAxis(Render::GraphicBuilderR, uint32_t axis, ACSDisplayOptions, DgnViewportCR vp) const;
-
     virtual StatusInt _GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, DPoint2dR spacing, uint32_t& gridPerRef) const {return ERROR;}
     virtual StatusInt _SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, DPoint2dCR spacing, uint32_t gridPerRef) {return ERROR;}
-
-    DGNPLATFORM_EXPORT virtual void _PointToGrid(DgnViewportR vp, DPoint3dR point) const;
 
     DGNPLATFORM_EXPORT virtual StatusInt _PointFromString(DPoint3dR outPoint, Utf8StringR errorMsg, Utf8CP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) const;
     DGNPLATFORM_EXPORT virtual StatusInt _StringFromPoint(Utf8StringR outString, Utf8StringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) const;
@@ -128,12 +120,8 @@ public:
     void SetDescription(Utf8CP description) {SetPropertyValue("Description", description);}
 
     // Optional grid settings for this ACS that override the view definition's grid settings when drawing a grid aligned with the ACS.
-    bool GetGridSpacing(DPoint2dR spacing, uint32_t& gridPerRef, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const; //!< NOTE: Returns true when ACS overrides view's grid settings...
     StatusInt GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, DPoint2dR spacing, uint32_t& gridPerRef) const {return _GetStandardGridParams(gridReps, gridOffset, spacing, gridPerRef);}
     StatusInt SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, DPoint2dCR spacing, uint32_t gridPerRef) {return _SetStandardGridParams(gridReps, gridOffset, spacing, gridPerRef);}
-
-    //! Fix the point to the ACS's grid
-    void PointToGrid(DgnViewportR viewport, DPoint3dR point) const {_PointToGrid(viewport, point);}
 
     //! Get the point (in UORs) corresponding to the input string.
     StatusInt PointFromString(DPoint3dR outPoint, Utf8StringR errorMsg, Utf8CP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) const {return _PointFromString(outPoint, errorMsg, inString, relative, lastPoint, modelRef);}

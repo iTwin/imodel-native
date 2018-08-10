@@ -301,10 +301,8 @@ protected:
     void _DrawView(ViewContextR) override;
     bool _Allow3dManipulations() const override;
     // WIP_MERGE_John_Patterns - double _GetPatternZOffset (ViewContextR, ElementHandleCR) const override;
-    AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     bool _IsSnapAdjustmentRequired(bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
     bool _IsContextRotationRequired(bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...
-    void _OnViewOpened(DgnViewportR vp) override;
 
     //  Override and forward the methods that trigger a query.
     void _OnCategoryChange(bool singleEnabled) override;
@@ -312,20 +310,7 @@ protected:
     void _SetViewedModels(DgnModelIdSet const&) override;
 
     //ScanRange _ShowTxnSummary(TxnSummaryCR summary) override; -- we don't need to override this, because the subject view will never have changed elements that must be displayed
-    void _OnAttachedToViewport(DgnViewportR) override;
     FitComplete _ComputeFitRange(FitContextR) override;
-
-#ifdef WIP_SpatialRedlineViewController
-    // QueryView
-    bool _IsInSet (int nVal, BeSQLite::DbValue const*) const override;
-    bool _WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) override;
-    Utf8String _GetRTreeMatchSql (ViewportR viewport) override;
-    int32_t _GetMaxElementFactor() override;
-    double _GetMinimumSizePixels (DrawPurpose updateType) override;
-    uint64_t _GetMaxElementMemory () override;
-    // END QueryView
-#endif
-    // END QueryView
 
     void SynchWithSubjectViewController();
 #endif // DOCUMENTATION_GENERATOR

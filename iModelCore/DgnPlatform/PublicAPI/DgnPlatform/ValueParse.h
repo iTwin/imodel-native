@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ValueParse.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -205,11 +205,6 @@ public:
     //! @param[in] model Initialize the parser from the settings in this model.
     static DGNPLATFORM_EXPORT  DistanceParserPtr Create(GeometricModelCR model);
 
-    //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's
-    //! target model and the scale from the viewport's ACS.
-    //! @param[in] vp Initialize the parser from the settings in this viewport.
-    static DGNPLATFORM_EXPORT  DistanceParserPtr Create(DgnViewportR vp);
-
     //! Construct a parser which is a duplicate of an existing parser.
     DGNPLATFORM_EXPORT DistanceParserPtr Clone() const;
 
@@ -265,11 +260,6 @@ public:
     //! Construct a parser with settings from a model.
     //! @param[in] model Initialize the parser from the settings in this model.
     static DGNPLATFORM_EXPORT PointParserPtr Create(GeometricModelCR model);
-
-    //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's
-    //! target model and the ACS from the viewport.
-    //! @param[in] vp  Initialize the parser from the settings in this viewport.
-    static DGNPLATFORM_EXPORT PointParserPtr Create(DgnViewportR vp);
 
     //! Construct a parser which is a duplicate of an existing parser.
     DGNPLATFORM_EXPORT PointParserPtr Clone() const;
@@ -350,11 +340,6 @@ public:
     //! @param[in] model Initialize the parser from the settings in this model.
     static DGNPLATFORM_EXPORT AreaParserPtr Create(GeometricModelCR model);
 
-    //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's
-    //! target model and the scale from the viewport's ACS.
-    //! @param[in] vp Initialize the parser from the settings in this viewport.
-    static DGNPLATFORM_EXPORT AreaParserPtr Create(DgnViewportR vp);
-
     //! Construct a parser which is a duplicate of an existing parser.
     AreaParserPtr Clone() const {return new AreaParser(*this);}
 };
@@ -375,11 +360,6 @@ public:
     //! Construct a parser with settings from a model.
     //! @param[in] model Initialize the parser from the settings in this model.
     static VolumeParserPtr Create(GeometricModelCR model) {VolumeParserPtr parser = Create(); parser->InitModelSettings(model); return parser;}
-
-    //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's
-    //! target model and the scale from the viewport's ACS.
-    //! @param[in] vp Initialize the parser from the settings in this viewport.
-    static DGNPLATFORM_EXPORT VolumeParserPtr Create(DgnViewportR vp);
 
     //! Construct a parser which is a duplicate of an existing parser.
     VolumeParserPtr Clone() const {return new VolumeParser(*this);}

@@ -180,16 +180,9 @@ protected:
     DGNPLATFORM_EXPORT void InvalidateScene();
     bool IsSceneReady() const;
 
-    //! Invokes the _VisitGeometry on \a context for <em>each element</em> that is in the view.
-    //! For normal views, this does the same thing as _DrawView.
-    virtual void _VisitAllElements(ViewContextR context) {_DrawView(context);}
-
     //! Stroke a single GeometrySource through a ViewContext.
     //! An application can override _StrokeGeometry to change the symbology of a GeometrySource.
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double pixelSize);
-
-    //! Get the extent of the model(s) viewed by this view
-    virtual AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const = 0;
 
     enum class CloseMe {No=0, Yes=1};
     //! called when one or more models are deleted
@@ -207,7 +200,6 @@ public:
     void RequestScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);
     Render::GraphicListPtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
-    void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
 
     bool AreFeatureOverridesDirty() const {return m_featureOverridesDirty;}
@@ -220,9 +212,6 @@ public:
 
     DgnCategoryIdSet const& GetViewedCategories() const {return m_definition->GetCategorySelector().GetCategories();}
     DGNPLATFORM_EXPORT void SetViewedCategories(DgnCategoryIdSet const&, bool enableAllSubCategories=false);
-
-    //! Get the axis-aliged extent of all of the possible elements visible in this view. For physical views, this is the "project extents".
-    AxisAlignedBox3d GetViewedExtents(DgnViewportCR vp) const {return _GetViewedExtents(vp);}
 
     //! Read the state of this controller from its definition elements.
     //! @see GetDefinitionR
@@ -563,10 +552,8 @@ protected:
     void QueryModelExtents(FitContextR);
 
     DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
-    DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR context) override;
     DGNPLATFORM_EXPORT FitComplete _ComputeFitRange(struct FitContext&) override;
-    DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff);
     DGNPLATFORM_EXPORT virtual void _SetViewedModels(DgnModelIdSet const&);
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
@@ -652,7 +639,6 @@ protected:
     TileTree::RootPtr m_root;
 
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
 
@@ -758,7 +744,6 @@ private:
     void _DrawView(ViewContextR) override;
     Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
     bool _Allow3dManipulations() const override;
-    AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
 
     void PushClipsForSpatialView(ViewContextR) const;
     void PopClipsForSpatialView(ViewContextR) const;
@@ -826,7 +811,6 @@ protected:
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
     bool _Allow3dManipulations() const override {return true;}
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
 
 public:
     TemplateViewController3d(TemplateViewDefinition3dCR viewDef) : T_Super(viewDef) {}

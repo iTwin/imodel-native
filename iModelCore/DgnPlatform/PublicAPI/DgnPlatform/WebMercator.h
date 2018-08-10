@@ -8,7 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnPlatform/DgnViewport.h>
 #include <DgnPlatform/DgnDbTables.h>
 #include <DgnPlatform/TileTree.h>
 #include <algorithm>

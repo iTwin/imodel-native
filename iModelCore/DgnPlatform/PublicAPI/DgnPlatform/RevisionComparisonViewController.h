@@ -132,8 +132,6 @@ protected:
     TextStringPtr       m_label;
 #endif
     
-    void _OnViewOpened (Dgn::DgnViewportR) override;
-
     DGNPLATFORM_EXPORT Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
 
     void _OnCategoryChange(bool singleEnable) override;

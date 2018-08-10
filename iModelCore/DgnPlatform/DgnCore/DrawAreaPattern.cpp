@@ -590,7 +590,6 @@ static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic,
     if (!clip.IsValid())
         return false;
 
-    DgnViewportP     vp = context.GetViewport();
     bool             wasAborted = false;
     DPoint2d         patOrg;
     DPoint3d         tileCorners[8];
@@ -609,16 +608,13 @@ static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic,
             symbolTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, 0.0); // NOTE: Don't supply net display priority, will be supplied by add calls...
             symbolTrans.Multiply(tileCorners, symbolCorners, 8);
 
-            if (vp)
-                {
-                Transform symbolToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), symbolTrans);
-                ElementAlignedBox3d range = symbol.GetBoundingBox();
+            Transform symbolToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), symbolTrans);
+            ElementAlignedBox3d range = symbol.GetBoundingBox();
 
-                symbolToWorld.Multiply(range, range);
+            symbolToWorld.Multiply(range, range);
 
-                if (!context.IsRangeVisible(range))
-                    continue; // Symbol range doesn't overlap pick...
-                }
+            if (!context.IsRangeVisible(range))
+                continue; // Symbol range doesn't overlap pick...
 
             ClipPlaneContainment containment = clip->ClassifyPointContainment(tileCorners, 8); 
 

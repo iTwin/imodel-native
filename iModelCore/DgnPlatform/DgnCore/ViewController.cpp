@@ -226,19 +226,6 @@ void ViewController::InvalidateScene()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* return the extents of the target model, if there is one.
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d ViewController2d::_GetViewedExtents(DgnViewportCR vp) const
-    {
-    GeometricModelP target = GetViewedModel();
-    if (target && target->GetRangeIndex())
-        return AxisAlignedBox3d(target->GetRangeIndex()->GetExtents().ToRange3d());
-
-    return AxisAlignedBox3d();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr ViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
@@ -648,109 +635,6 @@ bool SpatialViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMo
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    kab             06/86
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void roundGrid(double& num, double units)
-    {
-    double sign = ((num * units) < 0.0) ? -1.0 : 1.0;
-
-    num = (num * sign) / units + 0.5;
-    num = units * sign * floor(num);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void getGridOrientation(DgnViewportR vp, DPoint3dR origin, RotMatrixR rMatrix, GridOrientationType orientation)
-    {
-    // start with global origin (for spatial views) and identity matrix
-    rMatrix.InitIdentity();
-    origin = vp.GetViewController().IsSpatialView() ? vp.GetViewController().GetDgnDb().GeoLocation().GetGlobalOrigin() : DPoint3d::FromZero();
-
-    DVec3d xVec, yVec, zVec;
-
-    switch (orientation)
-        {
-        case GridOrientationType::View:
-            {
-            DPoint3d centerWorld = vp.NpcToWorld(DPoint3d::From(0.5,0.5,0.5));
-
-            rMatrix = vp.GetRotMatrix();
-            rMatrix.Multiply(origin);
-            origin.z = centerWorld.z;
-            rMatrix.MultiplyTranspose(origin, origin);
-            break;
-            }
-
-        case GridOrientationType::WorldXY:
-            {
-            break;
-            }
-
-        case GridOrientationType::WorldYZ:
-            {
-            rMatrix.GetRows(xVec, yVec, zVec);
-            rMatrix.InitFromRowVectors(yVec, zVec, xVec);
-            break;
-            }
-
-        case GridOrientationType::WorldXZ:
-            {
-            rMatrix.GetRows(xVec, yVec, zVec);
-            rMatrix.InitFromRowVectors(xVec, zVec, yVec);
-            break;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void gridFix(DgnViewportR vp, DPoint3dR point, RotMatrixCR rMatrix, DPoint3dCR origin, DPoint2dCR roundingDistance, bool isoGrid)
-    {
-    DVec3d planeNormal, eyeVec;
-
-    rMatrix.GetRow(planeNormal, 2);
-
-    if (vp.IsCameraOn())
-        eyeVec.NormalizedDifference(point, vp.GetCamera().GetEyePoint());
-    else
-        vp.GetRotMatrix().GetRow(eyeVec, 2);
-
-    LegacyMath::Vec::LinePlaneIntersect(&point, &point, &eyeVec, &origin, &planeNormal, false);
-
-    // get origin and point in view coordinate system
-    DPoint3d pointView, originView;
-
-    rMatrix.Multiply(pointView, point);
-    rMatrix.Multiply(originView, origin);
-
-    // see whether we need to adjust the origin for iso-grid
-    if (isoGrid)
-        {
-        long ltmp = (long) (pointView.y / roundingDistance.y);
-
-        if (ltmp & 0x0001)
-            originView.x += (roundingDistance.x / 2.0);
-        }
-
-    // subtract off the origin
-    pointView.y -= originView.y;
-    pointView.x -= originView.x;
-
-    // round off the remainder to the grid distances
-    roundGrid(pointView.y, roundingDistance.y);
-    roundGrid(pointView.x, roundingDistance.x);
-
-    // add the origin back in
-    pointView.x += originView.x;
-    pointView.y += originView.y;
-
-    // go back to root coordinate system
-    rMatrix.MultiplyTranspose(point, pointView);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_GetGridSpacing(DPoint2dR spacing, uint32_t& gridsPerRef) const
@@ -764,7 +648,7 @@ void ViewController::_GetGridSpacing(DPoint2dR spacing, uint32_t& gridsPerRef) c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::PointToStandardGrid(DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation, DPoint2dCR roundingDistance, bool isoGrid) const
     {
-    gridFix(*m_vp, point, gridOrientation, gridOrigin, roundingDistance, isoGrid);
+    // ###TODO: Remove me.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -772,27 +656,7 @@ void ViewController::PointToStandardGrid(DPoint3dR point, DPoint3dCR gridOrigin,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::PointToGrid(DPoint3dR point) const
     {
-    GridOrientationType orientation = _GetGridOrientationType();
-
-    if (GridOrientationType::AuxCoord == orientation)
-        {
-        GetAuxCoordinateSystem().PointToGrid(*m_vp, point);
-        return;
-        }
-    else if (GridOrientationType::GeoCoord == orientation)
-        {
-        // NEEDSWORK...
-        }
-
-    bool        isoGrid = false;
-    uint32_t    gridsPerRef;
-    DPoint2d    roundingDistance;
-    DPoint3d    origin;
-    RotMatrix   rMatrix;
-
-    _GetGridSpacing(roundingDistance, gridsPerRef);
-    getGridOrientation(*m_vp, origin, rMatrix, orientation);
-    PointToStandardGrid(point, origin, rMatrix, roundingDistance, isoGrid);
+    // ###TODO: Remove me.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -846,15 +710,6 @@ void TemplateViewController3d::_DrawView(ViewContextR context)
     GeometricModelP model = GetViewedModel();
     if (nullptr != model)
         context.VisitDgnModel(*model);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d TemplateViewController3d::_GetViewedExtents(DgnViewportCR vp) const
-    {
-    GeometricModelP target = GetViewedModel();
-    return (target && target->GetRangeIndex()) ? AxisAlignedBox3d(target->GetRangeIndex()->GetExtents().ToRange3d()) : AxisAlignedBox3d();
     }
 
 /*---------------------------------------------------------------------------------**//**

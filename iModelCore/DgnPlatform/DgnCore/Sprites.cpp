@@ -8,49 +8,6 @@
 #include <DgnPlatformInternal.h>
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-SpriteLocation::SpriteLocation()
-    {
-    m_viewport = nullptr;
-    m_sprite   = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpriteLocation::Activate(ISpriteP sprite, DgnViewportP viewport, DPoint3dCR location, int transparency)
-    {
-    if (nullptr == sprite || nullptr == viewport)
-        return;
-
-    viewport->InvalidateDecorations();
-    m_viewport = viewport;
-    sprite->AddRef();
-    m_sprite   = sprite;
-    m_transparency = transparency;
-    m_location     = location;
-
-    viewport->WorldToNpc(&m_location, &m_location, 1);
-    m_location.z = 0.0;
-    viewport->NpcToWorld(&m_location, &m_location, 1);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpriteLocation::Deactivate()
-    {
-    if (!IsActive())
-        return;
-
-    m_viewport->InvalidateDecorations();
-    m_viewport = nullptr;
-    m_sprite->Release();
-    m_sprite = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 StaticSprite::StaticSprite(Utf8CP nameSpace, Utf8CP spriteName) : m_namespace(nameSpace), m_spriteName(spriteName)

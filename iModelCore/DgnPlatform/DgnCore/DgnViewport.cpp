@@ -372,47 +372,7 @@ static void validateCamera(ViewDefinition3d::Camera& camera, ViewDefinition3dR c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::_AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const
     {
-    if (!m_is3dView)
-        return;
-
-    DRange3d extents = m_viewController->GetViewedExtents(*this);
-    if (extents.IsEmpty())
-        return;
-
-    // convert viewed extents in world coordinates to min/max in view aligned coordinates
-    Transform viewTransform;
-    viewTransform.InitFrom(m_rotMatrix);
-    Frustum extFrust(extents);
-    extFrust.Multiply(viewTransform);
-    extents = extFrust.ToRange();
-
-    m_rotMatrix.Multiply(origin);       // put origin in view coordinates
-    origin.z = extents.low.z;           // set origin to back of viewed extents
-    delta.z = extents.high.z - origin.z; // and delta to front of viewed extents
-    m_rotMatrix.MultiplyTranspose(origin);
-
-    if (!m_isCameraOn) 
-        return;
-
-    // if the camera is on, we need to make sure that the viewed volume is not behind the eye
-    DVec3d eyeOrg;
-    eyeOrg.DifferenceOf(m_camera.GetEyePoint(), origin);
-    m_rotMatrix.Multiply(eyeOrg);
-
-    // if the distance from the eye to origin in less than 1 meter, move the origin away from the eye. Usually, this means
-    // that the camera is outside the viewed extents and pointed away from it. There's nothing to see anyway.
-    if (eyeOrg.z < DgnUnits::OneMeter())
-        {
-        m_rotMatrix.Multiply(origin);
-        origin.z -= ((2.0*DgnUnits::OneMeter()) - eyeOrg.z);
-        m_rotMatrix.MultiplyTranspose(origin);
-        delta.z = DgnUnits::OneMeter();
-        return;
-        }
-
-    // if part of the viewed extents are behind the eye, don't include that.
-    if (delta.z > eyeOrg.z)
-        delta.z = eyeOrg.z;
+    
     }
 
 struct ViewChangedCaller
@@ -487,12 +447,9 @@ ViewportStatus DgnViewport::SetupFromViewController()
             // we're in a "2d" view of a physical model. That means that we must have our orientation with z out of the screen with z=0 at the center.
             AlignWithRootZ(); // make sure we're in a z Up view
 
-            DRange3d  extents = m_viewController->GetViewedExtents(*this);
-            if (extents.IsEmpty())
-                {
-                extents.low.z = -Render::Target::Get2dFrustumDepth();
-                extents.high.z = Render::Target::Get2dFrustumDepth();
-                }
+            DRange3d  extents;
+            extents.low.z = -Render::Target::Get2dFrustumDepth();
+            extents.high.z = Render::Target::Get2dFrustumDepth();
 
             double zMax = std::max(fabs(extents.low.z), fabs(extents.high.z));
             zMax = std::max(zMax, DgnUnits::OneMeter()); // make sure we have at least +-1m. Data may be purely planar

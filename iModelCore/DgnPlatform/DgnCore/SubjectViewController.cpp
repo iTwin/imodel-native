@@ -21,63 +21,11 @@ template<typename T> static void forEachSpatialModel(DgnDbR db, T func)
         func(stmt->GetValueId<DgnModelId>(0));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static void applyToTileTree(DgnViewportR vp, DgnModelId const& modelId, T func)
-    {
-    auto target = vp.GetRenderTarget();
-    auto system = nullptr != target ? &target->GetSystem() : nullptr;
-    if (nullptr == system) // typically, because the viewport is being destroyed...
-        return;
-
-    auto model = vp.GetViewController().GetDgnDb().Models().Get<SpatialModel>(modelId);
-    auto tree = model.IsValid() ? model->GetTileTree(system) : nullptr;
-    if (nullptr != tree)
-        func(*tree);
-    }
-
 //-------------------------------------------------------------------------------------------
 // @bsimethod                                                 Diego.Pinate     10/17
 //-------------------------------------------------------------------------------------------
 SubjectViewController::SubjectViewController(SpatialViewDefinition const& view) : SpatialViewController(view)
     {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SubjectViewController::_OnAttachedToViewport(DgnViewportR vp)
-    {
-    T_Super::_OnAttachedToViewport(vp);
-
-    // NB: This applies to every spatial model, because models may be added or removed from this view controller's viewed model list during alignment workflow.
-    // Possibly m_subjectColors contains the actual models of interest?
-
-    forEachSpatialModel(GetDgnDb(), [&](DgnModelId const& modelId)
-            {
-            applyToTileTree(vp, modelId, [&](TileTree::Root& tree)
-                {
-                tree.SetIgnoreChanges(true);
-                });
-            });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SubjectViewController::_OnDetachedFromViewport(DgnViewportR vp)
-    {
-    forEachSpatialModel(GetDgnDb(), [&](DgnModelId const& modelId)
-        {
-        applyToTileTree(vp, modelId, [&](TileTree::Root& tree)
-            {
-            tree.SetIgnoreChanges(false);
-            tree.SetDisplayTransform(nullptr);
-            });
-        });
-
-    T_Super::_OnDetachedFromViewport(vp);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -93,12 +41,7 @@ SubjectViewController::~SubjectViewController()
 //-------------------------------------------------------------------------------------------
 void SubjectViewController::ResetDynamicTransform(DgnElementId const& subjectId, DgnModelIdSet const& modelIds)
     {
-    Transform displayTransform = m_transformCache.find(subjectId) != m_transformCache.end() ? m_transformCache[subjectId] : Transform::FromIdentity();
-    BeAssert(nullptr != m_vp);
-    for (auto const& modelId : modelIds)
-        applyToTileTree(*m_vp, modelId, [&](TileTree::Root& tree) { tree.SetDisplayTransform(&displayTransform); });
-    
-    m_vp->InvalidateScene();
+    // ###TODO remove me
     }
 
 //-------------------------------------------------------------------------------------------
@@ -106,13 +49,7 @@ void SubjectViewController::ResetDynamicTransform(DgnElementId const& subjectId,
  //-------------------------------------------------------------------------------------------
 void SubjectViewController::ApplyDynamicTransform(DgnElementId const& subjectId, DgnModelIdSet const& modelIds, TransformCP incrementalTransform)
     {
-    Transform displayTransform = m_transformCache.find(subjectId) != m_transformCache.end() ? m_transformCache[subjectId] : Transform::FromIdentity();
-    displayTransform = Transform::FromProduct(*incrementalTransform, displayTransform);
-    BeAssert(nullptr != m_vp);
-    for (auto const& modelId : modelIds)
-        applyToTileTree(*m_vp, modelId, [&](TileTree::Root& tree) { tree.SetDisplayTransform(&displayTransform); });
-    
-    m_vp->InvalidateScene();
+    // ###TODO remove me
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -120,13 +57,7 @@ void SubjectViewController::ApplyDynamicTransform(DgnElementId const& subjectId,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SubjectViewController::SetTransform(DgnElementId const& subjectId, DgnModelIdSet const& modelIds, TransformCP transform)
     {
-    BeAssert(nullptr != m_vp);
-    for (auto const& modelId : modelIds)
-        applyToTileTree(*m_vp, modelId, [&](TileTree::Root& tree) { tree.SetDisplayTransform(transform); });
-    
-    m_transformCache[subjectId] = transform != nullptr ? *transform : Transform::FromIdentity();
-
-    m_vp->InvalidateScene();
+    // ###TODO remove me
     }
 
 //-------------------------------------------------------------------------------------------

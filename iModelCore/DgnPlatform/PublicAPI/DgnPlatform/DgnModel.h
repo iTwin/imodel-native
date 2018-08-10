@@ -496,8 +496,6 @@ protected:
 
     virtual void _OnValidate() {}
 
-    virtual void _DropGraphicsForViewport(DgnViewportCR viewport) {};
-
 public:
     Utf8String GetCopyrightMessage(ViewController& viewController) const {return _GetCopyrightMessage(viewController);}
 

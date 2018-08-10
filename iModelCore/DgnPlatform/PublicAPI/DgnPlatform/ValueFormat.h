@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ValueFormat.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -396,11 +396,6 @@ public:
     //! @param[in] model Initialize the formatter from the settings in this model.
     static DistanceFormatterPtr Create(GeometricModelCR model) {DistanceFormatterPtr formatter = Create(); formatter->InitModelSettings(model); return formatter;}
 
-    //! Construct a formatter with settings from a viewport.  Gets the settings from the viewport's
-    //! target model and the scale from the viewport's ACS.
-    //! @param[in] vp                       Initialize the formatter from the settings in this viewport.
-    static DGNPLATFORM_EXPORT DistanceFormatterPtr Create(DgnViewportR vp);
-
     //! Construct a formatter which is a duplicate of an existing formatter.
     DistanceFormatterPtr Clone() const {return new DistanceFormatter(*this);}
 
@@ -464,11 +459,6 @@ public:
     //! @param[in] model Initialize the formatter from the settings in this model.
     //! @param[in] addGlobalOrigin Apply the global origin offset to points before formatting.
     static DGNPLATFORM_EXPORT PointFormatterPtr Create(GeometricModelCR model, bool addGlobalOrigin);
-
-    //! Construct a formatter with settings from a viewport.  Gets the settings from the viewport's
-    //! target model and uses the viewport's ACS.
-    //! @param[in] vp                       Initialize the formatter from the settings in this viewport.
-    static DGNPLATFORM_EXPORT PointFormatterPtr Create(DgnViewportR vp);
 
     //! Construct a PointFormatter from a DistanceFormatter.
     //! @param[in] distanceFormatter Initialize the formatter from the settings in this viewport.
@@ -559,11 +549,6 @@ public:
     //! @param[in] model Initialize the formatter from the settings in this model.
     static DGNPLATFORM_EXPORT AreaFormatterPtr Create(GeometricModelCR model);
 
-    //! Construct a formatter with settings from a viewport.  Gets the settings from the viewport's
-    //! target model and the scale from the viewport's ACS.
-    //! @param[in] vp Initialize the formatter from the settings in this viewport.
-    static DGNPLATFORM_EXPORT AreaFormatterPtr Create(DgnViewportR vp);
-
     //! Construct a formatter which is a duplicate of an existing formatter.
     DGNPLATFORM_EXPORT AreaFormatterPtr Clone() const;
 
@@ -590,11 +575,6 @@ public:
     //! Construct a formatter with settings from a model.
     //! @param[in] model Initialize the formatter from the settings in this model.
     static DGNPLATFORM_EXPORT VolumeFormatterPtr Create(GeometricModelCR model);
-
-    //! Construct a formatter with settings from a viewport.  Gets the settings from the viewport's
-    //! target model and the scale from the viewport's ACS.
-    //! @param[in] vp                       Initialize the formatter from the settings in this viewport.
-    static DGNPLATFORM_EXPORT VolumeFormatterPtr Create(DgnViewportR vp);
 
     //! Construct a formatter which is a duplicate of an existing formatter.
     DGNPLATFORM_EXPORT VolumeFormatterPtr Clone() const;

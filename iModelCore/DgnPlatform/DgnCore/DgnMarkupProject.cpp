@@ -221,26 +221,6 @@ SpatialRedlineViewController::~SpatialRedlineViewController()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialRedlineViewController::_OnViewOpened(DgnViewportR vp)
-    {
-    // Setup a view aligned ACS that all points/snaps will be projected to...
-    DPoint3d origin = DPoint3d::From(0.5, 0.5, 1.0);
-
-    vp.NpcToWorld(&origin, &origin, 1);
-
-    AuxCoordSystem3dPtr auxCoordSys = new AuxCoordSystem3d(GetDgnDb().GetDictionaryModel());
-
-    auxCoordSys->SetOrigin(origin);
-    auxCoordSys->SetRotation(m_definition->GetRotation());
-
-    m_auxCoordSys = auxCoordSys.get();
-
-    T_Super::_OnViewOpened(vp);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialRedlineViewController::SynchWithSubjectViewController()
@@ -344,36 +324,12 @@ void SpatialRedlineViewController::_StoreState() const
 #ifdef WIP_RDL_QUERYVIEWS
 bool SpatialRedlineViewController::_IsInSet (int nVal, BeSQLite::DbValue const* vals) const {return m_subjectView._IsInSet(nVal,vals);}
 
-bool SpatialRedlineViewController::_WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) {return m_subjectView._WantElementLoadStart(viewport,currentTime,lastQueryTime,maxElementsDrawnInDynamicUpdate,queryFrustum);}
-Utf8String SpatialRedlineViewController::_GetRTreeMatchSql (ViewportR viewport) {return m_subjectView._GetRTreeMatchSql(viewport);}
 int32_t SpatialRedlineViewController::_GetMaxElementFactor() {return m_subjectView._GetMaxElementFactor();}
 double SpatialRedlineViewController::_GetMinimumSizePixels (DrawPurpose updateType) {return m_subjectView._GetMinimumSizePixels (updateType);}
 uint64_t SpatialRedlineViewController::_GetMaxElementMemory () {return m_subjectView._GetMaxElementMemory();}
 #endif
 
 ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (FitContextR context) {return m_subjectView._ComputeFitRange(context);}
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents(DgnViewportCR vp) const
-    {
-    AxisAlignedBox3d subjectRange = m_subjectView.GetViewedExtents(vp);
-    AxisAlignedBox3d rdlRange = T_Super::_GetViewedExtents(vp);
-    AxisAlignedBox3d fullRange;
-    fullRange.UnionOf(rdlRange, subjectRange);
-    return fullRange;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.wilson      10/2015
-//---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_OnAttachedToViewport(DgnViewportR vp)
-    {
-    T_Super::_OnAttachedToViewport(vp);
-    m_subjectView._OnAttachedToViewport(vp);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014

@@ -308,32 +308,6 @@ BentleyStatus VolumeElement::GetRange(DRange3d& range) const
     return SUCCESS;
     }
 
-#if defined(TODO_FENCE_PARAMS)
-    // This was always wacky - creating a viewport from the first spatial view in the file - assuming this is used anywhere, simplify implementation.
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-void VolumeElement::FindElements(DgnElementIdSet& elementIds, FenceParamsR fence, Statement& stmt, DgnDbR dgnDb) const
-    {
-    DbResult result;
-    while ((result = stmt.Step()) == BE_SQLITE_ROW)
-        {
-        DgnElementId id = stmt.GetValueId<DgnElementId> (0);
-        DgnElementCPtr element = dgnDb.Elements().GetElement(id);
-
-        if (!element.IsValid())
-            continue;
-        
-        GeometrySourceCP geomElement = element->ToGeometrySource();
-
-        if (nullptr == geomElement || !fence.AcceptElement (*geomElement))
-            continue;
-
-        elementIds.insert (id);
-        }
-    }
-#endif
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
@@ -370,54 +344,6 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewport, bool allowPartialOverlaps /*=true*/) const
-    {
-#if defined(TODO_FENCE_PARAMS)
-    // This was always wacky - creating a viewport from the first spatial view in the file - assuming this is used anywhere, simplify implementation.
-    SpatialViewController* viewController = viewport.GetViewControllerR().ToSpatialViewP();
-    BeAssert (viewController != nullptr);
-    DgnDbR dgnDb = viewController->GetDgnDb();
-    
-    auto camera = viewController->GetViewDefinitionR().ToView3dP();
-    if (nullptr != camera)
-        viewport.SynchWithViewController(false); 
-
-    FenceParams fence = CreateFence (&viewport, allowPartialOverlaps);
-    
-    // Prepare element query by range, and by what's visible in the view
-    Statement stmt;
-    Utf8CP sql = "SELECT r.ElementId FROM " DGN_VTABLE_SpatialIndex " AS r, " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g " \
-        " WHERE r.MaxX > ? AND r.MinX < ?  AND r.MaxY > ? AND r.MinY < ? AND r.MaxZ > ? AND r.MinZ < ?" \
-        " AND e.Id=r.ElementId AND g.ElementId=r.ElementId AND e.Id != ?" \
-        " AND InVirtualSet (?,e.ModelId,g.CategoryId)";
-    DbResult result = stmt.Prepare (dgnDb, sql);
-    BeAssert (result == BE_SQLITE_OK);
-
-    DRange3d volumeRange;
-    this->GetRange (volumeRange);
-    DRange3d viewRange = viewport.GetFrustum(DgnCoordSystem::World, false).ToRange();
-    DRange3d queryRange; //  Query range is the intersection of the range of the volume, and range of the current view
-    queryRange.IntersectionOf (volumeRange, viewRange);
-    stmt.BindDouble (1, queryRange.low.x);
-    stmt.BindDouble (2, queryRange.high.x);
-    stmt.BindDouble (3, queryRange.low.y);
-    stmt.BindDouble (4, queryRange.high.y);
-    stmt.BindDouble (5, queryRange.low.z);
-    stmt.BindDouble (6, queryRange.high.z);
-
-    DgnElementId elementId = GetElementId();
-    if (elementId.IsValid())
-        stmt.BindId(7, GetElementId()); // Exclude the VolumeElement itself from the checks!!
-
-    stmt.BindVirtualSet (8, *viewController);
-
-    FindElements (elementIds, fence, stmt, dgnDb);
-#endif
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
 bool VolumeElement::ContainsElement(DgnElementCR element, bool allowPartialOverlaps /*=true*/) const
     {
 #if defined(TODO_FENCE_PARAMS)
@@ -433,17 +359,6 @@ bool VolumeElement::ContainsElement(DgnElementCR element, bool allowPartialOverl
 #else
     return false;
 #endif
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   02/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-void VolumeElement::Fit (DgnViewport& viewport, double const* aspectRatio /*=nullptr*/, ViewDefinition::MarginPercent const* margin /*=nullptr*/) const
-    {
-    DRange3d volumeRange;
-    GetRange (volumeRange);
-
-    viewport.GetViewControllerR().GetViewDefinitionR().LookAtVolume(volumeRange, aspectRatio, margin);
     }
 
 END_BENTLEY_DGN_NAMESPACE

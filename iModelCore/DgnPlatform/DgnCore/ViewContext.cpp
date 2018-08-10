@@ -980,7 +980,7 @@ bool GeometryParams::IsEquivalent(GeometryParamsCR other) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
+void GeometryParams::Resolve(DgnDbR dgnDb)
     {
     if (m_resolved)
         return; // Already resolved...
@@ -990,21 +990,12 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
         return;
 
     // Setup from SubCategory appearance...
-    DgnSubCategory::Appearance appearance;
+    DgnSubCategoryCPtr subCat = DgnSubCategory::Get(dgnDb, m_subCategoryId);
+    BeAssert(subCat.IsValid());
+    if (!subCat.IsValid())
+        return;
 
-    if (nullptr != vp)
-        {
-        appearance = vp->GetViewController().GetSubCategoryAppearance(m_subCategoryId);
-        }
-    else
-        {
-        DgnSubCategoryCPtr subCat = DgnSubCategory::Get(dgnDb, m_subCategoryId);
-        BeAssert(subCat.IsValid());
-        if (!subCat.IsValid())
-            return;
-
-        appearance = subCat->GetAppearance();
-        }
+    auto appearance = subCat->GetAppearance();
 
     if (!m_appearanceOverrides.m_color)
         m_lineColor = appearance.GetColor();
@@ -1012,7 +1003,7 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
     if (!m_appearanceOverrides.m_fill)
         m_fillColor = appearance.GetColor();
     else if (BackgroundFill::None != m_backgroundFill)
-        m_fillColor = (nullptr != vp ? vp->GetBackgroundColor() : ColorDef::Black());
+        m_fillColor = ColorDef::Black();
 
     if (!m_appearanceOverrides.m_weight)
         m_weight = appearance.GetWeight();
@@ -1038,10 +1029,7 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
         }
 
     // SubCategory display priority is combined with element priority to compute net display priority. 
-    if (nullptr != vp && vp->Is3dView())
-        m_netPriority = 0;
-    else
-        m_netPriority = m_elmPriority + appearance.GetDisplayPriority();
+    m_netPriority = m_elmPriority + appearance.GetDisplayPriority();
 
     if (m_styleInfo.IsValid() && nullptr == m_styleInfo->GetLineStyleSymb().GetILineStyle())
         m_styleInfo->Resolve(dgnDb);
@@ -1054,7 +1042,7 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryParams::Resolve(ViewContextR context)
     {
-    Resolve(context.GetDgnDb(), context.GetViewport());
+    Resolve(context.GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**

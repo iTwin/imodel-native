@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/AuxCoordSysProcessor.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include    <Geom\msgeomstructs.hpp>
@@ -180,43 +180,6 @@ bool            _GetIsReadOnly () const override
 ACSFlags        _GetFlags () const override
     {
     return ACSFlags::Default;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BarryBentley    01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP       _GetAxisLabel
-(
-uint32_t    axis,
-WCharP    axisLabel,
-uint32_t    length
-) const override
-    {
-    int     quadrant = m_dgnGCSPtr->GetQuadrant();
-
-    axisLabel[1] = 0;
-    switch (axis)
-        {
-        case 0:
-            if ( (quadrant == 2) || (quadrant == 3) )
-                axisLabel[0] = 'W';
-            else
-                axisLabel[0] = 'E';
-            break;
-        case 1:
-            if ( (quadrant == 3) || (quadrant == 4) )
-                axisLabel[0] = 'S';
-            else
-                axisLabel[0] = 'N';
-            break;
-        case 2:
-            axisLabel[0] = 'H';
-            break;
-        default:
-            axisLabel[0] = 0;
-            break;
-        }
-    return axisLabel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -698,43 +661,6 @@ bool            _GetIsReadOnly () const override
 ACSFlags        _GetFlags () const override
     {
     return ACSFlags::Default;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BarryBentley    01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP       _GetAxisLabel
-(
-uint32_t    axis,
-WCharP    axisLabel,
-uint32_t    length
-) const override
-    {
-    int     quadrant = m_dgnGCSPtr->GetQuadrant();
-
-    axisLabel[1] = 0;
-    switch (axis)
-        {
-        case 0:
-            if ( (quadrant == 2) || (quadrant == 3) )
-                axisLabel[0] = 'W';
-            else
-                axisLabel[0] = 'E';
-            break;
-        case 1:
-            if ( (quadrant == 3) || (quadrant == 4) )
-                axisLabel[0] = 'S';
-            else
-                axisLabel[0] = 'N';
-            break;
-        case 2:
-            axisLabel[0] = 'H';
-            break;
-        default:
-            axisLabel[0] = 0;
-            break;
-        }
-    return axisLabel;
     }
 
 /*---------------------------------------------------------------------------------**//**

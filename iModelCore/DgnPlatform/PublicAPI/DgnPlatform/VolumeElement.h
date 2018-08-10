@@ -126,18 +126,6 @@ public:
 
     //! Clear any view clips previously setup
     DGNPLATFORM_EXPORT void ClearClip() const;
-    
-    //! Fit the view to just show the volume, keeping the view's current rotation.
-    //! @param[in] viewport  Viewport to fit the volume
-    //! @param[in] aspectRatio The X/Y aspect ratio of the view into which the result will be displayed. If the aspect ratio of the volume does not
-    //! match aspectRatio, the shorter axis is lengthened and the volume is centered. If aspectRatio is NULL, no adjustment is made.
-    //! @param[in] margin The amount of "white space" to leave around the view volume (which essentially increases the volume
-    //! of space shown in the view.) If NULL, no additional white space is added.
-    //! @note For 3d views, the camera is centered on the new volume and moved along the view z axis using the default lens angle
-    //! such that the entire volume is visible.
-    //! @note, for 2d views, only the X and Y values of volume are used.
-    //! @see ViewController::LookAtVolume()
-    DGNPLATFORM_EXPORT void Fit(DgnViewport& viewport, double const* aspectRatio=nullptr, ViewDefinition::MarginPercent const* margin=nullptr) const;
 
     /*
      * Query contained elements in the Volume
@@ -149,13 +137,6 @@ public:
     //! @param[in] allowPartialOverlaps Pass false to find only elements that are strictly contained. Pass true 
     //! to include elements that partially overlap the volume (i.e., at the boundary). 
     DGNPLATFORM_EXPORT void FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool allowPartialOverlaps = true) const;
-
-    //! Find all elements in the specified view within the volume
-    //! @param[out] elementIds Element ids found. Any existing entries are not cleared. 
-    //! @param[in] viewport Viewport that's used to find only the elements displayed. 
-    //! @param[in] allowPartialOverlaps Pass false to find only elements that are strictly contained. Pass true 
-    //! to include elements that partially overlap the volume (i.e., at the boundary). 
-    DGNPLATFORM_EXPORT void FindElements(DgnElementIdSet& elementIds, DgnViewportR viewport, bool allowPartialOverlaps = true) const;
 
     //! Determines if the volume contains the element
     //! @param element Element to check

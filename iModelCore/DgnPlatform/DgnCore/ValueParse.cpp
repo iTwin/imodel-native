@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ValueParse.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -878,17 +878,6 @@ DistanceParserPtr       DistanceParser::Create(GeometricModelCR model)
     return parser;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DistanceParserPtr       DistanceParser::Create(DgnViewportR viewport)
-    {
-    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    DistanceParserPtr parser = DistanceParser::Create(*targetModel);
-
-    return parser;
-    }
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -972,17 +961,6 @@ PointParserPtr         PointParser::Create(GeometricModelCR model)
     PointParserPtr   parser = Create();
 
     parser->InitModelSettings(model);
-
-    return parser;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-PointParserPtr          PointParser::Create(DgnViewportR viewport)
-    {
-    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    PointParserPtr parser = PointParser::Create(*targetModel);
 
     return parser;
     }
@@ -1135,28 +1113,6 @@ AreaParserPtr       AreaParser::Create(GeometricModelCR model)
     AreaParserPtr   parser = Create();
 
     parser->InitModelSettings(model);
-
-    return parser;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-AreaParserPtr       AreaParser::Create(DgnViewportR viewport)
-    {
-    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    AreaParserPtr   parser = AreaParser::Create(*targetModel);
-
-    return parser;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-VolumeParserPtr       VolumeParser::Create(DgnViewportR viewport)
-    {
-    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    VolumeParserPtr parser = VolumeParser::Create(*targetModel);
 
     return parser;
     }

@@ -733,17 +733,6 @@ StatusInt DistanceFormatter::SetUnits(UnitDefinitionCR newMasterUnit, UnitDefini
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DistanceFormatterPtr    DistanceFormatter::Create(DgnViewportR viewport)
-    {
-    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    DistanceFormatterPtr formatter = DistanceFormatter::Create(*targetModel);
-
-    return formatter;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    05/2005
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void metersToMasterSub(int64_t& mu, int64_t& su, double& masterUnits, double& subUnits, bool& negFlag, double inUors, double minResolution, 
@@ -1071,23 +1060,6 @@ PointFormatterPtr   PointFormatter::Create(GeometricModelCR model, bool addGloba
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointFormatterPtr   PointFormatter::Create(DgnViewportR viewport)
-    {
-    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    bool            useViewACS  = viewport.IsContextRotationRequired();
-
-    PointFormatterPtr   formatter = Create();
-    formatter->InitModelSettings(*targetModel, !useViewACS);
-
-    if (useViewACS)
-        formatter->SetAuxCoordSys(&viewport.GetViewController().GetAuxCoordinateSystem());
-
-    return formatter;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/12
-+---------------+---------------+---------------+---------------+---------------+------*/
 static void transformByACS(DPoint3d point, AuxCoordSystemCR acs)
     {
     double      scale = 1.0;
@@ -1204,17 +1176,6 @@ AreaFormatterPtr    AreaFormatter::Create(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AreaFormatterPtr    AreaFormatter::Create(DgnViewportR viewport)
-    {
-    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    AreaFormatterPtr formatter = AreaFormatter::Create(*targetModel);
-
-    return formatter;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/12
-+---------------+---------------+---------------+---------------+---------------+------*/
 static  void    appendUnitLabel(Utf8StringR str, Utf8CP label, L10N::StringId decoratorId, bool asSuffix)
     {
     if ('\0' == *label)
@@ -1272,17 +1233,6 @@ VolumeFormatterPtr VolumeFormatter::Create(GeometricModelCR model)
     VolumeFormatterPtr   formatter = Create();
 
     formatter->InitModelSettings(model);
-
-    return formatter;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-VolumeFormatterPtr VolumeFormatter::Create(DgnViewportR viewport)
-    {
-    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    VolumeFormatterPtr formatter = VolumeFormatter::Create(*targetModel);
 
     return formatter;
     }

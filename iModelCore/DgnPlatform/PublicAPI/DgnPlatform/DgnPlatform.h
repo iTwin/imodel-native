@@ -688,15 +688,6 @@ enum class OutputMessagePriority
     Fatal          = 17,
 };
 
-//! Values for NotificationManager::OutputMessage
-//! @private
-enum class OutputMessageAlert
-{
-    None     = 0,
-    Dialog   = 1,
-    Balloon  = 2,
-};
-
 enum class GridOrientationType
 {
     View     = 0,
