@@ -22,11 +22,29 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 BEGIN_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static double depthFromDisplayPriority(double priority)
+    {
+    // zDepth is obtained from GeometryParams::GetNetDisplayPriority(), which returns an int32_t.
+    // Coming from mstn, priorities tend to be in [-500..500]
+    // Let's assume that mstn's range is the full range and clamp anything outside that.
+    // Map them to [-s_half2dDepthRange, s_half2dDepthRange]
+    static const double s_half2dDepthRange = 0.5 * Target::Get2dFrustumDepth();
+    static const double priorityRange = 500;
+    static const double ratio = s_half2dDepthRange / priorityRange;
+
+    auto depth = std::min(priority, priorityRange);
+    depth = std::max(depth, -priorityRange);
+    return depth * ratio;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void copy2dTo3d(int numPoints, DPoint3dP pts3d, DPoint2dCP pts2d, double priority)
     {
-    double depth = Render::Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    double depth = depthFromDisplayPriority(priority);
     for (int i = 0; i < numPoints; i++, pts3d++, pts2d++)
         pts3d->Init(pts2d->x, pts2d->y, depth);
     }
@@ -2888,7 +2906,7 @@ void GeometryListBuilder::_AddShape(int numPoints, DPoint3dCP points, bool fille
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double priority)
     {
-    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    double zDepth = depthFromDisplayPriority(priority);
     if (0.0 == zDepth)
         {
         _AddArc(ellipse, isEllipse, filled);
@@ -3024,7 +3042,7 @@ void GeometryListBuilder::_AddTextStringR(TextStringR text)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddTextString2d(TextStringCR text, double priority)
     {
-    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    double zDepth = depthFromDisplayPriority(priority);
     if (0.0 == zDepth)
         {
         _AddTextString(text);
@@ -3044,7 +3062,7 @@ void GeometryListBuilder::_AddTextString2d(TextStringCR text, double priority)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddTextString2dR(TextStringR text, double priority)
     {
-    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    double zDepth = depthFromDisplayPriority(priority);
     if (0.0 == zDepth)
         {
         _AddTextStringR(text);
@@ -3210,7 +3228,7 @@ void GeometryListBuilder::_AddCurveVectorR(CurveVectorR curves, bool isFilled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, double priority)
     {
-    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    double zDepth = depthFromDisplayPriority(priority);
     if (0.0 == zDepth)
         {
         _AddCurveVector(curves, isFilled);
@@ -3228,7 +3246,7 @@ void GeometryListBuilder::_AddCurveVector2d(CurveVectorCR curves, bool isFilled,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddCurveVector2dR(CurveVectorR curves, bool isFilled, double priority)
     {
-    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    double zDepth = depthFromDisplayPriority(priority);
     if (0.0 == zDepth)
         {
         _AddCurveVectorR(*curves.Clone(), isFilled);
@@ -3265,7 +3283,7 @@ void GeometryListBuilder::_AddBSplineCurveR(RefCountedMSBsplineCurveR bcurve, bo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, double priority)
     {
-    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    double zDepth = depthFromDisplayPriority(priority);
     if (0.0 == zDepth)
         {
         _AddBSplineCurve(bcurve, filled);
@@ -3287,7 +3305,7 @@ void GeometryListBuilder::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool fille
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddBSplineCurve2dR(RefCountedMSBsplineCurveR bcurve, bool filled, double priority)
     {
-    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    double zDepth = depthFromDisplayPriority(priority);
     if (0.0 == zDepth)
         {
         _AddBSplineCurveR(bcurve, filled);
