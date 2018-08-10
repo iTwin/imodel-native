@@ -1121,7 +1121,7 @@ protected:
     //! @param dwg Input root or xRef DWG file from which dictionary groups to be processed.
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportGroups (DwgDbDatabaseCR dwg);
     //! Create anew or update existing group, which may be in a root or an xRef DWG file.
-    //! @param dwg Input dictionary group
+    //! @param group Input dictionary group
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportGroup (DwgDbGroupCR group);
 
     //! @name Options and configs
