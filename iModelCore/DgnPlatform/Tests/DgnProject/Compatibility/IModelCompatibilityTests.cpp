@@ -42,6 +42,27 @@ TEST_F(IModelCompatibilityTestFixture, BasicTestsOnAllPulledFiles)
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
+
+            // Run SELECT statements against all classes
+            for (ECSchemaCP schema : testDb.GetDb().Schemas().GetSchemas())
+                {
+                for (ECClassCP cl : schema->GetClasses())
+                    {
+                    if (!cl->IsEntityClass())
+                        continue;
+
+                    Utf8String ecsql("SELECT ECInstanceId,ECClassId");
+                    for (ECPropertyCP prop : cl->GetProperties())
+                        {
+                        ecsql.append(",").append(prop->GetName());
+                        }
+                    ecsql.append(" FROM ").append(cl->GetECSqlName());
+
+                    ECSqlStatement stmt;
+                    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), ecsql.c_str())) << ecsql << " | " << testDb.GetDescription();
+                    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "All entity classes are expected to be empty in the test files | " << ecsql << " | " << testDb.GetDescription();
+                    }
+                }
             }
         }
     }
@@ -483,6 +504,223 @@ TEST_F(IModelCompatibilityTestFixture, EC32Units)
             testDb.AssertFormat("Formats", "DefaultReal", "real", nullptr, JsonValue(R"json({"type": "Decimal", "formatTraits": ["keepSingleZero", "keepDecimalPoint"], "precision": 6})json"), JsonValue());
             testDb.AssertFormat("Formats", "AmerFI", "FeetInches", nullptr, JsonValue(R"json({"type": "Fractional", "formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"], "precision": 8, "uomSeparator":""})json"),
                                 JsonValue(R"json({"includeZero":true, "spacer":"", "units": [{"name":"FT", "label":"'"}, {"name":"IN", "label":"\""}]})json"));
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// Performs an import of a pre EC 3.2 schema
+// @bsimethod                                  Krischan.Eberle                      08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, PreEC32SchemaImport)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+
+                        <ECEntityClass typeName="MyDomainClass">
+                                <BaseClass>bis:PhysicalElement</BaseClass>
+                                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                                <ECProperty propertyName="Status" typeName="StatusEnum" />
+                            </ECEntityClass>
+                        <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
+                        <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
+                        <KindOfQuantity typeName="TEMPERATURE" displayLabel="Temperature" persistenceUnit="K(DefaultReal)" presentationUnits="CELSIUS(real4u);FAHRENHEIT(real4u);K(real4u)" relativeError="0.01"/>
+                        <ECEnumeration typeName="StatusEnum" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                            <ECEnumerator value="0"/>
+                            <ECEnumerator value="1"/>
+                            <ECEnumerator value="2"/>
+                        </ECEnumeration>
+                     </ECSchema>)xml"));
+            ASSERT_TRUE(deserializationCtx != nullptr);
+            const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
+            switch (testDb.GetAge())
+                {
+                    case ProfileState::Age::Older:
+                    case ProfileState::Age::UpToDate:
+                    {
+                    EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+
+                    EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Size, Status FROM ts.MyDomainClass")) << testDb.GetDescription();
+
+                    ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "MyDomainClass");
+                    ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << testDb.GetDescription();
+                    {
+                    ECPropertyCP sizeProp = cl->GetPropertyP("Size");
+                    ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << testDb.GetDescription();
+                    KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+                    ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
+                    testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQL_M", JsonValue(R"json(["SQ.M(Real4U)", "SQ.FT(Real4U)"])json"), 0.0001);
+                    }
+                    {
+                    ECPropertyCP statusProp = cl->GetPropertyP("Status");
+                    ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << testDb.GetDescription();
+                    ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
+                    ASSERT_TRUE(ecenum != nullptr) << testDb.GetDescription();
+                    testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                    {{"StatusEnum0", ECValue(0), nullptr},
+                    {"StatusEnum1", ECValue(1), nullptr},
+                    {"StatusEnum2", ECValue(2), nullptr}});
+                    }
+
+                    testDb.AssertKindOfQuantity("TestSchema", "ANGLE", "Angle", nullptr, "u:RAD", JsonValue(R"json(["f:DefaultRealU(2)[u:ARC_DEG]", "f:AngleDMS"])json"), 0.0001);
+                    testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]"])json"), 0.0001);
+                    testDb.AssertKindOfQuantity("TestSchema", "TEMPERATURE", "Temperature", nullptr, "u:K", JsonValue(R"json(["CELSIUS(Real4U)","FAHRENHEIT(Real4U)","K(Real4U)"])json"), 0.01);
+
+                    testDb.AssertEnum("TestSchema", "StatusEnum", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                    {{"StatusEnum0", ECValue(0), nullptr},
+                    {"StatusEnum1", ECValue(1), nullptr},
+                    {"StatusEnum2", ECValue(2), nullptr}});
+                    break;
+                    }
+
+                    case ProfileState::Age::Newer:
+                    {
+                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                    break;
+                    }
+                    default:
+                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
+                        break;
+                }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// Performs an update of a pre EC 3.2 schema
+// @bsimethod                                  Krischan.Eberle                      08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, PreEC32SchemaUpdate)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_PREEC32SCHEMAUPDATE))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            //Schema changes:
+            //- bumped up version to 1.0.1
+            //- KOQ AREA: 
+            //    - Added presentation unit SQ.CM(real4u)
+            //    - Changed relativeError to 0.001
+            // - Enum StatusEnum
+            //    - Changed display label to "Status"
+            //    - Added enumerator 3
+            // - Added subclass SubDomainClass
+            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            <ECSchema schemaName="SchemaUpdateTest" alias="su" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+
+             <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u);SQ.CM(real4u)" relativeError="0.001"/>
+             <ECEnumeration typeName="StatusEnum" displayLabel="Status" backingTypeName="int" isStrict="true">
+                <ECEnumerator value="0"/>
+                <ECEnumerator value="1"/>
+                <ECEnumerator value="2"/>
+                <ECEnumerator value="3"/>
+             </ECEnumeration>
+             <ECEntityClass typeName="MyDomainClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                <ECProperty propertyName="Status" typeName="StatusEnum" />
+             </ECEntityClass>
+             <ECEntityClass typeName="SubDomainClass">
+                <BaseClass>MyDomainClass</BaseClass>
+                <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
+                <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
+             </ECEntityClass>
+            </ECSchema>)xml"));
+            ASSERT_TRUE(deserializationCtx != nullptr);
+            const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
+            switch (testDb.GetAge())
+                {
+                    case ProfileState::Age::Older:
+                    case ProfileState::Age::UpToDate:
+                    {
+                    EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+
+                    EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Code,Size,Sizes,Status,Statuses FROM su.SubDomainClass")) << testDb.GetDescription();
+
+                    ECClassCP cl = testDb.GetDb().Schemas().GetClass("SchemaUpdateTest", "SubDomainClass");
+                    ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
+                    {
+                    ECPropertyCP sizeProp = cl->GetPropertyP("Size");
+                    ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << "SubDomainClass | " << testDb.GetDescription();
+                    KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+                    ASSERT_TRUE(koq != nullptr) << "SubDomainClass | "  << testDb.GetDescription();
+                    testDb.AssertKindOfQuantity(*koq, "SchemaUpdateTest", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+                    }
+
+                    {
+                    ECPropertyCP sizesProp = cl->GetPropertyP("Sizes");
+                    ASSERT_TRUE(sizesProp != nullptr && sizesProp->GetIsPrimitiveArray()) <<"SubDomainClass | "  << testDb.GetDescription();
+                    KindOfQuantityCP koq = sizesProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+                    ASSERT_TRUE(koq != nullptr) << "SubDomainClass | "  << testDb.GetDescription();
+                    testDb.AssertKindOfQuantity(*koq, "SchemaUpdateTest", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+                    }
+
+                    {
+                    ECPropertyCP statusProp = cl->GetPropertyP("Status");
+                    ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << "SubDomainClass | "  << testDb.GetDescription();
+                    ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
+                    ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | "  << testDb.GetDescription();
+                    testDb.AssertEnum(*ecenum, "SchemaUpdateTest", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                        {{"StatusEnum0", ECValue(0), nullptr},
+                        {"StatusEnum1", ECValue(1), nullptr},
+                        {"StatusEnum2", ECValue(2), nullptr},
+                        {"StatusEnum3", ECValue(3), nullptr}});
+                    }
+
+                    {
+                    ECPropertyCP statusesProp = cl->GetPropertyP("Statuses");
+                    ASSERT_TRUE(statusesProp != nullptr && statusesProp->GetIsPrimitiveArray()) << "SubDomainClass | "  << testDb.GetDescription();
+                    ECEnumerationCP ecenum = statusesProp->GetAsPrimitiveArrayProperty()->GetEnumeration();
+                    ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | "  << testDb.GetDescription();
+                    testDb.AssertEnum(*ecenum, "SchemaUpdateTest", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                        {{"StatusEnum0", ECValue(0), nullptr},
+                        {"StatusEnum1", ECValue(1), nullptr},
+                        {"StatusEnum2", ECValue(2), nullptr},
+                        {"StatusEnum3", ECValue(3), nullptr}});
+                    }
+
+
+                    testDb.AssertKindOfQuantity("SchemaUpdateTest", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+
+                    testDb.AssertEnum("SchemaUpdateTest", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                        {{"StatusEnum0", ECValue(0), nullptr},
+                        {"StatusEnum1", ECValue(1), nullptr},
+                        {"StatusEnum2", ECValue(2), nullptr},
+                        {"StatusEnum3", ECValue(3), nullptr}});
+                    break;
+                    }
+
+                    case ProfileState::Age::Newer:
+                    {
+                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                    break;
+                    }
+                    default:
+                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
+                        break;
+                }
             }
         }
     }
