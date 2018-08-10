@@ -130,15 +130,6 @@ Render::GraphicPtr  RevisionComparison::Controller::_StrokeGeometry(ViewContextR
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Controller::_CreateScene(SceneContextR context)
-    {
-    auto status = T_Super::_CreateScene(context);
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void getViewCorners(DPoint3dR low, DPoint3dR high, int indent, DgnViewportCR vp)

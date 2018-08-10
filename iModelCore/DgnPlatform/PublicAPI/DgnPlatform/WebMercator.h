@@ -189,7 +189,6 @@ public:
     DGNPLATFORM_EXPORT WebMercatorModel(CreateParams const& params);
 
     TileTree::RootPtr _CreateTileTree(Render::SystemP) override;
-    TileTree::RootPtr _GetTileTree(RenderContextR) override;
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
     double GetGroundBias() const {return m_groundBias;}

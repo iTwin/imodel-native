@@ -342,8 +342,6 @@ protected:
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
 
     virtual ClipVectorCP _GetClipVector() const { return nullptr; } // clip vector used by DrawArgs when rendering
-    virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
-    Transform GetDisplayTransform(RenderContextR context) const;
 
     virtual void _OnAddToRangeIndex(DRange3dCR range, DgnElementId id) { }
     virtual void _OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id) { }

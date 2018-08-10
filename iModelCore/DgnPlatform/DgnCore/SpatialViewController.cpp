@@ -70,14 +70,6 @@ void SpatialViewController::_OnRenderFrame()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
-    {
-    return ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::BuildCopyrightInfo()

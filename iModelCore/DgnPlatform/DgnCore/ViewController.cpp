@@ -814,38 +814,6 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static TileTree::RootPtr getRoot(T& viewController, SceneContextR context)
-    {
-    TileTree::RootPtr root;
-    auto model = viewController.GetViewedModel();
-    if (nullptr != model)
-        root = model->GetTileTree(context);
-
-    return root;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootP ViewController2d::GetRoot(SceneContextR context)
-    {
-    if (m_root.IsNull())
-        m_root = getRoot(*this, context);
-
-    return m_root.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewController2d::_CreateScene(SceneContextR context)
-    {
-    return ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController2d::_DrawView(ViewContextR context)
@@ -868,15 +836,6 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
 
     entry.first->second = obj;
     obj->_Load(*m_definition);
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TemplateViewController3d::_CreateScene(SceneContextR context)
-    {
-    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

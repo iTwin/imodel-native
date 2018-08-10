@@ -1650,14 +1650,6 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr GeometricModel::_GetTileTree(RenderContextR context)
-    {
-    return GetTileTree(context.GetRenderSystem());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootP GeometricModel::GetTileTree(Render::SystemP system)

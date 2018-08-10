@@ -197,7 +197,6 @@ protected:
     bool LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate);
 public:
     static RootPtr Create(GeometricModelR model, Render::SystemR system);
-    static RootPtr Create(GeometricModelR model, RenderContextR context);
     virtual ~Root() { ClearAllTiles(); }
 
     GeometricModelPtr GetModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }

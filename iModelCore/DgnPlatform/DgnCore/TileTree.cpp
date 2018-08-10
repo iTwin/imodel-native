@@ -806,18 +806,6 @@ bool Tile::IsEmpty() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Transform Root::GetDisplayTransform(RenderContextR context) const
-    {
-    auto transform = _GetTransform(context);
-    if (m_haveDisplayTransform)
-        transform = Transform::FromProduct(m_displayTransform, transform);
-
-    return transform;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 void Root::SetDisplayTransform(TransformCP tf)
     {
     m_haveDisplayTransform = nullptr != tf;
