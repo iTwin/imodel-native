@@ -474,6 +474,10 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32SchemaImport)
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
 
+            // Schema uses a newer version of the ECDbFileInfo schema -> add ecdb schema search path
+            BeFileName ecdbStandardSchemasFolder(ECSchemaReadContext::GetHostAssetsDirectory());
+            ecdbStandardSchemasFolder.AppendToPath(L"ECSchemas");
+            ecdbStandardSchemasFolder.AppendToPath(L"ECDb");
             ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                         <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
@@ -500,7 +504,7 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32SchemaImport)
                             <ECEnumerator value="1"/>
                             <ECEnumerator value="2"/>
                         </ECEnumeration>
-                     </ECSchema>)xml"));
+                     </ECSchema>)xml"),{ecdbStandardSchemasFolder});
             ASSERT_TRUE(deserializationCtx != nullptr);
             const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())

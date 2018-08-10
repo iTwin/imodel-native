@@ -63,8 +63,8 @@ struct TestFileCreator
         virtual ~TestFileCreator() {}
         BentleyStatus Run();
 
-        static ECN::ECSchemaReadContextPtr DeserializeSchemas(ECDbCR, std::vector<SchemaItem> const&);
-        static ECN::ECSchemaReadContextPtr DeserializeSchema(ECDbCR ecdb, SchemaItem const& schema) { return DeserializeSchemas(ecdb, {schema}); }
+        static ECN::ECSchemaReadContextPtr DeserializeSchemas(ECDbCR, std::vector<SchemaItem> const&, std::vector<BeFileName> const& additionalSearchPaths = {});
+        static ECN::ECSchemaReadContextPtr DeserializeSchema(ECDbCR ecdb, SchemaItem const& schema, std::vector<BeFileName> const& additionalSearchPaths = {}) { return DeserializeSchemas(ecdb, {schema}, additionalSearchPaths); }
     };
 
 //=======================================================================================
