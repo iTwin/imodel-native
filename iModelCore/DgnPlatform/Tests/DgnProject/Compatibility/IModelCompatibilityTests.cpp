@@ -456,6 +456,9 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32SchemaImport)
                     case ProfileState::Age::UpToDate:
                     {
                     EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+                    //No units or formats schema from EC3.2 must creep into the file when importing KOQs in an 4.0.0.1 file
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << testDb.GetDescription();
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 1}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << testDb.GetDescription();
 
                     EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Size, Status FROM ts.MyDomainClass")) << testDb.GetDescription();
 
@@ -560,6 +563,9 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32SchemaUpdate)
                     case ProfileState::Age::UpToDate:
                     {
                     EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+                    //No units or formats schema from EC3.2 must creep into the file when importing KOQs in an 4.0.0.1 file
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << testDb.GetDescription();
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 1}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << testDb.GetDescription();
 
                     EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Code,Size,Sizes,Status,Statuses FROM su.SubDomainClass")) << testDb.GetDescription();
 

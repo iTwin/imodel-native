@@ -396,11 +396,22 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32SchemaImport)
 
             ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                        <ECSchemaReference name="ECDbFileInfo" version="02.00.00" alias="ecdbf" />
                         <ECEntityClass typeName="Foo">
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                </ECCustomAttributes>
                                 <ECProperty propertyName="Code" typeName="int" />
                                 <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
                                 <ECProperty propertyName="Status" typeName="StatusEnum" />
-                            </ECEntityClass>
+                        </ECEntityClass>
+                        <ECEntityClass typeName="MyFileInfo">
+                            <BaseClass>ecdbf:FileInfo</BaseClass>
+                            <ECProperty propertyName="Path" typeName="string" />
+                        </ECEntityClass>
                         <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
                         <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
                         <KindOfQuantity typeName="TEMPERATURE" displayLabel="Temperature" persistenceUnit="K(DefaultReal)" presentationUnits="CELSIUS(real4u);FAHRENHEIT(real4u);K(real4u)" relativeError="0.01"/>
@@ -417,6 +428,9 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32SchemaImport)
                     case ProfileState::Age::UpToDate:
                     {
                     EXPECT_EQ(SUCCESS, schemaImportStat) << testDb.GetDescription();
+                    //No units or formats schema from EC3.2 must creep into the file when importing KOQs in an 4.0.0.1 file
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) <<  testDb.GetDescription();
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << testDb.GetDescription();
 
                     ECInstanceKey fooKey;
                     ECSqlStatement stmt;
@@ -560,6 +574,9 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32SchemaUpdate)
                     case ProfileState::Age::UpToDate:
                     {
                     EXPECT_EQ(SUCCESS, schemaImportStat) << testDb.GetDescription();
+                    //No units or formats schema from EC3.2 must creep into the file when importing KOQs in an 4.0.0.1 file
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << testDb.GetDescription();
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 1}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << testDb.GetDescription();
 
                     for (Utf8CP className : {"SubA", "SubB", "SubC"})
                         {
