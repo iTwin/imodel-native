@@ -158,7 +158,7 @@
     <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
     <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
     <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
-    <SubPart PartName="RapidJson" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+    <SubPart PartName="BeRapidJson" PartFile="Bentley" Repository="Bentley"/>
   </Part>
 
 </BuildContext>
