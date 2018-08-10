@@ -18,7 +18,7 @@
         <SubPart PartName="StandardSchemasV3"       PartFile="ECStandards"      Repository="ECStandards" />
         <SubPart PartName="V3ConversionSchemas"     PartFile="ECStandards"      Repository="ECStandards"/>
         <SubPart PartName="BeJsonCpp"               PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="RapidJson"               PartFile="Libsrc-Nugets"    Repository="bsicommon"/>
+        <SubPart PartName="BeRapidJson" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="UnitsNative"             PartFile="Units"            Repository="Units" />
         <Bindings>
             
