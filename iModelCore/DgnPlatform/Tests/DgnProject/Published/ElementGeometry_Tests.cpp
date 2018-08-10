@@ -2,12 +2,11 @@
 |
 |  $Source: Tests/DgnProject/Published/ElementGeometry_Tests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "../TestFixture/DgnDbTestFixtures.h"
-#include <folly/BeFolly.h>
 
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Element Geometry 

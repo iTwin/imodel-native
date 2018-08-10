@@ -1582,7 +1582,7 @@ BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::_OnConflic
             break;
         }
         
-    return HandleConflict(onConflict, db, tableName, change, opcode, indirect);
+    return HandleConflict(onConflict, db, tableName, change, opcode, indirect != 0);
     }
 
 //---------------------------------------------------------------------------------------

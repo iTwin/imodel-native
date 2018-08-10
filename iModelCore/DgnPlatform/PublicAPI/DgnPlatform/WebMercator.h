@@ -73,7 +73,7 @@ struct ImageryProvider : RefCountedBase
     virtual void _FromJson(Json::Value const& value) = 0;
 
     // Retrieve the Tile Template Url from the service.
-    virtual folly::Future<TemplateUrlLoadStatus> _FetchTemplateUrl() {return TemplateUrlLoadStatus::Received;}
+    virtual TemplateUrlLoadStatus _FetchTemplateUrl() {return TemplateUrlLoadStatus::Received;}
 
     // if a Tile Template Url must be retrieved, return the current status. If none is needed, return "Received"
     virtual TemplateUrlLoadStatus _GetTemplateUrlLoadStatus() const {return TemplateUrlLoadStatus::Received;}
@@ -350,7 +350,7 @@ public:
 
     void _ToJson(Json::Value&) const override;
 
-    folly::Future<TemplateUrlLoadStatus> _FetchTemplateUrl() override;
+    TemplateUrlLoadStatus _FetchTemplateUrl() override;
 
     TemplateUrlLoadStatus _GetTemplateUrlLoadStatus() const override {return m_templateUrlLoadStatus;}
 

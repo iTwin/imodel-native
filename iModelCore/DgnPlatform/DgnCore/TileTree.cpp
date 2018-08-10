@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
-#include <folly/BeFolly.h>
 #include <numeric>
 
 //#define WIP_SCALABLE_MESH
@@ -61,49 +60,35 @@ BentleyStatus TileLoader::LoadTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> TileLoader::Perform()
+BentleyStatus TileLoader::Perform()
     {
     m_tile->SetIsQueued(); // mark as queued so we don't request it again.
 
     TileLoaderPtr me(this);
     auto loadFlag = std::make_shared<LoadFlag>(m_loads);  // Keep track of running requests so we can exit gracefully.
 
-    return _ReadFromDb().then([me, loadFlag] (BentleyStatus status)
+    auto status = _ReadFromDb();
+    if (SUCCESS != status)
+        status = me->IsCanceledOrAbandoned() ? ERROR : me->_GetFromSource();
+
+    auto& tile = *me->m_tile;
+    if (SUCCESS != status || SUCCESS != me->LoadTile())
         {
-        if (SUCCESS == status)
-            return folly::makeFuture(SUCCESS);
-            
-        if (me->IsCanceledOrAbandoned())
-            return folly::makeFuture(ERROR);
-       
-        return me->_GetFromSource();
-        }).then(&BeFolly::ThreadPool::GetCpuPool(), [me, loadFlag] (BentleyStatus status)
-            {
-            DgnDb::SetThreadId(DgnDb::ThreadId::CpuPool); // for debugging
+        if (me->m_loads != nullptr && me->m_loads->IsCanceled())
+            tile.SetNotLoaded();     // Mark it as not loaded so we can retry again.
+        else
+            tile.SetNotFound();
 
-            auto& tile = *me->m_tile;
+        return ERROR;
+        }
 
-            if (SUCCESS != status || SUCCESS != me->LoadTile())
-                {
-                if (me->m_loads != nullptr && me->m_loads->IsCanceled())
-                    tile.SetNotLoaded();     // Mark it as not loaded so we can retry again.
-                else
-                    tile.SetNotFound();
-                return ERROR;
-                }
+    T_HOST.GetTileAdmin()._OnNewTileReady(tile.GetRoot().GetDgnDb());
+    tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
 
-            T_HOST.GetTileAdmin()._OnNewTileReady(tile.GetRoot().GetDgnDb());
-            tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
-            
-            // On a successful load, potentially store the tile in the cache.   
-            auto saveToDb = me->_SaveToDb();
+    // On a successful load, potentially store the tile in the cache.   
+    me->_SaveToDb();
 
-            // don't wait on the save unless caller wants to immediately extract data from cache.
-            if (me->_WantWaitOnSave())
-                saveToDb.get();
-
-            return SUCCESS;
-            });
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -117,7 +102,7 @@ bool TileLoader::_WantWaitOnSave() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> TileLoader::_GetFromSource()
+BentleyStatus TileLoader::_GetFromSource()
     {
     bool isHttp = (0 == strncmp("http:", m_resourceName.c_str(), 5) || 0 == strncmp("https:", m_resourceName.c_str(), 6));
     if (isHttp)
@@ -129,37 +114,28 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
     auto query = std::make_shared<FileDataQuery>(m_resourceName, m_loads);
  
     TileLoaderPtr me(this);
-    return query->Perform().then([me, query](ByteStream const& data)
-        {
-        if (!data.HasData())
-            return ERROR;
+    ByteStream data = query->Perform();
+    if (!data.HasData())
+        return ERROR;
 
-        me->m_tileBytes = std::move(data); // NEEDSWORK this is a copy not a move...
-        me->m_contentType = "";     // unknown 
-        me->m_expirationDate = 0;   // unknown 
+    me->m_tileBytes = std::move(data); // NEEDSWORK this is a copy not a move...
+    me->m_contentType = "";     // unknown 
+    me->m_expirationDate = 0;   // unknown 
 
-        return SUCCESS;
-        });         
+    return SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  12/2016
 //----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> TileLoader::_ReadFromDb()
+BentleyStatus TileLoader::_ReadFromDb()
     {
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
         return ERROR;
 
     TileLoaderPtr me(this);
-
-    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [me] ()
-        {
-        if (me->IsCanceledOrAbandoned())
-            return ERROR;
-
-        return me->DoReadFromDb();
-        });
+    return me->IsCanceledOrAbandoned() ? ERROR : me->DoReadFromDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -346,7 +322,7 @@ ByteStream Root::GetTileDataFromCache(Utf8StringCR cacheKey) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  12/2016
 //----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> TileLoader::_SaveToDb()
+BentleyStatus TileLoader::_SaveToDb()
     {
     if (!m_saveToCache)
         return SUCCESS;
@@ -356,11 +332,7 @@ folly::Future<BentleyStatus> TileLoader::_SaveToDb()
         return ERROR;
 
     TileLoaderPtr me(this);
-
-    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [me] ()
-        {
-        return me->DoSaveToDb();
-        });
+    return me->DoSaveToDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -456,22 +428,19 @@ BentleyStatus TileLoader::DoSaveToDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ByteStream> FileDataQuery::Perform()
+ByteStream FileDataQuery::Perform()
     {
     auto filename = m_fileName;
     TileLoadStatePtr loads = m_loads;
-    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [filename, loads] ()
-        {
-        ByteStream data;
-        BeFile dataFile;
-        if (BeFileStatus::Success != dataFile.Open(filename.c_str(), BeFileAccess::Read))
-            return data;
-
-        if (BeFileStatus::Success != dataFile.ReadEntireFile(data))
-            return data;
-
+    ByteStream data;
+    BeFile dataFile;
+    if (BeFileStatus::Success != dataFile.Open(filename.c_str(), BeFileAccess::Read))
         return data;
-        });
+
+    if (BeFileStatus::Success != dataFile.ReadEntireFile(data))
+        return data;
+
+    return data;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -540,7 +509,7 @@ BentleyStatus TileCache::_Cleanup() const
     if (sum <= m_allowedSize)
         return SUCCESS;
 
-    uint64_t garbageSize = sum - (m_allowedSize * .95); // 5% slack to avoid purging often
+    uint64_t garbageSize = sum - static_cast<uint64_t>(m_allowedSize * .95); // 5% slack to avoid purging often
 
     CachedStatementPtr selectStatement;
     constexpr Utf8CP selectSql = "SELECT DataSize,Created FROM " JOIN_TileTreeTables " ORDER BY Created ASC";
@@ -662,7 +631,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeDuration partialTimeout)
+BentleyStatus Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeDuration partialTimeout)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
@@ -1959,7 +1928,7 @@ void TriMeshTree::TriMesh::CreateParams::FromTile(TextureCR tile, GraphicBuilder
 Render::TriMeshArgs TriMeshTree::TriMesh::CreateTriMeshArgs(TextureP texture, FPoint2d const* textureUV) const
     {
     TriMeshArgs trimesh;
-    trimesh.m_numIndices = m_indices.size();
+    trimesh.m_numIndices = static_cast<uint32_t>(m_indices.size());
     trimesh.m_vertIndex = (uint32_t const*) (m_indices.empty() ? nullptr : &m_indices.front());
     trimesh.m_numPoints = (uint32_t) m_points.size();
     trimesh.m_points  = m_points.empty() ? nullptr : &m_points.front();
@@ -2112,8 +2081,8 @@ void TriMeshTree::Root::ClipTriMesh(TriMeshList& triMeshList, TriMesh::CreatePar
 
                 if (nullptr != clippedPolyface->GetParamCP())
                     {
-                    params[i].x = clippedPolyface->GetParamCP()[i].x;
-                    params[i].y = clippedPolyface->GetParamCP()[i].y;
+                    params[i].x = static_cast<float>(clippedPolyface->GetParamCP()[i].x);
+                    params[i].y = static_cast<float>(clippedPolyface->GetParamCP()[i].y);
                     }
                     //bsiFPoint2d_initFromDPoint2d(&params[i], &clippedPolyface->GetParamCP()[i]);
                 }
@@ -2126,9 +2095,9 @@ void TriMeshTree::Root::ClipTriMesh(TriMeshList& triMeshList, TriMesh::CreatePar
                 }
 
             Dgn::TileTree::TriMeshTree::TriMesh::CreateParams clippedGeomParams;
-            clippedGeomParams.m_numIndices = indices.size();
+            clippedGeomParams.m_numIndices = static_cast<int32_t>(indices.size());
             clippedGeomParams.m_vertIndex  = &indices.front();
-            clippedGeomParams.m_numPoints  = numPoints;
+            clippedGeomParams.m_numPoints  = static_cast<int32_t>(numPoints);
             clippedGeomParams.m_points     = &points.front();
             clippedGeomParams.m_normals    = normals.empty() ? nullptr : &normals.front();
             clippedGeomParams.m_textureUV  = params.empty() ? nullptr : &params.front();

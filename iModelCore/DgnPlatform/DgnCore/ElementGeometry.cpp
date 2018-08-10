@@ -2209,7 +2209,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     line.m_angle   = fbDefLine.angle();
                     line.m_through = *((DPoint2dCP) fbDefLine.through());
                     line.m_offset  = *((DPoint2dCP) fbDefLine.offset());
-                    line.m_nDashes = fbDefLine.dashes()->Length();
+                    line.m_nDashes = static_cast<short>(fbDefLine.dashes()->Length());
 
                     if (0 != line.m_nDashes)
                         memcpy(line.m_dashes, fbDefLine.dashes()->Data(), line.m_nDashes * sizeof(double));
@@ -4506,7 +4506,7 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                         line.m_angle   = fbDefLine.angle();
                         line.m_through = *((DPoint2dCP) fbDefLine.through());
                         line.m_offset  = *((DPoint2dCP) fbDefLine.offset());
-                        line.m_nDashes = fbDefLine.dashes()->Length();
+                        line.m_nDashes = static_cast<short>(fbDefLine.dashes()->Length());
 
                         if (0 != line.m_nDashes)
                             memcpy(line.m_dashes, fbDefLine.dashes()->Data(), line.m_nDashes * sizeof(double));

@@ -34,11 +34,11 @@ struct  ThematicCookedRange
 +---------------+---------------+---------------+---------------+---------------+------*/
 static FPoint2d    computeTextureParam (double value, double margin)
     {       
-    static float       s_paramEpsilon = .00002; 
-    float              minMargin = margin, maxMargin = 1.0 - margin;
-    float              minLimit = -margin + s_paramEpsilon, maxlimit = 1.0 + minMargin - s_paramEpsilon;
-    float              colorRange = 1.0 - 2.0 * margin;
-    float              textureValue = margin + colorRange * value; 
+    static float s_paramEpsilon = .00002; 
+    double minMargin = margin, maxMargin = 1.0 - margin;
+    double minLimit = -margin + s_paramEpsilon, maxlimit = 1.0 + minMargin - s_paramEpsilon;
+    double colorRange = 1.0 - 2.0 * margin;
+    double textureValue = margin + colorRange * value; 
                                   
     if (textureValue < minLimit)
         textureValue = minLimit;
@@ -49,7 +49,7 @@ static FPoint2d    computeTextureParam (double value, double margin)
     else if (fabs (textureValue - maxMargin) < s_paramEpsilon)
         textureValue -= s_paramEpsilon;
     
-    FPoint2d    point = {.5, textureValue };
+    FPoint2d    point = {.5f, static_cast<float>(textureValue) };
 
     return point;
     }

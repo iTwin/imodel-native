@@ -10,7 +10,6 @@
 #include <DgnPlatform/RenderPrimitives.h>
 #include <DgnPlatform/TileIO.h>
 #include <DgnPlatform/TileWriter.h>
-#include <folly/BeFolly.h>
 
 USING_NAMESPACE_TILETREE_IO
 USING_NAMESPACE_TILETREE

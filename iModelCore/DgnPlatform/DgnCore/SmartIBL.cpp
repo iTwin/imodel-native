@@ -194,7 +194,7 @@ BentleyStatus   ReadCurrentFile(ByteStream& byteStream)
     bvector<uint8_t>    buffer(1024 * 128);
     int                 nRead;
 
-    while (0 != (nRead = unzReadCurrentFile(m_zipFile, buffer.data(), buffer.size())))
+    while (0 != (nRead = unzReadCurrentFile(m_zipFile, buffer.data(), static_cast<unsigned int>(buffer.size()))))
         byteStream.Append(buffer.data(), nRead);
 
     unzCloseCurrentFile(m_zipFile);

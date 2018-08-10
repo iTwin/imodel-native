@@ -1212,7 +1212,7 @@ int HitList::AddHit (HitDetail* newHit, bool allowDuplicates, bool comparePriori
     printf("\n\n");
 #endif
 
-    return index;
+    return static_cast<int>(index);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-
+#include <cctype>
 #include <zlib/zip/unzip.h>
 
 #define  MINELEN	8                       // minimum scanline length for encoding
@@ -24,7 +24,7 @@ struct RGBE
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool rawLoadHDRScanline(RGBE* scanline, uint8_t const*& srcData, uint8_t const* srcEnd, uint32_t length)
+static BentleyStatus rawLoadHDRScanline(RGBE* scanline, uint8_t const*& srcData, uint8_t const* srcEnd, uint32_t length)
     {
     int i;
     int rshift = 0;
@@ -63,7 +63,7 @@ static bool rawLoadHDRScanline(RGBE* scanline, uint8_t const*& srcData, uint8_t 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool loadHDRScanline(RGBE* scanline, uint8_t const*& srcData, uint8_t const* srcEnd, uint32_t length)
+static BentleyStatus loadHDRScanline(RGBE* scanline, uint8_t const*& srcData, uint8_t const* srcEnd, uint32_t length)
     {
     if (length < MINELEN || length > MAXELEN || *srcData != 2)
         return rawLoadHDRScanline(scanline, srcData, srcEnd, length);
@@ -73,7 +73,7 @@ static bool loadHDRScanline(RGBE* scanline, uint8_t const*& srcData, uint8_t con
     scanline[0].m_g = *srcData++;
     scanline[0].m_b = *srcData++;
 
-    int     e = *srcData++;
+    uint8_t e = *srcData++;
 
     if (scanline[0].m_g != 2 || scanline[0].m_b & 128) 
         {
@@ -230,7 +230,7 @@ void HDRImage::Encode(Encoding encoding)
                 int         exponent = imageData[3] - 128;  
                 float       d = (float) pow(2.0f, exponent);
                 float       maxValue = (float) std::max(imageData[0], std::max(imageData[1], imageData[2]));
-                float       maxValue2 = d * maxValue / 255.0;
+                float       maxValue2 = d * maxValue / 255.0f;
 
                 imageData[0] = (uint8_t) (.5 + 255.0 * imageData[0] / maxValue);
                 imageData[1] = (uint8_t) (.5 + 255.0 * imageData[1] / maxValue);

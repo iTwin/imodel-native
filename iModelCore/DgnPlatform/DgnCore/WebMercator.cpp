@@ -883,7 +883,7 @@ Utf8String BingImageryProvider::_GetCopyrightMessage(ViewController& viewControl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ImageryProvider::TemplateUrlLoadStatus> BingImageryProvider::_FetchTemplateUrl()
+ImageryProvider::TemplateUrlLoadStatus BingImageryProvider::_FetchTemplateUrl()
     {
     return ImageryProvider::TemplateUrlLoadStatus::Failed;
     }
@@ -948,7 +948,7 @@ uint64_t    BingImageryProvider::_GetMaxValidDuration () const
     // return 3.0 * 60.0 * 1000.0;
 
     //     days  hours/day    seconds/Hour  milli/second
-    return 3.0 * 24.0       * 3600          * 1000;
+    return 3   * 24         * 3600          * 1000;
     }
 
 /*---------------------------------------------------------------------------------**//**

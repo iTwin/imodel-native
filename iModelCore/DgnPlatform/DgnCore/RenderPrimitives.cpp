@@ -45,8 +45,8 @@ static void copy2dTo3d(std::valarray<DPoint3d>& pts3d, DPoint2dCP pts2d, double 
 static FPoint2d toFPoint2d(DPoint2dCR dpoint)
     {
     FPoint2d fpoint;
-    fpoint.x = dpoint.x;
-    fpoint.y = dpoint.y;
+    fpoint.x = static_cast<float>(dpoint.x);
+    fpoint.y = static_cast<float>(dpoint.y);
     return fpoint;
     }
 
@@ -2777,7 +2777,7 @@ bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, bvector<PolyfaceHea
         TriMeshArgs polyTile;
 
         DPoint3dCP pts = polyface->GetPointCP();
-        uint32_t numPts = polyface->GetPointCount();
+        uint32_t numPts = static_cast<uint32_t>(polyface->GetPointCount());
 
         polyTile.m_pointParams = QPoint3d::Params(DRange3d::From(pts, numPts)); // use these point params
 
@@ -2793,7 +2793,7 @@ bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, bvector<PolyfaceHea
         bvector<FPoint2d> uvs; // temporary uv storage - will be rearranged below
         for (uint32_t i = 0; i < polyface->GetParamCount(); i++)
             {
-            FPoint2d fpt;  fpt.x = rawParams[i].x;  fpt.y = rawParams[i].y;
+            FPoint2d fpt = { static_cast<float>(rawParams[i].x), static_cast<float>(rawParams[i].y) };
             uvs.push_back(fpt);
             }
 
@@ -2823,7 +2823,7 @@ bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, bvector<PolyfaceHea
 
         polyTile.m_textureUV = &uvsOut[0];
         polyTile.m_vertIndex = &pointIndices[0];
-        polyTile.m_numIndices = pointIndices.size();
+        polyTile.m_numIndices = static_cast<uint32_t>(pointIndices.size());
 
         polyTile.m_texture = const_cast<Render::Texture*>(&tile);
         polyTile.m_material = params.GetMaterial();
@@ -3273,9 +3273,9 @@ void GeometryListBuilder::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool fille
     else
         {
         MSBsplineCurvePtr bs = bcurve.CreateCopy();
-        int nPoles = bs->GetNumPoles();
+        size_t nPoles = bs->GetNumPoles();
         DPoint3d* poles = bs->GetPoleP();
-        for (int i = 0; i < nPoles; i++)
+        for (size_t i = 0; i < nPoles; i++)
             poles[i].z = zDepth;
 
         _AddBSplineCurveR(*bs, filled);
@@ -3294,9 +3294,9 @@ void GeometryListBuilder::_AddBSplineCurve2dR(RefCountedMSBsplineCurveR bcurve, 
         }
     else
         {
-        int nPoles = bcurve.GetNumPoles();
+        size_t nPoles = bcurve.GetNumPoles();
         DPoint3d* poles = bcurve.GetPoleP();
-        for (int i = 0; i < nPoles; i++)
+        for (size_t i = 0; i < nPoles; i++)
             poles[i].z = zDepth;
 
         _AddBSplineCurveR(bcurve, filled);

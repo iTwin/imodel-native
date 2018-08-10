@@ -85,7 +85,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
     uint32_t waitForAllLoadsMillis = 0;
     auto const& plan = context.GetUpdatePlan();
     if (plan.WantWait() && plan.HasQuitTime() && plan.GetQuitTime().IsInFuture())
-        waitForAllLoadsMillis = std::chrono::duration_cast<std::chrono::milliseconds>(context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now()).count();
+        waitForAllLoadsMillis = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now()).count());
 
     if (!m_allRootsLoaded)
         {
@@ -208,7 +208,7 @@ BentleyStatus SpatialViewController::CreateThumbnailScene(SceneContextR context)
     if (plan.HasQuitTime() && plan.GetQuitTime().IsInFuture())
         {
         timeLimit = BeDuration(plan.GetQuitTime() - BeTimePoint::Now());
-        timeLimitMillis = std::chrono::duration_cast<std::chrono::milliseconds>(timeLimit).count();
+        timeLimitMillis = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(timeLimit).count());
         }
 
     // Load all the roots. Do not count time required toward our time limit.

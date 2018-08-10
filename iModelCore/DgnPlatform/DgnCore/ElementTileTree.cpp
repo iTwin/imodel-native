@@ -8,7 +8,6 @@
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/ElementTileTree.h>
 #include <DgnPlatform/TileReader.h>
-#include <folly/BeFolly.h>
 #include <DgnPlatform/RangeIndex.h>
 #include <GeomJsonWireFormat/JsonUtils.h>
 #include <numeric>
@@ -815,10 +814,10 @@ Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::System
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Loader::_GetFromSource()
+BentleyStatus Loader::_GetFromSource()
     {
     LoaderPtr me(this);
-    return folly::via(&BeFolly::ThreadPool::GetCpuPool(), [me]() { return me->DoGetFromSource(); });
+    return me->DoGetFromSource();
     }
 
 
@@ -902,15 +901,16 @@ bool Tile::IsCacheable() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Loader::_ReadFromDb()
+BentleyStatus Loader::_ReadFromDb()
     {
     StopWatch   stopWatch(true);
 
-    folly::Future<BentleyStatus> status = T_Super::_ReadFromDb();
+    auto status = T_Super::_ReadFromDb();
 
 #ifdef TILECACHE_DEBUG    
     s_statistics.UpdateRead(stopWatch.GetCurrent());
 #endif
+
     return status;
     }
 

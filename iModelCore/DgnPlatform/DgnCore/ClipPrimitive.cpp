@@ -361,7 +361,7 @@ static bool isLimitEdge(double limitValue, DPoint3dR point0, DPoint3dR point1)
 static void addPlaneSet(bvector<DPoint3d> const &points, bvector<bool> const &isBoundary, AddPlaneSetParams &params)
     {
     size_t nPoints = points.size ();
-    double                  area = bsiGeom_getXYPolygonArea(points.data (), nPoints);
+    double                  area = bsiGeom_getXYPolygonArea(points.data (), static_cast<uint32_t>(nPoints));
     DPoint3d                point0, point1, point0Local, point1Local;
     DVec3d                  zVector = DVec3d::From(0.0, 0.0, 1.0);
     DVec3d                  normal, tangent;

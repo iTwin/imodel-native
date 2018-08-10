@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ImageSource.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -92,7 +92,7 @@ struct PngReader
         }
 
     Byte** GetRows() const {return png_get_rows(m_png, m_info);}
-    int GetBytesPerRow() const {return png_get_rowbytes(m_png, m_info);}
+    int GetBytesPerRow() const {return static_cast<int>(png_get_rowbytes(m_png, m_info));}
     int GetPixelDepth() const {return m_info->pixel_depth;}
     bool IsValid() const{return nullptr != m_png;}
     int GetWidth() const {return m_info->width;}

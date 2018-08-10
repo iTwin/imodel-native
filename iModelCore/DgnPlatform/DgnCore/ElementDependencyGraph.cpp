@@ -244,7 +244,7 @@ DbResult DgnElementDependencyGraph::Nodes::SetInDegree(DgnElementId nodeId, size
 
     m_setInDegree->Reset();
     m_setInDegree->ClearBindings();
-    m_setInDegree->BindInt(1, inDegree);
+    m_setInDegree->BindInt(1, static_cast<int>(inDegree));
     m_setInDegree->BindId(2, nodeId);
     return m_setInDegree->Step();
     }
@@ -816,7 +816,7 @@ DbResult DgnElementDependencyGraph::EdgeQueue::AddEdge(DgnElementDependencyGraph
     m_insert->BindId(3, edge.m_eout);
     m_insert->BindId(4, edge.m_relClassId);
     m_insert->BindInt(5, edge.m_status);
-    m_insert->BindInt(6, edge.m_priority);
+    m_insert->BindInt(6, static_cast<int>(edge.m_priority));
     m_insert->BindBoolean(7, edge.m_deleted);
     auto stat = m_insert->Step();
 

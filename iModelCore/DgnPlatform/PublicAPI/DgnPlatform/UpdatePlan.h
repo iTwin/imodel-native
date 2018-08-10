@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/UpdatePlan.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,6 @@
 
 #include "DgnPlatform.h"
 #include <Bentley/BeTimeUtilities.h>
-#include <folly/futures/Future.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

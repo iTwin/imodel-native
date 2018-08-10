@@ -11,7 +11,6 @@
 #include "DgnPlatform.h"
 #include <set>
 #include <forward_list>
-#include <folly/futures/Future.h>
 #include <Bentley/CancellationToken.h>
 #include <DgnPlatform/RealityDataCache.h>
 #include <forward_list>
@@ -396,7 +395,7 @@ protected:
 
     Root(DgnDbR, DgnModelId, bool is3d, TransformCR, Utf8CP rootResource, Dgn::Render::SystemP);
 public:
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeDuration partialTimeout);
+    DGNPLATFORM_EXPORT virtual BentleyStatus _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeDuration partialTimeout);
     DGNPLATFORM_EXPORT void RequestTiles(MissingNodesCR, BeDuration partialTimeout);
 
     //! Select appropriate tiles from available set based on context. If any needed tiles are not available, add them to the context's set of tile requests.
@@ -539,12 +538,12 @@ public:
     bool HasPartialTimeout() const {return nullptr != m_loads && m_loads->HasPartialTimeout();}
     bool WantPartialTiles() const {return HasPartialTimeout();}
 
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _SaveToDb();
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _ReadFromDb();
+    DGNPLATFORM_EXPORT virtual BentleyStatus _SaveToDb();
+    DGNPLATFORM_EXPORT virtual BentleyStatus _ReadFromDb();
     DGNPLATFORM_EXPORT virtual bool _WantWaitOnSave() const;
 
     //! Called to get the data from the original location. The call must be fast and execute any long running operation asynchronously.
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _GetFromSource();
+    DGNPLATFORM_EXPORT virtual BentleyStatus _GetFromSource();
 
     //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data. Called from worker threads.
     virtual BentleyStatus _LoadTile() = 0; 
@@ -567,7 +566,7 @@ public:
         };
 
     //! Perform the load asynchronously.
-    folly::Future<BentleyStatus> Perform();
+    BentleyStatus Perform();
 };
 
 //=======================================================================================
@@ -581,7 +580,7 @@ struct FileDataQuery
     FileDataQuery(Utf8StringCR fileName, TileLoadStatePtr loads) : m_fileName(fileName), m_loads(loads) {}
 
     //! Read the entire file in a single chunk of memory.
-    DGNPLATFORM_EXPORT folly::Future<ByteStream> Perform();
+    DGNPLATFORM_EXPORT ByteStream Perform();
 };
 
 //=======================================================================================

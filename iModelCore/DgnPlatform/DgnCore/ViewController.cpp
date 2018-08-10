@@ -850,7 +850,7 @@ static BentleyStatus createScene(TileTree::DrawArgsR args)
         args.m_context.m_requests.RequestMissing(timeLimit);
         if (plan.HasQuitTime())
             {
-            args.m_root.WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(timeLimit).count());
+            args.m_root.WaitForAllLoadsFor(static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(timeLimit).count()));
             args.m_root.CancelAllTileLoads();
             }
         else

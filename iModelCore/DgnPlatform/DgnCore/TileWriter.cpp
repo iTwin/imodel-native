@@ -9,7 +9,6 @@
 #include <DgnPlatform/RenderPrimitives.h>
 #include <DgnPlatform/TileIO.h>
 #include <DgnPlatform/TileWriter.h>
-#include <folly/BeFolly.h>
 
 USING_NAMESPACE_TILETREE
 USING_NAMESPACE_TILETREE_IO
@@ -42,7 +41,7 @@ BentleyStatus Writer::WriteGltf()
     m_buffer.Append((uint32_t)Gltf::SceneFormat);
     m_buffer.Append((const uint8_t*) sceneStr.data(), sceneStrLength);
     if (!m_binaryData.empty())
-        m_buffer.Append((const uint8_t*) m_binaryData.data(), BinaryDataSize());
+        m_buffer.Append((const uint8_t*) m_binaryData.data(), static_cast<uint32_t>(BinaryDataSize()));
 
     WriteLength(startPosition, lengthDataPosition);
 
@@ -83,7 +82,7 @@ void Writer::WriteLength(uint32_t startPosition, uint32_t lengthDataPosition)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    Writer::AddBinaryData (void const* data, size_t size) 
     {
-    m_binaryData.Append (static_cast<uint8_t const*> (data), size);
+    m_binaryData.Append (static_cast<uint8_t const*> (data), static_cast<uint32_t>(size));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -186,7 +185,7 @@ void Writer::AddBatchIds(Json::Value& primitive, FeatureIndex const& featureInde
     bvector<uint16_t>   batchIds;
 
     for (size_t i=0; i<nVertices; i++)
-        batchIds.push_back(featureIndex.IsUniform() ? featureIndex.m_featureID : featureIndex.m_featureIDs[i]);
+        batchIds.push_back(static_cast<uint16_t>(featureIndex.IsUniform() ? featureIndex.m_featureID : featureIndex.m_featureIDs[i]));
    
     AddMeshUInt16Attributes(primitive, batchIds.data(), batchIds.size(), idStr, "Batch_", "BATCHID");
     }
@@ -447,7 +446,7 @@ Json::Value Writer::AddNormalPairs(OctEncodedNormalPairCP pairs, size_t numPairs
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Writer::AppendPolylineToBufferView(MeshPolylineCR polyline, bool useShortIndices)
     {
-    float fstartDistance = polyline.GetStartDistance();
+    float fstartDistance = static_cast<float>(polyline.GetStartDistance());
 
     m_binaryData.Append(fstartDistance);
     m_binaryData.Append((uint32_t) polyline.GetIndices().size());

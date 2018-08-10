@@ -2345,7 +2345,7 @@ struct IndexedPolylineArgs
 //=======================================================================================                                                           
 struct  MeshEdge
     {
-    enum    Flags
+    enum    Flags : uint8_t
         {
         Invisible =  1,
         Visible    = 0,

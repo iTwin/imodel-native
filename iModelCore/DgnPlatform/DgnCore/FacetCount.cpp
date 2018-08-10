@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/FacetCount.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -35,10 +35,10 @@ size_t FacetCounter::GetFacetCount(DgnTorusPipeDetailCR data) const
 
     // Assume that each stroke of the pipe section will be connected to each stroke of the primary circle
     // Also, if the torus does not do a full sweep, add the faces if it's capped
-    double torusStrokes = m_faceMultiplier * (pipeStrokes * primaryStrokes);
-    double faceStrokes  = data.m_sweepAngle == msGeomConst_2pi || !data.m_capped ? 0 : pipeStrokes * 2;
+    double torusStrokes = m_faceMultiplier * static_cast<double>(pipeStrokes * primaryStrokes);
+    double faceStrokes  = data.m_sweepAngle == msGeomConst_2pi || !data.m_capped ? 0.0 : pipeStrokes * 2.0;
 
-    return torusStrokes + faceStrokes;
+    return static_cast<size_t>(torusStrokes + faceStrokes);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -42,16 +42,10 @@
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_0_226"/>
     </Part>
 
-    <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
-    <Part Name="FollyShim" ExcludePlatforms="Linux*">
-        <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/> 
-    </Part>
-
     <!-- NOTE: IModel02 uses "C02" as a library suffix to differentiate from DgnV8, Graphite, and Bim02 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="B02">
 
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="FollyShim"/> 
         <SubPart PartName="ECDbLibrary"         PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
@@ -108,7 +102,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=folly">
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson">
         <SubPart PartName="DgnPlatformDLL"/>
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" SubPartDirectory="PublishedApi/DgnProject" Required="false"/>

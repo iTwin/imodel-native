@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/TileTree.h>
-#include <folly/BeFolly.h>
 
 BEGIN_SHEET_NAMESPACE
 namespace Handlers
@@ -849,7 +848,7 @@ void Sheet::Attachment::Viewport::SetSceneDepth(uint32_t depth, Root3d& tree)
 
         m_sceneDepth = depth;
         int dim = querySheetTilePixels();
-        dim = dim * pow(2, depth); // doubling the rect dimensions for every level of depth
+        dim = static_cast<int>(dim * pow(2, depth)); // doubling the rect dimensions for every level of depth
         SetRect(BSIRect::From(0, 0, dim, dim), /*temporary=*/true);
         }
     }
@@ -890,8 +889,6 @@ void Sheet::Attachment::Tile3d::CreateGraphics(SceneContextR context)
 
     if (State::Ready != currentState)
         {
-        UpdatePlan const& plan = context.GetUpdatePlan();
-
         viewport->SetSceneDepth(GetDepth(), tree);
         viewport->SetupFromViewController();
         }
@@ -1233,7 +1230,7 @@ void Sheet::Attachment::Root2d::DrawClipPolys(TileTree::DrawArgsR args) const
     {
     DRange3d range = GetRootTile()->GetRange();
 
-    double zDepth = Render::Target::DepthFromDisplayPriority(0.5 * Render::Target::GetMaxDisplayPriority());
+    double zDepth = Render::Target::DepthFromDisplayPriority(static_cast<int32_t>(0.5 * Render::Target::GetMaxDisplayPriority()));
 
     DPoint3d tmpPts[4];
     tmpPts[0] = DPoint3d::From(range.low.x, range.low.y, zDepth);
@@ -1531,8 +1528,7 @@ Sheet::Attachment::Root3d::Root3d(Sheet::ViewController& sheetController, ViewAt
 
     AxisAlignedBox3d range = attach.GetPlacement().CalculateRange();
 
-    int32_t biasDistance = Render::Target::DepthFromDisplayPriority(attach.GetDisplayPriority());
-    m_biasDistance = double(biasDistance);
+    m_biasDistance = Render::Target::DepthFromDisplayPriority(attach.GetDisplayPriority());
 
     LegacyMath::TMatrix::InitTransformsFromRange(&m_viewport->m_toParent, nullptr, &range.low, &range.high);
     m_viewport->m_toParent.ScaleMatrixColumns(scale.x, scale.y, 1.0);
@@ -1614,7 +1610,7 @@ Sheet::Attachment::Tile3d::Tile3d(Root3dR root, Tile3dCP parent, Placement place
     auto& tree = GetTree();
 
     uint32_t dim = querySheetTilePixels();
-    m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(dim, dim));
+    m_maxPixelSize = static_cast<uint32_t>(.5 * DPoint2d::FromZero().Distance(DPoint2d::From(dim, dim)));
 
     DRange3d fullRange;
     if (nullptr != parent)

@@ -279,8 +279,8 @@ struct Triangle
     bool        m_singleSided;
     uint8_t     m_edgeFlags[3];
 
-    uint32_t operator[](int index) const { BeAssert(index < 3); if(index>2) index=2; return m_indices[index]; }
-    uint32_t& operator[](int index) { BeAssert(index < 3); if(index>2) index=2; return m_indices[index]; }
+    uint32_t operator[](size_t index) const { BeAssert(index < 3); if(index>2) index=2; return m_indices[index]; }
+    uint32_t& operator[](size_t index) { BeAssert(index < 3); if(index>2) index=2; return m_indices[index]; }
 
     explicit Triangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); SetEdgeFlags(MeshEdge::Flags::Visible); }
     Triangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices); SetEdgeFlags(MeshEdge::Flags::Visible); }

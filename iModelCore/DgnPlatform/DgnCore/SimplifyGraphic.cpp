@@ -1544,9 +1544,9 @@ void SimplifyGraphic::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, d
         {
         MSBsplineCurve bs;
         bs.CopyFrom(bcurve);
-        int nPoles = bs.GetNumPoles();
+        size_t nPoles = bs.GetNumPoles();
         DPoint3d* poles = bs.GetPoleP();
-        for (int i = 0; i < nPoles; i++)
+        for (size_t i = 0; i < nPoles; i++)
             poles[i].z = zDepth;
 
         _AddBSplineCurve(bs, filled);

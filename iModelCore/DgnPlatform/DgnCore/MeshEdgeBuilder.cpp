@@ -87,7 +87,7 @@ MeshEdgesBuilder (DRange3dCR tileRange, MeshCR mesh, MeshBuilder::Polyface const
     // assume that the polyface indices are properly shared, this should be true as a seperate index array is used
     // for Polyfaces.
 
-    for (uint32_t triangleIndex = builderPolyface.m_baseTriangleIndex; triangleIndex < triangles.Count(); triangleIndex++)
+    for (size_t triangleIndex = builderPolyface.m_baseTriangleIndex; triangleIndex < triangles.Count(); triangleIndex++)
         {
         auto const&     triangle = triangles.GetTriangle(triangleIndex);
         DPoint3d        polyfacePoints[3];
@@ -113,7 +113,7 @@ MeshEdgesBuilder (DRange3dCR tileRange, MeshCR mesh, MeshBuilder::Polyface const
         for (size_t j=0; j<3; j++)
             {
             size_t          jNext = (j+1)%3;
-            uint32_t        triangleNormalIndex = m_triangleNormals.size();
+            uint32_t        triangleNormalIndex = static_cast<uint32_t>(m_triangleNormals.size());
             MeshEdge        meshEdge(triangle.m_indices[j], triangle.m_indices[jNext]), polyfaceEdge(polyfaceIndices[j], polyfaceIndices[jNext]);
             EdgeInfo        edgeInfo(triangle.GetEdgeVisible(j), triangleNormalIndex, meshEdge, polyfacePoints[j], polyfacePoints[jNext]);
             auto            insertPair = m_edgeMap.Insert(polyfaceEdge, edgeInfo);

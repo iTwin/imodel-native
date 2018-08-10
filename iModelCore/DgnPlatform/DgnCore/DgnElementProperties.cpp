@@ -645,7 +645,7 @@ void ElementAutoHandledPropertiesECInstanceAdapter::AllocateBuffer(size_t size)
     BeAssert(nullptr == m_element.m_ecPropertyData);
     BeAssert(0 == m_element.m_ecPropertyDataSize);
 
-    m_element.m_ecPropertyDataSize = size;
+    m_element.m_ecPropertyDataSize = static_cast<uint32_t>(size);
     m_element.m_ecPropertyData = (Byte*)bentleyAllocator_malloc(m_element.m_ecPropertyDataSize);
     InitializeMemory(_GetClassLayout(), m_element.m_ecPropertyData, m_element.m_ecPropertyDataSize, true);
     }

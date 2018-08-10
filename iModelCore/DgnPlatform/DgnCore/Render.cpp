@@ -300,7 +300,7 @@ bool EdgeArgs::Init(MeshEdgesCR meshEdges)
         return false;
 
     m_edges = visible.data();
-    m_numEdges = visible.size();
+    m_numEdges = static_cast<uint32_t>(visible.size());
 
     return true;
     }
@@ -315,7 +315,7 @@ bool SilhouetteEdgeArgs::Init(MeshEdgesCR meshEdges)
         return false;
 
     m_edges = silhouette.data();
-    m_numEdges = silhouette.size();
+    m_numEdges = static_cast<uint32_t>(silhouette.size());
     m_normals = meshEdges.m_silhouetteNormals.data();
 
     return true;

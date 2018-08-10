@@ -290,7 +290,7 @@ namespace Attachment
         ClipVectorCPtr m_clips;
 
         void QueueScene(SceneContextR);
-        virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
+        virtual BentleyStatus _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
         void _AdjustAspectRatio(DPoint3dR, DVec3dR) override {}
 
         //! Get the transfrom from attachment view coordinates to sheet view coordinates

@@ -60,12 +60,12 @@ private:
 
     Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys);
 
-    folly::Future<BentleyStatus> _GetFromSource() override;
+    BentleyStatus _GetFromSource() override;
     BentleyStatus _LoadTile() override;
     bool _IsExpired(uint64_t) override;
     bool _IsValidData() override;
     bool _IsCompleteData() override;
-    folly::Future<BentleyStatus> _ReadFromDb() override;
+    BentleyStatus _ReadFromDb() override;
 
     BentleyStatus LoadGeometryFromModel();
     void SetupForTileRepair();
