@@ -13,7 +13,6 @@
 #include "ClipVector.h"
 #include "TransformClipStack.h"
 #include "ScanCriteria.h"
-#include "IManipulator.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -82,10 +81,6 @@ struct IElemTopology : IRefCounted
 
     //! Return GeometrySource to handle requests related to transient geometry (like locate) where we don't have an DgnElement.
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
-
-    //! Return IEditManipulator for interacting with transient geometry.
-    //! @note Implementor is expected to check hit.GetDgnDb().IsReadonly().
-    virtual IEditManipulatorPtr _GetTransientManipulator(HitDetailCR) const {return nullptr;}
 };
 
 //=======================================================================================

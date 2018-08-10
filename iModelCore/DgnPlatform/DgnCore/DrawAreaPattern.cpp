@@ -1020,16 +1020,6 @@ void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR builder, CurveVectorC
         return;
         }
 
-    bool        wasSnappable = true;
-    IPickGeomP  pickGeom = GetIPickGeom();
-    GeomDetailP detail = pickGeom ? &pickGeom->_GetGeomDetail() : nullptr;
-
-    if (nullptr != detail)
-        {
-        wasSnappable = detail->IsSnappable();
-        detail->SetNonSnappable(!pattern->GetSnappable());
-        }
-
     if (doCook)
         CookGeometryParams(params, builder);
 
@@ -1049,8 +1039,5 @@ void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR builder, CurveVectorC
 
     if (changed)
         CookGeometryParams(params, builder); // Restore original symbology...
-
-    if (nullptr != detail)
-        detail->SetNonSnappable(!wasSnappable);
     }
 

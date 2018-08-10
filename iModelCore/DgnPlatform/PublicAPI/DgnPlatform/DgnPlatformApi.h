@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformApi.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,7 +37,6 @@
      @defgroup  GeometricQueries         Geometric Queries
      @defgroup  GeometryCollectors       Geometry Collectors
      @defgroup  ElementCopying           Element Copying
-     @defgroup Manipulators             Element Manipulators
      @}
  @defgroup  DgnECGroup EC Data/Metadata Persistence
      @{

@@ -2044,36 +2044,3 @@ void SnapContext::GetSegmentKeypoint(DPoint3dR hitPoint, double& keyParam, int d
     hitPoint.Interpolate(segment.point[0], keyParam, segment.point[1]);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SnapDetail::SetCustomKeypoint(int nBytes, Byte* dataP)
-    {
-    if (nBytes && NULL != (m_customKeypointData = (Byte *) bentleyAllocator_malloc(nBytes)))
-        {
-        m_customKeypointSize = nBytes;
-        memcpy(m_customKeypointData, dataP, nBytes);
-
-        // NOTE: Clear curve topo id so we don't try to create TopologyCurveAssociation instead of handler's custom assoc!
-        ICurvePrimitiveCP hitPrimitive = m_geomDetail.GetCurvePrimitive();
-
-        if (hitPrimitive)
-            hitPrimitive->SetId(NULL); 
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SnapContext::SetSnapInfo(SnapDetailR snap, SnapMode snapMode, ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, double aperture, bool isAdjusted, int nBytes, Byte* customKeypointData)
-    {
-    snap.SetSnapMode(snapMode);
-    snap.SetSprite(sprite);
-
-    snap.SetSnapPoint(snapPoint, forceHot, aperture);
-    snap.SetAllowAssociations(!isAdjusted);
-
-    if (nBytes && customKeypointData)
-        snap.SetCustomKeypoint(nBytes, customKeypointData);
-    }
-

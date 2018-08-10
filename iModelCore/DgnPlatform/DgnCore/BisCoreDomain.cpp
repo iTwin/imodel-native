@@ -101,9 +101,6 @@ HANDLER_DEFINE_MEMBERS(CodeSpec)
 
 END_BENTLEY_DGN_NAMESPACE
 
-HANDLER_EXTENSION_DEFINE_MEMBERS(IEditManipulatorExtension)
-HANDLER_EXTENSION_DEFINE_MEMBERS(GroupEditExtension)
-
 DOMAIN_DEFINE_MEMBERS(BisCoreDomain)
 
 /*---------------------------------------------------------------------------------**//**

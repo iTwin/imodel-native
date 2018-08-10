@@ -77,18 +77,6 @@ namespace SnapContext
 
     //! Define the current snap information as a json value given a close point in world and snap settings supplied as a json value.
     DGNPLATFORM_EXPORT Response DoSnap(Request const& input, DgnDbR db, struct CheckStop&);
-
-    //! Define the current snap information for this hit.
-    //! @param[in] snap SnapDetail to update.
-    //! @param[in] mode Snap mode used for this snap.
-    //! @param[in] sprite Sprite to use to decorate snap.
-    //! @param[in] snapPoint Location for snap in world coordinates.
-    //! @param[in] forceHot true to make snap active even if cursor is not within locate tolerance of snap location.
-    //! @param[in] aperture Hot distance to use when forceHot is false.
-    //! @param[in] isAdjusted true if snap is not suitable for creating assoc points (pass false if customKeypointData is supplied or snap not overriden).
-    //! @param[in] nBytes Size in bytes of customKeypointData, or 0 if none.
-    //! @param[in] customKeypointData Pointer to customKeypointData to save for this snap or NULL.
-    DGNPLATFORM_EXPORT void SetSnapInfo(SnapDetailR snap, SnapMode mode, Render::ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, double aperture, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = nullptr);
 } // namespace SnapContext
 
 END_BENTLEY_DGN_NAMESPACE
