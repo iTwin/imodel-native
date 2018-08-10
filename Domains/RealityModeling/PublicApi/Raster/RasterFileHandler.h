@@ -85,6 +85,7 @@ protected:
 public:
 
     DMatrix4dCR  GetSourceToWorld() const { return m_sourceToWorld; }
+    void SetSourceToWorld(DMatrix4dCR stw) { m_sourceToWorld = stw; }
 
     //! Query the DgnClassId of the RasterFileModel ECClass in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the RasterFileModel class - it does @em not return the class of a specific instance.
