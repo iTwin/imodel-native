@@ -16,11 +16,11 @@ baseDir = $(_MakeFilePath)
     NodeOS=win32
     NodeCPU=X64
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
-    Platform=Linux
+    Platform=linux
     NodeOS=linux
     NodeCPU=X64
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSX64"
-    Platform=Darwin
+    Platform=darwin
     NodeOS=darwin
     NodeCPU=X64
 %else
