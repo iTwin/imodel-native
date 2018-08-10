@@ -245,10 +245,6 @@ $(CoreObjs)TransformClipStack$(oext) :              $(DgnCoreDir)TransformClipSt
 
 $(CoreObjs)DgnCorePolyfaceClip$(oext) :             $(DgnCoreDir)DgnCorePolyfaceClip.cpp $(DgnPlatformAPISrc)ClipUtil.h ${MultiCompileDepends}
 
-$(CoreObjs)FenceParams$(oext) :                     $(DgnCoreDir)FenceParams.cpp $(DgnPlatformAPISrc)FenceParams.h $(contextDepends) ${MultiCompileDepends}
-
-#$(CoreObjs)GParray$(oext) :                         $(DgnCoreDir)GParray.cpp $(DgnPlatformAPISrc)GPArray.h ${MultiCompileDepends}
-
 $(CoreObjs)GradientSettings$(oext) :                $(DgnCoreDir)GradientSettings.cpp ${MultiCompileDepends}
 
 $(CoreObjs)UnitManager$(oext) :                     $(DgnCoreDir)UnitManager.cpp $(DgnPlatformAPISrc)UnitDefinition.h ${MultiCompileDepends}

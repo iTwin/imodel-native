@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/VolumeElement.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -295,49 +295,6 @@ ClipVectorPtr VolumeElement::CreateClipVector() const
     }
     
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-FenceParams VolumeElement::CreateFence(DgnViewportP viewport, bool allowPartialOverlaps) const
-    {
-    FenceParams fence;
-    
-    ClipVectorPtr clipVector = CreateClipVector();
-    if (clipVector.IsNull())
-        return fence;
-
-    fence.SetClip (*clipVector);
-    fence.SetClipMode (FenceClipMode::None);
-    fence.SetOverlapMode (allowPartialOverlaps);
-    fence.SetViewParams (viewport);
-    
-    return fence;
-    }
-    
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-DgnViewportPtr VolumeElement::CreateNonVisibleViewport (DgnDbR project) 
-    {
-    // TODO: Is there a way to avoid specifying a view??
-    SpatialViewDefinitionCPtr spatialView;
-    for (auto view : ViewDefinition::MakeIterator(project))
-        {
-        if ((spatialView = view.GetSpatialViewDefinition()).IsValid())
-            break;
-        }
-    if (!spatialView.IsValid())
-        return nullptr;
-
-    ViewControllerPtr viewController = spatialView->LoadViewController();
-
-    auto camera = viewController->GetViewDefinitionR().ToView3dP();
-    if (nullptr != camera)
-        camera->TurnCameraOff();
-
-    return new NonVisibleViewport (nullptr, *viewController);
-    }
-    
-//--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   02/15
 //+---------------+---------------+---------------+---------------+---------------+-----
 BentleyStatus VolumeElement::GetRange(DRange3d& range) const
@@ -351,6 +308,8 @@ BentleyStatus VolumeElement::GetRange(DRange3d& range) const
     return SUCCESS;
     }
 
+#if defined(TODO_FENCE_PARAMS)
+    // This was always wacky - creating a viewport from the first spatial view in the file - assuming this is used anywhere, simplify implementation.
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
@@ -373,12 +332,15 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, FenceParamsR fence
         elementIds.insert (id);
         }
     }
+#endif
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
 void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool allowPartialOverlaps /*=true*/) const
     {
+#if defined(TODO_FENCE_PARAMS)
+    // This was always wacky - creating a viewport from the first spatial view in the file - assuming this is used anywhere, simplify implementation.
     DgnViewportPtr viewport = CreateNonVisibleViewport (dgnDb);
     FenceParams fence = CreateFence (viewport.get(), allowPartialOverlaps);
     
@@ -402,6 +364,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool
         stmt.BindId(7, GetElementId()); // Exclude the VolumeElement itself from the checks!!
 
     FindElements (elementIds, fence, stmt, dgnDb);
+#endif
     }
 
 //--------------------------------------------------------------------------------------
@@ -409,6 +372,8 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool
 //+---------------+---------------+---------------+---------------+---------------+-----
 void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewport, bool allowPartialOverlaps /*=true*/) const
     {
+#if defined(TODO_FENCE_PARAMS)
+    // This was always wacky - creating a viewport from the first spatial view in the file - assuming this is used anywhere, simplify implementation.
     SpatialViewController* viewController = viewport.GetViewControllerR().ToSpatialViewP();
     BeAssert (viewController != nullptr);
     DgnDbR dgnDb = viewController->GetDgnDb();
@@ -447,6 +412,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     stmt.BindVirtualSet (8, *viewController);
 
     FindElements (elementIds, fence, stmt, dgnDb);
+#endif
     }
 
 //--------------------------------------------------------------------------------------
@@ -454,6 +420,8 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
 //+---------------+---------------+---------------+---------------+---------------+-----
 bool VolumeElement::ContainsElement(DgnElementCR element, bool allowPartialOverlaps /*=true*/) const
     {
+#if defined(TODO_FENCE_PARAMS)
+    // This was always wacky - creating a viewport from the first spatial view in the file - assuming this is used anywhere, simplify implementation.
     GeometrySourceCP geomSource = element.ToGeometrySource();
     if (nullptr == geomSource)
         return false;
@@ -462,6 +430,9 @@ bool VolumeElement::ContainsElement(DgnElementCR element, bool allowPartialOverl
     FenceParams fence = CreateFence (viewport.get(), allowPartialOverlaps);
 
     return fence.AcceptElement(*geomSource);
+#else
+    return false;
+#endif
     }
 
 //--------------------------------------------------------------------------------------

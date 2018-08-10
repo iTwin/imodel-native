@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/VolumeElement.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -66,12 +66,9 @@ private:
     mutable ClipPlaneSet* m_clipPlaneSet = nullptr;
 
     ClipVectorPtr CreateClipVector() const;
-    FenceParams CreateFence (DgnViewportP viewport, bool allowPartialOverlaps) const;
-    static DgnViewportPtr CreateNonVisibleViewport (DgnDbR dgnDb);
 
     BentleyStatus GetRange(DRange3d& range) const; // Gets the range of the volume, described from the Project Coordinate System in storage units 
     
-    void FindElements(DgnElementIdSet& elementIds, FenceParamsR fence, Statement& stmt, DgnDbR dgnDb) const;
     BentleyStatus ExtractExtrusionDetail(DgnExtrusionDetail& extrusionDetail) const;
 
 public:

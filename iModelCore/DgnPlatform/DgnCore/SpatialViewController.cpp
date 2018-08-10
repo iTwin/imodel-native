@@ -265,7 +265,7 @@ void SpatialViewController::_DrawView(ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::SceneLightsPtr ViewController3d::GetLights() const
     {
-    BeAssert(nullptr != dynamic_cast<OffscreenViewport*>(m_vp) || DgnDb::ThreadId::Client == DgnDb::GetThreadId());
+    BeAssert(DgnDb::ThreadId::Client == DgnDb::GetThreadId());
 
     if (m_lights.IsValid())
         return m_lights;

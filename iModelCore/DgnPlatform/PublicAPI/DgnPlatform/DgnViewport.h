@@ -559,29 +559,6 @@ public:
 
     DGNPLATFORM_EXPORT void ChangeActiveVolume(ClipVectorP volume);
 };
-
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   01/17
-//=======================================================================================
-struct OffscreenViewport : DgnViewport
-{
-    BSIRect m_rect;
-    BSIRect _GetViewRect() const override {return m_rect;}
-    void SetRect(BSIRect rect, bool temporary=false) {m_rect=rect; m_renderTarget->_SetViewRect(rect, temporary);}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   01/10
-//=======================================================================================
-struct NonVisibleViewport : DgnViewport
-{
-protected:
-    void _AdjustAspectRatio(DPoint3dR origin, DVec3dR delta) override {}
-
-public:
-    NonVisibleViewport(Render::Target* target, ViewControllerR viewController) : DgnViewport(target) {m_viewController = &viewController; SetupFromViewController();}
-};
 END_BENTLEY_DGN_NAMESPACE
 
 /** @endGroup */

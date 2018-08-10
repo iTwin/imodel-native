@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/BackDoor/PublicAPI/BackDoor/DgnProject/BackDoor.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -86,23 +86,6 @@ namespace BackDoor
 
     };
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsinamespace                                                 JoshSchifter    11/09
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    namespace NonVisibleViewport
-    {
-        /*-------------------------------------------------------------------------**//**
-        * @bsimethod                                            JoshSchifter    11/09
-        +-------+---------------+---------------+---------------+---------------+------*/
-        DgnViewportP Create (ViewControllerR viewInfo);
-
-        /*-------------------------------------------------------------------------**//**
-        * @bsimethod                                            JoshSchifter    11/09
-        +-------+---------------+---------------+---------------+---------------+------*/
-        void Delete (DgnViewportP viewport);
-
-    }; // NonVisibleViewport
-    
     /*-------------------------------------------------------------------------**//**
     * @bsinamespace                                                 KevinNyman      07/09
     +---------------+---------------+---------------+---------------+---------------+------*/

@@ -1,4 +1,12 @@
 ﻿#----------------------------------------------------------------------------------------
+#   Tests that are ignored specifically on imodel02
+#----------------------------------------------------------------------------------------
+
+# Wants to use FenceParams in conjunction with NonVisibleViewport to test
+# element inclusion in a volume. Neither of those classes exist any more.
+VolumeElementTestFixture.QueryTest
+
+#----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 GeometricPrimitiveTests.FacetCounts # Demonstrating disparity for Diego to fix

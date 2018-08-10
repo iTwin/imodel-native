@@ -58,11 +58,6 @@ public:
     //! @return true if any controls remain selected.
     virtual bool _DoUpdateSelectedControls(DgnButtonEventCR ev, SelectionMode mode) = 0;
 
-    //! Select control(s) that satisfy the given fence criteria. Controls should remain selected
-    //! until specifically de-selected.
-    //! @return true if any controls remain selected.
-    virtual bool _DoUpdateSelectedControls(FenceParamsR fp, SelectionMode mode) = 0;
-
     //! Select control(s) that make the most sense for the supplied hit.
     //! This method supports modification tools that need to select both the
     //! element and controls from a single click and immediately start modification.
