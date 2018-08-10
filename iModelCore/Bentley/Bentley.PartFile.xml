@@ -229,5 +229,12 @@
             <Libs>Delivery/$(libprefix)BeXml$(libext)</Libs>
         </Bindings>
     </Part>
+
+    <Part Name="BeRapidJson" BentleyBuildMakeFile="BeRapidJson/BeRapidJson.mke" ApiNumber="B02">
+        <SubPart PartName="RapidJson" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <Bindings>
+            <PublicAPI Domain="BeRapidJson"/>
+        </Bindings>
+    </Part>
     
 </BuildContext>

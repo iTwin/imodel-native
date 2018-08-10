@@ -1,0 +1,9 @@
+#----------------------------------------------------------------------
+#     $Source: BeRapidJson/BeRapidJson.mke $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------
+
+%include mdl.mki
+
+always:
+    ~linkdir "$(BuildContext)PublicAPI/BeRapidJson=$(_MakeFilePath)PublicAPI/BeRapidJson"
