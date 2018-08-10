@@ -16,6 +16,10 @@
 #include <functional>
 #include <map>
 
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#include <JavaScriptCore/JavaScriptCore.h>
+#endif
+
 /** @namespace BentleyApi::iModelJs::ServicesTier Contains types used by the services tier of the iModel.js application framework. */
 #define BEGIN_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE  BEGIN_BENTLEY_IMODELJS_NAMESPACE namespace ServicesTier {
 #define END_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE    } END_BENTLEY_IMODELJS_NAMESPACE
@@ -186,6 +190,11 @@ public:
     IMODELJS_EXPORT bool IsStopped() const;
     IMODELJS_EXPORT bool IsEventLoopThread() const;
     IMODELJS_EXPORT bool PostToEventLoop (EventLoopCallback_T const& callback);
+        
+
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+    IMODELJS_EXPORT JSContextRef GetContext() const;
+#endif
     };
 
 //=======================================================================================

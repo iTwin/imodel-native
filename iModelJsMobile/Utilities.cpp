@@ -34,6 +34,7 @@ void Runtime::OnCreate()
     {
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
@@ -91,7 +92,7 @@ private:
 public:
     Napi::Env& Env() {return *m_initEnv;}
     static Runtime* s_runtime;
-
+    JSContextRef GetContext() const;
     RuntimeInternal (RuntimeR runtime);
     };
 
@@ -102,6 +103,13 @@ RuntimeInternal::RuntimeInternal (RuntimeR runtime)
     auto jscEnv = new napi_env__(contextGroup);
     m_initEnv = new Napi::Env((napi_env)jscEnv);
     }
+
+JSContextRef RuntimeInternal::GetContext() const
+{
+    const napi_env__* jscEnv = m_initEnv->operator napi_env__ *();
+    return jscEnv->GetContext();
+    
+}
 
 void Runtime::Initialize()
     {
@@ -144,6 +152,14 @@ Runtime& Runtime::GetRuntime(Napi::Env const& env)
 bool Runtime::s_initialized = false;
 void* Runtime::s_initializationData = nullptr;
 Runtime* RuntimeInternal::s_runtime = nullptr;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                      6/18
+//---------------------------------------------------------------------------------------
+JSContextRef Runtime::GetContext() const
+    {
+    return m_impl->GetContext();
+    }
 
 END_BENTLEY_IMODELJS_JS_NAMESPACE
 

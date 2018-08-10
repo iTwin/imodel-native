@@ -1,4 +1,4 @@
-﻿/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicAPI/iModelJs/iModelJsUtilities.h $
 |
@@ -11,6 +11,10 @@
 #include <iModelJs/iModelJs.h>
 #include <functional>
 #include <vector>
+
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#include <JavaScriptCore/JavaScriptCore.h>
+#endif
 
 #define BEGIN_BENTLEY_IMODELJS_JS_NAMESPACE  BEGIN_BENTLEY_IMODELJS_NAMESPACE namespace Js {
 #define END_BENTLEY_IMODELJS_JS_NAMESPACE    } END_BENTLEY_IMODELJS_NAMESPACE
@@ -123,6 +127,11 @@ public:
     IMODELJS_EXPORT Napi::Env& Env();
 
     IMODELJS_EXPORT static Runtime& GetRuntime(Napi::Env const&);
+        
+
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+    IMODELJS_EXPORT JSContextRef GetContext() const;
+#endif
     };
 
 END_BENTLEY_IMODELJS_JS_NAMESPACE

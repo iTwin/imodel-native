@@ -347,6 +347,17 @@ Host::Host()
     Environment::InstallCoreExtensions();
     }
 
+
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                     7/2018
+//---------------------------------------------------------------------------------------
+JSContextRef Host::GetContext() const
+    {
+    return m_jsRuntime->GetContext();
+    }
+#endif
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------

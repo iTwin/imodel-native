@@ -9,7 +9,7 @@
 #import "AppDelegate.h"
 #include <iModelJs/iModelJs.h>
 #include <iModelJs/iModelJsServicesTier.h>
-
+#import "XMLHTTPRequest.h"
 @interface AppDelegate ()
 
 @end
@@ -30,7 +30,6 @@ extern void imodeljs_addon_setMobileTempDir(Utf8CP d);
     imodeljs_addon_setMobileResourcesDir(iModelJsNativePath.UTF8String);
     imodeljs_addon_setMobileTempDir(iTempFolder.UTF8String);
     m_host = new ServicesTier::UvHost;
-    
     // Copy document folders
     NSString *documentsDirectory = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents/sample_documents"];
     if (![[NSFileManager defaultManager] fileExistsAtPath:documentsDirectory isDirectory:NULL])
@@ -44,6 +43,10 @@ extern void imodeljs_addon_setMobileTempDir(Utf8CP d);
         }
     
     while (!m_host->IsReady()) { ; }
+    _xmlHttpRequest = [XMLHttpRequest new];
+    JSGlobalContextRef jsGlobalContext = JSContextGetGlobalContext(m_host->GetContext());
+    JSContext* ctx =[JSContext contextWithJSGlobalContextRef:jsGlobalContext];
+    [_xmlHttpRequest extend:ctx];
     m_host->PostToEventLoop([]()
         {
         auto& runtime = ServicesTier::Host::GetInstance().GetJsRuntime();
