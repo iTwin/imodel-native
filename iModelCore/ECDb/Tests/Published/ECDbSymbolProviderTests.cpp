@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbSymbolProviderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -161,6 +161,15 @@ struct ECDbExpressionSymbolContextTests : ECDbSymbolProviderTests
                        <Class class="ClassB" />
                     </Target>
                 </ECRelationshipClass>
+                <ECRelationshipClass typeName="Rel2"  strength="referencing" strengthDirection="forward" modifier="None">
+                    <Source multiplicity="(0..1)" roleLabel="A has B" polymorphic="False">
+                        <Class class="ClassA" />
+                    </Source>
+                    <Target multiplicity="(0..1)" roleLabel="B belongs to A" polymorphic="True">
+                        <Class class="ClassB" />
+                    </Target>
+                    <ECProperty propertyName="Priority" typeName="int" />
+                </ECRelationshipClass>
             </ECSchema>)xml";
         }
     
@@ -240,8 +249,8 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasOn
     
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
-    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
@@ -270,14 +279,14 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasMu
     
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
-    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindText(2, instanceB1->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(2, instanceB1->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Reset();
-    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
     stmt.BindId(2, classA->GetId());
-    stmt.BindText(3, instanceB2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(3, instanceB2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
     stmt.BindId(4, classB->GetId());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
@@ -306,8 +315,8 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelati
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
-    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
@@ -335,8 +344,8 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelat
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
-    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
@@ -367,8 +376,8 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelati
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
-    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindText(2, instanceB2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(2, instanceB2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
@@ -399,8 +408,8 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelat
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
-    stmt.BindText(1, instanceA2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(1, instanceA2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
@@ -452,8 +461,8 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsRelationshipW
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE DifferentSchema.DifferentClassB SET A.Id = ? WHERE ECInstanceId=?"));
-    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
@@ -516,8 +525,8 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
 
     ECSqlStatement insertStmt;
     ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "UPDATE DifferentSchema.SubA SET C.Id = ? WHERE ECInstanceId=?"));
-    insertStmt.BindText(1, instanceC->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    insertStmt.BindText(2, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    insertStmt.BindText(1, instanceC->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    insertStmt.BindText(2, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
     ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
     insertStmt.Finalize();
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
@@ -529,7 +538,7 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
 
     ECSqlStatement selectStmt;
     ASSERT_TRUE(selectStmt.Prepare(m_ecdb, "SELECT * FROM test2.ClassC WHERE ECInstanceId = ?").IsSuccess());
-    ASSERT_TRUE(selectStmt.BindText(1, instanceC->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No).IsSuccess());
+    ASSERT_TRUE(selectStmt.BindText(1, instanceC->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes).IsSuccess());
 
     ECInstanceECSqlSelectAdapter adapter(selectStmt);
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_ROW, selectStmt.Step());
@@ -561,7 +570,7 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsNullWhenThereAre
 //---------------------------------------------------------------------------------------
 // @bsitest                                       Grigas.Petraitis              07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsRelatedInstanceValue)
+TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsRelatedInstanceValue_WithNavigationPropertyRelationship)
     {
     ECClassCP classA = m_ecdb.Schemas().GetClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -574,8 +583,8 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsRelatedInstanceV
     
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE TestSchema.ClassB SET A.Id = ? WHERE ECInstanceId=?"));
-    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ECDbExpressionSymbolContext ecdbContext(m_ecdb);
@@ -583,6 +592,35 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsRelatedInstanceV
 
     ECValue value;
     ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedValue(\"TestSchema:Rel\", \"Forward\", \"TestSchema:ClassB\", \"label\")", *exprContext));
+    ASSERT_TRUE(value.IsString());
+    ASSERT_STREQ("test label", value.GetUtf8CP());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                       Grigas.Petraitis              07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsRelatedInstanceValue_WithLinkTableRelationship)
+    {
+    ECClassCP classA = m_ecdb.Schemas().GetClass("TestSchema", "ClassA");
+    IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(m_ecdb, *classA, nullptr).Insert(*instanceA);
+
+    ECClassCP classB = m_ecdb.Schemas().GetClass("TestSchema", "ClassB");
+    IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
+    instanceB->SetValue("label", ECValue("test label"));
+    ECInstanceInserter(m_ecdb, *classB, nullptr).Insert(*instanceB);
+    
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO TestSchema.Rel2 (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"));
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(2, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    
+    ECDbExpressionSymbolContext ecdbContext(m_ecdb);
+    ExpressionContextPtr exprContext = CreateContext(*instanceA);
+
+    ECValue value;
+    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedValue(\"TestSchema:Rel2\", \"Forward\", \"TestSchema:ClassB\", \"label\")", *exprContext));
     ASSERT_TRUE(value.IsString());
     ASSERT_STREQ("test label", value.GetUtf8CP());
     }

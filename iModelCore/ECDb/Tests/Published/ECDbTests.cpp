@@ -12,6 +12,42 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(SQLiteRegression, Test)
+    {
+    BeFileName testFilePath(L"D:\\temp\\sqliteselectissue.db");
+    if (!testFilePath.DoesPathExist())
+        return;
+
+    BeFileName temporaryDir;
+    BeTest::GetHost().GetOutputRoot(temporaryDir);
+    BeSQLiteLib::Initialize(temporaryDir);
+
+    Db db;
+    ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(testFilePath, Db::OpenParams(Db::OpenMode::Readonly)));
+
+    Utf8CP problematicSql = R"sql(
+    SELECT 1 FROM test_ClassA, (SELECT Id,ECClassId,SourceId,TargetId FROM test_Rel2) rel, test_ClassB
+       WHERE test_ClassA.Id=? AND test_ClassA.Id=rel.SourceId AND test_ClassB.Id=rel.TargetId
+                )sql";
+
+    printf("Query plan: %s\r\n", db.ExplainQuery(problematicSql, true).c_str());
+    printf("Query: %s\r\n", db.ExplainQuery(problematicSql, false).c_str());
+
+    Statement verifyStmt;
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.Prepare(db, problematicSql));
+
+
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.BindInt64(1, 1));
+    ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step());
+    verifyStmt.Reset();
+    verifyStmt.ClearBindings();
+    ASSERT_EQ(BE_SQLITE_OK, verifyStmt.BindText(1, "1", Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step()) << "This currently returns BE_SQLITE_DONE, possible due to a SQLite regression";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                      03/18
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbInit, Initialize)

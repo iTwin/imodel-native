@@ -1970,40 +1970,6 @@ TEST_F(ECSqlStatementTestFixture, HexLiteral)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                  Affan.Khan                      07/18
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, StrIds)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("strIds.ecdb", SchemaItem(
-        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                <ECEntityClass typeName="Sample" modifier="None">
-                </ECEntityClass>
-              </ECSchema>)xml")));
-
-    ECInstanceKey i1;
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(i1, "INSERT INTO ts.Sample(ECInstanceId) VALUES (100)"));
-
-    ECInstanceKey i2;
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(i2, "INSERT INTO ts.Sample(ECInstanceId) VALUES (200)"));
-
-    ECInstanceKey i3;
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(i3, "INSERT INTO ts.Sample(ECInstanceId) VALUES (300)"));
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Sample WHERE ECInstanceId = ?"));
-    stmt.BindText(1, i2.GetInstanceId().ToString().c_str(), IECSqlBinder::MakeCopy::No);
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ECInstanceECSqlSelectAdapter adapter(stmt);
-    IECInstancePtr inst = adapter.GetInstance();
-
-
-    ECSqlStatement stmt2;
-    ASSERT_EQ(ECSqlStatus::Success, stmt2.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Sample WHERE ECInstanceId = ?"));
-    stmt2.BindText(1, inst->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, PolymorphicDelete)
@@ -2613,60 +2579,126 @@ TEST_F(ECSqlStatementTestFixture, StructArrayDelete)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 01/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, BindECInstanceId)
+TEST_F(ECSqlStatementTestFixture, BindToNumericProps)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("BindToNumericProps.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+          <ECEntityClass typeName="Parent" modifier="None" >
+              <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Child" modifier="None" >
+              <ECCustomAttributes>
+                  <ClassMap xmlns="ECDbMap.02.00">
+                      <MapStrategy>TablePerHierarchy</MapStrategy>
+                  </ClassMap>
+                  <ShareColumns xmlns="ECDbMap.02.00">
+                      <MaxSharedColumnsBeforeOverflow>7</MaxSharedColumnsBeforeOverflow>
+                      <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                  </ShareColumns>
+              </ECCustomAttributes>
+              <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" />
+              <ECProperty propertyName="IntProp" typeName="int" />
+              <ECProperty propertyName="Int64Prop" typeName="long" />
+          </ECEntityClass>
+          <ECRelationshipClass typeName="Rel" strength="referencing" strengthDirection="Forward" modifier="None">
+              <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                 <Class class="Parent" />
+             </Source>
+              <Target multiplicity="(0..*)" polymorphic="True" roleLabel="referenced by">
+                <Class class="Child" />
+             </Target>
+          </ECRelationshipClass>
+        </ECSchema>)xml")));
 
-    ECInstanceKey pKey;
-    ECInstanceKey psaKey;
+    ECInstanceKey parentKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 01')"));
+    ECInstanceId parentId = parentKey.GetInstanceId();
+    Utf8String parentIdStr = parentId.ToString();
+    // Literal strings to numeric props
+    ECInstanceKey childKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(childKey, Utf8PrintfString("INSERT INTO ts.Child(IntProp,Int64Prop,Parent.Id) VALUES('100','100','%s')", parentIdStr.c_str()).c_str()));
+    ECInstanceId childId = childKey.GetInstanceId();
+    Utf8String childIdStr = childId.ToString();
 
+    //literal strings
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", childId.ToHexStr().c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child WHERE IntProp='100' AND Int64Prop='100' AND Parent.Id='%s'", parentIdStr.c_str()).c_str())) << "Ids as literal decimal strings";
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", childId.ToHexStr().c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child WHERE IntProp='100' AND Int64Prop='100' AND Parent.Id=%s", parentId.ToHexStr().c_str()).c_str())) << "Ids as literal hex strings";
+
+    ECSqlStatement selStmt;
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE ECInstanceId=? AND Parent.Id=? AND IntProp=? AND Int64Prop=?"));
+
+    //BindInt (for non-Ids)
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindInt64(1, childId.GetValue())) << selStmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindInt64(2, parentId.GetValue())) << selStmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindInt(3, 100)) << selStmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindInt(4, 100)) << selStmt.GetECSql();
+    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << selStmt.GetECSql();
+    selStmt.Reset();
+    selStmt.ClearBindings();
+
+    //BindInt64
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindInt64(1, childId.GetValue())) << selStmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindInt64(2, parentId.GetValue())) << selStmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindInt64(3, 100)) << selStmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindInt64(4, 100)) << selStmt.GetECSql();
+    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << selStmt.GetECSql();
+    selStmt.Reset();
+    selStmt.ClearBindings();
+
+    //BindText
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, childIdStr.c_str(), IECSqlBinder::MakeCopy::No)) << selStmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(2, parentIdStr.c_str(), IECSqlBinder::MakeCopy::No)) << selStmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(3, "100", IECSqlBinder::MakeCopy::No)) << selStmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(4, "100", IECSqlBinder::MakeCopy::No)) << selStmt.GetECSql();
+    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << selStmt.GetECSql();
+    selStmt.Reset();
+    selStmt.ClearBindings();
+
+    // Bind as hex
+    // Note: SQLite cannot compare numbers to hex string literals:
+    // Assume there is a row with ECInstanceId 0x111:
+    // WHERE ECInstanceId='0x111' will not match 
+    // WHERE ECInstanceId=0x111 will match 
+    
+    // Run a plain SQLite statement to verify that SQLite behaves like this:
     {
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES(NULL)"));
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(pKey));
-    statement.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsql.PSA (ECInstanceId) VALUES(NULL)"));
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(psaKey));
-    m_ecdb.SaveChanges();
+    Statement sqliteStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqliteStmt.Prepare(m_ecdb, "select cast(0x2 as number), cast('0x2' as number)"));
+    ASSERT_EQ(BE_SQLITE_ROW, sqliteStmt.Step());
+    ASSERT_EQ(2, sqliteStmt.GetValueInt(0)) << "Hex decimal can be converted to number | " << sqliteStmt.GetSql();
+    ASSERT_EQ(0, sqliteStmt.GetValueInt(1)) << "Hex string cannot be converted to number | " << sqliteStmt.GetSql();
     }
 
-    {
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "UPDATE ecsql.P SET MyPSA.Id=? WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, psaKey.GetInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(2, pKey.GetInstanceId()));
-    m_ecdb.AbandonChanges();
-    }
+    selStmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, childId.ToHexStr().c_str(), IECSqlBinder::MakeCopy::Yes)) << selStmt.GetECSql();
+    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind ECInstanceId as hex string | " << selStmt.GetECSql() << " | SQL: " << selStmt.GetNativeSql();
 
-    {
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "UPDATE ecsql.P SET MyPSA.Id = ? WHERE ECInstanceId = ? "));
-    ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(1, (int) psaKey.GetInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
-    ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(2, (int) pKey.GetInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
-    }
+    selStmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE Parent.Id=?"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, parentId.ToHexStr().c_str(), IECSqlBinder::MakeCopy::Yes)) << selStmt.GetECSql();
+    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind Parent.Id as hex string | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
 
-    {
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "UPDATE ecsql.P SET MyPSA.Id = ? WHERE ECInstanceId = ?"));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(1, psaKey.GetInstanceId().GetValue()));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(2, pKey.GetInstanceId().GetValue()));
-    m_ecdb.AbandonChanges();
-    }
+    selStmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE IntProp=?"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1,"0x64", IECSqlBinder::MakeCopy::No)) << selStmt.GetECSql();
+    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind hex string to IntProp | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
 
-    {
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "UPDATE ecsql.P SET MyPSA.Id = ? WHERE ECInstanceId = ? "));
+    selStmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE IntProp=?"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindInt(1, 0x64)) << selStmt.GetECSql();
+    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Bind hex dec to IntProp | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
 
-    Utf8Char psaIdStr[BeInt64Id::ID_STRINGBUFFER_LENGTH];
-    psaKey.GetInstanceId().ToString(psaIdStr);
-    Utf8Char pIdStr[BeInt64Id::ID_STRINGBUFFER_LENGTH];
-    pKey.GetInstanceId().ToString(pIdStr);
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, psaIdStr, IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(2, pIdStr, IECSqlBinder::MakeCopy::No));
+    selStmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE Int64Prop=?"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, "0x64", IECSqlBinder::MakeCopy::No)) << selStmt.GetECSql();
+    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind hex string to Int64Prop | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
 
-    m_ecdb.AbandonChanges();
-    }
+    selStmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE Int64Prop=?"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindInt64(1, 0x64)) << selStmt.GetECSql();
+    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Bind hex dec to Int64Prop | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
     }
 
 //---------------------------------------------------------------------------------------
