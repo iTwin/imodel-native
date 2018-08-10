@@ -1980,7 +1980,6 @@ protected:
     virtual GeometryStreamCR _GetGeometryStream() const = 0;
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _Stroke(ViewContextR, double pixelSize) const;
-    DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
     GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only GeometryBuilder should have write access to the GeometryStream...
 
     friend struct GeometricElement;
@@ -2008,8 +2007,6 @@ public:
 
     Render::GraphicPtr Stroke(ViewContextR context, double pixelSize) const {return _Stroke(context, pixelSize);}
     DGNPLATFORM_EXPORT Render::GraphicPtr Draw(ViewContextR context, double pixelSize) const;
-
-    SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}
 };
 
 //=======================================================================================

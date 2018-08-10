@@ -12,7 +12,6 @@
 #include "Annotations.h"
 #include "../DgnElement.h"
 #include "../ElementHandler.h"
-#include "../SnapContext.h"
 
 DGNPLATFORM_TYPEDEFS(TextAnnotationData);
 DGNPLATFORM_REF_COUNTED_PTR(TextAnnotationData);
@@ -92,7 +91,6 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation2d : AnnotationElement2d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation2d, AnnotationElement2d);
 
 protected:
-    SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
     DGNPLATFORM_EXPORT DgnElementPtr _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const override;
@@ -137,7 +135,6 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : GraphicalElement3d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation3d, GraphicalElement3d);
 
 protected:
-    SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
     DGNPLATFORM_EXPORT DgnElementPtr _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const override;

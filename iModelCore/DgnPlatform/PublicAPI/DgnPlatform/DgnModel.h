@@ -905,8 +905,6 @@ protected:
     void _Destroy() override { ReleaseTileTree(); }
     DGNPLATFORM_EXPORT void _PreDestroy() override;
 
-    virtual void _PickTerrainGraphics(PickContextR) const {}
-
     virtual void _OnFitView(FitContextR) {}
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private

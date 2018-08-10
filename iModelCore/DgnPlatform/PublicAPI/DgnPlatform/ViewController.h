@@ -211,7 +211,6 @@ public:
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
-    virtual void _PickTerrain(PickContextR context) {}
 
     bool AreFeatureOverridesDirty() const {return m_featureOverridesDirty;}
     void SetFeatureOverridesDirty(bool dirty=true) {m_featureOverridesDirty = dirty;}
@@ -566,7 +565,6 @@ protected:
     void QueryModelExtents(FitContextR);
 
     DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
-    DGNPLATFORM_EXPORT void _PickTerrain(PickContextR context) override;
     DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR context) override;
     DGNPLATFORM_EXPORT FitComplete _ComputeFitRange(struct FitContext&) override;

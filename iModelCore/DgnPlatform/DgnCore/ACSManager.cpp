@@ -402,27 +402,6 @@ void AuxCoordSystem::_AddAxis(GraphicBuilderR builder, uint32_t axis, ACSDisplay
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void AuxCoordSystem::_Pick(PickContextR context) const
-    {
-    IPickGeomP pickGeom;
-
-    if (nullptr == (pickGeom = context.GetIPickGeom()))
-        return;
-
-    pickGeom->_SetHitPriorityOverride((HitPriority) (static_cast<int>(HitPriority::TextBox) - 1)); // Make lower priority than edge hits but higher priority than interior hits...
-
-    DPoint3d origin = _GetOrigin();
-    auto graphic = context.CreateSceneGraphic();
-
-    graphic->SetSymbology(ColorDef::Black(), ColorDef::Black(), 1); // Doesn't matter...
-    graphic->AddPointString(1, &origin);
-
-    pickGeom->_SetHitPriorityOverride(HitPriority::Highest); // Clear priority override...
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt AuxCoordSystem::_PointFromString

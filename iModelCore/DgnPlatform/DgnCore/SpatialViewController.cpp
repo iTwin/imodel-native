@@ -269,24 +269,6 @@ void SpatialViewController::_DrawView(ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::_PickTerrain(PickContextR context)
-    {
-    auto& models = GetDgnDb().Models();
-    for (DgnModelId modelId : GetViewedModels())
-        {
-        DgnModelPtr model = models.GetModel(modelId);
-        if (!model.IsValid())
-            continue;
-
-        auto geomModel = model->ToGeometricModel3d();
-        if (nullptr != geomModel)
-            geomModel->_PickTerrainGraphics(context);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::SceneLightsPtr ViewController3d::GetLights() const

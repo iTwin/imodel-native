@@ -105,7 +105,6 @@ ENUM_IS_FLAGS(HitDetailSource)
 //=======================================================================================
 struct  GeomDetail
 {
-    friend struct PickContext;
 private:
     ICurvePrimitivePtr m_primitive;     // curve primitve for hit (world coordinates).
     DPoint3d m_closePoint;              // the closest point on geometry (world coordinates).

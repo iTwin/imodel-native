@@ -3877,14 +3877,6 @@ Render::GraphicPtr GeometrySource::Draw(ViewContextR context, double pixelSize) 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-SnapStatus GeometrySource::_OnSnap(SnapContextR context) const
-    {
-    return context.DoDefaultDisplayableSnap();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryType() const
