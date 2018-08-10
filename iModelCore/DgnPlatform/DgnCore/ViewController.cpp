@@ -838,64 +838,11 @@ TileTree::RootP ViewController2d::GetRoot(SceneContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus createScene(TileTree::DrawArgsR args)
-    {
-    auto const& plan = args.m_context.GetUpdatePlan();
-    if (plan.WantWait())
-        {
-        BeDuration timeLimit = plan.HasQuitTime() && plan.GetQuitTime().IsInFuture() ? plan.GetQuitTime() - BeTimePoint::Now() : BeDuration();
-        args.m_root.SelectTiles(args);
-        args.m_context.m_requests.RequestMissing(timeLimit);
-        if (plan.HasQuitTime())
-            {
-            args.m_root.WaitForAllLoadsFor(static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(timeLimit).count()));
-            args.m_root.CancelAllTileLoads();
-            }
-        else
-            {
-            args.m_root.WaitForAllLoads();
-            }
-        }
-
-    args.m_root.DrawInView(args);
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static BentleyStatus createScene(TileTree::RootPtr& root, T& viewController, SceneContextR context)
-    {
-    if (root.IsNull())
-        {
-        auto model = viewController.GetViewedModel();
-        if (nullptr != model)
-            root = model->GetTileTree(context);
-
-        if (root.IsNull())
-            return ERROR;
-        }
-
-    auto args = root->CreateDrawArgs(context);
-    return createScene(args);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ViewController2d::_CreateScene(SceneContextR context)
     {
-    return createScene(m_root, *this, context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewController2d::CreateScene(TileTree::DrawArgsR args)
-    {
-    return createScene(args);
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -929,7 +876,7 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TemplateViewController3d::_CreateScene(SceneContextR context)
     {
-    return createScene(m_root, *this, context);
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

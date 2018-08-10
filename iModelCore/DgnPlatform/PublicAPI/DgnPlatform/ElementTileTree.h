@@ -266,9 +266,6 @@ protected:
     bool _IsInvalidated(TileTree::DirtyRangesCR dirty) const override;
     void _UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew) override;
 
-    SelectParent SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args, uint32_t skipDepth) const;
-    SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override { return SelectTiles(selected, args, 0); }
-    void _DrawGraphics(TileTree::DrawArgsR) const override;
     Utf8String _GetTileCacheKey() const override;
 
     ChildTiles const* _GetChildren(bool load) const override;
@@ -349,8 +346,6 @@ public:
                 ThematicMeshBuilder(Utf8CP displacementChannel, Utf8CP paramChannel) : m_displacementChannel(displacementChannel), m_paramChannel(paramChannel) { }
     void        BuildMeshAuxData(Render::MeshAuxDataR auxData, PolyfaceQueryCR mesh, Render::Primitives::DisplayParamsCR displayParams);
     void        InitThematicDisplay(PolyfaceHeaderR mesh, Render::Primitives::DisplayParamsCR displayParams);
-    
-
 };
 
 END_ELEMENT_TILETREE_NAMESPACE

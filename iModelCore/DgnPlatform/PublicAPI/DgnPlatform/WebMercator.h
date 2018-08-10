@@ -91,10 +91,6 @@ struct ImageryProvider : RefCountedBase
     // if the provider wants to set a maximum duration for tiles, set it as a duration in milliseconds.
     // if not relevant, return 0. Bing Maps uses this to enforce a 3 day limit for tile life.
     virtual uint64_t _GetMaxValidDuration () const { return 0; }
-
-    // Some imagery providers (such as Bing) need to see the selected tiles so the copyright message can be computed.
-    virtual void _OnSelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const {}
-
 };
 
 DEFINE_REF_COUNTED_PTR(ImageryProvider)
@@ -138,12 +134,10 @@ struct MapTile : TileTree::QuadTree::Tile
     bool m_reprojected = false;  //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
     StatusInt ReprojectCorners(GeoPoint*);
     MapTile(MapRootR mapRoot, TileTree::QuadTree::TileId id, MapTileCP parent);
-    void _DrawGraphics(TileTree::DrawArgsR) const override;
     TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new MapTile(GetMapRoot(), id, this);}
     MapRoot& GetMapRoot() const {return (MapRoot&) m_root;}
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys = nullptr) override {return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);}
     double _GetMaximumSize() const override {return 0 == GetDepth() ? 0.0 : T_Super::_GetMaximumSize();}
-    TileTree::Tile::SelectParent _SelectTiles(bvector<TileTree::TileCPtr>&, TileTree::DrawArgsR) const override;
 };
 
 //=======================================================================================
@@ -364,8 +358,6 @@ public:
     uint64_t _GetMaxValidDuration () const override;
 
     MapType _GetMapType () const override {return m_mapType; }
-
-    void _OnSelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override;
 
     static BingImageryProvider* Create (Json::Value const& providerDataValue);
     };

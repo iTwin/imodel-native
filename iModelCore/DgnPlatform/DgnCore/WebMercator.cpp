@@ -95,15 +95,6 @@ WebMercatorPoint::WebMercatorPoint(GeoPoint latLong)
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MapTile::_DrawGraphics(DrawArgsR args) const
-    {
-    if (m_reprojected)  // if we were unable to re-project this tile, don't draw it.
-        T_Super::_DrawGraphics(args);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * This map tile just became available from some source (file, cache, http). Load its data and create
 * a Render::Graphic to draw it. Only when finished, set the "ready" flag.
 * @note this method can be called on many threads, simultaneously.
@@ -176,24 +167,6 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
     m_corners = corners;
     return SUCCESS;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   07/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-Tile::SelectParent MapTile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const
-    {
-    Tile::SelectParent result = T_Super::_SelectTiles(selected, args);
-
-    // only process the root tile.
-    if (0 != GetDepth())
-        return result;
-    
-    // Allow the imageryProvider to see the tiles in case it needs them for its copyright message (Bing does).
-    GetMapRoot().m_imageryProvider->_OnSelectTiles (selected, args);
-
-    return result;
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * Construct a new MapTile by TileId. First convert tileid -> LatLong, and then LatLong -> BIM world.
@@ -766,46 +739,6 @@ struct AttributionAppData : ViewController::AppData
     };
 
 static AttributionAppData::Key    s_attributionAppDataKey;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   07/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BingImageryProvider::_OnSelectTiles (bvector<TileCPtr>& selected, DrawArgsR args) const
-    {
-    ViewController& viewController = args.m_context.GetViewportR().GetViewControllerR();
-
-    // get our AppData from the viewController.
-    bool                newView = false;
-    AttributionAppData* attributionAppData;
-    if (nullptr == (attributionAppData = dynamic_cast <AttributionAppData*>(viewController.FindAppData(s_attributionAppDataKey))))
-        {
-        attributionAppData = new AttributionAppData ();
-        viewController.AddAppData (s_attributionAppDataKey, attributionAppData);
-        newView = true;
-        }
-
-    // There is no point in doing this every frame. So we set up a timer and do it every second.
-    if (newView || (attributionAppData->m_stopWatch.GetCurrentSeconds() > 1.0))
-        {
-        attributionAppData->m_extent.Init();
-
-        // calculate the extent of all the tiles and store it.
-        for (auto tile : selected)
-            {
-            if (!tile.IsValid())
-                continue;
-
-            UnionTileExtent (attributionAppData->m_extent, *(static_cast<MapTileCP>(tile.get())));
-            }
-
-        // reset stopwatch.
-        attributionAppData->m_stopWatch.Start();
-        SpatialViewController* svc;
-        if (nullptr != (svc = dynamic_cast<SpatialViewController*>(&viewController)))
-            svc->InvalidateCopyrightInfo();
-        }
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/17

@@ -1654,11 +1654,7 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootPtr GeometricModel::_GetTileTree(RenderContextR context)
     {
-    // Inheritance situation is awkward here - reality models should all return GetTileTree(context.GetRenderSystem());
-    if (DrawPurpose::CaptureThumbnail == context.GetDrawPurpose())
-        return ElementTileTree::Root::Create(*this, context);
-    else
-        return GetTileTree(context.GetRenderSystem());
+    return GetTileTree(context.GetRenderSystem());
     }
 
 /*---------------------------------------------------------------------------------**//**

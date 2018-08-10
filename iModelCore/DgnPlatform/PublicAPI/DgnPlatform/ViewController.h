@@ -579,7 +579,6 @@ protected:
     DGNPLATFORM_EXPORT void _AddModelLights(Render::SceneLightsR, Render::TargetR) const override;
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
     DGNPLATFORM_EXPORT void _OnRenderFrame() override;
-    BentleyStatus CreateThumbnailScene(SceneContextR context);
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
 
     //! Construct a new SpatialViewController from a View in the project.
@@ -679,7 +678,6 @@ public:
     void _UnloadAllTileTrees() override { m_root = nullptr; }
 
     TileTree::RootP GetRoot(SceneContextR context);
-    BentleyStatus CreateScene(TileTree::DrawArgsR args);
 };
 
 //=======================================================================================

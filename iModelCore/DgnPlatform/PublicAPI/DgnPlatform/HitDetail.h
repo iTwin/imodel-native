@@ -185,7 +185,6 @@ struct HitDetail : RefCountedBase
 {
 protected:
     DgnViewportR m_viewport;
-    Sheet::Attachment::ViewportP m_sheetViewport; // null unless this hit was generated from a view attachment on a sheet
     DgnElementId m_elementId;
     HitSource m_locateSource;  // Operation that generated the hit.
     DPoint3d m_testPoint;      // the point that was used to search (world coordinates).
@@ -203,15 +202,13 @@ protected:
     virtual bool _IsSameHit(HitDetailCP otherHit) const;
 
 public:
-    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, Sheet::Attachment::ViewportP attachVp, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
+    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
     DGNPLATFORM_EXPORT explicit HitDetail(HitDetailCR from);
     DGNPLATFORM_EXPORT virtual ~HitDetail();
     void SetLocateSource(HitSource source) {m_locateSource = source;}
     void SetHitPoint(DPoint3dCR pt) {_SetHitPoint(pt);}
     void SetTestPoint(DPoint3dCR pt) {_SetTestPoint(pt);}
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
-    bool IsSheetHit() const {return nullptr!=m_sheetViewport;}
-    Sheet::Attachment::ViewportP GetSheetAttachViewport() const {return m_sheetViewport;}
     DGNPLATFORM_EXPORT Utf8String GetInfoString(Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement() const;
     DgnElementId GetElementId() const {return m_elementId;}

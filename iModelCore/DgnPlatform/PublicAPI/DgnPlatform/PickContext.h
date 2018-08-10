@@ -155,7 +155,6 @@ public:
     void _AddHit(HitDetailR) override;
     IElemTopologyCP _GetElemTopology() const override {return (m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
     void _SetElemTopology(IElemTopologyCP topo) override {m_currElemTopo = topo;}
-    virtual bool _ProcessSheetAttachment(Sheet::Attachment::ViewportR);
     void SetHitDescription(HitDescription* descr) {m_hitDescription = descr;}
     HitDescriptionPtr GetHitDescription() const {return m_hitDescription;}
 

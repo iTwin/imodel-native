@@ -536,7 +536,7 @@ CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/015
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetail::HitDetail(DgnViewportR viewport, Sheet::Attachment::ViewportP sheetVp, GeometrySourceCP geomSource, DPoint3dCR testPoint, HitSource source, GeomDetailCR geomDetail) : m_viewport(viewport), m_sheetViewport(sheetVp)
+HitDetail::HitDetail(DgnViewportR viewport, GeometrySourceCP geomSource, DPoint3dCR testPoint, HitSource source, GeomDetailCR geomDetail) : m_viewport(viewport)
     {
     m_elementId         = (nullptr != geomSource && nullptr != geomSource->ToElement() ? geomSource->ToElement()->GetElementId() : DgnElementId());
     m_locateSource      = source;
@@ -548,7 +548,7 @@ HitDetail::HitDetail(DgnViewportR viewport, Sheet::Attachment::ViewportP sheetVp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetail::HitDetail(HitDetail const& from) : m_viewport(from.m_viewport), m_sheetViewport(from.m_sheetViewport) 
+HitDetail::HitDetail(HitDetail const& from) : m_viewport(from.m_viewport)
     {
     m_elementId         = from.m_elementId;
     m_locateSource      = from.m_locateSource;

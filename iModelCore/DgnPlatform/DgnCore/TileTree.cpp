@@ -785,100 +785,12 @@ void Tile::ExtendRange(DRange3dCR childRange) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const
-    {
-    DgnDb::VerifyClientThread();
-
-    _ValidateChildren();
-    Visibility vis = GetVisibility(args);
-    if (Visibility::OutsideFrustum == vis)
-        {
-        _UnloadChildren(args.m_purgeOlderThan);
-        return SelectParent::No;
-        }
-
-    bool tooCoarse = Visibility::TooCoarse == vis;
-    bool ready = IsReady();
-
-    // Would like to be able to enqueue children before parent is ready - but also want to ensure parent is ready
-    // before children. Otherwise when we e.g. zoom out, if parent is not ready we have nothing to draw.
-    // The IsParentDisplayable() test below allows us to skip intermediate tiles, but never the first displayable tiles in the tree.
-    bool skipThisTile = tooCoarse && (ready || IsParentDisplayable());
-    auto children = skipThisTile ? _GetChildren(true) : nullptr;
-
-    // Don't enqueue a tile if we're skipping it...
-    if (!ready && !skipThisTile)
-        args.InsertMissing(*this);
-
-    if (nullptr != children)
-        {
-        m_childrenLastUsed = args.m_now;
-        bool drawParent = false;
-        size_t initialSize = selected.size();
-
-        for (auto const& child : *children)
-            {
-            if (SelectParent::Yes == child->_SelectTiles(selected, args))
-                {
-                drawParent = true;
-                // NB: We must continue iterating children so that they can be requested if missing...
-                }
-            }
-
-        if (!drawParent)
-            {
-            m_childrenLastUsed = args.m_now;
-            return SelectParent::No;
-            }
-
-        selected.resize(initialSize);
-        }
-
-    if (!tooCoarse)
-        _UnloadChildren(args.m_purgeOlderThan);
-
-    if (ready)
-        {
-        if (_HasGraphics())
-            selected.push_back(this);
-
-        return SelectParent::No;
-        }
-    else if (_HasBackupGraphics())
-        {
-        // Caching previous graphics while regenerating tile to reduce flishy-flash when model changes.
-        selected.push_back(this);
-        return SelectParent::No;
-        }
-
-    return SelectParent::Yes;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Tile::HasContentRange() const
     {
     auto const& contentRange = _GetContentRange();
     return &contentRange != &m_range && !contentRange.IsEqual(m_range);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
-    {
-    /// NO. if (!IsDisplayable())
-    /// NO.     return false;
-
-    // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
-    Frustum box(range);
-    Frustum worldBox = box.TransformBy(args.GetLocation());
-    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(worldBox);
-    bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
-    return isOutside || clipped;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -889,96 +801,6 @@ bool Tile::IsEmpty() const
     // NB: A parent tile may be empty because the elements contained within it are all too small to contribute geometry -
     // children may not be empty.
     return IsReady() && !_HasGraphics() && !_HasChildren();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
-    {
-    // NB: We test for region culling before IsDisplayable() - otherwise we will never unload children of undisplayed tiles when
-    // they are outside frustum
-    if (IsEmpty() || IsRegionCulled(args))
-        return Visibility::OutsideFrustum;
-
-    // some nodes are merely for structure and don't have any geometry
-    if (!IsDisplayable())
-        return Visibility::TooCoarse;
-
-    bool hasContentRange = HasContentRange();
-    if (!_HasChildren())
-        {
-        if (hasContentRange && IsContentCulled(args))
-            return Visibility::OutsideFrustum;
-
-        return Visibility::Visible; // it's a leaf node
-        }
-
-    if (GetDepth() < args.GetMinDepth())
-        return Visibility::TooCoarse; // replace with children
-    else if (GetDepth() == args.GetMaxDepth())
-        return hasContentRange && IsContentCulled(args) ? Visibility::OutsideFrustum : Visibility::Visible;
-
-    double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
-    DPoint3d center = args.GetTileCenter(*this);
-
-#if defined(LIMIT_MIN_PIXEL_SIZE)
-    constexpr double s_minPixelSizeAtPoint = 1.0E-7;
-    double pixelSize = radius / std::max(s_minPixelSizeAtPoint, args.m_context.GetPixelSizeAtPoint(&center));
-#else
-    double pixelSizeAtPt = args.m_context.GetPixelSizeAtPoint(&center);
-    double pixelSize = 0.0 != pixelSizeAtPt ? radius / pixelSizeAtPt : 1.0E-3;
-#endif
-
-    if (pixelSize > _GetMaximumSize() * args.GetTileSizeModifier())
-        return Visibility::TooCoarse;
-
-    if (hasContentRange && IsContentCulled(args))
-        return Visibility::OutsideFrustum;
-
-    return Visibility::Visible;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Root::DrawInView(SceneContextR context)
-    {
-    DrawArgs args = CreateDrawArgs(context);
-    DrawInView(args);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Root::DrawInView(DrawArgsR args)
-    {
-    if (!GetRootTile().IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    bvector<TileCPtr> selectedTiles = SelectTiles(args);
-
-    for (auto const& selectedTile : selectedTiles)
-        selectedTile->_DrawGraphics(args);
-
-#if defined(DEBUG_TILE_SELECTION)
-    if (!selectedTiles.empty())
-        THREADLOG.debugv("Selected %u tiles requested %u tiles", static_cast<uint32_t>(selectedTiles.size()), static_cast<uint32_t>(context.m_requests.GetMissing(*this).size()));
-#endif
-
-    args.DrawGraphics();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DrawArgs Root::CreateDrawArgs(SceneContextR context)
-    {
-    auto now = BeTimePoint::Now();
-    return DrawArgs(context, GetDisplayTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1001,83 +823,6 @@ void Root::SetDisplayTransform(TransformCP tf)
     m_haveDisplayTransform = nullptr != tf;
     if (m_haveDisplayTransform)
         m_displayTransform = *tf;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<TileCPtr> Root::SelectTiles(SceneContextR context)
-    {
-    DrawArgs args = CreateDrawArgs(context);
-    return SelectTiles(args);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<TileCPtr> Root::SelectTiles(DrawArgsR args)
-    {
-    bvector<TileCPtr> selectedTiles;
-    if (!GetRootTile().IsValid())
-        {
-        BeAssert(false);
-        return selectedTiles;
-        }
-
-    InvalidateDamagedTiles();
-
-    GetRootTile()->_SelectTiles(selectedTiles, args);
-
-#if defined DEBUG_TILE_COUNTS
-    THREADLOG.errorv("Selected %u tiles Missing %u", static_cast<uint32_t>(selectedTiles.size()), static_cast<uint32_t>(args.m_missing.size()));
-
-    Tile::Counts counts;
-    GetRootTile()->Count(counts);
-    THREADLOG.errorv("Total %u Displayable %u Max Depth %u", static_cast<uint32_t>(counts.m_total), static_cast<uint32_t>(counts.m_displayable), counts.m_maxDepth);
-#endif
-
-    return selectedTiles;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::Pick(PickArgsR args, uint32_t depth) const
-    {
-    DgnDb::VerifyClientThread();
-
-    if (args.m_context.WasAborted())
-        return;
-
-    bool tooCoarse = true;
-
-    if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
-        {
-        Frustum box(m_range);
-        box.Multiply(args.GetLocation());
-
-        if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box) ||
-            ((nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8))))
-            {
-            return;
-            }
-
-        double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
-        DPoint3d center = args.GetTileCenter(*this);
-        double pixelSize = radius / args.m_context.GetPixelSizeAtPoint(&center);
-        tooCoarse = pixelSize > _GetMaximumSize();
-        }
-
-    auto* children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
-    if (tooCoarse && nullptr != children)
-        {
-        for (auto const& child : *children)
-            child->Pick(args, depth+1);
-
-        return;
-        }
-
-    _PickGraphics(args, depth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1149,20 +894,6 @@ TileLoadState::~TileLoadState()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::DrawBranch(ViewFlagsOverridesCR flags, Render::GraphicBranch& branch)
-    {
-    if (branch.m_entries.empty())
-        return;
-
-    branch.SetViewFlagsOverrides(flags);
-    auto drawBranch = m_context.CreateBranch(branch, m_context.GetDgnDb(), GetLocation(), m_clip);
-    BeAssert(branch.m_entries.empty()); // CreateBranch should have moved them
-    m_context.OutputGraphic(*drawBranch, nullptr);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewFlagsOverrides Root::_GetViewFlagsOverrides() const
@@ -1180,16 +911,6 @@ ViewFlagsOverrides Root::_GetViewFlagsOverrides() const
     return flags;
     }
     
-/*---------------------------------------------------------------------------------**//**
-* Add the Render::Graphics from all tiles that were found from this _Draw request to the context.
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::DrawGraphics()
-    {
-    // Allow the tile tree to specify how view flags should be overridden
-    DrawBranch(m_viewFlagsOverrides, m_graphics);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * We want to draw these missing tiles, but they are not yet ready. They may already be
 * queued for loading, or actively loading.
@@ -1259,17 +980,6 @@ Tile::ChildTiles const* QuadTree::Tile::_GetChildren(bool create) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QuadTree::Tile::_DrawGraphics(DrawArgsR args) const
-    {
-    BeAssert(IsReady());
-    if (m_graphic.IsValid())
-        args.m_graphics.Add(*m_graphic);
-
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QuadTree::Tile::_ValidateChildren() const
@@ -1325,33 +1035,6 @@ Tile::ChildTiles const* OctTree::Tile::_GetChildren(bool load) const
         }
 
     return m_children.empty() ? nullptr : &m_children;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Root::Pick(PickContext& context, TransformCR location, ClipVectorCP clips)
-    {
-    if (!GetRootTile().IsValid())
-        return;
-
-    PickArgs args(context, location, *this, clips);
-    m_rootTile->Pick(args, 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args) const
-    {
-    BeAssert(IsReady());
-    BeAssert(_HasGraphics()); // _SelectTiles() checks this - does not select tiles with no graphics.
-    if (_HasGraphics())
-        {
-        args.m_graphics.Add(*m_graphic);
-        if (_WantDebugRangeGraphics())
-            AddDebugRangeGraphics(args);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1491,75 +1174,6 @@ bool MissingNodes::Contains(TileCR tile) const
     toFind.m_prioritize = !prioritize;
     return m_set.end() != m_set.find(toFind);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::InsertMissing(TileCR tile)
-    {
-    // Refine partial tiles with lower-priority than siblings with no graphics at all.
-    m_missing.Insert(tile, !tile._IsPartial());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-double DrawArgs::ComputeTileDistance(TileCR tile) const
-    {
-    // Actually, distance squared...
-    DPoint3d centroid = DPoint3d::FromInterpolate(tile.GetRange().low, 0.5, tile.GetRange().high);
-    m_root.GetLocation().Multiply(centroid);
-    return centroid.DistanceSquared(m_context.GetViewportR().GetCamera().GetEyePoint());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-double DrawArgs::GetTileSizeModifier() const
-    {
-    double targetMod = 1.0;
-    return targetMod * m_context.GetUpdatePlan().GetTileOptions().GetScale();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeTimePoint DrawArgs::GetDeadline() const
-    {
-    return m_context.GetUpdatePlan().GetTileOptions().GetDeadline();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DrawArgs::GetMinDepth() const
-    {
-    return m_context.GetUpdatePlan().GetTileOptions().GetMinDepth();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DrawArgs::GetMaxDepth() const
-    {
-    return m_context.GetUpdatePlan().GetTileOptions().GetMaxDepth();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::InvalidateCopyrightInfo()
-    {
-    // Barry wants to update attribution info for bing map tiles based on the currently-selected set of tiles.
-    auto& vp = m_context.GetViewportR();
-    auto view = vp.GetSpatialViewControllerP();
-    if (nullptr != view)
-        {
-        view->InvalidateCopyrightInfo();
-        vp.InvalidateDecorations();
-        }
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1788,26 +1402,6 @@ bool TileRequests::HasMissingTiles() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-double TileArgs::GetTileRadius(TileCR tile) const
-    {
-    DRange3d range = tile.GetRange();
-    m_location.Multiply(&range.low, 2);
-    return 0.5 * (tile.GetRoot().Is3d() ? range.low.Distance(range.high) : range.low.DistanceXY(range.high));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DrawArgs::DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip)
-    : TileArgs(location, root, clip), m_context(context), m_missing(context.m_requests.GetMissing(root)), m_now(now), m_purgeOlderThan(purgeOlderThan),
-    m_viewFlagsOverrides(root._GetViewFlagsOverrides())
-    {
-    //
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::QPoint3dList TriMeshTree::TriMesh::CreateParams::QuantizePoints() const
@@ -1980,19 +1574,6 @@ GraphicPtr CreateTileGraphic(Render::GraphicR graphic, RootR root, TriMeshTree::
 +---------------+---------------+---------------+---------------+---------------+------*/
 TriMeshTree::TriMesh::TriMesh(CreateParams const& args, RootR root, Dgn::Render::SystemP renderSys)
     {
-    // After we create a Render::Graphic, we only need the points/indices/normals for picking.
-    // To save memory, only store them if the model is locatable.
-    if (root.IsPickable())
-        {
-        m_indices.resize(args.m_numIndices);
-        memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
-
-        m_points = args.QuantizePoints();
-
-        if (nullptr != args.m_normals)
-            m_normals = args.QuantizeNormals();
-        }
-
 #if defined(WIP_SCALABLE_MESH) // texture may not be valid...
     if (nullptr == renderSys)
 #else
@@ -2005,27 +1586,6 @@ TriMeshTree::TriMesh::TriMesh(CreateParams const& args, RootR root, Dgn::Render:
     GraphicPtr graphic = renderSys->_CreateTriMesh(trimesh, root.GetDgnDb());
 
     m_graphics.push_back(CreateTileGraphic(*graphic, root, args));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TriMeshTree::TriMesh::Draw(DrawArgsR args)
-    {
-    if (!m_graphics.empty())
-        args.m_graphics.Add(m_graphics);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TriMeshTree::TriMesh::Pick(PickArgsR args)
-    {
-    if (m_indices.empty())
-        return;
-
-    auto graphic = args.m_context.CreateSceneGraphic(args.m_location);
-    graphic->AddPolyface(*GetPolyface());
     }
 
 /*=================================================================================**//**
@@ -2119,89 +1679,6 @@ void TriMeshTree::Root::CreateGeometry(TriMeshList& triMeshList, TriMesh::Create
         }
     else
         triMeshList.push_front(new TriMesh(geomParams, *this, renderSys));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Tile::SelectParent TriMeshTree::Tile::_SelectTiles(bvector<TileTree::TileCPtr>& selectedTiles, DrawArgsR args) const
-    {
-    Visibility vis = GetVisibility(args);
-    if (Visibility::OutsideFrustum == vis)
-        {
-        _UnloadChildren(args.m_purgeOlderThan);
-        return SelectParent::No;
-        }
-
-    bool tooCoarse = Visibility::TooCoarse == vis;
-    auto children = _GetChildren(true);
-#if defined(WIP_SCALABLE_MESH)
-    if (tooCoarse && nullptr != children && !children->empty())
-#else
-    if (tooCoarse && nullptr != children)
-#endif
-        {
-        m_childrenLastUsed = args.m_now;
-        for (auto const& child : *children)
-            {
-            // 3mx requires that we load tiles recursively - we cannot jump directly to the tiles we actually want to draw...
-            if (!child->IsReady())
-                args.InsertMissing(*child);
-
-            child->_SelectTiles(selectedTiles, args);
-            }
-
-        return SelectParent::No;
-        }
-
-    // This node is either fine enough for the current view or has some unloaded children. We'll select it.
-    selectedTiles.push_back(this);
-
-    if (!tooCoarse)
-        {
-        // This node was fine enough for the current zoom scale and was successfully drawn. If it has loaded children from a previous pass, they're no longer needed.
-        // Unloading a 3mx tile's children sets the parent as 'not ready', requiring us to reload the parent (which also loads the children again)
-        // - so consider the children 'used' when the parent is selected
-        m_childrenLastUsed = args.m_now;
-        _UnloadChildren(args.m_purgeOlderThan);
-        }
-
-    return SelectParent::No;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::AddDebugRangeGraphics(DrawArgsR args) const
-    {
-    GraphicParams params;
-    params.SetLineColor(ColorDef::Red());
-
-    auto graphic = args.m_context.CreateSceneGraphic();
-    graphic->ActivateGraphicParams(params);
-    graphic->AddRangeBox(m_range);
-    args.m_graphics.Add(*graphic->Finish());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TriMeshTree::Tile::_DrawGraphics(DrawArgsR args) const
-    {
-    if (_WantDebugRangeGraphics())
-        AddDebugRangeGraphics(args);
-
-    for (auto mesh : m_meshes)
-        mesh->Draw(args);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TriMeshTree::Tile::_PickGraphics(PickArgsR args, uint32_t depth) const
-    {
-    for (auto mesh : m_meshes)
-        mesh->Pick(args);
     }
 
 /*---------------------------------------------------------------------------------**//**

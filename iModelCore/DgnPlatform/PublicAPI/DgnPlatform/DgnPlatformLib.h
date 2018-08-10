@@ -16,7 +16,6 @@
 #include "TxnManager.h"
 #include "SolidKernel.h"
 #include "DgnViewport.h"
-#include "Sheet.h"
 #include <BeSQLite/L10N.h>
 #include <Logging/bentleylogging.h>
 
@@ -482,8 +481,6 @@ public:
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
   
         virtual void _OnUndisplayedSetChanged(DgnDbR) {}
-
-        virtual Sheet::Attachment::ViewportPtr _CreateSheetAttachViewport() {return nullptr;}
 
         //! Given the name of a 'gated' feature, return whether or not it is enabled. By default, returns false.
         DGNPLATFORM_EXPORT virtual bool _IsFeatureEnabled(Utf8CP featureName);

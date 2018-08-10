@@ -10,7 +10,6 @@
 
 #include <DgnPlatform/ViewDefinition.h>
 #include <DgnPlatform/PickContext.h>
-#include <DgnPlatform/TileTree.h>
 
 #define USING_NAMESPACE_SHEET using namespace BentleyApi::Dgn::Sheet;
 #define BIS_CLASS_ViewAttachment "ViewAttachment"
@@ -83,10 +82,6 @@ public:
 
     //! Get the sheet attachment views.
     DGNPLATFORM_EXPORT bvector<ViewDefinitionCPtr> GetSheetAttachmentViews(DgnDbR db) const;
-
-
-    //! @private
-    DGNPLATFORM_EXPORT void DumpAttachments(int indent = 0) const;
 };
 
 //=======================================================================================
@@ -252,80 +247,6 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   11/16
-//=======================================================================================
-namespace Attachment
-{
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(Root);
-    DEFINE_REF_COUNTED_PTR(Root);
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(Root3d);
-
-    //=======================================================================================
-    // Describes the state of the scene for a given level of the tile tree.
-    // All tiles on a given level use the same scene to generate their graphics.
-    // @bsistruct                                                   Paul.Connelly   03/18
-    //=======================================================================================
-    enum class State
-    {
-        NotLoaded,  // We haven't tried to create the scene for this level of the tree
-        Empty,      // This level of the tree has an empty scene
-        Loading,    // All of the Roots for this level of the tree have been created and we are loading their tiles
-        Ready,      // All of the tiles required for this level of the tree are ready for rendering
-    };
-
-    //=======================================================================================
-    // @bsiclass                                                    Keith.Bentley   11/16
-    //=======================================================================================
-    struct Viewport : OffscreenViewport
-    {
-        Render::TexturePtr m_texture;
-        uint32_t m_texSize;
-        uint32_t m_sceneDepth = 0xffffffff;
-        Render::GraphicListPtr m_scene;
-        bool m_rendering = false;
-
-        Transform m_toParent = Transform::FromIdentity(); // attachment NPC to sheet world
-        double m_biasDistance = 0.0; // distance in z to position tile in parent viewport's z-buffer (should be obtained by calling DepthFromDisplayPriority)
-        Render::GraphicListPtr m_terrain;
-        ClipVectorCPtr m_clips;
-
-        void QueueScene(SceneContextR);
-        virtual BentleyStatus _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
-        void _AdjustAspectRatio(DPoint3dR, DVec3dR) override {}
-
-        //! Get the transfrom from attachment view coordinates to sheet view coordinates
-        DGNPLATFORM_EXPORT Transform GetTransformToSheet(DgnViewportCR sheetVp);
-
-        //! Get the transfrom from sheet view coordinates to attachment view coordinates
-        Transform GetTransformFromSheet(DgnViewportCR sheetVp) {Transform trans=GetTransformToSheet(sheetVp); trans.InverseOf(trans); return trans;}
-
-        ClipVectorCP GetAttachClips() const {return m_clips.get();}
-        void SetSceneDepth(uint32_t depth, Root3dR tree);
-    };
-
-    //=======================================================================================
-    // @bsistruct                                                   Mark.Schlosser  02/2018
-    //=======================================================================================
-    struct Root : TileTree::Root
-    {
-        DEFINE_T_SUPER(TileTree::Root);
-
-        ColorDef m_boundingBoxColor = ColorDef::DarkOrange();
-        double m_biasDistance;
-        ClipVectorPtr m_clip;
-    protected:
-        Root(DgnModelId modelId, Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Dgn::ViewControllerR view);
-
-        void _OnAddToRangeIndex(DRange3dCR, DgnElementId) override { }
-        void _OnRemoveFromRangeIndex(DRange3dCR, DgnElementId) override { }
-        void _OnUpdateRangeIndex(DRange3dCR, DRange3dCR, DgnElementId) override { }
-        void _OnProjectExtentsChanged(AxisAlignedBox3dCR) override { }
-
-        ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
-    };
-}
-
-//=======================================================================================
 //! A Sheet::ViewController is used to control views of Sheet::Models
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
@@ -333,103 +254,17 @@ struct ViewController : Dgn::ViewController2d
 {
     DEFINE_T_SUPER(ViewController2d);
     friend SheetViewDefinition;
-    friend struct Sheet::Attachment::Root;
 
-    struct Attachments;
-    struct Attachment : RefCountedBase
-    {
-    protected:
-        DgnElementId m_id;
-
-        explicit Attachment(DgnElementId id) : m_id(id) { }
-    public:
-        static RefCountedPtr<Attachment> Create(DgnElementId id, DgnDbR db);
-
-        DgnElementId GetId() const { return m_id; }
-
-        virtual bool _Load(DgnDbR db, ViewController& sheetController, SceneContextR context) = 0;
-        virtual Sheet::Attachment::RootP _GetTree() const = 0;
-
-        void CancelAllTileLoads()
-            {
-            auto tree = _GetTree();
-            if (nullptr != tree)
-                tree->CancelAllTileLoads();
-            }
-        void WaitForAllLoads()
-            {
-            auto tree = _GetTree();
-            if (nullptr != tree)
-                tree->WaitForAllLoads();
-            }
-    };
-
-    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachment);
-    DEFINE_REF_COUNTED_PTR(Attachment);
-
-    struct Attachments
-    {
-        using List = bvector<AttachmentPtr>;
-        using iterator = List::iterator;
-        using const_iterator = List::const_iterator;
-    private:
-        List m_list;
-        bool m_allAttachmentsLoaded = true; // Does every attachment have a valid RootPtr?
-
-        void UpdateAllLoaded();
-    public:
-        Attachments() = default;
-        Attachments(Attachments&& src) = default;
-        Attachments& operator=(Attachments&& src) = default;
-
-        bool AllLoaded() const { return m_allAttachmentsLoaded; }
-
-        size_t size() const { return m_list.size(); }
-        const_iterator begin() const { return m_list.begin(); }
-        const_iterator end() const { return m_list.end(); }
-        iterator begin() { return m_list.begin(); }
-        iterator end() { return m_list.end(); }
-        void clear() { m_list.clear(); m_allAttachmentsLoaded = true; }
-
-        Attachment* Find(DgnElementId id)
-            {
-            for (auto& attach : *this)
-                if (attach->GetId() == id)
-                    return attach.get();
-
-            return nullptr;
-            }
-
-        void Add(AttachmentR src);
-        bool Load(size_t index, DgnDbR db, ViewController& sheetController, SceneContextR context);
-        void InitBoundingBoxColors();
-    };
-
-    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachments);
 protected:
     DPoint2d m_size;
-    Attachments m_attachments;
-    bool m_allAttachmentTilesReady = true;
 
     ViewControllerCP _ToSheetView() const override {return this;}
     void _DrawView(ViewContextR) override;
     void _LoadState() override;
-    BentleyStatus _CreateScene(SceneContextR) override;
     FitComplete _ComputeFitRange(FitContextR context) override;
-    void _OnRenderFrame() override;
 
     void DrawBorder(ViewContextR context) const;
     ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}  //!< Construct a new SheetViewController.
-
-    Attachment* FindAttachment(DgnElementId id) { return m_attachments.Find(id); }
-    static bool WantRenderAttachments();
-
-    DGNPLATFORM_EXPORT void _CancelAllTileLoads(bool wait) override;
-    DGNPLATFORM_EXPORT void _UnloadAllTileTrees() override;
-public:
-    AttachmentsCR GetAttachments() const { return m_attachments; }
-    AttachmentsR GetAttachments() { return m_attachments; }
-    void MarkAttachmentSceneIncomplete() { m_allAttachmentTilesReady = false; }
 };
 
 //=======================================================================================
