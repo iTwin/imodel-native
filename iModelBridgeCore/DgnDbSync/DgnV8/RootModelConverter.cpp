@@ -454,12 +454,22 @@ void RootModelConverter::_ConvertModels()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File, Utf8StringP bridgeName) const
+bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
     {
     BeFileName fn(v8File.GetFileName().c_str());
     bool isMyFile = _GetParams().IsFileAssignedToBridge(fn);
-    if (nullptr != bridgeName)
-        bridgeName->Assign (_GetParams().GetBridgeRegSubKey().c_str());
+    if (!isMyFile)
+        {
+        // Before we get the bridge affinity work for references of foreign file formats, treat them as owned, so they get processed - TFS's 916434,921023.
+        auto rootConverter = dynamic_cast<RootModelConverter const*> (this);
+        if (rootConverter != nullptr && !DgnV8Api::DgnFile::IsSameFile(fn.c_str(), rootConverter->GetRootFileName().c_str(), DgnV8Api::FileCompareMask::BaseNameAndExtension))
+            {
+            DgnV8Api::DgnFileFormatType   format;
+            if (const_cast<DgnV8FileR>(v8File).GetVersion(&format, nullptr, nullptr) == BSISUCCESS &&
+                format != DgnV8Api::DgnFileFormatType::V8 && format != DgnV8Api::DgnFileFormatType::V7)
+                isMyFile = true;
+            }
+        }
     return  isMyFile;
     }
 
