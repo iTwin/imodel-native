@@ -91,6 +91,8 @@ $(o)ImportXrefs$(oext)      : $(baseDir)ImportXrefs.cpp $(DwgDepends) $(DgnDbSyn
 
 $(o)ImportBreps$(oext)      : $(baseDir)ImportBreps.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
+$(o)ImportGroups$(oext)     : $(baseDir)ImportGroups.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
 $(o)DwgHelper$(oext)        : $(baseDir)DwgHelper.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)DwgSyncInfo$(oext)      : $(baseDir)DwgSyncInfo.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}

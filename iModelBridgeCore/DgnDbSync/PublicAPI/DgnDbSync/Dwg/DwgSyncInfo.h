@@ -211,7 +211,7 @@ struct DwgSyncInfo
         DGNDBSYNC_EXPORT bool operator<(DwgModelSource const& rhs) const;
         DGNDBSYNC_EXPORT bool operator==(DwgModelSource const& rhs) const {return m_fileId == rhs.m_fileId && m_modelId.GetValue() == rhs.m_modelId.GetValue();}
         DGNDBSYNC_EXPORT bool operator!=(DwgModelSource const& rhs) const {return !(*this == rhs);}
-        DGNDBSYNC_EXPORT bool IsValid () { return m_fileId.IsValid() && m_modelId.IsValid(); }
+        DGNDBSYNC_EXPORT bool IsValid () const { return m_fileId.IsValid() && m_modelId.IsValid(); }
         };  // DwgModelSource
 
     enum class ModelSourceType
@@ -803,6 +803,8 @@ public:
     DGNDBSYNC_EXPORT BentleyStatus InsertElement (DgnElementId id, DwgDbEntityCR en, DwgObjectProvenance const& lmt, DwgModelSyncInfoId const& modelSyncId);
     DGNDBSYNC_EXPORT BentleyStatus UpdateElement (DgnElementId id, DwgDbEntityCR en, DwgObjectProvenance const& lmt);
     DGNDBSYNC_EXPORT bool TryFindElement (DgnElementId&, DwgDbObjectCP, DwgModelSyncInfoId const&) const;
+    //! Find all elements mapped from the input object and in models mapped from the same DWG file.
+    DGNDBSYNC_EXPORT bool FindElements (DgnElementIdSet&, DwgDbObjectIdCR) const;
     //! Check if the specified BIM element is mapped to the same DWG object as any element in the specified set.
     DGNDBSYNC_EXPORT bool IsMappedToSameDwgObject (DgnElementId elementId, DgnElementIdSet const& known) const;
 
