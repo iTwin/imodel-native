@@ -207,32 +207,28 @@ JsonValue TestDb::GetSchemaItemCounts(Utf8CP schemaName) const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                    06/18
+// @bsimethod                                     Krischan.Eberle                    08/18
 //+---------------+---------------+---------------+---------------+---------------+------
-void TestDb::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::pair<ECN::ECValue, Utf8CP>> const& expectedEnumerators) const
+void TestDb::AssertEnum(ECEnumerationCR ecEnum, Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::pair<ECN::ECValue, Utf8CP>> const& expectedEnumerators) const
     {
-    Utf8String assertMessage(schemaName);
-    assertMessage.append(".").append(enumName).append(" | ").append(GetDescription());
+    Utf8String assertMessage(ecEnum.GetFullName());
+    assertMessage.append(" | ").append(GetDescription());
 
-    // 1) Via schema manager
-    ECEnumerationCP ecEnum = GetDb().Schemas().GetEnumeration(schemaName, enumName);
-    ASSERT_TRUE(ecEnum != nullptr) << assertMessage;
-
-    EXPECT_EQ((int) expectedType, (int) ecEnum->GetType()) << assertMessage;
-    EXPECT_EQ(expectedIsStrict, ecEnum->GetIsStrict()) << assertMessage;
-    EXPECT_EQ(expectedDisplayLabel != nullptr, ecEnum->GetIsDisplayLabelDefined()) << assertMessage;
+    EXPECT_EQ((int) expectedType, (int) ecEnum.GetType()) << assertMessage;
+    EXPECT_EQ(expectedIsStrict, ecEnum.GetIsStrict()) << assertMessage;
+    EXPECT_EQ(expectedDisplayLabel != nullptr, ecEnum.GetIsDisplayLabelDefined()) << assertMessage;
     if (expectedDisplayLabel != nullptr)
-        EXPECT_STREQ(expectedDisplayLabel, ecEnum->GetDisplayLabel().c_str()) << assertMessage;
+        EXPECT_STREQ(expectedDisplayLabel, ecEnum.GetDisplayLabel().c_str()) << assertMessage;
 
     if (expectedDescription != nullptr)
-        EXPECT_STREQ(expectedDescription, ecEnum->GetDescription().c_str()) << assertMessage;
+        EXPECT_STREQ(expectedDescription, ecEnum.GetDescription().c_str()) << assertMessage;
     else
-        EXPECT_TRUE(ecEnum->GetDescription().empty()) << assertMessage;
+        EXPECT_TRUE(ecEnum.GetDescription().empty()) << assertMessage;
 
-    EXPECT_EQ(expectedEnumerators.size(), ecEnum->GetEnumeratorCount()) << assertMessage;
+    EXPECT_EQ(expectedEnumerators.size(), ecEnum.GetEnumeratorCount()) << assertMessage;
 
     size_t i = 0;
-    for (ECEnumeratorCP enumerator : ecEnum->GetEnumerators())
+    for (ECEnumeratorCP enumerator : ecEnum.GetEnumerators())
         {
         std::pair<ECValue, Utf8CP> const& expectedEnumValue = expectedEnumerators[i];
         Utf8CP expectedDisplayLabel = expectedEnumValue.second;
@@ -255,6 +251,20 @@ void TestDb::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDispl
 
         i++;
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void TestDb::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::pair<ECN::ECValue, Utf8CP>> const& expectedEnumerators) const
+    {
+    Utf8String assertMessage(schemaName);
+    assertMessage.append(".").append(enumName).append(" | ").append(GetDescription());
+
+    // 1) Via schema manager
+    ECEnumerationCP ecEnum = GetDb().Schemas().GetEnumeration(schemaName, enumName);
+    ASSERT_TRUE(ecEnum != nullptr) << assertMessage;
+    AssertEnum(*ecEnum, schemaName, enumName, expectedDisplayLabel, expectedDescription, expectedType, expectedIsStrict, expectedEnumerators);
 
     // if the file has EC3.2 enums, don't run the ECSQL verification as the persisted enumerator json differs from the expected
     if (SupportsFeature(ECDbFeature::NamedEnumerators))
@@ -283,7 +293,7 @@ void TestDb::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDispl
 
     IECSqlValue const& enumValues = stmt.GetValue(5);
     ASSERT_EQ((int) expectedEnumerators.size(), enumValues.GetArrayLength()) << stmt.GetECSql() << " | " << assertMessage;
-    i = 0;
+    int i = 0;
     for (IECSqlValue const& enumValue : enumValues.GetArrayIterable())
         {
         std::pair<ECValue, Utf8CP> const& expectedEnumValue = expectedEnumerators[i];
@@ -311,6 +321,35 @@ void TestDb::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDispl
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void TestDb::AssertKindOfQuantity(KindOfQuantityCR koq, Utf8CP expectedSchemaName, Utf8CP expectedKoqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationUnits, double expectedRelError) const
+    {
+    Utf8String assertMessage(koq.GetFullName());
+    assertMessage.append(" | ").append(GetDescription());
+
+    EXPECT_STREQ(expectedSchemaName, koq.GetSchema().GetName().c_str()) << assertMessage;
+    EXPECT_STREQ(expectedKoqName, koq.GetName().c_str()) << assertMessage;
+
+    EXPECT_EQ(expectedDisplayLabel != nullptr, koq.GetIsDisplayLabelDefined()) << assertMessage;
+    if (expectedDisplayLabel != nullptr)
+        EXPECT_STREQ(expectedDisplayLabel, koq.GetInvariantDisplayLabel().c_str()) << assertMessage;
+
+    if (expectedDescription != nullptr)
+        EXPECT_STREQ(expectedDescription, koq.GetDescription().c_str()) << assertMessage;
+    else
+        EXPECT_TRUE(koq.GetDescription().empty()) << assertMessage;
+
+    EXPECT_STREQ(expectedPersistenceUnit, koq.GetPersistenceUnit().ToText(false).c_str()) << assertMessage;
+    if (expectedPresentationUnits.m_value.isNull() || expectedPresentationUnits.m_value.empty())
+        EXPECT_TRUE(koq.GetPresentationUnitList().empty()) << assertMessage;
+    else
+        EXPECT_EQ(expectedPresentationUnits, JsonValue(koq.GetPresentationsJson(false))) << assertMessage;
+
+    EXPECT_DOUBLE_EQ(expectedRelError, koq.GetRelativeError()) << assertMessage;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 void TestDb::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationUnits, double expectedRelError) const
@@ -322,22 +361,7 @@ void TestDb::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP expe
     KindOfQuantityCP koq = GetDb().Schemas().GetKindOfQuantity(schemaName, koqName);
     ASSERT_TRUE(koq != nullptr) << assertMessage;
 
-    EXPECT_EQ(expectedDisplayLabel != nullptr, koq->GetIsDisplayLabelDefined()) << assertMessage;
-    if (expectedDisplayLabel != nullptr)
-        EXPECT_STREQ(expectedDisplayLabel, koq->GetInvariantDisplayLabel().c_str()) << assertMessage;
-
-    if (expectedDescription != nullptr)
-        EXPECT_STREQ(expectedDescription, koq->GetDescription().c_str()) << assertMessage;
-    else
-        EXPECT_TRUE(koq->GetDescription().empty()) << assertMessage;
-
-    EXPECT_STREQ(expectedPersistenceUnit, koq->GetPersistenceUnit().ToText(false).c_str()) << assertMessage;
-    if (expectedPresentationUnits.m_value.isNull() || expectedPresentationUnits.m_value.empty())
-        EXPECT_TRUE(koq->GetPresentationUnitList().empty()) << assertMessage;
-    else
-        EXPECT_EQ(expectedPresentationUnits, JsonValue(koq->GetPresentationsJson(false))) << assertMessage;
-
-    EXPECT_DOUBLE_EQ(expectedRelError, koq->GetRelativeError()) << assertMessage;
+    AssertKindOfQuantity(*koq, schemaName, koqName, expectedDisplayLabel, expectedDescription, expectedPersistenceUnit, expectedPresentationUnits, expectedRelError);
 
     // if the file has EC3.2 KOQs, don't run the ECSQL verification as the persisted enumerator json differs from the expected
     if (SupportsFeature(ECDbFeature::UnitsAndFormats))

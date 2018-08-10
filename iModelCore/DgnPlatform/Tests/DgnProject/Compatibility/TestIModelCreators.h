@@ -20,11 +20,14 @@
 #define TESTIMODEL_PREEC32KOQS "preec32koqs.bim"
 #define TESTIMODEL_EC32KOQS "ec32koqs.bim"
 #define TESTIMODEL_EC32UNITS "ec32units.bim"
+#define TESTIMODEL_PREEC32SCHEMAUPDATE "preec32schemaupdate.bim"
+#define TESTIMODEL_EC32SCHEMAUPDATE "ec32schemaupdate.bim"
 
 #define TESTIMODELCREATOR_LIST {std::make_shared<EmptyTestIModelCreator>(), \
                                 std::make_shared<PreEC32EnumsTestIModelCreator>(), \
                                 std::make_shared<UpgradedEC32EnumsTestIModelCreator>(), \
-                                std::make_shared<PreEC32KoqsTestIModelCreator>()}
+                                std::make_shared<PreEC32KoqsTestIModelCreator>(), \
+                                std::make_shared<PreEC32SchemaUpdateTestIModelCreator>()}
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
@@ -211,4 +214,38 @@ struct PreEC32KoqsTestIModelCreator final : TestIModelCreator
     public:
         PreEC32KoqsTestIModelCreator() : TestIModelCreator(TESTIMODEL_PREEC32KOQS) {}
         ~PreEC32KoqsTestIModelCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      08/2018
+//======================================================================================
+struct PreEC32SchemaUpdateTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
+            if (bim == nullptr)
+                return ERROR;
+
+            return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            <ECSchema schemaName="SchemaUpdateTest" alias="su" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+
+             <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
+             <ECEnumeration typeName="StatusEnum" displayLabel="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                <ECEnumerator value="0"/>
+                <ECEnumerator value="1"/>
+                <ECEnumerator value="2"/>
+             </ECEnumeration>
+             <ECEntityClass typeName="MyDomainClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                <ECProperty propertyName="Status" typeName="StatusEnum" />
+             </ECEntityClass>
+            </ECSchema>)xml"));
+            }
+    public:
+        explicit PreEC32SchemaUpdateTestIModelCreator() : TestIModelCreator(TESTIMODEL_PREEC32SCHEMAUPDATE) {}
+        ~PreEC32SchemaUpdateTestIModelCreator() {}
     };
