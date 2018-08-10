@@ -2,11 +2,11 @@
 |
 |  $Source: Tests/Published/ThreadSafetyTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include <rapidjson/BeRapidJson.h>
+#include <BeRapidJson/BeRapidJson.h>
 
 USING_NAMESPACE_BENTLEY_EC
 

@@ -11,7 +11,7 @@
 #include "TestInfoHolders.h"
 #include <Bentley/BeNumerical.h>
 #include <json/json.h>
-#include <rapidjson/BeRapidJson.h>
+#include <BeRapidJson/BeRapidJson.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 

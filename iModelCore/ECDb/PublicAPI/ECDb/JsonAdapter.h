@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 #include <ECDb/ECSqlStatement.h>
 #include <json/json.h>
-#include <rapidjson/BeRapidJson.h>
+#include <BeRapidJson/BeRapidJson.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

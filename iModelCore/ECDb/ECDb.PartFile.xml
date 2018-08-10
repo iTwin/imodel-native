@@ -27,7 +27,7 @@
         <SubPart PartName="ECObjectsNative" PartFile="ECObjects" Repository="ecobjects" />
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="geomlibs" />
         <SubPart PartName="BeJsonCpp"       PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="RapidJson" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="BeRapidJson" PartFile="Bentley" Repository="Bentley"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BeSQLiteEC$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)BeSQLiteEC$(ApiNumber)$(shlibext)</Assemblies>

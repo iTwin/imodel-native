@@ -11,7 +11,7 @@
 #include <cmath>
 #include <algorithm>
 #include <set>
-#include <rapidjson/BeRapidJson.h>
+#include <BeRapidJson/BeRapidJson.h>
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE

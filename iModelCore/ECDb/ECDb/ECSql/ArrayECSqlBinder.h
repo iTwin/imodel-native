@@ -2,13 +2,13 @@
 |
 |     $Source: ECDb/ECSql/ArrayECSqlBinder.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECSqlBinder.h"
-#include <rapidjson/BeRapidJson.h>
+#include <BeRapidJson/BeRapidJson.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
