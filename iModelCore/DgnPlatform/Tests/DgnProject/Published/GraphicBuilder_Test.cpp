@@ -92,7 +92,7 @@ protected:
     template<typename T> void PopulateGraphic(T populateGraphic)
         {
         // Using view coords because have no viewport from which to determine appropriate facet tolerance
-        GraphicBuilderPtr gf = m_system._CreateGraphic(GraphicBuilder::CreateParams(GetDgnDb(), Transform::FromIdentity(), nullptr, GraphicType::ViewOverlay));
+        GraphicBuilderPtr gf = m_system._CreateGraphic(GraphicBuilder::CreateParams(GetDgnDb(), Transform::FromIdentity(), GraphicType::ViewOverlay));
         ActivateGraphicParams(*gf);
         populateGraphic(*gf);
         gf->Finish();
@@ -101,7 +101,7 @@ protected:
     void ActivateGraphicParams(GraphicBuilderR gf, ColorDef fillColor = ColorDef::Blue())
         {
         GeometryParams geomParams(GetDefaultCategoryId());
-        geomParams.Resolve(GetDgnDb(), nullptr);
+        geomParams.Resolve(GetDgnDb());
         GraphicParams gfParams = GraphicParams::FromSymbology(ColorDef::Red(), fillColor, 5, LinePixels::Solid);
         gf.ActivateGraphicParams(gfParams, &geomParams);
         }
@@ -270,7 +270,7 @@ protected:
         explicit TestContext(PrimitiveBuilderR gf) : m_system(gf.GetSystem())
             {
             SetDgnDb(gf.GetDgnDb());
-            Attach(gf.GetViewport(), DrawPurpose::NotSpecified);
+            // Attach(gf.GetViewport(), DrawPurpose::NotSpecified);
             }
 
         SystemP _GetRenderSystem() const override { return &m_system; }

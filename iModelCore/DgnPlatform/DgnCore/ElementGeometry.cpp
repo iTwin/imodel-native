@@ -3742,21 +3742,9 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
-                // NOTE: Only use cache for auto-locate/snapping. Other callers of Stroke should be ok reading again, thread-safety issues otherwise...
-                bool useBRepCache = (nullptr != element && nullptr != context.GetIPickGeom());
                 IBRepEntityPtr entityPtr;
-
-                if (useBRepCache)
-                    entityPtr = BRepDataCache::FindCachedBRepEntity(*element, entryId);
-
-                if (!entityPtr.IsValid())
-                    {
-                    if (!reader.Get(egOp, entityPtr) || !entityPtr.IsValid())
-                        break;
-
-                    if (useBRepCache)
-                        BRepDataCache::AddCachedBRepEntity(*element, entryId, *entityPtr);
-                    }
+                if (!reader.Get(egOp, entityPtr) || !entityPtr.IsValid())
+                    break;
 
                 usePreBakedBody = currGraphic->WantPreBakedBody(*entityPtr);
 #endif

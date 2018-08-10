@@ -74,7 +74,7 @@ BentleyStatus LsComponent::StrokeContinuousArc(LineStyleContextR context, LineSt
 
        if all of that is true, then use a complex shape rather than sending the arc through the normal linestyle code.
     */
-    if (!_IsContinuous() || (nullptr != context.GetViewContext().GetIPickGeom()))
+    if (!_IsContinuous())
         return ERROR;
 
     double radius;

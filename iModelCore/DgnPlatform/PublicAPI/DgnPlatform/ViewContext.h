@@ -140,7 +140,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(GeometricModelR);
-    virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) = 0;
     virtual Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, DgnDbR db, TransformCR tf, ClipVectorCP clips) = 0;
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
@@ -309,9 +308,6 @@ public:
     //! Initializes a GraphicParams from the resolved GeometryParams and calls ActivateGraphicParams on the supplied Render::GraphicBuilderR.
     DGNPLATFORM_EXPORT void CookGeometryParams(Render::GeometryParamsR geomParams, Render::GraphicBuilderR graphic);
 
-    //! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-nullptr value.
-    //! @return the IPickGeom interface for this context. May return nullptr.
-    IPickGeomP GetIPickGeom() {return _GetIPickGeom();}
 /** @} */
 
     bool WantAreaPatterns() {return _WantAreaPatterns();}

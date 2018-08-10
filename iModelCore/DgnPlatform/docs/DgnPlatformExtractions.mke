@@ -2,7 +2,7 @@
 #
 #     $Source: docs/DgnPlatformExtractions.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -37,9 +37,6 @@ $(PublishExtractInput)View.sample.cpp : $(_MakeFilePath)samplecode/View.sample.c
     $(LinkFirstDepToFirstTarget)
 
 $(PublishExtractInput)TxnManager.sample.cpp : $(_MakeFilePath)samplecode/TxnManager.sample.cpp
-    $(LinkFirstDepToFirstTarget)
-
-$(PublishExtractInput)ViewController.sample.cpp : $(_MakeFilePath)samplecode/ViewController.sample.cpp
     $(LinkFirstDepToFirstTarget)
 
 #----------------------------------------------------------------------------------------
