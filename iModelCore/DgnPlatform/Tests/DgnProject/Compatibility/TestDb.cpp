@@ -351,11 +351,19 @@ void TestDb::AssertKindOfQuantity(KindOfQuantityCR koq, Utf8CP expectedSchemaNam
     else
         EXPECT_TRUE(koq.GetDescription().empty()) << assertMessage;
 
-    EXPECT_STREQ(expectedPersistenceUnit, koq.GetPersistenceUnit().ToText(false).c_str()) << assertMessage;
+    EXPECT_STREQ(expectedPersistenceUnit, koq.GetPersistenceUnit()->GetQualifiedName(koq.GetSchema()).c_str()) << assertMessage;
     if (expectedPresentationFormats.m_value.isNull() || expectedPresentationFormats.m_value.empty())
-        EXPECT_TRUE(koq.GetPresentationUnitList().empty()) << assertMessage;
+        EXPECT_TRUE(koq.GetPresentationFormats().empty()) << assertMessage;
     else
-        EXPECT_EQ(expectedPresentationFormats, JsonValue(koq.GetPresentationsJson(false))) << assertMessage;
+        {
+        EXPECT_EQ((int) expectedPresentationFormats.m_value.size(), (int) koq.GetPresentationFormats().size()) << assertMessage;
+        size_t i = 0;
+        for (NamedFormat const& presFormat : koq.GetPresentationFormats())
+            {
+            EXPECT_STREQ(expectedPresentationFormats.m_value[(Json::ArrayIndex) i].asCString(), presFormat.GetQualifiedFormatString(koq.GetSchema()).c_str()) << "Presentation Format #" << i << " | " << assertMessage;
+            i++;
+            }
+        }
 
     EXPECT_DOUBLE_EQ(expectedRelError, koq.GetRelativeError()) << assertMessage;
     }
@@ -373,18 +381,6 @@ void TestDb::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP expe
     ASSERT_TRUE(koq != nullptr) << assertMessage;
 
     AssertKindOfQuantity(*koq, schemaName, koqName, expectedDisplayLabel, expectedDescription, expectedPersistenceUnit, expectedPresentationFormats, expectedRelError);
-    EXPECT_STREQ(expectedPersistenceUnit, koq->GetPersistenceUnit().ToText(false).c_str()) << assertMessage;
-    if (expectedPresentationUnits.m_value.isNull() || expectedPresentationUnits.m_value.empty())
-        EXPECT_TRUE(koq->GetPresentationUnitList().empty()) << assertMessage;
-        {
-        EXPECT_EQ(expectedPresentationUnits, JsonValue(koq->GetPresentationsJson(false))) << assertMessage;
-        size_t i = 0;
-        for (NamedFormat const& presFormat : koq->GetPresentationFormats())
-            {
-            EXPECT_STREQ(expectedPresentationFormats.m_value[(Json::ArrayIndex) i].asCString(), presFormat.GetQualifiedFormatString(koq->GetSchema()).c_str()) << "Presentation Format #" << i << " | " << assertMessage;
-            i++;
-            }
-        }
 
     //If the file wasn't upgraded yet, the persisted KOQs differ from the expected. They only get upgraded
     //in memory on the fly. So don't run the ECSQL based KOQ verification in that case
