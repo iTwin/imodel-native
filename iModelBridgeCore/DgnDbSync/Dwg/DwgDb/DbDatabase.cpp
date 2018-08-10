@@ -23,6 +23,7 @@ DwgDbObjectId       DwgDbDatabase::GetTextStyleTableId () const { return DWGDB_C
 DwgDbObjectId       DwgDbDatabase::GetViewportTableId () const { return DWGDB_CALLSDKMETHOD(T_Super::getViewportTableId, T_Super::viewportTableId)(); }
 DwgDbObjectId       DwgDbDatabase::GetModelspaceId () { return DWGDB_CALLSDKMETHOD(T_Super::getModelSpaceId(), acdbSymUtil()->blockModelSpaceId(this)); }
 DwgDbObjectId       DwgDbDatabase::GetPaperspaceId () { return DWGDB_CALLSDKMETHOD(T_Super::getPaperSpaceId(), acdbSymUtil()->blockPaperSpaceId(this)); }
+DwgDbObjectId       DwgDbDatabase::GetGroupDictionaryId () const { return DWGDB_CALLSDKMETHOD(T_Super::getGroupDictionaryId(), T_Super::groupDictionaryId()); }
 double              DwgDbDatabase::GetANGBASE () const { return DWGDB_CALLSDKMETHOD(T_Super::getANGBASE(), T_Super::angbase()); }
 bool                DwgDbDatabase::GetANGDIR () const { return DWGDB_CALLSDKMETHOD(T_Super::getANGDIR(), T_Super::angdir()); }
 DwgDbAngularUnits   DwgDbDatabase::GetAUNITS () const { return DWGDB_UPWARDCAST(AngularUnits)(DWGDB_CALLSDKMETHOD(T_Super::getAUNITS, T_Super::aunits)()); }

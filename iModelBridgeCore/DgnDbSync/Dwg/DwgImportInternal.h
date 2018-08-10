@@ -371,6 +371,25 @@ public:
     };  // LayoutFactory
 
 /*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          08/18
++===============+===============+===============+===============+===============+======*/
+struct  GroupFactory
+    {
+private:
+    DwgImporter&        m_importer;
+    DwgDbGroupCR        m_dwgGroup;
+    DwgDbObjectIdArray  m_memberIds;
+
+    DgnElementIdSet GroupFactory::FindAllElements (DwgDbObjectIdCR objectId) const;
+    GenericGroupPtr CreateAndInsert ();
+
+public:
+    // the constructor
+    GroupFactory (DwgImporter& importer, DwgDbGroupCR group) : m_importer(importer), m_dwgGroup(group) {}
+    BentleyStatus   CreateGroup ();
+    };  // GroupFactory
+
+/*=================================================================================**//**
 * ElementFactory takes geometries collected from GeometryFactory as input, and creates
 * either shared parts or individual elements.  If GeometryFactory sees no trouble creating
 * an assembly, it will create shared parts.  If it cannot create parts, individual elements
