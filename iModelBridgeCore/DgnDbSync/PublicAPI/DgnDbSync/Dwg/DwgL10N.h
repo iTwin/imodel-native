@@ -111,7 +111,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (ProgressMessage, dwg_progress)
     L10N_STRING(STEP_CREATING)                     // =="Creating DgnDb [%s]"==
     L10N_STRING(STEP_EMBED_FILES)                  // =="Embedding Files"==
     L10N_STRING(STEP_EMBED_FONTS)                  // =="Embedding Fonts"==
-    L10N_STRING(STEP_CREATE_CLASS_VIEWS)           // =="Create ECClass Views"==
+    L10N_STRING(STEP_IMPORTING_GROUPS)             // =="Importing Groups"==
     L10N_STRING(STEP_IMPORTING_LAYERS)             // =="Importing Layers"==
     L10N_STRING(STEP_IMPORTING_TEXTSTYLES)         // =="Importing Text Styles"==
     L10N_STRING(STEP_IMPORTING_LINETYPES)          // =="Importing Line Types"==

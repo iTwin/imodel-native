@@ -692,7 +692,7 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbXrefGraphNode)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbXrefGraph : public DWGDB_EXTENDCLASS(XrefGraph)
     {
-//__PUBLISH_SECTION_START__
+//__PUBLISH_SECTION_END__
 private:
     // Only effective for RealDWG if xref's are resolved by acdbResolveCurrentXRefs, but database's created this way are NOT ref counted!
     DWGDB_EXPORT static DwgDbStatus     Build (DwgDbXrefGraph& graphOut, DwgDbDatabaseP hostDwg, bool includeGhosts = false);
@@ -712,6 +712,86 @@ public:
     DWGDB_EXPORT void   Reset ();
     };  // DwgDbXrefGraph
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbXrefGraph)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          07/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbGroupIterator
+    {
+//__PUBLISH_SECTION_END__
+private:
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDbGroupIteratorPtr       m_groupIterator;
+//__PUBLISH_SECTION_START__
+
+public:
+    DwgDbGroupIterator (OdDbGroupIterator* newIter) : m_groupIterator(newIter) {}
+
+//__PUBLISH_SECTION_END__
+#elif DWGTOOLKIT_RealDwg
+    AcDbGroupIterator*         m_groupIterator;
+//__PUBLISH_SECTION_START__
+
+public:
+    DwgDbGroupIterator (AcDbGroupIterator* newIter) { m_groupIterator = newIter; }
+    DwgDbGroupIterator () : m_groupIterator(nullptr) {}
+//__PUBLISH_SECTION_END__
+#endif  // DWGTOOLKIT_
+//__PUBLISH_SECTION_START__
+
+    DWGDB_EXPORT ~DwgDbGroupIterator ();
+
+public:
+    DWGDB_EXPORT bool               IsValid () const;
+    DWGDB_EXPORT void               Next ();
+    DWGDB_EXPORT bool               Done () const;
+    DWGDB_EXPORT DwgDbObjectId      GetObjectId () const;
+    };  // DwgDbGroupIterator
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          04/18
++===============+===============+===============+===============+===============+======*/
+class DwgDbGroup : public DWGDB_EXTENDCLASS(Group)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(Group)
+
+    DWGDB_EXPORT  DwgDbGroupIterator GetIterator ();
+    DWGDB_EXPORT  DwgDbStatus   Clear ();
+    DWGDB_EXPORT  DwgString     GetName () const;
+    DWGDB_EXPORT  DwgString     GetDescription () const;
+    DWGDB_EXPORT  bool          IsAnonymous () const;
+    DWGDB_EXPORT  bool          IsSelectable () const;
+    DWGDB_EXPORT  bool          IsNotAccessible () const;
+    DWGDB_EXPORT  bool          Has (DwgDbEntityCP entity) const;
+    DWGDB_EXPORT  size_t        GetAllEntityIds (DwgDbObjectIdArrayR ids) const;
+    DWGDB_EXPORT  size_t        GetNumEntities () const;
+    DWGDB_EXPORT  DwgDbStatus   GetIndex (DwgDbObjectIdCR id, size_t& out) const;
+    DWGDB_EXPORT  DwgDbStatus   Append (DwgDbObjectIdCR id);
+    DWGDB_EXPORT  DwgDbStatus   Append (DwgDbObjectIdArrayCR ids);
+    DWGDB_EXPORT  DwgDbStatus   Prepend (DwgDbObjectIdCR id);
+    DWGDB_EXPORT  DwgDbStatus   Prepend (DwgDbObjectIdArrayCR ids);
+    DWGDB_EXPORT  DwgDbStatus   InsertAt (size_t at, DwgDbObjectIdCR id);
+    DWGDB_EXPORT  DwgDbStatus   InsertAt (size_t at, DwgDbObjectIdArrayCR ids);
+    DWGDB_EXPORT  DwgDbStatus   Remove (DwgDbObjectIdCR id);
+    DWGDB_EXPORT  DwgDbStatus   Remove (DwgDbObjectIdArrayCR ids);
+    DWGDB_EXPORT  DwgDbStatus   RemoveAt (size_t at);
+    DWGDB_EXPORT  DwgDbStatus   RemoveAt (size_t at, DwgDbObjectIdArrayCR ids);
+    DWGDB_EXPORT  DwgDbStatus   Replace (DwgDbObjectIdCR oldId, DwgDbObjectIdCR newId);
+    DWGDB_EXPORT  DwgDbStatus   Reverse ();
+    DWGDB_EXPORT  DwgDbStatus   SetName (DwgStringCR name);
+    DWGDB_EXPORT  DwgDbStatus   SetDescription (DwgStringCR descr);
+    DWGDB_EXPORT  DwgDbStatus   SetColor (DwgCmColorCR color);
+    DWGDB_EXPORT  DwgDbStatus   SetColorIndex (uint16_t color);
+    DWGDB_EXPORT  DwgDbStatus   SetLayer (DwgDbObjectIdCR layerId);
+    DWGDB_EXPORT  DwgDbStatus   SetLinetype (DwgDbObjectIdCR linetypeId);
+    DWGDB_EXPORT  DwgDbStatus   SetLinetypeScale (double scale);
+    DWGDB_EXPORT  DwgDbStatus   SetMaterial (DwgDbObjectIdCR materialId);
+    DWGDB_EXPORT  DwgDbStatus   SetSelectable (bool selectable);
+    DWGDB_EXPORT  DwgDbStatus   SetVisibility (DwgDbVisibility visibility);
+    DWGDB_EXPORT  DwgDbStatus   Transfer (size_t from, size_t to, size_t num);
+    };  // DwgDbGroup
+DWGDB_DEFINE_OBJECTPTR (Group)
 
 END_DWGDB_NAMESPACE
 //__PUBLISH_SECTION_END__

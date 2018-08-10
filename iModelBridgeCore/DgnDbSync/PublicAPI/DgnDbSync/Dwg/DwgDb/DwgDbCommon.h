@@ -37,6 +37,7 @@
 #include    <Teigha/Drawing/Include/DbObjectId.h>
 #include    <Teigha/Drawing/Include/DbDatabase.h>
 #include    <Teigha/Drawing/Include/DbLayoutManager.h>
+#include    <Teigha/Drawing/Include/DbGroup.h>
 #include    <Teigha/Drawing/Include/DbXrecord.h>
 #include    <Teigha/Drawing/Include/DbXrefGraph.h>
 #include    <Teigha/Drawing/Include/ModelDocObj/DbViewBorder.h>
@@ -58,6 +59,7 @@
 #include    <RealDwg/Base/dbbody.h>
 #include    <RealDwg/Base/dbsol3d.h>
 #include    <RealDwg/Base/dbregion.h>
+#include    <RealDwg/Base/dbgroup.h>
 #include    <RealDwg/Base/dbextrudedsurf.h>
 #include    <RealDwg/Base/dbloftedsurf.h>
 #include    <RealDwg/Base/dbnurbsurf.h>
@@ -335,6 +337,7 @@ DEFINE_DWGDB_TYPEDEFS (DwgDbFaceRecord)
 DEFINE_DWGDB_TYPEDEFS (DwgDbFcf)
 DEFINE_DWGDB_TYPEDEFS (DwgDbFrame)
 DEFINE_DWGDB_TYPEDEFS (DwgDbGeoPositionMarker)
+DEFINE_DWGDB_TYPEDEFS (DwgDbGroup)
 DEFINE_DWGDB_TYPEDEFS (DwgDbHatch)
 DEFINE_DWGDB_TYPEDEFS (DwgDbImage)
 DEFINE_DWGDB_TYPEDEFS (DwgDbLayout)

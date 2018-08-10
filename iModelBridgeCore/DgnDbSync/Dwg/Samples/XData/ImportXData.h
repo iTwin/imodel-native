@@ -22,6 +22,9 @@
 #include <DgnDbSync/Dwg/DwgHelper.h>
 #include <DgnDbSync/Dwg/DwgBridge.h>
 
+// _ImportGroup will demonstrate how to create a GenericGroup element.
+#include <DgnPlatform/GenericDomain.h>
+
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_EC
@@ -36,6 +39,12 @@ BEGIN_DGNDBSYNC_DWG_NAMESPACE
 // This is the core class of the sample code: it lets DwgImporter convert DWG data by 
 // default, parses the XDATA found on each and every entity, and converts the data as
 // Adhoc properties of the DgnDb element.
+//
+// The overridden method _ImportGroup in this sample demonstrates how a GenericGroup may be
+// created from a DWG group.  This is also the default behavior of the super method.  But
+// through the sample, you may see the workflow of the group creation.  After the base 
+// DwgImporter finishes creating all models & elements, it iterates through the root DWG
+// file and xRef files, and calls _ImportGroup for each group found in the files.
 //
 // It also optionally dumps dictionary xRecords into the importer's issues file. The option
 // is part of this sample bridge and it is passed on to the sample importer. When the option
@@ -75,6 +84,8 @@ private:
     BentleyStatus   DumpXrecord (DwgDbXrecordCR xRecord);
     // Walk through dictionary entries and print out xRecords
     BentleyStatus   DumpDictionaryXrecords (DwgDbDictionaryCR dictionary);
+    // Find all elements from the SyncInfo for the input DWG object
+    DgnElementIdSet FindElementsMappedFrom (DwgDbObjectIdCR objectId);
 
 public:
     // Constructor
@@ -83,6 +94,8 @@ public:
     virtual void    _BeginImport () override;
     // Override _ImportEntity to convert both entity and its xdata
     virtual BentleyStatus   _ImportEntity (ElementImportResults& results, ElementImportInputs& inputs) override;
+    // Override _ImportGroup to convert a DWG group to a DgnDb group element, returning optional element ID.
+    virtual BentleyStatus   _ImportGroup (DwgDbGroupCR group) override;
     };  // ImportXData
 
 //=======================================================================================

@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Samples/XData/ImportXData.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ImportXData.h"
@@ -170,6 +170,90 @@ BentleyStatus   ImportXData::_ImportEntity (ElementImportResults& results, Eleme
         LOG.error ("Failed adding xdata to DgnElement as Adhoc properties!");
 
     return  status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus ImportXData::_ImportGroup (DwgDbGroupCR group)
+    {
+    // This method creates a GenericGroup in the BisCore's generic group model:
+    LOG.tracev ("Importing group %ls in file %ls", group.GetName().c_str(), group.GetDatabase()->GetFileName().c_str());
+
+    if (T_Super::IsUpdating())
+        {
+        // WIP - add code to find and update existing DgnDb group element.
+        BeAssert (false && "WIP: group updating not implemented yet!");
+        }
+
+    DwgDbObjectIdArray  objectIds;
+    if (0 == group.GetAllEntityIds(objectIds))
+        return  BSISUCCESS;
+
+    // A generic group must be added to a GenericGroupModel:
+    auto groupModel = T_Super::GetDgnDb().Models().Get<GenericGroupModel>(T_Super::GetGroupModelId());
+    if (!groupModel.IsValid())
+        return  BSIERROR;
+
+    // Create a new generic group, and add it into DgnDb:
+    auto genericGroup = GenericGroup::Create (*groupModel);
+    if (!genericGroup.IsValid() || genericGroup->Insert().IsNull())
+        return  BentleyStatus::ERROR;
+
+    // Process each and every member entity in DWG group:
+    for (auto objectId : objectIds)
+        {
+        // Find all elements that have been mapped from this object:
+        DgnElementIdSet elementIds = FindElementsMappedFrom (objectId);
+
+        // add them all in the same GenericGroup:
+        for (auto elementId : elementIds)
+            {
+            auto member = this->GetDgnDb().Elements().GetElement (elementId);
+            if (member.IsValid())
+                genericGroup->AddMember (*member);
+            }
+        }
+    
+    auto groupId = genericGroup->GetElementId ();
+    auto count = genericGroup->QueryMembers().size ();
+
+    LOG.tracev ("%d group memebers have been added to GenericGroup ID=%d!", count, groupId.GetValue());
+
+    if (0 == count)
+        {
+        GetDgnDb().Elements().Delete (groupId);
+        return  BentleyStatus::ERROR;
+        }
+    
+    return  BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet ImportXData::FindElementsMappedFrom (DwgDbObjectIdCR objectId)
+    {
+    DgnElementIdSet ids;
+
+    // If the member is an xRef insert, find the target DgnModel and get all elements in the model:
+    DwgDbBlockReferencePtr  blockInsert(objectId, DwgDbOpenMode::ForRead);
+    if (blockInsert.OpenStatus() == DwgDbStatus::Success && blockInsert->IsXAttachment())
+        {
+        auto modelMap = this->FindModel (objectId, DwgSyncInfo::ModelSourceType::XRefAttachment);
+
+        DgnModelP model = nullptr;
+        if (modelMap.IsValid() && nullptr != (model = modelMap.GetModel()))
+            ids = model->MakeIterator().BuildIdSet<DgnElementId> ();
+
+        return  ids;
+        }
+
+    // Consult the SyncInfo and Find the elements that have been mapped from this object, in the same model:
+    if (!T_Super::GetSyncInfo().FindElements(ids, objectId))
+        LOG.error (Utf8PrintfString("No DgnElement found for object ID=%llx", objectId.ToUInt64()).c_str());
+        
+    return  ids;
     }
 
 //---------------------------------------------------------------------------------------
@@ -399,7 +483,7 @@ END_DGNDBSYNC_DWG_NAMESPACE
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          11/17
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
     {
@@ -408,7 +492,7 @@ iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          11/17
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, WCharCP affinityLibPath, WCharCP dwgdxfName)
     {
