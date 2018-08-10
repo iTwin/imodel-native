@@ -246,7 +246,7 @@ TEST_F(IModelHubMockTestFixture, Locking)
     ASSERT_EQ(RepositoryStatus::Success, db->BriefcaseManager().LockDb(LockLevel::Shared).Result());
     ASSERT_EQ(RepositoryStatus::Success, db2->BriefcaseManager().LockDb(LockLevel::Shared).Result());
     }
-/* WIP_TEST_FAILING
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                            Kyle.Abramowitz       06/2018
 //-------------------------------------------------------------------------------------
@@ -469,7 +469,7 @@ TEST_F(IModelHubMockTestFixture, OverflowIssue)
     ASSERT_TRUE(rev2.IsValid());
     ASSERT_EQ(RevisionStatus::Success, dbA->Revisions().FinishCreateRevision());
     dbA->BriefcaseManager().RelinquishLocks();
-    //ASSERT_FALSE(GetMock()->PushChangeset(rev2, id).empty());
+    ASSERT_FALSE(GetMock()->PushChangeset(rev2, id).empty());
     dbA->CloseDb();
     dbA = nullptr;
 
@@ -525,7 +525,7 @@ TEST_F(IModelHubMockTestFixture, OverflowIssue)
     dbC->CloseDb();
     dbC = nullptr;
     }
-*/
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                            Kyle.Abramowitz       06/2018
 //-------------------------------------------------------------------------------------
