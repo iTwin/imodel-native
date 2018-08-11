@@ -202,3 +202,27 @@ DataSourceCacheTests.RemoveResponses_ResponsesWithSameName_RemovesResponses
     # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
     # Which is: BeFileNameStatus::AlreadyExists
     # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.CacheResponse_ResponseContainsItsParentInstanceAndParentRootRemoved_QueryResultsAndParentDeleted
+
+    # TFS#930240
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.CacheResponse_KeyHasDifferentHolderAndThenParentIsRemoved_RemovesResults
+
+    # TFS#930240
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
