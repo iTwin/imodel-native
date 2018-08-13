@@ -9,6 +9,7 @@
 #pragma once
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnDb.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <ECDb/ECDbApi.h>
 #include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/DgnFontData.h>

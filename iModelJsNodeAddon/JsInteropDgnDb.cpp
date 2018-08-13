@@ -155,7 +155,7 @@ DgnDbStatus JsInterop::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8CP
     for (auto ecprop : ecclass->GetProperties(false))
         {
         Utf8String pname(ecprop->GetName());
-        pname[0] = tolower(pname[0]);
+        pname[0] = static_cast<Utf8Char>(tolower(pname[0]));
         auto& propjson = propsjson[pname];
 
         SET_IF_NOT_EMPTY_STR(propjson[json_description()], ecprop->GetDescription());
@@ -171,7 +171,7 @@ DgnDbStatus JsInterop::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8CP
             propjson[json_minimumLength()] = ecprop->GetMinimumLength();
         if (ecprop->GetIsReadOnly())
             propjson[json_readOnly()] = true;
-        SET_IF_NOT_NULL_STR(propjson[json_kindOfQuantity()], ecprop->GetKindOfQuantity());
+        // ###TODO: GetKindOfQuantity does not return a string. KOQ has several types of 'name'. Which do you want? SET_IF_NOT_NULL_STR(propjson[json_kindOfQuantity()], ecprop->GetKindOfQuantity());
 
         bool isCA;
         propjson[json_isCustomHandled()] = (isCA = ecprop->IsDefined(*customHandledProperty));

@@ -258,11 +258,8 @@ JsTexture* ResourceCache::CreateTexture(ImageCR img, Texture::CreateParams const
 struct JsSystem : Render::System
 {
     int _Initialize(void*, bool) override NO_IMPL(0)
-    Render::TargetPtr _CreateTarget(Render::Device&, double) override NULL_IMPL
-    Render::TargetPtr _CreateOffscreenTarget(Render::Device&, double) override NULL_IMPL
     Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const&) const override NULL_IMPL
     Render::GraphicPtr _CreateSprite(Render::ISprite&, DPoint3dCR, DPoint3dCR, int, Dgn::DgnDbR) const override NULL_IMPL
-    Render::GraphicPtr _CreateViewlet(Render::GraphicBranch&, Render::PlanCR, Render::ViewletPosition const&) const override NULL_IMPL
     Render::TexturePtr _CreateGeometryTexture(Render::GraphicCR, DRange2dCR, bool, bool) const override NULL_IMPL
     Render::LightPtr _CreateLight(Dgn::Lighting::Parameters const&, DVec3dCP, DPoint3dCP) const override NULL_IMPL
 
