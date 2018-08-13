@@ -709,7 +709,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             }
 
         NativeAppData(NativeDgnDb& adb) : m_addonDb(adb) {}
-        static NativeAppData* Find(DgnDbR db) {return (NativeAppData*) db.FindAppData(GetKey());}
+        static NativeAppData* Find(DgnDbR db) {return (NativeAppData*) db.FindAppData(GetKey()).get();}
         static void Add(NativeDgnDb& adb)
             {
             BeAssert(nullptr == Find(adb.GetDgnDb()));

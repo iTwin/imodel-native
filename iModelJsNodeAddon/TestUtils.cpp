@@ -13,7 +13,7 @@ struct TestViewport : DgnViewport
 {
 	BSIRect m_rect;
 	BSIRect _GetViewRect() const override { return m_rect; }
-	TestViewport(BSIRect rect) : DgnViewport(nullptr) { m_rect = rect; }
+	TestViewport(BSIRect rect) : DgnViewport() { m_rect = rect; }
 	double _GetCameraFrustumNearScaleLimit() const override { return 0.003; }
 };
 
