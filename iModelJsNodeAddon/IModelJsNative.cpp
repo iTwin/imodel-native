@@ -862,7 +862,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
     Napi::Value GetElement(Napi::CallbackInfo const& info)
         {
-        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, optsJsonStr, Env().Undefined());
         Json::Value opts = Json::Value::From(optsJsonStr);
         Json::Value elementJson;  // ouput
@@ -1660,7 +1659,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         if (stat != BE_SQLITE_ROW || size == 0)
             return Env().Undefined();
 
-        auto blob = Napi::ArrayBuffer::New(Env(), size);
+        auto blob = Napi::Uint8Array::New(Env(), size);
         db.QueryProperty(blob.Data(), size, spec, id, subId);
         return blob;
         }
@@ -1668,8 +1667,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     // save a property to the be_prop table
     Napi::Value SaveFileProperty(Napi::CallbackInfo const& info)
         {
-        if (info.Length() < 2)
-            THROW_TYPE_EXCEPTION_AND_RETURN("saveFileProperty requires 2 arguments", Env().Undefined());
+        if (info.Length() < 3)
+            THROW_TYPE_EXCEPTION_AND_RETURN("saveFileProperty requires 3 arguments", Env().Undefined());
 
         REQUIRE_ARGUMENT_STRING(0, fileProps, Env().Undefined())
         auto propsJson = Json::Value::From(fileProps);
@@ -1684,23 +1683,32 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         uint64_t subId = propsJson[JsInterop::json_subId()].asUInt64();
 
         DbResult stat;
-        Napi::Value val = info[1];
-        if (val.IsUndefined())  // undefined means delete
+        Napi::Value blobVal = info[2];
+        Utf8String strbuf;
+        Utf8StringCP strDataP = nullptr;
+        void const* value = nullptr;
+        uint32_t propsize = 0;
+
+        Napi::Value strVal = info[1];
+        if (info[1].IsString())
+            {
+            strbuf = info[1].ToString().Utf8Value().c_str();
+            strDataP = &strbuf;
+            }
+        if (info[2].IsTypedArray())
+            {
+            auto arrayBuf = info[2].As<Napi::Uint8Array>();
+            value = arrayBuf.Data();
+            propsize = arrayBuf.ByteLength();
+            }
+        if (nullptr == strDataP && nullptr == value) 
             {
             stat = db.DeleteProperty(spec, id, subId);
             if (stat == BE_SQLITE_DONE)
                 stat = BE_SQLITE_OK;
             }
-        else if (val.IsArrayBuffer())
-            {
-            auto arrayBuf = val.As<Napi::ArrayBuffer>();
-            stat = db.SaveProperty(spec, arrayBuf.Data(), arrayBuf.ByteLength(), id, subId);
-            }
         else
-            {
-            stat = db.SavePropertyString(spec, val.ToString().Utf8Value().c_str(), id, subId);
-            }
-
+            stat =  strDataP ? db.SaveProperty(spec, *strDataP, value, propsize, id, subId) :  db.SaveProperty(spec, value, propsize, id, subId);
         return Napi::Number::New(Env(), (int) stat);
         }
 
@@ -1719,9 +1727,9 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         stmt.BindText(1, propsJson[JsInterop::json_namespace()].asCString(), Statement::MakeCopy::No);
         stmt.BindText(2, propsJson[JsInterop::json_name()].asCString(), Statement::MakeCopy::No);
         DbResult result = stmt.Step();
-        int count = stmt.GetValueInt(0);
-        int max  = stmt.GetValueInt(1);
-        int next = (result != BE_SQLITE_ROW || 0 == count) ? 0 : max + 1;
+        uint64_t count = stmt.GetValueUInt64(0);
+        uint64_t max  = stmt.GetValueUInt64(1);
+        uint64_t next = (result != BE_SQLITE_ROW || 0 == count) ? 0 : max + 1;
         return Napi::Number::New(Env(), next);
         }
 
