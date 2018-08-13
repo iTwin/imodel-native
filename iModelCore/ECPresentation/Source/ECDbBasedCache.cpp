@@ -36,7 +36,9 @@ protected:
 public:
     static TAppData* Get(ECDbCR db)
         {
-        BeSQLite::Db::AppData* appdata = db.FindAppData(s_key).get();
+        // NB: Use the version returning a raw pointer to work around circular dependency wherein destructors of
+        // ECDbClosedNotifier's want to find this app data while it is in the process of being destroyed.
+        BeSQLite::Db::AppData* appdata = db.FindRawAppData(s_key);
         return (nullptr != appdata) ? static_cast<TAppData*>(appdata) : nullptr;
         }
 
