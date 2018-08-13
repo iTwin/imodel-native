@@ -279,11 +279,12 @@ BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR
 
     if (m_db.IsDbOpen())
         {
+        Utf8String stringToken = Json::FastWriter::ToString(policyToken);
         stmt.Prepare(m_db, "INSERT INTO Policy VALUES (?, ?, ?, ?)");
         stmt.BindText(1, policyId, Statement::MakeCopy::No);
         stmt.BindText(2, expirationDate, Statement::MakeCopy::No);
         stmt.BindText(3, lastUpdateTime, Statement::MakeCopy::No);
-	stmt.BindText(4, Json::FastWriter::ToString(policyToken), Statement::MakeCopy::Yes);
+        stmt.BindText(4, stringToken, Statement::MakeCopy::No);
         DbResult result = stmt.Step();
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;

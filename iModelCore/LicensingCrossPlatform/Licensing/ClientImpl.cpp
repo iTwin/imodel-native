@@ -556,21 +556,17 @@ LicenseStatus ClientImpl::GetProductStatus(int requestedProductId)
 		}
 	// get GetProductLicenseStatus
 	auto productStatus = PolicyHelper::GetProductStatus(policy, productId, m_featureString);
-	// if prodStatus is TrialExpired
-	//     return LicenseStatus::Expired
+	// if prodStatus is TrialExpired, return LicenseStatus::Expired
 	if (productStatus == PolicyHelper::ProductStatus::TrialExpired)
 		{
 		return LicenseStatus::Expired;
 		}
-	// if prodStatus is Denied
-	//     return LicenseStatus::AccessDenied
+	// if prodStatus is Denied, return LicenseStatus::AccessDenied
 	if (productStatus == PolicyHelper::ProductStatus::Denied)
 		{
 		return LicenseStatus::AccessDenied;
 		}
-	// if prodStatus is NoLicense
-	//     check preactivation maybe? if preactivated, return LicenseStatus::PreActivation
-	//     return LicenseStatus::Expired
+	// if prodStatus is NoLicense, return LicenseStatus::Expired
 	if (productStatus == PolicyHelper::ProductStatus::NoLicense)
 		{
 		return LicenseStatus::Expired;
