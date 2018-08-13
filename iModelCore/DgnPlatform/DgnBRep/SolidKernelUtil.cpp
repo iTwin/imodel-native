@@ -5455,6 +5455,6 @@ CurveVectorPtr BRepUtil::Create::OffsetEdgesOnPlanarFaceToCurveVector(ISubEntity
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometricPrimitiveCPtr IBRepEntity::GetGeometry() const { return _GetGeometry(); }
-GeometricPrimitiveCPtr IBRepEntity::GetParentGeometry() const { return _GetParentGeometry(); }
+GeometricPrimitiveCPtr ISubEntity::GetGeometry() const { return _GetGeometry(); }
+GeometricPrimitiveCPtr ISubEntity::GetParentGeometry() const { return _GetParentGeometry(); }
 
