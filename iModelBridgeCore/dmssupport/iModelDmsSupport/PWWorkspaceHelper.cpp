@@ -10,6 +10,8 @@
 #include <ProjectWise_InternalSDK/Include/Workspace/ManagedWorkspace.h>
 #include <Bentley/Desktop/FileSystem.h>
 
+#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger(L"iModelBridge"))
+
 USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**

@@ -9,6 +9,8 @@
 #include <ProjectWise_InternalSDK/Include/aadmsapi.h>
 #include <ProjectWise_InternalSDK/Include/aaodsapi.h>
 #include <Bentley/Desktop/FileSystem.h>
+
+#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger(L"iModelBridge"))
 USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**

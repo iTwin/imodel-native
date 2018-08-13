@@ -23,7 +23,7 @@
 #endif
 
 #include <Logging/bentleylogging.h>
-#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger(L"iModelBridge"))
+
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 struct DmsSession;
