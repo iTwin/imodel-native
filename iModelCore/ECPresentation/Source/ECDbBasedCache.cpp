@@ -2,7 +2,7 @@
 |
 |     $Source: Source/ECDbBasedCache.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -36,14 +36,14 @@ protected:
 public:
     static TAppData* Get(ECDbCR db)
         {
-        BeSQLite::Db::AppData* appdata = db.FindAppData(s_key);
+        BeSQLite::Db::AppData* appdata = db.FindAppData(s_key).get();
         return (nullptr != appdata) ? static_cast<TAppData*>(appdata) : nullptr;
         }
 
     static TAppData& GetOrCreate(ECDbCR db)
         {
-        BeSQLite::Db::AppData* appdata = db.FindAppData(s_key);
-        if (nullptr != appdata)
+        BeSQLite::Db::AppDataPtr appdata = db.FindAppData(s_key);
+        if (appdata.IsValid())
             return static_cast<TAppData&>(*appdata);
 
         TAppData* thisAppData = new TAppData();
