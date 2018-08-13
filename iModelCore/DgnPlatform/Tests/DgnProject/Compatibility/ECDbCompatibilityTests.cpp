@@ -620,6 +620,9 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaImport)
                     case ProfileState::Age::UpToDate:
                     {
                     EXPECT_EQ(SUCCESS, schemaImportStat) << testDb.GetDescription();
+                    //No units or formats schema from EC3.2 must creep into the file when importing KOQs in an 4.0.0.1 file
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) <<  testDb.GetDescription();
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << testDb.GetDescription();
 
                     ECInstanceKey fooKey;
                     ECSqlStatement stmt;
