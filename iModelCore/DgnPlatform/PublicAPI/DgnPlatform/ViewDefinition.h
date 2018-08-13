@@ -281,7 +281,6 @@ public:
     Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(json_hline()));}
     void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(json_hline(), params.ToJson());}
 
-    DGNPLATFORM_EXPORT Render::SceneLightsPtr CreateSceneLights(Render::TargetR);
     DGNPLATFORM_EXPORT void SetSceneLight(Lighting::Parameters const&);
     DGNPLATFORM_EXPORT void SetSolarLight(Lighting::Parameters const&, DVec3dCR direction);
 
@@ -1259,6 +1258,12 @@ public:
     void SetOrigin2d(DPoint2dCR o) {m_origin = o;}
     DVec2d GetDelta2d() const {return m_delta;}
     void SetDelta2d(DVec2dCR v) {m_delta = v;}
+
+    static constexpr double Get2dFrustumDepth() {return DgnUnits::OneMeter();}
+    static constexpr int32_t GetMaxDisplayPriority() {return (1<<23)-32;}
+    static constexpr int32_t GetMinDisplayPriority() {return -GetMaxDisplayPriority();}
+    static constexpr double GetDisplayPriorityFactor() {return Get2dFrustumDepth() / (double) (GetMaxDisplayPriority()+1);}
+    static double DepthFromDisplayPriority(int32_t priority) {return GetDisplayPriorityFactor() * (double) priority;}
 };
 
 //=======================================================================================

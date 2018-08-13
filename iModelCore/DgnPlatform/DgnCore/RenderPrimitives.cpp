@@ -30,7 +30,7 @@ static double depthFromDisplayPriority(double priority)
     // Coming from mstn, priorities tend to be in [-500..500]
     // Let's assume that mstn's range is the full range and clamp anything outside that.
     // Map them to [-s_half2dDepthRange, s_half2dDepthRange]
-    static const double s_half2dDepthRange = 0.5 * Target::Get2dFrustumDepth();
+    static const double s_half2dDepthRange = 0.5 * ViewDefinition2d::Get2dFrustumDepth();
     static const double priorityRange = 500;
     static const double ratio = s_half2dDepthRange / priorityRange;
 

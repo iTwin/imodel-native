@@ -245,59 +245,6 @@ void SpatialViewController::_DrawView(ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::SceneLightsPtr ViewController3d::GetLights() const
-    {
-    BeAssert(DgnDb::ThreadId::Client == DgnDb::GetThreadId());
-
-    if (m_lights.IsValid())
-        return m_lights;
-        
-    Render::TargetP target = m_vp->GetRenderTarget();
-    if (nullptr == target)
-        return nullptr;
-
-    auto& displayStyle = const_cast<ViewDefinition3dR>(GetViewDefinition3d()).GetDisplayStyle3d();
-    m_lights = displayStyle.CreateSceneLights(*target); // lighting setup for the scene
-
-    if (!displayStyle.GetViewFlags().ShowSourceLights())
-        return m_lights;
-
-    _AddModelLights(*m_lights, *target);
-
-    return m_lights;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController3d::AddModelLights(Render::SceneLightsR lights, DgnModelId modelId, Render::TargetR target) const
-    {
-    DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
-    auto spatialModel = model.IsValid() ? model->ToSpatialModelP() : nullptr;
-    if (nullptr != spatialModel)
-        spatialModel->AddLights(*m_lights, target);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TemplateViewController3d::_AddModelLights(Render::SceneLightsR lights, Render::TargetR target) const
-    {
-    AddModelLights(lights, GetViewedModelId(), target);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::_AddModelLights(Render::SceneLightsR lights, Render::TargetR target) const
-    {
-    for (DgnModelId modelId : GetViewedModels())
-        AddModelLights(lights, modelId, target);
-    }
-
-/*---------------------------------------------------------------------------------**//**
     BeThreadUtilities::StartNewThread(Main, this);
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/

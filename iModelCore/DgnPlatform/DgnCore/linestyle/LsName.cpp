@@ -406,10 +406,6 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
     if (unitDef == 0)
         unitDef = 1.0;
 
-    DgnViewportP vp = viewContext.GetViewport();
-    if (vp == nullptr)
-        return BSIERROR;
-
     //  We create the texture in the component's units.  Then to convert to the line style's units we set the true width to the component width times unitDef.
     //  It seems more logical to work in the line style's units.  However, the lines in a texture look much better if QV draws them in the component's units. It seems that
     //  scaling down works much better than scaling up when we use the texture.
@@ -577,10 +573,10 @@ Texture* LsDefinition::GetRasterTexture(double& textureWidth, ViewContextR conte
 
         if (SUCCESS == getRasterTexture (imageDef, imageSize, flags, m_lsComp.get()))
             {
-            DgnViewportP vp = context.GetViewport();
-            if (vp == nullptr)
+            auto system = context.GetRenderSystem();
+            if (nullptr == system)
                 {
-                BeAssert(vp);
+                BeAssert(nullptr != system);
                 m_firstTextureInitialized = false;
                 return nullptr;
                 }
@@ -596,12 +592,12 @@ Texture* LsDefinition::GetRasterTexture(double& textureWidth, ViewContextR conte
                     alpha[outIndex] = invert ? (255 - imageDef[inIndex]) : imageDef[inIndex];
 
                 Image imageObj(imageSize.x, imageSize.y, ByteStream(&alpha.front(), imageBytes), Image::Format::Alpha);
-                m_rasterTexture = vp->GetRenderTarget()->CreateTexture(imageObj, context.GetDgnDb());
+                m_rasterTexture = system->_CreateTexture(imageObj, context.GetDgnDb());
                 }
             else
                 {
                 Image imageObj(imageSize.x, imageSize.y, ByteStream(imageDef, imageSize.x*imageSize.y*4), Image::Format::Rgba);
-                m_rasterTexture = vp->GetRenderTarget()->CreateTexture(imageObj, context.GetDgnDb());
+                m_rasterTexture = system->_CreateTexture(imageObj, context.GetDgnDb());
                 }
             }
         }

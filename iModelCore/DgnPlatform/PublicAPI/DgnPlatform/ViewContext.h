@@ -154,8 +154,7 @@ protected:
     DGNPLATFORM_EXPORT virtual Render::MaterialPtr _GetMaterial(RenderMaterialId id) const;
     DGNPLATFORM_EXPORT virtual Render::TexturePtr _CreateTexture(Render::ImageCR image) const;
     DGNPLATFORM_EXPORT virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const;
-    DGNPLATFORM_EXPORT virtual Render::SystemP _GetRenderSystem() const;
-    DGNPLATFORM_EXPORT virtual Render::TargetP _GetRenderTarget() const;
+    virtual Render::SystemP _GetRenderSystem() const { return nullptr; }
     DGNPLATFORM_EXPORT virtual double _GetPixelSizeAtPoint(DPoint3dCP origin) const;
     virtual bool _WantGlyphBoxes(double sizeInPixels) const { return false; }
     DGNPLATFORM_EXPORT ViewContext();
@@ -292,7 +291,6 @@ public:
     //! @return the DgnViewport. nullptr if not attached to a DgnViewport.
     DgnViewportP GetViewport() const {return m_viewport;}
     Render::SystemP GetRenderSystem() const {return _GetRenderSystem();}
-    Render::TargetP GetRenderTarget() const {return _GetRenderTarget();}
 
     bool Is3dView() const {return m_is3dView;}
     DGNPLATFORM_EXPORT bool IsCameraOn() const;

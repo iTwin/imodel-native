@@ -2922,12 +2922,6 @@ struct MeshEdgeCreationOptions
 //=======================================================================================
 struct System
 {
-    Target* m_nowPainting = nullptr;
-    bool CheckPainting(Target* target) {return target==m_nowPainting;}
-    bool IsPainting() {return !CheckPainting(nullptr);}
-    void StartPainting(Target* target) {BeAssert(!IsPainting()); m_nowPainting = target;}
-    void NotPainting() {m_nowPainting = nullptr;}
-
     virtual ~System() { }
     
     //! Initialize the rendering system. Return a non-zero value in case of error. The client thread waits for the result.
@@ -3003,64 +2997,6 @@ struct System
     //! Perform some small unit of work (or do nothing) during an idle frame.
     //! An idle frame is classified one tick of the render loop during which no viewports are open and the render queue is empty.
     virtual void _Idle() { }
-};
-
-//=======================================================================================
-//! A Render::Target holds the current scene, the current set of dynamic Graphics, and the current decorators.
-//! When frames are composed, all of those Graphics are rendered, as appropriate.
-//! A Render::Target holds a reference to a Render::Device, and a Render::System
-//! Every DgnViewport holds a reference to a Render::Target.
-// @bsiclass                                                    Keith.Bentley   11/15
-//=======================================================================================
-struct Target : RefCounted<NonCopyableClass>
-{
-protected:
-    bool m_abort;
-    int  m_id; // for debugging
-    System& m_system;
-    ClipVectorCPtr m_activeVolume;
-
-    virtual void _OnResized() {}
-    virtual Point2d _GetScreenOrigin() const = 0;
-    virtual BSIRect _GetViewRect() const = 0;
-    virtual DVec2d _GetDpiScale() const = 0;
-
-    DGNPLATFORM_EXPORT static void VerifyRenderThread();
-
-public:
-    static void RecordGraphicsStats();
-    virtual void _OnDestroy() {}
-    virtual bool _WantInvertBlackBackground() {return false;}
-    virtual double _GetCameraFrustumNearScaleLimit() const = 0;
-    virtual void _SetViewRect(BSIRect rect, bool temporary=false) {}
-
-    int GetId() const {return m_id;}
-    void SetAbortFlag() {m_abort=true;}
-    Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
-    BSIRect GetViewRect() const {return _GetViewRect();}
-    DVec2d GetDpiScale() const {return _GetDpiScale();}
-    DGNPLATFORM_EXPORT void DestroyNow();
-    void OnResized() {_OnResized();}
-    GraphicBuilderPtr CreateGraphic(GraphicBuilder::CreateParams const& params) {return m_system._CreateGraphic(params);}
-    MaterialPtr GetMaterial(RenderMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
-    TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
-    TexturePtr CreateTexture(ImageCR image, DgnDbR db) const {return m_system._CreateTexture(image, db);}
-    TexturePtr CreateTexture(ImageSourceCR source, DgnDbR db, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, bottomUp, db);}
-    LightPtr CreateLight(Lighting::Parameters const& params, DVec3dCP direction=nullptr, DPoint3dCP location=nullptr) {return m_system._CreateLight(params, direction, location);}
-    SystemR GetSystem() {return m_system;}
-
-    static constexpr double Get2dFrustumDepth() {return DgnUnits::OneMeter();}
-    static constexpr int32_t GetMaxDisplayPriority() {return (1<<23)-32;}
-    static constexpr int32_t GetMinDisplayPriority() {return -GetMaxDisplayPriority();}
-    static constexpr double GetDisplayPriorityFactor() {return Get2dFrustumDepth() / (double) (GetMaxDisplayPriority()+1);}
-    static double DepthFromDisplayPriority(int32_t priority) {return GetDisplayPriorityFactor() * (double) priority;}
-
-    //! Make the specified rectangle have the specified aspect ratio
-    //! @param[in] requestedRect    The rectangle within the view that the caller would like to capture
-    //! @param[in] targetAspectRatio The desired aspect ratio
-    //! @return The adjusted rectangle that captures as much of the requested rectangle as possible
-    //!         with one of its dimensions adjusted to match the aspect ratio of targetSize.
-    DGNPLATFORM_EXPORT static BSIRect SetAspectRatio(BSIRectCR requestedRect, double targetAspectRatio);
 };
 
 END_BENTLEY_RENDER_NAMESPACE

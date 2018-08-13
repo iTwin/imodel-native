@@ -1030,8 +1030,6 @@ protected:
     virtual BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const { return ERROR; }
 
 public:
-    DGNPLATFORM_EXPORT void AddLights(Render::SceneLightsR, Render::TargetR) const;
-
     BentleyStatus GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const { return _GetSpatialClassifiers(classifiers); }
     void OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents);
 };

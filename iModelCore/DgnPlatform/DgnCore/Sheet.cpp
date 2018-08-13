@@ -421,7 +421,7 @@ void Sheet::Border::AddToBuilder(Render::GraphicBuilderR builder) const
     params.SetGradient(m_gradient.get());
 
     builder.ActivateGraphicParams(params);
-    builder.AddShape2d(7, m_shadow, true, Render::Target::Get2dFrustumDepth());
+    builder.AddShape2d(7, m_shadow, true, ViewDefinition2d::Get2dFrustumDepth());
     }
 
 /*---------------------------------------------------------------------------------**//**

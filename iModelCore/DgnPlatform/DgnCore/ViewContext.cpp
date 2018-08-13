@@ -1083,21 +1083,3 @@ Render::TexturePtr ViewContext::_CreateTexture(Render::ImageSourceCR source, Ren
     return tx;
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::TargetP ViewContext::_GetRenderTarget() const
-    {
-    auto vp = GetViewport();
-    return nullptr != vp ? vp->GetRenderTarget() : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::SystemP ViewContext::_GetRenderSystem() const
-    {
-    auto target = GetRenderTarget();
-    return nullptr != target ? &target->GetSystem() : nullptr;
-    }
-

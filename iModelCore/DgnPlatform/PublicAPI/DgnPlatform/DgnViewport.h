@@ -155,7 +155,6 @@ protected:
     DVec3d m_viewDeltaUnexpanded;       // view delta (from ViewController, unexpanded)
     RotMatrix m_rotMatrix;              // rotation matrix (from ViewController)
     ViewDefinition3d::Camera m_camera;
-    Render::TargetPtr m_renderTarget;
     Render::HiliteSettings m_hilite;
     DMap4d m_rootToView;
     DMap4d m_rootToNpc;
@@ -177,7 +176,7 @@ protected:
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT void SuspendViewport();
     DGNPLATFORM_EXPORT virtual void _AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const;
-    virtual double _GetCameraFrustumNearScaleLimit() const {return GetRenderTarget()->_GetCameraFrustumNearScaleLimit();}
+    virtual double _GetCameraFrustumNearScaleLimit() const { return 0.0; }
 
     virtual bool _IsVisible() const {return true;}
     virtual void _SynchViewTitle() {}
@@ -189,7 +188,6 @@ protected:
     DGNPLATFORM_EXPORT void SaveViewUndo();
     DGNPLATFORM_EXPORT void Animate();
 public:
-    DgnViewport(Render::TargetP target) {SetRenderTarget(target);}
     virtual ~DgnViewport() {DestroyViewport();}
 
     Byte GetFlashingTransparency() const {return m_flashingTransparency;}
@@ -198,8 +196,6 @@ public:
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
     DGNPLATFORM_EXPORT void SetFlashed(DgnElementId id, double duration);
-
-    DGNPLATFORM_EXPORT void SetRenderTarget(Render::TargetP target);
 
     double GetFrustumFraction() const {return m_frustFraction;}
     bool IsVisible() {return _IsVisible();}
@@ -221,7 +217,7 @@ public:
     bool Allow3dManipulations() const {return m_viewController->Allow3dManipulations();}
     void DrawToolGraphics(ViewContextR context, bool isPreUpdate);
     DPoint3dCP GetViewCmdTargetCenter() {return m_sync.IsValidRotatePoint() ? &m_viewCmdTargetCenter : nullptr;}
-    Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
+    Point2d GetScreenOrigin() const { return { 0, 0 }; }
     DGNPLATFORM_EXPORT double PixelsFromInches(double inches) const;
 
     void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps;}
@@ -323,14 +319,14 @@ public:
     DVec3d GetZVector() const {DVec3d v; GetRotMatrix().GetRow(v,2); return v;}
 
     //! Get the DgnViewport rectangle in DgnCoordSystem::View.
-    virtual BSIRect _GetViewRect() const {return m_renderTarget->GetViewRect();}
+    virtual BSIRect _GetViewRect() const { return BSIRect::From(0, 0, 1, 1); }
     BSIRect GetViewRect() const {return _GetViewRect();}
 
     //! Get the DgnCoordSystem::View coordinates of lower-left-back and upper-right-front corners of a viewport.
     DGNPLATFORM_EXPORT DRange3d GetViewCorners() const;
 
     //! Get the DPI scale which can be used for conversion between physical pixels and device-independent pixels (DIPs).
-    DVec2d GetDpiScale() const {return m_renderTarget->GetDpiScale();}
+    DVec2d GetDpiScale() const { return DVec2d::From(0.0, 0.0); }
 
     //! Get an 8-point frustum corresponding to the 8 corners of the DgnViewport in the specified coordinate system.
     //! There are two sets of corners that may be of interest.
@@ -455,7 +451,7 @@ public:
     //! Determine whether this DgnViewport is currently active. Viewports become "active" after they have
     //! been initialized and connected to an Render::Target.
     //! @return true if the DgnViewport is active.
-    bool IsActive() const {return m_viewController.IsValid() && m_renderTarget.IsValid();}
+    bool IsActive() const { return false; }
 
     //! Determine whether this DgnViewport currently has a camera enabled. In this context, the "camera" is on
     //! if the WorldToView transform contains a perspective transformation.
@@ -470,8 +466,6 @@ public:
     //! Determine whether this viewport is a 3d view.
     //! @remarks Will be true only for a physical views.
     bool Is3dView() const {return m_is3dView;}
-
-    Render::TargetP GetRenderTarget() const {return m_renderTarget.get();}
 
     //! Get the ViewController associated with this DgnViewport.
     ViewControllerCR GetViewController() const {return *m_viewController;}

@@ -412,9 +412,6 @@ protected:
 
     ViewController3dCP _ToView3d() const override final {return this;}
     ViewController3d(ViewDefinition3dCR definition) : T_Super(definition) {}
-
-    virtual void _AddModelLights(Render::SceneLightsR lights, Render::TargetR) const { }
-    void AddModelLights(Render::SceneLightsR lights, DgnModelId modelId, Render::TargetR) const;
 public:
     void SetDisplayStyle(DisplayStyle3dR style) { GetViewDefinition3dR().SetDisplayStyle3d(style); SetViewFlags(style.GetViewFlags()); }
     
@@ -422,7 +419,6 @@ public:
     ViewDefinition3dR GetViewDefinition3dR() {return static_cast<ViewDefinition3dR>(*m_definition);}
     DGNPLATFORM_EXPORT ViewportStatus TurnCameraOn(Angle lensAngle);
 
-    DGNPLATFORM_EXPORT Render::SceneLightsPtr GetLights() const;
     void ClearLights() {DgnDb::VerifyClientThread(); m_lights = nullptr;}
 };
 
@@ -559,7 +555,6 @@ protected:
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
-    DGNPLATFORM_EXPORT void _AddModelLights(Render::SceneLightsR, Render::TargetR) const override;
     DGNPLATFORM_EXPORT void _OnRenderFrame() override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
 
@@ -805,7 +800,6 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
 
 private:
     TileTree::RootPtr m_root;
-    DGNPLATFORM_EXPORT void _AddModelLights(Render::SceneLightsR, Render::TargetR) const override;
 protected:
     TemplateViewController3dCP _ToTemplateView3d() const override final {return this;}
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}

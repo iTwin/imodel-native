@@ -448,8 +448,8 @@ ViewportStatus DgnViewport::SetupFromViewController()
             AlignWithRootZ(); // make sure we're in a z Up view
 
             DRange3d  extents;
-            extents.low.z = -Render::Target::Get2dFrustumDepth();
-            extents.high.z = Render::Target::Get2dFrustumDepth();
+            extents.low.z = -ViewDefinition2d::Get2dFrustumDepth();
+            extents.high.z = ViewDefinition2d::Get2dFrustumDepth();
 
             double zMax = std::max(fabs(extents.low.z), fabs(extents.high.z));
             zMax = std::max(zMax, DgnUnits::OneMeter()); // make sure we have at least +-1m. Data may be purely planar
@@ -502,8 +502,8 @@ ViewportStatus DgnViewport::SetupFromViewController()
         {
         AlignWithRootZ();
 
-        delta.z  =  2. * Render::Target::Get2dFrustumDepth();
-        origin.z = -Render::Target::Get2dFrustumDepth();
+        delta.z  =  2. * ViewDefinition2d::Get2dFrustumDepth();
+        origin.z = -ViewDefinition2d::Get2dFrustumDepth();
         }
 
     m_viewOrg   = origin;
@@ -992,7 +992,7 @@ ColorDef DgnViewport::GetBackgroundColor() const
     ColorDef bgColor = m_viewController->GetViewDefinitionR().GetDisplayStyle().GetBackgroundColor();
 
     // If background color resolved to be black, and user wants inverted, we set background color to white
-    if (ColorDef::Black() == bgColor && GetRenderTarget()->_WantInvertBlackBackground())
+    if (ColorDef::Black() == bgColor && false/*GetRenderTarget()->_WantInvertBlackBackground()*/)
         bgColor = ColorDef::White();
 
     return bgColor;

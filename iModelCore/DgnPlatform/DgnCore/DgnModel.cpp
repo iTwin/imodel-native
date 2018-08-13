@@ -354,27 +354,6 @@ PhysicalModelPtr PhysicalModel::Create(DgnDbR db, DgnElementId modeledElementId)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialModel::AddLights(Render::SceneLightsR lights, Render::TargetR target) const
-    {
-    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT JsonProperties,Origin,Yaw,Pitch,Roll FROM " BIS_SCHEMA(BIS_CLASS_LightLocation) " WHERE Model.Id=? AND Enabled=1");
-    stmt->BindId(1, GetModelId());
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
-        DPoint3d origin = stmt->GetValuePoint3d(1);
-
-        DVec3d dir;
-        YawPitchRollAngles angles(Angle::FromDegrees(stmt->GetValueDouble(2)), Angle::FromDegrees(stmt->GetValueDouble(3)), Angle::FromDegrees(stmt->GetValueDouble(4)));
-        angles.ToRotMatrix().GetColumn(dir, 0);
-
-        Json::Value json = Json::Value::From(stmt->GetValueText(0));
-        if (!json.isNull())
-            lights.AddLight(target.CreateLight((Lighting::ParametersCR) json[Lighting::Location::json_light()], &dir, &origin));
-        }
-    }
-    
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialModel::OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents)

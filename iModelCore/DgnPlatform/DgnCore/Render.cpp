@@ -8,59 +8,6 @@
 #include "DgnPlatformInternal.h"
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Target::VerifyRenderThread() {DgnDb::VerifyRenderThread();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BSIRect Render::Target::SetAspectRatio(BSIRectCR requestedRect, double targetAspectRatio)
-    {
-    BSIRect rect = requestedRect;
-
-    if (targetAspectRatio >= 1.0)
-        {
-        double requestedWidth = rect.Width();
-        double requiredWidth = rect.Height() * targetAspectRatio;
-        double adj = requiredWidth - requestedWidth;
-        rect.Inset((int)(-adj/2.0), 0);
-        }
-    else
-        {
-        double requestedHeight = rect.Height();
-        double requiredHeight = rect.Width() / targetAspectRatio;
-        double adj = requiredHeight - requestedHeight;
-        rect.Inset(0, (int)(-adj/2.0));
-        }
-
-    return rect;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Target::DestroyNow()
-    {
-
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::SetRenderTarget(Target* newTarget)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    06/2016
-//---------------------------------------------------------------------------------------
-uint32_t DgnViewport::SetMinimumTargetFrameRate(uint32_t frameRate)
-    {
-    return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FrustumPlanes::Init(FrustumCR frustum)

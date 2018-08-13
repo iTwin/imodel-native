@@ -23,21 +23,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicProcessorSystem);
 DEFINE_REF_COUNTED_PTR(FakeGraphicBuilder);
 DEFINE_REF_COUNTED_PTR(GraphicProcessorSystem);
 
-#if defined(NEEDSWORK_TARGET)
-
-// We can't create a Target in DgnPlatform because 3 functions are exported from DgnView...tests that require a Target will need to move to DgnDisplay repo.
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   10/17
-//=======================================================================================
-struct FakeTarget : Target
-{
-protected:
-    FakeTarget(SystemR system, double tileSizeMod) : Target(system, tileSizeMod) { }
-};
-
-#endif
-
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   10/17
 //=======================================================================================
