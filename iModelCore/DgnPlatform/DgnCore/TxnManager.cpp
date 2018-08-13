@@ -2463,7 +2463,7 @@ void TxnManager::DumpTxns(bool verbose) const
     TxnManagerR txnMgr = m_dgndb.Txns();
 
     TxnManager::TxnId endTxnId = txnMgr.GetCurrentTxnId();
-    int64_t lastRebaseId = txnMgr.QueryLastRebaseId();
+    // unused - int64_t lastRebaseId = txnMgr.QueryLastRebaseId();
 
     TxnManager::TxnId startTxnId = txnMgr.QueryNextTxnId(TxnManager::TxnId(0));
     if (!startTxnId.IsValid() || startTxnId >= endTxnId)
