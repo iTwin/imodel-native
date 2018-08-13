@@ -208,10 +208,10 @@ SubEntityType GetSubEntityType() const {return _GetSubEntityType();}
 DRange3d GetSubEntityRange() const {return _GetSubEntityRange();}
 
 //! @return A GeometricPrimitive representing the geometry of this sub-entity.
-GeometricPrimitiveCPtr GetGeometry() const {return _GetGeometry();}
+DGNPLATFORM_EXPORT GeometricPrimitiveCPtr GetGeometry() const;
 
 //! @return A GeometricPrimitive for the parent of this sub-entity.
-GeometricPrimitiveCPtr GetParentGeometry() const {return _GetParentGeometry();}
+DGNPLATFORM_EXPORT GeometricPrimitiveCPtr GetParentGeometry() const;
 
 //! @return A Render::Graphic representing this sub-entity.
 Render::GraphicPtr GetGraphic(ViewContextR context) const {return _GetGraphic(context);}
