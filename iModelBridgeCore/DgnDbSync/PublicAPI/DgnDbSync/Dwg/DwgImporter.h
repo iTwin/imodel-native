@@ -247,6 +247,7 @@ struct DwgImporter
     friend struct LineStyleFactory;
     friend struct LayoutFactory;
     friend struct LayoutXrefFactory;
+    friend struct GroupFactory;
     friend struct ElementFactory;
     friend class DwgProtocalExtension;
     friend class DwgRasterImageExt;
@@ -927,6 +928,7 @@ protected:
     ECN::ECSchemaCP             m_attributeDefinitionSchema;
     T_ConstantBlockAttrdefList  m_constantBlockAttrdefList;
     DgnModelId                  m_sheetListModelId;
+    DgnModelId                  m_groupModelId;
     DefinitionModelPtr          m_geometryPartsModel;
     DefinitionModelPtr          m_jobDefinitionModel;
     T_BlockPartsMap             m_blockPartsMap;
@@ -936,6 +938,7 @@ private:
     void                    InitUncategorizedCategory ();
     void                    InitBusinessKeyCodeSpec ();
     BentleyStatus           InitSheetListModel ();
+    BentleyStatus           InitGroupModel ();
     DgnElementId            CreateModelElement (DwgDbBlockTableRecordCR block, Utf8StringCR modelName, DgnClassId modelId);
     void                    ScaleModelTransformBy (TransformR trans, DwgDbBlockTableRecordCR block);
     void                    AlignSheetToPaperOrigin (TransformR trans, DwgDbObjectIdCR layoutId);
@@ -1025,7 +1028,9 @@ protected:
     ResolvedModelMapping                GetRootModel () const { return  m_rootDwgModelMap; }
     ResolvedModelMapping                GetModelFromSyncInfo (DwgDbObjectIdCR id, DwgDbDatabaseR dwg, TransformCR trans);
     //! Find a cached DgnModel mapped from a DWG "model".  Only search the cached map, no attempt to search in the syncInfo.
-    ResolvedModelMapping                FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSyncInfo::ModelSourceType source);
+    DGNDBSYNC_EXPORT ResolvedModelMapping FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSyncInfo::ModelSourceType source);
+    //! Find a cached DgnModel mapped from an xRef or raster attachment.
+    DGNDBSYNC_EXPORT ResolvedModelMapping FindModel (DwgDbObjectIdCR atatchmentId, DwgSyncInfo::ModelSourceType sourceType);
     Utf8String                          RemapModelName (Utf8StringCR name, BeFileNameCR, Utf8StringCR suffix);
     DGNDBSYNC_EXPORT virtual Utf8String _ComputeModelName (DwgDbBlockTableRecordCR block, Utf8CP suffix = nullptr);
     DGNDBSYNC_EXPORT virtual DgnClassId _GetModelType (DwgDbBlockTableRecordCR block);
@@ -1098,12 +1103,26 @@ protected:
     DgnDbStatus     UpdateResults (ElementImportResults& results, DgnElementId existingElement);
     //! Insert or update imported DgnElement and source DWG entity in DwgSynchInfo
     BentleyStatus   InsertOrUpdateResultsInSyncInfo (ElementImportResults& results, IDwgChangeDetector::DetectionResults const& updatePlan, DwgDbEntityCR entity, DwgSyncInfo::DwgModelSyncInfoId const& modelSyncId);
+    //! Create a new or update an existing element from an entity based on the sync info
+    BentleyStatus   ImportOrUpdateEntity (ElementImportInputs& inputs);
 
     //! @name  Importing layouts
     //! @{
-    // A DWG layout is made up by a Paperspace block containing graphical entities and a sheet/plot definition.
+    //! A DWG layout is made up by a Paperspace block containing graphical entities and a sheet/plot definition.
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportLayouts ();
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportLayout (ResolvedModelMapping& modelMap, DwgDbBlockTableRecordR block, DwgDbLayoutCR layout);
+
+    //! @name  Importing groups
+    //! @{
+    //! After models and elements have been processed, groups are created as GenericGroup's by the default implementations.
+    //! Since each xRef attachment becomes a spatial DgnModel, a group from an xRef may refer elements across models.
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportGroups ();
+    //! Import dictionary groups.  This method is called for the root DWG file, then followed by each of its xRef files.
+    //! @param dwg Input root or xRef DWG file from which dictionary groups to be processed.
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportGroups (DwgDbDatabaseCR dwg);
+    //! Create anew or update existing group, which may be in a root or an xRef DWG file.
+    //! @param group Input dictionary group
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportGroup (DwgDbGroupCR group);
 
     //! @name Options and configs
     //! @{
@@ -1224,10 +1243,9 @@ public:
     DGNDBSYNC_EXPORT BentleyStatus      ImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a none database-resident entity in a desired block (must be a valid block)
     DGNDBSYNC_EXPORT BentleyStatus      ImportNewEntity (ElementImportResults& results, ElementImportInputs& inputs, DwgDbObjectIdCR desiredOwnerId, Utf8StringCR desiredCode);
-    //! Create a new or update an existing element from an entity based on the sync info
-    DGNDBSYNC_EXPORT BentleyStatus      ImportOrUpdateEntity (ElementImportInputs& inputs);
     DGNDBSYNC_EXPORT DgnCode            CreateCode (Utf8StringCR value) const;
     DGNDBSYNC_EXPORT uint32_t           GetEntitiesImported () const { return m_entitiesImported; }
+    DGNDBSYNC_EXPORT DgnModelId         GetGroupModelId () const { return m_groupModelId; }
     
     };  // DwgImporter
 

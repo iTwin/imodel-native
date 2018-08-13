@@ -2638,7 +2638,8 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
         {
         _GetChangeDetector()._OnElementSeen(*this, csearch.GetExistingElementId());
         conversionResults.m_mapping = csearch.m_v8ElementMapping;
-        UpdateResults(conversionResults, csearch.GetExistingElementId());
+        if (v8eh.GetElementType() != DgnV8Api::RASTER_FRAME_ELM)
+            UpdateResults(conversionResults, csearch.GetExistingElementId());
         }
     else
         {

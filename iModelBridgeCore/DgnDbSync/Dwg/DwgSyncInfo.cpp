@@ -962,7 +962,7 @@ BentleyStatus   DwgSyncInfo::FindModel (DwgSyncInfo::DwgModelMapping* mapping, D
     if (!modelId.IsValid())
         return  BSIERROR;
 
-    // Note: We can't call GetModelForUpdate at this stage, because it hasn't set up the m_dwgFiles array yet
+    // Note: We can't call DwgImporter::GetDwgModelFromSyncInfo at this stage, because it hasn't set up the m_dwgFiles array yet
     DwgSyncInfo::FileProvenance provenance (*modelId.GetDatabase(), *this, m_dwgImporter.GetCurrentIdPolicy());
     if (!provenance.FindByName(false))
         return BSIERROR;
@@ -1124,6 +1124,27 @@ bool DwgSyncInfo::TryFindElement(DgnElementId& elementId, DwgDbObjectCP obj, Dwg
 
     BeAssert(BE_SQLITE_DONE == stmt->Step() && "DwgSyncInfo::TryFindElement is expected to only return one row from the SELECT");
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DwgSyncInfo::FindElements (DgnElementIdSet& ids, DwgDbObjectIdCR objectId) const
+    {
+    // query all elements mapped from input DWG object:
+    auto dwg = objectId.GetDatabase ();
+    if (nullptr == dwg)
+        return  false;
+
+    ElementIterator elemsInFile(*m_dgndb, "DwgFileId=? AND DwgObjectId=?");
+
+    elemsInFile.GetStatement()->BindInt64 (1, DwgFileId::GetFrom(*dwg).GetValue());
+    elemsInFile.GetStatement()->BindInt64 (2, objectId.ToUInt64());
+
+    for (auto elem : elemsInFile)
+        ids.insert (elem.GetElementId());
+
+    return  !ids.empty();
     }
 
 /*---------------------------------------------------------------------------------**//**
