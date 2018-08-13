@@ -17,7 +17,7 @@
 #define STRUCT_OFFSET(s, m)  size_t (&(((s *)0)->m))
 #else
 #include <stddef.h>
-#define STRUCT_OFFSET (s, m)  offsetof (s, m)
+#define STRUCT_OFFSET(s, m)  offsetof (s, m)
 #endif
 
 /*-------------------------------------------------------------------+
