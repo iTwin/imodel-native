@@ -119,6 +119,33 @@ void   DwgImporter::GetOrCreateJobPartitions ()
     this->InitUncategorizedCategory ();
     this->InitBusinessKeyCodeSpec ();
     this->InitSheetListModel ();
+    this->InitGroupModel ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DwgImporter::InitGroupModel ()
+    {
+    static Utf8CP s_partitionName = "Imported Groups";
+    DgnCode partitionCode = GroupInformationPartition::CreateCode(GetJobSubject(), s_partitionName);
+    DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
+    m_groupModelId = DgnModelId(partitionId.GetValueUnchecked());
+    
+    if (m_groupModelId.IsValid())
+        return BentleyStatus::BSISUCCESS;
+
+    GroupInformationPartitionPtr ed = GroupInformationPartition::Create(GetJobSubject(), s_partitionName);
+    GroupInformationPartitionCPtr partition = ed->InsertT<GroupInformationPartition>();
+    if (!partition.IsValid())
+        return BentleyStatus::BSIERROR;
+
+    GenericGroupModelPtr groupModel = GenericGroupModel::CreateAndInsert(*partition);
+    if (!groupModel.IsValid())
+        return BentleyStatus::BSIERROR;
+
+    m_groupModelId = groupModel->GetModelId();
+    return BentleyStatus::BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -388,6 +415,25 @@ ResolvedModelMapping   DwgImporter::FindModel (DwgDbObjectIdCR dwgModelId, Trans
         {
         // a DgnModel exists, check transform & source type!
         if (modelMap->GetTransform().IsEqual(trans) && modelMap->GetMapping().GetSourceType() == sourceType) 
+            return *modelMap;
+        }
+
+    return  ResolvedModelMapping();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedModelMapping   DwgImporter::FindModel (DwgDbObjectIdCR attachmentId, DwgSyncInfo::ModelSourceType sourceType)
+    {
+    // find cached model mapping by an xRef or raster attachment ID:
+    ResolvedModelMapping    unresolved (attachmentId);
+
+    auto    range = m_dwgModelMap.equal_range (unresolved);
+    for (auto modelMap = range.first; modelMap != range.second; ++modelMap)
+        {
+        // a DgnModel exists, check source type!
+        if (modelMap->GetMapping().GetSourceType() == sourceType) 
             return *modelMap;
         }
 
@@ -1913,6 +1959,13 @@ BentleyStatus   DwgImporter::Process ()
         return BSIERROR;
 
     DwgImportLogging::LogPerformance(timer, "Import Layouts");
+
+    timer.Start();
+    this->_ImportGroups ();
+    if (this->WasAborted())
+        return BSIERROR;
+
+    DwgImportLogging::LogPerformance(timer, "Import Groups");
 
     timer.Start ();
     this->_FinishImport ();

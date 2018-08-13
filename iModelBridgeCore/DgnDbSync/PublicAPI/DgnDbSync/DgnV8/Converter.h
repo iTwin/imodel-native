@@ -1172,7 +1172,6 @@ public:
     //! @{
     BentleyStatus GenerateThumbnails();
     BentleyStatus GenerateRealityModelTilesets();
-    BentleyStatus GenerateWebMercatorModel();
 
     bool ThumbnailUpdateRequired(ViewDefinition const& view);
 
@@ -2375,8 +2374,6 @@ public:
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialLevelTable(DgnV8FileR v8file);
     DGNDBSYNC_EXPORT void _OnUpdateLevel(DgnV8Api::LevelHandle const& level, DgnCategoryId cat, DgnV8FileR file) override;
     //! @}
-
-    // Misc
 };
 
 //=======================================================================================

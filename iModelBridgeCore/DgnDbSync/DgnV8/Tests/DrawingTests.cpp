@@ -983,7 +983,7 @@ TEST_F(DrawingTests, MultipleSheets_WithNoAttachedModels)
     if (true)
        {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 3, 3);
+        countModels(*db, 3, 2);
         ASSERT_EQ(3 , db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Sheet)).BuildIdList<DgnElementId>().size());
         }
     }
@@ -1037,7 +1037,7 @@ TEST_F(DrawingTests, Attachments_With2dRootModel)
     if (true)
        {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 4, 2);
+        countModels(*db, 4, 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 2);
@@ -1092,7 +1092,7 @@ TEST_F(DrawingTests, Cyclic2dModels)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         db->Schemas().CreateClassViewsInDb();
-        countModels(*db, 2, 2);
+        countModels(*db, 2, 1);
         ASSERT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
         ASSERT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
         }

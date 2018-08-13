@@ -66,6 +66,7 @@ public:
     DWGDB_EXPORT DwgDbObjectId      GetRegAppTableId () const;
     DWGDB_EXPORT DwgDbObjectId      GetTextStyleTableId () const;
     DWGDB_EXPORT DwgDbObjectId      GetViewportTableId () const;
+    DWGDB_EXPORT DwgDbObjectId      GetGroupDictionaryId () const;
     DWGDB_EXPORT DwgString          GetFileName () const;
     DWGDB_EXPORT double             GetANGBASE () const;
     DWGDB_EXPORT bool               GetANGDIR () const;

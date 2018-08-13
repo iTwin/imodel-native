@@ -216,7 +216,7 @@ bool            DwgImportHost::FindXrefFile (WStringR outFile, WCharCP inFile, D
         }
 
     // if looks like a standard relative path, try resolving it to the full path:
-    if (checkFile.StartsWith(L".."))
+    if (checkFile.StartsWith(L"..") || checkFile.StartsWith(L".\\"))
         {
         BeFileName  resolved;
         if (BSISUCCESS == BeFileName::ResolveRelativePath(resolved, inFile, basePath.c_str())&& resolved.DoesPathExist())
