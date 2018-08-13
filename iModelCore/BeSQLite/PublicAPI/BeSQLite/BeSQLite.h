@@ -2384,7 +2384,8 @@ protected:
     public:
         void Add(AppData::Key const& key, AppData* data) { BeMutexHolder lock(m_mutex); return AddInternal(key, data); }
         StatusInt Drop(AppData::Key const& key);
-        AppDataPtr Find(AppData::Key const& key) { BeMutexHolder lock(m_mutex); return FindInternal(key); }
+        AppData* FindRaw(AppData::Key const& key) { BeMutexHolder lock(m_mutex); return FindInternal(key); }
+        AppDataPtr Find(AppData::Key const& key) { return FindRaw(key); }
         template<typename T> AppDataPtr FindOrAdd(AppData::Key const& key, T createAppData)
             {
             BeMutexHolder lock(m_mutex);
@@ -2892,6 +2893,13 @@ public:
     //! @return A pointer to the AppData object with \c key. nullptr if not found.
     //! @note This function is thread-safe.
     BE_SQLITE_EXPORT AppDataPtr FindAppData(AppData::Key const& key) const;
+
+    //! @private
+    //! This exists because folks have dumb circular dependencies wherein during destruction of an AppData (ref-count == 0),
+    //! other objects owned by the AppData want to look it up again in the app data collection. If it is returned as a ref-counted ptr
+    //! it will be double-freed.
+    //! See PriorityAppData in ECPresentation.
+    AppData* FindRawAppData(AppData::Key const& key) const { return m_appData.FindRaw(key); }
 
     //! Search for the Db::AppData on this Db with \c key. If no such AppData yet exists, the supplied \c createAppData function
     //! will be invoked to create it, and the returned AppData* will be added to the Db.
