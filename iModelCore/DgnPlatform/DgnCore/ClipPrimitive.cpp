@@ -559,7 +559,7 @@ static void parseConcavePolygonPlanes(ClipPlaneSetR planeSet, DPoint2dCP pVertic
 
     bvector<bvector<DPoint3d>> loops;
     bvector<bvector<bool>> isBoundary;
-    vu_splitToConvexParts(point3d, 0, loops, &isBoundary);
+    vu_splitToConvexParts(point3d, 1, loops, &isBoundary);
     for (size_t i = 0; i < loops.size (); i++)
         addPlaneSet (loops[i], isBoundary[i], params);
 

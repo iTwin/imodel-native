@@ -37,6 +37,8 @@ void ViewFlags::FromJson(JsonValueCR val)
     m_monochrome = val[json_monochrome()].asBool();
     m_edgeMask = val[json_edgeMask()].asUInt();
     m_hLineMaterialColors = val[json_hlMatColors()].asBool();
+    m_animate = val[json_animate()].asBool();
+    m_backgroundMap = val[json_backgroundMap()].asBool();
 
     // Validate render mode. V8 converter only made sure to set everything above Phong to Smooth...
     uint32_t renderModeValue = val[json_renderMode()].asUInt();
@@ -75,6 +77,8 @@ Json::Value ViewFlags::ToJson() const
     if (!m_noClipVolume) val[json_clipVol()] = true;
     if (m_hLineMaterialColors) val[json_hlMatColors()] = true;
     if (m_monochrome) val[json_monochrome()] = true;
+    if (m_backgroundMap) val[json_backgroundMap()] = true;
+    if (m_animate) val[json_animate()] = true;
     if (m_edgeMask!=0) val[json_edgeMask()] = m_edgeMask;
 
     val[json_renderMode()] = (uint8_t) m_renderMode;
@@ -112,6 +116,7 @@ void ViewFlagsOverrides::Apply(ViewFlags& base) const
     if (IsPresent(kHiddenEdges)) base.SetShowHiddenEdges(m_values.ShowHiddenEdges());
     if (IsPresent(kShadows)) base.SetShowShadows(m_values.ShowShadows());
     if (IsPresent(kClipVolume)) base.SetShowClipVolume(m_values.ShowClipVolume());
+    if (IsPresent(kBackgroundMap)) base.SetShowClipVolume(m_values.ShowBackgroundMap());
     if (IsPresent(kConstructions)) base.SetShowConstructions(m_values.ShowConstructions());
     if (IsPresent(kMonochrome)) base.SetMonochrome(m_values.IsMonochrome());
     if (IsPresent(kGeometryMap)) base.SetIgnoreGeometryMap(m_values.IgnoreGeometryMap());

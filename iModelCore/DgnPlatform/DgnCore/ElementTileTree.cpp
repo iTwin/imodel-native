@@ -3258,7 +3258,8 @@ Utf8CP TileCache::GetCurrentVersion()
     //  9: We were failing to align most chunks of the binary data. In JavaScript this produces exceptions when trying to read unaligned data.
     //  10: Change tile cache key such that if tile has no 'zoom factor', it is written as 0, not 1.
     //  11: Added width + height to textures.
-    return "11";
+    //  12: Fixed display priority range in 2d models
+    return "12";
     }
 
 /*---------------------------------------------------------------------------------**//**

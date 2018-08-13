@@ -749,10 +749,12 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
         if (HasDataChanges()) // did we have any indirect data changes captured in the tracker?
             {
-            UndoChangeSet indirectChanges;
-            indirectChanges.FromChangeTrack(*this);
+            UndoChangeSet indirectDataChangeSet;
+            indirectDataChangeSet.FromChangeTrack(*this);
             Restart();
-            dataChangeSet.ConcatenateWith(indirectChanges); // combine direct and indirect changes into a single dataChangeSet
+            Changes indirectChanges(indirectDataChangeSet);
+            AddChanges(indirectChanges);
+            dataChangeSet.ConcatenateWith(indirectDataChangeSet); // combine direct and indirect changes into a single dataChangeSet
             }
 
         if (GetDgnDb().BriefcaseManager().IsBulkOperation() && (RepositoryStatus::Success != GetDgnDb().BriefcaseManager().EndBulkOperation().Result()))
@@ -1886,7 +1888,7 @@ void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelI
     m_stmt.BindId(Column::ECClass, elementClassId);
 
     auto rc = m_stmt.Step();
-    BeAssert(rc==BE_SQLITE_DONE);
+    //BeAssert(rc==BE_SQLITE_DONE); // This assert may fail if element was inserted before a call to PropagateChanges and updated after that.
     UNUSED_VARIABLE(rc);
 
     m_stmt.Reset();
@@ -2004,7 +2006,6 @@ void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, Chan
     m_stmt.BindId(2, mid);
     m_stmt.BindInt(3, (int) changeType);
     auto rc = m_stmt.Step();
-    BeAssert(rc==BE_SQLITE_DONE);
     UNUSED_VARIABLE(rc);
 
     m_stmt.Reset();

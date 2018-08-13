@@ -235,6 +235,9 @@ protected:
     bool IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const;
 
     virtual void _GetCustomMetadata(Utf8StringR name, Json::Value& data) const {};
+    virtual bool _WantDebugRangeGraphics() const { return false; }
+    DGNPLATFORM_EXPORT void AddDebugRangeGraphics(DrawArgsR args) const;
+
 public:
     Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_depth(nullptr==parent ? 0 : parent->GetDepth()+1), m_loadStatus(LoadStatus::NotLoaded) {}
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
@@ -982,14 +985,12 @@ struct Tile : TileTree::Tile
 
 protected:
     double m_maxDiameter;
-    double m_factor=0.5;
+    double m_factor=1.0;
 
     TriMeshList m_meshes;
 
     Tile(Root& root, Tile const* parent, double maxDiameter=0.0) : T_Super(root, parent), m_maxDiameter(maxDiameter) { }
 
-    virtual bool _WantDebugRangeGraphics() const { return false; }
-    DGNPLATFORM_EXPORT void AddDebugRangeGraphics(DrawArgsR args) const;
 
     bool _HasGraphics() const override { return m_meshes.end() != std::find_if(m_meshes.begin(), m_meshes.end(), [](TriMeshPtr const& arg) { return arg->HasGraphics(); }); }
     void _Invalidate() override { BeAssert(false); }

@@ -44,11 +44,27 @@ struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
     friend struct ViewElementHandler::ViewDisplayStyle;
     friend struct ViewDefinition;
 
+public:
+    //! The background map.  Generally supplied through a web mercator provider.
+    struct BackgroundMap
+    {
+        Utf8String  m_provider;     // Provider name (bing, mapbox etc.).
+        double      m_groundBias = 0.0;
+        double      m_transparency = 0.0;
+        Utf8String  m_providerData;
+        Utf8String  m_bingProvider;
+
+        bool IsValid() const { return !m_provider.empty(); }
+        Json::Value   ToJson() const;
+        void FromJson(JsonValueCR value);  
+    };
+
 protected:
     mutable BeMutex m_mutex;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
     Render::ViewFlags m_viewFlags;
+    BackgroundMap m_backgroundMap;
 
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
@@ -72,6 +88,7 @@ public:
     BE_JSON_NAME(monochromeColor);
     BE_JSON_NAME(subCategory);
     BE_JSON_NAME(subCategoryOvr);
+    BE_JSON_NAME(backgroundMap);
 
     DisplayStyle2dCP ToDisplayStyle2d() const {return _ToDisplayStyle2d();}
     DisplayStyle2dP ToDisplayStyle2dP() {return const_cast<DisplayStyle2dP>(_ToDisplayStyle2d());}
@@ -128,6 +145,10 @@ public:
     //! is not overridden, this will return the default appearance of the SubCategory.
     DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 
+    //! Get the background map.
+    BackgroundMap const& GetBackgroundMap() const { return m_backgroundMap; }
+    void SetBackgroundMap(BackgroundMap const& backgroundMap) { m_backgroundMap = backgroundMap; }
+
     //! Create a DgnCode for a DisplayStyle given a name that is meant to be unique within the scope of the specified DefinitionModel
     static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_DisplayStyle, scope, name);}
 
@@ -177,18 +198,33 @@ public:
             ColorDef m_aboveColor;      //!< the color to draw the ground plane if the view shows the ground from above
             ColorDef m_belowColor;      //!< the color to draw the ground plane if the view shows the ground from below
         };
+            
         struct SkyBox
         {
+            struct Image
+            {
+                enum class Type
+                {
+                    None,
+                    Spherical,
+                    Cylindrical,
+                };
+
+                DgnTextureId    m_textureId;
+                Type            m_type = Type::None;
+            };
+
+            ColorDef m_zenithColor; //!< if no image, the color of the zenith part of the sky gradient (shown when looking straight up.)
+            ColorDef m_nadirColor;  //!< if no image, the color of the nadir part of the ground gradient (shown when looking straight down.)
+            ColorDef m_groundColor; //!< if no image, the color of the ground part of the ground gradient
+            ColorDef m_skyColor;    //!< if no image, the color of the sky part of the sky gradient
+            double m_groundExponent=4.0; //!< if no image, the cutoff between ground and nadir
+            double m_skyExponent=4.0;    //!< if no image, the cutoff between sky and zenith
+            Image m_image;
             bool m_enabled = false;
             bool m_twoColor = false;
-            Utf8String m_jpegFile;  //!< the name of a jpeg file with a spherical skybox
-            ColorDef m_zenithColor; //!< if no jpeg file, the color of the zenith part of the sky gradient (shown when looking straight up.)
-            ColorDef m_nadirColor;  //!< if no jpeg file, the color of the nadir part of the ground gradient (shown when looking straight down.)
-            ColorDef m_groundColor; //!< if no jpeg file, the color of the ground part of the ground gradient
-            ColorDef m_skyColor;    //!< if no jpeg file, the color of the sky part of the sky gradient
-            double m_groundExponent=4.0; //!< if no jpeg file, the cutoff between ground and nadir
-            double m_skyExponent=4.0;    //!< if no jpeg file, the cutoff between sky and zenith
         };
+       
         GroundPlane m_groundPlane;
         SkyBox m_skybox;
 
@@ -197,6 +233,7 @@ public:
 
         DGNPLATFORM_EXPORT void Initialize();
     };
+
 
 protected:
     EnvironmentDisplay m_environment;
@@ -395,7 +432,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition : DefinitionElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ViewDefinition, DefinitionElement);
     friend struct ViewElementHandler::View;
-    friend struct ViewController;
+    friend struct ViewController;                
     friend struct DgnViewport;
 
 public:

@@ -1478,7 +1478,11 @@ void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     BeAssert(IsReady());
     BeAssert(_HasGraphics()); // _SelectTiles() checks this - does not select tiles with no graphics.
     if (_HasGraphics())
+        {
         args.m_graphics.Add(*m_graphic);
+        if (_WantDebugRangeGraphics())
+            AddDebugRangeGraphics(args);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2300,7 +2304,7 @@ Tile::SelectParent TriMeshTree::Tile::_SelectTiles(bvector<TileTree::TileCPtr>& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TriMeshTree::Tile::AddDebugRangeGraphics(DrawArgsR args) const
+void Tile::AddDebugRangeGraphics(DrawArgsR args) const
     {
     GraphicParams params;
     params.SetLineColor(ColorDef::Red());
