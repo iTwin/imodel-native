@@ -198,7 +198,7 @@ DgnElementCPtr DgnModel::GetModeledElement() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::AddAppData(AppData::Key const& key, AppData* obj)
+void DgnModel::AddAppDataInternal(AppData::Key const& key, AppData* obj)
     {
     auto entry = m_appData.Insert(&key, obj);
     if (entry.second)
@@ -213,16 +213,17 @@ void DgnModel::AddAppData(AppData::Key const& key, AppData* obj)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt DgnModel::DropAppData(AppData::Key const& key)
     {
-    return 0==m_appData.erase(&key) ? ERROR : SUCCESS;
+    BeMutexHolder lock(m_mutex);
+    return 0 == m_appData.erase(&key) ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::AppData* DgnModel::FindAppData(AppData::Key const& key) const
+DgnModel::AppData* DgnModel::FindAppDataInternal(AppData::Key const& key) const
     {
     auto entry = m_appData.find(&key);
-    return entry==m_appData.end() ? nullptr : entry->second.get();
+    return entry == m_appData.end() ? nullptr : entry->second.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -230,6 +231,7 @@ DgnModel::AppData* DgnModel::FindAppData(AppData::Key const& key) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<class T> void DgnModel::CallAppData(T const& caller) const
     {
+    BeMutexHolder lock(m_mutex);
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
         {
         if (DgnModel::AppData::DropMe::Yes == caller(*entry->second, *this))
@@ -245,6 +247,7 @@ template<class T> void DgnModel::CallAppData(T const& caller) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::~DgnModel()
     {
+    BeMutexHolder lock(m_mutex);
     m_appData.clear();
     }
 
@@ -850,6 +853,7 @@ DgnDbStatus DgnModel::_OnUpdate()
     if (modelHandler.GetDomain().IsReadonly())
         return DgnDbStatus::ReadOnlyDomain;
 
+    BeMutexHolder lock(m_mutex);
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnUpdate(*this);
@@ -1060,6 +1064,7 @@ DgnDbStatus DgnModel::_OnDelete()
     if (DgnDbStatus::Success != stat)
         return stat;
 
+    BeMutexHolder lock(m_mutex);
     for (auto appdata : m_appData)
         appdata.second->_OnDelete(*this);
 

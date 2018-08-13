@@ -157,6 +157,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         virtual DropMe _OnDeleted(DgnModelCR model) {return DropMe::Yes;}
     };
 
+    using AppDataPtr = RefCountedPtr<AppData>;
+
     //=======================================================================================
     //! Parameters to create a new instances of a DgnModel.
     //! @ingroup GROUP_DgnModel
@@ -230,7 +232,11 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     BE_PROP_NAME(IsTemplate)
 
 private:
+    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
+
     template<class T> void CallAppData(T const& caller) const;
+    DGNPLATFORM_EXPORT void AddAppDataInternal(AppData::Key const& key, AppData* data);
+    DGNPLATFORM_EXPORT AppData* FindAppDataInternal(AppData::Key const& key) const;
 
     void UnloadRangeIndex();
     DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
@@ -244,11 +250,10 @@ protected:
     DgnModelId m_parentModelId;
     DgnElementId m_modeledElementId;
     DgnClassId m_modeledElementRelClassId;
-    BeMutex m_mutex;
+    mutable BeMutex m_mutex;
     bool m_isPrivate;
     bool m_isTemplate;
     mutable bool m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
-    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     ECN::AdHocJsonValue m_jsonProperties;
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
@@ -614,7 +619,23 @@ public:
     //! Add (or replace) AppData on this DgnModel.
     //! @note It is illegal to add or remove AppData from within
     //! any of the AppData "_OnXxx" methods. If an entry with \a key already exists, it will be dropped and replaced with \a appData.
-    DGNPLATFORM_EXPORT void AddAppData(AppData::Key const& key, AppData* appData);
+    void AddAppData(AppData::Key const& key, AppData* appData) { BeMutexHolder lock(m_mutex); return AddAppDataInternal(key, appData); }
+
+    //! Find or add ApPData on this DgnModel.
+    //! If AppData with the specified key already exists, it is returned.
+    //! Otherwise the supplied function is invoked to create new AppData which will be added and returned.
+    //! @param[in] key The key identifying the type of AppData.
+    //! @params[in] createAppData a callable taking no arguments and returning an AppData*, invoked if no AppData corresponding to the supplied key currently exists on the model.
+    //! @return the AppData corresponding to the supplied key.
+    template<typename T> AppDataPtr FindOrAddAppData(AppData::Key const& key, T createAppData)
+        {
+        BeMutexHolder lock(m_mutex);
+        AppData* data = FindAppDataInternal(key);
+        if (nullptr == data)
+            AddAppDataInternal(key, data = createAppData());
+
+        return data;
+        }
 
     //! Remove AppData from this DgnModel
     //! @return SUCCESS if appData with key is found and was dropped.
@@ -623,7 +644,7 @@ public:
 
     //! Search for AppData on this model by AppData::Key.
     //! @return the AppData with \a key, or nullptr.
-    DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
+    AppDataPtr FindAppData(AppData::Key const& key) const { BeMutexHolder lock(m_mutex); return FindAppDataInternal(key); }
     /** @} */
 
     //! Make a copy of this DgnModel with the same DgnClassId and Properties.
