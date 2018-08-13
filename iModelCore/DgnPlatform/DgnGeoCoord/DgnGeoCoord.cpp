@@ -4975,11 +4975,11 @@ static BeSQLite::Db::AppData::Key const& GetKey()
 DgnGCSP         DgnGCS::FromProject(DgnDbR project)
     {
     // See if we already have it cached
-    auto saved = (DgnGCSAppData*) project.FindAppData(DgnGCSAppData::GetKey());
+    auto saved = (DgnGCSAppData*) project.FindAppData(DgnGCSAppData::GetKey()).get();
     if (NULL != saved)
         return saved->m_gcs.get();
 
-    if (NULL != project.FindAppData(NotFoundAppData::GetKey()))
+    if (NULL != project.FindAppData(NotFoundAppData::GetKey()).get())
         return NULL;
 
     // Make sure GCS is initialized
