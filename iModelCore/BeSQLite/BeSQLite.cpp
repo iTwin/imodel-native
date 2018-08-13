@@ -2421,7 +2421,7 @@ Db::AppData* Db::AppDataCollection::FindInternal(AppData::Key const& key)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-Db::AppData* Db::FindAppData(AppData::Key const& key) const
+Db::AppDataPtr Db::FindAppData(AppData::Key const& key) const
     {
     return m_appData.Find(key);
     }
