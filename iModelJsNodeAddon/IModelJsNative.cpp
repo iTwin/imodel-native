@@ -1683,13 +1683,11 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         uint64_t subId = propsJson[JsInterop::json_subId()].asUInt64();
 
         DbResult stat;
-        Napi::Value blobVal = info[2];
         Utf8String strbuf;
         Utf8StringCP strDataP = nullptr;
         void const* value = nullptr;
         uint32_t propsize = 0;
 
-        Napi::Value strVal = info[1];
         if (info[1].IsString())
             {
             strbuf = info[1].ToString().Utf8Value().c_str();
