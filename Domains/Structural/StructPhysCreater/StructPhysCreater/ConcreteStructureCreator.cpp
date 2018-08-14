@@ -2,7 +2,7 @@
 |
 |     $Source: StructPhysCreater/StructPhysCreater/ConcreteStructureCreator.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -64,7 +64,7 @@ PhysicalProperties* ConcreteStructureCreator::GetWallProperties()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus ConcreteStructureCreator::CreateSlabs(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
+BentleyStatus ConcreteStructureCreator::CreateSlabs(BentleyApi::Structural::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
     {
     Dgn::PhysicalElementPtr element;
     PhysicalProperties* properties;
@@ -72,7 +72,7 @@ BentleyStatus ConcreteStructureCreator::CreateSlabs(StructuralPhysical::Structur
     Transform linearMatrix;
     Dgn::DgnDbStatus status;
 
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetSlabProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -92,7 +92,7 @@ BentleyStatus ConcreteStructureCreator::CreateSlabs(StructuralPhysical::Structur
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus ConcreteStructureCreator::CreateWalls(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
+BentleyStatus ConcreteStructureCreator::CreateWalls(BentleyApi::Structural::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
     {
     Dgn::PhysicalElementPtr element;
     PhysicalProperties* properties;
@@ -100,7 +100,7 @@ BentleyStatus ConcreteStructureCreator::CreateWalls(StructuralPhysical::Structur
     Transform linearMatrix;
     Dgn::DgnDbStatus status;
 
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetWallProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -114,7 +114,7 @@ BentleyStatus ConcreteStructureCreator::CreateWalls(StructuralPhysical::Structur
         return BentleyStatus::ERROR;
         }
 
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetWallProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();

@@ -2,7 +2,7 @@
 |
 |     $Source: StructPhysCreater/StructPhysCreater/SteelStructureCreator.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -73,7 +73,7 @@ PhysicalProperties* SteelStructureCreator::GetBraceProperties()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus SteelStructureCreator::CreateGussetPlates(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
+BentleyStatus SteelStructureCreator::CreateGussetPlates(BentleyApi::Structural::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
     {
     Dgn::PhysicalElementPtr element;
     PhysicalProperties* properties;
@@ -82,7 +82,7 @@ BentleyStatus SteelStructureCreator::CreateGussetPlates(StructuralPhysical::Stru
     Dgn::DgnDbStatus status;
 
     // Gusset Plate Large
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetGussetPlateLargeProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -100,7 +100,7 @@ BentleyStatus SteelStructureCreator::CreateGussetPlates(StructuralPhysical::Stru
         }
 
     // Gusset Plate Small
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetGussetPlateSmallProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -118,7 +118,7 @@ BentleyStatus SteelStructureCreator::CreateGussetPlates(StructuralPhysical::Stru
         }
 
     // Gusset Plate Small
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetGussetPlateSmallProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -136,7 +136,7 @@ BentleyStatus SteelStructureCreator::CreateGussetPlates(StructuralPhysical::Stru
         }
 
     // Gusset Plate Large
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetGussetPlateLargeProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -154,7 +154,7 @@ BentleyStatus SteelStructureCreator::CreateGussetPlates(StructuralPhysical::Stru
         }
 
     // Gusset Plate Small
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetGussetPlateSmallProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -172,7 +172,7 @@ BentleyStatus SteelStructureCreator::CreateGussetPlates(StructuralPhysical::Stru
         }
 
     // Gusset Plate Small
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetGussetPlateSmallProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -195,7 +195,7 @@ BentleyStatus SteelStructureCreator::CreateGussetPlates(StructuralPhysical::Stru
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus SteelStructureCreator::CreateBraces(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
+BentleyStatus SteelStructureCreator::CreateBraces(BentleyApi::Structural::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
     {
     Dgn::PhysicalElementPtr element;
     PhysicalProperties* properties;
@@ -203,7 +203,7 @@ BentleyStatus SteelStructureCreator::CreateBraces(StructuralPhysical::Structural
     Transform linearMatrix;
     Dgn::DgnDbStatus status;
 
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetBraceProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -220,7 +220,7 @@ BentleyStatus SteelStructureCreator::CreateBraces(StructuralPhysical::Structural
         return BentleyStatus::ERROR;
         }
 
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetBraceProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -237,7 +237,7 @@ BentleyStatus SteelStructureCreator::CreateBraces(StructuralPhysical::Structural
         return BentleyStatus::ERROR;
         }
 
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetBraceProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -254,7 +254,7 @@ BentleyStatus SteelStructureCreator::CreateBraces(StructuralPhysical::Structural
         return BentleyStatus::ERROR;
         }
 
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetBraceProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();

@@ -102,7 +102,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions);BENTLEY_WIN32;</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(OUTROOT)Winx64\BuildContexts\StructuralDomains\VendorAPI;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\PublicAPI</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OUTROOT)Winx64\BuildContexts\StructuralDomains\VendorAPI;$(SrcRoot)DgnDomains\Structural\PublicAPI\;$(SrcRoot)Bentley\PublicAPI\;$(SrcRoot)DgnPlatform\PublicAPI\;$(SrcRoot)ECDb\PublicAPI\;$(SrcRoot)ecobjects\PublicApi\;$(SrcRoot)BeSQLite\PublicAPI\;$(SrcRoot)libsrc\jsoncpp\include\;$(SrcRoot)libsrc\jsoncpp\PublicAPI\;$(SrcRoot)Units\PublicAPI\;$(SrcRoot)BeHttp\PublicAPI\;$(SrcRoot)GeomLibs\PublicAPI\;$(SrcRoot)nuget\DgnDb_1_6_ForUpgraderNuget_x64.6.1.6.26\native\include\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>

@@ -2,7 +2,7 @@
 |
 |     $Source: StructPhysCreater/StructPhysCreater/SteelStructureCreator.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -33,7 +33,7 @@ struct SteelStructureCreator : SampleStructureCreator
     public:
         SteelStructureCreator() : SampleStructureCreator(STRUCT_ORIGIN_X, STRUCT_ORIGIN_Y, STRUCT_ORIGIN_Z) { }
 
-        BentleyStatus SteelStructureCreator::CreateGussetPlates(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
-        BentleyStatus SteelStructureCreator::CreateBraces(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
+        BentleyStatus SteelStructureCreator::CreateGussetPlates(BentleyApi::Structural::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
+        BentleyStatus SteelStructureCreator::CreateBraces(BentleyApi::Structural::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
     };
 

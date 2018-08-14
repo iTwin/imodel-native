@@ -2,7 +2,7 @@
 |
 |     $Source: StructPhysCreater/StructPhysCreater/StructPhysCreator.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -196,20 +196,20 @@ Dgn::DgnDbPtr StructPhysCreator::CreateDgnDb(BeFileNameCR outputFileName)
 //---------------------------------------------------------------------------------------
 BentleyStatus StructPhysCreator::DoUpdateSchema(Dgn::DgnDbPtr db)
     {
-    StructuralPhysical::StructuralPhysicalModelCPtr model = StructuralDomain::StructuralDomainUtilities::GetStructuralPhyicalModel(STRUCTURAL_MODEL_NAME, *db);
+    BentleyApi::Structural::StructuralPhysicalModelCPtr model = BentleyApi::Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(STRUCTURAL_MODEL_NAME, *db);
 
-    ECN::ECSchemaPtr dynSchema = StructuralDomain::StructuralDomainUtilities::GetUpdateableSchema(model);
+    ECN::ECSchemaPtr dynSchema = BentleyApi::Structural::StructuralDomainUtilities::GetUpdateableSchema(model);
 
     if (!dynSchema.IsValid())
         return BentleyStatus::ERROR;
 
-    //ECN::ECEntityClassP myClass = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElementEntityClass(db, dynSchema, "MyRctClass");
+    //ECN::ECEntityClassP myClass = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElementEntityClass(db, dynSchema, "MyRctClass");
 
     //ECN::PrimitiveECPropertyP myProp;
 
     //myClass->CreatePrimitiveProperty(myProp, "MyStringProp");
 
-    Dgn::SchemaStatus schemaStatus = StructuralDomain::StructuralDomainUtilities::UpdateSchemaInDb(*db, *dynSchema);
+    Dgn::SchemaStatus schemaStatus = BentleyApi::Structural::StructuralDomainUtilities::UpdateSchemaInDb(*db, *dynSchema);
 
     if (schemaStatus != Dgn::SchemaStatus::Success)
         return BentleyStatus::ERROR;
@@ -309,9 +309,9 @@ BentleyStatus StructPhysCreator::PopulateElementProperties(Dgn::PhysicalElementP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus StructPhysCreator::CreateConcreteStructure(StructuralPhysical::StructuralPhysicalModelR physicalModel, StructuralPhysical::StructuralTypeDefinitionModelR typeModel)
+BentleyStatus StructPhysCreator::CreateConcreteStructure(BentleyApi::Structural::StructuralPhysicalModelR physicalModel/*, BentleyApi::Structural::StructuralTypeDefinitionModelR typeModel*/)
     {
-    ECN::ECSchemaCP schema = physicalModel.GetDgnDb().Schemas().GetSchema(BENTLEY_CONCRETE_SCHEMA_NAME);
+    ECN::ECSchemaCP schema = physicalModel.GetDgnDb().Schemas().GetSchema(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME);
 
     ECN::ECClassContainerCR classes = schema->GetClasses();
 
@@ -367,9 +367,9 @@ BentleyStatus StructPhysCreator::CreateConcreteStructure(StructuralPhysical::Str
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus StructPhysCreator::CreateSteelStructure(StructuralPhysical::StructuralPhysicalModelR physicalModel, StructuralPhysical::StructuralTypeDefinitionModelR typeModel)
+BentleyStatus StructPhysCreator::CreateSteelStructure(BentleyApi::Structural::StructuralPhysicalModelR physicalModel/* , BentleyApi::Structural::StructuralTypeDefinitionModelR typeModel*/)
     {
-    ECN::ECSchemaCP schema = physicalModel.GetDgnDb().Schemas().GetSchema(BENTLEY_STEEL_SCHEMA_NAME);
+    ECN::ECSchemaCP schema = physicalModel.GetDgnDb().Schemas().GetSchema(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME);
 
     ECN::ECClassContainerCR classes = schema->GetClasses();
 
@@ -453,7 +453,7 @@ Dgn::DgnViewId StructPhysCreator::CreateView(Dgn::DefinitionModelR model, Utf8CP
 //---------------------------------------------------------------------------------------
 BentleyStatus StructPhysCreator::DoCreate()
     {
-     StructuralDomain::StructuralDomainUtilities::RegisterDomainHandlers();
+     BentleyApi::Structural::StructuralDomainUtilities::RegisterDomainHandlers();
 
     Dgn::DgnDbPtr db = CreateDgnDb(GetOutputFileName());
     if (!db.IsValid())
@@ -463,19 +463,19 @@ BentleyStatus StructPhysCreator::DoCreate()
 
     // Create the models in the BIM file
 
-    BentleyStatus status = StructuralDomain::StructuralDomainUtilities::CreateStructuralModels(STRUCTURAL_MODEL_NAME, *db);
+    BentleyStatus status = BentleyApi::Structural::StructuralDomainUtilities::CreateStructuralModels(STRUCTURAL_MODEL_NAME, *db);
 
     if (BentleyStatus::SUCCESS != status)
         return BentleyStatus::ERROR;
 
-    StructuralPhysical::StructuralPhysicalModelPtr       physicalModel = StructuralDomain::StructuralDomainUtilities::GetStructuralPhyicalModel(STRUCTURAL_MODEL_NAME, *db);
-    StructuralPhysical::StructuralTypeDefinitionModelPtr typeDefinitionModel = StructuralDomain::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(STRUCTURAL_MODEL_NAME, *db);
+    BentleyApi::Structural::StructuralPhysicalModelPtr       physicalModel = BentleyApi::Structural::StructuralDomainUtilities::CreateStructuralPhysicalModel(STRUCTURAL_MODEL_NAME, *db);
+    //BentleyApi::Structural::StructuralTypeDefinitionModelPtr typeDefinitionModel = BentleyApi::Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(STRUCTURAL_MODEL_NAME, *db);
 
 
     DoUpdateSchema(db);
 
-    CreateConcreteStructure(*physicalModel, *typeDefinitionModel);
-    CreateSteelStructure(*physicalModel, *typeDefinitionModel);
+    CreateConcreteStructure(*physicalModel/*, *typeDefinitionModel*/);
+    CreateSteelStructure(*physicalModel/*, *typeDefinitionModel*/);
 
 
     // Set the project extents to include the elements in the physicalModel, plus a margin

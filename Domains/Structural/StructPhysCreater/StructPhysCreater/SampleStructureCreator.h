@@ -2,7 +2,7 @@
 |
 |     $Source: StructPhysCreater/StructPhysCreater/SampleStructureCreator.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -80,7 +80,7 @@ struct SampleStructureCreator
         static double SampleStructureCreator::Sin45Deg();
 
     public:
-        BentleyStatus SampleStructureCreator::CreateBeams(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
-        BentleyStatus SampleStructureCreator::CreateColumns(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
+        BentleyStatus SampleStructureCreator::CreateBeams(BentleyApi::Structural::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
+        BentleyStatus SampleStructureCreator::CreateColumns(BentleyApi::Structural::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
     };
 

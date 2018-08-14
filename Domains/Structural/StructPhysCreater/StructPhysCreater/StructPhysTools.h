@@ -2,7 +2,7 @@
 |
 |     $Source: StructPhysCreater/StructPhysCreater/StructPhysTools.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -68,7 +68,7 @@ struct GeometricTools
     public:
         static BentleyStatus CreateStructuralMemberGeometry(
             Dgn::PhysicalElementPtr element,
-            StructuralPhysical::StructuralPhysicalModelR model,
+            BentleyApi::Structural::StructuralPhysicalModelR model,
             ECN::ECSchemaCP schema,
             PhysicalProperties* properties,
             Transform rotationMatrix,

@@ -2,7 +2,7 @@
 |
 |     $Source: StructPhysCreater/StructPhysCreater/StructPhysCreator.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -45,8 +45,8 @@ struct StructPhysCreator : Dgn::DgnPlatformLib::Host
 
         BentleyStatus PopulateInstanceProperties(ECN::IECInstancePtr instance);
         BentleyStatus PopulateElementProperties(Dgn::PhysicalElementPtr element);
-        BentleyStatus CreateConcreteStructure(StructuralPhysical::StructuralPhysicalModelR, StructuralPhysical::StructuralTypeDefinitionModelR);
-        BentleyStatus CreateSteelStructure(StructuralPhysical::StructuralPhysicalModelR, StructuralPhysical::StructuralTypeDefinitionModelR);
+        BentleyStatus CreateConcreteStructure(BentleyApi::Structural::StructuralPhysicalModelR/*, BentleyApi::Structural::StructuralTypeDefinitionModelR*/);
+        BentleyStatus CreateSteelStructure(BentleyApi::Structural::StructuralPhysicalModelR/*, BentleyApi::Structural::StructuralTypeDefinitionModelR*/);
 
         Dgn::DgnViewId CreateView(Dgn::DefinitionModelR, Utf8CP, Dgn::CategorySelectorR, Dgn::ModelSelectorR, Dgn::DisplayStyle3dR displayStyle);
 

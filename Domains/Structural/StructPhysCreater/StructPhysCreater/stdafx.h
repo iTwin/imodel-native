@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <StructuralDomain/StructuralDomainApi.h>
+#include <StructuralDomainApi.h>
 
 #include "StructPhysTools.h"
 

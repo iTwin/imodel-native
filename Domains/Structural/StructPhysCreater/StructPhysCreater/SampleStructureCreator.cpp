@@ -2,7 +2,7 @@
 |
 |     $Source: StructPhysCreater/StructPhysCreater/SampleStructureCreator.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -55,7 +55,7 @@ double SampleStructureCreator::Sin45Deg()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus SampleStructureCreator::CreateBeams(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
+BentleyStatus SampleStructureCreator::CreateBeams(BentleyApi::Structural::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
     {
     Dgn::PhysicalElementPtr element;
     PhysicalProperties* properties;
@@ -64,7 +64,7 @@ BentleyStatus SampleStructureCreator::CreateBeams(StructuralPhysical::Structural
     Dgn::DgnDbStatus status;
 
     // Beam 12'
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetBeam12Properties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -79,7 +79,7 @@ BentleyStatus SampleStructureCreator::CreateBeams(StructuralPhysical::Structural
         }
 
     // Beam 12'
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetBeam12Properties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -94,7 +94,7 @@ BentleyStatus SampleStructureCreator::CreateBeams(StructuralPhysical::Structural
         }
 
     // Beam 15'
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetBeam15Properties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -109,7 +109,7 @@ BentleyStatus SampleStructureCreator::CreateBeams(StructuralPhysical::Structural
         }
 
     // Beam 15'
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetBeam15Properties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -129,7 +129,7 @@ BentleyStatus SampleStructureCreator::CreateBeams(StructuralPhysical::Structural
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus SampleStructureCreator::CreateColumns(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
+BentleyStatus SampleStructureCreator::CreateColumns(BentleyApi::Structural::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
     {
     Dgn::PhysicalElementPtr element;
     PhysicalProperties* properties;
@@ -137,7 +137,7 @@ BentleyStatus SampleStructureCreator::CreateColumns(StructuralPhysical::Structur
     Transform linearMatrix;
     Dgn::DgnDbStatus status;
 
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetColumnProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -149,7 +149,7 @@ BentleyStatus SampleStructureCreator::CreateColumns(StructuralPhysical::Structur
         return BentleyStatus::ERROR;
         }
 
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetColumnProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -162,7 +162,7 @@ BentleyStatus SampleStructureCreator::CreateColumns(StructuralPhysical::Structur
         return BentleyStatus::ERROR;
         }
 
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetColumnProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
@@ -175,7 +175,7 @@ BentleyStatus SampleStructureCreator::CreateColumns(StructuralPhysical::Structur
         return BentleyStatus::ERROR;
         }
 
-    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    element = BentleyApi::Structural::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
     properties = GetColumnProperties();
     status = element->SetPlacement(GetStructurePlacement());
     rotationMatrix = GetEmptyTransform();
