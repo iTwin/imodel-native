@@ -923,8 +923,6 @@ protected:
     void _Destroy() override { ReleaseTileTree(); }
     DGNPLATFORM_EXPORT void _PreDestroy() override;
 
-    virtual void _OnFitView(FitContextR) {}
-
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
     void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element); UpdateLastElementModifiedTime();}

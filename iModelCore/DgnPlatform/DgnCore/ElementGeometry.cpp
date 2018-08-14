@@ -3218,55 +3218,7 @@ static void CookGeometryParams(ViewContextR context, Render::GeometryParamsR geo
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geomParams, DRange3dCP range)
     {
-    ViewFlags   viewFlags = context.GetViewFlags();
-
-    switch (geomParams.GetGeometryClass())
-        {
-        case DgnGeometryClass::Construction:
-            if (!viewFlags.ShowConstructions())
-                return false;
-            break;
-
-        case DgnGeometryClass::Dimension:
-            if (!viewFlags.ShowDimensions())
-                return false;
-            break;
-
-        case DgnGeometryClass::Pattern:
-            if (!viewFlags.ShowPatterns())
-                return false;
-            break;
-        }
-
-    if (nullptr == context.GetViewport())
-        return true;
-
-    if (nullptr != range && !range->IsNull())
-        {
-        if (!context.IsRangeVisible(*range))
-            return false; // Sub-graphic outside range...
-        }
-
-    DgnSubCategory::Appearance appearance = context.GetViewport()->GetViewController().GetSubCategoryAppearance(geomParams.GetSubCategoryId());
-
-    if (appearance.IsInvisible())
-        return false;
-
-    switch (context.GetDrawPurpose())
-        {
-        case DrawPurpose::Plot:
-            if (appearance.GetDontPlot())
-                return false;
-            break;
-
-        case DrawPurpose::Pick:
-        case DrawPurpose::FenceAccept:
-            if (appearance.GetDontLocate()) // NOTE: Don't check GetDontSnap as we still need "not snappable" hit...
-                return false;
-            break;
-        }
-
-    return true;
+    return context.IsGeometryVisible(geomParams, range);
     }
 
 /*---------------------------------------------------------------------------------**//**

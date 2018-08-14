@@ -261,7 +261,6 @@ protected:
     ViewControllerCP _ToSheetView() const override {return this;}
     void _DrawView(ViewContextR) override;
     void _LoadState() override;
-    FitComplete _ComputeFitRange(FitContextR context) override;
 
     void DrawBorder(ViewContextR context) const;
     ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}  //!< Construct a new SheetViewController.

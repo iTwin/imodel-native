@@ -1082,4 +1082,67 @@ Render::TexturePtr ViewContext::_CreateTexture(Render::ImageSourceCR source, Ren
 
     return tx;
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewContext::IsGeometryVisible(Render::GeometryParamsCR geomParams, DRange3dCP range)
+    {
+    ViewFlags   viewFlags = GetViewFlags();
+
+    switch (geomParams.GetGeometryClass())
+        {
+        case DgnGeometryClass::Construction:
+            if (!viewFlags.ShowConstructions())
+                return false;
+            break;
+
+        case DgnGeometryClass::Dimension:
+            if (!viewFlags.ShowDimensions())
+                return false;
+            break;
+
+        case DgnGeometryClass::Pattern:
+            if (!viewFlags.ShowPatterns())
+                return false;
+            break;
+        }
+
+    if (nullptr != range && !range->IsNull())
+        {
+        if (!IsRangeVisible(*range))
+            return false; // Sub-graphic outside range...
+        }
+
+    return _IsSubCategoryVisible(geomParams.GetSubCategoryId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewContext::_IsSubCategoryVisible(DgnSubCategoryId subCategoryId)
+    {
+#if defined(NEEDSWORK_IMODELCORE) // ###TODO: Any ViewContexts which might want to exclude geometry based on subcategory?
+    DgnSubCategory::Appearance appearance = context.GetViewport()->GetViewController().GetSubCategoryAppearance(geomParams.GetSubCategoryId());
+
+    if (appearance.IsInvisible())
+        return false;
+
+    switch (context.GetDrawPurpose())
+        {
+        case DrawPurpose::Plot:
+            if (appearance.GetDontPlot())
+                return false;
+            break;
+
+        case DrawPurpose::Pick:
+        case DrawPurpose::FenceAccept:
+            if (appearance.GetDontLocate()) // NOTE: Don't check GetDontSnap as we still need "not snappable" hit...
+                return false;
+            break;
+        }
+#endif
+
+    return true;
+    }
+

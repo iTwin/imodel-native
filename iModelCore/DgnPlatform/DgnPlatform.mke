@@ -225,8 +225,6 @@ $(CoreObjs)DgnCore$(oext) :                         $(DgnCoreDir)DgnCore.cpp $(D
 
 $(CoreObjs)ViewContext$(oext) :                     $(DgnCoreDir)ViewContext.cpp $(contextDepends) $(HandlerDepends) $(DgnPlatformAPISrc)DgnModel.h $(DgnPlatformAPISrc)ScanCriteria.h ${MultiCompileDepends}
 
-$(CoreObjs)FitContext$(oext) :                      $(DgnCoreDir)FitContext.cpp $(DgnPlatformAPISrc)NullContext.h $(DgnPlatformAPISrc)SimplifyGraphic.h $(HandlerDepends) ${MultiCompileDepends}
-
 $(CoreObjs)SnapContext$(oext) :                     $(DgnCoreDir)SnapContext.cpp $(HandlerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)SimplifyGraphic$(oext) :                 $(DgnCoreDir)SimplifyGraphic.cpp $(contextDepends) $(DgnPlatformAPISrc)SimplifyGraphic.h ${MultiCompileDepends}

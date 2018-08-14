@@ -448,15 +448,6 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::ViewController::FitComplete Sheet::ViewController::_ComputeFitRange(FitContextR context) 
-    {
-    context.ExtendFitRange(AxisAlignedBox3d(DPoint3d::FromZero(), DPoint3d::From(m_size.x,m_size.y,0.0)));
-    return FitComplete::Yes;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson  02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId Sheet::Model::FindFirstViewOfSheet(DgnDbR db, DgnModelId mid)

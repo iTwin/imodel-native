@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/NullContext.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -70,32 +70,6 @@ protected:
 
 public:
     NullContext() {m_ignoreViewRange = true;}
-};
-
-//=======================================================================================
-// Caclulate the view-aligned range of all elements either within a view or from the view's non-range criteria.
-// @bsiclass                                                    Keith.Bentley   02/16
-//=======================================================================================
-struct FitContext : NullContext
-{
-    DEFINE_T_SUPER(NullContext)
-
-    FitViewParams m_params;
-    Transform m_trans;       // usually view transform 
-    DRange3d m_fitRange;     // union of all view-aligned element ranges
-    mutable DRange3d m_lastRange;    // last view-aligned range tested
-
-    void AcceptRangeElement(DgnElementId id);
-    StatusInt _InitContextForView() override;
-    StatusInt _VisitGeometry(GeometrySourceCR source) override;
-    bool _ScanRangeFromPolyhedron() override;
-    RangeIndex::Traverser::Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override;
-    bool IsRangeContained(RangeIndex::FBoxCR range) const;
-    DGNPLATFORM_EXPORT void ExtendFitRange(ElementAlignedBox3dCR box, TransformCR placement);
-    DGNPLATFORM_EXPORT void ExtendFitRange(AxisAlignedBox3dCR elementBox);
-
-    FitContext(FitViewParams const& params) : m_params(params) {m_fitRange.Init();}
-    FitViewParams const& GetParams() const {return m_params;}
 };
 
 END_BENTLEY_DGN_NAMESPACE

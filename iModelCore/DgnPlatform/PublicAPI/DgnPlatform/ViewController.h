@@ -141,7 +141,6 @@ protected:
 
     virtual ~ViewController() {}
     enum class FitComplete {No=0, Yes=1};
-    DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(FitContextR);
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
     virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp; m_featureOverridesDirty=m_selectionSetDirty=true;}
@@ -545,11 +544,8 @@ protected:
     bset<Utf8String> m_copyrightMsgs;  // from reality models. Only keep unique ones
     Sprites m_copyrightSprites; // copyright images we must draw on the view (Bing Maps, for example) not owned by the view.
 
-    void QueryModelExtents(FitContextR);
-
     DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR context) override;
-    DGNPLATFORM_EXPORT FitComplete _ComputeFitRange(struct FitContext&) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff);
     DGNPLATFORM_EXPORT virtual void _SetViewedModels(DgnModelIdSet const&);
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
