@@ -769,6 +769,8 @@ public:
         virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
     };
 
+    using AppDataPtr = RefCountedPtr<AppData>;
+
     //! Holds changes to a dgn.ElementAspect in memory and writes out the changes when the host DgnElement is inserted or updated.
     //! All aspects are actually subclasses of either dgn.ElementUniqueAspect or dgn.ElementMultiAspect.
     //! A domain that defines a subclass of one of these ECClasses in the schema should normally also define a subclass of one of the
@@ -1098,7 +1100,13 @@ public:
         };
 
 private:
+    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
+
+    BeMutex& GetElementsMutex() const;
     template<class T> void CallAppData(T const& caller) const;
+    DGNPLATFORM_EXPORT void AddAppDataInternal(AppData::Key const& key, AppData* data) const;
+    DGNPLATFORM_EXPORT AppData* FindAppDataInternal(AppData::Key const& key) const;
+
     Utf8String ToJsonPropString() const;
     BE_JSON_NAME(UserProps)
     ECN::AdHocJsonValueR GetUserPropsR() {return (ECN::AdHocJsonValueR) m_jsonProperties[json_UserProps()];}
@@ -1133,7 +1141,6 @@ protected:
     BeSQLite::BeGuid m_federationGuid;
     Utf8String m_userLabel;
     ECN::AdHocJsonValue m_jsonProperties;
-    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     ECN::StructInstanceVector* m_structInstances;
 
     virtual Utf8CP _GetHandlerECClassName() const {return MyHandlerECClassName();} //!< @private
@@ -1479,7 +1486,7 @@ protected:
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
 
-    void ClearAllAppData(){m_appData.clear();}//!< @private
+    void ClearAllAppData(); //!< @private
 
     //! Generate the CreateParams to use for Import
     //! @param destModel Specifies the model into which the element is being cloned
@@ -1623,7 +1630,7 @@ public:
     //! @param[in] key The AppData's key. If AppData with this key already exists on this element, it is dropped and
     //! replaced with \a appData.
     //! @param[in] appData The appData object to attach to this element.
-    DGNPLATFORM_EXPORT void AddAppData(AppData::Key const& key, AppData* appData) const;
+    void AddAppData(AppData::Key const& key, AppData* appData) const { BeMutexHolder lock(GetElementsMutex()); AddAppDataInternal(key, appData); }
 
     //! Drop Application data from this element.
     //! @param[in] key the key for the AppData to drop.
@@ -1633,7 +1640,26 @@ public:
     //! Find DgnElementAppData on this element by key.
     //! @param[in] key The key for the AppData of interest.
     //! @return the AppData for key \a key, or nullptr.
-    DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
+    AppDataPtr FindAppData(AppData::Key const& key) const { BeMutexHolder lock(GetElementsMutex()); return FindAppDataInternal(key); }
+
+    //! Find application data on this element by key, or add it if not found.
+    //! @param[in] key The key specifying the app data of interest
+    //! @param[in] createAppData A callable taking no arguments and returning an AppData*
+    //! @return the existing or newly-created app data corresponding to the supplied key.
+    template<typename T> AppDataPtr FindOrAddAppData(AppData::Key const& key, T createAppData) const
+        {
+        BeMutexHolder lock(GetElementsMutex());
+        AppData* data = FindAppDataInternal(key);
+        if (nullptr == data)
+            AddAppDataInternal(key, data = createAppData());
+
+        return data;
+        }
+
+    //! Add app data, replacing a previous entry if it exists.
+    //! @param[in] key The key specifying the app data of interest.
+    //! @param[in] appdata The new app data to associate with the key.
+    DGNPLATFORM_EXPORT void ReplaceAppData(AppData::Key const& key, AppData* appData) const;
 
     //! @private
     DGNPLATFORM_EXPORT void CopyAppDataFrom(DgnElementCR source) const;

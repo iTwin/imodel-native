@@ -168,19 +168,18 @@ DRange3d HypermodelingViewController::GetDrawingRange (DrawingViewControllerR dr
     if (NULL == model)
         return DRange3d::NullRange();
 
-    auto appData = dynamic_cast<RangeDgnModelAppData*> (model->FindAppData (s_RangeDgnModelAppDataKey));
-    if (appData != NULL)
-        return appData->m_range;
+    auto appData = static_cast<RangeDgnModelAppData*>(model->FindOrAddAppData(s_RangeDgnModelAppDataKey, [&]()
+        {
+        DRange3d range = DRange3d::NullRange();
+        for (auto const& el : *model)
+            range.Extend(el.second->ToGeometrySource()->CalculateRange3d());
 
-    DRange3d range = DRange3d::NullRange();
-    for (auto const& el : *model)
-        range.Extend(el.second->ToGeometrySource()->CalculateRange3d());
+        range.ScaleAboutCenter (range, 1.10);
 
-    range.ScaleAboutCenter (range, 1.10);
-
-    appData = new RangeDgnModelAppData;
-    appData->m_range = range;
-    model->AddAppData (s_RangeDgnModelAppDataKey, appData);
+        appData = new RangeDgnModelAppData;
+        appData->m_range = range;
+        return appData;
+        }).get());
 
     return appData->m_range;
     }

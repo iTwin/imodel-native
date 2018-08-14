@@ -57,7 +57,7 @@ DgnDbStatus DgnElement::_OnSubModelInsert(DgnModelCR model) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData* DgnElement::FindAppData(AppData::Key const& key) const
+DgnElement::AppData* DgnElement::FindAppDataInternal(AppData::Key const& key) const
     {
     auto entry = m_appData.find(&key);
     return entry==m_appData.end() ? nullptr : entry->second.get();
@@ -66,7 +66,7 @@ DgnElement::AppData* DgnElement::FindAppData(AppData::Key const& key) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::AddAppData(AppData::Key const& key, AppData* obj) const
+void DgnElement::AddAppDataInternal(AppData::Key const& key, AppData* obj) const
     {
     auto entry = m_appData.Insert(&key, obj);
     if (entry.second)
@@ -81,7 +81,18 @@ void DgnElement::AddAppData(AppData::Key const& key, AppData* obj) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt DgnElement::DropAppData(AppData::Key const& key) const
     {
+    BeMutexHolder lock(GetElementsMutex());
     return 0==m_appData.erase(&key) ? ERROR : SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::ReplaceAppData(AppData::Key const& key, AppData* data) const
+    {
+    BeMutexHolder lock(GetElementsMutex());
+    m_appData.erase(&key);
+    AddAppDataInternal(key, data);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -137,6 +148,8 @@ DateTime DgnElement::QueryLastModifyTime() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<class T> void DgnElement::CallAppData(T const& caller) const
     {
+    BeMutexHolder lock(GetElementsMutex());
+
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
         {
         if (DgnElement::AppData::DropMe::Yes == caller(*entry->second, *this))
@@ -228,12 +241,15 @@ DgnDbStatus DgnElement::_OnInsert()
     if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid())
         return DgnDbStatus::DuplicateCode;
 
+    {
+    BeMutexHolder lock(GetElementsMutex());
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnInsert(*this);
         if (DgnDbStatus::Success != stat)
             return stat;
         }
+    }
 
     // Ensure model not exclusively locked, and code reserved
     DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementInsert(*this);
@@ -900,12 +916,15 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     if ((existingElemWithCode.IsValid() && existingElemWithCode != GetElementId()))
         return DgnDbStatus::DuplicateCode;
 
+    {
+    BeMutexHolder lock(GetElementsMutex());
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnUpdate(*this, original);
         if (DgnDbStatus::Success != stat)
             return stat;
         }
+    }
 
     // Ensure lock acquired and code reserved
     DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementUpdate(*this);
@@ -970,12 +989,15 @@ DgnDbStatus DgnElement::_OnDelete() const
     if (elementHandler.GetDomain().IsReadonly())
         return DgnDbStatus::ReadOnlyDomain;
 
+    {
+    BeMutexHolder lock(GetElementsMutex());
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnDelete(*this);
         if (DgnDbStatus::Success != stat)
             return stat;
         }
+    }
 
     // Ensure lock acquired
     DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementDelete(*this);
@@ -1662,10 +1684,9 @@ void DgnElement::_CopyFrom(DgnElementCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::CopyAppDataFrom(DgnElementCR source) const
     {
+    BeMutexHolder lock(GetElementsMutex());
     for (auto a : source.m_appData)
-        {
         AddAppData(*a.first, a.second.get());
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2183,10 +2204,11 @@ END_BENTLEY_DGN_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 MultiAspectMux* MultiAspectMux::Find(DgnElementCR el, ECClassCR cls)
     {
-    AppData* appData = el.FindAppData(GetKey(cls));
-    if (nullptr == appData)
+    auto appData = el.FindAppData(GetKey(cls));
+    if (appData.IsNull())
         return nullptr;
-    MultiAspectMux* mux = dynamic_cast<MultiAspectMux*>(appData);
+
+    MultiAspectMux* mux = dynamic_cast<MultiAspectMux*>(appData.get());
     BeAssert(nullptr != mux && "The same ECClass cannot have both Unique and MultiAspects");
     return mux;
     }
@@ -2196,10 +2218,7 @@ MultiAspectMux* MultiAspectMux::Find(DgnElementCR el, ECClassCR cls)
 +---------------+---------------+---------------+---------------+---------------+------*/
 MultiAspectMux& MultiAspectMux::Get(DgnElementCR el, ECClassCR cls)
     {
-    MultiAspectMux* mux = Find(el,cls);
-    if (nullptr == mux)
-        el.AddAppData(GetKey(cls), mux = new MultiAspectMux(cls));
-    return *mux;
+     return static_cast<MultiAspectMux&>(*el.FindOrAddAppData(GetKey(cls), [&]() { return new MultiAspectMux(cls); }));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2381,10 +2400,11 @@ RefCountedPtr<DgnElement::UniqueAspect> DgnElement::UniqueAspect::CreateAspect(D
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::UniqueAspect* DgnElement::UniqueAspect::Find(DgnElementCR el, ECClassCR cls)
     {
-    AppData* appData = el.FindAppData(GetKey(cls));
-    if (nullptr == appData)
+    AppDataPtr appData = el.FindAppData(GetKey(cls));
+    if (appData.IsNull())
         return nullptr;
-    UniqueAspect* aspect = dynamic_cast<UniqueAspect*>(appData);
+
+    UniqueAspect* aspect = dynamic_cast<UniqueAspect*>(appData.get());
     BeAssert(nullptr != aspect && "The same ECClass cannot have both Unique and MultiAspects");
     return aspect;
     }
@@ -2438,8 +2458,7 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::GetAspectP(DgnElementR el, E
 void DgnElement::UniqueAspect::SetAspect0(DgnElementCR el, UniqueAspect& newItem)
     {
     Key& key = newItem.GetKey(el.GetDgnDb());
-    el.DropAppData(key);  // remove any existing cached aspect
-    el.AddAppData(key, &newItem);
+    el.ReplaceAppData(key, &newItem);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4377,6 +4396,12 @@ bool DgnElement::IsDescendantOf(DgnElementId ancestorId) const
         return false;
     return parent->IsDescendantOf(ancestorId); 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BeMutex& DgnElement::GetElementsMutex() const { return GetDgnDb().Elements().GetMutex(); }
+void DgnElement::ClearAllAppData() { BeMutexHolder lock(GetElementsMutex()); m_appData.clear(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16

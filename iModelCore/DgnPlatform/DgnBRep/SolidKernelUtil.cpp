@@ -26,12 +26,10 @@ virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
 
 static BRepCache* Get(DgnElementCR elem, bool addIfNotFound)
     {
-    BRepCache* cache = dynamic_cast<BRepCache*>(elem.FindAppData(GetKey()));
-
-    if (nullptr == cache && addIfNotFound)
-        elem.AddAppData(GetKey(), cache = new BRepCache);
-
-    return cache;
+    if (addIfNotFound)
+        return static_cast<BRepCache*>(elem.FindOrAddAppData(GetKey(), []() { return new BRepCache(); }).get());
+    else
+        return static_cast<BRepCache*>(elem.FindAppData(GetKey()).get());
     }
 };
 
