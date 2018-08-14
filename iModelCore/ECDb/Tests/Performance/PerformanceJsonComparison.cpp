@@ -2,10 +2,10 @@
 |
 |  $Source: Tests/Performance/PerformanceJsonComparison.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <rapidjson/BeRapidJson.h>
+#include <BeRapidJson/BeRapidJson.h>
 #include "PerformanceTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
