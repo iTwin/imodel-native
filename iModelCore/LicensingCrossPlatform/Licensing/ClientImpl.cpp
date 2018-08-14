@@ -470,7 +470,7 @@ std::list<std::shared_ptr<Policy>> ClientImpl::GetUserPolicies()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<Policy> ClientImpl::SearchForOrRequestPolicy(Utf8String requestedProductId)
+std::shared_ptr<Policy> ClientImpl::SearchForPolicy(Utf8String requestedProductId)
 	{
 	std::shared_ptr<Policy> matchingPolicy = nullptr;
 	// get all of user's policies
@@ -498,25 +498,6 @@ std::shared_ptr<Policy> ClientImpl::SearchForOrRequestPolicy(Utf8String requeste
 				}
 			}
 		}
-	// matching policy was not found in DB, make a request for another if not custom productId
-	if (productId.Equals(m_clientInfo->GetApplicationProductId()))
-		{
-		auto policy = Policy::Create(GetPolicyToken());
-		// check if policy is valid
-		if (PolicyHelper::IsValid(policy))
-			{
-			// look for a securable that matches productId and featureString
-			for (auto securable : policy->GetSecurableData())
-				{
-				if (Utf8String(std::to_string(securable->GetProductId()).c_str()).Equals(productId) &&
-					securable->GetFeatureString().Equals(m_featureString))
-					{
-					// if matches, return this policy
-					return policy;
-					}
-				}
-			}
-		}
 
 	return matchingPolicy;
 	}
@@ -541,7 +522,7 @@ LicenseStatus ClientImpl::GetProductStatus(int requestedProductId)
 	else
 		productId = Utf8String(std::to_string(requestedProductId).c_str());
 	// get valid policy for user
-	auto policy = SearchForOrRequestPolicy(productId);
+	auto policy = SearchForPolicy(productId);
 	// if null, NotEntitled
 	if (policy == nullptr)
 		{
