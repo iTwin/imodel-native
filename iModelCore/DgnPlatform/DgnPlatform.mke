@@ -337,8 +337,6 @@ $(CoreObjs)CesiumTileWriter$(oext) :                $(DgnCoreDir)CesiumTileWrite
 
 $(CoreObjs)TileReader$(oext) :                      $(DgnCoreDir)TileReader.cpp $(DgnPlatformAPISrc)TileTree.h $(DgnPlatformAPISrc)TileReader.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}
 
-$(CoreObjs)RDSTileReader$(oext) :                    $(DgnCoreDir)RDSTileReader.cpp $(DgnPlatformAPISrc)TileTree.h $(DgnPlatformAPISrc)TileReader.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}
-
 $(CoreObjs)TileTreePublish$(oext) :                 $(DgnCoreDir)TileTreePublish.cpp $(DgnPlatformAPISrc)MeshTile.h $(DgnPlatformAPISrc)TileTree.h ${MultiCompileDepends}
 
 $(CoreObjs)LinkElement$(oext) :                     $(DgnCoreDir)LinkElement.cpp $(DgnPlatformAPISrc)LinkElement.h ${MultiCompileDepends}
@@ -630,9 +628,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)freetype2$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
-                            $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext) \
-                            $(ContextSubpartsLibs)RealityPlatformTools$(libext) \
-
+                            $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 
 %if defined (BENTLEYCONFIG_PARASOLID)
 LINKER_LIBRARIES_DELAYLOADED = \
@@ -672,16 +668,3 @@ $(BuildContext)Delivery/lastresortfonts : $(baseDir)LastResortFonts/lastresortfo
 
 $(BuildContext)Delivery/SkyBox/SkyBox.jpg : $(baseDir)Assets/SkyBox.jpg
     $(LinkFirstDepToFirstTarget)
-
-
-
-
-
-
-
-
-
-
-
-
-                     l
