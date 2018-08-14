@@ -73,61 +73,10 @@ double parametricCurvatureDerivative (double dx, double dy, double ddx, double d
     return (df * g - f * dg) / gg;
     }
 
-/**
-* intermediate class for "spirals" that really have distance-to-xy methods but need to act like spirals that have differential properties
-* This intermediate class implements DistanceToCurvature, DistanceToLocalAngle, DistanceToCurvatureDerivatives
-* based on direct x and y data from EvaluateAtDistance.
-*/
-struct GEOMDLLIMPEXP DSpiral2dDirectEvaluation : DSpiral2dBase
-{
-    DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_MIDLEVEL_OVERRIDES
-
-public:
-//! Evaluate the spiral and derivatives at specified distance along.
-//! return true if valid evaluation.
-//! DSpiral2dDirectEvaluation default implementation returns false.
-virtual bool EvaluateAtDistance
-    (
-    double distanceAlong, //!< [in] distance for evaluation
-    DPoint2dR xyz,          //!< [out] coordinates on spiral
-    DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
-    DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
-    DVec2dP d3XYZ    //!< [out] third derivative wrt distance
-    ) const;
-
-//!
-/**
-* use results of EvaluateAtDistance to provide integrand for caller's integrals.
-*/
-void EvaluateVectorIntegrand (double distance, double *pF) override;
-//! rotate xy and optional derivatives by radians.  (To be called by derived class EvaluateAtDistance when to rotate EvaluateAtDistance results from standard position)
-static void ApplyCCWRotation (
-    double radians,
-    DPoint2dR xyz,          //!< [out] coordinates on spiral
-    DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
-    DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
-    DVec2dP d3XYZ    //!< [out] third derivative wrt distance
-    );
-};
-
-//! Evaluate the spiral and derivatives at specified distance along.
-//! return true if valid evaluation.
-//! DSpiral2dDirectEvaluation default implementation returns false.
-bool DSpiral2dDirectEvaluation::EvaluateAtDistance
-(
-double distanceAlong, //!< [in] distance for evaluation
-DPoint2dR xyz,          //!< [out] coordinates on spiral
-DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
-DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
-DVec2dP d3XYZ    //!< [out] third derivative wrt distance
-) const
-    {
-    return false;
-    }
 
 // Italian Spiral
 
-struct GEOMDLLIMPEXP DSpiral2dItalian : DSpiral2dFractionOfNominalLengthCurve
+struct GEOMDLLIMPEXP DSpiral2dItalian : DSpiral2dDirectEvaluation
 {
     DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
 public:
@@ -158,19 +107,19 @@ static bool EvaluateAtDistanceInStandardOrientation
 };
 int DSpiral2dItalian::GetTransitionTypeCode () const { return TransitionType_Italian;}
 
-double DSpiral2dFractionOfNominalLengthCurve::DistanceToLocalAngle  (double distance) const
+double DSpiral2dDirectEvaluation::DistanceToLocalAngle  (double distance) const
     {
     double effectiveLength = m_nominalLength == 0.0 ? mLength : m_nominalLength;
     return FractionToLocalAngle (distance / effectiveLength);
     }
 // Return the curvature at specified distance from start ...
-double DSpiral2dFractionOfNominalLengthCurve::DistanceToCurvature   (double distance) const
+double DSpiral2dDirectEvaluation::DistanceToCurvature   (double distance) const
     {
     double effectiveLength = m_nominalLength == 0.0 ? mLength : m_nominalLength;
     return FractionToCurvature (distance / effectiveLength);
     }
 // Return the derivative of curvature wrt arc length at specified distance from start ...
-double DSpiral2dFractionOfNominalLengthCurve::DistanceToCurvatureDerivative (double distance) const
+double DSpiral2dDirectEvaluation::DistanceToCurvatureDerivative (double distance) const
     {
     double curvature, dCurvatureDFraction;
     double effectiveLength = m_nominalLength == 0.0 ? mLength : m_nominalLength;
@@ -184,7 +133,7 @@ double DSpiral2dFractionOfNominalLengthCurve::DistanceToCurvatureDerivative (dou
     return dCurvatureDDistance;
     }
 
-double DSpiral2dFractionOfNominalLengthCurve::FractionToCurvature (double fraction) const
+double DSpiral2dDirectEvaluation::FractionToCurvature (double fraction) const
     {
     DPoint2d uv;
     DVec2d uvD1, uvD2;
@@ -196,7 +145,7 @@ double DSpiral2dFractionOfNominalLengthCurve::FractionToCurvature (double fracti
     return curvature;
     }    
 
-double DSpiral2dFractionOfNominalLengthCurve::FractionToVelocity(double fraction) const
+double DSpiral2dDirectEvaluation::FractionToVelocity(double fraction) const
     {
     DPoint2d uv;
     DVec2d uvD1;
@@ -208,7 +157,7 @@ double DSpiral2dFractionOfNominalLengthCurve::FractionToVelocity(double fraction
     return 0.0;
     }    
 
-double DSpiral2dFractionOfNominalLengthCurve::FractionToLocalAngle(double fraction) const
+double DSpiral2dDirectEvaluation::FractionToLocalAngle(double fraction) const
     {
     DPoint2d uv;
     DVec2d uvD1;
@@ -220,7 +169,7 @@ double DSpiral2dFractionOfNominalLengthCurve::FractionToLocalAngle(double fracti
     return radians;
     }    
 
-bool DSpiral2dFractionOfNominalLengthCurve::FractionToDCurvatureDFraction (double fraction, double &curvature, double &dCurvatureDFraction) const
+bool DSpiral2dDirectEvaluation::FractionToDCurvatureDFraction (double fraction, double &curvature, double &dCurvatureDFraction) const
     {
     DPoint2d uv;
     DVec2d uvD1, uvD2, uvD3;
@@ -235,29 +184,6 @@ bool DSpiral2dFractionOfNominalLengthCurve::FractionToDCurvatureDFraction (doubl
     return false;
     }  
 
-double DSpiral2dDirectEvaluation::DistanceToLocalAngle (double distance) const
-    {
-    DPoint2d xy;
-    DVec2d d1xy;
-    EvaluateAtDistance (distance, xy, &d1xy, nullptr, nullptr);
-    return   atan2 (d1xy.y, d1xy.x) - mTheta0;
-    }
-
-double DSpiral2dDirectEvaluation::DistanceToCurvature (double distance) const
-    {
-    DPoint2d xy;
-    DVec2d d1xy, d2xy;
-    EvaluateAtDistance (distance, xy, &d1xy, &d2xy, nullptr);
-    return parametricCurvature (d1xy.x, d1xy.y, d2xy.x, d2xy.y);
-    }
-
-double DSpiral2dDirectEvaluation::DistanceToCurvatureDerivative (double distance) const
-    {
-    DPoint2d xy;
-    DVec2d d1xy, d2xy, d3xy;
-    EvaluateAtDistance (distance, xy, &d1xy, &d2xy, &d3xy);
-    return parametricCurvatureDerivative (d1xy.x, d1xy.y, d2xy.x, d2xy.y, d3xy.x, d3xy.y);
-    }
 // rotate each vector by radians ...
 void DSpiral2dDirectEvaluation::ApplyCCWRotation
 (
@@ -280,24 +206,8 @@ DVec2dP d3XY    //!< [out] third derivative wrt distance
         }
     }
 
-/*-----------------------------------------------------------------*//**
-@description BSIVectorIntegrand query function.
-@param distance IN distance parameter
-@param pF OUT array of two doubles x,y for integration.
-+---------------+---------------+---------------+---------------+------*/
-void DSpiral2dDirectEvaluation::EvaluateVectorIntegrand (double distance, double *pF)
-    {
-    DPoint2d xy;
-    DVec2d dxy;
-    EvaluateAtDistance (distance, xy, &dxy, nullptr, nullptr);
-    pF[0] = dxy.x;
-    pF[1] = dxy.y;
-    }
-
-
-
 // Specialize spiral for NEWSOUTHWALES ....
-DSpiral2dWesternAustralian::DSpiral2dWesternAustralian (double nominalLength) : DSpiral2dFractionOfNominalLengthCurve (nominalLength) {}
+DSpiral2dWesternAustralian::DSpiral2dWesternAustralian (double nominalLength) : DSpiral2dDirectEvaluation (nominalLength) {}
 // STATIC method
 bool DSpiral2dWesternAustralian::EvaluateAtDistanceInStandardOrientation
     (
@@ -362,7 +272,7 @@ DSpiral2dBaseP DSpiral2dWesternAustralian::Clone () const
     }
 
 // Specialize spiral for Chinese cubic ....
-DSpiral2dChinese::DSpiral2dChinese(double nominalLength) : DSpiral2dFractionOfNominalLengthCurve(nominalLength)
+DSpiral2dChinese::DSpiral2dChinese(double nominalLength) : DSpiral2dDirectEvaluation(nominalLength)
     {
     }
 // STATIC method
@@ -526,7 +436,7 @@ double aecAlg_computeAustralianXcFromRL( double L, double R )
     return( xc );
 }
 
-DSpiral2dAustralianRailCorp::DSpiral2dAustralianRailCorp (double nominalLength) : DSpiral2dFractionOfNominalLengthCurve (nominalLength) {}
+DSpiral2dAustralianRailCorp::DSpiral2dAustralianRailCorp (double nominalLength) : DSpiral2dDirectEvaluation (nominalLength) {}
 // STATIC method ...
 bool DSpiral2dAustralianRailCorp::EvaluateAtDistanceInStandardOrientation
     (
@@ -613,7 +523,7 @@ DSpiral2dBaseP DSpiral2dAustralianRailCorp::Clone () const
 
 
 // Specialize spiral for MXCubic ....
-DSpiral2dMXCubicAlongArc::DSpiral2dMXCubicAlongArc (double nominalLength) : DSpiral2dFractionOfNominalLengthCurve (nominalLength) {}
+DSpiral2dMXCubicAlongArc::DSpiral2dMXCubicAlongArc (double nominalLength) : DSpiral2dDirectEvaluation (nominalLength) {}
 // STATIC method
 bool DSpiral2dMXCubicAlongArc::EvaluateAtFractionInStandardOrientation
     (
@@ -694,7 +604,7 @@ DSpiral2dBaseP DSpiral2dMXCubicAlongArc::Clone () const
     }
 
 // Specialize spiral for Italian ....
-DSpiral2dItalian::DSpiral2dItalian (double nominalLength) : DSpiral2dFractionOfNominalLengthCurve (nominalLength) {}
+DSpiral2dItalian::DSpiral2dItalian (double nominalLength) : DSpiral2dDirectEvaluation (nominalLength) {}
 DSpiral2dBaseP DSpiral2dItalian::Clone () const
     {
     double nominalLength = m_nominalLength;
@@ -875,8 +785,8 @@ double ClothoidCosineApproximation::Evaluate40R2L2Map (double alpha, double R, d
 // Specialize spiral for DIRECTHALFCOSINE ....
 
 
-DSpiral2dFractionOfNominalLengthCurve::DSpiral2dFractionOfNominalLengthCurve (double nominalLength) : m_nominalLength (nominalLength) {}
-DSpiral2dDirectHalfCosine::DSpiral2dDirectHalfCosine (double projectedLength) : DSpiral2dFractionOfNominalLengthCurve (projectedLength) {}
+DSpiral2dDirectEvaluation::DSpiral2dDirectEvaluation (double nominalLength) : m_nominalLength (nominalLength) {}
+DSpiral2dDirectHalfCosine::DSpiral2dDirectHalfCosine (double projectedLength) : DSpiral2dDirectEvaluation (projectedLength) {}
 // STATIC method ...
 bool DSpiral2dDirectHalfCosine::EvaluateAtFractionInStandardOrientation
     (

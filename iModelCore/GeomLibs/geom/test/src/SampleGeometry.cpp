@@ -492,3 +492,99 @@ double dy
             }
         }
     }
+
+struct rangeEdgeDef
+{
+int corner0;
+int corner1;
+double fractionA;
+int numB;
+double fractionB;
+};
+
+
+void StrokeFrustum (bvector<DSegment3d> &segments, DPoint3d corners[8], bool patterns = false)
+    {
+    segments.clear ();
+    double ax = 0.7;
+    double ay = 0.5;
+    double az = 0.3;
+    int numC = 0;
+
+    // Edges from "low" get ai,bi decoration (with long first stroke)
+    // All others get c,ai
+    // +aaaaaaaaaaaaa   aaa  aaa  aaa+
+    // first period over fractiona
+    // Remainder divided to numB periods with trailing a solid
+    // 
+    bvector<rangeEdgeDef> edgeDefs {
+        {0,1, ax, 1},
+        {2,3, ax , numC},
+        {4,5, ax , numC},
+        {6,7, ax , numC},
+
+        {0,2, ay, 2},
+        {1,3, ax , numC},
+        {4,6, ax , numC},
+        {5,7, ax , numC},
+
+        {0,4, az, 3},
+        {1,5, ax , numC},
+        {2,6, ax , numC},
+        {3,7, ax , numC},
+        };
+    for (auto &def : edgeDefs)
+        {
+        auto segment = DSegment3d::From (corners[def.corner0], corners[def.corner1]);
+        double fractionA = def.fractionA;
+        int numB = def.numB;
+        if (!segment.point[0].AlmostEqual (segment.point[1]))
+            {
+            if (!patterns || fractionA >= 1.0 || numB == 0 || fractionA < 0.0)
+                segments.push_back (segment);
+            else
+                {
+                DPoint3d pointA = segment.FractionToPoint (fractionA);
+                if (fractionA > 0.0)
+                    {
+                    segments.push_back (DSegment3d::From(segment.point[0], pointA));
+                    }
+                if (fractionA < 1.0 && numB > 0)
+                    {
+                    double delta = (1.0 - fractionA) / numB;
+                    for (int i = 0; i < numB; i++)
+                        {
+                        double g0 = fractionA + i * delta;
+                        double g2 = g0 + delta;
+                        double g1 = g2 - fractionA * delta;
+                        segments.push_back (DSegment3d::From(segment.FractionToPoint (g1), segment.FractionToPoint (g2)));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+void StrokeRange (bvector<DSegment3d> &segments, DRange3dCR range, bool patterns = false)
+    {
+    DPoint3d corners[8];
+    range.Get8Corners (corners);
+    StrokeFrustum (segments, corners, patterns);
+    }
+void StrokeRange (bvector<DSegment3d> &segments, TransformCR transform, DRange3dCR range, bool patterns = false)
+    {
+    StrokeRange (segments, range, patterns);
+    for (auto &s : segments)
+        transform.Multiply (s);
+    }
+void StrokeFrustum (bvector<DSegment3d> &segments, DMatrix4dCR transform, DPoint3d corners[8], bool patterns = false)
+    {
+    StrokeFrustum (segments, corners, patterns);
+    for (auto &s : segments)
+        {
+        transform.MultiplyAndRenormalize (s.point[0], s.point[0]);
+        transform.MultiplyAndRenormalize (s.point[1], s.point[1]);
+        }
+    }
+
+

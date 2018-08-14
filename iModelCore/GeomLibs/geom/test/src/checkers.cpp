@@ -1565,7 +1565,10 @@ void Check::SaveTransformed (bvector<DTriangle3d> const &data, bool closed)
             SaveTransformed (points);
         }
     }
-
+DPoint3d Check::TransformPoint(DPoint3dCR xyz)
+    {
+    return s_transform * xyz;
+    }
 void Check::SaveTransformed (bvector<DSegment3d> const &data)
     {
     for (auto &segment : data)
@@ -1607,18 +1610,93 @@ void Check::ShiftToLowerRight (double dx)
         s_lowerRightBaseIndex = s_cache.size ();
         }
     }
-
 Transform Check::GetTransform () {return s_transform;}
 void Check::SetTransform (TransformCR transform) {s_transform = transform;}
 
+
+static bvector<Utf8String> s_keyinCache;
+void Check::DirectKeyin (char const *message)
+    {    
+    s_keyinCache.push_back (Utf8String (message));
+    }
+void Check::KeyinText (DPoint3dCR xyz, char const *text)
+    {
+    char message[2048];
+    sprintf (message,
+        "facet import dgnjs --text@[%lg,%lg,%lg]=%s\n",
+                xyz.x,xyz.y, xyz.z,
+                text
+                );
+    DirectKeyin (message);
+    }
+
+void Check::KeyinTextSize (double height)
+    {
+    char message[2048];
+    sprintf (message,
+        "facet import dgnjs --textsize=%lg\n", height);
+    DirectKeyin (message);
+    }
+
+void Check::KeyinOrigin(DPoint3dCR origin)
+    {
+    char message[2048];
+    sprintf (message,
+        "facet import dgnjs --origin=[%lg,%lg,%lg]\n", origin.x, origin.y, origin.z);
+    DirectKeyin (message);
+    }
+
+void Check::KeyinImport (char const *name, char const *extension)
+    {
+    BeFileName path;
+    BeTest::GetHost ().GetOutputRoot (path);
+
+    WString nameString;
+    BeStringUtilities::Utf8ToWChar (nameString, name);
+    path.AppendToPath (nameString.c_str ());
+    WString extensionString;
+    BeStringUtilities::Utf8ToWChar (extensionString, extension);
+    path.AppendExtension (extensionString.c_str ());
+
+    char message[2048];
+    sprintf (message,
+        "facet import dgnjs %ls\n", path.c_str ());
+    DirectKeyin (message);
+    }
 
 static int s_save = 1;
 static int s_noisyFiles = 0;
 static bool s_saveDGNJS = true;
 static bool s_saveIModelJson = true;
 static bool s_checkIModelJsonRoundTrip = false;
+void Check::ClearKeyins (char const *name)
+    {
+    if (s_keyinCache.size () > 0)
+        {
+        // save to the run/output directory, which we expect to under the working directory.
+        BeFileName path;
+        BeTest::GetHost ().GetOutputRoot (path);
+
+        WString wname;
+        BeStringUtilities::Utf8ToWChar (wname, name);
+        path.AppendToPath (wname.c_str ());
+        path.AppendExtension (L"key");
+        BeFile file;
+        if (BeFileStatus::Success == file.Create (path.c_str (), true))
+            {
+            for (auto &s : s_keyinCache)
+                {
+                uint32_t bytesWritten = 0;
+                file.Write(&bytesWritten, s.c_str (), (uint32_t)s.size ());
+                }
+            }
+        file.Close ();
+        s_keyinCache.clear ();
+        }
+    }
 void Check::ClearGeometry (char const *name)
     {
+
     if (s_save == 1)
         {
         // save to the run/output directory, which we expect to under the working directory.
@@ -1736,6 +1814,7 @@ void Check::SetUp()
     {
     // initialize standard services ...
     s_cache.clear ();
+    s_keyinCache.clear ();
     s_transform = Transform::FromIdentity ();
     s_stack.clear ();
     m_toleranceStack.clear ();

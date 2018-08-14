@@ -331,7 +331,7 @@ void BeCGWriter::WriteSpiralType (Utf8CP name, int typeCode)
 
 void BeCGWriter::WriteSpiral (struct DSpiral2dPlacement const &spiralPlacement)
     {
-    DSpiral2dFractionOfNominalLengthCurve const * nominalLengthSpiral = dynamic_cast <DSpiral2dFractionOfNominalLengthCurve const*> (spiralPlacement.spiral);
+    DSpiral2dDirectEvaluation const * nominalLengthSpiral = dynamic_cast <DSpiral2dDirectEvaluation const*> (spiralPlacement.spiral);
     WriteSetElementStart ("TransitionSpiral");
     //--------------------------------IPlacement placement = g.GetPlacement ();
     //--------------------------------SerializeMember (placement, "Placement");

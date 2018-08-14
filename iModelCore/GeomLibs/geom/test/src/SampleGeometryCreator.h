@@ -1122,3 +1122,9 @@ double ybase = -1.0    //!< [in] y height for base line
         points.push_back (T::From (x0,y0));
         }
     }
+
+void StrokeRange (bvector<DSegment3d> &segments, DRange3dCR range, bool patterns = false);
+void StrokeRange (bvector<DSegment3d> &segments, TransformCR transform, DRange3dCR range, bool patterns = false);
+
+void StrokeFrustum (bvector<DSegment3d> &segments, DPoint3d corners[8], bool patterns = false);
+void StrokeFrustum (bvector<DSegment3d> &segments, bvector<DMatrix4d> const &transform, DPoint3d corners[8], bool patterns = false);

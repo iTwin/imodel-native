@@ -14,6 +14,7 @@
 #include <iostream>
 
 #include <Bentley/BeConsole.h>
+
 struct CheckBSIBaseGeomMemory
     {
     int64_t counter0;
@@ -91,7 +92,6 @@ enum class FailureMode
 
 private: static int s_failureCount;
 private: static FailureMode s_failureMode;
-
 public:
 static int GetMaxVolume (){return s_maxVolume;}
 // Large numbers make more output
@@ -395,7 +395,17 @@ static bool Near (bvector<T> &a, bvector<T> &b, char const*pName = NULL)
 static void PushTolerance (ToleranceSelect select);
 //! Take the top tolerance off the stack and make it active.
 static void PopTolerance ();
-
+// KeyinXXX appends directives to a keyin file for microstation.
+// format as:  FACET IMPORT DGNJS --text@[x,y,z]=text
+static void KeyinText (DPoint3dCR xyz, char const *text);
+// format as: FACET IMPORT DGNJS --origin=[x,y,z]
+static void KeyinOrigin (DPoint3dCR xyz);
+// format as: FACET IMPORT DGNJS fullpathFilename
+static void KeyinImport (char const *text, char const * extension = "imjs");
+// format as: FACET IMPORT DGNJS --textsize=h
+static void KeyinTextSize (double height);
+// insert directly to keyin cache
+static void DirectKeyin (char const *);
 // Save (clone of) geometry in a cache
 static void SaveTransformed(bvector<IGeometryPtr> const &data);
 static void SaveTransformed(IGeometryPtr const &data);
@@ -422,8 +432,10 @@ static void Shift (DVec3dCR shift);
 static void ShiftToLowerRight (double dx = 0.0);
 static Transform GetTransform ();
 static void SetTransform (TransformCR transform);
+static DPoint3d TransformPoint (DPoint3dCR point);
 
 static void ClearGeometry (char const *name);
+static void ClearKeyins (char const *name);
 static void SetUp();
 static void TearDown();
 };

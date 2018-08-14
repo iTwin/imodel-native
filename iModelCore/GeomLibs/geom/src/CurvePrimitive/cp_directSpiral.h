@@ -15,8 +15,8 @@
 // Vector integrands for testing
 struct NominalLengthSpiralArcLengthIntegrands : BSIIncrementalVectorIntegrand
 {
-DSpiral2dFractionOfNominalLengthCurve &m_directSpiral;
-NominalLengthSpiralArcLengthIntegrands (DSpiral2dFractionOfNominalLengthCurve &directSpiral)
+DSpiral2dDirectEvaluation &m_directSpiral;
+NominalLengthSpiralArcLengthIntegrands (DSpiral2dDirectEvaluation &directSpiral)
     : m_directSpiral (directSpiral)
     {
     }
@@ -77,7 +77,7 @@ void Integrate (double startFraction, double endFraction, TransformCR frame, uin
 /*=================================================================================**//**
 * @bsiclass                                                      EarlinLutz   12/2015
 !! The bspline approximation is not evaluated until requested as proxy !!!
-!! The placement's raw pointer is DSpiral2dBase, but this class only constructs it with DSpiral2dFractionOfNominalLengthCurve.
+!! The placement's raw pointer is DSpiral2dBase, but this class only constructs it with DSpiral2dDirectEvaluation.
 +===============+===============+===============+===============+===============+======*/
 struct CurvePrimitiveDirectSpiral : public ICurvePrimitive
 {
@@ -86,7 +86,7 @@ typedef CurvePrimitiveBsplineCurve Super;
 protected:
 mutable MSBsplineCurvePtr m_curve;
 DSpiral2dPlacement m_placement;    // for outside use
-DSpiral2dFractionOfNominalLengthCurve *m_directSpiral;    // same pointer bits, but strongly typed.
+DSpiral2dDirectEvaluation *m_directSpiral;    // same pointer bits, but strongly typed.
 mutable bvector<DPoint3d> m_strokes;
 mutable bvector<double>   m_localFraction;
 mutable bvector<double>   m_trueDistance;
@@ -168,13 +168,13 @@ void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const 
 * @bsimethod                                                    EarlinLutz      12/2015
 +--------------------------------------------------------------------------------------*/
 explicit CurvePrimitiveDirectSpiral(
-DSpiral2dFractionOfNominalLengthCurve const & directSpiral,
+DSpiral2dDirectEvaluation const & directSpiral,
 TransformCR frame,
 double fractionA,
 double fractionB
 )
     {
-    m_directSpiral = (DSpiral2dFractionOfNominalLengthCurve*)directSpiral.Clone ();
+    m_directSpiral = (DSpiral2dDirectEvaluation*)directSpiral.Clone ();
     m_placement.InitCapturePointer(m_directSpiral, frame, fractionA, fractionB);
     CreateCachedCurve ();
     }

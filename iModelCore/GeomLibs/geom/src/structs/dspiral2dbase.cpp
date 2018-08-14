@@ -249,7 +249,7 @@ double curvature1
         return false;
         }
     mLength = fabs (angleChange / averageCurvature) ;
-    auto nominalLengthSpiral = dynamic_cast <DSpiral2dFractionOfNominalLengthCurve*> (this);
+    auto nominalLengthSpiral = dynamic_cast <DSpiral2dDirectEvaluation*> (this);
     // Problem!! mstn spiral handler does not create approximate spirals correctly.
     // ASSUME/GUESS/PRAY that the curvatures and angle were set up with the transition spiral formulas,
     //   and pulling out the length comes up with the right number ...
@@ -370,7 +370,7 @@ DVec2dR ddXdfdf,
 DVec2dR dddXdfdfdf
 )
     {
-    DSpiral2dFractionOfNominalLengthCurve * fractionalSpiral = dynamic_cast <DSpiral2dFractionOfNominalLengthCurve*> (this);
+    DSpiral2dDirectEvaluation * fractionalSpiral = dynamic_cast <DSpiral2dDirectEvaluation*> (this);
     if (fractionalSpiral)
         {
         DPoint2d uv;

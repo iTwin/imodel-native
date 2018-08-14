@@ -1783,5 +1783,350 @@ TEST(Transform, WeightedTransform)
 
         Check::Near(testOut, outPoints[i]);
         }
+    }
 
+#define NPC_000 0
+#define NPC_100 1
+#define NPC_010 2
+#define NPC_110 3
+
+#define NPC_001 4
+#define NPC_101 5
+#define NPC_011 6
+#define NPC_111 7
+enum class Coords
+{
+WORLD = 0,
+NPC = 1,
+VIEW = 2
+};
+struct ViewPortEmulator
+{
+
+// These vars and methods emulate viewing services in the viewport ...
+DMap4d m_worldToView;
+DMap4d m_viewToNPC;
+
+DPoint3d WorldToView (DPoint3dCR worldPoint)
+    {
+    DPoint3d viewPoint;
+    m_worldToView.M0.MultiplyAndRenormalize (&viewPoint, &worldPoint, 1);
+    return viewPoint;
+    }
+DPoint3d ViewToWorld (DPoint3dCR viewPoint)
+    {
+    DPoint3d worldPoint;
+    m_worldToView.M1.MultiplyAndRenormalize (&worldPoint, &viewPoint, 1);
+    return worldPoint;
+    }
+
+
+ViewPortEmulator (DMap4dCR worldToView, DMap4dCR viewToNPC) : m_worldToView (worldToView), m_viewToNPC (viewToNPC)
+    {
+    }
+
+DRay3d ViewPointToWorldRay (DPoint3d viewPoint)
+    {
+    // create two points A and B on the back and front planes.
+    DPoint4d npcA = m_viewToNPC.M0.Multiply (viewPoint, 1.0);
+    npcA.z = 0.0;        // mvoe it to back plane
+    DPoint4d npcB = npcA;
+    npcB.z = 1.0;       // move it to front plane
+    DPoint3d worldA, worldB;
+    DPoint4d viewA, viewB;
+    m_viewToNPC.M1.Multiply (&viewA, &npcA, 1);
+    m_viewToNPC.M1.Multiply (&viewB, &npcB, 1);
+    m_worldToView.M1.MultiplyAndNormalize (&worldA, &viewA, 1);
+    m_worldToView.M1.MultiplyAndNormalize (&worldB, &viewB, 1);
+    return DRay3d::FromOriginAndVector (worldB, worldA - worldB);
+    }
+DPoint3d ToView3d (Coords coords, DPoint3dCR point)
+    {
+    DPoint3d viewPoint;
+    if (coords == Coords::NPC)
+        m_viewToNPC.M1.MultiplyAndRenormalize (viewPoint, point);
+    else if (coords == Coords::WORLD)
+        m_worldToView.M0.MultiplyAndRenormalize (viewPoint, point);
+    else
+        viewPoint = point;
+    return viewPoint;
+    }
+DSegment3d ToView3d (Coords coords, DSegment3dCR segment)
+    {
+    DPoint3d point0, point1;
+    m_worldToView.M0.MultiplyAndRenormalize (point0, segment.point[0]);
+    m_worldToView.M0.MultiplyAndRenormalize (point1, segment.point[1]);
+    return DSegment3d::From (point0, point1);
+    }
+
+// "DisplayWorld" ... means 
+//   map to view coordinates
+//   Check::SaveTransformed
+void DisplaySegment (Coords coords, DPoint3dCR pointA, DPoint3dCR pointB)
+    {
+    Check::SaveTransformed (DSegment3d::From (ToView3d (coords, pointA), ToView3d (coords, pointB)));
+    }
+
+// "DisplayWorld" ... means 
+//   map to view coordinates
+//   Check::SaveTransformed
+void DisplayPlane (Coords coords, DPoint3dDVec3dDVec3dCR plane, int numX, int numY)
+    {
+    double xMax = numX + 1.0;     // extend a little on first line
+    for (int iY = 0; iY <= numY; iY++)
+        {
+        DisplaySegment (coords,
+            plane.Evaluate (0.0, (double)iY),
+            plane.Evaluate (xMax, (double)iY));
+        xMax = numX;
+        }
+    double yMax = numY;
+    for (int iX = 0; iX <= numX; iX++)
+        {
+        DisplaySegment (coords,
+            plane.Evaluate ((double)iX, 0.0),
+            plane.Evaluate ((double)iX, yMax));
+        }
+    }
+
+
+void DisplaySegment (Coords coords, DSegment3dCR segment)
+    {
+    Check::SaveTransformed (DSegment3d::From (ToView3d (coords, segment.point[0]), ToView3d (coords, segment.point[1])));
+    }
+void DisplayRange (Coords coords, DRange3dCR range, bool displayWithXYZPatterns)
+    {
+    bvector<DSegment3d> segments;
+    StrokeRange (segments, range, displayWithXYZPatterns);
+    for (auto &s : segments)
+        DisplaySegment (coords, s);
+    }
+void DisplayCuboid (Coords coords, DPoint3d corners[8], bool displayWithXYZPatterns)
+    {
+    bvector<DSegment3d> segments;
+    StrokeFrustum (segments, corners, displayWithXYZPatterns);
+    for (auto &s : segments)
+        DisplaySegment (coords, s);
+    }
+};
+struct DragState
+{
+DPoint3d m_initialViewPoint;
+};
+
+struct ViewClipCuboidTool
+{
+ViewPortEmulator &m_viewport;
+
+DragState m_dragState;
+
+
+DPoint3d m_cuboid[8]; // 8 points of view cube.  ASSUMED TO BE PARALLEL SIDES
+ViewClipCuboidTool (ViewPortEmulator &viewport) : m_viewport (viewport) {
+    m_dragState.m_initialViewPoint = DPoint3d::From (0,0,0);
+    }
+
+void SetRangeCuboid (DRange3dCR range)
+    {
+    range.Get8Corners (m_cuboid);
+    }
+void TransformCuboid (TransformCR transform)
+    {
+    transform.Multiply (m_cuboid, m_cuboid, 8);
+    }
+DPoint3d CuboidFractionsToWorld (DPoint3dCR uvw)
+    {
+    return m_cuboid[NPC_000]
+        + uvw.x * (m_cuboid[NPC_100] - m_cuboid[NPC_000])
+        + uvw.y * (m_cuboid[NPC_010] - m_cuboid[NPC_000])
+        + uvw.z * (m_cuboid[NPC_001] - m_cuboid[NPC_000]);
+    }
+
+
+// Given 3 points as fractions in the cuboid.
+// Return a plane with origin at first point, U and V vectors towards targets.
+DPoint3dDVec3dDVec3d CuboidFractionsToPlaneByVectors
+(
+DPoint3d uvwOrigin,
+DPoint3d uvwXTarget,
+DPoint3d uvwYTarget
+)
+    {
+    return DPoint3dDVec3dDVec3d::FromOriginAndTargets (
+        CuboidFractionsToWorld (uvwOrigin),
+        CuboidFractionsToWorld (uvwXTarget),
+        CuboidFractionsToWorld (uvwYTarget)
+        );
+    }
+// Return the (single point) intersection of a ray with a plane.
+// Return false if ray and plane are parallel.
+ValidatedDPoint3d IntersectRayWithPlane
+(
+DRay3dCR ray,
+DPoint3dDVec3dDVec3dCR plane
+)
+    {
+    // Point on ray is at parameter s is:    X(s) = ray.origin + s * ray.direction
+    // Point on plane at parameters u,v is:  Y(u,v) = plane.origin + u * plane.vectorU + v * plane.vectorV
+    // At intersection, these two are the same. So this is 3 equations in 3 unknowns (u,v,-s):
+    //    [plane.vectorU plane.vectorV ray.direction] * column([u v -s]) = ray.origin - plane.origin
+    //
+    RotMatrix matrix = RotMatrix::FromColumnVectors (plane.vectorU, plane.vectorV, ray.direction);
+    DVec3d rhs = ray.origin - plane.origin;
+    DVec3d uvw;
+    if (matrix.Solve (uvw, rhs))
+        return ValidatedDPoint3d (ray.FractionParameterToPoint (-uvw.z), true);
+    return ValidatedDPoint3d (ray.origin, false);
+    }
+// Given two rays and a plane
+// (Plane defined by origin and vectors, as a DPoint3dDVec3dDVec3d)
+// Find the intersections of the two rays with the plane.
+// Return the line segment joining the two points.
+// (The vector along this segemnt is the vector to transform geometry)
+// If either ray is parallel to the plane, return an invalid segment betweeen the ray origins.
+ValidatedDSegment3d MoveOnPlane
+(
+DRay3dCR rayA,                      // first ray (e.g. a ray from a mouse point into a view)
+DRay3dCR rayB,                      // second ray (e.g. a ray from a mouse point into a view)
+DPoint3dDVec3dDVec3dCR plane       // plane described by origin and 2 vectors
+)
+    {
+    auto pointA = IntersectRayWithPlane (rayA, plane);
+    auto pointB = IntersectRayWithPlane (rayB, plane);
+    if (pointA.IsValid () && pointB.IsValid ())
+        {
+        return ValidatedDSegment3d (DSegment3d::From (pointA.Value (), pointB.Value ()));
+        }
+    return ValidatedDSegment3d (DSegment3d::From (rayA.origin, rayB.origin), false);
+    }
+
+#ifdef CompileMoveOnCuboidMidZPlane
+
+// This is the arg list (targetPointView) of the original MoveOnPlane.
+// The new name emphasizes that it chooses a particular plane (middle z of cuboid).
+void MoveOnCuboidMidZPlane (DPoint3dCR targetPointView)
+    {
+    DPoint3d startingPointView = m_dragState.m_initialViewPoint;
+    // Construct a world space plane through the mid-Z of the cuboid ....
+    auto plane = CuboidFractionsToPlaneByVectors (
+        DPoint3d::From (0.5, 0.5, 0.5),
+        DPoint3d::From (1.0, 0.5, 0.5),
+        DPoint3d::From (0.5, 0.0, 0.5));
+
+    // construct world space rays from prior and current view points into the view . . 
+    DRay3d startRay = ViewPointToWorldRay (startingPointView);
+    DRay3d endRay   = ViewPointToWorldRay (targetPointView);
+    // Find intersections of each ray with the plane . ..
+    auto shiftSegment = MoveOnPlane (rayA, rayB, plane);
+    if (shiftSegment.IsValid ())
+        {
+        // shift be the vector along this segment . ..
+        shiftTransform = Transform::From (shiftSegment.Value ().VectorStartToEnd ());
+        trans.Multiply(m_cuboid, m_dragState.m_startingCuboid, _countof(m_cuboid));
+
+        FinishVolumeManipulation();
+        }
+    }
+//
+// Using the GetViewport () coordinate transformations,
+// 1) Convert given view point to npc
+// 2) move the npc z coordinates to 0 and 1 to get points on front and back
+// 3) convert the npc front and back points to world
+// 4) return a ray from front world point towards back world point.
+//
+DRay3d ViewPointToWorldRay (DPoint3d viewPoint)
+    {
+    // create two points A and B on the back and front planes.
+    DPoint4d npcA;
+    GetViewport()->ViewToNpc (&npcA, &viewPoint, 1);
+    npcA.z = 0.0;        // move pointA to the back plane
+    DPoint4d npcB = npcA;
+    npcB.z = 1.0;       // move pointB to front plane
+    DPoint3d worldA, worldB;
+    GetViewport()->NpcToWorld (&worldA, &npcA, 1);
+    GetViewport()->NpcToWorld (&worldB, &npcB, 1);
+    return DRay3d::FromOriginAndVector (worldB, worldA - worldB);
+    }
+
+#endif
+};
+struct TransformAndString
+{
+Transform m_transform;
+char const *m_string;
+TransformAndString (Transform transform, char const *string) : m_transform (transform), m_string (string) {}
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 08/18
+//---------------------------------------------------------------------------------------
+TEST(View,MouseMove)
+    {
+    DMap4d worldToViewMap;
+    double radiansW = Angle::DegreesToRadians (30);
+    auto worldToView = Transform::From(RotMatrix::FromAxisAndRotationAngle (2, radiansW), DPoint3d::From (10,20,0));
+    worldToViewMap.InitFromTransform (worldToView, false);
+
+    DMap4d viewToNpcMap;
+    viewToNpcMap.InitFromTransform (
+        Transform::FromRowValues (
+            100, 0, 0, 0,
+            0, 100, 0, 0,
+            0, 0, 100, -50), true);
+    auto viewBox = DRange3d::From (0,0,-50, 100, 100, 50);
+
+    ViewPortEmulator viewPort (worldToViewMap, viewToNpcMap);
+    DVec3d vectorQ = DVec3d::From (0.1, 0.38, 0.8);
+    vectorQ.Normalize ();
+    double radiansQ = Angle::DegreesToRadians (80);
+    RotMatrix matrixQ = RotMatrix::FromVectorAndRotationAngle (vectorQ, radiansQ);
+    Transform transformQ = Transform::FromMatrixAndFixedPoint (matrixQ, DPoint3d::From (0,0,0));
+    DVec3d vectorQ1;
+    double radiansQ1 = matrixQ.GetRotationAngleAndVector (vectorQ1);
+    Check::Near (radiansQ, radiansQ1, "verify degreeQ rotation");
+    Check::Parallel (vectorQ, vectorQ1, "verify axis of rotation");
+    for (auto placement : bvector<TransformAndString> {
+            TransformAndString(Transform::FromIdentity (), "Identity"),
+            TransformAndString(Transform::FromMatrixAndFixedPoint (
+                RotMatrix::FromVectorAndRotationAngle (DVec3d::From (0,0,1), Angle::DegreesToRadians (30)),
+                    DPoint3d::From (0,0,0)), "Z rotation"),
+            TransformAndString (transformQ, "General Rotation")
+            })
+        {
+        SaveAndRestoreCheckTransform shifter (200,0,0);
+        auto transform = placement.m_transform;
+        Check::KeyinText (Check::TransformPoint (DPoint3d::From (0,0,0)), placement.m_string);
+        Check::True (RotMatrix::From (transform).IsOrthogonal ());
+        ViewClipCuboidTool tool (viewPort);
+        tool.SetRangeCuboid (DRange3d::From (0,0,0, 12,16,20));
+        tool.TransformCuboid (transform);
+        DPoint3d viewPointA = DPoint3d::From (20,40,0);   // pixels at mouse start
+        DPoint3d viewPointB = DPoint3d::From (80,40,0);   // pixels at mouse end
+
+        viewPort.DisplaySegment (Coords::VIEW, viewPointA, viewPointB);
+        viewPort.DisplayCuboid (Coords::WORLD, tool.m_cuboid, true);
+        viewPort.DisplayRange (Coords::VIEW, viewBox, false);
+
+
+        DRay3d worldRayA = viewPort.ViewPointToWorldRay (viewPointA);
+        DRay3d worldRayB = viewPort.ViewPointToWorldRay (viewPointB);
+        auto worldPlane = tool.CuboidFractionsToPlaneByVectors (
+                    DPoint3d::From (0.5,0.5, 0.5),  // CuboidFractions center
+                DPoint3d::From (1.0,0.5, 0.5),  // CuboidFractions right center
+                DPoint3d::From (0.5,1.0, 0.5) 
+                );
+        viewPort.DisplayPlane (Coords::WORLD, worldPlane, 3, 2);
+        auto shiftSegment = tool.MoveOnPlane (worldRayA, worldRayB, worldPlane);
+        if (Check::True (shiftSegment.IsValid ()))
+            {
+            auto segment = shiftSegment.Value ();
+            auto shiftTransform = Transform::From (DVec3d::FromStartEnd (segment.point[0], segment.point[1]));
+            viewPort.DisplaySegment (Coords::WORLD, segment);
+            tool.TransformCuboid(shiftTransform);
+            viewPort.DisplayCuboid (Coords::WORLD, tool.m_cuboid, true);
+            }
+        }
+    Check::ClearGeometry ("View.MouseMove");
+    Check::KeyinImport ("View.MouseMove");
+    Check::ClearKeyins ("View.MouseMove");
     }

@@ -108,7 +108,7 @@ ValidatedDouble RunNewton (double target, bool (*function)(double x, T &a, doubl
     return ValidatedDouble (x, false);
     }
 
-bool cb_XPlusGamma5X (double x, double &gamma, double &f, double &dfdx)
+bool cb_XPlus5GammaX5 (double x, double &gamma, double &f, double &dfdx)
     {
     double x2 = x * x;
     double x4 = x2 * x2;
@@ -141,10 +141,11 @@ static int aecAlg_computeCzechTangentFromLength( double R, double Lp, double Xo,
     lamda = asin( Lp / ( 2.0 * R ) );
     gamma = 1.0 / cos( lamda );
     double gamma1 = gamma * gamma / (40.0 * R * R * Lp * Lp);
+    // EDL: gamma = 4RR / (4RR-LL)
     static int s_select = 1;
     if (s_select == 1)
         {
-        *X = RunNewton (Xo, cb_XPlusGamma5X, gamma1);
+        *X = RunNewton (Xo, cb_XPlus5GammaX5, gamma1);
         return SUCCESS;
         }
 
@@ -1926,4 +1927,50 @@ TEST(Angle,Atan2Zero)
     printf(" atan2(-0,-1) %.17lg\n", thetaMinus);
     printf(" Angle::Atan2(+0,-1) %.17lg\n", betaPlus);
     printf(" Angle::Atan2(-0,-1) %.17lg\n", betaMinus);
+    }
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PowerFunction,Hello)
+    {
+    double f = sqrt (10.0);
+    double aMax = 1.0e4;
+    uint32_t maxPower = 6;
+    for (double a = 1.0; a < aMax; a *= f)
+        {
+        double b = a;
+        double maxDelta = 0;
+        for (uint32_t p = 1; p <= maxPower; p++, b *= a)
+            {
+            double c = pow (a, p);
+            maxDelta = DoubleOps::MaxAbs (maxDelta, (c - b) / b);
+            Check::Near (b, pow (a, p), "repeated multiplication a^p = pow (a,p)");
+            }
+        Check::True (maxDelta < 1.0e-13, "Power function versus inline multiplication");
+        printf (" a= %15.2g maxDeltarelative  %.2le\n", a, maxDelta);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PowerFunction,Series)
+    {
+    double L = 120.0;   // typical spiral length
+    double R = 400.0;   // typical track radius
+    double alpha = 1.0 / (40.0 * R * R * L *L);
+    double dMax = 0.0;
+    for (double d = 0.0; d <= L; d += 10.0)
+        {
+        double d2 = d * d;
+        double d4 = d2 * d2;
+        double f0 = d * (1.0 - alpha * d4);
+        double f1 = d - alpha * pow (d, 5);
+        double delta = fabs (f1 - f0);
+        dMax = DoubleOps::Max (delta, dMax);
+        }
+    Check::True (dMax < 1.0e-13, "Power function versus inline multiplication");
     }

@@ -130,7 +130,7 @@ void UpdateIntegratedCurve(double maxStrokeLength)
 +--------------------------------------------------------------------------------------*/
 bool UpdateFractionCurve(double maxStrokeLength)
     {
-    DSpiral2dFractionOfNominalLengthCurve *fractionalSpiral = dynamic_cast <DSpiral2dFractionOfNominalLengthCurve*> (m_placement.spiral);
+    DSpiral2dDirectEvaluation *fractionalSpiral = dynamic_cast <DSpiral2dDirectEvaluation*> (m_placement.spiral);
     if (nullptr == fractionalSpiral)
         return false;
     DSegment1d interval = m_placement.FractionInterval ();
@@ -402,7 +402,7 @@ double fractionB,
 double maxStrokeLength = DEFAULT_SPIRAL_MAX_STROKE_LENGTH
 )
     {
-    DSpiral2dFractionOfNominalLengthCurve const *nominalLengthSpiral = dynamic_cast <DSpiral2dFractionOfNominalLengthCurve const *> (&spiral);
+    DSpiral2dDirectEvaluation const *nominalLengthSpiral = dynamic_cast <DSpiral2dDirectEvaluation const *> (&spiral);
     if (nominalLengthSpiral != nullptr)
         {
         return new CurvePrimitiveDirectSpiral (*nominalLengthSpiral, frame, fractionA, fractionB);

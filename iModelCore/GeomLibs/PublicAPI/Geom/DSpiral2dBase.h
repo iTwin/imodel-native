@@ -616,14 +616,14 @@ public:
 * This intermediate class implements DistanceToCurvature, DistanceToLocalAngle, DistanceToCurvatureDerivatives
 * based on direct x and y data from EvaluateAtDistance.
 */
-struct GEOMDLLIMPEXP DSpiral2dFractionOfNominalLengthCurve: DSpiral2dBase
+struct GEOMDLLIMPEXP DSpiral2dDirectEvaluation: DSpiral2dBase
 {
 double m_nominalLength;       // arbitrary parameter for evaluation.  (The base spiral data is also available)
-DSpiral2dFractionOfNominalLengthCurve (double nominalLength);
+DSpiral2dDirectEvaluation (double nominalLength);
 public:
 //! Evaluate the spiral and derivatives at specified fractional position
 //! return true if valid evaluation.
-//! DSpiral2dFractionOfNominalLengthCurve default implementation returns false.
+//! DSpiral2dDirectEvaluation default implementation returns false.
 virtual bool EvaluateAtFraction
     (
     double fraction, //!< [in] fraction for evaluation
@@ -633,13 +633,13 @@ virtual bool EvaluateAtFraction
     DVec2dP d3XYZ    //!< [out] third derivative wrt fraction
     ) const = 0;
 
-//! Return the true curvature at fractional position.  Implemented in DSpiral2dFractionOfNominalLengthCurve, not individual classes.
+//! Return the true curvature at fractional position.  Implemented in DSpiral2dDirectEvaluation, not individual classes.
 //! Assume EvaluateAtFraction.
 double FractionToCurvature (double fraction) const;
-//! Return the true curvature derivative wrt fraction.  Implemented in DSpiral2dFractionOfNominalLengthCurve, not individual classes.
+//! Return the true curvature derivative wrt fraction.  Implemented in DSpiral2dDirectEvaluation, not individual classes.
 //! Assume EvaluateAtFraction.
 bool FractionToDCurvatureDFraction (double fraction, double &curvature, double &dCurvatureDFraction) const;
-//! Return the magnitude of the true derivative of position wrt fraction.  Implemented in DSpiral2dFractionOfNominalLengthCurve, not individual classes.
+//! Return the magnitude of the true derivative of position wrt fraction.  Implemented in DSpiral2dDirectEvaluation, not individual classes.
 //! Assume EvaluateAtFraction.
 double FractionToVelocity(double fraction) const;
 //! Return the tangent angle (in radians) in local coordinates
@@ -671,7 +671,7 @@ static void ApplyCCWRotation (
 //     x =  s *(1-a *s^4)
 //     y = b * s^3
 
-struct GEOMDLLIMPEXP DSpiral2dWesternAustralian : DSpiral2dFractionOfNominalLengthCurve
+struct GEOMDLLIMPEXP DSpiral2dWesternAustralian : DSpiral2dDirectEvaluation
 {
     DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
 public:
@@ -704,7 +704,7 @@ static bool EvaluateAtDistanceInStandardOrientation
 // In local coordinates, with specific constants  a1,a2,a3,a4 and m based on length and final radius  . . .
 // x = s (1 - a1 m^2 s^4 + a2 m^4 s^8 - a3 m^6 s^12 + a4 m^8 s^16)
 // y = m * s^3
-struct GEOMDLLIMPEXP DSpiral2dAustralianRailCorp : DSpiral2dFractionOfNominalLengthCurve
+struct GEOMDLLIMPEXP DSpiral2dAustralianRailCorp : DSpiral2dDirectEvaluation
 {
     DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
 public:
@@ -737,7 +737,7 @@ static bool EvaluateAtDistanceInStandardOrientation
 // s = nominal distance along spiral
 // x = s (1 - a1 m^2 s^4 + a2 m^4 s^8 - a3 m^6 s^12 + a4 m^8 s^16)
 // y = m * s^3
-struct GEOMDLLIMPEXP DSpiral2dMXCubicAlongArc : DSpiral2dFractionOfNominalLengthCurve
+struct GEOMDLLIMPEXP DSpiral2dMXCubicAlongArc : DSpiral2dDirectEvaluation
 {
     DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
 public:
@@ -770,7 +770,7 @@ static bool EvaluateAtFractionInStandardOrientation
 
 // DIRECTHALFCOSINE
 // cosine factor multiplying x^2.
-struct GEOMDLLIMPEXP DSpiral2dDirectHalfCosine : DSpiral2dFractionOfNominalLengthCurve
+struct GEOMDLLIMPEXP DSpiral2dDirectHalfCosine : DSpiral2dDirectEvaluation
 {
     DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
 public:
@@ -800,7 +800,7 @@ static bool EvaluateAtFractionInStandardOrientation
     );
 };
 
-struct GEOMDLLIMPEXP DSpiral2dChinese : DSpiral2dFractionOfNominalLengthCurve
+struct GEOMDLLIMPEXP DSpiral2dChinese : DSpiral2dDirectEvaluation
     {
     DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
     public:
