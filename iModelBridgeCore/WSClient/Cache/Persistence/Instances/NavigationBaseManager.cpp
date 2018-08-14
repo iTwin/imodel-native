@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/NavigationBaseManager.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -25,6 +25,14 @@ m_dbAdapter(dbAdapter),
 m_statementCache(statementCache),
 m_navigationBaseClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_NavigationBase))
     {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NavigationBaseManager::IsNavigationBase(ECInstanceKeyCR instance)
+    {
+    return instance.GetClassId() == m_navigationBaseClass->GetId();
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015

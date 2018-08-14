@@ -1309,6 +1309,8 @@ BentleyStatus DataSourceCache::ReadInstanceHierarchy(ECInstanceKeyCR instance, E
     CacheNodeKey nodeKey;
     if (GetState().GetRootManager().IsRootNode(instance))
         nodeKey = CacheNodeKey(instance);
+    else if (GetState().GetNavigationBaseManager().IsNavigationBase(instance))
+        nodeKey = GetState().GetNavigationBaseManager().FindNavigationBase();
     else
         nodeKey = GetState().GetObjectInfoManager().ReadCachedInstanceKey(instance).GetInfoKey();
 
