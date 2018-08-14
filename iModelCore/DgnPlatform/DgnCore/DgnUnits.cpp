@@ -41,6 +41,7 @@ void EcefLocation::FromJson(JsonValueCR val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnGeoLocation::DgnGeoLocation(DgnDbR project) : m_dgndb(project)
     {
+    m_initialProjectCenter.Zero();
     m_globalOrigin.Zero();
     }
 
@@ -166,6 +167,9 @@ DgnDbStatus DgnGeoLocation::Load()
     if (jsonObj.isMember(json_ecefLocation()))
         m_ecefLocation.FromJson(jsonObj[json_ecefLocation()]);
 
+    if (jsonObj.isMember(json_initialProjectCenter()))
+        JsonUtils::DPoint3dFromJson(m_initialProjectCenter, jsonObj[json_initialProjectCenter()]);
+
     return DgnDbStatus::Success;
     }
 
@@ -176,6 +180,7 @@ void DgnGeoLocation::Save()
     {
     Json::Value jsonObj;
     JsonUtils::DPoint3dToJson(jsonObj[json_globalOrigin()], m_globalOrigin);
+    JsonUtils::DPoint3dToJson(jsonObj[json_initialProjectCenter()], m_initialProjectCenter);
 
     // save the EcefLocation, if valid
     if (m_ecefLocation.m_isValid)
@@ -222,6 +227,11 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
 void DgnGeoLocation::InitializeProjectExtents() 
     {
     SetProjectExtents(ComputeProjectExtents());
+
+    // We need an immutable origin for Cesium tile publishing that will not
+    // change when project extents change.   Set it here only.
+    m_initialProjectCenter = m_extent.LocalToGlobal(.5, .5, 5);
+    Save();
     }
 
 /*---------------------------------------------------------------------------------**//**
