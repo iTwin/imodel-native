@@ -80,7 +80,7 @@ private:
 
     std::list<std::shared_ptr<Policy>> GetPolicies();
     std::list<std::shared_ptr<Policy>> GetUserPolicies();
-    std::shared_ptr<Policy> SearchForOrRequestPolicy(Utf8String requestedProductId="");
+    std::shared_ptr<Policy> SearchForPolicy(Utf8String requestedProductId="");
     void StorePolicyTokenInUsageDb(std::shared_ptr<PolicyToken> policyToken);
     BentleyStatus RecordUsage();
     std::shared_ptr<PolicyToken> GetPolicyToken();
