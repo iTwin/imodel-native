@@ -7416,6 +7416,46 @@ TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_InstanceHasResponsesCachedUnd
     EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "F"})));
     }
 
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_NavigationBaseInstanceHasResponsesCachedUnderIt_ReturnsInstancesUnderIt)
+    {
+    auto cache = GetTestCache();
+
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("Root"), "Foo");
+
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, ObjectId()));
+    auto instance = cache->FindInstance(ObjectId());
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, instances.ToWSObjectsResponse()));
+
+    CachedResponseKey responseKey2(instance, "Foo");
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "C"});
+    instances.Add({"TestSchema.TestClass", "D"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, instances.ToWSObjectsResponse()));
+
+    CachedResponseKey responseKey3(cache->FindInstance({"TestSchema.TestClass", "C"}), "Foo");
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "E"});
+    instances.Add({"TestSchema.TestClass", "F"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey3, instances.ToWSObjectsResponse()));
+
+    ECInstanceKeyMultiMap map;
+    ASSERT_EQ(SUCCESS, cache->ReadInstanceHierarchy(instance, map));
+
+    EXPECT_EQ(4, map.size());
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "C"})));
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "D"})));
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "E"})));
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "F"})));
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
