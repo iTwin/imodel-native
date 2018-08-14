@@ -17,22 +17,26 @@ declare interface NativeApplyResult {
   aspect: NativeChangeSetCounts;
 }
 
+export enum NativeSQLiteDefaultTxn { None = 0, Deferred = 1, Immediate = 2, Exclusive = 3 }
+
 /* The NativeSQLiteDb class that is projected by the addon. */
 declare class NativeSQLiteDb {
   constructor();
   /**
   * Create a new SQLiteDb.
   * @param dbname The full path to the SQLiteDb in the local file system
+  * @param defaultTxn SQLite txn mode to use
   * @return non-zero error status if operation failed.
   */
-  createDb(dbname: string): DbResult;
+  createDb(dbname: string, defaultTxn: NativeSQLiteDefaultTxn): DbResult;
 
   /** Open a existing SQLiteDb.
   * @param dbname The full path to the SQLiteDb in the local file system
   * @param mode The open mode
+  * @param defaultTxn SQLite txn mode to use
   * @return non-zero error status if operation failed.
   */
-  openDb(dbname: string, mode: OpenMode): DbResult;
+  openDb(dbname: string, mode: OpenMode, defaultTxn: NativeSQLiteDefaultTxn): DbResult;
 
   /** Check to see if connection to SQLiteDb is open or not.
   * @return true if connection is open
@@ -43,6 +47,9 @@ declare class NativeSQLiteDb {
   * @return true if connection was closed
   */
   closeDb(): void;
+
+  /** Query the DbGuid property of this Db. */
+  getDbGuid(): string;
 
   createTable(tableName: string, ddl: string): DbResult;
 
