@@ -346,4 +346,12 @@ DGNPLATFORM_EXPORT ReadStatus ReadWebTile(Render::Primitives::GeometryCollection
 // Return false if feature table contains data not valid for DgnDb.
 bool VerifyFeatureTable(StreamBufferR, DgnDbR);
 
+//=======================================================================================
+/// @bsistruct                                                   Ray.Bentley     06/2017
+//=======================================================================================
+struct RDSTileReader
+{
+static TileTree::RootPtr ReadTileTree(Utf8CP url);
+};   // RDSTileReader
+
 END_TILETREE_IO_NAMESPACE
