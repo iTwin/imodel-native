@@ -8,7 +8,6 @@
 #include <DgnPlatformInternal.h>
 #include <Bentley/BeSystemInfo.h>
 #include <DgnPlatform/ElementTileTree.h>
-#include <DgnPlatform/TileIO.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
@@ -176,7 +175,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
     StopWatch timer(true);
 
     uint32_t waitForAllLoadsMillis = 0;
-    auto const& plan = context.GetUpdatePlan();        
+    auto const& plan = context.GetUpdatePlan();
     if (plan.WantWait() && plan.HasQuitTime() && plan.GetQuitTime().IsInFuture())
         waitForAllLoadsMillis = std::chrono::duration_cast<std::chrono::milliseconds>(context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now()).count();
 
@@ -197,14 +196,8 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
                     {
                     // a model can defer root creation if it needs some preparation work. Bing Maps does that because it needs to fetch the Bing key and the template URL.
                     modelRoot = model->GetTileTree(context);
-
                     if (modelRoot.IsNull())
                         {
-#ifdef RDS_TILESET_SUPPORT
-                        auto    json = model->GetJsonProperties("tilesetUrl");
-                        if (json.isString())
-                            modelRoot = TileTree::IO::RDSTileReader::ReadTileTree(json.asString().c_str());
-#endif
                         rootCreationDeferred = true;
                         }
                     else
