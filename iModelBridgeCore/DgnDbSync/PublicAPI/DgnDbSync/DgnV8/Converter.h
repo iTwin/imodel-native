@@ -2827,14 +2827,6 @@ struct ConvertV8TextToDgnDbExtension : ConvertToDgnDbElementExtension
     bool _GetBasisTransform(Bentley::Transform&, DgnV8EhCR, Converter&) override;
 };
 
-//=======================================================================================
-// @bsiclass                                                    Jeff.Marker     05/2016
-//=======================================================================================
-struct RealityMeshAttachmentConversion
-{
-    static StatusInt ExtractAttachment (BentleyApi::Utf8StringR rootUrl, Transform& location, BentleyApi::Dgn::ClipVectorPtr& clipVector, ModelSpatialClassifiers& classifiers, uint32_t& activeClassifierId, DgnV8EhCR v8el, Converter& converter, ResolvedModelMapping const& v8mm, uint16_t majorXAttributeId);
-                         
-};
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2016                                                                    
@@ -2875,6 +2867,16 @@ struct ScalableMeshElementHandler : DgnV8Api::ExtendedElementHandler
     DEFINE_T_SUPER(DgnV8Api::ExtendedElementHandler)
     DGNV8_ELEMENTHANDLER_DECLARE_MEMBERS(ScalableMeshElementHandler, );
 };
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2016
+//=======================================================================================
+struct RealityMeshAttachmentConversion
+{
+    static StatusInt ExtractAttachment (BentleyApi::Utf8StringR rootUrl, Transform& location, BentleyApi::Dgn::ClipVectorPtr& clipVector, ModelSpatialClassifiers& classifiers, uint32_t& activeClassifierId, DgnV8EhCR v8el, Converter& converter, ResolvedModelMapping const& v8mm, uint16_t majorXAttributeId);
+    static void ForceClassifierAttachmentLoad (DgnModelRefR modelRef);
+                         
+};
+
 
 //=======================================================================================
 // @bsiclass                                                    Mathieu.St-Pierre 07/17
