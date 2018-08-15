@@ -46,21 +46,25 @@ TEST_F(IModelCompatibilityTestFixture, BasicTestsOnAllPulledFiles)
             // Run SELECT statements against all classes
             for (ECSchemaCP schema : testDb.GetDb().Schemas().GetSchemas())
                 {
+                if (schema->GetName().Equals("ECDbSystem"))
+                    continue; //doesn't have mapped classes
+
                 for (ECClassCP cl : schema->GetClasses())
                     {
-                    if (!cl->IsEntityClass())
+                    if (!cl->IsEntityClass() && !cl->IsRelationshipClass())
                         continue;
-
+                    
                     Utf8String ecsql("SELECT ECInstanceId,ECClassId");
                     for (ECPropertyCP prop : cl->GetProperties())
                         {
-                        ecsql.append(",").append(prop->GetName());
+                        ecsql.append(",[").append(prop->GetName()).append("]");
                         }
                     ecsql.append(" FROM ").append(cl->GetECSqlName());
 
                     ECSqlStatement stmt;
                     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), ecsql.c_str())) << ecsql << " | " << testDb.GetDescription();
-                    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "All entity classes are expected to be empty in the test files | " << ecsql << " | " << testDb.GetDescription();
+                    const DbResult stepStat = stmt.Step();
+                    ASSERT_TRUE(BE_SQLITE_DONE == stepStat || BE_SQLITE_ROW == stepStat) << ecsql << " | " << testDb.GetDescription();
                     }
                 }
             }
@@ -553,15 +557,15 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32SchemaImport)
                     {
                     EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
 
-                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
-
                     if (testDb.GetAge() == ProfileState::Age::Older)
                         {
+                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription(); // not persisted yet in older files
                         EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
                         EXPECT_EQ(JsonValue("[{\"cnt\": 1}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
                         }
                     else
                         {
+                        EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
                         EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
                         EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
                         }
@@ -669,14 +673,15 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32SchemaUpdate)
                     case ProfileState::Age::UpToDate:
                     {
                     EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("SchemaUpdateTest")) << testDb.GetDescription();
                     if (testDb.GetAge() == ProfileState::Age::Older)
                         {
+                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("SchemaUpdateTest")) << testDb.GetDescription();
                         EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
                         EXPECT_EQ(JsonValue("[{\"cnt\": 1}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
                         }
                     else
                         {
+                        EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("SchemaUpdateTest")) << testDb.GetDescription();
                         EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
                         EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
                         }

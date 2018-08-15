@@ -140,7 +140,7 @@ struct UpgradedEC32EnumsTestIModelCreator final : TestIModelCreator
         BentleyStatus _UpgradeSchemas() const override;
 
     public:
-        explicit UpgradedEC32EnumsTestIModelCreator() : TestIModelCreator(TESTIMODEL_UPGRADEDEC32ENUMS) {}
+        UpgradedEC32EnumsTestIModelCreator() : TestIModelCreator(TESTIMODEL_UPGRADEDEC32ENUMS) {}
         ~UpgradedEC32EnumsTestIModelCreator() {}
     };
 //======================================================================================

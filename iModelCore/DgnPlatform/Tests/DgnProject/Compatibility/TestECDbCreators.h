@@ -84,7 +84,7 @@ struct EmptyTestECDbCreator final : TestECDbCreator
             }
 
     public:
-        explicit EmptyTestECDbCreator() : TestECDbCreator(TESTECDB_EMPTY) {}
+        EmptyTestECDbCreator() : TestECDbCreator(TESTECDB_EMPTY) {}
         ~EmptyTestECDbCreator() {}
     };
 
@@ -115,7 +115,7 @@ struct PreEC32EnumsTestECDbCreator final : TestECDbCreator
                                                      </ECSchema>)xml"));
             }
     public:
-        explicit PreEC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_PREEC32ENUMS) {}
+        PreEC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_PREEC32ENUMS) {}
         ~PreEC32EnumsTestECDbCreator() {}
     };
 
@@ -149,7 +149,7 @@ struct UpgradedEC32EnumsTestECDbCreator final : TestECDbCreator
         BentleyStatus _UpgradeSchemas() const override;
 
     public:
-        explicit UpgradedEC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_UPGRADEDEC32ENUMS) {}
+        UpgradedEC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_UPGRADEDEC32ENUMS) {}
         ~UpgradedEC32EnumsTestECDbCreator() {}
     };
 
@@ -180,7 +180,7 @@ struct EC32EnumsTestECDbCreator final : TestECDbCreator
                                                      </ECSchema>)xml"));
             }
     public:
-        explicit EC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32ENUMS) {}
+        EC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32ENUMS) {}
         ~EC32EnumsTestECDbCreator() {}
     };
 
@@ -267,7 +267,7 @@ struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
 </ECSchema>)xml"));
             }
     public:
-        explicit PreEC32KoqsTestECDbCreator() : TestECDbCreator(TESTECDB_PREEC32KOQS) {}
+        PreEC32KoqsTestECDbCreator() : TestECDbCreator(TESTECDB_PREEC32KOQS) {}
         ~PreEC32KoqsTestECDbCreator() {}
     };
 
@@ -325,7 +325,7 @@ struct PreEC32SchemaUpdateTestECDbCreator final : TestECDbCreator
             </ECSchema>)xml"));
             }
     public:
-        explicit PreEC32SchemaUpdateTestECDbCreator() : TestECDbCreator(TESTECDB_PREEC32SCHEMAUPDATE) {}
+        PreEC32SchemaUpdateTestECDbCreator() : TestECDbCreator(TESTECDB_PREEC32SCHEMAUPDATE) {}
         ~PreEC32SchemaUpdateTestECDbCreator() {}
     };
 
@@ -352,7 +352,7 @@ struct EC32KoqsTestECDbCreator final : TestECDbCreator
                 </ECSchema>)xml"));
             }
     public:
-        explicit EC32KoqsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32KOQS) {}
+        EC32KoqsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32KOQS) {}
         ~EC32KoqsTestECDbCreator() {}
     };
 
@@ -392,7 +392,66 @@ struct EC32UnitsTestECDbCreator final : TestECDbCreator
                 </ECSchema>)xml"));
             }
     public:        
-        explicit EC32UnitsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32UNITS) {}
+        EC32UnitsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32UNITS) {}
         ~EC32UnitsTestECDbCreator() {}
     };
 
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      08/2018
+//======================================================================================
+struct EC32SchemaUpdateTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
+                return ERROR;
+
+            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            <ECSchema schemaName="SchemaUpdateTest" alias="su" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+              <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+              <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+
+             <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT]" relativeError="0.0001"/>
+             <ECEnumeration typeName="StatusEnum" displayLabel="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                <ECEnumerator name="On" value="0"/>
+                <ECEnumerator name="Off" value="1"/>
+                <ECEnumerator name="Unknown" value="2"/>
+             </ECEnumeration>
+             <ECEntityClass typeName="BaseA">
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                <ECProperty propertyName="Status" typeName="StatusEnum" />
+             </ECEntityClass>
+             <ECEntityClass typeName="BaseB">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                <ECProperty propertyName="Status" typeName="StatusEnum" />
+             </ECEntityClass>
+             <ECEntityClass typeName="BaseC">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>6</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                <ECProperty propertyName="Status" typeName="StatusEnum" />
+             </ECEntityClass>
+            </ECSchema>)xml"));
+            }
+    public:
+        EC32SchemaUpdateTestECDbCreator() : TestECDbCreator(TESTECDB_EC32SCHEMAUPDATE) {}
+        ~EC32SchemaUpdateTestECDbCreator() {}
+    };
