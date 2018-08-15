@@ -108,7 +108,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OUTROOT)Winx64\BuildContexts\StructuralDomains\SubParts\Libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OUTROOT)Winx64\BuildContexts\StructuralDomains\SubParts\Libs;%(AdditionalLibraryDirectories);$(OUTROOT)Winx64\build\StructuralDomain; </AdditionalLibraryDirectories>
       <AdditionalDependencies>StructuralDomain.lib;Bentley.lib;BentleyGeom.lib;BeSQLite.lib;BeSQLiteEC.lib;DgnPlatform.lib;BeXml.lib;BeLibXml2.lib;ECObjects.lib;Units.lib;BaseGeoCoord.lib;BeJsonCpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>

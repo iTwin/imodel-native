@@ -479,7 +479,7 @@ BentleyStatus StructPhysCreator::DoCreate()
 
 
     // Set the project extents to include the elements in the physicalModel, plus a margin
-    Dgn::AxisAlignedBox3d projectExtents = physicalModel->QueryModelRange();
+    AxisAlignedBox3d projectExtents = physicalModel->QueryModelRange();
     projectExtents.Extend(0.5);
     db->GeoLocation().SetProjectExtents(projectExtents);
 

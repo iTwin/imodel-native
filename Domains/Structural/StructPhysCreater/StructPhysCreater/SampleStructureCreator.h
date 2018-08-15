@@ -68,7 +68,7 @@ struct SampleStructureCreator
         SampleStructureCreator(double originX, double originY, double originZ) :
             m_originX(originX), m_originY(originY), m_originZ(originZ) { }
 
-        Dgn::Placement3d SampleStructureCreator::GetStructurePlacement();
+        Placement3d SampleStructureCreator::GetStructurePlacement();
 
         virtual PhysicalProperties* SampleStructureCreator::GetBeam12Properties() = 0;
         virtual PhysicalProperties* SampleStructureCreator::GetBeam15Properties() = 0;

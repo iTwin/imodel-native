@@ -14,9 +14,9 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-Dgn::Placement3d SampleStructureCreator::GetStructurePlacement()
+Placement3d SampleStructureCreator::GetStructurePlacement()
     {
-    Dgn::Placement3d placement;
+    Placement3d placement;
     placement.GetOriginR() = DPoint3d::From(m_originX, m_originY, m_originZ);
     return placement;
     }
