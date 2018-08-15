@@ -127,13 +127,13 @@ bool ECSchemaDownConverter::Convert(ECSchemaR schema)
     auto unitsSchema = schema.FindSchema(unitsKey, SchemaMatchType::Latest);
     static SchemaKey formatsKey = SchemaKey("Formats", 1, 0, 0);
     auto formatsSchema = schema.FindSchema(formatsKey, SchemaMatchType::Latest);
-    if(schema.IsSchemaReferenced(schema, *unitsSchema))
+    if(nullptr != unitsSchema && schema.IsSchemaReferenced(schema, *unitsSchema))
         {
         LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", unitsSchema->GetFullSchemaName().c_str());
         schema.m_refSchemaList.erase(schema.m_refSchemaList.find(unitsKey));
         }
 
-    if(schema.IsSchemaReferenced(schema, *formatsSchema))
+    if(nullptr != formatsSchema && schema.IsSchemaReferenced(schema, *formatsSchema))
         {
         LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", formatsSchema->GetFullSchemaName().c_str());
         schema.m_refSchemaList.erase(schema.m_refSchemaList.find(formatsKey));

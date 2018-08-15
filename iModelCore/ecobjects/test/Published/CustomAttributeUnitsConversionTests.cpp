@@ -1073,6 +1073,47 @@ TEST_F(UnitsCustomAttributesConversionTests, EC32SchemasWithKoQsProperlyRemoveRe
     ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *ECTestFixture::GetUnitsSchema()));
     ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *ECTestFixture::GetFormatsSchema()));
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Joseph.Urbano                       08/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitsCustomAttributesConversionTests, EC2SchemasWithoutKoQsDoNotAttemptToRemoveReferenceToStandardUnitsSchema)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='testSchema' version='01.00.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+            <ECSchemaReference name='ECv3ConversionAttributes' version='01.00.00' prefix='V2ToV3' />
+            <ECClass typeName='A'>
+                <ECProperty propertyName='PropA' typeName='double' />
+            </ECClass>
+            <ECClass typeName='B'>
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName='PropA' typeName='double' />
+            </ECClass>
+            <ECClass typeName='C'>
+                <BaseClass>B</BaseClass>
+                <ECProperty propertyName='PropA' typeName='double' />
+            </ECClass>
+            <ECClass typeName='D'>
+                <ECProperty propertyName='Prop0' typeName='double' />
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext)) << "ECSchema failed to deserialize EC3 schema.";
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *ECTestFixture::GetUnitsSchema()));
+    ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *ECTestFixture::GetFormatsSchema()));
+
+    Utf8String convertedDuringXmlSerialization;
+    ASSERT_EQ(SchemaWriteStatus::Success, ECSchema::WriteToEC2XmlString(convertedDuringXmlSerialization, schema.get()));
+
+    ASSERT_TRUE(ECSchemaDownConverter::Convert(*schema));
+    ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *ECTestFixture::GetUnitsSchema()));
+    ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *ECTestFixture::GetFormatsSchema()));
+    }
 //=======================================================================================
 //! UnitInstanceConversionTest
 //=======================================================================================
