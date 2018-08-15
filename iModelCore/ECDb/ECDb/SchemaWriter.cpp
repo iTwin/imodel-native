@@ -15,15 +15,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, ECDbCR ecdb, SchemaImportContext& schemaImportCtx, bvector<ECSchemaCP> const& primarySchemasOrderedByDependencies)
+BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext& schemaImportCtx, bvector<ECSchemaCP> const& schemasRaw)
     {
     PERFLOG_START("ECDb", "Schema import> Persist schemas");
 
-    Context ctx(ecdb, schemaImportCtx);
-    if (SUCCESS != ValidateSchemasPreImport(ctx, primarySchemasOrderedByDependencies))
+    Context ctx(schemaImportCtx);
+    bvector<ECSchemaCP> schemas;
+    if (SUCCESS != ctx.PreprocessSchemas(schemas, schemasRaw))
         return ERROR;
 
-    if (SUCCESS != CompareSchemas(ctx, primarySchemasOrderedByDependencies))
+    if (SUCCESS != CompareSchemas(ctx, schemas))
         return ERROR;
 
     if (ctx.GetSchemasToImport().empty())
@@ -33,17 +34,11 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
         {
         if (!ctx.IsEC32AvailableInFile())
             {
-            //If we import into pre-EC3.2 files, we must not import the units and formats schema
-            //as they are only deserialized temporarily by ECObjects
-            if (schema->GetName().EqualsIAscii("Units") ||schema->GetName().EqualsIAscii("Formats"))
-                continue;
-
             if (schema->OriginalECXmlVersionAtLeast(ECVersion::V3_2))
                 {
                 ctx.Issues().ReportV("Failed to import ECSchemas. Schema '%s' is an EC %" PRIu32 ".%" PRIu32 " schema. Schemas with ECVersion 3.2 or higher cannot be imported in a file that does not support EC3.2 yet.",
                                      schema->GetFullSchemaName().c_str(), schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
                 return ERROR;
-
                 }
             }
 
@@ -60,15 +55,6 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
     schemasToMap.insert(schemasToMap.begin(), ctx.GetSchemasToImport().begin(), ctx.GetSchemasToImport().end());
     PERFLOG_FINISH("ECDb", "Schema import> Persist schemas");
     return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                     05/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::ValidateSchemasPreImport(Context const& ctx, bvector<ECSchemaCP> const& primarySchemasOrderedByDependencies)
-    {
-    const bool isValid = SchemaValidator::ValidateSchemas(ctx.ImportCtx(), ctx.Issues(), primarySchemasOrderedByDependencies);
-    return isValid ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -233,10 +219,13 @@ BentleyStatus SchemaWriter::InsertSchemaReferenceEntries(Context& ctx, ECSchemaC
     for (bpair<SchemaKey, ECSchemaPtr> const& kvPair : references)
         {
         ECSchemaCP reference = kvPair.second.get();
+        if (!ctx.IsEC32AvailableInFile() && ctx.LegacyUnitsHelper().IgnoreSchema(*reference))
+            continue;
+
         ECSchemaId referenceId = SchemaPersistenceHelper::GetSchemaId(ctx.GetECDb(), DbTableSpace::Main(), reference->GetName().c_str(), SchemaLookupMode::ByName);
         if (!referenceId.IsValid())
             {
-            BeAssert(false && "BuildDependencyOrderedSchemaList used by caller should have ensured that all references are already imported");
+            BeAssert(false && "All referenced schemas are expected to be imported before.");
             return ERROR;
             }
 
@@ -2178,9 +2167,6 @@ bool SchemaWriter::IsChangeToBaseClassIsSupported(ECClassCR baseClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& baseClassChanges, ECN::ECClassCR oldClass, ECN::ECClassCR newClass)
     {
-    if (!baseClassChanges.IsChanged())
-        return SUCCESS;
-
     std::function<ECClassCP(ECClassCR, Utf8StringCR)> findBaseClass = [] (ECClassCR ecClass, Utf8StringCR qualifiedName)
         {
         ECClassCP baseClass = nullptr;
@@ -2200,9 +2186,11 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
     for (size_t i = 0; i < baseClassChanges.Count(); i++)
         {
         StringChange& change = baseClassChanges[i];
+        if (!change.IsChanged())
+            continue;
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-
             ECClassCP oldBaseClass = findBaseClass(oldClass, change.GetOld().Value());
             if (oldBaseClass == nullptr)
                 return ERROR;
@@ -2281,7 +2269,7 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, ECClassCR oldClass, ECClassCR newClass)
     {
-    if (classChange.GetStatus() == ECChange::Status::Done)
+    if (classChange.GetStatus() == ECChange::Status::Done || !classChange.IsChanged())
         return SUCCESS;
 
     if (classChange.Name().IsChanged())
@@ -2418,6 +2406,9 @@ BentleyStatus SchemaWriter::UpdateProperties(Context& ctx, PropertyChanges& prop
     for (size_t i = 0; i < propertyChanges.Count(); i++)
         {
         PropertyChange& change = propertyChanges[i];
+        if (!change.IsChanged())
+            continue;
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ECPropertyCP oldProperty = oldClass.GetPropertyP(change.GetChangeName(), false);
@@ -2472,9 +2463,6 @@ BentleyStatus SchemaWriter::UpdateProperties(Context& ctx, PropertyChanges& prop
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, SchemaReferenceChanges& referenceChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
-    if (!referenceChanges.IsChanged())
-        return SUCCESS;
-
     for (size_t i = 0; i < referenceChanges.Count(); i++)
         {
         StringChange& change = referenceChanges[i];
@@ -2513,6 +2501,9 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, SchemaReference
                 return ERROR;
                 }
 
+            if (!ctx.IsEC32AvailableInFile() && ctx.LegacyUnitsHelper().IgnoreSchema(newRef))
+                continue;
+
             //Ensure schema exist
             if (!SchemaPersistenceHelper::TryGetSchemaKey(existingRef, ctx.GetECDb(), DbTableSpace::Main(), newRef.GetName().c_str()))
                 {
@@ -2546,36 +2537,8 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, SchemaReference
             }
         else if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
-            SchemaKey oldRef, newRef, existingRef;
-            if (SchemaKey::ParseSchemaFullName(oldRef, change.GetOld().Value().c_str()) != ECObjectsStatus::Success)
-                {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Failed to parse previous ECSchema reference.",
-                                          oldSchema.GetFullSchemaName().c_str());
-                return ERROR;
-                }
-
-            if (SchemaKey::ParseSchemaFullName(newRef, change.GetNew().Value().c_str()) != ECObjectsStatus::Success)
-                {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Failed to parse new ECSchema reference.",
-                                          oldSchema.GetFullSchemaName().c_str());
-                return ERROR;
-                }
-
-            //Ensure schema exist and also get updated version number.
-            if (!SchemaPersistenceHelper::TryGetSchemaKey(existingRef, ctx.GetECDb(), DbTableSpace::Main(), oldRef.GetName().c_str()))
-                {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Referenced ECSchema %s does not exist in the file.",
-                                          oldSchema.GetFullSchemaName().c_str(), oldRef.GetFullSchemaName().c_str());
-                return ERROR;
-                }
-
-            //Schema must exist with that or greater version
-            if (!existingRef.Matches(newRef, SchemaMatchType::LatestWriteCompatible))
-                {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Could not locate compatible referenced ECSchema %s.",
-                                          oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
-                return ERROR;
-                }
+            BeAssert(false && "Should never end up here, as schema references cannot be modified, they can only be added or deleted.");
+            return ERROR;
             }
 
         change.SetStatus(ECChange::Status::Done);
@@ -2896,12 +2859,12 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateClasses(Context& ctx, ClassChanges& classChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
-    if (!classChanges.IsChanged())
-        return SUCCESS;
-
     for (size_t i = 0; i < classChanges.Count(); i++)
         {
         ClassChange& change = classChanges[i];
+        if (!change.IsChanged())
+            continue;
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ECClassCP oldClass = oldSchema.GetClassCP(change.GetChangeName());
@@ -2954,12 +2917,12 @@ BentleyStatus SchemaWriter::UpdateClasses(Context& ctx, ClassChanges& classChang
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityChanges& koqChanges, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema)
     {
-    if (!koqChanges.IsChanged())
-        return SUCCESS;
-
     for (size_t i = 0; i < koqChanges.Count(); i++)
         {
         KindOfQuantityChange& change = koqChanges[i];
+        if (!change.IsChanged())
+            continue;
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting KindOfQuantity from an ECSchema is not supported.",
@@ -3078,12 +3041,12 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCategoryChanges& changes, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema)
     {
-    if (!changes.IsChanged())
-        return SUCCESS;
-
     for (size_t i = 0; i < changes.Count(); i++)
         {
         PropertyCategoryChange& change = changes[i];
+        if (!change.IsChanged())
+            continue;
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting PropertyCategory from an ECSchema is not supported.",
@@ -3357,12 +3320,12 @@ BentleyStatus SchemaWriter::VerifyEnumeratorChanges(Context& ctx, ECEnumerationC
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateEnumerations(Context& ctx, EnumerationChanges& enumChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
-    if (!enumChanges.IsChanged())
-        return SUCCESS;
-
     for (size_t i = 0; i < enumChanges.Count(); i++)
         {
         EnumerationChange& change = enumChanges[i];
+        if (!change.IsChanged())
+            continue;
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting ECEnumerations from an ECSchema is not supported.",
@@ -3408,12 +3371,12 @@ BentleyStatus SchemaWriter::UpdateEnumerations(Context& ctx, EnumerationChanges&
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdatePhenomena(Context& ctx, PhenomenonChanges& changes, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
-    if (!changes.IsChanged())
-        return SUCCESS;
-
     for (size_t i = 0; i < changes.Count(); i++)
         {
         PhenomenonChange& change = changes[i];
+        if (!change.IsChanged())
+            continue;
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting Phenomena from an ECSchema is not supported.",
@@ -3509,12 +3472,12 @@ BentleyStatus SchemaWriter::UpdatePhenomenon(Context& ctx, PhenomenonChange& cha
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateUnitSystems(Context& ctx, UnitSystemChanges& changes, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
-    if (!changes.IsChanged())
-        return SUCCESS;
-
     for (size_t i = 0; i < changes.Count(); i++)
         {
         UnitSystemChange& change = changes[i];
+        if (!change.IsChanged())
+            continue;
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting UnitSystems from an ECSchema is not supported.",
@@ -3610,12 +3573,12 @@ BentleyStatus SchemaWriter::UpdateUnitSystem(Context& ctx, UnitSystemChange& cha
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateUnits(Context& ctx, UnitChanges& changes, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
-    if (!changes.IsChanged())
-        return SUCCESS;
-
     for (size_t i = 0; i < changes.Count(); i++)
         {
         UnitChange& change = changes[i];
+        if (!change.IsChanged())
+            continue;
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting Units from an ECSchema is not supported.",
@@ -3711,12 +3674,12 @@ BentleyStatus SchemaWriter::UpdateUnit(Context& ctx, UnitChange& change, ECN::EC
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateFormats(Context& ctx, FormatChanges& changes, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
-    if (!changes.IsChanged())
-        return SUCCESS;
-
     for (size_t i = 0; i < changes.Count(); i++)
         {
         FormatChange& change = changes[i];
+        if (!change.IsChanged())
+            continue;
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting Formats from an ECSchema is not supported.",
@@ -4037,9 +4000,9 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaWriter::CompareSchemas(Context& ctx, bvector<ECSchemaCP> const& dependencyOrderedPrimarySchemas)
+BentleyStatus SchemaWriter::CompareSchemas(Context& ctx, bvector<ECSchemaCP> const& schemas)
     {
-    if (dependencyOrderedPrimarySchemas.empty())
+    if (schemas.empty())
         {
         BeAssert(false);
         return ERROR;
@@ -4048,7 +4011,7 @@ BentleyStatus SchemaWriter::CompareSchemas(Context& ctx, bvector<ECSchemaCP> con
     BeAssert(ctx.GetExistingSchemas().empty() && ctx.GetSchemasToImport().empty());
 
     std::set<Utf8String> doneList;
-    for (ECSchemaCP schema : dependencyOrderedPrimarySchemas)
+    for (ECSchemaCP schema : schemas)
         {
         Utf8String schemaFullName = schema->GetFullSchemaName();
         if (doneList.find(schemaFullName) != doneList.end())
@@ -4070,7 +4033,7 @@ BentleyStatus SchemaWriter::CompareSchemas(Context& ctx, bvector<ECSchemaCP> con
     if (!ctx.GetExistingSchemas().empty())
         {
         SchemaComparer comparer;
-        //We do not require detail if schema is added or deleted the name and version suffice
+        //We do not require detail if schema is added or deleted. the name and version suffices.
         SchemaComparer::Options options = SchemaComparer::Options(SchemaComparer::DetailLevel::NoSchemaElements, SchemaComparer::DetailLevel::NoSchemaElements);
         if (SUCCESS != comparer.Compare(ctx.GetDiff(), ctx.GetExistingSchemas(), ctx.GetSchemasToImport(), options))
             return ERROR;
@@ -4175,5 +4138,219 @@ BentleyStatus SchemaWriter::ReloadSchemas(Context& ctx)
 
     return SUCCESS;
     }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                   Krischan.Eberle    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in)
+    {
+    bvector<ECSchemaCP> schemasToImport = FindAllSchemasInGraph(in);
+    for (ECSchemaCP schema : schemasToImport)
+        {
+        if (schema == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        //this is the in-memory version of ECSchemas. ECDb only supports the latest in-memory version.
+        //Deserializing into older versions is not needed in ECDb and therefore not supported.
+        if (schema->GetECVersion() != ECVersion::Latest)
+            {
+            Issues().ReportV("Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be %s, but is %s.", schema->GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest), ECSchema::GetECVersionString(schema->GetECVersion()));
+            return ERROR;
+            }
+
+        if (schema->HasId())
+            {
+            ECSchemaId id = SchemaPersistenceHelper::GetSchemaId(GetECDb(), DbTableSpace::Main(), schema->GetName().c_str(), SchemaLookupMode::ByName);
+            if (!id.IsValid() || id != schema->GetId())
+                {
+                Issues().ReportV("Failed to import ECSchemas. ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
+                return ERROR;
+                }
+            }
+        }
+
+    bvector<ECSchemaCP> primarySchemas;
+    bvector<ECSchemaP> suppSchemas;
+    for (ECSchemaCP schema : schemasToImport)
+        {
+        if (schema->IsSupplementalSchema())
+            {
+            if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(schema))
+                {
+                LOG.warningv("Localization ECSchema '%s' is ignored as ECDb always persists ECSchemas in the invariant culture.", schema->GetFullSchemaName().c_str());
+                continue;
+                }
+
+            suppSchemas.push_back(const_cast<ECSchemaP> (schema));
+            }
+        else
+            primarySchemas.push_back(schema);
+        }
+
+    schemasToImport.clear();
+    if (!suppSchemas.empty())
+        {
+        for (ECSchemaCP primarySchema : primarySchemas)
+            {
+            if (primarySchema->IsSupplemented())
+                continue;
+
+            ECSchemaP primarySchemaP = const_cast<ECSchemaP> (primarySchema);
+            SupplementedSchemaBuilder builder;
+            SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchemaP, suppSchemas, false /*dont create ca copy while supplementing*/);
+            if (SupplementedSchemaStatus::Success != status)
+                {
+                Issues().ReportV("Failed to import ECSchemas. Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
+                return ERROR;
+                }
+
+            //All consolidated custom attribute must be reference. But Supplemental Provenance in BSCA is not
+            //This bug could also be fixed in SupplementSchema builder but its much safer to do it here for now.
+            if (primarySchema->GetSupplementalInfo().IsValid())
+                {
+                IECInstancePtr provenance = primarySchema->GetCustomAttribute("SupplementalProvenance");
+                if (provenance.IsValid())
+                    {
+                    auto& bsca = provenance->GetClass().GetSchema();
+                    if (!ECSchema::IsSchemaReferenced(*primarySchema, bsca))
+                        {
+                        primarySchemaP->AddReferencedSchema(const_cast<ECSchemaR>(bsca));
+                        }
+                    }
+                }
+            }
+        }
+
+    // The dependency order may have *changed* due to supplementation adding new ECSchema references! Re-sort them.
+    bvector<ECN::ECSchemaCP> sortedSchemas = Sort(primarySchemas);
+        
+    //If we import into pre-EC3.2 files, we must not import the units and formats schema
+    //as they are only deserialized temporarily by ECObjects
+    if (IsEC32AvailableInFile())
+        out.insert(out.begin(), sortedSchemas.begin(), sortedSchemas.end());
+    else
+        m_legacyUnitsHelper.Preprocess(out, sortedSchemas);
+
+    return SchemaValidator::ValidateSchemas(ImportCtx(), Issues(), out) ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+bvector<ECN::ECSchemaCP> SchemaWriter::Context::Sort(bvector<ECN::ECSchemaCP> const& in)
+    {
+    bvector<ECN::ECSchemaCP> sortedList;
+    bvector<ECN::ECSchemaCP> layer;
+    do
+        {
+        layer = GetNextLayer(in, layer);
+        std::reverse(layer.begin(), layer.end());
+        for (ECN::ECSchemaCP schema : layer)
+            sortedList.push_back(schema);
+
+        } while (!layer.empty());
+
+        std::reverse(sortedList.begin(), sortedList.end());
+        return sortedList;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+bvector<ECN::ECSchemaCP> SchemaWriter::Context::GetNextLayer(bvector<ECN::ECSchemaCP> const& schemas, bvector<ECN::ECSchemaCP> const& referencedBy)
+    {
+    bvector<ECN::ECSchemaCP> list;
+    bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> map;
+    if (referencedBy.empty())
+        {
+        for (auto schema : schemas)
+            if (map.find(schema->GetSchemaKey()) == map.end())
+                map[schema->GetSchemaKey()] = schema;
+
+        for (auto schema : schemas)
+            for (const auto& ref : FindAllSchemasInGraph(*schema, false))
+                {
+                auto itor = map.find(ref.first);
+                if (map.end() != itor)
+                    map.erase(itor);
+                }
+        }
+    else
+        {
+        for (auto schema : referencedBy)
+            for (const auto& ref : schema->GetReferencedSchemas())
+                if (map.end() == map.find(ref.first))
+                    map[ref.first] = ref.second.get();
+
+
+        for (auto const& entry : map)
+            for (const auto& ref : FindAllSchemasInGraph(*entry.second, false))
+                {
+                auto itor = map.find(ref.first);
+                if (map.end() != itor)
+                    map.erase(itor);
+                }
+        }
+
+    for (const auto& ref : map)
+        list.push_back(ref.second);
+
+    return list;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+bvector<ECN::ECSchemaCP> SchemaWriter::Context::FindAllSchemasInGraph(bvector<ECN::ECSchemaCP> const& schemas)
+    {
+    bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> map;
+    for (ECN::ECSchemaCP schema : schemas)
+        for (const auto& entry : FindAllSchemasInGraph(*schema, true))
+            if (map.find(entry.first) == map.end())
+                map[entry.first] = entry.second;
+
+    bvector<ECN::ECSchemaCP> temp;
+    for (const auto& entry : map)
+        temp.push_back(entry.second);
+
+    return temp;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> SchemaWriter::Context::FindAllSchemasInGraph(ECN::ECSchemaCR schema, bool includeThisSchema)
+    {
+    bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> schemaMap;
+    if (includeThisSchema)
+        schemaMap[schema.GetSchemaKey()] = &schema;
+
+    for (const auto& entry : schema.GetReferencedSchemas())
+        FindAllSchemasInGraph(schemaMap, entry.second.get());
+
+    return schemaMap;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+void SchemaWriter::Context::FindAllSchemasInGraph(bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>>& schemaMap, ECN::ECSchemaCP schema)
+    {
+    if (schemaMap.find(schema->GetSchemaKey()) != schemaMap.end())
+        return;
+
+    schemaMap[schema->GetSchemaKey()] = schema;
+    for (const auto& entry : schema->GetReferencedSchemas())
+        FindAllSchemasInGraph(schemaMap, entry.second.get());
+    }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

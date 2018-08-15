@@ -107,7 +107,6 @@ private:
     ECDbSystemSchemaHelper m_systemSchemaHelper;
 
     BentleyStatus ImportSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const*) const;
-    BentleyStatus PersistSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP>& schemasToMap, bvector<ECN::ECSchemaCP> const& schemasToImport) const;
 
     BentleyStatus MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
     BentleyStatus DoMapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
@@ -123,11 +122,6 @@ private:
 
     static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixins);
 
-    static bvector<ECN::ECSchemaCP> FindAllSchemasInGraph(bvector<ECN::ECSchemaCP> const&);
-    static void FindAllSchemasInGraph(bmap<ECN::SchemaKey, ECN::ECSchemaCP, ECN::SchemaKeyLessThan<ECN::SchemaMatchType::Exact>>&, ECN::ECSchemaCP);
-    static bmap<ECN::SchemaKey, ECN::ECSchemaCP, ECN::SchemaKeyLessThan<ECN::SchemaMatchType::Exact>> FindAllSchemasInGraph(ECN::ECSchemaCR, bool includeThisSchema);
-    static bvector<ECN::ECSchemaCP> Sort(bvector<ECN::ECSchemaCP> const&);
-    static bvector<ECN::ECSchemaCP> GetNextLayer(bvector<ECN::ECSchemaCP> const&, bvector<ECN::ECSchemaCP> const& referencedBy);
     static DbResult UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb);
 public:
     explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb) {}

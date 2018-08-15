@@ -20,8 +20,37 @@ struct SchemaWriter final
     public:
         struct Context final
             {
+        public:
+            //! When importing EC3.1 schemas into EC3.1 files, ECObjects deserializes the EC3.2 units and formats schema
+            //! as in-memory the schema will be an EC3.2 one. ECDb, however, must not persist these temporarily deserialized units and formats schemas.
+            //! This helper helps the respective schema writer code to ignore those schemas
+            struct LegacyUnitsHelper final
+                {
+                private:
+                    ECN::ECSchemaCP m_unitsSchema = nullptr;
+                    ECN::ECSchemaCP m_formatsSchema = nullptr;
+
+                public:
+                    LegacyUnitsHelper() {}
+                    void Preprocess(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in)
+                        {
+                        for (ECN::ECSchemaCP schema : in)
+                            {
+                            if (schema->GetName().EqualsIAscii("Units") && schema->GetVersionRead() == 1 && schema->GetVersionWrite() == 0 && schema->GetVersionMinor() == 0)
+                                m_unitsSchema = schema;
+                            else if (schema->GetName().EqualsIAscii("Formats") && schema->GetVersionRead() == 1 && schema->GetVersionWrite() == 0 && schema->GetVersionMinor() == 0)
+                                m_formatsSchema = schema;
+                            else
+                                out.push_back(schema);
+                            }
+                        }
+
+                    void ClearCache() { m_unitsSchema = nullptr; m_formatsSchema = nullptr; }
+                    bool IgnoreSchema(ECN::ECSchemaCR schema) const { return (m_unitsSchema != nullptr && &schema == m_unitsSchema) || (m_formatsSchema != nullptr && &schema == m_formatsSchema); }
+                    bool IgnoreSchema(ECN::SchemaKeyCR schemaKey) const { return (m_unitsSchema != nullptr && schemaKey.CompareByName(m_unitsSchema->GetName()) == 0 && schemaKey.CompareByVersion(m_unitsSchema->GetSchemaKey()) == 0) || (m_formatsSchema != nullptr && schemaKey.CompareByName(m_formatsSchema->GetName()) == 0 && schemaKey.CompareByVersion(m_formatsSchema->GetSchemaKey()) == 0); }
+                };
+
         private:
-            ECDbCR m_ecdb;
             SchemaImportContext& m_importCtx;
 
             ECN::SchemaDiff m_diff;
@@ -31,16 +60,25 @@ struct SchemaWriter final
             ECN::CustomAttributeValidator m_schemaUpgradeCustomAttributeValidator;
 
             bool m_ec32AvailableInFile = true;
+            LegacyUnitsHelper m_legacyUnitsHelper;
+
+            static bvector<ECN::ECSchemaCP> FindAllSchemasInGraph(bvector<ECN::ECSchemaCP> const&);
+            static void FindAllSchemasInGraph(bmap<ECN::SchemaKey, ECN::ECSchemaCP, ECN::SchemaKeyLessThan<ECN::SchemaMatchType::Exact>>&, ECN::ECSchemaCP);
+            static bmap<ECN::SchemaKey, ECN::ECSchemaCP, ECN::SchemaKeyLessThan<ECN::SchemaMatchType::Exact>> FindAllSchemasInGraph(ECN::ECSchemaCR, bool includeThisSchema);
+            static bvector<ECN::ECSchemaCP> Sort(bvector<ECN::ECSchemaCP> const& in);
+            static bvector<ECN::ECSchemaCP> GetNextLayer(bvector<ECN::ECSchemaCP> const&, bvector<ECN::ECSchemaCP> const& referencedBy);
 
         public:
-            Context(ECDbCR ecdb, SchemaImportContext& ctx) : m_ecdb(ecdb), m_importCtx(ctx)
+            explicit Context(SchemaImportContext& ctx) : m_importCtx(ctx)
                 {
-                m_ec32AvailableInFile = FeatureManager::IsEC32Available(ecdb);
+                m_ec32AvailableInFile = FeatureManager::IsEC32Available(GetECDb());
                 m_schemaUpgradeCustomAttributeValidator.AddRejectRule("CoreCustomAttributes:IsMixin.*");
                 m_schemaUpgradeCustomAttributeValidator.AddRejectRule("ECDbMap:*");
                 }
 
-            void ClearCache() { m_schemasToImport.clear(); m_existingSchemas.clear(); m_ecdb.ClearECDbCache(); }
+            BentleyStatus PreprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in);
+
+            void ClearCache() { m_schemasToImport.clear(); m_existingSchemas.clear(); m_legacyUnitsHelper.ClearCache(); GetECDb().ClearECDbCache(); }
             SchemaImportContext& ImportCtx() const { return m_importCtx; }
             bvector<ECN::ECSchemaCP> const& GetSchemasToImport() const { return m_schemasToImport; }
             bvector<ECN::ECSchemaCP>& GetSchemasToImportR() { return m_schemasToImport; }
@@ -54,11 +92,13 @@ struct SchemaWriter final
             bool IsMajorSchemaVersionChange(ECN::ECSchemaId schemaId) const { return m_schemasWithMajorVersionChange.find(schemaId) != m_schemasWithMajorVersionChange.end(); }
             bool IsEC32AvailableInFile() const { return m_ec32AvailableInFile; }
             void AddSchemaWithMajorVersionChange(ECN::ECSchemaId schemaId) { m_schemasWithMajorVersionChange.insert(schemaId); }
-            CachedStatementPtr GetCachedStatement(Utf8CP sql) { return m_ecdb.GetImpl().GetCachedSqliteStatement(sql); }
-            ECDbCR GetECDb() const { return m_ecdb; }
+            CachedStatementPtr GetCachedStatement(Utf8CP sql) { return GetECDb().GetImpl().GetCachedSqliteStatement(sql); }
+            ECDbCR GetECDb() const { return m_importCtx.GetECDb(); }
             MainSchemaManager const& GetSchemaManager() const { return m_importCtx.GetSchemaManager(); }
             ECN::CustomAttributeValidator const& GetSchemaUpgradeCustomAttributeValidator() const { return m_schemaUpgradeCustomAttributeValidator; }
-            IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
+            IssueReporter const& Issues() const { return GetECDb().GetImpl().Issues(); }
+
+            LegacyUnitsHelper& LegacyUnitsHelper() { return m_legacyUnitsHelper; }
             };
 
     private:
@@ -131,8 +171,6 @@ struct SchemaWriter final
 
         static bool IsPropertyTypeChangeSupported(Utf8StringR error, ECN::StringChange& typeChange, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty);
 
-        static BentleyStatus ValidateSchemasPreImport(Context const&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
-
         static BentleyStatus UpdateBaseClasses(Context&, ECN::BaseClassChanges&, ECN::ECClassCR, ECN::ECClassCR);
         static bool IsChangeToBaseClassIsSupported(ECN::ECClassCR baseClass);
 
@@ -140,7 +178,7 @@ struct SchemaWriter final
         static BentleyStatus ReloadSchemas(Context& ctx);
 
     public:
-        static BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, ECDbCR, SchemaImportContext&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
+        static BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
