@@ -80,7 +80,7 @@ bool ServerInfoProvider::CanUseCachedInfo() const
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ServerInfoProvider::UpdateInfo(WSInfoCR info) const
-{
+    {
     Utf8String url = m_configuration->GetServerUrl();
     s_serverInfo[url].first = info;
     s_serverInfo[url].second = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
@@ -91,10 +91,13 @@ void ServerInfoProvider::UpdateInfo(WSInfoCR info) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct) const
     {
+    if (!m_configuration->GetServiceVersion().IsEmpty())
+        return GetInfo(m_configuration->GetServiceVersion(), ct);
+
     auto finalResult = std::make_shared<WSInfoResult>();
 
     // WSG 2.0 +
-    return GetInfoFromPage("/v2.0/Plugins", ct)->Then([=] (WSInfoHttpResult& result)
+    return GetInfoFromPage("/v2.0/Plugins", {}, ct)->Then([=] (WSInfoHttpResult& result)
         {
         if (result.IsSuccess())
             {
@@ -110,7 +113,7 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct)
             }
 
         // WSG R2 - R3.5
-        GetInfoFromPage("/v1.2/Info", ct)->Then([=] (WSInfoHttpResult& result)
+        GetInfoFromPage("/v1.2/Info", {}, ct)->Then([=] (WSInfoHttpResult& result)
             {
             if (result.IsSuccess())
                 {
@@ -124,7 +127,7 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct)
                 }
 
             // WSG R1
-            GetInfoFromPage("/Pages/About.aspx", ct)->Then([=] (WSInfoHttpResult& result)
+            GetInfoFromPage("/Pages/About.aspx", {}, ct)->Then([=] (WSInfoHttpResult& result)
                 {
                 if (result.IsSuccess())
                     {
@@ -143,21 +146,35 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(BeVersionCR serviceVersion, ICancellationTokenPtr ct) const
+    {
+    Utf8String url = "/sv" + serviceVersion.ToMajorMinorString() + "/Plugins";
+    return GetInfoFromPage(url, serviceVersion, ct)->Then<WSInfoResult>([=] (WSInfoHttpResult& result)
+        {
+        if (!result.IsSuccess())
+            return WSInfoResult::Error(result.GetError());
+
+        return WSInfoResult::Success(result.GetValue());
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoFromPage(Utf8StringCR page, ICancellationTokenPtr ct) const
+AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoFromPage(Utf8StringCR page, BeVersionCR serviceVersion, ICancellationTokenPtr ct) const
     {
     Http::Request request = m_configuration->GetHttpClient().CreateGetRequest(m_configuration->GetServerUrl() + page);
     request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<WSInfoHttpResult>([=] (Http::Response& response)
         {
-        WSInfo info(response);
-        if (info.IsValid())
-            {
-            return WSInfoHttpResult::Success(info);
-            }
-        return WSInfoHttpResult::Error(response);
+        WSInfo info(response, serviceVersion);
+        if (!info.IsValid())
+            return WSInfoHttpResult::Error(response);
+
+        return WSInfoHttpResult::Success(info);
         });
     }
 

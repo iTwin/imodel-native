@@ -41,7 +41,8 @@ struct ServerInfoProvider
         void NotifyServerInfoUpdated(WSInfoCR info) const;
 
         AsyncTaskPtr<WSInfoResult> GetInfo(ICancellationTokenPtr ct) const;
-        AsyncTaskPtr<WSInfoHttpResult> GetInfoFromPage(Utf8StringCR page, ICancellationTokenPtr ct) const;
+        AsyncTaskPtr<WSInfoResult> GetInfo(BeVersionCR serviceVersion, ICancellationTokenPtr ct) const;
+        AsyncTaskPtr<WSInfoHttpResult> GetInfoFromPage(Utf8StringCR page, BeVersionCR serviceVersion, ICancellationTokenPtr ct) const;
 
     public:
         ServerInfoProvider(std::shared_ptr<const ClientConfiguration> configuration);

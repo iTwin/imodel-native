@@ -150,6 +150,34 @@ TEST_F(WSInfoTests, Ctor_FromSerialized_SameVersion)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSInfoTests, Ctor_FromSerialized_SameServiceVersion)
+    {
+    WSInfo info(WSInfo(BeVersion(2, 3), BeVersion(4, 5), BeVersion(6, 7), WSInfo::Type::BentleyWSG).ToString());
+
+    EXPECT_TRUE(info.IsValid());
+    EXPECT_EQ(WSInfo::Type::BentleyWSG, info.GetType());
+    EXPECT_EQ(BeVersion(2, 3), info.GetVersion());
+    EXPECT_EQ(BeVersion(4, 5), info.GetWebApiVersion());
+    EXPECT_EQ(BeVersion(6, 7), info.GetServiceVersion());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSInfoTests, Ctor_FromSerializedOlderFormatWithoutServiceVersion_ServiceVersionEmpty)
+    {
+    WSInfo info(R"({"type":1,"version":"2.3.0.0","webApi":"4.5.0.0"})");
+
+    EXPECT_TRUE(info.IsValid());
+    EXPECT_EQ(WSInfo::Type::BentleyWSG, info.GetType());
+    EXPECT_EQ(BeVersion(2, 3), info.GetVersion());
+    EXPECT_EQ(BeVersion(4, 5), info.GetWebApiVersion());
+    EXPECT_EQ(BeVersion(), info.GetServiceVersion());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSInfoTests, Ctor_FromSerialized_SameType)
     {
     EXPECT_EQ(WSInfo::Type::BentleyConnect, WSInfo(WSInfo(BeVersion(1, 0), BeVersion(1, 0), WSInfo::Type::BentleyConnect).ToString()).GetType());

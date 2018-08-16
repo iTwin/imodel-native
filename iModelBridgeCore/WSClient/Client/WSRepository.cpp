@@ -14,12 +14,12 @@
 #define INFO_Serialized_PluginId                "pluginId"
 #define INFO_Serialized_ServerUrl               "serverUrl"
 #define INFO_Serialized_PluginVersion           "pluginVersion"
+#define INFO_Serialized_ServiceVersion          "serviceVersion"
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSRepository::WSRepository()
-    {}
+WSRepository::WSRepository() {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas   05/2018
@@ -28,9 +28,7 @@ WSRepository::WSRepository(Utf8StringCR serialized) : WSRepository()
     {
     Json::Value json;
     if (!Json::Reader::Parse(serialized, json))
-        {
         return;
-        }
 
     m_id = json[INFO_Serialized_RepositoryId].asString();
     m_location = json[INFO_Serialized_Location].asString();
@@ -39,6 +37,7 @@ WSRepository::WSRepository(Utf8StringCR serialized) : WSRepository()
     m_pluginId = json[INFO_Serialized_PluginId].asString().c_str();
     m_serverUrl = json[INFO_Serialized_ServerUrl].asString();
     m_pluginVersion = BeVersion(json[INFO_Serialized_PluginVersion].asString().c_str());
+    m_serviceVersion = BeVersion(json[INFO_Serialized_ServiceVersion].asString().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -87,6 +86,14 @@ Utf8StringCR WSRepository::GetLabel() const
 BeVersionCR WSRepository::GetPluginVersion() const
     {
     return m_pluginVersion;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BeVersionCR WSRepository::GetServiceVersion() const
+    {
+    return m_serviceVersion;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -154,6 +161,14 @@ void WSRepository::SetPluginVersion(BeVersion version)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSRepository::SetServiceVersion(BeVersion version)
+    {
+    m_serviceVersion = version;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                               Vilius.Kazlauskas    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WSRepository::IsValid() const
@@ -178,5 +193,6 @@ Utf8String WSRepository::ToString() const
     json[INFO_Serialized_PluginId] = m_pluginId;
     json[INFO_Serialized_ServerUrl] = m_serverUrl;
     json[INFO_Serialized_PluginVersion] = m_pluginVersion.ToString();
+    json[INFO_Serialized_ServiceVersion] = m_serviceVersion.ToString();
     return Json::FastWriter::ToString(json);
     }

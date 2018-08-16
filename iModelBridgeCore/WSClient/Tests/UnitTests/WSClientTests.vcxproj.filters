@@ -356,6 +356,7 @@
     <ClCompile Include="Published\WebServices\Cache\SyncNotifierTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSJobTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\DataSourceCachePerformanceTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\WSRepositoryTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />

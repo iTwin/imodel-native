@@ -37,8 +37,7 @@ m_jobApi(JobApi::Create(configuration))
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WebApiV2::~WebApiV2()
-    {}
+WebApiV2::~WebApiV2() {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
@@ -66,17 +65,23 @@ BeVersion WebApiV2::GetMaxWebApiVersion() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetWebApiUrl(BeVersion webApiVersion) const
+Utf8String WebApiV2::GetVersionedUrl() const
     {
-    if (webApiVersion.IsEmpty())
-        webApiVersion = GetMaxWebApiVersion();
+    Utf8String version;
+    if (!m_configuration->GetServiceVersion().IsEmpty())
+        {
+        version = "sv" + m_configuration->GetServiceVersion().ToMajorMinorString();
+        }
+    else
+        {
+        version = "v" + GetMaxWebApiVersion().ToMajorMinorString();
+        }
 
     Utf8PrintfString url
         (
-        "%s/v%d.%d/",
+        "%s/%s/",
         m_configuration->GetServerUrl().c_str(),
-        webApiVersion.GetMajor(),
-        webApiVersion.GetMinor()
+        version.c_str()
         );
 
     return url;
@@ -85,17 +90,17 @@ Utf8String WebApiV2::GetWebApiUrl(BeVersion webApiVersion) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetRepositoryUrl(Utf8StringCR repositoryId, BeVersion webApiVersion) const
+Utf8String WebApiV2::GetRepositoryUrl(Utf8StringCR repositoryId) const
     {
-    return GetWebApiUrl(webApiVersion) + "Repositories/" + BeUri::EscapeString(repositoryId);
+    return GetVersionedUrl() + "Repositories/" + BeUri::EscapeString(repositoryId);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetUrl(Utf8StringCR path, Utf8StringCR queryString, BeVersion webApiVersion) const
+Utf8String WebApiV2::GetUrl(Utf8StringCR path, Utf8StringCR queryString) const
     {
-    Utf8String url = GetUrlWithoutLengthWarning(path, queryString, webApiVersion);
+    Utf8String url = GetUrlWithoutLengthWarning(path, queryString);
 
     BeAssert(url.size() < m_configuration->GetMaxUrlLength() && WARNING_UrlLengthLimitations);
     return url;
@@ -104,19 +109,15 @@ Utf8String WebApiV2::GetUrl(Utf8StringCR path, Utf8StringCR queryString, BeVersi
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetUrlWithoutLengthWarning(Utf8StringCR path, Utf8StringCR queryString, BeVersion webApiVersion) const
+Utf8String WebApiV2::GetUrlWithoutLengthWarning(Utf8StringCR path, Utf8StringCR queryString) const
     {
-    Utf8String url = GetRepositoryUrl(m_configuration->GetRepositoryId(), webApiVersion);
+    Utf8String url = GetRepositoryUrl(m_configuration->GetRepositoryId());
 
     if (!path.empty())
-        {
         url += "/" + path;
-        }
 
     if (!queryString.empty())
-        {
         url += "?" + queryString;
-        }
 
     return url;
     }
@@ -128,9 +129,8 @@ Utf8String WebApiV2::CreateObjectSubPath(ObjectIdCR objectId) const
     {
     Utf8String param;
     if (!objectId.IsEmpty())
-        {
         param.Sprintf("%s/%s/%s", objectId.schemaName.c_str(), objectId.className.c_str(), objectId.remoteId.c_str());
-        }
+
     return param;
     }
 
@@ -164,9 +164,8 @@ Utf8String WebApiV2::CreatePostQueryPath(Utf8StringCR classSubPath) const
 Utf8String WebApiV2::CreateNavigationSubPath(ObjectIdCR parentId) const
     {
     if (parentId.IsEmpty())
-        {
         return "Navigation/NavNode";
-        }
+
     return CreateObjectSubPath(parentId) + "/NavNode";
     }
 
@@ -178,9 +177,8 @@ Utf8String WebApiV2::CreateSelectPropertiesQuery(const bset<Utf8String>& propert
     Utf8String value = StringUtils::Join(properties.begin(), properties.end(), ",");
     Utf8String query;
     if (!value.empty())
-        {
         query.Sprintf("$select=%s", value.c_str());
-        }
+
     return query;
     }
 

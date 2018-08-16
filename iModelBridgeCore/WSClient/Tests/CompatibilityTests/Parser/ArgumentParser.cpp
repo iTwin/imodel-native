@@ -11,6 +11,7 @@
 #include <WebServices/Client/WSError.h>
 #include "ArgumentParser.h"
 #include <Bentley/Base64Utilities.h>
+#include <regex>
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2018
@@ -165,6 +166,23 @@ std::ostream* err
                 return -1;
             currentRepo->schemasDir.clear();
             currentRepo->id = argValue;
+            }
+        else if (arg == "-sv")
+            {
+            if (!GetArgValue(argc, args, i, argValue, err))
+                return -1;
+
+            std::regex regex(R"(^(\d+\.\d+)$)", std::regex_constants::icase);
+            std::cmatch matches;
+            std::regex_search(argValue, matches, regex);
+            if (matches.size() != 2)
+                {
+                PrintError(err, Utf8PrintfString("Invalid service version ('X.Y'): '%s'", argValue).c_str());
+                return -1;
+                }
+
+            currentRepo->schemasDir.clear();
+            currentRepo->serviceVersion = BeVersion(argValue);
             }
         else if (0 == arg.find("-auth:"))
             {
@@ -451,7 +469,7 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "                            [--createcache     <parameters> ...]" << std::endl;
     *out << "                            [--downloadschemas <parameters>]" << std::endl;
     *out << "                            [--config <filepath>]" << std::endl;
-    *out << "  <parameters>: -url URL -r REPOID [-auth:XXX VALUE][-l TESTLABEL][-c FAILURECOMMENT]" << std::endl;
+    *out << "  <parameters>: -url URL -r REPOID [-sv VERSION][-auth:XXX VALUE][-l TESTLABEL][-c FAILURECOMMENT]" << std::endl;
     *out << "  <parameters>: -schemas PATH" << std::endl;
     *out << "Usage with schemas:" << std::endl;
     *out << "  WSClientCompatibilityTests --createcache -schemas PATH --upgradecache ..." << std::endl;
@@ -463,6 +481,7 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "Parameters for server connection:" << std::endl;
     *out << "  -url URL           WSG server URL" << std::endl;
     *out << "  -r REPOID          repository ID" << std::endl;
+    *out << "  -sv VERSION        service version X.Y" << std::endl;
     *out << "  -auth:basic user:pass" << std::endl;
     *out << "                     Authenticate using credentials." << std::endl;
     *out << "  -auth:dev:ims  user:pass" << std::endl;
