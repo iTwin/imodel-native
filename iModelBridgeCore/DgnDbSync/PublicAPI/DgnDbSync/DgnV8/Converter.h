@@ -1078,7 +1078,9 @@ public:
 
     //! @private
     //! This is called in a separate process to check bridge file affinity only.
-    DGNDBSYNC_EXPORT static BentleyStatus CheckCanOpenFile(BentleyApi::BeFileName const& sourceFileName, BentleyApi::BeFileName const& affinityLibraryPath);
+    DGNDBSYNC_EXPORT static BentleyStatus GetAuthoringFileInfo(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, BentleyApi::BeFileName const& sourceFileName);
+    DGNDBSYNC_EXPORT static void InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath);
+    DGNDBSYNC_EXPORT static void GetAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,WCharCP affinityLibraryPathStr, WCharCP sourceFileNameStr);
     
     //! Make sure that the specified V8 file is registered in SyncInfo and then return the ID assigned to it by SyncInfo.
     //! This function \em caches the result in appdata on the file.
