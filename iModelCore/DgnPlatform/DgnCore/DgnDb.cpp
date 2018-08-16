@@ -51,18 +51,28 @@ DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_do
     ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */);
     }
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/18
+//=======================================================================================
+struct ElementTileCacheAppData : BeSQLite::Db::AppData
+{
+    RealityData::CachePtr m_cache;
+
+    explicit ElementTileCacheAppData(DgnDbCR db)
+        {
+        m_cache = ElementTileTree::TileCache::Create(db);
+        BeAssert(m_cache.IsValid());
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 RealityData::CachePtr DgnDb::ElementTileCache() const
     {
-    if (m_elementTileCache.IsNull())
-        {
-        m_elementTileCache = ElementTileTree::TileCache::Create(*this);
-        BeAssert(m_elementTileCache.IsValid());
-        }
-
-    return m_elementTileCache;
+    static AppData::Key s_key;
+    AppDataPtr appData = FindOrAddAppData(s_key, [&]() { return new ElementTileCacheAppData(*this); });
+    return static_cast<ElementTileCacheAppData&>(*appData).m_cache;
     }
 
 //--------------------------------------------------------------------------------------
@@ -82,7 +92,6 @@ SchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSet
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::Destroy()
     {
-    m_elementTileCache = nullptr;
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;
