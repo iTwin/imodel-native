@@ -280,16 +280,33 @@ static StatusInt HashBytes(Utf8StringR hashedValue, Utf8StringCR unhashedValue)
     HCRYPTPROV hProv;
     if (FALSE == ::CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, 0))
         {
-        if (NTE_BAD_KEYSET == GetLastError() && FALSE == ::CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_NEWKEYSET))
+        if (NTE_BAD_KEYSET == GetLastError())
+            {
+            if (FALSE == ::CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_NEWKEYSET))
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+            }
+        else
+            {
+            BeAssert(false);
             return ERROR;
+            }
         }
 
     HCRYPTHASH hHash;
     if (FALSE == ::CryptCreateHash(hProv, CALG_SHA1, 0, 0, &hHash))
+        {
+        BeAssert(false);
         return ERROR;
+        }
 
     if (FALSE == ::CryptHashData(hHash, (BYTE const*)unhashedValue.data(), (DWORD)unhashedValue.length(), 0))
+        {
+        BeAssert(false);
         return ERROR;
+        }
 
     BYTE  encryptedBuffer[SHA1_HASH_SIZE];
     DWORD bufferLength = DIM(encryptedBuffer);
