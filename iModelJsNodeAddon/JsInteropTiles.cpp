@@ -366,7 +366,7 @@ DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR id
 
     TileTree::MissingNodes missing;
     missing.Insert(*rootTile, true);
-    root->RequestTiles(missing, BeDuration());
+    root->RequestTiles(missing);
     root->WaitForAllLoads();
 
     if (!rootTile->_ToJson(result["rootTile"]))
@@ -393,7 +393,7 @@ DgnDbStatus JsInterop::GetTiles(JsonValueR result, DgnDbR db, Utf8StringCR treeI
             missing.Insert(*tile, true);
         }
 
-    root->RequestTiles(missing, BeDuration());
+    root->RequestTiles(missing);
     root->WaitForAllLoads();
 
     result = Json::arrayValue;
