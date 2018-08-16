@@ -105,6 +105,29 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi20ResponseIsOkNoPluginVersion_Retu
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WithServiceVersionAndWebApi20ResponseIsOkNoPluginVersion_ReturnsRepositoryInfoWithNoPluginVersion)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", {4, 2}, "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    std::map<Utf8String, Utf8String> headers {{"Mas-Server", "Bentley-WebAPI/2.6,Bentley-WSG/2.6"}};
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    auto result = client->GetInfo()->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+
+    auto repository = result.GetValue();
+    EXPECT_EQ("https://srv.com/ws", repository.GetServerUrl());
+    EXPECT_EQ("testPluginId--locationId", repository.GetId());
+    EXPECT_EQ("locationId", repository.GetLocation());
+    EXPECT_EQ("testPluginId", repository.GetPluginId());
+    EXPECT_TRUE(repository.GetPluginVersion().IsEmpty());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               julius.cepukenas    05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithPluginVersionAndMassServerHeader_ReturnsRepositoryInfoWithPluginVersion)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -116,6 +139,35 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithPluginVersionAnd
     GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STRCASEEQ("https://srv.com/ws/v2.8/Repositories/testPluginId--locationId/Policies/PolicyAssertion?$top=1", request.GetUrl().c_str());
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    auto result = client->GetInfo()->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+
+    auto repository = result.GetValue();
+    EXPECT_EQ("https://srv.com/ws", repository.GetServerUrl());
+    EXPECT_EQ("testPluginId--locationId", repository.GetId());
+    EXPECT_EQ("locationId", repository.GetLocation());
+    EXPECT_EQ("testPluginId", repository.GetPluginId());
+    EXPECT_EQ(BeVersion(1, 2), repository.GetPluginVersion());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               julius.cepukenas    05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WithServiceVersionAndWebApi28ResponseIsOkWithPluginVersionAndMassServerHeader_ReturnsRepositoryInfoWithPluginVersion)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", {4, 2}, "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    std::map<Utf8String, Utf8String> headers {{"Mas-Server", "Bentley-WebAPI/2.6,Bentley-WSG/2.6,testPluginId/1.2"}};
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi28());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_STRCASEEQ("https://srv.com/ws/sv4.2/Repositories/testPluginId--locationId/Policies/PolicyAssertion?$top=1", request.GetUrl().c_str());
         EXPECT_STREQ("GET", request.GetMethod().c_str());
         return StubHttpResponse(HttpStatus::OK, "", headers);
         });
@@ -797,6 +849,42 @@ TEST_F(WSRepositoryClientTests, SendGetObjectRequest_WebApiV2AndInvalidObjectId_
 
     auto result = client->SendGetObjectRequest(ObjectId("", "Foo", ""))->GetResult();
     EXPECT_EQ(result.GetError().GetId(), WSError::Id::NotSupported);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetObjectRequest_WithEmptyServiceVersionAndWebApiV2_SendsWebApiVersionUrl)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", {0, 0}, "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/testSchema/testClass/testId", request.GetUrl().c_str());
+        return StubHttpResponse();
+        });
+
+    client->SendGetObjectRequest({"testSchema", "testClass", "testId"})->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetObjectRequest_WithServiceVersionAndWebApiV2_SendsServiceVersionUrl)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", {4, 2}, "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("https://srv.com/ws/sv4.2/Repositories/foo/testSchema/testClass/testId", request.GetUrl().c_str());
+        return StubHttpResponse();
+        });
+
+    client->SendGetObjectRequest({"testSchema", "testClass", "testId"})->Wait();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -2755,15 +2843,47 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV2ResponseContainsOb
     }
 
 #ifdef USE_GTEST
+
+struct WSRepositoryClientTests_InvalidUrls : TestWithParam<Utf8String> {};
+INSTANTIATE_TEST_CASE_P(, WSRepositoryClientTests_InvalidUrls, ValuesIn(vector<Utf8String>{
+        "httpbbb://foo.com/v2.5/repositories/A--B/",
+        "http://foo.com/v2.5/repositories/AbbbB/",
+        "http://foo.com/svb2.5/repositories/A--B/",
+        "http://foo.com/b2.5/repositories/A--B/",
+        "http://foo.com/v2.a5/repositories/A--B/",
+        "http://foo.com/v2.5b/repositories/A--B/",
+        "http://foo.com/v2.5/rs/A--B/",
+        "http://foo.com/sv2.a5/repositories/A--B/"
+    }));
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(WSRepositoryClientTests_InvalidUrls, ParseRepositoryUrl_InvalidRepositoryUrl_ReturnsInvalid)
+    {
+    auto param = GetParam();
+    WSRepository repository = WSRepositoryClient::ParseRepositoryUrl(param);
+    EXPECT_FALSE(repository.IsValid());
+    EXPECT_EQ("", repository.GetServerUrl());
+    EXPECT_EQ("", repository.GetId());
+    EXPECT_EQ("", repository.GetPluginId());
+    EXPECT_EQ("", repository.GetLocation());
+    EXPECT_EQ(BeVersion(), repository.GetServiceVersion());
+    }
+
 struct WSRepositoryClientTests_VariousServerUrls : TestWithParam<vector<Utf8String>> {};
-INSTANTIATE_TEST_CASE_P(, WSRepositoryClientTests_VariousServerUrls, ValuesIn(vector<vector<Utf8String>>{
-        // Host
+INSTANTIATE_TEST_CASE_P(Host, WSRepositoryClientTests_VariousServerUrls, ValuesIn(vector<vector<Utf8String>>{
         {"http://foo.boo.com/foo/v2.5/repositories/A--B/", "http://foo.boo.com/foo"},
-        {"https://foo-boo.com/foo/v2.5/Repositories/A--B/", "https://foo-boo.com/foo"},
-        // Service path
+        {"https://foo-boo.com/foo/v2.5/Repositories/A--B/", "https://foo-boo.com/foo"}
+    }));
+INSTANTIATE_TEST_CASE_P(ServiceVersion, WSRepositoryClientTests_VariousServerUrls, ValuesIn(vector<vector<Utf8String>>{
+        {"http://foo.boo.com/foo/sv4.2/repositories/A--B/", "http://foo.boo.com/foo"},
+        {"https://foo-boo.com/foo/sv4.2/Repositories/A--B/", "https://foo-boo.com/foo"}
+    }));
+INSTANTIATE_TEST_CASE_P(ServicePath, WSRepositoryClientTests_VariousServerUrls, ValuesIn(vector<vector<Utf8String>>{
         {"https://foo.com/ws250/v2.5/repositories/A--B/", "https://foo.com/ws250"},
         {"https://foo.com/ws2/v2.5/repositories/A--B/", "https://foo.com/ws2"}
-    }));
+    })); 
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
@@ -2779,15 +2899,20 @@ TEST_P(WSRepositoryClientTests_VariousServerUrls, ParseRepositoryUrl_RepositoryU
     }
 
 struct WSRepositoryClientTests_ServerUrlEndings : TestWithParam<Utf8String> {};
-INSTANTIATE_TEST_CASE_P(, WSRepositoryClientTests_ServerUrlEndings, Values(
-    // Web API version
+INSTANTIATE_TEST_CASE_P(WebApiVersions, WSRepositoryClientTests_ServerUrlEndings, Values(
     "https://foo.com/foo/v1.0/repositories/A--B/",
     "https://foo.com/foo/v2.5/repositories/A--B/",
-    "https://foo.com/foo/v1234.5678/repositories/A--B/",
-    // Repositories
+    "https://foo.com/foo/v1234.5678/repositories/A--B/"
+    ));
+INSTANTIATE_TEST_CASE_P(ServiceVersions, WSRepositoryClientTests_ServerUrlEndings, Values(
+    "https://foo.com/foo/sv1.0/repositories/A--B/",
+    "https://foo.com/foo/sv2.5/repositories/A--B/",
+    "https://foo.com/foo/sv1234.5678/repositories/A--B/"
+));
+INSTANTIATE_TEST_CASE_P(Repositories, WSRepositoryClientTests_ServerUrlEndings, Values(
     "https://foo.com/foo/v2.5/Repositories/A--B/",
     "https://foo.com/foo/v2.5/RePosiTorieS/A--B/"
-    ));
+));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
@@ -2869,4 +2994,25 @@ TEST_P(WSRepositoryClientTests_Location, ParseRepositoryUrl_Url_LocationParsed)
     EXPECT_STREQ("https://foo.com/boo", repository.GetServerUrl().c_str());
     EXPECT_STREQ("A", repository.GetPluginId().c_str());
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, ParseRepositoryUrl_RepositoryUrlWithWebApiVersion_ServiceVersionEmpty)
+    {
+    WSRepository repository = WSRepositoryClient::ParseRepositoryUrl("http://foo.boo.com/foo/v4.2/repositories/A--B/");
+    EXPECT_TRUE(repository.IsValid());
+    EXPECT_EQ(BeVersion(), repository.GetServiceVersion());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, ParseRepositoryUrl_RepositoryUrlWithServiceVersion_ServiceVersionExtracted)
+    {
+    WSRepository repository = WSRepositoryClient::ParseRepositoryUrl("http://foo.boo.com/foo/sv4.2/repositories/A--B/");
+    EXPECT_TRUE(repository.IsValid());
+    EXPECT_EQ(BeVersion(4, 2), repository.GetServiceVersion());
+    }
+
 #endif

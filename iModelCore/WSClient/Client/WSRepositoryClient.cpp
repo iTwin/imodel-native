@@ -60,11 +60,28 @@ IWSSchemaProviderPtr schemaProvider,
 IHttpHandlerPtr customHandler
 )
     {
+    return Create(serverUrl, BeVersion(), repositoryId, clientInfo, schemaProvider, customHandler);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Benediktas.Lipnickas   09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+std::shared_ptr<WSRepositoryClient> WSRepositoryClient::Create
+(
+Utf8StringCR serverUrl,
+BeVersionCR serviceVersion,
+Utf8StringCR repositoryId,
+ClientInfoPtr clientInfo,
+IWSSchemaProviderPtr schemaProvider,
+IHttpHandlerPtr customHandler
+)
+    {
     BeAssert(!serverUrl.empty());
     BeAssert(!repositoryId.empty());
     BeAssert(nullptr != clientInfo);
     auto configuration = std::make_shared<ClientConfiguration>(serverUrl, repositoryId, clientInfo, schemaProvider, customHandler);
     configuration->SetPersistenceProviderId(ParsePluginIdFromRepositoryId(repositoryId));
+    configuration->SetServiceVersion(serviceVersion);
     return std::shared_ptr<WSRepositoryClient>(new WSRepositoryClient(std::make_shared<ClientConnection>(configuration)));
     }
 
@@ -569,19 +586,20 @@ WSRepository WSRepositoryClient::ParseRepositoryUrl(Utf8StringCR url, Utf8String
     // (https?:\/\/.+\/) - captures ServerUrl:
     //     https?:\/\/ - "http://" or "https://"
     //     .+\/ - any character one or more times untill "/"
-    // v\d+\.\d+ - Web API version (e.g. "v2.5")
-    //     v\d+ - first character must be "v" and then one or more digits - Web API version first part (e.g. "v2")
-    //     \.\d+ - "." and then one or more digits
+    // (\/v|\/sv)\d+\.\d+ - Web API version (e.g. "v2.5") or Service Version (e.g. "sv4.2")
     // \/repositories\/ - "/repositories/"
 
-    std::regex regex(R"((https?:\/\/.+)\/v\d+\.\d+\/repositories\/)", std::regex_constants::icase);
+    std::regex regex(R"((https?:\/\/.+)(\/v|\/sv)(\d+\.\d+)\/repositories\/)", std::regex_constants::icase);
     std::cmatch matches;
     std::regex_search(url.c_str(), matches, regex);
-    if (matches.empty() && matches.size() != 1)
+    if (matches.size() < 2)
         return WSRepository();
 
     WSRepository repository;
     repository.SetServerUrl(matches[1].str().c_str()); // [0] element is overall match 
+
+    if (matches.size() == 4 && matches[2] == "/sv")
+        repository.SetServiceVersion(BeVersion(matches[3].str().c_str()));
 
     //--------------------------------RepositoryId and PluginId parsing-------------------------------  
 
@@ -636,6 +654,9 @@ Utf8String WSRepositoryClient::ParsePluginIdFromRepositoryId(Utf8StringCR reposi
     return splits[0];
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String WSRepositoryClient::UrlDecode(Utf8String url)
     {
     Utf8String percentReplace("-PeRCenT_");

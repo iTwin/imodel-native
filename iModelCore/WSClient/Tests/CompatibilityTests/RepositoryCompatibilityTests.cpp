@@ -156,7 +156,7 @@ IWSRepositoryClientPtr CreateClient(TestRepository& repository)
         httpHandler = s_signInManager->GetAuthenticationHandler(repository.serverUrl, httpHandler);
         }
 
-    auto client = WSRepositoryClient::Create(repository.serverUrl, repository.id, StubValidClientInfo(), nullptr, httpHandler);
+    auto client = WSRepositoryClient::Create(repository.serverUrl, repository.serviceVersion, repository.id, StubValidClientInfo(), nullptr, httpHandler);
 
     if (!repository.environment && !repository.credentials.IsEmpty())
         {

@@ -18,6 +18,9 @@ void PrintTo(const TestRepository& value, ::std::ostream* os)
     else
         *os << Utf8PrintfString("-schemas %s ", Utf8String(value.schemasDir).c_str());
 
+    if (!value.serviceVersion.IsEmpty())
+        *os << "-sv " << value.serviceVersion.ToMajorMinorString() << " ";
+
     if (!value.tokenPath.empty())
         {
         if (!value.environment)

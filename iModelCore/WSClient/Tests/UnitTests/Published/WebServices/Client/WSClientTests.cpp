@@ -99,6 +99,40 @@ TEST_F(WSClientTests, GetServerInfo_CalledFirstTime_SendsGetPluginsUrl)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSClientTests, GetServerInfo_WithEmptyServiceVersionCalledFirstTime_SendsGetPluginsUrlUsingWebApiVersion)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", {0, 0}, StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.0/Plugins", request.GetUrl().c_str());
+        return StubHttpResponse();
+        });
+
+    client->GetServerInfo()->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSClientTests, GetServerInfo_WithServiceVersionCalledFirstTime_SendsGetPluginsUrlUsingServiceVersion)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", {4, 2}, StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/sv4.2/Plugins", request.GetUrl().c_str());
+        return StubHttpResponse();
+        });
+
+    client->GetServerInfo()->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnNotFound_SendsGetInfoUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -112,6 +146,21 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnNotFound_SendsGetInfoUrl
         });
 
     client->GetServerInfo()->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSClientTests, GetServerInfo_WithServiceVersionFirstResponsesReturnNotFound_ReturnsError)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", {4, 2}, StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
+
+    auto result = client->GetServerInfo()->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Status::ServerNotSupported, result.GetError().GetStatus());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -228,10 +277,28 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponseHasProperServerHeader_Identifyi
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "", {{"Server", "Bentley-WebAPI/2.0,Bentley-WSG/2.0"}}));
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "", {{"Server", "Bentley-WebAPI/2.1,Bentley-WSG/2.3"}}));
 
     auto info = client->GetServerInfo()->GetResult();
-    EXPECT_EQ(BeVersion(2, 0), info.GetValue().GetVersion());
+    EXPECT_EQ(BeVersion(2, 1), info.GetValue().GetWebApiVersion());
+    EXPECT_EQ(BeVersion(2, 3), info.GetValue().GetVersion());
+    EXPECT_EQ(BeVersion(), info.GetValue().GetServiceVersion());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSClientTests, GetServerInfo_WithServiceVersionFirstResponseHasProperServerHeader_IdentifyingWSG2)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", {4, 2}, StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "", {{"Server", "Bentley-WebAPI/2.1,Bentley-WSG/2.3"}}));
+
+    auto info = client->GetServerInfo()->GetResult();
+    EXPECT_EQ(BeVersion(2, 1), info.GetValue().GetWebApiVersion());
+    EXPECT_EQ(BeVersion(2, 3), info.GetValue().GetVersion());
+    EXPECT_EQ(BeVersion(4, 2), info.GetValue().GetServiceVersion());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -242,10 +309,12 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponseHasProperMasServerHeader_Identi
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "", {{"Mas-Server", "Bentley-WebAPI/2.6,Bentley-WSG/2.6"}}));
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "", {{"Mas-Server", "Bentley-WebAPI/2.1,Bentley-WSG/2.3"}}));
 
     auto info = client->GetServerInfo()->GetResult();
-    EXPECT_EQ(BeVersion(2,6), info.GetValue().GetVersion());
+    EXPECT_EQ(BeVersion(2, 1), info.GetValue().GetWebApiVersion());
+    EXPECT_EQ(BeVersion(2, 3), info.GetValue().GetVersion());
+    EXPECT_EQ(BeVersion(), info.GetValue().GetServiceVersion());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -256,10 +325,14 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponseHasMasServerAndServerHeader_Ide
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "", {{"Mas-Server", "Bentley-WebAPI/2.6,Bentley-WSG/2.6"}, {"Server", "Bentley-WebAPI/2.0,Bentley-WSG/2.0"}}));
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "", {
+            {"Mas-Server", "Bentley-WebAPI/2.6,Bentley-WSG/2.6"},
+            {"Server", "Bentley-WebAPI/2.0,Bentley-WSG/2.0"}}));
 
     auto info = client->GetServerInfo()->GetResult();
+    EXPECT_EQ(BeVersion(2, 6), info.GetValue().GetWebApiVersion());
     EXPECT_EQ(BeVersion(2, 6), info.GetValue().GetVersion());
+    EXPECT_EQ(BeVersion(), info.GetValue().GetServiceVersion());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -549,6 +622,24 @@ TEST_F(WSClientTests, UnregisterServerInfoListener_ExistingListener_ListenerNotN
     client->SendGetInfoRequest()->Wait();
     }
 #endif
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSClientTests, SendGetRepositoriesRequest_WithServiceVersionAndWebApi20_CorrectUrl)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", {4, 2}, StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("https://srv.com/ws/sv4.2/Repositories/", request.GetUrl().c_str());
+        return StubHttpResponse();
+        });
+
+    client->SendGetRepositoriesRequest()->Wait();
+    EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
