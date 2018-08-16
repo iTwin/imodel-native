@@ -6,6 +6,8 @@
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 #include <DgnClientFx/TestHelpers/DgnClientFxTests.h>
 #include <Bentley/BeTest.h>
+#include <DgnPlatform\UnitTests\ScopedDgnHost.h>
+#include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
@@ -18,7 +20,7 @@ struct MyTestApp : DgnClientFx::DgnClientApp, Dgn::DgnPlatformLib::Host::Reposit
     protected:
         mutable Dgn::TestRepositoryManager   m_server;
         Dgn::IRepositoryManagerP _GetRepositoryManager(Dgn::DgnDbR) const override { return &m_server; }
-        ScopedDgnHost host;
+        Dgn::ScopedDgnHost host;
     public:
         ~MyTestApp()
             {

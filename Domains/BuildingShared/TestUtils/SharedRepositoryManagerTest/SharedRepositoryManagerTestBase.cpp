@@ -1,7 +1,6 @@
 #include <BeXml/BeXml.h>
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/UnitTests/DgnDbTestUtils.h>
-#include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 #include <DgnClientFx/DgnClientUi.h>
 #include <DgnView/DgnViewLib.h>
 #include <DgnPlatform/FunctionalDomain.h>
