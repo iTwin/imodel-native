@@ -55,10 +55,6 @@ struct TileContext;
 // and that defined in the referencing GeometryStream. 99.9% of the time no symbology is defined in the part however...
 // #define CACHE_GEOMETRY_PARTS
 
-// Turn this on to diagnose issues which may be specific to partial tile generation.
-// It will prevent us from creating partial tiles - instead tile generation will take as long as needed to produce a complete tile.
-// #define DISABLE_PARTIAL_TILES
-
 // Often we find multiple threads trying to facet the same DgnGeometryPart simultaneously, and we want to allow only one thread to do so while the others wait on the result.
 // Unfortunately this is not 100% reliable, because the symbology associated with each instance can be any combination of that defined in the part's GeometryStream
 // and that defined in the referencing GeometryStream. 99.9% of the time no symbology is defined in the part however...
@@ -71,11 +67,6 @@ struct TileContext;
 // Uncomment to compare geometry read from tile cache data to that produced by LoadGeometryFromModel() and assert if unequal.
 // See TFS#772315 in which portions of geometry do not appear in tiles read from cache, but do appear if we disable the cache
 // #define DEBUG_TILE_CACHE_GEOMETRY
-#if defined(DEBUG_TILE_CACHE_GEOMETRY)
-    #if !defined(DISABLE_PARTIAL_TILES)
-        #define DISABLE_PARTIAL_TILES
-    #endif
-#endif
 
 #ifdef TILECACHE_DEBUG
 #define TILECACHE_PRINTF THREADLOG.debugv
@@ -433,7 +424,7 @@ protected:
     bool _CheckStop() override { return WasAborted() || AddAbortTest(m_loadContext.WasAborted()); }
     bool _WantUndisplayed() override { return true; }
     AreaPatternTolerance _GetAreaPatternTolerance(CurveVectorCR) override { return AreaPatternTolerance(m_tolerance); }
-    Render::SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
+    Render::SystemP _GetRenderSystem() const override { return &m_loadContext.GetRenderSystem(); }
     double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
     bool _WantGlyphBoxes(double sizeInPixels) const override { return wantGlyphBoxes(sizeInPixels); }
     void _DrawStyledCurveVector(GraphicBuilderR builder, CurveVectorCR curve, GeometryParamsR params, bool doCook) override
@@ -458,7 +449,7 @@ public:
     GeomPartPtr GenerateGeomPart(DgnGeometryPartCR, GeometryParamsR);
 
     RootR GetRoot() const { return m_root; }
-    System& GetRenderSystemR() const { BeAssert(nullptr != m_loadContext.GetRenderSystem()); return *m_loadContext.GetRenderSystem(); }
+    System& GetRenderSystemR() const { return m_loadContext.GetRenderSystem(); }
     bool Is3d() const { return m_root.Is3d(); }
 
     double GetMinRangeDiagonalSquared() const { return m_minRangeDiagonalSquared; }
@@ -796,19 +787,11 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
-    : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime),
+Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads)
+    : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile)), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime),
     m_doTileRepair(T_HOST._IsFeatureEnabled("Platform.TileRepair"))
     {
-#if defined(DISABLE_PARTIAL_TILES)
-    if (nullptr != loads)
-        loads->ClearPartialTimeout();
-#else
-    // We only create partial tiles for the 'root' tiles (the top-most displayable tiles) because they are the first tiles we generate for an empty view,
-    // and can always be substituted while higher-resolution child tiles are being (fully) generated.
-    if (nullptr != loads && loads->HasPartialTimeout() && tile.IsParentDisplayable())
-        loads->ClearPartialTimeout();
-#endif
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1049,7 +1032,7 @@ BentleyStatus Loader::_LoadTile()
         if (!m_tileBytes.empty() && !m_saveToCache)
             {
             BeAssert(geometry.IsEmpty());
-            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache, tile.GetRange()))
+            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), GetRenderSystem(), isLeafInCache, tile.GetRange()))
                 {
                 BeAssert(false);
                 return ERROR;
@@ -1078,20 +1061,14 @@ BentleyStatus Loader::_LoadTile()
             }
         }
 
-    auto  system = GetRenderSystem();
-    if (nullptr == GetRenderSystem())
-        {
-        // This is checked in _CreateTileTree()...
-        BeAssert(false && "ElementTileTree requires a Render::System");
-        return ERROR;
-        }
+    auto& system = GetRenderSystem();
 
     MeshGraphicArgs args;
     bvector<Render::GraphicPtr> graphics;
 
     for (auto const& mesh : geometry.Meshes())
         {
-        auto meshGraphic = mesh->GetGraphics(args, *system, root.GetDgnDb());
+        auto meshGraphic = mesh->GetGraphics(args, system, root.GetDgnDb());
         if (meshGraphic.IsValid())
             graphics.push_back(meshGraphic);
         }
@@ -1110,7 +1087,7 @@ BentleyStatus Loader::_LoadTile()
                 break;
             default:
                 BeAssert(std::accumulate(graphics.begin(), graphics.end(), true, [](bool cur, GraphicPtr const& gf) { return cur && gf.IsValid(); }));
-                graphic = system->_CreateGraphicList(std::move(graphics), root.GetDgnDb());
+                graphic = system._CreateGraphicList(std::move(graphics), root.GetDgnDb());
                 BeAssert(graphic.IsValid());
                 break;
             }
@@ -1118,7 +1095,7 @@ BentleyStatus Loader::_LoadTile()
         if (graphic.IsValid())
             {
             geometry.Meshes().m_features.SetModelId(root.GetModelId());
-            batch = system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features), tile._GetContentRange());
+            batch = system._CreateBatch(*graphic, std::move(geometry.Meshes().m_features), tile._GetContentRange());
             BeAssert(batch.IsValid());
             tile.SetGraphic(*batch);
             }
@@ -1129,25 +1106,10 @@ BentleyStatus Loader::_LoadTile()
         if (batch.IsValid())
             tile.SetGraphic(*batch);
 
-        if (!tile._IsPartial())
-            {
-            // Possible that one or more parent tiles will contain solely elements too small to produce geometry, in which case
-            // we must create their children in order to get graphics...mark undisplayable.
-            tile.SetDisplayable(batch.IsValid());
-            tile.ClearBackupGraphic();
-            return SUCCESS;
-            }
-        else
-            {
-            // Mark partial tile as canceled so it becomes 'not loaded' again and we can resume tile generation from where we left off...
-            BeAssert(nullptr != m_loads);
-            m_loads->SetCanceled();
-
-            // Also notify host that a new tile has become available, though it's only partial - otherwise it won't know to recreate the scene...
-            T_HOST.GetTileAdmin()._OnNewTileReady(root.GetDgnDb());
-
-            return ERROR;
-            }
+        // Possible that one or more parent tiles will contain solely elements too small to produce geometry, in which case
+        // we must create their children in order to get graphics...mark undisplayable.
+        tile.SetDisplayable(batch.IsValid());
+        return SUCCESS;
         });
     }
 
@@ -1185,7 +1147,7 @@ BentleyStatus Loader::DoGetFromSource()
         Render::Primitives::GeometryCollection readGeometry;
         bool readIsLeaf;
         m_tileBytes.ResetPos();
-        if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile(readRange, readGeometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), readIsLeaf))
+        if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile(readRange, readGeometry, m_tileBytes, *root.GetModel(), GetRenderSystem(), readIsLeaf))
             BeAssert(false);
 
         assertEqual(readGeometry, geometry);
@@ -1218,7 +1180,7 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
 bool Loader::_IsValidData()
     {
     BeAssert(!m_tileBytes.empty());
-    TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetElementRoot().GetModel(), *GetRenderSystem());
+    TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetElementRoot().GetModel(), GetRenderSystem());
 
     if (!m_doTileRepair)
         return reader.VerifyFeatureTable();
@@ -1266,7 +1228,7 @@ TileR Loader::GetElementTile() { return static_cast<TileR>(*m_tile); }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model, transform, "", &system),
+Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model, transform, system),
     m_name(model.GetName()),
 #if defined(CACHE_LARGE_GEOMETRY)
     m_cacheGeometry(m_is3d)
@@ -1274,9 +1236,6 @@ Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     m_cacheGeometry(false)
 #endif
     {
-    // ###TODO: Play with this? Default of 20 seconds is ok for reality tiles which are cached...pretty short for element tiles.
-    SetExpirationTime(BeDuration::Seconds(90));
-
     m_cache = model.GetDgnDb().ElementTileCache();
     }
 
@@ -1672,7 +1631,7 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
     if (!wantRange && !wantContentRange)
         return (m_debugGraphics.m_graphic = nullptr);
 
-    GraphicBuilderPtr gf = GetElementRoot().GetRenderSystemP()->_CreateGraphic(GraphicBuilder::CreateParams::Scene(GetElementRoot().GetDgnDb()));
+    GraphicBuilderPtr gf = GetElementRoot().GetRenderSystem()._CreateGraphic(GraphicBuilder::CreateParams::Scene(GetElementRoot().GetDgnDb()));
     GraphicParams params;
     params.SetWidth(0);
     if (wantRange)
@@ -1763,7 +1722,6 @@ void Tile::_Invalidate()
     {
     GetElementRoot().UnderMutex([&]()
         {
-        m_backupGraphic = m_graphic;
         m_graphic = nullptr;
         m_debugGraphics.Reset();
         m_generator.reset();
@@ -1836,7 +1794,7 @@ void Root::_OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents)
     // Note that currently we consider drawing outside of the project extents to be illegal.
     // Therefore we do not attempt to regenerate tiles to include geometry previously outside the extents, or exclude geometry previously within them.
     auto rootTile = static_cast<TileP>(GetRootTile().get());
-    if (Is3d() && nullptr != rootTile && !m_ignoreChanges)
+    if (Is3d() && nullptr != rootTile)
         {
         // ###TODO: What about non-spatial 3d models?
         Transform tfToTile;
@@ -1903,9 +1861,9 @@ void Tile::UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
+TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads)
     {
-    return Loader::Create(*this, loads, renderSys);
+    return Loader::Create(*this, loads);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2027,7 +1985,7 @@ private:
     void ClipStrokes(StrokesR strokes) const;
     void ClipPoints(StrokesR strokes) const;
 
-    SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
+    SystemP _GetRenderSystem() const override { return &m_loadContext.GetRenderSystem(); }
     GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const&) override { BeAssert(false); return nullptr; }
     GraphicPtr _CreateBranch(GraphicBranch&, DgnDbR, TransformCR, ClipVectorCP) override { BeAssert(false); return nullptr; }
     double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
@@ -2049,7 +2007,7 @@ public:
     void AddMeshes(GeomPartR part, bvector<GeometryCP> const& instances);
 
     // Return a list of all meshes currently in the builder map
-    MeshList GetMeshes(bool isPartialTile);
+    MeshList GetMeshes();
     // Return a tight bounding volume
     DRange3dCR GetContentRange() const { return m_contentRange; }
     DRange3dCR GetTileRange() const { return m_builderMap.GetRange(); }
@@ -2074,7 +2032,7 @@ virtual bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext)
   : m_tile(tile), m_options(options), m_tolerance(tile.GetTolerance()), m_loadContext(loadContext),
-    m_featureTable(tile.GetElementRoot().GetModelId(), nullptr != loadContext.GetRenderSystem() ? loadContext.GetRenderSystem()->_GetMaxFeaturesPerBatch() : s_hardMaxFeaturesPerTile),
+    m_featureTable(tile.GetElementRoot().GetModelId(), loadContext.GetRenderSystem()._GetMaxFeaturesPerBatch()),
     m_builderMap(m_tolerance, &m_featureTable, tile.GetTileRange(), m_tile.GetElementRoot().Is2d())
     {
     SetDgnDb(m_tile.GetElementRoot().GetDgnDb());
@@ -2427,7 +2385,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshList MeshGenerator::GetMeshes(bool isPartialTile)
+MeshList MeshGenerator::GetMeshes()
     {
     MeshList meshes;
     for (auto& builder : m_builderMap)
@@ -2440,10 +2398,7 @@ MeshList MeshGenerator::GetMeshes(bool isPartialTile)
     // Do not allow vertices outside of this tile's range to expand its content range
     clipContentRangeToTileRange(m_contentRange, GetTileRange());
 
-    if (isPartialTile)
-        meshes.m_features = m_featureTable;
-    else
-        meshes.m_features = std::move(m_featureTable);
+    meshes.m_features = std::move(m_featureTable);
 
     return meshes;
     }
@@ -2482,7 +2437,6 @@ struct TileGenerator
     enum class Completion
     {
         Full,       // Tile generation completed.
-        Partial,    // Tile generation partially completed. Can be resumed.
         Aborted,    // Tile generation aborted (tile load canceled, or tile abandoned).
     };
 private:
@@ -2572,7 +2526,6 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         }
 
     // Collect geometry from each element, until all elements processed or we run out of time
-    bool isPartialTile = false;
     TileR tile = GetTile();
     for (/*m_elementIter*/; m_elementCollector.GetEntries().end() != m_elementIter; ++m_elementIter)
         {
@@ -2592,16 +2545,14 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
             m_meshGenerator.AddMeshes(*geom, true);
 
         bool aborted = loadContext.WasAborted();
-        isPartialTile = loadContext.WantPartialTiles() && (aborted || loadContext.IsPastCollectionDeadline());
-        if (aborted || isPartialTile)
+        if (aborted)
             break;
         }
 
     if (m_meshGenerator.DidDecimation())
         m_geometries.MarkIncomplete();
 
-    // Don't discard our progress if this is a partial tile
-    if (!isPartialTile && loadContext.WasAborted())
+    if (loadContext.WasAborted())
         {
         m_geometries.clear();
         return Completion::Aborted;
@@ -2609,7 +2560,7 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
 
     // Determine whether or not to subdivide this tile
     bool canSkipSubdivision = tile.GetTolerance() <= s_maxLeafTolerance;
-    if (canSkipSubdivision && !isPartialTile && !loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor())
+    if (canSkipSubdivision && !loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor())
         {
         if (m_geometries.IsComplete() && !m_elementCollector.AnySkipped() && m_elementCollector.GetEntries().size() <= s_minElementsPerTile)
             {
@@ -2630,17 +2581,10 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
 
     // Facet all geometry thus far collected to produce meshes.
     Render::Primitives::GeometryCollection collection;
-    collection.Meshes() = m_meshGenerator.GetMeshes(isPartialTile);
-    if (!isPartialTile)
-        {
-        tile.SetContentRange(ElementAlignedBox3d(m_meshGenerator.GetContentRange()));
-        if (!m_geometries.IsComplete())
-            collection.MarkIncomplete();
-        }
-    else
-        {
+    collection.Meshes() = m_meshGenerator.GetMeshes();
+    tile.SetContentRange(ElementAlignedBox3d(m_meshGenerator.GetContentRange()));
+    if (!m_geometries.IsComplete())
         collection.MarkIncomplete();
-        }
 
     if (m_geometries.ContainsCurves())
         collection.MarkCurved();
@@ -2649,7 +2593,7 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
 
     m_geometries.clear(); // NB: Retains curved/complete flags...
 
-    return isPartialTile ? Completion::Partial : Completion::Full;
+    return Completion::Full;
     }
 
 END_ELEMENT_TILETREE_NAMESPACE
@@ -2695,9 +2639,8 @@ void Loader::SetupForTileRepair()
         return;
         }
 
-    auto sys = GetRenderSystem();
-    BeAssert(nullptr != sys);
-    uint32_t maxFeatures = std::min(s_hardMaxFeaturesPerTile, sys->_GetMaxFeaturesPerBatch());
+    auto& sys = GetRenderSystem();
+    uint32_t maxFeatures = std::min(s_hardMaxFeaturesPerTile, sys._GetMaxFeaturesPerBatch());
 
     double minRangeDiagonalSq = s_minRangeBoxSize * tile.GetTolerance();
     IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(tile.GetTolerance());
@@ -2745,7 +2688,6 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
     Render::Primitives::GeometryCollection collection;
     if (nullptr != m_generator.get())
         {
-        //THREADLOG.errorv("Refining partial tile (processed %u times)", m_generator->GetAndIncrementUseCount());
         auto status = m_generator->GenerateGeometry(collection, context);
         switch (status)
             {
@@ -2766,9 +2708,8 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
         return collection;
 
     uint32_t maxFeatures = s_hardMaxFeaturesPerTile; // Note: Element != Feature - could have multiple features per element due to differing subcategories/classes in GeometryStream
-    auto sys = context.GetRenderSystem();
-    if (nullptr != sys)
-        maxFeatures = std::min(maxFeatures, sys->_GetMaxFeaturesPerBatch());
+    auto& sys = context.GetRenderSystem();
+    maxFeatures = std::min(maxFeatures, sys._GetMaxFeaturesPerBatch());
 
     double minRangeDiagonalSq = s_minRangeBoxSize * m_tolerance;
     minRangeDiagonalSq *= minRangeDiagonalSq;
@@ -2780,17 +2721,13 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
     transformFromDgn.InverseOf(root.GetLocationForTileGeneration());
 
     // ###TODO: Avoid heap alloc if don't want partial tiles...
+    // ###TODO_IMODELCORE: Removed support for partial tiles - remove heap alloc.
     TileGeneratorUPtr generator = std::make_unique<TileGenerator>(GetDgnRange(), *model->GetRangeIndex(), minRangeDiagonalSq, context, maxFeatures, *this, *facetOptions, transformFromDgn, m_tolerance, GeometryOptions());
     auto status = generator->GenerateGeometry(collection, context);
     switch (status)
         {
         case TileGenerator::Completion::Aborted:
             return Render::Primitives::GeometryCollection();
-        case TileGenerator::Completion::Partial:
-            // Save generator to resume later and fall-through...
-            BeAssert(context.WantPartialTiles());
-            THREADLOG.warning("Produced partial tile");
-            m_generator = std::move(generator);
         default:
             return collection;
         }
@@ -2811,23 +2748,7 @@ DRange3d Tile::GetDgnRange() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transform Root::GetLocationForTileGeneration() const
     {
-    // TFS#783612: Diego's 'Model Alignment' workflow involves:
-    // 1. Start a dynamic transaction
-    // 2. Apply a uniform transform to all elements in a set of models
-    // 3. Apply the same transform to the models' tile trees as the temporary 'display transform' to cause them to render in the new location
-    // 4. When finished, cancel the dynamic transaction, which restores the range index; and remove the temporary display transform from the tile trees.
-    // In between 2 and 3, we try to generate tiles using the temporarily modified RangeIndex, and our range intersections are all wrong.
-    // During tile generation we transform ranges and positions from tile to dgn, and back again - so the net result is as if the
-    // RangeIndex had never been modified - we generate the same tiles we normally would.
-    auto tf = GetLocation();
-    if (m_haveDisplayTransform)
-        {
-        BeAssert(GetDgnDb().Txns().InDynamicTxn());
-        BeAssert(m_ignoreChanges);
-        tf = Transform::FromProduct(m_displayTransform, tf);
-        }
-
-    return tf;
+    return GetLocation();
     }
 
 /*---------------------------------------------------------------------------------**//**

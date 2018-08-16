@@ -58,7 +58,7 @@ private:
     Render::Primitives::GeometryCollection  m_geometry;
     bool m_doTileRepair;
 
-    Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys);
+    Loader(TileR tile, TileTree::TileLoadStatePtr loads);
 
     BentleyStatus _GetFromSource() override;
     BentleyStatus _LoadTile() override;
@@ -78,7 +78,7 @@ private:
     uint64_t _GetCreateTime() const override { return m_createTime; }
     bool _WantWaitOnSave() const override;
 public:
-    static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) { return new Loader(tile, loads, renderSys); }
+    static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads) { return new Loader(tile, loads); }
 };
 
 //=======================================================================================
@@ -88,18 +88,11 @@ struct LoadContext
 {
 private:
     LoaderCP    m_loader;
-    BeTimePoint m_deadline;
 public:
-    explicit LoadContext(LoaderCP loader) : m_loader(loader)
-        {
-        if (nullptr != loader && loader->WantPartialTiles() && loader->HasPartialTimeout())
-            m_deadline = BeTimePoint::Now() + loader->GetPartialTimeout();
-        }
+    explicit LoadContext(LoaderCP loader) : m_loader(loader) { }
 
     bool WasAborted() const { return nullptr != m_loader && m_loader->IsCanceledOrAbandoned(); }
-    Dgn::Render::SystemP GetRenderSystem() const {return m_loader->GetRenderSystem();}
-    bool IsPastCollectionDeadline() const { return m_deadline.IsValid() && m_deadline.IsInPast(); }
-    bool WantPartialTiles() const { return m_deadline.IsValid(); }
+    Dgn::Render::SystemR GetRenderSystem() const {return m_loader->GetRenderSystem();}
 };
 
 //=======================================================================================
@@ -187,7 +180,6 @@ protected:
     Root(GeometricModelR model, TransformCR transform, Render::SystemR system);
 
     Utf8CP _GetName() const override { return m_name.c_str(); }
-    Render::ViewFlagsOverrides _GetViewFlagsOverrides() const override { return Render::ViewFlagsOverrides(); }
 
     void RemoveCachedGeometry(DRange3dCR range, DgnElementId id);
     void _OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id) override { RemoveCachedGeometry(range, id); }
@@ -246,7 +238,6 @@ protected:
     mutable DebugGraphics       m_debugGraphics;
     double                      m_zoomFactor = 1.0;
     uint64_t                    m_debugId;
-    Render::GraphicPtr          m_backupGraphic;
     TileGeneratorUPtr           m_generator;
     bool                        m_hasZoomFactor = false;
     bool                        m_displayable = true;
@@ -258,7 +249,7 @@ protected:
 
     void InitTolerance(double minToleranceRatio, bool isLeaf=false);
 
-    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys = nullptr) override;
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
     TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
     double _GetMaximumSize() const override;
     void _Invalidate() override;
@@ -294,11 +285,8 @@ public:
     void SetContentRange (ElementAlignedBox3dCR contentRange) { m_contentRange = contentRange; }
     Utf8String GetDebugId() const { return _GetTileCacheKey(); }
 
-    bool _HasBackupGraphics() const override { return m_backupGraphic.IsValid(); }
-    bool _HasGraphics() const override { return m_graphic.IsValid() || _HasBackupGraphics(); }
-    void ClearBackupGraphic() { m_backupGraphic = nullptr; }
+    bool _HasGraphics() const override { return m_graphic.IsValid(); }
 
-    bool _IsPartial() const override { return nullptr != m_generator.get(); }
     void UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink);
 
     virtual bool IsCacheable() const;

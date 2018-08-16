@@ -21,58 +21,6 @@
 
 BEGIN_TILETREE_NAMESPACE
 
-/**  @addtogroup GROUP_TileTree TileTree Module
-
- A TileTree is an abstract class to manage a HLOD (hierarchical level of detail) tree of spatially coherent "3d tiles".
-
-It manages:
- - loading (locally and via http)
- - caching (in memory and on disk)
- - displaying
- - incremental asynchronous refinement
-
-The tree is represented in memory by two classes: TileTree::Root and TileTree::Tile. The tree is in a local
-coordinate system, and is positioned in world space by a linear transform.
-
-The HLOD tree can subdivide space using any approach, but must obey the following rules:
- a) there is one TileTree::Root, and it points to the root TileTree::Tile
- b) every Tile in the tree (other than the root tile) has one parent tile
- c) every Tile encloses a volume defined by a tree-axis-aligned DRange3d. That range must be contained within its parent's range.
- d) everything visible in a Tile must also be visible in one of its children (usually at higher detail). That is, either a
-    Tile is displayed or its children are displayed; never both.
- e) Tiles may overlap, but generally it works best if they don't.
-
-Display algorithm:
- Starting at the root Tile, intersect the Tile's range (in BIM world coordinates) against the view frustum. If the Tile's range
- is completely outside the view frustum, stop. Otherwise, calculate the size, in pixels, of the Tile by dividing the
- radius of a sphere enclosing the Tile's range by the size (in meters) of the pixel at the center of the Tile. If the pixel size is
- less than the Tile's "maximum pixel size", or if it has no child Tiles, it is displayed. Otherwise, recursively display each of
- its child Tiles.
-
-Tile Loading and Missing Tiles: Tiles cannot be displayed until they are loaded. The root Tile is loaded synchronously,
- so it is always present. Otherwise,  tiles are loaded as they are needed, asynchronously (in another thread.) The status
- of the load process is communicated between threads via the atomic member variable "m_loadState". When a tile is needed
- for a display request but is not loaded,  it is marked as "missing" and is placed in the download queue. Optionally,
- substitute (lower or higher resolution) Tiles may be drawn to show an approximation of the missing tile. Periodically
- (on a timer event, in the main thread), the "_DoProgressive" method of your ProgressiveTask object is called to check
- the list of missing tiles to see if they've arrived. If so, they should be drawn (potentially creating a new set of
- missing tiles). When all tiles have arrived, the ProgressiveTask is removed.
-
-In-memory Tile Caching:
- The strategy for in-memory caching involves purging unused Tiles during _Draw. When any tile is eliminated on range
- or resolution criteria, it and all of its children, recursively, are unloaded if they have not been used recently
- (as defined by the m_expirationTime member of TileTree::Root.) Of course this means that tiles are not purged
- from memory except during _Draw requests.
-
-HTTP request caching:
- TileTree employs the RealityData::Cache class for saving/loading copies of tile data from HTTP request in a SQLite database in
- the temporary directory. When an HTTP-based tile is needed, the local cache is first checked and used if present. Otherwise
- an HTTP GET request is issued and the result is saved on arrival. The local cached is purged periodically so it doesn't
- grow beyond the "maxSize" argument passed to TileTree::Root::CreateCache. Tiles are always loaded via the TileLoader::_LoadTile
- method regardless of whether their data comes from a local file, an HTTP request, or from the local cache.
-
-*/
-
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNodes)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileRequests)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
@@ -142,18 +90,14 @@ struct TileLoadState : ICancellationToken, NonCopyableClass
 {
 private:
     TileCPtr        m_tile;
-    BeDuration      m_partialTimeout;
     BeAtomic<bool>  m_canceled;
 public:
-    explicit TileLoadState(TileCR tile, BeDuration partialTimeout) : m_tile(&tile), m_partialTimeout(partialTimeout) { }
+    explicit TileLoadState(TileCR tile) : m_tile(&tile) { }
     DGNPLATFORM_EXPORT ~TileLoadState();
     bool IsCanceled() override {return m_canceled.load();}
     void SetCanceled() {m_canceled.store(true);}
     void Register(std::weak_ptr<ICancellationListener> listener) override {}
     TileCR GetTile() const { return *m_tile; }
-    BeDuration GetPartialTimeout() const {return m_partialTimeout;}
-    bool HasPartialTimeout() const {return !m_partialTimeout.IsZero();}
-    void ClearPartialTimeout() {m_partialTimeout = BeDuration();}
 
     struct PtrComparator
     {
@@ -213,7 +157,6 @@ protected:
     uint32_t m_depth;
     mutable BeAtomic<LoadStatus> m_loadStatus;
     mutable ChildTiles m_children;
-    mutable BeTimePoint m_childrenLastUsed; //! updated whenever this tile is used for display
 
     void SetAbandoned() const;
 
@@ -223,32 +166,35 @@ protected:
     virtual bool _IsInvalidated(DirtyRangesCR dirty) const { return true; }
     //! Invoked at beginning of _SelectTiles() to ensure children are still valid.
     virtual void _ValidateChildren() const { }
-
-    virtual void _GetCustomMetadata(Utf8StringR name, Json::Value& data) const {};
 public:
     Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_depth(nullptr==parent ? 0 : parent->GetDepth()+1), m_loadStatus(LoadStatus::NotLoaded) {}
+
+    ElementAlignedBox3d const& GetRange() const {return m_range;}
+    DGNPLATFORM_EXPORT ElementAlignedBox3d ComputeRange() const;
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
+
     double GetRadius() const {return 0.5 * m_range.low.Distance(m_range.high);}
     uint32_t GetDepth() const {return m_depth;}
     DPoint3d GetCenter() const {return DPoint3d::FromInterpolate(m_range.low, .5, m_range.high);}
-    ElementAlignedBox3d const& GetRange() const {return m_range;}
+
     LoadStatus GetLoadStatus() const {return (LoadStatus) m_loadStatus.load();}
-    void SetIsReady() {return m_loadStatus.store(LoadStatus::Ready);}
-    void SetIsQueued() const {return m_loadStatus.store(LoadStatus::Queued);}
-    void SetNotLoaded() {return m_loadStatus.store(LoadStatus::NotLoaded);}
-    void SetNotFound() {return m_loadStatus.store(LoadStatus::NotFound);}
     bool IsQueued() const {return m_loadStatus.load() == LoadStatus::Queued;}
     bool IsAbandoned() const {return m_loadStatus.load() == LoadStatus::Abandoned;}
     bool IsReady() const {return m_loadStatus.load() == LoadStatus::Ready;}
     bool IsNotLoaded() const {return m_loadStatus.load() == LoadStatus::NotLoaded;}
     bool IsNotFound() const {return m_loadStatus.load() == LoadStatus::NotFound;}
+    void SetIsReady() {return m_loadStatus.store(LoadStatus::Ready);}
+    void SetIsQueued() const {return m_loadStatus.store(LoadStatus::Queued);}
+    void SetNotLoaded() {return m_loadStatus.store(LoadStatus::NotLoaded);}
+    void SetNotFound() {return m_loadStatus.store(LoadStatus::NotFound);}
+
     bool IsDisplayable() const {return _GetMaximumSize() > 0.0;}
     bool IsParentDisplayable() const {return nullptr != GetParent() && GetParent()->IsDisplayable();}
+
     TileCP GetParent() const {return m_parent;}
     RootCR GetRoot() const {return m_root;}
     RootR GetRootR() {return m_root;}
-    DGNPLATFORM_EXPORT int CountTiles() const; //! for debugging
-    DGNPLATFORM_EXPORT ElementAlignedBox3d ComputeRange() const;
+    DGNPLATFORM_EXPORT Render::SystemR GetRenderSystem() const;
 
     virtual void _OnChildrenUnloaded() const {}
     DGNPLATFORM_EXPORT virtual void _UnloadChildren(BeTimePoint olderThan) const;
@@ -259,9 +205,6 @@ public:
     //! Returns whether this tile has graphics.
     virtual bool _HasGraphics() const = 0;
 
-    //! Returns whether this tile has back-up graphics.
-    virtual bool _HasBackupGraphics() const { return false; }
-
     //! Get the array of children for this Tile.
     //! @param[in] create If false, return nullptr if this tile has children but they are not yet created. Otherwise create them now.
     virtual ChildTiles const* _GetChildren(bool create) const = 0;
@@ -269,7 +212,7 @@ public:
     virtual Render::GraphicPtr _GetGraphic() const { return nullptr; }
 
     //! Called when tile data is required.
-    virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr, Dgn::Render::SystemP renderSys = nullptr) = 0;
+    virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr) = 0;
 
     //! Get the tile cache key for this Tile.
     virtual Utf8String _GetTileCacheKey() const = 0;
@@ -286,11 +229,7 @@ public:
     //! When the range of the model changes, update this tile's range
     virtual void _UpdateRange(DRange3dCR prevParentRange, DRange3dCR newParentRange) { }
 
-    virtual bool _IsPartial() const { return false; }
     bool IsEmpty() const;
-	
-    //! Returns custom metadata extracted from the model
-    virtual void GetCustomMetadata(Utf8StringR name, Json::Value& data) const { _GetCustomMetadata(name, data); };
 
     //! Puts the given graphic into a batch.
     DGNPLATFORM_EXPORT Render::GraphicPtr CreateTileGraphic(Render::GraphicR graphic, DgnModelId modelId) const;
@@ -302,14 +241,11 @@ public:
         uint32_t    m_maxDepth = 0;
     };
 
-    void Count(Counts& counts) const;
-
     virtual bool _ToJson(Json::Value&) const { return false; }
 };
 
 /*=================================================================================**//**
 //! The root of a tree of tiles. This object stores the location of the tree relative to world coordinates. 
-//! It also facilitates local caching of HTTP-based tiles.
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
 struct Root : RefCountedBase, NonCopyableClass
@@ -317,24 +253,16 @@ struct Root : RefCountedBase, NonCopyableClass
     friend TileLoader;
 
 protected:
-    bool m_isHttp;
-    bool m_pickable = false;
-    bool m_ignoreChanges = false;
-    bool m_haveDisplayTransform = false;
     bool m_is3d;
     mutable std::set<TileLoadStatePtr, TileLoadState::PtrComparator> m_activeLoads;
     DgnDbR m_db;
     DgnModelId m_modelId;
-    BeFileName m_localCacheName;
     Transform m_location;         // transform from tile coordinates to world coordinates
     TilePtr m_rootTile;
-    Utf8String m_rootResource;  // either directory or Url.
-    BeDuration m_expirationTime = BeDuration::Seconds(20); // save unused tiles for 20 seconds
-    Dgn::Render::SystemP m_renderSystem = nullptr;
+    Dgn::Render::SystemR m_renderSystem;
     RealityData::CachePtr m_cache;
     mutable BeConditionVariable m_cv;
     DirtyRanges::List m_damagedRanges;
-    Transform m_displayTransform;
 
     //! Clear the current tiles and wait for all pending download requests to complete/abort.
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
@@ -351,70 +279,51 @@ protected:
     void UpdateRange(DirtyRangesCR dirty);
     void InvalidateDamagedTiles();
 
-    Root(DgnDbR, DgnModelId, bool is3d, TransformCR, Utf8CP rootResource, Dgn::Render::SystemP);
+    Root(DgnDbR, DgnModelId, bool is3d, TransformCR, Dgn::Render::SystemR);
 public:
-    DGNPLATFORM_EXPORT virtual BentleyStatus _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeDuration partialTimeout);
-    DGNPLATFORM_EXPORT void RequestTiles(MissingNodesCR, BeDuration partialTimeout);
+    DGNPLATFORM_EXPORT virtual BentleyStatus _RequestTile(TileR tile, TileLoadStatePtr loads);
+    DGNPLATFORM_EXPORT void RequestTiles(MissingNodesCR);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
+
     void StartTileLoad(TileLoadStatePtr) const;
     void DoneTileLoad(TileLoadStatePtr) const;
+
     DGNPLATFORM_EXPORT void CancelTileLoad(TileCR tile);
+    DGNPLATFORM_EXPORT void CancelAllTileLoads();
     void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads.size()>0) m_cv.InfiniteWait(holder);}
     DGNPLATFORM_EXPORT void WaitForAllLoadsFor(uint32_t milliseconds);
-    DGNPLATFORM_EXPORT void CancelAllTileLoads();
-    bool IsHttp() const {return m_isHttp;}
+
     TransformCR GetLocation() const {return m_location;}
     void SetLocation(TransformCR location) {m_location = location;}
+
     RealityData::CachePtr GetCache() const {return m_cache;}
+
     TilePtr GetRootTile() const {return m_rootTile;} //!< Get the root Tile of this Root
     DgnDbR GetDgnDb() const {return m_db;} //!< Get the DgnDb from which this Root was created.
     DgnModelId GetModelId() const{return m_modelId;} //!< Get the ID of the GeometricModel from which this Root was created.
     ElementAlignedBox3d ComputeRange() const {return m_rootTile->ComputeRange();}
-    Dgn::Render::SystemP GetRenderSystemP() const {return m_renderSystem;}
-    ClipVectorCP GetClipVector() const { return _GetClipVector(); }
+    Dgn::Render::SystemR GetRenderSystem() const {return m_renderSystem;}
 
     //! Get the resource name (file name or URL) of a Tile in this TileTree. By default it concatenates the tile cache key to the rootResource
-    virtual Utf8String _ConstructTileResource(TileCR tile) const {return m_rootResource + tile._GetTileCacheKey();}
+    virtual Utf8String _ConstructTileResource(TileCR tile) const {return tile._GetTileCacheKey();}
 
     //! Get the name of this tile tree, chiefly for debugging
     virtual Utf8CP _GetName() const = 0;
-
-    //! Specify any view flags which should be overridden when rendering this tile tree.
-    DGNPLATFORM_EXPORT virtual Render::ViewFlagsOverrides _GetViewFlagsOverrides() const;
 
     //! Ctor for Root.
     //! @param model The model from which this Root was created.
     //! @param location The transform from tile coordinates to BIM world coordinates.
     //! @param rootResource The root resource (directory or Url) from which tiles can be loaded, or nullptr if the Url's are generated by _ConstructTileResource
     //! @param system The Rendering system used to create Render::Graphic used to draw this TileTree.
-    DGNPLATFORM_EXPORT Root(GeometricModelCR model, TransformCR location, Utf8CP rootResource, Dgn::Render::SystemP system);
+    DGNPLATFORM_EXPORT Root(GeometricModelCR model, TransformCR location, Dgn::Render::SystemR system);
 
-    DGNPLATFORM_EXPORT Root(DgnDbR, DgnModelId, TransformCR, Utf8CP rootResource, Dgn::Render::SystemP);
-
-    //! Set expiration time for unused Tiles. During calls to Draw, unused tiles that haven't been used for this number of seconds will be purged.
-    void SetExpirationTime(BeDuration val) {m_expirationTime = val;}
-
-    //! Get expiration time for unused Tiles.
-    BeDuration GetExpirationTime() const {return m_expirationTime;}
-                                                                                                                                           
-    //! Create a RealityData::Cache for Tiles from this Root. This will either create or open the SQLite file holding locally cached previously-downloaded versions of Tiles.
-    //! @param realityCacheName The name of the reality cache database file, relative to the temporary directory.
-    //! @param maxSize The cache maximum size in bytes.
-    //! @param httpOnly If true create cache only if HTTP root.
-    //! @note If httpOnly && this is not an HTTP root, this does nothing.
-    DGNPLATFORM_EXPORT void CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly = true);
-
-    //! Delete, if present, the local SQLite file holding the cache of downloaded tiles.
-    //! @note This will first delete the local RealityData::Cache, aborting all outstanding requests and waiting for the queue to empty.
-    DGNPLATFORM_EXPORT BentleyStatus DeleteCacheFile();
+    DGNPLATFORM_EXPORT Root(DgnDbR, DgnModelId, TransformCR, Dgn::Render::SystemR);
 
     void OnAddToRangeIndex(DRange3dCR range, DgnElementId id);
     void OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id);
     void OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id);
     virtual void _OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents) { }
-    void SetIgnoreChanges(bool ignore); //!< @private
-    void SetDisplayTransform(TransformCP tf); //!< @private
 
     bool Is3d() const { return m_is3d; }
     bool Is2d() const { return !Is3d(); }
@@ -439,7 +348,6 @@ protected:
     Utf8String                  m_resourceName;  // full file or URL name
     TilePtr                     m_tile;             // tile to load, cannot be null.
     TileLoadStatePtr            m_loads;
-    Dgn::Render::SystemP        m_renderSys;
     BeSQLite::SnappyFromBlob    m_snappyFrom;
     BeSQLite::SnappyToBlob      m_snappyTo;
 
@@ -457,8 +365,8 @@ protected:
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
     //! @param[in] renderSys The renderSys.  If null then the root node renderSys is used.
-    TileLoader(Utf8StringCR resourceName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey, Dgn::Render::SystemP renderSys)
-        : m_resourceName(resourceName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0), m_renderSys(renderSys) {}
+    TileLoader(Utf8StringCR resourceName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey)
+        : m_resourceName(resourceName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
 
     BentleyStatus LoadTile();
     BentleyStatus DoReadFromDb();
@@ -468,18 +376,14 @@ protected:
     virtual uint64_t _GetCreateTime() const { return BeTimeUtilities::GetCurrentTimeAsUnixMillis(); }
 public:
     bool IsCanceledOrAbandoned() const {return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned();}
-    Dgn::Render::SystemP GetRenderSystem() const { return nullptr == m_renderSys ? m_tile->GetRoot().GetRenderSystemP(): m_renderSys; }
-
-    BeDuration GetPartialTimeout() const {return nullptr != m_loads ? m_loads->GetPartialTimeout() : BeDuration();}
-    bool HasPartialTimeout() const {return nullptr != m_loads && m_loads->HasPartialTimeout();}
-    bool WantPartialTiles() const {return HasPartialTimeout();}
+    Dgn::Render::SystemR GetRenderSystem() const { return m_tile->GetRenderSystem(); }
 
     DGNPLATFORM_EXPORT virtual BentleyStatus _SaveToDb();
     DGNPLATFORM_EXPORT virtual BentleyStatus _ReadFromDb();
     DGNPLATFORM_EXPORT virtual bool _WantWaitOnSave() const;
 
     //! Called to get the data from the original location. The call must be fast and execute any long running operation asynchronously.
-    DGNPLATFORM_EXPORT virtual BentleyStatus _GetFromSource();
+    virtual BentleyStatus _GetFromSource() = 0;
 
     //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data. Called from worker threads.
     virtual BentleyStatus _LoadTile() = 0; 
@@ -503,20 +407,6 @@ public:
 
     //! Perform the load asynchronously.
     BentleyStatus Perform();
-};
-
-//=======================================================================================
-// @bsiclass                                                   Mathieu.Marchand  11/2016
-//=======================================================================================
-struct FileDataQuery
-{
-    Utf8String m_fileName;
-    TileLoadStatePtr m_loads;
-
-    FileDataQuery(Utf8StringCR fileName, TileLoadStatePtr loads) : m_fileName(fileName), m_loads(loads) {}
-
-    //! Read the entire file in a single chunk of memory.
-    DGNPLATFORM_EXPORT ByteStream Perform();
 };
 
 //=======================================================================================
@@ -571,101 +461,6 @@ public:
 };
 
 //=======================================================================================
-//! Accumulates a set of tiles that need to be loaded, for any number of tile trees.
-// @bsistruct                                                   Paul.Connelly   05/17
-//=======================================================================================
-struct TileRequests
-{
-private:
-    // NB: We use an std::map because we need each MissingNodes to maintain a stable address as we add to the map
-    typedef std::map<RootP, MissingNodes> Map;
-
-    Map m_map;
-public:
-    //! Obtain the set of missing nodes for the given tile tree.
-    MissingNodesR GetMissing(RootR root) { return m_map.insert(Map::value_type(&root, MissingNodes())).first->second; }
-
-    //! Request all accumulated tiles to be loaded. This operation first cancels loading of any previously-requested tiles which
-    //! are not contained in this set of requests.
-    DGNPLATFORM_EXPORT void RequestMissing(BeDuration timeoutForPartialTiles) const;
-
-    DGNPLATFORM_EXPORT bool HasMissingTiles() const;
-};
-
-//=======================================================================================
-//! A QuadTree is a 2d TileTree that subdivides each tile into 4 child equal-sized tiles, each with one corner at the center of its parent.
-//! A tile in a QuadTree can be addressed by a TileId comprised of a level (depth) and a row/column numbers. 
-//! The root tile is {0,0,0} and it is not necessarily square.
-// @bsiclass                                                    Keith.Bentley   11/16
-//=======================================================================================
-namespace QuadTree
-{
-//=======================================================================================
-//! Identifies a tile in a QuadTree
-// @bsiclass                                                    Keith.Bentley   08/16
-//=======================================================================================
-struct TileId
-{
-    uint8_t m_level;
-    uint32_t m_row;
-    uint32_t m_column;
-    TileId() {}
-    TileId(uint8_t level, uint32_t col, uint32_t row) {m_level=level; m_column=col; m_row=row;}
-};
-
-//=======================================================================================
-//! The root of a QuadTree
-// @bsiclass                                                    Keith.Bentley   08/16
-//=======================================================================================
-struct Root : TileTree::Root
-{
-    DEFINE_T_SUPER(TileTree::Root)
-
-    ColorDef m_tileColor;      //! for setting transparency
-    uint8_t m_maxZoom;         //! the maximum zoom level for this map
-    uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
-    ClipVectorPtr m_clip;      //! clip volume applied to tiles, in root coordinates
-
-    ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
-
-    uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
-    Root(GeometricModelCR, TransformCR location, Utf8CP rootResource, Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);
-};
-    
-//=======================================================================================
-//! A QuadTree tile. May or may not have its graphics present.
-// @bsiclass                                                    Keith.Bentley   05/16
-//=======================================================================================
-struct Tile : TileTree::Tile
-{
-    DEFINE_T_SUPER(TileTree::Tile)
-
-    bool m_isLeaf;
-    TileId m_id; 
-    Render::GraphicBuilder::TileCorners m_corners; 
-    mutable Render::GraphicPtr m_graphic;                   
-
-    Tile(Root& quadRoot, TileId id, Tile const* parent) : T_Super(quadRoot, parent), m_id(id) {m_isLeaf = (id.m_level == quadRoot.m_maxZoom);}
-
-    TileId GetTileId() const {return m_id;}
-    uint8_t GetZoomLevel() const {return m_id.m_level;}
-    uint32_t GetRow() const {return m_id.m_row;}
-    uint32_t GetColumn() const {return m_id.m_column;}
-    virtual TilePtr _CreateChild(TileId) const = 0;
-    bool _HasChildren() const override {return !m_isLeaf;}
-    bool _HasGraphics() const override {return IsReady() && m_graphic.IsValid();}
-    void SetIsLeaf() {m_isLeaf = true; /*m_children.clear();*/}
-    ChildTiles const* _GetChildren(bool load) const override;
-    Utf8String _GetTileCacheKey() const override {return Utf8PrintfString("%d/%d/%d", m_id.m_level, m_id.m_column, m_id.m_row);}
-    Root& GetQuadRoot() const {return (Root&) m_root;}
-    double _GetMaximumSize() const override {return GetQuadRoot().GetMaxPixelSize();}
-    void _Invalidate() override { m_graphic = nullptr; }
-    DGNPLATFORM_EXPORT void _ValidateChildren() const override;
-};
-
-} // end QuadTree
-
-//=======================================================================================
 //! An OctTree is a 3d TileTree that subdivides each tile into 8 child tiles. The subdivision
 //! of a parent tile into its children is not necessarily equal.
 //! A tile in an OctTree can be addressed by a TileId comprised of a depth level and 3 indices.
@@ -705,7 +500,7 @@ struct Root : TileTree::Root
 {
     DEFINE_T_SUPER(TileTree::Root);
 
-    DGNPLATFORM_EXPORT Root(GeometricModelCR, TransformCR location, Utf8CP rootUrl, Render::SystemP system);
+    DGNPLATFORM_EXPORT Root(GeometricModelCR, TransformCR location, Render::SystemR system);
 };
 
 //=======================================================================================
@@ -742,109 +537,6 @@ public:
     void SetGraphic(Render::GraphicR graphic) { m_graphic = &graphic; }
 };
 
-} // end OctTree
+} // namespace OctTree
 
-//=======================================================================================
-//! Tiles for reality models typically consist of one or more large textured meshes.
-// @bsistruct                                                   Paul.Connelly   07/17
-//=======================================================================================
-namespace TriMeshTree
-{
-//=======================================================================================
-//! Creates a Render::GraphicPtr created from the mesh, and (for pickable tiles)
-//! holds the data required to describe the mesh for picking.
-// @bsistruct                                                   Paul.Connelly   07/17
-//=======================================================================================
-struct TriMesh : RefCountedBase, NonCopyableClass
-{
-    struct CreateParams
-    {
-        int32_t m_numIndices = 0;
-        int32_t const* m_vertIndex = nullptr;
-        int32_t m_numPoints = 0;
-        FPoint3d const* m_points = nullptr;
-        FPoint3d const* m_normals = nullptr;
-        FPoint2d const* m_textureUV = nullptr;
-        Render::TexturePtr m_texture;
-
-        Render::QPoint3dList QuantizePoints() const;
-        Render::OctEncodedNormalList QuantizeNormals() const;
-        DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
-        DGNPLATFORM_EXPORT void FromTile(Render::TextureCR tile, Render::GraphicBuilder::TileCorners const& corners, FPoint3d* fpts, DgnDbR db);
-    };
-protected:
-    Render::QPoint3dList m_points = Render::QPoint3dList(DRange3d::NullRange());
-    Render::OctEncodedNormalList m_normals;
-    bvector<FPoint2d> m_textureUV;
-    bvector<int32_t> m_indices;
-    bvector<Render::GraphicPtr> m_graphics;
-    DGNPLATFORM_EXPORT Render::TriMeshArgs CreateTriMeshArgs(Render::TextureP texture, FPoint2d const* textureUV) const;
-public:
-    DGNPLATFORM_EXPORT TriMesh(CreateParams const&, RootR, Render::SystemP renderSys);
-    TriMesh() { }
-
-    DGNPLATFORM_EXPORT PolyfaceHeaderPtr GetPolyface() const;
-
-    bvector<Render::GraphicPtr> GetGraphics() const {return m_graphics;}
-    void ClearGraphic() {m_graphics.clear();}
-    Dgn::Render::QPoint3dListCR GetPoints() const {return m_points;}
-    bool IsEmpty() const {return m_points.empty();}
-    bool HasGraphics() const {return !m_graphics.empty() && m_graphics.front().IsValid();}
-};
-
-DEFINE_POINTER_SUFFIX_TYPEDEFS(TriMesh);
-DEFINE_REF_COUNTED_PTR(TriMesh);
-
-typedef std::forward_list<TriMeshPtr> TriMeshList; // a forward_list is smaller than a vector in the common case of a single element.
-
-//=======================================================================================
-//! The root of a TriMeshTree
-// @bsistruct                                                   Paul.Connelly   07/17
-//=======================================================================================
-struct Root : TileTree::Root
-{
-    DEFINE_T_SUPER(TileTree::Root);
-
-protected:
-    Root(GeometricModelCR model, TransformCR location, Utf8CP sceneFile, Render::SystemP system) : T_Super(model, location, sceneFile, system) { }
-    Root(DgnDbR db, DgnModelId modelId, TransformCR location, Utf8CP sceneFile, Render::SystemP system) : T_Super(db, modelId, location, sceneFile, system) { }
-
-    void ClipTriMesh(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys);
-
-    virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp, GetDgnDb()) : nullptr; }
-
-public:
-    DGNPLATFORM_EXPORT void CreateGeometry(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys);
-};
-
-//=======================================================================================
-//! A TriMeshTree tile.
-// @bsistruct                                                   Paul.Connelly   07/17
-//=======================================================================================
-struct Tile : TileTree::Tile
-{
-    DEFINE_T_SUPER(TileTree::Tile);
-
-protected:
-    double m_maxDiameter;
-    double m_factor=1.0;
-
-    TriMeshList m_meshes;
-
-    Tile(Root& root, Tile const* parent, double maxDiameter=0.0) : T_Super(root, parent), m_maxDiameter(maxDiameter) { }
-
-    bool _HasGraphics() const override { return m_meshes.end() != std::find_if(m_meshes.begin(), m_meshes.end(), [](TriMeshPtr const& arg) { return arg->HasGraphics(); }); }
-    void _Invalidate() override { BeAssert(false); }
-    ChildTiles const* _GetChildren(bool) const override {return IsReady() ? &m_children : nullptr;}
-    double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
-    void _UnloadChildren(BeTimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
-    void _OnChildrenUnloaded() const override {m_loadStatus.store(LoadStatus::NotLoaded);}
-
-public:
-    TriMeshList& GetGeometry() {return m_meshes;}
-    void ClearGeometry() {m_meshes.clear();}
-    Root& GetTriMeshRootR() {return static_cast<Root&>(GetRootR());}
-};
-
-} // end TriMeshTree
 END_TILETREE_NAMESPACE
