@@ -12,6 +12,7 @@
 #include <DgnPlatform/RenderPrimitives.h>
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/DgnMaterial.h>
+#include <DgnPlatform/TileTree.h>
 
 #define BEGIN_TILETREE_IO_NAMESPACE BEGIN_TILETREE_NAMESPACE namespace IO {
 #define END_TILETREE_IO_NAMESPACE } END_TILETREE_NAMESPACE
