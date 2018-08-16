@@ -23,6 +23,7 @@ USING_NAMESPACE_BUILDING_SHARED
 void SharedRepositoryManagerTestBase::CreateSeedDb(WCharCP seedFileName, WCharCP appendedPath, void(*RegisterDomainFunction)())
     {
     DgnDbPtr dgnDbPtr;
+    ScopedDgnHost host;
     {
     BeFileName  temporaryDir;
     PhysicalModelPtr siteModel;
@@ -52,6 +53,7 @@ void SharedRepositoryManagerTestBase::CreateSeedDb(WCharCP seedFileName, WCharCP
     dgnDbPtr->SaveSettings();
     }
     dgnDbPtr->CloseDb();
+    Dgn::T_HOST.GetScriptAdmin().TerminateOnThread();
     }
 
 //---------------------------------------------------------------------------------------
