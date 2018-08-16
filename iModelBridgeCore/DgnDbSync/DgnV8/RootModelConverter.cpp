@@ -67,6 +67,7 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     if (!m_rootFile.IsValid())
         return openStatus;
 
+
     //  Identify the root model
     auto rootModelId = _GetRootModelId();
 
@@ -74,6 +75,8 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId, /*fillCache*/true, /*loadRefs*/true, GetParams().GetProcessAffected());
     if (NULL == m_rootModelRef)
         return openStatus;
+
+    RealityMeshAttachmentConversion::ForceClassifierAttachmentLoad (*m_rootModelRef);
 
     if (DgnV8Api::DGNFILE_STATUS_Success != (openStatus = _ComputeCoordinateSystemTransform()))
         return openStatus;
