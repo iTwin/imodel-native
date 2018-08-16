@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "IModelJsNative.h"
+#include <DgnPlatform/ElementTileTree.h>
 
 using namespace IModelJsNative;
 namespace Render = Dgn::Render;
@@ -293,6 +294,39 @@ struct JsSystem : Render::System
 // (It is entirely stateless so this is not a problem).
 JsSystem s_system;
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/18
+//=======================================================================================
+struct TileTreeAppData : DgnModel::AppData
+{
+    ElementTileTree::RootPtr    m_root;
+
+    void _OnUnload(DgnModelR model) override
+        {
+        if (m_root.IsValid())
+            m_root->CancelAllTileLoads();
+        }
+
+    void _OnUnloaded(DgnModelR model) override
+        {
+        BeAssert(m_root.IsNull() || 1 == m_root->GetRefCount());
+        m_root = nullptr;
+        }
+
+    explicit TileTreeAppData(GeometricModelR model)
+        {
+        m_root = ElementTileTree::Root::Create(model, s_system);
+        BeAssert(m_root.IsValid());
+        }
+
+    static ElementTileTree::RootPtr FindTileTree(GeometricModelR model)
+        {
+        static Key s_key;
+        auto appData = model.FindOrAddAppData(s_key, [&]() { return new TileTreeAppData(model); });
+        return static_cast<TileTreeAppData&>(*appData).m_root;
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -308,7 +342,7 @@ static DgnDbStatus findTileTree(TileTree::RootP& root, Utf8StringCR idStr, DgnDb
     if (model.IsNull())
         return DgnDbStatus::MissingId;
 
-    root = model->GetTileTree(&s_system);
+    root = TileTreeAppData::FindTileTree(*model).get();
     return nullptr != root ? DgnDbStatus::Success : DgnDbStatus::NotFound;
     }
 
