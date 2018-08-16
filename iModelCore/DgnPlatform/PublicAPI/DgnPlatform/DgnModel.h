@@ -22,7 +22,6 @@ DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
-namespace TileTree {struct Root;}
 namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct Geometric2d; struct GroupInformation; struct Information; struct InformationRecord; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
 
 //=======================================================================================
@@ -147,14 +146,26 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         //! @return DropMe::Yes to be removed from DgnModel
         virtual DropMe _OnUpdated(DgnModelCR model) {return DropMe::No;}
 
-        //! Called before the DgnModel is deleted.
+        //! Called before the DgnModel is deleted from the DgnDb.
         //! @param[in] model The model to which this AppData is attached
         virtual void _OnDelete(DgnModelR model) {}
 
-        //! Called after the DgnModel was deleted.
+        //! Called after the DgnModel was deleted from the DgnDb.
         //! @param[in] model The model to which this AppData is attached
         //! @return DropMe::Yes to be removed from DgnModel
         virtual DropMe _OnDeleted(DgnModelCR model) {return DropMe::Yes;}
+
+        //! Called before the DgnModel is unloaded from memory.
+        //! @param[in] model The model to which this AppData is attached
+        virtual void _OnUnload(DgnModelR model) {}
+
+        //! Called after the DgnModel is unloaded from memory.
+        //! @param[in] model The model to which this AppData is attached
+        virtual void _OnUnloaded(DgnModelR model) {}
+
+        // ###TODO_IMODELCORE: range index callbacks:
+        // virtual void _OnAddToRangeIndex(DgnModelCR model, DRange3dCR range, DgnElementId elementId) {}
+        // virtual Dropme _OnProjectExtentsChanged(SpatialModelCR model, AxisAlignedBox3dCR newExtents) {}
     };
 
     using AppDataPtr = RefCountedPtr<AppData>;
@@ -234,7 +245,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
 private:
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
-    template<class T> void CallAppData(T const& caller) const;
+    template<typename T> void CallAppData(T const& caller) const;
+    template<typename T> void NotifyAppData(T const& notifier);
     DGNPLATFORM_EXPORT void AddAppDataInternal(AppData::Key const& key, AppData* data);
     DGNPLATFORM_EXPORT AppData* FindAppDataInternal(AppData::Key const& key) const;
 
@@ -258,8 +270,8 @@ protected:
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
-    virtual void _Destroy() { }
-    virtual void _PreDestroy() { }
+    DGNPLATFORM_EXPORT virtual void _Destroy();
+    DGNPLATFORM_EXPORT virtual void _PreDestroy();
 
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
 
@@ -909,7 +921,6 @@ public:
 protected:
     mutable std::unique_ptr<RangeIndex::Tree> m_rangeIndex;
     Formatter m_displayInfo;
-    RefCountedPtr<TileTree::Root> m_root;
     BeAtomic<uint64_t> m_lastModifiedTime;
 
     DGNPLATFORM_EXPORT void AddToRangeIndex(DgnElementCR);
@@ -917,11 +928,6 @@ protected:
     DGNPLATFORM_EXPORT void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
 
     DGNPLATFORM_EXPORT void UpdateLastElementModifiedTime();
-
-    DGNPLATFORM_EXPORT virtual RefCountedPtr<TileTree::Root> _CreateTileTree(Render::SystemP);
-    DGNPLATFORM_EXPORT void ReleaseTileTree();
-    void _Destroy() override { ReleaseTileTree(); }
-    DGNPLATFORM_EXPORT void _PreDestroy() override;
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
@@ -954,8 +960,6 @@ public:
 
     //! Get the Formatter for this model.
     Formatter const& GetFormatter() const {return m_displayInfo;}
-
-    DGNPLATFORM_EXPORT TileTree::Root* GetTileTree(Render::SystemP system);
 
     //! Returns the time of the most recent modification to any element in this model, in unix milliseconds.
     DGNPLATFORM_EXPORT uint64_t GetLastElementModifiedTime() const;

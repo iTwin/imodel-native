@@ -16,7 +16,6 @@
 #include "ISprite.h"
 #include <Bentley/BeThread.h>
 #include <BeSQLite/RTreeMatch.h>
-#include "TileTree.h"
 
 DGNPLATFORM_TYPEDEFS(FitViewParams)
 DGNPLATFORM_TYPEDEFS(HypermodelingViewController)
@@ -195,8 +194,6 @@ protected:
 
 public:
     Render::GraphicListPtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
-    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);
-    void RequestScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);
     Render::GraphicListPtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
@@ -383,18 +380,6 @@ public:
 
     //! Empty the set of elements that are never drawn
     DGNPLATFORM_EXPORT void ClearNeverDrawn();
-
-    //! Returns true if all of the TileTree::Roots associated with this ViewController have been loaded.
-    //! @private
-    virtual bool _AllTileTreesLoaded() const = 0;
-
-    //! Cancels loading of any tiles associated with this ViewController's TileTree::Roots and optionally waits.
-    //! @private
-    virtual void _CancelAllTileLoads(bool wait) = 0;
-
-    //! Unloads any TileTree::Roots associated with this ViewController.
-    //! @private
-    virtual void _UnloadAllTileTrees() = 0;
 };
 
 //=======================================================================================
@@ -534,9 +519,7 @@ protected:
 
     bool m_loading = false;
     bool m_defaultDeviceOrientationValid = false;
-    bool m_allRootsLoaded = false;
     bool m_copyrightInfoValid = false;
-    bmap<DgnModelId, TileTree::RootPtr> m_roots;
     RotMatrix m_defaultDeviceOrientation;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
@@ -591,10 +574,6 @@ public:
     void SetNonSceneLODSize(double val) {m_nonSceneLODSize=val;} //!< see GetNonSceneLODSize
     DGNPLATFORM_EXPORT Render::TextureCP GetEnvironmentMap(Render::SystemCR system) const;
 
-    bool _AllTileTreesLoaded() const override { return m_allRootsLoaded; }
-    DGNPLATFORM_EXPORT void _CancelAllTileLoads(bool wait) override;
-    void _UnloadAllTileTrees() override { m_allRootsLoaded = false; m_roots.clear(); }
-
     void InvalidateCopyrightInfo() { m_copyrightInfoValid = false; }
 };
 
@@ -627,8 +606,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    TileTree::RootPtr m_root;
-
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
@@ -643,10 +620,6 @@ public:
     GeometricModel2dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel2d>(GetViewedModelId()).get();}
 
     void SetDisplayStyle(DisplayStyle2dR style) { GetViewDefinition2dR().SetDisplayStyle2d(style); SetViewFlags(style.GetViewFlags()); }
-
-    bool _AllTileTreesLoaded() const override { return m_root.IsValid(); }
-    DGNPLATFORM_EXPORT void _CancelAllTileLoads(bool wait) override;
-    void _UnloadAllTileTrees() override { m_root = nullptr; }
 };
 
 //=======================================================================================
@@ -794,8 +767,6 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
 {
     DEFINE_T_SUPER(ViewController3d);
 
-private:
-    TileTree::RootPtr m_root;
 protected:
     TemplateViewController3dCP _ToTemplateView3d() const override final {return this;}
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
@@ -810,10 +781,6 @@ public:
     DgnModelId GetViewedModelId() const {return GetTemplateViewDefinition3d().GetViewedModel();}
     GeometricModel3dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel3d>(GetViewedModelId()).get();}
     DGNPLATFORM_EXPORT DgnDbStatus SetViewedModel(DgnModelId modelId);
-
-    bool _AllTileTreesLoaded() const override { return m_root.IsValid(); }
-    DGNPLATFORM_EXPORT void _CancelAllTileLoads(bool wait) override;
-    void _UnloadAllTileTrees() override { m_root = nullptr; }
 };
 
 END_BENTLEY_DGN_NAMESPACE

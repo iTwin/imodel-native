@@ -8,7 +8,6 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/DgnGeoCoord.h>
-#include <DgnPlatform/ElementTileTree.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
@@ -730,31 +729,5 @@ DgnDbStatus TemplateViewController3d::SetViewedModel(DgnModelId viewedModelId)
 
     GetViewDefinitionR().LookAtVolume(model->QueryModelRange());
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TemplateViewController3d::_CancelAllTileLoads(bool wait)
-    {
-    if (m_root.IsValid())
-        {
-        m_root->CancelAllTileLoads();
-        if (wait)
-            m_root->WaitForAllLoads();
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController2d::_CancelAllTileLoads(bool wait)
-    {
-    if (m_root.IsValid())
-        {
-        m_root->CancelAllTileLoads();
-        if (wait)
-            m_root->WaitForAllLoads();
-        }
     }
 

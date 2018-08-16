@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <Bentley/BeSystemInfo.h>
-#include <DgnPlatform/ElementTileTree.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
@@ -49,12 +48,6 @@ SpatialViewController::SpatialViewController(SpatialViewDefinitionCR def) : T_Su
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_OnRenderFrame()
     {
-    BeAssert(nullptr != m_vp);
-
-    // Barry added the concept of 'deferred' loading of TileTree::Roots for Bing map tile trees...
-    // We could solve this another way but it's going to be totally different in iModelJs so do what Sheet::ViewController does.
-    if (!m_allRootsLoaded)
-        m_vp->InvalidateScene();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -67,21 +60,6 @@ void SpatialViewController::BuildCopyrightInfo()
 
     m_copyrightMsgs.clear();
     m_copyrightSprites.clear();
-
-    for (auto const& kvp : m_roots)
-        {
-        auto model = GetDgnDb().Models().Get<GeometricModel3d>(kvp.first);
-        if (model.IsValid())
-            {
-            Utf8String message = model->GetCopyrightMessage(*this);
-            if (!message.empty())
-                m_copyrightMsgs.insert(message);
-
-            Render::RgbaSpritePtr sprite = model->GetCopyrightSprite(*this);
-            if (sprite.IsValid())
-                m_copyrightSprites.insert(sprite);
-            }
-        }
 
     m_copyrightInfoValid = true;
     }
@@ -183,17 +161,9 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     InvalidateCopyrightInfo();
 
     if (onOff)
-        {
         models.insert(modelId);
-        m_allRootsLoaded = false;
-        }
     else
-        {
         models.erase(modelId);
-        auto rootIter = m_roots.find(modelId);
-        if (m_roots.end() != rootIter)
-            m_roots.erase(rootIter);
-        }
 
     if (nullptr != m_vp)
         m_vp->InvalidateScene();
@@ -205,8 +175,6 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
 void SpatialViewController::_SetViewedModels(DgnModelIdSet const& models)
     {
     GetSpatialViewDefinition().GetModelSelector().GetModelsR() = models;
-    m_roots.clear();
-    m_allRootsLoaded = false;
     if (nullptr != m_vp)
         m_vp->InvalidateScene();
     }
@@ -729,30 +697,3 @@ GeometricModelP SpatialViewController::_GetTargetModel() const
     DgnModelId model = *GetViewedModels().begin();
     return GetDgnDb().Models().Get<GeometricModel>(model).get();
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::_CancelAllTileLoads(bool wait)
-    {
-    DgnDb::VerifyClientThread();
-
-    // Cancel them all first, asynchronously, so one Root's tiles don't continue to load while we
-    // wait for another's to receive the 'cancel' notification...
-    for (auto& kvp : m_roots)
-        {
-        auto& root = kvp.second;
-        if (root.IsValid())
-            root->CancelAllTileLoads();
-        }
-
-    if (!wait)
-        return;
-
-    for (auto& kvp : m_roots)
-        {
-        auto& root = kvp.second;
-        if (root.IsValid())
-            root->WaitForAllLoads();
-        }
-    }
-

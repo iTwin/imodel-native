@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/ElementTileTree.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
@@ -77,12 +76,17 @@ void DgnModels::DropLoadedModel(DgnModelR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_PreDestroy()
+void DgnModel::_PreDestroy()
     {
-    // We're about to synchronously wait for all tile loads to terminate in all models.
-    // Before we do that, make sure all active loads are canceled, so that they will terminate quickly
-    if (m_root.IsValid())
-        m_root->CancelAllTileLoads();
+    NotifyAppData([](AppData& handler, DgnModelR model) { handler._OnUnload(model); });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_Destroy()
+    {
+    NotifyAppData([](AppData& handler, DgnModelR model) { handler._OnUnloaded(model); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -229,7 +233,7 @@ DgnModel::AppData* DgnModel::FindAppDataInternal(AppData::Key const& key) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class T> void DgnModel::CallAppData(T const& caller) const
+template<typename T> void DgnModel::CallAppData(T const& caller) const
     {
     BeMutexHolder lock(m_mutex);
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
@@ -240,6 +244,16 @@ template<class T> void DgnModel::CallAppData(T const& caller) const
             ++entry;
         }
     }    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> void DgnModel::NotifyAppData(T const& notifier)
+    {
+    BeMutexHolder lock(m_mutex);
+    for (auto& entry : m_appData)
+        notifier(*entry.second, *this);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Destructor for DgnModel. Free all memory allocated to this DgnModel.
@@ -358,8 +372,7 @@ PhysicalModelPtr PhysicalModel::Create(DgnDbR db, DgnElementId modeledElementId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialModel::OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents)
     {
-    if (m_root.IsValid())
-        m_root->_OnProjectExtentsChanged(newExtents);
+    // ###TODO_IMODELCORE: notify app data
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -832,6 +845,7 @@ DgnDbStatus DgnModel::_OnUpdate()
     if (modelHandler.GetDomain().IsReadonly())
         return DgnDbStatus::ReadOnlyDomain;
 
+    {
     BeMutexHolder lock(m_mutex);
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
@@ -839,6 +853,7 @@ DgnDbStatus DgnModel::_OnUpdate()
         if (DgnDbStatus::Success != stat)
             return stat;
         }
+    }
 
     // Ensure code is reserved and lock acquired
     return GetDgnDb().BriefcaseManager().OnModelUpdate(*this);
@@ -919,6 +934,7 @@ void GeometricModel::AddToRangeIndex(DgnElementCR element)
     if (nullptr == m_rangeIndex)
         return;
 
+    /* ###TODO_IMODELCORE notify app data
     GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom)
         {
@@ -926,6 +942,7 @@ void GeometricModel::AddToRangeIndex(DgnElementCR element)
         if (geom->HasGeometry() && m_root.IsValid())
             m_root->OnAddToRangeIndex(geom->CalculateRange3d(), element.GetElementId());
         }
+    */
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -937,6 +954,7 @@ void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
     if (nullptr == m_rangeIndex)
         return;
 
+    /* ###TODO_IMODELCORE notify app data
     GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom && geom->HasGeometry())
         {
@@ -944,6 +962,7 @@ void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
         if (m_root.IsValid())
             m_root->OnRemoveFromRangeIndex(geom->CalculateRange3d(), element.GetElementId());
         }
+    */
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -975,6 +994,7 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
         m_rangeIndex->AddEntry(RangeIndex::Entry(newBox, id, origGeom->GetCategoryId()));
         }
 
+    /* ###TODO_IMODELCORE notify app data
     if (m_root.IsValid())
         {
         if (origHasGeom)
@@ -989,6 +1009,7 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
             m_root->OnAddToRangeIndex(newBox, id);
             }
         }
+    */
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1043,9 +1064,7 @@ DgnDbStatus DgnModel::_OnDelete()
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    BeMutexHolder lock(m_mutex);
-    for (auto appdata : m_appData)
-        appdata.second->_OnDelete(*this);
+    NotifyAppData([](AppData& handler, DgnModelR model) { handler._OnDelete(model); });
 
     // before we can delete a model, we must delete all of its elements. If that fails, we cannot continue.
     Statement stmt(m_dgndb, "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ModelId=?");
@@ -1631,49 +1650,6 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
 
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
     return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootP GeometricModel::GetTileTree(Render::SystemP system)
-    {
-    // DgnDb::VerifyClientThread(); ###TODO: Relax this constraint when publishing view attachments to Cesium...
-
-    // NB: Reality models sometimes need to load the root outside of the context of a render system.
-    if (m_root.IsNull() || (nullptr != system && m_root->GetRenderSystemP() != system))
-        {
-        // TFS#799212: current Root may contain a reality data cache db. Ensure its destructor runs
-        // before creating new Root to avoid SQLITE_BUSY errors.
-        m_root = nullptr;
-        m_root = _CreateTileTree(system);
-        }
-
-    return m_root.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::ReleaseTileTree()
-    {
-    // NB: We may be loading any number of tiles in background threads. We need to cancel them before destroying this model and its root.
-    // The root's destructor takes care of that.
-    // Why not do this in GeometricModel's destructor? Because loaders may invoke functions like _FillRangeIndex(), which will
-    // have become pure calls by the time we get to that destructor.
-    BeAssert(m_root.IsNull() || 1 == m_root->GetRefCount());
-    m_root = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr GeometricModel::_CreateTileTree(Render::SystemP system)
-    {
-    if (nullptr != system)
-        return ElementTileTree::Root::Create(*this, *system);
-    else
-        return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
