@@ -2890,7 +2890,7 @@ void DoGeometrySimplification()
 
             if (nullptr == firstPathEntry)
                 firstPathEntry = &pathEntry;
-            else if (!firstPathEntry->m_v8ToDgnDbTrans.IsEqual(pathEntry.m_v8ToDgnDbTrans))
+            else if (!Converter::IsTransformEqualWithTolerance(firstPathEntry->m_v8ToDgnDbTrans,pathEntry.m_v8ToDgnDbTrans))
                 continue; // Require same V8->DgnDb transform...
             else if (!firstPathEntry->m_geomParams.IsEquivalent(pathEntry.m_geomParams))
                 continue; // Require same symbology...

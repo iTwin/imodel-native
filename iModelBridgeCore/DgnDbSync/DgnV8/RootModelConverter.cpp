@@ -197,10 +197,7 @@ void SpatialConverterBase::ApplyJobTransformToRootTrans()
 
     m_rootTrans = BentleyApi::Transform::FromProduct(jobTrans, m_rootTrans); // NB: pre-multiply!
 
-    auto matrixTolerance = Angle::TinyAngle();
-    auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(jobTrans.ColumnXMagnitude());
-
-    if (!jobTrans.IsEqual(m_importJob.GetImportJob().GetTransform(), matrixTolerance, pointTolerance))
+    if (!Converter::IsTransformEqualWithTolerance(jobTrans,m_importJob.GetImportJob().GetTransform()))
         {
         m_importJob.GetImportJob().SetTransform(jobTrans);
         GetSyncInfo().UpdateImportJob(m_importJob.GetImportJob()); // update syncinfo to record the new baseline
@@ -212,11 +209,9 @@ void SpatialConverterBase::ApplyJobTransformToRootTrans()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialConverterBase::DetectRootTransformChange()
     {
-    auto matrixTolerance = Angle::TinyAngle();
-    auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(m_rootTrans.ColumnXMagnitude());
-
+    
     //  Detect if anything about the root GCS/units transform has changed (including the computed root trans and the job trans).
-    m_rootTransHasChanged = !m_rootModelMapping.GetTransform().IsEqual(m_rootTrans, matrixTolerance, pointTolerance);
+    m_rootTransHasChanged = !Converter::IsTransformEqualWithTolerance(m_rootModelMapping.GetTransform(),m_rootTrans);
 
     if (!m_rootTransHasChanged)
         return;

@@ -1918,6 +1918,9 @@ public:
     //! It is non-identity in the case where we are pulling in a new dgnv8 file and we need to do a GCS or other coordinate transform to map it in.
     TransformCR GetRootTrans() const {return m_rootTrans;}
 
+    //! Utility method to compare transforms with a tolerance.
+    DGNDBSYNC_EXPORT static bool IsTransformEqualWithTolerance(TransformCR lhs, TransformCR rhs);
+
     //! @}
 
     //! @name Error and Progress Reporting

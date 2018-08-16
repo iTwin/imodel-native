@@ -899,7 +899,7 @@ BentleyStatus SyncInfo::FindModel(V8ModelMapping* mapping, DgnV8ModelCR v8Model,
 
     for (auto entry=it.begin(); entry!=it.end(); ++entry)
         {
-        if (nullptr == modelTrans || entry.GetTransform().IsEqual(*modelTrans))
+        if (nullptr == modelTrans || Converter::IsTransformEqualWithTolerance(entry.GetTransform(),*modelTrans))
             {
             if (nullptr != mapping)
                 {
