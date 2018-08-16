@@ -29,6 +29,7 @@
 #define UNKNOWN_EVENT_TYPE "UnknownEventType"
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
+struct GlobalEventManager;
 USING_NAMESPACE_BENTLEY_DGN
 
 //=======================================================================================
@@ -112,12 +113,15 @@ namespace GlobalEvent
     //=======================================================================================
     struct EXPORT_VTABLE_ATTRIBUTE GenericGlobalEvent : RefCountedBase
         {
+    private:
+        friend GlobalEventManager;
     protected:
         Utf8String m_eventTopic;
         Utf8String m_fromEventSubscriptionId;
         Utf8String m_toEventSubscriptionId;
         Utf8String m_projectId;
         Utf8String m_iModelId;
+        Utf8String m_lockUrl;
 
         GenericGlobalEvent
         (
@@ -125,7 +129,8 @@ namespace GlobalEvent
             const Utf8String fromEventSubscriptionId,
             const Utf8String toEventSubscriptionId,
             const Utf8String projectId,
-            const Utf8String iModelId
+            const Utf8String iModelId,
+            const Utf8String lockUrl
         )
             {
             m_eventTopic = eventTopic;
@@ -133,6 +138,7 @@ namespace GlobalEvent
             m_toEventSubscriptionId = toEventSubscriptionId;
             m_projectId = projectId;
             m_iModelId = iModelId;
+            m_lockUrl = lockUrl;
             }
 
     public:

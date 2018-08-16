@@ -22,8 +22,9 @@ ChangeSetCreatedEvent::ChangeSetCreatedEvent
     const Utf8String iModelId,
     const Utf8String changeSetId,
     const Utf8String changeSetIndex,
-    const int        briefcaseId
-) : GenericGlobalEvent(eventTopic, fromEventSubscriptionId, toEventSubscriptionId, projectId, iModelId)
+    const int        briefcaseId,
+    const Utf8String lockUrl
+) : GenericGlobalEvent(eventTopic, fromEventSubscriptionId, toEventSubscriptionId, projectId, iModelId, lockUrl)
     {
     m_changeSetId = changeSetId;
     m_changeSetIndex = changeSetIndex;
@@ -42,7 +43,8 @@ RefCountedPtr<struct ChangeSetCreatedEvent> ChangeSetCreatedEvent::Create
     const Utf8String iModelId,
     const Utf8String changeSetId,
     const Utf8String changeSetIndex,
-    const int        briefcaseId
+    const int        briefcaseId,
+    const Utf8String lockUrl
 )
     {
     return new ChangeSetCreatedEvent
@@ -54,6 +56,7 @@ RefCountedPtr<struct ChangeSetCreatedEvent> ChangeSetCreatedEvent::Create
         iModelId,
         changeSetId,
         changeSetIndex,
-        briefcaseId
+        briefcaseId,
+        lockUrl
     );
     }

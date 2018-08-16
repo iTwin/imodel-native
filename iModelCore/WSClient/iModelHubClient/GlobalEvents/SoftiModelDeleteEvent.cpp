@@ -19,8 +19,9 @@ SoftiModelDeleteEvent::SoftiModelDeleteEvent
     const Utf8String fromEventSubscriptionId,
     const Utf8String toEventSubscriptionId,
     const Utf8String projectId,
-    const Utf8String iModelId
-) : GenericGlobalEvent(eventTopic, fromEventSubscriptionId, toEventSubscriptionId, projectId, iModelId)
+    const Utf8String iModelId,
+    const Utf8String lockUrl
+) : GenericGlobalEvent(eventTopic, fromEventSubscriptionId, toEventSubscriptionId, projectId, iModelId, lockUrl)
     {
     }
 
@@ -33,7 +34,8 @@ RefCountedPtr<struct SoftiModelDeleteEvent> SoftiModelDeleteEvent::Create
     const Utf8String fromEventSubscriptionId,
     const Utf8String toEventSubscriptionId,
     const Utf8String projectId,
-    const Utf8String iModelId
+    const Utf8String iModelId,
+    const Utf8String lockUrl
 )
     {
     return new SoftiModelDeleteEvent
@@ -42,6 +44,7 @@ RefCountedPtr<struct SoftiModelDeleteEvent> SoftiModelDeleteEvent::Create
         fromEventSubscriptionId,
         toEventSubscriptionId,
         projectId,
-        iModelId
+        iModelId,
+        lockUrl
     );
     }

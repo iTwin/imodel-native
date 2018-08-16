@@ -2,7 +2,7 @@
 |
 |     $Source: Azure/EventServiceClient.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -33,6 +33,15 @@ EventServiceClient::EventServiceClient()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<EventServiceResult> EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
     {
+    return MakeReceiveRequest("DELETE", longPolling);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Jeehwan.cho   05/2016
+                                                       Arvind.Venkateswaran   07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<EventServiceResult> EventServiceClient::MakeReceiveRequest(Utf8StringCR requestMethod, bool longPolling)
+    {
     char numBuffer[10];
     if (longPolling)
         {
@@ -50,14 +59,41 @@ AsyncTaskPtr<EventServiceResult> EventServiceClient::MakeReceiveDeleteRequest(bo
         numBuffer[0] = '0';
         numBuffer[1] = 0;
         }
-    
+
     Utf8String url = m_fullAddress + Utf8String(numBuffer);
-    Http::Request request(url.c_str(), "DELETE", nullptr);
+    Http::Request request(url.c_str(), requestMethod, nullptr);
     request.GetHeaders().Clear();
     request.GetHeaders().SetValue("Content-Length", "0");
     request.GetHeaders().SetValue("Content-Type", "application/atom+xml;type=entry;charset=utf-8");
     request.GetHeaders().SetAuthorization(m_token);
     request.SetTransferTimeoutSeconds(230);
+    m_ct = SimpleCancellationToken::Create();
+    request.SetCancellationToken(m_ct);
+    return request.PerformAsync()
+        ->Then<EventServiceResult>([=] (Http::Response& httpResponse)
+        {
+        if (httpResponse.IsSuccess())
+            return EventServiceResult::Success(httpResponse);
+        return EventServiceResult::Error(httpResponse);
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Karolis.Uzkuraitis            08/2018
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<EventServiceResult> EventServiceClient::MakeReceivePeekRequest(bool longPolling)
+    {
+    return MakeReceiveRequest("POST", longPolling);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Karolis.Uzkuraitis            08/2018
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<EventServiceResult> EventServiceClient::MakeDeleteEventRequest(Utf8StringCR lockUrl)
+    {
+    Http::Request request(lockUrl, "DELETE", nullptr);
+    request.GetHeaders().Clear();
+    request.GetHeaders().SetAuthorization(m_token);
     m_ct = SimpleCancellationToken::Create();
     request.SetCancellationToken(m_ct);
     return request.PerformAsync()
