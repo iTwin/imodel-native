@@ -16,7 +16,6 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace TileTree {struct TileRequests;}
 /**
 * @addtogroup GROUP_ViewContext ViewContext Module
 * A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first attached to a DgnViewport.

@@ -359,10 +359,10 @@ public:
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
     void StartTileLoad(TileLoadStatePtr) const;
     void DoneTileLoad(TileLoadStatePtr) const;
-    void CancelTileLoad(TileCR tile);
+    DGNPLATFORM_EXPORT void CancelTileLoad(TileCR tile);
     void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads.size()>0) m_cv.InfiniteWait(holder);}
-    void WaitForAllLoadsFor(uint32_t milliseconds);
-    void CancelAllTileLoads();
+    DGNPLATFORM_EXPORT void WaitForAllLoadsFor(uint32_t milliseconds);
+    DGNPLATFORM_EXPORT void CancelAllTileLoads();
     bool IsHttp() const {return m_isHttp;}
     TransformCR GetLocation() const {return m_location;}
     void SetLocation(TransformCR location) {m_location = location;}

@@ -10,7 +10,6 @@
 
 #include "DgnDb.h"
 #include "ViewController.h"
-#include "TileTree.h"
 
 DGNPLATFORM_TYPEDEFS(IViewportAnimator);
 DGNPLATFORM_REF_COUNTED_PTR(IViewportAnimator);

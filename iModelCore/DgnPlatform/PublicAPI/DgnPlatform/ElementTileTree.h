@@ -196,7 +196,7 @@ protected:
 
     bool LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate);
 public:
-    static RootPtr Create(GeometricModelR model, Render::SystemR system);
+    DGNPLATFORM_EXPORT static RootPtr Create(GeometricModelR model, Render::SystemR system);
     virtual ~Root() { ClearAllTiles(); }
 
     GeometricModelPtr GetModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
