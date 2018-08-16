@@ -265,13 +265,7 @@ TEST_P(RepositoryCompatibilityTests_Upgrade, Upgrade)
     ASSERT_TRUE(createResult.IsSuccess());
 
     // Force close
-    IDataSourceCache* cache = nullptr;
-    auto task = createResult.GetValue()->GetCacheAccessThread()->ExecuteAsync([&]
-        {
-        cache = &createResult.GetValue()->StartCacheTransaction().GetCache();
-        });
-    task->Wait();
-    cache->Close();
+    createResult.GetValue()->Close();
     createResult = CachingDataSource::OpenResult();
 
     // Open connection for upgrade
@@ -279,7 +273,7 @@ TEST_P(RepositoryCompatibilityTests_Upgrade, Upgrade)
     client = CreateClient(repository);
     auto openResult = CachingDataSource::OpenOrCreate(client, path, env)->GetResult();
     ASSERT_TRUE(openResult.IsSuccess());
-    auto ds = createResult.GetValue();
+    auto ds = openResult.GetValue();
 
     // Pull new schemas if any
     auto updateResult = ds->UpdateSchemas(nullptr)->GetResult();
