@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Azure/EventServiceClient.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,11 +32,14 @@ struct EventServiceClient
         SimpleCancellationTokenPtr m_ct;
         EventServiceClient(); //Need a default constructor for iModel Hub Client
         EventServiceClient(Utf8StringCR baseAddress, Utf8StringCR userId);
+        AsyncTaskPtr<EventServiceResult> MakeReceiveRequest(Utf8StringCR requestMethod, bool longPooling = true);
 
     public:
         WSCLIENT_EXPORT static EventServiceClientPtr Create(Utf8StringCR baseAddress, Utf8StringCR userId)
              {return EventServiceClientPtr(new EventServiceClient(baseAddress, userId)); }
         WSCLIENT_EXPORT AsyncTaskPtr<EventServiceResult> MakeReceiveDeleteRequest(bool longPolling = true);
+        WSCLIENT_EXPORT AsyncTaskPtr<EventServiceResult> MakeReceivePeekRequest(bool longPooling = true);
+        WSCLIENT_EXPORT AsyncTaskPtr<EventServiceResult> MakeDeleteEventRequest(Utf8StringCR lockUrl);
         WSCLIENT_EXPORT void UpdateSASToken(Utf8StringCR sasToken);
         WSCLIENT_EXPORT void CancelRequest();
     };

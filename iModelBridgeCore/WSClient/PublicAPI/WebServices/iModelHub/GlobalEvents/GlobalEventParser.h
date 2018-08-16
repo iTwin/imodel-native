@@ -18,7 +18,7 @@ USING_NAMESPACE_BENTLEY_DGN
 //=======================================================================================
 struct GlobalEventParser
     {
-    IMODELHUBCLIENT_EXPORT static GlobalEventPtr ParseEvent(Utf8CP responseContentType, Utf8String responseString);
+    IMODELHUBCLIENT_EXPORT static GlobalEventPtr ParseEvent(Utf8CP responseContentType, Utf8String responseString, Utf8String headerLocation = nullptr);
     };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

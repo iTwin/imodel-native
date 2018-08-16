@@ -155,6 +155,7 @@ BaseEventReponseTaskPtr BaseEventManager::GetEventServiceResponse
     int numOfRetries,
     const bool longpolling,
     EventServiceClientPtr eventServiceClient,
+    GetEventRequestType requestType,
     ICancellationTokenPtr cancellationToken
 )
     {
@@ -168,13 +169,23 @@ BaseEventReponseTaskPtr BaseEventManager::GetEventServiceResponse
         }
 
     BaseEventReponseResultPtr finalResult = std::make_shared<BaseEventReponseResult>();
-    return eventServiceClient->MakeReceiveDeleteRequest(longpolling)
-        ->Then([=] (const EventServiceResult& result)
+
+    AsyncTaskPtr<EventServiceResult> eventRequestTask = nullptr;
+    if(requestType == GetEventRequestType::Destructive)
+        {
+        eventRequestTask = eventServiceClient->MakeReceiveDeleteRequest(longpolling);
+        }
+    else if (requestType == GetEventRequestType::Peek)
+        {
+        eventRequestTask = eventServiceClient->MakeReceivePeekRequest(longpolling);
+        }
+
+    return eventRequestTask->Then([=] (const EventServiceResult& result)
         {
         if (result.IsSuccess())
             {
             Response response = result.GetValue();
-            if (response.GetHttpStatus() != HttpStatus::OK)
+            if (response.GetHttpStatus() != HttpStatus::OK && response.GetHttpStatus() != HttpStatus::Created)
                 {
                 LogHelper::Log(LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                 finalResult->SetError(result.GetError());
@@ -207,7 +218,7 @@ BaseEventReponseTaskPtr BaseEventManager::GetEventServiceResponse
                     eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
 
                     int nextLoopValue = numOfRetries - 1;
-                    GetEventServiceResponse(nextLoopValue, longpolling, eventServiceClient, cancellationToken)->Then([=] (BaseEventReponseResultCR currentResult)
+                    GetEventServiceResponse(nextLoopValue, longpolling, eventServiceClient, requestType, cancellationToken)->Then([=] (BaseEventReponseResultCR currentResult)
                         {
                         if (!currentResult.IsSuccess())
                             {

@@ -287,7 +287,7 @@ EventTaskPtr EventManager::GetEvent
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    return AsyncTaskAddMethodLogging<EventResult>(GetEventServiceResponse(3, longPolling, m_eventServiceClient, cancellationToken)->Then<EventResult>
+    return AsyncTaskAddMethodLogging<EventResult>(GetEventServiceResponse(3, longPolling, m_eventServiceClient, GetEventRequestType::Destructive, cancellationToken)->Then<EventResult>
         ([=] (EventReponseResult& result)
         {
         if (result.IsSuccess())

@@ -36,6 +36,7 @@ struct GlobalEventManager : BaseEventManager
     {
 private:
     friend struct GlobalConnection;
+    friend struct GenericGlobalEvent;
 
     bmap<Utf8String, EventServiceClientPtr> m_eventServiceClients;
 
@@ -68,6 +69,8 @@ private:
     //! Update the EventSubscription to the given EventTypes
     GlobalEventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(Utf8String intanceId, GlobalEventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    GlobalEventTaskPtr GetEventInternal(const GlobalEventSubscriptionId instanceId, bool longPooling, GetEventRequestType requestType, const ICancellationTokenPtr cancellationToken = nullptr);
+
     IMODELHUBCLIENT_EXPORT Json::Value GenerateEventSASJson() const override;
     
     IMODELHUBCLIENT_EXPORT bool IsSubscribedToEvents(EventServiceClientPtr eventServiceClient) const override;
@@ -91,7 +94,7 @@ public:
     //! @note Additional convenience method to use with InstanceId. SubscribeToEvents() can be used to modify events too.
     IMODELHUBCLIENT_EXPORT GlobalEventSubscriptionTaskPtr ModifySubscription(const GlobalEventSubscriptionId instanceId, GlobalEventTypeSet* eventTypes, ICancellationTokenPtr cancellationToken = nullptr);
 
-    //! Get Event from subscription provided instanceId.
+    //! Get Event from subscription provided instanceId. Event is immediately destroyed in the server.
     //! @param[in] instanceId IntanceId of subscription See SubscribeToEvents().
     //! @param[in] longPooling option to wait longer for events
     //! @param[in] cancellationToken
@@ -102,6 +105,18 @@ public:
     //! @param[in] instanceId IntanceId of subscription.
     //! @return Asynchronous task that has the status of subscription deletion as result.
     IMODELHUBCLIENT_EXPORT StatusTaskPtr UnsubscribeEvents(const GlobalEventSubscriptionId instanceId) const;
+
+    //! Peek Event from subscription provided instanceId. Event gets locked in the server until it is deleted using DeleteEvent() or lock expires.
+    //! @param[in] instanceId IntanceId of subscription See SubscribeToEvents().
+    //! @param[in] longPooling option to wait longer for events
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the Global event result.
+    IMODELHUBCLIENT_EXPORT GlobalEventTaskPtr PeekEvent(const GlobalEventSubscriptionId instanceId, bool longPooling = false, const ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Delete Event that was received using PeekEvent() and successfully handled.
+    //! @param[in] globalEvent Global event to delete.
+    //! @return Asynchronous task that has the status of event deletion as result.
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr DeleteEvent(GlobalEventPtr globalEvent);
     };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

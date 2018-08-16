@@ -105,7 +105,7 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(const Utf8String jsonString, 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Karolis.Uzkuraitis            05/2018
 //---------------------------------------------------------------------------------------
-GlobalEventPtr ParseIntoChangeSetCreatedEvent(const Utf8String jsonString)
+GlobalEventPtr ParseIntoChangeSetCreatedEvent(const Utf8String jsonString, const Utf8String headerLocation)
     {
     const std::shared_ptr<Json::Value> data = EventPropertiesToJSON(jsonString, GlobalEvent::ChangeSetCreatedEvent);
     if (data == nullptr)
@@ -120,14 +120,15 @@ GlobalEventPtr ParseIntoChangeSetCreatedEvent(const Utf8String jsonString)
         (*data)[GlobalEvent::Property_iModelId].asString(),
         (*data)[GlobalEvent::ChangeSetCreatedEventProperties::Property_ChangeSetId].asString(),
         (*data)[GlobalEvent::ChangeSetCreatedEventProperties::Property_ChangeSetIndex].asString(),
-        (*data)[GlobalEvent::ChangeSetCreatedEventProperties::Property_BriefcaseId].asInt()
+        (*data)[GlobalEvent::ChangeSetCreatedEventProperties::Property_BriefcaseId].asInt(),
+        headerLocation
     );
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Karolis.Uzkuraitis            05/2018
 //---------------------------------------------------------------------------------------
-GlobalEventPtr ParseIntoHardiModelDeleteEvent(const Utf8String jsonString)
+GlobalEventPtr ParseIntoHardiModelDeleteEvent(const Utf8String jsonString, const Utf8String headerLocation)
     {
     const std::shared_ptr<Json::Value> data = EventPropertiesToJSON(jsonString, GlobalEvent::HardiModelDeleteEvent);
     if (data == nullptr)
@@ -139,14 +140,15 @@ GlobalEventPtr ParseIntoHardiModelDeleteEvent(const Utf8String jsonString)
         (*data)[GlobalEvent::Property_FromEventSubscriptionId].asString(),
         (*data)[GlobalEvent::Property_ToEventSubscriptionId].asString(),
         (*data)[GlobalEvent::Property_ProjectId].asString(),
-        (*data)[GlobalEvent::Property_iModelId].asString()
+        (*data)[GlobalEvent::Property_iModelId].asString(),
+        headerLocation
     );
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Karolis.Uzkuraitis            05/2018
 //---------------------------------------------------------------------------------------
-GlobalEventPtr ParseIntoiModelCreatedEvent(const Utf8String jsonString)
+GlobalEventPtr ParseIntoiModelCreatedEvent(const Utf8String jsonString, const Utf8String headerLocation)
     {
     const std::shared_ptr<Json::Value> data = EventPropertiesToJSON(jsonString, GlobalEvent::iModelCreatedEvent);
     if (data == nullptr)
@@ -157,14 +159,15 @@ GlobalEventPtr ParseIntoiModelCreatedEvent(const Utf8String jsonString)
         (*data)[GlobalEvent::Property_FromEventSubscriptionId].asString(),
         (*data)[GlobalEvent::Property_ToEventSubscriptionId].asString(),
         (*data)[GlobalEvent::Property_ProjectId].asString(),
-        (*data)[GlobalEvent::Property_iModelId].asString()
+        (*data)[GlobalEvent::Property_iModelId].asString(),
+        headerLocation
     );
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Karolis.Uzkuraitis            05/2018
 //---------------------------------------------------------------------------------------
-GlobalEventPtr ParseIntoNamedVersionCreatedEvent(const Utf8String jsonString)
+GlobalEventPtr ParseIntoNamedVersionCreatedEvent(const Utf8String jsonString, const Utf8String headerLocation)
     {
     const std::shared_ptr<Json::Value> data = EventPropertiesToJSON(jsonString, GlobalEvent::NamedVersionCreatedEvent);
     if (data == nullptr)
@@ -179,14 +182,15 @@ GlobalEventPtr ParseIntoNamedVersionCreatedEvent(const Utf8String jsonString)
         (*data)[GlobalEvent::Property_iModelId].asString(),
         (*data)[GlobalEvent::NamedVersionCreatedEventProperties::Property_VersionId].asString(),
         (*data)[GlobalEvent::NamedVersionCreatedEventProperties::Property_VersionName].asString(),
-        (*data)[GlobalEvent::NamedVersionCreatedEventProperties::Property_ChangeSetId].asString()
+        (*data)[GlobalEvent::NamedVersionCreatedEventProperties::Property_ChangeSetId].asString(),
+        headerLocation
     );
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Karolis.Uzkuraitis            05/2018
 //---------------------------------------------------------------------------------------
-GlobalEventPtr ParseIntoSoftiModelDeleteEvent(const Utf8String jsonString)
+GlobalEventPtr ParseIntoSoftiModelDeleteEvent(const Utf8String jsonString, const Utf8String headerLocation)
     {
     const std::shared_ptr<Json::Value> data = EventPropertiesToJSON(jsonString, GlobalEvent::SoftiModelDeleteEvent);
     if (data == nullptr)
@@ -198,7 +202,8 @@ GlobalEventPtr ParseIntoSoftiModelDeleteEvent(const Utf8String jsonString)
         (*data)[GlobalEvent::Property_FromEventSubscriptionId].asString(),
         (*data)[GlobalEvent::Property_ToEventSubscriptionId].asString(),
         (*data)[GlobalEvent::Property_ProjectId].asString(),
-        (*data)[GlobalEvent::Property_iModelId].asString()
+        (*data)[GlobalEvent::Property_iModelId].asString(),
+        headerLocation
     );
     }
 
@@ -208,7 +213,8 @@ GlobalEventPtr ParseIntoSoftiModelDeleteEvent(const Utf8String jsonString)
 GlobalEventPtr GlobalEventParser::ParseEvent
 (
     const Utf8CP responseContentType,
-    Utf8String responseString
+    Utf8String responseString,
+    const Utf8String headerLocation
 )
     {
     if (Utf8String::IsNullOrEmpty(responseString.c_str()) || Utf8String::IsNullOrEmpty(responseContentType))
@@ -223,11 +229,11 @@ GlobalEventPtr GlobalEventParser::ParseEvent
     const GlobalEvent::GlobalEventType eventType = GlobalEvent::Helper::GetEventTypeFromEventName(responseContentType);
     switch (eventType)
         {
-            case GlobalEvent::GlobalEventType::ChangeSetCreatedEvent:       return ParseIntoChangeSetCreatedEvent(actualJsonPart);
-            case GlobalEvent::GlobalEventType::HardiModelDeleteEvent:       return ParseIntoHardiModelDeleteEvent(actualJsonPart);
-            case GlobalEvent::GlobalEventType::iModelCreatedEvent:          return ParseIntoiModelCreatedEvent(actualJsonPart);
-            case GlobalEvent::GlobalEventType::NamedVersionCreatedEvent:    return ParseIntoNamedVersionCreatedEvent(actualJsonPart);
-            case GlobalEvent::GlobalEventType::SoftiModelDeleteEvent:       return ParseIntoSoftiModelDeleteEvent(actualJsonPart);
+            case GlobalEvent::GlobalEventType::ChangeSetCreatedEvent:       return ParseIntoChangeSetCreatedEvent(actualJsonPart, headerLocation);
+            case GlobalEvent::GlobalEventType::HardiModelDeleteEvent:       return ParseIntoHardiModelDeleteEvent(actualJsonPart, headerLocation);
+            case GlobalEvent::GlobalEventType::iModelCreatedEvent:          return ParseIntoiModelCreatedEvent(actualJsonPart, headerLocation);
+            case GlobalEvent::GlobalEventType::NamedVersionCreatedEvent:    return ParseIntoNamedVersionCreatedEvent(actualJsonPart, headerLocation);
+            case GlobalEvent::GlobalEventType::SoftiModelDeleteEvent:       return ParseIntoSoftiModelDeleteEvent(actualJsonPart, headerLocation);
             default:
             case GlobalEvent::GlobalEventType::UnknownEventType:            return nullptr;
         }
