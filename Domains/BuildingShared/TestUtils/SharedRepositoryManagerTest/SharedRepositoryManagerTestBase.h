@@ -18,7 +18,12 @@ struct MyTestApp : DgnClientFx::DgnClientApp, Dgn::DgnPlatformLib::Host::Reposit
     protected:
         mutable Dgn::TestRepositoryManager   m_server;
         Dgn::IRepositoryManagerP _GetRepositoryManager(Dgn::DgnDbR) const override { return &m_server; }
-
+        ScopedDgnHost host;
+    public:
+        ~MyTestApp()
+            {
+            Dgn::T_HOST.GetScriptAdmin().TerminateOnThread();
+            }
     };
 
 /*---------------------------------------------------------------------------------**//**
