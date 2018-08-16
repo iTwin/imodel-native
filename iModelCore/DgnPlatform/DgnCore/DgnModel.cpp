@@ -934,15 +934,15 @@ void GeometricModel::AddToRangeIndex(DgnElementCR element)
     if (nullptr == m_rangeIndex)
         return;
 
-    /* ###TODO_IMODELCORE notify app data
     GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom)
         {
         m_rangeIndex->AddElement(*geom);
+        /* ###TODO_IMODELCORE notify app data
         if (geom->HasGeometry() && m_root.IsValid())
             m_root->OnAddToRangeIndex(geom->CalculateRange3d(), element.GetElementId());
+        */
         }
-    */
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -954,15 +954,15 @@ void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
     if (nullptr == m_rangeIndex)
         return;
 
-    /* ###TODO_IMODELCORE notify app data
     GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom && geom->HasGeometry())
         {
         m_rangeIndex->RemoveElement(element.GetElementId());
+        /* ###TODO_IMODELCORE notify app data
         if (m_root.IsValid())
             m_root->OnRemoveFromRangeIndex(geom->CalculateRange3d(), element.GetElementId());
+        */
         }
-    */
     }
 
 /*---------------------------------------------------------------------------------**//**
