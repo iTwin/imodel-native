@@ -244,7 +244,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                     PropertyMap const& propertyMap = referencedPropertyNameExp.GetPropertyMap();
                     NativeSqlBuilder::List snippets;
                     if (propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId)
-                        snippets.push_back(NativeSqlBuilder(propertyMap.GetAccessString().c_str()));
+                        snippets.push_back(NativeSqlBuilder(propertyMap.GetAccessString()));
                     else
                         {
                         ToSqlPropertyMapVisitor sqlVisitor(propertyMap.GetClassMap().GetJoinedOrPrimaryTable(), ToSqlPropertyMapVisitor::ECSqlScope::Select);
@@ -285,7 +285,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                 return ECSqlStatus::Error;
 
             NativeSqlBuilder sqlSnippet;
-            sqlSnippet.Append(alias.c_str());
+            sqlSnippet.AppendEscaped(alias);
             nativeSqlSnippets.push_back(sqlSnippet);
             break;
             }
