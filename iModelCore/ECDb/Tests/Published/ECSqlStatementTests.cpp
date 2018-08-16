@@ -6723,4 +6723,55 @@ TEST_F(ECSqlStatementTestFixture, OptimizeECSqlForSealedAndClassWithNotDerviedCl
         m_ecdb.CloseDb();
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                  10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, EnumeratorNamesForEC31Enums)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("enumerator.ecdb"));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8' ?>"
+        "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
+        "    <ECEnumeration typeName='Colors' displayLabel='Color' backingTypeName='string' isStrict='True'>"
+        "        <ECEnumerator value='Red'/>"
+        "        <ECEnumerator value='Blue'/>"
+        "        <ECEnumerator value='Green'/>"
+        "        <ECEnumerator value='Yellow'/>"
+        "        <ECEnumerator value='Black'/>"
+        "    </ECEnumeration>"
+        "    <ECEnumeration typeName='Domains' displayLabel='Domain' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value='1' DisplayLabel='com'/>"
+        "        <ECEnumerator value='2' DisplayLabel='org'/>"
+        "        <ECEnumerator value='3' DisplayLabel='edu'/>"
+        "        <ECEnumerator value='4' DisplayLabel='net'/>"
+        "        <ECEnumerator value='5' DisplayLabel='int'/>"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <ECProperty propertyName='Color' typeName='Colors'/>"
+        "        <ECProperty propertyName='Domain' typeName='Domains' />"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
+    m_ecdb.SaveChanges();
+    ECSqlStatement stmt;
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Red, ts.Domains.Domains1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Blue, ts.Domains.Domains2)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Green, ts.Domains.Domains3)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Yellow, ts.Domains.Domains4)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Black, ts.Domains.Domains5)"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 1}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color = ts.Colors.Red"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 2}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color IN (ts.Colors.Red, ts.Colors.Blue)"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 5}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color BETWEEN ts.Colors.Red AND ts.Colors.Black"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 1}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain = ts.Domains.Domains1"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 3}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain IN (ts.Domains.Domains1, ts.Domains.Domains2, ts.Domains.Domains3)"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 5}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain BETWEEN ts.Domains.Domains1 AND ts.Domains.Domains5"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.TestClass SET Color = ts.Colors.Red WHERE Color = ts.Colors.Yellow"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.TestClass SET Domain = ts.Domains.Domains5 WHERE Domain = ts.Domains.Domains3"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.TestClass WHERE Color = ts.Colors.Yellow"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.TestClass WHERE Domain = ts.Domains.Domains4"));
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
