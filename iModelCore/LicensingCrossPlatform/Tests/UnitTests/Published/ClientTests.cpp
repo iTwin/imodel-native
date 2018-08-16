@@ -14,6 +14,7 @@
 #include "../../../Licensing/PolicyToken.h"
 #include "../../../Licensing/DummyJsonHelper.h"
 #include "../../../Licensing/DateHelper.h"
+#include "../../../PublicAPI/Licensing/Utils/SCVWritter.h"
 
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
@@ -415,21 +416,46 @@ TEST_F(ClientTests, GetProductStatus_Test)
 	ASSERT_EQ((int)client->GetProductStatus(9999), (int)LicenseStatus::NotEntitled); // Policy with productId does not exist
 	}
 
-//TEST_F(ClientTests, SendUsage_InegrationTest)
-//    {
-//    auto client = CreateTestClient(true, UrlProvider::Environment::Dev);
-//
-//    EXPECT_SUCCESS(client->StartApplication());
-//
-//    // TODO: SCV should be generated and send to server periodically inside the client logic
-//    BeFileName path;
-//    BeTest::GetHost().GetTempDir(path);
-//    path.AppendToPath(L"test.scv");
-//    EXPECT_SUCCESS(client->GetUsageDb().WriteUsageToSCVFile(path));
-//
-//    client->SendUsage(path, "1004175881").get();
-//    // TODO: how to check if sending was successfull?
-//    }
+TEST_F(ClientTests, SendUsage_Success)
+    {
+    auto client = CreateTestClient(true, UrlProvider::Environment::Qa);
+
+    SCVWritter writter;
+
+    writter.AddRow(1004175881, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                   "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                   "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
+                   "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", DateTime::GetCurrentTimeUtc().ToString(),
+                   1.0, "RealTime", "US", "Production");
+
+    writter.AddRow(1004175881, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                   "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                   "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
+                   "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", DateTime::GetCurrentTimeUtc().ToString(),
+                   1.0, "RealTime", "US", "Production");
+
+    writter.AddRow(1004175881, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                   "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                   "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
+                   "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", DateTime::GetCurrentTimeUtc().ToString(),
+                   1.0, "RealTime", "US", "Production");
+
+    BeFileName path;
+    BeTest::GetHost().GetTempDir(path);
+    path.AppendToPath(L"test.csv");
+
+    EXPECT_SUCCESS(writter.WriteToFile(path));
+
+    try
+        {
+        client->SendUsage(path, "1004175881").get();
+        EXPECT_SUCCESS(SUCCESS);
+        }
+    catch (HttpError err)
+        {
+        GTEST_FATAL_FAILURE_(err.GetMessage().c_str());
+        }
+    }
 
 TEST_F(ClientTests, DISABLED_CreateDemoClient_StartAndStopApplication_Succeeds)
     {
