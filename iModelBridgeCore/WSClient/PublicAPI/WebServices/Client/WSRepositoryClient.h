@@ -482,7 +482,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             );
 
         //! @param[in] serverUrl - address to supported server/site
-        //! @param[in] serviceVersion - service version to use. Non-empty value forces sv<major>.<minor> URLs.
+        //! @param[in] serviceVersion - service version to use. Non-empty value forces /svX.Y/ URLs.
         //! @param[in] repositoryId - repository identifier
         //! @param[in] clientInfo - client infomation for licensing and other information
         //! @param[in] customHandler - custom http handler for testing purposes.

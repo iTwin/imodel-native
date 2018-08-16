@@ -108,7 +108,7 @@ struct WSClient : public IWSClient, public std::enable_shared_from_this<WSClient
             );
 
         //! @param[in] serverUrl - address to supported server/site
-        //! @param[in] serviceVersion - service version to use. Non-empty value forces sv<major>.<minor> URLs.
+        //! @param[in] serviceVersion - service version to use. Non-empty value forces /svX.Y/ URLs.
         //! @param[in] clientInfo - client infomation for licensing and other information
         //! @param[in] customHandler - custom http handler for testing purposes
         WSCLIENT_EXPORT static IWSClientPtr Create
