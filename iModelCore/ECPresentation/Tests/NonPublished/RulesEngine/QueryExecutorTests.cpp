@@ -220,7 +220,7 @@ TEST_F (NavigationQueryExecutorTests, GetClassGroupingNodes)
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
     query->From(*nested);
-    query->OrderBy(ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
+    query->OrderBy(Utf8String("[").append(ECClassGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Class);
     
@@ -279,7 +279,7 @@ TEST_F (NavigationQueryExecutorTests, GetDisplayLabelGroupingNodes)
     query->SelectAll();
     query->From(*UnionNavigationQuery::Create(*gadgetInstancesQuery, *widgetInstancesQuery));
     query->GroupByContract(*DisplayLabelGroupingNodesQueryContract::Create(nullptr));
-    query->OrderBy(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
+    query->OrderBy(Utf8String("[").append(ECClassGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::DisplayLabelGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
 
@@ -311,8 +311,8 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode)
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
     query->From(ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false));
-    query->Where(Utf8PrintfString("%s = ?", DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName).c_str(), {new BoundQueryECValue(ECValue("AAA"))});
-    query->OrderBy(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
+    query->Where(Utf8PrintfString("[%s] = ?", DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName).c_str(), {new BoundQueryECValue(ECValue("AAA"))});
+    query->OrderBy(Utf8String("[").append(ECClassGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
@@ -346,8 +346,8 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode_In
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
     query->From(ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false));
-    query->Where(Utf8PrintfString("%s = ?", DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName).c_str(), {new BoundQueryECValue(ECValue("AAA"))});
-    query->OrderBy(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
+    query->Where(Utf8PrintfString("[%s] = ?", DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName).c_str(), {new BoundQueryECValue(ECValue("AAA"))});
+    query->OrderBy(Utf8String("[").append(ECClassGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
@@ -562,7 +562,7 @@ TEST_F (NavigationQueryExecutorTests, ClassGroupingNodesSortedByLabel)
     classes.push_back(m_sprocketClass);
 
     // taken from ECClassSortingQueryContext in QueryBuilder
-    static Utf8PrintfString sortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
+    static Utf8PrintfString sortedDisplayLabel("%s([%s])", FUNCTION_NAME_GetSortingValue, ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
 
     NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create();
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
@@ -614,7 +614,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGrouping)
     nested->SelectContract(*contract);
     nested->From(*m_widgetClass, false);
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
-    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
+    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
@@ -664,7 +664,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyRangeGrouping)
     nested->SelectContract(*contract);
     nested->From(*m_widgetClass, false);
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
-    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
+    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
 
@@ -713,7 +713,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyRangeGroupingWithCustomLabelsAndIm
     nested->SelectContract(*contract);
     nested->From(*m_widgetClass, false);
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
-    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
+    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
@@ -777,7 +777,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithoutDisplay
     nested->From(*m_gadgetClass, true, "parentInstance");
     nested->Where("([alias].[Gadget].[Id] = [parentInstance].[ECInstanceId] OR [alias].[Gadget].[Id] IS NULL)", BoundQueryValuesList());
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
-    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
+    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
 
@@ -823,7 +823,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
     nested->From(*m_widgetClass, true, "parentInstance");
     nested->Where("([alias].[Widget].[Id] = [parentInstance].[ECInstanceId] OR [alias].[Widget].[Id] IS NULL)", BoundQueryValuesList());
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
-    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
+    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
 
@@ -875,7 +875,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
     nested->From(*m_widgetClass, true, "parentInstance");
     nested->Where("([alias].[Widget].[Id] = [parentInstance].[ECInstanceId] OR [alias].[Widget].[Id] IS NULL)", BoundQueryValuesList());
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
-    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
+    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
 
@@ -921,7 +921,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
     nested->From(*classD, true, "parentInstance");
     nested->Where("([alias].[ClassD].[Id] = [parentInstance].[ECInstanceId] OR [alias].[ClassD].[Id] IS NULL)", BoundQueryValuesList());
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
-    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
+    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
 
@@ -962,7 +962,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithLabelOverr
     nested->From(*classD, true, "parentInstance");
     nested->Where("([alias].[ClassD].[Id] = [parentInstance].[ECInstanceId] OR [alias].[ClassD].[Id] IS NULL)", BoundQueryValuesList());
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
-    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
+    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
@@ -1001,7 +1001,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithInstanceLa
     nested->From(*classD, true, "parentInstance");
     nested->Where("([alias].[ClassD].[Id] = [parentInstance].[ECInstanceId] OR [alias].[ClassD].[Id] IS NULL)", BoundQueryValuesList());
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
-    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
+    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
@@ -1045,7 +1045,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
     nested->From(*m_widgetClass, true, "parentInstance");
     nested->Where("([alias].[Widget].[Id] = [parentInstance].[ECInstanceId] OR [alias].[Widget].[Id] IS NULL)", BoundQueryValuesList());
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
-    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
+    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
 
@@ -1091,7 +1091,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
     nested->From(*m_widgetClass, true, "parentInstance");
     nested->Where("([alias].[Widget].[Id] = [parentInstance].[ECInstanceId] OR [alias].[Widget].[Id] IS NULL)", BoundQueryValuesList());
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
-    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
+    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
 
@@ -1199,7 +1199,7 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForECClassGroupingNo
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
     query->From(*grouped);
-    query->OrderBy(ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
+    query->OrderBy(Utf8String("[").append(ECClassGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Class);
     
@@ -1249,7 +1249,7 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForBaseClassGrouping
     ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
     sorted->SelectAll();
     sorted->From(*grouped);
-    sorted->OrderBy("DisplayLabel");
+    sorted->OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &sorted->GetExtendedData());
     NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", m_statementCache, *sorted);
@@ -1277,7 +1277,7 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForDisplayLabelGroup
     query->SelectAll();
     query->From(ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, true));
     query->GroupByContract(*contract);
-    query->OrderBy(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
+    query->OrderBy(Utf8String("[").append(ECClassGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::DisplayLabelGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
 
@@ -1314,7 +1314,7 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForPropertyGroupingN
     nested->SelectContract(*contract);
     nested->From(*m_widgetClass, false);
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
-    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("GetSortingValue(DisplayLabel)");
+    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy(Utf8String("GetSortingValue([").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("])").c_str());
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     

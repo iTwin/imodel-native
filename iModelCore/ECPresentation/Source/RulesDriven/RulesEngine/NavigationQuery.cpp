@@ -182,6 +182,114 @@ FilteredIdsHandler* FilteredIdsHandler::Create(size_t inputSize)
     return new BoundIdsHandler();
     }
 
+
+enum class IsFunctionTestStage
+    {
+    Name,
+    Space,
+    OpenArgs,
+    Args,
+    CloseArgs,
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool QueryHelpers::IsFunction(Utf8StringCR clause)
+    {
+    IsFunctionTestStage stage = IsFunctionTestStage::Name;
+    for (size_t i = 0; i < clause.size(); ++i)
+        {
+        switch (stage)
+            {
+            case IsFunctionTestStage::Name:
+                {
+                if ('0' <= clause[i] && clause[i] <= '9'
+                    || 'A' <= clause[i] && clause[i] <= 'Z'
+                    || 'a' <= clause[i] && clause[i] <= 'z'
+                    || '_' == clause[i])
+                    {
+                    continue;
+                    }
+                if (' ' == clause[i])
+                    {
+                    stage = IsFunctionTestStage::Space;
+                    break;
+                    }
+                if ('(' == clause[i])
+                    {
+                    stage = IsFunctionTestStage::OpenArgs;
+                    break;
+                    }
+                return false;
+                }
+            case IsFunctionTestStage::Space:
+                {
+                if (' ' == clause[i])
+                    continue;
+                if ('(' == clause[i])
+                    {
+                    stage = IsFunctionTestStage::OpenArgs;
+                    break;
+                    }
+                return false;
+                }
+            }
+        if (IsFunctionTestStage::OpenArgs == stage)
+            break;
+        }
+
+    if (IsFunctionTestStage::OpenArgs != stage || ')' != clause[clause.size() - 1])
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsNumeric(Utf8StringCR clause)
+    {
+    for (Utf8Char c : clause)
+        {
+        if ((c < '0' || c > '9') && c != '.')
+            return false;
+        }
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool QueryHelpers::IsLiteral(Utf8StringCR clause)
+    {
+    BeAssert(!clause.empty());
+    return clause.EqualsI("null")
+        || clause.EqualsI("false") || clause.EqualsI("true")
+        || IsNumeric(clause)
+        || clause.StartsWith("'") && clause.EndsWith("'");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool QueryHelpers::IsWrapped(Utf8StringCR clause)
+    {
+    BeAssert(!clause.empty());
+    return clause.StartsWith("[") && clause.EndsWith("]");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String QueryHelpers::Wrap(Utf8StringCR str)
+    {
+    if (str.empty() || IsFunction(str) || IsLiteral(str) || IsWrapped(str))
+        return str;
+
+    return Utf8String("[").append(str).append("]");
+    }
+
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -341,133 +449,25 @@ void ComplexPresentationQuery<TBase>::Select(Utf8StringR output, Utf8CP clause, 
 // @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-void ComplexPresentationQuery<TBase>::SelectProperty(Utf8StringR output, ECPropertyCR selectProperty, Utf8CP alias, bool append)
+void ComplexPresentationQuery<TBase>::SelectField(Utf8StringR output, Utf8StringCR clause, Utf8CP alias, bool append)
     {
-    Utf8String className(selectProperty.GetClass().GetName().c_str());
-    Utf8String propertyName(selectProperty.GetName().c_str());
-    SelectProperty(output, className.c_str(), propertyName.c_str(), alias, append);
+    Utf8String clauseAndAlias = clause;
+    if (!Utf8String::IsNullOrEmpty(alias))
+        clauseAndAlias.append(" AS ").append(QueryHelpers::Wrap(alias));
+    Select(output, clauseAndAlias.c_str(), append);
     }
-
-enum class FieldNameMatchingStages
-    {
-    Start,
-    OpeningBracket,
-    Name,
-    Prefix,
-    ClosingBracket,
-    Dot,
-    };
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                01/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool FieldNameMatchesAlias(Utf8CP fieldName, Utf8CP alias)
-    {
-    FieldNameMatchingStages stage = FieldNameMatchingStages::Start;
-    bool hadPrefix = false;
-    uint32_t aliasIndex = 0;
-    uint32_t i = 0;
-    while (0 != fieldName[i])
-        {
-        Utf8Char c = fieldName[i];
-        switch (stage)
-            {
-            case FieldNameMatchingStages::Dot:
-                if (!hadPrefix)
-                    return false;
-                // continue to ::Start
-            case FieldNameMatchingStages::Start:
-                {
-                if ('[' == c)
-                    {
-                    stage = FieldNameMatchingStages::OpeningBracket;
-                    ++i;
-                    }
-                else if (std::isalnum(c))
-                    stage = FieldNameMatchingStages::Name;
-                else
-                    return false;
-                break;
-                }
-            case FieldNameMatchingStages::OpeningBracket:
-                {
-                if (!std::isalnum(c))
-                    return false;
-                stage = FieldNameMatchingStages::Name;
-                break;
-                }
-            case FieldNameMatchingStages::Name:
-                {
-                if (0 == alias[aliasIndex])
-                    return true;
-                else if (']' == c)
-                    {
-                    stage = FieldNameMatchingStages::ClosingBracket;
-                    aliasIndex = 0;
-                    }
-                else if ('.' == c)
-                    {
-                    stage = FieldNameMatchingStages::Dot;
-                    aliasIndex = 0;
-                    }
-                else if (c != alias[aliasIndex])
-                    {
-                    stage = FieldNameMatchingStages::Prefix;
-                    aliasIndex = 0;
-                    }
-                else
-                    ++aliasIndex;
-                ++i;
-                break;
-                }
-            case FieldNameMatchingStages::Prefix:
-                {
-                hadPrefix = true;
-                if (']' == c)
-                    stage = FieldNameMatchingStages::ClosingBracket;
-                else if ('.' == c)
-                    stage = FieldNameMatchingStages::Dot;
-                ++i;
-                break;
-                }
-            case FieldNameMatchingStages::ClosingBracket:
-                {
-                if ('.' == c)
-                    stage = FieldNameMatchingStages::Dot;
-                else
-                    return false;
-                ++i;
-                break;
-                }
-            }
-        }
-    return 0 == alias[aliasIndex];
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String Wrap(Utf8StringCR str) {return Utf8String("[").append(str).append("]");}
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-void ComplexPresentationQuery<TBase>::SelectProperty(Utf8StringR output, Utf8CP className, Utf8CP propertyName, Utf8CP alias, bool append)
+void ComplexPresentationQuery<TBase>::SelectProperty(Utf8StringR output, ECPropertyCR selectProperty, Utf8CP alias, bool append)
     {
-    Utf8String classAndPropertyNames;
-    if (nullptr == className)
-        classAndPropertyNames = propertyName;
-    else
-        classAndPropertyNames.append(Wrap(className)).append(".").append(Wrap(propertyName));
-
-    Utf8String propertySelectClause;
-    if (Utf8String::IsNullOrEmpty(alias) || FieldNameMatchesAlias(propertyName, alias))
-        propertySelectClause = classAndPropertyNames;
-    else
-        propertySelectClause.append(classAndPropertyNames).append(" AS ").append(Wrap(alias));
-
-    Select(output, propertySelectClause.c_str(), append);
+    Utf8String clause;
+    clause.append(QueryHelpers::Wrap(selectProperty.GetClass().GetName().c_str()))
+        .append(".")
+        .append(QueryHelpers::Wrap(selectProperty.GetName().c_str()));
+    SelectField(output, clause, alias, append);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -477,10 +477,9 @@ template<typename TBase>
 void ComplexPresentationQuery<TBase>::SelectString(Utf8StringR output, Utf8CP selectString, Utf8CP alias, bool append)
     {
     Utf8String stringSelectClause;
-    if (Utf8String::IsNullOrEmpty(alias))
-        stringSelectClause.Sprintf("\'%s\'", selectString);
-    else
-        stringSelectClause.Sprintf("\'%s\' AS [%s]", selectString, alias);
+    stringSelectClause.append("'").append(selectString).append("'");
+    if (!Utf8String::IsNullOrEmpty(alias))
+        stringSelectClause.append(" AS ").append(QueryHelpers::Wrap(alias));
     Select(output, stringSelectClause.c_str(), append);
     }
 
@@ -563,11 +562,17 @@ Utf8String ComplexPresentationQuery<TBase>::CreateSelectClause() const
             if (FieldVisibility::Outer == field->GetVisibility() && 0 == (QueryPosition::Outer & position))
                 continue;
 
+            Utf8String wrappedName = QueryHelpers::Wrap(field->GetName());
             Utf8String selectClauseField;
             if (m_nestedQuery.IsNull() || nullptr != m_nestedQuery->AsStringQuery() || selectWithClauses || FieldVisibility::Outer == field->GetVisibility())
-               SelectProperty(selectClauseField, nullptr, field->GetSelectClause(m_selectPrefix.c_str(), m_nestedQuery.IsValid()).c_str(), field->GetName(), true);
+                {
+                bool skipNestedClauses = m_nestedQuery.IsValid() && (nullptr == m_nestedQuery->AsStringQuery());
+                SelectField(selectClauseField, field->GetSelectClause(m_selectPrefix.c_str(), skipNestedClauses), wrappedName.c_str(), true);
+                }
             else
-                SelectProperty(selectClauseField, nullptr, field->GetName(), nullptr, true);
+                {
+                SelectField(selectClauseField, wrappedName, nullptr, true);
+                }
             selectClauseFields.push_back(selectClauseField);
             }
         }
@@ -583,9 +588,9 @@ Utf8String ComplexPresentationQuery<TBase>::CreateSelectClause() const
             
             Utf8String selectClauseField;
             if (m_groupingContract.get() == groupingContract)
-                SelectProperty(selectClauseField, nullptr, field->GetSelectClause(m_selectPrefix.c_str(), m_nestedQuery.IsValid()).c_str(), field->GetName(), true);
+                SelectField(selectClauseField, field->GetSelectClause(m_selectPrefix.c_str(), m_nestedQuery.IsValid()), field->GetName(), true);
             else
-                SelectProperty(selectClauseField, nullptr, field->GetName(), nullptr, true);
+                SelectField(selectClauseField, QueryHelpers::Wrap(field->GetName()), nullptr, true);
             selectClauseFields.push_back(selectClauseField);
             }
         }
@@ -719,7 +724,7 @@ Utf8String ComplexPresentationQuery<TBase>::CreateGroupByClause() const
 
         if (!groupByClause.empty())
             groupByClause.append(", ");
-        groupByClause.append(field->GetGroupingClause());
+        groupByClause.append(QueryHelpers::Wrap(field->GetGroupingClause()));
         }
     return groupByClause;
     }
@@ -917,7 +922,7 @@ static NavigationECPropertyCP GetNavigationProperty(ECClassCR prev, ECRelationsh
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String GetNavigationPropertyName(NavigationECPropertyCR navigationProperty)
     {
-    return Utf8String("[").append(navigationProperty.GetName()).append("].[Id]");
+    return QueryHelpers::Wrap(navigationProperty.GetName()).append(".[Id]");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1047,10 +1052,10 @@ Utf8String ComplexPresentationQuery<TBase>::CreateJoinClause() const
                 BeAssert(!join.m_joinAlias.empty());
                 bool isForward = (join.m_isForward == (ECRelatedInstanceDirection::Forward == navigationProperty->GetDirection()));
                 joinClause.append(GetECClassClause(*join.m_join));
-                joinClause.append(" ").append(join.m_joinAlias);
-                joinClause.append(" ON [").append(join.m_joinAlias).append("].");
+                joinClause.append(" ").append(QueryHelpers::Wrap(join.m_joinAlias));
+                joinClause.append(" ON ").append(QueryHelpers::Wrap(join.m_joinAlias)).append(".");
                 joinClause.append(isForward ? GetOppositeNavigationPropertyName(*navigationProperty, *previousClass, wasPreviousJoinForward) : GetNavigationPropertyName(*navigationProperty));
-                joinClause.append(" = [").append(previousClassName).append("].");
+                joinClause.append(" = ").append(QueryHelpers::Wrap(previousClassName)).append(".");
                 joinClause.append(isForward ? GetNavigationPropertyName(*navigationProperty) : GetOppositeNavigationPropertyName(*navigationProperty, *previousClass, wasPreviousJoinForward));
 
                 previousClass = join.m_join;
@@ -1066,7 +1071,7 @@ Utf8String ComplexPresentationQuery<TBase>::CreateJoinClause() const
                 // append the join on relationship clause
                 BeAssert(!join.m_usingAlias.empty());
                 joinClause.append(GetECClassClause(*join.m_using));
-                joinClause.append(" ").append(join.m_usingAlias);
+                joinClause.append(" ").append(QueryHelpers::Wrap(join.m_usingAlias));
                 joinClause.append(Utf8PrintfString(previousClassJoinClause.c_str(), previousClassName.c_str(), join.m_usingAlias.c_str(), previousClassName.c_str(), join.m_usingAlias.c_str()));
 
                 // only join the other end of the relationship if this is the last join clause in the group
@@ -1076,7 +1081,7 @@ Utf8String ComplexPresentationQuery<TBase>::CreateJoinClause() const
                     joinClause.append(join.m_isOuterJoin ? " LEFT JOIN " : " INNER JOIN ").append(GetECClassClause(*join.m_join));
                     if (!join.m_joinAlias.empty())
                         {
-                        joinClause.append(" ").append(join.m_joinAlias);
+                        joinClause.append(" ").append(QueryHelpers::Wrap(join.m_joinAlias));
                         joinedClassName = join.m_joinAlias;
                         }
                     joinClause.append(Utf8PrintfString(joinedClassJoinClause.c_str(), joinedClassName.c_str(), join.m_usingAlias.c_str(), joinedClassName.c_str(), join.m_usingAlias.c_str()));
@@ -1110,10 +1115,7 @@ Utf8String ComplexPresentationQuery<TBase>::GetClause(PresentationQueryClauses c
             {
             Utf8PrintfString clause("(%s)", m_nestedQuery->ToString().c_str());
             if (!m_nestedQueryAlias.empty())
-                {
-                clause.append(" ");
-                clause.append(m_nestedQueryAlias);
-                }
+                clause.append(" ").append(QueryHelpers::Wrap(m_nestedQueryAlias));
             return clause;
             }
         
@@ -1127,10 +1129,7 @@ Utf8String ComplexPresentationQuery<TBase>::GetClause(PresentationQueryClauses c
                 fromClause.append("ONLY ");
             fromClause.append(GetECClassClause(*from.m_class).c_str());
             if (!from.m_alias.empty())
-                {
-                fromClause.append(" ");
-                fromClause.append(from.m_alias.c_str());
-                }
+                fromClause.append(" ").append(QueryHelpers::Wrap(from.m_alias));
             first = false;
             }
         return fromClause;
