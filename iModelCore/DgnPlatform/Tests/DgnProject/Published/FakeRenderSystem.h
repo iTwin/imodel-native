@@ -152,8 +152,6 @@ public:
     GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParamsCR params) const override { return m_proc->CreateGraphic(*const_cast<GraphicProcessorSystem*>(this), params); }
     GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR db) const override { m_proc->Process(args); return FakeGraphic::Create(db); }
     GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR db) const override { m_proc->Process(args); return FakeGraphic::Create(db); }
-    GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR db) const override { m_proc->Process(args); return FakeGraphic::Create(db); }
-    GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR loc, DPoint3dCR xvec, int transparency, DgnDbR db) const override { m_proc->Process(sprite, loc, xvec, transparency); return FakeGraphic::Create(db); }
 
     GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& list, DgnDbR db) const override { m_proc->ProcessGraphicList(std::move(list)); return FakeGraphic::Create(db); }
     GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR db, TransformCR tf, ClipVectorCP clip) const override { m_proc->ProcessBranch(std::move(branch), tf, clip); return FakeGraphic::Create(db); }
