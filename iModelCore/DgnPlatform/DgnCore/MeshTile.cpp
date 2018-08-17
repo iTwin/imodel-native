@@ -1,4 +1,4 @@
-/*-------------------------------------------------------------------------------------+
+/*-------------------------------------------------------------------------------------+                                     
 |
 |     $Source: DgnCore/MeshTile.cpp $
 |
@@ -1842,15 +1842,9 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::TileGenerator(DgnDbR dgndb, AxisAlignedBox3dCR projectExtents, ITileCollectionFilterCP filter, ITileGenerationProgressMonitorP progress)
-    : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_dgndb(dgndb), m_totalTiles(0), m_totalModels(0), m_completedModels(0), m_filter(filter)
+TileGenerator::TileGenerator(DgnDbR dgndb, TransformCR dbToTile, ITileCollectionFilterCP filter, ITileGenerationProgressMonitorP progress)
+    : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_dgndb(dgndb), m_totalTiles(0), m_totalModels(0), m_completedModels(0), m_filter(filter), m_spatialTransformFromDgn(dbToTile)
     {
-#if defined(WIP_MESHTILE_3SM)
-    m_spatialTransformFromDgn.InitIdentity();
-#else
-    DPoint3d origin = projectExtents.GetCenter();
-    m_spatialTransformFromDgn = Transform::From(-origin.x, -origin.y, -origin.z);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
