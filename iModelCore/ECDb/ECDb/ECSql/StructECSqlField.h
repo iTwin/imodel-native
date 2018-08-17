@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructECSqlField.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,13 +10,12 @@
 #include "ECSqlField.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      07/2013
 //+===============+===============+===============+===============+===============+======
 struct StructECSqlField final : public ECSqlField, IECSqlValueIterable
     {
-    friend struct ECSqlFieldFactory;
-
     private:
         struct IteratorState final : IECSqlValueIterable::IIteratorState
             {
@@ -42,11 +41,6 @@ struct StructECSqlField final : public ECSqlField, IECSqlValueIterable
 
         std::map<Utf8CP, std::unique_ptr<ECSqlField>, CompareIUtf8Ascii> m_structMemberFields;
 
-        StructECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt, colInfo, false, false) {}
-        //Before calling this, the child field must be complete. You must not add child fields to the child fields afterwards
-        //Otherwise the flags m_needsInit and m_needsReset might become wrong
-        void AppendField(std::unique_ptr<ECSqlField> field);
-
         bool _IsNull() const override;
 
         IECSqlValue const& _GetStructMemberValue(Utf8CP memberName) const override;
@@ -71,8 +65,11 @@ struct StructECSqlField final : public ECSqlField, IECSqlValueIterable
         //ECSqlField
         ECSqlStatus _OnAfterReset() override;
         ECSqlStatus _OnAfterStep() override;
-
+    public:
+        StructECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt, colInfo, false, false) {}
+        //Before calling this, the child field must be complete. You must not add child fields to the child fields afterwards
+        //Otherwise the flags m_needsInit and m_needsReset might become wrong
+        void AppendField(std::unique_ptr<ECSqlField> field);
     };
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PropertyNameExp.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -70,7 +70,6 @@ struct PropertyNameExp final : ValueExp
         bool IsPropertyRef() const { return m_propertyRef != nullptr; }
         ECSqlSystemPropertyInfo const& GetSystemPropertyInfo() const { BeAssert(m_sysPropInfo != nullptr); return *m_sysPropInfo; }
         bool IsLhsAssignmentOperandExpression() const;
-        std::unique_ptr<EnumValueExp> ParseAsEnumValueExp(ECDbCR&) const;
     };
 
 

@@ -318,10 +318,9 @@ void ECSqlParameterMap::OnClearBindings()
 //static
 ECSqlStatus ArrayConstraintValidator::Validate(ECDbCR ecdb, ECSqlTypeInfo const& expected, uint32_t actualArrayLength)
     {
-    const uint32_t expectedMinOccurs = expected.GetArrayMinOccurs();
-    if (actualArrayLength < expectedMinOccurs)
+    if (expected.GetArrayMinOccurs() != nullptr && actualArrayLength < expected.GetArrayMinOccurs().Value())
         {
-        LOG.errorv("Array to be bound to the array parameter must at least have %" PRIu32 " element(s) as defined in the respective ECProperty.", expectedMinOccurs);
+        LOG.errorv("Array to be bound to the array parameter must at least have %" PRIu32 " element(s) as defined in the respective ECProperty.", expected.GetArrayMinOccurs().Value());
         return ECSqlStatus::Error;
         }
 
@@ -334,10 +333,9 @@ ECSqlStatus ArrayConstraintValidator::Validate(ECDbCR ecdb, ECSqlTypeInfo const&
 //static
 ECSqlStatus ArrayConstraintValidator::ValidateMaximum(ECDbCR ecdb, ECSqlTypeInfo const& expected, uint32_t actualArrayLength)
     {
-    const uint32_t expectedMaxOccurs = expected.GetArrayMaxOccurs();
-    if (actualArrayLength > expectedMaxOccurs)
+    if (expected.GetArrayMaxOccurs() != nullptr && actualArrayLength > expected.GetArrayMaxOccurs().Value())
         {
-        LOG.errorv("Array to be bound to the array parameter must at most have %" PRIu32 " element(s) as defined in the respective ECProperty.", expectedMaxOccurs);
+        LOG.errorv("Array to be bound to the array parameter must at most have %" PRIu32 " element(s) as defined in the respective ECProperty.", expected.GetArrayMaxOccurs().Value());
         return ECSqlStatus::Error;
         }
 

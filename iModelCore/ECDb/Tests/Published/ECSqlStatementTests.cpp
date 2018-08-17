@@ -2738,6 +2738,127 @@ TEST_F(ECSqlStatementTestFixture, InsertNullForECInstanceId)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, BindEnum)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("BindEnum.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="Status" backingTypeName="int" isStrict="true">
+                    <ECEnumerator name="On" value="1" />
+                    <ECEnumerator name="Off" value="2" />
+                </ECEnumeration>
+                <ECEnumeration typeName="Domain" backingTypeName="string" isStrict="true">
+                    <ECEnumerator name="Org" value=".org" />
+                    <ECEnumerator name="Com" value=".com" />
+                </ECEnumeration>
+                <ECEntityClass typeName="Foo" >
+                    <ECProperty propertyName="Status" typeName="Status" />
+                    <ECProperty propertyName="Domain" typeName="Domain" />
+                    <ECArrayProperty propertyName="Statuses" typeName="Status" />
+                    <ECArrayProperty propertyName="Domains" typeName="Domain" />
+                </ECEntityClass>
+              </ECSchema>)xml")));
+    ECEnumerationCP statusEnum = m_ecdb.Schemas().GetEnumeration("TestSchema", "Status");
+    ASSERT_TRUE(statusEnum != nullptr);
+    ECEnumeratorCP statusOn = statusEnum->FindEnumeratorByName("On");
+    ASSERT_TRUE(statusOn != nullptr);
+    ECEnumeratorCP statusOff = statusEnum->FindEnumeratorByName("Off");
+    ASSERT_TRUE(statusOff != nullptr);
+    ECEnumerationCP domainEnum = m_ecdb.Schemas().GetEnumeration("TestSchema", "Domain");
+    ASSERT_TRUE(domainEnum != nullptr);
+    ECEnumeratorCP orgDomain = domainEnum->FindEnumeratorByName("Org");
+    ASSERT_TRUE(orgDomain != nullptr);
+    ECEnumeratorCP comDomain = domainEnum->FindEnumeratorByName("Com");
+    ASSERT_TRUE(comDomain != nullptr);
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.Foo(Status,Statuses,Domain,Domains) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindEnum(1,*statusOn));
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.GetBinder(2).AddArrayElement().BindEnum(*statusOn));
+    ASSERT_EQ(ECSqlStatus::Success, statement.GetBinder(2).AddArrayElement().BindEnum(*statusOff));
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindEnum(3, *comDomain));
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.GetBinder(4).AddArrayElement().BindEnum(*orgDomain));
+    ASSERT_EQ(ECSqlStatus::Success, statement.GetBinder(4).AddArrayElement().BindEnum(*comDomain));
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(key));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Status,Statuses,Domain,Domains FROM ts.Foo"));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << statement.GetECSql();
+    ASSERT_EQ(statusOn->GetInteger(), statement.GetValueInt(0)) << statement.GetECSql();
+    ECEnumeratorCP actualStatus = statement.GetValueEnum(0);
+    ASSERT_TRUE(actualStatus != nullptr);
+    ASSERT_STREQ(statusOn->GetName().c_str(), actualStatus->GetName().c_str()) << statement.GetECSql();
+    ASSERT_EQ(statusOn->GetInteger(), actualStatus->GetInteger()) << statement.GetECSql();
+
+    int i = 0;
+    for (IECSqlValue const& arrayElement : statement.GetValue(1).GetArrayIterable())
+        {
+        ECEnumeratorCP actualStatus = arrayElement.GetEnum();
+        ASSERT_TRUE(actualStatus != nullptr);
+        switch (i)
+            {
+                case 0:
+                {     
+                ASSERT_EQ(statusOn->GetInteger(), arrayElement.GetInt()) << statement.GetECSql();
+                ASSERT_STREQ(statusOn->GetName().c_str(), actualStatus->GetName().c_str()) << statement.GetECSql();
+                ASSERT_EQ(statusOn->GetInteger(), actualStatus->GetInteger()) << statement.GetECSql();
+                break;
+                }
+                case 1:
+                {
+                ASSERT_EQ(statusOff->GetInteger(), arrayElement.GetInt()) << statement.GetECSql();
+                ASSERT_STREQ(statusOff->GetName().c_str(), actualStatus->GetName().c_str()) << statement.GetECSql();
+                ASSERT_EQ(statusOff->GetInteger(), actualStatus->GetInteger()) << statement.GetECSql();
+                break;
+                }
+                default:
+                    FAIL() << "Array is expected to only have two elements";
+            }
+        i++;
+        }
+
+    ASSERT_STREQ(comDomain->GetString().c_str(), statement.GetValueText(2)) << statement.GetECSql();
+    ECEnumeratorCP actualDomain = statement.GetValueEnum(2);
+    ASSERT_TRUE(actualDomain != nullptr);
+    ASSERT_STREQ(actualDomain->GetName().c_str(), actualDomain->GetName().c_str()) << statement.GetECSql();
+    ASSERT_STREQ(actualDomain->GetString().c_str(), actualDomain->GetString().c_str()) << statement.GetECSql();
+
+    i = 0;
+    for (IECSqlValue const& arrayElement : statement.GetValue(3).GetArrayIterable())
+        {
+        ECEnumeratorCP actualDomain = arrayElement.GetEnum();
+        ASSERT_TRUE(actualStatus != nullptr);
+
+        switch (i)
+            {
+                case 0:
+                {
+                ASSERT_STREQ(orgDomain->GetString().c_str(), arrayElement.GetText()) << statement.GetECSql();
+                ASSERT_STREQ(orgDomain->GetName().c_str(), actualDomain->GetName().c_str()) << statement.GetECSql();
+                ASSERT_EQ(orgDomain->GetString(), actualDomain->GetString()) << statement.GetECSql();
+                break;
+                }
+                case 1:
+                {
+                ASSERT_STREQ(comDomain->GetString().c_str(), arrayElement.GetText()) << statement.GetECSql();
+                ASSERT_STREQ(comDomain->GetName().c_str(), actualDomain->GetName().c_str()) << statement.GetECSql();
+                ASSERT_EQ(comDomain->GetString(), actualDomain->GetString()) << statement.GetECSql();
+                break;
+                }
+                default:
+                    FAIL() << "Array is expected to only have two elements";
+            }
+        i++;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 01/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindSourceAndTargetECInstanceId)
@@ -3930,9 +4051,9 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForPrimitiveArrays)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     //Top level column
-    auto const& topLevelColumnInfo = stmt.GetColumnInfo(0);
+    ECSqlColumnInfoCR topLevelColumnInfo = stmt.GetColumnInfo(0);
     AssertColumnInfo("Dt_Array", false, false, "Dt_Array", "PSA", "c", topLevelColumnInfo);
-    auto const& topLevelArrayValue = stmt.GetValue(0);
+    IECSqlValue const& topLevelArrayValue = stmt.GetValue(0);
 
     //out of bounds test
     ASSERT_FALSE(stmt.GetColumnInfo(-1).IsValid()) << "ECSqlStatement::GetColumnInfo (-1) is expected to fail";
@@ -3942,7 +4063,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForPrimitiveArrays)
     int arrayIndex = 0;
     for (IECSqlValue const& arrayElement : topLevelArrayValue.GetArrayIterable())
         {
-        auto const& arrayElementColumnInfo = arrayElement.GetColumnInfo();
+        ECSqlColumnInfoCR arrayElementColumnInfo = arrayElement.GetColumnInfo();
         Utf8String expectedPropPath;
         expectedPropPath.Sprintf("Dt_Array[%d]", arrayIndex);
         AssertColumnInfo(nullptr, false, false, expectedPropPath.c_str(), "PSA", "c", arrayElementColumnInfo);
@@ -6729,11 +6850,9 @@ TEST_F(ECSqlStatementTestFixture, OptimizeECSqlForSealedAndClassWithNotDerviedCl
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, EnumeratorNamesForEC31Enums)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("enumerator.ecdb"));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("EnumeratorNamesForEC31Enums.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8' ?>"
         "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
         "    <ECEnumeration typeName='Colors' displayLabel='Color' backingTypeName='string' isStrict='True'>"
         "        <ECEnumerator value='Red'/>"
         "        <ECEnumerator value='Blue'/>"
@@ -6753,25 +6872,125 @@ TEST_F(ECSqlStatementTestFixture, EnumeratorNamesForEC31Enums)
         "        <ECProperty propertyName='Domain' typeName='Domains' />"
         "    </ECEntityClass>"
         "</ECSchema>")));
-    m_ecdb.SaveChanges();
-    ECSqlStatement stmt;
 
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Red, ts.Domains.Domains1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES ('Red', 1)"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Blue, ts.Domains.Domains2)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES ('Blue', 2)"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Green, ts.Domains.Domains3)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES ('Green', 3)"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Yellow, ts.Domains.Domains4)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES ('Yellow', 4)"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Black, ts.Domains.Domains5)"));
-    ASSERT_EQ(JsonValue("[{\"cnt\": 1}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color = ts.Colors.Red"));
-    ASSERT_EQ(JsonValue("[{\"cnt\": 2}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color IN (ts.Colors.Red, ts.Colors.Blue)"));
-    ASSERT_EQ(JsonValue("[{\"cnt\": 5}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color BETWEEN ts.Colors.Red AND ts.Colors.Black"));
-    ASSERT_EQ(JsonValue("[{\"cnt\": 1}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain = ts.Domains.Domains1"));
-    ASSERT_EQ(JsonValue("[{\"cnt\": 3}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain IN (ts.Domains.Domains1, ts.Domains.Domains2, ts.Domains.Domains3)"));
-    ASSERT_EQ(JsonValue("[{\"cnt\": 5}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain BETWEEN ts.Domains.Domains1 AND ts.Domains.Domains5"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES ('Black', 5)"));
+    EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color = ts.Colors.Red"));
+    EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color = 'Red'"));
+    EXPECT_EQ(JsonValue("[{\"cnt\": 4}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color IN (ts.Colors.Red, ts.Colors.Blue)"));
+    EXPECT_EQ(JsonValue("[{\"cnt\": 4}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color IN (ts.Colors.Red, 'Blue')"));
+    EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color BETWEEN ts.Colors.Red AND ts.Colors.Black"));
+    EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain = ts.Domains.Domains1"));
+    EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain = 1"));
+    EXPECT_EQ(JsonValue("[{\"cnt\": 6}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain IN (ts.Domains.Domains1, ts.Domains.Domains2, ts.Domains.Domains3)"));
+    EXPECT_EQ(JsonValue("[{\"cnt\": 6}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain IN (1, ts.Domains.Domains2, 3)"));
+    EXPECT_EQ(JsonValue("[{\"cnt\": 10}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain BETWEEN ts.Domains.Domains1 AND ts.Domains.Domains5"));
+    EXPECT_EQ(JsonValue("[{\"cnt\": 10}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain BETWEEN ts.Domains.Domains1 AND 5"));
 
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.TestClass SET Color = ts.Colors.Red WHERE Color = ts.Colors.Yellow"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.TestClass SET Domain = ts.Domains.Domains5 WHERE Domain = ts.Domains.Domains3"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.TestClass WHERE Color = ts.Colors.Yellow"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.TestClass WHERE Domain = ts.Domains.Domains4"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, EnumeratorNames)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("EnumeratorNames.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8' ?>"
+        "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "    <ECEnumeration typeName='Colors' displayLabel='Color' backingTypeName='string' isStrict='True'>"
+        "        <ECEnumerator name='Red' value='Red' />"
+        "        <ECEnumerator name='Blue' value='Blue' />"
+        "        <ECEnumerator name='Green' value='Green' />"
+        "        <ECEnumerator name='Yellow' value='Yellow' />"
+        "        <ECEnumerator name='Black' value='Black' />"
+        "    </ECEnumeration>"
+        "    <ECEnumeration typeName='Domains' displayLabel='Domain' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator name='Com' value='1' DisplayLabel='com' />"
+        "        <ECEnumerator name='Org' value='2' DisplayLabel='org' />"
+        "        <ECEnumerator name='Edu' value='3' DisplayLabel='edu' />"
+        "        <ECEnumerator name='Net' value='4' DisplayLabel='net' />"
+        "        <ECEnumerator name='Int' value='5' DisplayLabel='int' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <ECProperty propertyName='Color' typeName='Colors' />"
+        "        <ECProperty propertyName='Domain' typeName='Domains' />"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Red, ts.Domains.Com)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES ('Red', 1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Blue, ts.Domains.Org)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES ('Blue', 2)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Green, ts.Domains.Edu)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES ('Green', 3)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Yellow, ts.Domains.Net)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES ('Yellow', 4)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Black, ts.Domains.[Int])"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestClass(Color,Domain) VALUES ('Black', 5)"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 2}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color = ts.Colors.Red"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 2}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color = 'Red'"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 4}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color IN (ts.Colors.Red, ts.Colors.Blue)"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 4}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color IN ('Red', ts.Colors.Blue)"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 0}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color BETWEEN ts.Colors.Red AND ts.Colors.Black"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 0}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Color BETWEEN 'Red' AND 'Black'"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 2}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain = ts.Domains.Com"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 2}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain = 1"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 6}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain IN (ts.Domains.Com, ts.Domains.Org, ts.Domains.Edu)"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 6}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain IN (1, ts.Domains.Org, 3)"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 10}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain BETWEEN ts.Domains.Com AND ts.Domains.[Int]"));
+    ASSERT_EQ(JsonValue("[{\"cnt\": 10}]"), GetHelper().ExecuteSelectECSql("SELECT COUNT(*) cnt FROM ts.TestClass WHERE Domain BETWEEN 1 AND ts.Domains.[Int]"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.TestClass SET Color = ts.Colors.Red WHERE Color = ts.Colors.Yellow"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.TestClass SET Domain = ts.Domains.Net WHERE Domain = ts.Domains.Edu"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.TestClass WHERE Color = ts.Colors.Yellow"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.TestClass WHERE Domain = ts.Domains.Net"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, ORedEnumerators)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ORedEnumerators.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="Status" backingTypeName="int" isStrict="false">
+                    <ECEnumerator name="On" value="1" />
+                    <ECEnumerator name="Off" value="2" />
+                </ECEnumeration>
+                <ECEnumeration typeName="Domain" backingTypeName="string" isStrict="false">
+                    <ECEnumerator name="Org" value=".org" />
+                    <ECEnumerator name="Com" value=".com" />
+                </ECEnumeration>
+                <ECEntityClass typeName="Foo" >
+                    <ECProperty propertyName="Status" typeName="Status" />
+                    <ECProperty propertyName="Domain" typeName="Domain" />
+                </ECEntityClass>
+              </ECSchema>)xml")));
+    ECInstanceKey unoredKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(unoredKey, "INSERT INTO ts.Foo(Status, Domain) VALUES (ts.Status.[On], ts.Domain.Com)"));
+    ECInstanceKey oredKey;
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteInsertECSql(oredKey, "INSERT INTO ts.Foo(Status, Domain) VALUES (ts.Status.[On] | ts.Status.Off, ts.Domain.Com | ts.Domain.Org)")) << "Bitwise OR not supported yet";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Foo WHERE Status = ts.Status.[On]"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(unoredKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Foo WHERE Status & ts.Status.[On] <> 0")) << "Bitwise AND not supported yet";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/IECSqlValue.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -119,6 +119,13 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue
         //! - property is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
         //!   those types can implicitly be converted into each other.
         ECDB_EXPORT int GetInt() const;
+
+        //! Gets the value as @ref BentleyApi::ECN::ECEnumerator "ECEnumerator"
+        //! @note as ECEnumerations cannot be OR'ed, so if the value does not match any of the ECEnumerators defined
+        //! in the underlying ECEnumeration, nullptr will be returned.
+        //! @return ECEnumerator or nullptr, if the underlying value does not represent an exact ECEnumerator of an ECEnumeration. 
+        //! (OR'ed ECEnumerators are not supported)
+        ECDB_EXPORT ECN::ECEnumeratorCP GetEnum() const;
 
         //! Gets the value as Int64
         //! @return Int64 value

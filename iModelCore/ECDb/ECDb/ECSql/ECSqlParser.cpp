@@ -97,8 +97,6 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, ScopedIssueRe
         return nullptr;
         }
 
-    //Replace propertyname exp with enumexp if possiable
-    ResolveEnumerators(*exp, ecdb);
     //resolve types and references now that first pass parsing is done and all nodes are available
     if (SUCCESS != m_context->FinalizeParsing(*exp))
         return nullptr;
@@ -106,34 +104,7 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, ScopedIssueRe
     return exp;
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       10/2017
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-void ECSqlParser::ResolveEnumerators(Exp& exp, ECDbCR ecdb)
-    {
-    std::vector<Exp*> children(exp.GetChildrenR().begin(), exp.GetChildrenR().end());
-    for (Exp* child : children)
-        {
-        if (child->GetType() == Exp::Type::PropertyName)
-            {
-            std::unique_ptr<EnumValueExp> enumExp = child->GetAs<PropertyNameExp>().ParseAsEnumValueExp(ecdb);
-            if (enumExp != nullptr)
-                {
-                std::vector<std::unique_ptr<Exp>> replaceWith;
-                replaceWith.push_back(std::move(enumExp));
-                if (!exp.GetChildrenR().Replace(*child, replaceWith))
-                    {
-                    BeAssert(false);
-                    }
-                }
-            }
-        else
-            {
-            ResolveEnumerators(*child, ecdb);
-            }
-        }
-    }
+
 //****************** Parsing SELECT statement ***********************************
 
 //-----------------------------------------------------------------------------------------
@@ -371,7 +342,7 @@ BentleyStatus ECSqlParser::ParseAssignmentCommalist(std::unique_ptr<AssignmentLi
         BeAssert(SQL_ISRULE(assignmentNode, assignment) && assignmentNode->count() == 3 && "Wrong ECSQL grammar. Expected rule assignment.");
 
         std::unique_ptr<PropertyNameExp> lhsExp = nullptr;
-        BentleyStatus stat = ParseColumnRef(lhsExp, assignmentNode->getChild(0));
+        BentleyStatus stat = ParseColumnRefAsPropertyNameExp(lhsExp, assignmentNode->getChild(0));
         if (SUCCESS != stat)
             return stat;
 
@@ -513,7 +484,7 @@ BentleyStatus ECSqlParser::ParseColumnRefCommalist(std::unique_ptr<PropertyNameL
     for (size_t i = 0; i < columnCount; i++)
         {
         std::unique_ptr<PropertyNameExp> propertyNameExp = nullptr;
-        BentleyStatus stat = ParseColumnRef(propertyNameExp, parseNode->getChild(i));
+        BentleyStatus stat = ParseColumnRefAsPropertyNameExp(propertyNameExp, parseNode->getChild(i));
         if (SUCCESS != stat)
             return stat;
 
@@ -525,12 +496,10 @@ BentleyStatus ECSqlParser::ParseColumnRefCommalist(std::unique_ptr<PropertyNameL
     }
 
 
-
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       01/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParsePropertyPath(std::unique_ptr<PropertyNameExp>& exp, OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseExpressionPath(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode, bool forceIntoPropertyNameExp) const
     {
     if (!SQL_ISRULE(parseNode, property_path))
         {
@@ -539,6 +508,7 @@ BentleyStatus ECSqlParser::ParsePropertyPath(std::unique_ptr<PropertyNameExp>& e
         }
 
     PropertyPath propertyPath;
+    bool propertyPathContainsArrayIndex = false;
     for (size_t i = 0; i < parseNode->count(); i++)
         {
         OSQLParseNode const* property_path_entry = parseNode->getChild(i);
@@ -551,6 +521,7 @@ BentleyStatus ECSqlParser::ParsePropertyPath(std::unique_ptr<PropertyNameExp>& e
             if (opt_column_array_idx->getFirst() != nullptr)
                 {
                 arrayIndex = atoi(opt_column_array_idx->getFirst()->getTokenValue().c_str());
+                propertyPathContainsArrayIndex = true;
                 }
 
             propertyPath.Push(tokenValue, arrayIndex);
@@ -566,13 +537,29 @@ BentleyStatus ECSqlParser::ParsePropertyPath(std::unique_ptr<PropertyNameExp>& e
             }
         }
 
+    // if this could be an enumeration exp, try to parse it. If not found, interpret as property name exp
+    if (!forceIntoPropertyNameExp && propertyPath.Size() == 3 && !propertyPathContainsArrayIndex)
+        {
+        ECEnumerationCP ecEnum = m_context->GetECDb().Schemas().GetEnumeration(propertyPath[0].GetName(), propertyPath[1].GetName(), SchemaLookupMode::AutoDetect);
+        if (ecEnum != nullptr)
+            {
+            ECEnumeratorCP enumerator = ecEnum->FindEnumeratorByName(propertyPath[2].GetName().c_str());
+            if (enumerator != nullptr)
+                {
+                exp = std::make_unique<EnumValueExp>(*enumerator, propertyPath);
+                return SUCCESS;
+                }
+            }
+        }
+
     exp = std::make_unique<PropertyNameExp>(std::move(propertyPath));
     return SUCCESS;
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<PropertyNameExp>& exp, OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseColumnRefAsPropertyNameExp(std::unique_ptr<PropertyNameExp>& exp, OSQLParseNode const* parseNode) const
     {
     if (!SQL_ISRULE(parseNode, column_ref))
         {
@@ -580,7 +567,25 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<PropertyNameExp>& exp,
         return ERROR;
         }
 
-    return ParsePropertyPath(exp, parseNode->getFirst());
+    std::unique_ptr<ValueExp> valueExp;
+    if (SUCCESS != ParseExpressionPath(valueExp, parseNode->getFirst(), true))
+        return ERROR;
+
+    exp = std::unique_ptr<PropertyNameExp>((PropertyNameExp*) valueExp.release());
+    return SUCCESS;
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       04/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode, bool forceIntoPropertyNameExp) const
+    {
+    if (!SQL_ISRULE(parseNode, column_ref))
+        {
+        BeAssert(false && "Wrong grammar");
+        return ERROR;
+        }
+
+    return ParseExpressionPath(exp, parseNode->getFirst(), forceIntoPropertyNameExp);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -659,8 +664,6 @@ BentleyStatus ECSqlParser::ParseTerm(std::unique_ptr<ValueExp>& exp, OSQLParseNo
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
-// WIP_ECSQL: Implement Case operation also correct datatype list in sqlbison.y as
-// per ECSQLTypes. We only support premitive type casting
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::ParseCastSpec(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
     {
@@ -713,7 +716,7 @@ BentleyStatus ECSqlParser::ParseCastSpec(std::unique_ptr<ValueExp>& exp, OSQLPar
         return SUCCESS;
         }
 
-    //struct type
+    //struct or enum type
     if (scalarTargetNode->count() != 3)
         {
         BeAssert(false);
@@ -721,8 +724,8 @@ BentleyStatus ECSqlParser::ParseCastSpec(std::unique_ptr<ValueExp>& exp, OSQLPar
         }
 
     Utf8StringCR targetSchemaName = scalarTargetNode->getChild(0)->getTokenValue();
-    Utf8StringCR targetClassName = scalarTargetNode->getChild(2)->getTokenValue();
-    exp = std::make_unique<CastExp>(std::move(castOperandExp), targetSchemaName, targetClassName, isArrayTargetType);
+    Utf8StringCR targetTypeName = scalarTargetNode->getChild(2)->getTokenValue();
+    exp = std::make_unique<CastExp>(std::move(castOperandExp), targetSchemaName, targetTypeName, isArrayTargetType);
     return SUCCESS;
     }
 
@@ -1081,7 +1084,7 @@ BentleyStatus ECSqlParser::ParseDatetimeValueFct(std::unique_ptr<ValueExp>& exp,
 
     Utf8CP unparsedValue = parseNode.getChild(1)->getTokenValue().c_str();
     if (columnTypeNode->getTokenID() == SQL_TOKEN_DATE || columnTypeNode->getTokenID() == SQL_TOKEN_TIMESTAMP)
-        return LiteralValueExp::Create(exp, *m_context, unparsedValue, ECSqlTypeInfo(ECN::PRIMITIVETYPE_DateTime));
+        return LiteralValueExp::Create(exp, *m_context, unparsedValue, ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_DateTime));
 
     exp = nullptr;
     BeAssert(false && "Wrong grammar");
@@ -2416,15 +2419,15 @@ BentleyStatus ECSqlParser::ParseLiteral(Utf8StringR literalVal, ECSqlTypeInfo& d
         {
             case SQL_NODE_INTNUM:
                 literalVal.assign(parseNode.getTokenValue());
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Long);
+                dataType = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long);
                 break;
             case SQL_NODE_APPROXNUM:
                 literalVal.assign(parseNode.getTokenValue());
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Double);
+                dataType = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Double);
                 break;
             case SQL_NODE_STRING:
                 literalVal.assign(parseNode.getTokenValue());
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_String);
+                dataType = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
                 break;
             case SQL_NODE_KEYWORD:
             {
@@ -2436,12 +2439,12 @@ BentleyStatus ECSqlParser::ParseLiteral(Utf8StringR literalVal, ECSqlTypeInfo& d
             else if (parseNode.getTokenID() == SQL_TOKEN_TRUE)
                 {
                 literalVal.assign("TRUE");
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+                dataType = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean);
                 }
             else if (parseNode.getTokenID() == SQL_TOKEN_FALSE)
                 {
                 literalVal.assign("FALSE");
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+                dataType = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean);
                 }
             break;
             }
@@ -2571,14 +2574,7 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                 case OSQLParseNode::cast_spec:
                     return ParseCastSpec(valueExp, parseNode);
                 case OSQLParseNode::column_ref:
-                {
-                std::unique_ptr<PropertyNameExp> propNameExp = nullptr;
-                if (SUCCESS != ParseColumnRef(propNameExp, parseNode))
-                    return ERROR;
-
-                valueExp = std::move(propNameExp);
-                return SUCCESS;
-                }
+                    return ParseColumnRef(valueExp, parseNode, false);
                 case OSQLParseNode::num_value_exp:
                     return ParseNumValueExp(valueExp, parseNode);
                 case OSQLParseNode::concatenation:
@@ -2591,6 +2587,8 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                     return ParseGeneralSetFct(valueExp, parseNode);
                 case OSQLParseNode::fct_spec:
                     return ParseFctSpec(valueExp, parseNode);
+                case OSQLParseNode::property_path:
+                    return ParseExpressionPath(valueExp, parseNode);
                 case OSQLParseNode::term:
                     return ParseTerm(valueExp, parseNode);
                 case OSQLParseNode::parameter:

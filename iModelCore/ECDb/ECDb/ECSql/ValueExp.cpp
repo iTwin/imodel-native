@@ -81,18 +81,18 @@ Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx
                     case BinarySqlOperator::Modulo:
                     case BinarySqlOperator::Divide:
                     case BinarySqlOperator::Multiply:
-                        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Double));
+                        SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Double));
                         break;
                     case BinarySqlOperator::ShiftLeft:
                     case BinarySqlOperator::ShiftRight:
                     case BinarySqlOperator::BitwiseOr:
                     case BinarySqlOperator::BitwiseAnd:
                     case BinarySqlOperator::BitwiseXOr:
-                        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
+                        SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long));
                         break;
 
                     case BinarySqlOperator::Concat:
-                        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_String));
+                        SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String));
                         break;
 
                     default:
@@ -209,30 +209,34 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
                 return FinalizeParseStatus::Error;
                 }
 
-            SetTypeInfo(ECSqlTypeInfo(targetType, m_castTargetIsArray, nullptr));
+            SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(targetType, m_castTargetIsArray));
+            return FinalizeParseStatus::NotCompleted;
             }
-        else
+
+        //WIP: Need to change the grammar to allow specifying cast targets from other table spaces
+        ECEnumerationCP targetEnumType = ctx.Schemas().GetEnumeration(m_castTargetSchemaName, GetCastTargetTypeName(), SchemaLookupMode::AutoDetect);
+        if (targetEnumType != nullptr)
             {
-            //WIP: Need to change the grammar to allow specifying cast targets from other table spaces
-            ECClassCP targetType = ctx.Schemas().GetClass(m_castTargetSchemaName, GetCastTargetClassName(), SchemaLookupMode::AutoDetect);
-            if (targetType == nullptr)
-                {
-                ctx.Issues().ReportV("Invalid CAST target type '%s.%s'. The type does not exist.", m_castTargetSchemaName.c_str(), GetCastTargetClassName().c_str());
-                return FinalizeParseStatus::Error;
-                }
-
-            if (!targetType->IsStructClass())
-                {
-                ctx.Issues().ReportV("Invalid CAST target type '%s.%s'. The type is not an EC struct.", m_castTargetSchemaName.c_str(), GetCastTargetClassName().c_str());
-                return FinalizeParseStatus::Error;
-                }
-
-            SetTypeInfo(ECSqlTypeInfo(*targetType->GetStructClassCP(), m_castTargetIsArray));
+            SetTypeInfo(ECSqlTypeInfo::CreateEnum(*targetEnumType, m_castTargetIsArray));
+            return FinalizeParseStatus::NotCompleted;
             }
 
+        ECClassCP targetClassType = ctx.Schemas().GetClass(m_castTargetSchemaName, GetCastTargetTypeName(), SchemaLookupMode::AutoDetect);
+        if (targetClassType == nullptr)
+            {
+            ctx.Issues().ReportV("Invalid CAST target type '%s.%s'. The type does not exist.", m_castTargetSchemaName.c_str(), GetCastTargetTypeName().c_str());
+            return FinalizeParseStatus::Error;
+            }
+
+        if (!targetClassType->IsStructClass())
+            {
+            ctx.Issues().ReportV("Invalid CAST target type '%s.%s'. Only enumeration and struct types are supported.", m_castTargetSchemaName.c_str(), GetCastTargetTypeName().c_str());
+            return FinalizeParseStatus::Error;
+            }
+
+        SetTypeInfo(ECSqlTypeInfo::CreateStruct(*targetClassType->GetStructClassCP(), m_castTargetIsArray));
         return FinalizeParseStatus::NotCompleted;
         }
-
 
     ECSqlTypeInfo const& castOperandTypeInfo = GetCastOperand()->GetTypeInfo();
     if (castOperandTypeInfo.IsNull()) //NULL can always be cast
@@ -244,32 +248,28 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
         return FinalizeParseStatus::Error;
         }
 
-    ECSqlTypeInfo const& expectedTypeInfo = GetTypeInfo();
+    ECSqlTypeInfo const& targetTypeInfo = GetTypeInfo();
+    if (!targetTypeInfo.IsPrimitive())
+        {
+        ctx.Issues().ReportV("Invalid target type in CAST expression '%s'. Non-primitive target type can only be used when casting NULL.", ToECSql().c_str());
+        return FinalizeParseStatus::Error;
+        }
 
-    if (castOperandTypeInfo.GetPrimitiveType() != expectedTypeInfo.GetPrimitiveType())
+    if (castOperandTypeInfo.GetPrimitiveType() != targetTypeInfo.GetPrimitiveType())
         {
         //primitives can be cast except for points because they map to multiple columns
-        std::vector<ECSqlTypeInfo const*> typeInfos {&expectedTypeInfo, &castOperandTypeInfo};
+        std::vector<ECSqlTypeInfo const*> typeInfos {&targetTypeInfo, &castOperandTypeInfo};
         for (ECSqlTypeInfo const* typeInfo : typeInfos)
             {
             if (typeInfo->IsPoint())
                 {
-                ctx.Issues().ReportV("Casting from '%s' to '%s' is not supported", ExpHelper::ToString(castOperandTypeInfo.GetPrimitiveType()), ExpHelper::ToString(expectedTypeInfo.GetPrimitiveType()));
+                ctx.Issues().ReportV("Casting from '%s' to '%s' is not supported", ExpHelper::ToString(castOperandTypeInfo.GetPrimitiveType()), ExpHelper::ToString(targetTypeInfo.GetPrimitiveType()));
                 return FinalizeParseStatus::Error;
                 }
             }
         }
 
     return FinalizeParseStatus::Completed;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool CastExp::NeedsCasting() const
-    {
-    BeAssert(IsComplete());
-    return !GetCastOperand()->GetTypeInfo().Equals(GetTypeInfo());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -369,7 +369,7 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
             return Exp::FinalizeParseStatus::Error;
             }
 
-        SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+        SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Double));
         return FinalizeParseStatus::Completed;
         }
 
@@ -410,7 +410,7 @@ Utf8String MemberFunctionCallExp::_ToString() const
 bool MemberFunctionCallExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
     {
     //we don't have metadata about function args, so use a default type if the arg is a parameter
-    parameterExp.SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+    parameterExp.SetTargetExpInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Double));
     return true;
     }
 
@@ -510,7 +510,7 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
 bool FunctionCallExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
     {
     //we don't have metadata about function args, so use a default type if the arg is a parameter
-    parameterExp.SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+    parameterExp.SetTargetExpInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Double));
     return true;
     }
 
@@ -540,15 +540,15 @@ void FunctionCallExp::DetermineReturnType(ECDbCR ecdb)
         {
         switch (func->GetReturnType())
             {
-                case DbValueType::BlobVal: SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Binary)); return;
-                case DbValueType::IntegerVal: SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Long)); return;
-                case DbValueType::TextVal: SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_String)); return;
+                case DbValueType::BlobVal: SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Binary)); return;
+                case DbValueType::IntegerVal: SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long)); return;
+                case DbValueType::TextVal: SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String)); return;
 
                 case DbValueType::FloatVal:
                 //NullVal means that no return type was specified. In that case we use Double to be as generic as possible
                 case DbValueType::NullVal:
                 default:
-                    SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+                    SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Double));
                     return;
             }
         }
@@ -558,7 +558,7 @@ void FunctionCallExp::DetermineReturnType(ECDbCR ecdb)
     if (it == GetBuiltInFunctionReturnTypes().end())
         {
         //all other functions get the default return type 
-        SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+        SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Double));
         return;
         }
 
@@ -628,66 +628,64 @@ bmap<Utf8CP, ECSqlTypeInfo, CompareIUtf8Ascii> const& FunctionCallExp::GetBuiltI
         {
         s_builtInFunctionReturnTypes = new bmap<Utf8CP, ECSqlTypeInfo, CompareIUtf8Ascii>();
         bmap<Utf8CP, ECSqlTypeInfo, CompareIUtf8Ascii>& map = *s_builtInFunctionReturnTypes;
-        map["any"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-        map["changes"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
-        map["char"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["count"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
-        DateTime::Info dateInfo = DateTime::Info::CreateForDate();
-        map[CURRENT_DATE()] = ECSqlTypeInfo(PRIMITIVETYPE_DateTime, false, &dateInfo);
-        DateTime::Info utcInfo = DateTime::Info::CreateForDateTime(DateTime::Kind::Utc);
-        map[CURRENT_TIMESTAMP()] = ECSqlTypeInfo(PRIMITIVETYPE_DateTime, false, &utcInfo);
-        map["date"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["datetime"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["every"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-        map["glob"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-        map["group_concat"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["hex"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["instr"] = ECSqlTypeInfo(PRIMITIVETYPE_Integer);
-        map["invirtualset"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-        map["json"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["json_array"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["json_array_length"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
-        map["json_extract"] = ECSqlTypeInfo(PRIMITIVETYPE_String); // must be type 'Any'
-        map["json_group_array"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["json_group_object"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["json_insert"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["json_object"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["json_quote"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["json_remove"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["json_replace"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["json_set"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["json_type"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["json_valid"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-        map["julianday"] = ECSqlTypeInfo(PRIMITIVETYPE_Double);
-        map["last_insert_rowid"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
-        map["length"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
-        map["like"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-        map["lower"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["ltrim"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["match"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-        map["quote"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["printf"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["random"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
-        map["randomblob"] = ECSqlTypeInfo(PRIMITIVETYPE_Binary);
-        map["regexp"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-        map["replace"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["rtrim"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["round"] = ECSqlTypeInfo(PRIMITIVETYPE_Double);
-        map["some"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-        map["soundex"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["sqlite_compileoption_get"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["sqlite_compileoption_used"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-        map["sqlite_source_id"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["sqlite_version"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["strftime"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["substr"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["time"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["total_changes"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
-        map["trim"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["typeof"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["unicode"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
-        map["upper"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
-        map["zeroblob"] = ECSqlTypeInfo(PRIMITIVETYPE_Binary);
+        map["any"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean);
+        map["changes"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long);
+        map["char"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["count"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long);
+        map[CURRENT_DATE()] = ECSqlTypeInfo::CreateDateTime(DateTime::Info::CreateForDate());
+        map[CURRENT_TIMESTAMP()] = ECSqlTypeInfo::CreateDateTime(DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+        map["date"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["datetime"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["every"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean);
+        map["glob"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean);
+        map["group_concat"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["hex"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["instr"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Integer);
+        map["invirtualset"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean);
+        map["json"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["json_array"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["json_array_length"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long);
+        map["json_extract"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String); // must be type 'Any'
+        map["json_group_array"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["json_group_object"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["json_insert"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["json_object"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["json_quote"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["json_remove"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["json_replace"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["json_set"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["json_type"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["json_valid"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean);
+        map["julianday"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Double);
+        map["last_insert_rowid"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long, false, EXTENDEDTYPENAME_Id);
+        map["length"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long);
+        map["like"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean);
+        map["lower"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["ltrim"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["match"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean);
+        map["quote"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["printf"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["random"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long);
+        map["randomblob"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Binary);
+        map["regexp"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean);
+        map["replace"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["rtrim"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["round"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Double);
+        map["some"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean);
+        map["soundex"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["sqlite_compileoption_get"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["sqlite_compileoption_used"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean);
+        map["sqlite_source_id"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["sqlite_version"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["strftime"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["substr"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["time"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["total_changes"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long);
+        map["trim"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["typeof"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["unicode"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long);
+        map["upper"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        map["zeroblob"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Binary);
         }
 
     return *s_builtInFunctionReturnTypes;
@@ -711,7 +709,7 @@ Exp::FinalizeParseStatus LikeRhsValueExp::_FinalizeParsing(ECSqlParseContext& ct
 //+---------------+---------------+---------------+---------------+---------------+------
 bool LikeRhsValueExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
     {
-    parameterExp.SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_String));
+    parameterExp.SetTargetExpInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String));
     return true;
     }
 
@@ -747,32 +745,11 @@ void LikeRhsValueExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-EnumValueExp::EnumValueExp(ECEnumeratorCR value, Utf8StringCR accesString) : ValueExp(Type::EnumValue, true), m_enumerator(value), m_accessString(accesString)
+EnumValueExp::EnumValueExp(ECEnumeratorCR value, PropertyPath const& expPath) : ValueExp(Type::EnumValue, true), m_enumerator(value), m_expPath(expPath)
     {    
-    SetTypeInfo(ECSqlTypeInfo(value.IsInteger() ? ECN::PrimitiveType::PRIMITIVETYPE_Integer : ECN::PrimitiveType::PRIMITIVETYPE_String));
+    SetTypeInfo(ECSqlTypeInfo::CreateEnum(value.GetEnumeration()));
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       10/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String EnumValueExp::GetSqlValue() const
-    { 
-    Utf8String strValue;
-    if (GetEnumerator().IsInteger())
-        {
-        strValue.Sprintf("%" PRId32, GetEnumerator().GetInteger());
-        }
-    else if (GetEnumerator().IsString())
-        {
-        strValue.append("'").append(GetEnumerator().GetString()).append("'");
-        }
-    else
-        {
-        BeAssert(false);
-        }
-
-    return strValue;
-    }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -781,25 +758,19 @@ void EnumValueExp::_ToECSql(ECSqlRenderContext& ctx) const
     if (HasParentheses())
         ctx.AppendToECSql("(");
 
-    ctx.AppendToECSql(m_accessString);
+    ctx.AppendToECSql(m_expPath.ToString(true, false));
 
     if (HasParentheses())
         ctx.AppendToECSql(")");
     }
-
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String EnumValueExp::_ToString() const
     {
-    Utf8String str("EnumValue [Value: ");
-    str.append(m_accessString.c_str()).append(" (").append(GetSqlValue().c_str()).append(")");
-
-    if (GetTypeInfo().IsPrimitive())
-        str.append(", Type: ").append(ExpHelper::ToString(GetTypeInfo().GetPrimitiveType()));
-
-    str.append("]");
+    Utf8String str("EnumValue [");
+    str.append(m_expPath.ToString()).append("]");
     return str;
     }
 
@@ -814,7 +785,7 @@ BentleyStatus LiteralValueExp::Create(std::unique_ptr<ValueExp>& exp, ECSqlParse
 
     std::unique_ptr<LiteralValueExp> valueExp(new LiteralValueExp(value, typeInfo));
 
-    if (!typeInfo.IsNull() && typeInfo.GetPrimitiveType() == PRIMITIVETYPE_DateTime)
+    if (typeInfo.IsDateTime())
         {
         DateTime dt;
         if (SUCCESS != DateTime::FromString(dt, value))
@@ -823,7 +794,7 @@ BentleyStatus LiteralValueExp::Create(std::unique_ptr<ValueExp>& exp, ECSqlParse
             return ERROR;
             }
 
-        valueExp->SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_DateTime, false, &dt.GetInfo()));
+        valueExp->SetTypeInfo(ECSqlTypeInfo::CreateDateTime(dt.GetInfo()));
         }
 
     exp = std::move(valueExp);
@@ -849,7 +820,7 @@ BentleyStatus LiteralValueExp::ResolveDataType(ECSqlParseContext& ctx)
             return ERROR;
             }
 
-        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_DateTime, false, &dt.GetInfo()));
+        SetTypeInfo(ECSqlTypeInfo::CreateDateTime(dt.GetInfo()));
         }
 
     return SUCCESS;
@@ -1014,7 +985,7 @@ Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing(ECSqlParseContext& ctx, 
 //+---------------+---------------+---------------+---------------+---------------+------
 void ParameterExp::SetDefaultTargetExpInfo()
     {
-    SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+    SetTargetExpInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Double));
 
 #ifndef NDEBUG
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
@@ -1118,10 +1089,10 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
             {
                 case Operator::Minus:
                 case Operator::Plus:
-                    SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+                    SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Double));
                     break;
                 case Operator::BitwiseNot:
-                    SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Long));
+                    SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long));
                     break;
 
                 default:
@@ -1604,18 +1575,18 @@ BentleyStatus FunctionSignature::SetParameterType(Exp::Collection& argExps) cons
                 }
 
             if (arg->Type() == FunctionSignature::ValueType::String)
-                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_String));
+                test.SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String));
             else if (arg->Type() == FunctionSignature::ValueType::Blob)
-                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Binary));
+                test.SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Binary));
             else if (arg->Type() == FunctionSignature::ValueType::Float ||
                      arg->Type() == FunctionSignature::ValueType::Numeric)
-                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Double));
+                test.SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Double));
             else if (arg->Type() == FunctionSignature::ValueType::Integer)
-                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
+                test.SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long));
             else if (arg->Type() == FunctionSignature::ValueType::Any)
-                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
+                test.SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long));
             else
-                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Binary));
+                test.SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Binary));
             }
 
         j++;
@@ -1624,33 +1595,34 @@ BentleyStatus FunctionSignature::SetParameterType(Exp::Collection& argExps) cons
 
         return SUCCESS;
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus FunctionSignature::Verify(Utf8StringR err, Exp::Collection const& argExps) const
     {
     const std::vector<Arg const*> args = Args();
-    const int required = RequiredArgCount();
-    const int optional = OptionalArgCount();
+    const int requiredArgCount = RequiredArgCount();
+    const int optionalArgCount = OptionalArgCount();
     const bool varying = HasVariadicArg();
 
     if (args.empty() && !argExps.empty())
         {
-        err = "Function take no argument";
+        err = "Function take no argument.";
         return ERROR;
         }
 
-    if (required > argExps.size())
+    if (requiredArgCount > argExps.size())
         {
-        err = "Not enough arguments supplied";
+        err = "Not enough arguments supplied.";
         return ERROR;
         }
 
     if (!varying)
         {
-        if (argExps.size() > optional + required)
+        if (argExps.size() > optionalArgCount + requiredArgCount)
             {
-            err = "Too many arguments";
+            err = "Too many arguments.";
             return ERROR;
             }
 
@@ -1666,20 +1638,9 @@ BentleyStatus FunctionSignature::Verify(Utf8StringR err, Exp::Collection const& 
         Arg const* arg = args[i];
         ValueExp const* test = argExps[j]->GetAsCP<ValueExp>();
         ECSqlTypeInfo const& testType = test->GetTypeInfo();
-        const bool primtive =
-            testType.IsNull() ||
-            testType.IsBoolean() ||
-            testType.IsString() ||
-            testType.IsDateTime() ||
-            testType.IsBinary() ||
-            testType.IsGeometry() ||
-            testType.IsNumeric() ||
-            testType.IsExactNumeric() ||
-            testType.IsApproximateNumeric();
-
-        if (!primtive)
+        if (!testType.IsNull() && !testType.IsPrimitive())
             {
-            err = "Expecting primitive argument to funtion";
+            err = "Expecting primitive argument to function.";
             return ERROR;
             }
 
@@ -1690,37 +1651,37 @@ BentleyStatus FunctionSignature::Verify(Utf8StringR err, Exp::Collection const& 
             }
 
         if (arg->Type() == ValueType::String)
-            if (!test->GetTypeInfo().IsString())
+            if (!testType.IsString())
                 {
-                err.Sprintf("Argument '%s' Expecting primitive argument to funtion", arg->Name().c_str());
+                err.Sprintf("Argument '%s' Expecting primitive argument to function.", arg->Name().c_str());
                 return ERROR;
                 }
 
         if (arg->Type() == ValueType::Blob)
             if (!testType.IsBinary() || !testType.IsGeometry())
                 {
-                err.Sprintf("Argument '%s' Expecting binary argument to funtion", arg->Name().c_str());
+                err.Sprintf("Argument '%s' Expecting binary argument to function.", arg->Name().c_str());
                 return ERROR;
                 }
 
         if (arg->Type() == ValueType::Integer)
             if (!testType.IsExactNumeric())
                 {
-                err.Sprintf("Argument '%s' Expecting integer argument to funtion", arg->Name().c_str());
+                err.Sprintf("Argument '%s' Expecting integer argument to function.", arg->Name().c_str());
                 return ERROR;
                 }
 
         if (arg->Type() == ValueType::Float)
             if (!testType.IsApproximateNumeric())
                 {
-                err.Sprintf("Argument '%s' Expecting float argument to funtion", arg->Name().c_str());
+                err.Sprintf("Argument '%s' Expecting float argument to function.", arg->Name().c_str());
                 return ERROR;
                 }
 
         if (arg->Type() == ValueType::Numeric)
             if (!testType.IsNumeric())
                 {
-                err.Sprintf("Argument '%s' Expecting numeric argument to funtion", arg->Name().c_str());
+                err.Sprintf("Argument '%s' Expecting numeric argument to function.", arg->Name().c_str());
                 return ERROR;
                 }
 

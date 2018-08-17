@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/NavigationPropertyECSqlField.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,8 +15,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct NavigationPropertyECSqlField final : public ECSqlField, IECSqlValueIterable
     {
-    friend struct ECSqlFieldFactory;
-
     private:
         struct IteratorState final : IECSqlValueIterable::IIteratorState
             {
@@ -46,8 +44,6 @@ struct NavigationPropertyECSqlField final : public ECSqlField, IECSqlValueIterab
         std::unique_ptr<ECSqlField> m_idField;
         std::unique_ptr<ECSqlField> m_relClassIdField;
 
-        NavigationPropertyECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt, colInfo, false, false) {}
-
         //!For a Navigation Property the main information is the Id. So we consider a nav prop value NULL if
         //!the id is NULL (regardless of what the value of the RelECClassId is)
         bool _IsNull() const override { BeAssert(m_idField != nullptr); return m_idField->IsNull(); }
@@ -75,6 +71,8 @@ struct NavigationPropertyECSqlField final : public ECSqlField, IECSqlValueIterab
         ECSqlStatus _OnAfterReset() override;
         ECSqlStatus _OnAfterStep() override;
 
+    public:
+        NavigationPropertyECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt, colInfo, false, false) {}
         void SetMembers(std::unique_ptr<ECSqlField> idField, std::unique_ptr<ECSqlField> relClassIdField);
     };
 

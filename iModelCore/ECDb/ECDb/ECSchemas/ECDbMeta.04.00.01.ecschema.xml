@@ -467,6 +467,8 @@
             <Class class="ECClassDef"/>
         </Target>
     </ECRelationshipClass>
+    <!-- ECCustomAttributeContainerType can be OR'ed together. That cannot be expressed in the ECEnumerations
+         directly though. -->
     <ECEnumeration typeName="ECCustomAttributeContainerType" backingTypeName="int" isStrict="true">
         <ECEnumerator name="Schema" value="1" displayLabel="Schema" />
         <ECEnumerator name="EntityClass" value="2" displayLabel="EntityClass"/>

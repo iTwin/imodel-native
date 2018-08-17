@@ -180,6 +180,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @return ECSqlStatus::Success or error codes
         ECSqlStatus BindInt(int parameterIndex, int value) { return GetBinder(parameterIndex).BindInt(value); }
 
+        //! Binds an @ref BentleyApi::ECN::ECEnumeration "ECEnumeration" value to the parameter
+        //! @param[in] parameterIndex Parameter index
+        //! @param[in] value Value to bind
+        //! @return ECSqlStatus::Success or error codes
+        ECSqlStatus BindEnum(int parameterIndex, ECN::ECEnumeratorCR value) { return GetBinder(parameterIndex).BindEnum(value); }
+
         //! Binds a 64-bit integer value to the parameter
         //! @param[in] parameterIndex Parameter index
         //! @param[in] value Value to bind
@@ -364,6 +370,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //!   those types can implicitly be converted into each other.
         //! - @p columnIndex is out of bounds
         int GetValueInt(int columnIndex) const { return GetValue(columnIndex).GetInt(); }
+
+        //! Gets the value of the specific column as @ref BentleyApi::ECN::ECEnumerator "ECEnumerator".
+        //! @note as ECEnumerations cannot be OR'ed, so if the value does not match any of the ECEnumerators defined
+        //! in the underlying ECEnumeration, nullptr will be returned.
+        //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
+        //! @return ECEnumerator or nullptr, if the underlying value does not represent a defined ECEnumerator of the ECEnumeration. 
+        //! (OR'ed ECEnumerators are not supported)
+        ECN::ECEnumeratorCP GetValueEnum(int columnIndex) const { return GetValue(columnIndex).GetEnum(); }
 
         //! Gets the value of the specific column as an Int64 value.
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)

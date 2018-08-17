@@ -631,7 +631,17 @@ ECSqlStatus ECSqlExpPreparer::PrepareEnumValueExp(NativeSqlBuilder::List& native
     if (exp.HasParentheses())
         nativeSqlBuilder.AppendParenLeft();
 
-    nativeSqlBuilder.Append(exp.GetSqlValue());
+    ECEnumeratorCR enumerator = exp.GetEnumerator();
+    if (enumerator.IsInteger())
+        nativeSqlBuilder.AppendFormatted("%" PRId32, enumerator.GetInteger());
+    else if (enumerator.IsString())
+        nativeSqlBuilder.AppendQuoted(enumerator.GetString().c_str());
+    else
+        {
+        ctx.Issues().ReportV("Unsupported ECEnumeration %s. Only integer and string enumerations are supported.", enumerator.GetEnumeration().GetFullName().c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
     if (exp.HasParentheses())
         nativeSqlBuilder.AppendParenRight();
 
