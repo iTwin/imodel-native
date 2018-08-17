@@ -13,23 +13,20 @@
 USING_NAMESPACE_TILETREE
 
 // Obsolete versions of table storing tile data
-#define TABLE_NAME_TileTree1 "TileTree"
-#define TABLE_NAME_TileTree2 "TileTree2"
+#define TABLE_NAME_TileTree3 "TileTree3"
 
-// 3rd version of this table: Moved 'Created' to a separate table to avoid sqlite potentially having to copy the
-// big data blob when updating only the create time
-#define TABLE_NAME_TileTree "TileTree3"
-
-// Obsolete first version of this table: No primary key - expect rowid to match corresponding row in TileTree3.
-// That failed because the tables could be updated in multiple threads simultaneously.
-#define TABLE_NAME_TileTreeCreateTime1 "TileTreeCreateTime"
+// 4th version of this table: modified for iModelJs (imodel02 branch):
+// Element tiles are now the only types of tiles produced and cached by the backend.
+//  - Remove ContentType and Expires columns
+//  - Add Metadata column, containing data formerly stored in the binary stream (geometry flags like 'is curved', zoom factor, etc)
+#define TABLE_NAME_TileTree "TileTree4"
 
 // Second version: Same primary key as tile data table.
 #define TABLE_NAME_TileTreeCreateTime "TileTreeCreateTime2"
 
-#define COLUMN_TileTree_FileName TABLE_NAME_TileTree ".FileName"
-#define COLUMN_TileTreeCreateTime_FileName TABLE_NAME_TileTreeCreateTime ".FileName"
-#define JOIN_TileTreeTables TABLE_NAME_TileTree " JOIN " TABLE_NAME_TileTreeCreateTime " ON " COLUMN_TileTree_FileName "=" COLUMN_TileTreeCreateTime_FileName
+#define COLUMN_TileTree_TileId TABLE_NAME_TileTree ".TileId"
+#define COLUMN_TileTreeCreateTime_TileId TABLE_NAME_TileTreeCreateTime ".TileId"
+#define JOIN_TileTreeTables TABLE_NAME_TileTree " JOIN " TABLE_NAME_TileTreeCreateTime " ON " COLUMN_TileTree_TileId "=" COLUMN_TileTreeCreateTime_TileId
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -118,7 +115,7 @@ BentleyStatus TileLoader::_ReadFromDb()
 BentleyStatus TileLoader::DropFromDb(RealityData::CacheR cache)
     {
     CachedStatementPtr stmt;
-    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree " WHERE FileName=?");
+    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree " WHERE TileId=?");
     stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
     if (BE_SQLITE_DONE != stmt->Step())
         {
@@ -126,7 +123,7 @@ BentleyStatus TileLoader::DropFromDb(RealityData::CacheR cache)
         return ERROR;
         }
 
-    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime " WHERE FileName=?");
+    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime " WHERE TileId=?");
     stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
     if (BE_SQLITE_DONE != stmt->Step())
         {
@@ -151,10 +148,10 @@ BentleyStatus TileLoader::DoReadFromDb()
         {
         RealityData::Cache::AccessLock lock(*cache); // block writes to cache Db while we're reading
 
-        enum Column : int {Data,DataSize,ContentType,Expires,Created,Rowid};
+        enum Column : int {Data,DataSize,Metadata,Created,Rowid};
         CachedStatementPtr stmt;
-        constexpr Utf8CP selectSql = "SELECT Data,DataSize,ContentType,Expires,Created," TABLE_NAME_TileTree ".ROWID as TileRowId"
-            " FROM " JOIN_TileTreeTables " WHERE " COLUMN_TileTree_FileName "=?";
+        constexpr Utf8CP selectSql = "SELECT Data,DataSize,Metadata,Created," TABLE_NAME_TileTree ".ROWID as TileRowId"
+            " FROM " JOIN_TileTreeTables " WHERE " COLUMN_TileTree_TileId "=?";
 
         if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, selectSql))
             {
@@ -215,15 +212,16 @@ BentleyStatus TileLoader::DoReadFromDb()
             }
 
         m_tileBytes.SetPos(0);
-        m_contentType = stmt->GetValueText(Column::ContentType);
-        m_expirationDate = stmt->GetValueInt64(Column::Expires);
+        Json::Value json;
+        Json::Reader::Parse(stmt->GetValueText(Column::Metadata), json);
+        m_tileMetadata.FromJson(json);
         
         if (!_IsCompleteData())
             return ERROR; // _GetFromSource() will be invoked to further process the cache data
 
         m_saveToCache = false;  // We just load the data from cache don't save it and update timestamp only.
 
-        if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE FileName=?"))
+        if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE TileId=?"))
             {
             stmt->BindInt64(1, _GetCreateTime());
             stmt->BindText(2, m_cacheKey, Statement::MakeCopy::No);
@@ -233,9 +231,6 @@ BentleyStatus TileLoader::DoReadFromDb()
                 }
             }
         }
-
-    // ###TODO: Why? if (m_loads != nullptr)
-    // ###TODO: Why?     m_loads = nullptr;
 
     return SUCCESS;
     }
@@ -254,11 +249,10 @@ ByteStream Root::GetTileDataFromCache(Utf8StringCR cacheKey) const
         {
         RealityData::Cache::AccessLock lock(*cache);
 
-        enum Column : int {Data,DataSize,ContentType,Expires,Created,Rowid};
+        enum Column : int {Data,DataSize,Rowid};
 
         CachedStatementPtr stmt;
-        constexpr Utf8CP selectSql = "SELECT Data,DataSize,ContentType,Expires,Created," TABLE_NAME_TileTree ".ROWID as TileRowId"
-            " FROM " JOIN_TileTreeTables " WHERE " COLUMN_TileTree_FileName "=?";
+        constexpr Utf8CP selectSql = "SELECT Data,DataSize," TABLE_NAME_TileTree ".ROWID as TileRowId FROM " TABLE_NAME_TileTree " WHERE TileId=?";
 
         if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, selectSql))
             {
@@ -328,7 +322,7 @@ BentleyStatus TileLoader::DoSaveToDb()
 
     // "INSERT OR REPLACE" so we can update old data that we failed to load.
     CachedStatementPtr stmt;
-    auto rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTree " (Filename,Data,DataSize,ContentType,Expires) VALUES (?,?,?,?,?)");
+    auto rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTree " (TileId,Data,DataSize,Metadata) VALUES (?,?,?,?)");
 
     BeAssert(rc == BE_SQLITE_OK);
     BeAssert(stmt.IsValid());
@@ -351,8 +345,8 @@ BentleyStatus TileLoader::DoSaveToDb()
         stmt->BindInt64(3, (int64_t) zipSize);
         }
 
-    stmt->BindText(4, m_contentType, Statement::MakeCopy::No);
-    stmt->BindInt64(5, m_expirationDate);
+    Utf8String metadata = Json::FastWriter::ToString(m_tileMetadata.ToJson());
+    stmt->BindText(4, metadata, Statement::MakeCopy::No);
 
     rc = stmt->Step();
     if (BE_SQLITE_DONE != rc)
@@ -362,7 +356,7 @@ BentleyStatus TileLoader::DoSaveToDb()
         }
 
     // Compress and save the data
-    rc = cache->GetDb().GetCachedStatement(stmt, "SELECT ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?");
+    rc = cache->GetDb().GetCachedStatement(stmt, "SELECT ROWID FROM " TABLE_NAME_TileTree " WHERE TileId=?");
     BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
 
     stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
@@ -385,7 +379,7 @@ BentleyStatus TileLoader::DoSaveToDb()
         }
 
     // Write the tile creation time into separate table so that when we update it on next use of this tile, sqlite doesn't have to copy the potentially-huge data column
-    rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTreeCreateTime " (FileName,Created) VALUES (?,?)");
+    rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTreeCreateTime " (TileId,Created) VALUES (?,?)");
     BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
 
     stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
@@ -405,12 +399,10 @@ BentleyStatus TileLoader::DoSaveToDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileCache::_Prepare() const 
     {
-    // The 'create time' table was the most recently modified - 'tile data' table was not modified at that time.
-    // If new 'create time' table exists, this db is up to date.
-    if (m_db.TableExists(TABLE_NAME_TileTreeCreateTime))
+    // When current tables were TileTreeCreateTime2 and TileTree3, we changed the file extension from .TileCache to .Tiles
+    // So we will never encounter an existing .Tiles file containing previous versions of those tables.
+    if (m_db.TableExists(TABLE_NAME_TileTree))
         {
-        BeAssert(m_db.TableExists(TABLE_NAME_TileTree));
-
         if (!_ValidateData())
             {
             // The db schema is current, but the binary data format is not. Discard it.
@@ -432,17 +424,14 @@ BentleyStatus TileCache::_Prepare() const
         }
         
     // Drop leftover tables from previous versions
-    m_db.DropTableIfExists(TABLE_NAME_TileTree1);
-    m_db.DropTableIfExists(TABLE_NAME_TileTree2);
-    m_db.DropTableIfExists(TABLE_NAME_TileTreeCreateTime1);
-
-    // Drop leftover 'tile data' table - otherwise the existing rows will lack corresponding 'create time' rows
-    m_db.DropTableIfExists(TABLE_NAME_TileTree);
+    m_db.DropTableIfExists(TABLE_NAME_TileTree3);
 
     // Create the tables
-    return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTreeCreateTime, "Filename CHAR PRIMARY KEY,Created BIGINT")
-        && BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree,
-        "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,ContentType TEXT,Expires BIGINT") ? SUCCESS : ERROR;
+    if (!m_db.TableExists(TABLE_NAME_TileTreeCreateTime) && BE_SQLITE_OK != m_db.CreateTable(TABLE_NAME_TileTreeCreateTime, "TileId CHAR PRIMARY KEY,Created BIGINT"))
+        return ERROR;
+
+    return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree,
+        "TileId CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,Metadata TEXT") ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -491,8 +480,8 @@ BentleyStatus TileCache::_Cleanup() const
 
     // ###TODO: We should be using foreign key + cascading delete here...
     CachedStatementPtr deleteDataStatement;
-    constexpr Utf8CP deleteDataSql = "DELETE FROM " TABLE_NAME_TileTree " WHERE FileName IN"
-        " (SELECT FileName FROM " TABLE_NAME_TileTreeCreateTime " WHERE Created <= ?)";
+    constexpr Utf8CP deleteDataSql = "DELETE FROM " TABLE_NAME_TileTree " WHERE TileId IN"
+        " (SELECT TileId FROM " TABLE_NAME_TileTreeCreateTime " WHERE Created <= ?)";
     m_db.GetCachedStatement(deleteDataStatement, deleteDataSql);
     BeAssert(deleteDataStatement.IsValid());
     deleteDataStatement->BindInt64(1, creationDate);
@@ -529,25 +518,6 @@ void Root::ClearAllTiles()
 
     m_rootTile = nullptr;
     m_cache = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName DgnPlatformLib::Host::TileAdmin::_GetRealityDataCacheFileName(Utf8CP realityCacheName) const
-    {
-    // TFS#784733: Navigator wants these in a subdirectory to simplify management of various other types of caches
-    // NB: Only reality data caches go in that subdirectory - element tiles go next to the iModel
-    BeFileName filename = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-
-    filename.AppendToPath(L"Tiles");
-    filename.AppendSeparator();
-    BeFileName::CreateNewDirectory(filename);
-
-    filename.AppendToPath(WString(realityCacheName, true).c_str());
-    filename.AppendExtension(L"TileCache");
-
-    return filename;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1148,4 +1118,26 @@ GraphicPtr Tile::CreateTileGraphic(Render::GraphicR graphic, DgnModelId modelId)
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::SystemR Tile::GetRenderSystem() const { return m_root.GetRenderSystem(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TileMetadata::ToJson() const
+    {
+    Json::Value json;
+    json["zoomFactor"] = m_zoomFactor;
+    json["flags"] = static_cast<uint32_t>(m_flags);
+    m_contentRange.ToJson(json["contentRange"]);
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileMetadata::FromJson(Json::Value const& json)
+    {
+    m_zoomFactor = json["zoomFactor"].asDouble();
+    m_flags = static_cast<TileFlags>(json["flags"].asUInt());
+    m_contentRange.FromJson(json["contentRange"]);
+    }
 

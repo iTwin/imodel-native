@@ -334,6 +334,33 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/18
+//=======================================================================================
+enum class TileFlags : uint32_t
+{
+    None            = 0,
+    ContainsCurves  = 0x0001,
+    Incomplete      = 0x0001 << 1,
+    IsLeaf          = 0x0001 << 2,
+    IsEmpty         = 0x0001 << 3,
+};
+
+ENUM_IS_FLAGS(TileFlags);
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/18
+//=======================================================================================
+struct TileMetadata
+{
+    TileFlags           m_flags = TileFlags::None;
+    ElementAlignedBox3d m_contentRange;
+    double              m_zoomFactor = 0.0;
+
+    Json::Value ToJson() const;
+    void FromJson(Json::Value const& json);
+};
+
+//=======================================================================================
 //! This object is created to read and load a single tile asynchronously. 
 //! If caching is enabled, it will first attempt to read the data from the cache. If it's
 //! not available it will call _GetFromSource(). Once the data is available, _LoadTile is called. 
@@ -354,9 +381,7 @@ protected:
     // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
     StreamBuffer m_tileBytes;   // when available, bytes are saved here
-    Utf8String m_contentType;   // MIME type of the data. Can be empty.
-    uint64_t m_maxValidDuration; // default validity time of tile. 0 if not enforced by the Tile subclass.
-    uint64_t m_expirationDate;  // Expiration date. Will be 0 when not available.
+    TileMetadata m_tileMetadata;
     bool m_saveToCache = false;
 
     //! Constructor for TileLoader.

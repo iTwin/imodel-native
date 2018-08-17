@@ -353,7 +353,6 @@ void WriteFeatureTable(FeatureTableCR featureTable)
     WriteLength(startPosition, startPosition);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -392,7 +391,6 @@ virtual BentleyStatus AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& 
     return ERROR;
     }
  
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -406,7 +404,6 @@ void AddMeshes(Render::Primitives::GeometryCollectionCR geometry)
 
     AddPrimitivesJson(primitives);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -443,10 +440,7 @@ BentleyStatus WriteTile(ElementAlignedBox3dCR contentRange, Render::Primitives::
     }
 };  // DgnCacheTileWriter
 
-
-
 END_TILETREE_IO_NAMESPACE
-   
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017

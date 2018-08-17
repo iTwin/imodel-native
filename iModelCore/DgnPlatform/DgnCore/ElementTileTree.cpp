@@ -1131,6 +1131,7 @@ BentleyStatus Loader::DoGetFromSource()
     if (geometry.IsEmpty() && geometry.IsComplete())
         {
         m_tileBytes.clear();
+        m_tileMetadata.m_flags = (TileTree::TileFlags::IsLeaf | TileTree::TileFlags::IsEmpty);
         }
     else
         {
@@ -1141,6 +1142,18 @@ BentleyStatus Loader::DoGetFromSource()
         bool isLeaf = tile.IsLeaf() || tile.HasZoomFactor();
         if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), isLeaf))
             return ERROR;
+
+        m_tileMetadata.m_zoomFactor = tile.HasZoomFactor() ? tile.GetZoomFactor() : 0.0;
+        m_tileMetadata.m_contentRange = tile._GetContentRange();
+
+        if (isLeaf)
+            m_tileMetadata.m_flags |= TileTree::TileFlags::IsLeaf;
+
+        if (geometry.ContainsCurves())
+            m_tileMetadata.m_flags |= TileTree::TileFlags::ContainsCurves;
+
+        if (!geometry.IsComplete())
+            m_tileMetadata.m_flags |= TileTree::TileFlags::Incomplete;
 
 #if defined(DEBUG_TILE_CACHE_GEOMETRY)
         ElementAlignedBox3d readRange;
@@ -2910,21 +2923,8 @@ RealityData::CachePtr TileCache::Create(DgnDbCR db)
 Utf8CP TileCache::GetCurrentVersion()
     {
     // Increment this when the binary tile format changes...
-    // Version history:
-    //  1: Added version to cache db property table; fixed various pre-existing serialization bugs
-    //  2: Removed rangeCenter from polylines
-    //  3: Fixed ordering of DisplayParams::operator<() to use stable IDs of materials and textures rather than addresses,
-    //     to ensure same order when deserializing from cache data back into MeshBuilderMap.
-    //  4: Prevent unused vertices from ending up in meshes due to degenerate triangles (detect degenerates *before* adding vertices)
-    //  5: Ensure curved, stroked curve vectors are treated as curved
-    //  6: Treat transparency < 15 as opaque (affects mesh batching)
-    //  7: Fix out-of-control subdivision in specific cases (TFS#884193, TFS#886685)
-    //  8: Fix issue in which MeshGenerator::AddPolyface() decimates a polyface in a tile which later becomes a leaf tile (TFS#889847)
-    //  9: We were failing to align most chunks of the binary data. In JavaScript this produces exceptions when trying to read unaligned data.
-    //  10: Change tile cache key such that if tile has no 'zoom factor', it is written as 0, not 1.
-    //  11: Added width + height to textures.
-    //  12: Fixed display priority range in 2d models
-    return "12";
+    // We changed the cache db schema shortly after creating imodel02 branch - so version history restarts at same time.
+    return "0";
     }
 
 /*---------------------------------------------------------------------------------**//**
