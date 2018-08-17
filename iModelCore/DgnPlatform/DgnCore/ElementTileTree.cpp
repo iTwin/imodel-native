@@ -764,7 +764,7 @@ END_UNNAMED_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads)
-    : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile)), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime),
+    : T_Super("", tile, loads, tile.GetRoot().ConstructTileResource(tile)), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime),
     m_doTileRepair(T_HOST._IsFeatureEnabled("Platform.TileRepair"))
     {
     //
@@ -866,8 +866,6 @@ BentleyStatus Loader::_LoadTile()
     bool haveGeometry = !geometry.Meshes().empty();
     return tile.GetElementRoot().UnderMutex([&]()
         {
-        tile.SetHasGraphics(haveGeometry);
-
         // Possible that one or more parent tiles will contain solely elements too small to produce geometry, in which case
         // we must create their children in order to get graphics...mark undisplayable.
         tile.SetDisplayable(haveGeometry);
@@ -893,7 +891,6 @@ BentleyStatus Loader::DoGetFromSource()
     if (geometry.IsEmpty() && geometry.IsComplete())
         {
         m_tileBytes.clear();
-        m_tileMetadata.m_flags = (TileTree::TileFlags::IsLeaf | TileTree::TileFlags::IsUndisplayable);
         }
     else
         {
@@ -902,23 +899,16 @@ BentleyStatus Loader::DoGetFromSource()
         // (it can be refined to higher zoom level - those tiles are not cached unless admin specifically requests so).
         BeAssert(!tile.HasZoomFactor() || 1.0 == tile.GetZoomFactor() || T_HOST.GetTileAdmin()._WantCachedHiResTiles(root.GetDgnDb()));
         bool isLeaf = tile.IsLeaf() || tile.HasZoomFactor();
-        if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), isLeaf))
+        if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile.GetContentRange(), geometry, *root.GetModel(), isLeaf))
             return ERROR;
 
-        m_tileMetadata.m_zoomFactor = tile.HasZoomFactor() ? tile.GetZoomFactor() : 0.0;
-        m_tileMetadata.m_contentRange = tile._GetContentRange();
-
-        if (isLeaf)
-            m_tileMetadata.m_flags |= TileTree::TileFlags::IsLeaf;
-
-        if (geometry.ContainsCurves())
-            m_tileMetadata.m_flags |= TileTree::TileFlags::ContainsCurves;
-
-        if (!geometry.IsComplete())
-            m_tileMetadata.m_flags |= TileTree::TileFlags::Incomplete;
-
+        m_tileMetadata.SetContentRange(tile.GetContentRange());
+        m_tileMetadata.SetIsDisplayable(true);
+        m_tileMetadata.SetIsLeaf(isLeaf);
+        m_tileMetadata.SetContainsCurves(geometry.ContainsCurves());
+        m_tileMetadata.SetIsIncomplete(!geometry.IsComplete());
         if (tile.HasZoomFactor())
-            m_tileMetadata.m_flags |= TileTree::TileFlags::HasZoomFactor;
+            m_tileMetadata.SetZoomFactor(tile.GetZoomFactor());
         }
     
     m_saveToCache = true;
@@ -995,7 +985,7 @@ TileR Loader::GetElementTile() { return static_cast<TileR>(*m_tile); }
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model, transform, system),
-    m_name(model.GetName()), m_cacheGeometry(false)
+    m_cacheGeometry(false)
     {
     m_cache = model.GetDgnDb().ElementTileCache();
     }
@@ -1360,7 +1350,7 @@ Utf8String Tile::_GetTileCacheKey() const
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::Tile(Root& octRoot, TileTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable)
-    : T_Super(octRoot, id, parent, false), m_displayable(displayable)
+    : T_Super(octRoot, id, parent, false)
     {
     if (nullptr != parent)
         m_range = ElementAlignedBox3d(parent->ComputeChildRange(*this, octRoot.Is2d()));
@@ -1368,7 +1358,6 @@ Tile::Tile(Root& octRoot, TileTree::TileId id, Tile const* parent, DRange3dCP ra
         m_range.Extend(*range);
 
     InitTolerance(s_minToleranceRatio);
-    m_debugId = (octRoot.GetModelId().GetValue() << 32) + (id.m_level << 24) + (id.m_i << 16) + (id.m_j << 8) + id.m_k;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1376,7 +1365,7 @@ Tile::Tile(Root& octRoot, TileTree::TileId id, Tile const* parent, DRange3dCP ra
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::Tile(Root& root, TileTree::TileId id, DRange3dCR range, double minToleranceRatio)
-    : T_Super(root, id, nullptr, true), m_displayable(true)
+    : T_Super(root, id, nullptr, true)
     {
     m_range.Extend(range);
     InitTolerance(minToleranceRatio, true);
@@ -1401,8 +1390,8 @@ Tile::Tile(Tile const& parent) : T_Super(const_cast<Root&>(parent.GetElementRoot
 void Tile::InitTolerance(double minToleranceRatio, bool isLeaf)
     {
     double diagDist = GetElementRoot().Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
-    m_tolerance = diagDist / (minToleranceRatio * m_zoomFactor);
-    m_isLeaf = isLeaf;
+    m_tolerance = diagDist / (minToleranceRatio * GetZoomFactor());
+    SetIsLeaf(isLeaf);
     BeAssert(0.0 != m_tolerance);
     }
 
@@ -1413,17 +1402,12 @@ void Tile::_Invalidate()
     {
     GetElementRoot().UnderMutex([&]()
         {
-        m_hasGraphics = false;
         m_generator.reset();
 
-        m_contentRange = ElementAlignedBox3d();
+        if (HasZoomFactor())
+            UnloadChildren(BeTimePoint::Now());
 
-        if (m_hasZoomFactor)
-            _UnloadChildren(BeTimePoint::Now());
-
-        m_isLeaf = false;
-        m_hasZoomFactor = false;
-        m_zoomFactor = 1.0;
+        m_metadata.Reset();
 
         InitTolerance(s_minToleranceRatio);
 
@@ -1432,7 +1416,7 @@ void Tile::_Invalidate()
 
         // Root tile...
         GeometricModelPtr model = GetElementRoot().GetModel();
-        m_displayable = isElementCountLessThan(s_minElementsPerTile, *model->GetRangeIndex());
+        SetDisplayable(isElementCountLessThan(s_minElementsPerTile, *model->GetRangeIndex()));
         });
     }
 
@@ -1606,14 +1590,14 @@ void Tile::_ValidateChildren() const
                 }
             default:
                 // We previously sub-divided, now don't want to.
-                _UnloadChildren(BeTimePoint::Now());
+                UnloadChildren(BeTimePoint::Now());
                 break;
             }
         }
     else if (IsLeaf() || 1 == m_children.size())
         {
         // Child had zoom factor, now we no longer have it - may want to subdivide, or may have become a leaf
-        _UnloadChildren(BeTimePoint::Now());
+        UnloadChildren(BeTimePoint::Now());
         }
     }
 
@@ -1623,7 +1607,7 @@ void Tile::_ValidateChildren() const
 double Tile::_GetMaximumSize() const
     {
     // returning 0.0 signifies undisplayable tile...
-    return m_displayable ? s_tileScreenSize * m_zoomFactor : 0.0;
+    return IsDisplayable() ? s_tileScreenSize * GetZoomFactor() : 0.0;
     }
 
 /*=================================================================================**//**
@@ -2658,7 +2642,7 @@ bool Tile::_ToJson(Json::Value& json) const
 
     JsonUtils::DRange3dToJson(json["range"], GetRange());
     if (HasContentRange())
-        JsonUtils::DRange3dToJson(json["contentRange"], _GetContentRange());
+        JsonUtils::DRange3dToJson(json["contentRange"], GetContentRange());
 
     if (HasZoomFactor())
         json["zoomFactor"] = GetZoomFactor();
@@ -2691,7 +2675,7 @@ bool Tile::_ToJson(Json::Value& json) const
 Utf8String Tile::GetIdString() const
     {                                                                                                                                                                       
     // NB: Zoom factor is stored as a double for arithmetic purposes, but it's always an unsigned integral power of two.
-    return Utf8PrintfString("%u/%u/%u/%u:%u", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, static_cast<uint32_t>(m_zoomFactor));
+    return Utf8PrintfString("%u/%u/%u/%u:%u", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, static_cast<uint32_t>(GetZoomFactor()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2752,7 +2736,7 @@ TilePtr Tile::FindTile(TileTree::TileId id, double zoomFactor)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilePtr Tile::FindTile(double zoomFactor)
     {
-    if (zoomFactor == m_zoomFactor)
+    if (zoomFactor == GetZoomFactor())
         return this;
 
     BeAssert(zoomFactor > 0.0 && HasZoomFactor());

@@ -29,6 +29,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoader)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileCache)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DirtyRanges)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StreamBuffer)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileMetadata)
 
 DEFINE_REF_COUNTED_PTR(Tile)
 DEFINE_REF_COUNTED_PTR(Root)
@@ -161,6 +162,58 @@ struct TileId
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/18
+//=======================================================================================
+enum class TileFlags : uint32_t
+{
+    None            = 0,
+    ContainsCurves  = 0x0001 << 0, // This tile's geometry includes curves.
+    Incomplete      = 0x0001 << 1, // This tile's range contains some geometry too small to contribute to tile's geometry.
+    IsLeaf          = 0x0001 << 2, // This tile has no children.
+    IsDisplayable = 0x0001 << 3, // This tile has geometry. It may have children with geometry.
+    HasZoomFactor   = 0x0001 << 4, // This tile does not subdivide but does refine into a single higher-resolution child tile.
+};
+
+ENUM_IS_FLAGS(TileFlags);
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/18
+//=======================================================================================
+struct TileMetadata
+{
+private:
+    TileFlags           m_flags = TileFlags::None;
+    ElementAlignedBox3d m_contentRange;
+    double              m_zoomFactor = 1.0;
+public:
+    Json::Value ToJson() const;
+    void FromJson(Json::Value const& json);
+
+    void Reset() { *this = TileMetadata(); }
+
+    TileFlags GetFlags() const { return m_flags; }
+    bool IsFlagSet(TileFlags flag) const { return flag == (m_flags & flag); }
+    void SetFlag(TileFlags flag, bool set) { m_flags = set ? (m_flags | flag) : (m_flags & ~flag); }
+
+    bool IsLeaf() const { return IsFlagSet(TileFlags::IsLeaf); }
+    void SetIsLeaf(bool isLeaf) { SetFlag(TileFlags::IsLeaf, isLeaf); }
+
+    bool IsDisplayable() const { return IsFlagSet(TileFlags::IsDisplayable); }
+    void SetIsDisplayable(bool displayable) { SetFlag(TileFlags::IsDisplayable, displayable); }
+
+    void SetContainsCurves(bool contains) { SetFlag(TileFlags::ContainsCurves, contains); }
+    void SetIsIncomplete(bool incomplete) { SetFlag(TileFlags::Incomplete, incomplete); }
+
+    bool HasZoomFactor() const { return IsFlagSet(TileFlags::HasZoomFactor); }
+    double GetZoomFactor() const { return m_zoomFactor; }
+    void SetZoomFactor(double zoomFactor) { SetFlag(TileFlags::HasZoomFactor, true); m_zoomFactor = zoomFactor; }
+    void ClearZoomFactor() { SetFlag(TileFlags::HasZoomFactor, false); m_zoomFactor = 1.0; }
+
+    ElementAlignedBox3dCR GetContentRange() const { return m_contentRange; }
+    void SetContentRange(ElementAlignedBox3dCR range) { m_contentRange = range; }
+};
+
+//=======================================================================================
 //! A Tile in a TileTree. Every Tile has 0 or 1 parent Tile and 0 or more child Tiles. 
 //! The range member is an ElementAlignedBox in the local coordinate system of the TileTree.
 //! All child Tiles must be contained within the range of their parent Tile.
@@ -180,8 +233,7 @@ protected:
     mutable BeAtomic<LoadStatus> m_loadStatus;
     mutable ChildTiles m_children;
     TileId m_id;
-    bool m_isLeaf;
-    bool m_hasGraphics = false;
+    TileMetadata m_metadata;
 
     void SetAbandoned() const;
 
@@ -193,8 +245,11 @@ protected:
     DGNPLATFORM_EXPORT virtual void _ValidateChildren() const;
     DGNPLATFORM_EXPORT DRange3d ComputeChildRange(Tile& child, bool is2d=false) const;
 public:
-    Tile(RootR root, TileId id, TileCP parent, bool isLeaf) : m_root(root), m_parent(parent), m_depth(nullptr == parent ? 0 : parent->GetDepth() + 1), m_loadStatus(LoadStatus::NotLoaded),
-        m_id(id), m_isLeaf(isLeaf) { }
+    Tile(RootR root, TileId id, TileCP parent, bool isLeaf)
+        : m_root(root), m_parent(parent), m_depth(nullptr == parent ? 0 : parent->GetDepth() + 1), m_loadStatus(LoadStatus::NotLoaded), m_id(id)
+        {
+        SetIsLeaf(isLeaf);
+        }
 
     ElementAlignedBox3d const& GetRange() const {return m_range;}
     DGNPLATFORM_EXPORT ElementAlignedBox3d ComputeRange() const;
@@ -218,25 +273,28 @@ public:
     void SetNotLoaded() {return m_loadStatus.store(LoadStatus::NotLoaded);}
     void SetNotFound() {return m_loadStatus.store(LoadStatus::NotFound);}
 
-    bool IsDisplayable() const {return _GetMaximumSize() > 0.0;}
+    TileMetadataCR GetMetadata() const { return m_metadata; }
+    void SetMetadata(TileMetadataCR metadata) { m_metadata = metadata; }
+
+    void SetZoomFactor(double zoom) { BeAssert(!IsLeaf()); m_metadata.SetZoomFactor(zoom); }
+    bool HasZoomFactor() const { return m_metadata.HasZoomFactor(); }
+    double GetZoomFactor() const { return HasZoomFactor() ? m_metadata.GetZoomFactor() : 1.0; }
+
+    bool IsDisplayable() const { return m_metadata.IsDisplayable(); }
     bool IsParentDisplayable() const {return nullptr != GetParent() && GetParent()->IsDisplayable();}
+    void SetDisplayable(bool displayable) { m_metadata.SetIsDisplayable(!displayable); }
 
     TileCP GetParent() const {return m_parent;}
     RootCR GetRoot() const {return m_root;}
     RootR GetRootR() {return m_root;}
     DGNPLATFORM_EXPORT Render::SystemR GetRenderSystem() const;
 
-    virtual void _OnChildrenUnloaded() const {}
-    DGNPLATFORM_EXPORT virtual void _UnloadChildren(BeTimePoint olderThan) const;
+    DGNPLATFORM_EXPORT void UnloadChildren(BeTimePoint olderThan) const;
 
     //! Determine whether this tile has any child tiles. Return true even if the children are not yet created.
-    virtual bool _HasChildren() const { return !m_isLeaf; }
-    bool IsLeaf() const { return m_isLeaf; }
-    void SetIsLeaf(bool isLeaf = true) { m_isLeaf = isLeaf; }
-
-    //! Returns whether this tile has graphics.
-    virtual bool _HasGraphics() const { return m_hasGraphics; }
-    void SetHasGraphics(bool hasGraphics = true) { m_hasGraphics = hasGraphics; }
+    bool HasChildren() const { return !IsLeaf(); }
+    bool IsLeaf() const { return m_metadata.IsLeaf(); }
+    void SetIsLeaf(bool isLeaf = true) { m_metadata.SetIsLeaf(isLeaf); }
 
     //! Get the array of children for this Tile.
     //! @param[in] create If false, return nullptr if this tile has children but they are not yet created. Otherwise create them now.
@@ -255,8 +313,9 @@ public:
     void Invalidate(DirtyRangesCR dirty);
 
     //! Returns a potentially more tight-fitting range enclosing the visible contents of this tile.
-    virtual ElementAlignedBox3d const& _GetContentRange() const {return m_range;}
-    bool HasContentRange() const;
+    ElementAlignedBox3d const& GetContentRange() const { return HasContentRange() ? m_metadata.GetContentRange() : m_range; }
+    bool HasContentRange() const { return !m_metadata.GetContentRange().IsNull(); }
+    void SetContentRange(ElementAlignedBox3dCR contentRange) { m_metadata.SetContentRange(contentRange); }
 
     //! When the range of the model changes, update this tile's range
     virtual void _UpdateRange(DRange3dCR prevParentRange, DRange3dCR newParentRange) { }
@@ -291,8 +350,6 @@ protected:
     //! still valid and that cannot be accomplished in the destructor of Root.
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
 
-    virtual ClipVectorCP _GetClipVector() const { return nullptr; } // clip vector used by DrawArgs when rendering
-
     virtual void _OnAddToRangeIndex(DRange3dCR range, DgnElementId id) { }
     virtual void _OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id) { }
     virtual void _OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id) { }
@@ -303,7 +360,7 @@ protected:
 
     Root(DgnDbR, DgnModelId, bool is3d, TransformCR, Dgn::Render::SystemR);
 public:
-    DGNPLATFORM_EXPORT virtual BentleyStatus _RequestTile(TileR tile, TileLoadStatePtr loads);
+    DGNPLATFORM_EXPORT BentleyStatus RequestTile(TileR tile, TileLoadStatePtr loads);
     DGNPLATFORM_EXPORT void RequestTiles(MissingNodesCR);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
@@ -328,15 +385,12 @@ public:
     Dgn::Render::SystemR GetRenderSystem() const {return m_renderSystem;}
 
     //! Get the resource name (file name or URL) of a Tile in this TileTree. By default it concatenates the tile cache key to the rootResource
-    virtual Utf8String _ConstructTileResource(TileCR tile) const {return tile._GetTileCacheKey();}
-
-    //! Get the name of this tile tree, chiefly for debugging
-    virtual Utf8CP _GetName() const = 0;
+    Utf8String ConstructTileResource(TileCR tile) const {return tile._GetTileCacheKey();}
 
     //! Ctor for Root.
     //! @param model The model from which this Root was created.
     //! @param location The transform from tile coordinates to BIM world coordinates.
-    //! @param rootResource The root resource (directory or Url) from which tiles can be loaded, or nullptr if the Url's are generated by _ConstructTileResource
+    //! @param rootResource The root resource (directory or Url) from which tiles can be loaded, or nullptr if the Url's are generated by ConstructTileResource
     //! @param system The Rendering system used to create rendering resources like materials and textures.
     DGNPLATFORM_EXPORT Root(GeometricModelCR model, TransformCR location, Dgn::Render::SystemR system);
 
@@ -353,34 +407,6 @@ public:
     virtual bool _ToJson(Json::Value&) const { return false; }
     virtual TilePtr _FindTileById(Utf8CP id) { return nullptr; }
     ByteStream GetTileDataFromCache(Utf8StringCR cacheKey) const;
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   08/18
-//=======================================================================================
-enum class TileFlags : uint32_t
-{
-    None            = 0,
-    ContainsCurves  = 0x0001 << 0, // This tile's geometry includes curves.
-    Incomplete      = 0x0001 << 1, // This tile's range contains some geometry too small to contribute to tile's geometry.
-    IsLeaf          = 0x0001 << 2, // This tile has no children.
-    IsUndisplayable = 0x0001 << 3, // This tile has no geometry. It may have children with geometry.
-    HasZoomFactor   = 0x0001 << 4, // This tile does not subdivide but does refine into a single higher-resolution child tile.
-};
-
-ENUM_IS_FLAGS(TileFlags);
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   08/18
-//=======================================================================================
-struct TileMetadata
-{
-    TileFlags           m_flags = TileFlags::None;
-    ElementAlignedBox3d m_contentRange;
-    double              m_zoomFactor = 1.0;
-
-    Json::Value ToJson() const;
-    void FromJson(Json::Value const& json);
 };
 
 //=======================================================================================

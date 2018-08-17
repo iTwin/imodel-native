@@ -161,7 +161,6 @@ protected:
 
     typedef bmap<DgnElementId, Render::Primitives::GeometryList> GeomListMap;
 
-    Utf8String                      m_name;
     mutable BeMutex                 m_mutex;
     mutable std::mutex              m_dbMutex;
     mutable GeomPartCache           m_geomParts;
@@ -170,8 +169,6 @@ protected:
     bool                            m_cacheGeometry;
 
     Root(GeometricModelR model, TransformCR transform, Render::SystemR system);
-
-    Utf8CP _GetName() const override { return m_name.c_str(); }
 
     void RemoveCachedGeometry(DRange3dCR range, DgnElementId id);
     void _OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id) override { RemoveCachedGeometry(range, id); }
@@ -213,12 +210,7 @@ struct Tile : TileTree::Tile
 
 protected:
     double                      m_tolerance;
-    mutable ElementAlignedBox3d m_contentRange;
-    double                      m_zoomFactor = 1.0;
-    uint64_t                    m_debugId;
     TileGeneratorUPtr           m_generator;
-    bool                        m_hasZoomFactor = false;
-    bool                        m_displayable = true;
 
     Tile(Root& root, TileTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable);
     explicit Tile(Tile const& parent);
@@ -248,24 +240,16 @@ public:
     double GetTolerance() const { return m_tolerance; }
     DRange3d GetDgnRange() const;
     DRange3d GetTileRange() const { return GetRange(); }
-    ElementAlignedBox3d const& _GetContentRange() const override { return m_contentRange.IsNull() ? GetRange() : m_contentRange; }
 
     RootCR GetElementRoot() const { return static_cast<RootCR>(GetRoot()); }
     RootR GetElementRoot() { return static_cast<RootR>(GetRootR()); }
 
     Render::Primitives::GeometryCollection GenerateGeometry(LoadContextCR context);
 
-    void SetZoomFactor(double zoom) { BeAssert(!IsLeaf()); m_zoomFactor = zoom; m_hasZoomFactor = true; }
-    bool HasZoomFactor() const { return m_hasZoomFactor; }
-    double GetZoomFactor() const { BeAssert(HasZoomFactor()); return HasZoomFactor() ? m_zoomFactor : 1.0; }
-    void SetContentRange (ElementAlignedBox3dCR contentRange) { m_contentRange = contentRange; }
-    Utf8String GetDebugId() const { return _GetTileCacheKey(); }
-
     void UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink);
 
     virtual bool IsCacheable() const;
     void SetGenerator(TileGeneratorUPtr&&);
-    void SetDisplayable(bool displayable) { m_displayable = displayable; }
 
     bool _ToJson(Json::Value&) const override;
     Utf8String GetIdString() const;

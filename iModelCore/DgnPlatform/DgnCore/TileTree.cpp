@@ -534,7 +534,7 @@ BeFileName DgnPlatformLib::Host::TileAdmin::_GetElementCacheFileName(DgnDbCR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Root::_RequestTile(TileR tile, TileLoadStatePtr loads)
+BentleyStatus Root::RequestTile(TileR tile, TileLoadStatePtr loads)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
@@ -624,7 +624,7 @@ void Tile::SetAbandoned() const
 * it arrives. Set its "abandoned" flag to tell the download thread it can skip it (it will get deleted when the download thread releases its reference to it.)
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::_UnloadChildren(BeTimePoint olderThan) const
+void Tile::UnloadChildren(BeTimePoint olderThan) const
     {
     if (m_children.empty())
         return;
@@ -634,7 +634,7 @@ void Tile::_UnloadChildren(BeTimePoint olderThan) const
         {
         // yes, this node has been used recently. We're going to keep it, but potentially unload its grandchildren
         for (auto const& child : m_children)
-            child->_UnloadChildren(olderThan);
+            child->UnloadChildren(olderThan);
 
         return;
         }
@@ -642,7 +642,6 @@ void Tile::_UnloadChildren(BeTimePoint olderThan) const
     for (auto const& child : m_children)
         child->SetAbandoned();
 
-    _OnChildrenUnloaded();
     m_children.clear();
     }
 
@@ -662,22 +661,13 @@ void Tile::ExtendRange(DRange3dCR childRange) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Tile::HasContentRange() const
-    {
-    auto const& contentRange = _GetContentRange();
-    return &contentRange != &m_range && !contentRange.IsEqual(m_range);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Tile::IsEmpty() const
     {
     // NB: A parent tile may be empty because the elements contained within it are all too small to contribute geometry -
     // children may not be empty.
-    return IsReady() && !_HasGraphics() && !_HasChildren();
+    return IsReady() && !IsDisplayable() && !HasChildren();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -734,7 +724,7 @@ void Root::RequestTiles(MissingNodesCR missingNodes)
         if (missing->IsNotLoaded())
             {
             TileLoadStatePtr loads = std::make_shared<TileLoadState>(*missing);
-            _RequestTile(const_cast<TileR>(*missing), loads);
+            RequestTile(const_cast<TileR>(*missing), loads);
             }
         }
     }
@@ -744,7 +734,7 @@ void Root::RequestTiles(MissingNodesCR missingNodes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::ChildTiles const* Tile::_GetChildren(bool load) const
     {
-    if (m_isLeaf)
+    if (IsLeaf())
         return nullptr;
 
     if (load && m_children.empty())
@@ -877,8 +867,8 @@ void Tile::_ValidateChildren() const
     {
     // This node may have initially had children and subsequently determined that it should be a leaf instead
     // - unload its now-useless children unconditionally
-    if (m_isLeaf)
-        _UnloadChildren(BeTimePoint::Now());
+    if (IsLeaf())
+       UnloadChildren(BeTimePoint::Now());
     }
 
 /*---------------------------------------------------------------------------------**//**
