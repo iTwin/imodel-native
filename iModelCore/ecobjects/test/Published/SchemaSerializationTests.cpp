@@ -551,6 +551,52 @@ TEST_F(SchemaXmlSerializationTest, ExpectCustomAttributesSerializedInOrder)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                           Caleb.Shafer                            08/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaXmlSerializationTest, ExpectCustomAttributeVersionAsTwoPartWhenEC2)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "testSchema", "ts", 5, 1, 0);
+
+    ECCustomAttributeClassP caClass;
+    schema->CreateCustomAttributeClass(caClass, "TestCA");
+
+    StandaloneECEnablerPtr enabler = caClass->GetDefaultStandaloneEnabler();
+
+    // Schema level
+    auto schemaCAInstance = enabler->CreateInstance();
+    EC_EXPECT_SUCCESS(schema->SetCustomAttribute(*schemaCAInstance));
+
+    // Class level
+    auto relCAInstance = enabler->CreateInstance();
+    ECRelationshipClassP relClass;
+    schema->CreateRelationshipClass(relClass, "TestClass");
+
+    EC_EXPECT_SUCCESS(relClass->SetCustomAttribute(*relCAInstance));
+
+    // Property level
+    auto propCAInstance = enabler->CreateInstance();
+    PrimitiveECPropertyP prop;
+    relClass->CreatePrimitiveProperty(prop, "TestProp");
+
+    EC_EXPECT_SUCCESS(prop->SetCustomAttribute(*propCAInstance));
+
+    // Relationship constraint level
+    auto constraintCAInstance = enabler->CreateInstance();
+    EC_EXPECT_SUCCESS(relClass->GetSource().SetCustomAttribute(*constraintCAInstance));
+
+    Utf8String schemaXml;
+    schema->WriteToEC2XmlString(schemaXml, schema.get());
+
+    int numOfMatches = 0;
+    size_t offset = 0;
+    while((offset = schemaXml.find("xmlns=\"testSchema.05.00\"", offset+1)) != Utf8String::npos)
+        numOfMatches += 1;
+
+    EXPECT_EQ(numOfMatches, 4);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaJsonSerializationTest, SchemaWithNoItems)

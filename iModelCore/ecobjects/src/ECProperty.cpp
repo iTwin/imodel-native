@@ -957,7 +957,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
             xmlWriter.WriteAttribute(attribute.first, attribute.second);
         }
 
-    WriteCustomAttributes (xmlWriter);
+    WriteCustomAttributes(xmlWriter, ecXmlVersion);
     xmlWriter.WriteElementEnd();
 
     return status;

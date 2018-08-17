@@ -2175,7 +2175,7 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
             xmlWriter.WriteComment(comment.c_str());
         }
 
-    WriteCustomAttributes (xmlWriter);
+    WriteCustomAttributes(xmlWriter, ecXmlVersion);
             
     for (ECPropertyP prop: GetProperties(false))
         { 
@@ -3507,7 +3507,7 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
         xmlWriter.WriteAttribute(ABSTRACTCONSTRAINT_ATTRIBUTE, qualifiedClassName.c_str());
         }
         
-    WriteCustomAttributes (xmlWriter);
+    WriteCustomAttributes(xmlWriter, ecXmlVersion);
 
     for (const auto &constraint : m_constraintClasses)
         {

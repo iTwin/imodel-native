@@ -713,7 +713,8 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes 
 (
-BeXmlWriterR xmlWriter
+BeXmlWriterR xmlWriter,
+ECVersion ecXmlVersion
 ) const
     {
     if (m_primaryCustomAttributes.size() == 0)
@@ -734,7 +735,10 @@ BeXmlWriterR xmlWriter
         else if (0 == BeStringUtilities::StricmpAscii(className, "DisplayUnitSpecificationAttr"))
             className = "DisplayUnitSpecification";
 
-        (*iter)->WriteToBeXmlNodeLatestVersion(xmlWriter, className);
+        if (ecXmlVersion == ECVersion::V2_0)
+            (*iter)->WriteToBeXmlNode(xmlWriter, className);
+        else
+            (*iter)->WriteToBeXmlNodeLatestVersion(xmlWriter, className);
         }
     xmlWriter.WriteElementEnd();
 

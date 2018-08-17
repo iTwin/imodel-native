@@ -1183,7 +1183,7 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     WriteSchemaReferences();
 
     WriteCustomAttributeDependencies(m_ecSchema);
-    m_ecSchema.WriteCustomAttributes(m_xmlWriter);
+    m_ecSchema.WriteCustomAttributes(m_xmlWriter, m_ecXmlVersion);
 
     // if there is no Element Order specified, create a new default one (enumerations, classes) ordered alphabetically.
     auto& serializationOrder = m_ecSchema.m_serializationOrder;

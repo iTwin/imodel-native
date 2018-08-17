@@ -98,7 +98,7 @@ protected:
     ECObjectsStatus                     SetSupplementedCustomAttribute(IECInstanceR customAttributeInstance);
 
     CustomAttributeReadStatus           ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR context, ECSchemaCR fallBackSchema);
-    SchemaWriteStatus                   WriteCustomAttributes(BeXmlWriterR xmlWriter) const;
+    SchemaWriteStatus                   WriteCustomAttributes(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion = ECVersion::Latest) const;
     bool                                WriteCustomAttributes(Json::Value& outValue) const;
     //! Only copies primary ones, not consolidated ones. Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer) const;
