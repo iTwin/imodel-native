@@ -40,14 +40,6 @@ struct TileContext;
 // Temporary: Disabling edge generation by default until memory consumption issues resolved. Comment out following to re-enable
 // #define DISABLE_EDGE_GENERATION
 
-// For debugging tile generation code - disables use of cached tiles.
-// #define DISABLE_TILE_CACHE
-
-// We used to cache GeometryLists for elements occupying a significant (25%) fraction of the total model range.
-// That can't work for BReps because they are associated with a specific thread's partition.
-// In any case it wasn't much of an optimization as we still had to facet/stroke the geometry each time it was encountered.
-// #define CACHE_LARGE_GEOMETRY
-
 // Cache facets for geometry parts in Root
 // This cache grows in an unbounded manner - and every BRep is typically a part, even if only one reference to it exists
 // With this disabled, we will still ensure that when multiple threads want to facet the same part, all but the first will wait for the first to do so
@@ -60,20 +52,6 @@ struct TileContext;
 // and that defined in the referencing GeometryStream. 99.9% of the time no symbology is defined in the part however...
 // Uncomment this to enable that (ideally after having addressed the symbology issue noted above)
 // #define SHARE_GEOMETRY_PARTS
-
-// Uncomment to record and output statistics on # of cached tiles, time spent reading them, etc
-// #define TILECACHE_DEBUG
-
-// Uncomment to compare geometry read from tile cache data to that produced by LoadGeometryFromModel() and assert if unequal.
-// See TFS#772315 in which portions of geometry do not appear in tiles read from cache, but do appear if we disable the cache
-// #define DEBUG_TILE_CACHE_GEOMETRY
-
-#ifdef TILECACHE_DEBUG
-#define TILECACHE_PRINTF THREADLOG.debugv
-#else
-#define TILECACHE_PRINTF(...)
-
-#endif
 
 constexpr double s_minRangeBoxSize = 2.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh ###TODO: Revisit...
 constexpr double s_tileScreenSize = 512.0;
@@ -803,56 +781,6 @@ BentleyStatus Loader::_GetFromSource()
     return me->DoGetFromSource();
     }
 
-
-#ifdef TILECACHE_DEBUG
-static double s_displayTime = 5.0;   // Every 5 second.
-
-struct TileCacheStatistics
-{
-    size_t      m_emptyTileCount = 0;
-    double      m_emptyTileTime = 0.0;
-    size_t      m_totalTileCount = 0;
-    double      m_totalTime = 0.0;
-    double      m_lastDisplayTime = 0.0;
-    double      m_totalReadTime = 0.0;
-    StopWatch   m_stopWatch;
-    BeMutex     m_mutex;
-
-void    Update(double time, bool empty)
-    {
-    BeMutexHolder lock(m_mutex);
-
-    m_totalTileCount++;
-    m_totalTime += time;
-    if (empty)
-        {
-        m_emptyTileCount++;
-        m_emptyTileTime += time;
-        }
-    Display();
-    }
-
-void    UpdateRead(double time)
-    {
-    BeMutexHolder lock(m_mutex);
-
-    m_totalReadTime  += time;
-    Display();
-    }
-
-    
-void Display()
-    {
-    if (m_stopWatch.GetCurrentSeconds() - m_lastDisplayTime > s_displayTime)
-        {
-        TILECACHE_PRINTF("Total: %d, Empty: %d: (%f %%) Empty Tile: %f (%f), Total: %f, Non Empty: %f, Read: %f", m_totalTileCount, m_emptyTileCount, 100.0 * (double) m_emptyTileCount / (double) m_totalTileCount, m_emptyTileTime, m_emptyTileTime / m_totalTime, m_totalTime, m_totalTime - m_emptyTileTime, m_totalReadTime);
-        m_lastDisplayTime = m_stopWatch.GetCurrentSeconds();
-        }
-    }
-};
-static TileCacheStatistics       s_statistics;
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -865,10 +793,6 @@ bool Loader::IsCacheable() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Tile::IsCacheable() const
     {
-#if defined(DISABLE_TILE_CACHE)
-    // Tile cache is really annoying when debugging tile generation code...
-    return false;
-#else
     // Host can specify no caching.
     if (!T_HOST.GetTileAdmin()._WantCachedTiles(GetRoot().GetDgnDb()))
         return false;
@@ -878,7 +802,6 @@ bool Tile::IsCacheable() const
         return T_HOST.GetTileAdmin()._WantCachedHiResTiles(GetRoot().GetDgnDb());
 
     return true;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -890,123 +813,8 @@ BentleyStatus Loader::_ReadFromDb()
 
     auto status = T_Super::_ReadFromDb();
 
-#ifdef TILECACHE_DEBUG    
-    s_statistics.UpdateRead(stopWatch.GetCurrent());
-#endif
-
     return status;
     }
-
-#if defined(DEBUG_TILE_CACHE_GEOMETRY)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T> static bool areEqual(T const& lhs, T const& rhs) { return lhs == rhs; }
-template <> bool areEqual(DisplayParamsCR lhs, DisplayParamsCR rhs) { return lhs.IsEqualTo(rhs); }
-template <> bool areEqual(MeshPolyline const& lhs, MeshPolyline const& rhs) { return areEqual(lhs.GetIndices(), rhs.GetIndices()); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T> static bool areEqual(bvector<T> const& lhs, bvector<T> const& rhs)
-    {
-    if (lhs.size() != rhs.size())
-        return false;
-
-    for (size_t i = 0; i < lhs.size(); i++)
-        if (!areEqual(lhs[i], rhs[i]))
-            return false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T, typename U> static bool areEqual(bmap<T, U> const& lhs, bmap<T, U> const& rhs)
-    {
-    if (lhs.size() != rhs.size())
-        return false;
-
-    for (auto const& kvp : lhs)
-        {
-        auto iter = rhs.find(kvp.first);
-        if (rhs.end() == iter || !areEqual(kvp.second, iter->second))
-            return false;
-        }
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T> static bool assertEqual(T const& lhs, T const& rhs)
-    {
-    bool equal = areEqual(lhs, rhs);
-    BeAssert(equal);
-    return equal;
-    }
-
-#define ASSERT_EQ(LHS, RHS) assertEqual((LHS), (RHS))
-#define ASSERT_EQ_MEMBER(MEMBER) ASSERT_EQ((lhs.MEMBER), (rhs.MEMBER))
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void assertEqual(MeshCR lhs, MeshCR rhs)
-    {
-    ASSERT_EQ_MEMBER(IsEmpty());
-    ASSERT_EQ_MEMBER(Is2d());
-    ASSERT_EQ_MEMBER(IsPlanar());
-    ASSERT_EQ_MEMBER(GetType());
-    ASSERT_EQ_MEMBER(GetDisplayParams());
-    ASSERT_EQ_MEMBER(Triangles().Indices());
-    ASSERT_EQ_MEMBER(Polylines());
-    ASSERT_EQ_MEMBER(Points());
-
-    // Normals may be generated during collection then discarded when written to cache
-    if (!lhs.GetDisplayParams().IgnoresLighting())
-        ASSERT_EQ_MEMBER(Normals());
-
-    ASSERT_EQ_MEMBER(Params());
-    ASSERT_EQ_MEMBER(Colors());
-    ASSERT_EQ_MEMBER(GetColorTable().GetMap());
-
-    //FeatureIndex lhsFeatures, rhsFeatures;
-    //lhs.ToFeatureIndex(lhsFeatures);
-    //rhs.ToFeatureIndex(rhsFeatures);
-    //ASSERT_EQ(lhsFeatures, rhsFeatures);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void assertEqual(MeshListCR lhs, MeshListCR rhs)
-    {
-    if (lhs.size() != rhs.size())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    for (size_t i = 0; i < lhs.size(); i++)
-        assertEqual(*lhs[i], *rhs[i]);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void assertEqual(Render::Primitives::GeometryCollectionCR lhs, Render::Primitives::GeometryCollectionCR rhs)
-    {
-    ASSERT_EQ_MEMBER(IsEmpty());
-    ASSERT_EQ_MEMBER(IsComplete());
-    ASSERT_EQ_MEMBER(ContainsCurves());
-    assertEqual(lhs.Meshes(), rhs.Meshes());
-    }
-
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -1041,10 +849,6 @@ BentleyStatus Loader::_LoadTile()
 
         tile.SetContentRange(contentRange);
         }
-
-#ifdef TILECACHE_DEBUG
-    s_statistics.Update(stopWatch.GetCurrentSeconds(), geometry.IsEmpty());
-#endif
 
     // No point subdividing empty Tiles - improves performance if we don't
     // Also not much point subdividing nodes containing no curved geometry
@@ -1154,18 +958,6 @@ BentleyStatus Loader::DoGetFromSource()
 
         if (!geometry.IsComplete())
             m_tileMetadata.m_flags |= TileTree::TileFlags::Incomplete;
-
-#if defined(DEBUG_TILE_CACHE_GEOMETRY)
-        ElementAlignedBox3d readRange;
-        Render::Primitives::GeometryCollection readGeometry;
-        bool readIsLeaf;
-        m_tileBytes.ResetPos();
-        if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile(readRange, readGeometry, m_tileBytes, *root.GetModel(), GetRenderSystem(), readIsLeaf))
-            BeAssert(false);
-
-        assertEqual(readGeometry, geometry);
-        m_tileBytes.ResetPos();
-#endif
         }
     
     m_saveToCache = true;
@@ -1242,12 +1034,7 @@ TileR Loader::GetElementTile() { return static_cast<TileR>(*m_tile); }
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model, transform, system),
-    m_name(model.GetName()),
-#if defined(CACHE_LARGE_GEOMETRY)
-    m_cacheGeometry(m_is3d)
-#else
-    m_cacheGeometry(false)
-#endif
+    m_name(model.GetName()), m_cacheGeometry(false)
     {
     m_cache = model.GetDgnDb().ElementTileCache();
     }
@@ -2794,13 +2581,6 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
     {
     try
         {
-#ifdef DEBUG_ELEMENT_FILTER
-        static DgnElementId             s_debugId((uint64_t) 73634);
-
-        if (s_debugId.IsValid() && s_debugId != elemId)
-            return;
-#endif
-
         if (!m_root.GetCachedGeometry(m_geometries, elemId, rangeDiagonalSquared))
             {
             m_curElemId = elemId;

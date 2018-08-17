@@ -642,12 +642,6 @@ void Tile::_UnloadChildren(BeTimePoint olderThan) const
     for (auto const& child : m_children)
         child->SetAbandoned();
 
-#if defined(DEBUG_UNLOAD_CHILDREN)
-    BeDuration elapsed(BeTimePoint::Now() - olderThan);
-    BeDuration sinceLastUsed(BeTimePoint::Now() - m_childrenLastUsed);
-    THREADLOG.debugv("Unloading children after %f seconds (children last used %f seconds ago)", elapsed.ToSeconds(), sinceLastUsed.ToSeconds());
-#endif
-
     _OnChildrenUnloaded();
     m_children.clear();
     }
