@@ -197,7 +197,6 @@ ECN::ECEnumeratorCP IECSqlValue::GetEnum() const
     else if (ecEnum->GetType() == ECN::PRIMITIVETYPE_String)
         return ecEnum->FindEnumerator(GetText());
 
-    LOG.errorv("ECSqlStatement::GetEnum> No matching ECEnumerator found for value '%s' in the ECEnumeration '%s'.", GetText(), ecEnum->GetFullName());
     return nullptr;
     }
 
