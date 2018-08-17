@@ -30,6 +30,7 @@ BEGIN_DGNDBSYNC_DWG_NAMESPACE
 #define SYNC_TABLE_Linetype     SYNCINFO_TABLE("Linetype")
 #define SYNC_TABLE_Material     SYNCINFO_TABLE("Material")
 #define SYNC_TABLE_View         SYNCINFO_TABLE("View")
+#define SYNC_TABLE_Group        SYNCINFO_TABLE("Group")
 #define SYNC_TABLE_ECSchema     SYNCINFO_TABLE("ECSchema")
 #define SYNC_TABLE_Discards     SYNCINFO_TABLE("Discards")
 #define SYNC_TABLE_ImportJob    SYNCINFO_TABLE("ImportJob")
@@ -605,15 +606,15 @@ struct DwgSyncInfo
         DGNDBSYNC_EXPORT MaterialIterator(DgnDbCR db);
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
             {
-            private:
-                friend struct MaterialIterator;
-                Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
+        private:
+            friend struct MaterialIterator;
+            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
 
-            public:
-                DGNDBSYNC_EXPORT RenderMaterialId GetRenderMaterialId();
-                DGNDBSYNC_EXPORT DwgFileId GetDwgFileId();
-                DGNDBSYNC_EXPORT uint64_t GetDwgObjectId();
-                Entry const& operator* () const {return *this;}
+        public:
+            DGNDBSYNC_EXPORT RenderMaterialId GetRenderMaterialId();
+            DGNDBSYNC_EXPORT DwgFileId GetDwgFileId();
+            DGNDBSYNC_EXPORT uint64_t GetDwgObjectId();
+            Entry const& operator* () const {return *this;}
             };
 
         typedef Entry const_iterator;
@@ -621,6 +622,53 @@ struct DwgSyncInfo
         DGNDBSYNC_EXPORT const_iterator begin() const;
         const_iterator end() const { return Entry (nullptr, false); }
         };  // MaterialIterator
+
+    //! Sync info for Group
+    struct Group
+        {
+    private:
+        BentleyApi::MD5     m_hasher;
+
+    public:
+        StableIdPolicy      m_idPolicy;
+        DgnElementId        m_id;
+        DwgFileId           m_fileId;
+        uint64_t            m_objectId;
+        Utf8String          m_name;
+        DwgObjectHash       m_hash;
+        
+        DGNDBSYNC_EXPORT explicit Group () { m_id.Invalidate(); }
+        DGNDBSYNC_EXPORT explicit Group (DgnElementId id, DwgFileId fid, StableIdPolicy policy, DwgDbGroupCR group);
+        DGNDBSYNC_EXPORT BeSQLite::DbResult Insert (BeSQLite::Db&) const;
+        DGNDBSYNC_EXPORT BeSQLite::DbResult Update (BeSQLite::Db&) const;
+        DGNDBSYNC_EXPORT DgnElementId GetDgnElementId () const { return m_id; }
+        DGNDBSYNC_EXPORT uint64_t GetDwgHandleValue () const { return m_objectId; }
+        DGNDBSYNC_EXPORT bool IsValid() const { return m_id.IsValid(); }
+        bool IsSame (Group const& other) const { return m_hash.IsSame(other.m_hash); }
+        };  // Group
+
+    // Group iterator
+    struct GroupIterator : BeSQLite::DbTableIterator
+        {
+        DGNDBSYNC_EXPORT GroupIterator(DgnDbCR db);
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+        private:
+            friend struct GroupIterator;
+            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
+
+        public:
+            DGNDBSYNC_EXPORT DgnElementId GetDgnElementId();
+            DGNDBSYNC_EXPORT DwgFileId GetDwgFileId();
+            DGNDBSYNC_EXPORT uint64_t GetDwgObjectId();
+            Entry const& operator* () const {return *this;}
+            };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNDBSYNC_EXPORT const_iterator begin() const;
+        const_iterator end() const { return Entry(nullptr, false); }
+        };  // GroupIterator
 
 
     DwgImporter&        m_dwgImporter;
@@ -783,11 +831,19 @@ public:
     DGNDBSYNC_EXPORT DgnCategoryId FindCategory (DwgDbObjectIdCR layerId, DwgFileId fileId);
     DGNDBSYNC_EXPORT DwgDbHandle FindLayerHandle (DgnCategoryId categoryId, DwgFileId fileId);
 
-    //! Query sync info for a dwg material in the current dwg file.
+    //! Query sync info for a dwg material in the current dwg file (applies to StableIdPolicy::ById)..
     DGNDBSYNC_EXPORT bool FindMaterial (Material& out, DwgDbObjectIdCR id);
     DGNDBSYNC_EXPORT Material InsertMaterial (RenderMaterialId id, DwgDbMaterialCR material);
     DGNDBSYNC_EXPORT BentleyStatus UpdateMaterial (DwgSyncInfo::Material& prov);
     DGNDBSYNC_EXPORT BentleyStatus DeleteMaterial (RenderMaterialId id);
+
+    //! Query sync info for a DWG group (applies to StableIdPolicy::ById).
+    //! @param[out] out The sync info about the requested group
+    //! @param[in] groupId The input DWG group object ID for which a sync info is queried
+    DGNDBSYNC_EXPORT bool FindGroup (DwgSyncInfo::Group& out, DwgDbObjectIdCR groupId);
+    DGNDBSYNC_EXPORT Group InsertGroup (DgnElementId id, DwgDbGroupCR group);
+    DGNDBSYNC_EXPORT BentleyStatus UpdateGroup (DwgSyncInfo::Group& syncGroup);
+    DGNDBSYNC_EXPORT BentleyStatus DeleteGroup (DgnElementId id);
 
     //! @}
 

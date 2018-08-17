@@ -218,6 +218,9 @@ struct IDwgChangeDetector
     //! Called when a DWG modelspace viewport or a paperspace viewport is dicovered.
     virtual void  _OnViewSeen (DwgImporter&, DgnViewId) = 0;
 
+    //! Called when a DWG dictionary group is discovered.
+    virtual void  _OnGroupSeen (DwgImporter&, DgnElementId) = 0;
+
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
     //! @{
     virtual void _DetectDeletedElements (DwgImporter&, DwgSyncInfo::ElementIterator&) = 0;  //!< don't forget to call _DetectDeletedElementsEnd when done
@@ -228,6 +231,7 @@ struct IDwgChangeDetector
     virtual void _DetectDeletedModelsEnd (DwgImporter&) = 0;
     virtual void _DetectDeletedMaterials (DwgImporter&) = 0;
     virtual void _DetectDeletedViews (DwgImporter&) = 0;
+    virtual void _DetectDeletedGroups (DwgImporter&) = 0;
     //! @}
 };  // IDwgChangeDetector
 typedef std::unique_ptr <IDwgChangeDetector>    T_DwgChangeDetectorPtr;
@@ -608,7 +612,7 @@ public:
         DwgSyncInfo::DwgModelSyncInfoId GetModelSyncInfoId () const { return m_modelMapping.GetModelSyncInfoId(); }
         };  // ElementImportInputs
 
-    //! A data context for output DgnElement's imported from a modelspace or paperspace DWG entity.
+    //! A data context for output DgnElement's imported from a modelspace or paperspace entity.
     struct ElementImportResults
         {
     public:
@@ -1114,15 +1118,27 @@ protected:
 
     //! @name  Importing groups
     //! @{
-    //! After models and elements have been processed, groups are created as GenericGroup's by the default implementations.
-    //! Since each xRef attachment becomes a spatial DgnModel, a group from an xRef may refer elements across models.
+    //! After models and elements have been processed, this method will be called to process all DWG groups in all files.
+    //! The default implementations will import DWG groups as GenericGroup elements.
+    //! @note Multiple attachments of the same xRef file are imported as individual DgnModel's. A group element created from a group in such an xRef will contain member elements across these models, by the default implementation.
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportGroups ();
-    //! Import dictionary groups.  This method is called for the root DWG file, then followed by each of its xRef files.
-    //! @param dwg Input root or xRef DWG file from which dictionary groups to be processed.
+    //! Import dictionary groups from a DWG file.  This method is called for the root DWG file, then followed by each of its xRef files.
+    //! In an updating job, this method also consults the sync info and calls _OnUpdateGroup on an existing DWG group.
+    //! @param[in] dwg Input root or xRef DWG file whose group dictionary will be processed.
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportGroups (DwgDbDatabaseCR dwg);
-    //! Create anew or update existing group, which may be in a root or an xRef DWG file.
-    //! @param group Input dictionary group
-    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportGroup (DwgDbGroupCR group);
+    //! Create and insert a new group element from a DWG group which may be in either a root or an xRef DWG file.
+    //! @param dwgGroup Input object of the DWG group dictionary.
+    //! @return A new and inserted DgnDb group element.  The default implementation creates a GenericGroup.
+    DGNDBSYNC_EXPORT virtual DgnElementPtr  _ImportGroup (DwgDbGroupCR dwgGroup);
+    //! Update existing group element.
+    //! @param[out] dgnGroup Existing DgnDb group element to be updated.
+    //! @param[in] dwgGroup Input object of the DWG group from which the DgnDb group will be updated.
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _UpdateGroup (DgnElementR dgnGroup, DwgDbGroupCR dwgGroup);
+    //! Detect existing DWG group against its provenance and act according to the detection results.
+    //! @param[in] prov Input provenance of the DWG group retrieved from the sync info.
+    //! @param[in] dwgGroup Input object of the DWG group dictionary.
+    //! @note When a change is detected for a DWG group, _UpdateGroup will be called; otherwise _ImportGroup will be called, by the default implementation.
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _OnUpdateGroup (DwgSyncInfo::Group const& prov, DwgDbGroupCR dwgGroup);
 
     //! @name Options and configs
     //! @{
@@ -1263,6 +1279,7 @@ public:
     bool    _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const& m,  DwgDbDatabaseCP xref = nullptr) override { return false; }
     void    _OnModelSeen (DwgImporter&, ResolvedModelMapping const& m) override {}
     void    _OnViewSeen (DwgImporter&, DgnViewId) override {}
+    void    _OnGroupSeen (DwgImporter&, DgnElementId) override {}
     void    _OnModelInserted (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP) override {}
     void    _OnElementSeen (DwgImporter&, DgnElementId) override {}
     void    _DetectDeletedElements (DwgImporter&, DwgSyncInfo::ElementIterator&) override {}
@@ -1273,6 +1290,7 @@ public:
     void    _DetectDeletedModelsEnd (DwgImporter&) override {}
     void    _DetectDeletedMaterials (DwgImporter&) override {}
     void    _DetectDeletedViews (DwgImporter&) override {}
+    void    _DetectDeletedGroups (DwgImporter&) override {}
 
     //! always fills in element provenence and returns true
     DGNDBSYNC_EXPORT bool   _IsElementChanged (DetectionResults&, DwgImporter&, DwgDbObjectCR, ResolvedModelMapping const&, T_DwgSyncInfoElementFilter*) override;
@@ -1293,6 +1311,7 @@ private:
     bset<DwgSyncInfo::DwgModelSyncInfoId>   m_dwgModelsSkipped;
     bset<DwgSyncInfo::DwgModelSyncInfoId>   m_newlyDiscoveredModels;
     bset<DgnViewId>                         m_viewsSeen;
+    DgnElementIdSet                         m_groupsSeen;
     uint32_t                                m_elementsDiscarded;
 
     bool    IsUpdateRequired (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR obj) const;
@@ -1310,6 +1329,7 @@ public:
     DGNDBSYNC_EXPORT void   _OnModelSeen (DwgImporter&, ResolvedModelMapping const&) override;
     DGNDBSYNC_EXPORT void   _OnModelInserted (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP xRef) override;
     DGNDBSYNC_EXPORT void   _OnViewSeen (DwgImporter&, DgnViewId) override;
+    DGNDBSYNC_EXPORT void   _OnGroupSeen (DwgImporter&, DgnElementId) override;
     DGNDBSYNC_EXPORT void   _OnElementSeen (DwgImporter&, DgnElementId) override;
     DGNDBSYNC_EXPORT bool   _IsElementChanged (DetectionResults&, DwgImporter&, DwgDbObjectCR, ResolvedModelMapping const&, T_DwgSyncInfoElementFilter* filter) override;
     //! @}
@@ -1327,6 +1347,7 @@ public:
     //! delete tables
     DGNDBSYNC_EXPORT void   _DetectDeletedMaterials (DwgImporter&) override;
     DGNDBSYNC_EXPORT void   _DetectDeletedViews (DwgImporter&) override;
+    DGNDBSYNC_EXPORT void   _DetectDeletedGroups (DwgImporter&) override;
     //! @}
 };  // UpdaterChangeDetector
 

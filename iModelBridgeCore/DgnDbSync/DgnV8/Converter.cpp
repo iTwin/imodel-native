@@ -1271,8 +1271,20 @@ StableIdPolicy Converter::_GetIdPolicy(DgnV8FileR dgnFile) const
     if (StableIdPolicy::ByHash == _GetParams().GetStableIdPolicy())
         return StableIdPolicy::ByHash;
 
-    // only V8 files have stable ids
-    return IsV8Format(dgnFile) ? StableIdPolicy::ById : StableIdPolicy::ByHash; 
+    // some files have stable ids
+    DgnV8Api::DgnFileFormatType format = DgnV8Api::DgnFileFormatType::V8;
+    dgnFile.GetVersion(&format, nullptr, nullptr);
+    switch (format)
+        {
+        case DgnV8Api::DgnFileFormatType::V8:
+        case DgnV8Api::DgnFileFormatType::DWG:
+        case DgnV8Api::DgnFileFormatType::DXF:
+        case DgnV8Api::DgnFileFormatType::IFC:
+            return StableIdPolicy::ById;
+        }
+    
+    // others do not
+    return StableIdPolicy::ByHash; 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2880,7 +2892,7 @@ ResolvedModelMapping Converter::GetModelFromSyncInfo(DgnV8ModelRefCR v8Model, Tr
 
     for (auto entry=it.begin(); entry!=it.end(); ++entry)
         {
-        if (entry.GetTransform().IsEqual(trans))
+        if (Converter::IsTransformEqualWithTolerance(entry.GetTransform(),trans))
             {
             auto model = m_dgndb->Models().GetModel(entry.GetModelId());
             if (!model.IsValid())
@@ -3040,7 +3052,7 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         foundOne = true; // We have mapped this DgnV8 model to a DgnDb model.
 
         //  See if this particular mapping is based on the same transform.
-        if (thisModel.GetTransform().IsEqual(trans))
+        if (Converter::IsTransformEqualWithTolerance(thisModel.GetTransform(),trans))
             return thisModel;
         }
 
@@ -3162,7 +3174,7 @@ ResolvedModelMapping RootModelConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
         foundOne = true; // We have mapped this DgnV8 model to a DgnDb model.
 
         //  See if this particular mapping is based on the same transform.
-        if (thisModel.GetTransform().IsEqual(trans))
+        if (Converter::IsTransformEqualWithTolerance(thisModel.GetTransform(),trans))
             return thisModel;
         }
 
@@ -3195,7 +3207,7 @@ ResolvedModelMapping RootModelConverter::_FindModelForDgnV8Model(DgnV8ModelR v8M
     for (auto thisModel : FindMappingsToV8Model(v8Model)) // finds all unique transforms of attachments of this model
         {
         //  See if this mapping is based on the same transform.
-        if (thisModel.GetTransform().IsEqual(trans)) 
+        if (Converter::IsTransformEqualWithTolerance(thisModel.GetTransform(),trans))
             return thisModel;
         }
 
@@ -3635,6 +3647,16 @@ bool Converter::ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Mo
     return true;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Abeesh.Basheer           08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool            Converter::IsTransformEqualWithTolerance(TransformCR lhs, TransformCR rhs)
+    {
+    auto matrixTolerance = Angle::TinyAngle();
+    auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(rhs.ColumnXMagnitude());
+    return lhs.IsEqual(rhs, matrixTolerance, pointTolerance);
+    }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
 

@@ -1,0 +1,20 @@
+#-----------------------------------------------------------------------+
+#                                                                       |
+#     $Source: DgnV8/Converters/Dgnv8BridgeInstaller/Dgnv8BridgeInstaller.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#                                                                       |
+#----------------------------------------------------------------------*/
+
+#----------------------------------------------------------------------*/
+# Symlink files needed for powerproduct build in BuildContext
+#----------------------------------------------------------------------*/
+
+$(BuildContext)DgnV8BridgeInstallFiles :
+    !~@mkdir $@
+
+$(BuildContext)DgnV8BridgeInstallFiles/DgnV8BridgeInstallerBeforeCompile.mki : $(_MakeFilePath)DgnV8BridgeInstallerBeforeCompile.mki
+    @CreateSymLinks.py -f"$@=$<"
+
+$(BuildContext)DgnV8BridgeInstallFiles/DgnV8BridgeInstaller.wxs : $(_MakeFilePath)DgnV8BridgeInstaller.wxs
+    @CreateSymLinks.py -f"$@=$<"
