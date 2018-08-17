@@ -136,13 +136,6 @@ public:
 struct Root : TileTree::OctTree::Root
 {
     DEFINE_T_SUPER(TileTree::OctTree::Root);
-
-    enum class DebugOptions
-    {
-        None = 0,
-        ShowBoundingVolume = 1 << 0,
-        ShowContentVolume = 1 << 1,
-    };
 protected:
     struct SolidPrimitivePartMap
     {
@@ -174,7 +167,6 @@ protected:
     mutable GeomPartCache           m_geomParts;
     mutable SolidPrimitivePartMap   m_solidPrimitiveParts;
     mutable GeomListMap             m_geomLists;
-    DebugOptions                    m_debugOptions = DebugOptions::None;
     bool                            m_cacheGeometry;
 
     Root(GeometricModelR model, TransformCR transform, Render::SystemR system);
@@ -192,8 +184,6 @@ public:
     virtual ~Root() { ClearAllTiles(); }
 
     GeometricModelPtr GetModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
-    DebugOptions GetDebugOptions() const;
-    void SetDebugOptions(DebugOptions opts) { m_debugOptions = opts; }
 
     std::mutex& GetDbMutex() const { return m_dbMutex; }
 
@@ -214,8 +204,6 @@ public:
     TileTree::TilePtr _FindTileById(Utf8CP id) override;
 };
 
-ENUM_IS_FLAGS(Root::DebugOptions);
-
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
@@ -224,18 +212,8 @@ struct Tile : TileTree::OctTree::Tile
     DEFINE_T_SUPER(TileTree::OctTree::Tile);
 
 protected:
-    struct DebugGraphics
-    {
-        Render::GraphicPtr  m_graphic;
-        Root::DebugOptions  m_options = Root::DebugOptions::None;
-
-        bool IsUsable(Root::DebugOptions opts) const { return m_options == opts && m_graphic.IsNull() == (Root::DebugOptions::None == opts); }
-        void Reset() { m_graphic = nullptr; m_options = Root::DebugOptions::None; }
-    };
-
     double                      m_tolerance;
     mutable ElementAlignedBox3d m_contentRange;
-    mutable DebugGraphics       m_debugGraphics;
     double                      m_zoomFactor = 1.0;
     uint64_t                    m_debugId;
     TileGeneratorUPtr           m_generator;
@@ -262,8 +240,6 @@ protected:
     void _ValidateChildren() const override;
 
     Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
-
-    Render::GraphicPtr GetDebugGraphics(Root::DebugOptions options) const;
 public:
     static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr, true); }
     static TilePtr CreateRoot(Root& root, DRange3dCR range, bool populate) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range, populate); }
@@ -284,8 +260,6 @@ public:
     double GetZoomFactor() const { BeAssert(HasZoomFactor()); return HasZoomFactor() ? m_zoomFactor : 1.0; }
     void SetContentRange (ElementAlignedBox3dCR contentRange) { m_contentRange = contentRange; }
     Utf8String GetDebugId() const { return _GetTileCacheKey(); }
-
-    bool _HasGraphics() const override { return m_graphic.IsValid(); }
 
     void UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink);
 

@@ -62,8 +62,6 @@ constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 
-static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
-
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
 //=======================================================================================
@@ -901,14 +899,13 @@ BentleyStatus Loader::_LoadTile()
             geometry.Meshes().m_features.SetModelId(root.GetModelId());
             batch = system._CreateBatch(*graphic, std::move(geometry.Meshes().m_features), tile._GetContentRange());
             BeAssert(batch.IsValid());
-            tile.SetGraphic(*batch);
+            tile.SetHasGraphics(true);
             }
         }
 
     return tile.GetElementRoot().UnderMutex([&]()
         {
-        if (batch.IsValid())
-            tile.SetGraphic(*batch);
+        tile.SetHasGraphics(batch.IsValid());
 
         // Possible that one or more parent tiles will contain solely elements too small to produce geometry, in which case
         // we must create their children in order to get graphics...mark undisplayable.
@@ -1388,76 +1385,6 @@ void Root::RemoveCachedGeometry(DRange3dCR range, DgnElementId id)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Root::DebugOptions Root::GetDebugOptions() const
-    {
-    return m_debugOptions | s_globalDebugOptions;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Root::ToggleDebugBoundingVolumes()
-    {
-    switch (s_globalDebugOptions)
-        {
-        case DebugOptions::None:
-            s_globalDebugOptions = DebugOptions::ShowBoundingVolume;
-            break;
-        case DebugOptions::ShowContentVolume:
-            s_globalDebugOptions = DebugOptions::None;
-            break;
-        default:
-            s_globalDebugOptions = DebugOptions::ShowContentVolume;
-            break;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
-    {
-    if (!_HasGraphics())
-        return nullptr;
-    else if (m_debugGraphics.IsUsable(options))
-        return m_debugGraphics.m_graphic;
-
-    m_debugGraphics.m_options = options;
-
-    bool wantRange = Root::DebugOptions::None != (Root::DebugOptions::ShowBoundingVolume & options);
-    bool wantContentRange = Root::DebugOptions::None != (Root::DebugOptions::ShowContentVolume & options);
-    if (!wantRange && !wantContentRange)
-        return (m_debugGraphics.m_graphic = nullptr);
-
-    GraphicBuilderPtr gf = GetElementRoot().GetRenderSystem()._CreateGraphic(GraphicBuilder::CreateParams::Scene(GetElementRoot().GetDgnDb()));
-    GraphicParams params;
-    params.SetWidth(0);
-    if (wantRange)
-        {
-        ColorDef color = IsLeaf() ? ColorDef::DarkBlue() : (HasZoomFactor() ? ColorDef::DarkMagenta() : ColorDef::DarkOrange());
-        params.SetLineColor(color);
-        params.SetFillColor(color);
-        params.SetLinePixels((IsLeaf() || HasZoomFactor()) ? LinePixels::Code5 : LinePixels::Code4);
-        gf->ActivateGraphicParams(params);
-        gf->AddRangeBox(GetRange());
-        }
-
-    if (wantContentRange)
-        {
-        params.SetLineColor(ColorDef::DarkRed());
-        params.SetFillColor(ColorDef::DarkRed());
-        params.SetLinePixels(LinePixels::Solid);
-        gf->ActivateGraphicParams(params);
-        gf->AddRangeBox(_GetContentRange());
-        }
-
-    m_debugGraphics.m_graphic = gf->Finish();
-    return m_debugGraphics.m_graphic;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Tile::_GetTileCacheKey() const
@@ -1522,8 +1449,7 @@ void Tile::_Invalidate()
     {
     GetElementRoot().UnderMutex([&]()
         {
-        m_graphic = nullptr;
-        m_debugGraphics.Reset();
+        m_hasGraphics = false;
         m_generator.reset();
 
         m_contentRange = ElementAlignedBox3d();
@@ -1654,8 +1580,6 @@ void Tile::UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShr
         for (auto& child : *children)
             static_cast<TileP>(child.get())->UpdateRange(myOld, GetRange(), allowShrink);
         }
-
-    m_debugGraphics.Reset(); // so we changes to bounding volumes immediately...
     }
 
 /*---------------------------------------------------------------------------------**//**

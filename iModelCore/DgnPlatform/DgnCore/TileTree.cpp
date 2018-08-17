@@ -1092,23 +1092,6 @@ void Root::CancelTileLoad(TileCR tile)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Marc.Neely   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr Tile::CreateTileGraphic(Render::GraphicR graphic, DgnModelId modelId) const
-    {
-    if (!modelId.IsValid())
-        return &graphic;
-
-    Dgn::Render::SystemR renderSystem = m_root.GetRenderSystem();
-
-    Feature feature(DgnElementId(modelId.GetValue()), DgnSubCategoryId(), DgnGeometryClass::Primary);
-    FeatureTable features(modelId, renderSystem._GetMaxFeaturesPerBatch());
-    features.GetIndex(feature);
-
-    return renderSystem._CreateBatch(graphic, std::move(features), _GetContentRange());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::SystemR Tile::GetRenderSystem() const { return m_root.GetRenderSystem(); }
