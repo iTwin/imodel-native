@@ -1039,12 +1039,27 @@ bool SyncInfo::IsMappedToSameV8Element(DgnElementId elementId, DgnElementIdSet c
     if (iThisElement == findByBimId.end())
         return false;
 
-    ByV8ElementIdIter othersMappedToV8Id(*m_dgndb);
-    othersMappedToV8Id.Bind(iThisElement.GetV8ModelSyncInfoId(), iThisElement.GetV8ElementId());
-    for (auto const& otherMappedToV8Id : othersMappedToV8Id)
+    if (iThisElement.GetV8ElementId() == 0)
         {
-        if (known.find(otherMappedToV8Id.GetElementId()) != known.end())
-            return true;
+        // when StableIdPolicy==ByHash
+        ByHashIter  othersMappedToV8Hash(*m_dgndb);
+        othersMappedToV8Hash.Bind(iThisElement.GetV8ModelSyncInfoId(), iThisElement.GetProvenance().m_hash);
+        for (auto const& otherMappedToV8Hash : othersMappedToV8Hash)
+            {
+            if (known.find(otherMappedToV8Hash.GetElementId()) != known.end())
+                return true;
+            }
+        }
+    else
+        {
+        // when StableIdPolicy==ById
+        ByV8ElementIdIter othersMappedToV8Id(*m_dgndb);
+        othersMappedToV8Id.Bind(iThisElement.GetV8ModelSyncInfoId(), iThisElement.GetV8ElementId());
+        for (auto const& otherMappedToV8Id : othersMappedToV8Id)
+            {
+            if (known.find(otherMappedToV8Id.GetElementId()) != known.end())
+                return true;
+            }
         }
     return false;
     }

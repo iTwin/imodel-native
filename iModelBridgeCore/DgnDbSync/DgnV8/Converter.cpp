@@ -1271,8 +1271,20 @@ StableIdPolicy Converter::_GetIdPolicy(DgnV8FileR dgnFile) const
     if (StableIdPolicy::ByHash == _GetParams().GetStableIdPolicy())
         return StableIdPolicy::ByHash;
 
-    // only V8 files have stable ids
-    return IsV8Format(dgnFile) ? StableIdPolicy::ById : StableIdPolicy::ByHash; 
+    // some files have stable ids
+    DgnV8Api::DgnFileFormatType format = DgnV8Api::DgnFileFormatType::V8;
+    dgnFile.GetVersion(&format, nullptr, nullptr);
+    switch (format)
+        {
+        case DgnV8Api::DgnFileFormatType::V8:
+        case DgnV8Api::DgnFileFormatType::DWG:
+        case DgnV8Api::DgnFileFormatType::DXF:
+        case DgnV8Api::DgnFileFormatType::IFC:
+            return StableIdPolicy::ById;
+        }
+    
+    // others do not
+    return StableIdPolicy::ByHash; 
     }
 
 /*---------------------------------------------------------------------------------**//**
