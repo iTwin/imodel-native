@@ -299,9 +299,9 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsByProperty)
 TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsMultipleClassesByProperty)
     {
     GroupingRuleP groupingRule1 = new GroupingRule("", 1, false, "Basic1", "Class1A", "", "", "");
-    groupingRule1->AddGroup(*new PropertyGroup("", "", true, "DisplayLabel"));
+    groupingRule1->AddGroup(*new PropertyGroup("", "", true, "Name"));
     GroupingRuleP groupingRule2 = new GroupingRule("", 1, false, "Basic1", "Class1B", "", "", "");
-    groupingRule2->AddGroup(*new PropertyGroup("", "", true, "DisplayLabel"));
+    groupingRule2->AddGroup(*new PropertyGroup("", "", true, "Name"));
     m_ruleset->AddPresentationRule(*groupingRule1);
     m_ruleset->AddPresentationRule(*groupingRule2);
     
@@ -325,7 +325,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsMultipleClasse
 TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsByRange)
     {
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "Basic1", "Class1A", "", "", "");
-    PropertyGroupP groupingSpec = new PropertyGroup("", "", true, "DisplayLabel");
+    PropertyGroupP groupingSpec = new PropertyGroup("", "", true, "Name");
     groupingSpec->AddRange(*new PropertyRangeGroupSpecification("", "", "0", "5"));
     groupingSpec->AddRange(*new PropertyRangeGroupSpecification("", "", "6", "10"));
     groupingSpec->AddRange(*new PropertyRangeGroupSpecification("", "", "11", "20"));
@@ -378,12 +378,12 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFiltering)
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
 
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "Basic1", "Class1A", "", "", "");
-    groupingRule->AddGroup(*new PropertyGroup("", "", true, "DisplayLabel"));
+    groupingRule->AddGroup(*new PropertyGroup("", "", true, "Name"));
     m_ruleset->AddPresentationRule(*groupingRule);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "Basic1:Class1A", false);
 
-    TestNavNodePtr propertyGroupingNode = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClass, *ecClass->GetPropertyP("DisplayLabel"), "MyCustomLabel", rapidjson::Value(9), false);
+    TestNavNodePtr propertyGroupingNode = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClass, *ecClass->GetPropertyP("Name"), "MyCustomLabel", rapidjson::Value(9), false);
     m_nodesCache.Cache(*propertyGroupingNode, false);
     NavNodeExtendedData extendedData(*propertyGroupingNode);
     extendedData.SetSpecificationHash(spec.GetHash());
@@ -411,13 +411,13 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_RangeFiltering)
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "Basic1", "Class1A", "", "", "");
     m_ruleset->AddPresentationRule(*groupingRule);
 
-    PropertyGroup* groupingSpecification = new PropertyGroup("", "", true, "DisplayLabel");
+    PropertyGroup* groupingSpecification = new PropertyGroup("", "", true, "Name");
     groupingSpecification->AddRange(*new PropertyRangeGroupSpecification("", "", "1", "5"));
     groupingRule->AddGroup(*groupingSpecification);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "Basic1:Class1A", false);
 
-    TestNavNodePtr propertyGroupingNode = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClass, *ecClass->GetPropertyP("DisplayLabel"), "MyCustomLabel", rapidjson::Value(0), true);
+    TestNavNodePtr propertyGroupingNode = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClass, *ecClass->GetPropertyP("Name"), "MyCustomLabel", rapidjson::Value(0), true);
     m_nodesCache.Cache(*propertyGroupingNode, false);
     NavNodeExtendedData extendedData(*propertyGroupingNode);
     extendedData.SetSpecificationHash(spec.GetHash());
@@ -445,7 +445,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_OtherRangeFiltering)
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "Basic1", "Class1A", "", "", "");
     m_ruleset->AddPresentationRule(*groupingRule);
 
-    PropertyGroup* groupingSpecification = new PropertyGroup("", "", true, "DisplayLabel");
+    PropertyGroup* groupingSpecification = new PropertyGroup("", "", true, "Name");
     groupingSpecification->AddRange(*new PropertyRangeGroupSpecification("", "", "1", "5"));
     groupingSpecification->AddRange(*new PropertyRangeGroupSpecification("", "", "7", "9"));
     groupingSpecification->AddRange(*new PropertyRangeGroupSpecification("", "", "10", "15"));
@@ -453,7 +453,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_OtherRangeFiltering)
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "Basic1:Class1A", false);
 
-    TestNavNodePtr propertyGroupingNode = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClass, *ecClass->GetPropertyP("DisplayLabel"), "MyCustomLabel", rapidjson::Value(-1), true);
+    TestNavNodePtr propertyGroupingNode = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClass, *ecClass->GetPropertyP("Name"), "MyCustomLabel", rapidjson::Value(-1), true);
     m_nodesCache.Cache(*propertyGroupingNode, false);
     NavNodeExtendedData extendedData(*propertyGroupingNode);
     extendedData.SetSpecificationHash(spec.GetHash());

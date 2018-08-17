@@ -238,10 +238,10 @@ void ExpectedQueries::PrepareSchemaContext()
 void ExpectedQueries::RegisterExpectedQueries()
     {
     Localization::Init();
-    static Utf8PrintfString ecInstanceNodesQuerySortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, ECInstanceNodesQueryContract::DisplayLabelFieldName);
-    static Utf8PrintfString ecClassGroupingNodesQuerySortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
-    static Utf8PrintfString baseClassGroupingNodesQuerySortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, BaseECClassGroupingNodesQueryContract::DisplayLabelFieldName);
-    static Utf8PrintfString labelGroupingQuerySortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
+    static Utf8PrintfString ecInstanceNodesQuerySortedDisplayLabel("%s([%s])", FUNCTION_NAME_GetSortingValue, ECInstanceNodesQueryContract::DisplayLabelFieldName);
+    static Utf8PrintfString ecClassGroupingNodesQuerySortedDisplayLabel("%s([%s])", FUNCTION_NAME_GetSortingValue, ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
+    static Utf8PrintfString baseClassGroupingNodesQuerySortedDisplayLabel("%s([%s])", FUNCTION_NAME_GetSortingValue, BaseECClassGroupingNodesQueryContract::DisplayLabelFieldName);
+    static Utf8PrintfString labelGroupingQuerySortedDisplayLabel("%s([%s])", FUNCTION_NAME_GetSortingValue, DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
 
     static Utf8PrintfString ecClassGroupingNodesOrderByClause("%s", ecClassGroupingNodesQuerySortedDisplayLabel.c_str());
 
@@ -431,7 +431,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         NavigationQueryPtr nestedQueries = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(expectedQueryClasses, "this", [](ComplexNavigationQuery& query)
             {
             query.Where("[this].[ECInstanceId] IN (?) AND "
-                "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
+                "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?",
                 {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
             });
 
@@ -465,7 +465,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         nested->SelectContract(*contract, "this");
         nested->From(b1_Class1A, false, "this");
         nested->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?",
             {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1903,14 +1903,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&b1_Class1A), "this");
         nestedQuery1->From(b1_Class1A, false, "this");
         nestedQuery1->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?",
             {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*ECInstanceNodesQueryContract::Create(&b1_Class1B), "this");
         nestedQuery2->From(b1_Class1B, false, "this");
         nestedQuery2->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?",
             {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1943,7 +1943,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(b1_Class1A, false, "this");
         nestedQuery->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?",
             {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1959,12 +1959,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&b1_Class1A), "this");
         nestedQuery1->From(b1_Class1A, false, "this");
-        nestedQuery1->Where("[this].[DisplayLabel] = 2", BoundQueryValuesList());
+        nestedQuery1->Where("[this].[Name] = 2", BoundQueryValuesList());
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*ECInstanceNodesQueryContract::Create(&b1_Class1B), "this");
         nestedQuery2->From(b1_Class1B, false, "this");
-        nestedQuery2->Where("[this].[DisplayLabel] = 2", BoundQueryValuesList());
+        nestedQuery2->Where("[this].[Name] = 2", BoundQueryValuesList());
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -2016,7 +2016,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery->From(b1_Class1A, false, "this");
         nestedQuery->From(b2_Class2, false, "parent", true);
         nestedQuery->Where("[parent].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))}, true);
-        nestedQuery->Where("[this].[DisplayLabel] = [parent].[Name]", BoundQueryValuesList(), true);
+        nestedQuery->Where("[this].[Name] = [parent].[Name]", BoundQueryValuesList(), true);
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -2035,7 +2035,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery->From(b1_Class1A, false, "this");
         nestedQuery->From(b2_Class2, false, "parent_parent", true);
         nestedQuery->Where("[parent_parent].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))}, true);
-        nestedQuery->Where("[this].[DisplayLabel] = [parent_parent].[Name]", BoundQueryValuesList(), true);
+        nestedQuery->Where("[this].[Name] = [parent_parent].[Name]", BoundQueryValuesList(), true);
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -2056,7 +2056,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery->From(b2_Class2, false, "parent_parent", true);
         nestedQuery->Where("[parent].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)456))}, true);
         nestedQuery->Where("[parent_parent].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))}, true);
-        nestedQuery->Where("[this].[DisplayLabel] = [parent_parent].[Name] OR [this].[DisplayLabel] = [parent].[Name]", BoundQueryValuesList(), true);
+        nestedQuery->Where("[this].[Name] = [parent_parent].[Name] OR [this].[Name] = [parent].[Name]", BoundQueryValuesList(), true);
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -2110,8 +2110,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         contract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
 
         ComplexNavigationQueryPtr instancesQuery = ComplexNavigationQuery::Create();
-        instancesQuery->SelectContract(*contract, "searchQuery");
-        instancesQuery->From(*searchQuery, "searchQuery");
+        instancesQuery->SelectContract(*contract, SEARCH_QUERY_Alias);
+        instancesQuery->From(*searchQuery, SEARCH_QUERY_Alias);
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
@@ -2130,8 +2130,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         contract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
 
         ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
-        query->SelectContract(*contract, "searchQuery");
-        query->From(*searchQuery, "searchQuery");
+        query->SelectContract(*contract, SEARCH_QUERY_Alias);
+        query->From(*searchQuery, SEARCH_QUERY_Alias);
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll();
@@ -2141,7 +2141,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
         expected->From(*grouped);
-        expected->OrderBy("GetSortingValue(DisplayLabel)");
+        expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Class);
         
         RegisterQuery("SearchResultInstanceNodes_GroupByClass", *expected);
@@ -2156,9 +2156,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         contract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
 
         ComplexNavigationQueryPtr instancesQuery = ComplexNavigationQuery::Create();
-        instancesQuery->SelectContract(*contract, "searchQuery");
-        instancesQuery->From(*searchQuery, "searchQuery");
-        instancesQuery->Where("[searchQuery].[" SEARCH_QUERY_FIELD_ECClassId "] = ?", {new BoundQueryId(ret_Widget.GetId())});
+        instancesQuery->SelectContract(*contract, SEARCH_QUERY_Alias);
+        instancesQuery->From(*searchQuery, SEARCH_QUERY_Alias);
+        instancesQuery->Where("[" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECClassId "] = ?", {new BoundQueryId(ret_Widget.GetId())});
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
@@ -2177,8 +2177,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         contract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
 
         ComplexNavigationQueryPtr instancesQuery = ComplexNavigationQuery::Create();
-        instancesQuery->SelectContract(*contract, "searchQuery");
-        instancesQuery->From(*searchQuery, "searchQuery");
+        instancesQuery->SelectContract(*contract, SEARCH_QUERY_Alias);
+        instancesQuery->From(*searchQuery, SEARCH_QUERY_Alias);
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
@@ -2200,10 +2200,10 @@ void ExpectedQueries::RegisterExpectedQueries()
         contract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
 
         ComplexNavigationQueryPtr instancesQuery = ComplexNavigationQuery::Create();
-        instancesQuery->SelectContract(*contract, "searchQuery");
-        instancesQuery->From(*searchQuery, "searchQuery");
-        instancesQuery->Where("[searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "] IN (?) AND "
-            "GetECInstanceDisplayLabel([searchQuery].[" SEARCH_QUERY_FIELD_ECClassId "], [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?",
+        instancesQuery->SelectContract(*contract, SEARCH_QUERY_Alias);
+        instancesQuery->From(*searchQuery, SEARCH_QUERY_Alias);
+        instancesQuery->Where("[" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECInstanceId "] IN (?) AND "
+            "GetECInstanceDisplayLabel([" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECClassId "], [" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?",
             {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
@@ -2223,9 +2223,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         contract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
 
         ComplexNavigationQueryPtr instancesQuery = ComplexNavigationQuery::Create();
-        instancesQuery->SelectContract(*contract, "searchQuery");
-        instancesQuery->From(*searchQuery, "searchQuery");
-        instancesQuery->Where("[searchQuery].[" SEARCH_QUERY_FIELD_ECClassId "] = ?", {new BoundQueryId(ret_Widget.GetId())});
+        instancesQuery->SelectContract(*contract, SEARCH_QUERY_Alias);
+        instancesQuery->From(*searchQuery, SEARCH_QUERY_Alias);
+        instancesQuery->Where("[" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECClassId "] = ?", {new BoundQueryId(ret_Widget.GetId())});
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
@@ -2247,11 +2247,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         contract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
 
         ComplexNavigationQueryPtr instancesQuery = ComplexNavigationQuery::Create();
-        instancesQuery->SelectContract(*contract, "searchQuery");
-        instancesQuery->From(*searchQuery, "searchQuery");
-        instancesQuery->Where("[searchQuery].[" SEARCH_QUERY_FIELD_ECClassId "] = ?"
-            " AND [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "] IN (?)"
-            " AND GetECInstanceDisplayLabel([searchQuery].[" SEARCH_QUERY_FIELD_ECClassId "], [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?",
+        instancesQuery->SelectContract(*contract, SEARCH_QUERY_Alias);
+        instancesQuery->From(*searchQuery, SEARCH_QUERY_Alias);
+        instancesQuery->Where("[" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECClassId "] = ?"
+            " AND [" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECInstanceId "] IN (?)"
+            " AND GetECInstanceDisplayLabel([" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECClassId "], [" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?",
             {new BoundQueryId(ret_Widget.GetId()), new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
@@ -2271,8 +2271,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         contract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
 
         ComplexNavigationQueryPtr instancesQuery = ComplexNavigationQuery::Create();
-        instancesQuery->SelectContract(*contract, "searchQuery");
-        instancesQuery->From(*searchQuery, "searchQuery");
+        instancesQuery->SelectContract(*contract, SEARCH_QUERY_Alias);
+        instancesQuery->From(*searchQuery, SEARCH_QUERY_Alias);
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
@@ -2291,8 +2291,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         contract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
 
         ComplexNavigationQueryPtr instancesQuery = ComplexNavigationQuery::Create();
-        instancesQuery->SelectContract(*contract, "searchQuery");
-        instancesQuery->From(*searchQuery, "searchQuery");
+        instancesQuery->SelectContract(*contract, SEARCH_QUERY_Alias);
+        instancesQuery->From(*searchQuery, SEARCH_QUERY_Alias);
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
@@ -2313,16 +2313,16 @@ void ExpectedQueries::RegisterExpectedQueries()
         widgetContract->SetECClassIdFieldName(SEARCH_QUERY_FIELD_ECClassId);
         widgetContract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
         ComplexNavigationQueryPtr widgetInstancesQuery = ComplexNavigationQuery::Create();
-        widgetInstancesQuery->SelectContract(*widgetContract, "searchQuery");
-        widgetInstancesQuery->From(*widgetSearchQuery, "searchQuery");
+        widgetInstancesQuery->SelectContract(*widgetContract, SEARCH_QUERY_Alias);
+        widgetInstancesQuery->From(*widgetSearchQuery, SEARCH_QUERY_Alias);
 
-        StringNavigationQueryPtr gadgetSearchQuery = StringNavigationQuery::Create("SELECT MyID, ECInstanceId AS RulesEngine_ECInstanceId, ECClassId AS RulesEngine_ECClassId FROM [RulesEngineTest].[Gadget] WHERE [Gadget].[ECInstanceId] > 0");
+        StringNavigationQueryPtr gadgetSearchQuery = StringNavigationQuery::Create("SELECT MyID, ECInstanceId AS [" SEARCH_QUERY_FIELD_ECInstanceId "], ECClassId AS [" SEARCH_QUERY_FIELD_ECClassId "] FROM [RulesEngineTest].[Gadget] WHERE [Gadget].[ECInstanceId] > 0");
         RefCountedPtr<DisplayLabelGroupingNodesQueryContract> gadgetContract = DisplayLabelGroupingNodesQueryContract::Create(&ret_Gadget);
         gadgetContract->SetECClassIdFieldName(SEARCH_QUERY_FIELD_ECClassId);
         gadgetContract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
         ComplexNavigationQueryPtr gadgetInstancesQuery = ComplexNavigationQuery::Create();
-        gadgetInstancesQuery->SelectContract(*gadgetContract, "searchQuery");
-        gadgetInstancesQuery->From(*gadgetSearchQuery, "searchQuery");
+        gadgetInstancesQuery->SelectContract(*gadgetContract, SEARCH_QUERY_Alias);
+        gadgetInstancesQuery->From(*gadgetSearchQuery, SEARCH_QUERY_Alias);
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
@@ -2714,7 +2714,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
-        grouped->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouped->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         
         RegisterQuery("Grouping_PropertyGroup_GroupsByProperty", *grouped);
@@ -2725,14 +2725,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         PropertyGroupP spec = new PropertyGroup();
         RegisterForDelete(*spec);
 
-        NavigationQueryContractPtr contract1 = ECPropertyGroupingNodesQueryContract::Create(b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel"), nullptr, *spec, nullptr);
+        NavigationQueryContractPtr contract1 = ECPropertyGroupingNodesQueryContract::Create(b1_Class1A, *b1_Class1A.GetPropertyP("Name"), nullptr, *spec, nullptr);
         ComplexNavigationQueryPtr nested1 = ComplexNavigationQuery::Create();
         nested1->SelectContract(*contract1, "this");
         nested1->From(b1_Class1A, true, "this");
         ComplexNavigationQueryPtr grouped1 = ComplexNavigationQuery::Create();
         grouped1->SelectAll().From(*nested1).GroupByContract(*contract1);
         
-        NavigationQueryContractPtr contract2 = ECPropertyGroupingNodesQueryContract::Create(b1_Class1B, *b1_Class1B.GetPropertyP("DisplayLabel"), nullptr, *spec, nullptr);
+        NavigationQueryContractPtr contract2 = ECPropertyGroupingNodesQueryContract::Create(b1_Class1B, *b1_Class1B.GetPropertyP("Name"), nullptr, *spec, nullptr);
         ComplexNavigationQueryPtr nested2 = ComplexNavigationQuery::Create();
         nested2->SelectContract(*contract2, "this");
         nested2->From(b1_Class1B, true, "this");
@@ -2740,7 +2740,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouped2->SelectAll().From(*nested2).GroupByContract(*contract2);
                 
         UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create(*grouped2, *grouped1);
-        unionQuery->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        unionQuery->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         unionQuery->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
 
         RegisterQuery("Grouping_PropertyGroup_GroupsMultipleClassesByProperty", *unionQuery);
@@ -2748,20 +2748,20 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // Grouping_PropertyGroup_GroupsByRange
         {
-        PropertyGroupP spec = new PropertyGroup("", "", false, "DisplayLabel", "");
+        PropertyGroupP spec = new PropertyGroup("", "", false, "Name", "");
         spec->AddRange(*new PropertyRangeGroupSpecification("", "", "0", "5"));
         spec->AddRange(*new PropertyRangeGroupSpecification("", "", "6", "10"));
         spec->AddRange(*new PropertyRangeGroupSpecification("", "", "11", "20"));
         RegisterForDelete(*spec);
 
-        NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel"), nullptr, *spec, nullptr);
+        NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(b1_Class1A, *b1_Class1A.GetPropertyP("Name"), nullptr, *spec, nullptr);
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b1_Class1A, true, "this");
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll().From(*nested).GroupByContract(*contract);
-        grouped->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouped->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         
         RegisterQuery("Grouping_PropertyGroup_GroupsByRange", *grouped);
@@ -2781,7 +2781,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
-        grouped->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouped->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         
         RegisterQuery("Grouping_PropertyGroup_OverridesImageId", *grouped);
@@ -2794,7 +2794,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b1_Class1A, false, "this");
-        nested->Where("[this].[DisplayLabel] = ?", {new BoundQueryECValue(ECValue(9))});
+        nested->Where("[this].[Name] = ?", {new BoundQueryECValue(ECValue(9))});
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll();
@@ -2811,7 +2811,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b1_Class1A, false, "this");
-        nested->Where("[this].[DisplayLabel] BETWEEN ? AND ?", {new BoundQueryECValue(ECValue(1)), new BoundQueryECValue(ECValue(5))});
+        nested->Where("[this].[Name] BETWEEN ? AND ?", {new BoundQueryECValue(ECValue(1)), new BoundQueryECValue(ECValue(5))});
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll();
@@ -2828,9 +2828,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b1_Class1A, false, "this");
-        nested->Where("[this].[DisplayLabel] NOT BETWEEN ? AND ?", {new BoundQueryECValue(ECValue(1)), new BoundQueryECValue(ECValue(5))});
-        nested->Where("[this].[DisplayLabel] NOT BETWEEN ? AND ?", {new BoundQueryECValue(ECValue(7)), new BoundQueryECValue(ECValue(9))});
-        nested->Where("[this].[DisplayLabel] NOT BETWEEN ? AND ?", {new BoundQueryECValue(ECValue(10)), new BoundQueryECValue(ECValue(15))});
+        nested->Where("[this].[Name] NOT BETWEEN ? AND ?", {new BoundQueryECValue(ECValue(1)), new BoundQueryECValue(ECValue(5))});
+        nested->Where("[this].[Name] NOT BETWEEN ? AND ?", {new BoundQueryECValue(ECValue(7)), new BoundQueryECValue(ECValue(9))});
+        nested->Where("[this].[Name] NOT BETWEEN ? AND ?", {new BoundQueryECValue(ECValue(10)), new BoundQueryECValue(ECValue(15))});
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll();
@@ -2853,7 +2853,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll().From(*nested1).GroupByContract(*contract1);
-        grouped->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouped->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
                 
         RegisterQuery("Grouping_PropertyGroup_CreatesGroupingQueryWhenRelationshipWithNavigationPropertyIsUsed", *grouped);
@@ -2868,7 +2868,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouped->SelectAll();
         grouped->From(ComplexNavigationQuery::Create()->SelectContract(*propertyGroupingContract, "this").From(ret_ClassF, true, "this"));
         grouped->GroupByContract(*propertyGroupingContract);
-        grouped->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouped->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         RegisterQuery("Grouping_PropertyGroup_GroupsSubclassNodesWhenPolymorphicallyReturningParentNodes_1", *grouped);
 
@@ -2903,7 +2903,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouping->SelectAll();
         grouping->From(*grouped);
         grouping->GroupByContract(*propertyGroupingContract);
-        grouping->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouping->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouping->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         grouping->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_ClassDHasClassE.GetId());
         RegisterQuery("Grouping_PropertyGroup_GroupsSubclassNodesWhenPolymorphicallyReturningParentNodesWithRelatedInstances_1", *grouping);
@@ -2941,7 +2941,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouping->SelectAll();
         grouping->From(*grouped);
         grouping->GroupByContract(*propertyGroupingContract);
-        grouping->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouping->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouping->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         grouping->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_ClassDHasClassE.GetId());
         RegisterQuery("Grouping_PropertyGroup_GroupsRelatedSubclassNodesWhenPolymorphicallyReturningParentNodes_1", *grouping);
@@ -2986,7 +2986,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouping->SelectAll();
         grouping->From(*UnionNavigationQuery::Create(*grouped1, *grouped2));
         grouping->GroupByContract(*propertyGroupingContract);
-        grouping->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouping->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouping->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         RegisterQuery("Grouping_PropertyGroup_GroupsByBaseClassPropertyWhenReturningDerivedClassInstances", *grouping);
         }
@@ -3007,7 +3007,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouped->SelectAll();
         grouped->From(*query);
         grouped->GroupByContract(*propertyGroupingContract);
-        grouped->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouped->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         grouped->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_WidgetHasGadgets.GetId());
 
@@ -3031,7 +3031,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouped->SelectAll();
         grouped->From(*query);
         grouped->GroupByContract(*propertyGroupingContract);
-        grouped->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouped->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetParentECClassId(ret_Widget.GetId());
@@ -3063,7 +3063,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouped->SelectAll();
         grouped->From(*UnionNavigationQuery::Create(*query1, *query2));
         grouped->GroupByContract(*contract1);
-        grouped->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouped->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetParentECClassId(ret_ClassD.GetId());
@@ -3091,7 +3091,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
         sorted->SelectAll();
         sorted->From(*grouped);
-        sorted->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        sorted->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         sorted->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         
         RegisterQuery("Grouping_PropertyGroup_GroupsByPropertyValue", *sorted);
@@ -3111,7 +3111,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         sorted->SelectAll();
         sorted->From(*nested);
         sorted->GroupByContract(*contract);
-        sorted->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        sorted->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         sorted->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         
         RegisterQuery("Grouping_PropertyGroup_SortsByDisplayLabelWhenTryingToSortByPropertyValueAndGroupByLabel", *sorted);
@@ -3132,7 +3132,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         sorted->SelectAll();
         sorted->From(*nested);
         sorted->GroupByContract(*contract);
-        sorted->OrderBy(ECPropertyGroupingNodesQueryContract::GroupingValueFieldName);
+        sorted->OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::GroupingValueFieldName).append("]").c_str());
         sorted->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         
         RegisterQuery("Grouping_PropertyGroup_GroupsAndSortsByPropertyValue", *sorted);
@@ -3271,7 +3271,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
-        grouped->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouped->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         grouped->GetResultParametersR().GetMatchingRelationshipIds().insert(b4_ClassBHasClassC.GetId());
         
@@ -3294,7 +3294,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
-        grouped->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouped->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         grouped->GetResultParametersR().GetMatchingRelationshipIds().insert(b4_ClassBHasClassC.GetId());
         
@@ -3318,7 +3318,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouped->SelectAll();
         grouped->From(*nested);
         grouped->GroupByContract(*contract);
-        grouped->OrderBy(Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
+        grouped->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
         grouped->GetResultParametersR().GetMatchingRelationshipIds().insert(b4_ClassBHasClassC.GetId());
         
@@ -3449,7 +3449,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
-        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
+        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
@@ -3468,7 +3468,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
-        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
+        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
@@ -3488,7 +3488,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, false));
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
-        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
+        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
         field = &AddField(*descriptor, b2_Class2, ContentDescriptor::Property("this", b2_Class2, *b2_Class2.GetPropertyP("Name")));
 
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
@@ -4287,7 +4287,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
-        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
+        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
         descriptor->SetContentFlags((int)ContentFlags::ShowImages);
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -4307,7 +4307,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
-        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
+        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
         descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
         
         ComplexContentQueryPtr nested = ComplexContentQuery::Create();
@@ -4397,7 +4397,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
-        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
+        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
@@ -4415,7 +4415,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, true));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
-        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
+        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
@@ -4472,8 +4472,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1B, false));
  
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));       
-        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
-        field = &AddField(*descriptor, b1_Class1B, ContentDescriptor::Property("this", b1_Class1B, *b1_Class1B.GetPropertyP("DisplayLabel")));
+        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
+        field = &AddField(*descriptor, b1_Class1B, ContentDescriptor::Property("this", b1_Class1B, *b1_Class1B.GetPropertyP("Name")));
         
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query1), "this");
@@ -4498,7 +4498,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, false));
   
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));      
-        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
+        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
         field = &AddField(*descriptor, b2_Class2, ContentDescriptor::Property("this", b2_Class2, *b2_Class2.GetPropertyP("Name")));
         
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
@@ -4523,12 +4523,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
-        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
+        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
         query->From(b1_Class1A, false, "this");
-        query->Where("[this].[DisplayLabel] = 10", BoundQueryValuesList());
+        query->Where("[this].[Name] = 10", BoundQueryValuesList());
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -4572,7 +4572,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->AddContentFlag(ContentFlags::MergeResults);
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
-        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
+        field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
@@ -4586,7 +4586,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr innerDescriptor = GetEmptyContentDescriptor(ContentDisplayType::PropertyPane);
         
         innerDescriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
-        field = &AddField(*innerDescriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
+        field = &AddField(*innerDescriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
         field = &AddField(*innerDescriptor, b3_Class3, ContentDescriptor::Property("this", b3_Class3, *b3_Class3.GetPropertyP("SomeProperty")));
     
         ComplexContentQueryPtr q1 = ComplexContentQuery::Create();

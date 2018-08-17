@@ -926,7 +926,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceKeyFieldSerialization)
             "Expand": false,
             "Priority": 0
             },
-        "Name": "key",
+        "Name": "/key/",
         "DisplayLabel": "",
         "Type": {
             "TypeName": "ECInstanceKey",
@@ -947,8 +947,9 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceKeyFieldSerialization)
 TEST_F(DefaultECPresentationSerializerTests, ECNavigationInstanceIdFieldSerialization)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
-    ContentDescriptor::ECNavigationInstanceIdField field(ContentDescriptor::ECPropertiesField(*testClass, ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String"))));
-    rapidjson::Document actual = field.AsJson();
+    ContentDescriptor::ECPropertiesField propertiesField(*testClass, ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
+    ContentDescriptor::ECNavigationInstanceIdField navigationInstanceIdField(propertiesField);
+    rapidjson::Document actual = navigationInstanceIdField.AsJson();
 
     rapidjson::Document expected;
     expected.Parse(R"({
@@ -959,7 +960,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECNavigationInstanceIdFieldSerializ
             "Expand": false,
             "Priority": 0
             },
-        "Name": "",
+        "Name": "/id/PropertyTestClassA_String",
         "DisplayLabel": "",
         "Type": {
             "TypeName": "ECInstanceId",

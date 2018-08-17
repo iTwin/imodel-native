@@ -177,7 +177,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_AppliesInstanceFilter)
     {
-    ContentInstancesOfSpecificClassesSpecification spec(1, "this.DisplayLabel = 10", "Basic1:Class1A", false);
+    ContentInstancesOfSpecificClassesSpecification spec(1, "this.Name = 10", "Basic1:Class1A", false);
     
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
@@ -229,7 +229,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_CategorizesF
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
     ASSERT_EQ(2, fields.size());
 
-    EXPECT_STREQ("Class2_DisplayLabel", fields[0]->GetName().c_str());
+    EXPECT_STREQ("Class2_Name", fields[0]->GetName().c_str());
     EXPECT_STREQ("Miscellaneous", fields[0]->GetCategory().GetName().c_str());
 
     EXPECT_STREQ("Class2_CategorizedProperty", fields[1]->GetName().c_str());
@@ -278,7 +278,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_MergesSimila
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
     ASSERT_EQ(2, fields.size());
 
-    EXPECT_STREQ("Class1A_Class2_DisplayLabel", fields[0]->GetName().c_str());
+    EXPECT_STREQ("Class1A_Class2_Name", fields[0]->GetName().c_str());
     EXPECT_EQ(2, fields[0]->AsPropertiesField()->GetProperties().size());
 
     EXPECT_STREQ("Class2_CategorizedProperty", fields[1]->GetName().c_str());
