@@ -2659,12 +2659,7 @@ bool Tile::_ToJson(Json::Value& json) const
         }
 
     ByteStream geometry = GetRoot().GetTileDataFromCache(_GetTileCacheKey());
-    if (!geometry.empty())
-        {
-        Utf8String encodedGeometry;
-        Base64Utilities::Encode(encodedGeometry, geometry.GetData(), geometry.size());
-        json["geometry"] = encodedGeometry;
-        }
+    json["hasGeometry"] = !geometry.empty();
 
     return true;
     }

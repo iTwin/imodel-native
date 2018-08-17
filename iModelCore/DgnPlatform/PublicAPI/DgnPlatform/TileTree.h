@@ -274,6 +274,7 @@ public:
     void SetNotFound() {return m_loadStatus.store(LoadStatus::NotFound);}
 
     TileMetadataCR GetMetadata() const { return m_metadata; }
+    TileMetadataR GetMetadata() { return m_metadata; }
     void SetMetadata(TileMetadataCR metadata) { m_metadata = metadata; }
 
     void SetZoomFactor(double zoom) { BeAssert(!IsLeaf()); m_metadata.SetZoomFactor(zoom); }
@@ -406,7 +407,7 @@ public:
 
     virtual bool _ToJson(Json::Value&) const { return false; }
     virtual TilePtr _FindTileById(Utf8CP id) { return nullptr; }
-    ByteStream GetTileDataFromCache(Utf8StringCR cacheKey) const;
+    DGNPLATFORM_EXPORT ByteStream GetTileDataFromCache(Utf8StringCR cacheKey) const;
 };
 
 //=======================================================================================
