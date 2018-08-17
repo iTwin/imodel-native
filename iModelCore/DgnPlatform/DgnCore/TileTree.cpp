@@ -97,11 +97,14 @@ folly::Future<BentleyStatus> TileLoader::Perform()
             tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
             
             // On a successful load, potentially store the tile in the cache.   
-            auto saveToDb = me->_SaveToDb();
+            if (nullptr == me->m_renderSys || me->m_renderSys->_DoCacheTiles())
+                {
+                auto saveToDb = me->_SaveToDb();
 
-            // don't wait on the save unless caller wants to immediately extract data from cache.
-            if (me->_WantWaitOnSave())
-                saveToDb.get();
+                // don't wait on the save unless caller wants to immediately extract data from cache.
+                if (me->_WantWaitOnSave())
+                    saveToDb.get();
+                }
 
             return SUCCESS;
             });
@@ -750,9 +753,9 @@ BeFileName DgnPlatformLib::Host::TileAdmin::_GetElementCacheFileName(DgnDbCR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
     {
-    if (httpOnly && !IsHttp()) 
+    if (httpOnly && !IsHttp())
         return;
-        
+
     m_localCacheName = T_HOST.GetTileAdmin()._GetRealityDataCacheFileName(realityCacheName);
     m_cache = new TileCache(maxSize);
     if (SUCCESS != m_cache->OpenAndPrepare(m_localCacheName))
