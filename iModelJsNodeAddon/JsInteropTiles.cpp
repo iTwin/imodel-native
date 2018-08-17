@@ -260,7 +260,6 @@ struct JsSystem : Render::System
 {
     int _Initialize(void*, bool) override NO_IMPL(0)
     Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const&) const override NULL_IMPL
-    Render::GraphicPtr _CreateSprite(Render::ISprite&, DPoint3dCR, DPoint3dCR, int, Dgn::DgnDbR) const override NULL_IMPL
     Render::TexturePtr _CreateGeometryTexture(Render::GraphicCR, DRange2dCR, bool, bool) const override NULL_IMPL
     Render::LightPtr _CreateLight(Dgn::Lighting::Parameters const&, DVec3dCP, DPoint3dCP) const override NULL_IMPL
 
@@ -284,7 +283,6 @@ struct JsSystem : Render::System
     uint32_t _GetMaxFeaturesPerBatch() const override { return 2048; }
     Render::GraphicPtr _CreateTriMesh(Render::TriMeshArgsCR args, Dgn::DgnDbR db) const override RETURN_GRAPHIC
     Render::GraphicPtr _CreateIndexedPolylines(Render::IndexedPolylineArgsCR args, Dgn::DgnDbR db) const override RETURN_GRAPHIC
-    Render::GraphicPtr _CreatePointCloud(Render::PointCloudArgsCR args, Dgn::DgnDbR db) const override RETURN_GRAPHIC
     Render::GraphicPtr _CreateGraphicList(bvector<Render::GraphicPtr>&& graphics, Dgn::DgnDbR db) const override RETURN_GRAPHIC
     Render::GraphicPtr _CreateBranch(Render::GraphicBranch&& branch, Dgn::DgnDbR db, TransformCR, ClipVectorCP) const override RETURN_GRAPHIC
     Render::GraphicPtr _CreateBatch(Render::GraphicR graphic, Render::FeatureTable&& features, DRange3dCR range) const override { return new Render::Graphic(graphic.GetDgnDb()); }
