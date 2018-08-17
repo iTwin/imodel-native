@@ -671,6 +671,41 @@ void UpdaterChangeDetector::_DetectDeletedMaterials (DwgImporter& importer)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_OnGroupSeen (DwgImporter& importer, DgnElementId groupId)
+    {
+    if (groupId.IsValid())
+        m_groupsSeen.insert (groupId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_DetectDeletedGroups (DwgImporter& importer)
+    {
+    auto groupModel = importer.GetDgnDb().Models().Get<GenericGroupModel>(importer.GetGroupModelId());
+    if (!groupModel.IsValid())
+        return;
+
+    auto&   elements = importer.GetDgnDb().Elements ();
+    auto&   syncInfo = importer.GetSyncInfo ();
+
+    for (auto groupId : groupModel->MakeIterator().BuildIdSet<DgnElementId>())
+        {
+        if (m_groupsSeen.find(groupId) == m_groupsSeen.end())
+            {
+            auto group = elements.Get<DgnElement> (groupId);
+            LOG.tracev ("Delete group %s (ID=%lld)", group.IsValid() ? group->GetUserLabel() : "??", groupId.GetValue());
+            elements.Delete (groupId);
+            syncInfo.DeleteGroup (groupId);
+            }
+        }
+
+    m_groupsSeen.clear ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_OnViewSeen (DwgImporter& importer, DgnViewId viewId)
