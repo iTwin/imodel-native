@@ -1083,7 +1083,7 @@ private:
     FutureStatus GenerateTilesFromTileTree(ITileCollector* collector, double leafTolerance, bool surfacesOnly, GeometricModelP model);
 
 public:
-    DGNPLATFORM_EXPORT explicit TileGenerator(DgnDbR dgndb, AxisAlignedBox3dCR projectExtents, ITileCollectionFilterCP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
+    DGNPLATFORM_EXPORT explicit TileGenerator(DgnDbR dgndb, TransformCR dbToTile, ITileCollectionFilterCP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TransformCR GetSpatialTransformFromDgn() const { return m_spatialTransformFromDgn; }
