@@ -1131,6 +1131,19 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return CreateBentleyReturnObject(status, jsValue);
         }
 
+    Napi::Value GetTileContent(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, treeIdStr, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(1, tileIdStr, Env().Undefined());
+
+        Json::Value output;
+        auto status = JsInterop::GetTileContent(output, GetDgnDb(), treeIdStr, tileIdStr);
+        
+        Napi::Value jsValue = NapiUtils::Convert(Env(), output);
+        return CreateBentleyReturnObject(status, jsValue);
+        }
+
     Napi::Value InsertLinkTableRelationship(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -1780,6 +1793,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
             InstanceMethod("getTiles", &NativeDgnDb::GetTiles),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
+            InstanceMethod("getTileContent", &NativeDgnDb::GetTileContent),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),

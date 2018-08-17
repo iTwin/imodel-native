@@ -404,3 +404,28 @@ DgnDbStatus JsInterop::GetTiles(JsonValueR result, DgnDbR db, Utf8StringCR treeI
 
     return DgnDbStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus JsInterop::GetTileContent(JsonValueR result, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId)
+    {
+    TileTree::RootP root = nullptr;
+    auto status = findTileTree(root, treeId, db);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    auto tile = root->_FindTileById(tileId.c_str());
+    if (tile.IsNull())
+        return DgnDbStatus::NotFound;
+
+    ByteStream geometry = root->GetTileDataFromCache(tile->_GetTileCacheKey());
+    if (geometry.empty())
+        return DgnDbStatus::NotFound;
+
+    Utf8String base64;
+    Base64Utilities::Encode(base64, geometry.GetData(), geometry.size());
+    result = base64;
+    return DgnDbStatus::Success;
+    }
+
