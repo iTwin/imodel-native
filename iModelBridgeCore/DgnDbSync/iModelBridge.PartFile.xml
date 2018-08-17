@@ -117,7 +117,7 @@
       <SubPart PartName="iModelBridgeFwk-en"/>
       <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>
       <SubPart PartName="iModelDmsSupport" Repository="DmsSupport" PartFile="iModelDmsSupport"/>
-      <SubPart PartName="cxxopts" Repository="libsrc-cxxopts" PartFile="cxxopts"/>
+      <SubPart PartName="cxxopts" Repository="bsicommon" PartFile="Libsrc-Nugets"/>
       <Bindings>
         <Assemblies>Delivery/$(libprefix)iModelBridgeFwkLib$(ApiNumber)$(shlibext)</Assemblies>
         <Libs Required="false">Delivery/$(libprefix)iModelBridgeFwkLib$(libext)</Libs>
@@ -171,7 +171,7 @@
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="PublicApi"/>
-        <SubPart PartName="cxxopts" PartFile ="cxxopts" Repository="Libsrc-cxxopts"/>
+        <SubPart PartName="cxxopts" Repository="bsicommon" PartFile="Libsrc-Nugets"/>
         <Bindings>
             <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeAssign$(exeext)</Files>
         </Bindings>

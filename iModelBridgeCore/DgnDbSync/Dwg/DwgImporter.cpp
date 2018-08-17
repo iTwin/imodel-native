@@ -1847,6 +1847,7 @@ void            DwgImporter::_FinishImport ()
         changeDetector._DetectDeletedModelsEnd (*this);
         changeDetector._DetectDeletedMaterials (*this);
         changeDetector._DetectDeletedViews (*this);
+        changeDetector._DetectDeletedGroups (*this);
 
         // update syncinfo for master DWG file
         DwgSyncInfo&    syncInfo = GetSyncInfo ();

@@ -10,6 +10,7 @@
 #include <BeSQLite/L10N.h>
 #include <Bentley/BeTextFile.h>
 #include <GeomJsonWireFormat/JsonUtils.h>
+#include <Bentley/BeNumerical.h>
 #include "iModelBridgeHelpers.h"
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -784,7 +785,9 @@ Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR 
     // the property on the JobSubject, so that the user and apps can see what the 
     // bridge configuration transform is.
     Transform jobSubjectTransform;
-    if ((BSISUCCESS != JobSubjectUtils::GetTransform(jobSubjectTransform, jobSubject)) || !jobSubjectTransform.IsEqual(jobTrans))
+    auto matrixTolerance = Angle::TinyAngle();
+    auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(jobTrans.ColumnXMagnitude());
+    if ((BSISUCCESS != JobSubjectUtils::GetTransform(jobSubjectTransform, jobSubject)) || !jobSubjectTransform.IsEqual(jobTrans, matrixTolerance, pointTolerance))
         {
         auto jobSubjectED = jobSubject.MakeCopy<Subject>();
         JobSubjectUtils::SetTransform(*jobSubjectED, jobTrans);

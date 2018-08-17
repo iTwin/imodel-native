@@ -378,15 +378,16 @@ struct  GroupFactory
 private:
     DwgImporter&        m_importer;
     DwgDbGroupCR        m_dwgGroup;
-    DwgDbObjectIdArray  m_memberIds;
+    DwgDbObjectIdArray  m_dwgMemberIds;
 
-    DgnElementIdSet GroupFactory::FindAllElements (DwgDbObjectIdCR objectId) const;
-    GenericGroupPtr CreateAndInsert ();
+    DgnElementIdSet FindAllElements (DwgDbObjectIdCR objectId) const;
+    GenericGroupPtr CreateAndInsert () const;
 
 public:
     // the constructor
-    GroupFactory (DwgImporter& importer, DwgDbGroupCR group) : m_importer(importer), m_dwgGroup(group) {}
-    BentleyStatus   CreateGroup ();
+    GroupFactory (DwgImporter& importer, DwgDbGroupCR dwgGroup);
+    DgnElementPtr   Create () const;
+    BentleyStatus   Update (GenericGroupR dgnGroup) const;
     };  // GroupFactory
 
 /*=================================================================================**//**

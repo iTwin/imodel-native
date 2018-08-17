@@ -175,43 +175,40 @@ BentleyStatus   ImportXData::_ImportEntity (ElementImportResults& results, Eleme
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus ImportXData::_ImportGroup (DwgDbGroupCR group)
+DgnElementPtr   ImportXData::_ImportGroup (DwgDbGroupCR group)
     {
     // This method creates a GenericGroup in the BisCore's generic group model:
     LOG.tracev ("Importing group %ls in file %ls", group.GetName().c_str(), group.GetDatabase()->GetFileName().c_str());
 
-    if (T_Super::IsUpdating())
-        {
-        // WIP - add code to find and update existing DgnDb group element.
-        BeAssert (false && "WIP: group updating not implemented yet!");
-        }
-
+    GenericGroupPtr     genericGroup;
     DwgDbObjectIdArray  objectIds;
     if (0 == group.GetAllEntityIds(objectIds))
-        return  BSISUCCESS;
+        return  genericGroup;
 
     // A generic group must be added to a GenericGroupModel:
-    auto groupModel = T_Super::GetDgnDb().Models().Get<GenericGroupModel>(T_Super::GetGroupModelId());
+    auto& db = T_Super::GetDgnDb ();
+    auto groupModel = db.Models().Get<GenericGroupModel>(T_Super::GetGroupModelId());
     if (!groupModel.IsValid())
-        return  BSIERROR;
+        return  genericGroup;
 
-    // Create a new generic group, and add it into DgnDb:
-    auto genericGroup = GenericGroup::Create (*groupModel);
-    if (!genericGroup.IsValid() || genericGroup->Insert().IsNull())
-        return  BentleyStatus::ERROR;
+    // Create a new generic group element and insert it to the db.
+    // Currently a GenericGroup requires a valid source, i.e. the group element, ID at the time its memebers are added.
+    genericGroup = GenericGroup::Create (*groupModel);
+    if (!genericGroup.IsValid() || !genericGroup->Insert().IsValid())
+        return  genericGroup;
 
-    // Process each and every member entity in DWG group:
+    // Process each and every member entity found in the DWG group:
     for (auto objectId : objectIds)
         {
         // Find all elements that have been mapped from this object:
-        DgnElementIdSet elementIds = FindElementsMappedFrom (objectId);
+        auto memberIds = FindElementsMappedFrom (objectId);
 
-        // add them all in the same GenericGroup:
-        for (auto elementId : elementIds)
+        // Add them all in the same GenericGroup:
+        for (auto memberId : memberIds)
             {
-            auto member = this->GetDgnDb().Elements().GetElement (elementId);
-            if (member.IsValid())
-                genericGroup->AddMember (*member);
+            auto element = db.Elements().GetElement (memberId);
+            if (element.IsValid())
+                genericGroup->AddMember (*element);
             }
         }
     
@@ -222,11 +219,71 @@ BentleyStatus ImportXData::_ImportGroup (DwgDbGroupCR group)
 
     if (0 == count)
         {
-        GetDgnDb().Elements().Delete (groupId);
-        return  BentleyStatus::ERROR;
+        // Delete the empty group from DgnDb:
+        T_Super::GetDgnDb().Elements().Delete (groupId);
+        genericGroup = nullptr;
         }
     
-    return  BentleyStatus::SUCCESS;
+    return  genericGroup;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ImportXData::_UpdateGroup (DgnElementR dgnGroup, DwgDbGroupCR dwgGroup)
+    {
+    // This method gets called only in an update job run that creates changeset.
+    // When a change has been detected via _OnUpdateGroup, this method is called; otherwise _ImportGroup is called.
+    LOG.tracev ("Updating group %ls in file %ls", dwgGroup.GetName().c_str(), dwgGroup.GetDatabase()->GetFileName().c_str());
+
+    // This sample code only creates GenericGroup's:
+    auto genericGroup = dynamic_cast<GenericGroupP> (&dgnGroup);
+    if (nullptr == genericGroup)
+        {
+        T_Super::ReportError (IssueCategory::UnexpectedData(), Issue::GroupError(), Utf8PrintfString("existing element is not a GenericGroup for %lls!", dwgGroup.GetName().c_str()).c_str());
+        return  BentleyStatus::BSIERROR;
+        }
+
+    // Build existing member list from the GenericGroup so we know which members to be removed at the end:
+    auto oldMembers = ElementGroupsMembers::QueryMembers (*genericGroup);
+
+    DwgDbObjectIdArray  objectIds;
+    if (0 == dwgGroup.GetAllEntityIds(objectIds))
+        return  BentleyStatus::BSISUCCESS;
+
+    auto& db = T_Super::GetDgnDb ();
+
+    // Step-1: add new members which are not seen from the sync info, and remove them from the existing list:
+    for (auto objectId : objectIds)
+        {
+        // Find all elements that have been mapped from this object:
+        auto newMembers = FindElementsMappedFrom (objectId);
+
+        // Add new or record existing members in GenericGroup:
+        for (auto newMember : newMembers)
+            {
+            // If a member is present in both groups, remove it from the existing list:
+            if (oldMembers.find(newMember) != oldMembers.end())
+                {
+                oldMembers.erase (newMember);
+                continue;
+                }
+            // Otherwise this is a new member which needs to be added to the DgnDb group:
+            auto element = db.Elements().GetElement (newMember);
+            if (element.IsValid())
+                genericGroup->AddMember (*element);
+            }
+        }
+
+    // Now we are ready to remove members from the DgnDb group: the remaining entries in existing list are the ones to be removed:
+    for (auto oldMember : oldMembers)
+        {
+        auto element = db.Elements().GetElement (oldMember);
+        if (element.IsValid())
+            genericGroup->RemoveMember (*element);
+        }
+
+    return  BentleyStatus::BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -240,7 +297,7 @@ DgnElementIdSet ImportXData::FindElementsMappedFrom (DwgDbObjectIdCR objectId)
     DwgDbBlockReferencePtr  blockInsert(objectId, DwgDbOpenMode::ForRead);
     if (blockInsert.OpenStatus() == DwgDbStatus::Success && blockInsert->IsXAttachment())
         {
-        auto modelMap = this->FindModel (objectId, DwgSyncInfo::ModelSourceType::XRefAttachment);
+        auto modelMap = T_Super::FindModel (objectId, DwgSyncInfo::ModelSourceType::XRefAttachment);
 
         DgnModelP model = nullptr;
         if (modelMap.IsValid() && nullptr != (model = modelMap.GetModel()))
@@ -251,7 +308,7 @@ DgnElementIdSet ImportXData::FindElementsMappedFrom (DwgDbObjectIdCR objectId)
 
     // Consult the SyncInfo and Find the elements that have been mapped from this object, in the same model:
     if (!T_Super::GetSyncInfo().FindElements(ids, objectId))
-        LOG.error (Utf8PrintfString("No DgnElement found for object ID=%llx", objectId.ToUInt64()).c_str());
+        T_Super::ReportError (IssueCategory::UnexpectedData(), Issue::GroupError(), Utf8PrintfString("No DgnElement found for object ID=%llx", objectId.ToUInt64()).c_str());
         
     return  ids;
     }
