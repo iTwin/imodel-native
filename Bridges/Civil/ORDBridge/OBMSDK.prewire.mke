@@ -1,0 +1,40 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ORDBridge/OBMSDK.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+%ifdef OBM_SDK
+    OBMSdk=${OBM_SDK}/
+    %ifnofile ${OBM_SDK}
+        %error $(OBM_SDK) not found. Make sure OBM_SDK points to Product\OpenBridgeModelerSDK directory in your OpenBridge output tree.
+    %endif
+%else
+    OBMSdk=$(BuildContext)SdkSources/OpenBridgeModelerSDK/
+%endif
+
+Delivery=$(BuildContext)Delivery/
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    cleanopt = --clean
+%else
+    cleanopt =
+%endif
+
+%if defined (VERBOSE)
+    PUBLISH_VERBOSE = -v6
+%else
+    PUBLISH_VERBOSE = -v3   # INFO_LEVEL_VeryInteresting
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Deliver the results
+#----------------------------------------------------------------------------------------
+$(Delivery)OBMSdk/Dlls : $(OBMSdk)redist
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/OBMSdk : $(OBMSdk)include/OpenBridgeModeler
+    $(LinkFirstDepToFirstTargetAsDirectory)
