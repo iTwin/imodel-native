@@ -742,16 +742,7 @@ void Root::RequestTiles(MissingNodesCR missingNodes)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-OctTree::Root::Root(GeometricModelCR model, TransformCR location, Render::SystemR system)
-    : T_Super(model, location, system)
-    {
-    // 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Tile::ChildTiles const* OctTree::Tile::_GetChildren(bool load) const
+Tile::ChildTiles const* Tile::_GetChildren(bool load) const
     {
     if (m_isLeaf)
         return nullptr;
@@ -833,10 +824,10 @@ static DRange3d bisectRange(DRange3dCR range, bool takeLow)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d OctTree::Tile::ComputeChildRange(OctTree::Tile& child, bool is2d) const
+DRange3d Tile::ComputeChildRange(Tile& child, bool is2d) const
     {
     // Each dimension of the relative ID is 0 or 1, indicating which bisection of the range to take
-    TileTree::OctTree::TileId relativeId = child.GetRelativeTileId();
+    TileId relativeId = child.GetRelativeTileId();
     BeAssert(2 > relativeId.m_i && 2 > relativeId.m_j && 2 > relativeId.m_k);
 
     // We should never subdivide along z for 2d tiles...Ideally we would use a quad-tree for those
@@ -860,7 +851,7 @@ DRange3d OctTree::Tile::ComputeChildRange(OctTree::Tile& child, bool is2d) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-OctTree::TileId OctTree::TileId::GetRelativeId(OctTree::TileId parentId) const
+TileId TileId::GetRelativeId(TileId parentId) const
     {
     BeAssert(parentId.m_level+1 == m_level);
     return TileId(parentId.m_level, m_i % 2, m_j % 2, m_k % 2);
@@ -869,10 +860,10 @@ OctTree::TileId OctTree::TileId::GetRelativeId(OctTree::TileId parentId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-OctTree::TileId OctTree::Tile::GetRelativeTileId() const
+TileId Tile::GetRelativeTileId() const
     {
     auto tileId = GetTileId();
-    auto parent = GetOctParent();
+    auto parent = GetParent();
     if (nullptr != parent)
         tileId = tileId.GetRelativeId(parent->GetTileId());
 
@@ -882,7 +873,7 @@ OctTree::TileId OctTree::Tile::GetRelativeTileId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void OctTree::Tile::_ValidateChildren() const
+void Tile::_ValidateChildren() const
     {
     // This node may have initially had children and subsequently determined that it should be a leaf instead
     // - unload its now-useless children unconditionally

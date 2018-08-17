@@ -133,9 +133,9 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
-struct Root : TileTree::OctTree::Root
+struct Root : TileTree::Root
 {
-    DEFINE_T_SUPER(TileTree::OctTree::Root);
+    DEFINE_T_SUPER(TileTree::Root);
 protected:
     struct SolidPrimitivePartMap
     {
@@ -207,9 +207,9 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
-struct Tile : TileTree::OctTree::Tile
+struct Tile : TileTree::Tile
 {
-    DEFINE_T_SUPER(TileTree::OctTree::Tile);
+    DEFINE_T_SUPER(TileTree::Tile);
 
 protected:
     double                      m_tolerance;
@@ -220,15 +220,15 @@ protected:
     bool                        m_hasZoomFactor = false;
     bool                        m_displayable = true;
 
-    Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable);
+    Tile(Root& root, TileTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable);
     explicit Tile(Tile const& parent);
-    Tile(Root& root, TileTree::OctTree::TileId id, DRange3dCR range, double minToleranceRatio);
+    Tile(Root& root, TileTree::TileId id, DRange3dCR range, double minToleranceRatio);
     ~Tile();
 
     void InitTolerance(double minToleranceRatio, bool isLeaf=false);
 
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
-    TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
+    TileTree::TilePtr _CreateChild(TileTree::TileId) const override;
     double _GetMaximumSize() const override;
     void _Invalidate() override;
     bool _IsInvalidated(TileTree::DirtyRangesCR dirty) const override;
@@ -241,8 +241,8 @@ protected:
 
     Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
 public:
-    static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr, true); }
-    static TilePtr CreateRoot(Root& root, DRange3dCR range, bool populate) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range, populate); }
+    static TilePtr Create(Root& root, TileTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr, true); }
+    static TilePtr CreateRoot(Root& root, DRange3dCR range, bool populate) { return new Tile(root, TileTree::TileId::RootId(), nullptr, &range, populate); }
     static TilePtr CreateWithZoomFactor(Tile const& parent) { return new Tile(parent); }
 
     double GetTolerance() const { return m_tolerance; }
@@ -269,7 +269,7 @@ public:
 
     bool _ToJson(Json::Value&) const override;
     Utf8String GetIdString() const;
-    TilePtr FindTile(TileTree::OctTree::TileId id, double zoomFactor);
+    TilePtr FindTile(TileTree::TileId id, double zoomFactor);
     TilePtr FindTile(double zoomFactor);
     TileP GetElementParent() const { return const_cast<TileP>(static_cast<TileCP>(GetParent())); }
 };

@@ -863,53 +863,14 @@ BentleyStatus Loader::_LoadTile()
             }
         }
 
-    auto& system = GetRenderSystem();
-
-    MeshGraphicArgs args;
-    bvector<Render::GraphicPtr> graphics;
-
-    for (auto const& mesh : geometry.Meshes())
-        {
-        auto meshGraphic = mesh->GetGraphics(args, system, root.GetDgnDb());
-        if (meshGraphic.IsValid())
-            graphics.push_back(meshGraphic);
-        }
-
-    GraphicPtr batch;
-    if (!graphics.empty())
-        {
-        GraphicPtr graphic;
-        switch (graphics.size())
-            {
-            case 0:
-                break;
-            case 1:
-                graphic = *graphics.begin();
-                BeAssert(graphic.IsValid());
-                break;
-            default:
-                BeAssert(std::accumulate(graphics.begin(), graphics.end(), true, [](bool cur, GraphicPtr const& gf) { return cur && gf.IsValid(); }));
-                graphic = system._CreateGraphicList(std::move(graphics), root.GetDgnDb());
-                BeAssert(graphic.IsValid());
-                break;
-            }
-
-        if (graphic.IsValid())
-            {
-            geometry.Meshes().m_features.SetModelId(root.GetModelId());
-            batch = system._CreateBatch(*graphic, std::move(geometry.Meshes().m_features), tile._GetContentRange());
-            BeAssert(batch.IsValid());
-            tile.SetHasGraphics(true);
-            }
-        }
-
+    bool haveGeometry = !geometry.Meshes().empty();
     return tile.GetElementRoot().UnderMutex([&]()
         {
-        tile.SetHasGraphics(batch.IsValid());
+        tile.SetHasGraphics(haveGeometry);
 
         // Possible that one or more parent tiles will contain solely elements too small to produce geometry, in which case
         // we must create their children in order to get graphics...mark undisplayable.
-        tile.SetDisplayable(batch.IsValid());
+        tile.SetDisplayable(haveGeometry);
         return SUCCESS;
         });
     }
@@ -932,7 +893,7 @@ BentleyStatus Loader::DoGetFromSource()
     if (geometry.IsEmpty() && geometry.IsComplete())
         {
         m_tileBytes.clear();
-        m_tileMetadata.m_flags = (TileTree::TileFlags::IsLeaf | TileTree::TileFlags::IsEmpty);
+        m_tileMetadata.m_flags = (TileTree::TileFlags::IsLeaf | TileTree::TileFlags::IsUndisplayable);
         }
     else
         {
@@ -955,6 +916,9 @@ BentleyStatus Loader::DoGetFromSource()
 
         if (!geometry.IsComplete())
             m_tileMetadata.m_flags |= TileTree::TileFlags::Incomplete;
+
+        if (tile.HasZoomFactor())
+            m_tileMetadata.m_flags |= TileTree::TileFlags::HasZoomFactor;
         }
     
     m_saveToCache = true;
@@ -1395,7 +1359,7 @@ Utf8String Tile::_GetTileCacheKey() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable)
+Tile::Tile(Root& octRoot, TileTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable)
     : T_Super(octRoot, id, parent, false), m_displayable(displayable)
     {
     if (nullptr != parent)
@@ -1411,7 +1375,7 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
 * NB: Constructor used by ThumbnailTile...
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(Root& root, TileTree::OctTree::TileId id, DRange3dCR range, double minToleranceRatio)
+Tile::Tile(Root& root, TileTree::TileId id, DRange3dCR range, double minToleranceRatio)
     : T_Super(root, id, nullptr, true), m_displayable(true)
     {
     m_range.Extend(range);
@@ -1593,7 +1557,7 @@ TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
+TileTree::TilePtr Tile::_CreateChild(TileTree::TileId childId) const
     {
     return Tile::Create(const_cast<RootR>(GetElementRoot()), childId, *this);
     }
@@ -2726,7 +2690,8 @@ bool Tile::_ToJson(Json::Value& json) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Tile::GetIdString() const
     {                                                                                                                                                                       
-    return Utf8PrintfString("%u/%u/%u/%u:%f", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, m_zoomFactor);
+    // NB: Zoom factor is stored as a double for arithmetic purposes, but it's always an unsigned integral power of two.
+    return Utf8PrintfString("%u/%u/%u/%u:%u", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, static_cast<uint32_t>(m_zoomFactor));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2737,21 +2702,22 @@ TileTree::TilePtr Root::_FindTileById(Utf8CP strId)
     if (GetRootTile().IsNull())
         return nullptr;
     
-    TileTree::OctTree::TileId id;
-    double zoomFactor;
-    if (nullptr == strId || 5 != BE_STRING_UTILITIES_UTF8_SSCANF(strId, "%" SCNu8 "/%u/%u/%u:%lf", &id.m_level, &id.m_i, &id.m_j, &id.m_k, &zoomFactor))
+    // NB: Zoom factor is stored as a double for arithmetic purposes, but it's always an unsigned integral power of two.
+    uint32_t zoomFactor;
+    TileTree::TileId id;
+    if (nullptr == strId || 5 != BE_STRING_UTILITIES_UTF8_SSCANF(strId, "%" SCNu8 "/%u/%u/%u:%u", &id.m_level, &id.m_i, &id.m_j, &id.m_k, &zoomFactor))
         {
         BeAssert(false && "Invalid tile id string");
         return nullptr;
         }
 
-    return static_cast<TileR>(*GetRootTile()).FindTile(id, zoomFactor);
+    return static_cast<TileR>(*GetRootTile()).FindTile(id, static_cast<double>(zoomFactor));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilePtr Tile::FindTile(TileTree::OctTree::TileId id, double zoomFactor)
+TilePtr Tile::FindTile(TileTree::TileId id, double zoomFactor)
     {
     if (id == GetTileId())
         return FindTile(zoomFactor);

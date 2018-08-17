@@ -139,6 +139,28 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct TileId
+{
+    uint8_t     m_level;
+    uint32_t    m_i;
+    uint32_t    m_j;
+    uint32_t    m_k;
+
+    TileId(uint8_t level, uint32_t i, uint32_t j, uint32_t k) : m_level(level), m_i(i), m_j(j), m_k(k) { }
+    TileId() : TileId(0,0,0,0) { }
+
+    TileId CreateChildId(uint32_t i, uint32_t j, uint32_t k) const { return TileId(m_level+1, m_i*2+i, m_j*2+j, m_k*2+k); }
+    TileId GetRelativeId(TileId parentId) const;
+
+    static TileId RootId() { return TileId(0,0,0,0); }
+
+    bool operator==(TileId const& other) const { return m_level == other.m_level && m_i == other.m_i && m_j == other.m_j && m_k == other.m_k; }
+    bool IsRoot() const { return *this == RootId(); }
+};
+
+//=======================================================================================
 //! A Tile in a TileTree. Every Tile has 0 or 1 parent Tile and 0 or more child Tiles. 
 //! The range member is an ElementAlignedBox in the local coordinate system of the TileTree.
 //! All child Tiles must be contained within the range of their parent Tile.
@@ -157,6 +179,9 @@ protected:
     uint32_t m_depth;
     mutable BeAtomic<LoadStatus> m_loadStatus;
     mutable ChildTiles m_children;
+    TileId m_id;
+    bool m_isLeaf;
+    bool m_hasGraphics = false;
 
     void SetAbandoned() const;
 
@@ -165,13 +190,18 @@ protected:
     //! Given the non-empty set of damaged ranges intersecting this tile's range, return whether the tile has become invalidated and must be regenerated.
     virtual bool _IsInvalidated(DirtyRangesCR dirty) const { return true; }
     //! Invoked at beginning of _SelectTiles() to ensure children are still valid.
-    virtual void _ValidateChildren() const { }
+    DGNPLATFORM_EXPORT virtual void _ValidateChildren() const;
+    DGNPLATFORM_EXPORT DRange3d ComputeChildRange(Tile& child, bool is2d=false) const;
 public:
-    Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_depth(nullptr==parent ? 0 : parent->GetDepth()+1), m_loadStatus(LoadStatus::NotLoaded) {}
+    Tile(RootR root, TileId id, TileCP parent, bool isLeaf) : m_root(root), m_parent(parent), m_depth(nullptr == parent ? 0 : parent->GetDepth() + 1), m_loadStatus(LoadStatus::NotLoaded),
+        m_id(id), m_isLeaf(isLeaf) { }
 
     ElementAlignedBox3d const& GetRange() const {return m_range;}
     DGNPLATFORM_EXPORT ElementAlignedBox3d ComputeRange() const;
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
+
+    TileId GetTileId() const { return m_id; }
+    TileId GetRelativeTileId() const;
 
     double GetRadius() const {return 0.5 * m_range.low.Distance(m_range.high);}
     uint32_t GetDepth() const {return m_depth;}
@@ -200,20 +230,24 @@ public:
     DGNPLATFORM_EXPORT virtual void _UnloadChildren(BeTimePoint olderThan) const;
 
     //! Determine whether this tile has any child tiles. Return true even if the children are not yet created.
-    virtual bool _HasChildren() const = 0;
+    virtual bool _HasChildren() const { return !m_isLeaf; }
+    bool IsLeaf() const { return m_isLeaf; }
+    void SetIsLeaf(bool isLeaf = true) { m_isLeaf = isLeaf; }
 
     //! Returns whether this tile has graphics.
-    virtual bool _HasGraphics() const = 0;
+    virtual bool _HasGraphics() const { return m_hasGraphics; }
+    void SetHasGraphics(bool hasGraphics = true) { m_hasGraphics = hasGraphics; }
 
     //! Get the array of children for this Tile.
     //! @param[in] create If false, return nullptr if this tile has children but they are not yet created. Otherwise create them now.
-    virtual ChildTiles const* _GetChildren(bool create) const = 0;
+    DGNPLATFORM_EXPORT virtual ChildTiles const* _GetChildren(bool create) const;
+    virtual TilePtr _CreateChild(TileId) const = 0;
 
     //! Called when tile data is required.
     virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr) = 0;
 
     //! Get the tile cache key for this Tile.
-    virtual Utf8String _GetTileCacheKey() const = 0;
+    virtual Utf8String _GetTileCacheKey() const { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
 
     //! Get the maximum size, in pixels, that this Tile should occupy on the screen. If larger, use its children, if possible.
     virtual double _GetMaximumSize() const = 0;
@@ -327,10 +361,11 @@ public:
 enum class TileFlags : uint32_t
 {
     None            = 0,
-    ContainsCurves  = 0x0001,
-    Incomplete      = 0x0001 << 1,
-    IsLeaf          = 0x0001 << 2,
-    IsEmpty         = 0x0001 << 3,
+    ContainsCurves  = 0x0001 << 0, // This tile's geometry includes curves.
+    Incomplete      = 0x0001 << 1, // This tile's range contains some geometry too small to contribute to tile's geometry.
+    IsLeaf          = 0x0001 << 2, // This tile has no children.
+    IsUndisplayable = 0x0001 << 3, // This tile has no geometry. It may have children with geometry.
+    HasZoomFactor   = 0x0001 << 4, // This tile does not subdivide but does refine into a single higher-resolution child tile.
 };
 
 ENUM_IS_FLAGS(TileFlags);
@@ -342,7 +377,7 @@ struct TileMetadata
 {
     TileFlags           m_flags = TileFlags::None;
     ElementAlignedBox3d m_contentRange;
-    double              m_zoomFactor = 0.0;
+    double              m_zoomFactor = 1.0;
 
     Json::Value ToJson() const;
     void FromJson(Json::Value const& json);
@@ -472,83 +507,5 @@ public:
     const_iterator begin() const { return m_set.begin(); }
     const_iterator end() const { return m_set.end(); }
 };
-
-//=======================================================================================
-//! An OctTree is a 3d TileTree that subdivides each tile into 8 child tiles. The subdivision
-//! of a parent tile into its children is not necessarily equal.
-//! A tile in an OctTree can be addressed by a TileId comprised of a depth level and 3 indices.
-//! The root tile is {0,0,0,0}.
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-namespace OctTree
-{
-//=======================================================================================
-//! Identifies a tile in an OctTree
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct TileId
-{
-    uint8_t     m_level;
-    uint32_t    m_i;
-    uint32_t    m_j;
-    uint32_t    m_k;
-
-    TileId(uint8_t level, uint32_t i, uint32_t j, uint32_t k) : m_level(level), m_i(i), m_j(j), m_k(k) { }
-    TileId() : TileId(0,0,0,0) { }
-
-    TileId CreateChildId(uint32_t i, uint32_t j, uint32_t k) const { return TileId(m_level+1, m_i*2+i, m_j*2+j, m_k*2+k); }
-    TileId GetRelativeId(TileId parentId) const;
-
-    static TileId RootId() { return TileId(0,0,0,0); }
-
-    bool operator==(TileId const& other) const { return m_level == other.m_level && m_i == other.m_i && m_j == other.m_j && m_k == other.m_k; }
-    bool IsRoot() const { return *this == RootId(); }
-};
-
-//=======================================================================================
-//! The root of an OctTree
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct Root : TileTree::Root
-{
-    DEFINE_T_SUPER(TileTree::Root);
-
-    DGNPLATFORM_EXPORT Root(GeometricModelCR, TransformCR location, Render::SystemR system);
-};
-
-//=======================================================================================
-//! An OctTree tile.
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct Tile : TileTree::Tile
-{
-    DEFINE_T_SUPER(TileTree::Tile);
-protected:
-    bool                m_isLeaf;
-    TileId              m_id;
-    bool                m_hasGraphics = false;
-
-    Tile(Root& octRoot, TileId id, Tile const* parent, bool isLeaf) : T_Super(octRoot, parent), m_id(id), m_isLeaf(isLeaf) { }
-    DGNPLATFORM_EXPORT DRange3d ComputeChildRange(OctTree::Tile& child, bool is2d=false) const;
-
-public:
-    virtual TileTree::TilePtr _CreateChild(TileId) const = 0;
-    bool _HasChildren() const override { return !m_isLeaf; }
-    DGNPLATFORM_EXPORT ChildTiles const* _GetChildren(bool load) const override;
-    DGNPLATFORM_EXPORT void _ValidateChildren() const override;
-    Utf8String _GetTileCacheKey() const override { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
-    
-    TileId GetTileId() const { return m_id; }
-    TileId GetRelativeTileId() const;
-    bool _HasGraphics() const override { return IsReady() && m_hasGraphics; }
-    Root& GetOctRoot() const { return static_cast<Root&>(m_root); }
-    Tile const* GetOctParent() const { return static_cast<Tile const*>(GetParent()); }
-    bool IsLeaf() const { return m_isLeaf; }
-
-    void SetIsLeaf(bool isLeaf = true) { m_isLeaf = isLeaf; }
-    void SetHasGraphics(bool hasGraphics) { m_hasGraphics = hasGraphics; }
-};
-
-} // namespace OctTree
 
 END_TILETREE_NAMESPACE

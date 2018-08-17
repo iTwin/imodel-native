@@ -2938,25 +2938,12 @@ struct System
     virtual MaterialPtr _CreateMaterial(Material::CreateParams const&, DgnDbR) const = 0;
 
     virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const = 0;
-    virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const = 0;
 
     //! Create a triangle mesh primitive
     virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const = 0;
 
     //! Create an indexed polyline primitive
     virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const = 0;
-
-    //! Create a point cloud primitive
-    virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const = 0;
-
-    // ! Create polygons on a range for a sheet tile
-    DGNPLATFORM_EXPORT bvector<PolyfaceHeaderPtr> _CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip) const;
-
-    //! Create a sheet tile primitive from polys
-    DGNPLATFORM_EXPORT bvector<GraphicPtr> _CreateSheetTile(TextureCR tile, bvector<PolyfaceHeaderPtr>& polys, DgnDbR dgndb, GraphicParamsCR params) const;
-
-    //! Create a tile primitive
-    DGNPLATFORM_EXPORT GraphicPtr _CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params) const;
 
     //! Create a Graphic consisting of a list of Graphics
     virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const = 0;
