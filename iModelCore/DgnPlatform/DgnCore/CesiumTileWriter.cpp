@@ -156,9 +156,6 @@ public:
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BatchTableBuilder(FeatureTableCR attrs, DgnDbR db, bool is3d) : m_json(Json::objectValue), m_db(db), m_is3d(is3d)
-#if defined(ERROR_UNUSED_FIELD)
-, m_attrs(attrs)
-#endif
     {
     InitUncategorizedCategory();
 
@@ -167,10 +164,6 @@ BatchTableBuilder(FeatureTableCR attrs, DgnDbR db, bool is3d) : m_json(Json::obj
                             assemblyIds    = Json::arrayValue, 
                             categoryIds    = Json::arrayValue,
                             subCategoryIds = Json::arrayValue;
-
-#if defined(ERROR_UNUSED_VARIABLE)
-    bool                    validLabelsFound = false;
-#endif
                         
     for (auto const& kvp : attrs)
         {
@@ -191,10 +184,6 @@ BatchTableBuilder(FeatureTableCR attrs, DgnDbR db, bool is3d) : m_json(Json::obj
     m_json["assembly"]    = std::move(assemblyIds);
     m_json["subCategory"] = std::move(subCategoryIds);
     m_json["category"]    = std::move(categoryIds);
-
-#ifdef WIP
-    context.AddBatchTableAttributes (m_json, attrs);
-#endif
     }
 
 
@@ -443,9 +432,9 @@ struct RenderSystem : Render::System
 {
     static  constexpr uint32_t          s_maxFeatures = 0xffff;
 
-    mutable StreamBuffer                m_streamBuffer;
-    mutable CesiumTileWriter            m_writer;
-    mutable Json::Value                 m_primitives;
+    mutable StreamBuffer                    m_streamBuffer;
+    mutable CesiumTileWriter                m_writer;
+    mutable Json::Value                     m_primitives;
     mutable DRange3d                        m_range;
     mutable FeatureTable                    m_featureTable;
     mutable bvector<PointCloudData>         m_pointClouds;
@@ -480,7 +469,7 @@ struct RenderSystem : Render::System
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& featureTable, DRange3dCR range) const override 
     {
-    m_featureTable = std::move(featureTable);
+//  m_featureTable = std::move(featureTable);
     m_range = range;
     return nullptr; 
     }
@@ -622,12 +611,14 @@ struct Context
     double              m_leafTolerance;
     GeometricModelP     m_model;
     ClipVectorPtr       m_clip;
+    std::shared_ptr<BeFolly::LimitingTaskQueue<BentleyStatus>> m_requestTileQueue;
 
-    Context(TileTree::TileP inputTile, PublishedTileP outputTile, ClipVectorCP clip, ICesiumPublisher* publisher, double leafTolerance, GeometricModelP model) : 
-            m_inputTile(inputTile), m_outputTile(outputTile), m_publisher(publisher), m_leafTolerance(leafTolerance), m_model(model) { if (nullptr != clip) m_clip = clip->Clone(nullptr); }
+
+    Context(TileTree::TileP inputTile, PublishedTileP outputTile, ClipVectorCP clip, ICesiumPublisher* publisher, double leafTolerance, GeometricModelP model, std::shared_ptr<BeFolly::LimitingTaskQueue<BentleyStatus>> requestTileQueue) : 
+            m_inputTile(inputTile), m_outputTile(outputTile), m_publisher(publisher), m_leafTolerance(leafTolerance), m_model(model), m_requestTileQueue(requestTileQueue) { if (nullptr != clip) m_clip = clip->Clone(nullptr); }
 
     Context(TileTree::TileP inputTile, PublishedTileP outputTile, Context const& inContext) :
-            m_inputTile(inputTile), m_outputTile(outputTile), m_clip(inContext.m_clip), m_publisher(inContext.m_publisher), m_leafTolerance(inContext.m_leafTolerance), m_model(inContext.m_model) { }
+            m_inputTile(inputTile), m_outputTile(outputTile), m_clip(inContext.m_clip), m_publisher(inContext.m_publisher), m_leafTolerance(inContext.m_leafTolerance), m_model(inContext.m_model), m_requestTileQueue(inContext.m_requestTileQueue) { }
 
 
 };
@@ -669,32 +660,21 @@ BeFileName PublishedTile::GetFileName() const
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
+* @bsimethod                                    Mathieu.Marchand                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-WriteStatus writeCesiumTile(Context context)
-    {
-    TileTree::IO::RenderSystem*    renderSystem = new TileTree::IO::RenderSystem(*context.m_model);
-
-    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]
-        {                                
-        TileTree::TileLoadStatePtr      loadState;
-
-        return context.m_inputTile->IsNotLoaded() ? context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem, BeDuration()) : SUCCESS;
-        })
-    .then([=](BentleyStatus status)
+static folly::Future<BentleyStatus> requestTile(Context context, std::shared_ptr<TileTree::IO::RenderSystem> renderSystem)
+{
+    if (context.m_inputTile->IsNotLoaded())
         {
-        if (SUCCESS != status)
-            return WriteStatus::UnableToLoadTile;
+        TileTree::TileLoadStatePtr loadState;
+        return context.m_requestTileQueue->Push([=]()
+            {
+            return context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem.get(), BeDuration());
+            });
+        }
         
-        WriteStatus writeStatus = renderSystem->WriteTile(*context.m_outputTile);
-        delete renderSystem;
-        return writeStatus;
-        })
-    .then([=](WriteStatus status)
-        {
-        return status;
-        }).get();
-    }
+    return SUCCESS;
+}
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -702,7 +682,17 @@ WriteStatus writeCesiumTile(Context context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static FutureWriteStatus generateParentTile (Context context)
     {
-    return folly::makeFuture (writeCesiumTile(context));
+    std::shared_ptr<TileTree::IO::RenderSystem> renderSystem = std::make_shared<RenderSystem>(*context.m_model);
+
+    return requestTile(context, renderSystem).then([=](BentleyStatus status)
+        {
+        if (SUCCESS != status)
+            return folly::makeFuture(WriteStatus::UnableToLoadTile);
+        
+        WriteStatus writeStatus = renderSystem->WriteTile(*context.m_outputTile);
+
+        return folly::makeFuture(writeStatus);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -762,7 +752,9 @@ FutureWriteStatus writeCesiumTileset(ICesiumPublisher* publisher, GeometricModel
             return folly::makeFuture(status);
 
         TileTree::TilePtr   inputTile = tileRoot->GetRootTile();
-        Context             context(inputTile.get(), publishedRoot.get(), clip.get(), publisher, leafTolerance, model);
+        auto                requestTileQueue = std::make_shared<BeFolly::LimitingTaskQueue<BentleyStatus>>(BeFolly::ThreadPool::GetIoPool(), 20);
+
+        Context             context(inputTile.get(), publishedRoot.get(), clip.get(), publisher, leafTolerance, model, requestTileQueue);
                                                                                                                 
         return generateParentTile(context).then([=](FutureWriteStatus status) { return generateChildTiles(status.value(), context); });
         })
