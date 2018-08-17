@@ -282,7 +282,7 @@ public:
 
     bool IsDisplayable() const { return m_metadata.IsDisplayable(); }
     bool IsParentDisplayable() const {return nullptr != GetParent() && GetParent()->IsDisplayable();}
-    void SetDisplayable(bool displayable) { m_metadata.SetIsDisplayable(!displayable); }
+    void SetDisplayable(bool displayable) { m_metadata.SetIsDisplayable(displayable); }
 
     TileCP GetParent() const {return m_parent;}
     RootCR GetRoot() const {return m_root;}
