@@ -20,7 +20,7 @@
       <DirectoryRef Id="INSTALLDIR">
         <Directory Id="Dgnv8BridgeRegistryEntriesDir">
             <Component Id="Dgnv8BridgeRegistryEntries" Guid="{500E802A-1128-465B-8032-C528F90B66EC}" Win64="$(var.COMPONENT_WIN64)" Feature="DefaultFeature">
-              <RegistryKey Root="HKLM" Key="Software\Bentley\iModelBridges\DgnV8Bridge" >
+              <RegistryKey Root="HKLM" Key="Software\Bentley\iModelBridges\IModelBridgeForMstn" >
                 <RegistryValue Name="BridgeLibraryPath" Type="string" Value="[INSTALLDIR]DgnV8BridgeB02.dll" KeyPath="yes"/>
                 <RegistryValue Name="AffinityLibraryPath" Type="string" Value="[INSTALLDIR]DgnV8BridgeB02.dll"/>
                 <RegistryValue Name="BridgeAssetsDir" Type="string" Value="[INSTALLDIR]Assets"/>

@@ -695,7 +695,7 @@ BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t buffer
 #endif
 
     affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;
-    BeStringUtilities::Wcsncpy(buffer, bufferSize, L"DgnV8Bridge");
+    BeStringUtilities::Wcsncpy(buffer, bufferSize, L"IModelBridgeForMstn");
     return BSISUCCESS;
     }
 
