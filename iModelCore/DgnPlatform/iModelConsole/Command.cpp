@@ -1828,11 +1828,11 @@ void MetadataCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 //static
 Utf8String MetadataCommand::GetPropertyTypeName(ECN::ECPropertyCR prop)
     {
+    Utf8CP extendedTypeName = nullptr;
     if (prop.GetIsPrimitive() || prop.GetIsPrimitiveArray())
         {
         ECEnumerationCP ecEnum = nullptr;
         Nullable<PrimitiveType> primType;
-        Utf8String extendedTypeName;
         PrimitiveECPropertyCP primProp = prop.GetAsPrimitiveProperty();
         bool isArray = false;
         if (primProp != nullptr)
@@ -1842,7 +1842,7 @@ Utf8String MetadataCommand::GetPropertyTypeName(ECN::ECPropertyCR prop)
                 primType = primProp->GetType();
 
             if (primProp->HasExtendedType())
-                extendedTypeName = primProp->GetExtendedTypeName();
+                extendedTypeName = primProp->GetExtendedTypeName().c_str();
             }
         else
             {
@@ -1854,7 +1854,7 @@ Utf8String MetadataCommand::GetPropertyTypeName(ECN::ECPropertyCR prop)
                 primType = primArrayProp->GetPrimitiveElementType();
 
             if (primArrayProp->HasExtendedType())
-                extendedTypeName = primArrayProp->GetExtendedTypeName();
+                extendedTypeName = primArrayProp->GetExtendedTypeName().c_str();
             }
 
         Utf8String typeName;
@@ -1910,8 +1910,8 @@ Utf8String MetadataCommand::GetPropertyTypeName(ECN::ECPropertyCR prop)
         if (isArray)
             typeName.append("[]");
 
-        if (!extendedTypeName.empty())
-            typeName.append(" Extended Type: ").append(extendedTypeName);
+        if (!Utf8String::IsNullOrEmpty(extendedTypeName))
+            typeName.append(" | Extended Type: ").append(extendedTypeName);
 
         return typeName;
         }
