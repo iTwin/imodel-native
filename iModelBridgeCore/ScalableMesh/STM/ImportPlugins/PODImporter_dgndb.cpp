@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/PODImporter_dgndb.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -38,6 +38,8 @@
 #include <ScalableMesh\Import\Plugin\InputExtractorV0.h>
 #include <ScalableMesh\Import\Plugin\SourceV0.h>
 #include <ScalableMesh\IScalableMeshPolicy.h>
+
+#include <STMInternal/GeoCoords/WKTUtils.h>
 
 
 #define PointCloudMinorId_Handler 1
@@ -135,7 +137,23 @@ private:
 
             try
                 {
-                gcs = GetGCSFactory().Create(WKT.c_str());
+                WString wktWithoutFlavor;
+                
+                ISMStore::WktFlavor fileWktFlavor;
+                BaseGCS::WktFlavor  baseGcsWktFlavor;
+
+                fileWktFlavor = GetWKTFlavor(&wktWithoutFlavor, WKT);
+                bool result = MapWktFlavorEnum(baseGcsWktFlavor, fileWktFlavor);
+
+                if (result == true)
+                    {
+                    SMStatus status;
+                    gcs = GetGCSFactory().Create(wktWithoutFlavor.c_str(), baseGcsWktFlavor, status);
+                    }
+                else
+                    {
+                    gcs = GetGCSFactory().Create(WKT.c_str());
+                    }                
                 }
             catch (CustomError&)
                 {
