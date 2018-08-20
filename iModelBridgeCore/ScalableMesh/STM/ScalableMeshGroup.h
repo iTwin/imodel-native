@@ -248,8 +248,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override{return ERROR;}
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override {return ERROR;}
 #endif
-
-        virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) override {}
+        
         virtual void _ReFilter() override {}
         
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override {}
@@ -269,6 +268,10 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual bool                   _LastSynchronizationCheck(time_t& last) const override { return false; }        
 
         virtual  IScalableMeshPtr             _GetGroup() override { return nullptr; }
+
+#ifdef WIP_MESH_IMPORT
+        virtual void                          _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) override;
+#endif
 
         virtual void                          _AddToGroup(IScalableMeshPtr& sMesh, bool isRegionRestricted = false, const DPoint3d* region = nullptr, size_t nOfPtsInRegion = 0) override
             {}

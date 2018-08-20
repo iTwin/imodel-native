@@ -4615,7 +4615,7 @@ bool TriangleWithinClosedFeature(const DPoint3d* triangle, const std::vector<DPo
         for (size_t i = 0; i < 3; ++i)
             {
             DPoint2d triPt2d(DPoint2d::From(triangle[i]));            
-            if (!PolygonOps::IsPointInConvexPolygon(triPt2d, &feature2d[0], feature2d.size(), 0)) return false;
+            if (!PolygonOps::IsPointInConvexPolygon(triPt2d, &feature2d[0], (int)feature2d.size(), 0)) return false;
             }        
         }
     else
@@ -4651,7 +4651,7 @@ bool TriangleWithinClosedFeature(const DPoint3d* triangle, const std::vector<DPo
             for (size_t i = 0; i < 3; ++i)
                 { 
                 DPoint2d triPt2d(DPoint2d::From(triangle[i]));
-                if (PolygonOps::IsPointInConvexPolygon(triPt2d, &polygon2d[0], polygon2d.size(), 0)) trianglePts[i] = true;                
+                if (PolygonOps::IsPointInConvexPolygon(triPt2d, &polygon2d[0], (int)polygon2d.size(), 0)) trianglePts[i] = true;                
                 }
             }
         return (trianglePts[0] && trianglePts[1] && trianglePts[2]);

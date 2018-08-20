@@ -92,16 +92,50 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(std::vector<int>& f
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize);
 
 BENTLEY_SM_EXPORT bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, const PolyfaceQuery* meshP);
-BENTLEY_SM_EXPORT bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, ClipVectorCP clip, const PolyfaceQuery* meshP, const bvector<bool>& isMask);
+BENTLEY_SM_EXPORT bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<size_t>& polyfaceIndices, ClipVectorCP clip, const PolyfaceQuery* meshP, const bvector<bool>& isMask);
 //void BuildSkirtMeshesForPolygonSet(bvector<bvector<PolyfaceHeaderPtr>>& skirts, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, DRange3d& nodeRange);
+
 
 class MeshClipper
 {
+public:
+    enum class RegionResult
+    {
+        Success,
+        ClippingNotComputed,
+        NoData,
+        NoIntersectionWithClips,
+        NoSelection,
+        InsufficientRegionFilterArguments,
+        NoRegionsMatchingSelection,
+        MoreThanOneRegionMatchingSelection
+    };
+
+    enum class RegionFilter
+    {
+        Boundary,
+        Mask,
+        BoundaryOrExterior,
+        MaskOrExterior,
+        Exterior,
+        All
+    };
+
+    enum class RegionFilterMode
+    {
+        IncludeSelected,
+        ExcludeSelected,
+        SelectedIDs,
+        ExcludeSelectedIDs
+    };
+
 private:
+
+    //Source data
     const DPoint3d* m_vertexBuffer;
-    const size_t m_nVertices;
+    size_t m_nVertices;
     const int32_t* m_indexBuffer;
-    const size_t m_nIndices;
+    size_t m_nIndices;
     const DPoint2d* m_uvBuffer;
     const int32_t* m_uvIndices;
     DRange3d m_range;
@@ -109,61 +143,126 @@ private:
     size_t m_widthOfTexData;
     size_t m_heightOfTexData;
     bool m_is25dData;
+    PolyfaceQuery const* m_sourceData;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmData;
+
+    //Clipper object geometries
+    struct ClipInfo
+    {
+        enum struct Type
+        {
+            Vector,
+            Polygon
+        };
+        Type type;
+        uint64_t id;
+        virtual bool isClipMask() {
+            return true;
+        }
+    };
+
+    struct ClipVectorInfo :ClipInfo
+    {
+        ClipVectorCP clip = nullptr;
+        bvector<bool> arePrimitivesMasks;
+        DRange3d clipExt;
+        ClipVectorInfo() { type = Type::Vector; }
+        virtual bool isClipMask() {
+            bool isMask = true;
+            for (auto& mask : arePrimitivesMasks)
+                if (!mask) isMask = false;
+            return isMask;
+        }
+    };
+
+    struct ClipPolyInfo : ClipInfo
+    {
+        bvector<DPoint3d> pts;
+        bool isMask;
+        ClipPolyInfo() { type = Type::Polygon; }
+        virtual bool isClipMask() { return isMask; }
+    };
+
+    bvector<ClipVectorPtr> vectorDefs;
+    bvector<ClipVectorInfo> allVectors;
+    bvector<ClipPolyInfo> allPolys;
+    bvector<ClipInfo*> orderedClipList;
+
+    //results of computation
+    bool wasClipped;
+    struct ClippedRegion
+    {
+        uint64_t id;
+        bvector<PolyfaceHeaderPtr> meshes;
+        bool isExterior;
+    };
+
+    bvector<ClippedRegion> computedRegions;
+    bvector<ClippedRegion*> selectedRegions;
+    RegionResult selectionError;
+    
+
+    //private functions
+    enum PointClassification
+    {
+        UNKNOWN = 0,
+        OUTSIDE,
+        INSIDE,
+        ON,
+    };
+    void TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr, FaceToUVMap& faceToUVMap, bmap<int32_t, int32_t>& mapOfIndices);
+    DTMInsertPointCallback GetInsertPointCallback(FaceToUVMap& faceToUVMap, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& ptr);
+
+    void MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtm);
+    bool GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons);
+    bool GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr);
+
+    void OrderClipGeometryList();
+
+    bool HasOnlyPolygons();
+    void GetClipsAsPolygons(bvector<bvector<DPoint3d>>& outPolygons);
+    void GetClipsAsVectors(bvector<ClipVectorPtr>& outVectors);
+    void GetClipsAsSingleVector(ClipVectorPtr& outVector);
+
+    RegionResult GetInOrOutRegion(PolyfaceHeaderPtr& mesh, const bool getInside);
+
+    ClipInfo* FindMatchingClip(uint64_t id);
 public:
 
-    void SetSourceMesh(const PolyfaceQuery* meshSourceData, bool is25dData=false);
+    BENTLEY_SM_EXPORT MeshClipper();
+    BENTLEY_SM_EXPORT void SetSourceMesh(const PolyfaceQuery* meshSourceData, bool is25dData = false);
     void SetTextureDimensions(size_t width, size_t height)
     {
         m_widthOfTexData = width;
         m_heightOfTexData = height;
     }
 
-    void SetClipGeometry(const bvector<uint64_t>& ids, const bvector<bvector<DPoint3d>>& polygons);
-    void SetClipGeometry(const bvector<uint64_t>& ids, const bvector<bvector<DPoint3d>>& polygons, const bvector<bool>& polygonIsMask);
-    void SetClipGeometry(const bmap<size_t, uint64_t>& idsForPrimitives, ClipVectorCP clip);
-    void SetClipGeometry(const bmap<size_t, uint64_t>& idsForPrimitives, ClipVectorCP clip, const bmap<size_t, bool>& isMaskForEachPrimitive);
-    void SetClipGeometry(uint64_t id, ClipVectorCP clip, bool isMask = true);
+    BENTLEY_SM_EXPORT void SetClipGeometry(const bvector<uint64_t>& ids, const bvector<bvector<DPoint3d>>& polygons);
+    BENTLEY_SM_EXPORT void SetClipGeometry(const bvector<uint64_t>& ids, const bvector<bvector<DPoint3d>>& polygons, const bvector<bool>& polygonIsMask);
+    BENTLEY_SM_EXPORT void SetClipGeometry(const bmap<size_t, uint64_t>& idsForPrimitives, ClipVectorCP clip);
+    BENTLEY_SM_EXPORT void SetClipGeometry(const bmap<size_t, uint64_t>& idsForPrimitives, ClipVectorCP clip, const bmap<size_t, bool>& isMaskForEachPrimitive);
+    BENTLEY_SM_EXPORT void SetClipGeometry(uint64_t id, ClipVectorCP clip, bool isMask = true);
+    BENTLEY_SM_EXPORT void ClearClipGeometry();
 
-    void SetMaskInfo(uint64_t id, bool isMask);
-    bool IsClipMask(uint64_t id);
+    BENTLEY_SM_EXPORT void SetMaskInfo(uint64_t id, bool isMask);
+    BENTLEY_SM_EXPORT bool IsClipMask(uint64_t id);
 
-    void SetMeshExtents(DRange3d extentOfData, DRange3d extentOfTexture);
+    BENTLEY_SM_EXPORT void SetMeshExtents(DRange3d extentOfData, DRange3d extentOfTexture);
 
-    void ComputeClip();
+    BENTLEY_SM_EXPORT void ComputeClip();
 
-    void GetRegions(bvector<uint64_t>& ids, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces);
-    void GetExteriorRegion(PolyfaceHeaderPtr& mesh);
-    bool WasClipped();
 
-    enum class RegionResult
-    {
-        Success,
-        ClippingNotComputed,
-        NoData,
-        NoIntersectionWithClips,
-        InsufficientRegionFilterArguments,
-        NoRegionsMatchingSelection
-    };
 
-    enum class RegionFilter
-    {
-        Boundary,
-        Mask,
-        All
-    };
+    BENTLEY_SM_EXPORT RegionResult GetRegions(bvector<uint64_t>& ids, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces);
+    BENTLEY_SM_EXPORT RegionResult GetExteriorRegion(PolyfaceHeaderPtr& mesh);
+    BENTLEY_SM_EXPORT RegionResult GetInteriorRegion(PolyfaceHeaderPtr& mesh);
+    BENTLEY_SM_EXPORT bool WasClipped();
 
-    enum class RegionFilterMode
-    {
-        All,
-        None,
-        AllExceptSelected,
-        OnlySelected
-    };
-
-    RegionResult SelectRegions(RegionFilter filter, RegionFilterMode mode);
-    RegionResult SelectRegions(RegionFilter filter, RegionFilterMode mode, bvector<uint64_t>& idsFilter);
-    void GetSelectedRegion(PolyfaceHeaderPtr& mesh);
-    bvector<bpair<uint64_t, PolyfaceHeaderPtr>>&& GetSelectedRegions();
+    BENTLEY_SM_EXPORT void SelectRegions(RegionFilter filter, RegionFilterMode mode);
+    BENTLEY_SM_EXPORT void SelectRegions(RegionFilter filter, RegionFilterMode mode, bvector<uint64_t>& idsFilter);
+    BENTLEY_SM_EXPORT RegionResult GetSelectedRegion(PolyfaceHeaderPtr& mesh);
+    BENTLEY_SM_EXPORT  bvector<bpair<uint64_t, PolyfaceHeaderPtr>>&& GetSelectedRegions(RegionResult& result);
+    BENTLEY_SM_EXPORT void ClearSelection();
 
 };
 

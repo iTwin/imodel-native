@@ -50,7 +50,7 @@ StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WS
     if (SUCCESS != source->GetTextureInfo(textureInfo))
         return ERROR;
 
-    PrepareClipsForSaveAs(clips);
+    //PrepareClipsForSaveAs(clips);
 
     // Set global parameters to the new 3sm (this will also create a new index)
     if (SUCCESS != scMeshDestination->SetGCS(source->GetGCS()))

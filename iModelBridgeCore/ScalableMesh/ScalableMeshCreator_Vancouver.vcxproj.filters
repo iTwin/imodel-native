@@ -1495,6 +1495,6 @@
     <Xml Include="ScalableMeshCore.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ScalableMeshImportersLib_Vancouver.mke" />
+    <None Include="ScalableMeshCreator_Vancouver.mke" />
   </ItemGroup>
 </Project>

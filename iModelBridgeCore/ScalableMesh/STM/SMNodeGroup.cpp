@@ -244,6 +244,8 @@ StatusInt SMNodeGroup::SaveTileToCacheWithExistingTileIDs(Json::Value & tile)
         }
 
     uint64_t tileID = tile.isMember("SMRootID") ? tile["SMRootID"].asUInt() : tile["SMHeader"]["id"].asUInt();
+    uint64_t tileLevel = tile["SMHeader"].isMember("level") ? tile["SMHeader"]["level"].asUInt() : this->m_level;
+    tile["SMHeader"]["level"] = tileLevel;
 
     if (SUCCESS != this->SaveTileToCache(tile, tileID))
         return ERROR;
@@ -252,6 +254,7 @@ StatusInt SMNodeGroup::SaveTileToCacheWithExistingTileIDs(Json::Value & tile)
         {
         for (auto& child : tile["children"])
             {
+            child["SMHeader"]["level"] = tileLevel + 1;
             if (SUCCESS != SaveTileToCacheWithExistingTileIDs(child))
                 return ERROR;
             }
@@ -280,6 +283,7 @@ StatusInt SMNodeGroup::SaveTileToCache(Json::Value & tile, uint64_t tileID)
                 newPrefix.append(BEFILENAME(GetDirectoryName, contentURL));
                 auto tilesetURL = BEFILENAME(GetFileNameAndExtension, contentURL);
                 SMNodeGroupPtr newGroup = SMNodeGroup::Create(this->m_parametersPtr, this->m_groupCachePtr, s_currentGroupID);
+                newGroup->SetLevel(tile["SMHeader"]["level"].asUInt());
 #ifndef LINUX_SCALABLEMESH_BUILD
                 newGroup->SetURL(DataSourceURL(tilesetURL.c_str()));
 #endif
