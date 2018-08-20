@@ -18,6 +18,16 @@
         </Bindings>
     </Part>
     
+    <Part Name="OBMSDK" BentleyBuildMakeFile="ORDBridge/OBMSDK.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SdkSource>OpenBridgeModelerSDK</SdkSource>
+        <Bindings>
+            <PublicAPI Domain="OBMSdk" />
+            <Files ProductDirectoryName="OBMDlls" SubPartDirectory="OBMSdk/Dlls" Required="true">
+                Delivery/OBMSdk/Dlls/*.dll
+            </Files>
+        </Bindings>
+    </Part>
+    
     <Part Name="Resources" BentleyBuildMakeFile="ORDBridge/Resources.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <Bindings>
             <Directory SourceName="Delivery/Resources/Dgnlibs" ProductDirectoryName="Dgnlibs" SubPartDirectory="Resources/Dgnlibs" 
@@ -40,6 +50,7 @@
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
         <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
         <ProductDirectory Name="CifDlls"  Path="Cif"/>
+        <ProductDirectory Name="OBMDlls"  Path="OBM"/>
         <ProductDirectory Name="Dgnlibs"  RelativeTo="ApplicationRoot" Path="Dgnlibs"/>
     </ProductDirectoryList>
 
@@ -47,9 +58,11 @@
         <SubPart PartName="ORDBridgePublicAPI"/>
         <SubPart PartName="VersionedV8_InternalSDK" Repository="DgnDbSync" PartFile="DgnDbSync"/>
         <SubPart PartName="Cif_InternalSDK" />
+        <SubPart PartName="OBMSDK" />
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync" />
         <SubPart PartName="DgnV8ConverterDLL" Repository="DgnDbSync" PartFile="DgnDbSync"/>
         <SubPart PartName="RoadRailPhysical" PartFile="RoadRailPhysical" Repository="DgnDomains-RoadRailPhysical"/>
+        <SubPart PartName="BridgeStructuralPhysical" PartFile="BridgeStructuralPhysical" Repository="DgnDomains-BridgePhysical"/>
         <SubPart PartName="DgnV8ConverterSqlang" PartFile="DgnDbSync" Repository="DgnDbSync" />
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)ORDBridge$(libext)</Libs>
@@ -105,6 +118,7 @@
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
         <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
         <ProductDirectory Name="CifDlls"  Path="Cif"/>
+        <ProductDirectory Name="OBMDlls"  Path="OBM"/>
         <ProductDirectory Name="ScalableMeshV8SDK" Deliver="false" />
         <ProductDirectory Name="BentleyDesktopClientApi" RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="ApplicationRoot" />
@@ -229,6 +243,7 @@
     <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
     <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
     <ProductDirectory Name="CifDlls"  Path="Cif"/>
+    <ProductDirectory Name="OBMDlls"  Path="OBM"/>
     <ProductDirectory Name="ScalableMeshV8SDK" Deliver="false" />
     <ProductDirectory Name="BentleyDesktopClientApi" RelativeTo="ApplicationRoot" />
     <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="ApplicationRoot" />
