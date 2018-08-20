@@ -185,10 +185,20 @@ const double* IScalableMeshViewDependentQueryParams::GetRootToViewMatrix() const
     return _GetRootToViewMatrix();
     }
 
+bool IScalableMeshViewDependentMeshQueryParams::ShouldLoadContours() const
+{
+    return _ShouldLoadContours();
+}
+
 void IScalableMeshViewDependentQueryParams::SetMinScreenPixelsPerPoint(double minScreenPixelsPerPoint)
     {
     _SetMinScreenPixelsPerPoint(minScreenPixelsPerPoint);
     }
+
+void IScalableMeshViewDependentMeshQueryParams::SetLoadContours(bool loadContours)
+{
+    _SetLoadContours(loadContours);
+}
 
 void IScalableMeshViewDependentQueryParams::SetRootToViewMatrix(const double rootToViewMatrix[][4])
     {
@@ -2992,6 +3002,11 @@ void      IScalableMeshCachedDisplayNode::SetIsInVideoMemory(bool isInVideoMemor
     return _SetIsInVideoMemory(isInVideoMemory);
     }
 
+bool      IScalableMeshCachedDisplayNode::GetContours(bvector<bvector<DPoint3d>>& contours)
+{
+    return _GetContours(contours);
+}
+
 IScalableMeshCachedDisplayNodePtr IScalableMeshCachedDisplayNode::Create(uint64_t nodeId, IScalableMesh* smP)
     {
     if (smP == nullptr)
@@ -3045,6 +3060,8 @@ template class ScalableMeshCachedDisplayNode<DPoint3d>;
 template class ScalableMeshNodeEdit<DPoint3d>;   
 
 template class ScalableMeshNodeWithReprojection<DPoint3d>;
+
+template class ScalableMeshContourCachedDisplayNode<DPoint3d>;
 
 template int BuildQueryObject<DPoint3d>(//ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP,
     ISMPointIndexQuery<DPoint3d, Extent3dType>*&                        pQueryObject,

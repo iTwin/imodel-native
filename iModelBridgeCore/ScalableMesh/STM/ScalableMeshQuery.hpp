@@ -2081,7 +2081,15 @@ template <class POINT> void ScalableMeshCachedMeshNode<POINT>::LoadMesh(bool loa
 #define QV_RGBS_FORMAT   6      // 4 band with alpha stencil (0 or 255 only)
 #define QV_BGRS_FORMAT   7      // 4 band with alpha stencil (0 or 255 only)
 
-
+template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(ScalableMeshCachedDisplayNode<POINT>& otherPtr)
+    : m_invertClips(otherPtr.m_invertClips), m_loadTexture(otherPtr.m_loadTexture)
+{
+    m_node = dynamic_cast<ScalableMeshNode<POINT>&>(otherPtr).GetNodePtr();
+    m_cachedDisplayMeshData= otherPtr.m_cachedDisplayMeshData;
+    m_cachedDisplayTextureData = otherPtr.m_cachedDisplayTextureData;
+    m_clipVectors = otherPtr.m_clipVectors;
+    m_scalableMeshP = otherPtr.m_scalableMeshP;
+}
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
     : ScalableMeshNode<POINT>(nodePtr), m_invertClips(false), m_loadTexture(false)
@@ -2812,6 +2820,78 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
         }
     }
+
+    template <class POINT>   ScalableMeshContourCachedDisplayNode<POINT>::ScalableMeshContourCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
+        : ScalableMeshCachedDisplayNode<POINT>(nodePtr)
+        {
+        m_contoursReady = false;
+        }
+
+    template <class POINT>    ScalableMeshContourCachedDisplayNode<POINT>::ScalableMeshContourCachedDisplayNode(IScalableMeshCachedDisplayNode* nodePtr)
+        : ScalableMeshCachedDisplayNode<POINT>(*dynamic_cast<ScalableMeshCachedDisplayNode<POINT>*>(nodePtr))
+        {
+        m_contoursReady = false;
+        }
+
+    template <class POINT>    bool      ScalableMeshContourCachedDisplayNode<POINT>::_GetContours(bvector<bvector<DPoint3d>>& contours)
+        {
+        if (!m_contoursReady)
+            return false;
+        for (auto& contour : m_contours)
+            {
+            contours.push_back(contour);
+            }
+
+        return true;
+        }
+
+    template <class POINT> void ScalableMeshContourCachedDisplayNode<POINT>::ComputeContours(ContoursParameters params)
+        {
+        m_params = params;
+
+        DRange3d meshRange = GetContentExtent();
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        auto meshP = GetMesh(flags);
+        if (meshP.get() == nullptr) return;
+
+        double roundedDownNextMultiple = (floor(meshRange.low.z / m_params.majorContourSpacing)*m_params.majorContourSpacing);
+        double roundedUpNextMultiple = (ceil(meshRange.high.z / m_params.majorContourSpacing)*m_params.majorContourSpacing);
+        for (double i = roundedDownNextMultiple; i < roundedUpNextMultiple; i += m_params.majorContourSpacing)
+            {
+            DPlane3d plane = DPlane3d::From3Points(DPoint3d::From(0, 0, i), DPoint3d::From(0, 1, i), DPoint3d::From(1, 0, i));
+            bvector<DSegment3d> allSegments;
+
+            meshP->CutWithPlane(allSegments, plane);
+
+            bvector<bvector<DPoint3d>> polylines;
+            for (auto& seg : allSegments)
+                seg.point[0].z = seg.point[1].z = i;
+            StitchSegmentsAtJunctions(polylines, allSegments);
+
+            for(auto& line: polylines)
+                m_contours.push_back(line);
+            }
+
+        roundedDownNextMultiple = (floor(meshRange.low.z / m_params.minorContourSpacing)*m_params.minorContourSpacing);
+        roundedUpNextMultiple = (ceil(meshRange.high.z / m_params.minorContourSpacing)*m_params.minorContourSpacing);
+        for (double i = roundedDownNextMultiple; i < roundedUpNextMultiple; i += m_params.minorContourSpacing)
+            {
+            DPlane3d plane = DPlane3d::From3Points(DPoint3d::From(0, 0, i), DPoint3d::From(0, 1, i), DPoint3d::From(1, 0, i));
+            bvector<DSegment3d> allSegments;
+
+            meshP->CutWithPlane(allSegments, plane);
+
+            bvector<bvector<DPoint3d>> polylines;
+            for (auto& seg : allSegments)
+                seg.point[0].z = seg.point[1].z = i;
+            StitchSegmentsAtJunctions(polylines, allSegments);
+
+            for (auto& line : polylines)
+                m_contours.push_back(line);
+            }
+
+        m_contoursReady = true;
+        }
     
     
 template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const
