@@ -294,8 +294,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     BENTLEY_SM_EXPORT void AppendMeshParts(bvector<bvector<DPoint3d>>& points, bvector<bvector<int32_t>>& indices, bvector<Utf8String>& metadata, bvector<bvector<DPoint2d>>& uvs, bvector<bvector<uint8_t>>& tex, bool shouldCreateGraph);
 #endif
 
-    size_t                   AddMeshDefinitionUnconditional(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent,const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
-    BENTLEY_SM_EXPORT size_t AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, bool ExtentFixed, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
+    size_t                   AddMeshDefinitionUnconditional(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent,const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs, bool isMesh3d);
+    BENTLEY_SM_EXPORT size_t AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, bool ExtentFixed, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs, bool isMesh3d);
 
 #ifdef WIP_MESH_IMPORT
     BENTLEY_SM_EXPORT void GetMetadata();
@@ -973,9 +973,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         //ISMStore::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
         BENTLEY_SM_EXPORT void                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
 //#ifdef WIP_MESH_IMPORT                           
-        BENTLEY_SM_EXPORT void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata="");
+        BENTLEY_SM_EXPORT void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata="", bool isMesh3d = true);
 
-        BENTLEY_SM_EXPORT void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
+        BENTLEY_SM_EXPORT void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs, bool isMesh3d);
 //#endif
 
         BENTLEY_SM_EXPORT void PropagateFullMeshDown();
