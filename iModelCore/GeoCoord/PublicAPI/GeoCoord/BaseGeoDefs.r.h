@@ -87,6 +87,7 @@
 #define CS_MNDOTOBL "OBL-MNDOT"
 #define CS_LMMICH   "LM-MICH"
 #define CS_TRMRS    "TM-SNYDER"
+#define CS_KRVMO    "KROVAKMOD"
 
 
 #define MSGLISTID_GeoCoordErrors        1
@@ -186,6 +187,7 @@ enum    DgnProjectionTypes
     COORDSYS_KRVK95    =    81, // (Cone) Krovak 95
     COORDSYS_TRMRS     =    82, // (Cone) Transverse Mercator Snyder Formulation
 
+    COORDSYS_KRVMO     =    83, // (Cone) Krovak Modified for Czech republic.
     COORDSYS_Geographic =   COORDSYS_UNITY, // Geographic Latitude/Longitude
     COORDSYS_StatePlane =   101,    // (Vars) Obsolete, use COORDSYS_SPCSL
     COORDSYS_UTM        =   102,    // (Cyln) Obsolete, use COORDSYS_UTMZN

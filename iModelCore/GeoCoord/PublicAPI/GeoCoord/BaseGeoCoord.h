@@ -777,6 +777,7 @@ enum ProjectionCodeValue : unsigned short     {
     pcvPlateCarree                                  = 68,
     pcvPopularVisualizationPseudoMercator           = 69,
     pcvLambertMichigan                              = 70,
+    pcvCzechKrovakModified                          = 71,
     pcvHotineObliqueMercator1UV                     = (pcvHotineObliqueMercator * 256) + 1,
     pcvHotineObliqueMercator1XY                     = (pcvHotineObliqueMercator * 256) + 2,
     pcvHotineObliqueMercator2UV                     = (pcvHotineObliqueMercator * 256) + 3,
@@ -1740,6 +1741,18 @@ GeoPointR       centerPoint
 * @bsimethod                                                    Barry.Bentley   06/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED bool              IsEquivalent
+(
+BaseGCSCR        compareTo
+) const;
+
+/*---------------------------------------------------------------------------------**//**
+* Compares this coordinate system with the argument and returns true if they are equal.
+* This method differs from the IsEquivalent method as it requires that all fileds including
+* name, description, source, projection method, unit etc be identical.
+* @param    compareTo IN     The BaseGCS to compare to.
+* @bsimethod                                                    Alain.Robert   2018/06
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED bool              IsEqual
 (
 BaseGCSCR        compareTo
 ) const;

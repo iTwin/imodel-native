@@ -167,6 +167,8 @@ static  CoordSysData    csDataMap[] =
   { COORDSYS_LMMICH,    CS_LMMICH,  BaseGCS::pcvLambertMichigan,                            /* cs_PRJCOD_LMMICH   */ },
   { COORDSYS_KRVK95,    CS_KRVK95,  BaseGCS::pcvCzechKrovak95,                              /* cs_PRJCOD_KRVK95   */ },
   { COORDSYS_TRMRS,     CS_TRMRS,   BaseGCS::pcvSnyderTransverseMercator,                   /* cs_PRJCOD_TRMRS    */ },
+  { COORDSYS_KRVMO,     CS_KRVMO,   BaseGCS::pcvCzechKrovakModified,                        /* cs_PRJCOD_KROVAKMOD*/ },
+
 
 };
 
@@ -2671,6 +2673,11 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromWKTName (WStringR name) const
              (upperMethodName == L"KROVAK OBLIQUE CONIC CONFORMAL") ||
              (upperMethodName == L"KROVAK_OBLIQUE_CONIC_CONFORMAL"))
         ID = BaseGCS::pcvCzechKrovak; // ?? cs_PRJCOD_KRVK95
+    else if ((upperMethodName == L"KROVAK MODIFIED") ||
+             (upperMethodName == L"KROVAK OBLIQUE CONFORMAL CONIC MODIFIED") ||
+             (upperMethodName == L"KROVAK OBLIQUE CONIC CONFORMAL MODIFIED") ||
+             (upperMethodName == L"KROVAK_OBLIQUE_CONIC_CONFORMAL_MODIFIED"))
+        ID = BaseGCS::pcvCzechKrovakModified; 
     else if ((upperMethodName == L"MILLER_CYLINDRICAL") ||
              (upperMethodName == L"CT_MILLERCYLINDRICAL") ||
              (upperMethodName == L"MILLER") ||
@@ -2945,6 +2952,7 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
             (BaseGCS::pcvPolarStereographic == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvBonne == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvCzechKrovak == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvCzechKrovakModified == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvLambertEqualAreaAzimuthal == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvObliqueStereographic == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvSnyderObliqueStereographic == coordinateSystem.GetProjectionCode()) ||
@@ -3037,7 +3045,8 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
              (upperParameterName == L"ANGLE FROM RECTIFIED TO SKEW GRID"))
         {
         if ((BaseGCS::pcvObliqueCylindricalSwiss != coordinateSystem.GetProjectionCode()) && // Swiss azimuth is implicit and needs(cannot) not be specified
-            (BaseGCS::pcvCzechKrovak != coordinateSystem.GetProjectionCode()))               // Krovak azimuth is implicit and needs(cannot) not be specified
+            (BaseGCS::pcvCzechKrovak != coordinateSystem.GetProjectionCode()) &&             // Krovak azimuth is implicit and needs(cannot) not be specified
+            (BaseGCS::pcvCzechKrovakModified != coordinateSystem.GetProjectionCode()))       // Krovak azimuth is implicit and needs(cannot) not be specified
             if (SUCCESS != coordinateSystem.SetAzimuth (parameterValue * conversionToDegree))
                 return ERROR;
         }
@@ -6277,7 +6286,7 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
     // Minnesota TM in OGC flavor (does not extract elevation)
     // Minnesota LM in OGC flavor (does not extract elevation)
     // Oblique mercator in Oracle 9 ... misses extraction of some parameters.
-    // Mercator in geotiff or Oracle does not parse standard arallel
+    // Mercator in geotiff or Oracle does not parse standard parallel
     // Lambert (confuses 2SP with TAN) in Oracle flavor .
     if (SUCCESS != status || (m_csParameters->prj_code == cs_PRJCOD_WCCST && wktFlavorOGC == wktFlavor) || 
                              (m_csParameters->prj_code == cs_PRJCOD_MNDOTT && wktFlavorOGC == wktFlavor) ||
@@ -6289,8 +6298,10 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
                              (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorGeoTools == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorEPSG == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_WCCSL && wktFlavorOGC == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorOracle9 == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_LMTAN && wktFlavorOracle == wktFlavor) ||
-                             (m_csParameters->prj_code == cs_PRJCOD_KROVAK))
+                             (m_csParameters->prj_code == cs_PRJCOD_KROVAK) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_KROVAKMOD))
                             
         {
         try {
@@ -7550,6 +7561,7 @@ double BaseGCS::GetStandardParallel1 () const
             return m_csParameters->csdef.prj_prm2;
 
         case cs_PRJCOD_KROVAK:
+        case cs_PRJCOD_KROVAKMOD:
         case cs_PRJCOD_KROVK1:
         case cs_PRJCOD_KRVK95:
         case cs_PRJCOD_KRVK951:
@@ -7592,6 +7604,7 @@ StatusInt   BaseGCS::SetStandardParallel1 (double value)
             return SUCCESS;
 
         case cs_PRJCOD_KROVAK:
+        case cs_PRJCOD_KROVAKMOD:
         case cs_PRJCOD_KROVK1:
         case cs_PRJCOD_KRVK95:
         case cs_PRJCOD_KRVK951:
@@ -8131,6 +8144,7 @@ double BaseGCS::GetPoint1Longitude () const
         case cs_PRJCOD_HOM2UV:
         case cs_PRJCOD_HOM2XY:
         case cs_PRJCOD_KROVAK:
+        case cs_PRJCOD_KROVAKMOD:
         case cs_PRJCOD_KROVK1:
         case cs_PRJCOD_KRVK95:
         case cs_PRJCOD_KRVK951:
@@ -8154,6 +8168,7 @@ StatusInt   BaseGCS::SetPoint1Longitude (double value)
         case cs_PRJCOD_HOM2UV:
         case cs_PRJCOD_HOM2XY:
         case cs_PRJCOD_KROVAK:
+        case cs_PRJCOD_KROVAKMOD:
         case cs_PRJCOD_KROVK1:
         case cs_PRJCOD_KRVK95:
         case cs_PRJCOD_KRVK951:
@@ -8178,6 +8193,7 @@ double BaseGCS::GetPoint1Latitude () const
         case cs_PRJCOD_HOM2UV:
         case cs_PRJCOD_HOM2XY:
         case cs_PRJCOD_KROVAK:
+        case cs_PRJCOD_KROVAKMOD:
         case cs_PRJCOD_KROVK1:
         case cs_PRJCOD_KRVK95:
         case cs_PRJCOD_KRVK951:
@@ -8201,6 +8217,7 @@ StatusInt   BaseGCS::SetPoint1Latitude (double value)
         case cs_PRJCOD_HOM2UV:
         case cs_PRJCOD_HOM2XY:
         case cs_PRJCOD_KROVAK:
+        case cs_PRJCOD_KROVAKMOD:
         case cs_PRJCOD_KROVK1:
         case cs_PRJCOD_KRVK95:
         case cs_PRJCOD_KRVK951:
@@ -9800,6 +9817,136 @@ bool            BaseGCS::IsEquivalent (BaseGCSCR compareTo) const
     return Compare (compareTo, datumDifferent, csDifferent, verticalDatumDifferent, localTransformDifferent, true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Alain.Robert   2018/06
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            BaseGCS::IsEqual (BaseGCSCR compareTo) const
+    {
+    if (NULL == m_csParameters)
+        return false;
+
+    if (NULL == compareTo.m_csParameters)
+        return false;
+
+    CSDefinition    thisDef    = m_csParameters->csdef;
+    CSDefinition    compareDef = compareTo.m_csParameters->csdef;
+
+    // the projection codes have to match. 
+    if (m_csParameters->prj_code != compareTo.m_csParameters->prj_code)
+        return false;
+
+    // the projection flags have to match.
+    if (m_csParameters->prj_flags != compareTo.m_csParameters->prj_flags)
+        return false;
+
+    // unless the prj_flgs says no origin longitude is used (note bit set means not used), they must be equal.
+    if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLNG)) && !doubleSame (thisDef.org_lng, compareDef.org_lng) )
+        return false;
+    
+    // unless the prj_flgs says no origin latitude is used (note bit set means not used), they must be equal.
+    if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLAT)) && !doubleSame (thisDef.org_lat, compareDef.org_lat) )
+        return false;
+    
+    // if the scale is not the same, they're not same units, can't be the same.
+    if (!doubleSame (thisDef.scale, compareDef.scale))
+        return false;
+    
+    // unless the prj_flgs says no false easting/northing is used (note bit set means not use), they must be equal.
+    if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGFLS)) && (!distanceSame (thisDef.x_off, compareDef.x_off) || !distanceSame (thisDef.y_off, compareDef.y_off)) )
+        return false;
+    
+    // if the prj_flgs says a scale reduction is used (note bit set used), they must be equal.
+    if ( (0 != (m_csParameters->prj_flags & cs_PRJFLG_SCLRED)) && !doubleSame (thisDef.scl_red, compareDef.scl_red))
+        return false;
+    
+    // find the parameter map for this projection
+    struct cs_PrjprmMap_ *mp;
+    for (mp = cs_PrjprmMap; mp->prj_code != cs_PRJCOD_END; mp++)
+        {
+        if (mp->prj_code == m_csParameters->prj_code)
+            break;
+        }
+
+    if (mp->prj_code == cs_PRJCOD_END)
+        return true;
+    
+    if (cs_PRJCOD_UNITY != m_csParameters->prj_code) // All others (except lat/long for which parameters are irrelevant)
+        {
+        // find which parameters are needed for the projection by using cs_prjprm, compare those.
+        double *thisDouble;
+        double *compareDouble;
+        int     iParam;
+        for (iParam = 0, thisDouble = &thisDef.prj_prm1, compareDouble = &compareDef.prj_prm1; iParam < 24; iParam++, thisDouble++, compareDouble++)
+            {
+            // if the parameter index is 0, then that parameter's not used. There are never any embedded 0's so we can stop at the first one we encounter.
+            // NOTE: we don't need to know what it's used for, just that it is used.
+            int parameterIndex = mp->prm_types[iParam];
+            if (parameterIndex <= 0)
+                break;
+    
+            // for the northern/southern hemisphere parameter, 0 and 1 are the same.
+            if (cs_PRMCOD_HSNS == parameterIndex)
+               {
+               if ( (*thisDouble >= 0.0) != (*compareDouble >= 0.0) )
+                    return false;
+               }
+            else
+                {
+                if (!doubleSame (*thisDouble, *compareDouble))
+                    return false;
+                }
+            }
+        }
+
+    // Keynames must be the same (if set)
+    if (0 != strcmp (m_csParameters->datum.key_nm, compareTo.m_csParameters->datum.key_nm))
+        return false;
+
+    // If datum keyname is null the ellipsoid must be the same
+    if ( (0 == m_csParameters->datum.key_nm[0]) && (0 != strcmp (m_csParameters->datum.ell_knm, compareTo.m_csParameters->datum.ell_knm)) )
+        return false;
+
+    if (m_verticalDatum != compareTo.m_verticalDatum)
+        return false;
+
+    if (!LocalTransformer::IsEquivalent (m_localTransformer, compareTo.m_localTransformer))
+        return false;
+
+    // quads must match.
+    if (thisDef.quad != compareDef.quad)
+        return false;
+
+    if (!WString(GetDescription()).Equals(compareTo.GetDescription()))
+        return false;
+
+    WString tempString1;
+    WString tempString2;
+    if (!WString(GetSource(tempString1)).Equals(compareTo.GetSource(tempString2)))
+        return false;
+
+    if (!WString(GetName()).Equals(compareTo.GetName()))
+        return false;
+
+    if (!WString(GetGroup(tempString1)).Equals(compareTo.GetGroup(tempString1)))
+        return false;
+
+
+    if (!WString(GetUnits(tempString1)).Equals(compareTo.GetUnits(tempString1)))
+        return false;
+
+    if (GetMinimumLongitude() == compareTo.GetMinimumLongitude())
+        return false;
+
+    if (GetMaximumLongitude() == compareTo.GetMaximumLongitude())
+        return false;
+
+    if (GetMinimumLatitude() == compareTo.GetMinimumLatitude())
+        return false;
+
+    if (GetMaximumLatitude() == compareTo.GetMaximumLatitude())
+        return false;
+    return true;
+    }
 #define SET_RETURN_OPT(var)   {var=true;if(stopFirstDifference) return false;}
 #define SET_RETURN(var)       {var=true;return false;}
 
@@ -10079,6 +10226,8 @@ bool tolerateEquivalentDifferencesWhenDeprecated
     return datumsEquivalent;
     }
 
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -10305,7 +10454,6 @@ bool            BaseGCS::Compare (BaseGCSCR compareTo, bool& datumDifferent, boo
     // quads must match.
     if (thisDef.quad != compareDef.quad)
         SET_RETURN (csDifferent)
-
 
     return true;
     }
@@ -11982,6 +12130,24 @@ WStringR GCSAsASC
         // COORDSYS_KRVKR
         // COORDSYS_KRVKG
         case cs_PRJCOD_KROVAK:
+            CS_ftoa (ctemp, sizeof (ctemp), m_csParameters->csdef.scl_red, redFrmt);
+            GCSAsASCStream << "        SCL_RED: " << ctemp << std::endl;
+            CS_ftoa (ctemp, sizeof (ctemp), m_csParameters->csdef.prj_prm1, lngFrmt);
+            GCSAsASCStream << "          PARM1: " << ctemp << std::endl;
+            CS_ftoa (ctemp, sizeof (ctemp), m_csParameters->csdef.prj_prm2, latFrmt);
+            GCSAsASCStream << "          PARM2: " << ctemp << std::endl;
+            CS_ftoa (ctemp, sizeof (ctemp), m_csParameters->csdef.prj_prm3, latFrmt);
+            GCSAsASCStream << "          PARM3: " << ctemp << std::endl;
+            CS_ftoa (ctemp, sizeof (ctemp), m_csParameters->csdef.org_lng, lngFrmt);
+            GCSAsASCStream << "        ORG_LNG: " << ctemp << std::endl;
+            CS_ftoa (ctemp, sizeof (ctemp), m_csParameters->csdef.org_lat, latFrmt);
+            GCSAsASCStream << "        ORG_LAT: " << ctemp << std::endl;
+            CS_ftoa (ctemp, sizeof (ctemp), m_csParameters->csdef.x_off, xyFrmt);
+            GCSAsASCStream << "          X_OFF: " << ctemp << std::endl;
+            CS_ftoa (ctemp, sizeof (ctemp), m_csParameters->csdef.y_off, xyFrmt);
+            GCSAsASCStream << "          Y_OFF: " << ctemp << std::endl;
+            break;
+        case cs_PRJCOD_KROVAKMOD:
             CS_ftoa (ctemp, sizeof (ctemp), m_csParameters->csdef.scl_red, redFrmt);
             GCSAsASCStream << "        SCL_RED: " << ctemp << std::endl;
             CS_ftoa (ctemp, sizeof (ctemp), m_csParameters->csdef.prj_prm1, lngFrmt);
@@ -16152,3 +16318,4 @@ GeoCoordinates::BaseGCS* pBaseGcs
     }
 
 END_EXTERN_C
+

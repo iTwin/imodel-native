@@ -1053,6 +1053,8 @@ enum class ProjectionCodeValue
     pcvPopularVisualizationPseudoMercator           = BGC::BaseGCS::pcvPopularVisualizationPseudoMercator,
     pcvObliqueMercatorMinnesota                     = BGC::BaseGCS::pcvObliqueMercatorMinnesota,
     pcvLambertMichigan                              = BGC::BaseGCS::pcvLambertMichigan,
+    pcvCzechKrovakModified                          = BGC::BaseGCS::pcvCzechKrovakModified,
+
     };
 
 property ProjectionCodeValue ProjectionCode
@@ -3021,6 +3023,7 @@ ECL::LightweightDoubleType^ m_doubleType;
 ECL::LightweightInt32Type^  m_int32Type;
 ECL::ReadOnlyDelegate^      m_classReadOnlyDelegate;
 ECL::LightweightClass^      m_CSBaseClass;
+ECL::LightweightClass^      m_gcsDescriptionClass;
 ECL::LightweightClass^      m_projectedCSBaseClass;
 ECL::LightweightClass^      m_geographicCSBaseClass;
 ECL::LightweightClass^      m_latLongOriginClass;
@@ -3988,7 +3991,7 @@ property ECL::LightweightClass^     CSBaseClass
 
             ECL::LightweightClass^  ecClass = gcnew ECL::LightweightClass ("CSBaseClass");
                             AddProperty (ecClass, "Name",             nullptr,          Priority::Name,                m_csCategory, PropIndex::Name,              false, stringType);
-                            AddProperty (ecClass, "Description",      nullptr,          Priority::Description,         m_csCategory, PropIndex::Description,       false, stringType);
+//                          AddProperty (ecClass, "Description",      nullptr,          Priority::Description,         m_csCategory, PropIndex::Description,       false, stringType);
 //                          AddProperty (ecClass, "Group",            nullptr,          Priority::Group,               m_csCategory, PropIndex::Group,             true, stringType);
 //                          AddProperty (ecClass, "Location",         nullptr,          Priority::Location,            m_csCategory, PropIndex::Location,          true, stringType);
 //                          AddProperty (ecClass, "Country",          nullptr,          Priority::Country,             m_csCategory, PropIndex::Country,           true, stringType);
@@ -4015,7 +4018,7 @@ property ECL::LightweightClass^     CSBaseClass
                                                   cs_PRJCOD_TRMRKRG,    cs_PRJCOD_WINKL,    cs_PRJCOD_NRTHSRT,  cs_PRJCOD_LMBRTAF,  cs_PRJCOD_HOM1UV,
                                                   cs_PRJCOD_HOM1XY,     cs_PRJCOD_HOM2UV,   cs_PRJCOD_HOM2XY,   cs_PRJCOD_RSKEW,    cs_PRJCOD_RSKEWC,
                                                   cs_PRJCOD_RSKEWO,     cs_PRJCOD_UTMZNBF,  cs_PRJCOD_TRMERBF,  cs_PRJCOD_SYS34_01, cs_PRJCOD_EDCYLE,
-                                                  cs_PRJCOD_PCARREE,    cs_PRJCOD_MRCATPV,  cs_PRJCOD_MNDOTOBL, cs_PRJCOD_LMMICH};
+                                                  cs_PRJCOD_PCARREE,    cs_PRJCOD_MRCATPV,  cs_PRJCOD_MNDOTOBL, cs_PRJCOD_LMMICH,   cs_PRJCOD_KROVAKMOD};
 
             array<String^>^ projectionStrings = { "LL",                 "TM",               "AE",               "MRCAT",
                                                   "AZMED",              "LMTAN",            "PLYCN",            "MODPC",            "AZMEA",
@@ -4032,7 +4035,7 @@ property ECL::LightweightClass^     CSBaseClass
                                                   "TRMRKRG",            "WINKEL",           "NERTH-SRT",        "LMAF",             "HOM1UV",
                                                   "HOM1XY",             "HOM2UV",           "HOM2XY",           "RSKEW",            "RSKEWC",
                                                   "RSKEWO",             "UTMZN-BF",         "TRMER-BF",         "SYSTM34-01",       "EDCYL-E",
-                                                  "PCARREE",            "MRCAT-PV",         "OBL-MNDOT",        "LM-MICH" };
+                                                  "PCARREE",            "MRCAT-PV",         "OBL-MNDOT",        "LM-MICH",          "KROVAKMOD" };
 
             ecClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
 
@@ -4050,6 +4053,24 @@ property ECL::LightweightClass^     CSBaseClass
             m_CSBaseClass = ecClass;
             }
         return m_CSBaseClass;
+        }
+    }
+
+property ECL::LightweightClass^     GCSDescriptionClass
+    {
+    ECL::LightweightClass^ get ()
+        {
+        if (nullptr == m_gcsDescriptionClass)
+            {
+            ECL::LightweightProperty^   gcsDescriptionProp;
+            ECL::LightweightStringType^ stringType = CSStringType;
+
+            m_gcsDescriptionClass = gcnew ECL::LightweightClass("GCSDescriptionClass");
+
+            gcsDescriptionProp = AddProperty(m_gcsDescriptionClass, "Description", nullptr, Priority::Description, m_csCategory, PropIndex::Description, !m_editNonCSMapData, stringType);
+            }
+
+        return m_gcsDescriptionClass;
         }
     }
 
@@ -5225,6 +5246,7 @@ property ECS::ECSchema^     Schema
             ECUI::ECPropertyPane::SetExtendedTypeTypeConverter (m_datumTypeET,      DatumTypeTypeConverter::typeid);
 
             m_schema->AddClass (CSBaseClass);
+            m_schema->AddClass (GCSDescriptionClass);
             m_schema->AddClass (ProjectedCSBaseClass);
             m_schema->AddClass (GeographicCSBaseClass);
             m_schema->AddClass (OriginLongitudeClass);
@@ -5402,6 +5424,7 @@ ECI::ECInstanceList^   GetCoordinateSystemProperties (BaseGCS^ coordSys)
             break;
 
         case cs_PRJCOD_KROVAK:  // without 1995 correction
+        case cs_PRJCOD_KROVAKMOD:  // with Czech Modification correction
         case cs_PRJCOD_KROVK1:  // Krovk1 is obsolete, should not be encountered.
         case cs_PRJCOD_KRVK95:  // with 1995 correction
         case cs_PRJCOD_KRVK951: // Krvk951 is obsolete, should not be encountered.
@@ -5489,6 +5512,7 @@ ECI::ECInstanceList^   GetCoordinateSystemProperties (BaseGCS^ coordSys)
         default:
             instanceList->Add (ProjectedCSBaseClass->CreateInstance (coordSys));
         }
+    instanceList->Add (GCSDescriptionClass->CreateInstance(coordSys));
     instanceList->Add (DatumIndexClass->CreateInstance (coordSys));
     instanceList->Add (BaseDatumClass->CreateInstance (coordSys));
     bool    deltaValid, rotationValid, scaleValid;

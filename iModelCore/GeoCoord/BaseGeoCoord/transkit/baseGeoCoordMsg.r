@@ -105,7 +105,7 @@ MessageList MSGLISTID_GeoCoordNames =
     { COORDSYS_HOM2U,           "Oblique 2 Points (Unrectified)"                    },
 
     { COORDSYS_GAUSK,           "Gauss-Kruger"                                      },
-    { COORDSYS_KRVKP,           "Krovak (precise origin)"                           },
+    { COORDSYS_KRVKP,           "Krovak"                                            },
     { COORDSYS_KRVKR,           "Krovak (rounded origin)"                           },
     { COORDSYS_MRCSR,           "Mercator with scale reduction"                     },
     { COORDSYS_OCCNC,           "OCCNC"                                             },
@@ -141,7 +141,8 @@ MessageList MSGLISTID_GeoCoordNames =
     { COORDSYS_LMMICH,          "Lambert Conformal Conic Michigan Variation"        },   
     { COORDSYS_KRVK95 ,         "Krovak Oblique Conformal Conic/95 Adjustment"      },                   
     { COORDSYS_TRMRS ,          "Transverse Mercator Snyder Formulation"            },                   
-          
+    { COORDSYS_KRVMO ,          "Krovak Modified for Czech Republic"                },
+
     }
 };
 
