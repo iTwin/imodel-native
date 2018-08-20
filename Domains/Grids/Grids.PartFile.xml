@@ -33,11 +33,8 @@
       <ProductDirectory Name="UnitTests-Objects" Path="unittests" />
     </ProductDirectoryList>
 
-    <Part Name="GridsSchema" BentleyBuildMakeFile="Grids/GridsSchema.prewire.mke">
-      <SubPart PartName="AecUnitsPublicAPI" Repository="DgnDomains-DesignModelingUnits" PartFile="AecUnits" />
-      <Bindings>
-        <Files ProductDirectoryName="Assets"        ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/Grids*.xml</Files>
-      </Bindings>
+    <Part Name="GridsSchema">
+      <SubPart PartName="GridsSchema" Repository="BisSchemas" PartFile="BisSchemas" />
     </Part>
 
     <Part Name="GridsApi" BentleyBuildMakeFile="Grids/GridsApi.prewire.mke">
