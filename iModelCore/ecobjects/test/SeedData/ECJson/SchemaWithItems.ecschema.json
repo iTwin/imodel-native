@@ -106,7 +106,7 @@
         "unit": "MM",
         "format": "DefaultReal"
       },
-      "precision": 3.0,
+      "relativeError": 3.0,
       "presentationUnits": [
         {
           "unit": "IN",

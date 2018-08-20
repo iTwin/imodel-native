@@ -4,7 +4,7 @@
   "schemaItemType": "KindOfQuantity",
   "schema": "ExampleSchema",
   "name": "ExampleKoQ",
-  "precision": 3.0,
+  "relativeError": 3.0,
   "persistenceUnit": {
     "unit": "MM",
     "format": "DefaultReal"
