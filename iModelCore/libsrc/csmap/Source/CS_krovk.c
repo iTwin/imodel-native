@@ -204,6 +204,9 @@ void EXP_LVL9 CSkrovkS (struct cs_Csprm_ *csprm)
 
 	krovk = &csprm->proj_prms.krovk;
 	krovk->apply95 = (csprm->prj_code == cs_PRJCOD_KRVK95) ? 1 : 0;
+#if defined (GEOCOORD_ENHANCEMENT)
+    krovk->applyKrovakMod = (csprm->prj_code == cs_PRJCOD_KROVAKMOD) ? 1 : 0;
+#endif
 
 	/* Extract the parameters from the definition. */
 	krovk->orgLng  = csprm->csdef.org_lng * cs_Degree;
@@ -387,6 +390,15 @@ int EXP_LVL9 CSkrovkF (Const struct cs_Krovk_ *krovk,double xy [2],Const double 
 		xy [XX] -= deltaXY [XX];
 		xy [YY] -= deltaXY [YY];
 	}
+#if defined (GEOCOORD_ENHANCEMENT)
+	/* Apply the Krovak Modified for Czech republic adjustment if appropriate. */
+	if (krovk->applyKrovakMod)
+	{
+		CSkrovkMod (deltaXY,xy);
+		xy [XX] -= deltaXY [XX];
+		xy [YY] -= deltaXY [YY];
+	}
+#endif
 
 	/* We do some strange stuff here to get a normal coordinate system out of
 	   this.  That is, a coordinate system which works well in a traditional
@@ -458,6 +470,18 @@ int EXP_LVL9 CSkrovkI (Const struct cs_Krovk_ *krovk,double lnglat [2],Const dou
 		xx += deltaXY [XX];
 		yy += deltaXY [YY];
 	}
+
+#if defined (GEOCOORD_ENHANCEMENT)
+	/* Apply the Krovak Modified for Czech republic adjustment if appropriate. */
+	if (krovk->applyKrovakMod)
+	{
+		tmp_xy [XX] = xx;
+		tmp_xy [YY] = yy;
+		CSkrovkMod (deltaXY,tmp_xy);
+		xx += deltaXY [XX];
+		yy += deltaXY [YY];
+	}
+#endif
 
 	/* Convert the X and Y to polar coordinates. */
 	theta = atan2 (yy,xx);
@@ -773,3 +797,38 @@ double EXP_LVL9 CSkrovkEpsgParam (double e_rad,double e_sq,double orgLng,double 
 	}
 	return epsgParm;
 }
+#if defined (GEOCOORD_ENHANCEMENT)
+/**********************************************************************
+**	Computes the Forward/Inverse DeltaX and DeltaY associated with Krovak Modified
+**  for the Czech Republic (Operation Method EPSG:1042)
+**  Note that this implementation conforms to EPSG guidance note
+**  but that the inverse is not exactly identical in both direction
+**  yet sufficiently close for any purposes.
+***********************************************************************/
+void EXP_LVL9 CSkrovkMod (double deltaXY [2],Const double xy [2])
+{
+    static double C1 = 2.946529277E-02;
+    static double C2 = 2.515965696E-02;
+    static double C3 = 1.193845912E-07;
+    static double C4 = -4.668270147E-07;
+    static double C5 = 9.233980362E-12;
+    static double C6 = 1.523735715E-12;
+    static double C7 = 1.696780024E-18;
+    static double C8 = 4.408314235E-18;
+    static double C9 = -8.331083518E-24;
+    static double C10 = -3.689471323E-24;
+    static double X0 = 1089000.00;
+    static double Y0 = 654000.00;
+
+
+    double Xr = xy[XX] - X0;
+    double Yr = xy[YY] - Y0;
+
+    double XrSqr = Xr*Xr;
+    double YrSqr = Yr*Yr;
+
+    deltaXY[XX] = C1 + C3*Xr - C4*Yr - 2*C6*Xr*Yr + C5*(XrSqr-YrSqr) + C7*Xr*(XrSqr-3*YrSqr) - C8*Yr*(3*XrSqr-YrSqr) + 4*C9*Xr*Yr*(XrSqr-YrSqr) + C10*(XrSqr*XrSqr+YrSqr*YrSqr-6*XrSqr*YrSqr);
+    deltaXY[YY] = C2 + C3*Yr + C4*Xr + 2*C5*Xr*Yr + C6*(XrSqr-YrSqr) + C8*Xr*(XrSqr-3*YrSqr) + C7*Yr*(3*XrSqr-YrSqr) - 4*C10*Xr*Yr*(XrSqr-YrSqr) + C9*(XrSqr*XrSqr+YrSqr*YrSqr-6*XrSqr*YrSqr);
+}
+
+#endif

@@ -691,7 +691,11 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 	   PRIMEM element other than the greenwich default is for a GEOGCS
 	   definition. */
 	CS_stncp (pmerWkt,"PRIMEM[\"Greenwich\",0]",sizeof (pmerWkt));
+#ifdef GEOCOORD_ENHANCEMENT
+	if (((prjPtr->flags & cs_PRJFLG_GEOGR) != 0 || prjPtr->code == cs_PRJCOD_KROVAK || prjPtr->code == cs_PRJCOD_KROVAKMOD) && cs_def->org_lng != 0.0)
+#else
 	if (((prjPtr->flags & cs_PRJFLG_GEOGR) != 0 || prjPtr->code == cs_PRJCOD_KROVAK) && cs_def->org_lng != 0.0)
+#endif
 	{
 		int orgLng = (int)cs_def->org_lng;
 		kCp = 0;				// redundant, but it keeps lint happy.
@@ -1289,6 +1293,50 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_SCLRED,cs_def->scl_red,paramFlags);
 			}
 			break;
+#ifdef GEOCOORD_ENHANCEMENT
+		case  cs_PRJCOD_KROVAKMOD:
+			if (flavor == wktFlvrAutodesk)
+			{
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_CNTMER,cs_def->org_lng,paramFlags);
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_ORGLAT,cs_def->org_lat,paramFlags);
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_POLELNG,cs_def->prj_prm1,paramFlags);
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_POLELAT,cs_def->prj_prm2,paramFlags);
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_OSTDPLL,cs_def->prj_prm3,paramFlags);
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_FEAST,cs_def->x_off,paramFlags);
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_FNORTH,cs_def->y_off,paramFlags);
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_SCLRED,cs_def->scl_red,paramFlags);
+			}
+			else
+			{
+                /* CSMAP did not extract el_def if needed
+                */
+                if (el_def == NULL)
+                {
+		            elDefPtr = CS_eldef (cs_def->elp_knm);
+		            if (elDefPtr == NULL)
+		            {
+				        /* Couldn't get an ellipsoid to reference!!! */
+				        CS_erpt (cs_NO_REFERNCE);
+				        goto error;
+		            }
+                    el_def = elDefPtr;
+                }
+				/* Convert the parameter from CS-MAP form to EPSG form. */
+				e_sq = el_def->ecent * el_def->ecent;
+				e_rad = el_def->e_rad * cs_def->scl_red;
+				epsgParm = CSkrovkEpsgParam (e_rad,e_sq,cs_def->org_lng,cs_def->org_lat,cs_def->prj_prm2);
+
+				/* Produce the parameter string. */				
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_GCPLNG,cs_def->prj_prm1,paramFlags);
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_GCPLAT,cs_def->org_lat,paramFlags);
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_GCAZM,epsgParm,paramFlags);
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_OSTDPLL,cs_def->prj_prm3,paramFlags);
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_FEAST,cs_def->x_off,paramFlags);
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_FNORTH,cs_def->y_off,paramFlags);
+				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_SCLRED,cs_def->scl_red,paramFlags);
+			}
+			break;
+#endif
 		case  cs_PRJCOD_MRCATK:
 			/* There are flavors of WKT that do not support this variation of the Mercator projection.
 			   In this case, we need to convert the scale reduction factor to a standard parallel

@@ -892,6 +892,16 @@ struct csWktPrjNameMap_ csWktPrjNameMap [] =
 	                       "",
 	                       "",
 	                       ""},
+#ifdef GEOCOORD_ENHANCEMENT
+	{cs_PRJCOD_KROVAKMOD,1042,"Krovak Modified",
+	                       "",
+	                       "",										// WKT ESRI
+	                       "",										// WKT Oracle
+						   "",										// WKT Geo Tools
+	                       "",
+	                       "",
+	                       ""},
+#endif
 //ADSK-HW October 2nd 2006 - end of new projections added from MapGuide
 	{   cs_PRJCOD_END,   0,"",
 	                       "",

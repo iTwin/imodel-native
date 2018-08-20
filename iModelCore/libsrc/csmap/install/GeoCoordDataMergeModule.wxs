@@ -39,6 +39,7 @@
     <?define SouthAfrica_GUID = "{4C626A78-BF4E-4A7B-BCFA-0C7B8ACDC8D9}" ?>
     <?define Venezuela_GUID = "{B2BBC001-2EF3-4ED4-92C5-F7811F43109F}" ?>
     <?define Portugal_GUID = "{A37074F6-6743-427A-9A59-91FDE8FA4CA2}" ?>
+    <?define Slovakia_GUID = "{D17BAE02-9031-4579-8B75-752BDCFEED4F}" ?>
     <?define UK_GUID = "{91B0501A-CE98-4239-9A14-1F21F9974758}" ?>
     <?define USA_GUID = "{64BF4122-25F8-401F-A883-CF00CAF6A7D7}" ?>
     <?define HARN_GUID = "{7CE208E6-7B70-40C0-935F-CBE48E8466CD}" ?>
@@ -71,6 +72,7 @@
     <?define Spain_GUID = "{33ECC984-933D-4F6E-B60A-E72E833B47BD}" ?>
     <?define Venezuela_GUID = "{9C361201-63FB-4D17-A6B8-65A1E1AB9B20}" ?>
     <?define Portugal_GUID = "{1593B84B-14FD-453F-A3DF-89D66AC4FFCC}" ?>
+    <?define Slovakia_GUID = "{329D57C2-E6C2-44BD-97CF-2AAFB5E4136B}" ?>
     <?define UK_GUID = "{71994BD0-F161-49AD-84B9-58048EE56F2C}" ?>
     <?define USA_GUID = "{244311A3-4EA6-445C-9FA3-435A9C7674CF}" ?>
     <?define HARN_GUID = "{D0936E1A-FA0A-4447-96DD-CF8075DCE323}" ?>
@@ -225,7 +227,7 @@
                     </Component>
                 </Directory>
 
-                <Directory Id="_F496843213004D18A901451136762C68" Name="Potugal">
+                <Directory Id="_F496843213004D18A901451136762C68" Name="Portugal">
                     <Component Id="_F74BC54427D742BA8F54050586CEE73F" Guid="$(var.Portugal_GUID)" Win64="$(var.COMPONENT_WIN64)">
                         <File Id="_3D8256C3DF57449E970CB260C15BF902" Name="D73_ETRS89_geo.gsb" KeyPath="yes" Source="$(env.GeoCoordData)Portugal\D73_ETRS89_geo.gsb" />
                         <File Id="_7F32673609244BEDBB5415237D4971A9" Name="DLX_ETRS89_geo.gsb" Source="$(env.GeoCoordData)Portugal\DLX_ETRS89_geo.gsb" />
@@ -233,6 +235,12 @@
                         <File Id="_7CADBE45E4C840D9B676EC573E3EBC55" Name="ptED_e89.gsb" Source="$(env.GeoCoordData)Portugal\ptED_e89.gsb" />
                         <File Id="_F5FA65307152417A80C59712B8779917" Name="ptLB_e89.gsb" Source="$(env.GeoCoordData)Portugal\ptLB_e89.gsb" />
                         <File Id="_6ECCC194BD014F70ADF7FA721B8207A1" Name="ptLX_e89.gsb" Source="$(env.GeoCoordData)Portugal\ptLX_e89.gsb" />
+                    </Component>
+                </Directory>
+
+                <Directory Id="_7F4B681F767748A1BC9D7739C9817E48" Name="Slovakia">
+                    <Component Id="_0F491C4329514AF9AC34C702367DC0FC" Guid="$(var.Slovakia_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                        <File Id="_A10721F966A44F2AB541C865041E8FD5" Name="README.txt" KeyPath="yes" Source="$(env.GeoCoordData)Slovakia\README.txt" />
                     </Component>
                 </Directory>
 

@@ -1606,6 +1606,10 @@ void EXP_LVL3 CS_fillIn (struct cs_Csdef_ *csPtr)
 		csPtr->org_lat = csPtr->prj_prm2;
 		break;
 #endif
+#if defined (GEOCOORD_ENHANCEMENT)
+	case cs_PRJCOD_KROVAKMOD:
+		break;
+#endif
 	}
 	return;
 }

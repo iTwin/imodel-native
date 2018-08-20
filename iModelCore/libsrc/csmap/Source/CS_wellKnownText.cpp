@@ -2145,6 +2145,17 @@ int CSwktToCs (struct cs_Csdef_ *csDef,struct cs_Dtdef_ *dtDef,struct cs_Eldef_ 
 			break;
 		case cs_PRJCOD_PCARREE:
 			break;
+#if defined (GEOCOORD_ENHANCEMENT)
+        case cs_PRJCOD_KROVAKMOD:
+			status = CSwellKnownTextKrovak (csDef,elDef,wktElement,primeMeridianLongitude,
+																   geogcsUnitsFactor,
+																   flavor);
+			if (status != 0)
+			{
+				goto error;
+			}
+			break;
+#endif
 		default:
 			break;
 		}

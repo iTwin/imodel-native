@@ -571,6 +571,16 @@
 							 cs_PRJFLG_CNFRM  | \
 							 cs_PRJFLG_CONIC  | \
 							 cs_PRJFLG_RNTRNT)
+
+#ifdef GEOCOORD_ENHANCEMENT
+#define cs_PRJFLGS_KROVAKMOD (cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
+							 cs_PRJFLG_SCALK  | cs_PRJFLG_CNVRG  | \
+							 cs_PRJFLG_CNFRM  | \
+							 cs_PRJFLG_CONIC  | cs_PRJFLG_OBLQ | \
+							 cs_PRJFLG_SCLRED | \
+							 cs_PRJFLG_RNTRNT)
+#endif
+
 #if defined (TOTAL_SPECIAL)
 #define cs_PRJFLGS_UTMZNBF	(cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
 							 cs_PRJFLG_SCALK  | cs_PRJFLG_CNVRG  | \
@@ -783,7 +793,10 @@ struct cs_Prjtab_ cs_Prjtab [] =
 #endif
 	{   "LM-MICH",CSlmbrtS,CSlmbrtQ,cs_PRJCOD_LMMICH,cs_PRJFLGS_LMMICH,1051UL,
 	    			"Lambert Conformal Conic Projection, Two Standard Parallels"},
-
+#if defined (GEOCOORD_ENHANCEMENT)
+	{     "KROVAKMOD",CSkrovkS,CSkrovkQ,cs_PRJCOD_KROVAKMOD,cs_PRJFLGS_KROVAKMOD,1042UL,
+	    			"Krovak Oblique Conformal Conic Modified, Czech Republic"},
+#endif
 	{           "",NULL,    NULL,    cs_PRJCOD_END,  0L, 0UL,
 					""}	/* End of table marker. */
 };
@@ -1752,6 +1765,9 @@ struct cs_PrjprmMap_ cs_PrjprmMap [] =
 #if defined (GEOCOORD_ENHANCEMENT)
     /* entry identical to HOM1XY added Alain Robert May 2011 */
 	{cs_PRJCOD_MNDOTOBL, { cs_PRMCOD_GCPLNG, cs_PRMCOD_GCPLAT, cs_PRMCOD_GCAZM }},
+#endif
+#if defined (GEOCOORD_ENHANCEMENT)
+	{cs_PRJCOD_KROVAKMOD, { cs_PRMCOD_POLELNG,  cs_PRMCOD_POLELAT,  cs_PRMCOD_OSTDPLL }},
 #endif
 
 	{   cs_PRJCOD_END, { 0 }}
