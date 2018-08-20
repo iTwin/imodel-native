@@ -111,7 +111,7 @@
     "ExampleKoQ": {
       "schemaItemType": "KindOfQuantity",
       "persistenceUnit": "ExampleSchema.ExampleUnit",
-      "precision": 3.0,
+      "relativeError": 3.0,
       "presentationUnits": [
         "Formats.DefaultRealU[ExampleSchema.ExampleUnit|example]"
       ]
