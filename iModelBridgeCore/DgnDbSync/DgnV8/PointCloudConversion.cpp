@@ -211,7 +211,7 @@ BentleyStatus SpatialConverterBase::_ConvertPointCloudElement(DgnV8EhCR v8eh, Re
         }
 
     // Schedule reality model tileset creation.
-    AddModelRequiringRealityTiles(pPointCloudModel->GetModelId());
+    AddModelRequiringRealityTiles(pPointCloudModel->GetModelId(), filename);
 
         
     // Display the point cloud (or not) in the DgnDb views

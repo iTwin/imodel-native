@@ -74,7 +74,11 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
     WString      dbFileName = GetDgnDb().GetFileName().GetFileNameWithoutExtension();
 
     outputDirectory.AppendToPath(dbFileName.c_str());
-    if (!outputDirectory.IsDirectory() && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(outputDirectory))
+    if (outputDirectory.IsDirectory())
+        {
+        BeFileName::EmptyDirectory(outputDirectory);
+        }
+    else if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(outputDirectory))
         {
         ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TemporaryDirectoryNotFound(), Utf8String(outputDirectory.c_str()).c_str());
         BeAssert(false && "unable to create output directory");
@@ -87,9 +91,10 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
     auto    ecefLocation = m_dgndb->GeoLocation().GetEcefLocation();
     auto    dbToEcefTransform = ecefLocation.m_isValid ? Transform::From(ecefLocation.m_angles.ToRotMatrix(), ecefLocation.m_origin) : Transform::FromIdentity();
 
-    for (auto const& modelId : m_modelsRequiringRealityTiles)
+    for (auto const& curr : m_modelsRequiringRealityTiles)
         {
-        auto model = m_dgndb->Models().GetModel(modelId);
+        auto model = m_dgndb->Models().GetModel(curr.first);
+        auto file = curr.second;                  // Carole M. - this should be the source file -- Use its last modified time to determine if the existing tileset matches (or needs to be regenerated).
         auto geometricModel = model->ToGeometricModel();
 
         if (nullptr == geometricModel)

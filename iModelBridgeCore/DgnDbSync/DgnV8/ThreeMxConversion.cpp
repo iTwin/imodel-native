@@ -397,7 +397,7 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
         modelSelector.Update();
         }
     // Schedule reality model tileset creation.
-    converter.AddModelRequiringRealityTiles(modelId);
+    converter.AddModelRequiringRealityTiles(modelId, BeFileName(rootUrl));
 
     return Result::SkipElement;
     }

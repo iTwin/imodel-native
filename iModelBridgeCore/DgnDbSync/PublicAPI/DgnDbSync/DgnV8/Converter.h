@@ -991,7 +991,7 @@ protected:
     DgnModelId          m_jobDefinitionModelId;
     DgnElementId         m_textStyleNoneId;
     bset<DgnModelId>    m_unchangedModels;
-    bset<DgnModelId>    m_modelsRequiringRealityTiles;;
+    bmap<DgnModelId, BeFileName>    m_modelsRequiringRealityTiles;;
 
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
@@ -1985,7 +1985,7 @@ public:
     void ClearV8ProgressMeter();
     
     //! Add model requiring reality tiles.
-    void AddModelRequiringRealityTiles(DgnModelId id) { m_modelsRequiringRealityTiles.insert(id); }
+    void AddModelRequiringRealityTiles(DgnModelId id, BeFileNameCR sourceFile) { m_modelsRequiringRealityTiles.Insert(id, sourceFile); }
     //! @}
 
     //! @name Change Monitoring
@@ -2575,7 +2575,7 @@ protected:
 
 
 public:
-    static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}
+    static WCharCP GetRegistrySubKey() {return L"IModelBridgeForMstn";}
 
     DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
     DGNDBSYNC_EXPORT  ~RootModelConverter();

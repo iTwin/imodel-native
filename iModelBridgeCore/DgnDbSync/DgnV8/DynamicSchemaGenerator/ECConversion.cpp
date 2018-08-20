@@ -2335,6 +2335,14 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
 void DynamicSchemaGenerator::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP baseInterface, ECN::ECClassCP baseObject)
     {
     bool wasFlattened = false;
+    // CopyFlattenedProperty looks in m_flattenedRefs, so we need to prepopulate that
+    ECN::ECSchemaReferenceListCR referencedSchemas = schema->GetReferencedSchemas();
+    for (ECN::ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+        {
+        ECN::ECSchemaP refSchema = it->second.get();
+        m_flattenedRefs[refSchema->GetName()] = refSchema;
+        }
+
     for (BECN::ECClassP ecClass : schema->GetClasses())
         {
         BECN::ECEntityClassP entityClass = ecClass->GetEntityClassP();

@@ -1011,7 +1011,7 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
         models.Update();
         }
     // Schedule reality model tileset creation.
-    AddModelRequiringRealityTiles(pModel->GetModelId());
+    AddModelRequiringRealityTiles(pModel->GetModelId(), v8LocalFilename);
 
     return SUCCESS;
     }
