@@ -95,6 +95,7 @@ GCSSpecificTransformTester::GCSSpecificTransformTester()
 
 static bvector<conversionTest> s_listOfConversionTests = 
     {
+
     {L"LL84", L"LL83", 34.0, 30.0, 0.0, 34.0, 30.0, 0.0, false},
     {L"LL84", L"LL83", 32.0, 29.0, 0.0, 32.0, 29.0, 0.0, false},
 
@@ -203,8 +204,100 @@ static bvector<conversionTest> s_listOfConversionTests =
     {L"OSTN15.BritishNatGrid", L"EnglandHighway-C15H5", 170370.71800000000000,  11572.40500000000000, 0.0, -141695.23550506,    237683.03701474, 0.0, true},
 
 
+    // Slovak JTSK03 to JTSK (Through NADCON file) values come from https://zbgis.skgeodesy.sk/rts/en/Transform
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 16.7 , 47.7 , 0.0, 16.700021658, 47.699998944, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 16.8 , 47.7 , 0.0, 16.800021936, 47.699999656, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 16.9 , 47.7 , 0.0, 16.900021331, 47.699999908, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17   , 47.7 , 0.0, 17.000021544, 47.700000447, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.1 , 47.7 , 0.0, 17.100021550, 47.700000953, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 18.4 , 47.7 , 0.0, 18.400008828, 47.700009753, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 19.2 , 47.7 , 0.0, 19.199998958, 47.700007733, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 19.8 , 47.7 , 0.0, 19.799994964, 47.700004461, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 21.1 , 47.7 , 0.0, 21.099988586, 47.700000358, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.5 , 47.7 , 0.0, 22.499986258, 47.699995439, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.7 , 47.8 , 0.0, 17.700016478, 47.800006444, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 18.2 , 47.8 , 0.0, 18.200010650, 47.800008136, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 20.4 , 47.8 , 0.0, 20.399993389, 47.800004281, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 21.8 , 47.8 , 0.0, 21.799985603, 47.799995947, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 16.6 , 47.9 , 0.0, 16.600019822, 47.899998253, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.8 , 47.9 , 0.0, 17.800013839, 47.900005492, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.6 , 47.9 , 0.0, 22.599985858, 47.899995119, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 16.7 , 48.0 , 0.0, 16.700020033, 47.999997858, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.9 , 48.0 , 0.0, 17.900012517, 48.000005128, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 19   , 48.0 , 0.0, 18.999999597, 48.000006525, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 21.2 , 48.0 , 0.0, 21.199988614, 47.999998856, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.3 , 48.0 , 0.0, 22.299986022, 47.999995433, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 16.7 , 48.1 , 0.0, 16.700019319, 48.099996867, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.8 , 48.1 , 0.0, 17.800012136, 48.100003436, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 19.9 , 48.1 , 0.0, 19.899995164, 48.100004514, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.3 , 48.1 , 0.0, 22.299986142, 48.099995464, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.1 , 48.2 , 0.0, 17.100018831, 48.199997717, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 18.9 , 48.2 , 0.0, 18.900002122, 48.200004475, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 20.7 , 48.2 , 0.0, 20.699989175, 48.200001614, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.3 , 48.2 , 0.0, 22.299986175, 48.199995347, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 16.9 , 48.3 , 0.0, 16.900018508, 48.299995300, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 19.5 , 48.3 , 0.0, 19.499995469, 48.300004022, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 21.1 , 48.3 , 0.0, 21.099988842, 48.299998622, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.6 , 48.3 , 0.0, 22.599986769, 48.299994722, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.3 , 48.4 , 0.0, 17.300013517, 48.399997228, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 19.6 , 48.4 , 0.0, 19.599995589, 48.400003853, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.5 , 48.4 , 0.0, 22.499987422, 48.399994983, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.2 , 48.5 , 0.0, 17.200012769, 48.499995942, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 19.3 , 48.5 , 0.0, 19.299996317, 48.500002981, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 21.4 , 48.5 , 0.0, 21.399987475, 48.499997083, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.6 , 48.5 , 0.0, 22.599988189, 48.499995044, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.7 , 48.6 , 0.0, 17.700011092, 48.600000175, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 19.9 , 48.6 , 0.0, 19.899992525, 48.600002325, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.0 , 48.6 , 0.0, 21.999988072, 48.599995619, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.6 , 48.7 , 0.0, 17.600010817, 48.699999311, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 20.1 , 48.7 , 0.0, 20.099993631, 48.700001303, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 21.9 , 48.7 , 0.0, 21.899988292, 48.699996150, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.6 , 48.8 , 0.0, 17.600009703, 48.799998008, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 19.8 , 48.8 , 0.0, 19.799993722, 48.800000572, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.5 , 48.8 , 0.0, 22.499989792, 48.799994789, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 18   , 48.9 , 0.0, 18.000007661, 48.899999850, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 20.1 , 48.9 , 0.0, 20.099992475, 48.899999631, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.2 , 48.9 , 0.0, 22.199989475, 48.899995564, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.8 , 49.0 , 0.0, 17.800007619, 48.999999256, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 20.3 , 49.0 , 0.0, 20.299991278, 48.999998353, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.3 , 49.0 , 0.0, 22.299990144, 48.999995664, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 18.2 , 49.1 , 0.0, 18.200004019, 49.100001139, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 20.8 , 49.1 , 0.0, 20.799991178, 49.099996681, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.4 , 49.1 , 0.0, 22.399990553, 49.099995831, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 18.8 , 49.2 , 0.0, 18.800002011, 49.200001203, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 21.2 , 49.2 , 0.0, 21.199989189, 49.199996339, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 16.7 , 49.3 , 0.0, 16.700007628, 49.299994444, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 19.6 , 49.3 , 0.0, 19.599998119, 49.299999550, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.3 , 49.3 , 0.0, 22.299990500, 49.299995931, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.7 , 49.4 , 0.0, 17.700005208, 49.399998628, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 19.6 , 49.4 , 0.0, 19.599998211, 49.399999125, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.0 , 49.4 , 0.0, 21.999990839, 49.399995239, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 19   , 49.5 , 0.0, 19.000001153, 49.500000181, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 21.7 , 49.5 , 0.0, 21.699990811, 49.499995172, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 17.7 , 49.6 , 0.0, 17.700004078, 49.599998719, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 20.7 , 49.6 , 0.0, 20.699993378, 49.599995397, 0.0, false},
+    {L"Slov/JTSK03.LL", L"Slov/JTSK.LL", 22.4 , 49.6 , 0.0, 22.399990831, 49.599995694, 0.0, false},
 
+    { L"Slov/JTSK03.LL", L"Slov/JTSK03.Krovak", 16.7 , 47.7 , 0.0, -609254.984, -1326822.821, 0.0, true },
+    { L"Slov/JTSK03.LL", L"Slov/JTSK03.Krovak", 19.2 , 47.7 , 0.0, -422379.264, -1343668.587, 0.0, true },
+    { L"Slov/JTSK03.LL", L"Slov/JTSK03.Krovak", 22.6 , 47.9 , 0.0, -166928.118, -1334520.451, 0.0, true },
+    { L"Slov/JTSK03.LL", L"Slov/JTSK03.Krovak", 17.8 , 48.1 , 0.0, -523014.011, -1290705.929, 0.0, true },
+    { L"Slov/JTSK03.LL", L"Slov/JTSK03.Krovak", 22.6 , 48.3 , 0.0, -165634.692, -1290071.390, 0.0, true },
+    { L"Slov/JTSK03.LL", L"Slov/JTSK03.Krovak", 20.1 , 48.7 , 0.0, -348130.272, -1237269.005, 0.0, true },
+    { L"Slov/JTSK03.LL", L"Slov/JTSK03.Krovak", 22.3 , 49.0 , 0.0, -185308.631, -1211595.909, 0.0, true },
+    { L"Slov/JTSK03.LL", L"Slov/JTSK03.Krovak", 16.7 , 49.3 , 0.0, -590360.321, -1149928.977, 0.0, true },
+    { L"Slov/JTSK03.LL", L"Slov/JTSK03.Krovak", 21.7 , 49.5 , 0.0, -226905.949, -1154420.633, 0.0, true },
+    { L"Slov/JTSK03.LL", L"Slov/JTSK03.Krovak", 20.7 , 49.6 , 0.0, -298658.354, -1139888.320, 0.0, true },
 
+    { L"Slov/JTSK03.Krovak", L"ETRS89.UTM-33N", -609254.984, -1326822.821, 0.0,  627455.174, 5284306.364, 0.0, true },
+    { L"Slov/JTSK03.Krovak", L"ETRS89.UTM-33N", -166928.118, -1334520.451, 0.0, 1067704.873, 5333170.354, 0.0, true },
+    { L"Slov/JTSK03.Krovak", L"ETRS89.UTM-33N", -523014.011, -1290705.929, 0.0,  708353.772, 5331154.991, 0.0, true },
+    { L"Slov/JTSK03.Krovak", L"ETRS89.UTM-33N", -165634.692, -1290071.390, 0.0, 1063292.358, 5377580.647, 0.0, true },
+    { L"Slov/JTSK03.Krovak", L"ETRS89.UTM-33N", -348130.272, -1237269.005, 0.0,  875073.789, 5406613.662, 0.0, true },
+    { L"Slov/JTSK03.Krovak", L"ETRS89.UTM-33N", -185308.631, -1211595.909, 0.0, 1033591.434, 5453129.382, 0.0, true },
+    { L"Slov/JTSK03.Krovak", L"ETRS89.UTM-33N", -590360.321, -1149928.977, 0.0,  623495.043, 5462125.530, 0.0, true },
+    { L"Slov/JTSK03.Krovak", L"ETRS89.UTM-33N", -226905.949, -1154420.633, 0.0,  984814.538, 5504586.861, 0.0, true },
+    { L"Slov/JTSK03.Krovak", L"ETRS89.UTM-33N", -298658.354, -1139888.320, 0.0,  911639.270, 5509716.043, 0.0, true },
 
 
     };
@@ -236,15 +329,15 @@ TEST_P(GCSSpecificTransformTester, SpecificCoordConversionTest)
 
     if (theConversionTestParam.m_linearUnit)
         {
-        EXPECT_NEAR(resultPoint.x, theConversionTestParam.m_outputCoordinateX, 0.001);
-        EXPECT_NEAR(resultPoint.y, theConversionTestParam.m_outputCoordinateY, 0.001);
-        EXPECT_NEAR(resultPoint.z, theConversionTestParam.m_outputCoordinateZ, 0.001);
+        EXPECT_NEAR(resultPoint.x, theConversionTestParam.m_outputCoordinateX, 0.002);
+        EXPECT_NEAR(resultPoint.y, theConversionTestParam.m_outputCoordinateY, 0.002);
+        EXPECT_NEAR(resultPoint.z, theConversionTestParam.m_outputCoordinateZ, 0.002);
         }
     else
         {
-        EXPECT_NEAR(resultPoint.x, theConversionTestParam.m_outputCoordinateX, 0.0000001);
-        EXPECT_NEAR(resultPoint.y, theConversionTestParam.m_outputCoordinateY, 0.0000001);
-        EXPECT_NEAR(resultPoint.z, theConversionTestParam.m_outputCoordinateZ, 0.0000001);
+        EXPECT_NEAR(resultPoint.x, theConversionTestParam.m_outputCoordinateX, 0.00000002);
+        EXPECT_NEAR(resultPoint.y, theConversionTestParam.m_outputCoordinateY, 0.00000002);
+        EXPECT_NEAR(resultPoint.z, theConversionTestParam.m_outputCoordinateZ, 0.00000002);
         }
 }
 

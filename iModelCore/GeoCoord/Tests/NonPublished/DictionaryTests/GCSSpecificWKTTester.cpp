@@ -44,6 +44,8 @@ GCSSpecificWKTTester::GCSSpecificWKTTester()
 static bvector<WString> s_ListOfWKTs =
     {
 
+    L"PROJCS[\"NAD_1983_2011_StatePlane_Texas_Central_FIPS_4203_Ft_US\",GEOGCS[\"GCS_NAD_1983_2011\",DATUM[\"D_NAD_1983_2011\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER[\"False_Easting\",2296583.333333333],PARAMETER[\"False_Northing\",9842500.0],PARAMETER[\"Central_Meridian\",-100.3333333333333],PARAMETER[\"Standard_Parallel_1\",30.11666666666667],PARAMETER[\"Standard_Parallel_2\",31.88333333333333],PARAMETER[\"Latitude_Of_Origin\",29.66666666666667],UNIT[\"Foot_US\",0.3048006096012192]]",
+    L"PROJCS[\"VT83\",GEOGCS[\"NAD83\",DATUM[\"NAD83\",SPHEROID[\"GRS1980\",6378137.000,298.25722210]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Transverse Mercator\"],PARAMETER[\"False Easting\",500000.000],PARAMETER[\"False Northing\",0.000],PARAMETER[\"Scale Reduction\",0.999964285714],PARAMETER[\"Central Meridian\",-72.50000000000000],PARAMETER[\"Origin Latitude\",42.50000000000000],UNIT[\"Meter\",1.00000000000000]]",
     L"PROJCS[\"Belge 1972 / Belgian Lambert 72\",GEOGCS[\"Belge 1972\",DATUM[\"Reseau_National_Belge_1972\",SPHEROID[\"International 1924\",6378388,297,AUTHORITY[\"EPSG\",\"7022\"]],TOWGS84[-106.8686,52.2978,-103.7239,0.3366,-0.457,1.8422,-1.2747],AUTHORITY[\"EPSG\",\"6313\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4313\"]],PROJECTION[\"Lambert_Conformal_Conic_2SP\"],PARAMETER[\"standard_parallel_1\",51.16666723333333],PARAMETER[\"standard_parallel_2\",49.8333339],PARAMETER[\"latitude_of_origin\",90],PARAMETER[\"central_meridian\",4.367486666666666],PARAMETER[\"false_easting\",150000.013],PARAMETER[\"false_northing\",5400088.438],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"X\",EAST],AXIS[\"Y\",NORTH],AUTHORITY[\"EPSG\",\"31370\"]]",
     L"PROJCS[\"Czech/JTSK.Krovak\",GEOGCS[\"Czech/JTSK.LL\",DATUM[\"Czech/JTSK\",SPHEROID[\"BESSEL\",6377397.155,299.15281283],TOWGS84[570.6934,85.6936,462.8393,-4.998250,-1.586630,-5.261140,3.54301550]],PRIMEM[\"Ferro\", -17.6666666666667],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Krovak Oblique Conformal Conic\"],PARAMETER[\"Central Meridian\",-17.66666666666667],PARAMETER[\"Origin Latitude\",49.50000000000000],PARAMETER[\"Oblique Pole Longitude\",42.50000000000000],PARAMETER[\"Oblique Pole Latitude\",59.75759855555555],PARAMETER[\"Oblique Cone Standard Parallel\",78.50000000000000],PARAMETER[\"False Easting\",0.000],PARAMETER[\"False Northing\",0.000],PARAMETER[\"Scale Reduction\",0.999900000000],UNIT[\"Meter\",1.00000000000000]]",
     L"PROJCS[\"Quebec MTM Zone 10 (NAD 27)\",GEOGCS[\"NAD 27 (Canada)\",DATUM[\"NAD 27 (Canada)\",SPHEROID[\"Clarke 1866\",6378206.4,294.9786982]],PRIMEM[\"Greenwich\",0],UNIT[\"Decimal Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"Scale_Factor\",0.9999],PARAMETER[\"Central_Meridian\",-79.500000],PARAMETER[\"False_Easting\",304800.00000],UNIT[\"Meter\",1.000000]]",
@@ -8064,6 +8066,8 @@ static bvector<WString> s_listShouldBeSupported =
 TEST_P (GCSSpecificWKTTester, ParseWKTTest)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
+    GeoCoordinates::BaseGCSPtr currentGCS1;
+
 
     currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
@@ -8073,6 +8077,71 @@ TEST_P (GCSSpecificWKTTester, ParseWKTTest)
     EXPECT_TRUE(SUCCESS == currentGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText.c_str()));
 
     EXPECT_TRUE(currentGCS->IsValid());
+
+    currentGCS1 = GeoCoordinates::BaseGCS::CreateGCS();
+
+
+    EXPECT_TRUE(SUCCESS == currentGCS1->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorGeoTiff, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS1->IsValid());
+    EXPECT_TRUE(currentGCS1->IsEquivalent(*currentGCS));
+
+    currentGCS1 = GeoCoordinates::BaseGCS::CreateGCS();
+
+    EXPECT_TRUE(SUCCESS == currentGCS1->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorESRI, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS1->IsValid());
+    EXPECT_TRUE(currentGCS1->IsEquivalent(*currentGCS));
+
+
+    currentGCS1 = GeoCoordinates::BaseGCS::CreateGCS();
+
+    EXPECT_TRUE(SUCCESS == currentGCS1->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOracle, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS1->IsValid());
+    EXPECT_TRUE(currentGCS1->IsEquivalent(*currentGCS));
+
+
+    currentGCS1 = GeoCoordinates::BaseGCS::CreateGCS();
+
+    EXPECT_TRUE(SUCCESS == currentGCS1->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorGeoTools, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS1->IsValid());
+    EXPECT_TRUE(currentGCS1->IsEquivalent(*currentGCS));
+
+
+    currentGCS1 = GeoCoordinates::BaseGCS::CreateGCS();
+
+    EXPECT_TRUE(SUCCESS == currentGCS1->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorEPSG, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS1->IsValid());
+    EXPECT_TRUE(currentGCS1->IsEquivalent(*currentGCS));
+
+
+    currentGCS1 = GeoCoordinates::BaseGCS::CreateGCS();
+
+    EXPECT_TRUE(SUCCESS == currentGCS1->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOracle9, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS1->IsValid());
+    EXPECT_TRUE(currentGCS1->IsEquivalent(*currentGCS));
+
+
+    currentGCS1 = GeoCoordinates::BaseGCS::CreateGCS();
+
+    EXPECT_TRUE(SUCCESS == currentGCS1->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorAutodesk, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS1->IsValid());
+    EXPECT_TRUE(currentGCS1->IsEquivalent(*currentGCS));
+
+
+    currentGCS1 = GeoCoordinates::BaseGCS::CreateGCS();
+
+    EXPECT_TRUE(SUCCESS == currentGCS1->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorUnknown, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS1->IsValid());
+    EXPECT_TRUE(currentGCS1->IsEquivalent(*currentGCS));
+
+
     }
    
 
