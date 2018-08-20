@@ -2453,3 +2453,47 @@ dgn_TxnTable::Model::Iterator::Entry dgn_TxnTable::Model::Iterator::begin() cons
 DgnModelId dgn_TxnTable::Model::Iterator::Entry::GetModelId() const {return m_sql->GetValueId<DgnModelId>(0);}
 TxnTable::ChangeType dgn_TxnTable::Model::Iterator::Entry::GetChangeType() const {return (TxnTable::ChangeType) m_sql->GetValueInt(1);}
 DgnClassId dgn_TxnTable::Model::Iterator::Entry::GetECClassId() const {return m_sql->GetValueId<DgnClassId>(2);}
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         08/2018
+//---------------------------------------------------------------------------------------
+void TxnManager::DumpTxns(bool verbose) const
+    {
+    TxnManagerR txnMgr = m_dgndb.Txns();
+
+    TxnManager::TxnId endTxnId = txnMgr.GetCurrentTxnId();
+    // unused - int64_t lastRebaseId = txnMgr.QueryLastRebaseId();
+
+    TxnManager::TxnId startTxnId = txnMgr.QueryNextTxnId(TxnManager::TxnId(0));
+    if (!startTxnId.IsValid() || startTxnId >= endTxnId)
+        return;
+
+    DgnDbR db = const_cast<TxnManager*>(this)->GetDgnDb();
+
+    for (TxnManager::TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = txnMgr.QueryNextTxnId(currTxnId))
+        {
+        Utf8PrintfString title("\n\n---------- Txn#%lld ---------------", currTxnId.GetValue());
+        if (txnMgr.IsSchemaChangeTxn(currTxnId))
+            {
+            DbSchemaChangeSet dbSchemaChangeSet;
+            txnMgr.ReadDbSchemaChanges(dbSchemaChangeSet, currTxnId);
+            dbSchemaChangeSet.Dump(Utf8PrintfString("%s - schemaChanges", title.c_str()).c_str());
+            }
+        else
+            {
+            AbortOnConflictChangeSet sqlChangeSet;
+            txnMgr.ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None);
+
+            if (verbose)
+                sqlChangeSet.Dump(title.c_str(), db, false, 2);
+            else
+                {
+                printf("%s\n\n", title.c_str());
+                BeSQLite::EC::ChangeSummary changeSummary(db);
+                changeSummary.FromChangeSet(sqlChangeSet);
+                changeSummary.Dump();
+                }
+            }
+        }
+    }

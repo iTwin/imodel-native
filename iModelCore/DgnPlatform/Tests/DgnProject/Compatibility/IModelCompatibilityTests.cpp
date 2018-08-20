@@ -46,21 +46,25 @@ TEST_F(IModelCompatibilityTestFixture, BasicTestsOnAllPulledFiles)
             // Run SELECT statements against all classes
             for (ECSchemaCP schema : testDb.GetDb().Schemas().GetSchemas())
                 {
+                if (schema->GetName().Equals("ECDbSystem"))
+                    continue; //doesn't have mapped classes
+
                 for (ECClassCP cl : schema->GetClasses())
                     {
-                    if (!cl->IsEntityClass())
+                    if (!cl->IsEntityClass() && !cl->IsRelationshipClass())
                         continue;
-
+                    
                     Utf8String ecsql("SELECT ECInstanceId,ECClassId");
                     for (ECPropertyCP prop : cl->GetProperties())
                         {
-                        ecsql.append(",").append(prop->GetName());
+                        ecsql.append(",[").append(prop->GetName()).append("]");
                         }
                     ecsql.append(" FROM ").append(cl->GetECSqlName());
 
                     ECSqlStatement stmt;
                     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), ecsql.c_str())) << ecsql << " | " << testDb.GetDescription();
-                    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "All entity classes are expected to be empty in the test files | " << ecsql << " | " << testDb.GetDescription();
+                    const DbResult stepStat = stmt.Step();
+                    ASSERT_TRUE(BE_SQLITE_DONE == stepStat || BE_SQLITE_ROW == stepStat) << ecsql << " | " << testDb.GetDescription();
                     }
                 }
             }
