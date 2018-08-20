@@ -7,7 +7,7 @@
 |
 ======================================================================================= -->
 <ECSchema schemaName="ClassificationSystems" alias="clsf" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
+    <ECSchemaReference name="BisCore" version="01.00.01" alias="bis" />
 
     <ECEntityClass typeName="IClassified" modifier="Abstract" displayTitle="IClassifiedElement" Description="An interface that indicates that an element could be classified by classification(s)">
         <ECCustomAttributes>
