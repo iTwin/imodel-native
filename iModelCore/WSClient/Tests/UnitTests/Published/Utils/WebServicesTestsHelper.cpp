@@ -300,7 +300,7 @@ ClientInfoPtr StubClientInfo()
 
 ClientInfoPtr StubValidClientInfo()
     {
-    auto productId = "2545"; // Navigator Desktop CONNECT Edition
+    auto productId = "test"; // Fake for tets
     return std::shared_ptr<ClientInfo>(new ClientInfo("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId));
     }
 

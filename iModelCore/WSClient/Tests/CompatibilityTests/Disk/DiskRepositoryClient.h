@@ -111,7 +111,10 @@ struct DiskRepositoryClient : public IWSRepositoryClient
 
         virtual AsyncTaskPtr<WSRepositoryResult> GetInfo(ICancellationTokenPtr ct) const override
             {
-            FBC_NOT_IMPLEMENTED(WSRepositoryResult);
+            WSRepository repo;
+            repo.SetServerUrl("FakeUrl");
+            repo.SetId("FakeId");
+            return CreateCompletedAsyncTask(WSRepositoryResult::Success(repo));
             };
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest

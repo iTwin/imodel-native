@@ -666,6 +666,9 @@ bool CachingDataSource::IsServerSchemaSupported(CacheTransactionCR txn, JsonValu
     {
     Utf8CP name = schemaDef[CLASS_ECSchemaDef_PROPERTY_Name].asCString();
 
+    if ("ECDbMap" == schemaKey.m_schemaName)
+        return false;
+
     if (ECSchema::IsStandardSchema(name))
         {
         if (txn.GetCache().GetAdapter().HasECSchema(name))

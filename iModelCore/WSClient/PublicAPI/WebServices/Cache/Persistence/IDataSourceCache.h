@@ -107,7 +107,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! Get IECDbAdapter for accessing common functionality
         virtual IECDbAdapterR GetAdapter() = 0;
 
-        //! Get IExtendedDataAdapter for accessing extended data for instances
+        //! Get IExtendedDataAdapter for accessing custom key-value pairs for cached instances.
+        //! Useful for adding addtional data to cached instances. Examples - extracted, generated, local information about instance.
         virtual IExtendedDataAdapter& GetExtendedDataAdapter() = 0;
 
         //! Get ECDb for accessing raw database
