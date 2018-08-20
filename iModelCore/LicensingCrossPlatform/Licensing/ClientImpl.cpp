@@ -550,7 +550,7 @@ LicenseStatus ClientImpl::GetProductStatus(int requestedProductId)
 	// if prodStatus is NoLicense, return LicenseStatus::Expired
 	if (productStatus == PolicyHelper::ProductStatus::NoLicense)
 		{
-		return LicenseStatus::Expired;
+		return LicenseStatus::NotEntitled;
 		}
 	// if prodStatus is Allowed
 	if (productStatus == PolicyHelper::ProductStatus::Allowed)
