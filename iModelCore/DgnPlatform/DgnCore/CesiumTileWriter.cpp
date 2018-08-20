@@ -463,6 +463,8 @@ struct RenderSystem : Render::System
     virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, DgnDbR, Texture::CreateParams const& params)  const override {return new TileTexture(source, bottomUp, params); }
     virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const override  { return nullptr; }
     virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const override { return nullptr; }
+    virtual bool _DoCacheTiles() const override { return false; }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017

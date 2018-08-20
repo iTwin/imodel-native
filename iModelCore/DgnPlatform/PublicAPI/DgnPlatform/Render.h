@@ -3536,6 +3536,9 @@ struct System
     //! Perform some small unit of work (or do nothing) during an idle frame.
     //! An idle frame is classified one tick of the render loop during which no viewports are open and the render queue is empty.
     virtual void _Idle() { }
+
+    //! Return true to cache tiles...
+    virtual bool _DoCacheTiles() const { return true; }
 };
 
 //=======================================================================================
