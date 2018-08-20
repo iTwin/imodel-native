@@ -8,7 +8,6 @@
 
 #include "PublicApi/BuildingDgnUtilsApi.h"
 
-#include <DgnClientFx/DgnClientApp.h>
 //#include "PublicApi/BuildingUtils.h"
 #include <DgnView/DgnTool.h>
 #include <dgnPlatform/ViewController.h>
