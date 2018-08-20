@@ -1477,7 +1477,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh(bv
 // @bsimethod                                                   Mathieu.St-Pierre 08/14
 //=======================================================================================
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(int pi_levelToStitch, vector<SMMeshIndexNode<POINT, EXTENT>*>* nodesToStitch)
-    {
+    {   
     if (!IsLoaded())
         Load();
 

@@ -343,6 +343,8 @@ $(o)SMPublisher$(oext) : $(stmDir)Stores/SMPublisher.cpp $(PCHHeaderDepends) ${M
 
 $(o)SMCesiumPublisher$(oext) : $(stmDir)Stores/SMCesiumPublisher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
+$(o)ScalableMeshSaveAs$(oext) : $(stmDir)ScalableMeshSaveAs.cpp ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build RDS provider
 #-----------------------------------------------------------------------

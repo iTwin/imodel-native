@@ -1,6 +1,7 @@
 #include "ScalableMeshWorker.h"
 
 
+#include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #include <ImagePP/all/h/HFCMacros.h>
 #include <ImagePP\all\h\HRFFileFormats.h>
 #include <ImagePP/all/h/HRFRasterFileFactory.h>
@@ -9,9 +10,15 @@
 #include "SMWorkerTaskScheduler.h"
 
 
+
+
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_IMAGEPP
+
+
+#define TRACE_ON 1
 
 
 BEGIN_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
@@ -263,7 +270,13 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
 //ScalableMeshStep
 
 void ScalableMeshWorker::Start()
-    {	
+    {
+
+#ifdef TRACE_ON	
+    BeFileNameStatus fileStatus = BeFileName::EmptyDirectory(L"D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\");
+    assert(fileStatus == BeFileNameStatus::Success);
+#endif	    
+
     if (m_startingIndexTask.size() > 0)
         {
         BeFileNameStatus fileStatus = BeFileName::EmptyDirectory(m_taskFolderName.c_str());
@@ -297,7 +310,22 @@ void ScalableMeshWorker::Start()
         }
 
 
-    TaskScheduler taskScheduler(m_taskFolderName);
+    WString cfgValue;
+    uint16_t nbWorkers = 1;
+
+    if (SUCCESS == ConfigurationManager::GetVariable(cfgValue, L"SM_WORKER_NB_WORKERS"))
+        {
+        uint64_t value;
+
+        BentleyStatus status = BeStringUtilities::ParseUInt64(value, Utf8String(cfgValue.c_str()).c_str());
+
+        if (status == SUCCESS)
+            {
+            nbWorkers = (uint16_t)value;
+            }
+        }    
+
+    TaskScheduler taskScheduler(m_taskFolderName, nbWorkers);
 
     taskScheduler.Start();
     }
