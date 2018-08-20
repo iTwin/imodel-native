@@ -200,7 +200,7 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
     if (((ScalableMeshModel*)spatialModel)->_AllowPublishing())
         {
         // Schedule reality model tileset creation.
-        converter.AddModelRequiringRealityTiles(modelId);
+        converter.AddModelRequiringRealityTiles(modelId, smFileName);
         }
 
     return Result::SkipElement;
