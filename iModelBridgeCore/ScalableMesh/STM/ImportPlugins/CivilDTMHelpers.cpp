@@ -465,8 +465,7 @@ MeshHandler::MeshHandler(const BcDTM&                          pi_rDTM,
     m_initialized(false),
     m_maxPtCount(0), 
     m_maxPtIndicesCount(0)
-    {
-    assert(DTMState::Tin == const_cast<BcDTM&>(m_rDTM).GetDTMState());
+    {    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -488,7 +487,12 @@ bool MeshHandler::ComputeCounts()
     //size_t                  m_maxPtIndicesCount;
 
     m_initialized = true;
-    
+
+    if (DTMState::Tin != const_cast<BcDTM&>(m_rDTM).GetDTMState())
+        {
+        DTMStatusInt status = const_cast<BcDTM&>(m_rDTM).Triangulate();
+        assert(status == DTM_SUCCESS);
+        }        
     /*
     m_maxPtCount = ComputeMaxPointCounts(m_typesInfo);    
     m_maxPtIndicesCount = ComputeMaxPointIndicesCounts(m_typesInfo);
