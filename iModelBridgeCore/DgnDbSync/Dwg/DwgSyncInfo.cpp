@@ -1178,8 +1178,8 @@ bool DwgSyncInfo::IsMappedToSameDwgObject (DgnElementId elementId, DgnElementIdS
         {
         // when StableIdPolicy==ByHash
         ByHashIter  othersMappedToDwgHash(*m_dgndb);
-        othersMappedToDwgHash.Bind(iThisElement.GetDwgModelSyncInfoId(), iThisElement.GetProvenance().m_hash);
-        for (auto const& otherMappedToV8Hash : othersMappedToV8Hash)
+        othersMappedToDwgHash.Bind(iThisElement.GetDwgModelSyncInfoId(), iThisElement.GetProvenance().GetPrimaryHash(), iThisElement.GetProvenance().GetSecondaryHash());
+        for (auto const& otherMappedToDwgHash : othersMappedToDwgHash)
             {
             if (known.find(otherMappedToDwgHash.GetElementId()) != known.end())
                 return true;

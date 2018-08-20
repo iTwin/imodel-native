@@ -358,7 +358,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     Json::Value v8JobProps(Json::objectValue);      // V8Bridge-specific job properties - information that is not recorded anywhere else.
     v8JobProps["RootModel"] = Utf8String(m_rootModelRef->GetDgnModelP()->GetModelName());
     v8JobProps["BridgeVersion"] = 1;//TODO: Move it to #define
-    v8JobProps["BridgeType"] = "DgnV8Bridge";
+    v8JobProps["BridgeType"] = "IModelBridgeForMstn";
     JobSubjectUtils::InitializeProperties(*ed, _GetParams().GetBridgeRegSubKeyUtf8(), comments, &v8JobProps);
 
     SubjectCPtr jobSubject = ed->InsertT<Subject>();

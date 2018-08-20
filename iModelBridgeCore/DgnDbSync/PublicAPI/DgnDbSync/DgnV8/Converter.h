@@ -2575,7 +2575,7 @@ protected:
 
 
 public:
-    static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}
+    static WCharCP GetRegistrySubKey() {return L"IModelBridgeForMstn";}
 
     DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
     DGNDBSYNC_EXPORT  ~RootModelConverter();
