@@ -200,8 +200,8 @@ TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5Data_Server
     EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponseNotModified()))));
 
-    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "LEGACY_SCHEMA"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "LEGACY_SCHEMA"), An<BeFileNameCR>(), _, _, _))
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         GetLegacySchema()->WriteToXmlFile(filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
@@ -235,8 +235,8 @@ TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5UpgradeInte
     EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponseNotModified()))));
 
-    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "LEGACY_SCHEMA"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "LEGACY_SCHEMA"), An<BeFileNameCR>(), _, _, _))
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         GetLegacySchema()->WriteToXmlFile(filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));

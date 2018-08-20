@@ -229,7 +229,7 @@ TEST_F(ImsClientTests, Login_DevImsAppliesToTest_RetrievesValidToken)
 
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
 
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_HTTP, NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_TRACE);
 
     StubLocalState localState;
     UrlProvider::Initialize(UrlProvider::Dev, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
@@ -257,7 +257,7 @@ TEST_F(ImsClientTests, Login_QaImsAppliesToTest_RetrievesValidToken)
 
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
 
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_HTTP, NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_TRACE);
 
     StubLocalState localState;
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
@@ -285,7 +285,7 @@ TEST_F(ImsClientTests, Login_ReleaseImsAppliesToTest_RetrievesValidToken)
 
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
 
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_HTTP, NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_TRACE);
 
     StubLocalState localState;
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
