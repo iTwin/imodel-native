@@ -1922,6 +1922,9 @@ DgnDbStatus DgnElement::Delete() const {return GetDgnDb().Elements().Delete(*thi
 //---------------------------------------------------------------------------------------
 DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member, int priority)
     {
+    if (!group.GetElementId().IsValid() || !member.GetElementId().IsValid())
+        return DgnDbStatus::InvalidId; // elements must be inserted to form link table relationship
+
     CachedECSqlStatementPtr statement = group.GetDgnDb().GetNonSelectPreparedECSqlStatement(
         "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) 
         " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId,MemberPriority) VALUES(?,?,?,?,?)", group.GetDgnDb().GetECCrudWriteToken());
