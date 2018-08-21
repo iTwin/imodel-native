@@ -94,55 +94,14 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct)
     if (!m_configuration->GetServiceVersion().IsEmpty())
         return GetInfo(m_configuration->GetServiceVersion(), ct);
 
-    auto finalResult = std::make_shared<WSInfoResult>();
-
     // WSG 2.0 +
-    return GetInfoFromPage("/v2.0/Plugins", {}, ct)->Then([=] (WSInfoHttpResult& result)
+    return GetInfoFromPage("/v2.0/Plugins", {}, ct)->Then<WSInfoResult>([=] (WSInfoHttpResult& result)
         {
-        if (result.IsSuccess())
-            {
-            finalResult->SetSuccess(result.GetValue());
-            return;
-            }
+        if (!result.IsSuccess())
+            return WSInfoResult::Error(result.GetError());
 
-        WSError error(result.GetError());
-        if (error.GetStatus() != WSError::Status::ServerNotSupported)
-            {
-            finalResult->SetError(error);
-            return;
-            }
-
-        // WSG R2 - R3.5
-        GetInfoFromPage("/v1.2/Info", {}, ct)->Then([=] (WSInfoHttpResult& result)
-            {
-            if (result.IsSuccess())
-                {
-                finalResult->SetSuccess(result.GetValue());
-                return;
-                }
-            if (result.GetError().GetHttpStatus() != HttpStatus::NotFound)
-                {
-                finalResult->SetError(result.GetError());
-                return;
-                }
-
-            // WSG R1
-            GetInfoFromPage("/Pages/About.aspx", {}, ct)->Then([=] (WSInfoHttpResult& result)
-                {
-                if (result.IsSuccess())
-                    {
-                    finalResult->SetSuccess(result.GetValue());
-                    return;
-                    }
-
-                finalResult->SetError(result.GetError());
-                });
-            });
-        })
-        ->Then<WSInfoResult>([=]
-            {
-            return *finalResult;
-            });
+        return WSInfoResult::Success(result.GetValue());
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
