@@ -69,6 +69,25 @@ folly::Future<BentleyStatus> _GetFromSource() override
         });
     }
 
+
+struct QPointComparator
+    {
+    bool operator()(QPoint3d const& lhs, QPoint3d const& rhs) const
+        {
+        if (lhs.x < rhs.x)
+            return true;
+        else if (lhs.x > rhs.x)
+            return false;
+
+        if (lhs.y < rhs.y)
+            return true;
+        else if (lhs.y > rhs.y)
+            return false;
+
+        return lhs.z < rhs.z;
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -88,13 +107,15 @@ BentleyStatus DoGetFromSource()
     Transform                   dgnToTile, cloudToTile;
     DRange3d                    tileRange = tile.GetRange();
     QPoint3dList                points(tileRange);
+    bset<QPoint3d, QPointComparator> qPointSet;
+
 
     dgnToTile.InverseOf(root.GetLocation());
     cloudToTile = Transform::FromProduct(dgnToTile, root.GetPointCloudModel().GetSceneToWorld());
 
     while (0 != (nBatchPoints = (size_t) ptGetQueryPointsf (queryHandle->GetHandle(), s_maxTileBatchCount, &batchPoints.front().x, colorsPresent ? (PTubyte*) batchColors.data() : nullptr, nullptr, nullptr, nullptr)))
         {
-        for(size_t i=0; i<nBatchPoints; i++)
+        for(size_t i=0; i<nBatchPoints; i++)                                                                                                                                                                                      
             {
             DPoint3d        tmpPoint = {batchPoints[i].x, batchPoints[i].y, batchPoints[i].z};
 
@@ -102,9 +123,15 @@ BentleyStatus DoGetFromSource()
 
             if (tileRange.IsContained(tmpPoint))
                 {
-                points.Add(tmpPoint);
-                if (colorsPresent)
-                    colors.push_back(batchColors[i]);
+                QPoint3d    qPoint(tmpPoint, points.GetParams());
+
+                auto        inserted = qPointSet.insert(qPoint);
+                if (inserted.second)
+                    {
+                    points.push_back(qPoint);
+                    if (colorsPresent)
+                        colors.push_back(batchColors[i]);
+                    }
                 }
             }
         }
