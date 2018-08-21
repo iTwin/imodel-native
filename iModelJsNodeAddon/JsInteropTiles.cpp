@@ -374,32 +374,36 @@ DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR id
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/18
+* @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus JsInterop::GetTiles(JsonValueR result, DgnDbR db, Utf8StringCR treeIdStr, bvector<Utf8String> const& tileIds)
+DgnDbStatus JsInterop::GetTileChildren(JsonValueR result, DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR parentIdStr)
     {
     TileTree::RootP root = nullptr;
     auto status = findTileTree(root, treeIdStr, db);
     if (DgnDbStatus::Success != status)
         return status;
 
+    auto parent = root->_FindTileById(parentIdStr.c_str());
+    if (parent.IsNull())
+        return DgnDbStatus::NotFound;
+
+    result = Json::arrayValue;
+    auto children = parent->_GetChildren(true);
+    if (nullptr == children)
+        return DgnDbStatus::Success;
+
     TileTree::MissingNodes missing;
-    for (auto const& tileId : tileIds)
-        {
-        auto tile = root->_FindTileById(tileId.c_str());
-        if (tile.IsValid())
-            missing.Insert(*tile, true);
-        }
+    for (auto const& child : *children)
+        missing.Insert(*child, true);
 
     root->RequestTiles(missing);
     root->WaitForAllLoads();
 
-    result = Json::arrayValue;
-    for (auto const& node : missing)
+    for (auto const& child : *children)
         {
-        Json::Value tileJson;
-        if (node->_ToJson(tileJson))
-            result.append(tileJson);
+        Json::Value childJson;
+        if (child->_ToJson(childJson))
+            result.append(childJson);
         }
 
     return DgnDbStatus::Success;

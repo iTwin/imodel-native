@@ -117,7 +117,7 @@ public:
     static RepositoryStatus BriefcaseManagerEndBulkOperation(DgnDbR dgndb);
 
     static DgnDbStatus GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR id);
-    static DgnDbStatus GetTiles(JsonValueR result, DgnDbR db, Utf8StringCR treeId, bvector<Utf8String> const& tileIds);
+    static DgnDbStatus GetTileChildren(JsonValueR result, DgnDbR db, Utf8StringCR treeId, Utf8StringCR parentId);
     static DgnDbStatus GetTileContent(JsonValueR result, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId);
 
     static void ThrowJsException(Utf8CP msg);

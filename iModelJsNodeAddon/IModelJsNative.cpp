@@ -1118,15 +1118,15 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return CreateBentleyReturnObject(status, jsValue);
         }
 
-    Napi::Value GetTiles(Napi::CallbackInfo const& info)
+    Napi::Value GetTileChildren(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, treeIdStr, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING_ARRAY(1, tileIdsStr, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(1, tileIdStr, Env().Undefined());
 
         Json::Value output;
-        auto status = JsInterop::GetTiles(output, GetDgnDb(), treeIdStr, tileIdsStr);
-
+        auto status = JsInterop::GetTileChildren(output, GetDgnDb(), treeIdStr, tileIdStr);
+        
         Napi::Value jsValue = NapiUtils::Convert(Env(), output);
         return CreateBentleyReturnObject(status, jsValue);
         }
@@ -1791,7 +1791,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getReversedChangeSetId", &NativeDgnDb::GetReversedChangeSetId),
             InstanceMethod("getSchema", &NativeDgnDb::GetSchema),
             InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
-            InstanceMethod("getTiles", &NativeDgnDb::GetTiles),
+            InstanceMethod("getChildren", &NativeDgnDb::GetTileChildren),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("getTileContent", &NativeDgnDb::GetTileContent),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
