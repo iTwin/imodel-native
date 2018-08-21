@@ -244,6 +244,36 @@ TEST_F(WSClientTests, GetServerInfo_WithServiceVersionFirstResponseHasProperServ
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSClientTests, GetServerInfo_WithServiceVersionFirstResponseIdentifiesServiceWithLowerWebApiVersionThanSupported_ReturnsError)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", {4, 2}, StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "", {{"Server", "Bentley-WebAPI/1.9,Bentley-WSG/2.3"}}));
+
+    auto info = client->GetServerInfo()->GetResult();
+    ASSERT_FALSE(info.IsSuccess());
+    EXPECT_EQ(WSError::Status::ServerNotSupported, info.GetError().GetStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSClientTests, GetServerInfo_WithServiceVersionFirstResponseIdentifiesServiceWithHigherWebApiVersionThanSupported_ReturnsError)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", {4, 2}, StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "", {{"Server", "Bentley-WebAPI/2.9,Bentley-WSG/2.3"}}));
+
+    auto info = client->GetServerInfo()->GetResult();
+    ASSERT_FALSE(info.IsSuccess());
+    EXPECT_EQ(WSError::Status::ServerNotSupported, info.GetError().GetStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                julius.cepukenas                     09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_FirstResponseHasProperMasServerHeader_IdentifyingWSG)

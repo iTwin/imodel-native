@@ -44,12 +44,17 @@ WebApiV2::~WebApiV2() {}
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WebApiV2::IsSupported(WSInfoCR info)
     {
-    return
-        info.GetWebApiVersion() >= BeVersion(2, 0) &&
-        info.GetWebApiVersion() < BeVersion(3, 0) &&
-        info.GetType() == WSInfo::Type::BentleyWSG;
-    }
+    if (info.GetWebApiVersion() < BeVersion(2, 0))
+        return false;
+    
+    if (info.GetWebApiVersion() > s_maxTestedWebApi)
+        return false;
 
+    if (info.GetType() != WSInfo::Type::BentleyWSG)
+        return false;
+
+    return true;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
