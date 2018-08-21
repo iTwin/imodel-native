@@ -932,7 +932,7 @@ TEST(FormattingTest, Simple)
 
     FormatDictionary fd = FormatDictionary();
     NumericFormatSpec numFmt = NumericFormatSpec();
-    numFmt.ImbueLocale("en-US");
+    numFmt.ImbueLocaleProperties(LocaleProperties::DefaultAmerican());
     numFmt.SetSignOption(ShowSignOption::OnlyNegative);
     EXPECT_STREQ ("135", numFmt.FormatInteger(135).c_str());
     EXPECT_STREQ ("135689", numFmt.FormatInteger(135689).c_str());
