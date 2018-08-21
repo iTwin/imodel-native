@@ -327,7 +327,7 @@ BentleyStatus StructPhysCreator::CreateConcreteStructure(BentleyApi::Structural:
             }
 
         Utf8String className = derivedClass->GetFullName();
-        if (className == "Concrete:Beam")
+        if (className == "StructuralPhysical:Beam")
             {
             status = creator->CreateBeams(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
@@ -335,7 +335,7 @@ BentleyStatus StructPhysCreator::CreateConcreteStructure(BentleyApi::Structural:
                 return BentleyStatus::ERROR;
                 }
             }
-        else if (className == "Concrete:Column")
+        else if (className == "StructuralPhysical:Column")
             {
             status = creator->CreateColumns(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
@@ -343,7 +343,7 @@ BentleyStatus StructPhysCreator::CreateConcreteStructure(BentleyApi::Structural:
                 return BentleyStatus::ERROR;
                 }
             }
-        else if (className == "Concrete:Slab")
+        else if (className == "StructuralPhysical:Slab")
             {
             status = creator->CreateSlabs(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
@@ -351,7 +351,7 @@ BentleyStatus StructPhysCreator::CreateConcreteStructure(BentleyApi::Structural:
                 return BentleyStatus::ERROR;
                 }
             }
-        else if (className == "Concrete:Wall")
+        else if (className == "StructuralPhysical:Wall")
             {
             status = creator->CreateWalls(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
@@ -385,7 +385,7 @@ BentleyStatus StructPhysCreator::CreateSteelStructure(BentleyApi::Structural::St
             }
 
         Utf8String className = derivedClass->GetFullName();
-        if (className == "Steel:Beam")
+        if (className == "StructuralPhysical:Beam")
             {
             status = creator->CreateBeams(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
@@ -393,7 +393,7 @@ BentleyStatus StructPhysCreator::CreateSteelStructure(BentleyApi::Structural::St
                 return BentleyStatus::ERROR;
                 }
             }
-        else if (className == "Steel:Column")
+        else if (className == "StructuralPhysical:Column")
             {
             status = creator->CreateColumns(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
@@ -401,7 +401,7 @@ BentleyStatus StructPhysCreator::CreateSteelStructure(BentleyApi::Structural::St
                 return BentleyStatus::ERROR;
                 }
             }
-        else if (className == "Steel:Plate")
+        else if (className == "StructuralPhysical:Plate")
             {
             status = creator->CreateGussetPlates(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
@@ -409,7 +409,7 @@ BentleyStatus StructPhysCreator::CreateSteelStructure(BentleyApi::Structural::St
                 return BentleyStatus::ERROR;
                 }
             }
-        else if (className == "Steel:Brace")
+        else if (className == "StructuralPhysical:Brace")
             {
             status = creator->CreateBraces(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
@@ -461,22 +461,20 @@ BentleyStatus StructPhysCreator::DoCreate()
         return BentleyStatus::ERROR;
         }
 
-    // Create the models in the BIM file
-
-    BentleyStatus status = BentleyApi::Structural::StructuralDomainUtilities::CreateStructuralModels(STRUCTURAL_MODEL_NAME, *db);
+    const BentleyStatus status = BentleyApi::Structural::StructuralDomainUtilities::CreateStructuralModels(STRUCTURAL_MODEL_NAME, *db);
 
     if (BentleyStatus::SUCCESS != status)
         return BentleyStatus::ERROR;
 
-    BentleyApi::Structural::StructuralPhysicalModelPtr       physicalModel = BentleyApi::Structural::StructuralDomainUtilities::CreateStructuralPhysicalModel(STRUCTURAL_MODEL_NAME, *db);
-    //BentleyApi::Structural::StructuralTypeDefinitionModelPtr typeDefinitionModel = BentleyApi::Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(STRUCTURAL_MODEL_NAME, *db);
+    BentleyApi::Structural::StructuralPhysicalModelPtr physicalModel = BentleyApi::Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(STRUCTURAL_MODEL_NAME, *db);
 
+    if (physicalModel == nullptr)
+        return BentleyStatus::ERROR;
 
     DoUpdateSchema(db);
 
-    CreateConcreteStructure(*physicalModel/*, *typeDefinitionModel*/);
-    CreateSteelStructure(*physicalModel/*, *typeDefinitionModel*/);
-
+    CreateConcreteStructure(*physicalModel);
+    CreateSteelStructure(*physicalModel);
 
     // Set the project extents to include the elements in the physicalModel, plus a margin
     AxisAlignedBox3d projectExtents = physicalModel->QueryModelRange();
