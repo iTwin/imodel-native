@@ -31,7 +31,14 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 void WSRepositoryClientTests::SetUp()
     {
+    BaseMockHttpHandlerTest::SetUp();
     ServerInfoProvider::InvalidateAllInfo();
+    }
+
+void WSRepositoryClientTests::TearDown()
+    {
+    ServerInfoProvider::InvalidateAllInfo();
+    BaseMockHttpHandlerTest::TearDown();
     }
 
 Json::Value StubWSObjectCreationJson()

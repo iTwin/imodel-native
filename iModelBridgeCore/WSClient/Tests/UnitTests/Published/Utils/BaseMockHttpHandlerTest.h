@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/BaseMockHttpHandlerTest.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,6 +27,8 @@ class BaseMockHttpHandlerTest : public WSClientBaseTest
         HttpClientCR GetClient() const;
         MockHttpHandler& GetHandler() const;
         std::shared_ptr<MockHttpHandler> GetHandlerPtr() const;
+
+        void TearDown();
     };
 
 END_WSCLIENT_UNITTESTS_NAMESPACE
