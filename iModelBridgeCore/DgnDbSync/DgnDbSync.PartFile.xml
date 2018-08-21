@@ -144,9 +144,42 @@
     </ProductDirectoryList>
 
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-    <!-- DgnV8Bridge - an iModelBridge that converts DgnV8 files. This bridge starts with a root model.              -->
+    <!-- DgnV8Bridge - Part of Vancouver Bridge SDK              -->
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-    <Product Name="DgnV8Bridge" SaveProduct="true" BuildInstallSet="true">
+    <Product Name="DgnV8Bridge" SaveProduct="true">
+        <SubPart PartName="DgnV8ConverterExe" />
+        <SubPart PartName="DgnV8ConverterDLL" />
+        <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+        <Directories DirectoryListName="DgnV8BridgeDirList" />
+    </Product>
+
+    <ProductDirectoryList ListName="DgnV8BridgeDirList">
+        <ProductDirectory Name="applicationroot" Path=""/>
+        <ProductDirectory Name="Assemblies"     Path="lib/x64"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assemblies" LibType="Static" Path="lib/x64"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="DgnV8ConverterLibs" Path="lib/x64"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies" Path="lib/x64"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi" Path="lib/x64"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="lib/x64"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="DgnV8Dlls"      Path="DgnV8"    RelativeTo="Assemblies"/>
+        <ProductDirectory Name="PublicApi"      Path="include"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="PublicApi" LibType="Static" Path="include"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="VersionedDgnV8Api" Path="include"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="VendorApi"      Path="include"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="VendorApi" LibType="Static" Path="include"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Libs"           Path=""         RelativeTo="Assemblies"/>
+        <ProductDirectory Name="Libs" LibType="Static" Path=""         RelativeTo="Assemblies"/>
+        <ProductDirectory Name="DgnV8ConverterLibs" Path=""     RelativeTo="Assemblies"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""     RelativeTo="Assemblies"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        Path=""     RelativeTo="Assemblies" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""     RelativeTo="Assemblies"/>
+    </ProductDirectoryList>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- MstnBridge - an iModelBridge that converts DgnV8 files. This bridge starts with a root model.              -->
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <Product Name="MstnBridge" SaveProduct="true" BuildInstallSet="true">
         <SubPart PartName="DgnV8ConverterExe" />
         <SubPart PartName="DgnV8ConverterDLL" />
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridge" Repository="DgnDbSync"/>
@@ -154,7 +187,7 @@
         <SubPart PartName="DgnV8BridgeInstallFiles"/>
         <InstallerWixFile SourceFile="DgnV8/Converters/Dgnv8BridgeInstaller/Dgnv8BridgeInstaller"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
-        <Directories DirectoryListName="DgnV8BridgeDirList" />
+        <Directories DirectoryListName="MstnBridgeDirList" />
     </Product>
 
     <Part Name="DgnV8BridgeInstallFiles" OnlyPlatforms="x64" BentleyBuildMakeFile="DgnV8/Converters/Dgnv8BridgeInstaller/Dgnv8BridgeInstaller.prewire.mke">
@@ -169,7 +202,7 @@
       </Bindings>
     </Part>
   
-    <ProductDirectoryList ListName="DgnV8BridgeDirList">
+    <ProductDirectoryList ListName="MstnBridgeDirList">
         <ProductDirectory Name="applicationroot" Path=""/>
         
         <ProductDirectory Name="DgnPlatformV8TranskitEn"        RelativeTo="DgnV8Dlls" Path="en"/>
