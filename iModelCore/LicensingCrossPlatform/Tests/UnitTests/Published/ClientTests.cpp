@@ -416,6 +416,33 @@ TEST_F(ClientTests, GetProductStatus_Test)
 	ASSERT_EQ((int)client->GetProductStatus(9999), (int)LicenseStatus::NotEntitled); // Policy with productId does not exist
 	}
 
+TEST_F(ClientTests, CleanUpPolicies_Success)
+	{
+	auto client = CreateTestClient(true);
+	client->StartApplication();
+	// create expired/invalid and valid policies and add them to database
+	Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+	auto jsonPolicyExpired1 = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(-1), DateHelper::AddDaysToCurrentTime(7), userId, 9903, "", 1, false);
+	auto jsonPolicyExpired2 = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(-1), DateHelper::AddDaysToCurrentTime(7), userId, 9913, "", 1, false);
+	auto jsonPolicyValid = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
+	auto expiredPolicyToken1 = PolicyToken::Create(jsonPolicyExpired1);
+	auto expiredPolicyToken2 = PolicyToken::Create(jsonPolicyExpired2);
+	auto validPolicyToken = PolicyToken::Create(jsonPolicyValid);
+	client->AddPolicyTokenToDb(expiredPolicyToken1);
+	client->AddPolicyTokenToDb(expiredPolicyToken2);
+	client->AddPolicyTokenToDb(validPolicyToken);
+	// all 3 should be located
+	ASSERT_NE(client->GetPolicyWithId(expiredPolicyToken1->GetPolicyId()),nullptr);
+	ASSERT_NE(client->GetPolicyWithId(expiredPolicyToken2->GetPolicyId()), nullptr);
+	ASSERT_NE(client->GetPolicyWithId(validPolicyToken->GetPolicyId()), nullptr);
+	// clean up policies; expired policy should be removed
+	client->CleanUpPolicies();
+	// invalid policy should NOT be located and thus be a nullptr
+	ASSERT_EQ(client->GetPolicyWithId(expiredPolicyToken1->GetPolicyId()), nullptr);
+	ASSERT_EQ(client->GetPolicyWithId(expiredPolicyToken2->GetPolicyId()), nullptr);
+	ASSERT_NE(client->GetPolicyWithId(validPolicyToken->GetPolicyId()), nullptr);
+	}
+
 TEST_F(ClientTests, SendUsage_Success)
     {
     auto client = CreateTestClient(true, UrlProvider::Environment::Qa);

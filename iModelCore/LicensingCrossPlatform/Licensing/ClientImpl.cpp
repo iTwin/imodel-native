@@ -120,6 +120,7 @@ void ClientImpl::PolicyHeartbeat(int64_t currentTime)
         int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
 
         GetPolicyToken();
+        CleanUpPolicies();
 
         PolicyHeartbeat(currentTimeUnixMs);
         });
@@ -432,6 +433,37 @@ Utf8String ClientImpl::GetLoggingPostSource(LogPostingSource lps) const
                 return "Unknown";
         }
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientImpl::CleanUpPolicies()
+	{
+	for (auto policy : GetPolicies())
+		{
+		// if policy is not valid, remove it from the database; no point in keeping it
+		if (!PolicyHelper::IsValid(policy))
+			{
+			m_usageDb->DeletePolicyFile(policy->GetPolicyId());
+			}
+		}
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::shared_ptr<Policy> ClientImpl::GetPolicyWithId(Utf8StringCR policyId)
+	{
+	for (auto policy : GetPolicies())
+		{
+		if (policy->GetPolicyId().Equals(policyId))
+			{
+			return policy;
+			}
+		}
+	// if nothing found, return nullptr
+	return nullptr;
+	}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod

@@ -116,6 +116,10 @@ public:
     // Used in tests
     LICENSING_EXPORT UsageDb& GetUsageDb();
     LICENSING_EXPORT void AddPolicyTokenToDb(std::shared_ptr<PolicyToken> policyToken) { StorePolicyTokenInUsageDb(policyToken); };
+	LICENSING_EXPORT std::shared_ptr<Policy> GetPolicyWithId(Utf8StringCR policyId);
+
+	// clean up policies; used internally, but also used in unit tests
+	LICENSING_EXPORT void CleanUpPolicies();
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

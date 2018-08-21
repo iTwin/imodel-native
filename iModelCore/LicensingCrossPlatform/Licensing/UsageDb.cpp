@@ -295,6 +295,24 @@ BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus UsageDb::DeletePolicyFile(Utf8StringCR policyId)
+	{
+	Statement stmt;
+
+	if (m_db.IsDbOpen())
+		{
+		stmt.Prepare(m_db, "DELETE FROM Policy WHERE PolicyId = ?");
+		stmt.BindText(1, policyId, Statement::MakeCopy::No);
+		DbResult result = stmt.Step();
+		if (result == DbResult::BE_SQLITE_DONE)
+			return SUCCESS;
+		}
+	return ERROR;
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value UsageDb::GetPolicyFile()
     {
     Statement stmt;
