@@ -360,3 +360,67 @@ void    DwgFileEditor::RenameAndActivateLayout (DwgStringCR oldName, DwgStringCR
     EXPECT_EQ (layout->GetPlotBy(), DwgDbLayout::PlotBy::Layout) << "The plot type should be PlotBy::Layout!";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgFileEditor::CreateGroup (Utf8StringCR name, DwgDbObjectIdArrayCR members)
+    {
+    // create a new group with input members
+    DwgDbDictionaryPtr  groups (m_dwgdb->GetGroupDictionaryId(), DwgDbOpenMode::ForWrite);
+    ASSERT_DWGDBSUCCESS(groups.OpenStatus()) << "Failed to open the group dictionary!";
+    EXPECT_FALSE(groups->Has(name)) << "A group with the same name exists in DWG!";
+
+    // create a new group object
+    DwgDbGroupPtr   group = DwgDbGroup::Create ();
+    ASSERT_DWGDBSUCCESS(group.OpenStatus()) << "Error creating a new DWG group object!";
+
+    // add the entry to the dictionary
+    DwgDbObjectId   entryId;
+    groups->SetAt (name, DwgDbObject::Cast(group.get()), &entryId);
+    EXPECT_TRUE(entryId.IsValid()) << "Error adding a new entry to the group dictionary!";
+
+    // append the input members to the group
+    for (auto member : members)
+        ASSERT_DWGDBSUCCESS(group->Append(member));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgFileEditor::UpdateGroup (Utf8StringCR name, DwgDbObjectIdArrayCR members)
+    {
+    // update existing group with potentially different members
+    DwgDbDictionaryPtr  groups (m_dwgdb->GetGroupDictionaryId(), DwgDbOpenMode::ForRead);
+    ASSERT_DWGDBSUCCESS(groups.OpenStatus()) << "Failed to open the group dictionary!";
+    EXPECT_TRUE(groups->Has(name)) << "The requested group does not exist in DWG!";
+
+    // get group ID by name:
+    DwgDbObjectId   existingId;
+    EXPECT_DWGDBSUCCESS(groups->GetIdAt(existingId, name)) << "Failed finding existing group by name!";
+    // open the group object:
+    DwgDbGroupPtr   group(existingId, DwgDbOpenMode::ForWrite);
+    ASSERT_DWGDBSUCCESS(group.OpenStatus()) << "Error opening existing DWG group for write!";
+
+    // empty the group, then add the input members to it:
+    ASSERT_DWGDBSUCCESS(group->Clear());
+    for (auto member : members)
+        ASSERT_DWGDBSUCCESS(group->Append(member));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgFileEditor::GetModelspaceEntities (DwgDbObjectIdArrayR ids) const
+    {
+    ids.clear ();
+
+    DwgDbBlockTableRecordPtr modelspace (m_dwgdb->GetModelspaceId(), DwgDbOpenMode::ForRead);
+    if (modelspace.OpenStatus() != DwgDbStatus::Success)
+        return  modelspace.OpenStatus();
+
+    auto iter = modelspace->GetBlockChildIterator ();
+    for (iter.Start(); !iter.Done(); iter.Step())
+        ids.push_back (iter.GetEntityId());
+
+    return  ids.size() > 0 ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
+    }

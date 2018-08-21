@@ -131,6 +131,7 @@ public:
 
     DWGDB_EXPORT DwgString (WCharCP chars);
     DWGDB_EXPORT DwgString (DwgString const& in) : DwgString(in.c_str()) {}
+    DWGDB_EXPORT DwgString (Utf8StringCR in);
     DWGDB_EXPORT ~DwgString ();
 
     DWGDB_EXPORT void       Assign (WCharCP chars);

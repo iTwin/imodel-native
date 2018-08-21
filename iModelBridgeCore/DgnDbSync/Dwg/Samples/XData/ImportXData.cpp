@@ -544,24 +544,9 @@ END_DGNDBSYNC_DWG_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
     {
-    // Supply a our sample Bridge
+    // Supply our sample Bridge to the iModelBridge Framework.
     return  new ImportXDataSample();
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, WCharCP affinityLibPath, WCharCP dwgdxfName)
-    {
-    // Want our sample Bridge to precede the generic DwgBridge, i.e. set to a higher level.
-    BeFileName  filename(dwgdxfName);
-    if (DwgHelper::SniffDwgFile(filename) || DwgHelper::SniffDxfFile(filename))
-        {
-        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Medium;
-        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"ImportXDataSample");
-        }
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

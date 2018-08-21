@@ -239,6 +239,15 @@ public:
     DWGDB_EXPORT DwgDbStatus                GetNameAt (DwgStringR outName, DwgDbObjectIdCR inId) const;
     DWGDB_EXPORT bool                       Has (DwgStringCR name) const;
     DWGDB_EXPORT bool                       Has (DwgDbObjectIdCR id) const;
+    //! Find an entry by name, and change it to a new name
+    DWGDB_EXPORT DwgDbStatus                SetName (DwgStringCR oldName, DwgStringCR newName);
+    //! Add a new entry to the dictionary
+    //! @param[in] name A new entry name to be added
+    //! @param[in] object A new entry to be added
+    //! @param[out] entryId An optional object ID to be returned upon a successful add
+    DWGDB_EXPORT DwgDbStatus                SetAt (DwgStringCR name, DwgDbObjectP object, DwgDbObjectIdP entryId = nullptr);
+    DWGDB_EXPORT DwgDbStatus                Remove (DwgStringCR name);
+    DWGDB_EXPORT DwgDbStatus                Remove (DwgDbObjectIdCR entryId);
     };  // DwgDbDictionary
 DWGDB_DEFINE_OBJECTPTR (Dictionary)
 
