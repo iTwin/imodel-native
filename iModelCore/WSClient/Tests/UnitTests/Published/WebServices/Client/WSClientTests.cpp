@@ -19,6 +19,11 @@ void WSClientTests::SetUp()
     ServerInfoProvider::InvalidateAllInfo();
     }
 
+void WSClientTests::TearDown()
+    {
+    BaseMockHttpHandlerTest::TearDown();
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
