@@ -2115,6 +2115,151 @@ BentleyStatus SchemaReader::ValidateBaseClasses(ECN::ECSchemaP schema)
     }
 
 //---------------------------------------------------------------------------------------
+// ExtendTypeConverter                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+static Utf8CP const EXTEND_TYPE = "ExtendType";
+
+struct ExtendTypeConverter : ECN::IECCustomAttributeConverter
+    {
+    private:
+        ECN::ECObjectsStatus ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName);
+        static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("BimUpgrader"); }
+        Utf8String m_unit;
+
+    public:
+        ECN::ECObjectsStatus Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance);
+        ExtendTypeConverter(Utf8StringCR unit) : m_unit(unit) {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECN::ECObjectsStatus ExtendTypeConverter::ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName)
+    {
+    ECN::KindOfQuantityP koq = schema.GetKindOfQuantityP(koqName.c_str());
+    if (nullptr == koq)
+        {
+        schema.CreateKindOfQuantity(koq, koqName.c_str());
+        koq->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultRealU", persistenceUnitName));
+        koq->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", presentationUnitName));
+        koq->SetRelativeError(1e-4);
+        }
+    prop->SetKindOfQuantity(koq);
+    prop->RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+    prop->RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+    return ECN::ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP getLinearUnitName(Utf8StringCR unit)
+    {
+    if (unit.EqualsIAscii("English"))
+        return "FT";
+    if (unit.EqualsIAscii("Metric"))
+        return "M";
+    if (unit.EqualsIAscii("USSurvey"))
+        return "US_SURVEY_FT";
+    return "M";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP getAreaUnitName(Utf8StringCR unit)
+    {
+    if (unit.EqualsIAscii("English"))
+        return "SQ.FT";
+    if (unit.EqualsIAscii("Metric"))
+        return "SQ.M";
+    if (unit.EqualsIAscii("USSurvey"))
+        return "SQ.US_SURVEY_FT";
+    return "SQ.M";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP getVolumeUnitName(Utf8StringCR unit)
+    {
+    if (unit.EqualsIAscii("English"))
+        return "CUB.FT";
+    if (unit.EqualsIAscii("Metric"))
+        return "CUB.M";
+    if (unit.EqualsIAscii("USSurvey"))
+        return "CUB.FT";
+    return "CUB.M";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP getAngleUnitName(Utf8StringCR unit)
+    {
+    if (unit.EqualsIAscii("English"))
+        return "ARC_DEG";
+    if (unit.EqualsIAscii("USSurvey"))
+        return "ARC_DEG";
+    return "RAD";
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance)
+    {
+    ECN::ECPropertyP prop = dynamic_cast<ECN::ECPropertyP> (&container);
+    if (prop == nullptr)
+        {
+        GetLogger().warningv("Found ExtendType custom attribute on a container which is not a property, removing.  Container is %s", container.GetContainerName());
+        container.RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+        container.RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+        return ECN::ECObjectsStatus::Success;
+        }
+
+    ECN::ECValue standardValue;
+    ECN::ECObjectsStatus status = instance.GetValue(standardValue, "Standard");
+    if (ECN::ECObjectsStatus::Success != status || standardValue.IsNull())
+        {
+        GetLogger().infov("Found an ExtendType custom attribute on an ECProperty, '%s.%s', but it did not contain a Standard value. Dropping custom attribute....",
+                  prop->GetClass().GetFullName(), prop->GetName().c_str());
+        container.RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+        container.RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+        return ECN::ECObjectsStatus::Success;
+        }
+
+    int standard = standardValue.GetInteger();
+    switch (standard)
+        {
+        // Coordinates
+        //case 7:
+        //    ReplaceWithKOQ(schema, prop, "COORDINATE", "Coord", 0.0001);
+        //    break;
+        // Distance
+        case 8:
+            ReplaceWithKOQ(schema, prop, "DISTANCE", "M", getLinearUnitName(m_unit));
+            break;
+            // Area
+        case 9:
+            ReplaceWithKOQ(schema, prop, "AREA", "SQ.M", getAreaUnitName(m_unit));
+            break;
+            // Volume
+        case 10:
+            ReplaceWithKOQ(schema, prop, "VOLUME", "CUB.M", getVolumeUnitName(m_unit));
+            break;
+            // Angle
+        case 11:
+            ReplaceWithKOQ(schema, prop, "ANGLE", "RAD", getAngleUnitName(m_unit));
+            break;
+        default:
+            GetLogger().warningv("Found an ExtendType custom attribute on an ECProperty, '%s.%s', with an unknown standard value %d.  Only values 7-11 are supported.",
+                         prop->GetClass().GetFullName(), prop->GetName().c_str());
+            break;
+        }
+    return ECN::ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SchemaReader::_Read(Json::Value& schemas)
@@ -2266,6 +2411,9 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
         {
         flattener2.CheckForMixinConversion(*rootClass);
         }
+
+    ECN::IECCustomAttributeConverterPtr extendType = new ExtendTypeConverter(m_importer->m_masterUnit);
+    ECN::ECSchemaConverter::AddConverter("EditorCustomAttributes", EXTEND_TYPE, extendType);
 
     bvector<SchemaKey> schemasToDrop;
     for (ECN::SchemaKey key : keysToImport)

@@ -180,6 +180,11 @@ BentleyStatus BimFromJsonImpl::ImportJson(Json::Value& entry)
         return SUCCESS;
         }
 
+    if (entry.isMember("masterUnit"))
+        {
+        m_masterUnit = entry["masterUnit"].asString();
+        return SUCCESS;
+        }
     Utf8String objectType = entry[JSON_TYPE_KEY].asString();
     if (Utf8String::IsNullOrEmpty(objectType.c_str()))
         return ERROR;

@@ -70,6 +70,7 @@ struct BimFromJsonImpl : DgnImportContext
     protected:
         ECN::ECSchemaReadContextPtr m_schemaReadContext;
         SyncInfo* m_syncInfo;
+        Utf8String m_masterUnit;
 
         static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("BimTeleporter"); }
         DgnDbP GetDgnDb()

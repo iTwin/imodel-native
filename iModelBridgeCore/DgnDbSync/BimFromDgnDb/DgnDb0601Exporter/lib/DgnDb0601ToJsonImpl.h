@@ -141,6 +141,7 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         DgnElementId CreateDrawingElement(Utf8CP name);
         DgnElementId CreateSheetElement(DgnModelCR model);
         DgnElementId CreateDefinitionModel(Utf8CP modelName);
+        BentleyStatus ExportUnits() const;
         BentleyStatus ExportSchemas() const;
         DgnElementId InitListModel(Utf8CP name);
         BentleyStatus InitDrawingListModel();
