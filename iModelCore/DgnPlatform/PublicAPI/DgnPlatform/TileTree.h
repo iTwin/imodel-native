@@ -401,7 +401,6 @@ public:
 
     DGNPLATFORM_EXPORT virtual BentleyStatus _SaveToDb();
     DGNPLATFORM_EXPORT virtual BentleyStatus _ReadFromDb();
-    DGNPLATFORM_EXPORT virtual bool _WantWaitOnSave() const;
 
     //! Called to get the data from the original location. The call must be fast and execute any long running operation asynchronously.
     virtual BentleyStatus _GetFromSource() = 0;

@@ -148,8 +148,7 @@ BentleyStatus  CreateDisplayParamJson(Json::Value& matJson, MeshCR mesh,  Displa
     if (nullptr != material && material->GetKey().IsPersistent())
         {
         matJson["materialId"] = material->GetKey().GetId().ToHexStr();
-        if (T_HOST.GetTileAdmin()._WantEmbedMaterials())
-            AddMaterialJson(*material);
+        AddMaterialJson(*material);
         }
 
     matJson["class"] = (uint16_t) displayParams.GetClass();
@@ -277,10 +276,7 @@ BentleyStatus AddTextureJson(TextureMappingCR mapping, Json::Value& matJson)
         }
     else
         {
-        if (T_HOST.GetTileAdmin()._WantEmbedMaterials())
-            name = texture.GetKey().GetId().ToHexStr();
-        else
-            return SUCCESS;		// We are not collecting persistent textures. Return without error.
+        name = texture.GetKey().GetId().ToHexStr();
         }
 
     if (!m_json.isMember("namedTextures") || !m_json["namedTextures"].isMember(name))

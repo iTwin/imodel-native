@@ -62,13 +62,11 @@ private:
 
     BentleyStatus LoadGeometryFromModel();
     BentleyStatus DoGetFromSource();
-    bool IsCacheable() const;
     bool IsExpired() const { return m_cacheCreateTime < m_createTime; }
     TileCR GetElementTile() const;
     TileR GetElementTile();
 
     uint64_t _GetCreateTime() const override { return m_createTime; }
-    bool _WantWaitOnSave() const override;
 public:
     static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads) { return new Loader(tile, loads); }
 };
@@ -175,8 +173,6 @@ public:
     RootR GetElementRoot() { return static_cast<RootR>(GetRootR()); }
 
     Render::Primitives::GeometryCollection GenerateGeometry(LoadContextCR context);
-
-    virtual bool IsCacheable() const;
 
     bool _ToJson(Json::Value&) const override;
     Utf8String GetIdString() const;

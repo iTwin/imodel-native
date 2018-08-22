@@ -326,7 +326,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_exceptionHandler);
     BeAssert(NULL == m_knownLocationsAdmin);
     BeAssert(NULL == m_repositoryAdmin);
-    BeAssert(NULL == m_tileAdmin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -369,7 +368,6 @@ DgnPlatformLib::Host::NotificationAdmin&    DgnPlatformLib::Host::_SupplyNotific
 DgnPlatformLib::Host::LineStyleAdmin&       DgnPlatformLib::Host::_SupplyLineStyleAdmin()       {return *new LineStyleAdmin();}
 DgnPlatformLib::Host::TxnAdmin&             DgnPlatformLib::Host::_SupplyTxnAdmin()             {return *new TxnAdmin();}
 DgnPlatformLib::Host::RepositoryAdmin&      DgnPlatformLib::Host::_SupplyRepositoryAdmin()      {return *new RepositoryAdmin();}
-DgnPlatformLib::Host::TileAdmin&            DgnPlatformLib::Host::_SupplyTileAdmin()            {return *new TileAdmin();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      10/2014

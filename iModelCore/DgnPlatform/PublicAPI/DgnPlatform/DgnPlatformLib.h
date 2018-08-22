@@ -401,26 +401,6 @@ public:
             virtual void _OnResponse(IBriefcaseManager::Response const& response, Utf8CP operation) { }
             };
 
-        //! Supplies functionality related to tiles
-        struct TileAdmin : IHostObject
-        {
-            //! Return true to enable caching of generated tiles on disk.
-            virtual bool _WantCachedTiles(DgnDbR) const { return true; }
-
-            //! Respond when a new tile is generated.
-            virtual void _OnNewTileReady(DgnDbR) { }
-
-            virtual bool _WantCachedHiResTiles(DgnDbR) const { return false; } //!< @private
-            virtual bool _WantEmbedMaterials() const { return false; } //!< @private
-            virtual bool _WantWaitOnSave(DgnDbR) const { return false; } //!< @private
-
-            //! Return the full path to a .tilecache file for caching generated element tiles.
-            DGNPLATFORM_EXPORT virtual BeFileName _GetElementCacheFileName(DgnDbCR db) const;
-
-            //! Return the full path to a .tilecache file for caching downloaded reality data tiles.
-            DGNPLATFORM_EXPORT BeFileName _GetRealityDataCacheFileName(Utf8CP realityCacheName) const;
-        };
-
         typedef bvector<DgnDomain*> T_RegisteredDomains;
 
     protected:
@@ -435,7 +415,6 @@ public:
         GeoCoordinationAdmin*   m_geoCoordAdmin;
         TxnAdmin*               m_txnAdmin;
         RepositoryAdmin*        m_repositoryAdmin;
-        TileAdmin*              m_tileAdmin;
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
 
@@ -472,9 +451,6 @@ public:
         //! Supply the RepositoryAdmin
         DGNPLATFORM_EXPORT virtual RepositoryAdmin& _SupplyRepositoryAdmin();
 
-        //! Supply the TileAdmin
-        DGNPLATFORM_EXPORT virtual TileAdmin& _SupplyTileAdmin();
-
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
 
@@ -498,7 +474,6 @@ public:
             m_geoCoordAdmin = nullptr;
             m_txnAdmin = nullptr;
             m_repositoryAdmin = nullptr;
-            m_tileAdmin = nullptr;
             };
 
         virtual ~Host() {}
@@ -513,7 +488,6 @@ public:
         GeoCoordinationAdmin&   GetGeoCoordinationAdmin()  {return *m_geoCoordAdmin;}
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
         RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}
-        TileAdmin&              GetTileAdmin()             {return *m_tileAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
 
         DgnProgressMeterP GetProgressMeter() {return m_progressMeter;}

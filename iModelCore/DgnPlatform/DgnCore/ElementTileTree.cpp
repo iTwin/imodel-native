@@ -779,29 +779,6 @@ BentleyStatus Loader::_GetFromSource()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Loader::IsCacheable() const
-    {
-    return GetElementTile().IsCacheable();
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Tile::IsCacheable() const
-    {
-    // Host can specify no caching.
-    if (!T_HOST.GetTileAdmin()._WantCachedTiles(GetRoot().GetDgnDb()))
-        return false;
-
-    // Don't cache tiles refined for zoom...
-    if (HasZoomFactor() && GetZoomFactor() > 1.0)
-        return T_HOST.GetTileAdmin()._WantCachedHiResTiles(GetRoot().GetDgnDb());
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::_ReadFromDb()
@@ -825,27 +802,19 @@ BentleyStatus Loader::_LoadTile()
 
     bool isLeafInCache = false;
     auto& geometry = m_geometry;
-    if (!IsCacheable())
+    // NB: If we loaded this tile from the cache, m_saveToCache will be false. Read it from the cache data.
+    // Otherwise, we've already populated m_geometry from model and written it to m_tileBytes. Do not deserialize it again.
+    if (!m_tileBytes.empty() && !m_saveToCache)
         {
-        if (SUCCESS != LoadGeometryFromModel())
-            return ERROR;
-        }
-    else
-        {
-        // NB: If we loaded this tile from the cache, m_saveToCache will be false. Read it from the cache data.
-        // Otherwise, we've already populated m_geometry from model and written it to m_tileBytes. Do not deserialize it again.
-        if (!m_tileBytes.empty() && !m_saveToCache)
+        BeAssert(geometry.IsEmpty());
+        if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), GetRenderSystem(), isLeafInCache, tile.GetRange()))
             {
-            BeAssert(geometry.IsEmpty());
-            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), GetRenderSystem(), isLeafInCache, tile.GetRange()))
-                {
-                BeAssert(false);
-                return ERROR;
-                }
+            BeAssert(false);
+            return ERROR;
             }
-
-        tile.SetContentRange(contentRange);
         }
+
+    tile.SetContentRange(contentRange);
 
     // No point subdividing empty Tiles - improves performance if we don't
     // Also not much point subdividing nodes containing no curved geometry
@@ -877,9 +846,6 @@ BentleyStatus Loader::_LoadTile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::DoGetFromSource()
     {
-    if (!IsCacheable())
-        return IsCanceledOrAbandoned() ? ERROR : SUCCESS;
-      
     TileR   tile = GetElementTile();
     RootR   root = tile.GetElementRoot();
 
@@ -896,7 +862,6 @@ BentleyStatus Loader::DoGetFromSource()
         // TBD -- Avoid round trip through m_tileBytes when loading from elements.
         // NB: Tile may not be a leaf, but may have zoom factor of 1.0 indicating it should not be sub-divided
         // (it can be refined to higher zoom level - those tiles are not cached unless admin specifically requests so).
-        BeAssert(!tile.HasZoomFactor() || 1.0 == tile.GetZoomFactor() || T_HOST.GetTileAdmin()._WantCachedHiResTiles(root.GetDgnDb()));
         bool isLeaf = tile.IsLeaf();
         double zoomFactor = tile.GetZoomFactor();
         if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile.GetContentRange(), geometry, *root.GetModel(), isLeaf, tile.HasZoomFactor() ? &zoomFactor : nullptr))
@@ -933,17 +898,6 @@ bool Loader::_IsValidData()
     BeAssert(!m_tileBytes.empty());
     TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetElementRoot().GetModel(), GetRenderSystem());
     return reader.VerifyFeatureTable();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Loader::_WantWaitOnSave() const
-    {
-    // BuildingConceptStation's tools invalidate tiles on every single mouse motion.
-    // If we don't wait on the save to cache, then a subsequent tile invalidation may cause cache row to be updated/deleted
-    // before a pending save completes, producing errors in sqlite.
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2047,7 +2001,8 @@ Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double 
 RealityData::CachePtr TileCache::Create(DgnDbCR db)
     {
     RealityData::CachePtr cache(new TileCache(1024*1024*1024));
-    BeFileName cacheName = T_HOST.GetTileAdmin()._GetElementCacheFileName(db);
+    BeFileName cacheName = db.GetFileName();
+    cacheName.AppendExtension(L"Tiles");
     if (SUCCESS != cache->OpenAndPrepare(cacheName))
         cache = nullptr;
 

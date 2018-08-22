@@ -79,21 +79,12 @@ BentleyStatus TileLoader::Perform()
         return ERROR;
         }
 
-    T_HOST.GetTileAdmin()._OnNewTileReady(tile.GetRoot().GetDgnDb());
     tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
 
     // On a successful load, potentially store the tile in the cache.   
     me->_SaveToDb();
 
     return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TileLoader::_WantWaitOnSave() const
-    {
-    return T_HOST.GetTileAdmin()._WantWaitOnSave(m_tile->GetRoot().GetDgnDb());
     }
 
 //----------------------------------------------------------------------------------------
@@ -518,17 +509,6 @@ void Root::ClearAllTiles()
 
     m_rootTile = nullptr;
     m_cache = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName DgnPlatformLib::Host::TileAdmin::_GetElementCacheFileName(DgnDbCR db) const
-    {
-    // TFS#816125: Tile cache names must be unique. Easiest way to ensure that is to put in same directory as iModel.
-    BeFileName filename = db.GetFileName();
-    filename.AppendExtension(L"TileCache");
-    return filename;
     }
 
 /*---------------------------------------------------------------------------------**//**
