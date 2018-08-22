@@ -112,7 +112,7 @@ TEST_F(ClassificationSystemsTestFixture, PropertiesAreSetProperly)
         ASSERT_TRUE(group.IsValid()) << "Failed to create group";
 
         ASSERT_TRUE(0 == strcmp(group->GetUserLabel(), expectedGroupName)) << "Group label was set wrong";
-        ASSERT_TRUE(group->GetParentId() == system->GetElementId()) << "Group label was set wrong";
+        ASSERT_TRUE(group->GetClassificationSystemId() == system->GetElementId()) << "Group label was set wrong";
 
         group->Insert(&stat);
         ASSERT_EQ(DgnDbStatus::Success, stat) << "Group failed to be inserted to Db";

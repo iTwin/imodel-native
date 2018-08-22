@@ -69,7 +69,7 @@ Dgn::ElementIterator ClassificationSystem::MakeClassificationIterator() const
     {
     BeAssert(GetElementId().IsValid());
 
-    Utf8String where("WHERE Parent.Id=?");
+    Utf8String where("WHERE Model.Id=?");
 
     Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(CLASSIFICATIONSYSTEMS_SCHEMA(CLASSIFICATIONSYSTEMS_CLASS_Classification), where.c_str());
     iterator.GetStatement()->BindId(1, GetElementId());
@@ -83,7 +83,7 @@ Dgn::ElementIterator ClassificationSystem::MakeClassificationGroupIterator() con
     {
     BeAssert(GetElementId().IsValid());
 
-    Utf8String where("WHERE Parent.Id=?");
+    Utf8String where("WHERE Model.Id=?");
 
     Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(CLASSIFICATIONSYSTEMS_SCHEMA(CLASSIFICATIONSYSTEMS_CLASS_ClassificationGroup), where.c_str());
     iterator.GetStatement()->BindId(1, GetElementId());
@@ -223,7 +223,6 @@ ClassificationCP specializes
         }
     Dgn::DgnCode code = GetClassificationCode(params.m_dgndb, id, elemid);
     SetCode(code);
-    SetClassificationSystem(system);
     if(specializes != nullptr) 
         SetSpecializationId(specializes->GetElementId());
     }
@@ -241,8 +240,20 @@ ClassificationGroupCP group,
 ClassificationCP specializes
 )
     {
-    Dgn::DgnClassId classId = QueryClassId(system.GetDgnDb());
-    Dgn::DgnElement::CreateParams params(system.GetDgnDb(), system.GetModelId(), classId);
+    Dgn::DgnDbR db = system.GetDgnDb();
+
+    Dgn::DgnModelPtr model = system.GetSubModel();
+    if (model.IsNull())
+        model = Dgn::DefinitionModel::CreateAndInsert(system);
+
+    if (model.IsNull())
+        {
+        BeAssert(model.IsValid());
+        return nullptr;
+        }
+
+    Dgn::DgnClassId classId = QueryClassId(db);
+    Dgn::DgnElement::CreateParams params(db, model->GetModelId(), classId);
     ClassificationPtr classification = new Classification(params, system, name, id, description, group, specializes);
     classification->Insert();
     if (group != nullptr)
@@ -254,13 +265,11 @@ ClassificationCP specializes
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassificationGroup::ClassificationGroup
 (
-CreateParams const& params, 
-ClassificationSystemCR system,
+CreateParams const& params,
 Utf8CP name
 ) : T_Super(params)
     {
     SetUserLabel(name);
-    SetClassificationSystem(system);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,21 +281,22 @@ ClassificationSystemCR system,
 Utf8CP name
 )
     {
-    Dgn::DgnClassId classId = QueryClassId(system.GetDgnDb());
-    Dgn::DgnElement::CreateParams params(system.GetDgnDb(), system.GetModelId(), classId);
-    ClassificationGroupPtr group = new ClassificationGroup(params, system, name);
+    Dgn::DgnDbR db = system.GetDgnDb();
+
+    Dgn::DgnModelPtr model = system.GetSubModel();
+    if (model.IsNull())
+        model = Dgn::DefinitionModel::CreateAndInsert(system);
+
+    if (model.IsNull())
+        {
+        BeAssert(model.IsValid());
+        return nullptr;
+        }
+
+    Dgn::DgnClassId classId = QueryClassId(db);
+    Dgn::DgnElement::CreateParams params(db, model->GetModelId(), classId);
+    ClassificationGroupPtr group = new ClassificationGroup(params, name);
     return group;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  08/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ClassificationGroup::SetClassificationSystem
-(
-ClassificationSystemCR system
-)
-    {
-    SetParentId(system.GetElementId(), GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationSystemHasClassificationGroups));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -304,17 +314,6 @@ Dgn::DgnElementId groupId
 
     BeSQLite::EC::ECInstanceKey rkey;
     db.InsertLinkTableRelationship (rkey, relClass, sourceId, targetId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  08/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Classification::SetClassificationSystem
-(
-ClassificationSystemCR system
-)
-    {
-    SetParentId(system.GetElementId(), GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationSystemHasClassifications));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -369,7 +368,15 @@ Dgn::DgnElementId Classification::GetClassificationSystemId
 (
 ) const
     {
-    return GetParentId();
+    return GetModel()->GetModeledElementId();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                08/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnElementId ClassificationGroup::GetClassificationSystemId() const
+    {
+    return GetModel()->GetModeledElementId();
     }
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE

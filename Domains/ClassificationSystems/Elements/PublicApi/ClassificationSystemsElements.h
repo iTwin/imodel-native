@@ -87,10 +87,6 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification : Dgn::DefinitionElement
         //! @param[in] description   new Description for this Classificatio
         void SetDescription(Utf8CP description) { SetPropertyValue(prop_Description(), description); }
 
-        //! Sets ClassificationSystem. ClassificationSystem needs to be inserted.
-        //! @param[in] system to set
-        void SetClassificationSystem(ClassificationSystemCR system);
-
         //! Sets Classification group Id
         //! @param[in] groupId to set
         void SetGroupId(Dgn::DgnElementId groupId);
@@ -149,13 +145,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationGroup : Dgn::GroupInformationElemen
 
     protected:
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationGroup(CreateParams const& params) : T_Super(params) {}
-        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationGroup(CreateParams const& params, ClassificationSystemCR system, Utf8CP name);
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationGroup(CreateParams const& params, Utf8CP name);
         friend struct ClassificationGroupHandler;
         friend struct ClassificationSystemsDomain;
 
-        //! Sets ClassificationSystem. ClassificationSystem needs to be inserted.
-        //! @param[in] system to set
-        void SetClassificationSystem(ClassificationSystemCR system);
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationGroup, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
         
