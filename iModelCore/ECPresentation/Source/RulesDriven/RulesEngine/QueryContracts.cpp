@@ -747,7 +747,7 @@ Utf8String ECPropertyGroupingNodesQueryContract::GetGroupingValuesClause(Utf8CP 
     {
     Utf8String clause("group_concat(");
     if (m_specification.GetRanges().empty())
-        clause.append(QueryHelpers::Wrap(GroupingValueFieldName));
+        clause.append("DISTINCT ").append(QueryHelpers::Wrap(GroupingValueFieldName));
     else
         clause.append(FUNCTION_NAME_GetRangeIndex).append("(").append(QueryHelpers::Wrap(GroupingValueFieldName)).append(")");
     clause.append(")");
