@@ -17,23 +17,6 @@
 appName = UstationDummy
 o = $(OutputRootDir)Build/$(appName)/
 
-nameToDefine = __IMODEL_DMSSUPPORT_BUILD__
-%include cdefapnd.mki
-
-nameToDefine = UNICODE
-%include cdefapnd.mki
-
-nameToDefine = _UNICODE
-%include cdefapnd.mki
-
-dmsAPISrc     = $(SrcRoot)DmsSupport/PublicAPI/iModelDmsSupport/
-
-
-dirToSearch = $(BuildContext)PublicAPI\ProjectWise_InternalSDK\Include
-%include cincapnd.mki
-
-dirToSearch = $(BuildContext)PublicAPI\ProjectWise_InternalSDK\PrivateSDK
-%include cincapnd.mki
 
 always:
     ~mkdir $(o)
