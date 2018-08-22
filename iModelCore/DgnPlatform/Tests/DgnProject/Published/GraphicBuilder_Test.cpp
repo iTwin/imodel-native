@@ -721,7 +721,7 @@ template<typename T> void MeshBuilderTest::RoundTripGeometryCollection(T populat
     GeometricModelR model = *GetDefaultPhysicalModel();
     bool isLeaf = true;
     TileTree::StreamBuffer writeBytes;
-    EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(writeBytes, contentRange, geom, model, isLeaf));
+    EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(writeBytes, contentRange, geom, model, isLeaf, nullptr));
 
     // Read the geometry back from the buffer
     ElementAlignedBox3d readContentRange;
@@ -737,7 +737,7 @@ template<typename T> void MeshBuilderTest::RoundTripGeometryCollection(T populat
 
     // Write it back to a stream buffer, confirm same bytes
     TileTree::StreamBuffer roundTripBytes;
-    EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(roundTripBytes, readContentRange, readGeom, model, readIsLeaf));
+    EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(roundTripBytes, readContentRange, readGeom, model, readIsLeaf, nullptr));
     ExpectEqualBytes(writeBytes, roundTripBytes);
     }
 
@@ -767,7 +767,7 @@ template<typename T> void MeshBuilderTest::RoundTripMeshBuilders(T populateGraph
     auto geom = GetGeometryCollection(contentRange, centroid);
     TileTree::StreamBuffer writeBytes;
     GeometricModelR model = *GetDefaultPhysicalModel();
-    EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(writeBytes, contentRange, geom, model, true));
+    EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(writeBytes, contentRange, geom, model, true, nullptr));
 
     // Round-trip, omitting no elements
     RoundTripMeshBuilders(writeBytes, DgnElementIdSet(), allElemIds);
@@ -817,7 +817,7 @@ void MeshBuilderTest::RoundTripMeshBuilders(TileTree::StreamBufferR writeBytes, 
 
     // Serialize the new geometry collection, compare to input
     TileTree::StreamBuffer roundTripBytes;
-    EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(roundTripBytes, readContentRange, geom, model, true));
+    EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(roundTripBytes, readContentRange, geom, model, true, nullptr));
     if (skipElems.empty())
         {
         ExpectEqualGeometry(writeBytes, roundTripBytes);
@@ -836,7 +836,7 @@ void MeshBuilderTest::RoundTripMeshBuilders(TileTree::StreamBufferR writeBytes, 
         EXPECT_EQ(TileTree::IO::ReadStatus::Success, TileTree::IO::ReadDgnTile(m_builders, writeBytes, model, m_system, flags, invSkipElems));
         auto geom = GetGeometryCollection(readContentRange, readCentroid);
         TileTree::StreamBuffer mergeBytes;
-        EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(mergeBytes, readContentRange, geom, model, true));
+        EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(mergeBytes, readContentRange, geom, model, true, nullptr));
         ExpectEqualGeometry(writeBytes, mergeBytes);
         }
     }
