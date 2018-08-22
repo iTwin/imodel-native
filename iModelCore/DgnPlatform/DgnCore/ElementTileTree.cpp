@@ -898,8 +898,9 @@ BentleyStatus Loader::DoGetFromSource()
         // NB: Tile may not be a leaf, but may have zoom factor of 1.0 indicating it should not be sub-divided
         // (it can be refined to higher zoom level - those tiles are not cached unless admin specifically requests so).
         BeAssert(!tile.HasZoomFactor() || 1.0 == tile.GetZoomFactor() || T_HOST.GetTileAdmin()._WantCachedHiResTiles(root.GetDgnDb()));
-        bool isLeaf = tile.IsLeaf() || tile.HasZoomFactor();
-        if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile.GetContentRange(), geometry, *root.GetModel(), isLeaf))
+        bool isLeaf = tile.IsLeaf();
+        double zoomFactor = tile.GetZoomFactor();
+        if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile.GetContentRange(), geometry, *root.GetModel(), isLeaf, tile.HasZoomFactor() ? &zoomFactor : nullptr))
             return ERROR;
 
         m_tileMetadata.SetContentRange(tile.GetContentRange());
@@ -984,8 +985,7 @@ TileR Loader::GetElementTile() { return static_cast<TileR>(*m_tile); }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model, transform, system),
-    m_cacheGeometry(false)
+Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model, transform, system)
     {
     m_cache = model.GetDgnDb().ElementTileCache();
     }
@@ -1071,69 +1071,10 @@ bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeomPartPtr Root::FindOrInsertGeomPart(DgnGeometryPartId partId, Render::GeometryParamsR geomParams, ViewContextR context)
+GeomPartPtr Root::GenerateGeomPart(DgnGeometryPartId partId, Render::GeometryParamsR geomParams, ViewContextR context)
     {
-    return m_geomParts.FindOrInsert(partId, GetDgnDb(), geomParams, context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomPartPtr GeomPartCache::FindOrInsert(DgnGeometryPartId partId, DgnDbR db, Render::GeometryParamsR geomParams, ViewContextR context)
-    {
-#if defined(SHARE_GEOMETRY_PARTS)
-    m_mutex.lock(); // << LOCK
-
-    auto foundPart = m_parts.find(partId);
-    if (m_parts.end() != foundPart)
-        {
-        // This part has already been created and cached.
-        m_mutex.unlock(); // >> UNLOCK
-        return foundPart->second;
-        }
-
-    auto foundBuilder = m_builders.find(partId);
-    if (m_builders.end() != foundBuilder)
-        {
-        // Another thread is currently generating this part. Wait for it to finish.
-        GeomPartBuilderPtr builder = foundBuilder->second;
-        m_mutex.unlock(); // >> UNLOCK
-        return builder->WaitForPart();
-        }
-
-    // We need to create this part. Any other threads that also want this part should wait while we create it.
     GeomPartBuilderPtr builder = GeomPartBuilder::Create();
-    m_builders.Insert(partId, builder);
-    builder->GetMutex().lock();
-    m_mutex.unlock(); // >> UNLOCK
-
-    GeomPartPtr part = builder->GeneratePart(partId, db, geomParams, context);
-
-    // NB: Mark as "cached" even if cache disabled - waiting threads may end up using it too
-    if (part.IsValid())
-        part->SetInCache(true);
-
-    m_mutex.lock(); // << LOCK
-
-#if defined CACHE_GEOMETRY_PARTS
-    BeAssert(m_parts.end() == m_parts.find(partId));
-    m_parts.Insert(partId, part);
-#endif
-
-    foundBuilder = m_builders.find(partId);
-    BeAssert(m_builders.end() != foundBuilder);
-    m_builders.erase(foundBuilder);
-
-    m_mutex.unlock(); // >> UNLOCK
-    builder->GetMutex().unlock();
-    builder->NotifyAll();
-
-    return part;
-#else
-    GeomPartBuilderPtr builder = GeomPartBuilder::Create();
-    GeomPartPtr part = builder->GeneratePart(partId, db, geomParams, context);
-    return part;
-#endif
+    return builder->GeneratePart(partId, GetDgnDb(), geomParams, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1190,7 +1131,7 @@ GeomPartPtr TileContext::GenerateGeomPart(DgnGeometryPartCR geomPart, GeometryPa
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileContext::AddGeomPart(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams)
     {
-    GeomPartPtr tileGeomPart = m_root.FindOrInsertGeomPart(partId, geomParams, *this);
+    GeomPartPtr tileGeomPart = m_root.GenerateGeomPart(partId, geomParams, *this);
     if (tileGeomPart.IsNull())
         return;
 
@@ -1204,138 +1145,6 @@ void TileContext::AddGeomPart(Render::GraphicBuilderR graphic, DgnGeometryPartId
     BeAssert(nullptr != dynamic_cast<TileBuilderP>(&graphic));
     auto& parent = static_cast<TileBuilderR>(graphic);
     parent.Add(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), displayParams, GetDgnDb()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomPartPtr Root::FindOrInsertGeomPart(ISolidPrimitiveR prim, DRange3dCR range, DisplayParamsCR displayParams, DgnElementId elemId) const
-    {
-    BeMutexHolder lock(m_mutex);
-    return m_solidPrimitiveParts.FindOrInsert(prim, range, displayParams, elemId, GetDgnDb());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomPartPtr Root::SolidPrimitivePartMap::FindOrInsert(ISolidPrimitiveR prim, DRange3dCR range, DisplayParamsCR displayParams, DgnElementId elemId, DgnDbR db)
-    {
-    Key key(prim, range, displayParams);
-
-    auto findRange = m_map.equal_range(key);
-    for (auto curr = findRange.first; curr != findRange.second; ++curr)
-        {
-        if (curr->first.IsEqual(key))
-            return curr->second;
-        }
-
-    IGeometryPtr geom = IGeometry::Create(&prim);
-    GeometryList geomList;
-    geomList.push_back(*Geometry::Create(*geom, Transform::FromIdentity(), range, elemId, displayParams, prim.HasCurvedFaceOrEdge(), db, false));
-    auto part = GeomPart::Create(range, geomList);
-    m_map.Insert(key, part);
-
-    return part;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Root::SolidPrimitivePartMap::Key::operator<(Key const& rhs) const
-    {
-    double const* a1 = &m_range.low.x,
-                * a2 = &rhs.m_range.low.x;
-
-    double tolerance = s_solidPrimitivePartCompareTolerance;
-    for (size_t i = 0; i < 6; i++)
-        {
-        if (*a1 < *a2 - tolerance)
-            return true;
-        else if (*a1 > *a2 + tolerance)
-            return false;
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Root::SolidPrimitivePartMap::Key::IsEqual(Key const& rhs) const
-    {
-    return m_displayParams->IsEqualTo(*rhs.m_displayParams, DisplayParams::ComparePurpose::Merge)
-        && m_solidPrimitive->IsSameStructureAndGeometry(*rhs.m_solidPrimitive, s_solidPrimitivePartCompareTolerance);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Root::WantCacheGeometry(double rangeDiagSq) const
-    {
-    if (!m_cacheGeometry)
-        return false;
-
-    // Only cache geometry which occupies a significant portion of the model's range, since it will appear in many tiles
-    constexpr double rangeRatio = 0.25;
-    DRange3d range = ComputeRange();
-    double diag = Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
-    if (0.0 == diag)
-        return false;
-
-    BeAssert(Is3d()); // we only bother caching for 3d...want rangeRatio relative to actual range, not expanded range
-    return rangeDiagSq / diag >= rangeRatio;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Root::AddCachedGeometry(GeometryList const& geometry, size_t startIndex, DgnElementId elementId, double rangeDiagSq) const
-    {
-    if (!WantCacheGeometry(rangeDiagSq))
-        return;
-
-    BeMutexHolder lock(m_mutex);
-    auto pair = m_geomLists.Insert(elementId, geometry.Slice(startIndex, geometry.size()));
-    if (pair.second)
-        {
-        for (auto& geom : pair.first->second)
-            geom->SetInCache(true);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Root::GetCachedGeometry(GeometryList& geometry, DgnElementId elementId, double rangeDiagSq) const
-    {
-    // NB: Check the range so that we don't acquire the mutex for geometry too small to be in cache
-    if (!WantCacheGeometry(rangeDiagSq))
-        return false;
-
-    BeMutexHolder lock(m_mutex);
-    auto iter = m_geomLists.find(elementId);
-    if (m_geomLists.end() == iter)
-        return false;
-
-    if (geometry.empty())
-        geometry = iter->second;
-    else
-        geometry.append(iter->second);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Root::RemoveCachedGeometry(DRange3dCR range, DgnElementId id)
-    {
-    double rangeDiagSq = Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
-    if (WantCacheGeometry(rangeDiagSq))
-        {
-        BeMutexHolder lock(m_mutex);
-        m_geomLists.erase(id);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1396,141 +1205,6 @@ void Tile::InitTolerance(double minToleranceRatio, bool isLeaf)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::_Invalidate()
-    {
-    GetElementRoot().UnderMutex([&]()
-        {
-        m_generator.reset();
-
-        if (HasZoomFactor())
-            UnloadChildren(BeTimePoint::Now());
-
-        m_metadata.Reset();
-
-        InitTolerance(s_minToleranceRatio);
-
-        if (nullptr != GetParent())
-            return;
-
-        // Root tile...
-        GeometricModelPtr model = GetElementRoot().GetModel();
-        SetDisplayable(isElementCountLessThan(s_minElementsPerTile, *model->GetRangeIndex()));
-        });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Tile::_IsInvalidated(TileTree::DirtyRangesCR dirty) const
-    {
-    if (IsLeaf())
-        return true;
-
-    double minRangeDiagonalSquared = s_minRangeBoxSize * m_tolerance;
-    minRangeDiagonalSquared *= minRangeDiagonalSquared;
-    for (DRange3dCR range : dirty)
-        {
-        double diagSq = GetElementRoot().Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
-        if (diagSq >= minRangeDiagonalSquared || diagSq == 0.0) // ###TODO_ELEMENT_TILE: Dumb single-point primitives...
-            return true;
-        }
-
-    // No damaged range is large enough to contribute to this tile, so no need to regenerate it.
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void updateLowerBound(double& myValue, double parentOldValue, double parentNewValue, bool allowShrink)
-    {
-    if (DoubleOps::AlmostEqual(myValue, parentOldValue) && (allowShrink || parentOldValue > parentNewValue))
-        myValue = parentNewValue;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void updateUpperBound(double& myValue, double parentOldValue, double parentNewValue, bool allowShrink)
-    {
-    if (DoubleOps::AlmostEqual(myValue, parentOldValue) && (allowShrink || parentOldValue < parentNewValue))
-        myValue = parentNewValue;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Root::_OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents)
-    {
-    // The range of a spatial tile tree == the project extents.
-    // Note that currently we consider drawing outside of the project extents to be illegal.
-    // Therefore we do not attempt to regenerate tiles to include geometry previously outside the extents, or exclude geometry previously within them.
-    auto rootTile = static_cast<TileP>(GetRootTile().get());
-    if (Is3d() && nullptr != rootTile)
-        {
-        // ###TODO: What about non-spatial 3d models?
-        Transform tfToTile;
-        tfToTile.InverseOf(GetLocation());
-
-        DRange3d tileRange;
-        tfToTile.Multiply(tileRange, newExtents);
-
-        rootTile->UpdateRange(rootTile->GetRange(), tileRange, true);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::_UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew)
-    {
-    // The range of a 2d tile tree == the range of geometry within the model.
-    // This can change whenever elements are added/removed/modified.
-    // Must update ranges of tiles to reflect change.
-    // Invalidating tiles for modified geometry is handled by _Invalidate()
-    if (!GetElementRoot().Is3d())
-        {
-        // ###TODO: What about non-spatial 3d models?
-        UpdateRange(parentOld, parentNew, false);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink)
-    {
-    // Expand outside bounds of range to match the new range
-    // NB: It doesn't matter if the new range intersects the tile's range - may still need to expand
-    DRange3d myOld = GetRange();
-    if (nullptr == GetParent())
-        {
-        if (allowShrink)
-            m_range = ElementAlignedBox3d(parentNew);
-        else
-            m_range.UnionOf(parentOld, parentNew);
-        }
-    else
-        {
-        updateLowerBound(m_range.low.x, parentOld.low.x, parentNew.low.x, allowShrink);
-        updateLowerBound(m_range.low.y, parentOld.low.y, parentNew.low.y, allowShrink);
-        updateLowerBound(m_range.low.z, parentOld.low.z, parentNew.low.z, allowShrink);
-        updateUpperBound(m_range.high.x, parentOld.high.x, parentNew.high.x, allowShrink);
-        updateUpperBound(m_range.high.y, parentOld.high.y, parentNew.high.y, allowShrink);
-        updateUpperBound(m_range.high.z, parentOld.high.z, parentNew.high.z, allowShrink);
-        }
-
-    auto children = _GetChildren(false);
-    if (nullptr != children)
-        {
-        for (auto& child : *children)
-            static_cast<TileP>(child.get())->UpdateRange(myOld, GetRange(), allowShrink);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads)
@@ -1558,47 +1232,6 @@ Tile::ChildTiles const* Tile::_GetChildren(bool load) const
         }
 
     return T_Super::_GetChildren(load);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::_ValidateChildren() const
-    {
-    // Until the tile is ready, we won't know if it will be a leaf, be sub-divided, or have a zoom factor applied
-    if (!IsReady() || !IsDisplayable())
-        return;
-
-    if (HasZoomFactor())
-        {
-        switch (m_children.size())
-            {
-            case 0:
-                break;
-            case 1:
-                {
-                // Child had zoom factor then was invalidated.
-                auto child = static_cast<TileP>(m_children[0].get());
-                if (!child->HasZoomFactor())
-                    {
-                    child->SetIsLeaf(false);
-                    child->SetZoomFactor(2.0 * GetZoomFactor());
-                    child->InitTolerance(s_minToleranceRatio);
-                    }
-
-                break;
-                }
-            default:
-                // We previously sub-divided, now don't want to.
-                UnloadChildren(BeTimePoint::Now());
-                break;
-            }
-        }
-    else if (IsLeaf() || 1 == m_children.size())
-        {
-        // Child had zoom factor, now we no longer have it - may want to subdivide, or may have become a leaf
-        UnloadChildren(BeTimePoint::Now());
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2453,17 +2086,9 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
     {
     try
         {
-        if (!m_root.GetCachedGeometry(m_geometries, elemId, rangeDiagonalSquared))
-            {
-            m_curElemId = elemId;
-            m_curRangeDiagonalSquared = rangeDiagonalSquared;
-
-            size_t elemGeomIndex = m_geometries.size();
-
-            VisitElement(elemId, false);
-
-            m_root.AddCachedGeometry(m_geometries, elemGeomIndex, elemId, rangeDiagonalSquared);
-            }
+        m_curElemId = elemId;
+        m_curRangeDiagonalSquared = rangeDiagonalSquared;
+        VisitElement(elemId, false);
         }
     catch (...)
         {
@@ -2546,7 +2171,6 @@ StatusInt TileContext::_VisitElement(DgnElementId elementId, bool allowLoad)
     return status;
     }
 
-    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2576,6 +2200,8 @@ Utf8CP TileCache::GetCurrentVersion()
     {
     // Increment this when the binary tile format changes...
     // We changed the cache db schema shortly after creating imodel02 branch - so version history restarts at same time.
+    // 0: Initial version following db schema change
+    // 1: Do not set 'is leaf' if have size multiplier ('zoom factor'); add flag and value for size multiplier
     return "0";
     }
 
@@ -2638,28 +2264,16 @@ bool Tile::_ToJson(Json::Value& json) const
     {
     json["id"]["treeId"] = GetElementRoot().GetModelId().ToHexStr();
     json["id"]["tileId"] = GetIdString();
-    json["maximumSize"] = _GetMaximumSize();
+    json["maximumSize"] = IsDisplayable() ? s_tileScreenSize : 0.0;
+    json["isLeaf"] = IsLeaf();
 
     JsonUtils::DRange3dToJson(json["range"], GetRange());
     if (HasContentRange())
         JsonUtils::DRange3dToJson(json["contentRange"], GetContentRange());
 
     if (HasZoomFactor())
-        json["zoomFactor"] = GetZoomFactor();
-
-    if (nullptr != GetParent())
-        json["parentId"] = GetElementParent()->GetIdString();
+        json["sizeMultiplier"] = GetZoomFactor();
     
-    auto children = _GetChildren(true);
-    json["childIds"] = Json::arrayValue;
-    if (nullptr != children)
-        {
-        for (auto const& child : *children)
-            json["childIds"].append(static_cast<TileR>(*child).GetIdString());
-        }
-
-    ByteStream geometry = GetRoot().GetTileDataFromCache(_GetTileCacheKey());
-    json["hasGeometry"] = !geometry.empty();
 
     return true;
     }

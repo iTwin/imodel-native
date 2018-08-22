@@ -300,17 +300,19 @@ struct DgnTile
         ContainsCurves  = 0x0001,
         Incomplete      = 0x0001 << 1,
         IsLeaf          = 0x0001 << 2,
+        HasZoomFactor   = 0x0001 << 3,
     };
 
     struct Header : TileHeader
     {
         Flags               flags;
         ElementAlignedBox3d contentRange;
+        double              zoomFactor;
         uint32_t            length;
 
         bool Read(StreamBufferR buffer)
             {
-            if (TileHeader::Read(buffer) && IsValid() && buffer.Read(flags) && buffer.Read(contentRange) && buffer.Read(length))
+            if (TileHeader::Read(buffer) && IsValid() && buffer.Read(flags) && buffer.Read(contentRange) && buffer.Read(zoomFactor) && buffer.Read(length))
                 return true;
 
             Invalidate();
@@ -333,7 +335,7 @@ struct DgnTile
 
 ENUM_IS_FLAGS(DgnTile::Flags);
 
-DGNPLATFORM_EXPORT BentleyStatus WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, bool isLeaf);
+DGNPLATFORM_EXPORT BentleyStatus WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, bool isLeaf, double const* zoomFactor);
 DGNPLATFORM_EXPORT ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf, DRange3dCR tileRange);
 
 // Read meshes from cache data into a MeshBuilderMap, optionally excluding specific elements.

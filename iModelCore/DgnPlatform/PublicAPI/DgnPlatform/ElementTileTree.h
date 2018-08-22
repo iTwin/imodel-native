@@ -41,8 +41,6 @@ typedef bvector<TileP>      TilePList;
 
 typedef std::unique_ptr<TileGenerator> TileGeneratorUPtr;
 
-//#define TILECACHE_DEBUG
-
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
@@ -115,65 +113,15 @@ public:
 };
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   05/17
-//=======================================================================================
-struct GeomPartCache
-{
-private:
-    typedef bmap<DgnGeometryPartId, Render::Primitives::GeomPartPtr> PartMap;
-    typedef bmap<DgnGeometryPartId, GeomPartBuilderPtr> BuilderMap;
-
-    std::mutex  m_mutex;
-    PartMap     m_parts;
-    BuilderMap  m_builders;
-public:
-    Render::Primitives::GeomPartPtr FindOrInsert(DgnGeometryPartId, DgnDbR, Render::GeometryParamsR, ViewContextR);
-};
-
-//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct Root : TileTree::Root
 {
     DEFINE_T_SUPER(TileTree::Root);
 protected:
-    struct SolidPrimitivePartMap
-    {
-        struct Key
-        {
-            ISolidPrimitivePtr                      m_solidPrimitive;
-            DRange3d                                m_range;
-            Render::Primitives::DisplayParamsCPtr   m_displayParams;
-
-            Key() { }
-            Key(ISolidPrimitiveR solidPrimitive, DRange3dCR range, Render::Primitives::DisplayParamsCR displayParams) : m_solidPrimitive(&solidPrimitive), m_range(range), m_displayParams(&displayParams) { }
-
-            bool operator<(Key const& rhs) const;
-            bool IsEqual(Key const& rhs) const;
-        };
-
-        typedef bmultimap<Key, Render::Primitives::GeomPartPtr> Map;
-
-        Map m_map;
-
-        Render::Primitives::GeomPartPtr FindOrInsert(ISolidPrimitiveR prim, DRange3dCR range, Render::Primitives::DisplayParamsCR displayParams, DgnElementId elemId, DgnDbR db);
-    };
-
-    typedef bmap<DgnElementId, Render::Primitives::GeometryList> GeomListMap;
-
-    mutable BeMutex                 m_mutex;
-    mutable std::mutex              m_dbMutex;
-    mutable GeomPartCache           m_geomParts;
-    mutable SolidPrimitivePartMap   m_solidPrimitiveParts;
-    mutable GeomListMap             m_geomLists;
-    bool                            m_cacheGeometry;
+    mutable std::mutex  m_dbMutex;
 
     Root(GeometricModelR model, TransformCR transform, Render::SystemR system);
-
-    void RemoveCachedGeometry(DRange3dCR range, DgnElementId id);
-    void _OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id) override { RemoveCachedGeometry(range, id); }
-    void _OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id) override { RemoveCachedGeometry(oldRange, id); }
-    void _OnProjectExtentsChanged(AxisAlignedBox3dCR) override;
 
     bool LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate);
 public:
@@ -184,18 +132,11 @@ public:
 
     std::mutex& GetDbMutex() const { return m_dbMutex; }
 
-    Render::Primitives::GeomPartPtr FindOrInsertGeomPart(DgnGeometryPartId partId, Render::GeometryParamsR geomParams, ViewContextR viewContext);
-    Render::Primitives::GeomPartPtr FindOrInsertGeomPart(ISolidPrimitiveR prim, DRange3dCR range, Render::Primitives::DisplayParamsCR displayParams, DgnElementId elemId) const;
-
-    bool GetCachedGeometry(Render::Primitives::GeometryList& geometry, DgnElementId elementId, double rangeDiagonalSquared) const;
-    void AddCachedGeometry(Render::Primitives::GeometryList const& geometry, size_t startIndex, DgnElementId elementId, double rangeDiagonalSquared) const;
-    bool WantCacheGeometry(double rangeDiagonalSquared) const;
-
-    DGNPLATFORM_EXPORT static void ToggleDebugBoundingVolumes();
+    Render::Primitives::GeomPartPtr GenerateGeomPart(DgnGeometryPartId partId, Render::GeometryParamsR geomParams, ViewContextR viewContext);
 
     Transform GetLocationForTileGeneration() const; //!< @private
 
-    template<typename T> auto UnderMutex(T func) const -> decltype(func()) { BeMutexHolder lock(m_mutex); return func(); }
+    template<typename T> auto UnderMutex(T func) const -> decltype(func()) { BeMutexHolder lock(m_cv.GetMutex()); return func(); }
 
     bool _ToJson(Json::Value&) const override;
     TileTree::TilePtr _FindTileById(Utf8CP id) override;
@@ -222,14 +163,10 @@ protected:
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
     TileTree::TilePtr _CreateChild(TileTree::TileId) const override;
     double _GetMaximumSize() const override;
-    void _Invalidate() override;
-    bool _IsInvalidated(TileTree::DirtyRangesCR dirty) const override;
-    void _UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew) override;
 
     Utf8String _GetTileCacheKey() const override;
 
     ChildTiles const* _GetChildren(bool load) const override;
-    void _ValidateChildren() const override;
 
     Render::Primitives::MeshList GenerateMeshes(Render::Primitives::GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
 public:
@@ -245,8 +182,6 @@ public:
     RootR GetElementRoot() { return static_cast<RootR>(GetRootR()); }
 
     Render::Primitives::GeometryCollection GenerateGeometry(LoadContextCR context);
-
-    void UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink);
 
     virtual bool IsCacheable() const;
     void SetGenerator(TileGeneratorUPtr&&);

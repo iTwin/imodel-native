@@ -408,10 +408,13 @@ void AddMeshes(Render::Primitives::GeometryCollectionCR geometry)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WriteTile(ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, bool isLeaf)
+BentleyStatus WriteTile(ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, bool isLeaf, double const* zoomFactor)
     {
     uint32_t        startPosition = m_buffer.GetSize();
     DgnTile::Flags  flags = isLeaf ? DgnTile::Flags::IsLeaf : DgnTile::Flags::None;
+
+    if (nullptr != zoomFactor)
+        flags |= DgnTile::Flags::HasZoomFactor;
 
     if (geometry.ContainsCurves())
         flags |=  DgnTile::Flags::ContainsCurves;
@@ -423,6 +426,7 @@ BentleyStatus WriteTile(ElementAlignedBox3dCR contentRange, Render::Primitives::
     m_buffer.Append(DgnTile::Version);
     m_buffer.Append(static_cast<uint32_t>(flags));
     m_buffer.Append(contentRange);
+    m_buffer.Append(nullptr != zoomFactor ? *zoomFactor : 0.0);
 
     uint32_t    lengthDataPosition = m_buffer.GetSize();
     m_buffer.Append((uint32_t) 0);              // Filled in below.
@@ -445,8 +449,8 @@ END_TILETREE_IO_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileTree::IO::WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, bool isLeaf)
+BentleyStatus TileTree::IO::WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, bool isLeaf, double const* zoomFactor)
     {
-    return TileTree::IO::DgnCacheTileWriter(streamBuffer, model).WriteTile(contentRange, geometry, isLeaf);
+    return TileTree::IO::DgnCacheTileWriter(streamBuffer, model).WriteTile(contentRange, geometry, isLeaf, zoomFactor);
     }
 

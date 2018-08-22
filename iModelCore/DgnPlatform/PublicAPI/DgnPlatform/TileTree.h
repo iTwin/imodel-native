@@ -27,7 +27,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Root)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoader)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileCache)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(DirtyRanges)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StreamBuffer)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileMetadata)
 
@@ -109,34 +108,6 @@ public:
         bool operator()(TileCP lhs, TileLoadStatePtr const& rhs) const { return operator()(lhs, rhs->m_tile.get()); }
         bool operator()(TileCP lhs, TileCP rhs) const { return lhs < rhs; }
     };
-};
-
-//=======================================================================================
-//! A set of ranges within a TileTree which have become damaged due to modification of
-//! the model. Can be partitioned to include only those damaged ranges which intersect
-//! a given range.
-// @bsistruct                                                   Paul.Connelly   05/17
-//=======================================================================================
-struct DirtyRanges
-{
-    typedef bvector<DRange3d> List;
-    using iterator = List::iterator;
-    using const_iterator = List::const_iterator;
-private:
-    iterator    m_begin;
-    iterator    m_end;
-public:
-    DirtyRanges(iterator begin, iterator end) : m_begin(begin), m_end(end) { }
-    explicit DirtyRanges(List& list) : m_begin(list.begin()), m_end(list.end()) { }
-    
-    //! Returns the set of dirty ranges which intersect the given range.
-    //! Note that this modifies the ordering of the underlying List's contents (but only within the range thereof represented by this object).
-    DGNPLATFORM_EXPORT DirtyRanges Intersect(DRange3dCR range) const;
-
-    bool empty() const { return m_begin == m_end; }
-    size_t size() const { return std::distance(m_begin, m_end); }
-    const_iterator begin() const { return m_begin; }
-    const_iterator end() const { return m_end; }
 };
 
 //=======================================================================================
@@ -237,12 +208,6 @@ protected:
 
     void SetAbandoned() const;
 
-    //! Mark this tile as invalidated, e.g. because its contents have been modified.
-    virtual void _Invalidate() = 0;
-    //! Given the non-empty set of damaged ranges intersecting this tile's range, return whether the tile has become invalidated and must be regenerated.
-    virtual bool _IsInvalidated(DirtyRangesCR dirty) const { return true; }
-    //! Invoked at beginning of _SelectTiles() to ensure children are still valid.
-    DGNPLATFORM_EXPORT virtual void _ValidateChildren() const;
     DGNPLATFORM_EXPORT DRange3d ComputeChildRange(Tile& child, bool is2d=false) const;
 public:
     Tile(RootR root, TileId id, TileCP parent, bool isLeaf)
@@ -311,15 +276,10 @@ public:
     //! Get the maximum size, in pixels, that this Tile should occupy on the screen. If larger, use its children, if possible.
     virtual double _GetMaximumSize() const = 0;
 
-    void Invalidate(DirtyRangesCR dirty);
-
     //! Returns a potentially more tight-fitting range enclosing the visible contents of this tile.
     ElementAlignedBox3d const& GetContentRange() const { return HasContentRange() ? m_metadata.GetContentRange() : m_range; }
     bool HasContentRange() const { return !m_metadata.GetContentRange().IsNull(); }
     void SetContentRange(ElementAlignedBox3dCR contentRange) { m_metadata.SetContentRange(contentRange); }
-
-    //! When the range of the model changes, update this tile's range
-    virtual void _UpdateRange(DRange3dCR prevParentRange, DRange3dCR newParentRange) { }
 
     bool IsEmpty() const;
 
@@ -344,20 +304,11 @@ protected:
     Dgn::Render::SystemR m_renderSystem;
     RealityData::CachePtr m_cache;
     mutable BeConditionVariable m_cv;
-    DirtyRanges::List m_damagedRanges;
 
     //! Clear the current tiles and wait for all pending download requests to complete/abort.
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
     //! still valid and that cannot be accomplished in the destructor of Root.
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
-
-    virtual void _OnAddToRangeIndex(DRange3dCR range, DgnElementId id) { }
-    virtual void _OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id) { }
-    virtual void _OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id) { }
-
-    void MarkDamaged(DRange3dCR range);
-    void UpdateRange(DirtyRangesCR dirty);
-    void InvalidateDamagedTiles();
 
     Root(DgnDbR, DgnModelId, bool is3d, TransformCR, Dgn::Render::SystemR);
 public:
@@ -396,11 +347,6 @@ public:
     DGNPLATFORM_EXPORT Root(GeometricModelCR model, TransformCR location, Dgn::Render::SystemR system);
 
     DGNPLATFORM_EXPORT Root(DgnDbR, DgnModelId, TransformCR, Dgn::Render::SystemR);
-
-    void OnAddToRangeIndex(DRange3dCR range, DgnElementId id);
-    void OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id);
-    void OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id);
-    virtual void _OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents) { }
 
     bool Is3d() const { return m_is3d; }
     bool Is2d() const { return !Is3d(); }
@@ -462,7 +408,7 @@ public:
 
     //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data. Called from worker threads.
     virtual BentleyStatus _LoadTile() = 0; 
-    virtual uint64_t      _GetMaxValidDuration() const { return 0; }
+    virtual uint64_t _GetMaxValidDuration() const { return 0; }
 
     //! Given the time (in unix millis) at which the tile was written to the cache, return true if the cached tile is no longer usable.
     //! If so, it will be deleted from the cache and _LoadTile() will be used to produce a new tile instead.
