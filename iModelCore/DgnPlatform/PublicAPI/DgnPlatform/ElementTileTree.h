@@ -39,8 +39,6 @@ DEFINE_REF_COUNTED_PTR(ThematicMeshBuilder);
 typedef bvector<TilePtr>    TileList;
 typedef bvector<TileP>      TilePList;
 
-typedef std::unique_ptr<TileGenerator> TileGeneratorUPtr;
-
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
@@ -51,10 +49,7 @@ struct Loader : TileTree::TileLoader
 private:
     uint64_t        m_createTime;       // The time of the most recent change to any element in the associated model when the tile loader was created.
     uint64_t        m_cacheCreateTime;  // The time of the most recent change to any element in the associated model when the tile cache data was created.
-    DgnElementIdSet m_omitElemIds;      // IDs of any elements present in cache FeatureTable but since deleted from associated model or modified.
-    DgnElementIdSet m_tileElemIds;      // IDs of elements present in cache, modulo any present in m_omitElemIds.
     Render::Primitives::GeometryCollection  m_geometry;
-    bool m_doTileRepair;
 
     Loader(TileR tile, TileTree::TileLoadStatePtr loads);
 
@@ -66,7 +61,6 @@ private:
     BentleyStatus _ReadFromDb() override;
 
     BentleyStatus LoadGeometryFromModel();
-    void SetupForTileRepair();
     BentleyStatus DoGetFromSource();
     bool IsCacheable() const;
     bool IsExpired() const { return m_cacheCreateTime < m_createTime; }
@@ -151,7 +145,6 @@ struct Tile : TileTree::Tile
 
 protected:
     double                      m_tolerance;
-    TileGeneratorUPtr           m_generator;
 
     Tile(Root& root, TileTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable);
     explicit Tile(Tile const& parent);
@@ -184,7 +177,6 @@ public:
     Render::Primitives::GeometryCollection GenerateGeometry(LoadContextCR context);
 
     virtual bool IsCacheable() const;
-    void SetGenerator(TileGeneratorUPtr&&);
 
     bool _ToJson(Json::Value&) const override;
     Utf8String GetIdString() const;

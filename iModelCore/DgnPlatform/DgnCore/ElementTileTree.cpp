@@ -764,8 +764,7 @@ END_UNNAMED_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads)
-    : T_Super("", tile, loads, tile.GetRoot().ConstructTileResource(tile)), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime),
-    m_doTileRepair(T_HOST._IsFeatureEnabled("Platform.TileRepair"))
+    : T_Super("", tile, loads, tile.GetRoot().ConstructTileResource(tile)), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime)
     {
     //
     }
@@ -923,12 +922,7 @@ BentleyStatus Loader::DoGetFromSource()
 bool Loader::_IsExpired(uint64_t createTimeMillis)
     {
     m_cacheCreateTime = createTimeMillis;
-    if (m_doTileRepair)
-        return false;
-
-    auto& tile = GetElementTile();
-    uint64_t lastModMillis = tile.GetElementRoot().GetModel()->GetLastElementModifiedTime();
-    return createTimeMillis < static_cast<uint64_t>(lastModMillis);
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -938,16 +932,7 @@ bool Loader::_IsValidData()
     {
     BeAssert(!m_tileBytes.empty());
     TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetElementRoot().GetModel(), GetRenderSystem());
-
-    if (!m_doTileRepair)
-        return reader.VerifyFeatureTable();
-
-    if (IsExpired())
-        reader.GetElements(m_omitElemIds, m_tileElemIds, m_cacheCreateTime);
-    else
-        reader.FindDeletedElements(m_omitElemIds);
-
-    return true;
+    return reader.VerifyFeatureTable();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -966,14 +951,7 @@ bool Loader::_WantWaitOnSave() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::_IsCompleteData()
     {
-    if (!m_doTileRepair)
-        return true;
-
-#if defined(TEST_TILE_REPAIR)
-    return false;
-#else
-    return !IsExpired() && m_omitElemIds.empty();
-#endif
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1751,7 +1729,6 @@ private:
     MeshGenerator                               m_meshGenerator;
     GeometryList                                m_geometries;
     ElementCollector::Entries::const_iterator   m_elementIter;
-    uint32_t                                    m_useCount = 1;
 
     LoadContextCR GetLoadContext() const { return m_tileContext.GetLoadContext(); }
     TileR GetTile() const { return const_cast<TileR>(m_meshGenerator.GetTile()); } // constructor receives as non-const...
@@ -1766,51 +1743,8 @@ public:
     m_elementIter = m_elementCollector.GetEntries().begin();
     }
 
-    static TileGeneratorUPtr Create(DRange3dCR range, RangeIndex::Tree& rangeIndex, double minRangeDiagonalSquared, LoadContextCR loadContext, uint32_t maxElements, TileR tile, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, GeometryOptionsCR geomOpts, TileTree::StreamBufferR stream, DgnElementIdSet const& omitElems, DgnElementIdSet const& tileElems);
-
     Completion GenerateGeometry(Render::Primitives::GeometryCollection&, LoadContextCR loadContext);
-    uint32_t GetAndIncrementUseCount() { return ++m_useCount; }
-    bool ReadFrom(TileTree::StreamBufferR buffer, DgnElementIdSet const& omitElems);
 };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileGeneratorUPtr TileGenerator::Create(DRange3dCR range, RangeIndex::Tree& rangeIndex, double minRangeDiagonalSquared, LoadContextCR loadContext, uint32_t maxElements, TileR tile, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, GeometryOptionsCR geomOpts, TileTree::StreamBufferR stream, DgnElementIdSet const& omitElems, DgnElementIdSet const& tileElems)
-    {
-    TileGeneratorUPtr generator(new TileGenerator(range, rangeIndex, minRangeDiagonalSquared, loadContext, maxElements, tile, facetOptions, transformFromDgn, tolerance, geomOpts, &tileElems));
-    if (!generator->ReadFrom(stream, omitElems))
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return generator;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TileGenerator::ReadFrom(TileTree::StreamBufferR stream, DgnElementIdSet const& omitElems)
-    {
-    bool containsCurves;
-    bool isIncomplete;
-    if (!m_meshGenerator.ReadFrom(stream, containsCurves, isIncomplete, omitElems))
-        {
-        BeAssert(false);
-        return false;
-        }
-
-    // We have no way of determining that all curved elements were removed from the tile...
-    if (containsCurves)
-        m_geometries.MarkCurved();
-
-    // Similarly we can't know whether all geometry previously omitted from tile no longer exists or would no longer be omitted...
-    if (isIncomplete)
-        m_geometries.MarkIncomplete();
-
-    return true;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
@@ -1912,8 +1846,6 @@ BentleyStatus Loader::LoadGeometryFromModel()
     PSolidThreadUtil::WorkerThreadOuterMark outerMark;
 #endif
 
-    SetupForTileRepair();
-
     auto& tile = GetElementTile();
 
     LoadContext loadContext(this);
@@ -1923,66 +1855,11 @@ BentleyStatus Loader::LoadGeometryFromModel()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Loader::SetupForTileRepair()
-    {
-#if !defined(TEST_TILE_REPAIR)
-    if (!IsExpired() && m_omitElemIds.empty())
-        return;
-#endif
-
-    if (m_tileBytes.empty())
-        return;
-
-    auto& tile = GetElementTile();
-    auto& root = tile.GetElementRoot();
-    auto model = root.GetModel();
-    if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    auto& sys = GetRenderSystem();
-    uint32_t maxFeatures = std::min(s_hardMaxFeaturesPerTile, sys._GetMaxFeaturesPerBatch());
-
-    double minRangeDiagonalSq = s_minRangeBoxSize * tile.GetTolerance();
-    IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(tile.GetTolerance());
-    facetOptions->SetHideSmoothEdgesWhenGeneratingNormals(false);
-
-    Transform transformFromDgn;
-    transformFromDgn.InverseOf(root.GetLocationForTileGeneration());
-
-    LoadContext context(this);
-    TileGeneratorUPtr generator = TileGenerator::Create(tile.GetDgnRange(), *model->GetRangeIndex(), minRangeDiagonalSq, context, maxFeatures, tile, *facetOptions, transformFromDgn, tile.GetTolerance(), GeometryOptions(), m_tileBytes, m_omitElemIds, m_tileElemIds);
-    BeAssert(nullptr != generator);
-
-    m_tileBytes.ResetPos();
-    m_omitElemIds.clear();
-    m_tileElemIds.clear();
-
-    if (nullptr != generator)
-        {
-        m_tileBytes.clear();
-        tile.SetGenerator(std::move(generator));
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::SetGenerator(TileGeneratorUPtr&& generator)
-    {
-    m_generator = std::move(generator);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::~Tile()
     {
-    // Defined here for instantiation of destructor of std::unique_ptr<TileGenerator> which is incomplete type in header file.
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1991,22 +1868,6 @@ Tile::~Tile()
 Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR context)
     {
     Render::Primitives::GeometryCollection collection;
-    if (nullptr != m_generator.get())
-        {
-        auto status = m_generator->GenerateGeometry(collection, context);
-        switch (status)
-            {
-            case TileGenerator::Completion::Aborted:
-                // clear out collection and fall-through...
-                collection = Render::Primitives::GeometryCollection();
-            case TileGenerator::Completion::Full:
-                // no longer need to save generator...fall-through...
-                m_generator.reset();
-            default:
-                return collection;
-            }
-        }
-
     auto& root = GetElementRoot();
     auto model = root.GetModel();
     if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
@@ -2027,8 +1888,8 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
 
     // ###TODO: Avoid heap alloc if don't want partial tiles...
     // ###TODO_IMODELCORE: Removed support for partial tiles - remove heap alloc.
-    TileGeneratorUPtr generator = std::make_unique<TileGenerator>(GetDgnRange(), *model->GetRangeIndex(), minRangeDiagonalSq, context, maxFeatures, *this, *facetOptions, transformFromDgn, m_tolerance, GeometryOptions());
-    auto status = generator->GenerateGeometry(collection, context);
+    TileGenerator generator(GetDgnRange(), *model->GetRangeIndex(), minRangeDiagonalSq, context, maxFeatures, *this, *facetOptions, transformFromDgn, m_tolerance, GeometryOptions());
+    auto status = generator.GenerateGeometry(collection, context);
     switch (status)
         {
         case TileGenerator::Completion::Aborted:
