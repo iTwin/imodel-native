@@ -967,9 +967,12 @@ void SMScene::LoadOverview(SMNode* node)
 
         Tile::ChildTiles const* children = node->_GetChildren(true);
 
-        for (auto& childNode : *children)
-            {            
-            LoadOverview((SMNode*)childNode.get());
+        if (nullptr != children)
+            {
+            for (auto& childNode : *children)
+                {            
+                LoadOverview((SMNode*)childNode.get());
+                }
             }
         }
     
@@ -2831,8 +2834,8 @@ void ScalableMeshModel::_OnSaveJsonProperties()
     if (m_clip.IsValid())
         val[json_clip()] = m_clip->ToJson();
 
-    if (!m_classifiers.empty())
-        val[json_classifiers()] = m_classifiers.ToJson();
+    if (!m_classifiers.empty())     // Note - This originally was stored on the "scalableMesh" member...
+        SetJsonProperties(json_classifiers(), m_classifiers.ToJson());
 
     SetJsonProperties(json_scalablemesh(), val);
     }
@@ -3176,8 +3179,12 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
     if (val.isMember(json_clip()))
         m_clip = ClipVector::FromJson(val[json_clip()]);
 
-    if (val.isMember(json_classifiers()))
-        m_classifiers.FromJson(val[json_classifiers()]);
+    Json::Value     classifiers = GetJsonProperties(json_classifiers());
+    if (classifiers.isNull())
+        classifiers = m_classifiers.FromJson(val[json_classifiers()]);       // Old location.                                                                                                                                                             
+
+    if (!classifiers.isNull())
+        m_classifiers.FromJson(classifiers);
 
     if (m_smPtr == 0 && !m_tryOpen)
         {                
