@@ -8,13 +8,13 @@
   "properties" : [
     {
       "name" : "PrimitivePropertyNonOverride",
-      "propertyType" : "PrimitiveProperty",
+      "type" : "PrimitiveProperty",
       "typeName" : "int",
       "inherited" : true
     },
     {
       "name" : "PrimitivePropertyOverride",
-      "propertyType" : "PrimitiveProperty",
+      "type" : "PrimitiveProperty",
       "typeName" : "string",
       "minLength" : 3,
       "maxLength" : 12

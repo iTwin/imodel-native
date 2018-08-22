@@ -159,7 +159,7 @@ SchemaWriteStatus ECEnumeration::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecX
     xmlWriter.WriteElementStart(elementName);
     
     xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->GetName().c_str());
-    xmlWriter.WriteAttribute(BACKING_TYPE_NAME_ATTRIBUTE, GetTypeName().c_str());
+    xmlWriter.WriteAttribute(ECXML_BACKING_TYPE_NAME_ATTRIBUTE, GetTypeName().c_str());
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
@@ -209,7 +209,7 @@ SchemaWriteStatus ECEnumeration::WriteJson(Json::Value& outValue, bool standalon
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
 
     // ECEnumeration Properties
-    outValue[BACKING_TYPE_NAME_ATTRIBUTE] = GetTypeName();
+    outValue[TYPE_ATTRIBUTE] = GetTypeName();
     outValue[IS_STRICT_ATTRIBUTE] = GetIsStrict();
 
     Json::Value enumeratorArr = Json::Value(Json::ValueType::arrayValue);
@@ -247,10 +247,10 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
         SetDisplayLabel(value.c_str());
     
     // BACKING_TYPE_NAME_ATTRIBUTE is a required attribute.  If it is missing, an error will be returned.
-    if (BEXML_Success != enumerationNode.GetAttributeStringValue(value, BACKING_TYPE_NAME_ATTRIBUTE))
+    if (BEXML_Success != enumerationNode.GetAttributeStringValue(value, ECXML_BACKING_TYPE_NAME_ATTRIBUTE))
         {
         BeAssert(s_noAssert);
-        LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", enumerationNode.GetName(), BACKING_TYPE_NAME_ATTRIBUTE);
+        LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", enumerationNode.GetName(), ECXML_BACKING_TYPE_NAME_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 

@@ -75,7 +75,8 @@
 #define POLYMORPHIC_ATTRIBUTE               "polymorphic"
 #define ABSTRACTCONSTRAINT_ATTRIBUTE        "abstractConstraint"
 #define ECJSON_CONSTRAINT_CLASSES           "constraintClasses"
-#define BACKING_TYPE_NAME_ATTRIBUTE         "backingTypeName"
+#define TYPE_ATTRIBUTE                      "type"
+#define ECXML_BACKING_TYPE_NAME_ATTRIBUTE   "backingTypeName" 
 #define IS_STRICT_ATTRIBUTE                 "isStrict"
 #define ENUMERATOR_VALUE_ATTRIBUTE          "value"
 #define PERSISTENCE_UNIT_ATTRIBUTE          "persistenceUnit"
@@ -85,7 +86,8 @@
 #define ECJSON_UNIT_FORMAT_FORMAT           "format"
 #define PRIORITY_ATTRIBUTE                  "priority"
 #define ECJSON_ECPROPERTY_NAME              "name"
-#define READONLY_ATTRIBUTE                  "readOnly"
+#define ECXML_READONLY_ATTRIBUTE            "readOnly"
+#define ECJSON_READONLY_ATTRIBUTE           "isReadOnly"
 #define CATEGORY_ATTRIBUTE                  "category"
 #define TYPE_NAME_ATTRIBUTE                 "typeName"
 #define EXTENDED_TYPE_NAME_ATTRIBUTE        "extendedTypeName"
@@ -151,7 +153,6 @@
 #define DIRECTION_BACKWARD                  "backward"
 
 // ECProperty Types
-#define ECJSON_ECPROPERTY_TYPE              "propertyType"
 #define ECJSON_ECPROPERTY_PRIMITIVE         "PrimitiveProperty"
 #define ECJSON_ECPROPERTY_STRUCT            "StructProperty"
 #define ECJSON_ECPROPERTY_PRIMITIVEARRAY    "PrimitiveArrayProperty"

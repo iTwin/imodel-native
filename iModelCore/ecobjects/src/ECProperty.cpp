@@ -751,7 +751,7 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
     // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
     ECObjectsStatus setterStatus;
-    READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, READONLY_ATTRIBUTE, this, IsReadOnly)
+    READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, ECXML_READONLY_ATTRIBUTE, this, IsReadOnly)
 
     if (BEXML_Success == propertyNode.GetAttributeStringValue(value, KIND_OF_QUANTITY_ATTRIBUTE))
         {
@@ -907,7 +907,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
     if(IsReadOnlyFlagSet())
-        xmlWriter.WriteAttribute(READONLY_ATTRIBUTE, true);
+        xmlWriter.WriteAttribute(ECXML_READONLY_ATTRIBUTE, true);
     if (IsMinimumValueDefined())
         {
         Utf8String minValue;
@@ -996,7 +996,7 @@ SchemaWriteStatus ECProperty::_WriteJson(Json::Value& outValue, bool isInherited
         propertyType = ECJSON_ECPROPERTY_NAVIGATION;
     else
         return SchemaWriteStatus::FailedToCreateJson;
-    outValue[ECJSON_ECPROPERTY_TYPE] = propertyType;
+    outValue[TYPE_ATTRIBUTE] = propertyType;
 
     if (GetInvariantDescription().length() != 0)
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
@@ -1005,7 +1005,7 @@ SchemaWriteStatus ECProperty::_WriteJson(Json::Value& outValue, bool isInherited
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
 
     if (IsReadOnlyFlagSet()) // Only need to specify this property if it's true.
-        outValue[READONLY_ATTRIBUTE] = true;
+        outValue[ECJSON_READONLY_ATTRIBUTE] = true;
 
     if (IsCategoryDefinedLocally())
         outValue[CATEGORY_ATTRIBUTE] = ECJsonUtilities::FormatPropertyCategoryName(*GetCategory());

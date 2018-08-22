@@ -55,7 +55,7 @@
       "modifier": "sealed",
       "properties": [
         {
-          "propertyType": "PrimitiveArrayProperty",
+          "type": "PrimitiveArrayProperty",
           "name": "ExamplePrimitiveArray",
           "label": "ExPrimitiveArray",
           "typeName": "int",
@@ -124,7 +124,7 @@
     },
     "ExampleEnumeration": {
       "schemaItemType": "Enumeration",
-      "backingTypeName": "int",
+      "type": "int",
       "isStrict": true,
       "enumerators": [
         {
