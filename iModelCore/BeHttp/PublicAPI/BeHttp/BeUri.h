@@ -21,14 +21,14 @@ struct BeUri
     private:
         enum class UriPatternGroup
             {
-            Scheme = 2,
-            Authority = 3,
-            Userinfo = 6,
-            Host = 7,
-            Port = 10,
-            Path = 11,
-            Query = 13,
-            Fragment = 15
+            Scheme = 1,
+            Authority = 2,
+            Userinfo = 3,
+            Host = 4,
+            Port = 5,
+            Path = 6,
+            Query = 7,
+            Fragment = 8
             };
 
         struct MatchResults;
@@ -53,10 +53,8 @@ struct BeUri
         BeUri() = default;
 
         //! Creates URI and percent-escapes any unsafe symbols in path, query, and fragment components.
-        //! IMPORTANT: Improperly formatted URIs may exhibit unexpected behaviors. For example,
-        //! missing authority prefix "//" in "localhost:8080" will cause the URI to be split into
-        //! scheme component "localhost" and path component "8080". For complete URI format specification,
-        //! consult <a href="https://tools.ietf.org/html/rfc3986#section-3">[RFC 3986] section 3</a>.
+        //! Uri must begin with a scheme. Complete URI specification is available in
+        //! <a href="https://tools.ietf.org/html/rfc3986#section-3">[RFC 3986] section 3</a>.
         BEHTTP_EXPORT BeUri(Utf8StringCR uri);
 
         //! Returns whether the uri is valid
