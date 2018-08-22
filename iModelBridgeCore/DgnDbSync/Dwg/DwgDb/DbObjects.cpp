@@ -29,9 +29,11 @@ DWGDB_OBJECT_DEFINE_MEMBERS2 (Xrecord)
 
 #ifdef DWGTOOLKIT_OpenDwg
 #define ReturnVoidOrStatus(_name_)  { ##_name_##; return DwgDbStatus::Success; }
+#define ReturnBoolOrStatus(_name_)  { bool b = ##_name_##; return b ? DwgDbStatus::Success : DwgDbStatus::UnknownError; }
 
 #elif DWGTOOLKIT_RealDwg
 #define ReturnVoidOrStatus(_name_)  return ToDwgDbStatus(##_name_##)
+#define ReturnBoolOrStatus(_name_)  return ToDwgDbStatus(##_name_##)
 
 
 // An unpublished API in acdbxx.dll
@@ -228,6 +230,28 @@ DwgDbStatus     DwgDbDictionary::GetNameAt (DwgStringR outName, DwgDbObjectIdCR 
 #endif
     return  status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbDictionary::SetAt (DwgStringCR name, DwgDbObjectP object, DwgDbObjectIdP entryId)
+    {
+    DwgDbStatus     status = DwgDbStatus::NotSupported;
+    DwgDbObjectId   id;
+#ifdef DWGTOOLKIT_OpenDwg
+    id = T_Super::setAt (name, object);
+    status = DwgDbStatus::Success;
+#elif DWGTOOLKIT_RealDwg
+    Acad::ErrorStatus   es = T_Super::setAt (name.c_str(), object, id);
+    status = ToDwgDbStatus (es);
+#endif
+    if (entryId != nullptr)
+        *entryId = id;
+    return  status;
+    }
+DwgDbStatus     DwgDbDictionary::SetName (DwgStringCR old, DwgStringCR newn) { ReturnBoolOrStatus(T_Super::setName(old, newn)); }
+DwgDbStatus     DwgDbDictionary::Remove (DwgStringCR name) { ReturnVoidOrStatus(T_Super::remove(name)); }
+DwgDbStatus     DwgDbDictionary::Remove (DwgDbObjectIdCR id) { ReturnVoidOrStatus(T_Super::remove(id)); }
 bool            DwgDbDictionary::Has (DwgStringCR name) const { return T_Super::has(name); }
 bool            DwgDbDictionary::Has (DwgDbObjectIdCR id) const { return T_Super::has(id); }
 DwgDbDictionaryIterator DwgDbDictionary::GetIterator () const { return DwgDbDictionaryIterator(T_Super::newIterator()); }

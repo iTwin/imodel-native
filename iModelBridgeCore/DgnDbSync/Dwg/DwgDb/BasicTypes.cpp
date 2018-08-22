@@ -65,6 +65,7 @@ size_t      DwgString::GetBufferSize () const { return this->GetLength()*sizeof(
 DwgStringR  DwgString::operator             = (DwgStringCR str) { this->Assign(str.c_str()); return *this; }
             DwgString::operator             const wchar_t* () const { return reinterpret_cast<const wchar_t*>(DWGDB_CALLSDKMETHOD(T_Super::c_str(), T_Super::kwszPtr())); }
 DwgString::DwgString (WCharCP chars)        { this->Assign(chars); }
+DwgString::DwgString (Utf8StringCR in) : DWGDB_CALLSDKMETHOD(T_Super(in.c_str(),OdCodePageId::CP_CNT),T_Super(in.c_str(),Encoding::Utf8)) {}
 DwgString::~DwgString ()                    { ; }
 
 uint32_t    DwgCmColor::GetMRGB () const        { return static_cast<uint32_t>(T_Super::color()); }
