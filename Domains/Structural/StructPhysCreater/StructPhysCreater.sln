@@ -5,6 +5,8 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StructPhysCreater", "StructPhysCreater\StructPhysCreater.vcxproj", "{20800D75-ED84-4263-95FE-66C95D10E578}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DgnV8ConverterTests", "DgnV8ConverterTests\DgnV8ConverterTests.vcxproj", "{548E3742-6532-402C-AF93-772DDDF8687A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{20800D75-ED84-4263-95FE-66C95D10E578}.Release|x64.Build.0 = Release|x64
 		{20800D75-ED84-4263-95FE-66C95D10E578}.Release|x86.ActiveCfg = Release|Win32
 		{20800D75-ED84-4263-95FE-66C95D10E578}.Release|x86.Build.0 = Release|Win32
+		{548E3742-6532-402C-AF93-772DDDF8687A}.Debug|x64.ActiveCfg = Debug|x64
+		{548E3742-6532-402C-AF93-772DDDF8687A}.Debug|x64.Build.0 = Debug|x64
+		{548E3742-6532-402C-AF93-772DDDF8687A}.Debug|x86.ActiveCfg = Debug|Win32
+		{548E3742-6532-402C-AF93-772DDDF8687A}.Debug|x86.Build.0 = Debug|Win32
+		{548E3742-6532-402C-AF93-772DDDF8687A}.Release|x64.ActiveCfg = Release|x64
+		{548E3742-6532-402C-AF93-772DDDF8687A}.Release|x64.Build.0 = Release|x64
+		{548E3742-6532-402C-AF93-772DDDF8687A}.Release|x86.ActiveCfg = Release|Win32
+		{548E3742-6532-402C-AF93-772DDDF8687A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
