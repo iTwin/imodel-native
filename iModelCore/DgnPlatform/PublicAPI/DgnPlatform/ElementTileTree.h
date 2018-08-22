@@ -26,14 +26,12 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Loader);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LoadContext);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Context);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Result);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomPartBuilder);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileGenerator);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ThematicMeshBuilder);
 
 DEFINE_REF_COUNTED_PTR(Tile);
 DEFINE_REF_COUNTED_PTR(Root);
 DEFINE_REF_COUNTED_PTR(Loader);
-DEFINE_REF_COUNTED_PTR(GeomPartBuilder);
 DEFINE_REF_COUNTED_PTR(ThematicMeshBuilder);
 
 typedef bvector<TilePtr>    TileList;
@@ -83,25 +81,6 @@ public:
 
     bool WasAborted() const { return nullptr != m_loader && m_loader->IsCanceledOrAbandoned(); }
     Dgn::Render::SystemR GetRenderSystem() const {return m_loader->GetRenderSystem();}
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   05/17
-//=======================================================================================
-struct GeomPartBuilder : RefCountedBase
-{
-private:
-    BeConditionVariable             m_cv;
-    Render::Primitives::GeomPartPtr m_part;
-
-    GeomPartBuilder() { }
-public:
-    static GeomPartBuilderPtr Create() { return new GeomPartBuilder(); }
-
-    Render::Primitives::GeomPartPtr WaitForPart();
-    Render::Primitives::GeomPartPtr GeneratePart(DgnGeometryPartId partId, DgnDbR db, Render::GeometryParamsR geomParams, ViewContextR viewContext);
-    BeMutex& GetMutex() { return m_cv.GetMutex(); }
-    void NotifyAll() { BeAssert(m_part.IsValid()); m_cv.notify_all(); }
 };
 
 //=======================================================================================

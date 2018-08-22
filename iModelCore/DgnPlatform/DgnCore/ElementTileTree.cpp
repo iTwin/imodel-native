@@ -1003,40 +1003,17 @@ bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeomPartPtr Root::GenerateGeomPart(DgnGeometryPartId partId, Render::GeometryParamsR geomParams, ViewContextR context)
+GeomPartPtr Root::GenerateGeomPart(DgnGeometryPartId partId, Render::GeometryParamsR geomParams, ViewContextR viewContext)
     {
-    GeomPartBuilderPtr builder = GeomPartBuilder::Create();
-    return builder->GeneratePart(partId, GetDgnDb(), geomParams, context);
-    }
+    GeomPartPtr part;
+    DgnGeometryPartCPtr geomPart = GetDgnDb().Elements().Get<DgnGeometryPart>(partId);
+    if (geomPart.IsValid())
+        {
+        auto& tileContext = static_cast<TileContext&>(viewContext);
+        part = tileContext.GenerateGeomPart(*geomPart, geomParams);
+        }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomPartPtr GeomPartBuilder::WaitForPart()
-    {
-    BeMutexHolder lock(GetMutex());
-    while (m_part.IsNull())
-        m_cv.InfiniteWait(lock);
-
-    BeAssert(m_part.IsValid());
-    return m_part;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomPartPtr GeomPartBuilder::GeneratePart(DgnGeometryPartId partId, DgnDbR db, Render::GeometryParamsR geomParams, ViewContextR vc)
-    {
-    BeAssert(m_part.IsNull());
-    BeAssert(nullptr != dynamic_cast<TileContext*>(&vc));
-
-    auto& context = static_cast<TileContext&>(vc);
-    DgnGeometryPartCPtr geomPart = db.Elements().Get<DgnGeometryPart>(partId);
-    if (geomPart.IsNull())
-        return nullptr;
-
-    m_part = context.GenerateGeomPart(*geomPart, geomParams);
-    return m_part;
+    return part;
     }
 
 /*---------------------------------------------------------------------------------**//**
