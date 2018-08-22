@@ -6,7 +6,7 @@
 |       $Date: 2011/11/09 18:11:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,6 +22,8 @@
 #include <ScalableMesh/Type/IScalableMeshPoint.h>
 #include <ScalableMesh/Type/IScalableMeshLinear.h>
 #include <ScalableMesh/Type/IScalableMeshTIN.h>
+#include <ScalableMesh/Type/IScalableMeshMesh.h>
+
 
 #include <STMInternal/Foundations/PrivateStringTools.h>
 
@@ -50,6 +52,7 @@ private:
     CivilDTMWrapper                 m_dtm;
     PointHandler                    m_pointHandler;
     LinearHandler                   m_linearHandler;
+    MeshHandler                     m_meshHandler;
     TINAsLinearHandler              m_tinLinearHandler;
     GCS                             m_gcs;
     
@@ -81,7 +84,8 @@ private:
                 storedTypes.push_back(PointType3d64fCreator().Create());
                 break;
             case DTMState::DuplicatesRemoved:
-            case DTMState::Tin:
+            case DTMState::Tin:                
+                storedTypes.push_back(MeshType3d64fCreator().Create());
                 storedTypes.push_back(TINTypeAsLinearTi32Pi32Pq32Gi32_3d64fCreator().Create());
                 storedTypes.push_back(LinearTypeTi32Pi32Pq32Gi32_3d64fCreator().Create());
                 storedTypes.push_back(PointType3d64fCreator().Create());
@@ -126,6 +130,7 @@ public:
             m_pointHandler(dtm, CivilImportedTypes::GetInstance().points),
             m_linearHandler(dtm, CivilImportedTypes::GetInstance().linears),
             m_tinLinearHandler(dtm, CivilImportedTypes::GetInstance().tinLinears),
+            m_meshHandler(dtm, CivilImportedTypes::GetInstance().mesh),            
             m_gcs(gcs)
         {
         }
@@ -135,6 +140,7 @@ public:
     PointHandler&                   GetPointHandler        () { return m_pointHandler; }
     LinearHandler&                  GetLinearHandler       () { return m_linearHandler; }
     TINAsLinearHandler&             GetTINLinearHandler    () { return m_tinLinearHandler; }
+    MeshHandler&                    GetMeshHandler         () { return m_meshHandler; }
     };
 
 
@@ -280,7 +286,7 @@ private:
     // Dimension groups definition
     enum 
         {
-        DG_XYZ,
+        DG_XYZ,        
         DG_QTY,
         };
 
@@ -354,6 +360,133 @@ public:
         }
     };
 
+
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Mathieu.St-Pierre   08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+class CivilDTMMeshExtractor : public InputExtractorBase
+{
+private:
+    // Dimension groups definition
+    enum
+    {
+        DG_XYZ,
+        DG_TRI_INDICES,
+        DG_METADATA,
+        DG_TEXTURE,
+        DG_UVS,
+        DG_QTY,
+    };
+
+    const MeshHandler&             m_rMeshHandler;
+    /*
+    MeshHandler::TypeInfoCIter     m_typeInfoIter;
+    MeshHandler::TypeInfoCIter     m_typeInfoEnd;
+    */
+
+    PODPacketProxy<DPoint3d>       m_pointPacket;
+    PODPacketProxy<int32_t>        m_triIndicesPacket;
+    PODPacketProxy<char>           m_metadataPacket;
+    PODPacketProxy<uint8_t>        m_texturePacket;
+    PODPacketProxy<DPoint2d>       m_uvsPacket;
+    
+    HPU::Array<DPoint3d>           m_ptArray;
+    HPU::Array<int32_t>            m_ptIndicesArray;
+    HPU::Array<char>               m_metadataArray;
+    HPU::Array<uint8_t>            m_textureArray;
+    HPU::Array<DPoint2d>           m_uvsArray;
+
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description
+    * @bsimethod                                                  Mathieu.St-Pierre   08/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual void                    _Assign(PacketGroup&     pi_rRawEntities) override
+        {
+        m_pointPacket.AssignTo(pi_rRawEntities[DG_XYZ]);
+        m_ptArray.WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
+
+        m_triIndicesPacket.AssignTo(pi_rRawEntities[DG_TRI_INDICES]);
+        m_ptIndicesArray.WrapEditable(m_triIndicesPacket.Edit(), 0, m_triIndicesPacket.GetCapacity());
+
+        m_metadataPacket.AssignTo(pi_rRawEntities[DG_METADATA]);
+        m_metadataArray.WrapEditable(m_metadataPacket.Edit(), 0, m_metadataPacket.GetCapacity());
+
+        m_texturePacket.AssignTo(pi_rRawEntities[DG_TEXTURE]);
+        m_textureArray.WrapEditable(m_texturePacket.Edit(), 0, m_texturePacket.GetCapacity());
+
+        m_uvsPacket.AssignTo(pi_rRawEntities[DG_UVS]);
+        m_uvsArray.WrapEditable(m_uvsPacket.Edit(), 0, m_uvsPacket.GetCapacity());
+        }
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description
+    * @bsimethod                                                 Mathieu.St-Pierre   08/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual void                    _Read() override
+        {
+        m_ptArray.Clear();
+        m_ptIndicesArray.Clear();
+
+        if (/*m_typeInfoIter == m_typeInfoEnd ||*/
+            !m_rMeshHandler.Copy(/*m_typeInfoIter, */ m_ptArray, m_ptIndicesArray))
+            {
+            m_pointPacket.SetSize(0);
+            m_triIndicesPacket.SetSize(0);
+            return;
+            }
+
+        m_pointPacket.SetSize(m_ptArray.GetSize());
+        m_triIndicesPacket.SetSize(m_ptIndicesArray.GetSize());
+        m_metadataPacket.SetSize(0);
+        m_texturePacket.SetSize(0);
+        m_uvsPacket.SetSize(0);
+
+        /*
+        assert(m_typeInfoIter->m_pointCount == m_pointPacket.GetSize());
+        assert(m_typeInfoIter->m_pointCount == m_pointPacket.GetSize());
+        */
+        }
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsimethod                                                 Mathieu.St-Pierre   08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+    virtual bool                    _Next() override
+        {
+        return false;
+        /*
+        if (m_typeInfoIter == m_typeInfoEnd)
+            return false;
+
+        return ++m_typeInfoIter < m_typeInfoEnd;
+        */
+        }
+public:
+    /*---------------------------------------------------------------------------------**//**
+    * @description
+    * @bsimethod                                                 Mathieu.St-Pierre   08/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    explicit                        CivilDTMMeshExtractor(const MeshHandler& pi_rMeshHandler)
+        : m_rMeshHandler(pi_rMeshHandler)/*,
+        m_typeInfoIter(pi_rPointHandler.TypesInfoBegin()),
+        m_typeInfoEnd(pi_rPointHandler.TypesInfoEnd())*/
+    {
+    }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   10/2010
@@ -399,8 +532,6 @@ class CivilDTMPointExtractorCreator : public InputExtractorCreatorMixinBase<Civi
     };
 
 const ExtractorRegistry::AutoRegister<CivilDTMPointExtractorCreator> s_RegisterCivilDTMPointExtractor;
-
-
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -553,6 +684,58 @@ const ExtractorRegistry::AutoRegister<CivilDTMLinearExtractorCreator> s_Register
 
 
 /*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Mathieu.St-Pierre   08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+class CivilDTMMeshExtractorCreator : public InputExtractorCreatorMixinBase<CivilDTMSource>
+    {
+
+    virtual bool                                _Supports(const DataType&                 pi_rType) const override
+        {
+        return pi_rType.GetFamily() == MeshTypeFamilyCreator().Create();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description
+    * @bsimethod                                                 Mathieu.St-Pierre   08/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual RawCapacities                       _GetOutputCapacities(CivilDTMSource&                 sourceBase,
+                                                                     const Source&                   source,
+                                                                     const ExtractionQuery&          selection) const override
+        {
+        if (!sourceBase.GetMeshHandler().ComputeCounts())
+            return RawCapacities(0);
+
+        return RawCapacities(sourceBase.GetMeshHandler().GetMaxPointCount() * sizeof(DPoint3d), 
+                             sourceBase.GetMeshHandler().GetMaxPtIndicesCount() * sizeof(int32_t), 
+                             0, 
+                             0, 
+                             0);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description
+    * @bsimethod                                                 Mathieu.St-Pierre   08/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual InputExtractorBase*                 _Create(CivilDTMSource&         sourceBase,
+                                                        const Source&           source,
+                                                        const ExtractionQuery&  selection,
+                                                        const ExtractionConfig& config,
+                                                        Log&                     log) const override
+        {
+        if (!sourceBase.GetMeshHandler().ComputeCounts())
+            return 0;
+
+        return new CivilDTMMeshExtractor(sourceBase.GetMeshHandler());
+        }
+
+};
+
+const ExtractorRegistry::AutoRegister<CivilDTMMeshExtractorCreator> s_RegisterCivilDTMMeshExtractor;
+
+
+
+/*---------------------------------------------------------------------------------**//**
 * @description    
 * @bsiclass                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -597,6 +780,7 @@ class CivilDTMTINLinearExtractorCreator : public InputExtractorCreatorMixinBase<
     };
 
 const ExtractorRegistry::AutoRegister<CivilDTMTINLinearExtractorCreator> s_RegisterCivilDTMTINLinearExtractor;
+
 
 } //END UNAMED NAMESPACE
 

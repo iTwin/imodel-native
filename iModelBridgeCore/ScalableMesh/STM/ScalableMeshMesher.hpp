@@ -66,10 +66,15 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 #endif
    // LOG_SET_PATH("e:\\Elenie\\mesh\\")
    // LOG_SET_PATH_W("e:\\Elenie\\mesh\\")
+        
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndicesPtr(node->GetPtsIndicePtr());
 
+    if (ptIndicesPtr->size() > 0)
+        {
+        return true;
+        }
+    
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
-
-
 
     if (pointsPtr->size() > 4)
         {
@@ -1598,7 +1603,7 @@ for (size_t& neighborInd : neighborIndices)
     int nfaces = 0;
     size_t arraySize;
     bvector<int> componentsPointsId;
-    DPoint3d extentMin, extentMax;
+    DPoint3d extentMin, extentMax;   
 
     extentMin = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(node->m_nodeHeader.m_nodeExtent));
     extentMax = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(node->m_nodeHeader.m_nodeExtent));

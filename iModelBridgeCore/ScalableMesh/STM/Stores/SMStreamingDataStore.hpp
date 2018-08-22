@@ -1536,11 +1536,12 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
         dataIndex += sizeof(numNeighbors);
         header->m_apNeighborNodeID[neighborPosInd].clear();
         header->m_apNeighborNodeID[neighborPosInd].reserve(numNeighbors);
+        
         for (size_t neighborInd = 0; neighborInd < numNeighbors; neighborInd++)
-            {
+            {            
             uint32_t neighborId;
             memcpy(&neighborId, headerData + dataIndex, sizeof(neighborId));
-            dataIndex += sizeof(neighborId);
+            dataIndex += sizeof(neighborId);            
             header->m_apNeighborNodeID[neighborPosInd].push_back(neighborId != ISMStore::GetNullNodeID() ? HPMBlockID(neighborId) : ISMStore::GetNullNodeID());
             }
         }
@@ -1836,11 +1837,16 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
         assert(neighbors.isArray());
         if (neighbors.size() > 0)
             {
+            for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
+                {
+                header->m_apNeighborNodeID[neighborPosInd].clear();
+                }
+
             for (auto& neighbor : neighbors)
                 {
                 assert(neighbor.isObject());
                 auto nodePos = neighbor["nodePos"].asUInt();
-                auto nodeId = neighbor["nodeId"].asUInt();
+                auto nodeId = neighbor["nodeId"].asUInt();                
                 header->m_apNeighborNodeID[nodePos].push_back(nodeId);
                 }
             }

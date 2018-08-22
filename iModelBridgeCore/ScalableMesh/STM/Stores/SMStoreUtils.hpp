@@ -88,6 +88,8 @@ template <class EXTENT> SMIndexNodeHeader<EXTENT>::SMIndexNodeHeader(const SMInd
     for (auto& id : m_apSubNodeID) id = smNodeHeader.m_apSubNodeID[&id - &m_apSubNodeID.front()];
     for (size_t i = 0; i < 26; ++i)
         {
+        m_apNeighborNodeID[i].clear();
+
         for (auto& id : smNodeHeader.m_apNeighborNodeID[i])
                 m_apNeighborNodeID[i].push_back(id);
         }
@@ -139,6 +141,8 @@ template <class EXTENT> SMIndexNodeHeader<EXTENT>& SMIndexNodeHeader<EXTENT>::op
     for (auto& id : m_apSubNodeID) if (nodeHeader.m_apSubNodeID[&id - &m_apSubNodeID.front()] != SQLiteNodeHeader::NO_NODEID) id = HPMBlockID(nodeHeader.m_apSubNodeID[&id - &m_apSubNodeID.front()]);
     for (size_t i = 0; i < 26; ++i)
         {
+        m_apNeighborNodeID[i].clear();
+
         for (auto& id : nodeHeader.m_apNeighborNodeID[i])
             if (id != SQLiteNodeHeader::NO_NODEID)
                 m_apNeighborNodeID[i].push_back(HPMBlockID(id));

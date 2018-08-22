@@ -289,17 +289,19 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void ImportTreeFrom(IScalableMeshNodePtr& sourceNode, bool shouldCopyData=true, bool use2d = false);
 
 #ifdef WIP_MESH_IMPORT
-    void  GetMeshParts(bvector<IScalableMeshMeshPtr>& parts, bvector<Utf8String>& metadata, bvector<bvector<uint8_t>>& texData);
+    BENTLEY_SM_EXPORT void  GetMeshParts(bvector<IScalableMeshMeshPtr>& parts, bvector<Utf8String>& metadata, bvector<bvector<uint8_t>>& texData);
 
-    void AppendMeshParts(bvector<bvector<DPoint3d>>& points, bvector<bvector<int32_t>>& indices, bvector<Utf8String>& metadata, bvector<bvector<DPoint2d>>& uvs, bvector<bvector<uint8_t>>& tex, bool shouldCreateGraph);
+    BENTLEY_SM_EXPORT void AppendMeshParts(bvector<bvector<DPoint3d>>& points, bvector<bvector<int32_t>>& indices, bvector<Utf8String>& metadata, bvector<bvector<DPoint2d>>& uvs, bvector<bvector<uint8_t>>& tex, bool shouldCreateGraph);
+#endif
 
-    size_t             AddMeshDefinitionUnconditional(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent,const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
-    size_t             AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, bool ExtentFixed, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
+    size_t                   AddMeshDefinitionUnconditional(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent,const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs, bool isMesh3d);
+    BENTLEY_SM_EXPORT size_t AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, bool ExtentFixed, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs, bool isMesh3d);
 
-    void GetMetadata();
+#ifdef WIP_MESH_IMPORT
+    BENTLEY_SM_EXPORT void GetMetadata();
     void StoreMetadata();
 
-    void GetMeshParts();
+    BENTLEY_SM_EXPORT void GetMeshParts();
     void StoreMeshParts();
 #endif
 
@@ -912,12 +914,12 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         bvector<RefCountedPtr<EditOperation>> m_remainingUnappliedEdits;
 
-#ifdef WIP_MESH_IMPORT
-        public: //NEEDS_WORK: make private
-        bvector<int> m_meshParts;
+//#ifdef WIP_MESH_IMPORT
+        //public: //NEEDS_WORK: make private
+        bvector<int>        m_meshParts;
         bvector<Utf8String> m_meshMetadata;
-        bool m_existingMesh;
-#endif 
+        bool                m_existingMesh;
+//#endif 
 
     };
 
@@ -970,11 +972,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         //ISMStore::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
         BENTLEY_SM_EXPORT void                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
-#ifdef WIP_MESH_IMPORT
-        void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata="");
+//#ifdef WIP_MESH_IMPORT                           
+        BENTLEY_SM_EXPORT void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata="", bool isMesh3d = true);
 
-        void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
-#endif
+        BENTLEY_SM_EXPORT void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs, bool isMesh3d);
+//#endif
 
         BENTLEY_SM_EXPORT void PropagateFullMeshDown();
 
@@ -1007,7 +1009,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);        
         virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false, bool useNodeMap = false);
 
-        int64_t  AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes);
+        BENTLEY_SM_EXPORT int64_t  AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes);
 
         bool m_isInsertingClips;
 

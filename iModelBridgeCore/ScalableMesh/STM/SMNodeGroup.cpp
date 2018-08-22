@@ -1032,6 +1032,18 @@ Json::Value * SMGroupCache::GetNodeFromCache(const uint64_t & nodeId)
     return m_nodeHeadersPtr->operator[](nodeId);
     }
 
+
+#ifndef VANCOUVER_API
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t SMGroupCache::_GetExcessiveRefCountThreshold() const 
+    { 
+    return numeric_limits<uint32_t>::max(); 
+    }
+#endif
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

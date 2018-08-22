@@ -92,7 +92,7 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(std::vector<int>& f
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize);
 
 BENTLEY_SM_EXPORT bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, const PolyfaceQuery* meshP);
-BENTLEY_SM_EXPORT bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, ClipVectorCP clip, const PolyfaceQuery* meshP, const bvector<bool>& isMask);
+BENTLEY_SM_EXPORT bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<size_t>& polyfaceIndices, ClipVectorCP clip, const PolyfaceQuery* meshP, const bvector<bool>& isMask);
 //void BuildSkirtMeshesForPolygonSet(bvector<bvector<PolyfaceHeaderPtr>>& skirts, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, DRange3d& nodeRange);
 
 
@@ -163,7 +163,7 @@ private:
 
     struct ClipVectorInfo :ClipInfo
     {
-        ClipVectorCP clip;
+        ClipVectorCP clip = nullptr;
         bvector<bool> arePrimitivesMasks;
         DRange3d clipExt;
         ClipVectorInfo() { type = Type::Vector; }
@@ -224,6 +224,8 @@ private:
     void GetClipsAsVectors(bvector<ClipVectorPtr>& outVectors);
     void GetClipsAsSingleVector(ClipVectorPtr& outVector);
 
+    RegionResult GetInOrOutRegion(PolyfaceHeaderPtr& mesh, const bool getInside);
+
     ClipInfo* FindMatchingClip(uint64_t id);
 public:
 
@@ -253,6 +255,7 @@ public:
 
     BENTLEY_SM_EXPORT RegionResult GetRegions(bvector<uint64_t>& ids, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces);
     BENTLEY_SM_EXPORT RegionResult GetExteriorRegion(PolyfaceHeaderPtr& mesh);
+    BENTLEY_SM_EXPORT RegionResult GetInteriorRegion(PolyfaceHeaderPtr& mesh);
     BENTLEY_SM_EXPORT bool WasClipped();
 
     BENTLEY_SM_EXPORT void SelectRegions(RegionFilter filter, RegionFilterMode mode);

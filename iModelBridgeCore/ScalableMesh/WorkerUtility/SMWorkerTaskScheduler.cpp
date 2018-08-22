@@ -2,6 +2,8 @@
 #include "ScalableMeshWorker.h"
 #include "SMWorkerTaskScheduler.h"
 
+#include <process.h>
+
 #include <Bentley\BeDirectoryIterator.h>
 #include <BeXml\BeXml.h>
 
@@ -20,6 +22,7 @@
 #include <ScalableMesh\IScalableMeshSourceCreatorWorker.h>
 
 #include "SMWorkerDefinitions.h"
+
 
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
@@ -313,9 +316,10 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pXml
 /*---------------------------------------------------NEEDS_WORK_MST : Duplicate from ATP Code - END-----------------------------------------------------------*/
 
 
-TaskScheduler::TaskScheduler(BeFileName& taskFolderName)
+TaskScheduler::TaskScheduler(BeFileName& taskFolderName, uint32_t nbWorkers)
     {
     m_taskFolderName = taskFolderName;
+    m_nbWorkers = nbWorkers;
     }
 
 TaskScheduler::~TaskScheduler()
@@ -332,6 +336,9 @@ void TaskScheduler::Start()
         BENTLEYDLL_EXPORT StatusInt ToNext();
 */            
 
+    clock_t duration = clock();
+    
+    BeDuration sleeper(BeDuration::FromSeconds(0.1));
     
     
     bool isThereTaskAvailable = true;
@@ -349,15 +356,29 @@ void TaskScheduler::Start()
             {                                
             if (isDir == false && 0 == name.GetExtension().CompareTo(L"xml"))
                 {                
+                isThereTaskAvailable = true;
+                
                 struct _stat64i32 buffer;
 
                 if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
+                                
+                BeFileName lockFileName(name);
+                lockFileName.AppendString(L".lock");
 
-                isThereTaskAvailable = true;
+                FILE* lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW);
 
+                if (lockFile == nullptr)
+                    continue;
+                                
+                //struct _stat64i32 buffer;
+
+                if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
+                                
                 FILE* file = nullptr;
                 
-                errno_t err = _wfopen_s(&file, name, L"abN+");
+                //errno_t err = _wfopen_s(&file, name, L"abN+");
+                errno_t err = 0;
+                file = _wfsopen(name, L"ab+", _SH_DENYRW);
                 
                 if (file == nullptr) continue;
 
@@ -384,26 +405,83 @@ void TaskScheduler::Start()
                 fclose(file);
 
                 while (0 != _wremove(name))
+                    {                    
+					}
+
+                fclose(lockFile);
+
+                while (0 != _wremove(lockFileName))
                     {
-                    //If file doesn't exist anymore, break.
-                    if (_wstat(name.c_str(), &buffer) != 0) break;
+			        sleeper.Sleep();
+                    }                                
+                }
+
+            }          
+        
+        if (!isThereTaskAvailable)
+            {
+            BeFileName testPlanLockFile(m_taskFolderName);
+
+            testPlanLockFile.AppendString(L"\\Tasks.xml.Plan.lock");
+
+            FILE* lockFile = _wfsopen(testPlanLockFile.c_str(), L"ab+", _SH_DENYRW);
+
+            if (lockFile == nullptr)
+                {
+                isThereTaskAvailable = true;
+                continue;
+                }
+
+            BeDirectoryIterator dirIter(m_taskFolderName);
+
+            BeFileName name;
+            bool isDir;
+
+            bool needExecuteTaskPlan = true;
+
+            for (; SUCCESS == dirIter.GetCurrentEntry(name, isDir); dirIter.ToNext())
+                {
+                if (isDir == false && 0 == name.GetExtension().CompareTo(L"xml"))
+                    {
+                    needExecuteTaskPlan = false;
+                    break;
                     }
                 }
 
-            }                   
+            StatusInt status = SUCCESS;
+            
+            if (needExecuteTaskPlan)            
+                status = GetSourceCreatorWorker()->ExecuteNextTaskInTaskPlan();        
 
-        if (!isThereTaskAvailable)
-            {
-            StatusInt status = GetSourceCreatorWorker()->ExecuteNextTaskInTaskPlan();        
+            fclose(lockFile);
             
             if (status == SUCCESS_TASK_PLAN_COMPLETE)
-                break;
+                break;           
 
             isThereTaskAvailable = true;
             }
+
+        sleeper.Sleep();
         }
 
+
+    double totalDuration = (double)(clock() - duration) / CLOCKS_PER_SEC;
+
     m_sourceCreatorWorkerPtr = nullptr;
+        
+    BeFileName durationFileName(L"D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\duration");    
+    durationFileName.AppendString(std::to_wstring(::_getpid()).c_str());
+    durationFileName.AppendString(L".csv");
+
+    FILE* durationFile = _wfsopen(durationFileName.c_str(), L"ab+", _SH_DENYRW);
+
+        /*
+        fwprintf(pResultFile,
+            L"%s,%s,%s,%s,%I64d,%I64d,%.5f%%,%.5f,%s,%.5f,%.5f,%.5f,%.5f,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%s\n",
+            */
+
+    fwprintf(durationFile, L"Duration : %.5f\n", totalDuration);
+    fclose(durationFile);
     }
     
 void TaskScheduler::GetScalableMeshFileName(BeFileName& smFileName) const
@@ -422,7 +500,7 @@ IScalableMeshSourceCreatorWorkerPtr TaskScheduler::GetSourceCreatorWorker()
 
         StatusInt status;
         
-        m_sourceCreatorWorkerPtr = IScalableMeshSourceCreatorWorker::GetFor(smFileName.c_str(), status);
+        m_sourceCreatorWorkerPtr = IScalableMeshSourceCreatorWorker::GetFor(smFileName.c_str(), m_nbWorkers, status);
 
         assert(m_sourceCreatorWorkerPtr.IsValid());            
         }
@@ -444,7 +522,7 @@ bool TaskScheduler::ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType&
                 t = WorkerTaskType::FILTER;
             else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"index"))
                 t = WorkerTaskType::INDEX;
-            else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"mesh"))
+            else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"mesh")) 
                 t = WorkerTaskType::MESH;
             else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"stitch"))
                 t = WorkerTaskType::STITCH;            

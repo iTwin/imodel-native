@@ -6,13 +6,15 @@
 |       $Date: 2012/02/23 00:32:43 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "../ImagePPHeaders.h"
 #include "CivilDTMHelpers.h"
 #include "..\Stores\SMStoreUtils.h"
+#include <TerrainModel/Core/DTMIterators.h>
+
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 
@@ -68,6 +70,19 @@ CivilImportedTypes::CivilImportedTypes ()
         };
     static const size_t TIN_LINEAR_TYPES_QTY = sizeof(TIN_LINEAR_TYPES) / sizeof(TIN_LINEAR_TYPES[0]);
 
+
+    static const DTMFeatureType MESH_TYPES[] =
+        {
+        //DTMFeatureType::TinHull
+        //DTMFeatureType::TinPoint,
+        //DTMFeatureType::TinLine,
+        DTMFeatureType::Triangle,
+        //DTMFeatureType::TriangleEdge,
+        //DTMFeatureType::TriangleIndex,
+        //DTMFeatureType::TriangleInfo,
+        };
+    static const size_t MESH_TYPES_QTY = sizeof(MESH_TYPES) / sizeof(MESH_TYPES[0]);
+
     struct IsValidFeatureType : public std::unary_function<DTMFeatureType, bool>
         {
         bool operator () (DTMFeatureType featureType) const
@@ -77,9 +92,11 @@ CivilImportedTypes::CivilImportedTypes ()
     linears.reserve(LINEAR_TYPES_QTY);
     points.reserve(POINT_TYPES_QTY);
     tinLinears.reserve(TIN_LINEAR_TYPES_QTY);
+    mesh.reserve(MESH_TYPES_QTY);
     remove_copy_if(POINT_TYPES, POINT_TYPES + POINT_TYPES_QTY, back_inserter(points), not1(IsValidFeatureType()));
     remove_copy_if(LINEAR_TYPES, LINEAR_TYPES + LINEAR_TYPES_QTY, back_inserter(linears), not1(IsValidFeatureType()));
     remove_copy_if(TIN_LINEAR_TYPES, TIN_LINEAR_TYPES + TIN_LINEAR_TYPES_QTY, back_inserter(tinLinears), not1(IsValidFeatureType()));
+    remove_copy_if(MESH_TYPES, MESH_TYPES + MESH_TYPES_QTY, back_inserter(mesh), not1(IsValidFeatureType()));
     }
 
 
@@ -431,6 +448,146 @@ bool LinearHandler::Copy    (TypeInfoCIter               pi_typeInfoIter,
         assert(!"Unable to gather features from source");
         return false;
         }
+
+    return true;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+*
+* @bsimethod                                                  Mathieu.St-Pierre  08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshHandler::MeshHandler(const BcDTM&                          pi_rDTM,
+                         const CivilImportedTypes::TypeIdList& typeIDList)
+    : m_rDTM(pi_rDTM),
+    m_typeIDList(typeIDList),
+    m_initialized(false),
+    m_maxPtCount(0), 
+    m_maxPtIndicesCount(0)
+    {    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+*
+* @bsimethod                                                  Mathieu.St-Pierre   09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MeshHandler::ComputeCounts()
+    {
+    if (m_initialized)
+        return true;
+    /*
+    if (!ComputeTotalCounts(m_typesInfo, m_rDTM, m_typeIDList))
+        return false;
+        */
+
+    //MeshFeatureTypeInfoList m_typesInfo;
+    //size_t                  m_maxPtCount;
+    //size_t                  m_maxPtIndicesCount;
+
+    m_initialized = true;
+
+    if (DTMState::Tin != const_cast<BcDTM&>(m_rDTM).GetDTMState())
+        {
+        DTMStatusInt status = const_cast<BcDTM&>(m_rDTM).Triangulate();
+        assert(status == DTM_SUCCESS);
+        }        
+    /*
+    m_maxPtCount = ComputeMaxPointCounts(m_typesInfo);    
+    m_maxPtIndicesCount = ComputeMaxPointIndicesCounts(m_typesInfo);
+    */
+
+    m_maxPtCount = const_cast<BcDTM&>(m_rDTM).GetPointCount();
+    m_maxPtIndicesCount = const_cast<BcDTM&>(m_rDTM).GetTrianglesCount() * 3;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+*
+* @bsimethod                                                  Mathieu.St-Pierre   09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+#if 0
+MeshHandler::TypeInfoCIter MeshHandler::TypesInfoBegin() const
+    {
+    assert(m_initialized);
+    return m_typesInfo.begin();
+    }
+#endif
+/*---------------------------------------------------------------------------------**//**
+* @description
+*
+* @bsimethod                                                  Mathieu.St-Pierre   09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+#if 0
+MeshHandler::TypeInfoCIter MeshHandler::TypesInfoEnd() const
+    {
+    assert(m_initialized);
+    return m_typesInfo.end();
+    }
+#endif
+
+size_t MeshHandler::GetMaxPointCount() const
+    {
+    assert(m_initialized);
+    return m_maxPtCount;
+    }
+
+size_t MeshHandler::GetMaxPtIndicesCount() const
+    {
+    assert(m_initialized);
+    return m_maxPtIndicesCount;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+*
+* @bsimethod                                                  Mathieu.St-Pierre   09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct MeshCallbackUserArg
+    {
+    HPU::Array<DPoint3d>* m_pointArray;
+    HPU::Array<int32_t>*  m_ptIndicesArray;
+    };
+
+
+int TriangleMeshCallback(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d *meshPointsP, int numMeshFaces, long *meshFacesP, void *userP)
+    {    
+    MeshCallbackUserArg* userArg = (MeshCallbackUserArg*)userP;
+
+    userArg->m_pointArray->Append(meshPointsP, meshPointsP + numMeshPoints);
+    userArg->m_ptIndicesArray->Append(meshFacesP, meshFacesP + numMeshFaces);
+
+    return DTM_SUCCESS;    
+    }
+
+bool MeshHandler::Copy(/*TypeInfoCIter           pi_typeInfoIter,*/
+                        HPU::Array<DPoint3d>&  po_pointArray, 
+                        HPU::Array<int32_t>&   po_ptIndicesArray) const
+    {        
+    assert(DTMState::Tin == const_cast<BcDTM&>(m_rDTM).GetDTMState());
+
+    MeshCallbackUserArg userArg;
+
+    userArg.m_pointArray = &po_pointArray;
+    userArg.m_ptIndicesArray = &po_ptIndicesArray;
+
+    DTMFenceParams fenceParams;
+
+    int maxTriangles = m_rDTM.GetTrianglesCount() * 2;
+
+    Bentley::TerrainModel::DTMMeshEnumeratorPtr en = Bentley::TerrainModel::DTMMeshEnumerator::Create(const_cast<BcDTM&>(m_rDTM));
+
+    en->SetMaxTriangles(maxTriangles);
+
+    for (PolyfaceQueryP polyFace : *en)
+        {                
+        po_pointArray.Append(polyFace->GetPointCP(), polyFace->GetPointCP() + polyFace->GetPointCount());
+        po_ptIndicesArray.Append(polyFace->GetPointIndexCP(), polyFace->GetPointIndexCP() + polyFace->GetPointIndexCount());                
+        }
+
 
     return true;
     }

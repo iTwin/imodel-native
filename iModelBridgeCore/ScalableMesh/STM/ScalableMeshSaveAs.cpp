@@ -50,7 +50,7 @@ StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WS
     if (SUCCESS != source->GetTextureInfo(textureInfo))
         return ERROR;
 
-    PrepareClipsForSaveAs(clips);
+    //PrepareClipsForSaveAs(clips);
 
     // Set global parameters to the new 3sm (this will also create a new index)
     if (SUCCESS != scMeshDestination->SetGCS(source->GetGCS()))
@@ -327,7 +327,6 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
 
-#ifdef VANCOUVER_API
     SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType::CESIUM, static_cast<SMStreamingStore<DRange3d>*>(pDataStore.get())->GetDataSourceAccount(), DataSource::SessionName());
     SMGroupCache::Ptr groupCache = nullptr;
     SMNodeGroupPtr rootNodeGroup = SMNodeGroup::Create(groupParameters, groupCache, path, 0, nullptr);
@@ -359,9 +358,6 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     saveGroupsThread.join();
 
     strategy->Clear();
-#else
-    assert(!"Not yet available on dgndb, missing SMNodeGroup::Create overload");
-#endif
 
 
     if (progress != nullptr && progress->IsCanceled()) return SUCCESS;
