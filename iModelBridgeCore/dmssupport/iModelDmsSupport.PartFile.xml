@@ -59,7 +59,12 @@
         <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/v8iConfig" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="v8iConfig" SubPartDirectory="DgnPlatformV8Sdk/Dlls/v8iConfig" Required="true"/>    
     </Bindings>
  </Part>
-  <Part Name="iModelDmsPublicApi" BentleyBuildMakeFile="iModelDmsApiprewire.mke">
+  <Part Name="UstationDummy" BentleyBuildMakeFile="iModelDmsSupport/UstationDummy.mke" OnlyPlatforms="x64">
+    <Bindings>
+      <Assemblies ProductDirectoryName="DgnV8Dlls">Delivery/$(shlibprefix)ustation$(shlibext)</Assemblies>
+    </Bindings>
+  </Part>
+  <Part Name="iModelDmsPublicApi" BentleyBuildMakeFile="iModelDmsApiprewire.mke"> 
     <Bindings>
       <PublicAPI Domain="iModelDmsSupport" />
     </Bindings>
@@ -70,6 +75,7 @@
     <SubPart PartName="VersionedV8_InternalSDK" PartFile="DgnDbSync" Repository="DgnDbSync"/>
     <SubPart PartName="v8ConfigSupport"/>
     <SubPart PartName="iModelDmsPublicApi"/>
+    <SubPart PartName="UstationDummy"/>
     <SubPart PartName="BentleyDll" Repository="Bentley" PartFile="Bentley"/>
     <Bindings>
       <Assemblies>Delivery/$(shlibprefix)iModelDmsSupport$(ApiNumber)$(shlibext)</Assemblies>
