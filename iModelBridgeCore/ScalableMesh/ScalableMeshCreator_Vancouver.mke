@@ -208,7 +208,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 #$(o)ScalableMeshQuery$(oext) : $(stmDir)ScalableMeshQuery.cpp $(stmDir)ScalableMeshQuery.hpp $(stmDir)ScalableMeshQuery.h $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ScalableMeshMesher$(oext) : $(stmDir)ScalableMeshMesher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)ScalableMeshMesher$(oext) : $(stmDir)ScalableMeshMesher.cpp $(stmDir)ScalableMeshMesher.hpp $(stmDir)ScalableMeshMesher.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 #$(o)SMMeshIndex$(oext) : $(stmDir)SMMeshIndex.cpp $(stmDir)SMMeshIndex.hpp $(stmDir)SMMeshIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
