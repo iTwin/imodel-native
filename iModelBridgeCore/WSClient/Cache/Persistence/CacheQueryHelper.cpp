@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/CacheQueryHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -148,11 +148,12 @@ bool* pInfoNeedsSelecting
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CacheQueryHelper::CreateOrderByClause
+Utf8String CacheQueryHelper::ECSql::CreateOrderByClause
 (
 const ISelectProvider::SortProperties& sortProperties,
 ECClassCR ecClass,
-Utf8CP classAlias
+Utf8CP classAlias,
+bool reverseOrder
 )
     {
     Utf8String orderByClause;
@@ -168,13 +169,13 @@ Utf8CP classAlias
             orderByClause += ", ";
             }
 
-        Utf8CP direction = sortProperty.GetSortAscending() ? "ASC" : "DESC";
+        Utf8CP direction = sortProperty.GetSortAscending() != reverseOrder ? "ASC" : "DESC";
         Utf8CP format = IsTypeString(sortProperty.GetProperty()) ? "LOWER (%s.[%s]) %s" : "%s.[%s] %s";
 
         orderByClause += Utf8PrintfString(format, classAlias, Utf8String(sortProperty.GetProperty().GetName()).c_str(), direction);
         }
 
-    return "ORDER BY " + orderByClause;
+    return orderByClause;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -198,7 +199,10 @@ Utf8StringCR optionalWhereClause
     {
     ECClassCR ecClass = info.GetECClass();
     Utf8String selectClause = CreateSelectClause(info.GetSelectProperties(), "instance", "info", nullptr);
+
     Utf8String orderByClause = CreateOrderByClause(info.GetSortProperties(), ecClass, "instance");
+    if (!orderByClause.empty())
+        orderByClause = "ORDER BY " + orderByClause;
 
     Utf8String optionalAndClause;
     if (!optionalWhereClause.empty())
@@ -232,7 +236,10 @@ const ClassReadInfo& info
     {
     ECClassCR ecClass = info.GetECClass();
     Utf8String selectClause = CreateSelectClause(info.GetSelectProperties(), "instance", "info", nullptr);
+
     Utf8String orderByClause = CreateOrderByClause(info.GetSortProperties(), ecClass, "instance");
+    if (!orderByClause.empty())
+        orderByClause = "ORDER BY " + orderByClause;
 
     Utf8PrintfString ecSql
         (
@@ -260,7 +267,10 @@ Utf8StringCR customWhereClause
     bool infoNeedsSelecting = false;
     ECClassCR ecClass = info.GetECClass();
     Utf8String selectClause = CreateSelectClause(info.GetSelectProperties(), "instance", "info", &infoNeedsSelecting);
+
     Utf8String orderByClause = CreateOrderByClause(info.GetSortProperties(), ecClass, "instance");
+    if (!orderByClause.empty())
+        orderByClause = "ORDER BY " + orderByClause;
 
     Utf8String infoJoin;
     if (infoNeedsSelecting)
