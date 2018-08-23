@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSError.xliff.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,7 @@
 //=======================================================================================
 MOBILEDGN_TRANSLATABLE_STRINGS_START(WSErrorL10N, WSError)
     {
-    MESSAGE_ServerNotSupported,         // =="Server is not supported. Please check server address or contact your server administrator"==
+    MESSAGE_ServerNotSupported,         // =="Server is not supported or no longer available. Please check server address or contact your server administrator"==
     MESSAGE_FunctionalityNotSupported,  // =="Requested functionality is not supported for this server version"==
     MESSAGE_UnknownError,               // =="Unknown error. Please contact your server administrator"==
     MESSAGE_FileNotFound,               // =="File not found on server. Please contact your server administrator"==
@@ -23,3 +23,4 @@ MOBILEDGN_TRANSLATABLE_STRINGS_START(WSErrorL10N, WSError)
 MOBILEDGN_TRANSLATABLE_STRINGS_END
 
 #define WSErrorLocalizedString(K) WSErrorL10N::GetString (WSErrorL10N::K, #K)
+ 
