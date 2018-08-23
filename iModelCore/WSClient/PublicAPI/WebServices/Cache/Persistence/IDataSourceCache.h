@@ -311,6 +311,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         virtual BentleyStatus RemoveTemporaryResponses(Utf8StringCR name, DateTimeCR accessedBeforeDateUtc) = 0;
         //! Removes all cached responses that match name
         virtual BentleyStatus RemoveResponses(Utf8StringCR name) = 0;
+        //! Removes all cached responses that starts with a given prefix
+        virtual BentleyStatus RemoveResponsesByPrefix(Utf8StringCR responsePrefix) = 0;
         //! Removes cached instance. Will also remove all held resources
         virtual CacheStatus RemoveInstance(ObjectIdCR objectId) = 0;
         //! Removes cached file from disk
