@@ -134,6 +134,8 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
 
     AcDbRasterImage::rxInit ();
     AcDbRasterImageDef::rxInit ();
+    DwgDbViewRepBlockReference::rxInit ();
+    DwgDbViewBorder::rxInit ();
 
 #endif  // DWGTOOLKIT_
 
@@ -141,8 +143,6 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
     DwgDbRasterImage::rxInit ();
     DwgDbPointCloudEx::rxInit ();
     DwgDbLight::rxInit ();
-    DwgDbViewRepBlockReference::rxInit ();
-    DwgDbViewBorder::rxInit ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -176,7 +176,6 @@ void            UnRegisterDwgDbObjectExtensions ()
     DwgDbAttribute::rxUninit ();
     DwgDbViewport::rxUninit ();
     DwgDbBlockReference::rxUninit ();
-    DwgDbViewRepBlockReference::rxUninit ();
     DwgDbHatch::rxUninit ();
     DwgDbRasterImage::rxUninit ();
     DwgDbRegion::rxUninit ();
@@ -187,7 +186,6 @@ void            UnRegisterDwgDbObjectExtensions ()
     DwgDbMText::rxUninit ();
     DwgDbText::rxUninit ();
     DwgDbTrace::rxUninit ();
-    DwgDbViewBorder::rxUninit ();
 
     DwgDbSymbolTable::rxUninit ();
     DwgDbSymbolTableRecord::rxUninit ();

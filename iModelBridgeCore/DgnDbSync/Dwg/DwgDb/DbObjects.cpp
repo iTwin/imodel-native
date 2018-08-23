@@ -170,7 +170,10 @@ DwgDbObjectIterator::~DwgDbObjectIterator ()
     {
 #ifdef DWGTOOLKIT_RealDwg
     if (nullptr != m_objectIterator)
+        {
         delete m_objectIterator;
+        m_objectIterator = nullptr;
+        }
 #endif
     }
 bool            DwgDbObjectIterator::IsValid () const { return nullptr != m_objectIterator; }

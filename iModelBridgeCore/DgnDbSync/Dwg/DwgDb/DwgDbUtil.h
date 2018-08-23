@@ -14,11 +14,13 @@ USING_NAMESPACE_DWGDB
 
 // do not publish this in PublicAPI
 #ifdef DWGTOOLKIT_OpenDwg
-#define DwgDbArray          OdArray
-#define DwgDbVersion        OdDb::DwgVersion
+#define TkArray         OdArray
+#define TkDbVersion     OdDb::DwgVersion
+#define TkObjectArray   OdRxObjectPtrArray
 #elif DWGTOOLKIT_RealDwg
-#define DwgDbArray          AcArray
-#define DwgDbVersion        AcDb::AcDbDwgVersion
+#define TkArray         AcArray
+#define TkDbVersion     AcDb::AcDbDwgVersion
+#define TkObjectArray   AcDbVoidPtrArray
 #endif
 
 struct Util : NonCopyableClass
@@ -48,7 +50,7 @@ public:
     static void         GetRotMatrix (RotMatrixR rotMatrix, DWGGE_TypeCR(Matrix3d) geMatrix);
     static DwgDbStatus  GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(SplineEnt3d) geSpline);
     static DwgDbStatus  GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(SplineEnt2d) geSpline);
-    static DwgDbStatus  GetCurveVector (CurveVectorR curveVector, const DwgDbArray<DWGGE_TypeP(Curve2d)>& curves);
+    static DwgDbStatus  GetCurveVector (CurveVectorR curveVector, const TkArray<DWGGE_TypeP(Curve2d)>& curves);
     static DwgDbStatus  GetCurvePrimitive (ICurvePrimitivePtr& primitive, DWGGE_TypeCP(Curve2d) geCurve);
 
     static DWGGE_Type(Point3d)  GePoint3dFrom (DPoint3dCR p);
@@ -56,12 +58,13 @@ public:
     static DWGGE_Type(Vector3d) GeVector3dFrom (DVec3dCR v);
     static DWGGE_Type(Vector2d) GeVector2dFrom (DVec2dCR v);
     static DWGGE_Type(Scale3d)  GeScale3dFrom (DVec3dCR v);
-    static void                 GetGeMatrix (DWGGE_TypeR(Matrix3d) matrix, TransformCR trans);
-    static size_t               GetGePointArray (DWGGE_TypeR(Point3dArray) pointsOut, DPoint3dArrayCR pointsIn);
-    static size_t               GetGePointArray (DWGGE_TypeR(Point2dArray) pointsOut, DPoint2dArrayCR pointsIn);
+    static void         GetGeMatrix (DWGGE_TypeR(Matrix3d) matrix, TransformCR trans);
+    static size_t       GetGePointArray (DWGGE_TypeR(Point3dArray) pointsOut, DPoint3dArrayCR pointsIn);
+    static size_t       GetGePointArray (DWGGE_TypeR(Point2dArray) pointsOut, DPoint2dArrayCR pointsIn);
     static size_t       GetObjectIdArray (DWGDB_TypeR(ObjectIdArray) idsOut, DwgDbObjectIdArrayCR idsIn);
+    static DwgDbStatus  GetObjectArray (DwgDbObjectPArrayR out, TkObjectArray& in);
 
-    static DwgFileVersion   GetDwgVersionFrom (DwgDbVersion dwgVersion);
-    static DwgDbVersion     GetDwgVersionFrom (DwgFileVersion dwgVersion);
+    static DwgFileVersion   GetDwgVersionFrom (TkDbVersion dwgVersion);
+    static TkDbVersion      GetDwgVersionFrom (DwgFileVersion dwgVersion);
     static ::HMODULE        GetOrLoadToolkitDll (DwgStringCR dllPrefix);
     };  // Util

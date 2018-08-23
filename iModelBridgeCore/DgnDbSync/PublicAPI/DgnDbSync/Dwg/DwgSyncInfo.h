@@ -467,6 +467,7 @@ struct DwgSyncInfo
         DwgObjectProvenance () {}
         BentleyStatus  CreateBlockHash (DwgDbObjectIdCR blockId);
         BentleyStatus  CreateAsmObjectHash (DwgDbObjectCR obj);
+        void AppendComplexObjectHash (DwgObjectHash::HashFiler& filer, DwgDbObjectCR obj);
         bool HasSecondaryHash () const { return !m_secondaryHash.IsNull(); }
         bool IsSame (DwgObjectProvenance const& other, bool check2nd = false) const { return m_primaryHash.IsSame(other.m_primaryHash) && (!check2nd || m_secondaryHash.IsSame(other.m_secondaryHash)); }
         DwgObjectHash const& GetPrimaryHash () const { return m_primaryHash; }
