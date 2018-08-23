@@ -45,6 +45,13 @@ public:
 		return AddDaysToTime(GetCurrentTime(),daysToAdd);
 		}
 
+	static int64_t GetDaysLeftUntilTime(const time_t& time)
+		{
+		double secondsLeft = difftime(time, GetCurrentTime());
+		int64_t daysLeft = (int)ceil(secondsLeft/(24*60*60));
+		return daysLeft;
+		}
+
 	static time_t StringToTime(const std::string& string)
 		{
 		std::tm tm;

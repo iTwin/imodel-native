@@ -105,8 +105,28 @@ BentleyStatus UsageDb::SetUpTables()
         return ERROR;
         }
 
+	// Create Offline Grace Period table
+	if (SetUpOfflineGraceTable() != SUCCESS)
+		{
+			return ERROR;
+		}
+
     return SUCCESS;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus UsageDb::SetUpOfflineGraceTable()
+	{
+	if (m_db.CreateTable("OfflineGrace",
+		"GraceId NVARCHAR(20) PRIMARY KEY, "
+		"OfflineGracePeriodStart NVARCHAR(20)") != DbResult::BE_SQLITE_OK)
+	{
+		return ERROR;
+	}
+	return ResetOfflineGracePeriod();
+	}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -330,6 +350,59 @@ Json::Value UsageDb::GetPolicyFile()
 
     return jv;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus UsageDb::SetOfflineGracePeriodStart(Utf8StringCR startTime)
+	{
+	Statement stmt;
+	if (m_db.IsDbOpen())
+		{
+		stmt.Prepare(m_db, "INSERT OR REPLACE INTO OfflineGrace VALUES (?, ?)");
+		stmt.BindText(1, GRACESTART, Statement::MakeCopy::No);
+		stmt.BindText(2, startTime, Statement::MakeCopy::No);
+		DbResult result = stmt.Step();
+		if (result == DbResult::BE_SQLITE_DONE)
+			{
+			return SUCCESS;
+			}
+		}
+	return ERROR;
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String UsageDb::GetOfflineGracePeriodStart()
+	{
+	// Return empty string if no grace period (nothing returned)
+	Utf8String returnString = "";
+	Statement stmt;
+	if (m_db.IsDbOpen())
+		{
+		stmt.Prepare(m_db, "SELECT OfflineGracePeriodStart FROM OfflineGrace WHERE GraceId = ?");
+		stmt.BindText(1, GRACESTART, Statement::MakeCopy::No);
+		DbResult result = stmt.Step();
+		if (result == DbResult::BE_SQLITE_ROW)
+			{
+			return stmt.GetValueText(0);
+			}
+		}
+	return returnString;
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus UsageDb::ResetOfflineGracePeriod()
+	{
+	if (m_db.IsDbOpen())
+		{
+		return SetOfflineGracePeriodStart("");
+		}
+	return ERROR;
+	}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod

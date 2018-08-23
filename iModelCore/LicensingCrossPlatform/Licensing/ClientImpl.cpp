@@ -534,12 +534,41 @@ std::shared_ptr<Policy> ClientImpl::SearchForPolicy(Utf8String requestedProductI
 	return matchingPolicy;
 	}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ClientImpl::StorePolicyTokenInUsageDb(std::shared_ptr<PolicyToken> policyToken)
 	{
 	m_usageDb->AddOrUpdatePolicyFile(policyToken->GetPolicyId(),
 		policyToken->GetExpirationDate(),
 		policyToken->GetLastUpdateTime(),
 		policyToken->GetPolicyFile());
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ClientImpl::HasOfflineGracePeriodStarted()
+	{
+	auto graceStartString = m_usageDb->GetOfflineGracePeriodStart();
+	return graceStartString != "";
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t ClientImpl::GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString)
+	{
+	Utf8String graceStartString = m_usageDb->GetOfflineGracePeriodStart();
+	if (graceStartString == "")
+	{
+		return 0;
+	}
+	// check if online usage is allowed; 
+	auto offlineDurationDays = PolicyHelper::GetOfflineDuration(policy, productId, featureString);
+	auto gracePeriodEndTime = DateHelper::AddDaysToTime(DateHelper::StringToTime(graceStartString.c_str()), offlineDurationDays);
+	auto daysLeft = DateHelper::GetDaysLeftUntilTime(gracePeriodEndTime);
+	return daysLeft;
 	}
 
 /*--------------------------------------------------------------------------------------+
@@ -579,7 +608,7 @@ LicenseStatus ClientImpl::GetProductStatus(int requestedProductId)
 		{
 		return LicenseStatus::AccessDenied;
 		}
-	// if prodStatus is NoLicense, return LicenseStatus::Expired
+	// if prodStatus is NoLicense, return LicenseStatus::NotEntitled
 	if (productStatus == PolicyHelper::ProductStatus::NoLicense)
 		{
 		return LicenseStatus::NotEntitled;
@@ -587,16 +616,31 @@ LicenseStatus ClientImpl::GetProductStatus(int requestedProductId)
 	// if prodStatus is Allowed
 	if (productStatus == PolicyHelper::ProductStatus::Allowed)
 		{
-		//     if (IsTrial) return LicenseStatus::Trial
+		// if (IsTrial) return LicenseStatus::Trial
 		if (PolicyHelper::IsTrial(policy, productId, m_featureString))
 			{
 			return LicenseStatus::Trial;
 			}
-		//     hasOfflineGracePeriodStarted = HasOfflineGracePeriodStarted()
-		//     daysLeftInOfflineGracePeriod = GetDaysLeftInOfflineGracePeriod()
-		//     if (hasOfflineGracePeriodStarted && daysLeftInOfflineGracePeriod > 0
-		//         return LicenseStatus::Offline
-		//     else return LicenseStatus::Ok
+		// if (hasOfflineGracePeriodStarted && daysLeftInOfflineGracePeriod > 0
+		if (HasOfflineGracePeriodStarted())
+			{
+			// if not allowed to use offline, return LicenseStatus::DisabledByPolicy
+			if (!PolicyHelper::IsAllowedOfflineUsage(policy, productId, m_featureString))
+				{
+				return LicenseStatus::DisabledByPolicy;
+				}
+			// if still has time left for offline usage, return LicenseStatus::Offline
+			if (GetDaysLeftInOfflineGracePeriod(policy, productId, m_featureString) > 0)
+				{
+				return LicenseStatus::Offline;
+				}
+			// else offline grace period has expired, return LicenseStatus::Expired
+			else
+				{
+				return LicenseStatus::Expired;
+				}
+			}
+		// else return LicenseStatus::Ok
 		return LicenseStatus::Ok;
 		}
 	// return DisabledByPolicy

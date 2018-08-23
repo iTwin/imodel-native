@@ -25,10 +25,13 @@ private:
 	Db m_db;
 
 private:
+	const Utf8String GRACESTART = "GRACESTART";
+
 	BentleyStatus OpenDb(BeFileNameCR filePath);
 
 	BentleyStatus CreateDb(BeFileNameCR filePath);
 
+	BentleyStatus SetUpOfflineGraceTable();
     BentleyStatus SetUpTables();
 
     int64_t GetLastRowId();
@@ -55,6 +58,10 @@ public:
 	LICENSING_EXPORT BentleyStatus DeletePolicyFile(Utf8StringCR policyId);
 
     LICENSING_EXPORT Json::Value GetPolicyFile();
+
+	LICENSING_EXPORT BentleyStatus SetOfflineGracePeriodStart(Utf8StringCR startTime);
+	LICENSING_EXPORT Utf8String GetOfflineGracePeriodStart();
+	LICENSING_EXPORT BentleyStatus ResetOfflineGracePeriod();
 
     LICENSING_EXPORT BentleyStatus CleanUpUsages();
 

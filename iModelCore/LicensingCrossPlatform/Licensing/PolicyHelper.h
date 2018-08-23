@@ -164,6 +164,30 @@ public:
 		return result;
 		};
 
+	static bool IsAllowedOfflineUsage(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString)
+		{
+		bool result = false;
+		auto qualifier = GetQualifier(policy, "AllowOfflineUsage", productId, featureString);
+		// check if AllowOfflineUsage is TRUE
+		if (qualifier != nullptr)
+		{
+			result = qualifier->GetValue() == "TRUE";
+		}
+		return result;
+		}
+
+	static int GetOfflineDuration(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString)
+		{
+		int result = 0;
+		auto qualifier = GetQualifier(policy, "OfflineDuration", productId, featureString);
+		// get days of offline usage allowed
+		if (qualifier != nullptr)
+		{
+			result = std::stoi(qualifier->GetValue().c_str());
+		}
+		return result;
+		}
+
 	static PolicyHelper::ProductStatus GetProductStatus(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString)
 		{
 		if (policy == nullptr)

@@ -18,7 +18,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 struct DummyJsonHelper
 {
 private:
-	enum class PolicyType { Full, NoSecurables, NoACLs, NoUserData, NoRequestData };
+	enum class PolicyType { Full, NoSecurables, NoACLs, NoUserData, NoRequestData, OfflineNotAllowed };
 	static std::string PolicyStart() { return "{"; };
 	static std::string PolicyEnd() { return "}"; };
 	static std::string PolicyNext() { return ","; };
@@ -75,7 +75,7 @@ private:
 		};
 
 	static std::string AppliesToSecurableIds() { return "\"AppliesToSecurableIds\":[\"844c10c2-375d-4153-a08f-896d2e64a13f\"]"; };
-	static std::string ACLs(Utf8String expiration, int accessKind, Utf8String userId, bool isTrial)
+	static std::string ACLs(Utf8String expiration, int accessKind, Utf8String userId, bool isTrial, bool isOfflineUsageAllowed)
 		{
 		std::ostringstream stream;
 		stream << "\"ACLs\":[{\"AccessKind\":";
@@ -85,7 +85,16 @@ private:
 		stream << "\",\"PrincipalId\":\"";
 		stream << userId.c_str();
 		stream << "\",\"SecurableId\":\"844c10c2-375d-4153-a08f-896d2e64a13f\"";
-		stream << ",\"QualifierOverrides\":[{\"Name\":\"UseAlertingService\",\"Prompt\":\"You have reached a license threshold defined by your organization's administrator. Continuing may result in additional application usage charges.\\r\\nTo proceed, you must \\\"Acknowledge\\\".\",\"Type\":\"enum\",\"Value\":\"ALERT\"},{\"Name\":\"AllowOfflineUsage\",\"Prompt\":\"You must Sign In to use this application.\",\"Type\":\"bool\",\"Value\":\"TRUE\"}";
+		stream << ",\"QualifierOverrides\":[{\"Name\":\"UseAlertingService\",\"Prompt\":\"You have reached a license threshold defined by your organization's administrator. Continuing may result in additional application usage charges.\\r\\nTo proceed, you must \\\"Acknowledge\\\".\",\"Type\":\"enum\",\"Value\":\"ALERT\"},{\"Name\":\"AllowOfflineUsage\",\"Prompt\":\"You must Sign In to use this application.\",\"Type\":\"bool\",\"Value\":\"";
+		if (isOfflineUsageAllowed)
+			{
+			stream << "TRUE";
+			}
+		else
+			{
+			stream << "FALSE";
+			}
+		stream << "\"}";
 		if (isTrial) // Add UsageType qualifier with value Trial
 			{
 			stream << ",{\"Name\":\"UsageType\",\"Prompt\":null,\"Type\":\"string\",\"Value\":\"Trial\"}";
@@ -150,6 +159,7 @@ private:
 
 	static Json::Value CreatePolicySpecific(PolicyType type, time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
 		{
+		bool isOnlineUsageAllowed = type != PolicyType::OfflineNotAllowed;
 		// Create string
 		std::ostringstream stream;
 		stream << PolicyStart();
@@ -161,7 +171,7 @@ private:
 		stream << MachineSignature() << PN();
 		stream << AppliesToUserId(userId) << PN();
 		stream << AppliesToSecurableIds() << PN();
-		if (type != PolicyType::NoACLs) stream << ACLs(DateHelper::TimeToString(aclExpiresOn).c_str(), accessKind, userId, isTrial) << PN();
+		if (type != PolicyType::NoACLs) stream << ACLs(DateHelper::TimeToString(aclExpiresOn).c_str(), accessKind, userId, isTrial, isOnlineUsageAllowed) << PN();
 		if (type != PolicyType::NoSecurables) stream << SecurableData(productId, featureString) << PN();
 		if (type != PolicyType::NoUserData) stream << UserData(userId) << PN();
 		stream << DefaultQualifiers(); // no PN needed here; last subitem
@@ -195,6 +205,11 @@ public:
 	static Json::Value CreatePolicyNoRequestData(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
 	{
 		return CreatePolicySpecific(PolicyType::NoRequestData, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
+	};
+
+	static Json::Value CreatePolicyOfflineNotAllowed(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+	{
+		return CreatePolicySpecific(PolicyType::OfflineNotAllowed, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
 	};
 };
 

@@ -81,6 +81,10 @@ private:
     std::list<std::shared_ptr<Policy>> GetPolicies();
     std::list<std::shared_ptr<Policy>> GetUserPolicies();
     std::shared_ptr<Policy> SearchForPolicy(Utf8String requestedProductId="");
+
+    bool HasOfflineGracePeriodStarted();
+    int64_t GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString);
+
     void StorePolicyTokenInUsageDb(std::shared_ptr<PolicyToken> policyToken);
     BentleyStatus RecordUsage();
     std::shared_ptr<PolicyToken> GetPolicyToken();

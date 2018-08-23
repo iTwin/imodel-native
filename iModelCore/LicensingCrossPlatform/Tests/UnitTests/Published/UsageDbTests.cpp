@@ -240,3 +240,23 @@ TEST_F(UsageDbTests, CleanUpUsages_Success)
 
     EXPECT_SUCCESS(db.CleanUpUsages());
     }
+
+TEST_F(UsageDbTests, OfflineGracePeriod_Success)
+	{
+	UsageDb db;
+
+	EXPECT_SUCCESS(OpenOrCreateTestDb(db));
+	
+	Utf8String testString = "TESTSTRING";
+	Utf8String testString2 = "ANOTHERSTRING";
+
+	EXPECT_EQ(db.GetOfflineGracePeriodStart(), "");
+	EXPECT_SUCCESS(db.SetOfflineGracePeriodStart(testString));
+	EXPECT_EQ(db.GetOfflineGracePeriodStart(), testString);
+	EXPECT_SUCCESS(db.ResetOfflineGracePeriod());
+	EXPECT_EQ(db.GetOfflineGracePeriodStart(), "");
+	EXPECT_SUCCESS(db.SetOfflineGracePeriodStart(testString2));
+	EXPECT_EQ(db.GetOfflineGracePeriodStart(), testString2);
+	EXPECT_SUCCESS(db.ResetOfflineGracePeriod());
+	EXPECT_EQ(db.GetOfflineGracePeriodStart(), "");
+	}

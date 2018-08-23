@@ -391,6 +391,7 @@ TEST_F(ClientTests, GetProductStatus_Test)
 	auto jsonPolicyNoUserData = DummyJsonHelper::CreatePolicyNoUserData(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9906, "", 1, false);
 	auto jsonPolicyNoRequestData = DummyJsonHelper::CreatePolicyNoRequestData(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9907, "", 1, false);
 	auto jsonPolicyIdBad = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userIdBad, 9908, "", 1, false);
+	auto jsonPolicyOfflineNotAllowed = DummyJsonHelper::CreatePolicyOfflineNotAllowed(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9909, "", 1, false);
 
 	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValid));
 	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValidTrial));
@@ -401,6 +402,7 @@ TEST_F(ClientTests, GetProductStatus_Test)
 	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyNoUserData));
 	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyNoRequestData));
 	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyIdBad));
+	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyOfflineNotAllowed));
 	
 	// NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
 	ASSERT_EQ((int)client->GetProductStatus(), (int)LicenseStatus::AccessDenied); // Obtained test policy should result in AccessDenied
@@ -414,6 +416,20 @@ TEST_F(ClientTests, GetProductStatus_Test)
 	ASSERT_EQ((int)client->GetProductStatus(9907), (int)LicenseStatus::NotEntitled);
 	ASSERT_EQ((int)client->GetProductStatus(9908), (int)LicenseStatus::NotEntitled);
 	ASSERT_EQ((int)client->GetProductStatus(9999), (int)LicenseStatus::NotEntitled); // Policy with productId does not exist
+	ASSERT_EQ((int)client->GetProductStatus(9909), (int)LicenseStatus::Ok); // Grace Period NOT started; should return Ok
+	
+	auto timestamp = Utf8String(DateHelper::TimeToString(DateHelper::GetCurrentTime()).c_str());
+	auto timestampPast = Utf8String(DateHelper::TimeToString(DateHelper::AddDaysToCurrentTime(-14)).c_str()); // Two weeks ago; default offline period allowed is only 1 week
+	
+	client->GetUsageDb().SetOfflineGracePeriodStart(timestamp);
+	ASSERT_EQ((int)client->GetProductStatus(9900), (int)LicenseStatus::Offline); // Valid status should be Offline now
+	ASSERT_EQ((int)client->GetProductStatus(9909), (int)LicenseStatus::DisabledByPolicy); // Grace Period started; should be disabled
+	client->GetUsageDb().ResetOfflineGracePeriod();
+	ASSERT_EQ((int)client->GetProductStatus(9900), (int)LicenseStatus::Ok); // Should be back to Ok
+	ASSERT_EQ((int)client->GetProductStatus(9909), (int)LicenseStatus::Ok); // Same for this
+	client->GetUsageDb().SetOfflineGracePeriodStart(timestampPast);
+	ASSERT_EQ(client->GetUsageDb().GetOfflineGracePeriodStart(),timestampPast);
+	ASSERT_EQ((int)client->GetProductStatus(9900), (int)LicenseStatus::Expired); // Valid status should be Expired now, since offline grace period has expired
 	}
 
 TEST_F(ClientTests, CleanUpPolicies_Success)
