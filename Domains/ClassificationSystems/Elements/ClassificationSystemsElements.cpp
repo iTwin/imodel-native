@@ -324,7 +324,7 @@ void Classification::SetSpecializationId
 Dgn::DgnElementId specializationId
 )
     {
-    SetPropertyValue(prop_Specialization(), specializationId, GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationSpecializesClassification));
+    SetParentId(specializationId, GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationSpecializesClassification));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -358,7 +358,7 @@ Dgn::DgnElementId Classification::GetSpecializationId
 (
 ) const
     {
-    return GetPropertyValueId<Dgn::DgnElementId>(prop_Specialization());
+    return GetParentId();
     }
 
 /*---------------------------------------------------------------------------------**//**

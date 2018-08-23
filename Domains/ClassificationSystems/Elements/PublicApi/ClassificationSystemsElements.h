@@ -73,7 +73,6 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification : Dgn::DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_Classification, Dgn::DefinitionElement);
     private:
         BE_PROP_NAME(Description)
-        BE_PROP_NAME(Specialization)
         
         Dgn::DgnCode GetClassificationCode(Dgn::DgnDbR db, Utf8CP name, Dgn::DgnElementId id) const;
 

@@ -31,7 +31,6 @@
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
         <ECProperty propertyName="Description" typeName="string" displayLabel="Description"/>
-        <ECNavigationProperty propertyName="Specialization" relationshipName="ClassificationSpecializesClassification" direction="Forward" description="Classification this Specializes in" />
     </ECEntityClass>
     
     <ECEntityClass typeName="ClassificationGroup" modifier="Sealed" displayLabel="ClassificationSystem ClassDefinition group" description="The ClassDefinition group element">
@@ -81,11 +80,12 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ClassificationSpecializesClassification" modifier="None" strength="referencing" description="a relationship">
-        <Source multiplicity="(0..*)" roleLabel="specializes" polymorphic="false">
+    <ECRelationshipClass typeName="ClassificationSpecializesClassification" modifier="None" strength="embedding" description="a relationship">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="specializes" polymorphic="false">
             <Class class="Classification"/>
         </Source>
-        <Target multiplicity="(1..1)" roleLabel="is specialized" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is specialized" polymorphic="false">
             <Class class="Classification"/>
          </Target>
     </ECRelationshipClass> 
