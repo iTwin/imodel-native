@@ -915,7 +915,6 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
 
             auto& childTile = parentNodeTileChildren.append(tile);
             childTile.removeMember("children");
-            childTile.removeMember("SMHeader");
 
             childTile["content"]["url"] = Utf8String(("n_" + std::to_string(this->GetID()) + ".json").c_str());
             }
