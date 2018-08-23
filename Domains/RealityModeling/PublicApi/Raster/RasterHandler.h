@@ -32,7 +32,7 @@ private:
     mutable Dgn::ClipVectorPtr m_clipVector;       // optimized for display.
 public:
     void ToBlob(bvector<uint8_t>& blob, Dgn::DgnDbR dgndb) const;
-    void FromBlob(void const* blob, size_t size, Dgn::DgnDbR dgndb);
+    void FromBlob(void const* blob, size_t size);
 
     void InitFrom(RasterClip const& other);
 
@@ -114,6 +114,9 @@ public:
 
     //! Set the clips of this RasterModel.
     RASTER_EXPORT void SetClip(RasterClipCR);
+
+    //! Set the clips of this RasterModel using blob data
+    RASTER_EXPORT void SetClip(void const* blob, size_t size);
 
     Utf8String GetDescription() const;
 

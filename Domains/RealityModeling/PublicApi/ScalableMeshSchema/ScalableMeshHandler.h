@@ -176,10 +176,14 @@ struct SMNode : Dgn::TileTree::TriMeshTree::Tile
 private:
     
     IScalableMeshNodePtr m_scalableMeshNodePtr;
+    bool                 m_canUnloadChildren = true; 
 
     bool ReadHeader(Transform& locationTransform);
     BentleyStatus Read3SMTile(Dgn::TileTree::StreamBuffer&, SMSceneR, Dgn::Render::SystemP renderSys, bool loadChildren);
     BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren);
+
+    Dgn::TileTree::Tile::SelectParent SelectViewTiles(bvector<Dgn::TileTree::TileCPtr>& selected, Dgn::TileTree::DrawArgsR args, bool& parentSelected, clock_t& startTime, IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const;
+
 
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
     Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
@@ -200,10 +204,13 @@ public:
     bool _HasChildren() const override { return m_scalableMeshNodePtr->GetChildrenNodes().size() > 0 || !IsReady(); }
     ChildTiles const* _GetChildren(bool load) const override; 
 
+    virtual void _OnChildrenUnloaded() const override;
+    virtual void _UnloadChildren(BeTimePoint olderThan) const override;
+    
 
     ElementAlignedBox3d ComputeRange();
 
-    virtual Dgn::TileTree::Tile::SelectParent _SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selected, Dgn::TileTree::DrawArgsR args) const override;
+    virtual Dgn::TileTree::Tile::SelectParent _SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selected, Dgn::TileTree::DrawArgsR args) const override;    
 
 };
 
@@ -227,6 +234,8 @@ private:
     Dgn::ClipVectorCPtr m_clip;    
     Utf8CP _GetName() const override { return "3SM"; }
     Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
+
+    void LoadOverview(SMNode* node);
 
 public:
 

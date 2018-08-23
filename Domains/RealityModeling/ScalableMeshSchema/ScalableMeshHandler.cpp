@@ -293,8 +293,8 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
 static double s_minScreenPixelsPerPoint = 800;
 
 //For now keep the old value (i.e. : 1) for already support sources but set a higher level for streaming texture source because 1 seems a bit too low anyway.
-static double s_maxPixelError = 1;
-static double s_maxPixelErrorStreamingTexture = 2.5;
+static double s_maxPixelError = 3;
+static double s_maxPixelErrorStreamingTexture = 3;
 
 bool IsWireframeRendering(ViewContextCR viewContext)
     {    
@@ -438,20 +438,33 @@ Tile::ChildTiles const* SMNode::_GetChildren(bool load) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Mathieu.St-Pierre  08/17
+* @bsimethod                                                    Mathieu.St-Pierre  08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*
-bool SMNode::IsNotLoaded() const
-    { 
-    if (m_loadStatus.load() == LoadStatus::NotLoaded)
-        return true;
-    
-    if (m_children.size() > 0 && m_children[0].GetLoadStatus() == == LoadStatus::NotLoaded)
-        return true;
-
-    return false;
+void SMNode::_OnChildrenUnloaded() const
+    {   
     }
-*/
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre  08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool s_unloadChildren = true;
+
+void SMNode::_UnloadChildren(BeTimePoint olderThan) const
+    {
+    if (s_unloadChildren)
+        {
+        if (!m_canUnloadChildren)
+            {
+            for (auto const& child : m_children)
+                child->_UnloadChildren(olderThan);
+
+            return;
+            }
+
+        __super::_UnloadChildren(olderThan);
+        }
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                   Mathieu.St-Pierre  08/17
@@ -500,16 +513,161 @@ BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render:
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   Mathieu.St-Pierre  12/17
+* @bsimethod                                                   Mathieu.St-Pierre  08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-
 #ifndef NDEBUG
-    static double s_firstNodeSearchingDelay = (double)1 / 15 * CLOCKS_PER_SEC;
+static double s_firstNodeSearchingDelay = (double)1 / 15 * CLOCKS_PER_SEC;
 #else
-    //static double s_firstNodeSearchingDelay = (double)1 / 10 * CLOCKS_PER_SEC;
-    static double s_firstNodeSearchingDelay = (double)1 / 60 * CLOCKS_PER_SEC;
+//static double s_firstNodeSearchingDelay = (double)1 / 10 * CLOCKS_PER_SEC;
+static double s_firstNodeSearchingDelay = (double)1 / 60 * CLOCKS_PER_SEC;
 #endif
 
+Dgn::TileTree::Tile::SelectParent SMNode::SelectViewTiles(bvector<Dgn::TileTree::TileCPtr>& selected, Dgn::TileTree::DrawArgsR args, bool& parentSelected, clock_t& startTime, IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const
+    {
+    if ((clock() - startTime) > s_firstNodeSearchingDelay && (m_parent != nullptr) && m_parent->IsReady() && m_parent->_HasGraphics())
+        {
+        args.InsertMissing(*this);
+        parentSelected = true;
+        return SelectParent::Yes;
+        }
+
+    DgnDb::VerifyClientThread();
+
+    SMNodeViewStatus viewStatus = m_scalableMeshNodePtr->IsCorrectForView(viewDependentQueryParams);
+
+    if (viewStatus == SMNodeViewStatus::NotVisible)
+        {
+        _UnloadChildren(args.m_purgeOlderThan);
+        return SelectParent::No;
+        }
+
+    if (viewStatus == SMNodeViewStatus::Fine)
+        {
+#if 0
+        if (s_showTiles)
+            {
+            DRange3d contentExtent(m_scalableMeshNodePtr->GetContentExtent());
+            /**
+            if (isCesium)
+            {
+            context.PopTransformClip();
+
+            DPoint3d box[8];
+            contentExtent.Get8Corners(box);
+            smToDgnUorTransform.Multiply(box, 8);
+            contentExtent = DRange3d::From(box, 8);
+            }
+            */
+
+            __int64  nodeId(m_scalableMeshNodePtr->GetNodeId());
+
+            TextString nodeIdString;
+
+            DPoint3d stringOrigin = { (contentExtent.high.x + contentExtent.low.x) / 2, (contentExtent.high.y + contentExtent.low.y) / 2, contentExtent.high.z };
+
+            char buffer[1000];
+            BeStringUtilities::FormatUInt64(buffer, nodeId);
+
+            nodeIdString.SetOrigin(stringOrigin);
+            nodeIdString.SetText(buffer);
+
+            TextStringStyle stringStyle;
+            double maxExtentDim = std::max(contentExtent.XLength(), contentExtent.YLength());
+            int textSize = std::max((int)(maxExtentDim / s_tileSizePerIdStringSize), 1);
+            stringStyle.SetSize(textSize);
+            nodeIdString.SetStyle(stringStyle);
+            /*
+            ElemMatSymbP matSymbP = args.m_context.GetElemMatSymb();
+            matSymbP->Init();
+            matSymbP->SetLineColor(ColorDef::Red());
+            matSymbP->SetFillColor(ColorDef::Red());
+            args.m_context.GetIDrawGeom().ActivateMatSymb(matSymbP);
+            */
+            args.m_context.GetIDrawGeom().DrawTextString(nodeIdString);
+
+            DPoint3d box[8];
+            contentExtent.Get8Corners(box);
+            std::swap(box[6], box[7]);
+            box[3] = box[7];
+
+            args.m_context.GetIDrawGeom().DrawLineString3d(5, &box[3], nullptr);
+
+            /*
+            if (isCesium)
+            {
+            context.PushTransform(smToDgnUorTransform);
+            }
+            */
+            }
+#endif
+
+        _UnloadChildren(args.m_purgeOlderThan);
+
+        if (IsReady())
+            {
+            selected.push_back(this);
+            return SelectParent::No;
+            }
+        else
+            {
+            /*
+            SMNodePtr thisTile(const_cast<SMNode*>(this));
+            m_3smModel->m_currentDrawingInfoPtr->m_nodesToLoad.push_back(thisTile);
+            */
+            args.InsertMissing(*this);
+            parentSelected = true;
+            return SelectParent::Yes;
+            }
+        }
+
+    assert(viewStatus == SMNodeViewStatus::TooCoarse);
+    //if (viewStatus == SMNodeViewStatus::TooCoarse)        
+    bool drawParent = false;
+
+    auto children = _GetChildren(true);
+    size_t sizeBeforeChildren = selected.size();
+
+    if (nullptr != children)
+        {
+        for (auto const& child : *children)
+            {            
+            if (SelectParent::Yes == ((SMNode*)child.get())->SelectViewTiles(selected, args, parentSelected, startTime, viewDependentQueryParams))
+                {
+                drawParent = true;
+                // NB: We must continue iterating children so that they can be requested if missing...
+                }
+            }
+        }
+
+    if (!drawParent)
+        {
+        if (sizeBeforeChildren < selected.size())
+            {
+            return SelectParent::No;
+            }
+        }
+
+    if (IsReady() && _HasGraphics())
+        {
+        //if (_HasGraphics())
+        selected.push_back(this);
+        return SelectParent::No;
+        }
+    else if (_HasBackupGraphics())
+        {
+        // Caching previous graphics while regenerating tile to reduce flishy-flash when model changes.
+        selected.push_back(this);
+        return SelectParent::No;
+        }
+
+    parentSelected = true;
+    args.InsertMissing(*this);
+    return SelectParent::Yes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.St-Pierre  12/17
++---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selected, Dgn::TileTree::DrawArgsR args) const
     {
 
@@ -520,196 +678,69 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
     
     if (s_tryCustomSelect)
         {        
-        static clock_t startTime = 0;
-        static IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams;
+        assert(m_parent == nullptr);
 
-        if (m_parent == nullptr)
+        clock_t startTime = 0;
+        IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams;
+        
+        startTime = clock();
+        
+        viewDependentQueryParams = IScalableMeshViewDependentMeshQueryParams::CreateParams();
+
+        DMatrix4d localToView(args.m_context.GetWorldToView().M0);
+
+        ClipVectorPtr clipVector;
+        //clip = args.m_context.GetTransformClipStack().GetClip();
+        Render::FrustumPlanes frustumPlanes(args.m_context.GetFrustumPlanes());
+
+        ConvexClipPlaneSet convexClipPlaneSet(&frustumPlanes.m_planes[0], 6);
+
+        ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+
+        ClipPrimitivePtr clipPrimitive(ClipPrimitive::CreateFromClipPlanes(clipPlaneSet));
+
+        clipVector = ClipVector::CreateFromPrimitive(clipPrimitive.get());
+
+
+        DMatrix4d smToUOR = DMatrix4d::From(m_3smModel->m_smToModelUorTransform);
+
+        localToView.InitProduct (localToView, smToUOR);
+        
+        viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
+
+        if (m_3smModel->m_textureInfo->IsUsingBingMap())
             {
-            startTime = clock();
-            
-            viewDependentQueryParams = IScalableMeshViewDependentMeshQueryParams::CreateParams();
-
-            DMatrix4d localToView(args.m_context.GetWorldToView().M0);
-
-            ClipVectorPtr clipVector;
-            //clip = args.m_context.GetTransformClipStack().GetClip();
-            Render::FrustumPlanes frustumPlanes(args.m_context.GetFrustumPlanes());
-
-            ConvexClipPlaneSet convexClipPlaneSet(&frustumPlanes.m_planes[0], 6);
-
-            ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
-
-            ClipPrimitivePtr clipPrimitive(ClipPrimitive::CreateFromClipPlanes(clipPlaneSet));
-
-            clipVector = ClipVector::CreateFromPrimitive(clipPrimitive.get());
-
-
-            DMatrix4d smToUOR = DMatrix4d::From(m_3smModel->m_smToModelUorTransform);
-
-            localToView.InitProduct (localToView, smToUOR);
-            
-            viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
-
-            if (m_3smModel->m_textureInfo->IsUsingBingMap())
-            {
-                viewDependentQueryParams->SetMaxPixelError(s_maxPixelErrorStreamingTexture);
+            viewDependentQueryParams->SetMaxPixelError(s_maxPixelErrorStreamingTexture);
             }
-            else
+        else
             {
-                viewDependentQueryParams->SetMaxPixelError(s_maxPixelError);
-            }
-
-            viewDependentQueryParams->SetRootToViewMatrix(localToView.coff);
-
-            clipVector->TransformInPlace(m_3smModel->m_modelUorToSmTransform);
-
-            viewDependentQueryParams->SetViewClipVector(clipVector);
+            viewDependentQueryParams->SetMaxPixelError(s_maxPixelError);
             }
 
-        if ((clock() - startTime) > s_firstNodeSearchingDelay)
+        viewDependentQueryParams->SetRootToViewMatrix(localToView.coff);
+
+        clipVector->TransformInPlace(m_3smModel->m_modelUorToSmTransform);
+
+        viewDependentQueryParams->SetViewClipVector(clipVector);
+
+        bool parentSelected = false;
+        
+        Dgn::TileTree::Tile::SelectParent selectParent = SelectViewTiles(selected, args, parentSelected, startTime, viewDependentQueryParams);
+
+        if (parentSelected && args.m_missing.size() == 0)
             {
-            return SelectParent::Yes;            
+            parentSelected = parentSelected;
             }
         
-
-        DgnDb::VerifyClientThread();        
-
-        SMNodeViewStatus viewStatus = m_scalableMeshNodePtr->IsCorrectForView(viewDependentQueryParams);
-
-        if (viewStatus == SMNodeViewStatus::NotVisible)
-            {
-            _UnloadChildren(args.m_purgeOlderThan);
-            return SelectParent::No;
-            }
-
-        if (viewStatus == SMNodeViewStatus::Fine)
-            {
-#if 0
-            if (s_showTiles)
-                {
-                DRange3d contentExtent(m_scalableMeshNodePtr->GetContentExtent());
-/**
-                if (isCesium)
-                    {
-                    context.PopTransformClip();
-
-                    DPoint3d box[8];
-                    contentExtent.Get8Corners(box);
-                    smToDgnUorTransform.Multiply(box, 8);
-                    contentExtent = DRange3d::From(box, 8);
-                }
-*/
-
-                __int64  nodeId(m_scalableMeshNodePtr->GetNodeId());
-
-                TextString nodeIdString;
-
-                DPoint3d stringOrigin = { (contentExtent.high.x + contentExtent.low.x) / 2, (contentExtent.high.y + contentExtent.low.y) / 2, contentExtent.high.z };
-
-                char buffer[1000];
-                BeStringUtilities::FormatUInt64(buffer, nodeId);
-
-                nodeIdString.SetOrigin(stringOrigin);
-                nodeIdString.SetText(buffer);
-
-                TextStringStyle stringStyle;
-                double maxExtentDim = std::max(contentExtent.XLength(), contentExtent.YLength());
-                int textSize = std::max((int)(maxExtentDim / s_tileSizePerIdStringSize), 1);
-                stringStyle.SetSize(textSize);
-                nodeIdString.SetStyle(stringStyle);
-/*
-                ElemMatSymbP matSymbP = args.m_context.GetElemMatSymb();
-                matSymbP->Init();
-                matSymbP->SetLineColor(ColorDef::Red());
-                matSymbP->SetFillColor(ColorDef::Red());
-                args.m_context.GetIDrawGeom().ActivateMatSymb(matSymbP);
-*/
-                args.m_context.GetIDrawGeom().DrawTextString(nodeIdString);
-
-                DPoint3d box[8];
-                contentExtent.Get8Corners(box);
-                std::swap(box[6], box[7]);
-                box[3] = box[7];
-
-                args.m_context.GetIDrawGeom().DrawLineString3d(5, &box[3], nullptr);
-
-/*
-                if (isCesium)
-                {
-                    context.PushTransform(smToDgnUorTransform);
-                }
-*/
-            }
-#endif
-
-            _UnloadChildren(args.m_purgeOlderThan);
-
-            if (IsReady())
-                {
-                selected.push_back(this);
-                return SelectParent::No;
-                }
-            else
-                {
-                /*
-                SMNodePtr thisTile(const_cast<SMNode*>(this));
-                m_3smModel->m_currentDrawingInfoPtr->m_nodesToLoad.push_back(thisTile);
-                */
-                args.InsertMissing(*this);
-                return SelectParent::Yes;
-                }            
-            }
-
-        assert(viewStatus == SMNodeViewStatus::TooCoarse);
-        //if (viewStatus == SMNodeViewStatus::TooCoarse)        
-        bool drawParent = false;
-        
-        auto children = _GetChildren(true);
-
-        if (nullptr != children)
-            {
-            for (auto const& child : *children)
-                {
-                if (SelectParent::Yes == child->_SelectTiles(selected, args))
-                    {
-                    drawParent = true;
-                    // NB: We must continue iterating children so that they can be requested if missing...
-                    }
-                }
-            }
-
-        if (!drawParent)
-            {
-            return SelectParent::No;
-            }
-
-        if (IsReady())
-            {
-            if (_HasGraphics())
-                selected.push_back(this);
-
-            return SelectParent::No;
-            }
-        else if (_HasBackupGraphics())
-            {
-            // Caching previous graphics while regenerating tile to reduce flishy-flash when model changes.
-            selected.push_back(this);
-            return SelectParent::No;
-            }
-
-        return SelectParent::Yes;
+        return selectParent;
         }
-
-      
-    
+          
     return __super::_SelectTiles(selected, args);
     }
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
-static double s_maxDiamFactor = 10;
-static double s_constantFactor = 100;
 bool SMNode::ReadHeader(Transform& locationTransform)
     {
     m_range.low = m_scalableMeshNodePtr->GetContentExtent().low;
@@ -717,17 +748,7 @@ bool SMNode::ReadHeader(Transform& locationTransform)
 
     locationTransform.Multiply(m_range.low);
     locationTransform.Multiply(m_range.high);
-    /*
-       JsonValueCR val = pt["maxScreenDiameter"];
-       if (val.empty())
-       {
-       LOG_ERROR("Cannot find \"maxScreenDiameter\" entry");
-       return false;
-       }
-
-       m_maxDiameter = val.asDouble();
-       */
-
+  
     float geometricResolution;
     float textureResolution;
 
@@ -735,26 +756,7 @@ bool SMNode::ReadHeader(Transform& locationTransform)
         
 	//The formula below should give the same value as maxScreenDiameter in the 3mxb.
     m_maxDiameter = m_range.low.Distance(m_range.high) / std::min(geometricResolution, textureResolution);
-	
-    /*
-       if (!readVectorEntry(pt, "resources", nodeResources))
-       {
-       LOG_ERROR("Cannot find \"resources\" entry");
-       return false;
-       }
-
-       bvector<Utf8String> children;
-       if (!readVectorEntry(pt, "children", children))
-       return false;
-
-       BeAssert(children.size() <= 1);
-
-       if (1 == children.size())
-       m_childPath = children[0];
-
-       if (m_parent)
-       m_parent->ExtendRange(m_range);
-       */
+	   
     return true;
     }
 
@@ -947,6 +949,33 @@ BentleyStatus SMScene::LoadNodeSynchronous(SMNodeR node)
     return result.isReady() ? SUCCESS : ERROR;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.St-Pierre  08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SMScene::LoadOverview(SMNode* node)
+    {
+    StreamBuffer in;
+
+    node->Read3SMTile(in, *this, GetRenderSystemP(), false);
+
+    if (!node->_HasGraphics())
+        {
+        node->m_canUnloadChildren = false;
+
+        Tile::ChildTiles const* children = node->_GetChildren(true);
+
+        if (nullptr != children)
+            {
+            for (auto& childNode : *children)
+                {            
+                LoadOverview((SMNode*)childNode.get());
+                }
+            }
+        }
+    
+    }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -960,9 +989,14 @@ BentleyStatus SMScene::LoadScene()
     m_rootTile = root;
     root->m_3smModel = m_3smModel;
 
+    LoadOverview(root);
+   
+    /*
     auto result = _RequestTile(*root, nullptr, GetRenderSystemP(), BeDuration());
     result.wait(BeDuration::Seconds(2)); // only wait for 2 seconds
     return result.isReady() ? SUCCESS : ERROR;
+    */
+    return SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------
@@ -2697,8 +2731,8 @@ void ScalableMeshModel::_OnSaveJsonProperties()
     if (m_clip.IsValid())
         val[json_clip()] = m_clip->ToJson();
 
-    if (!m_classifiers.empty())
-        val[json_classifiers()] = m_classifiers.ToJson();
+    if (!m_classifiers.empty())     // Note - This originally was stored on the "scalableMesh" member...
+        SetJsonProperties(json_classifiers(), m_classifiers.ToJson());
 
     SetJsonProperties(json_scalablemesh(), val);
     }
@@ -3043,8 +3077,12 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
     if (val.isMember(json_clip()))
         m_clip = ClipVector::FromJson(val[json_clip()]);
 
-    if (val.isMember(json_classifiers()))
-        m_classifiers.FromJson(val[json_classifiers()]);
+    Json::Value     classifiers = GetJsonProperties(json_classifiers());
+    if (classifiers.isNull())
+        classifiers = m_classifiers.FromJson(val[json_classifiers()]);       // Old location.                                                                                                                                                             
+
+    if (!classifiers.isNull())
+        m_classifiers.FromJson(classifiers);
 
     if (m_smPtr == 0 && !m_tryOpen)
         {                

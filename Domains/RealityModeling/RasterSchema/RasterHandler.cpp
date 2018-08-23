@@ -190,7 +190,7 @@ void RasterClip::ToBlob(bvector<uint8_t>& blob, DgnDbR dgndb) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  7/2016
 //----------------------------------------------------------------------------------------
-void RasterClip::FromBlob(void const* blob, size_t size, DgnDbR dgndb)
+void RasterClip::FromBlob(void const* blob, size_t size)
     {
     Clear();
 
@@ -470,6 +470,14 @@ void RasterModel::SetClip(RasterClipCR clip)
     return;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void RasterModel::SetClip(void const* blob, size_t size)
+    {
+    m_clips.FromBlob(blob, size);
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  10/2016
 //----------------------------------------------------------------------------------------
@@ -516,7 +524,7 @@ DgnDbStatus RasterModel::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stateme
     int blobSize = 0;
     void const* pBlob = statement.GetValueBlob(params.GetSelectIndex(RASTER_MODEL_PROP_Clip), &blobSize);
 
-    m_clips.FromBlob(pBlob, blobSize, GetDgnDb());
+    m_clips.FromBlob(pBlob, blobSize);
 
     return DgnDbStatus::Success;
     }
