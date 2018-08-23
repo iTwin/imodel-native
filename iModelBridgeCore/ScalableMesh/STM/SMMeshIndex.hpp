@@ -1169,6 +1169,14 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::AddEdit
     }
 
 //=======================================================================================
+// @bsimethod                                                  Mathieu.St-Pierre 08/18
+//=======================================================================================
+template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::IsExistingMesh() const
+    {
+    return m_existingMesh;
+    }
+
+//=======================================================================================
 // @bsimethod                                                  Elenie.Godzaridis 03/15
 //=======================================================================================
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Unload() 

@@ -786,6 +786,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void AddEdit(RefCountedPtr<EditOperation>& editDef);
 
+    BENTLEY_SM_EXPORT bool IsExistingMesh() const;
 
     // The byte array starts with three integers specifying the width/heigth in pixels, and the number of channels
     void PushTexture(const Byte* texture, size_t size);              

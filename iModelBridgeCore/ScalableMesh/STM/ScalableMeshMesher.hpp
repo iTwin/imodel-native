@@ -66,11 +66,9 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 #endif
    // LOG_SET_PATH("e:\\Elenie\\mesh\\")
    // LOG_SET_PATH_W("e:\\Elenie\\mesh\\")
-        
-    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndicesPtr(node->GetPtsIndicePtr());
-
+            
     //If already mesh just compute the content extent.
-    if (m_existingMesh /*ptIndicesPtr->size() > 0*/)
+    if (node->IsExistingMesh())
         {
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
 
