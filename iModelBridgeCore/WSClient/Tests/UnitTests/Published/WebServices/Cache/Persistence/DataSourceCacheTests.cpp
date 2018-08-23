@@ -7910,6 +7910,58 @@ TEST_F(DataSourceCacheTests, RemoveResponses_ResponsesWithSameName_RemovesRespon
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsitest                                   Eimantas.Morkunas                 07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveResponsesByPrefix_NoMatchingResponses_ReturnsSuccess)
+    {
+    auto cache = GetTestCache();
+
+    ASSERT_EQ(SUCCESS, cache->RemoveResponsesByPrefix("Foo"));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                   Eimantas.Morkunas                 07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveResponsesByPrefix_ResponsesMatchingPrefixExists_OnlyPrefixedResponsesRemoved)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("A"), "Test");
+    CachedResponseKey responseKey2(cache->FindOrCreateRoot("A"), "Test2");
+    CachedResponseKey responseKey3(cache->FindOrCreateRoot("B"), "Test3");
+    CachedResponseKey responseKey4(cache->FindOrCreateRoot("A"), "Other1");
+    CachedResponseKey responseKey5(cache->FindOrCreateRoot("C"), "Other2");
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey3, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey4, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey5, StubInstances().ToWSObjectsResponse()));
+
+    ASSERT_EQ(SUCCESS, cache->RemoveResponsesByPrefix("Test"));
+
+    EXPECT_THAT(cache->IsResponseCached(responseKey1), false);
+    EXPECT_THAT(cache->IsResponseCached(responseKey2), false);
+    EXPECT_THAT(cache->IsResponseCached(responseKey3), false);
+    EXPECT_THAT(cache->IsResponseCached(responseKey4), true);
+    EXPECT_THAT(cache->IsResponseCached(responseKey5), true);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                   Eimantas.Morkunas                 07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveResponsesByPrefix_ResponseContainingButNotStartingByPrefix_ResponseNotRemoved)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey(cache->FindOrCreateRoot("A"), "Test");
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+
+    ASSERT_EQ(SUCCESS, cache->RemoveResponsesByPrefix("est"));
+
+    EXPECT_THAT(cache->IsResponseCached(responseKey), true);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForObject_WorksFine)

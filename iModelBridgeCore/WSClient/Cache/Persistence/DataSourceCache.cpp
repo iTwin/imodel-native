@@ -1703,6 +1703,15 @@ BentleyStatus DataSourceCache::RemoveResponses(Utf8StringCR name)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Eimantas.Morkunas    07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DataSourceCache::RemoveResponsesByPrefix(Utf8StringCR responsePrefix)
+    {
+    LogCacheDataForMethod();
+    return GetState().GetCachedResponseManager().DeleteResponsesByPrefix(responsePrefix);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 CacheStatus DataSourceCache::ReadResponse

@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Responses/CachedResponseManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -112,6 +112,8 @@ struct CachedResponseManager : public IECDbAdapter::DeleteListener
         BentleyStatus DeleteResponses(Utf8StringCR responseName, DateTimeCR accessedBeforeDateUtc, const ECInstanceKeyMultiMap& nodesToLeave);
         //! Delete responses with same name
         BentleyStatus DeleteResponses(Utf8StringCR responseName);
+        //! Delete responses that starts with a given prefix
+        BentleyStatus DeleteResponsesByPrefix(Utf8StringCR responsePrefix);
         //! Save query info
         BentleyStatus SaveInfo(CachedResponseInfoR info);
         //! Insert query info and update page cache date
