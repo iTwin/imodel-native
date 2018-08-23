@@ -51,8 +51,6 @@ USING_NAMESPACE_TILETREE
 #define PRINT_MSG(...)
 #endif
 
-#define SM_ACTIVATE_UPLOADER 0
-#define SM_ACTIVATE_LOAD_TEST 0
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Mathieu.St-Pierre     3/2017
@@ -1732,48 +1730,6 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     if (!m_smPtr.IsValid())
         return;    
 
-#if SM_ACTIVATE_UPLOADER == 1 || SM_ACTIVATE_LOAD_TEST == 1
-    WString projectName = dgnProject.GetFileName().GetFileNameWithoutExtension();
-#endif
-
-#if SM_ACTIVATE_UPLOADER == 1
-    if (projectName.Contains(WString(L"upload_to_cloud")))
-        {
-        if (projectName.Equals(WString(L"upload_to_cloud_wsg")))
-            {
-            WString container(L"scalablemesh"); // WSG container
-            m_smPtr->ConvertToCloud(container, smFilename.GetFileNameWithoutExtension(), SMCloudServerType::WSG);
-            }
-        else if (projectName.Equals(WString(L"upload_to_cloud_azure")))
-            {
-            WString container(L"scalablemeshtest"); // Azure container
-            m_smPtr->ConvertToCloud(container, smFilename.GetFileNameWithoutExtension(), SMCloudServerType::Azure);
-            }
-        else if (projectName.Equals(WString(L"upload_to_cloud_local_curl")))
-            {
-            WString container(L"scalablemeshtest"); // local disk container
-            m_smPtr->ConvertToCloud(container, smFilename.GetFileNameWithoutExtension(), SMCloudServerType::LocalDiskCURL);
-            }
-        else if (projectName.Equals(WString(L"upload_to_cloud_local")))
-            {
-            WString container(L"scalablemeshtest"); // local disk container
-            m_smPtr->ConvertToCloud(container, smFilename.GetFileNameWithoutExtension(), SMCloudServerType::LocalDisk);
-            }
-        else
-            {
-            assert(false); // unknown service
-            }
-        }
-#endif
-
-#if SM_ACTIVATE_LOAD_TEST == 1
-    if (projectName.Contains(WString(L"load_test")))
-        {
-        size_t nbLoadedNodes = 0;
-        m_smPtr->LoadAllNodeData(nbLoadedNodes, 6);
-        }
-#endif
-
     //if (m_smPtr->IsTerrain())
         {
          ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
@@ -1784,75 +1740,10 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
              }
         }
     
-    const GeoCoords::GCS& gcs(m_smPtr->GetGCS());
-
-    DPoint3d scale;
-    scale.x = 1;
-    scale.y = 1;
-    scale.z = 1;
-    
     DgnGCS* projGCS = dgnProject.GeoLocation().GetDgnGCS();
-    DPoint3d globalOrigin = dgnProject.GeoLocation().GetGlobalOrigin();
+    m_smPtr->Reproject(projGCS, dgnProject);
 
-    if (gcs.HasGeoRef())
-        {
-        DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));
-        dgnGcsPtr->UorsFromCartesian(scale, scale);
-        scale.DifferenceOf(scale, globalOrigin);
-
-        if (projGCS != nullptr && !projGCS->IsEquivalent(*dgnGcsPtr))
-            {
-            dgnGcsPtr->SetReprojectElevation(true);
-
-            Transform trans = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
-                                                         0, scale.y, 0, globalOrigin.y,
-                                                         0, 0, scale.z, globalOrigin.z);
-
-            DRange3d smExtent, smExtentUors;
-            m_smPtr->GetRange(smExtent);
-            trans.Multiply(smExtentUors, smExtent);
-
-            DPoint3d extent;
-            extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
-            Transform       approxTransform;
-
-            auto coordInterp = m_smPtr->IsCesium3DTiles() ? Dgn::GeoCoordInterpretation::XYZ : Dgn::GeoCoordInterpretation::Cartesian;
-
-            StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, *projGCS);
-            if (0 == status || 1 == status || 25 == status)
-                {
-                DRange3d smExtentInDestGCS1;
-                approxTransform.Multiply(smExtentInDestGCS1, smExtentUors);
-                m_smToModelUorTransform = Transform::FromProduct(approxTransform, trans);
-
-                DRange3d smExtentInDestGCS;
-                m_smToModelUorTransform.Multiply(smExtentInDestGCS, smExtent);
-                }
-            else
-                {
-                m_smToModelUorTransform = Transform::FromRowValues(scale.x, 0, 0, -globalOrigin.x,
-                                                                   0, scale.y, 0, -globalOrigin.y,
-                                                                   0, 0, scale.y, -globalOrigin.z);
-                }
-            }
-        else
-            {
-            m_smToModelUorTransform = Transform::FromRowValues(scale.x, 0, 0, -globalOrigin.x,
-                                                               0, scale.y, 0, -globalOrigin.y,
-                                                               0, 0, scale.y, -globalOrigin.z);
-            }
-        }
-    else
-        {
-        if (projGCS != nullptr)
-            dgnProject.GeoLocation().GetDgnGCS()->UorsFromCartesian(scale, scale);
-
-        m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
-        }
-
-    m_smPtr->SetReprojection(*projGCS, m_smToModelUorTransform);
-
-
+    m_smToModelUorTransform = m_smPtr->GetReprojectionTransform();
     
     m_storageToUorsTransfo = DMatrix4d::From(m_smToModelUorTransform);
 
@@ -2783,7 +2674,7 @@ void ScalableMeshModel::Properties::ToJson(Json::Value& v) const
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::Properties::FromJson(Json::Value const& v)
     {
-    m_fileId = v["FileId"].asString();
+    m_fileId = v.isMember("tilesetUrl") && !v["tilesetUrl"].asString().empty() ? v["tilesetUrl"].asString() : v["FileId"].asString();
     }
 
 //----------------------------------------------------------------------------------------
@@ -2796,6 +2687,12 @@ void ScalableMeshModel::_OnSaveJsonProperties()
     Json::Value val;
 
     m_properties.ToJson(val);
+
+    if (m_smPtr != 0 && m_smPtr->IsCesium3DTiles())
+        {
+        Json::Value tilesetVal = m_properties.m_fileId.c_str();
+        SetJsonProperties(json_tilesetUrl(), tilesetVal);
+        }
 
     if (m_clip.IsValid())
         val[json_clip()] = m_clip->ToJson();
@@ -3139,6 +3036,7 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
     T_Super::_OnLoadedJsonProperties();
 
     Json::Value val(GetJsonProperties(json_scalablemesh()));
+    val[json_tilesetUrl()] = GetJsonProperties(json_tilesetUrl()).asString();
 
     m_properties.FromJson(val);
 

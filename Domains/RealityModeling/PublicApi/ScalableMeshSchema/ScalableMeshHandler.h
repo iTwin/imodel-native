@@ -369,7 +369,7 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetTileTreeForPublis
     BE_JSON_NAME(clip)
     BE_JSON_NAME(classifiers)
     BE_JSON_NAME(publishing)
-
+    BE_JSON_NAME(tilesetUrl)
 
     friend struct SMClipProvider;
 
