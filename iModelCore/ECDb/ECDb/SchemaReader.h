@@ -83,25 +83,58 @@ struct SchemaReader final
     private:
         TableSpaceSchemaManager const& m_schemaManager;
 
-        struct LegacyKindOfQuantityHelper final
+        struct LegacyUnitsHelper final
             {
             private:
                 ECDbCR m_ecdb;
+                DbTableSpace const& m_tableSpace;
+                mutable bool m_isInitialized = false;
                 mutable ECN::ECSchemaPtr m_formatsSchema = nullptr;
                 mutable ECN::ECSchemaPtr m_unitsSchema = nullptr;
 
-                BentleyStatus Initialize() const;
                 BentleyStatus AddReferences(ECN::ECSchemaCR koqSchema) const;
 
             public:
-                explicit LegacyKindOfQuantityHelper(ECDbCR ecdb) : m_ecdb(ecdb) {}
+                LegacyUnitsHelper(ECDbCR ecdb, DbTableSpace const& tableSpace) : m_ecdb(ecdb), m_tableSpace(tableSpace) {}
+
+                BentleyStatus Initialize() const;
+
+                ECN::ECSchemaCP GetUnitsSchema() const { Initialize(); return m_unitsSchema.get(); }
+                ECN::ECSchemaCP GetFormatsSchema() const { Initialize(); return m_formatsSchema.get(); }
+
+                static bool IsValidUnitsSchemaName(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode)
+                    {
+                    if (schemaNameOrAlias.EqualsIAscii("u") && (mode == SchemaLookupMode::AutoDetect || mode == SchemaLookupMode::ByAlias))
+                        return true;
+
+                    if (schemaNameOrAlias.EqualsIAscii("Units") && (mode == SchemaLookupMode::AutoDetect || mode == SchemaLookupMode::ByName))
+                        return true;
+
+                    return false;
+                    }
+
+                static bool IsValidFormatsSchemaName(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode)
+                    {
+                    if (schemaNameOrAlias.EqualsIAscii("f") && (mode == SchemaLookupMode::AutoDetect || mode == SchemaLookupMode::ByAlias))
+                        return true;
+
+                    if (schemaNameOrAlias.EqualsIAscii("Formats") && (mode == SchemaLookupMode::AutoDetect || mode == SchemaLookupMode::ByName))
+                        return true;
+
+                    return false;
+                    }
+
+
                 BentleyStatus AssignPersistenceUnitAndPresentationFormats(ECN::KindOfQuantityR koq, Utf8CP legacyPersUnit, bvector<Utf8CP> const& legacyPresUnits) const;
 
-                void ClearCache() const { m_formatsSchema = nullptr; m_unitsSchema = nullptr; }
+                void ClearCache() const { m_isInitialized = false; m_formatsSchema = nullptr; m_unitsSchema = nullptr; }
             };
 
         struct ReaderCache final
             {
+            public:
+                mutable bool m_areUnitsAndFormatsLoaded = false;
+
             private:
                 ECDb const& m_ecdb;
                 mutable std::map<ECN::ECSchemaId, std::unique_ptr<SchemaDbEntry>> m_schemaCache;
@@ -115,10 +148,10 @@ struct SchemaReader final
                 mutable std::map<ECN::FormatId, ECN::ECFormatCP> m_formatCache;
                 mutable bmap<Utf8String, bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>, CompareIUtf8Ascii> m_classIdCache;
 
-                LegacyKindOfQuantityHelper m_legacyKoqHelper;
+                LegacyUnitsHelper m_legacyUnitsHelper;
 
             public:
-                explicit ReaderCache(ECDb const& ecdb) : m_ecdb(ecdb), m_legacyKoqHelper(ecdb) {}
+                ReaderCache(ECDb const& ecdb, DbTableSpace const& tableSpace) : m_ecdb(ecdb), m_legacyUnitsHelper(ecdb, tableSpace) {}
                 void Clear() const;
                 SchemaDbEntry* Find(ECN::ECSchemaId) const;
                 ClassDbEntry* Find(ECN::ECClassId) const;
@@ -127,7 +160,6 @@ struct SchemaReader final
                 ECN::PropertyCategoryCP Find(ECN::PropertyCategoryId id) const { auto it = m_propCategoryCache.find(id); return it != m_propCategoryCache.end() ? it->second : nullptr; }
                 ECN::UnitSystemCP Find(ECN::UnitSystemId id) const { auto it = m_unitSystemCache.find(id); return it != m_unitSystemCache.end() ? it->second : nullptr;}
                 ECN::PhenomenonCP Find(ECN::PhenomenonId id) const { auto it = m_phenomenonCache.find(id); return it != m_phenomenonCache.end() ? it->second : nullptr; }
-                bool IsUnitCacheEmpty() const { return m_unitCache.empty(); }
                 ECN::ECUnitCP Find(ECN::UnitId id) const { auto it = m_unitCache.find(id); return it != m_unitCache.end() ? it->second : nullptr; }
                 ECN::ECFormatCP Find(ECN::FormatId id) const { auto it = m_formatCache.find(id); return it != m_formatCache.end() ? it->second : nullptr; }
 
@@ -145,7 +177,7 @@ struct SchemaReader final
                 void Insert(ECN::ECUnitCR unit) const { m_unitCache.insert(std::make_pair(unit.GetId(), &unit)); }
                 void Insert(ECN::ECFormatCR format) const { m_formatCache.insert(std::make_pair(format.GetId(), &format)); }
 
-                LegacyKindOfQuantityHelper const& GetLegacyKoqHelper() const { return m_legacyKoqHelper; }
+                LegacyUnitsHelper const& GetLegacyUnitsHelper() const { return m_legacyUnitsHelper; }
             };
 
         ReaderCache m_cache;
@@ -165,7 +197,7 @@ struct SchemaReader final
         BentleyStatus LoadRelationshipConstraintFromDb(ECN::ECRelationshipClassP&, Context&, ECN::ECClassId constraintClassId, ECN::ECRelationshipEnd) const;
         BentleyStatus LoadRelationshipConstraintClassesFromDb(ECN::ECRelationshipConstraintR, Context&, ECRelationshipConstraintId constraintId) const;
         BentleyStatus LoadSchemaDefinition(SchemaDbEntry*&, bvector<SchemaDbEntry*>& newlyLoadedSchemas, ECN::ECSchemaId) const;
-        BentleyStatus LoadUnits(Context&) const;
+        BentleyStatus LoadUnitsAndFormats(Context&) const;
 
         BentleyStatus ReadSchema(SchemaDbEntry*&, Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         BentleyStatus ReadEnumeration(ECN::ECEnumerationCP&, Context&, ECN::ECEnumerationId) const;
@@ -175,7 +207,7 @@ struct SchemaReader final
         BentleyStatus ReadUnits(Context&) const;
         BentleyStatus ReadUnitSystems(Context&) const;
         BentleyStatus ReadPhenomena(Context&) const;
-        BentleyStatus ReadFormat(ECN::ECFormatCP&, Context&, ECN::FormatId) const;
+        BentleyStatus ReadFormats(Context&) const;
         BentleyStatus ReadFormatComposite(Context&, ECN::ECFormat&, ECN::FormatId, Utf8CP compositeSpacer) const;
         BentleyStatus ReadPropertyCategory(ECN::PropertyCategoryCP&, Context&, ECN::PropertyCategoryId) const;
 

@@ -1754,7 +1754,7 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
     {
-    //This tests that units, unit systems and phenomena are always loaded entirely if
+    //This tests that units, unit systems, phenomena and formats are always loaded entirely if
     //a KOQ is loaded, a unit is loaded, a unit system is loaded or a phenomenon is loaded.
 
     ASSERT_EQ(SUCCESS, SetupECDb("LoadAllUnitsImplicitly.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -1782,6 +1782,7 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
     const int standardUnitSystemCount = 12;
     const int standardPhenCount = 67;
     const int standardUnitCount = 453;
+    const int standardFormatCount = 10;
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "No schema elements are expected to be loaded at this point");
     assertLoadCount(m_ecdb, "Units", 0, 0, 0, 0, 0, "No schema elements are expected to be loaded at this point");
@@ -1792,7 +1793,7 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
 
     assertLoadCount(m_ecdb, "TestSchema", 1, 0, 0, 0, 0, "After a KOQ without presentation formats was loaded");
     assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a KOQ without presentation formats was loaded");
-    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a KOQ without presentation formats was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, standardFormatCount, "After a KOQ without presentation formats was loaded");
 
     m_ecdb.ClearECDbCache();
 
@@ -1801,14 +1802,14 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
 
     assertLoadCount(m_ecdb, "TestSchema", 1, 0, 0, 0, 0, "After a KOQ with 2 presentation formats was loaded");
     assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a KOQ with 2 presentation formats was loaded");
-    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 2, "After a KOQ with 2 presentation formats was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, standardFormatCount, "After a KOQ with 2 presentation formats was loaded");
 
     koqWithoutPres = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "KoqWithoutPresentation");
     ASSERT_TRUE(koqWithoutPres != nullptr);
 
     assertLoadCount(m_ecdb, "TestSchema", 2, 0, 0, 0, 0, "After a second KOQ was loaded");
     assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a second KOQ was loaded");
-    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 2, "After a second KOQ was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, standardFormatCount, "After a second KOQ was loaded");
 
     m_ecdb.ClearECDbCache();
     ECUnitCP unit = m_ecdb.Schemas().GetUnit("Units", "KM");
@@ -1816,29 +1817,29 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a Unit was loaded");
     assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a Unit was loaded");
-    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a Unit was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, standardFormatCount, "After a Unit was loaded");
 
     unit = m_ecdb.Schemas().GetUnit("Units", "KG");
     ASSERT_TRUE(unit != nullptr);
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a second Unit was loaded");
     assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a second Unit was loaded");
-    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a second Unit was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, standardFormatCount, "After a second Unit was loaded");
 
     m_ecdb.ClearECDbCache();
     ECFormatCP format = m_ecdb.Schemas().GetFormat("Formats", "Fractional");
     ASSERT_TRUE(format != nullptr);
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a Format without composite units was loaded");
-    assertLoadCount(m_ecdb, "Units", 0, 0, 0, 0, 0, "After a Format without composite units was loaded");
-    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 1, "After a Format without composite units was loaded");
+    assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a Format without composite units was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, standardFormatCount, "After a Format without composite units was loaded");
 
     format = m_ecdb.Schemas().GetFormat("Formats", "AngleDMS");
     ASSERT_TRUE(format != nullptr);
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a Format with composite units was loaded");
     assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a second Format with composite units was loaded");
-    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 2, "After a Format with composite units was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, standardFormatCount, "After a Format with composite units was loaded");
 
     m_ecdb.ClearECDbCache();
     UnitSystemCP unitSystem = m_ecdb.Schemas().GetUnitSystem("Units", "SI");
@@ -1846,14 +1847,14 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a UnitSystem was loaded");
     assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a UnitSystem was loaded");
-    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a UnitSystem was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, standardFormatCount, "After a UnitSystem was loaded");
 
     unitSystem = m_ecdb.Schemas().GetUnitSystem("Units", "FINANCE");
     ASSERT_TRUE(unitSystem != nullptr);
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a second UnitSystem was loaded");
     assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a second UnitSystem was loaded");
-    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a second UnitSystem was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, standardFormatCount, "After a second UnitSystem was loaded");
 
     m_ecdb.ClearECDbCache();
     PhenomenonCP phen = m_ecdb.Schemas().GetPhenomenon("Units", "AREA");
@@ -1861,14 +1862,14 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a Phenomenon was loaded");
     assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a Phenomenon was loaded");
-    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a Phenomenon was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, standardFormatCount, "After a Phenomenon was loaded");
 
     phen = m_ecdb.Schemas().GetPhenomenon("Units", "THERMAL_CONDUCTIVITY");
     ASSERT_TRUE(phen != nullptr);
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "After a second Phenomenon was loaded");
     assertLoadCount(m_ecdb, "Units", 0, standardUnitCount, standardUnitSystemCount, standardPhenCount, 0, "After a second Phenomenon was loaded");
-    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, 0, "After a second Phenomenon was loaded");
+    assertLoadCount(m_ecdb, "Formats", 0, 0, 0, 0, standardFormatCount, "After a second Phenomenon was loaded");
     }
 
 //---------------------------------------------------------------------------------------
