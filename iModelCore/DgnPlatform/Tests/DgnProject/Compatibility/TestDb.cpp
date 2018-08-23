@@ -426,9 +426,6 @@ void TestDb::AssertUnit(Utf8CP schemaName, Utf8CP unitName, Utf8CP expectedDispl
                             Nullable<double> expectedNumerator, Nullable<double> expectedDenominator, Nullable<double> expectedOffset, 
                             QualifiedName const& expectedUnitSystem, QualifiedName const& expectedPhenomenon, bool expectedIsConstant, QualifiedName const& expectedInvertingUnit) const
     {
-    if (!SupportsFeature(ECDbFeature::UnitsAndFormats))
-        return;
-
     Utf8String assertMessage(schemaName);
     assertMessage.append(".").append(unitName).append(" | ").append(GetDescription());
 
@@ -487,6 +484,9 @@ void TestDb::AssertUnit(Utf8CP schemaName, Utf8CP unitName, Utf8CP expectedDispl
         }
 
     // 2) Via ECSQL
+    if (!SupportsFeature(ECDbFeature::UnitsAndFormats))
+        return;
+
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDb(), "SELECT u.ECInstanceId,u.DisplayLabel,u.Description,u.Definition,u.Numerator,u.Denominator,u.[Offset],u.UnitSystem.Id,u.Phenomenon.Id,u.IsConstant,u.InvertingUnit.Id FROM meta.UnitDef u JOIN meta.ECSchemaDef s ON u.Schema.Id=s.ECInstanceId WHERE s.Name=? AND u.Name=?")) << assertMessage;
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | " << assertMessage;
@@ -553,9 +553,6 @@ void TestDb::AssertUnit(Utf8CP schemaName, Utf8CP unitName, Utf8CP expectedDispl
 //+---------------+---------------+---------------+---------------+---------------+------
 void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, JsonValue const& expectedNumericSpec, JsonValue const& expectedCompSpec) const
     {
-    if (!SupportsFeature(ECDbFeature::UnitsAndFormats))
-        return;
-
     Utf8String assertMessage(schemaName);
     assertMessage.append(".").append(formatName).append(" | ").append(GetDescription());
 
@@ -589,6 +586,9 @@ void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedD
         ASSERT_TRUE(format->GetCompositeSpec()->ToJson(actualCompSpec, true));
         EXPECT_EQ(expectedCompSpec, JsonValue(actualCompSpec)) << assertMessage;
         }
+
+    if (!SupportsFeature(ECDbFeature::UnitsAndFormats))
+        return;
 
     // 2) Via ECSQL
     ECSqlStatement stmt;
@@ -660,9 +660,6 @@ void TestDb::AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedD
 //+---------------+---------------+---------------+---------------+---------------+------
 void TestDb::AssertUnitSystem(Utf8CP schemaName, Utf8CP unitsystemName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription) const
     {
-    if (!SupportsFeature(ECDbFeature::UnitsAndFormats))
-        return;
-
     Utf8String assertMessage(schemaName);
     assertMessage.append(".").append(unitsystemName).append(" | ").append(GetDescription());
 
@@ -678,6 +675,9 @@ void TestDb::AssertUnitSystem(Utf8CP schemaName, Utf8CP unitsystemName, Utf8CP e
         EXPECT_STREQ(expectedDescription, sys->GetDescription().c_str()) << assertMessage;
     else
         EXPECT_TRUE(sys->GetDescription().empty()) << assertMessage;
+
+    if (!SupportsFeature(ECDbFeature::UnitsAndFormats))
+        return;
 
     // 2) Via ECSQL
     ECSqlStatement stmt;
@@ -703,9 +703,6 @@ void TestDb::AssertUnitSystem(Utf8CP schemaName, Utf8CP unitsystemName, Utf8CP e
 //+---------------+---------------+---------------+---------------+---------------+------
 void TestDb::AssertPhenomenon(Utf8CP schemaName, Utf8CP phenName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedDefinition) const
     {
-    if (!SupportsFeature(ECDbFeature::UnitsAndFormats))
-        return;
-
     Utf8String assertMessage(schemaName);
     assertMessage.append(".").append(phenName).append(" | ").append(GetDescription());
 
@@ -726,6 +723,9 @@ void TestDb::AssertPhenomenon(Utf8CP schemaName, Utf8CP phenName, Utf8CP expecte
         EXPECT_STREQ(expectedDefinition, phen->GetDefinition().c_str()) << assertMessage;
     else
         EXPECT_TRUE(phen->GetDefinition().empty()) << assertMessage;
+
+    if (!SupportsFeature(ECDbFeature::UnitsAndFormats))
+        return;
 
     // 2) Via ECSQL
     ECSqlStatement stmt;
@@ -759,26 +759,28 @@ void TestDb::AssertLoadSchemas() const
     //1) via schema manager
     for (ECSchemaCP schema : GetDb().Schemas().GetSchemas(true))
         {
-        EXPECT_TRUE(schema->HasId()) << schema->GetFullSchemaName() << " | " << GetDescription();
+        const bool expectsHasId = SupportsFeature(ECDbFeature::UnitsAndFormats) || (!schema->GetName().EqualsIAscii("Units") && !schema->GetName().EqualsIAscii("Formats"));
+        EXPECT_EQ(expectsHasId, schema->HasId()) << schema->GetFullSchemaName() << " | " << GetDescription();
+
         EXPECT_FALSE(schema->GetName().empty()) << schema->GetFullSchemaName() << " | " << GetDescription();
-        for (ECClassCP ecClass : schema->GetClasses()) 
+        for (ECClassCP ecClass : schema->GetClasses())
             {
             EXPECT_TRUE(ecClass->HasId()) << ecClass->GetFullName() << " | " << GetDescription();
             EXPECT_FALSE(ecClass->GetName().empty()) << ecClass->GetFullName() << " | " << GetDescription();
             for (ECPropertyCP prop : ecClass->GetProperties())
-                { 
+                {
                 EXPECT_TRUE(prop->HasId()) << ecClass->GetFullName() << "." << prop->GetName() << " | " << GetDescription();
                 EXPECT_FALSE(prop->GetName().empty()) << ecClass->GetFullName() << "." << prop->GetName() << " | " << GetDescription();
                 }
             }
 
-        for (ECEnumerationCP ecEnum : schema->GetEnumerations()) 
+        for (ECEnumerationCP ecEnum : schema->GetEnumerations())
             {
             EXPECT_TRUE(ecEnum->HasId()) << ecEnum->GetFullName() << " | " << GetDescription();
             EXPECT_FALSE(ecEnum->GetName().empty()) << ecEnum->GetFullName() << " | " << GetDescription();
             }
 
-        for (KindOfQuantityCP koq : schema->GetKindOfQuantities()) 
+        for (KindOfQuantityCP koq : schema->GetKindOfQuantities())
             {
             EXPECT_TRUE(koq->HasId()) << koq->GetFullName() << " | " << GetDescription();
             EXPECT_FALSE(koq->GetName().empty()) << koq->GetFullName() << " | " << GetDescription();
@@ -790,33 +792,30 @@ void TestDb::AssertLoadSchemas() const
             EXPECT_FALSE(cat->GetName().empty()) << cat->GetFullName() << " | " << GetDescription();
             }
 
-        if (SupportsFeature(ECDbFeature::UnitsAndFormats))
+
+        for (ECUnitCP unit : schema->GetUnits())
             {
-            for (ECUnitCP unit : schema->GetUnits())
-                {
-                EXPECT_TRUE(unit->HasId()) << unit->GetFullName() << " | " << GetDescription();
-                EXPECT_FALSE(unit->GetName().empty()) << unit->GetFullName() << " | " << GetDescription();
-                }
-
-            for (ECFormatCP format : schema->GetFormats())
-                {
-                EXPECT_TRUE(format->HasId()) << format->GetFullName() << " | " << GetDescription();
-                EXPECT_FALSE(format->GetName().empty()) << format->GetFullName() << " | " << GetDescription();
-                }
-
-            for (UnitSystemCP unitSystem : schema->GetUnitSystems())
-                {
-                EXPECT_TRUE(unitSystem->HasId()) << unitSystem->GetFullName() << " | " << GetDescription();
-                EXPECT_FALSE(unitSystem->GetName().empty()) << unitSystem->GetFullName() << " | " << GetDescription();
-                }
-
-            for (PhenomenonCP phenomenon : schema->GetPhenomena())
-                {
-                EXPECT_TRUE(phenomenon->HasId()) << phenomenon->GetFullName() << " | " << GetDescription();
-                EXPECT_FALSE(phenomenon->GetName().empty()) << phenomenon->GetFullName() << " | " << GetDescription();
-                }
+            EXPECT_EQ(expectsHasId, unit->HasId()) << unit->GetFullName() << " | " << GetDescription();
+            EXPECT_FALSE(unit->GetName().empty()) << unit->GetFullName() << " | " << GetDescription();
             }
 
+        for (ECFormatCP format : schema->GetFormats())
+            {
+            EXPECT_EQ(expectsHasId, format->HasId()) << format->GetFullName() << " | " << GetDescription();
+            EXPECT_FALSE(format->GetName().empty()) << format->GetFullName() << " | " << GetDescription();
+            }
+
+        for (UnitSystemCP unitSystem : schema->GetUnitSystems())
+            {
+            EXPECT_EQ(expectsHasId, unitSystem->HasId()) << unitSystem->GetFullName() << " | " << GetDescription();
+            EXPECT_FALSE(unitSystem->GetName().empty()) << unitSystem->GetFullName() << " | " << GetDescription();
+            }
+
+        for (PhenomenonCP phenomenon : schema->GetPhenomena())
+            {
+            EXPECT_EQ(expectsHasId, phenomenon->HasId()) << phenomenon->GetFullName() << " | " << GetDescription();
+            EXPECT_FALSE(phenomenon->GetName().empty()) << phenomenon->GetFullName() << " | " << GetDescription();
+            }
         }
 
     GetDb().ClearECDbCache();

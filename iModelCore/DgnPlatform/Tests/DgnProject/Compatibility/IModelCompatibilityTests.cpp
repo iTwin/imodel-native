@@ -405,15 +405,17 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32KindOfQuantities)
                 testDb.AssertKindOfQuantity("PreEC32Koqs", "TestKoq_NoPresUnit", nullptr, nullptr, "u:W_PER_M_K", JsonValue(R"json(["f:DefaultReal[u:W_PER_M_K]"])json"), 0.4);
                 }
 
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units", false) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats", false) != nullptr) << testDb.GetDescription();
+
+            testDb.AssertUnit("Units", "COULOMB", "C", nullptr, "A*S", nullptr, nullptr, nullptr, QualifiedName("Units", "SI"), QualifiedName("Units", "ELECTRIC_CHARGE"), false, QualifiedName());
+            testDb.AssertUnitSystem("Units", "SI", nullptr, nullptr);
+            testDb.AssertPhenomenon("Units", "LUMINOSITY", "Luminosity", nullptr, "LUMINOSITY");
+            testDb.AssertFormat("Formats", "AmerFI", "FeetInches", nullptr, JsonValue(R"json({"type": "Fractional", "formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"], "precision": 8, "uomSeparator":""})json"),
+                                JsonValue(R"json({"includeZero":true, "spacer":"", "units": [{"name":"FT", "label":"'"}, {"name":"IN", "label":"\""}]})json"));
+
             if (!testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
                 {
-                EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units", false) == nullptr) << testDb.GetDescription();
-                EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats", false) == nullptr) << testDb.GetDescription();
-                EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "COULOMB") == nullptr) << testDb.GetDescription();
-                EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") == nullptr) << testDb.GetDescription();
-                EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "LUMINOSITY") == nullptr) << testDb.GetDescription();
-                EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("Formats", "AmerFI") == nullptr) << testDb.GetDescription();
-
                 ECSqlStatement stmt;
                 EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(testDb.GetDb(), "SELECT * FROM meta.UnitDef")) << testDb.GetDescription();
                 stmt.Finalize();
@@ -425,18 +427,6 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32KindOfQuantities)
                 stmt.Finalize();
                 EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(testDb.GetDb(), "SELECT * FROM meta.FormatCompositeUnitDef")) << testDb.GetDescription();
                 stmt.Finalize();
-                }
-            else
-                {
-                EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units", false) != nullptr) << testDb.GetDescription();
-                EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats", false) != nullptr) << testDb.GetDescription();
-
-                testDb.AssertUnit("Units", "COULOMB", "C", nullptr, "A*S", nullptr, nullptr, nullptr, QualifiedName("Units", "SI"), QualifiedName("Units", "ELECTRIC_CHARGE"), false, QualifiedName());
-                testDb.AssertUnitSystem("Units", "SI", nullptr, nullptr);
-                testDb.AssertPhenomenon("Units", "LUMINOSITY", "Luminosity", nullptr, "LUMINOSITY");
-                testDb.AssertFormat("Formats", "AmerFI", "FeetInches", nullptr, JsonValue(R"json({"type": "Fractional", "formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"], "precision": 8, "uomSeparator":""})json"),
-                                    JsonValue(R"json({"includeZero":true, "spacer":"", "units": [{"name":"FT", "label":"'"}, {"name":"IN", "label":"\""}]})json"));
-
                 }
             }
         }
