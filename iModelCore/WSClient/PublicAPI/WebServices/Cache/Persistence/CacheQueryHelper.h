@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/CacheQueryHelper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,13 +38,6 @@ struct CacheQueryHelper
             Utf8CP classAlias,
             Utf8CP infoAlias,
             bool* pInfoNeedsSelecting
-            );
-
-        static Utf8String CreateOrderByClause
-            (
-            const ISelectProvider::SortProperties& sortProperties,
-            ECClassCR ecClass,
-            Utf8CP classAlias
             );
 
         static bool IsTypeString(ECPropertyCR property);
@@ -150,6 +143,15 @@ struct CacheQueryHelper
             //! ECSql parameters: CachedInstance.$RemoteId
             //! Limit: 1
             WSCACHE_EXPORT static Utf8String SelectECInstanceIdByRemoteId(ECClassCR cachedInstanceClass);
+
+            //! Creates an order by clause to be used in ECSql statements
+            WSCACHE_EXPORT static Utf8String CreateOrderByClause
+                (
+                const ISelectProvider::SortProperties& sortProperties,
+                ECClassCR ecClass,
+                Utf8CP classAlias,
+                bool reverseOrder = false
+                );
             };
     };
 
