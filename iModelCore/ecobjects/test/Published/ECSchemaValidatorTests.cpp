@@ -1967,4 +1967,138 @@ TEST_F(SchemaValidatorTests, NoClassShouldSubclassSpatialLocationModel)
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class subclasses bis:SpatialLocationModel, so validation should fail";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, NoClassShouldSubclassGroupInformationModel)
+    {
+    // Test that an entity class may not subclass bis:GroupInformationModel
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity, bisGroupInformationModel;
+    ECSchemaPtr schema;
+    ECEntityClassP entity0, entity1;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisGroupInformationModel, "GroupInformationModel"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "GoodEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
+
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class does not subclass bis:GroupInformationModel, so validation should succeed";
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "BadEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisGroupInformationModel));
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class subclasses bis:GroupInformationModel, so validation should fail";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, NoClassShouldSubclassInformationRecordModel)
+    {
+    // Test that an entity class may not subclass bis:InformationRecordModel
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity, bisInformationRecordModel;
+    ECSchemaPtr schema;
+    ECEntityClassP entity0, entity1;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisInformationRecordModel, "InformationRecordModel"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "GoodEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
+
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class does not subclass bis:InformationRecordModel, so validation should succeed";
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "BadEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisInformationRecordModel));
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class subclasses bis:InformationRecordModel, so validation should fail";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, NoClassShouldSubclassDocumentListModel)
+    {
+    // Test that an entity class may not subclass bis:DocumentListModel
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity, bisDocumentListModel;
+    ECSchemaPtr schema;
+    ECEntityClassP entity0, entity1;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisDocumentListModel, "DocumentListModel"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "GoodEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
+
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class does not subclass bis:DocumentListModel, so validation should succeed";
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "BadEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisDocumentListModel));
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class subclasses bis:DocumentListModel, so validation should fail";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, NoClassShouldSubclassLinkModel)
+    {
+    // Test that an entity class may not subclass bis:LinkModel
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity, bisLinkModel;
+    ECSchemaPtr schema;
+    ECEntityClassP entity0, entity1;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisLinkModel, "LinkModel"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "GoodEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
+
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class does not subclass bis:LinkModel, so validation should succeed";
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "BadEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisLinkModel));
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class subclasses bis:LinkModel, so validation should fail";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, NoClassShouldSubclassDefinitionModelWithExceptions)
+    {
+    // Test that an entity class may not subclass bis:DefinitionModel, except for bis:DictionaryModel and bis:RepositoryModel
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity, bisDefinitionModel, bisDictionaryModel, bisRepositoryModel;
+    ECSchemaPtr schema;
+    ECEntityClassP entity0, entity1;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisDefinitionModel, "DefinitionModel"));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisDictionaryModel, "DictionaryModel"));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisRepositoryModel, "RepositoryModel"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "GoodEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
+
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class does not subclass bis:DefinitionModel, so validation should succeed";
+
+    ASSERT_EQ(ECObjectsStatus::Success, bisDictionaryModel->AddBaseClass(*bisDefinitionModel));
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "bis:DictionrayModel may subclass bis:DefinitionModel, so validation should succeed";
+
+    ASSERT_EQ(ECObjectsStatus::Success, bisRepositoryModel->AddBaseClass(*bisDefinitionModel));
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "bis:RepositoryModel may subclass bis:DefinitionModel, so validation should succeed";
+
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "BadEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisDefinitionModel));
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class subclasses bis:DefinitionModel, so validation should fail";
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
