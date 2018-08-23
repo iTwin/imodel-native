@@ -514,7 +514,7 @@ void Root::ClearAllTiles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Root::RequestTile(TileR tile, TileLoadStatePtr loads)
+BentleyStatus Root::RequestTile(TileR tile)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
@@ -522,8 +522,7 @@ BentleyStatus Root::RequestTile(TileR tile, TileLoadStatePtr loads)
         return ERROR;
         }
 
-    if (nullptr == loads)
-        loads = std::make_shared<TileLoadState>(tile);
+    auto loads = std::make_shared<TileLoadState>(tile);
 
     TileLoaderPtr loader = tile._CreateTileLoader(loads);
     if (!loader.IsValid())
@@ -682,34 +681,6 @@ TileLoadState::~TileLoadState()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* We want to draw these missing tiles, but they are not yet ready. They may already be
-* queued for loading, or actively loading.
-* If they are in the "not loaded" state, add them to the load queue.
-* Any tiles which are currently loading/queued but are *not* in this missing set should
-* be cancelled - we have determined we do not need them to draw the current frame.
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Root::RequestTiles(MissingNodesCR missingNodes)
-    {
-        {
-        // First cancel any loading/queued tiles which are no longer needed
-        BeMutexHolder lock(m_cv.GetMutex());
-        for (auto& load : m_activeLoads)
-            if (!load->IsCanceled() && !missingNodes.Contains(load->GetTile()))
-                load->SetCanceled();
-        }
-
-    for (auto const& missing : missingNodes)
-        {
-        if (missing->IsNotLoaded())
-            {
-            TileLoadStatePtr loads = std::make_shared<TileLoadState>(*missing);
-            RequestTile(const_cast<TileR>(*missing), loads);
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::ChildTiles const* Tile::_GetChildren(bool load) const
@@ -838,29 +809,6 @@ TileId Tile::GetRelativeTileId() const
         tileId = tileId.GetRelativeId(parent->GetTileId());
 
     return tileId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MissingNodes::Insert(TileCR tile, bool prioritize)
-    {
-    m_set.insert(Node(tile, prioritize));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool MissingNodes::Contains(TileCR tile) const
-    {
-    bool prioritize = false; // !tile._IsPartial();
-    Node toFind(tile, prioritize);
-    if (m_set.end() != m_set.find(toFind))
-        return true;
-
-    // It's possible the tile was previously partial, then became complete on background thread.
-    toFind.m_prioritize = !prioritize;
-    return m_set.end() != m_set.find(toFind);
     }
 
 /*---------------------------------------------------------------------------------**//**

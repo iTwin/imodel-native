@@ -21,8 +21,6 @@
 
 BEGIN_TILETREE_NAMESPACE
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNodes)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(TileRequests)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Root)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoader)
@@ -312,8 +310,7 @@ protected:
 
     Root(DgnDbR, DgnModelId, bool is3d, TransformCR, Dgn::Render::SystemR);
 public:
-    DGNPLATFORM_EXPORT BentleyStatus RequestTile(TileR tile, TileLoadStatePtr loads);
-    DGNPLATFORM_EXPORT void RequestTiles(MissingNodesCR);
+    DGNPLATFORM_EXPORT BentleyStatus RequestTile(TileR tile);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
 
@@ -368,7 +365,6 @@ public:
 struct TileLoader : RefCountedBase, NonCopyableClass
 {
 protected:
-    Utf8String                  m_resourceName;  // full file or URL name
     TilePtr                     m_tile;             // tile to load, cannot be null.
     TileLoadStatePtr            m_loads;
     BeSQLite::SnappyFromBlob    m_snappyFrom;
@@ -381,13 +377,10 @@ protected:
     bool m_saveToCache = false;
 
     //! Constructor for TileLoader.
-    //! @param[in] resourceName full file name or URL name.
     //! @param[in] tile The tile that we are loading.
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
-    //! @param[in] renderSys The renderSys.  If null then the root node renderSys is used.
-    TileLoader(Utf8StringCR resourceName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey)
-        : m_resourceName(resourceName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
+    TileLoader(TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey) : m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
 
     BentleyStatus LoadTile();
     BentleyStatus DoReadFromDb();
@@ -427,57 +420,6 @@ public:
 
     //! Perform the load asynchronously.
     BentleyStatus Perform();
-};
-
-//=======================================================================================
-//! A set of missing tiles intended to be queued for loading.
-//! Sorted according to priority for loading - tiles nearer the root or closer to the camera
-//! are loaded with priority.
-//! A given tile can only appear in the set once.
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct MissingNodes
-{
-    struct Node
-    {
-        friend struct MissingNodes;
-    private:
-        TileCPtr    m_tile;
-        bool        m_prioritize;
-
-        Node(TileCR tile, bool prioritize) : m_tile(&tile), m_prioritize(prioritize) { }
-    public:
-        Node() { }
-
-        TileCR operator*() const { return *m_tile; }
-        TileCP operator->() const { return m_tile.get(); }
-
-        bool operator<(Node const& rhs) const
-            {
-            if (m_tile->GetDepth() != rhs.m_tile->GetDepth())
-                return m_tile->GetDepth() < rhs.m_tile->GetDepth();
-            else if (m_prioritize != rhs.m_prioritize)
-                return m_prioritize;
-            else
-                return m_tile.get() < rhs.m_tile.get();
-            }
-    };
-private:
-    typedef bset<Node> Set;
-
-    Set m_set;
-public:
-    DGNPLATFORM_EXPORT void Insert(TileCR tile, bool prioritize);
-    bool Contains(TileCR tile) const;
-
-    bool empty() const { return m_set.empty(); }
-    size_t size() const { return m_set.size(); }
-    void clear() { m_set.clear(); }
-
-    typedef Set::const_iterator const_iterator;
-
-    const_iterator begin() const { return m_set.begin(); }
-    const_iterator end() const { return m_set.end(); }
 };
 
 END_TILETREE_NAMESPACE

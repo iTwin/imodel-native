@@ -764,7 +764,7 @@ END_UNNAMED_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads)
-    : T_Super("", tile, loads, tile.GetRoot().ConstructTileResource(tile)), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime)
+    : T_Super(tile, loads, tile.GetRoot().ConstructTileResource(tile)), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime)
     {
     //
     }
