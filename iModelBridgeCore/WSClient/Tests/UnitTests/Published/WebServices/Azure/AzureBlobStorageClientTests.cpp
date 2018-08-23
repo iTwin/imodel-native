@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Azure/AzureBlobStorageClientTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AzureBlobStorageClientTests.h"
@@ -178,3 +178,24 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsBadRequest_R
     auto result = client->SendUpdateFileRequest("SASUrl", filePath)->GetResult();
     ASSERT_FALSE(result.IsSuccess());
     }
+
+TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_FileSmallerThanChunk_UploadsWithOneRequest)
+    {
+    auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
+    uint32_t fileSize = 200;
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("TestUrl", request.GetUrl().c_str());
+        EXPECT_EQ(fileSize, request.GetRequestBody()->GetLength());
+        EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
+        return StubHttpResponse(HttpStatus::Created, "", {{"ETag", "FooBoo"}});
+        });
+
+    BeFileName filePath = StubFileWithSize(fileSize);
+    auto result = client->SendUpdateFileRequest("TestUrl", filePath)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    ASSERT_EQ("FooBoo", result.GetValue().GetETag());
+    }
+
