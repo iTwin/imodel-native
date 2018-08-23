@@ -143,7 +143,7 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
         }
     else if (url.StartsWith(L"http") || url.StartsWith(L"https"))
         {
-        this->m_location = ServerLocation::HTTP_SERVER;
+        this->m_location = url.Contains(L"://localhost") ? ServerLocation::HTTP_SERVER_LOCAL : ServerLocation::HTTP_SERVER;
         this->m_commMethod = CommMethod::CURL;
         this->m_url = Utf8String(url.c_str());
         }
@@ -255,7 +255,14 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     std::unique_ptr<std::function<string()>> sasCallback = nullptr;
     Utf8String sslCertificatePath;
 
-    if (settings->IsLocal() && settings->IsUsingCURL())
+    if (settings->IsDataFromHTTPServerAddress())
+        {
+        service_name = L"DataSourceServiceCURL";
+        account_name = L"HTTP-Servers";
+
+        m_masterFileName = settings->GetURL();
+        }
+    else if (settings->IsLocal() && settings->IsUsingCURL())
         {
         service_name = L"DataSourceServiceCURL";
         account_name = L"LocalCURLAccount";
@@ -313,13 +320,6 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         {
         // NEEDS_WORK_SM_STREAMING: Use WAStorage library here...
         assert(!"Not implemented...");
-        }
-    else if (settings->IsDataFromHTTPServerAddress())
-        {
-        service_name = L"DataSourceServiceCURL";
-        account_name = L"HTTP-Servers";
-        
-        m_masterFileName = settings->GetURL();
         }
     else
         {

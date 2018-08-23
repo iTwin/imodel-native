@@ -547,6 +547,12 @@ BentleyStatus                      ScalableMeshGroup::_Reproject(GeoCoordinates:
     {
     return ERROR;
     }
+#else
+BentleyStatus                      ScalableMeshGroup::_Reproject(DgnGCSCP targetCS, DgnDbR dgnProject)
+    {
+    return ERROR;
+    }
+
 #endif
 
 Transform                          ScalableMeshGroup::_GetReprojectionTransform() const
