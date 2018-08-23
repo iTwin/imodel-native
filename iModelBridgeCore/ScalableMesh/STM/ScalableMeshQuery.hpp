@@ -1620,59 +1620,28 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
            
             if (clips != nullptr /*&& range3D2.XLength() < 150 && range3D2.YLength() < 150*/)
                 {
-                BeAssert(std::is_sorted(clips->begin(), clips->end(), [](ClipPrimitivePtr i, ClipPrimitivePtr j)
-                    { // boundary clips should be first
-                    if (!i->IsMask() && j->IsMask()) return true;
-                    return false;
-                    }));
-
-                bvector<DPoint3d> clearedPts;
-                bvector<int32_t> clearedIndices;
-                bvector<int32_t> newUvsIndices;
-                bvector<DPoint2d> newUvs;
-                bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
-                bvector<bool> isMask;
-                map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
-                if (!GetRegionsFromClipVector3D(polyfaces, clips.get(), meshPtr->GetPolyfaceQuery(), isMask))
-                {
-                    meshP = meshPtr.get();
-                    return meshP;
-                }
+                bmap<size_t, uint64_t> idsForPrimitives;
+                for (size_t n = 0; n < clips->size(); n++) idsForPrimitives[n] = uint64_t (-1);
+                MeshClipper clipper;
+                PolyfaceHeaderPtr polyface;
+                clipper.SetClipGeometry(idsForPrimitives, clips.get());
+                clipper.SetSourceMesh(meshPtr->GetPolyfaceQuery());
+                clipper.ComputeClip();
+                clipper.GetInteriorRegion(polyface);
 
                 // Clear mesh
                 meshPtr = ScalableMeshMesh::Create();
 
                 // Reconstruct mesh with new polyface
-                auto appendToMesh = [](ScalableMeshMeshPtr meshPtr, PolyfaceHeaderPtr polyface) -> int
+                if (polyface != nullptr)
                     {
-                    if (polyface != nullptr)
-                        {
-                        return meshPtr->AppendMesh(polyface->Point().size(), polyface->Point().data(),
-                                                   polyface->PointIndex().size(), polyface->PointIndex().data(),
-                                                   0, 0, 0,
-                                                   polyface->Param().size(), polyface->Param().data(),
-                                                   polyface->ParamIndex().data());
-                        }
-                    return SUCCESS;
-                    };
-                PolyfaceHeaderPtr polyface = nullptr;
-                if ((*clips)[0]->IsMask())
-                    {
-                    polyface = polyfaces[0].empty() ? nullptr : polyfaces[0][0];
-                    status = appendToMesh(meshPtr, polyface);
-                    BeAssert(status == SUCCESS);
+                    meshPtr->AppendMesh(polyface->Point().size(), polyface->Point().data(),
+                                        polyface->PointIndex().size(), polyface->PointIndex().data(),
+                                        0, 0, 0,
+                                        polyface->Param().size(), polyface->Param().data(),
+                                        polyface->ParamIndex().data());
                     }
-                else
-                    {
-                    for (int i = 0; i < clips->size(); i++)
-                        {
-                        if ((*clips)[i]->IsMask()) break;
 
-                        polyface = polyfaces[i].empty() ? nullptr : polyfaces[i][0];
-                        status = appendToMesh(meshPtr, polyface);
-                        BeAssert(status == SUCCESS);
-                        }
-                    }
                 }
 
             if ((meshPtr->GetNbFaces() == 0) && flags->ShouldLoadIndices())
@@ -2303,6 +2272,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                 if (val["texId"].size() > 0)
                     textureIDs.push_back((*val["texId"].begin()).asUInt64());
                 }
+
             for(auto& texId: textureIDs)
                 {
                 RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> displayTextureDataPtr = meshNode->GetDisplayTexture(texId);
@@ -2315,7 +2285,13 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                         memcpy(&width, texPtr->GetData(), sizeof(int));
                         memcpy(&height, texPtr->GetData() + sizeof(int), sizeof(int));
                         SmCachedDisplayTexture* cachedDisplayTexture;
+
+                        size_t usedMemInBytes = 0;
+                        bool isStoredOnGpu = false;
+                        
                         displayCacheManagerPtr->_CreateCachedTexture(cachedDisplayTexture,
+                                                                     usedMemInBytes,
+                                                                     isStoredOnGpu,
                                                                      width,
                                                                      height,
                                                                      false,

@@ -23,8 +23,6 @@ CCompPDBName = $(appName)
 
 DgnPlatformV8LibDir = ${BuildContext}/SubParts/DgnV8Libs/
 
-dirToSearch=$(BuildContext)VendorAPI/CGAL
-%include cincapnd.mki
 
 dirToSearch=$(BuildContext)VendorAPI/Boost
 %include cincapnd.mki
@@ -48,7 +46,7 @@ always:
    @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
 
 
-CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -wd4091 -wd4312
+CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -wd4091 -wd4312 -wd4067 -wd4459
 
 
 #Uncomment this to allow generating design meshes
@@ -84,7 +82,7 @@ CCompOpts + -wd4018 -wd4309 -wd4305
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTMIMPORT_BUILD__  -DVANCOUVER_API -wd4091 -wd4312
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTMIMPORT_BUILD__  -DVANCOUVER_API -wd4091 -wd4312 -wd4067 -wd4459
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
@@ -326,7 +324,7 @@ $(o)ScalableMeshQuadTreeBCLIBFilters$(oext) : $(stmDir)ScalableMeshQuadTreeBCLIB
 
 #$(o)StreamTextureProvider$(oext) : $(stmDir)StreamTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)Tracer$(oext) : $(stmDir)Tracer.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+#$(o)Tracer$(oext) : $(stmDir)Tracer.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 #$(o)RasterUtilities$(oext) : $(stmDir)RasterUtilities.cpp $(stmDir)RasterUtilities.h ${MultiCompileDepends}
 

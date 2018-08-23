@@ -1735,7 +1735,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
             int childInd = 0;
             for (auto& child : children)
                 {
-                if (child.isMember("SMHeader"))
+                if (child.isMember("SMHeader") && child["SMHeader"].isMember("id"))
                     header->m_apSubNodeID[childInd++] = HPMBlockID(child["SMHeader"]["id"].asUInt());
                 else
                     header->m_apSubNodeID[childInd++] = HPMBlockID(child["SMRootID"].asUInt());
@@ -2199,7 +2199,7 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
     //    {
     //    delete it->second;
     //    }
-    m_dataCache.clear();
+    m_dataCache.reset(nullptr);
     }
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
@@ -2234,10 +2234,10 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
                 sizeToWrite = (uint32_t)compressedPacket.GetDataSize() + sizeof(uint32_t);
                 dataToWrite = new Byte[sizeToWrite];
                 reinterpret_cast<uint32_t&>(*dataToWrite) = (uint32_t)bufferSize;
-                if (m_dataCache.count(blockID.m_integerID) > 0)
+                if (m_dataCache != nullptr)
                     {
                     // must update data count in the cache
-                    auto& block = this->m_dataCache[blockID.m_integerID];
+                    auto& block = this->m_dataCache;
                     block->resize(bufferSize);
                     memcpy(block->data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
                     dataToWrite = block->data();
@@ -2383,10 +2383,8 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
         }
     auto blockSize = block.size();
     // Data now resides in the pool, no longer need to keep it in the store
-    m_dataCacheMutex.lock();
     block.UnLoad();
-    m_dataCache.erase(block.GetID());
-    m_dataCacheMutex.unlock();
+    m_dataCache.reset(nullptr);
 
     return blockSize;
     }
@@ -2399,9 +2397,7 @@ template <class DATATYPE, class EXTENT> bool SMStreamingNodeDataStore<DATATYPE, 
 template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlock(HPMBlockID blockID) const
     {
     // std::map [] operator is not thread safe while inserting new elements
-    m_dataCacheMutex.lock();
-    auto& block = m_dataCache[blockID.m_integerID];
-    m_dataCacheMutex.unlock();
+    auto& block = m_dataCache;
     if (!block)
         {
         block.reset(new StreamingDataBlock());
@@ -2995,10 +2991,8 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
 template <class DATATYPE, class EXTENT> StreamingTextureBlock& StreamingNodeTextureStore<DATATYPE, EXTENT>::GetTexture(HPMBlockID blockID) const
     {
     // std::map [] operator is not thread safe while inserting new elements
-    m_dataCacheMutex.lock();
-    StreamingTextureBlock* texture = static_cast<StreamingTextureBlock*>(m_dataCache[blockID.m_integerID].get());
+    StreamingTextureBlock* texture = static_cast<StreamingTextureBlock*>(m_dataCache.get());
     if (!texture) texture = new StreamingTextureBlock();
-    m_dataCacheMutex.unlock();
     assert((texture->GetID() != uint64_t(-1) ? texture->GetID() == blockID.m_integerID : true));
     if (!texture->IsLoaded())
         {
@@ -3112,11 +3106,8 @@ template <class DATATYPE, class EXTENT> size_t StreamingNodeTextureStore<DATATYP
     ((int*)DataTypeArray)[2] = (int)texture.GetNbChannels();
     assert(maxCountData >= texture.size());
     memmove(DataTypeArray + 3 * sizeof(int), texture.data(), std::min(texture.size(), maxCountData));
-    m_dataCacheMutex.lock();
-    auto textureID = texture.GetID();
     //delete m_dataCache[textureID];
-    m_dataCache.erase(textureID);
-    m_dataCacheMutex.unlock();
+    m_dataCache.reset(nullptr);
     return std::min(textureSize + 3 * sizeof(int), maxCountData);
     }
 

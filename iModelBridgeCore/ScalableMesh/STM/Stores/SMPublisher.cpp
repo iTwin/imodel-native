@@ -150,25 +150,6 @@ StatusInt SM3SMPublisher::_Publish(IScalableMeshPublishParamsPtr params)
         progress->Progress() = 0.0f;
         }
 
-    // Compute clip ranges
-    auto clips = m_params->GetClips();
-    if (clips.IsValid())
-        {
-        for (ClipPrimitivePtr const& primitive : *clips)
-            {
-            ClipRangeInfo clipRangeInfo;
-            clipRangeInfo.m_clip = primitive;
-            if (primitive->GetRange(clipRangeInfo.m_range, nullptr, primitive->IsMask()))
-                {
-                m_clipRanges.push_back(clipRangeInfo);
-                }
-            else
-                {
-                BeAssert(false && "Problem computing range for clip");
-                }
-            }
-        }
-
     m_publishThreadPool = GetPublishThreadPool();
 
     // Create null promise for the root node and add it to the processing queue to kick-start the process

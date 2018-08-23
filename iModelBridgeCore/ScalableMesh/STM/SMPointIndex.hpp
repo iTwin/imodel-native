@@ -924,7 +924,8 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Remove
 	if (GetBlockID().IsValid())
 	{
 		SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex);
-		m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+        SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Cesium3DTiles, (uint64_t)m_SMIndex);
+        m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 	}
 }
 

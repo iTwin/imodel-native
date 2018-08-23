@@ -413,8 +413,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override;
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override;
 #endif
-
-        virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) override;
+        
         virtual void _ReFilter() override;
         
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override;
@@ -693,8 +692,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override { return ERROR; }
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override { return ERROR; }
 #endif
-
-        virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) override {};
+        
         virtual void _ReFilter() override {};
            
     };

@@ -84,6 +84,8 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
 
         virtual bool        Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const override
             {
+            assert(!"Currently Deactivated");
+
 #ifdef WIP_MESH_IMPORT
             node->GetMetadata();
             node->GetMeshParts();

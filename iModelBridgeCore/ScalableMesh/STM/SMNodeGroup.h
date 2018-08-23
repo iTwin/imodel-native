@@ -99,8 +99,13 @@ private:
     //SMGroupGlobalParameters() = delete;
     SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account, const SESSION_NAME &session);
 
-SMGroupGlobalParameters(const SMGroupGlobalParameters&) = delete;
-SMGroupGlobalParameters& operator=(const SMGroupGlobalParameters&) = delete;
+    SMGroupGlobalParameters(const SMGroupGlobalParameters&) = delete;
+    SMGroupGlobalParameters& operator=(const SMGroupGlobalParameters&) = delete;
+
+
+#ifndef VANCOUVER_API
+    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); }
+#endif
 
 private:
 
@@ -133,6 +138,12 @@ public:
 private:
     SMGroupCache() = delete;
     SMGroupCache(node_header_cache* nodeCache);
+
+
+#ifndef VANCOUVER_API
+    virtual uint32_t _GetExcessiveRefCountThreshold() const override;
+#endif
+
 
 private:
 

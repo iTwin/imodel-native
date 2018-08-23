@@ -609,8 +609,15 @@ BentleyStatus                      ScalableMeshGroup::_DeleteCoverage(uint64_t i
         }
 
     return SUCCESS;
-    }
+    } 
 
+#ifdef WIP_MESH_IMPORT
+
+void ScalableMeshGroup::_GetAllTextures(bvector<IScalableMeshTexturePtr>& textures)
+    {
+    assert(!"Not yet implemented");
+    }
+#endif
 
 void ScalableMeshGroup::_SetGroupSelectionFromPoint(DPoint3d firstPoint)
 {

@@ -87,9 +87,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
 
-#ifdef WIP_MESH_IMPORT        
+//#ifdef WIP_MESH_IMPORT        
     m_existingMesh = false;
-#endif
+//#endif
 
     Init();
 
@@ -113,9 +113,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
              
-#ifdef WIP_MESH_IMPORT        
+//#ifdef WIP_MESH_IMPORT        
     m_existingMesh = false;
-#endif
+//#endif
 
     Init();
 
@@ -133,9 +133,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
     m_mesher3d = pi_rpParentNode->GetMesher3d();
 
-#ifdef WIP_MESH_IMPORT         
+//#ifdef WIP_MESH_IMPORT         
     m_existingMesh = false;
-#endif
+//#endif
 
     m_nbClips = 0;
 
@@ -153,9 +153,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
     m_mesher3d = pi_rpParentNode->GetMesher3d();
      
-#ifdef WIP_MESH_IMPORT         
+//#ifdef WIP_MESH_IMPORT         
     m_existingMesh = false;
-#endif
+//#endif
 
     m_nbClips = 0;
 
@@ -175,9 +175,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher3d = pi_rpParentNode->GetMesher3d();
 
      
-#ifdef WIP_MESH_IMPORT         
+//#ifdef WIP_MESH_IMPORT         
     m_existingMesh = false;
-#endif
+//#endif
     m_nbClips = 0;
 
     Init();
@@ -201,9 +201,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
      
-#ifdef WIP_MESH_IMPORT                
+//#ifdef WIP_MESH_IMPORT                
     m_existingMesh = false;
-#endif
+//#endif
     m_nbClips = 0;
 
     Init();
@@ -1101,8 +1101,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveW
     flags->SetLoadTexture(true);
     IScalableMeshMeshPtr meshP = nodeP->GetMesh(flags);
     bvector<bool> isMask;
+    bvector<size_t> polyfaceIndices;
     if (meshP.get() != nullptr)
-        GetRegionsFromClipVector3D(polyfaces, boundariesToRemoveWithin, meshP->GetPolyfaceQuery(), isMask);
+        GetRegionsFromClipVector3D(polyfaces, polyfaceIndices, boundariesToRemoveWithin, meshP->GetPolyfaceQuery(), isMask);
 
     map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
     if (polyfaces[0][0]->GetPointCount() > 0)
@@ -1264,19 +1265,24 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveN
 {
 	SMPointIndexNode<POINT, EXTENT>::RemoveNonDisplayPoolData();
 	GetMemoryPool()->RemoveItem(m_triIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex);
-	m_triIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    GetMemoryPool()->RemoveItem(m_triIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Cesium3DTiles, (uint64_t)m_SMIndex);
+    m_triIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
 	GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::Texture, (uint64_t)m_SMIndex);
-	m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::Cesium3DTiles, (uint64_t)m_SMIndex);
+    m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
 	GetMemoryPool()->RemoveItem(m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex);
-	m_triUvIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    GetMemoryPool()->RemoveItem(m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Cesium3DTiles, (uint64_t)m_SMIndex);
+    m_triUvIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
 	GetMemoryPool()->RemoveItem(m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex);
-	m_uvCoordsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    GetMemoryPool()->RemoveItem(m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Cesium3DTiles, (uint64_t)m_SMIndex);
+    m_uvCoordsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
 	GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)m_SMIndex);
-	m_graphPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Cesium3DTiles, (uint64_t)m_SMIndex);
+    m_graphPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 }
 
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveMultiTextureData() 
@@ -1856,8 +1862,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFe
     return 0;
     }
 
-#ifdef WIP_MESH_IMPORT
-extern ScalableMeshExistingMeshMesher<DPoint3d, DRange3d> s_ExistingMeshMesher;
+//#ifdef WIP_MESH_IMPORT
 
 template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMeshDefinitionUnconditional(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs)
     {
@@ -1890,6 +1895,13 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
         {
         parts.push_back(id.asInt());
         }
+
+    //Push some default part if none has been specified.
+    if (parts.size() == 0 && nIndices > 0)
+        {
+        parts.push_back(0);
+        }
+
     ClipMeshDefinition(m_nodeHeader.m_nodeExtent, pointsClipped, extentClipped, indicesClipped, outUvs, pts, nPts, indices, nIndices, extent,texId, parts);
 
     val["texId"] = Json::arrayValue;
@@ -1907,7 +1919,10 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
     Utf8String metadataStr(Json::FastWriter().write(val));
     if (!m_nodeHeader.m_nodeExtent.IntersectsWith(extentClipped)) return 0;
 
+#ifdef WIP_MESH_IMPORT
     if (m_mesher2_5d != &s_ExistingMeshMesher || m_mesher3d != &s_ExistingMeshMesher) m_mesher2_5d = m_mesher3d = &s_ExistingMeshMesher;
+#endif
+	
     m_existingMesh = true;
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
 
@@ -1961,9 +1976,14 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
                 subMetadata["texId"] = Json::arrayValue;
                 subMetadata["parts"] = Json::arrayValue;
                 subMetadata["parts"].append((int)indicesPtr->size());
-                int newId = texId[currentPart];
-                assert(newId < 10000);
-                subMetadata["texId"].append(texId[currentPart]);
+
+                if (texId.size() > currentPart)
+                    {
+                    int newId = texId[currentPart];
+                    assert(newId < 10000);
+                    subMetadata["texId"].append(texId[currentPart]);
+                    }
+
                 Utf8String subMetadataStr(Json::FastWriter().write(subMetadata));
                 m_meshMetadata.push_back(subMetadataStr);
                 m_meshParts.push_back((int)indicesPtr->size());
@@ -1976,11 +1996,18 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
         val["texId"] = Json::arrayValue;
         val["parts"] = Json::arrayValue;
         val["parts"].append((int)indicesPtr->size());
-        val["texId"].append(texId[currentPart]);
+
+        if (texId.size() > currentPart)
+            {
+            val["texId"].append(texId[currentPart]);
+            }
+
         metadataStr = Json::FastWriter().write(val);
         m_meshMetadata.push_back(metadataStr);
 
-       
+        assert(uvs == nullptr);
+
+#ifdef WIP_MESH_IMPORT       
         if (uvs != nullptr)
             {
             m_nodeHeader.m_isTextured = true;
@@ -2012,6 +2039,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
             uvIndicePtr->clear();
             uvIndicePtr->push_back(&(*indicesPtr)[0], indicesPtr->size());
             }
+#endif
         }
     else
         {
@@ -2087,7 +2115,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
     return 0;
     }
 
-#endif
+//#endif
 
 //=======================================================================================
 // @bsimethod                                                   Mathieu.St-Pierre 10/14
@@ -2355,9 +2383,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::OnPush
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::OnPropagateDataDown()
     {
     PropagateFeaturesToChildren();
-#ifdef WIP_MESH_IMPORT
+//#ifdef WIP_MESH_IMPORT
     PropagateMeshToChildren();
-#endif
+//#endif
     }
    
 
@@ -2403,7 +2431,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
             }
         }
 #else //Prototype version for the design mesh handling by ScalableMesh for Hololens prototype. 
-    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  indicesPtr = GetPtsIndicePtr();
+
     if (indicesPtr->size() == 0) return;
     DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
                                         ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
@@ -4630,8 +4658,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                     isMaskPrimitive.push_back(isMask[&clip - clips.data()]);
                 clipComplete->Append(*clip);
             }
+            bvector<size_t> polyfaceIndices;
             if (meshP.get() != nullptr)
-                hasClip = GetRegionsFromClipVector3D(polyfaces, clipComplete.get(), m_SMIndex->IsFromCesium() ? polyHeader.get() : polyfaceQuery, isMaskPrimitive);
+                hasClip = GetRegionsFromClipVector3D(polyfaces, polyfaceIndices, clipComplete.get(), m_SMIndex->IsFromCesium() ? polyHeader.get() : polyfaceQuery, isMaskPrimitive);
         }
 
         if (hasClip) 
@@ -5299,9 +5328,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
         {
         if (!IsLoaded())
             Load();
-#ifdef WIP_MESH_IMPORT
+//#ifdef WIP_MESH_IMPORT
         if (m_existingMesh) return true;
-#endif
+//#endif
         bool needsMeshing = false;
 
         if (!HasRealChildren())
@@ -5573,8 +5602,8 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::PerformCl
     {
     if (m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->ClipActionRecursive(action, clipId, extent, setToggledWhenIDIsOn, tr);
     }
-
-#ifdef WIP_MESH_IMPORT
+   
+//#ifdef WIP_MESH_IMPORT
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs)
     {
     if (0 == nPts)
@@ -5614,7 +5643,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddMeshDe
         assert(nAddedPoints >= nPts);
         }
     }
-#endif
+//#endif
 
 template<class POINT, class EXTENT>  int64_t  SMMeshIndex<POINT, EXTENT>::AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes)
     {
