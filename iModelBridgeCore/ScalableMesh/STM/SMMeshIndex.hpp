@@ -1787,7 +1787,7 @@ template<class EXTENT> void ClipMeshDefinition(EXTENT clipExtent, bvector<DPoint
     int64_t currentTexId = -1;
     for (auto& idx : newIndices)
         {
-        if (faceIds[(&idx - &newIndices[0]) / 3] != currentTexId)
+        if (faceIds.size() != 0 && faceIds[(&idx - &newIndices[0]) / 3] != currentTexId)
             {
             if (currentTexId != -1)
                 {
@@ -1809,7 +1809,9 @@ template<class EXTENT> void ClipMeshDefinition(EXTENT clipExtent, bvector<DPoint
         indicesClipped.push_back(ptMap[idx - 1] + 1);
         }
     assert(currentTexId < 10000);
-    newTexIds.push_back(currentTexId);
+    if (currentTexId != -1)
+        newTexIds.push_back(currentTexId);
+
     newParts.push_back((int)indicesClipped.size());
     inOutUvs = tempUvs;
     parts = newParts;
@@ -2432,6 +2434,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
             subNodeUvIndicesPtr->push_back(&(*uvIndicesPtr)[0], uvIndicesPtr->size());
             uvIndicesPtr->clear();
             }
+
+        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->m_existingMesh = m_existingMesh;
         }
 #else //Prototype version for the design mesh handling by ScalableMesh for Hololens prototype. 
 

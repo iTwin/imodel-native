@@ -838,7 +838,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                             }
                         }
                     });
-
+                
                 
                 StatusInt status = creatorPtr->Create(isSingleFile);
                 importInProgress = false;

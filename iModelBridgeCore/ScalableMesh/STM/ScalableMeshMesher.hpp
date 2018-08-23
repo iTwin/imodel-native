@@ -69,8 +69,23 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
         
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndicesPtr(node->GetPtsIndicePtr());
 
-    if (ptIndicesPtr->size() > 0)
+    //If already mesh just compute the content extent.
+    if (m_existingMesh /*ptIndicesPtr->size() > 0*/)
         {
+        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+
+        assert(pointsPtr->size() > 0);
+
+        node->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::Create((*pointsPtr)[0].x, (*pointsPtr)[0].y, (*pointsPtr)[0].z, (*pointsPtr)[0].x, (*pointsPtr)[0].y, (*pointsPtr)[0].z);
+                
+        for (size_t ind = 1; ind < pointsPtr->size(); ind++)
+            {
+            node->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::MergeExtents(node->m_nodeHeader.m_contentExtent, ExtentOp<EXTENT>::Create(PointOp<POINT>::GetX((*pointsPtr)[ind]), PointOp<POINT>::GetY((*pointsPtr)[ind]), PointOp<POINT>::GetZ((*pointsPtr)[ind]),
+                                                                                                                                             PointOp<POINT>::GetX((*pointsPtr)[ind]), PointOp<POINT>::GetY((*pointsPtr)[ind]), PointOp<POINT>::GetZ((*pointsPtr)[ind])));
+            }
+
+        node->SetDirty(true);
+        
         return true;
         }
     
