@@ -119,6 +119,15 @@ TEST_F(ECExpressionsToECSqlConverterTests, StructProperties)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, DisplayLabelFieldWithSlashes)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("/DisplayLabel/ = \"a\"");
+    ASSERT_STREQ("[/DisplayLabel/] = 'a'", ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, IsOfClassFunctionSpecialCase)

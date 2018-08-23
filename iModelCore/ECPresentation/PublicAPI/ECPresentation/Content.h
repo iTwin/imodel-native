@@ -592,6 +592,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     //===================================================================================
     struct DisplayLabelField : Field
     {
+        ECPRESENTATION_EXPORT static const Utf8CP NAME;
+
     private:
         int m_priority;
         bmap<ECClassCP, bvector<ECPropertyCP>> m_labelProperties;
@@ -610,7 +612,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] label The label of this field.
         //! @param[in] priority Field priority.
         DisplayLabelField(Utf8String label, int priority = Property::DEFAULT_PRIORITY) 
-            : Field(Category::GetDefaultCategory(), "DisplayLabel", label), m_priority(priority)
+            : Field(Category::GetDefaultCategory(), NAME, label), m_priority(priority)
             {}
 
         //! Set the priority for this field.

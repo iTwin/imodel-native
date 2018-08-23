@@ -578,6 +578,7 @@ ContentDescriptor::Field::TypeDescription const& ContentDescriptor::Field::GetTy
     return *m_type;
     }
 
+const Utf8CP ContentDescriptor::DisplayLabelField::NAME = "/DisplayLabel/";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

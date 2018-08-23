@@ -392,6 +392,73 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithSor
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @betest                                       Grigas.Petraitis                08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(DescriptorOverride_SortByDisplayLabel, R"*(
+    <ECEntityClass typeName="MyClass">
+        <ECProperty propertyName="MyProperty" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_SortByDisplayLabel)
+    {
+    // insert some instances
+    ECClassCP ecClass = GetClass("MyClass");
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance){instance.SetValue("MyProperty", ECValue("a"));});
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance){instance.SetValue("MyProperty", ECValue("b"));});
+
+    // set up input
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instanceB, instanceA});
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rules->AddPresentationRule(*rule);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(0, false, ecClass->GetFullName(), "MyProperty"));
+
+    // get the descriptor
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::List, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // get the default content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+    
+    // validate the default content set
+    ASSERT_EQ(2, content->GetContentSet().GetSize());
+
+    // create the override
+    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    ovr->SetSortingField(descriptor->GetDisplayLabelField()->GetName().c_str());
+    ovr->SetSortDirection(SortDirection::Ascending);
+
+    // get the content with descriptor override
+    content = IECPresentationManager::GetManager().GetContent(*ovr, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // make sure the records in the content set are sorted
+    ASSERT_EQ(2, content->GetContentSet().GetSize());
+    EXPECT_STREQ("a", content->GetContentSet().Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("b", content->GetContentSet().Get(1)->GetDisplayLabel().c_str());
+    
+    // change the order from ascending to descending
+    ovr->SetSortDirection(SortDirection::Descending);
+
+    // get the content with the changed sorting order
+    content = IECPresentationManager::GetManager().GetContent(*ovr, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // make sure the records in the content set are sorted in descending order
+    ASSERT_EQ(2, content->GetContentSet().GetSize());
+    EXPECT_STREQ("b", content->GetContentSet().Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("a", content->GetContentSet().Get(1)->GetDisplayLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @betest                                      Grigas.Petraitis                05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_SortingByEnumProperty)
@@ -549,6 +616,59 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
 
     // make sure the records in the content set are filtered
     RulesEngineTestHelpers::ValidateContentSet({instance2.get()}, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest                                       Grigas.Petraitis                08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(DescriptorOverride_FiltersByDisplayLabel, R"*(
+    <ECEntityClass typeName="MyClass">
+        <ECProperty propertyName="MyProperty" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_FiltersByDisplayLabel)
+    {
+    // insert some instances
+    ECClassCP ecClass = GetClass("MyClass");
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance){instance.SetValue("MyProperty", ECValue("a"));});
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance){instance.SetValue("MyProperty", ECValue("b"));});
+
+    // set up input
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instanceB, instanceA});
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rules->AddPresentationRule(*rule);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(0, false, ecClass->GetFullName(), "MyProperty"));
+
+    // get the descriptor
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::List, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // get the default content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+    
+    // validate the default content set
+    ASSERT_EQ(2, content->GetContentSet().GetSize());
+
+    // create the override
+    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    ovr->SetFilterExpression(Utf8PrintfString("%s = \"b\"", descriptor->GetDisplayLabelField()->GetName().c_str()));
+
+    // get the content with descriptor override
+    content = IECPresentationManager::GetManager().GetContent(*ovr, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // make sure the records in the content set are filtered
+    ASSERT_EQ(1, content->GetContentSet().GetSize());
+    EXPECT_STREQ("b", content->GetContentSet().Get(0)->GetDisplayLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9050,14 +9170,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfDisplayL
 
     RapidJsonValueCR values1 = contentSet.Get(0)->GetValues();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"({"DisplayLabel": "Test1"})");
+    expectedValues1.Parse(R"({"/DisplayLabel/": "Test1"})");
     EXPECT_EQ(expectedValues1, values1)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values1);
 
     RapidJsonValueCR values2 = contentSet.Get(1)->GetValues();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"({"DisplayLabel": "Test2"})");
+    expectedValues2.Parse(R"({"/DisplayLabel/": "Test2"})");
     EXPECT_EQ(expectedValues2, values2)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values2);
