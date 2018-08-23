@@ -92,7 +92,7 @@ BentleyStatus TileLoader::Perform()
 //----------------------------------------------------------------------------------------
 BentleyStatus TileLoader::_ReadFromDb()
     {
-    auto cache = m_tile->GetRootR().GetCache();
+    auto cache = m_tile->GetRoot().GetCache();
     if (!cache.IsValid())
         return ERROR;
 
@@ -131,7 +131,7 @@ BentleyStatus TileLoader::DropFromDb(RealityData::CacheR cache)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileLoader::DoReadFromDb()
     {
-    auto cache = m_tile->GetRootR().GetCache();
+    auto cache = m_tile->GetRoot().GetCache();
     if (!cache.IsValid())
         return ERROR;
 
@@ -286,7 +286,7 @@ BentleyStatus TileLoader::_SaveToDb()
     if (!m_saveToCache)
         return SUCCESS;
 
-    auto cache = m_tile->GetRootR().GetCache();
+    auto cache = m_tile->GetRoot().GetCache();
     if (!cache.IsValid())
         return ERROR;
 
@@ -303,7 +303,7 @@ BentleyStatus TileLoader::DoSaveToDb()
     if (!m_saveToCache)
         return SUCCESS;
 
-    auto cache = m_tile->GetRootR().GetCache();
+    auto cache = m_tile->GetRoot().GetCache();
     if (!cache.IsValid())
         return ERROR; 
 
@@ -602,29 +602,9 @@ BentleyStatus Root::RequestTile(TileR tile)
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelCR model, TransformCR location, Render::SystemR system)
-    : Root(model.GetDgnDb(), model.GetModelId(), model.Is3d(), location, system)
+    : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_modelId(model.GetModelId()), m_is3d(model.Is3d()), m_cache(model.GetDgnDb().ElementTileCache())
     {
     //
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(DgnDbR db, DgnModelId modelId, TransformCR location, Render::SystemR system)
-    : Root(db, modelId, true, location, system)
-    {
-    auto model = db.Models().GetModel(modelId);
-//    BeAssert(model.IsValid());   This is null when called during conversion of ThreeMx.
-    if (model.IsValid() && !model->Is3d())
-        m_is3d = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(DgnDbR db, DgnModelId modelId, bool is3d, TransformCR location, Render::SystemR system)
-    : m_db(db), m_location(location), m_renderSystem(system), m_modelId(modelId), m_is3d(is3d)
-    {
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -648,6 +628,17 @@ void Root::DoneTileLoad(TileLoadStateSPtr state) const
     BeAssert(m_activeLoads.end() != m_activeLoads.find(state));
     m_activeLoads.erase(state);
     m_cv.notify_all();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Root::ToJson(Json::Value& json) const
+    {
+    json["id"] = GetModelId().ToHexStr();
+    json["maxTilesToSkip"] = 1;
+    JsonUtils::TransformToJson(json["location"], GetLocation());
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

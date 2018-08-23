@@ -353,6 +353,9 @@ static bool setupForStyledCurveVector(GraphicBuilderR builder, CurveVectorCR cur
     return wasCurved;
     }
 
+using RootR = TileTree::RootR;
+using RootPtr = TileTree::RootPtr;
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================
@@ -529,7 +532,7 @@ GraphicBuilderPtr TileBuilder::_CreateSubGraphic(TransformCR tf, ClipVectorCP cl
         ClipVectorPtr tClip = clip->Clone(&GetLocalToWorldTransform());
 
         Transform tileTransform;
-        tileTransform.InverseOf(m_context.GetRoot().GetLocationForTileGeneration());
+        tileTransform.InverseOf(m_context.GetRoot().GetLocation());
         tClip->TransformInPlace(tileTransform);
 
         subGf->SetCurrentClip(tClip.get());
@@ -764,7 +767,7 @@ END_UNNAMED_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::Loader(TileR tile, TileTree::TileLoadStateSPtr loads)
-    : T_Super(tile, loads, tile.GetRoot().ConstructTileResource(tile)), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime)
+    : T_Super(tile, loads, tile.GetRoot().ConstructTileResource(tile)), m_createTime(tile.GetRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime)
     {
     //
     }
@@ -796,7 +799,7 @@ BentleyStatus Loader::_ReadFromDb()
 BentleyStatus Loader::_LoadTile() 
     { 
     TileR                                   tile = GetElementTile();
-    RootR                                   root = tile.GetElementRoot();
+    RootR                                   root = tile.GetRoot();
     ElementAlignedBox3d                     contentRange;
     StopWatch                               stopWatch(true);
 
@@ -832,7 +835,7 @@ BentleyStatus Loader::_LoadTile()
         }
 
     bool haveGeometry = !geometry.Meshes().empty();
-    return tile.GetElementRoot().UnderMutex([&]()
+    return tile.GetRoot().UnderMutex([&]()
         {
         // Possible that one or more parent tiles will contain solely elements too small to produce geometry, in which case
         // we must create their children in order to get graphics...mark undisplayable.
@@ -847,7 +850,7 @@ BentleyStatus Loader::_LoadTile()
 BentleyStatus Loader::DoGetFromSource()
     {
     TileR   tile = GetElementTile();
-    RootR   root = tile.GetElementRoot();
+    RootR   root = tile.GetRoot();
 
     if (SUCCESS != LoadGeometryFromModel())
         return ERROR;
@@ -888,7 +891,7 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
     {
     m_cacheCreateTime = createTimeMillis;
     auto& tile = GetElementTile();
-    uint64_t lastModMillis = tile.GetElementRoot().GetModel()->GetLastElementModifiedTime();
+    uint64_t lastModMillis = tile.GetRoot().GetModel()->GetLastElementModifiedTime();
     return createTimeMillis < static_cast<uint64_t>(lastModMillis);
     }
 
@@ -898,7 +901,7 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
 bool Loader::_IsValidData()
     {
     BeAssert(!m_tileBytes.empty());
-    TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetElementRoot().GetModel(), GetRenderSystem());
+    TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetRoot().GetModel(), GetRenderSystem());
     return reader.VerifyFeatureTable();
     }
 
@@ -915,14 +918,6 @@ bool Loader::_IsCompleteData()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileCR Loader::GetElementTile() const { return static_cast<TileCR>(*m_tile); }
 TileR Loader::GetElementTile() { return static_cast<TileR>(*m_tile); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model, transform, system)
-    {
-    m_cache = model.GetDgnDb().ElementTileCache();
-    }
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
 static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
@@ -994,7 +989,7 @@ bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate)
     // Instead, make the root tile empty & undisplayable; its direct children can be generated in parallel instead as the lowest-resolution tiles.
     // Optimization: Don't do this if the number of elements in the model is less than the min number of elements per tile, so that we reduce the number
     // of tiles required.
-    m_rootTile = Tile::CreateRoot(*this, range, populate);
+    m_rootTile = ElementTileTree::Tile::CreateRoot(*this, range, populate);
 
     if (!populate)
         m_rootTile->SetIsReady();
@@ -1005,15 +1000,12 @@ bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeomPartPtr Root::GenerateGeomPart(DgnGeometryPartId partId, Render::GeometryParamsR geomParams, ViewContextR viewContext)
+static GeomPartPtr generateGeomPart(DgnGeometryPartId partId, Render::GeometryParamsR geomParams, TileContext& context)
     {
     GeomPartPtr part;
-    DgnGeometryPartCPtr geomPart = GetDgnDb().Elements().Get<DgnGeometryPart>(partId);
+    DgnGeometryPartCPtr geomPart = context.GetDgnDb().Elements().Get<DgnGeometryPart>(partId);
     if (geomPart.IsValid())
-        {
-        auto& tileContext = static_cast<TileContext&>(viewContext);
-        part = tileContext.GenerateGeomPart(*geomPart, geomParams);
-        }
+        part = context.GenerateGeomPart(*geomPart, geomParams);
 
     return part;
     }
@@ -1042,7 +1034,7 @@ GeomPartPtr TileContext::GenerateGeomPart(DgnGeometryPartCR geomPart, GeometryPa
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileContext::AddGeomPart(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams)
     {
-    GeomPartPtr tileGeomPart = m_root.GenerateGeomPart(partId, geomParams, *this);
+    GeomPartPtr tileGeomPart = generateGeomPart(partId, geomParams, *this);
     if (tileGeomPart.IsNull())
         return;
 
@@ -1063,7 +1055,7 @@ void TileContext::AddGeomPart(Render::GraphicBuilderR graphic, DgnGeometryPartId
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Tile::_GetTileCacheKey() const
     {
-    return GetElementRoot().GetModelId().ToString() + GetIdString();
+    return GetRoot().GetModelId().ToString() + GetIdString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1094,7 +1086,7 @@ Tile::Tile(Root& root, TileTree::TileId id, DRange3dCR range, double minToleranc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(Tile const& parent) : T_Super(const_cast<Root&>(parent.GetElementRoot()), parent.GetTileId(), &parent, false)
+Tile::Tile(Tile const& parent) : T_Super(const_cast<Root&>(parent.GetRoot()), parent.GetTileId(), &parent, false)
     {
     m_range.Extend(parent.GetRange());
 
@@ -1109,7 +1101,7 @@ Tile::Tile(Tile const& parent) : T_Super(const_cast<Root&>(parent.GetElementRoot
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::InitTolerance(double minToleranceRatio, bool isLeaf)
     {
-    double diagDist = GetElementRoot().Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
+    double diagDist = GetRoot().Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
     m_tolerance = diagDist / (minToleranceRatio * GetZoomFactor());
     SetIsLeaf(isLeaf);
     BeAssert(0.0 != m_tolerance);
@@ -1128,7 +1120,7 @@ TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStateSPtr load
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::TilePtr Tile::_CreateChild(TileTree::TileId childId) const
     {
-    return Tile::Create(const_cast<RootR>(GetElementRoot()), childId, *this);
+    return Tile::Create(const_cast<RootR>(GetRoot()), childId, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1248,11 +1240,11 @@ virtual bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext)
   : m_tile(tile), m_options(options), m_tolerance(tile.GetTolerance()), m_loadContext(loadContext),
-    m_featureTable(tile.GetElementRoot().GetModelId(), loadContext.GetRenderSystem()._GetMaxFeaturesPerBatch()),
-    m_builderMap(m_tolerance, &m_featureTable, tile.GetTileRange(), m_tile.GetElementRoot().Is2d())
+    m_featureTable(tile.GetRoot().GetModelId(), loadContext.GetRenderSystem()._GetMaxFeaturesPerBatch()),
+    m_builderMap(m_tolerance, &m_featureTable, tile.GetTileRange(), m_tile.GetRoot().Is2d())
     {
-    SetDgnDb(m_tile.GetElementRoot().GetDgnDb());
-    m_is3dView = m_tile.GetElementRoot().Is3d();
+    SetDgnDb(m_tile.GetRoot().GetDgnDb());
+    m_is3dView = m_tile.GetRoot().Is3d();
     SetViewFlags(TileContext::GetDefaultViewFlags());
 
 
@@ -1288,7 +1280,7 @@ void MeshGenerator::AddMeshes(GeometryList const& geometries, bool doRangeTest)
 void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
     {
     DRange3dCR geomRange = geom.GetTileRange();
-    double rangePixels = (m_tile.GetElementRoot().Is3d() ? geomRange.DiagonalDistance() : geomRange.DiagonalDistanceXY()) / m_tolerance;
+    double rangePixels = (m_tile.GetRoot().Is3d() ? geomRange.DiagonalDistance() : geomRange.DiagonalDistanceXY()) / m_tolerance;
     if (rangePixels < s_minRangeBoxSize && 0.0 < geomRange.DiagonalDistance()) // ###TODO_ELEMENT_TILE: single point primitives have an empty range...
         return;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
@@ -1312,7 +1304,7 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
     // All instances will have the same facet options and range size...
     GeometryCP first = *iter;
     DRange3dCR geomRange = first->GetTileRange();
-    double rangePixels = (m_tile.GetElementRoot().Is3d() ? geomRange.DiagonalDistance() : geomRange.DiagonalDistanceXY()) / m_tolerance;
+    double rangePixels = (m_tile.GetRoot().Is3d() ? geomRange.DiagonalDistance() : geomRange.DiagonalDistanceXY()) / m_tolerance;
     if (rangePixels < s_minRangeBoxSize)
         return;
 
@@ -1430,7 +1422,7 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     bool                hasTexture = displayParams.IsTextured();
     bool                anyContributed = false;
     uint32_t            fillColor = displayParams.GetFillColor();
-    DgnDbR              db = m_tile.GetElementRoot().GetDgnDb();
+    DgnDbR              db = m_tile.GetRoot().GetDgnDb();
     MeshAuxData         auxData;
 
     MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar);
@@ -1624,7 +1616,7 @@ MeshList MeshGenerator::GetMeshes()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeshGenerator::ReadFrom(TileTree::StreamBufferR stream, bool& containsCurves, bool& isIncomplete, DgnElementIdSet const& omitElems)
     {
-    auto model = m_tile.GetElementRoot().GetModel();
+    auto model = m_tile.GetRoot().GetModel();
     BeAssert(model.IsValid());
     BeAssert(nullptr != _GetRenderSystem());
 
@@ -1669,7 +1661,7 @@ public:
     TileGenerator(DRange3dCR range, RangeIndex::Tree& rangeIndex, double minRangeDiagonalSquared, LoadContextCR loadContext, uint32_t maxElements, TileR tile, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, GeometryOptionsCR geomOpts, DgnElementIdSet const* skipElems=nullptr)
     :   m_facetOptions(&facetOptions),
         m_elementCollector(range, rangeIndex, minRangeDiagonalSquared, loadContext, maxElements, skipElems),
-        m_tileContext(m_geometries, const_cast<RootR>(tile.GetElementRoot()), range, facetOptions, transformFromDgn, tolerance, loadContext),
+        m_tileContext(m_geometries, const_cast<RootR>(tile.GetRoot()), range, facetOptions, transformFromDgn, tolerance, loadContext),
         m_meshGenerator(tile, geomOpts, loadContext)
     {
     // ElementCollector has now collected all elements valid for this tile, ordered from largest to smallest
@@ -1801,7 +1793,7 @@ Tile::~Tile()
 Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR context)
     {
     Render::Primitives::GeometryCollection collection;
-    auto& root = GetElementRoot();
+    auto& root = GetRoot();
     auto model = root.GetModel();
     if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
         return collection;
@@ -1817,7 +1809,7 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
     facetOptions->SetHideSmoothEdgesWhenGeneratingNormals(false); // We'll do this ourselves when generating meshes - This will turn on sheet edges that should be hidden (Pug.dgn).
 
     Transform transformFromDgn;
-    transformFromDgn.InverseOf(root.GetLocationForTileGeneration());
+    transformFromDgn.InverseOf(root.GetLocation());
 
     // ###TODO: Avoid heap alloc if don't want partial tiles...
     // ###TODO_IMODELCORE: Removed support for partial tiles - remove heap alloc.
@@ -1838,16 +1830,8 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
 DRange3d Tile::GetDgnRange() const
     {
     DRange3d range;
-    GetElementRoot().GetLocationForTileGeneration().Multiply(range, GetTileRange());
+    GetRoot().GetLocation().Multiply(range, GetTileRange());
     return range;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Transform Root::GetLocationForTileGeneration() const
-    {
-    return GetLocation();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1977,20 +1961,9 @@ Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Root::_ToJson(Json::Value& json) const
-    {
-    json["id"] = GetModelId().ToHexStr();
-    json["maxTilesToSkip"] = 1;
-    JsonUtils::TransformToJson(json["location"], GetLocation());
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool Tile::_ToJson(Json::Value& json) const
     {
-    json["id"]["treeId"] = GetElementRoot().GetModelId().ToHexStr();
+    json["id"]["treeId"] = GetRoot().GetModelId().ToHexStr();
     json["id"]["tileId"] = GetIdString();
     json["maximumSize"] = IsDisplayable() ? s_tileScreenSize : 0.0;
     json["isLeaf"] = IsLeaf();
@@ -2018,7 +1991,7 @@ Utf8String Tile::GetIdString() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TilePtr Root::_FindTileById(Utf8CP strId)
+TileTree::TilePtr Root::FindTileById(Utf8CP strId)
     {
     if (GetRootTile().IsNull())
         return nullptr;
@@ -2032,7 +2005,7 @@ TileTree::TilePtr Root::_FindTileById(Utf8CP strId)
         return nullptr;
         }
 
-    return static_cast<TileR>(*GetRootTile()).FindTile(id, static_cast<double>(zoomFactor));
+    return static_cast<ElementTileTree::TileR>(*GetRootTile()).FindTile(id, static_cast<double>(zoomFactor));
     }
 
 /*---------------------------------------------------------------------------------**//**

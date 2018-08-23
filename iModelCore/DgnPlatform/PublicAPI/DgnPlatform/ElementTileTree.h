@@ -20,8 +20,9 @@
 
 BEGIN_ELEMENT_TILETREE_NAMESPACE
 
+using Root = TileTree::Root;
+
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Root);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Loader);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LoadContext);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Context);
@@ -30,7 +31,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(TileGenerator);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ThematicMeshBuilder);
 
 DEFINE_REF_COUNTED_PTR(Tile);
-DEFINE_REF_COUNTED_PTR(Root);
 DEFINE_REF_COUNTED_PTR(Loader);
 DEFINE_REF_COUNTED_PTR(ThematicMeshBuilder);
 
@@ -86,36 +86,6 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
-struct Root : TileTree::Root
-{
-    DEFINE_T_SUPER(TileTree::Root);
-protected:
-    mutable std::mutex  m_dbMutex;
-
-    Root(GeometricModelR model, TransformCR transform, Render::SystemR system);
-
-    bool LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate);
-public:
-    DGNPLATFORM_EXPORT static RootPtr Create(GeometricModelR model, Render::SystemR system);
-    virtual ~Root() { ClearAllTiles(); }
-
-    GeometricModelPtr GetModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
-
-    std::mutex& GetDbMutex() const { return m_dbMutex; }
-
-    Render::Primitives::GeomPartPtr GenerateGeomPart(DgnGeometryPartId partId, Render::GeometryParamsR geomParams, ViewContextR viewContext);
-
-    Transform GetLocationForTileGeneration() const; //!< @private
-
-    template<typename T> auto UnderMutex(T func) const -> decltype(func()) { BeMutexHolder lock(m_cv.GetMutex()); return func(); }
-
-    bool _ToJson(Json::Value&) const override;
-    TileTree::TilePtr _FindTileById(Utf8CP id) override;
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
 struct Tile : TileTree::Tile
 {
     DEFINE_T_SUPER(TileTree::Tile);
@@ -147,9 +117,6 @@ public:
     double GetTolerance() const { return m_tolerance; }
     DRange3d GetDgnRange() const;
     DRange3d GetTileRange() const { return GetRange(); }
-
-    RootCR GetElementRoot() const { return static_cast<RootCR>(GetRoot()); }
-    RootR GetElementRoot() { return static_cast<RootR>(GetRootR()); }
 
     Render::Primitives::GeometryCollection GenerateGeometry(LoadContextCR context);
 
