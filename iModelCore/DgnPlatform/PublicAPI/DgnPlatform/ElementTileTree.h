@@ -49,7 +49,7 @@ private:
     uint64_t        m_cacheCreateTime;  // The time of the most recent change to any element in the associated model when the tile cache data was created.
     Render::Primitives::GeometryCollection  m_geometry;
 
-    Loader(TileR tile, TileTree::TileLoadStatePtr loads);
+    Loader(TileR tile, TileTree::TileLoadStateSPtr loads);
 
     BentleyStatus _GetFromSource() override;
     BentleyStatus _LoadTile() override;
@@ -66,7 +66,7 @@ private:
 
     uint64_t _GetCreateTime() const override { return m_createTime; }
 public:
-    static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads) { return new Loader(tile, loads); }
+    static LoaderPtr Create(TileR tile, TileTree::TileLoadStateSPtr loads) { return new Loader(tile, loads); }
 };
 
 //=======================================================================================
@@ -130,7 +130,7 @@ protected:
 
     void InitTolerance(double minToleranceRatio, bool isLeaf=false);
 
-    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStateSPtr) override;
     TileTree::TilePtr _CreateChild(TileTree::TileId) const override;
     double _GetMaximumSize() const override;
 
@@ -158,26 +158,6 @@ public:
     TilePtr FindTile(TileTree::TileId id, double zoomFactor);
     TilePtr FindTile(double zoomFactor);
     TileP GetElementParent() const { return const_cast<TileP>(static_cast<TileCP>(GetParent())); }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   04/18
-//=======================================================================================
-struct TileCache : TileTree::TileCache
-{
-    DEFINE_T_SUPER(TileTree::TileCache);
-private:
-    explicit TileCache(uint64_t maxSize) : T_Super(maxSize) { }
-
-    BentleyStatus _Initialize() const final;
-    bool _ValidateData() const final;
-
-    static BeSQLite::PropertySpec GetVersionSpec() { return BeSQLite::PropertySpec("binaryFormatVersion", "elementTileCache"); }
-    static Utf8CP GetCurrentVersion();
-
-    bool WriteCurrentVersion() const;
-public:
-    static RealityData::CachePtr Create(DgnDbCR db);
 };
 
 //=======================================================================================

@@ -763,7 +763,7 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads)
+Loader::Loader(TileR tile, TileTree::TileLoadStateSPtr loads)
     : T_Super(tile, loads, tile.GetRoot().ConstructTileResource(tile)), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime)
     {
     //
@@ -887,7 +887,9 @@ BentleyStatus Loader::DoGetFromSource()
 bool Loader::_IsExpired(uint64_t createTimeMillis)
     {
     m_cacheCreateTime = createTimeMillis;
-    return false;
+    auto& tile = GetElementTile();
+    uint64_t lastModMillis = tile.GetElementRoot().GetModel()->GetLastElementModifiedTime();
+    return createTimeMillis < static_cast<uint64_t>(lastModMillis);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1116,7 +1118,7 @@ void Tile::InitTolerance(double minToleranceRatio, bool isLeaf)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads)
+TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStateSPtr loads)
     {
     return Loader::Create(*this, loads);
     }
@@ -1970,73 +1972,6 @@ Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double 
     {
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityData::CachePtr TileCache::Create(DgnDbCR db)
-    {
-    RealityData::CachePtr cache(new TileCache(1024*1024*1024));
-    BeFileName cacheName = db.GetFileName();
-    cacheName.AppendExtension(L"Tiles");
-    if (SUCCESS != cache->OpenAndPrepare(cacheName))
-        cache = nullptr;
-
-    return cache;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP TileCache::GetCurrentVersion()
-    {
-    // Increment this when the binary tile format changes...
-    // We changed the cache db schema shortly after creating imodel02 branch - so version history restarts at same time.
-    // 0: Initial version following db schema change
-    // 1: Do not set 'is leaf' if have size multiplier ('zoom factor'); add flag and value for size multiplier
-    return "0";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TileCache::WriteCurrentVersion() const
-    {
-    // NB: SavePropertyString() is non-const because modifying *cacheable* properties mutates the Db's internal state
-    // Our property is *not* cacheable
-    auto& db = const_cast<BeSQLite::Db&>(m_db);
-    if (BeSQLite::BE_SQLITE_OK != db.SavePropertyString(GetVersionSpec(), GetCurrentVersion()))
-        {
-        BeAssert(false && "Failed to save tile cache version");
-        return false;
-        }
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileCache::_Initialize() const
-    {
-    // We've created a brand-new cache Db. Write the current binary format version to its property table.
-    return WriteCurrentVersion() ? SUCCESS : ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TileCache::_ValidateData() const
-    {
-    auto spec = GetVersionSpec();
-    Utf8String storedVersion;
-    if (BE_SQLITE_ROW == m_db.QueryProperty(storedVersion, spec) && storedVersion.Equals(GetCurrentVersion()))
-        return true;
-
-    // Binary format has changed. Discard existing tile data.
-    WriteCurrentVersion();
-    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

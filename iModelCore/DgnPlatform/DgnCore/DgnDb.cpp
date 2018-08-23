@@ -60,7 +60,7 @@ struct ElementTileCacheAppData : BeSQLite::Db::AppData
 
     explicit ElementTileCacheAppData(DgnDbCR db)
         {
-        m_cache = ElementTileTree::TileCache::Create(db);
+        m_cache = TileTree::TileCache::Create(db);
         BeAssert(m_cache.IsValid());
         }
 };

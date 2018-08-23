@@ -394,7 +394,7 @@ BentleyStatus TileCache::_Prepare() const
     // So we will never encounter an existing .Tiles file containing previous versions of those tables.
     if (m_db.TableExists(TABLE_NAME_TileTree))
         {
-        if (!_ValidateData())
+        if (!ValidateData())
             {
             // The db schema is current, but the binary data format is not. Discard it.
             CachedStatementPtr stmt;
@@ -497,6 +497,73 @@ BentleyStatus TileCache::_Cleanup() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RealityData::CachePtr TileCache::Create(DgnDbCR db)
+    {
+    RealityData::CachePtr cache(new TileCache(1024*1024*1024));
+    BeFileName cacheName = db.GetFileName();
+    cacheName.AppendExtension(L"Tiles");
+    if (SUCCESS != cache->OpenAndPrepare(cacheName))
+        cache = nullptr;
+
+    return cache;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP TileCache::GetCurrentVersion()
+    {
+    // Increment this when the binary tile format changes...
+    // We changed the cache db schema shortly after creating imodel02 branch - so version history restarts at same time.
+    // 0: Initial version following db schema change
+    // 1: Do not set 'is leaf' if have size multiplier ('zoom factor'); add flag and value for size multiplier
+    return "0";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileCache::WriteCurrentVersion() const
+    {
+    // NB: SavePropertyString() is non-const because modifying *cacheable* properties mutates the Db's internal state
+    // Our property is *not* cacheable
+    auto& db = const_cast<BeSQLite::Db&>(m_db);
+    if (BeSQLite::BE_SQLITE_OK != db.SavePropertyString(GetVersionSpec(), GetCurrentVersion()))
+        {
+        BeAssert(false && "Failed to save tile cache version");
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TileCache::_Initialize() const
+    {
+    // We've created a brand-new cache Db. Write the current binary format version to its property table.
+    return WriteCurrentVersion() ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileCache::ValidateData() const
+    {
+    auto spec = GetVersionSpec();
+    Utf8String storedVersion;
+    if (BE_SQLITE_ROW == m_db.QueryProperty(storedVersion, spec) && storedVersion.Equals(GetCurrentVersion()))
+        return true;
+
+    // Binary format has changed. Discard existing tile data.
+    WriteCurrentVersion();
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::ClearAllTiles()
@@ -563,7 +630,7 @@ Root::Root(DgnDbR db, DgnModelId modelId, bool is3d, TransformCR location, Rende
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::StartTileLoad(TileLoadStatePtr state) const
+void Root::StartTileLoad(TileLoadStateSPtr state) const
     {
     BeAssert(nullptr != state);
     BeMutexHolder lock(m_cv.GetMutex());
@@ -574,7 +641,7 @@ void Root::StartTileLoad(TileLoadStatePtr state) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::DoneTileLoad(TileLoadStatePtr state) const
+void Root::DoneTileLoad(TileLoadStateSPtr state) const
     {
     BeAssert(nullptr != state);
     BeMutexHolder lock(m_cv.GetMutex());
@@ -853,7 +920,7 @@ void Root::CancelAllTileLoads()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::CancelTileLoad(TileCR tile)
     {
-    // ###TODO_ELEMENT_TILE: Bentley containers don't support 'transparent' comparators, meaning we can't compare a TileLoadStatePtr to a Tile even
+    // ###TODO_ELEMENT_TILE: Bentley containers don't support 'transparent' comparators, meaning we can't compare a TileLoadStateSPtr to a Tile even
     // though the comparator can. We should fix that - but for now, instead, we're using std::set.
     BeMutexHolder lock(m_cv.GetMutex());
     auto iter = m_activeLoads.find(&tile);

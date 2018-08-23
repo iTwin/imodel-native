@@ -40,17 +40,26 @@ DEFINE_REF_COUNTED_PTR(TileCache)
 struct TileCache : RealityData::Cache
 {
     uint64_t m_allowedSize;
-protected:
-    virtual bool _ValidateData() const { return true; }
-public:
-    BentleyStatus _Prepare() const override;
-    BentleyStatus _Cleanup() const override;
+private:
+
     TileCache(uint64_t maxSize) : m_allowedSize(maxSize) {}
 
+    bool ValidateData() const;
+    bool WriteCurrentVersion() const;
+public:
+    BentleyStatus _Prepare() const final;
+    BentleyStatus _Initialize() const final;
+    BentleyStatus _Cleanup() const final;
+
     static BeFileName GetCacheFileName(BeFileNameCR baseName);
+
+    static BeSQLite::PropertySpec GetVersionSpec() { return BeSQLite::PropertySpec("binaryFormatVersion", "elementTileCache"); }
+    static Utf8CP GetCurrentVersion();
+
+    static RealityData::CachePtr Create(DgnDbCR db);
 };
 
-typedef std::shared_ptr<struct TileLoadState> TileLoadStatePtr;
+typedef std::shared_ptr<struct TileLoadState> TileLoadStateSPtr;
 
 //=======================================================================================
 //! A ByteStream with a "current position". Used for reading tiles
@@ -101,9 +110,9 @@ public:
     {
         using is_transparent = std::true_type;
 
-        bool operator()(TileLoadStatePtr const& lhs, TileLoadStatePtr const& rhs) const { return operator()(lhs->m_tile.get(), rhs->m_tile.get()); }
-        bool operator()(TileLoadStatePtr const& lhs, TileCP rhs) const { return operator()(lhs->m_tile.get(), rhs); }
-        bool operator()(TileCP lhs, TileLoadStatePtr const& rhs) const { return operator()(lhs, rhs->m_tile.get()); }
+        bool operator()(TileLoadStateSPtr const& lhs, TileLoadStateSPtr const& rhs) const { return operator()(lhs->m_tile.get(), rhs->m_tile.get()); }
+        bool operator()(TileLoadStateSPtr const& lhs, TileCP rhs) const { return operator()(lhs->m_tile.get(), rhs); }
+        bool operator()(TileCP lhs, TileLoadStateSPtr const& rhs) const { return operator()(lhs, rhs->m_tile.get()); }
         bool operator()(TileCP lhs, TileCP rhs) const { return lhs < rhs; }
     };
 };
@@ -266,7 +275,7 @@ public:
     virtual TilePtr _CreateChild(TileId) const = 0;
 
     //! Called when tile data is required.
-    virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr) = 0;
+    virtual TileLoaderPtr _CreateTileLoader(TileLoadStateSPtr) = 0;
 
     //! Get the tile cache key for this Tile.
     virtual Utf8String _GetTileCacheKey() const { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
@@ -294,7 +303,7 @@ struct Root : RefCountedBase, NonCopyableClass
 
 protected:
     bool m_is3d;
-    mutable std::set<TileLoadStatePtr, TileLoadState::PtrComparator> m_activeLoads;
+    mutable std::set<TileLoadStateSPtr, TileLoadState::PtrComparator> m_activeLoads;
     DgnDbR m_db;
     DgnModelId m_modelId;
     Transform m_location;         // transform from tile coordinates to world coordinates
@@ -314,8 +323,8 @@ public:
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
 
-    void StartTileLoad(TileLoadStatePtr) const;
-    void DoneTileLoad(TileLoadStatePtr) const;
+    void StartTileLoad(TileLoadStateSPtr) const;
+    void DoneTileLoad(TileLoadStateSPtr) const;
 
     DGNPLATFORM_EXPORT void CancelTileLoad(TileCR tile);
     DGNPLATFORM_EXPORT void CancelAllTileLoads();
@@ -366,7 +375,7 @@ struct TileLoader : RefCountedBase, NonCopyableClass
 {
 protected:
     TilePtr                     m_tile;             // tile to load, cannot be null.
-    TileLoadStatePtr            m_loads;
+    TileLoadStateSPtr           m_loads;
     BeSQLite::SnappyFromBlob    m_snappyFrom;
     BeSQLite::SnappyToBlob      m_snappyTo;
 
@@ -380,7 +389,7 @@ protected:
     //! @param[in] tile The tile that we are loading.
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
-    TileLoader(TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey) : m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
+    TileLoader(TileR tile, TileLoadStateSPtr& loads, Utf8StringCR cacheKey) : m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
 
     BentleyStatus LoadTile();
     BentleyStatus DoReadFromDb();
@@ -413,8 +422,8 @@ public:
 
     struct LoadFlag
         {
-        TileLoadStatePtr m_state;
-        LoadFlag(TileLoadStatePtr state) : m_state(state) {state->GetTile().GetRoot().StartTileLoad(state);}
+        TileLoadStateSPtr m_state;
+        LoadFlag(TileLoadStateSPtr state) : m_state(state) {state->GetTile().GetRoot().StartTileLoad(state);}
         ~LoadFlag() {m_state->GetTile().GetRoot().DoneTileLoad(m_state);}
         };
 
