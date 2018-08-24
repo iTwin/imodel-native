@@ -179,10 +179,6 @@ BentleyStatus ScalableMeshModel::_ReloadClipMask(const BentleyApi::Dgn::DgnEleme
     bvector<uint64_t> clipIds;
     clipIds.push_back(clipMaskElementId.GetValue());
 
-    /*//NEEDS_WORK_MST - Removed
-    if (GetProgressiveQueryEngine().IsValid())
-        GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
-*/
     m_forceRedraw = true;
     return SUCCESS;
     }
@@ -872,7 +868,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     trimesh.m_vertIndex = vertIndex;
 
    
-    if (s_applyTexture && renderSys != nullptr && m_scalableMeshNodePtr->IsTextured())
+    if (s_applyTexture && renderSys != nullptr && m_scalableMeshNodePtr->IsTextured() && m_3smModel->m_displayTexture)
         {                
 #if 1 //NEEDS_WORK_SM GetTextureCompressed doesn't currently work for Cesium. 
         IScalableMeshTexturePtr smTexturePtr(m_scalableMeshNodePtr->GetTexture());
@@ -999,26 +995,6 @@ BentleyStatus SMScene::LoadScene()
     return SUCCESS;
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.St-Pierre  12/2016
-//----------------------------------------------------------------------------------------
-IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEngine()
-    {
-    //NEEDS_WORK_MST - Removed
-    assert(!"Should not be called");
-
-    if (m_progressiveQueryEngine == nullptr)
-        {
-        m_displayNodesCache = new ScalableMeshDisplayCacheManager();
-        if (!((ScalableMeshDisplayCacheManager*)m_displayNodesCache.get())->CanDisplay())
-            {
-            return nullptr;
-            }
-        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache, m_displayTexture);
-        }
-
-    return m_progressiveQueryEngine;
-    }
 
 void DoPick(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
             bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes, 
@@ -1115,8 +1091,7 @@ void ScalableMeshModel::ClearAllDisplayMem()
 
     IScalableMeshProgressiveQueryEngine::CancelAllQueries();
     ClearProgressiveQueriesInfo();
-    m_currentDrawingInfoPtr = nullptr;
-    m_progressiveQueryEngine = nullptr;
+    m_currentDrawingInfoPtr = nullptr;    
     m_smPtr->RemoveAllDisplayData();    
     RefreshClips();
     }
@@ -1563,7 +1538,6 @@ ScalableMeshModel::~ScalableMeshModel()
 
 void ScalableMeshModel::Cleanup(bool isModelDelete)
     {
-    if (nullptr != m_progressiveQueryEngine.get() && nullptr != m_currentDrawingInfoPtr.get()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
     if (nullptr != m_currentDrawingInfoPtr.get())
     {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
@@ -1583,8 +1557,7 @@ void ScalableMeshModel::Cleanup(bool isModelDelete)
             m_smPtr->GetExtraFileNames(extraFileNames);
 
         //Close the 3SM file, to close extra clip files.
-		m_currentDrawingInfoPtr = nullptr;
-		m_progressiveQueryEngine = nullptr;        
+		m_currentDrawingInfoPtr = nullptr;		
         m_smPtr = nullptr;        
 
         for (auto& extraFileName : extraFileNames)
@@ -1853,15 +1826,14 @@ void ScalableMeshModel::CloseFile()
 	{
 		m_loadedAllModels = false;
 	}
-    if (nullptr != m_progressiveQueryEngine.get() && nullptr != m_currentDrawingInfoPtr.get()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
+
     if (nullptr != m_currentDrawingInfoPtr.get())
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
         m_currentDrawingInfoPtr->m_smPtr = nullptr;
         }
-
-    m_progressiveQueryEngine = nullptr;    
+    
     m_smPtr = nullptr;
     m_displayNodesCache = nullptr;
     m_tryOpen = false;
@@ -2042,27 +2014,12 @@ WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb, b
 
 void ScalableMeshModel::ClearOverviews(IScalableMeshPtr& targetSM)
     {
-    GetProgressiveQueryEngine()->ClearOverviews(targetSM.get());
-    if (targetSM.get() == m_smPtr.get())
-        {
-        if (nullptr != m_progressiveQueryEngine.get() && m_currentDrawingInfoPtr.IsValid()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
-        }
-#if 0
-    if (targetSM.get() == m_smPtr->GetTerrainSM().get())
-        {
-        if (nullptr != m_progressiveQueryEngine.get() && m_currentDrawingInfoPtr.IsValid()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_terrainQuery);
-        if (m_currentDrawingInfoPtr.IsValid())
-            {
-            m_currentDrawingInfoPtr->m_terrainMeshNodes.clear();
-            m_currentDrawingInfoPtr->m_terrainOverviewNodes.clear();
-            }
-        }
-#endif
+    assert(!"Not done yet");
     }
 
 void ScalableMeshModel::LoadOverviews(IScalableMeshPtr& targetSM)
     {
-    GetProgressiveQueryEngine()->InitScalableMesh(targetSM);
+    assert(!"Not done yet");    
     }
 
 //----------------------------------------------------------------------------------------
@@ -2080,13 +2037,6 @@ void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint
     bvector<uint64_t> clipIds;
     for (auto& clip: previouslyActiveClips)
        clipIds.push_back(clip);
-
-/*//NEEDS_WORK_MST - Removed
-    auto tryProgressiveQueryEngine = GetProgressiveQueryEngine();
-    if (tryProgressiveQueryEngine.get() == nullptr) return;
-    GetProgressiveQueryEngine()->SetActiveClips(clips, m_smPtr);
-    GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
-*/
     
     m_forceRedraw = true;
     }

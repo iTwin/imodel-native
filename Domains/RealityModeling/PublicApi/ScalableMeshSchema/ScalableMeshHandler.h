@@ -399,8 +399,7 @@ public: //MST_TEMP
     mutable BentleyApi::AxisAlignedBox3d       m_range;
     mutable bool                                    m_displayTexture;       
 	mutable IScalableMeshTextureInfoPtr             m_textureInfo;
-    mutable IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;
-    mutable IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;
+    mutable IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;    
     mutable ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
     mutable DMatrix4d                               m_storageToUorsTransfo;
     mutable bool m_forceRedraw;
