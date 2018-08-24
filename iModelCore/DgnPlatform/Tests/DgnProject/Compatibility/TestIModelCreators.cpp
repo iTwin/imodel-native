@@ -130,9 +130,9 @@ BentleyStatus TestIModelCreator::_UpgradeOldFiles() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    07/18
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus UpgradedEC32EnumsTestIModelCreator::_UpgradeSchemas() const
+BentleyStatus EC32EnumsProfileUpgradedTestIModelCreator::_UpgradeSchemas() const
     {
-    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(DgnDbProfile::Get().GetCreatedDataFolder(), TESTIMODEL_UPGRADEDEC32ENUMS, false))
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(DgnDbProfile::Get().GetCreatedDataFolder(), TESTIMODEL_EC32ENUMS_PROFILEUPGRADED, false))
         {
         if (testFile.GetAge() != ProfileState::Age::UpToDate)
             {
@@ -152,7 +152,7 @@ BentleyStatus UpgradedEC32EnumsTestIModelCreator::_UpgradeSchemas() const
 
         //Upgrade the enumerator names of the enums
         if (SUCCESS != ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                                    <ECSchema schemaName="UpgradedEC32Enums" alias="upgradedec32" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                                         <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
                                                             <ECEnumerator name="Unknown" value="0"/>
                                                             <ECEnumerator name="On" value="1"/>

@@ -150,6 +150,8 @@ struct EC32EnumsProfileUpgradedTestECDbCreator final : TestECDbCreator
                                                         </ECEnumeration>
                                                      </ECSchema>)xml"));
             }
+
+        BentleyStatus _UpgradeSchemas() const override;
     public:
         explicit EC32EnumsProfileUpgradedTestECDbCreator() : TestECDbCreator(TESTECDB_EC32ENUMS_PROFILEUPGRADED) {}
         ~EC32EnumsProfileUpgradedTestECDbCreator() {}
