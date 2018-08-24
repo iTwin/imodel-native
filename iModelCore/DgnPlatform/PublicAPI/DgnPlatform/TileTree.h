@@ -399,42 +399,38 @@ protected:
     Utf8String m_cacheKey;      // for loading or saving to tile cache
     StreamBuffer m_tileBytes;   // when available, bytes are saved here
     TileMetadata m_tileMetadata;
+
+    uint64_t m_createTime;       // The time of the most recent change to any element in the associated model when the tile loader was created.
+    uint64_t m_cacheCreateTime;  // The time of the most recent change to any element in the associated model when the tile cache data was created.
     bool m_saveToCache = false;
 
-    //! Constructor for TileLoader.
-    //! @param[in] tile The tile that we are loading.
-    //! @param[in] loads The cancellation token.
-    //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
-    TileLoader(TileR tile, TileLoadStateSPtr& loads, Utf8StringCR cacheKey) : m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey) {}
+    TileLoader(TileR tile, TileLoadStateSPtr loads);
 
     BentleyStatus LoadTile();
     BentleyStatus DoReadFromDb();
     BentleyStatus DoSaveToDb();
     BentleyStatus DropFromDb(RealityData::CacheR);
 
-    virtual uint64_t _GetCreateTime() const { return BeTimeUtilities::GetCurrentTimeAsUnixMillis(); }
+    uint64_t _GetCreateTime() const { return m_createTime; }
 public:
     bool IsCanceledOrAbandoned() const {return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned();}
     Dgn::Render::SystemR GetRenderSystem() const { return m_tile->GetRenderSystem(); }
 
-    DGNPLATFORM_EXPORT virtual BentleyStatus _SaveToDb();
-    DGNPLATFORM_EXPORT virtual BentleyStatus _ReadFromDb();
+    DGNPLATFORM_EXPORT BentleyStatus _SaveToDb();
+    DGNPLATFORM_EXPORT BentleyStatus _ReadFromDb();
 
     //! Called to get the data from the original location. The call must be fast and execute any long running operation asynchronously.
     virtual BentleyStatus _GetFromSource() = 0;
 
     //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data. Called from worker threads.
     virtual BentleyStatus _LoadTile() = 0; 
-    virtual uint64_t _GetMaxValidDuration() const { return 0; }
 
     //! Given the time (in unix millis) at which the tile was written to the cache, return true if the cached tile is no longer usable.
     //! If so, it will be deleted from the cache and _LoadTile() will be used to produce a new tile instead.
-    virtual bool _IsExpired(uint64_t cachedTileCreateTime) { return false; }
+    bool _IsExpired(uint64_t cachedTileCreateTime);
 
     //! Return false if m_tileBytes contains invalid data and should be updated from source.
-    virtual bool _IsValidData() { return true; }
-    //! Return true if m_tileBytes contains complete tile data; false if data must be further processed by _GetFromSource()
-    virtual bool _IsCompleteData() { return true; }
+    bool _IsValidData();
 
     struct LoadFlag
         {
@@ -445,6 +441,9 @@ public:
 
     //! Perform the load asynchronously.
     BentleyStatus Perform();
+
+    TileR GetTile() { return *m_tile; }
+    TileCR GetTile() const { return *m_tile; }
 };
 
 //=======================================================================================
