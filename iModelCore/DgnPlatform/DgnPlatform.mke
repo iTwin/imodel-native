@@ -201,8 +201,6 @@ $(CoreObjs)RenderPrimitives$(oext) :                $(DgnCoreDir)RenderPrimitive
 
 $(CoreObjs)MeshEdgeBuilder$(oext) :                 $(DgnCoreDir)MeshEdgeBuilder.cpp ${MultiCompileDepends}
 
-$(CoreObjs)ElementTileTree$(oext) :                 $(DgnCoreDir)ElementTileTree.cpp $(DgnPlatformAPISrc)ElementTileTree.h ${MultiCompileDepends}
-
 $(CoreObjs)FacetCount$(oext) :                      $(DgnCoreDir)FacetCount.cpp ${MultiCompileDepends}
 
 $(CoreObjs)RealityDataCache$(oext) :                $(DgnCoreDir)RealityDataCache.cpp $(RealityDataHandlerDepends) ${MultiCompileDepends}
@@ -363,7 +361,7 @@ $(o)SmartIBL$(oext) :                               $(DgnCoreDir)SmartIBL.cpp ${
 
 $(o)DgnProvenance$(oext) :                          $(DgnCoreDir)DgnProvenance.cpp $(DgnPlatformAPISrc)DgnProvenance.h ${MultiCompileDepends}
 
-$(o)ThematicDisplay$(oext) :                          $(DgnCoreDir)ThematicDisplay.cpp $(DgnPlatformAPISrc)ElementTileTree.h ${MultiCompileDepends} 
+$(o)ThematicDisplay$(oext) :                          $(DgnCoreDir)ThematicDisplay.cpp $(DgnPlatformAPISrc)RenderPrimitives.h ${MultiCompileDepends} 
 
 #----------------------------------------------------------------------
 #   DgnBRep

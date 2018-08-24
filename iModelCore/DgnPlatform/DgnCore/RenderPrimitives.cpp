@@ -2377,7 +2377,7 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     // NB: Need scaled 2d range - ignore 3d transform...
     double minAxis = std::min(textRange2d.high.x - textRange2d.low.x, textRange2d.high.y - textRange2d.low.y) * geom.GetTransform().ColumnXMagnitude();
     double textSize = minAxis * meterSize;
-    constexpr double s_minToleranceRatioMultiplier = 2.0; // from ElementTileTree.cpp; used to multiply the s_minToleranceRatio
+    constexpr double s_minToleranceRatioMultiplier = 2.0; // from TileTree.cpp; used to multiply the s_minToleranceRatio
     constexpr double s_texSizeThreshold = 64.0;
     bool doTextAsRasterIfPossible = textSize / s_minToleranceRatioMultiplier <= s_texSizeThreshold;
 

@@ -8,7 +8,7 @@
 #include "DgnPlatformInternal.h"
 #include <Bentley/BeTest.h> // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 #include <DgnPlatform/DgnGeoCoord.h>
-#include <DgnPlatform/ElementTileTree.h>
+#include <DgnPlatform/TileTree.h>
 
 #ifndef NDEBUG
 #define CHECK_NON_NAVIGATION_PROPERTY_API
