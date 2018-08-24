@@ -456,6 +456,138 @@ TEST_F(IModelCompatibilityTestFixture, EC32KindOfQuantities)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, PreEC32Units)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            //this test only tests files which do not support EC32 units yet
+            if (testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+                continue;
+
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            testDb.GetDb().ClearECDbCache();
+
+            EXPECT_EQ(8, testDb.GetDb().Schemas().GetSchemas(false).size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("u", false, SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("f", false, SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "CM") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("u", "CM", SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("u", "SI", SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "AREA") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("u", "AREA", SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("Formats", "DefaultReal") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("f", "DefaultReal", SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            // now import a schema with a KOQ. This should trigger deserializing the units/formats schema from disk
+            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
+                     </ECSchema>)xml"));
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
+            ASSERT_EQ(SchemaStatus::Success, testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas())) << testDb.GetDescription();
+
+            //3 more schemas: the imported test schema and the in-memory units/formats schemas
+            EXPECT_EQ(11, testDb.GetDb().Schemas().GetSchemas(false).size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("u", false, SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("f", false, SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "CM") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("u", "CM", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("u", "SI", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "AREA") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("u", "AREA", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("Formats", "DefaultReal") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("f", "DefaultReal", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            }
+        }
+
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_PREEC32KOQS))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            //this test only tests files which do not support EC32 units yet
+            if (testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+                continue;
+
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            testDb.GetDb().ClearECDbCache();
+
+            EXPECT_EQ(11, testDb.GetDb().Schemas().GetSchemas(false).size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("u", false, SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("f", false, SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "CM") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("u", "CM", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("u", "SI", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "AREA") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("u", "AREA", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("Formats", "DefaultReal") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("f", "DefaultReal", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            // now import another schema. This should work fine even though the previous code has triggered to deserialize the units and format schema into memory.
+            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                    <ECSchema schemaName="NewSchema" alias="ns" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
+                     </ECSchema>)xml"));
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
+            ASSERT_EQ(SchemaStatus::Success, testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas())) << testDb.GetDescription();
+
+            EXPECT_EQ(12, testDb.GetDb().Schemas().GetSchemas(false).size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("u", false, SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("f", false, SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "CM") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("u", "CM", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("u", "SI", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "AREA") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("u", "AREA", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("Formats", "DefaultReal") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("f", "DefaultReal", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IModelCompatibilityTestFixture, EC32Units)
@@ -538,7 +670,7 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32SchemaImport)
                             <ECEnumerator value="2"/>
                         </ECEnumeration>
                      </ECSchema>)xml"));
-            ASSERT_TRUE(deserializationCtx != nullptr);
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())
                 {
@@ -607,6 +739,98 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32SchemaImport)
     }
 
 //---------------------------------------------------------------------------------------
+// Performs an import of a EC 3.2 schema
+// @bsimethod                                  Krischan.Eberle                      08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, EC32SchemaImport)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+                        <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                        <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+
+                        <ECEntityClass typeName="MyDomainClass">
+                                <BaseClass>bis:PhysicalElement</BaseClass>
+                                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                                <ECProperty propertyName="Status" typeName="StatusEnum" />
+                        </ECEntityClass>
+                        <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="u:RAD" presentationUnits="f:DefaultRealU(2)[u:ARC_DEG]" relativeError="0.0001"/>
+                        <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT]" relativeError="0.0001"/>
+                        <KindOfQuantity typeName="TEMPERATURE" displayLabel="Temperature" persistenceUnit="u:K" presentationUnits="f:DefaultRealU(4)[u:CELSIUS];f:DefaultRealU(4)[u:FAHRENHEIT];f:DefaultRealU(4)[u:K]" relativeError="0.01"/>
+                        <ECEnumeration typeName="StatusEnum" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                            <ECEnumerator name="On" value="0"/>
+                            <ECEnumerator name="Off" value="1"/>
+                            <ECEnumerator name="Unknown" value="2"/>
+                        </ECEnumeration>
+                     </ECSchema>)xml"));
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
+            const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
+            switch (testDb.GetAge())
+                {
+                    case ProfileState::Age::UpToDate:
+                    {
+                    EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << testDb.GetDescription();
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << testDb.GetDescription();
+
+                    ECClassCP fooClass = testDb.GetDb().Schemas().GetClass("TestSchema", "MyDomainClass");
+                    ASSERT_TRUE(fooClass != nullptr && fooClass->IsEntityClass()) << testDb.GetDescription();
+                    {
+                    ECPropertyCP sizeProp = fooClass->GetPropertyP("Size");
+                    ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << testDb.GetDescription();
+                    KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+                    ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
+                    testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]"])json"), 0.0001);
+                    }
+                    {
+                    ECPropertyCP statusProp = fooClass->GetPropertyP("Status");
+                    ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << testDb.GetDescription();
+                    ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
+                    ASSERT_TRUE(ecenum != nullptr) << testDb.GetDescription();
+                    testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                    {{"On", ECValue(0), nullptr},
+                    {"Off", ECValue(1), nullptr},
+                    {"Unknown", ECValue(2), nullptr}});
+                    }
+
+                    testDb.AssertKindOfQuantity("TestSchema", "ANGLE", "Angle", nullptr, "u:RAD", JsonValue(R"json(["f:DefaultRealU(2)[u:ARC_DEG]"])json"), 0.0001);
+                    testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]"])json"), 0.0001);
+                    testDb.AssertKindOfQuantity("TestSchema", "TEMPERATURE", "Temperature", nullptr, "u:K", JsonValue(R"json(["f:DefaultRealU(4)[u:CELSIUS]","f:DefaultRealU(4)[u:FAHRENHEIT]","f:DefaultRealU(4)[u:K]"])json"), 0.01);
+
+                    testDb.AssertEnum("TestSchema", "StatusEnum", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                    {{"On", ECValue(0), nullptr},
+                    {"Off", ECValue(1), nullptr},
+                    {"Unknown", ECValue(2), nullptr}});
+                    break;
+                    }
+
+                    case ProfileState::Age::Older:
+                    case ProfileState::Age::Newer:
+                    {
+                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                    break;
+                    }
+                    default:
+                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
+                        break;
+                }
+            }
+        }
+    }
+//---------------------------------------------------------------------------------------
 // Performs an update of a pre EC 3.2 schema
 // @bsimethod                                  Krischan.Eberle                      08/18
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -655,7 +879,7 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32SchemaUpdate)
                 <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
              </ECEntityClass>
             </ECSchema>)xml"));
-            ASSERT_TRUE(deserializationCtx != nullptr);
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())
                 {
@@ -740,6 +964,285 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32SchemaUpdate)
                         FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
                         break;
                 }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// Performs an update of a pre EC3.2 schema to an EC3.2 schema
+// @bsimethod                                  Krischan.Eberle                      08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpdateOfPreEC32Schema)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_PREEC32SCHEMAUPDATE))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            //Schema changes:
+            //- bumped up version to 1.0.1
+            //- KOQ AREA: 
+            //    - Added presentation unit f:DefaultRealU(4)[u:SQ_CM]
+            //    - Changed relativeError to 0.001
+            // - Enum StatusEnum
+            //    - Changed display label to "Status"
+            //    - add meaningful names to enumerators
+            //    - Added enumerator 3
+            // - Added subclasses SubA, SubB, SubC
+            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+          <ECSchema schemaName="SchemaUpdateTest" alias="su" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+            <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+
+            <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT];f:DefaultRealU(4)[u:SQ_CM]" relativeError="0.001"/>
+            <ECEnumeration typeName="StatusEnum" displayLabel="Status" backingTypeName="int" isStrict="true">
+                <ECEnumerator name="On" value="0"/>
+                <ECEnumerator name="Off" value="1"/>
+                <ECEnumerator name="Unknown" value="2"/>
+                <ECEnumerator name="Halfhalf" value="3"/>
+            </ECEnumeration>
+            <ECEntityClass typeName="MyDomainClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                <ECProperty propertyName="Status" typeName="StatusEnum" />
+             </ECEntityClass>
+             <ECEntityClass typeName="SubDomainClass">
+                <BaseClass>MyDomainClass</BaseClass>
+                <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
+                <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
+             </ECEntityClass>
+           </ECSchema>)xml"));
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
+            const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
+            switch (testDb.GetAge())
+                {
+                    case ProfileState::Age::Older:
+                    case ProfileState::Age::UpToDate:
+                    {
+                    EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+                    if (testDb.GetAge() == ProfileState::Age::Older)
+                        {
+                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("SchemaUpdateTest")) << testDb.GetDescription();
+                        EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                        EXPECT_EQ(JsonValue("[{\"cnt\": 1}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                        }
+                    else
+                        {
+                        EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("SchemaUpdateTest")) << testDb.GetDescription();
+                        EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                        EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                        }
+
+                    EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Code,Size,Sizes,Status,Statuses FROM su.SubDomainClass")) << testDb.GetDescription();
+
+                    ECClassCP cl = testDb.GetDb().Schemas().GetClass("SchemaUpdateTest", "SubDomainClass");
+                    ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
+                    {
+                    ECPropertyCP sizeProp = cl->GetPropertyP("Size");
+                    ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << "SubDomainClass | " << testDb.GetDescription();
+                    KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+                    ASSERT_TRUE(koq != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+                    testDb.AssertKindOfQuantity(*koq, "SchemaUpdateTest", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+                    }
+
+                    {
+                    ECPropertyCP sizesProp = cl->GetPropertyP("Sizes");
+                    ASSERT_TRUE(sizesProp != nullptr && sizesProp->GetIsPrimitiveArray()) << "SubDomainClass | " << testDb.GetDescription();
+                    KindOfQuantityCP koq = sizesProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+                    ASSERT_TRUE(koq != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+                    testDb.AssertKindOfQuantity(*koq, "SchemaUpdateTest", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+                    }
+
+                    {
+                    ECPropertyCP statusProp = cl->GetPropertyP("Status");
+                    ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << "SubDomainClass | " << testDb.GetDescription();
+                    ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
+                    ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+                    testDb.AssertEnum(*ecenum, "SchemaUpdateTest", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                    {{"On", ECValue(0), nullptr},
+                    {"Off", ECValue(1), nullptr},
+                    {"Unknown", ECValue(2), nullptr},
+                    {"Halfhalf", ECValue(3), nullptr}});
+                    }
+
+                    {
+                    ECPropertyCP statusesProp = cl->GetPropertyP("Statuses");
+                    ASSERT_TRUE(statusesProp != nullptr && statusesProp->GetIsPrimitiveArray()) << "SubDomainClass | " << testDb.GetDescription();
+                    ECEnumerationCP ecenum = statusesProp->GetAsPrimitiveArrayProperty()->GetEnumeration();
+                    ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+                    testDb.AssertEnum(*ecenum, "SchemaUpdateTest", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                    {{"On", ECValue(0), nullptr},
+                    {"Off", ECValue(1), nullptr},
+                    {"Unknown", ECValue(2), nullptr},
+                    {"Halfhalf", ECValue(3), nullptr}});
+                    }
+
+                    testDb.AssertKindOfQuantity("SchemaUpdateTest", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+
+                    testDb.AssertEnum("SchemaUpdateTest", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                    {{"On", ECValue(0), nullptr},
+                    {"Off", ECValue(1), nullptr},
+                    {"Unknown", ECValue(2), nullptr},
+                    {"Halfhalf", ECValue(3), nullptr}});
+                    break;
+                    }
+
+                    case ProfileState::Age::Newer:
+                    {
+                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                    break;
+                    }
+                    default:
+                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
+                        break;
+                }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// Performs an update of a EC 3.2 schema
+// @bsimethod                                  Krischan.Eberle                      08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpdate)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32SCHEMAUPDATE))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+                //Schema changes:
+                //- bumped up version to 1.0.1
+                //- KOQ AREA: 
+                //    - Added presentation unit f:DefaultRealU(4)[u:SQ_CM]
+                //    - Changed relativeError to 0.001
+                // - Enum StatusEnum
+                //    - Changed display label to "Status"
+                //    - Added enumerator 3
+                // - Added subclasses SubA, SubB, SubC
+                ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            <ECSchema schemaName="SchemaUpdateTest" alias="su" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+              <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+              <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+
+             <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT];f:DefaultRealU(4)[u:SQ_CM]" relativeError="0.001"/>
+             <ECEnumeration typeName="StatusEnum" displayLabel="Status" backingTypeName="int" isStrict="true">
+                <ECEnumerator name="On" value="0"/>
+                <ECEnumerator name="Off" value="1"/>
+                <ECEnumerator name="Unknown" value="2"/>
+                <ECEnumerator name="Halfhalf" value="3"/>
+             </ECEnumeration>
+          <ECEntityClass typeName="MyDomainClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                <ECProperty propertyName="Status" typeName="StatusEnum" />
+             </ECEntityClass>
+             <ECEntityClass typeName="SubDomainClass">
+                <BaseClass>MyDomainClass</BaseClass>
+                <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
+                <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
+             </ECEntityClass>
+            </ECSchema>)xml"));
+                ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
+                const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
+                switch (testDb.GetAge())
+                    {
+                        case ProfileState::Age::Older:
+                        case ProfileState::Age::UpToDate:
+                        {
+                        EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+                        if (testDb.GetAge() == ProfileState::Age::Older)
+                            {
+                            EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("SchemaUpdateTest")) << testDb.GetDescription();
+                            EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                            EXPECT_EQ(JsonValue("[{\"cnt\": 1}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                            }
+                        else
+                            {
+                            EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("SchemaUpdateTest")) << testDb.GetDescription();
+                            EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                            EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                            }
+
+                        EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Code,Size,Sizes,Status,Statuses FROM su.SubDomainClass")) << testDb.GetDescription();
+
+                        ECClassCP cl = testDb.GetDb().Schemas().GetClass("SchemaUpdateTest", "SubDomainClass");
+                        ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
+                        {
+                        ECPropertyCP sizeProp = cl->GetPropertyP("Size");
+                        ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << "SubDomainClass | " << testDb.GetDescription();
+                        KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+                        ASSERT_TRUE(koq != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+                        testDb.AssertKindOfQuantity(*koq, "SchemaUpdateTest", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+                        }
+
+                        {
+                        ECPropertyCP sizesProp = cl->GetPropertyP("Sizes");
+                        ASSERT_TRUE(sizesProp != nullptr && sizesProp->GetIsPrimitiveArray()) << "SubDomainClass | " << testDb.GetDescription();
+                        KindOfQuantityCP koq = sizesProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+                        ASSERT_TRUE(koq != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+                        testDb.AssertKindOfQuantity(*koq, "SchemaUpdateTest", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+                        }
+
+                        {
+                        ECPropertyCP statusProp = cl->GetPropertyP("Status");
+                        ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << "SubDomainClass | " << testDb.GetDescription();
+                        ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
+                        ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+                        testDb.AssertEnum(*ecenum, "SchemaUpdateTest", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                        {{"On", ECValue(0), nullptr},
+                        {"Off", ECValue(1), nullptr},
+                        {"Unknown", ECValue(2), nullptr},
+                        {"Halfhalf", ECValue(3), nullptr}});
+                        }
+
+                        {
+                        ECPropertyCP statusesProp = cl->GetPropertyP("Statuses");
+                        ASSERT_TRUE(statusesProp != nullptr && statusesProp->GetIsPrimitiveArray()) << "SubDomainClass | " << testDb.GetDescription();
+                        ECEnumerationCP ecenum = statusesProp->GetAsPrimitiveArrayProperty()->GetEnumeration();
+                        ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+                        testDb.AssertEnum(*ecenum, "SchemaUpdateTest", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                        {{"On", ECValue(0), nullptr},
+                        {"Off", ECValue(1), nullptr},
+                        {"Unknown", ECValue(2), nullptr},
+                        {"Halfhalf", ECValue(3), nullptr}});
+                        }
+
+                        testDb.AssertKindOfQuantity("SchemaUpdateTest", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+
+                        testDb.AssertEnum("SchemaUpdateTest", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                        {{"On", ECValue(0), nullptr},
+                        {"Off", ECValue(1), nullptr},
+                        {"Unknown", ECValue(2), nullptr},
+                        {"Halfhalf", ECValue(3), nullptr}});
+                        break;
+                        }
+
+                        case ProfileState::Age::Newer:
+                        {
+                        EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                        break;
+                        }
+                        default:
+                            FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
+                            break;
+                    }
             }
         }
     }

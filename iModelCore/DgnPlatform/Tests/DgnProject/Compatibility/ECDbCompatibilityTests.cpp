@@ -403,6 +403,138 @@ TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, PreEC32Units)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EMPTY))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            //this test only tests files which do not support EC32 units yet
+            if (testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+                continue;
+
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            testDb.GetDb().ClearECDbCache();
+
+            EXPECT_EQ(5, testDb.GetDb().Schemas().GetSchemas(false).size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("u", false, SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("f", false, SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "CM") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("u", "CM", SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("u", "SI", SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "AREA") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("u", "AREA", SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("Formats", "DefaultReal") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("f", "DefaultReal", SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            // now import a schema with a KOQ. This should trigger deserializing the units/formats schema from disk
+            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
+                     </ECSchema>)xml"));
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
+            ASSERT_EQ(SUCCESS, testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas())) << testDb.GetDescription();
+
+            //3 more schemas: the imported test schema and the in-memory units/formats schemas
+            EXPECT_EQ(8, testDb.GetDb().Schemas().GetSchemas(false).size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("u", false, SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("f", false, SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "CM") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("u", "CM", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("u", "SI", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "AREA") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("u", "AREA", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("Formats", "DefaultReal") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("f", "DefaultReal", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            }
+        }
+
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_PREEC32KOQS))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            //this test only tests files which do not support EC32 units yet
+            if (testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+                continue;
+
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            testDb.GetDb().ClearECDbCache();
+
+            EXPECT_EQ(8, testDb.GetDb().Schemas().GetSchemas(false).size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("u", false, SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("f", false, SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "CM") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("u", "CM", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("u", "SI", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "AREA") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("u", "AREA", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("Formats", "DefaultReal") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("f", "DefaultReal", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            // now import another schema. This should work fine even though the previous code has triggered to deserialize the units and format schema into memory.
+            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                    <ECSchema schemaName="NewSchema" alias="ns" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
+                     </ECSchema>)xml"));
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
+            ASSERT_EQ(SUCCESS, testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas())) << testDb.GetDescription();
+
+            EXPECT_EQ(9, testDb.GetDb().Schemas().GetSchemas(false).size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("u", false, SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("f", false, SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "CM") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("u", "CM", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("u", "SI", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "AREA") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("u", "AREA", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("Formats", "DefaultReal") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetFormat("f", "DefaultReal", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, EC32Units)
@@ -494,7 +626,7 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32SchemaImport)
                             <ECEnumerator value="2"/>
                         </ECEnumeration>
                      </ECSchema>)xml"));
-            ASSERT_TRUE(deserializationCtx != nullptr);
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())
                 {
@@ -616,7 +748,7 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32SchemaImportWithEC32Reference)
                             <ECEnumerator value="2"/>
                         </ECEnumeration>
                      </ECSchema>)xml"), {ecdbStandardSchemasFolder});
-                ASSERT_TRUE(deserializationCtx != nullptr);
+                ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
                 const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
                 switch (testDb.GetAge())
                     {
@@ -713,7 +845,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaImport)
                             <ECEnumerator name="Unknown" value="2"/>
                         </ECEnumeration>
                      </ECSchema>)xml"));
-            ASSERT_TRUE(deserializationCtx != nullptr);
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())
                 {
@@ -858,7 +990,7 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32SchemaUpdate)
                 <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
              </ECEntityClass>
             </ECSchema>)xml"));
-            ASSERT_TRUE(deserializationCtx != nullptr);
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())
                 {
@@ -1056,7 +1188,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaUpdateOfPreEC32Schema)
                 <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
             </ECEntityClass>
            </ECSchema>)xml"));
-            ASSERT_TRUE(deserializationCtx != nullptr);
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())
                 {
@@ -1244,7 +1376,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaUpdate)
                 <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
              </ECEntityClass>
             </ECSchema>)xml"));
-            ASSERT_TRUE(deserializationCtx != nullptr);
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())
                 {
