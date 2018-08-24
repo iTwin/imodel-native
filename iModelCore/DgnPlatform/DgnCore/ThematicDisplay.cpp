@@ -8,9 +8,6 @@
 #include "DgnPlatformInternal.h"
 
 #include <DgnPlatform/RenderPrimitives.h>
-#include <DgnPlatform/ElementTileTree.h>
-
-
 
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      10/2010
@@ -72,7 +69,7 @@ GradientSymbCPtr getThematicGradient(Render::Primitives::DisplayParamsCR display
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  ElementTileTree::ThematicMeshBuilder::InitThematicDisplay(PolyfaceHeaderR mesh, Render::Primitives::DisplayParamsCR displayParams)
+void  Render::Primitives::ThematicMeshBuilder::InitThematicDisplay(PolyfaceHeaderR mesh, Render::Primitives::DisplayParamsCR displayParams)
     {
     // TBD -- Active channel selection - for now any scalar.
 
@@ -109,7 +106,7 @@ void  ElementTileTree::ThematicMeshBuilder::InitThematicDisplay(PolyfaceHeaderR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void   ElementTileTree::ThematicMeshBuilder::BuildMeshAuxData(MeshAuxDataR auxData, PolyfaceQueryCR mesh, Render::Primitives::DisplayParamsCR displayParams)
+void   Render::Primitives::ThematicMeshBuilder::BuildMeshAuxData(MeshAuxDataR auxData, PolyfaceQueryCR mesh, Render::Primitives::DisplayParamsCR displayParams)
     {
     // TBD -- Active channel selection - for now use first scalar or displacement.
     if (!mesh.GetAuxDataCP().IsValid())

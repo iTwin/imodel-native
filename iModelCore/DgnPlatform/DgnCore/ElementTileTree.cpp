@@ -355,6 +355,8 @@ static bool setupForStyledCurveVector(GraphicBuilderR builder, CurveVectorCR cur
 
 using RootR = TileTree::RootR;
 using RootPtr = TileTree::RootPtr;
+using LoadContext = TileTree::LoadContext;
+using LoadContextCR = TileTree::LoadContextCR;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/16

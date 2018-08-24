@@ -37,12 +37,14 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryAccumulator);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshList);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ThematicMeshBuilder);
 
 DEFINE_REF_COUNTED_PTR(DisplayParams);
 DEFINE_REF_COUNTED_PTR(Mesh);
 DEFINE_REF_COUNTED_PTR(MeshBuilder);
 DEFINE_REF_COUNTED_PTR(Geometry);
 DEFINE_REF_COUNTED_PTR(GeomPart);
+DEFINE_REF_COUNTED_PTR(ThematicMeshBuilder);
 
 typedef bvector<Polyface>               PolyfaceList;
 typedef bvector<Strokes>                StrokesList;
@@ -1025,6 +1027,21 @@ protected:
     DGNPLATFORM_EXPORT double ComputeTolerance(GeometryAccumulatorR) const;
 public:
     PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params, DgnElementId elemId=DgnElementId()) : GeometryListBuilder(system, params, elemId) { }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     03/2018
+//=======================================================================================
+struct ThematicMeshBuilder : RefCountedBase
+{
+private:
+    Utf8String          m_displacementChannel;
+    Utf8String          m_paramChannel;
+public:
+    ThematicMeshBuilder(Utf8CP displacementChannel, Utf8CP paramChannel) : m_displacementChannel(displacementChannel), m_paramChannel(paramChannel) { }
+
+    void BuildMeshAuxData(Render::MeshAuxDataR auxData, PolyfaceQueryCR mesh, Render::Primitives::DisplayParamsCR displayParams);
+    void InitThematicDisplay(PolyfaceHeaderR mesh, Render::Primitives::DisplayParamsCR displayParams);
 };
 
 END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE

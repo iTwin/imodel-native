@@ -24,6 +24,7 @@ BEGIN_TILETREE_NAMESPACE
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Root)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoader)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(LoadContext)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileCache)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StreamBuffer)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileMetadata)
@@ -431,6 +432,20 @@ public:
 
     //! Perform the load asynchronously.
     BentleyStatus Perform();
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct LoadContext
+{
+private:
+    TileLoaderCP    m_loader;
+public:
+    explicit LoadContext(TileLoaderCP loader) : m_loader(loader) { }
+
+    bool WasAborted() const { return nullptr != m_loader && m_loader->IsCanceledOrAbandoned(); }
+    Dgn::Render::SystemR GetRenderSystem() const {return m_loader->GetRenderSystem();}
 };
 
 END_TILETREE_NAMESPACE
