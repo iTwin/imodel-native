@@ -334,6 +334,97 @@ TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, PreEC32Units)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EMPTY))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            //this test only tests files which do not support EC32 units yet
+            if (testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+                continue;
+
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            testDb.GetDb().ClearECDbCache();
+
+            EXPECT_EQ(5, testDb.GetDb().Schemas().GetSchemas(false).size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("u", false, SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("f", false, SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            // now import another schema. PreEC3.1 code does not trigger deserializing the units/formats schema from disk
+            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
+                     </ECSchema>)xml"));
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
+            ASSERT_EQ(SUCCESS, testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas())) << testDb.GetDescription();
+
+            EXPECT_EQ(6, testDb.GetDb().Schemas().GetSchemas(false).size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("u", false, SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("f", false, SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+            }
+        }
+
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_PREEC32KOQS))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            //this test only tests files which do not support EC32 units yet
+            if (testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+                continue;
+
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            testDb.GetDb().ClearECDbCache();
+
+            // PreEC3.1 code does not trigger deserializing the units/formats schema from disk
+            EXPECT_EQ(6, testDb.GetDb().Schemas().GetSchemas(false).size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("u", false, SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("f", false, SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            // now import another schema. Still no deserialization of the units and format schema into memory as this is pre EC3.1 code
+            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                    <ECSchema schemaName="NewSchema" alias="ns" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
+                     </ECSchema>)xml"));
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
+            ASSERT_EQ(SUCCESS, testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas())) << testDb.GetDescription();
+
+            EXPECT_EQ(7, testDb.GetDb().Schemas().GetSchemas(false).size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("u", false, SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") == nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("f", false, SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, EC32Units)
@@ -484,6 +575,46 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32SchemaImport)
                         FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
                         break;
                 }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// Performs an import of a EC 3.2 schema
+// @bsimethod                                  Krischan.Eberle                      08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, EC32SchemaImport)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EMPTY))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            ASSERT_TRUE(TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                        <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                        <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+                        <ECEntityClass typeName="Foo">
+                                <ECProperty propertyName="Code" typeName="int" />
+                                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                                <ECProperty propertyName="Status" typeName="StatusEnum" />
+                            </ECEntityClass>
+                        <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="u:RAD" presentationUnits="f:DefaultRealU(2)[u:ARC_DEG]" relativeError="0.0001"/>
+                        <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT]" relativeError="0.0001"/>
+                        <KindOfQuantity typeName="TEMPERATURE" displayLabel="Temperature" persistenceUnit="u:K" presentationUnits="f:DefaultRealU(4)[u:CELSIUS];f:DefaultRealU(4)[u:FAHRENHEIT];f:DefaultRealU(4)[u:K]" relativeError="0.01"/>
+                        <ECEnumeration typeName="StatusEnum" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                            <ECEnumerator name="On" value="0"/>
+                            <ECEnumerator name="Off" value="1"/>
+                            <ECEnumerator name="Unknown" value="2"/>
+                        </ECEnumeration>
+                     </ECSchema>)xml")) == nullptr) << testDb.GetDescription();
             }
         }
     }
@@ -670,6 +801,185 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32SchemaUpdate)
                         FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
                         break;
                 }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// Performs an update of a pre EC3.2 schema to an EC3.2 schema
+// @bsimethod                                  Krischan.Eberle                      08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, EC32SchemaUpdateOfPreEC32Schema)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_PREEC32SCHEMAUPDATE))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            //Schema changes:
+            //- bumped up version to 1.0.1
+            //- KOQ AREA: 
+            //    - Added presentation unit f:DefaultRealU(4)[u:SQ_CM]
+            //    - Changed relativeError to 0.001
+            // - Enum StatusEnum
+            //    - Changed display label to "Status"
+            //    - add meaningful names to enumerators
+            //    - Added enumerator 3
+            // - Added subclasses SubA, SubB, SubC
+            ASSERT_TRUE(TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+          <ECSchema schemaName="SchemaUpdateTest" alias="su" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+            <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+
+            <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT];f:DefaultRealU(4)[u:SQ_CM]" relativeError="0.001"/>
+            <ECEnumeration typeName="StatusEnum" displayLabel="Status" backingTypeName="int" isStrict="true">
+                <ECEnumerator name="On" value="0"/>
+                <ECEnumerator name="Off" value="1"/>
+                <ECEnumerator name="Unknown" value="2"/>
+                <ECEnumerator name="Halfhalf" value="3"/>
+            </ECEnumeration>
+            <ECEntityClass typeName="BaseA">
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                <ECProperty propertyName="Status" typeName="StatusEnum" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SubA">
+                <BaseClass>BaseA</BaseClass>
+                <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
+                <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
+            </ECEntityClass>
+            <ECEntityClass typeName="BaseB">
+                <ECCustomAttributes>
+                 <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                 </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                <ECProperty propertyName="Status" typeName="StatusEnum" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SubB">
+                <BaseClass>BaseB</BaseClass>
+                <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
+                <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
+            </ECEntityClass>
+            <ECEntityClass typeName="BaseC">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>6</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                <ECProperty propertyName="Status" typeName="StatusEnum" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SubC">
+                <BaseClass>BaseC</BaseClass>
+                <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
+                <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
+            </ECEntityClass>
+           </ECSchema>)xml")) == nullptr) << testDb.GetDescription();
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// Performs an update of a EC 3.2 schema
+// @bsimethod                                  Krischan.Eberle                      08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, EC32SchemaUpdate)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EC32SCHEMAUPDATE))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            //Schema changes:
+            //- bumped up version to 1.0.1
+            //- KOQ AREA: 
+            //    - Added presentation unit f:DefaultRealU(4)[u:SQ_CM]
+            //    - Changed relativeError to 0.001
+            // - Enum StatusEnum
+            //    - Changed display label to "Status"
+            //    - Added enumerator 3
+            // - Added subclasses SubA, SubB, SubC
+            ASSERT_TRUE(TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            <ECSchema schemaName="SchemaUpdateTest" alias="su" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+              <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+              <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+
+             <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT];f:DefaultRealU(4)[u:SQ_CM]" relativeError="0.001"/>
+             <ECEnumeration typeName="StatusEnum" displayLabel="Status" backingTypeName="int" isStrict="true">
+                <ECEnumerator name="On" value="0"/>
+                <ECEnumerator name="Off" value="1"/>
+                <ECEnumerator name="Unknown" value="2"/>
+                <ECEnumerator name="Halfhalf" value="3"/>
+             </ECEnumeration>
+             <ECEntityClass typeName="BaseA">
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                <ECProperty propertyName="Status" typeName="StatusEnum" />
+             </ECEntityClass>
+             <ECEntityClass typeName="SubA">
+                <BaseClass>BaseA</BaseClass>
+                <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
+                <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
+             </ECEntityClass>
+             <ECEntityClass typeName="BaseB">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                <ECProperty propertyName="Status" typeName="StatusEnum" />
+             </ECEntityClass>
+             <ECEntityClass typeName="SubB">
+                <BaseClass>BaseB</BaseClass>
+                <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
+                <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
+             </ECEntityClass>
+             <ECEntityClass typeName="BaseC">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>6</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                <ECProperty propertyName="Status" typeName="StatusEnum" />
+             </ECEntityClass>
+             <ECEntityClass typeName="SubC">
+                <BaseClass>BaseC</BaseClass>
+                <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
+                <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
+             </ECEntityClass>
+            </ECSchema>)xml")) == nullptr) << testDb.GetDescription();
             }
         }
     }
