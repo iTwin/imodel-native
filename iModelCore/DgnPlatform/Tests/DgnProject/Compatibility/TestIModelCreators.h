@@ -373,7 +373,7 @@ struct EC32EnumsSchemaUpgradeTestIModelCreator final : TestIModelCreator
             // ECObjects downgrades an EC3.2 file to EC3.1 during deserialization
             return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                                            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+                                                         <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
                                                          <ECEnumeration typeName="StatusEnum" displayLabel="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
                                                             <ECEnumerator name="On" value="0"/>
                                                             <ECEnumerator name="Off" value="1"/>
@@ -404,37 +404,14 @@ struct EC32KoqsSchemaUpgradeTestIModelCreator final : TestIModelCreator
 
             return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                                                         <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
                                                          <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                                          <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
-
                                                          <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT]" relativeError="0.0001"/>
-                                                         <ECEntityClass typeName="BaseA">
-                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                         <ECEntityClass typeName="MyDomainClass">
+                                                            <BaseClass>bis:PhysicalElement</BaseClass>
                                                             <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
-                                                         </ECEntityClass>
-                                                         <ECEntityClass typeName="BaseB">
-                                                            <ECCustomAttributes>
-                                                                <ClassMap xmlns="ECDbMap.02.00.00">
-                                                                    <MapStrategy>TablePerHierarchy</MapStrategy>
-                                                                </ClassMap>
-                                                            </ECCustomAttributes>
-                                                            <ECProperty propertyName="Code" typeName="int" />
-                                                            <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
-                                                         </ECEntityClass>
-                                                         <ECEntityClass typeName="BaseC">
-                                                            <ECCustomAttributes>
-                                                                <ClassMap xmlns="ECDbMap.02.00.00">
-                                                                    <MapStrategy>TablePerHierarchy</MapStrategy>
-                                                                </ClassMap>
-                                                                <ShareColumns xmlns="ECDbMap.02.00.00">
-                                                                    <MaxSharedColumnsBeforeOverflow>6</MaxSharedColumnsBeforeOverflow>
-                                                                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
-                                                                </ShareColumns>
-                                                            </ECCustomAttributes>
-                                                            <ECProperty propertyName="Code" typeName="int" />
-                                                            <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
-                                                         </ECEntityClass>
+                                                        </ECEntityClass>
                                                    </ECSchema>)xml"));
             }
     public:
