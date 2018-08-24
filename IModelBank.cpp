@@ -262,7 +262,7 @@ static DbResult applyChangeSet(ChangeSetApplyStats &stats, Db &db, bvector<BeFil
     DbResult result = changesetReader.GetSchemaChanges(containsSchemaChanges, dbSchemaChanges);
     if (result != BE_SQLITE_OK)
     {
-        BeAssert(false);
+//        BeAssert(false);
         return result;
     }
 
