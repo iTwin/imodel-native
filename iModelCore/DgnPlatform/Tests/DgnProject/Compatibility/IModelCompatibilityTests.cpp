@@ -1095,12 +1095,9 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpdateOfPreEC32Schema)
     }
 
 //---------------------------------------------------------------------------------------
-// Performs an update of a EC 3.2 schema
 // @bsimethod                                  Krischan.Eberle                      08/18
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpdate)
     {
-    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32SCHEMAUPDATE))
         {
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
