@@ -43,6 +43,7 @@
 #include    <Teigha/Drawing/Include/ModelDocObj/DbViewBorder.h>
 #include    <Teigha/Drawing/Include/ModelDocObj/DbViewRepBlockReference.h>
 #include    <Teigha/Kernel/Include/OdString.h>
+#include    <Teigha/Kernel/Include/RxObject.h>
 #include    <Teigha/Drawing/Extensions/ExServices/ExHostAppServices.h>
 #include    <Teigha/Kernel/Extensions/ExServices/ExSystemServices.h>
 

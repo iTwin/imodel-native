@@ -1238,14 +1238,7 @@ DwgSyncInfo::DwgObjectProvenance::DwgObjectProvenance (DwgDbObjectCR obj, DwgSyn
         {
         // the primary hash is from the object data itself.
         obj.DxfOut (filer);
-        // Aec objects do not dxfOut actual data - add range for now - TFS 853852:
-        if (obj.GetDwgClassName().StartsWithI(L"AecDb"))
-            {
-            DwgDbEntityCP   ent = DwgDbEntity::Cast(&obj);
-            DRange3d        range;
-            if (nullptr != ent && ent->GetRange(range) == DwgDbStatus::Success)
-                m_hasher.Add(&range, sizeof(range));
-            }
+        this->AppendComplexObjectHash (filer, obj);
         m_primaryHash = m_hasher.GetHashVal ();
 
         if (hash2nd)
@@ -1262,6 +1255,51 @@ DwgSyncInfo::DwgObjectProvenance::DwgObjectProvenance (DwgDbObjectCR obj, DwgSyn
         }
 
     BeAssert (!m_primaryHash.IsNull() && L"DwgObjectProvenance has no hash!");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgSyncInfo::DwgObjectProvenance::AppendComplexObjectHash (DwgObjectHash::HashFiler& filer, DwgDbObjectCR obj)
+    {
+    DwgDbEntityCP   entity = DwgDbEntity::Cast(&obj);
+    if (nullptr == entity)
+        return;
+
+    // handle complex objects which require additional primary hash:
+    DwgDb3dPolylineP    pline3d = nullptr;
+    if (obj.GetDwgClassName().StartsWithI(L"AecDb"))
+        {
+        // Aec objects do not dxfOut actual data - add range for now - TFS 853852:
+        DRange3d    range;
+        if (entity->GetRange(range) == DwgDbStatus::Success)
+            m_hasher.Add (&range, sizeof(range));
+        }
+    else if (obj.IsAProxy())
+        {
+        // a proxy entity does not file out DXF group code 310 - need more data, TFS 933725.
+        DwgDbObjectPArray   proxy;
+        if (DwgDbStatus::Success == entity->Explode(proxy))
+            {
+            for (auto ent : proxy)
+                {
+                ent->DxfOut (filer);
+                // operator delete is hidden by Teigha!
+                ::free (ent);
+                }
+            }
+        }
+    else if ((pline3d = DwgDb3dPolyline::Cast(entity)) != nullptr)
+        {
+        // a 3D polyline has vertex entities to follow.
+        DwgDbObjectIterator iter = pline3d->GetVertexIterator ();
+        for (iter.Start(); !iter.Done(); iter.Next())
+            {
+            DwgDbEntityPtr vertex(iter.GetObjectId(), DwgDbOpenMode::ForRead);
+            if (vertex.OpenStatus() == DwgDbStatus::Success)
+                vertex->DxfOut (filer);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -653,7 +653,13 @@ END_DWGDB_NAMESPACE
     void DwgDb##_classSuffix_##::SetDatabaseDefaults (DwgDbDatabaseP dwg) { T_Super::setDatabaseDefaults(dwg); } \
     void DwgDb##_classSuffix_##::SetCastShadows (bool c) { T_Super::setCastShadows(c); } \
     void DwgDb##_classSuffix_##::SetReceiveShadows (bool r) { T_Super::setReceiveShadows(r); } \
-    void DwgDb##_classSuffix_##::SetVisibility (DwgDbVisibility v, bool s) { T_Super::setVisibility(DWGDB_CASTTOENUM_DB(Visibility)(v), s); }
+    void DwgDb##_classSuffix_##::SetVisibility (DwgDbVisibility v, bool s) { T_Super::setVisibility(DWGDB_CASTTOENUM_DB(Visibility)(v), s); } \
+    DwgDbStatus DwgDb##_classSuffix_##::Explode (DwgDbObjectPArrayR entities) const { \
+        TkObjectArray array; \
+        DwgDbStatus status = ToDwgDbStatus (T_Super::explode(array)); \
+        if (DwgDbStatus::Success == status) { \
+            Util::GetObjectArray(entities, array); } \
+        return status; }
 
 // define common methods for DbEntity as above, plus an object Create method
 #define DWGDB_ENTITY_DEFINE_MEMBERS(_classSuffix_)                  \
