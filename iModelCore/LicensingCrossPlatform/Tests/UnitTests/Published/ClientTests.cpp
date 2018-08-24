@@ -81,12 +81,12 @@ BeFileName GetUsageDbPath()
     return path;
     }
 
-ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env)
+ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
-    auto productId = "2545";
+    //auto productId = "2545";
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -114,17 +114,22 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
 
 ClientImplPtr CreateTestClient(bool signIn)
     {
-    return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa);
+    return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, "2545");
     }
 
 ClientImplPtr CreateTestClient(bool signIn, UrlProvider::Environment env)
     {
-    return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), env);
+    return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), env, "2545");
     }
 
 ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor)
     {
-    return CreateTestClient(signIn, heartbeatInterval, timeRetriever, delayedExecutor, UrlProvider::Environment::Qa);
+    return CreateTestClient(signIn, heartbeatInterval, timeRetriever, delayedExecutor, UrlProvider::Environment::Qa, "2545");
+    }
+
+ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, Utf8StringCR productId)
+    {
+    return CreateTestClient(signIn, heartbeatInterval, timeRetriever, delayedExecutor, UrlProvider::Environment::Qa, productId);
     }
 
 void ClientTests::SetUpTestCase()
@@ -141,239 +146,42 @@ void ClientTests::SetUpTestCase()
     BeSQLiteLib::Initialize(tmpDir);
     }
 
-//TEST_F(ClientTests, StartApplication_Called2ndTimeBeforeEndTime_ExtendsEndTime)
-//    {
-//    auto timeRetriever = TestTimeRetriever::Create();
-//    auto delayedExecutor = TestDelayedExecutor::Create();
-//    auto client = CreateTestClient(false, 10, timeRetriever, delayedExecutor);
-//    EXPECT_NE(nullptr, client);
-//
-//    timeRetriever->time = 10;
-//    EXPECT_SUCCESS(client->StartApplication());
-//
-//    EXPECT_EQ(1, client->GetUsageDb().GetRecordCount());
-//    EXPECT_EQ(10 + 10, client->GetUsageDb().GetLastRecordEndTime());
-//
-//    timeRetriever->time = 15;
-//    EXPECT_SUCCESS(client->StartApplication());
-//
-//    EXPECT_EQ(1, client->GetUsageDb().GetRecordCount());
-//    EXPECT_EQ(15 + 10, client->GetUsageDb().GetLastRecordEndTime());
-//    }
+TEST_F(ClientTests, StartApplication_Success)
+    {
+    auto client = CreateTestClient(true);
+    EXPECT_NE((int) client->StartApplication(), (int) LicenseStatus::Error);
+    client->StopApplication();
+    }
 
-//TEST_F(ClientTests, StartApplication_Called2ndTimeAfterEndTime_CreatesNewRecord)
-//    {
-//    auto timeRetriever = TestTimeRetriever::Create();
-//    auto delayedExecutor = TestDelayedExecutor::Create();
-//    auto client = CreateTestClient(false, 10, timeRetriever, delayedExecutor);
-//    EXPECT_NE(nullptr, client);
-//
-//    timeRetriever->time = 10;
-//    EXPECT_SUCCESS(client->StartApplication());
-//
-//    EXPECT_EQ(1, client->GetUsageDb().GetRecordCount());
-//    EXPECT_EQ(10 + 10, client->GetUsageDb().GetLastRecordEndTime());
-//
-//    timeRetriever->time = 25;
-//    EXPECT_SUCCESS(client->StartApplication());
-//
-//    EXPECT_EQ(2, client->GetUsageDb().GetRecordCount());
-//    EXPECT_EQ(25 + 10, client->GetUsageDb().GetLastRecordEndTime());
-//    }
+TEST_F(ClientTests, GetCertificate_Success)
+    {
+    Utf8String cert;
 
-//TEST_F(ClientTests, StartApplication_AfterStopApplication_CreatesNewRecord)
-//    {
-//    auto timeRetriever = TestTimeRetriever::Create();
-//    auto delayedExecutor = TestDelayedExecutor::Create();
-//    auto client = CreateTestClient(false, 10, timeRetriever, delayedExecutor);
-//    EXPECT_NE(nullptr, client);
-//
-//    timeRetriever->time = 10;
-//    EXPECT_SUCCESS(client->StartApplication());
-//
-//    timeRetriever->time = 13;
-//    EXPECT_SUCCESS(client->StopApplication());
-//
-//    timeRetriever->time = 15;
-//    EXPECT_SUCCESS(client->StartApplication());
-//
-//    EXPECT_EQ(2, client->GetUsageDb().GetRecordCount());
-//    EXPECT_EQ(15 + 10, client->GetUsageDb().GetLastRecordEndTime());
-//    }
+    auto client = CreateTestClient(true);
+        
+    EXPECT_NO_THROW(cert = client->GetCertificate().get());
+    EXPECT_NE(cert.empty(), true);
+    }
 
-//TEST_F(ClientTests, Heartbeat_AfterApplicationStart_UpdatesEndTime)
-//    {
-//    auto timeRetriever = TestTimeRetriever::Create();
-//    auto delayedExecutor = TestDelayedExecutor::Create();
-//    auto client = CreateTestClient(false, 10, timeRetriever, delayedExecutor);
-//    EXPECT_NE(nullptr, client);
-//
-//    timeRetriever->time = 10;
-//    EXPECT_SUCCESS(client->StartApplication());
-//
-//    EXPECT_EQ(1, client->GetUsageDb().GetRecordCount());
-//    EXPECT_EQ(10 + 10, client->GetUsageDb().GetLastRecordEndTime());
-//
-//    timeRetriever->time = 20;
-//    delayedExecutor->Execute();
-//
-//    EXPECT_EQ(1, client->GetUsageDb().GetRecordCount());
-//    EXPECT_EQ(20 + 10, client->GetUsageDb().GetLastRecordEndTime());
-//
-//    timeRetriever->time = 30;
-//    delayedExecutor->Execute();
-//
-//    EXPECT_EQ(1, client->GetUsageDb().GetRecordCount());
-//    EXPECT_EQ(30 + 10, client->GetUsageDb().GetLastRecordEndTime());
-//    }
+TEST_F(ClientTests, StopApplication_Success)
+    {
+    auto client = CreateTestClient(true);
+    using namespace std::chrono_literals;
 
-//TEST_F(ClientTests, Heartbeat_AfterApplicationEnd_DoesNothing)
-//    {
-//    auto timeRetriever = TestTimeRetriever::Create();
-//    auto delayedExecutor = TestDelayedExecutor::Create();
-//    auto client = CreateTestClient(false, 10, timeRetriever, delayedExecutor);
-//    EXPECT_NE(nullptr, client);
-//
-//    timeRetriever->time = 10;
-//    EXPECT_SUCCESS(client->StartApplication());
-//
-//    timeRetriever->time = 15;
-//    EXPECT_SUCCESS(client->StopApplication());
-//    
-//    timeRetriever->time = 20;
-//    delayedExecutor->Execute();
-//
-//    // After stopping application db will be closed, so we open it again for inspection.
-//    EXPECT_SUCCESS(client->GetUsageDb().OpenOrCreate(GetUsageDbPath()));
-//
-//    EXPECT_EQ(1, client->GetUsageDb().GetRecordCount());
-//    EXPECT_EQ(15, client->GetUsageDb().GetLastRecordEndTime());
-//    }
+    client->StartApplication();
 
-//TEST_F(ClientTests, Heartbeat_AfterStartApplicationCalledTwise_UpdatesAccordingToTheLast)
-//    {
-//    auto timeRetriever = TestTimeRetriever::Create();
-//    auto delayedExecutor = TestDelayedExecutor::Create();
-//    auto client = CreateTestClient(false, 10, timeRetriever, delayedExecutor);
-//    EXPECT_NE(nullptr, client);
-//
-//    timeRetriever->time = 10;
-//    EXPECT_SUCCESS(client->StartApplication());
-//
-//    timeRetriever->time = 15;
-//    EXPECT_SUCCESS(client->StartApplication());
-//
-//    timeRetriever->time = 20;
-//    delayedExecutor->Execute();
-//
-//    EXPECT_EQ(1, client->GetUsageDb().GetRecordCount());
-//    EXPECT_EQ(15+10, client->GetUsageDb().GetLastRecordEndTime());
-//
-//    timeRetriever->time = 25;
-//    delayedExecutor->Execute();
-//
-//    EXPECT_EQ(1, client->GetUsageDb().GetRecordCount());
-//    EXPECT_EQ(25+10, client->GetUsageDb().GetLastRecordEndTime());
-//    }
+    std::this_thread::sleep_for(10s);
 
-//TEST_F(ClientTests, StopApplication_CalledBeforeStartApplication_DoesNothing)
-//    {
-//    auto client = CreateTestClient(false);
-//    EXPECT_NE(nullptr, client);
-//
-//    EXPECT_SUCCESS(client->StopApplication());
-//
-//    // After stopping application db will be closed, so we open it again for inspection.
-//    EXPECT_SUCCESS(client->GetUsageDb().OpenOrCreate(GetUsageDbPath()));
-//
-//    EXPECT_EQ(0, client->GetUsageDb().GetRecordCount());
-//    }
+    EXPECT_SUCCESS(client->StopApplication());
+    }
 
-//TEST_F(ClientTests, StopApplication_CalledAfterStartApplication_UpdatesLastRecordEndTime)
-//    {
-//    auto timeRetriever = TestTimeRetriever::Create();
-//    auto delayedExecutor = TestDelayedExecutor::Create();
-//    auto client = CreateTestClient(false, 10, timeRetriever, delayedExecutor);
-//    EXPECT_NE(nullptr, client);
-//
-//    timeRetriever->time = 10;
-//    EXPECT_SUCCESS(client->StartApplication());
-//
-//    timeRetriever->time = 13;
-//    EXPECT_SUCCESS(client->StopApplication());
-//
-//    // After stopping application db will be closed, so we open it again for inspection.
-//    EXPECT_SUCCESS(client->GetUsageDb().OpenOrCreate(GetUsageDbPath()));
-//
-//    EXPECT_EQ(1, client->GetUsageDb().GetRecordCount());
-//    EXPECT_EQ(13, client->GetUsageDb().GetLastRecordEndTime());
-//    }
+TEST_F(ClientTests, GetPolicy_Success)
+    {
+    auto client = CreateTestClient(true);
 
-//TEST_F(ClientTests, CreateRealClient_StartAndStopApplication_Succeeds)
-//    {
-//    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-//    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
-//
-//    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "2545");
-//    auto manager = ConnectSignInManager::Create(clientInfo, nullptr, localState);
-//    BeFileName dbPath = GetUsageDbPath();
-//
-//    auto client = Client::Create(
-//        dbPath,
-//        manager,
-//        clientInfo,
-//        manager->GetUserInfo());
-//    EXPECT_NE(nullptr, client);
-//
-//    EXPECT_SUCCESS(client->StartApplication());
-//    EXPECT_SUCCESS(client->StopApplication());
-//    }
-
-// TODO: Create separate Project for Integration tests.
-// TEST_F (ClientTests, GetPolicy_IntegrationTest)
-//    {
-//    auto client = CreateTestClient(true);
-//
-//    // Test code can be written like this:
-//    auto policyToken = client->GetPolicy().get(); // This will re throw exeptions occured and they will be catched by gtest.
-//    ASSERT_FALSE(policyToken->GetDefaultQualifier("HeartbeatInterval").isNull()); // Check if qualifier is in PolicyToken
-//
-//    JsonValueCR hbi = policyToken->GetDefaultQualifier("HeartbeatInterval");
-//    auto nameText = hbi["Name"].asString();
-//    auto valueInt = hbi["Value"].asInt();
-//    
-//    JsonValueCR ut = policyToken->GetDefaultQualifier("UsageType");
-//    nameText = ut["Name"].asString();
-//    auto valueText = ut["Value"].asString();
-
-    /*JsonValueCR polid = policyToken->GetPolicyId();
-    auto policyId = polid.ToString();
-    policyId.ReplaceAll("\"", "");*/
-
-    //auto ut = policyToken->GetQualifier("UsageType").asCString();
-
-    //printf("\nHeartbeatInterval = %s\n", hbi.c_str());
-
-    // If you want you can catch specific expection in tests simply like this:
-    //try
-    //    {
-    //    auto policyToken = client->GetPolicy().get();
-    //    ASSERT_FALSE(policyToken->GetQualifier("HeartbeatInterval").isNull()); // Check if qualifier is in PolicyToken
-    //    }
-    //catch (const HttpError& e)
-    //    {
-    //    FAIL();
-    //    }
-
-    // Production code should look like this:
-    //client->GetPolicy().then([](std::shared_ptr<PolicyToken> token)
-    //    {
-    //    // use token
-    //    }).onError([](const HttpError& e) 
-    //    {
-    //    // Error handling.
-    //    });
-    //}
+    auto policyToken = client->GetPolicy().get();
+    EXPECT_NE(policyToken, nullptr);
+    }
 
 TEST_F(ClientTests, GetProductStatus_Test)
 	{
@@ -489,25 +297,6 @@ TEST_F(ClientTests, SendUsage_Success)
 
     EXPECT_SUCCESS(writter.WriteToFile(path));
 
-    try
-        {
-        client->SendUsage(path, "1004175881").get();
-        EXPECT_SUCCESS(SUCCESS);
-        }
-    catch (HttpError err)
-        {
-        GTEST_FATAL_FAILURE_(err.GetMessage().c_str());
-        }
+    EXPECT_NO_THROW(client->SendUsage(path, "1004175881").wait());
     }
 
-TEST_F(ClientTests, DISABLED_CreateDemoClient_StartAndStopApplication_Succeeds)
-    {
-    auto client = CreateTestClient(true);
-    using namespace std::chrono_literals;
-
-    EXPECT_EQ((int)client->StartApplication(), (int)LicenseStatus::AccessDenied);
-
-    std::this_thread::sleep_for(5min);
-
-    EXPECT_SUCCESS(client->StopApplication());
-    }

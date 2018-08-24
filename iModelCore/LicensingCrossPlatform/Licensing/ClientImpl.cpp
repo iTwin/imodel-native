@@ -58,7 +58,7 @@ LicenseStatus ClientImpl::StartApplication()
     {
     if (SUCCESS != m_usageDb->OpenOrCreate(m_dbPath))
         return LicenseStatus::Error;
-
+    
     // Get policy token
     m_policyToken = GetPolicyToken();
 
@@ -91,7 +91,7 @@ void ClientImpl::UsageHeartbeat(int64_t currentTime)
     LOG.trace("UsageHeartbeat");
 
     m_lastRunningUsageheartbeatStartTime = currentTime;
-    m_delayedExecutor->Delayed(USAGE_HEARTBEAT_INTERVAL_MS).then([this, currentTime]
+    m_delayedExecutor->Delayed(USAGE_HEARTBEAT_INTERVAL_MS).then([this, currentTime] 
         {
         if (currentTime != m_lastRunningUsageheartbeatStartTime)
             return;
@@ -266,6 +266,8 @@ BentleyStatus ClientImpl::PostUsageLogs()
         return ERROR;
         }
 
+    m_usageDb->CleanUpUsages();
+
     Utf8String ultimateId;
     ultimateId.Sprintf("%ld", m_policyToken->GetUltimateSAPId());  
 
@@ -280,8 +282,6 @@ BentleyStatus ClientImpl::PostUsageLogs()
             }
         }
     
-    m_usageDb->CleanUpUsages();
-
     return SUCCESS;
     }
 
@@ -318,7 +318,13 @@ folly::Future<folly::Unit> ClientImpl::SendUsage(BeFileNameCR usageCSV, Utf8Stri
         return uploadRequest.Perform().then([=](Response response)
             {
             if (!response.IsSuccess())
+                {
+                LOG.errorv("Unable to post %s - %s", usageCSV.c_str(), HttpError(response).GetMessage().c_str());
                 throw HttpError(response);
+                }
+
+            std::tr2::sys::path pval(usageCSV.c_str());
+            remove(pval);
 
             return folly::makeFuture();
             });
