@@ -8,30 +8,39 @@
 #pragma once
 #include "CompatibilityTestFixture.h"
 
+// List of Test Files against which tests are written.
+// Note, they might also be from future versions of DgnPlatform in which case there is no TestImodelCreator, as only
+// the newer versions of DgnPlatform can create them. But tests have to be written with the old code against those files
+// to make sure that the old software can work with the newer files.
+
 // *** Instructions for adding new test file creators ***
 // 1) Define the test file name with a TESTIMODEL_ macro
 // 2) Add a new subclass of TestIModelCreator
 // 3) Add a unique_ptr to the TESTIMODELCREATOR_LIST macro
-
 #define TESTIMODEL_EMPTY "empty.bim"
-#define TESTIMODEL_PREEC32ENUMS "preec32enums.bim"
-#define TESTIMODEL_UPGRADEDEC32ENUMS "upgradedec32enums.ecdb"
+#define TESTIMODEL_EC31ENUMS "ec31enums.bim"
+#define TESTIMODEL_EC32ENUMS_PROFILEUPGRADED "ec32enums_profileupgraded.bim"
 #define TESTIMODEL_EC32ENUMS "ec32enums.bim"
-#define TESTIMODEL_PREEC32KOQS "preec32koqs.bim"
+#define TESTIMODEL_EC31KOQS "ec31koqs.bim"
 #define TESTIMODEL_EC32KOQS "ec32koqs.bim"
 #define TESTIMODEL_EC32UNITS "ec32units.bim"
-#define TESTIMODEL_PREEC32SCHEMAUPDATE "preec32schemaupdate.bim"
-#define TESTIMODEL_EC32SCHEMAUPDATE "ec32schemaupdate.bim"
+#define TESTIMODEL_EC31ENUMS_SCHEMAUPGRADE "ec31enums_schemaupgrade.bim"
+#define TESTIMODEL_EC31KOQS_SCHEMAUPGRADE "ec31koqs_schemaupgrade.bim"
+#define TESTIMODEL_EC32ENUMS_SCHEMAUPGRADE "ec32enums_schemaupgrade.bim"
+#define TESTIMODEL_EC32KOQS_SCHEMAUPGRADE "ec32koqs_schemaupgrade.bim"
 
 #define TESTIMODELCREATOR_LIST {std::make_shared<EmptyTestIModelCreator>(), \
-                                std::make_shared<EC32EnumsTestIModelCreator>(), \
-                                std::make_shared<PreEC32EnumsTestIModelCreator>(), \
-                                std::make_shared<UpgradedEC32EnumsTestIModelCreator>(), \
-                                std::make_shared<PreEC32KoqsTestIModelCreator>(), \
-                                std::make_shared<EC32KoqsTestIModelCreator>(), \
-                                std::make_shared<EC32UnitsTestIModelCreator>(), \
-                                std::make_shared<PreEC32SchemaUpdateTestIModelCreator>(), \
-                                std::make_shared<EC32SchemaUpdateTestIModelCreator>()}
+                              std::make_shared<EC31EnumsTestIModelCreator>(), \
+                              std::make_shared<EC32EnumsTestIModelCreator>(), \
+                              std::make_shared<EC32EnumsProfileUpgradedTestIModelCreator>(), \
+                              std::make_shared<EC31EnumsSchemaUpgradeTestIModelCreator>(), \
+                              std::make_shared<EC32EnumsSchemaUpgradeTestIModelCreator>(), \
+                              std::make_shared<EC31KoqsTestIModelCreator>(), \
+                              std::make_shared<EC32KoqsTestIModelCreator>(), \
+                              std::make_shared<EC31KoqsSchemaUpgradeTestIModelCreator>(), \
+                              std::make_shared<EC32KoqsSchemaUpgradeTestIModelCreator>(), \
+                              std::make_shared<EC32UnitsTestIModelCreator>()}
+
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
@@ -80,10 +89,11 @@ struct EmptyTestIModelCreator final : TestIModelCreator
         ~EmptyTestIModelCreator() {}
     };
 
+
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
 //======================================================================================
-struct PreEC32EnumsTestIModelCreator final : TestIModelCreator
+struct EC31EnumsTestIModelCreator final : TestIModelCreator
     {
     private:
         BentleyStatus _Create() override
@@ -94,7 +104,7 @@ struct PreEC32EnumsTestIModelCreator final : TestIModelCreator
 
             // add types of enums which don't exist in the schemas already in the test file
             return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                                    <ECSchema schemaName="PreEC32Enums" alias="preec32" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
                                                             <ECEnumerator value="0"/>
                                                             <ECEnumerator value="1"/>
@@ -107,14 +117,14 @@ struct PreEC32EnumsTestIModelCreator final : TestIModelCreator
                                                      </ECSchema>)xml"));
             }
     public:
-        PreEC32EnumsTestIModelCreator() : TestIModelCreator(TESTIMODEL_PREEC32ENUMS) {}
-        ~PreEC32EnumsTestIModelCreator() {}
+        explicit EC31EnumsTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC31ENUMS) {}
+        ~EC31EnumsTestIModelCreator() {}
     };
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      07/2018
 //======================================================================================
-struct UpgradedEC32EnumsTestIModelCreator final : TestIModelCreator
+struct EC32EnumsProfileUpgradedTestIModelCreator final : TestIModelCreator
     {
     private:
         BentleyStatus _Create() override
@@ -125,7 +135,7 @@ struct UpgradedEC32EnumsTestIModelCreator final : TestIModelCreator
 
             //Initial import of EC3.1 enums. _UpgradeSchemas will then upgrade to EC32 enums
             return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                                    <ECSchema schemaName="UpgradedEC32Enums" alias="upgradedec32" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                    <ECSchema schemaName="TestSchema" alias="upgradedec32" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
                                                             <ECEnumerator value="0"/>
                                                             <ECEnumerator value="1"/>
@@ -137,48 +147,15 @@ struct UpgradedEC32EnumsTestIModelCreator final : TestIModelCreator
                                                         </ECEnumeration>
                                                      </ECSchema>)xml"));
             }
-
-        BentleyStatus _UpgradeSchemas() const override;
-
     public:
-        UpgradedEC32EnumsTestIModelCreator() : TestIModelCreator(TESTIMODEL_UPGRADEDEC32ENUMS) {}
-        ~UpgradedEC32EnumsTestIModelCreator() {}
-    };
-//======================================================================================
-// @bsiclass                                               Krischan.Eberle      06/2018
-//======================================================================================
-struct EC32EnumsTestIModelCreator final : TestIModelCreator
-    {
-    private:
-        BentleyStatus _Create() override
-            {
-            DgnDbPtr bim = CreateNewTestFile(m_fileName);
-            if (bim == nullptr)
-                return ERROR;
-
-            // add types of enums which don't exist in the schemas already in the test file
-            return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                                    <ECSchema schemaName="EC32Enums" alias="ec32enums" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                                        <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
-                                                            <ECEnumerator name="Unknown" value="0"/>
-                                                            <ECEnumerator name="On" value="1"/>
-                                                            <ECEnumerator name="Off" value="2"/>
-                                                        </ECEnumeration>
-                                                        <ECEnumeration typeName="StringEnum_EnumeratorsWithDisplayLabel" displayLabel="String Enumeration with enumerators with display label" backingTypeName="string" isStrict="false">
-                                                            <ECEnumerator name="On" value="On" displayLabel="Turned On"/>
-                                                            <ECEnumerator name="Off" value="Off" displayLabel="Turned Off"/>
-                                                        </ECEnumeration>
-                                                     </ECSchema>)xml"));
-            }
-    public:
-        EC32EnumsTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC32ENUMS) {}
-        ~EC32EnumsTestIModelCreator() {}
+        explicit EC32EnumsProfileUpgradedTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC32ENUMS_PROFILEUPGRADED) {}
+        ~EC32EnumsProfileUpgradedTestIModelCreator() {}
     };
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
 //======================================================================================
-struct PreEC32KoqsTestIModelCreator final : TestIModelCreator
+struct EC31KoqsTestIModelCreator final : TestIModelCreator
     {
     private:
         BentleyStatus _Create() override
@@ -189,7 +166,7 @@ struct PreEC32KoqsTestIModelCreator final : TestIModelCreator
 
             //test schema for KOQs originates from AECUnits ECSchemas
             return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-<ECSchema schemaName="PreEC32Koqs" alias="preec32koqs" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
  <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
  <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
  <KindOfQuantity typeName="AREA_SMALL" displayLabel="Small Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.MM(real2u);SQ.IN(real4u)" relativeError="0.0001"/>
@@ -239,9 +216,9 @@ struct PreEC32KoqsTestIModelCreator final : TestIModelCreator
  <KindOfQuantity typeName="ANGULAR_VELOCITY"                     displayLabel="Angular Velocity"                     persistenceUnit="RAD/SEC(DefaultReal)"                  presentationUnits="RAD/SEC(real4u);DEG/SEC(real4u);RPM(real4u)" relativeError="0.001"/>
  <KindOfQuantity typeName="THERMAL_CONDUCTIVITY"                 displayLabel="Thermal Conductivity"                 persistenceUnit="W/(M*K)(DefaultReal)"                  presentationUnits="W/(M*K)(real4u);W/(M*C)(real4u);(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)(real4u)" relativeError="0.001"/>
 
- <KindOfQuantity typeName="TestKoq_NoPresUnit"  persistenceUnit="W/(M*K)" relativeError="0.4"/>
- <KindOfQuantity typeName="TestKoq_PersUnitWithFormat_NoPresUnit"  persistenceUnit="W/(M*K)(DefaultReal)" relativeError="0.5"/>
- <KindOfQuantity typeName="TestKoq_PersUnitWithFormatWithUnit_NoPresUnit"  persistenceUnit="FT(AmerFI8)" relativeError="0.6"/>
+ <KindOfQuantity typeName="TestKoq_NoPresUnit" persistenceUnit="W/(M*K)" relativeError="0.4"/>
+ <KindOfQuantity typeName="TestKoq_PersUnitWithFormat_NoPresUnit" persistenceUnit="W/(M*K)(DefaultReal)" relativeError="0.5"/>
+ <KindOfQuantity typeName="TestKoq_PersUnitWithFormatWithUnit_NoPresUnit" persistenceUnit="FT(AmerFI8)" relativeError="0.6"/>
  <KindOfQuantity typeName="TestKoq_M_Mfi8" persistenceUnit="M" presentationUnits="M(fi8)" relativeError="0.7"/>
  <KindOfQuantity typeName="TestKoq_Mfi8" persistenceUnit="M(fi8)" relativeError="0.8"/>
  <KindOfQuantity typeName="TestKoq_SQFTfi8" persistenceUnit="SQ.FT(fi8)" relativeError="0.9"/>
@@ -258,14 +235,14 @@ struct PreEC32KoqsTestIModelCreator final : TestIModelCreator
 </ECSchema>)xml"));
             }
     public:
-        PreEC32KoqsTestIModelCreator() : TestIModelCreator(TESTIMODEL_PREEC32KOQS) {}
-        ~PreEC32KoqsTestIModelCreator() {}
+        explicit EC31KoqsTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC31KOQS) {}
+        ~EC31KoqsTestIModelCreator() {}
     };
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      08/2018
 //======================================================================================
-struct PreEC32SchemaUpdateTestIModelCreator final : TestIModelCreator
+struct EC31EnumsSchemaUpgradeTestIModelCreator final : TestIModelCreator
     {
     private:
         BentleyStatus _Create() override
@@ -275,61 +252,49 @@ struct PreEC32SchemaUpdateTestIModelCreator final : TestIModelCreator
                 return ERROR;
 
             return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-            <ECSchema schemaName="SchemaUpdateTest" alias="su" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                 <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+                 <ECEnumeration typeName="StatusEnum" displayLabel="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                    <ECEnumerator value="0"/>
+                    <ECEnumerator value="1"/>
+                    <ECEnumerator value="2"/>
+                 </ECEnumeration>
+                 <ECEntityClass typeName="MyDomainClass">
+                    <BaseClass>bis:PhysicalElement</BaseClass>
+                    <ECProperty propertyName="Status" typeName="StatusEnum" />
+                 </ECEntityClass>
+            </ECSchema>)xml"));
+            }
+    public:
+        explicit EC31EnumsSchemaUpgradeTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC31ENUMS_SCHEMAUPGRADE) {}
+        ~EC31EnumsSchemaUpgradeTestIModelCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      08/2018
+//======================================================================================
+struct EC31KoqsSchemaUpgradeTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
+            if (bim == nullptr)
+                return ERROR;
+
+            return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-
-             <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
-             <ECEnumeration typeName="StatusEnum" displayLabel="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
-                <ECEnumerator value="0"/>
-                <ECEnumerator value="1"/>
-                <ECEnumerator value="2"/>
-             </ECEnumeration>
-             <ECEntityClass typeName="MyDomainClass">
-                <BaseClass>bis:PhysicalElement</BaseClass>
-                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
-                <ECProperty propertyName="Status" typeName="StatusEnum" />
-             </ECEntityClass>
+                <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
+                <ECEntityClass typeName="MyDomainClass">
+                   <BaseClass>bis:PhysicalElement</BaseClass>
+                   <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                </ECEntityClass>
             </ECSchema>)xml"));
             }
     public:
-        explicit PreEC32SchemaUpdateTestIModelCreator() : TestIModelCreator(TESTIMODEL_PREEC32SCHEMAUPDATE) {}
-        ~PreEC32SchemaUpdateTestIModelCreator() {}
-    };
-
-//======================================================================================
-// @bsiclass                                               Krischan.Eberle      08/2018
-//======================================================================================
-struct EC32SchemaUpdateTestIModelCreator final : TestIModelCreator
-    {
-    private:
-        BentleyStatus _Create() override
-            {
-            DgnDbPtr bim = CreateNewTestFile(m_fileName);
-            if (bim == nullptr)
-                return ERROR;
-
-            return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-            <ECSchema schemaName="SchemaUpdateTest" alias="su" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-              <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
-              <ECSchemaReference name="Units" version="01.00.00" alias="u" />
-              <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
-
-             <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT]" relativeError="0.0001"/>
-             <ECEnumeration typeName="StatusEnum" displayLabel="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
-                <ECEnumerator name="On" value="0"/>
-                <ECEnumerator name="Off" value="1"/>
-                <ECEnumerator name="Unknown" value="2"/>
-             </ECEnumeration>
-             <ECEntityClass typeName="MyDomainClass">
-                <BaseClass>bis:PhysicalElement</BaseClass>
-                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
-                <ECProperty propertyName="Status" typeName="StatusEnum" />
-             </ECEntityClass>
-            </ECSchema>)xml"));
-            }
-    public:
-        EC32SchemaUpdateTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC32SCHEMAUPDATE) {}
-        ~EC32SchemaUpdateTestIModelCreator() {}
+        explicit EC31KoqsSchemaUpgradeTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC31KOQS_SCHEMAUPGRADE) {}
+        ~EC31KoqsSchemaUpgradeTestIModelCreator() {}
     };
 
 //======================================================================================
@@ -345,7 +310,7 @@ struct EC32KoqsTestIModelCreator final : TestIModelCreator
                 return ERROR;
 
             return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                <ECSchema schemaName="EC32Koqs" alias="ec32koqs" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                     <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
                     <KindOfQuantity typeName="TestKoq_PresFormatWithMandatoryComposite" displayLabel="My first test KOQ" persistenceUnit="u:CM" presentationUnits="f:DefaultRealU(4)[u:M]" relativeError="0.1"/>
@@ -362,6 +327,121 @@ struct EC32KoqsTestIModelCreator final : TestIModelCreator
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
 //======================================================================================
+struct EC32EnumsTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
+            if (bim == nullptr)
+                return ERROR;
+
+            // ECObjects downgrades an EC3.2 file to EC3.1 during deserialization
+            return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                                        <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                                                            <ECEnumerator name="Unknown" value="0"/>
+                                                            <ECEnumerator name="On" value="1"/>
+                                                            <ECEnumerator name="Off" value="2"/>
+                                                        </ECEnumeration>
+                                                        <ECEnumeration typeName="StringEnum_EnumeratorsWithDisplayLabel" displayLabel="String Enumeration with enumerators with display label" backingTypeName="string" isStrict="false">
+                                                            <ECEnumerator name="On" value="On" displayLabel="Turned On"/>
+                                                            <ECEnumerator name="Off" value="Off" displayLabel="Turned Off"/>
+                                                        </ECEnumeration>
+                                                     </ECSchema>)xml"));
+            }
+    public:
+        EC32EnumsTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC32ENUMS) {}
+        ~EC32EnumsTestIModelCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct EC32EnumsSchemaUpgradeTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
+            if (bim == nullptr)
+                return ERROR;
+
+            // ECObjects downgrades an EC3.2 file to EC3.1 during deserialization
+            return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                                            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+                                                         <ECEnumeration typeName="StatusEnum" displayLabel="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                                                            <ECEnumerator name="On" value="0"/>
+                                                            <ECEnumerator name="Off" value="1"/>
+                                                            <ECEnumerator name="Unknown" value="2"/>
+                                                         </ECEnumeration>
+                                                        <ECEntityClass typeName="MyDomainClass">
+                                                            <BaseClass>bis:PhysicalElement</BaseClass>
+                                                            <ECProperty propertyName="Status" typeName="StatusEnum" />
+                                                        </ECEntityClass>
+                                                   </ECSchema>)xml"));
+            }
+    public:
+        EC32EnumsSchemaUpgradeTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC32ENUMS_SCHEMAUPGRADE) {}
+        ~EC32EnumsSchemaUpgradeTestIModelCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct EC32KoqsSchemaUpgradeTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
+            if (bim == nullptr)
+                return ERROR;
+
+            return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                                                         <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                                         <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+
+                                                         <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT]" relativeError="0.0001"/>
+                                                         <ECEntityClass typeName="BaseA">
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                            <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                                                         </ECEntityClass>
+                                                         <ECEntityClass typeName="BaseB">
+                                                            <ECCustomAttributes>
+                                                                <ClassMap xmlns="ECDbMap.02.00.00">
+                                                                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                                </ClassMap>
+                                                            </ECCustomAttributes>
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                            <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                                                         </ECEntityClass>
+                                                         <ECEntityClass typeName="BaseC">
+                                                            <ECCustomAttributes>
+                                                                <ClassMap xmlns="ECDbMap.02.00.00">
+                                                                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                                </ClassMap>
+                                                                <ShareColumns xmlns="ECDbMap.02.00.00">
+                                                                    <MaxSharedColumnsBeforeOverflow>6</MaxSharedColumnsBeforeOverflow>
+                                                                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                                                                </ShareColumns>
+                                                            </ECCustomAttributes>
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                            <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                                                         </ECEntityClass>
+                                                   </ECSchema>)xml"));
+            }
+    public:
+        EC32KoqsSchemaUpgradeTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC32KOQS_SCHEMAUPGRADE) {}
+        ~EC32KoqsSchemaUpgradeTestIModelCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
 struct EC32UnitsTestIModelCreator final : TestIModelCreator
     {
     private:
@@ -372,7 +452,7 @@ struct EC32UnitsTestIModelCreator final : TestIModelCreator
                 return ERROR;
 
             return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                <ECSchema schemaName="EC32Units" alias="ec32units" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                     <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
                     <UnitSystem typeName="MyMetric" displayLabel="Metric" description="Metric Units of measure" />
