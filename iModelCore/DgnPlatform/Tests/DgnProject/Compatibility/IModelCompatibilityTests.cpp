@@ -1249,7 +1249,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
                 }
 
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
-            const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
+            const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())
                 {
                     case ProfileState::Age::Older:
@@ -1261,7 +1261,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
 
                     case ProfileState::Age::Newer:
                     {
-                    EXPECT_EQ(ERROR, schemaImportStat) << testDb.GetDescription();
+                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                     break;
                     }
                     default:
