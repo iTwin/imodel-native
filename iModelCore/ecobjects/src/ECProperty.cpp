@@ -994,7 +994,8 @@ bool ECProperty::_ToJson(Json::Value& outValue, bool isInherited, bvector<bpair<
     else if (GetIsNavigation())
         propertyType = ECJSON_ECPROPERTY_NAVIGATION;
     else
-        return SchemaWriteStatus::FailedToCreateJson;
+        return false;
+
     outValue[TYPE_ATTRIBUTE] = propertyType;
 
     if (GetInvariantDescription().length() != 0)
