@@ -500,6 +500,8 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)CCApi.lib\
     $(ContextSubpartsLibs)BeCurl.lib
+
+
 #    $(DgnPlatformV8LibDir)Bentley.lib \
 #    $(DgnPlatformV8LibDir)ECObjects.lib \
 #    $(DgnPlatformV8LibDir)BentleyGeom.lib \
