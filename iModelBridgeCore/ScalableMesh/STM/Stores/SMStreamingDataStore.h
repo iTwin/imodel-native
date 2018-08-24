@@ -44,7 +44,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             {
             public:
 
-                enum ServerLocation { LOCAL, RDS, AZURE, HTTP_SERVER};
+                enum ServerLocation { LOCAL, RDS, AZURE, HTTP_SERVER, HTTP_SERVER_LOCAL};
                 enum CommMethod { FILE, CURL, WASTORAGE };
                 enum DataType { CESIUM3DTILES, SMCESIUM3DTILES, SMGROUPS };
 
@@ -65,14 +65,14 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
                       m_url(settings.m_url)
                     {}
 
-            bool IsLocal()                  const   { return m_location == LOCAL; }
+            bool IsLocal()                  const   { return m_location == LOCAL || m_location == HTTP_SERVER_LOCAL; }
             bool IsPublic()                 const   { return m_public; }
             bool IsUsingCURL()              const   { return m_commMethod == CURL; }
             bool IsUsingWAStorage()         const   { return m_commMethod == WASTORAGE; }
             bool IsDataFromLocal()          const   { return m_location == LOCAL; }
             bool IsDataFromRDS()            const   { return m_location == RDS; }
             bool IsDataFromAzure()          const   { return m_location == AZURE; }
-            bool IsDataFromHTTPServerAddress()  const   { return m_location == HTTP_SERVER; }
+            bool IsDataFromHTTPServerAddress()  const   { return m_location == HTTP_SERVER || m_location == HTTP_SERVER_LOCAL; }
             bool IsPublishing()             const   { return m_isPublishing; }
             bool IsCesium3DTiles()          const   { return m_dataType == CESIUM3DTILES; }
             bool IsStubFile()               const   { return m_isStubFile; }

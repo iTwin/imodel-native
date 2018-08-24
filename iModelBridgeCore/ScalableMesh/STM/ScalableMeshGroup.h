@@ -218,6 +218,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override;
 #ifdef VANCOUVER_API
         virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) override;
+#else
+        virtual BentleyStatus                      _Reproject(DgnGCSCP targetCS, DgnDbR dgnProject) override;
 #endif
         virtual Transform                          _GetReprojectionTransform() const override;
 

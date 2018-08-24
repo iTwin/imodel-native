@@ -320,6 +320,8 @@ struct IScalableMesh :  IRefCounted
 
 #ifdef VANCOUVER_API
         virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) = 0;
+#else
+        virtual BentleyStatus                      _Reproject(BentleyApi::Dgn::DgnGCSCP targetCS, DgnDbR dgnProject) = 0;
 #endif
 
         virtual Transform              _GetReprojectionTransform() const = 0;
@@ -517,6 +519,8 @@ struct IScalableMesh :  IRefCounted
 
 #ifdef VANCOUVER_API
         BENTLEY_SM_EXPORT BentleyStatus          Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel);
+#else
+        BENTLEY_SM_EXPORT BentleyStatus          Reproject(BentleyApi::Dgn::DgnGCSCP targetCS, DgnDbR dgnProject);
 #endif
 
         BENTLEY_SM_EXPORT Transform              GetReprojectionTransform() const;
