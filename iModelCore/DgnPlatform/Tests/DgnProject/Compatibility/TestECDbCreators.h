@@ -138,7 +138,7 @@ struct EC32EnumsProfileUpgradedTestECDbCreator final : TestECDbCreator
 
             //Initial import of EC3.1 enums. _UpgradeSchemas will then upgrade to EC32 enums
             return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                                    <ECSchema schemaName="TestSchema" alias="upgradedec32" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
                                                             <ECEnumerator value="0"/>
                                                             <ECEnumerator value="1"/>
