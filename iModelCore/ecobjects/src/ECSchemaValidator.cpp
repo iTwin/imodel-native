@@ -313,6 +313,57 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
     return status;
     }
 
+ECObjectsStatus CheckForModelBaseClasses(ECClassCR baseClass, ECClassCR entity)
+    {
+    // Class may not subclass bis:SpatialLocationModel
+    if (baseClass.Is("BisCore", "SpatialLocationModel"))
+        {
+        LOG.errorv("Entity class '%s' may not subclass bis:SpatialLocationModel.", entity.GetFullName());
+        return ECObjectsStatus::Error;
+        }
+    // Class may not subclass bis:PhysicalModel
+    if (baseClass.Is("BisCore", "PhysicalModel"))
+        {
+        LOG.errorv("Entity class '%s' may not subclass bis:PhysicalModel.", entity.GetFullName());
+        return ECObjectsStatus::Error;
+        }
+    // Class may not subclass bis:GroupInformationModel
+    if (baseClass.Is("BisCore", "GroupInformationModel"))
+        {
+        LOG.errorv("Entity class '%s' may not subclass bis:GroupInformationModel.", entity.GetFullName());
+        return ECObjectsStatus::Error;
+        }
+    // Class may not subclass bis:InformationRecordModel
+    if (baseClass.Is("BisCore", "InformationRecordModel"))
+        {
+        LOG.errorv("Entity class '%s' may not subclass bis:InformationRecordModel.", entity.GetFullName());
+        return ECObjectsStatus::Error;
+        }
+    // Class may not subclass bis:DocumentListModel
+    if (baseClass.Is("BisCore", "DocumentListModel"))
+        {
+        LOG.errorv("Entity class '%s' may not subclass bis:DocumentListModel.", entity.GetFullName());
+        return ECObjectsStatus::Error;
+        }
+    // Class may not subclass bis:LinkModel
+    if (baseClass.Is("BisCore", "LinkModel"))
+        {
+        LOG.errorv("Entity class '%s' may not subclass bis:LinkModel.", entity.GetFullName());
+        return ECObjectsStatus::Error;
+        }
+    // Class may not subclass bis:DefinitionModel, except for DictionaryModel and RepositoryModel
+    if (baseClass.Is("BisCore", "DefinitionModel"))
+        {
+        if (!(strcmp(entity.GetFullName(), "BisCore:DictionaryModel") == 0) && !(strcmp(entity.GetFullName(), "BisCore:RepositoryModel") == 0))
+            {
+            LOG.errorv("Entity class '%s' may not subclass bis:DefinitionModel.", entity.GetFullName());
+            return ECObjectsStatus::Error;
+            }
+        }
+    
+    return ECObjectsStatus::Success;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -381,18 +432,8 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
         if (strcmp(baseClass->GetFullName(), BISCORE_CLASS_ISubModeledElement) == 0)
             foundISubModelElement = true;
 
-        // Class may not subclass bis:SpatialLocationModel
-        if (baseClass->Is("BisCore", "SpatialLocationModel"))
-            {
-            LOG.errorv("Entity class '%s' may not subclass bis:SpatialLocationModel.", entity.GetFullName());
+        if (ECObjectsStatus::Success != CheckForModelBaseClasses(*baseClass, entity))
             status = ECObjectsStatus::Error;
-            }
-        // Class may not subclass bis:PhysicalModel
-        if (baseClass->Is("BisCore", "PhysicalModel"))
-            {
-            LOG.errorv("Entity class '%s' may not subclass bis:PhysicalModel.", entity.GetFullName());
-            status = ECObjectsStatus::Error;
-            }
         }
     if (foundIParentElement && foundISubModelElement)
         {

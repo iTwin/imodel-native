@@ -7,7 +7,7 @@
   "modifier": "sealed",
   "properties": [
     {
-      "propertyType": "PrimitiveArrayProperty",
+      "type": "PrimitiveArrayProperty",
       "name": "ExamplePrimitiveArray",
       "label": "ExPrimitiveArray",
       "typeName": "int",
