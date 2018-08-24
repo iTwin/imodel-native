@@ -484,8 +484,6 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32Units)
 
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "CM") == nullptr) << testDb.GetDescription();
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("u", "CM", SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
-
-
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") == nullptr) << testDb.GetDescription();
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("u", "SI", SchemaLookupMode::ByAlias) == nullptr) << testDb.GetDescription();
             EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "AREA") == nullptr) << testDb.GetDescription();
@@ -514,7 +512,6 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32Units)
 
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "CM") != nullptr) << testDb.GetDescription();
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("u", "CM", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
-
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") != nullptr) << testDb.GetDescription();
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("u", "SI", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
             EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "AREA") != nullptr) << testDb.GetDescription();
@@ -548,7 +545,6 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32Units)
 
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "CM") != nullptr) << testDb.GetDescription();
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("u", "CM", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
-
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") != nullptr) << testDb.GetDescription();
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("u", "SI", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
             EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "AREA") != nullptr) << testDb.GetDescription();
@@ -576,7 +572,6 @@ TEST_F(IModelCompatibilityTestFixture, PreEC32Units)
 
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("Units", "CM") != nullptr) << testDb.GetDescription();
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnit("u", "CM", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
-
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("Units", "SI") != nullptr) << testDb.GetDescription();
             EXPECT_TRUE(testDb.GetDb().Schemas().GetUnitSystem("u", "SI", SchemaLookupMode::ByAlias) != nullptr) << testDb.GetDescription();
             EXPECT_TRUE(testDb.GetDb().Schemas().GetPhenomenon("Units", "AREA") != nullptr) << testDb.GetDescription();
@@ -1024,22 +1019,12 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpdateOfPreEC32Schema)
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())
                 {
-                    case ProfileState::Age::Older:
                     case ProfileState::Age::UpToDate:
                     {
                     EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
-                    if (testDb.GetAge() == ProfileState::Age::Older)
-                        {
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("SchemaUpdateTest")) << testDb.GetDescription();
-                        EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
-                        EXPECT_EQ(JsonValue("[{\"cnt\": 1}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
-                        }
-                    else
-                        {
-                        EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("SchemaUpdateTest")) << testDb.GetDescription();
-                        EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
-                        EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
-                        }
+                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("SchemaUpdateTest")) << testDb.GetDescription();
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
 
                     EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Code,Size,Sizes,Status,Statuses FROM su.SubDomainClass")) << testDb.GetDescription();
 
@@ -1095,6 +1080,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpdateOfPreEC32Schema)
                     break;
                     }
 
+                    case ProfileState::Age::Older:
                     case ProfileState::Age::Newer:
                     {
                     EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
