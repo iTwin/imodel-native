@@ -1206,7 +1206,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Enums)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
     {
-    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32ENUMS_SCHEMAUPGRADE))
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32KOQS_SCHEMAUPGRADE))
         {
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
