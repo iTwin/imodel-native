@@ -1015,14 +1015,16 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpdateOfPreEC32Schema)
                 <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
              </ECEntityClass>
            </ECSchema>)xml"));
+
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
+
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())
                 {
                     case ProfileState::Age::UpToDate:
                     {
                     EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("SchemaUpdateTest")) << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("SchemaUpdateTest")) << testDb.GetDescription();
                     EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
                     EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='SchemaUpdateTest'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
 
@@ -1120,7 +1122,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpdate)
                 // - Enum StatusEnum
                 //    - Changed display label to "Status"
                 //    - Added enumerator 3
-                // - Added subclasses SubA, SubB, SubC
+                // - Added subclass SubDomainClass
                 ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema schemaName="SchemaUpdateTest" alias="su" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>

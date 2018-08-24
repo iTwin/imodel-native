@@ -1183,6 +1183,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaUpdateOfPreEC32Schema)
                 <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
             </ECEntityClass>
            </ECSchema>)xml"));
+
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())
@@ -1278,6 +1279,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaUpdateOfPreEC32Schema)
                     EXPECT_EQ(ERROR, schemaImportStat) << testDb.GetDescription();
                     break;
                     }
+
                     default:
                         FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
                         break;

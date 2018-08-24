@@ -35,7 +35,8 @@
                               std::make_shared<EC32KoqsTestECDbCreator>(), \
                               std::make_shared<PreEC32KoqsTestECDbCreator>(), \
                               std::make_shared<EC32UnitsTestECDbCreator>(), \
-                              std::make_shared<PreEC32SchemaUpdateTestECDbCreator>()}
+                              std::make_shared<PreEC32SchemaUpdateTestECDbCreator>(), \
+                              std::make_shared<EC32SchemaUpdateTestECDbCreator>()}
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
