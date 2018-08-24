@@ -19,22 +19,10 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 struct BeUri
     {
     private:
-        enum class UriPatternGroup
-            {
-            Scheme = 1,
-            Authority = 2,
-            Userinfo = 3,
-            Host = 4,
-            Port = 5,
-            Path = 6,
-            Query = 7,
-            Fragment = 8
-            };
-
         struct MatchResults;
 
     private:
-        static Utf8String GetUriComponent(UriPatternGroup group, const MatchResults& results);
+        static Utf8String GetUriComponent(size_t group, const MatchResults& results);
         static Utf8String EscapeUriComponent(Utf8String component);
 
     private:

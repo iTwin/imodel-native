@@ -168,6 +168,31 @@ TEST_F(BeUriTests, Ctor_InvalidUri_EmptyComponents)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsitest                                      Robert.Lukasonok                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeUriTests, Ctor_LongUriComponents_SucceedsWithoutStackOverflow)
+    {
+    const size_t SCHEME_LENGTH = 128;
+    const size_t USER_INFO_LENGTH = 256;
+    const size_t HOST_LENGTH = 512;
+    const size_t PATH_LENGTH = 2048;
+    const size_t QUERY_LENGTH = 2048;
+    const size_t FRAGMENT_LENGTH = 2048;
+
+    Utf8String scheme(SCHEME_LENGTH, 's');
+    Utf8String userInfo(USER_INFO_LENGTH, 'u');
+    Utf8String host(HOST_LENGTH, 'h');
+    Utf8String path(PATH_LENGTH, 'p');
+    Utf8String query(QUERY_LENGTH, 'q');
+    Utf8String fragment(FRAGMENT_LENGTH, 'f');
+
+    Utf8String uriString = scheme + "://" + userInfo + "@" + host + ":12345/" + path + "?" + query + "#" + fragment;
+    BeUri uri(uriString);
+    EXPECT_TRUE(uri.IsValid());
+    EXPECT_STREQ(uriString.c_str(), uri.ToString().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                      Vincas.Razma                    12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeUriTests, EscapeUnsafeCharactersInUrl_UrlWithUnsafeCharacters_CharactersAreEscaped)

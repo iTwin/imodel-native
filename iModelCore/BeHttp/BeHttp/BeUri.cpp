@@ -13,11 +13,25 @@
 
 USING_NAMESPACE_BENTLEY_HTTP
 
-std::basic_regex<Utf8String::value_type> s_uriPattern
+const std::basic_regex<Utf8String::value_type> s_uriSchemeAndAuthorityPattern
 (
-R"(^([a-z][a-z0-9+\-.]*):(?:\/\/((?:([^@\/?#]*)@)?((?:[^:\/?#\[\]]+|\[[^\]\/]+\]))?(?::(\d+))?))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?$)",
-std::regex_constants::icase
+R"(^([a-z][a-z0-9+\-.]*):(?:\/\/((?:([^@\/?#]*)@)?((?:[^:\/?#\[\]]+|\[[^\]\/]+\]))?(?::(\d+))?))?)",
+std::regex_constants::icase | std::regex_constants::optimize
 );
+const size_t CAPTURE_GROUP_SCHEME = 1;
+const size_t CAPTURE_GROUP_AUTHORITY = 2;
+const size_t CAPTURE_GROUP_USER_INFO = 3;
+const size_t CAPTURE_GROUP_HOST = 4;
+const size_t CAPTURE_GROUP_PORT = 5;
+
+const std::basic_regex<Utf8String::value_type> s_uriPathQueryAndFragmentPattern
+(
+R"(([^?#]*)(?:\?([^#]*))?(?:#(.*))?)",
+std::regex_constants::icase | std::regex_constants::optimize
+);
+const size_t CAPTURE_GROUP_PATH = 1;
+const size_t CAPTURE_GROUP_QUERY = 2;
+const size_t CAPTURE_GROUP_FRAGMENT = 3;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                 Robert.Lukasonok    07/2018
@@ -35,28 +49,31 @@ BeUri::BeUri(Utf8StringCR uri)
     if (uri.empty())
         return;
 
-    MatchResults results;
-    if (!std::regex_search(uri.c_str(), results.matches, s_uriPattern))
+    MatchResults schemeAndAuthority;
+    if (!std::regex_search(uri.c_str(), schemeAndAuthority.matches, s_uriSchemeAndAuthorityPattern))
         return;
 
-    if (!results.matches[0].matched)
+    bool authorityIsPresent = schemeAndAuthority.matches[static_cast<size_t>(CAPTURE_GROUP_AUTHORITY)].matched;
+
+    Utf8String unmatchedPart = uri.substr(schemeAndAuthority.matches[0].length());
+    MatchResults pathQueryAndFragment;
+    if (!std::regex_match(unmatchedPart.c_str(), pathQueryAndFragment.matches, s_uriPathQueryAndFragmentPattern))
         return;
 
-    bool authorityIsPresent = results.matches[static_cast<size_t>(UriPatternGroup::Authority)].matched;
-    Utf8String path = EscapeUriComponent(GetUriComponent(UriPatternGroup::Path, results));
+    Utf8String path = EscapeUriComponent(GetUriComponent(CAPTURE_GROUP_PATH, pathQueryAndFragment));
     if (authorityIsPresent && !path.empty() && '/' != path[0])
         return;
 
-    m_scheme = GetUriComponent(UriPatternGroup::Scheme, results);
-    m_userInfo = GetUriComponent(UriPatternGroup::Userinfo, results);
-    m_host = GetUriComponent(UriPatternGroup::Host, results);
-    m_path = path;
-    m_query = EscapeUriComponent(GetUriComponent(UriPatternGroup::Query, results));
-    m_fragment = EscapeUriComponent(GetUriComponent(UriPatternGroup::Fragment, results));
-
-    Utf8String portComponent = GetUriComponent(UriPatternGroup::Port, results);
+    Utf8String portComponent = GetUriComponent(CAPTURE_GROUP_PORT, schemeAndAuthority);
     if (!portComponent.empty())
         m_port = atoi(portComponent.c_str());
+
+    m_scheme = GetUriComponent(CAPTURE_GROUP_SCHEME, schemeAndAuthority);
+    m_userInfo = GetUriComponent(CAPTURE_GROUP_USER_INFO, schemeAndAuthority);
+    m_host = GetUriComponent(CAPTURE_GROUP_HOST, schemeAndAuthority);
+    m_path = path;
+    m_query = EscapeUriComponent(GetUriComponent(CAPTURE_GROUP_QUERY, pathQueryAndFragment));
+    m_fragment = EscapeUriComponent(GetUriComponent(CAPTURE_GROUP_FRAGMENT, pathQueryAndFragment));
 
     m_authorityIsPresent = authorityIsPresent;
     m_valid = true;
@@ -65,7 +82,7 @@ BeUri::BeUri(Utf8StringCR uri)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 Robert.Lukasonok   07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BeUri::GetUriComponent(UriPatternGroup group, const MatchResults& results)
+Utf8String BeUri::GetUriComponent(size_t group, const MatchResults& results)
     {
     std::sub_match<Utf8String::const_iterator> subMatch = results.matches[static_cast<size_t>(group)];
 
