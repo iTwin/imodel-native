@@ -204,7 +204,7 @@ struct Tile : RefCountedBase, NonCopyableClass
     enum class LoadStatus : int {NotLoaded=0, Queued=1, Loading=2, Ready=3, NotFound=4, Abandoned=5};
     typedef bvector<TilePtr> ChildTiles;
 
-protected:
+private:
     RootR   m_root;
     mutable ElementAlignedBox3d m_range;
     TileCP  m_parent;
@@ -213,17 +213,18 @@ protected:
     mutable ChildTiles m_children;
     TileId m_id;
     TileMetadata m_metadata;
+    double m_tolerance;
+
+    Tile(RootR root, TileId id, TileCP parent, bool isLeaf);
+    Tile(Root& root, TileTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable);
+    explicit Tile(Tile const& parent);
+    Tile(Root& root, TileTree::TileId id, DRange3dCR range, double minToleranceRatio);
 
     void SetAbandoned() const;
 
+    void InitTolerance(double minToleranceRatio, bool isLeaf=false);
     DGNPLATFORM_EXPORT DRange3d ComputeChildRange(Tile& child, bool is2d=false) const;
 public:
-    Tile(RootR root, TileId id, TileCP parent, bool isLeaf)
-        : m_root(root), m_parent(parent), m_depth(nullptr == parent ? 0 : parent->GetDepth() + 1), m_loadStatus(LoadStatus::NotLoaded), m_id(id)
-        {
-        SetIsLeaf(isLeaf);
-        }
-
     ElementAlignedBox3d const& GetRange() const {return m_range;}
     DGNPLATFORM_EXPORT ElementAlignedBox3d ComputeRange() const;
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
@@ -272,17 +273,17 @@ public:
 
     //! Get the array of children for this Tile.
     //! @param[in] create If false, return nullptr if this tile has children but they are not yet created. Otherwise create them now.
-    DGNPLATFORM_EXPORT virtual ChildTiles const* _GetChildren(bool create) const;
-    virtual TilePtr _CreateChild(TileId) const = 0;
+    DGNPLATFORM_EXPORT ChildTiles const* _GetChildren(bool create) const;
+    TilePtr _CreateChild(TileId) const;
 
     //! Called when tile data is required.
-    virtual TileLoaderPtr _CreateTileLoader(TileLoadStateSPtr) = 0;
+    TileLoaderPtr _CreateTileLoader(TileLoadStateSPtr);
 
     //! Get the tile cache key for this Tile.
-    virtual Utf8String _GetTileCacheKey() const { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
+    Utf8String _GetTileCacheKey() const;
 
     //! Get the maximum size, in pixels, that this Tile should occupy on the screen. If larger, use its children, if possible.
-    virtual double _GetMaximumSize() const = 0;
+    double _GetMaximumSize() const;
 
     //! Returns a potentially more tight-fitting range enclosing the visible contents of this tile.
     ElementAlignedBox3d const& GetContentRange() const { return HasContentRange() ? m_metadata.GetContentRange() : m_range; }
@@ -291,7 +292,19 @@ public:
 
     bool IsEmpty() const;
 
-    virtual bool _ToJson(Json::Value&) const { return false; }
+    DGNPLATFORM_EXPORT bool ToJson(Json::Value&) const;
+
+    double GetTolerance() const { return m_tolerance; }
+    DRange3d GetDgnRange() const;
+    DRange3d GetTileRange() const { return GetRange(); }
+
+    Utf8String GetIdString() const;
+    TilePtr FindTile(TileTree::TileId id, double zoomFactor);
+    TilePtr FindTile(double zoomFactor);
+
+    static TilePtr Create(Root& root, TileTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr, true); }
+    static TilePtr CreateRoot(Root& root, DRange3dCR range, bool populate) { return new Tile(root, TileTree::TileId::RootId(), nullptr, &range, populate); }
+    static TilePtr CreateWithZoomFactor(Tile const& parent) { return new Tile(parent); }
 };
 
 /*=================================================================================**//**

@@ -63,62 +63,6 @@ constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   11/16
-//=======================================================================================
-struct RangeAccumulator : RangeIndex::Traverser
-{
-    DRange3dR       m_range;
-    uint32_t        m_numElements = 0;
-    bool            m_is2d;
-
-    RangeAccumulator(DRange3dR range, bool is2d) : m_range(range), m_is2d(is2d) { m_range = DRange3d::NullRange(); }
-
-    bool _AbortOnWriteRequest() const override { return true; }
-    Accept _CheckRangeTreeNode(FBox3d const&, bool) const override { return Accept::Yes; }
-    Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
-        {
-        ++m_numElements;
-        m_range.Extend(entry.m_range.ToRange3d());
-        return Stop::No;
-        }
-
-    bool Accumulate(RangeIndex::Tree& tree)
-        {
-        if (Stop::Yes == tree.Traverse(*this))
-            return false;
-        else
-            return !m_range.IsNull();
-        }
-
-    uint32_t GetElementCount() const { return m_numElements; }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool isElementCountLessThan(uint32_t threshold, RangeIndex::Tree& tree)
-    {
-    struct Counter : RangeIndex::Traverser
-    {
-        uint32_t    m_count = 0;
-        uint32_t    m_threshold;
-
-        explicit Counter(uint32_t threshold) : m_threshold(threshold) { }
-
-        Accept _CheckRangeTreeNode(FBox3d const&, bool) const override { return m_count < m_threshold ? Accept::Yes : Accept::No; }
-        Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
-            {
-            ++m_count;
-            return m_count < m_threshold ? Stop::No : Stop::Yes;
-            }
-    };
-
-    Counter counter(threshold);
-    tree.Traverse(counter);
-    return counter.m_count < threshold;
-    }
-
-//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================
 struct TileGeometrySource
@@ -357,6 +301,9 @@ using RootR = TileTree::RootR;
 using RootPtr = TileTree::RootPtr;
 using LoadContext = TileTree::LoadContext;
 using LoadContextCR = TileTree::LoadContextCR;
+using TileR = TileTree::TileR;
+using TileCR = TileTree::TileCR;
+using TilePtr = TileTree::TilePtr;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/16
@@ -735,34 +682,6 @@ static void clipContentRangeToTileRange(DRange3dR content, DRange3dCR tile)
         content.Init();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DRange3d scaleSpatialRange(DRange3dCR range)
-    {
-    // Geometry often lies in a plane precisely coincident with the planes of the project extents.
-    // We must expand the extents slightly to prevent floating point fuzz in range intersection tests
-    // against such geometry - otherwise portions may be inappropriately culled.
-    // Similarly (TFS#863543) some 3d data sets consist of essentially 2d data sitting smack in the center of the
-    // project extents. If we subdivide tiles in half, we face similar issues where the geometry ends up precisely
-    // aligned to tile boundaries. Bias the scale to prevent this.
-    // NOTE: There's no simple way to detect and deal with arbitrarily located geometry just-so-happening to
-    // align with some tile's boundary...
-    constexpr double loScale = 1.0001,
-                     hiScale = 1.0002,
-                     fLo = 0.5 * (1.0 + loScale),
-                     fHi = 0.5 * (1.0 + hiScale);
-
-    DRange3d result = range;
-    if (!result.IsNull())
-        {
-        result.high.Interpolate(range.low, fHi, range.high);
-        result.low.Interpolate(range.high, fLo, range.low);
-        }
-
-    return result;
-    }
-
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -800,7 +719,7 @@ BentleyStatus Loader::_ReadFromDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::_LoadTile() 
     { 
-    TileR                                   tile = GetElementTile();
+    TileR                                   tile = *m_tile;
     RootR                                   root = tile.GetRoot();
     ElementAlignedBox3d                     contentRange;
     StopWatch                               stopWatch(true);
@@ -851,7 +770,7 @@ BentleyStatus Loader::_LoadTile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::DoGetFromSource()
     {
-    TileR   tile = GetElementTile();
+    TileR   tile = *m_tile;
     RootR   root = tile.GetRoot();
 
     if (SUCCESS != LoadGeometryFromModel())
@@ -892,7 +811,7 @@ BentleyStatus Loader::DoGetFromSource()
 bool Loader::_IsExpired(uint64_t createTimeMillis)
     {
     m_cacheCreateTime = createTimeMillis;
-    auto& tile = GetElementTile();
+    auto& tile = *m_tile;
     uint64_t lastModMillis = tile.GetRoot().GetModel()->GetLastElementModifiedTime();
     return createTimeMillis < static_cast<uint64_t>(lastModMillis);
     }
@@ -903,7 +822,7 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
 bool Loader::_IsValidData()
     {
     BeAssert(!m_tileBytes.empty());
-    TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetRoot().GetModel(), GetRenderSystem());
+    TileTree::IO::DgnTileReader reader(m_tileBytes, *m_tile->GetRoot().GetModel(), GetRenderSystem());
     return reader.VerifyFeatureTable();
     }
 
@@ -912,90 +831,6 @@ bool Loader::_IsValidData()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::_IsCompleteData()
     {
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileCR Loader::GetElementTile() const { return static_cast<TileCR>(*m_tile); }
-TileR Loader::GetElementTile() { return static_cast<TileR>(*m_tile); }
-
-#if defined (BENTLEYCONFIG_PARASOLID) 
-static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
-    {
-    // DgnDb::VerifyClientThread(); ###TODO: Relax this constraint when publishing view attachments to Cesium...
-
-    if (DgnDbStatus::Success != model.FillRangeIndex())
-        return nullptr;
-
-    DRange3d range;
-    bool populateRootTile;
-    if (model.Is3dModel())
-        {
-        range = model.GetDgnDb().GeoLocation().GetProjectExtents();
-        range = scaleSpatialRange(range);
-        populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex());
-        }
-    else
-        {
-        RangeAccumulator accum(range, model.Is2dModel());
-        if (!accum.Accumulate(*model.GetRangeIndex()))
-            range = DRange3d::From(DPoint3d::FromZero());
-
-        auto sheet = model.ToSheetModel();
-        if (nullptr != sheet)
-            range.Extend(sheet->GetSheetExtents());
-
-        populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
-        }
-
-#if defined(POPULATE_ROOT_TILE)
-    // For debugging...
-    populateRootTile = true;
-#endif
-
-    // Translate world coordinates to center of range in order to reduce precision errors
-    DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
-    Transform transform = Transform::From(centroid);
-
-#if defined (BENTLEYCONFIG_PARASOLID)
-    PSolidKernelManager::StartSession();
-
-    if (s_psolidMainThreadMark.IsNull())
-        s_psolidMainThreadMark = new PSolidThreadUtil::MainThreadMark();
-#endif
-
-    RootPtr root = new Root(model, transform, system);
-    Transform rangeTransform;
-
-    rangeTransform.InverseOf(transform);
-    DRange3d tileRange;
-    rangeTransform.Multiply(tileRange, range);
-    return root->LoadRootTile(tileRange, model, populateRootTile) ? root : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate)
-    {
-    // We want to generate the lowest-resolution tiles before any of their descendants, so that we always have *something* to draw
-    // However, if we generated the single root tile before any others, we'd have to process every element in the model and waste all our work threads.
-    // Instead, make the root tile empty & undisplayable; its direct children can be generated in parallel instead as the lowest-resolution tiles.
-    // Optimization: Don't do this if the number of elements in the model is less than the min number of elements per tile, so that we reduce the number
-    // of tiles required.
-    m_rootTile = ElementTileTree::Tile::CreateRoot(*this, range, populate);
-
-    if (!populate)
-        m_rootTile->SetIsReady();
-
     return true;
     }
 
@@ -1053,99 +888,11 @@ void TileContext::AddGeomPart(Render::GraphicBuilderR graphic, DgnGeometryPartId
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Tile::_GetTileCacheKey() const
-    {
-    return GetRoot().GetModelId().ToString() + GetIdString();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(Root& octRoot, TileTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable)
-    : T_Super(octRoot, id, parent, false)
-    {
-    if (nullptr != parent)
-        m_range = ElementAlignedBox3d(parent->ComputeChildRange(*this, octRoot.Is2d()));
-    else
-        m_range.Extend(*range);
-
-    InitTolerance(s_minToleranceRatio);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* NB: Constructor used by ThumbnailTile...
-* @bsimethod                                                    Paul.Connelly   01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(Root& root, TileTree::TileId id, DRange3dCR range, double minToleranceRatio)
-    : T_Super(root, id, nullptr, true)
-    {
-    m_range.Extend(range);
-    InitTolerance(minToleranceRatio, true);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(Tile const& parent) : T_Super(const_cast<Root&>(parent.GetRoot()), parent.GetTileId(), &parent, false)
-    {
-    m_range.Extend(parent.GetRange());
-
-    BeAssert(parent.HasZoomFactor());
-    SetZoomFactor(parent.GetZoomFactor() * 2.0);
-
-    InitTolerance(s_minToleranceRatio);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::InitTolerance(double minToleranceRatio, bool isLeaf)
-    {
-    double diagDist = GetRoot().Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
-    m_tolerance = diagDist / (minToleranceRatio * GetZoomFactor());
-    SetIsLeaf(isLeaf);
-    BeAssert(0.0 != m_tolerance);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStateSPtr loads)
+TileTree::TileLoaderPtr TileTree::Tile::_CreateTileLoader(TileTree::TileLoadStateSPtr loads)
     {
     return Loader::Create(*this, loads);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TilePtr Tile::_CreateChild(TileTree::TileId childId) const
-    {
-    return Tile::Create(const_cast<RootR>(GetRoot()), childId, *this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Tile::ChildTiles const* Tile::_GetChildren(bool load) const
-    {
-    if (HasZoomFactor() && load && m_children.empty())
-        {
-        // Create a single child containing same geometry in same range, faceted to a higher resolution.
-        m_children.push_back(CreateWithZoomFactor(*this));
-        }
-
-    return T_Super::_GetChildren(load);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-double Tile::_GetMaximumSize() const
-    {
-    // returning 0.0 signifies undisplayable tile...
-    return IsDisplayable() ? s_tileScreenSize * GetZoomFactor() : 0.0;
     }
 
 /*=================================================================================**//**
@@ -1765,37 +1512,12 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
 END_ELEMENT_TILETREE_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley    02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Loader::LoadGeometryFromModel()
-    {
-#if defined (BENTLEYCONFIG_PARASOLID)    
-    PSolidThreadUtil::WorkerThreadOuterMark outerMark;
-#endif
-
-    auto& tile = GetElementTile();
-
-    LoadContext loadContext(this);
-    m_geometry = tile.GenerateGeometry(loadContext);
-
-    return loadContext.WasAborted() ? ERROR : SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Tile::~Tile()
-    {
-    //
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR context)
+Render::Primitives::GeometryCollection generateTileGeometry(TileR tile, LoadContextCR context)
     {
     Render::Primitives::GeometryCollection collection;
-    auto& root = GetRoot();
+    auto& root = tile.GetRoot();
     auto model = root.GetModel();
     if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
         return collection;
@@ -1804,10 +1526,11 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
     auto& sys = context.GetRenderSystem();
     maxFeatures = std::min(maxFeatures, sys._GetMaxFeaturesPerBatch());
 
-    double minRangeDiagonalSq = s_minRangeBoxSize * m_tolerance;
+    auto tolerance = tile.GetTolerance();
+    double minRangeDiagonalSq = s_minRangeBoxSize * tolerance;
     minRangeDiagonalSq *= minRangeDiagonalSq;
 
-    IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(m_tolerance);
+    IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(tolerance);
     facetOptions->SetHideSmoothEdgesWhenGeneratingNormals(false); // We'll do this ourselves when generating meshes - This will turn on sheet edges that should be hidden (Pug.dgn).
 
     Transform transformFromDgn;
@@ -1815,7 +1538,7 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
 
     // ###TODO: Avoid heap alloc if don't want partial tiles...
     // ###TODO_IMODELCORE: Removed support for partial tiles - remove heap alloc.
-    TileGenerator generator(GetDgnRange(), *model->GetRangeIndex(), minRangeDiagonalSq, context, maxFeatures, *this, *facetOptions, transformFromDgn, m_tolerance, GeometryOptions());
+    TileGenerator generator(tile.GetDgnRange(), *model->GetRangeIndex(), minRangeDiagonalSq, context, maxFeatures, tile, *facetOptions, transformFromDgn, tolerance, GeometryOptions());
     auto status = generator.GenerateGeometry(collection, context);
     switch (status)
         {
@@ -1827,13 +1550,20 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
+* @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Tile::GetDgnRange() const
+BentleyStatus Loader::LoadGeometryFromModel()
     {
-    DRange3d range;
-    GetRoot().GetLocation().Multiply(range, GetTileRange());
-    return range;
+#if defined (BENTLEYCONFIG_PARASOLID)    
+    PSolidThreadUtil::WorkerThreadOuterMark outerMark;
+#endif
+
+    auto& tile = *m_tile;
+
+    LoadContext loadContext(this);
+    m_geometry = generateTileGeometry(tile, loadContext);
+
+    return loadContext.WasAborted() ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1958,107 +1688,5 @@ Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double 
     {
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Tile::_ToJson(Json::Value& json) const
-    {
-    json["id"]["treeId"] = GetRoot().GetModelId().ToHexStr();
-    json["id"]["tileId"] = GetIdString();
-    json["maximumSize"] = IsDisplayable() ? s_tileScreenSize : 0.0;
-    json["isLeaf"] = IsLeaf();
-
-    JsonUtils::DRange3dToJson(json["range"], GetRange());
-    if (HasContentRange())
-        JsonUtils::DRange3dToJson(json["contentRange"], GetContentRange());
-
-    if (HasZoomFactor())
-        json["sizeMultiplier"] = GetZoomFactor();
-    
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Tile::GetIdString() const
-    {                                                                                                                                                                       
-    // NB: Zoom factor is stored as a double for arithmetic purposes, but it's always an unsigned integral power of two.
-    return Utf8PrintfString("%u/%u/%u/%u:%u", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, static_cast<uint32_t>(GetZoomFactor()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TilePtr Root::FindTileById(Utf8CP strId)
-    {
-    if (GetRootTile().IsNull())
-        return nullptr;
-    
-    // NB: Zoom factor is stored as a double for arithmetic purposes, but it's always an unsigned integral power of two.
-    uint32_t zoomFactor;
-    TileTree::TileId id;
-    if (nullptr == strId || 5 != BE_STRING_UTILITIES_UTF8_SSCANF(strId, "%" SCNu8 "/%u/%u/%u:%u", &id.m_level, &id.m_i, &id.m_j, &id.m_k, &zoomFactor))
-        {
-        BeAssert(false && "Invalid tile id string");
-        return nullptr;
-        }
-
-    return static_cast<ElementTileTree::TileR>(*GetRootTile()).FindTile(id, static_cast<double>(zoomFactor));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-TilePtr Tile::FindTile(TileTree::TileId id, double zoomFactor)
-    {
-    if (id == GetTileId())
-        return FindTile(zoomFactor);
-
-    auto children = _GetChildren(true);
-    if (nullptr == children)
-        return nullptr;
-
-    if (id.m_level <= m_id.m_level)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    uint32_t    shift = id.m_level - m_id.m_level - 1;
-
-    auto imod = id.m_i >> shift, jmod = id.m_j >> shift, kmod = id.m_k >> shift;
-    for (auto const& child : *children)
-        {
-        auto elemChild = static_cast<TileP>(child.get());
-        auto childId = elemChild->GetTileId();
-        if (childId.m_i == imod && childId.m_j== jmod && childId.m_k == kmod)
-            return elemChild->FindTile(id, zoomFactor);
-        }
-
-    BeAssert(false && "missing child tile");
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-TilePtr Tile::FindTile(double zoomFactor)
-    {
-    if (zoomFactor == GetZoomFactor())
-        return this;
-
-    BeAssert(zoomFactor > 0.0 && HasZoomFactor());
-    auto children = _GetChildren(true);
-    if (nullptr == children || 1 != children->size())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return static_cast<TileR>(**children->begin()).FindTile(zoomFactor);
     }
 
