@@ -147,6 +147,7 @@ TEST_F(BeUriTests, Ctor_InvalidUri_EmptyComponents)
         BeUri("scheme://host:"),
         BeUri("scheme://host:path"),
         BeUri("scheme://[]"),
+        BeUri("scheme://[a][b]"),
         BeUri("scheme://[::1/64]")
         };
 
