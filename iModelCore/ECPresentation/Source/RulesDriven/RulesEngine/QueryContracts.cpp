@@ -747,7 +747,7 @@ Utf8String ECPropertyGroupingNodesQueryContract::GetGroupingValuesClause(Utf8CP 
     {
     Utf8String clause("group_concat(");
     if (m_specification.GetRanges().empty())
-        clause.append(QueryHelpers::Wrap(GroupingValueFieldName));
+        clause.append("DISTINCT ").append(QueryHelpers::Wrap(GroupingValueFieldName));
     else
         clause.append(FUNCTION_NAME_GetRangeIndex).append("(").append(QueryHelpers::Wrap(GroupingValueFieldName)).append(")");
     clause.append(")");
@@ -784,11 +784,11 @@ bvector<PresentationQueryContractFieldCPtr> ECPropertyGroupingNodesQueryContract
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool ProcessLabelOverridesPolymorpically(bvector<ECPropertyCP>& properties, ECClassCR ecClass, ContentDescriptor::DisplayLabelField const* field)
+static bool ProcessLabelOverridesPolymorpically(bvector<ECPropertyCP>& properties, ECClassCR ecClass, ContentDescriptor::DisplayLabelField const& field)
     {
     for (ECClassCP baseClass : ecClass.GetBaseClasses())
         {
-        bvector<ECPropertyCP> propertiesToAppend = field->GetPropertiesForClass(baseClass);
+        bvector<ECPropertyCP> propertiesToAppend = field.GetPropertiesForClass(baseClass);
         if (!propertiesToAppend.empty())
             properties.insert(properties.end(), propertiesToAppend.begin(), propertiesToAppend.end());
 
@@ -800,7 +800,6 @@ static bool ProcessLabelOverridesPolymorpically(bvector<ECPropertyCP>& propertie
 
 Utf8CP ContentQueryContract::ContractIdFieldName = "/ContractId/";
 Utf8CP ContentQueryContract::ECInstanceKeysFieldName = "/ECInstanceKeys/";
-Utf8CP ContentQueryContract::DisplayLabelFieldName = "/DisplayLabel/";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -810,7 +809,7 @@ ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR desc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFunctionField const& ContentQueryContract::GetDisplayLabelField(ContentDescriptor::DisplayLabelField const* field) const
+PresentationQueryContractFunctionField const& ContentQueryContract::GetDisplayLabelField(ContentDescriptor::DisplayLabelField const& field) const
     {
     if (m_displayLabelField.IsNull())
         {
@@ -819,17 +818,17 @@ PresentationQueryContractFunctionField const& ContentQueryContract::GetDisplayLa
             labelProperty = m_class->GetInstanceLabelProperty();
 
         Utf8CP labelClause = nullptr != labelProperty ? labelProperty->GetName().c_str() : "''";
-        m_displayLabelField = PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, FUNCTION_NAME_GetECInstanceDisplayLabel,
+        m_displayLabelField = PresentationQueryContractFunctionField::Create(field.GetName().c_str(), FUNCTION_NAME_GetECInstanceDisplayLabel,
             CreateFieldsList("ECClassId", "ECInstanceId", labelClause, CreateRelatedInstanceInfoClause(m_relatedClasses)), true);
 
         if (m_class)
             {
-            bvector<ECPropertyCP> properties = field->GetPropertiesForClass(m_class);
+            bvector<ECPropertyCP> properties = field.GetPropertiesForClass(m_class);
             ProcessLabelOverridesPolymorpically(properties, *m_class, field);
             if (!properties.empty())
                 {
                 RefCountedPtr<PresentationQueryContractFunctionField> nestedParameter = m_displayLabelField;
-                m_displayLabelField = PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, "COALESCE", CreateFieldsListFromECProperties(properties), true);
+                m_displayLabelField = PresentationQueryContractFunctionField::Create(field.GetName().c_str(), "COALESCE", CreateFieldsListFromECProperties(properties), true);
                 m_displayLabelField->GetFunctionParameters().push_back(nestedParameter);
                 }
             }
@@ -1111,7 +1110,7 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
             PresentationQueryContractFieldCPtr contractField;
             if (descriptorField->IsDisplayLabelField() && m_descriptor->ShowLabels())
                 {
-                contractField = &GetDisplayLabelField(descriptorField->AsDisplayLabelField());
+                contractField = &GetDisplayLabelField(*descriptorField->AsDisplayLabelField());
                 isDisplayLabelField = true;
                 }
             else if (descriptorField->IsPropertiesField())

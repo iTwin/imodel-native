@@ -1409,6 +1409,22 @@ private:
         if (left.EndsWith(".ClassName"))
             m_usedClasses.push_back(node.GetRightCP()->ToString().Trim("\""));
         }
+    
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            08/2018
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    void HandleStringConstNode(LiteralNode const& node)
+        {
+        Utf8CP value = node.GetInternalValue().GetUtf8CP();
+        if (0 == strcmp(value, ContentDescriptor::DisplayLabelField::NAME))
+            {
+            // note: name of display label field contains invalid characters, so we wrap it
+            // with quotes to make it look like a string - see Preprocess method
+            Append(QueryHelpers::Wrap(value));
+            return;
+            }
+        Append(Utf8PrintfString("'%s'", value));
+        }
 
 public:
     bool StartArrayIndex(NodeCR) override {BeAssert(false); return false;}
@@ -1524,7 +1540,7 @@ public:
             case TOKEN_StringConst:
                 BeAssert(nullptr != dynamic_cast<LiteralNode const*>(&node) 
                     && dynamic_cast<LiteralNode const*>(&node)->GetInternalValue().IsUtf8());
-                Append(Utf8PrintfString("'%s'", static_cast<LiteralNode const*>(&node)->GetInternalValue().GetUtf8CP()));
+                HandleStringConstNode(static_cast<LiteralNode const&>(node));
                 break;
             case TOKEN_DateTimeConst:
                 Append(Utf8PrintfString("DATE '%s'", node.ToString().c_str()));
@@ -1564,6 +1580,14 @@ public:
     ECExpressionToECSqlConverter() 
         : m_inArguments(false), m_inStructProperty(false), m_ignoreArguments(false), m_previousToken(TOKEN_Unrecognized)
         {}
+    
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            08/2018
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    static void Preprocess(Utf8StringR expr)
+        {
+        expr.ReplaceAll(ContentDescriptor::DisplayLabelField::NAME, Utf8String(ContentDescriptor::DisplayLabelField::NAME).AddQuotes().c_str());
+        }
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
@@ -1597,7 +1621,10 @@ Utf8String ECExpressionsHelper::ConvertToECSql(Utf8StringCR expression)
     if (expression.empty())
         return "";
 
-    NodePtr node = GetNodeFromExpression(expression.c_str());
+    Utf8String copy(expression);
+    ECExpressionToECSqlConverter::Preprocess(copy);
+
+    NodePtr node = GetNodeFromExpression(copy.c_str());
     if (node.IsNull())
         {
         BeAssert(false);
