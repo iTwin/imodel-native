@@ -12,27 +12,32 @@
 // Note, they might also be from future versions of ECDb in which case there is no TestECDbCreator, as only
 // the newer versions of ECDb can create them. But tests have to be written with the old code against those files
 // to make sure that the old software can work with the newer files.
-#define TESTECDB_EMPTY "empty.ecdb"
-#define TESTECDB_PREEC32ENUMS "preec32enums.ecdb"
-#define TESTECDB_UPGRADEDEC32ENUMS "upgradedec32enums.ecdb"
-#define TESTECDB_EC32ENUMS "ec32enums.ecdb"
-#define TESTECDB_PREEC32KOQS "preec32koqs.ecdb"
-#define TESTECDB_EC32KOQS "ec32koqs.ecdb"
-#define TESTECDB_EC32UNITS "ec32units.ecdb"
-#define TESTECDB_PREEC32SCHEMAUPDATE "preec32schemaupdate.ecdb"
-#define TESTECDB_EC32SCHEMAUPDATE "ec32schemaupdate.ecdb"
-
 
 // *** Instructions for adding new test file creators ***
 // 1) Define the test file name with a TESTECDB_ macro
 // 2) Add a new subclass of TestECDbCreator
 // 3) Add a unique_ptr to the TESTECDBCREATOR_LIST macro
 
+#define TESTECDB_EMPTY "empty.ecdb"
+#define TESTECDB_EC31ENUMS "ec31enums.ecdb"
+#define TESTECDB_EC32ENUMS_PROFILEUPGRADED "ec32enums_profileupgraded.ecdb"
+#define TESTECDB_EC32ENUMS "ec32enums.ecdb"
+#define TESTECDB_EC31KOQS "ec31koqs.ecdb"
+#define TESTECDB_EC32KOQS "ec32koqs.ecdb"
+#define TESTECDB_EC32UNITS "ec32units.ecdb"
+#define TESTECDB_EC31ENUMS_SCHEMAUPGRADE "ec31enums_schemaupgrade.ecdb"
+#define TESTECDB_EC31KOQS_SCHEMAUPGRADE "ec31koqs_schemaupgrade.ecdb"
+#define TESTECDB_EC32ENUMS_SCHEMAUPGRADE "ec32enums_schemaupgrade.ecdb"
+#define TESTECDB_EC32KOQS_SCHEMAUPGRADE "ec32koqs_schemaupgrade.ecdb"
+
 #define TESTECDBCREATOR_LIST {std::make_shared<EmptyTestECDbCreator>(), \
-                              std::make_shared<PreEC32EnumsTestECDbCreator>(), \
-                              std::make_shared<UpgradedEC32EnumsTestECDbCreator>(), \
-                               std::make_shared<PreEC32KoqsTestECDbCreator>(), \
-                               std::make_shared<PreEC32SchemaUpdateTestECDbCreator>()}
+                              std::make_shared<EC32EnumsTestECDbCreator>(), \
+                              std::make_shared<EC31EnumsTestECDbCreator>(), \
+                              std::make_shared<EC32EnumsProfileUpgradedTestECDbCreator>(), \
+                              std::make_shared<EC31KoqsTestECDbCreator>(), \
+                              std::make_shared<EC31EnumsSchemaUpgradeTestECDbCreator>(), \
+                              std::make_shared<EC31KoqsSchemaUpgradeTestECDbCreator>(), \
+                              std::make_shared<EC32EnumsSchemaUpgradeTestECDbCreator>()}
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
@@ -89,7 +94,7 @@ struct EmptyTestECDbCreator final : TestECDbCreator
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
 //======================================================================================
-struct PreEC32EnumsTestECDbCreator final : TestECDbCreator
+struct EC31EnumsTestECDbCreator final : TestECDbCreator
     {
     private:
         BentleyStatus _Create() override
@@ -100,7 +105,7 @@ struct PreEC32EnumsTestECDbCreator final : TestECDbCreator
 
             // add types of enums which don't exist in the schemas already in the test file
             return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                                    <ECSchema schemaName="PreEC32Enums" alias="preec32" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
                                                             <ECEnumerator value="0"/>
                                                             <ECEnumerator value="1"/>
@@ -113,14 +118,14 @@ struct PreEC32EnumsTestECDbCreator final : TestECDbCreator
                                                      </ECSchema>)xml"));
             }
     public:
-        explicit PreEC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_PREEC32ENUMS) {}
-        ~PreEC32EnumsTestECDbCreator() {}
+        explicit EC31EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_EC31ENUMS) {}
+        ~EC31EnumsTestECDbCreator() {}
     };
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      07/2018
 //======================================================================================
-struct UpgradedEC32EnumsTestECDbCreator final : TestECDbCreator
+struct EC32EnumsProfileUpgradedTestECDbCreator final : TestECDbCreator
     {
     private:
         BentleyStatus _Create() override
@@ -131,7 +136,7 @@ struct UpgradedEC32EnumsTestECDbCreator final : TestECDbCreator
 
             //The actual upgrade to EC32 enums will happen on the respective EC32 version of this creator
             return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                                    <ECSchema schemaName="UpgradedEC32Enums" alias="upgradedec32" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
                                                             <ECEnumerator value="0"/>
                                                             <ECEnumerator value="1"/>
@@ -144,14 +149,14 @@ struct UpgradedEC32EnumsTestECDbCreator final : TestECDbCreator
                                                      </ECSchema>)xml"));
             }
     public:
-        explicit UpgradedEC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_UPGRADEDEC32ENUMS) {}
-        ~UpgradedEC32EnumsTestECDbCreator() {}
+        explicit EC32EnumsProfileUpgradedTestECDbCreator() : TestECDbCreator(TESTECDB_EC32ENUMS_PROFILEUPGRADED) {}
+        ~EC32EnumsProfileUpgradedTestECDbCreator() {}
     };
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
 //======================================================================================
-struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
+struct EC31KoqsTestECDbCreator final : TestECDbCreator
     {
     private:
         BentleyStatus _Create() override
@@ -162,7 +167,7 @@ struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
 
             //test schema for KOQs originates from AECUnits ECSchemas
             return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-<ECSchema schemaName="PreEC32Koqs" alias="preec32koqs" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
  <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
  <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
  <KindOfQuantity typeName="AREA_SMALL" displayLabel="Small Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.MM(real2u);SQ.IN(real4u)" relativeError="0.0001"/>
@@ -223,14 +228,14 @@ struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
 </ECSchema>)xml"));
             }
     public:
-        explicit PreEC32KoqsTestECDbCreator() : TestECDbCreator(TESTECDB_PREEC32KOQS) {}
-        ~PreEC32KoqsTestECDbCreator() {}
+        explicit EC31KoqsTestECDbCreator() : TestECDbCreator(TESTECDB_EC31KOQS) {}
+        ~EC31KoqsTestECDbCreator() {}
     };
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      08/2018
 //======================================================================================
-struct PreEC32SchemaUpdateTestECDbCreator final : TestECDbCreator
+struct EC31EnumsSchemaUpgradeTestECDbCreator final : TestECDbCreator
     {
     private:
         BentleyStatus _Create() override
@@ -240,10 +245,9 @@ struct PreEC32SchemaUpdateTestECDbCreator final : TestECDbCreator
                 return ERROR;
 
             return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-            <ECSchema schemaName="SchemaUpdateTest" alias="su" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
               <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
 
-             <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
              <ECEnumeration typeName="StatusEnum" displayLabel="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
                 <ECEnumerator value="0"/>
                 <ECEnumerator value="1"/>
@@ -251,7 +255,6 @@ struct PreEC32SchemaUpdateTestECDbCreator final : TestECDbCreator
              </ECEnumeration>
              <ECEntityClass typeName="BaseA">
                 <ECProperty propertyName="Code" typeName="int" />
-                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
                 <ECProperty propertyName="Status" typeName="StatusEnum" />
              </ECEntityClass>
              <ECEntityClass typeName="BaseB">
@@ -261,7 +264,6 @@ struct PreEC32SchemaUpdateTestECDbCreator final : TestECDbCreator
                     </ClassMap>
                 </ECCustomAttributes>
                 <ECProperty propertyName="Code" typeName="int" />
-                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
                 <ECProperty propertyName="Status" typeName="StatusEnum" />
              </ECEntityClass>
              <ECEntityClass typeName="BaseC">
@@ -275,12 +277,147 @@ struct PreEC32SchemaUpdateTestECDbCreator final : TestECDbCreator
                     </ShareColumns>
                 </ECCustomAttributes>
                 <ECProperty propertyName="Code" typeName="int" />
-                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
                 <ECProperty propertyName="Status" typeName="StatusEnum" />
              </ECEntityClass>
             </ECSchema>)xml"));
             }
     public:
-        explicit PreEC32SchemaUpdateTestECDbCreator() : TestECDbCreator(TESTECDB_PREEC32SCHEMAUPDATE) {}
-        ~PreEC32SchemaUpdateTestECDbCreator() {}
+        explicit EC31EnumsSchemaUpgradeTestECDbCreator() : TestECDbCreator(TESTECDB_EC31ENUMS_SCHEMAUPGRADE) {}
+        ~EC31EnumsSchemaUpgradeTestECDbCreator() {}
     };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      08/2018
+//======================================================================================
+struct EC31KoqsSchemaUpgradeTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
+                return ERROR;
+
+            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+              <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+
+             <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
+             <ECEntityClass typeName="BaseA">
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+             </ECEntityClass>
+             <ECEntityClass typeName="BaseB">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+             </ECEntityClass>
+             <ECEntityClass typeName="BaseC">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>6</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+             </ECEntityClass>
+            </ECSchema>)xml"));
+            }
+    public:
+        explicit EC31KoqsSchemaUpgradeTestECDbCreator() : TestECDbCreator(TESTECDB_EC31KOQS_SCHEMAUPGRADE) {}
+        ~EC31KoqsSchemaUpgradeTestECDbCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct EC32EnumsTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
+                return ERROR;
+
+            // ECObjects downgrades an EC3.2 file to EC3.1 during deserialization
+            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                                        <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                                                            <ECEnumerator name="Unknown" value="0"/>
+                                                            <ECEnumerator name="On" value="1"/>
+                                                            <ECEnumerator name="Off" value="2"/>
+                                                        </ECEnumeration>
+                                                        <ECEnumeration typeName="StringEnum_EnumeratorsWithDisplayLabel" displayLabel="String Enumeration with enumerators with display label" backingTypeName="string" isStrict="false">
+                                                            <ECEnumerator name="On" value="On" displayLabel="Turned On"/>
+                                                            <ECEnumerator name="Off" value="Off" displayLabel="Turned Off"/>
+                                                        </ECEnumeration>
+                                                     </ECSchema>)xml"));
+            }
+    public:
+        EC32EnumsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32ENUMS) {}
+        ~EC32EnumsTestECDbCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct EC32EnumsSchemaUpgradeTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
+                return ERROR;
+
+            // ECObjects downgrades an EC3.2 file to EC3.1 during deserialization
+            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                                                         <ECEnumeration typeName="StatusEnum" displayLabel="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                                                            <ECEnumerator name="On" value="0"/>
+                                                            <ECEnumerator name="Off" value="1"/>
+                                                            <ECEnumerator name="Unknown" value="2"/>
+                                                         </ECEnumeration>
+                                                     <ECEntityClass typeName="BaseA">
+                                                        <ECProperty propertyName="Code" typeName="int" />
+                                                        <ECProperty propertyName="Status" typeName="StatusEnum" />
+                                                     </ECEntityClass>
+                                                     <ECEntityClass typeName="BaseB">
+                                                        <ECCustomAttributes>
+                                                            <ClassMap xmlns="ECDbMap.02.00.00">
+                                                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                            </ClassMap>
+                                                        </ECCustomAttributes>
+                                                        <ECProperty propertyName="Code" typeName="int" />
+                                                        <ECProperty propertyName="Status" typeName="StatusEnum" />
+                                                     </ECEntityClass>
+                                                     <ECEntityClass typeName="BaseC">
+                                                        <ECCustomAttributes>
+                                                            <ClassMap xmlns="ECDbMap.02.00.00">
+                                                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                            </ClassMap>
+                                                            <ShareColumns xmlns="ECDbMap.02.00.00">
+                                                                <MaxSharedColumnsBeforeOverflow>6</MaxSharedColumnsBeforeOverflow>
+                                                                <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                                                            </ShareColumns>
+                                                        </ECCustomAttributes>
+                                                        <ECProperty propertyName="Code" typeName="int" />
+                                                        <ECProperty propertyName="Status" typeName="StatusEnum" />
+                                                     </ECEntityClass>
+                                                   </ECSchema>)xml"));
+            }
+    public:
+        EC32EnumsSchemaUpgradeTestECDbCreator() : TestECDbCreator(TESTECDB_EC32ENUMS_SCHEMAUPGRADE) {}
+        ~EC32EnumsSchemaUpgradeTestECDbCreator() {}
+    };
+
