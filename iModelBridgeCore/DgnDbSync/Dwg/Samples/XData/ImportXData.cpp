@@ -390,16 +390,16 @@ BentleyStatus ImportXData::DumpXrecord (DwgDbXrecordCR xRecord)
 //---------------------------------------------------------------------------------------
 BentleyStatus ImportXData::DumpDictionaryXrecords (DwgDbDictionaryCR dictionary)
     {
-    DwgDbDictionaryIterator iter = dictionary.GetIterator ();
+    DwgDbDictionaryIteratorPtr iter = dictionary.GetIterator ();
     if (!iter.IsValid())
         return  BentleyStatus::ERROR;
 
     // Check all entries of the dictionary:
-    for (; !iter.Done(); iter.Next())
+    for (; !iter->Done(); iter->Next())
         {
         DwgDbDictionaryP    child = nullptr;
         DwgDbXrecordP       xRecord = nullptr;
-        DwgDbObjectPtr      entry(iter.GetObjectId(), DwgDbOpenMode::ForRead);
+        DwgDbObjectPtr      entry(iter->GetObjectId(), DwgDbOpenMode::ForRead);
 
         // Only care about either a child dictionary or an xRecord object:
         if (!entry.IsNull() && (nullptr != (child = DwgDbDictionary::Cast(entry.get())) || nullptr != (xRecord = DwgDbXrecord::Cast(entry.get()))))
@@ -407,7 +407,7 @@ BentleyStatus ImportXData::DumpDictionaryXrecords (DwgDbDictionaryCR dictionary)
             // Push current dictionary name into the xRecord name:
             Utf8String  previousName = m_xRecordName;
             size_t      previousSize = previousName.size ();
-            DwgString   entryName = iter.GetName ();
+            DwgString   entryName = iter->GetName ();
             if (!entryName.IsEmpty())
                 {
                 if (m_xRecordName.empty())
@@ -450,12 +450,12 @@ void ImportXData::_BeginImport ()
         DwgDbRegAppTablePtr regappTable(GetDwgDb().GetRegAppTableId(), DwgDbOpenMode::ForRead);
         if (!regappTable.IsNull())
             {
-            DwgDbSymbolTableIterator iter = regappTable->NewIterator ();
+            DwgDbSymbolTableIteratorPtr iter = regappTable->NewIterator ();
             if (iter.IsValid())
                 {
-                for (iter.Start(); !iter.Done(); iter.Step())
+                for (iter->Start(); !iter->Done(); iter->Step())
                     {
-                    DwgDbRegAppTableRecordPtr   regapp(iter.GetRecordId(), DwgDbOpenMode::ForRead);
+                    DwgDbRegAppTableRecordPtr   regapp(iter->GetRecordId(), DwgDbOpenMode::ForRead);
                     if (!regapp.IsNull())
                         {
                         Utf8String  utf8Name (regapp->GetName().c_str());

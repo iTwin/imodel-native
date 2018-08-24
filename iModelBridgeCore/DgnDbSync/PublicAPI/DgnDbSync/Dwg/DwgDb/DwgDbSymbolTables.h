@@ -63,7 +63,7 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgFontInfo)
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
-struct DwgDbSymbolTableIterator
+struct DwgDbSymbolTableIterator : public RefCountedBase
     {
 private:
     DwgDbSymbolTableIterator& operator = (DwgDbSymbolTableIterator& iter);
@@ -109,12 +109,13 @@ public:
     //! Are reconciled layers excluded in the layer table iterator?
     DWGDB_EXPORT bool   GetSkipReconciledLayers () const;
     };  // DwgDbSymbolTableIterator
+typedef RefCountedPtr<DwgDbSymbolTableIterator>     DwgDbSymbolTableIteratorPtr;
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbSymbolTableIterator)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
-struct DwgDbBlockChildIterator
+struct DwgDbBlockChildIterator : public RefCountedBase
     {
 private:
 #ifdef DWGTOOLKIT_OpenDwg
@@ -140,6 +141,8 @@ public:
     DWGDB_EXPORT bool                   Done () const { return nullptr != m_blockChildIterator ? m_blockChildIterator->done() : true; }
     DWGDB_EXPORT DwgDbObjectId          GetEntityId () const;
     };  // DwgDbBlockChildIterator
+typedef RefCountedPtr<DwgDbBlockChildIterator>  DwgDbBlockChildIteratorPtr;
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbBlockChildIterator)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
@@ -157,7 +160,7 @@ DWGDB_DEFINE_OBJECTPTR (SymbolTableRecord)
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
 #define DWGDB_DECLARE_SYMBOLTABLE_MEMBERS(__name__)     \
-    DWGDB_EXPORT DwgDbSymbolTableIterator NewIterator(bool atBeginning = true, bool skipDeleted = true) const;  \
+    DWGDB_EXPORT DwgDbSymbolTableIteratorPtr NewIterator(bool atBeginning = true, bool skipDeleted = true) const;  \
     DWGDB_EXPORT DwgDbObjectId  GetByName (WStringCR name, bool getErased = false) const;
 
 /*=================================================================================**//**
@@ -194,7 +197,7 @@ public:
     DWGDB_EXPORT bool                       IsOverlayReference () const;
     DWGDB_EXPORT bool                       IsAnonymous () const;
     DWGDB_EXPORT bool                       HasAttributeDefinitions () const;
-    DWGDB_EXPORT DwgDbBlockChildIterator    GetBlockChildIterator () const;
+    DWGDB_EXPORT DwgDbBlockChildIteratorPtr GetBlockChildIterator () const;
     DWGDB_EXPORT DwgString                  GetPath () const;
     DWGDB_EXPORT DPoint3d                   GetBase () const;
     DWGDB_EXPORT DwgDbUnits                 GetINSUNITS () const;
