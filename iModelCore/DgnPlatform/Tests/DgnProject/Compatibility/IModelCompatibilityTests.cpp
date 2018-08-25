@@ -343,6 +343,61 @@ TEST_F(IModelCompatibilityTestFixture, EC32Enums)
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
 
+            if (testDb.VersionSupportsFeature(testDb.GetECDbInitialVersion(), ECDbFeature::NamedEnumerators))
+                {
+                EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
+
+                testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
+                {{"Unspecified", ECValue("Unspecified"), nullptr},
+                {"Utc", ECValue("Utc"), nullptr},
+                {"Local", ECValue("Local"), nullptr}});
+
+                testDb.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
+                {{"None", ECValue(0), "None"},
+                {"Abstract", ECValue(1), "Abstract"},
+                {"Sealed", ECValue(2), "Sealed"}});
+
+                testDb.AssertEnum("TestSchema", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                {{"Unknown", ECValue(0), nullptr},
+                {"On", ECValue(1), nullptr},
+                {"Off", ECValue(2), nullptr}});
+
+                testDb.AssertEnum("TestSchema", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
+                {{"On", ECValue("On"), "Turned On"},
+                {"Off", ECValue("Off"), "Turned Off"}});
+                continue;
+                }
+
+            // original file is 4.0.0.1
+            EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
+
+            if (!testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
+                {
+                // file still is a 4.0.0.1 file -> wasn't upgraded
+
+                testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
+                {{"Unspecified", ECValue("Unspecified"), nullptr},
+                {"Utc", ECValue("Utc"), nullptr},
+                {"Local", ECValue("Local"), nullptr}});
+
+                testDb.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
+                {{"ECClassModifier0", ECValue(0), "None"},
+                {"ECClassModifier1", ECValue(1), "Abstract"},
+                {"ECClassModifier2", ECValue(2), "Sealed"}});
+
+                testDb.AssertEnum("TestSchema", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
+
+                testDb.AssertEnum("TestSchema", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
+                {{"On", ECValue("On"), "Turned On"},
+                {"Off", ECValue("Off"), "Turned Off"}});
+                continue;
+                }
+
+            // file was upgraded to 4.0.0.2
+            EXPECT_TRUE(testDb.GetTestFile().IsUpgraded() || testDb.IsUpgraded()) << testDb.GetDescription();
             testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
             {{"Unspecified", ECValue("Unspecified"), nullptr},
             {"Utc", ECValue("Utc"), nullptr},
@@ -354,9 +409,9 @@ TEST_F(IModelCompatibilityTestFixture, EC32Enums)
             {"Sealed", ECValue(2), "Sealed"}});
 
             testDb.AssertEnum("TestSchema", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-            {{"Unknown", ECValue(0), nullptr},
-            {"On", ECValue(1), nullptr},
-            {"Off", ECValue(2), nullptr}});
+            {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+            {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+            {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
 
             testDb.AssertEnum("TestSchema", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
             {{"On", ECValue("On"), "Turned On"},
@@ -364,7 +419,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32Enums)
             }
         }
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      06/18
 //+---------------+---------------+---------------+---------------+---------------+------
