@@ -453,7 +453,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32Units)
             testDb.AssertPhenomenon("Units", "LUMINOSITY", "Luminosity", nullptr, "LUMINOSITY");
 
             testDb.AssertUnit("TestSchema", "MySquareM", "Square Meter", nullptr, "M*M", 1.0, nullptr, nullptr, QualifiedName("TestSchema", "MyMetric"), QualifiedName("TestSchema", "MyArea"), false, QualifiedName());
-            testDb.AssertUnit("TestSchema", "MySquareFt", "Square Feet", nullptr, "Ft*Ft", 10.0, nullptr, 0.4, QualifiedName("TestSchema", "MyImperial"), QualifiedName("EC32UnTestSchemaits", "MyArea"), false, QualifiedName());
+            testDb.AssertUnit("TestSchema", "MySquareFt", "Square Feet", nullptr, "Ft*Ft", 10.0, nullptr, 0.4, QualifiedName("TestSchema", "MyImperial"), QualifiedName("TestSchema", "MyArea"), false, QualifiedName());
             testDb.AssertUnit("Units", "COULOMB", "C", nullptr, "A*S", nullptr, nullptr, nullptr, QualifiedName("Units", "SI"), QualifiedName("Units", "ELECTRIC_CHARGE"), false, QualifiedName());
             testDb.AssertUnit("Units", "PI", "Pi", nullptr, "ONE", 3.1415926535897932384626433832795, nullptr, nullptr, QualifiedName(), QualifiedName("Units", "LENGTH_RATIO"), true, QualifiedName());
             testDb.AssertUnit("Units", "QUARTER_PI", "Pi/4", nullptr, "PI", 1.0, 4.0, nullptr, QualifiedName(), QualifiedName("Units", "LENGTH_RATIO"), true, QualifiedName());
@@ -688,34 +688,11 @@ TEST_F(ECDbCompatibilityTestFixture, EC32SchemaImport_Koqs)
                         <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT]" relativeError="0.0001"/>
                         <KindOfQuantity typeName="TEMPERATURE" displayLabel="Temperature" persistenceUnit="u:K" presentationUnits="f:DefaultRealU(4)[u:CELSIUS];f:DefaultRealU(4)[u:FAHRENHEIT];f:DefaultRealU(4)[u:K]" relativeError="0.01"/>
                      </ECSchema>)xml"));
-            if (!testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
-                {
-                // The schema could even be deserialized, but the referenced Units and Formats schemas are not available unless,
-                // they have been previously imported into an 4.0.0.2 file.
-                ASSERT_TRUE(deserializationCtx == nullptr) << testDb.GetDescription();
-                continue;
-                }
 
-            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
-            const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
-                {
-                    case ProfileState::Age::Older:
-                    case ProfileState::Age::UpToDate:
-                    {
-                    FAIL() << "Shouldn't get here, because the test schema cannot be deserialized for a 4.0.0.1 file because the units/formats schemas are not there | " << testDb.GetDescription();
-                    break;
-                    }
-
-                    case ProfileState::Age::Newer:
-                    {
-                    EXPECT_EQ(ERROR, schemaImportStat) << testDb.GetDescription();
-                    break;
-                    }
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
-                }
+            // The schema could even be deserialized, but the referenced Units and Formats schemas are not available (neither on disk
+            // because this is the EC3.1 code stream, nor in the file).
+            ASSERT_TRUE(deserializationCtx == nullptr) << testDb.GetDescription();
+            continue;
             }
         }
     }
