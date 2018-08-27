@@ -31,6 +31,7 @@
 #include <ScalableMesh/IScalableMesh.h>
 #include "SMMeshIndex.h"
 #include "./ScalableMesh/ScalableMeshGraph.h"
+#include "ScalableMeshProgressiveQueryPlanner.h"
 #ifdef SCALABLE_MESH_ATP
 #include <ScalableMesh/IScalableMeshATP.h>
 #endif
@@ -52,34 +53,6 @@ struct ScalableMeshExtentQuery;
 typedef RefCountedPtr<ScalableMeshExtentQuery> ScalableMeshExtentQueryPtr;
 
 
-struct RequestedQuery
-    {
-    RequestedQuery()
-        {
-        //m_queryObjectP = 0;
-        }
-
-    ~RequestedQuery()
-        {
-            /*
-        if (m_queryObjectP != 0)
-            {
-            delete m_queryObjectP;
-            m_queryObjectP = 0;
-            }
-            */
-        }
-
-    int                                                          m_queryId;
-    bvector<IScalableMeshCachedDisplayNodePtr>                                m_overviewMeshNodes;
-    bvector<IScalableMeshCachedDisplayNodePtr>                                m_requiredMeshNodes;
-    IScalableMeshPtr m_meshToQuery;
-    //ISMPointIndexQuery<ISMStore::Point3d64f, Extent3dType>* m_queryObjectP;    
-    bool                                                         m_isQueryCompleted;
-    bool                                                         m_fetchLastCompletedNodes;
-    bool                                                         m_loadTexture;
-    bvector<bool>                                                m_clipVisibilities;
-    };
 
 class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressiveQueryEngine                              
     {    
@@ -92,11 +65,15 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
         IScalableMeshDisplayCacheManagerPtr                   m_displayCacheManagerPtr;
         bset<uint64_t>                                        m_activeClips;
         bool                                                  m_loadTexture;
+        bvector<QueryPlanner*>                                m_planners;
+
+        QueryPlanner* GetQueryPlanner(const RequestedQuery& queryObject);
 
         void UpdatePreloadOverview();
         void PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh);
         void StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes);
 
+        void SortOverviews(bvector<IScalableMeshCachedDisplayNodePtr>& overviews, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP);
     protected:                                        
 
         void ComputeOverview();

@@ -710,6 +710,7 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
         double   m_minScreenPixelsPerPoint;
         double   m_maxPixelError;
         double   m_rootToViewMatrix[4][4];
+        bool m_loadContours;
         
 
         //NEEDS_WORK_SM : Only one of those is likely required
@@ -774,15 +775,20 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             return m_isProgressiveDisplay;
             }
 
+        virtual bool            _ShouldLoadContours() const override
+            {
+            return m_loadContours;
+            }
+
         virtual void          _SetMinScreenPixelsPerPoint(double minScreenPixelsPerPoint) override
             {
             m_minScreenPixelsPerPoint = minScreenPixelsPerPoint;
             }
 
         virtual void          _SetMaxPixelError(double errorInPixels) override
-        {
+            {
             m_maxPixelError = errorInPixels;
-        }
+            }
 
         virtual void          _SetProgressiveDisplay(bool isProgressiveDisplay) override
             {
@@ -820,7 +826,13 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             {
             m_sourceGCSPtr = sourceGCSPtr;
             m_targetGCSPtr = targetGCSPtr;
-            }        
+            }   
+
+
+        virtual void            _SetLoadContours(bool loadContours) override
+            {
+            m_loadContours = loadContours;
+            }
         
     public : 
 
@@ -830,6 +842,7 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             m_maxPixelError = 1.0;
             m_isProgressiveDisplay = false;
             m_stopQueryCallbackFP = 0;
+            m_loadContours = false;
             }
 
         virtual ~ScalableMeshViewDependentMeshQueryParams()
@@ -1453,6 +1466,11 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
             virtual void      _SetIsInVideoMemory(bool isInVideoMemory) override {}
 
+            virtual bool      _GetContours(bvector<bvector<DPoint3d>>& contours) override
+            {
+                return false;
+            }
+
     public:             
 
             ScalableMeshCachedMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, bool loadTexture)
@@ -1544,6 +1562,11 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
                 }
 
             virtual void      _SetIsInVideoMemory(bool isInVideoMemory);
+
+            virtual bool      _GetContours(bvector<bvector<DPoint3d>>& contours) override
+            {
+                return false;
+            }
           
     public:             
             
@@ -1552,6 +1575,8 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, Transform reprojectionTransform);
 
             ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, const IScalableMesh* scalableMeshP);
+
+            ScalableMeshCachedDisplayNode(ScalableMeshCachedDisplayNode<POINT>& otherPtr);
 
             virtual ~ScalableMeshCachedDisplayNode();
 
@@ -1609,8 +1634,41 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             typedef RefCountedPtr<ScalableMeshCachedDisplayNode<POINT>> Ptr;
     };
 
+    struct ContoursParameters
+    {
+        float majorContourSpacing;
+        float minorContourSpacing;
+    };
 
-       
+    template<class POINT> class ScalableMeshContourCachedDisplayNode : public virtual ScalableMeshCachedDisplayNode<POINT>
+    {
+
+    private:
+        
+        bvector<bvector<DPoint3d>> m_contours;
+        ContoursParameters m_params;
+        std::atomic<bool> m_contoursReady;
+
+        ScalableMeshContourCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
+        ScalableMeshContourCachedDisplayNode(IScalableMeshCachedDisplayNode* nodePtr);
+
+    protected:
+        virtual bool      _GetContours(bvector<bvector<DPoint3d>>& contours) override;
+
+    public:
+
+        void ComputeContours(ContoursParameters params);
+
+        static ScalableMeshContourCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
+        {
+            return new ScalableMeshContourCachedDisplayNode<POINT>(nodePtr);
+        }
+
+        static ScalableMeshContourCachedDisplayNode<POINT>* Create(IScalableMeshCachedDisplayNode* nodePtr)
+        {
+            return new ScalableMeshContourCachedDisplayNode<POINT>(nodePtr);
+        }
+    };
 
 
 template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit, public ScalableMeshNode<POINT>

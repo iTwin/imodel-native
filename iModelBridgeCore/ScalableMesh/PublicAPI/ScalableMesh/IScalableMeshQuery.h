@@ -647,6 +647,8 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         virtual void      _SetIsInVideoMemory(bool isInVideoMemory) = 0;
 
+        virtual bool      _GetContours(bvector<bvector<DPoint3d>>& contours) = 0;
+
     public : 
 
 
@@ -657,6 +659,8 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
         BENTLEY_SM_EXPORT StatusInt GetDisplayClipVectors(bvector<CLIP_VECTOR_NAMESPACE::ClipVectorPtr>& clipVectors) const;
 
         BENTLEY_SM_EXPORT void      SetIsInVideoMemory(bool isInVideoMemory);
+
+        BENTLEY_SM_EXPORT bool      GetContours(bvector<bvector<DPoint3d>>& contours);
 
         BENTLEY_SM_EXPORT static IScalableMeshCachedDisplayNodePtr Create(uint64_t nodeId, IScalableMesh* smP);
     };
@@ -776,6 +780,10 @@ struct IScalableMeshViewDependentMeshQueryParams : virtual public IScalableMeshM
         virtual StatusInt       _SetStopQueryCallback(StopQueryCallbackFP stopQueryCallbackFP) = 0;
         
         virtual void            _SetViewClipVector(CLIP_VECTOR_NAMESPACE::ClipVectorPtr& viewClipVector) = 0;
+
+        virtual bool            _ShouldLoadContours() const = 0;
+
+        virtual void            _SetLoadContours(bool loadContours) = 0;
                                                   
     public : 
 
@@ -793,6 +801,8 @@ struct IScalableMeshViewDependentMeshQueryParams : virtual public IScalableMeshM
         const CLIP_VECTOR_NAMESPACE::ClipVectorPtr GetViewClipVector() const;
 
         bool                IsProgressiveDisplay() const;
+
+        bool                ShouldLoadContours() const;
     
         
         BENTLEY_SM_EXPORT void      SetViewBox(const DPoint3d viewBox[]);        
@@ -809,7 +819,9 @@ struct IScalableMeshViewDependentMeshQueryParams : virtual public IScalableMeshM
 
         BENTLEY_SM_EXPORT void      SetViewClipVector(CLIP_VECTOR_NAMESPACE::ClipVectorPtr& viewClipVector);
         
-        BENTLEY_SM_EXPORT static    IScalableMeshViewDependentMeshQueryParamsPtr CreateParams();       
+        BENTLEY_SM_EXPORT static    IScalableMeshViewDependentMeshQueryParamsPtr CreateParams();
+
+        BENTLEY_SM_EXPORT void      SetLoadContours(bool loadContours);
     };
 
 

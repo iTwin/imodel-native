@@ -21,6 +21,65 @@ using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 
+void StitchSegmentsAtJunctions(bvector<bvector<DPoint3d>>& polylines, const bvector<DSegment3d>& segments)
+    {
+    bmap<DPoint3d, bvector<size_t>, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
+
+    for (auto& seg : segments)
+        {
+        bvector<size_t> vecPt;
+        vecPt.push_back(&seg - segments.data());
+        if (mapOfPoints.count(seg.point[0]) == 0)
+            mapOfPoints.insert(make_bpair(seg.point[0], vecPt));
+        else
+            mapOfPoints[seg.point[0]].push_back(&seg - segments.data());
+        if (mapOfPoints.count(seg.point[1]) == 0)
+            mapOfPoints.insert(make_bpair(seg.point[1], vecPt));
+        else
+            mapOfPoints[seg.point[1]].push_back(&seg - segments.data());
+
+        bvector<DPoint3d> vec;
+        vec.push_back(seg.point[0]);
+        vec.push_back(seg.point[1]);
+        polylines.push_back(vec);
+        }
+
+    std::vector<int> segUpdatedValues(segments.size(), -1);
+
+    for (auto it = mapOfPoints.begin(); it != mapOfPoints.end(); it++)
+        {
+        if (it->second.size() == 2)
+            {
+            size_t minVal = std::min(it->second[0], it->second[1]);
+            size_t maxVal = std::max(it->second[0], it->second[1]);
+            size_t updatedMinVal = segUpdatedValues[minVal] != -1 ? (int)segUpdatedValues[minVal] : minVal;
+            size_t updatedMaxVal = segUpdatedValues[maxVal] != -1 ? (int)segUpdatedValues[maxVal] : maxVal;
+            while (segUpdatedValues[updatedMinVal] != -1)
+                updatedMinVal = (int)segUpdatedValues[updatedMinVal];
+            while (segUpdatedValues[updatedMaxVal] != -1)
+                updatedMaxVal = (int)segUpdatedValues[updatedMaxVal];
+
+            if (updatedMinVal == updatedMaxVal)
+                continue;
+            DPoint3d firstVal = it->first;
+            assert(polylines[updatedMinVal].front().IsEqual(it->first) || polylines[updatedMinVal].back().IsEqual(it->first));
+            assert(polylines[updatedMaxVal].front().IsEqual(it->first) || polylines[updatedMaxVal].back().IsEqual(it->first));
+
+            size_t posToAppendSeg = polylines[updatedMinVal].front() == it->first ? 0 : polylines[updatedMinVal].size();
+            bool reverseSeg = (posToAppendSeg == 0 && !polylines[updatedMaxVal].back().IsEqual(it->first)) || (posToAppendSeg != 0 && !polylines[updatedMaxVal].front().IsEqual(it->first));
+
+
+            if(reverseSeg)
+                polylines[updatedMinVal].insert(polylines[updatedMinVal].begin() + posToAppendSeg, polylines[updatedMaxVal].rbegin(), polylines[updatedMaxVal].rend());
+            else
+                polylines[updatedMinVal].insert(polylines[updatedMinVal].begin() + posToAppendSeg, polylines[updatedMaxVal].begin(), polylines[updatedMaxVal].end());
+            segUpdatedValues[updatedMaxVal] = (int)updatedMinVal;
+            polylines[updatedMaxVal].clear();
+            }
+        }
+    std::remove_if(polylines.begin(), polylines.end(), [](const bvector<DPoint3d>& elem) {return elem.empty(); });
+    }
+
 /*----------------------------------------------------------------------+
 | Include standard library header files                                 |
 +----------------------------------------------------------------------*/
