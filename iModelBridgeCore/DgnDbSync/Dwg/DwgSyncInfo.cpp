@@ -1238,14 +1238,7 @@ DwgSyncInfo::DwgObjectProvenance::DwgObjectProvenance (DwgDbObjectCR obj, DwgSyn
         {
         // the primary hash is from the object data itself.
         obj.DxfOut (filer);
-        // Aec objects do not dxfOut actual data - add range for now - TFS 853852:
-        if (obj.GetDwgClassName().StartsWithI(L"AecDb"))
-            {
-            DwgDbEntityCP   ent = DwgDbEntity::Cast(&obj);
-            DRange3d        range;
-            if (nullptr != ent && ent->GetRange(range) == DwgDbStatus::Success)
-                m_hasher.Add(&range, sizeof(range));
-            }
+        this->AppendComplexObjectHash (filer, obj);
         m_primaryHash = m_hasher.GetHashVal ();
 
         if (hash2nd)
@@ -1267,6 +1260,67 @@ DwgSyncInfo::DwgObjectProvenance::DwgObjectProvenance (DwgDbObjectCR obj, DwgSyn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DwgSyncInfo::DwgObjectProvenance::AppendComplexObjectHash (DwgObjectHash::HashFiler& filer, DwgDbObjectCR obj)
+    {
+    DwgDbEntityCP   entity = DwgDbEntity::Cast(&obj);
+    if (nullptr == entity)
+        return;
+
+    // handle complex objects which require additional primary hash:
+    if (obj.GetDwgClassName().StartsWithI(L"AecDb"))
+        {
+        // Aec objects do not dxfOut actual data - add range for now - TFS 853852:
+        DRange3d    range;
+        if (entity->GetRange(range) == DwgDbStatus::Success)
+            m_hasher.Add (&range, sizeof(range));
+        return;
+        }
+
+    if (obj.IsAProxy())
+        {
+        // a proxy entity does not file out DXF group code 310 - need more data, TFS 933725.
+        DwgDbObjectPArray   proxy;
+        if (DwgDbStatus::Success == entity->Explode(proxy))
+            {
+            for (auto ent : proxy)
+                {
+                ent->DxfOut (filer);
+                // operator delete is hidden by Teigha!
+                ::free (ent);
+                }
+            }
+        return;
+        }
+
+    // 2D/3D polyline and polyface/polygon mesh entities have vertex entities to follow.
+    DwgDb2dPolylineCP   pline2d = nullptr;
+    DwgDb3dPolylineCP   pline3d = nullptr;
+    DwgDbPolyFaceMeshCP pfmesh = nullptr;
+    DwgDbPolygonMeshCP  mesh = nullptr;
+    DwgDbObjectIteratorPtr  vertexIter;
+    if ((pline2d = DwgDb2dPolyline::Cast(entity)) != nullptr)
+        vertexIter = pline2d->GetVertexIterator ();
+    else if ((pline3d = DwgDb3dPolyline::Cast(entity)) != nullptr)
+        vertexIter = pline3d->GetVertexIterator ();
+    else if ((pfmesh = DwgDbPolyFaceMesh::Cast(entity)) != nullptr)
+        vertexIter = pfmesh->GetVertexIterator ();
+    else if ((mesh = DwgDbPolygonMesh::Cast(entity)) != nullptr)
+        vertexIter = mesh->GetVertexIterator ();
+
+    if (vertexIter.IsValid() && vertexIter->IsValid())
+        {
+        for (vertexIter->Start(); !vertexIter->Done(); vertexIter->Next())
+            {
+            DwgDbEntityPtr vertex(vertexIter->GetObjectId(), DwgDbOpenMode::ForRead);
+            if (vertex.OpenStatus() == DwgDbStatus::Success)
+                vertex->DxfOut (filer);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/16
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgSyncInfo::DwgObjectProvenance::CreateBlockHash (DwgDbObjectIdCR blockId)
     {
     DwgDbBlockTableRecordPtr    block(blockId, DwgDbOpenMode::ForRead);
@@ -1274,10 +1328,13 @@ BentleyStatus   DwgSyncInfo::DwgObjectProvenance::CreateBlockHash (DwgDbObjectId
         return  BSIERROR;
 
     // this is a performance dragger but unfortunately we cannot use existing hashed blocks as they won't match!
-    DwgDbBlockChildIterator     iter = block->GetBlockChildIterator ();
-    for (iter.Start(); !iter.Done(); iter.Step())
+    DwgDbBlockChildIteratorPtr  iter = block->GetBlockChildIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
+        return  BSIERROR;
+
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbEntityPtr  entity(iter.GetEntityId(), DwgDbOpenMode::ForRead);
+        DwgDbEntityPtr  entity(iter->GetEntityId(), DwgDbOpenMode::ForRead);
         if (entity.IsNull())
             continue;
 

@@ -293,15 +293,15 @@ BentleyStatus   AttributeFactory::ProcessConstantAttributes (DwgDbObjectIdCR blo
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   AttributeFactory::CreateElements (DwgDbBlockReferenceCR blockReference)
     {
-    DwgDbObjectIterator     iter = blockReference.GetAttributeIterator ();
-    if (!iter.IsValid())
+    DwgDbObjectIteratorPtr  iter = blockReference.GetAttributeIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSISUCCESS;
 
     DwgDbObjectId   blockId = blockReference.GetBlockTableRecordId ();
     bool            hasEcInstance = BSISUCCESS == this->CreateECInstance(blockId);
 
     // create DgnElements and collect ElementAspects from variable attributes
-    BentleyStatus   status = this->ProcessVariableAttributes (iter);
+    BentleyStatus   status = this->ProcessVariableAttributes (*iter.get());
 
     // if a block has no attrdef at all, which would have resulted in no ECInstance created, we are done:
     if (!hasEcInstance)
@@ -402,17 +402,17 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
             status = attrdefClass->CreatePrimitiveProperty (idProp, "Element", PRIMITIVETYPE_Long);
             }
 
-        DwgDbBlockChildIterator     entityIter = block.GetBlockChildIterator ();
-        if (!entityIter.IsValid())
+        DwgDbBlockChildIteratorPtr  entityIter = block.GetBlockChildIterator ();
+        if (!entityIter.IsValid() || !entityIter->IsValid())
             return  ECObjectsStatus::Error;
 
         ConstantBlockAttrdefs       constantAttrdefs(block.GetObjectId());
         ECPropertyNameSet           uniqueNames;
 
         // get all attrdefs in the block and create a string property for each and everyone of them:
-        for (entityIter.Start(); !entityIter.Done(); entityIter.Step())
+        for (entityIter->Start(); !entityIter->Done(); entityIter->Step())
             {
-            DwgDbAttributeDefinitionPtr attrdef(entityIter.GetEntityId(), DwgDbOpenMode::ForRead);
+            DwgDbAttributeDefinitionPtr attrdef(entityIter->GetEntityId(), DwgDbOpenMode::ForRead);
             if (attrdef.IsNull())
                 continue;
 

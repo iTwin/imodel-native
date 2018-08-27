@@ -864,8 +864,8 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
     if (materialTable.IsNull())
         return  BSIERROR;
 
-    DwgDbDictionaryIterator iter = materialTable->GetIterator ();
-    if (!iter.IsValid())
+    DwgDbDictionaryIteratorPtr iter = materialTable->GetIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
     
     this->SetStepName (ProgressMessage::STEP_IMPORTING_MATERIALS());
@@ -877,16 +877,16 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
     Utf8PrintfString  paletteName ("Palette-%ls", this->GetRootDwgFileName().GetFileNameAndExtension().c_str());
 
     uint32_t    count = 0;
-    for (; !iter.Done(); iter.Next())
+    for (; !iter->Done(); iter->Next())
         {
         // skip ByLayer and ByBlock materials
-        if (iter.GetObjectId() == materialByLayer || iter.GetObjectId() == materialByBlock)
+        if (iter->GetObjectId() == materialByLayer || iter->GetObjectId() == materialByBlock)
             continue;
 
-        DwgDbMaterialPtr    material(iter.GetObjectId(), DwgDbOpenMode::ForRead);
+        DwgDbMaterialPtr    material(iter->GetObjectId(), DwgDbOpenMode::ForRead);
         if (material.IsNull())
             {
-            this->ReportError (IssueCategory::Unknown(), Issue::CantOpenObject(), Utf8PrintfString("material ID=%ld", iter.GetObjectId().ToAscii()).c_str());
+            this->ReportError (IssueCategory::Unknown(), Issue::CantOpenObject(), Utf8PrintfString("material ID=%ld", iter->GetObjectId().ToAscii()).c_str());
             continue;
             }
 

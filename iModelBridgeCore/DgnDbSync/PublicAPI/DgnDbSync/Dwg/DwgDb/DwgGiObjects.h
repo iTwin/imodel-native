@@ -403,7 +403,7 @@ public:
         Sphere              = 4,
         };
 
-    enum TileBy         // == T_Super:: Tiling
+    enum TileBy         // == T_Super::Tiling
         {
         InheritTiling       = 0,
         Tile                = 1,

@@ -3164,6 +3164,9 @@ void    CleanUpParasolid (PK_BODY_create_topology_2_r_t& results, bool deleteGeo
 
         if (PK_ERROR_no_errors != pkError)
             DIAGNOSTICPRINTF ("Failled deleting %lld Parasolid entities. [Error=%d]!\n", entities.size(), pkError);
+
+        // set the body tag to null so the caller will not try to delete it again:
+        results.body = PK_ENTITY_null;
         }
 
     this->StopDebugReport ();
