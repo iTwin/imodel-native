@@ -135,7 +135,7 @@ private:
                 }
 
             try
-                {
+                {   
                 WString wktWithoutFlavor;
                 
                 ISMStore::WktFlavor fileWktFlavor;
