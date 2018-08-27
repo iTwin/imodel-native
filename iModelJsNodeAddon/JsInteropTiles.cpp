@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "IModelJsNative.h"
-#include <DgnPlatform/ElementTileTree.h>
+#include <DgnPlatform/TileTree.h>
 
 using namespace IModelJsNative;
 namespace Render = Dgn::Render;
@@ -297,7 +297,7 @@ JsSystem s_system;
 //=======================================================================================
 struct TileTreeAppData : DgnModel::AppData
 {
-    ElementTileTree::RootPtr    m_root;
+    TileTree::RootPtr    m_root;
 
     void _OnUnload(DgnModelR model) override
         {
@@ -313,11 +313,11 @@ struct TileTreeAppData : DgnModel::AppData
 
     explicit TileTreeAppData(GeometricModelR model)
         {
-        m_root = ElementTileTree::Root::Create(model, s_system);
+        m_root = TileTree::Root::Create(model, s_system);
         BeAssert(m_root.IsValid());
         }
 
-    static ElementTileTree::RootPtr FindTileTree(GeometricModelR model)
+    static TileTree::RootPtr FindTileTree(GeometricModelR model)
         {
         static Key s_key;
         auto appData = model.FindOrAddAppData(s_key, [&]() { return new TileTreeAppData(model); });
@@ -351,7 +351,7 @@ DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR id
     {
     TileTree::RootP root = nullptr;
     auto status = findTileTree(root, idStr, db);
-    if (DgnDbStatus::Success == status && !root->_ToJson(result))
+    if (DgnDbStatus::Success == status && !root->ToJson(result))
         status = DgnDbStatus::NotFound;
 
     if (DgnDbStatus::Success != status)
@@ -362,12 +362,10 @@ DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR id
     if (rootTile.IsNull())
         return DgnDbStatus::NotFound;
 
-    TileTree::MissingNodes missing;
-    missing.Insert(*rootTile, true);
-    root->RequestTiles(missing);
+    root->RequestTile(*rootTile);
     root->WaitForAllLoads();
 
-    if (!rootTile->_ToJson(result["rootTile"]))
+    if (!rootTile->ToJson(result["rootTile"]))
         return DgnDbStatus::NotFound;
 
     return DgnDbStatus::Success;
@@ -383,26 +381,24 @@ DgnDbStatus JsInterop::GetTileChildren(JsonValueR result, DgnDbR db, Utf8StringC
     if (DgnDbStatus::Success != status)
         return status;
 
-    auto parent = root->_FindTileById(parentIdStr.c_str());
+    auto parent = root->FindTileById(parentIdStr.c_str());
     if (parent.IsNull())
         return DgnDbStatus::NotFound;
 
     result = Json::arrayValue;
-    auto children = parent->_GetChildren(true);
+    auto children = parent->GetChildren(true);
     if (nullptr == children)
         return DgnDbStatus::Success;
 
-    TileTree::MissingNodes missing;
     for (auto const& child : *children)
-        missing.Insert(*child, true);
+        root->RequestTile(*child);
 
-    root->RequestTiles(missing);
     root->WaitForAllLoads();
 
     for (auto const& child : *children)
         {
         Json::Value childJson;
-        if (child->_ToJson(childJson))
+        if (child->ToJson(childJson))
             result.append(childJson);
         }
 
@@ -419,11 +415,11 @@ DgnDbStatus JsInterop::GetTileContent(JsonValueR result, DgnDbR db, Utf8StringCR
     if (DgnDbStatus::Success != status)
         return status;
 
-    auto tile = root->_FindTileById(tileId.c_str());
+    auto tile = root->FindTileById(tileId.c_str());
     if (tile.IsNull())
         return DgnDbStatus::NotFound;
 
-    ByteStream geometry = root->GetTileDataFromCache(tile->_GetTileCacheKey());
+    ByteStream geometry = root->GetTileDataFromCache(tile->GetTileCacheKey());
     if (geometry.empty())
         return DgnDbStatus::NotFound;
 
