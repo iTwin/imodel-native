@@ -8,7 +8,7 @@
 
 #include <BeHttp/BeUri.h>
 #include <curl/curl.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <regex>
 
 USING_NAMESPACE_BENTLEY_HTTP
@@ -66,7 +66,7 @@ BeUri::BeUri(Utf8StringCR uri)
 
     Utf8String portComponent = GetUriComponent(CAPTURE_GROUP_PORT, schemeAndAuthority);
     if (!portComponent.empty())
-        m_port = atoi(portComponent.c_str());
+        m_port = std::atoi(portComponent.c_str());
 
     m_scheme = GetUriComponent(CAPTURE_GROUP_SCHEME, schemeAndAuthority);
     m_userInfo = GetUriComponent(CAPTURE_GROUP_USER_INFO, schemeAndAuthority);
