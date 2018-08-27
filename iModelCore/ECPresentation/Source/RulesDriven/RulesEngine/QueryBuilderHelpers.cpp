@@ -387,7 +387,7 @@ void QueryBuilderHelpers::ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& 
                 orderByClause.append(enumeration->GetSchema().GetName()).append("', '");
                 orderByClause.append(enumeration->GetName()).append("', ");
                 }
-            orderByClause.append(ovr.GetSortingField()->GetName());
+            orderByClause.append(QueryHelpers::Wrap(ovr.GetSortingField()->GetName()));
             if (nullptr != enumeration)
                 orderByClause.append(")");
             sortingFieldNames.push_back(ovr.GetSortingField()->GetName().c_str());

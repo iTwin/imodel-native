@@ -728,7 +728,7 @@ TEST_F(DefaultECPresentationSerializerTests, DisplayLabelFieldSerialization)
             "Expand": false,
             "Priority": 1000
             },
-        "Name": "DisplayLabel",
+        "Name": "/DisplayLabel/",
         "DisplayLabel": "Label",
         "Type": {
             "TypeName": "string",
@@ -1005,7 +1005,7 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentFieldSerialization)
             "ValueFormat": "Struct",
             "Members": [
                 {
-                "Name": "DisplayLabel",
+                "Name": "/DisplayLabel/",
                 "Label": "NestedLabel",
                 "Type": {
                     "TypeName": "string",
@@ -1059,7 +1059,7 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentFieldSerialization)
                 "Expand": false,
                 "Priority": 1000
                 },
-            "Name": "DisplayLabel",
+            "Name": "/DisplayLabel/",
             "DisplayLabel": "NestedLabel",
             "Type": {
                 "TypeName": "string",
@@ -1139,7 +1139,7 @@ TEST_F(DefaultECPresentationSerializerTests, DisplayLabelFieldSerializationHasCo
             "Expand": false,
             "Priority": 1000
             },
-        "Name": "DisplayLabel",
+        "Name": "/DisplayLabel/",
         "DisplayLabel": "Label",
         "Type": {
             "TypeName": "string",
@@ -1370,7 +1370,7 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentTypeDescriptionSeriali
         "ValueFormat": "Struct",
         "Members": [
             {
-            "Name": "DisplayLabel",
+            "Name": "/DisplayLabel/",
             "Label": "NestedLabel",
             "Type": {
                 "TypeName": "string",
@@ -2119,7 +2119,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
                 "Expand": false,
                 "Priority": 1000
                 },
-            "Name": "DisplayLabel",
+            "Name": "/DisplayLabel/",
             "DisplayLabel": "Label",
             "Type": {
                 "TypeName": "string",

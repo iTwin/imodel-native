@@ -10,11 +10,3 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 
-RulesDrivenECPresentationManagerContentTests.MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenSomeValuesAreNull
-
-    # TFS#932706
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/20/2018
-    # c:\build\src\mds06t\ECPresentation\Tests\Published\RulesEngine\PresentationManagerContentTests.cpp(5871): error:       Expected: varies_string.c_str()
-    # Which is: "*** Varies ***"
-    # To be equal to: record->GetDisplayValues()["MyClassA_MyClassB_ArrayProperty"].GetString()
-    # Which is: NULL

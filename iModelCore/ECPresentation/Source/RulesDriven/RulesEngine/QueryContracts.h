@@ -471,7 +471,6 @@ struct ContentQueryContract : PresentationQueryContract
 public:
     ECPRESENTATION_EXPORT static Utf8CP ContractIdFieldName;
     ECPRESENTATION_EXPORT static Utf8CP ECInstanceKeysFieldName;
-    ECPRESENTATION_EXPORT static Utf8CP DisplayLabelFieldName;
 
 private:
     PresentationQueryContractFieldPtr m_ecInstanceKeysField;
@@ -484,7 +483,7 @@ private:
 
 private:
     ECPRESENTATION_EXPORT ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const&, bvector<RelatedClass> const&, bool);
-    PresentationQueryContractFunctionField const& GetDisplayLabelField(ContentDescriptor::DisplayLabelField const* field) const;
+    PresentationQueryContractFunctionField const& GetDisplayLabelField(ContentDescriptor::DisplayLabelField const& field) const;
     PresentationQueryContractFieldCPtr GetCalculatedPropertyField(Utf8String const&, Utf8String const&, bool) const;
     PresentationQueryContractFieldCPtr CreateInstanceKeyField(Utf8CP fieldName, Utf8CP alias, ECClassId defaultClassId, bool isMerging) const;
     PresentationQueryContractFieldCPtr CreateInstanceKeyField(ContentDescriptor::ECInstanceKeyField const&, bool isMerging) const;

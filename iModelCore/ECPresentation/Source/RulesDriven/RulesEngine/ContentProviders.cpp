@@ -370,6 +370,10 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
                 else if (MergeContent(contentValues, contentDisplayValues, instanceValues, GetContext().GetLocalizationProvider(), GetContext().GetLocale()))
                     {
                     // if detected different values during merge, stop
+                    if (item.GetValues().HasMember(fieldName))
+                        item.GetValues()[fieldName].Swap(contentValues);
+                    if (item.GetDisplayValues().HasMember(fieldName))
+                        item.GetDisplayValues()[fieldName].Swap(contentDisplayValues);
                     item.GetMergedFieldNames().push_back(fieldName);
                     break;
                     }
