@@ -47,7 +47,7 @@ def pullAllNugets(path, pathToNugetPuller, name):
     versions = nugetpkg.SearchVersionsFromServer(address, name)
     for v in versions:
         # ignore stale versions until they have been deleted fromthe nuget server
-        if LooseVersion(v) < LooseVersion("2018.8.24.3"):
+        if LooseVersion(v) < LooseVersion("2018.8.25.1"):
             continue
         # Dowload and save all versions
         localDir = path

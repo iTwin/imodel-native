@@ -488,8 +488,8 @@ TEST_F(IModelCompatibilityTestFixture, EC32Units)
             testDb.AssertPhenomenon("Units", "TORQUE", "Torque", nullptr, "FORCE*LENGTH*ANGLE(-1)");
             testDb.AssertPhenomenon("Units", "LUMINOSITY", "Luminosity", nullptr, "LUMINOSITY");
 
-            testDb.AssertUnit("TestSchema", "MySquareM", "Square Meter", nullptr, "M*M", 1.0, nullptr, nullptr, QualifiedName("EC32Units", "MyMetric"), QualifiedName("EC32Units", "MyArea"), false, QualifiedName());
-            testDb.AssertUnit("TestSchema", "MySquareFt", "Square Feet", nullptr, "Ft*Ft", 10.0, nullptr, 0.4, QualifiedName("EC32Units", "MyImperial"), QualifiedName("EC32Units", "MyArea"), false, QualifiedName());
+            testDb.AssertUnit("TestSchema", "MySquareM", "Square Meter", nullptr, "M*M", 1.0, nullptr, nullptr, QualifiedName("TestSchema", "MyMetric"), QualifiedName("TestSchema", "MyArea"), false, QualifiedName());
+            testDb.AssertUnit("TestSchema", "MySquareFt", "Square Feet", nullptr, "Ft*Ft", 10.0, nullptr, 0.4, QualifiedName("TestSchema", "MyImperial"), QualifiedName("TestSchema", "MyArea"), false, QualifiedName());
             testDb.AssertUnit("Units", "COULOMB", "C", nullptr, "A*S", nullptr, nullptr, nullptr, QualifiedName("Units", "SI"), QualifiedName("Units", "ELECTRIC_CHARGE"), false, QualifiedName());
             testDb.AssertUnit("Units", "PI", "Pi", nullptr, "ONE", 3.1415926535897932384626433832795, nullptr, nullptr, QualifiedName(), QualifiedName("Units", "LENGTH_RATIO"), true, QualifiedName());
             testDb.AssertUnit("Units", "QUARTER_PI", "Pi/4", nullptr, "PI", 1.0, 4.0, nullptr, QualifiedName(), QualifiedName("Units", "LENGTH_RATIO"), true, QualifiedName());
@@ -704,38 +704,13 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaImport_Koqs)
                         <KindOfQuantity typeName="TEMPERATURE" displayLabel="Temperature" persistenceUnit="u:K" presentationUnits="f:DefaultRealU(4)[u:CELSIUS];f:DefaultRealU(4)[u:FAHRENHEIT];f:DefaultRealU(4)[u:K]" relativeError="0.01"/>
                      </ECSchema>)xml"));
 
-            if (!testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
-                {
-                // The schema could even be deserialized, but the referenced Units and Formats schemas are not available unless,
-                // they have been previously imported into an 4.0.0.2 file.
-                ASSERT_TRUE(deserializationCtx == nullptr) << testDb.GetDescription();
-                continue;
-                }
-
-            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
-            const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
-                {
-                    case ProfileState::Age::Older:
-                    case ProfileState::Age::UpToDate:
-                    {
-                    FAIL() << "Shouldn't get here, because the test schema cannot be deserialized for a 4.0.0.1 file because the units/formats schemas are not there | " << testDb.GetDescription();
-                    break;
-                    }
-
-                    case ProfileState::Age::Newer:
-                    {
-                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
-                    break;
-                    }
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
-                }
+            // The schema could even be deserialized, but the referenced Units and Formats schemas are not available (neither on disk
+            // because this is the EC3.1 code stream, nor in the file).
+            ASSERT_TRUE(deserializationCtx == nullptr) << testDb.GetDescription();
+            continue;
             }
         }
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      08/18
@@ -1206,7 +1181,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Enums)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
     {
-    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32ENUMS_SCHEMAUPGRADE))
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC32KOQS_SCHEMAUPGRADE))
         {
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
             {
