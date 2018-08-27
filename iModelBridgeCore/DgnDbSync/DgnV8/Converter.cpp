@@ -1644,6 +1644,8 @@ void Converter::OnUpdateComplete()
     // *** WIP_UPDATER - update thumbnails for views with modified models
     if (m_elementsConverted != 0)
         GenerateThumbnails();
+    if (m_modelsRequiringRealityTiles.size() != 0)
+        GenerateRealityModelTilesets();
 
     // Update the project extents ... but only if it gets bigger.
     auto rtreeBox = m_dgndb->GeoLocation().QueryRTreeExtents();
@@ -2650,7 +2652,9 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
         {
         _GetChangeDetector()._OnElementSeen(*this, csearch.GetExistingElementId());
         conversionResults.m_mapping = csearch.m_v8ElementMapping;
-        if (v8eh.GetElementType() != DgnV8Api::RASTER_FRAME_ELM)
+        if (v8eh.GetElementType() != DgnV8Api::RASTER_FRAME_ELM &&
+            !(v8eh.GetElementType() == DgnV8Api::EXTENDED_ELM &&  // Quickly reject non-106
+             DgnV8Api::ElementHandlerManager::GetHandlerId(v8eh) == DgnV8Api::PointCloudHandler::GetElemHandlerId()))
             UpdateResults(conversionResults, csearch.GetExistingElementId());
         }
     else
@@ -2671,29 +2675,27 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Keith.Bentley                   02 / 15
 //---------------------------------------------------------------------------------------
-void SpatialConverterBase::DoConvertSpatialElement(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement)
+BentleyStatus SpatialConverterBase::DoConvertSpatialElement(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement)
     {
     if (WasAborted())
-        return;
+        return BSISUCCESS;
 
     ReportProgress();
 
     // Convert raster elements
     if (v8eh.GetElementType() == DgnV8Api::RASTER_FRAME_ELM)
         {
-        _ConvertRasterElement(v8eh, v8mm, true);
-        return;
+        return _ConvertRasterElement(v8eh, v8mm, true, isNewElement);
         }
 
     // Convert point cloud elements
     if (v8eh.GetElementType() == DgnV8Api::EXTENDED_ELM &&  // Quickly reject non-106
         DgnV8Api::ElementHandlerManager::GetHandlerId(v8eh) == DgnV8Api::PointCloudHandler::GetElemHandlerId())
         {
-        _ConvertPointCloudElement(v8eh, v8mm, true);
-        return;
+        return _ConvertPointCloudElement(v8eh, v8mm, true, isNewElement);
         }
 
-    ConvertElement(results, v8eh, v8mm, GetSyncInfo().GetCategory(v8eh, v8mm), false, isNewElement);
+    return ConvertElement(results, v8eh, v8mm, GetSyncInfo().GetCategory(v8eh, v8mm), false, isNewElement);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2751,12 +2753,14 @@ void SpatialConverterBase::_ConvertSpatialElement(ElementConversionResults& resu
 //TODO        return;
 
     IChangeDetector::SearchResults changeInfo;
+    BentleyStatus stat = SUCCESS;
     if (GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, v8mm))
         {
-        DoConvertSpatialElement(results, v8eh, v8mm, (IChangeDetector::ChangeType::Insert == changeInfo.m_changeType));
+        stat = DoConvertSpatialElement(results, v8eh, v8mm, (IChangeDetector::ChangeType::Insert == changeInfo.m_changeType));
         }
 
-    ProcessConversionResults(results, changeInfo, v8eh, v8mm);
+    if (SUCCESS == stat)
+        ProcessConversionResults(results, changeInfo, v8eh, v8mm);
     }
 
 /*---------------------------------------------------------------------------------**//**

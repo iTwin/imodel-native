@@ -207,6 +207,8 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatform.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatformTools.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ECPresentation.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
 
 
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib

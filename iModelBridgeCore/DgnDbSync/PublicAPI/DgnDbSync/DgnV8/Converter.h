@@ -991,7 +991,7 @@ protected:
     DgnModelId          m_jobDefinitionModelId;
     DgnElementId         m_textStyleNoneId;
     bset<DgnModelId>    m_unchangedModels;
-    bmap<DgnModelId, BeFileName>    m_modelsRequiringRealityTiles;;
+    bmap<DgnModelId, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>>    m_modelsRequiringRealityTiles;;
 
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
@@ -1985,7 +1985,7 @@ public:
     void ClearV8ProgressMeter();
     
     //! Add model requiring reality tiles.
-    void AddModelRequiringRealityTiles(DgnModelId id, BeFileNameCR sourceFile) { m_modelsRequiringRealityTiles.Insert(id, sourceFile); }
+    void AddModelRequiringRealityTiles(DgnModelId id, Utf8StringCR sourceFile, SyncInfo::V8FileSyncInfoId fileId) { m_modelsRequiringRealityTiles.Insert(id, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>(sourceFile, fileId)); }
     //! @}
 
     //! @name Change Monitoring
@@ -2331,19 +2331,19 @@ public:
     //! @name  Converting Elements
     //! @{
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialElement(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const&);
-    DGNDBSYNC_EXPORT void DoConvertSpatialElement(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const& m, bool isNewElement);
+    DGNDBSYNC_EXPORT BentleyStatus DoConvertSpatialElement(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const& m, bool isNewElement);
     void ConvertElementList(DgnV8Api::PersistentElementRefList* list, ResolvedModelMapping const&);
     //! @}
 
     //! @name  Converting Rasters
     //! @{
-    DGNDBSYNC_EXPORT virtual BentleyStatus _ConvertRasterElement(DgnV8EhCR v8eh, ResolvedModelMapping const&, bool copyRaster);
+    DGNDBSYNC_EXPORT virtual BentleyStatus _ConvertRasterElement(DgnV8EhCR v8eh, ResolvedModelMapping const&, bool copyRaster, bool isNewElement);
     DGNDBSYNC_EXPORT virtual bool _RasterMustBeExported(Dgn::ImageFileFormat fileFormat);
     //! @}
 
     //! @name  Converting Point Clouds
     //! @{
-    DGNDBSYNC_EXPORT virtual BentleyStatus _ConvertPointCloudElement(DgnV8EhCR v8eh, ResolvedModelMapping const&, bool copyPointCloud);
+    DGNDBSYNC_EXPORT virtual BentleyStatus _ConvertPointCloudElement(DgnV8EhCR v8eh, ResolvedModelMapping const&, bool copyPointCloud, bool isNewElement);
     void ConvertV8PointCloudViewSettings(SpatialViewControllerR, DgnV8ViewInfoCR viewInfo);
     //! @}
 

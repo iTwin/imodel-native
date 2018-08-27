@@ -1263,8 +1263,6 @@ struct CompareIUtf8Ascii
     bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0; }
     };
 
-static bool s_doFileSaveTimeCheck = true;
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------

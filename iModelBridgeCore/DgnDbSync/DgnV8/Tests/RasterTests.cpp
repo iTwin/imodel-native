@@ -999,5 +999,12 @@ TEST_F(RasterTests, CRUD)
         ASSERT_TRUE(row2.IsEqual(actual2, 0.0001));
         }
 
+    BentleyApi::BeFileName popotons = GetOutputFileName(L"popotons.jpg");
+    time_t mtime;
+    popotons.GetFileTime(nullptr, nullptr, &mtime);
+    mtime += 1000;
+    popotons.SetFileTime(nullptr, &mtime);
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    ASSERT_EQ(1, m_count);
     }
 

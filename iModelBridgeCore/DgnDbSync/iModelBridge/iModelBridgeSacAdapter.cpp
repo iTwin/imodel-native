@@ -336,6 +336,8 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
         CreateIModel(imodelName, briefcaseName, saparams);
         }
 
+    BentleyApi::Http::HttpClient::Uninitialize();
+
     return BSISUCCESS;
     }
 
