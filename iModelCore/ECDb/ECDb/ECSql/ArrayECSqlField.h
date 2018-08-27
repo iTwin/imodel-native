@@ -2,13 +2,13 @@
 |
 |     $Source: ECDb/ECSql/ArrayECSqlField.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECSqlField.h"
-#include <rapidjson/BeRapidJson.h>
+#include <BeRapidJson/BeRapidJson.h>
 #include <Bentley/ByteStream.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
