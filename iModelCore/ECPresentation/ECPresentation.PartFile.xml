@@ -29,7 +29,7 @@
     <Part Name="ECPresentation-Library" BentleyBuildMakeFile="ECPresentation.mke" ApiNumber="B02">
         <SubPart PartName="ECPresentation-PublicAPI" />
         <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="RapidJson" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="BeRapidJson" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/>
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="ECDb" PartFile="ECDb" Repository="ECDb" />

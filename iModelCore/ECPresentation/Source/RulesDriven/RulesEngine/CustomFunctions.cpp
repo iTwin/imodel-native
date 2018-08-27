@@ -1050,7 +1050,7 @@ protected:
         rapidjson::StringBuffer buf;
         rapidjson::Writer<rapidjson::StringBuffer> w(buf);
         json.Accept(w);
-        ctx.SetResultText(buf.GetString(), (int)buf.GetLength(), DbFunction::Context::CopyData::Yes);
+        ctx.SetResultText(buf.GetString(), (int)buf.GetSize(), DbFunction::Context::CopyData::Yes);
         delete &json;
         }
 public:
@@ -1488,7 +1488,7 @@ protected:
         rapidjson::StringBuffer buf;
         rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
         json.Accept(writer);
-        ctx.SetResultText(buf.GetString(), (int)buf.GetLength(), DbFunction::Context::CopyData::Yes);
+        ctx.SetResultText(buf.GetString(), (int)buf.GetSize(), DbFunction::Context::CopyData::Yes);
         }
 public:
     ECInstanceKeysArrayScalar(CustomFunctionsManager const& manager)
