@@ -1033,6 +1033,8 @@ enum class ProjectionCodeValue
     pcvPopularVisualizationPseudoMercator           = BGC::BaseGCS::pcvPopularVisualizationPseudoMercator,
     pcvObliqueMercatorMinnesota                     = BGC::BaseGCS::pcvObliqueMercatorMinnesota,
     pcvLambertMichigan                              = BGC::BaseGCS::pcvLambertMichigan,
+    pcvCzechKrovakModified                          = BGC::BaseGCS::pcvCzechKrovakModified,
+
     };
 
 property ProjectionCodeValue ProjectionCode
@@ -3996,7 +3998,7 @@ property ECL::LightweightClass^     CSBaseClass
                                                   cs_PRJCOD_TRMRKRG,    cs_PRJCOD_WINKL,    cs_PRJCOD_NRTHSRT,  cs_PRJCOD_LMBRTAF,  cs_PRJCOD_HOM1UV,
                                                   cs_PRJCOD_HOM1XY,     cs_PRJCOD_HOM2UV,   cs_PRJCOD_HOM2XY,   cs_PRJCOD_RSKEW,    cs_PRJCOD_RSKEWC,
                                                   cs_PRJCOD_RSKEWO,     cs_PRJCOD_UTMZNBF,  cs_PRJCOD_TRMERBF,  cs_PRJCOD_SYS34_01, cs_PRJCOD_EDCYLE,
-                                                  cs_PRJCOD_PCARREE,    cs_PRJCOD_MRCATPV,  cs_PRJCOD_MNDOTOBL, cs_PRJCOD_LMMICH};
+                                                  cs_PRJCOD_PCARREE,    cs_PRJCOD_MRCATPV,  cs_PRJCOD_MNDOTOBL, cs_PRJCOD_LMMICH,   cs_PRJCOD_KROVAKMOD};
 
             array<String^>^ projectionStrings = { "LL",                 "TM",               "AE",               "MRCAT",
                                                   "AZMED",              "LMTAN",            "PLYCN",            "MODPC",            "AZMEA",
@@ -4013,7 +4015,7 @@ property ECL::LightweightClass^     CSBaseClass
                                                   "TRMRKRG",            "WINKEL",           "NERTH-SRT",        "LMAF",             "HOM1UV",
                                                   "HOM1XY",             "HOM2UV",           "HOM2XY",           "RSKEW",            "RSKEWC",
                                                   "RSKEWO",             "UTMZN-BF",         "TRMER-BF",         "SYSTM34-01",       "EDCYL-E",
-                                                  "PCARREE",            "MRCAT-PV",         "OBL-MNDOT",        "LM-MICH" };
+                                                  "PCARREE",            "MRCAT-PV",         "OBL-MNDOT",        "LM-MICH",          "KROVAKMOD" };
 
             ecClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
 
@@ -5402,6 +5404,7 @@ ECI::ECInstanceList^   GetCoordinateSystemProperties (BaseGCS^ coordSys)
             break;
 
         case cs_PRJCOD_KROVAK:  // without 1995 correction
+        case cs_PRJCOD_KROVAKMOD:  // with Czech Modification correction
         case cs_PRJCOD_KROVK1:  // Krovk1 is obsolete, should not be encountered.
         case cs_PRJCOD_KRVK95:  // with 1995 correction
         case cs_PRJCOD_KRVK951: // Krvk951 is obsolete, should not be encountered.

@@ -668,6 +668,7 @@ enum ProjectionCodeValue
     pcvPlateCarree                                  = 68,
     pcvPopularVisualizationPseudoMercator           = 69,
     pcvLambertMichigan                              = 70,
+    pcvCzechKrovakModified                          = 71,
     pcvHotineObliqueMercator1UV                     = (pcvHotineObliqueMercator * 256) + 1,
     pcvHotineObliqueMercator1XY                     = (pcvHotineObliqueMercator * 256) + 2,
     pcvHotineObliqueMercator2UV                     = (pcvHotineObliqueMercator * 256) + 3,
