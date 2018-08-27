@@ -273,17 +273,17 @@ public:
 
     //! Get the array of children for this Tile.
     //! @param[in] create If false, return nullptr if this tile has children but they are not yet created. Otherwise create them now.
-    DGNPLATFORM_EXPORT ChildTiles const* _GetChildren(bool create) const;
-    TilePtr _CreateChild(TileId) const;
+    DGNPLATFORM_EXPORT ChildTiles const* GetChildren(bool create) const;
+    TilePtr CreateChild(TileId) const;
 
     //! Called when tile data is required.
-    TileLoaderPtr _CreateTileLoader(TileLoadStateSPtr);
+    TileLoaderPtr CreateTileLoader(TileLoadStateSPtr);
 
     //! Get the tile cache key for this Tile.
-    Utf8String _GetTileCacheKey() const;
+    DGNPLATFORM_EXPORT Utf8String GetTileCacheKey() const;
 
     //! Get the maximum size, in pixels, that this Tile should occupy on the screen. If larger, use its children, if possible.
-    double _GetMaximumSize() const;
+    double GetMaximumSize() const;
 
     //! Returns a potentially more tight-fitting range enclosing the visible contents of this tile.
     ElementAlignedBox3d const& GetContentRange() const { return HasContentRange() ? m_metadata.GetContentRange() : m_range; }
@@ -360,7 +360,7 @@ public:
     Dgn::Render::SystemR GetRenderSystem() const {return m_renderSystem;}
 
     //! Get the resource name (file name or URL) of a Tile in this TileTree. By default it concatenates the tile cache key to the rootResource
-    Utf8String ConstructTileResource(TileCR tile) const {return tile._GetTileCacheKey();}
+    Utf8String ConstructTileResource(TileCR tile) const {return tile.GetTileCacheKey();}
 
     bool Is3d() const { return m_is3d; }
     bool Is2d() const { return !Is3d(); }
@@ -372,8 +372,8 @@ public:
 
     template<typename T> auto UnderMutex(T func) const -> decltype(func()) { BeMutexHolder lock(m_cv.GetMutex()); return func(); }
 
-    bool ToJson(Json::Value&) const;
-    TilePtr FindTileById(Utf8CP id);
+    DGNPLATFORM_EXPORT bool ToJson(Json::Value&) const;
+    DGNPLATFORM_EXPORT TilePtr FindTileById(Utf8CP id);
 
     DGNPLATFORM_EXPORT static RootPtr Create(GeometricModelR model, Render::SystemR system);
 };
@@ -411,13 +411,13 @@ protected:
     BentleyStatus DoSaveToDb();
     BentleyStatus DropFromDb(RealityData::CacheR);
 
-    uint64_t _GetCreateTime() const { return m_createTime; }
+    uint64_t GetCreateTime() const { return m_createTime; }
 public:
     bool IsCanceledOrAbandoned() const {return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned();}
     Dgn::Render::SystemR GetRenderSystem() const { return m_tile->GetRenderSystem(); }
 
-    DGNPLATFORM_EXPORT BentleyStatus _SaveToDb();
-    DGNPLATFORM_EXPORT BentleyStatus _ReadFromDb();
+    DGNPLATFORM_EXPORT BentleyStatus SaveToDb();
+    DGNPLATFORM_EXPORT BentleyStatus ReadFromDb();
 
     //! Called to get the data from the original location. The call must be fast and execute any long running operation asynchronously.
     virtual BentleyStatus _GetFromSource() = 0;
@@ -427,10 +427,10 @@ public:
 
     //! Given the time (in unix millis) at which the tile was written to the cache, return true if the cached tile is no longer usable.
     //! If so, it will be deleted from the cache and _LoadTile() will be used to produce a new tile instead.
-    bool _IsExpired(uint64_t cachedTileCreateTime);
+    bool IsExpired(uint64_t cachedTileCreateTime);
 
     //! Return false if m_tileBytes contains invalid data and should be updated from source.
-    bool _IsValidData();
+    bool IsValidData();
 
     struct LoadFlag
         {

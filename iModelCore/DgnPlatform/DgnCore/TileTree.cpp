@@ -983,7 +983,7 @@ TileLoader::TileLoader(TileR tile, TileLoadStateSPtr loads) : m_tile(&tile), m_l
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileLoader::_IsExpired(uint64_t createTimeMillis)
+bool TileLoader::IsExpired(uint64_t createTimeMillis)
     {
     m_cacheCreateTime = createTimeMillis;
     auto& tile = *m_tile;
@@ -994,7 +994,7 @@ bool TileLoader::_IsExpired(uint64_t createTimeMillis)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileLoader::_IsValidData()
+bool TileLoader::IsValidData()
     {
     BeAssert(!m_tileBytes.empty());
     IO::DgnTileReader reader(m_tileBytes, *m_tile->GetRoot().GetModel(), GetRenderSystem());
@@ -1024,7 +1024,7 @@ BentleyStatus TileLoader::Perform()
     TileLoaderPtr me(this);
     auto loadFlag = std::make_shared<LoadFlag>(m_loads);  // Keep track of running requests so we can exit gracefully.
 
-    auto status = _ReadFromDb();
+    auto status = ReadFromDb();
     if (SUCCESS != status)
         status = me->IsCanceledOrAbandoned() ? ERROR : me->_GetFromSource();
 
@@ -1042,7 +1042,7 @@ BentleyStatus TileLoader::Perform()
     tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
 
     // On a successful load, potentially store the tile in the cache.   
-    me->_SaveToDb();
+    me->SaveToDb();
 
     return SUCCESS;
     }
@@ -1050,7 +1050,7 @@ BentleyStatus TileLoader::Perform()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  12/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TileLoader::_ReadFromDb()
+BentleyStatus TileLoader::ReadFromDb()
     {
     auto cache = m_tile->GetRoot().GetCache();
     if (!cache.IsValid())
@@ -1117,7 +1117,7 @@ BentleyStatus TileLoader::DoReadFromDb()
 
         uint64_t rowId = stmt->GetValueInt64(Column::Rowid);
         uint64_t createTime = stmt->GetValueInt64(Column::Created);
-        if (_IsExpired(createTime))
+        if (IsExpired(createTime))
             {
             DropFromDb(*cache);
             return ERROR;
@@ -1154,7 +1154,7 @@ BentleyStatus TileLoader::DoReadFromDb()
                 }
 
             m_tileBytes.SetPos(0);
-            if (!_IsValidData())
+            if (!IsValidData())
                 {
                 m_tileBytes.clear();
                 DropFromDb(*cache);
@@ -1171,7 +1171,7 @@ BentleyStatus TileLoader::DoReadFromDb()
 
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE TileId=?"))
             {
-            stmt->BindInt64(1, _GetCreateTime());
+            stmt->BindInt64(1, GetCreateTime());
             stmt->BindText(2, m_cacheKey, Statement::MakeCopy::No);
             if (BE_SQLITE_DONE != stmt->Step())
                 {
@@ -1238,7 +1238,7 @@ ByteStream Root::GetTileDataFromCache(Utf8StringCR cacheKey) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  12/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TileLoader::_SaveToDb()
+BentleyStatus TileLoader::SaveToDb()
     {
     if (!m_saveToCache)
         return SUCCESS;
@@ -1331,7 +1331,7 @@ BentleyStatus TileLoader::DoSaveToDb()
     BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
 
     stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
-    stmt->BindInt64(2, _GetCreateTime());
+    stmt->BindInt64(2, GetCreateTime());
     if (BE_SQLITE_DONE != stmt->Step())
         {
         BeAssert(false);
@@ -1548,7 +1548,7 @@ BentleyStatus Root::RequestTile(TileR tile)
 
     auto loads = std::make_shared<TileLoadState>(tile);
 
-    TileLoaderPtr loader = tile._CreateTileLoader(loads);
+    TileLoaderPtr loader = tile.CreateTileLoader(loads);
     if (!loader.IsValid())
         return ERROR;   
     
@@ -1719,7 +1719,7 @@ ElementAlignedBox3d Tile::ComputeRange() const
     if (m_range.IsValid())
         return m_range;
 
-    auto const* children = _GetChildren(true); // only returns fully loaded children
+    auto const* children = GetChildren(true); // only returns fully loaded children
     if (nullptr != children)
         {
         for (auto const& child : *children)
@@ -1745,7 +1745,7 @@ TileLoadState::~TileLoadState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::ChildTiles const* Tile::_GetChildren(bool load) const
+Tile::ChildTiles const* Tile::GetChildren(bool load) const
     {
     if (IsLeaf())
         return nullptr;
@@ -1765,7 +1765,7 @@ Tile::ChildTiles const* Tile::_GetChildren(bool load) const
                     {
                     for (int k = 0; k < 2; k++)
                         {
-                        auto child = _CreateChild(m_id.CreateChildId(i, j, k));
+                        auto child = CreateChild(m_id.CreateChildId(i, j, k));
                         if (child.IsValid())
                             m_children.push_back(child);
                         }
@@ -1780,7 +1780,7 @@ Tile::ChildTiles const* Tile::_GetChildren(bool load) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Tile::_GetTileCacheKey() const
+Utf8String Tile::GetTileCacheKey() const
     {
     return GetRoot().GetModelId().ToString() + GetIdString();
     }
@@ -1788,7 +1788,7 @@ Utf8String Tile::_GetTileCacheKey() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-double Tile::_GetMaximumSize() const
+double Tile::GetMaximumSize() const
     {
     // returning 0.0 signifies undisplayable tile...
     return IsDisplayable() ? s_tileScreenSize * GetZoomFactor() : 0.0;
@@ -1927,7 +1927,7 @@ TilePtr Tile::FindTile(TileId id, double zoomFactor)
     if (id == GetTileId())
         return FindTile(zoomFactor);
 
-    auto children = _GetChildren(true);
+    auto children = GetChildren(true);
     if (nullptr == children)
         return nullptr;
 
@@ -1961,7 +1961,7 @@ TilePtr Tile::FindTile(double zoomFactor)
         return this;
 
     BeAssert(zoomFactor > 0.0 && HasZoomFactor());
-    auto children = _GetChildren(true);
+    auto children = GetChildren(true);
     if (nullptr == children || 1 != children->size())
         {
         BeAssert(false);
@@ -2004,7 +2004,7 @@ bool Tile::ToJson(Json::Value& json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilePtr Tile::_CreateChild(TileId childId) const
+TilePtr Tile::CreateChild(TileId childId) const
     {
     return Tile::Create(const_cast<RootR>(GetRoot()), childId, *this);
     }
@@ -2294,7 +2294,7 @@ BentleyStatus Loader::LoadGeometryFromModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileLoaderPtr Tile::_CreateTileLoader(TileLoadStateSPtr loads)
+TileLoaderPtr Tile::CreateTileLoader(TileLoadStateSPtr loads)
     {
     return Loader::Create(*this, loads);
     }
