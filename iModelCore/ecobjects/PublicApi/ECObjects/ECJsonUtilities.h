@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <json/json.h>
-#include <rapidjson/BeRapidJson.h>
+#include <BeRapidJson/BeRapidJson.h>
 #include <Bentley/DateTime.h>
 #include <Bentley/ByteStream.h>
 #include <Geom/GeomApi.h>
