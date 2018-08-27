@@ -15,7 +15,7 @@
 #include <Bentley/bmap.h>
 #include <Bentley/Tasks/AsyncError.h>
 #include <iostream>
-#include <rapidjson/BeRapidJson.h>
+#include <BeRapidJson/BeRapidJson.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
