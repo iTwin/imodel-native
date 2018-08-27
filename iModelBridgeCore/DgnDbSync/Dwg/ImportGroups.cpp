@@ -241,17 +241,17 @@ BentleyStatus   DwgImporter::_ImportGroups (DwgDbDatabaseCR dwg)
         return  BSIERROR;
         }
 
-    DwgDbDictionaryIterator iter = groups->GetIterator ();
-    if (!iter.IsValid())
+    DwgDbDictionaryIteratorPtr  iter = groups->GetIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BentleyStatus::BSIERROR;
 
     auto& detector = this->_GetChangeDetector ();
     auto& syncInfo = this->GetSyncInfo ();
 
     // Check all entries of the dictionary:
-    for (; !iter.Done(); iter.Next())
+    for (; !iter->Done(); iter->Next())
         {
-        DwgDbGroupPtr   group(iter.GetObjectId(), DwgDbOpenMode::ForRead);
+        DwgDbGroupPtr   group(iter->GetObjectId(), DwgDbOpenMode::ForRead);
         if (group.OpenStatus() != DwgDbStatus::Success)
             {
             this->ReportError (IssueCategory::CorruptData(), Issue::CantOpenObject(), Utf8PrintfString("the group dictionary in %lls!", this->GetRootDwgFileName().c_str()).c_str());

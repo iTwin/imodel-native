@@ -1338,7 +1338,7 @@ public:
     DgnV8Api::ECQuery const& GetSelectAllV8ECQuery() const;
     static DgnV8Api::FindInstancesScopePtr CreateFindInstancesScope(DgnV8EhCR);
     DgnCode TryGetBusinessKey(ECObjectsV8::IECInstanceCR);
-    BentleyStatus GetECContentOfElement(V8ElementECContent& content, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement);
+    DGNDBSYNC_EXPORT BentleyStatus GetECContentOfElement(V8ElementECContent& content, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement);
     //! @}
 
 

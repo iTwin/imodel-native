@@ -46,6 +46,44 @@ CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -I$(DwgVendorAPI)
     CCompOpts + -D_ADESK_STATIC_LINKING_
 %endif
 
+#----------------------------------------------------------------------
+#   Compile SampleAffinity
+#----------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)SampleAffinity.obj : $(baseDir)SampleAffinity.cpp $(ImportXDataDepends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the DLL
+#----------------------------------------------------------------------
+LINKER_LIBRARIES    = $(DwgImporterDir)DwgImporter$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(DwgDbLibName)
+
+LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform$(libext)
+%if $(DWGTOOLKIT) == "RealDwg"
+LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acdb$(RealDwgSuffix)$(libext)
+%endif
+
+DLM_NAME            = SampleAffinity
+DLM_DEST            = $(o)
+DLM_OBJECT_DEST     = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NOINITFUNC      = 1
+DLM_NOENTRY         = 1
+DLM_NO_IMPLIB       = 1
+DLM_NO_CONTEXT_LINK = 1
+
+%include $(sharedMki)LinkLibrary.mki
+
+
+#----------------------------------------------------------------------
+#   Compile ImportXData
+#----------------------------------------------------------------------
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
@@ -54,7 +92,7 @@ $(o)ImportXData.obj    : $(baseDir)ImportXData.cpp $(ImportXDataDepends) ${Multi
 %include MultiCppCompileGo.mki
 
 #----------------------------------------------------------------------
-#   Link the executable
+#   Link ImportXData.exe
 #----------------------------------------------------------------------
 EXE_DEST            = $(o)
 EXE_NAME            = $(appname)
@@ -85,7 +123,8 @@ always:
     ~linkdir "$(BuildContext)Delivery/Samples/XData=$(baseDir)"
 
 %if !defined(NDEBUG)
-# Symlink the exe to RealDwgImporter for debugging purpose
+# Symlink the dll & exe to RealDwgImporter for debugging purpose
 always:
     ~linkfile "$(OutputRootDir)Product/RealDwgImporter/$(EXE_NAME)$(exeext)=$(EXE_DEST)$(EXE_NAME)$(exeext)"
+    ~linkfile "$(OutputRootDir)Product/RealDwgImporter/SampleAffinity$(shlibext)=$(DLM_DEST)SampleAffinity$(shlibext)"
 %endif

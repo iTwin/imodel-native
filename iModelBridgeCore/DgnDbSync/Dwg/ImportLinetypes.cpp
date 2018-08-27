@@ -600,19 +600,19 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
     if (linetypeTable.IsNull())
         return  BSIERROR;
 
-    DwgDbSymbolTableIterator    iter = linetypeTable->NewIterator ();
-    if (!iter.IsValid())
+    DwgDbSymbolTableIteratorPtr iter = linetypeTable->NewIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
     this->SetStepName (ProgressMessage::STEP_IMPORTING_LINETYPES());
 
     uint32_t    count = 0;
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbLinetypeTableRecordPtr    linetype(iter.GetRecordId(), DwgDbOpenMode::ForRead);
+        DwgDbLinetypeTableRecordPtr    linetype(iter->GetRecordId(), DwgDbOpenMode::ForRead);
         if (linetype.IsNull())
             {
-            this->ReportError (IssueCategory::Unknown(), Issue::CantOpenObject(), Utf8PrintfString("linetype ID=%ld", iter.GetRecordId().ToAscii()).c_str());
+            this->ReportError (IssueCategory::Unknown(), Issue::CantOpenObject(), Utf8PrintfString("linetype ID=%ld", iter->GetRecordId().ToAscii()).c_str());
             continue;
             }
 

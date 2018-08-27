@@ -316,10 +316,10 @@ END_DWGDB_NAMESPACE
 
 // implement common DwgDbXxxTable methods
 #define DWGDB_DEFINE_SYMBOLTABLE_MEMBERS(_tableName_)                                                                   \
-    DwgDbSymbolTableIterator DwgDb##_tableName_##::NewIterator(bool atBeginning,bool skipErased) const                  \
+    DwgDbSymbolTableIteratorPtr DwgDb##_tableName_##::NewIterator(bool atBeginning,bool skipErased) const               \
         {                                                                                                               \
-        OdDbSymbolTableIteratorPtr odIter = this->newIterator(atBeginning, skipErased);                                 \
-        return  odIter.get();                                                                                           \
+        OdDbSymbolTableIteratorPtr odIter = T_Super::newIterator(atBeginning, skipErased);                              \
+        return new DwgDbSymbolTableIterator(odIter.get());                                                              \
         };                                                                                                              \
     DwgDbObjectId DwgDb##_tableName_##::GetByName(WStringCR name, bool erased) const                                    \
         {                                                                                                               \
@@ -396,13 +396,13 @@ END_DWGDB_NAMESPACE
 
 // implement common DwgDbXxxTable methods
 #define DWGDB_DEFINE_SYMBOLTABLE_MEMBERS(_tableName_)                                                                       \
-    DwgDbSymbolTableIterator DwgDb##_tableName_##::NewIterator(bool atBeginning,bool skipErased) const                      \
+    DwgDbSymbolTableIteratorPtr DwgDb##_tableName_##::NewIterator(bool atBeginning,bool skipErased) const                   \
         {                                                                                                                   \
         AcDb##_tableName_##Iterator* acIter = nullptr;                                                                      \
         if (Acad::eOk == this->newIterator(acIter, atBeginning, skipErased))                                                \
-            return DwgDbSymbolTableIterator(acIter);                                                                        \
+            return new DwgDbSymbolTableIterator(acIter);                                                                    \
         else                                                                                                                \
-            return DwgDbSymbolTableIterator();                                                                              \
+            return new DwgDbSymbolTableIterator();                                                                          \
         };                                                                                                                  \
     DwgDbObjectId DwgDb##_tableName_##::GetByName(WStringCR name, bool includeErased) const                                 \
         {                                                                                                                   \
@@ -653,7 +653,13 @@ END_DWGDB_NAMESPACE
     void DwgDb##_classSuffix_##::SetDatabaseDefaults (DwgDbDatabaseP dwg) { T_Super::setDatabaseDefaults(dwg); } \
     void DwgDb##_classSuffix_##::SetCastShadows (bool c) { T_Super::setCastShadows(c); } \
     void DwgDb##_classSuffix_##::SetReceiveShadows (bool r) { T_Super::setReceiveShadows(r); } \
-    void DwgDb##_classSuffix_##::SetVisibility (DwgDbVisibility v, bool s) { T_Super::setVisibility(DWGDB_CASTTOENUM_DB(Visibility)(v), s); }
+    void DwgDb##_classSuffix_##::SetVisibility (DwgDbVisibility v, bool s) { T_Super::setVisibility(DWGDB_CASTTOENUM_DB(Visibility)(v), s); } \
+    DwgDbStatus DwgDb##_classSuffix_##::Explode (DwgDbObjectPArrayR entities) const { \
+        TkObjectArray array; \
+        DwgDbStatus status = ToDwgDbStatus (T_Super::explode(array)); \
+        if (DwgDbStatus::Success == status) { \
+            Util::GetObjectArray(entities, array); } \
+        return status; }
 
 // define common methods for DbEntity as above, plus an object Create method
 #define DWGDB_ENTITY_DEFINE_MEMBERS(_classSuffix_)                  \

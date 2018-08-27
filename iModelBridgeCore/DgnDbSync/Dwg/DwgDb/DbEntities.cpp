@@ -373,7 +373,7 @@ double     DwgDb2dPolyline::GetThickness () const { return T_Super::thickness();
 bool       DwgDb2dPolyline::HasPlinegen () const { return DWGDB_IsTrue(T_Super::isLinetypeGenerationOn()); }
 DVec3d     DwgDb2dPolyline::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
 DwgDb2dPolyline::Type   DwgDb2dPolyline::GetType () const { return DWGDB_CASTFROMENUM_DB(2dPolyline::Type)(T_Super::polyType()); }
-DwgDbObjectIterator     DwgDb2dPolyline::GetVertexIterator () const { return DwgDbObjectIterator(T_Super::vertexIterator()); }
+DwgDbObjectIteratorPtr  DwgDb2dPolyline::GetVertexIterator () const { return new DwgDbObjectIterator(T_Super::vertexIterator()); }
 DwgDbStatus DwgDb2dPolyline::ConvertToType (Type t) { return ToDwgDbStatus(T_Super::convertToPolyType(DWGDB_CASTTOENUM_DB(Poly2dType)(t))); }
 DwgDbStatus DwgDb2dPolyline::MakeClosed () { RETURNVOIDORSTATUS(T_Super::makeClosed()); }
 DwgDbStatus DwgDb2dPolyline::MakeOpen () { RETURNVOIDORSTATUS(T_Super::makeOpen()); }
@@ -492,7 +492,7 @@ DwgDbStatus DwgDb3dPolyline::InsertVertexAt (DwgDbObjectIdR outId, DwgDbObjectId
     return  status;
     }
 DwgDb3dPolyline::Type   DwgDb3dPolyline::GetType () const { return DWGDB_CASTFROMENUM_DB(3dPolyline::Type)(T_Super::polyType()); }
-DwgDbObjectIterator     DwgDb3dPolyline::GetVertexIterator () const { return DwgDbObjectIterator(T_Super::vertexIterator()); }
+DwgDbObjectIteratorPtr  DwgDb3dPolyline::GetVertexIterator () const { return new DwgDbObjectIterator(T_Super::vertexIterator()); }
 DwgDbStatus DwgDb3dPolyline::MakeOpen () { RETURNVOIDORSTATUS(T_Super::makeOpen()); }
 DwgDbStatus DwgDb3dPolyline::MakeClosed () { RETURNVOIDORSTATUS(T_Super::makeClosed()); }
 DwgDbStatus DwgDb3dPolyline::SplineFit () { RETURNVOIDORSTATUS(T_Super::splineFit()); }
@@ -515,7 +515,7 @@ DwgDbStatus DwgDbPolyFaceMesh::AppendVertex (DwgDbObjectIdR outId, DwgDbPolyFace
 int16_t DwgDbPolyFaceMesh::GetNumFaces() const { return T_Super::numFaces(); }
 int16_t DwgDbPolyFaceMesh::GetNumVertices() const { return T_Super::numVertices(); }
 DwgDbStatus DwgDbPolyFaceMesh::AppendFaceRecord(DwgDbFaceRecordP face) { RETURNVOIDORSTATUS(T_Super::appendFaceRecord(face)); }
-DwgDbObjectIterator DwgDbPolyFaceMesh::GetVertexIterator() const { return DwgDbObjectIterator(T_Super::vertexIterator()); }
+DwgDbObjectIteratorPtr DwgDbPolyFaceMesh::GetVertexIterator() const { return new DwgDbObjectIterator(T_Super::vertexIterator()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/18
@@ -549,7 +549,7 @@ int16_t     DwgDbPolygonMesh::GetNSurfaceDensity() const { return T_Super::nSurf
 DwgDbStatus DwgDbPolygonMesh::Straighten() { RETURNVOIDORSTATUS(T_Super::straighten()); }
 DwgDbStatus DwgDbPolygonMesh::SurfaceFit() { RETURNVOIDORSTATUS(T_Super::surfaceFit()); }
 DwgDbStatus DwgDbPolygonMesh::SurfaceFit(Type t, int16_t u, int16_t v) { RETURNVOIDORSTATUS(T_Super::surfaceFit(DWGDB_CASTTOENUM_DB(PolyMeshType)(t), u, v)); }
-DwgDbObjectIterator DwgDbPolygonMesh::GetVertexIterator() const {  return DwgDbObjectIterator(T_Super::vertexIterator()); }
+DwgDbObjectIteratorPtr DwgDbPolygonMesh::GetVertexIterator() const { return new DwgDbObjectIterator(T_Super::vertexIterator()); }
 
 DPoint3d    DwgDbPolyFaceMeshVertex::GetPosition() const { return Util::DPoint3dFrom(T_Super::position()); }
 DwgDbStatus DwgDbPolyFaceMeshVertex::SetPosition(DPoint3dCR p) { RETURNVOIDORSTATUS(T_Super::setPosition(Util::GePoint3dFrom(p))); }
@@ -1314,6 +1314,10 @@ DwgDbStatus     DwgDbViewport::SetAnnotationScale (double scale)
             }
         }
 
+#ifdef DWGTOOLKIT_RealDwg
+    delete iter;
+#endif
+
     return  status;
     }
 
@@ -1493,7 +1497,7 @@ DPoint3d        DwgDbBlockReference::GetPosition () const { return Util::DPoint3
 void            DwgDbBlockReference::GetBlockTransform (TransformR out) const { return Util::GetTransform(out, T_Super::blockTransform()); }
 DVec3d          DwgDbBlockReference::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
 DwgDbStatus     DwgDbBlockReference::ExplodeToOwnerSpace () const { return ToDwgDbStatus(T_Super::explodeToOwnerSpace()); }
-DwgDbObjectIterator DwgDbBlockReference::GetAttributeIterator () const { return DwgDbObjectIterator(T_Super::attributeIterator()); }
+DwgDbObjectIteratorPtr DwgDbBlockReference::GetAttributeIterator () const { return new DwgDbObjectIterator(T_Super::attributeIterator()); }
 DwgDbStatus    DwgDbBlockReference::SetPosition (DPoint3dCR o) { RETURNVOIDORSTATUS(T_Super::setPosition(Util::GePoint3dFrom(o))); }
 DwgDbStatus    DwgDbBlockReference::SetRotation (double a) { RETURNVOIDORSTATUS(T_Super::setRotation(a)); }
 DwgDbStatus    DwgDbBlockReference::SetScales (DVec3dCR s) { RETURNVOIDORSTATUS(T_Super::setScaleFactors(Util::GeScale3dFrom(s))); }
@@ -1609,7 +1613,7 @@ DPoint3d        DwgDbViewRepBlockReference::GetPosition () const { return Util::
 void            DwgDbViewRepBlockReference::GetBlockTransform (TransformR out) const { return Util::GetTransform(out, T_Super::blockTransform()); }
 DVec3d          DwgDbViewRepBlockReference::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
 DwgDbStatus     DwgDbViewRepBlockReference::ExplodeToOwnerSpace () const { return ToDwgDbStatus(T_Super::explodeToOwnerSpace()); }
-DwgDbObjectIterator DwgDbViewRepBlockReference::GetAttributeIterator () const { return DwgDbObjectIterator(T_Super::attributeIterator()); }
+DwgDbObjectIteratorPtr DwgDbViewRepBlockReference::GetAttributeIterator () const { return new DwgDbObjectIterator(T_Super::attributeIterator()); }
 DwgDbObjectId   DwgDbViewRepBlockReference::GetOwnerViewportId () const { return T_Super::ownerViewportId(); }
 void            DwgDbViewRepBlockReference::SetOwnerViewportId (DwgDbObjectId id) { T_Super::setOwnerViewportId(id); }
 
