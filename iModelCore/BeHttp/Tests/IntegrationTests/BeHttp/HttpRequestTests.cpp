@@ -889,6 +889,21 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithMinimalSizeLargerTh
     EXPECT_EQ(HttpStatus::BadRequest, response.GetHttpStatus());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(HttpRequestTests, NoBody)
+    {
+    Request request("http://httpbin.org/ip", "HEAD");
+
+    Response response = request.Perform().get();
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    Utf8String body = response.GetBody().AsString();
+    EXPECT_STREQ("", body.c_str());
+    auto headers = response.GetHeaders();
+    EXPECT_TRUE(Utf8String::IsNullOrEmpty(headers.GetETag()));
+    }
+
 struct MethodParam
     {
     Utf8String url;
