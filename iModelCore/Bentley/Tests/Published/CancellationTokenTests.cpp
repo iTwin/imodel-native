@@ -258,4 +258,56 @@ TEST_F(CancellationTokenTests, MergeCancellationToken_Register_CanceledTokens_Is
     EXPECT_TRUE(1 == token->IsCanceled());
     token->Register(listener);
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                          Petras.Sukys         08/2018
+//-----------------------------------------------------------------------------------------
+TEST_F(CancellationTokenTests, ConjunctiveCancellationToken_IsCanceled_SingleCancelledToken_ReturnsFalse)
+    {
+    auto listener = std::make_shared<MockCancellationListener>();
+    auto a = SimpleCancellationToken::Create(true);
+    auto b = SimpleCancellationToken::Create();
+    auto token = ConjunctiveCancellationToken::Create(a, b);
+    EXPECT_FALSE(token->IsCanceled());
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                          Petras.Sukys         08/2018
+//-----------------------------------------------------------------------------------------
+TEST_F(CancellationTokenTests, ConjunctiveCancellationToken_IsCanceled_AllCancelledTokens_ReturnsTrue)
+    {
+    auto listener = std::make_shared<MockCancellationListener>();
+    auto a = SimpleCancellationToken::Create(true);
+    auto b = SimpleCancellationToken::Create(true);
+    auto token = ConjunctiveCancellationToken::Create(a, b);
+    EXPECT_TRUE(token->IsCanceled());
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                          Petras.Sukys         08/2018
+//-----------------------------------------------------------------------------------------
+TEST_F(CancellationTokenTests, ConjunctiveCancellationToken_Register_SingleCancelledToken_OnCanceledNotCalled)
+    {
+    auto listener = std::make_shared<MockCancellationListener>();
+    auto a = SimpleCancellationToken::Create(true);
+    auto b = SimpleCancellationToken::Create();
+    EXPECT_CALL(*listener, OnCanceled()).Times(0);
+    auto token = ConjunctiveCancellationToken::Create(a, b);
+    EXPECT_FALSE(token->IsCanceled());
+    token->Register(listener);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                          Petras.Sukys         08/2018
+//-----------------------------------------------------------------------------------------
+TEST_F(CancellationTokenTests, ConjunctiveCancellationToken_Register_AllCancelledTokens_OnCanceledCalled)
+    {
+    auto listener = std::make_shared<MockCancellationListener>();
+    auto a = SimpleCancellationToken::Create(true);
+    auto b = SimpleCancellationToken::Create(true);
+    EXPECT_CALL(*listener, OnCanceled()).Times(1);
+    auto token = ConjunctiveCancellationToken::Create(a, b);
+    EXPECT_TRUE(token->IsCanceled());
+    token->Register(listener);
+    }
 #endif
