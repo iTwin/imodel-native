@@ -9,7 +9,7 @@
 #pragma once
 
 #include <ECDb/ECDbApi.h>
-#include <rapidjson/BeRapidJson.h>
+#include <BeRapidJson/BeRapidJson.h>
 #include <WebServices/Cache/Util/ECSqlAdapterCache.h>
 #include <WebServices/Client/Response/WSObjectsResponse.h>
 #include <WebServices/Client/WSQuery.h>
