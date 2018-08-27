@@ -36,19 +36,19 @@ TEST_F(BeUriTests, Ctor_ValidUriWithoutUnsafeSymbols_ExpectedComponentsAndOrigin
         std::make_tuple("scheme://www.host.com", "scheme", "www.host.com", "", "www.host.com", -1, "/", "", ""),
         std::make_tuple("c:/Windows/System32", "c", "", "", "", -1, "/Windows/System32", "", ""),
         std::make_tuple("s.c+e-m0e:", "s.c+e-m0e", "", "", "", -1, "/", "", ""),
-        std::make_tuple("path", "", "", "", "", -1, "path", "", ""),
-        std::make_tuple("path/", "", "", "", "", -1, "path/", "", ""),
-        std::make_tuple("/path", "", "", "", "", -1, "/path", "", ""),
-        std::make_tuple("/path/", "", "", "", "", -1, "/path/", "", ""),
-        std::make_tuple("/", "", "", "", "", -1, "/", "", ""), // No authority, path is separator
-        std::make_tuple("//", "", "", "", "", -1, "/", "", ""), // Empty authority
-        std::make_tuple("///", "", "", "", "", -1, "/", "", ""), // Empty authority, path is separator
-        std::make_tuple("////", "", "", "", "", -1, "//", "", ""), // Empty authority, path is two seperators
+        std::make_tuple("scheme:path", "scheme", "", "", "", -1, "path", "", ""),
+        std::make_tuple("scheme:path/", "scheme", "", "", "", -1, "path/", "", ""),
+        std::make_tuple("scheme:/path", "scheme", "", "", "", -1, "/path", "", ""),
+        std::make_tuple("scheme:/path/", "scheme", "", "", "", -1, "/path/", "", ""),
+        std::make_tuple("scheme:/", "scheme", "", "", "", -1, "/", "", ""), // No authority, path is separator
+        std::make_tuple("scheme://", "scheme", "", "", "", -1, "/", "", ""), // Empty authority
+        std::make_tuple("scheme:///", "scheme", "", "", "", -1, "/", "", ""), // Empty authority, path is separator
+        std::make_tuple("scheme:////", "scheme", "", "", "", -1, "//", "", ""), // Empty authority, path is two seperators
         std::make_tuple("scheme:path:to:something", "scheme", "", "", "", -1, "path:to:something", "", ""),
-        std::make_tuple("//1.2.3.4:1234", "", "1.2.3.4:1234", "", "1.2.3.4", 1234, "/", "", ""), // IPv4
-        std::make_tuple("//[::ffff:0.0.0.0]:1234", "", "[::ffff:0.0.0.0]:1234", "", "[::ffff:0.0.0.0]", 1234, "/", "", ""), // IPv6
-        std::make_tuple("schem?e://host", "", "", "", "", -1, "schem", "e://host", ""),
-        std::make_tuple("schem#e://host", "", "", "", "", -1, "schem", "", "e://host"),
+        std::make_tuple("scheme://1.2.3.4:1234", "scheme", "1.2.3.4:1234", "", "1.2.3.4", 1234, "/", "", ""), // IPv4
+        std::make_tuple("scheme://[::ffff:0.0.0.0]:1234", "scheme", "[::ffff:0.0.0.0]:1234", "", "[::ffff:0.0.0.0]", 1234, "/", "", ""), // IPv6
+        std::make_tuple("scheme:pat?h://host", "scheme", "", "", "", -1, "pat", "h://host", ""),
+        std::make_tuple("scheme:pat#h://host", "scheme", "", "", "", -1, "pat", "", "h://host"),
         std::make_tuple("scheme::", "scheme", "", "", "", -1, ":", "", ""),
         std::make_tuple("scheme:@", "scheme", "", "", "", -1, "@", "", ""),
         };
@@ -101,8 +101,8 @@ TEST_F(BeUriTests, Ctor_ValidUriWithUnsafeSymbols_ExpectedComponentsAndOriginalS
     bvector<TestCase> testCases =
         {
         std::make_tuple("scheme://hos|t:42/pat|h", "scheme://hos|t:42/pat%7Ch", "scheme", "hos|t:42", "", "hos|t", 42, "/pat%7Ch", "", ""),
-        std::make_tuple("[]", "%5B%5D", "", "", "", "", -1, "%5B%5D", "", ""), // [] in path component
-        std::make_tuple("[::1/64]", "%5B::1/64%5D", "", "", "", "", -1, "%5B::1/64%5D", "", "") // [] in path component
+        std::make_tuple("scheme:[]", "scheme:%5B%5D", "scheme", "", "", "", -1, "%5B%5D", "", ""), // [] in path component
+        std::make_tuple("scheme:[::1/64]", "scheme:%5B::1/64%5D", "scheme", "", "", "", -1, "%5B::1/64%5D", "", "") // [] in path component
         };
 
     for (const auto& testCase : testCases)
@@ -137,11 +137,20 @@ TEST_F(BeUriTests, Ctor_InvalidUri_EmptyComponents)
         {
         BeUri(),
         BeUri(""),
-        BeUri("//host:"),
-        BeUri("//host:path"),
-        BeUri("//[]"),
-        BeUri("//[::1/64]")
+        BeUri("path"),
+        BeUri("/path"),
+        BeUri(":path"),
+        BeUri("?query"),
+        BeUri("#fragment"),
+        BeUri("//host"),
+        BeUri("0scheme:/"),
+        BeUri("scheme://host:"),
+        BeUri("scheme://host:path"),
+        BeUri("scheme://[]"),
+        BeUri("scheme://[a][b]"),
+        BeUri("scheme://[::1/64]")
         };
+
 
     for (const auto& uri : testCases)
         {
@@ -156,6 +165,31 @@ TEST_F(BeUriTests, Ctor_InvalidUri_EmptyComponents)
         EXPECT_STREQ("", uri.ToString().c_str());
         EXPECT_FALSE(uri.IsValid());
         }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                      Robert.Lukasonok                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeUriTests, Ctor_LongUriComponents_SucceedsWithoutStackOverflow)
+    {
+    const size_t SCHEME_LENGTH = 128;
+    const size_t USER_INFO_LENGTH = 256;
+    const size_t HOST_LENGTH = 512;
+    const size_t PATH_LENGTH = 2048;
+    const size_t QUERY_LENGTH = 2048;
+    const size_t FRAGMENT_LENGTH = 2048;
+
+    Utf8String scheme(SCHEME_LENGTH, 's');
+    Utf8String userInfo(USER_INFO_LENGTH, 'u');
+    Utf8String host(HOST_LENGTH, 'h');
+    Utf8String path(PATH_LENGTH, 'p');
+    Utf8String query(QUERY_LENGTH, 'q');
+    Utf8String fragment(FRAGMENT_LENGTH, 'f');
+
+    Utf8String uriString = scheme + "://" + userInfo + "@" + host + ":12345/" + path + "?" + query + "#" + fragment;
+    BeUri uri(uriString);
+    EXPECT_TRUE(uri.IsValid());
+    EXPECT_STREQ(uriString.c_str(), uri.ToString().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+

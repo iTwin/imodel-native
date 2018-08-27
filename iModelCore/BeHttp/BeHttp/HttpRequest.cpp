@@ -10,6 +10,8 @@
 #include <Bentley/Tasks/ThreadlessTaskScheduler.h>
 #include <folly/BeFolly.h>
 
+#include "WebLogging.h"
+
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
 
@@ -22,6 +24,11 @@ Request::Request(Utf8String url, Utf8String method, IHttpHandlerPtr customHandle
     m_compressionOptions()
     {
     BeUri::EscapeUnsafeCharactersInUrl(m_url);
+    if (m_url.empty())
+        {
+        LOG.errorv("Request object received an invalid URI: \"%s\"", url.c_str());
+        BeAssert(false);
+        }
     }
 
 //----------------------------------------------------------------------------------------

@@ -30,9 +30,9 @@ TEST_F (HttpProxyTests, Ctor_Default_FieldsEmpty)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpProxyTests, Ctor_UrlUsed_UrlSet)
     {
-    HttpProxy proxy("foo");
+    HttpProxy proxy("foo://bar");
     EXPECT_TRUE(proxy.IsValid());
-    EXPECT_STREQ("foo", proxy.GetProxyUrl().c_str());
+    EXPECT_STREQ("foo://bar", proxy.GetProxyUrl().c_str());
     EXPECT_FALSE(proxy.GetCredentials().IsValid());
     }
 
@@ -41,9 +41,9 @@ TEST_F(HttpProxyTests, Ctor_UrlUsed_UrlSet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpProxyTests, Ctor_UrlUsedAndCredentials_UrlAndCredentialsSet)
     {
-    HttpProxy proxy("foo", {"a", "b"});
+    HttpProxy proxy("foo://bar", {"a", "b"});
     EXPECT_TRUE(proxy.IsValid());
-    EXPECT_STREQ("foo", proxy.GetProxyUrl().c_str());
+    EXPECT_STREQ("foo://bar", proxy.GetProxyUrl().c_str());
     EXPECT_EQ(Credentials("a", "b"), proxy.GetCredentials());
     }
 
@@ -52,9 +52,9 @@ TEST_F(HttpProxyTests, Ctor_UrlUsedAndCredentials_UrlAndCredentialsSet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpProxyTests, Ctor_UrlWithSpecialSymbols_SymbolsAreEncoded)
     {
-    HttpProxy proxy("foo", {"a", "b"});
+    HttpProxy proxy("foo://bar", {"a", "b"});
     EXPECT_TRUE(proxy.IsValid());
-    EXPECT_STREQ("foo", proxy.GetProxyUrl().c_str());
+    EXPECT_STREQ("foo://bar", proxy.GetProxyUrl().c_str());
     EXPECT_EQ(Credentials("a", "b"), proxy.GetCredentials());
     }
 
