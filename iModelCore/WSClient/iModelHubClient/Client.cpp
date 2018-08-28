@@ -938,7 +938,7 @@ StatusResult Client::MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets
             if (callback != nullptr)
                 {
                 uint64_t fileSize;
-                auto status = changeSet->GetRevisionChangesFile().GetFileSize(fileSize);
+                changeSet->GetRevisionChangesFile().GetFileSize(fileSize);
                 sizeMerged += fileSize;
                 callback(sizeMerged, totalSize);
                 }
