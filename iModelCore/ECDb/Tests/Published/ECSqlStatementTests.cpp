@@ -6846,6 +6846,82 @@ TEST_F(ECSqlStatementTestFixture, OptimizeECSqlForSealedAndClassWithNotDerviedCl
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, AliasedEnumProps)
+    {
+    for (Utf8CP schemaXml : {R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEnumeration typeName="Status" backingTypeName="int" isStrict="true">
+                    <ECEnumerator value="1" displayLabel="On" />
+                    <ECEnumerator value="2" displayLabel="Off"/>
+                </ECEnumeration>
+                <ECEnumeration typeName="Domains" backingTypeName="string" isStrict="true">
+                    <ECEnumerator value="Org" displayLabel="Org" />
+                    <ECEnumerator value="Com" displayLabel="Com"/>
+                </ECEnumeration>
+                <ECEntityClass typeName="Foo" >
+                    <ECProperty propertyName="Status" typeName="Status" />
+                    <ECArrayProperty propertyName="Statuses" typeName="Status" />
+                    <ECProperty propertyName="Domain" typeName="Domain" />
+                    <ECArrayProperty propertyName="Domains" typeName="Domain" />
+                </ECEntityClass>
+              </ECSchema>)xml",
+                R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="Status" backingTypeName="int" isStrict="true">
+                    <ECEnumerator name="On" value="1" />
+                    <ECEnumerator name="Off" value="2" />
+                </ECEnumeration>
+                <ECEnumeration typeName="Domains" backingTypeName="string" isStrict="true">
+                    <ECEnumerator name="Org" value="Org" displayLabel="Org" />
+                    <ECEnumerator name="Com" value="Com" displayLabel="Com"/>
+                </ECEnumeration>
+                <ECEntityClass typeName="Foo" >
+                    <ECProperty propertyName="Status" typeName="Status" />
+                    <ECArrayProperty propertyName="Statuses" typeName="Status" />
+                    <ECProperty propertyName="Domain" typeName="Domain" />
+                    <ECArrayProperty propertyName="Domains" typeName="Domain" />
+                </ECEntityClass>
+              </ECSchema>)xml"})
+        {
+        ASSERT_EQ(SUCCESS, SetupECDb("AliasedEnumProps.ecdb", SchemaItem(schemaXml)));
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(Status,Statuses,Domain,Domains) VALUES (1,?,'Org',?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt(1)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt(2)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(2).AddArrayElement().BindText("Org", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(2).AddArrayElement().BindText("Com", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+        stmt.Finalize();
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Status as MyStatus,Statuses as MyStatuses,Domain as MyDomain, Domains as MyDomains FROM ts.Foo"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ECSqlColumnInfoCR colInfo0 = stmt.GetColumnInfo(0);
+        ASSERT_TRUE(colInfo0.IsGeneratedProperty()) << stmt.GetECSql();
+        ASSERT_FALSE(colInfo0.GetDataType().IsArray()) << stmt.GetECSql();
+        ASSERT_EQ(PRIMITIVETYPE_Integer, colInfo0.GetDataType().GetPrimitiveType()) << stmt.GetECSql();
+
+        ECSqlColumnInfoCR colInfo1 = stmt.GetColumnInfo(1);
+        ASSERT_TRUE(colInfo1.IsGeneratedProperty()) << stmt.GetECSql();
+        ASSERT_TRUE(colInfo1.GetDataType().IsArray()) << stmt.GetECSql();
+        ASSERT_EQ(PRIMITIVETYPE_Integer, colInfo1.GetDataType().GetPrimitiveType()) << stmt.GetECSql();
+
+        ECSqlColumnInfoCR colInfo2 = stmt.GetColumnInfo(2);
+        ASSERT_TRUE(colInfo2.IsGeneratedProperty()) << stmt.GetECSql();
+        ASSERT_FALSE(colInfo2.GetDataType().IsArray()) << stmt.GetECSql();
+        ASSERT_EQ(PRIMITIVETYPE_String, colInfo2.GetDataType().GetPrimitiveType()) << stmt.GetECSql();
+
+        ECSqlColumnInfoCR colInfo3 = stmt.GetColumnInfo(3);
+        ASSERT_TRUE(colInfo3.IsGeneratedProperty()) << stmt.GetECSql();
+        ASSERT_TRUE(colInfo3.GetDataType().IsArray()) << stmt.GetECSql();
+        ASSERT_EQ(PRIMITIVETYPE_String, colInfo3.GetDataType().GetPrimitiveType()) << stmt.GetECSql();
+
+        stmt.Finalize();
+        CloseECDb();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                  10/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, EnumeratorNamesForEC31Enums)

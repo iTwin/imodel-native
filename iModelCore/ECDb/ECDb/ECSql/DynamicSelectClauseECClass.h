@@ -32,7 +32,7 @@ struct DynamicSelectClauseECClass final
         ECSqlStatus Initialize();
 
         ECSqlStatus AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp);
-        ECSqlStatus AddReferenceToStructSchema(ECN::ECSchemaCR structSchema) const;
+        ECSqlStatus AddReferenceToPropertyTypeSchema(ECN::ECSchemaCR propertyTypeSchema) const;
         ECN::ECEntityClassR GetClass() const { BeAssert(m_class != nullptr); return *m_class; }
         ECN::ECSchemaR GetSchema() const { BeAssert(m_schema != nullptr); return *m_schema; }
 

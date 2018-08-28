@@ -138,6 +138,10 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             if (typeInfo.IsEnum())
                 {
                 BeAssert(typeInfo.GetEnumerationType() != nullptr);
+                ECSqlStatus stat = AddReferenceToPropertyTypeSchema(typeInfo.GetEnumerationType()->GetSchema());
+                if (!stat.IsSuccess())
+                    return stat;
+
                 if (ECObjectsStatus::Success != GetClass().CreateEnumerationProperty(primProp, encodedPropName, *typeInfo.GetEnumerationType()))
                     return ECSqlStatus::Error;
                 }
@@ -158,7 +162,7 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             case ECSqlTypeInfo::Kind::Struct:
             {
             ECStructClassCR structType = typeInfo.GetStructType();
-            ECSqlStatus stat = AddReferenceToStructSchema(structType.GetSchema());
+            ECSqlStatus stat = AddReferenceToPropertyTypeSchema(structType.GetSchema());
             if (!stat.IsSuccess())
                 return stat;
 
@@ -179,6 +183,10 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             PrimitiveArrayECPropertyP arrayProp = nullptr;
             if (typeInfo.GetEnumerationType() != nullptr)
                 {
+                ECSqlStatus stat = AddReferenceToPropertyTypeSchema(typeInfo.GetEnumerationType()->GetSchema());
+                if (!stat.IsSuccess())
+                    return stat;
+
                 if (ECObjectsStatus::Success != GetClass().CreatePrimitiveArrayProperty(arrayProp, encodedPropName, *typeInfo.GetEnumerationType()))
                     return ECSqlStatus::Error;
                 }
@@ -204,7 +212,7 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             case ECSqlTypeInfo::Kind::StructArray:
             {
             ECStructClassCR structType = typeInfo.GetStructType();
-            ECSqlStatus stat = AddReferenceToStructSchema(structType.GetSchema());
+            ECSqlStatus stat = AddReferenceToPropertyTypeSchema(structType.GetSchema());
             if (!stat.IsSuccess())
                 return stat;
 
@@ -240,12 +248,12 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::AddReferenceToStructSchema(ECSchemaCR structSchema) const
+ECSqlStatus DynamicSelectClauseECClass::AddReferenceToPropertyTypeSchema(ECSchemaCR propertyTypeSchema) const
     {
-    if (ECSchema::IsSchemaReferenced(GetSchema(), structSchema))
+    if (ECSchema::IsSchemaReferenced(GetSchema(), propertyTypeSchema))
         return ECSqlStatus::Success;
 
-    if (ECObjectsStatus::Success != GetSchema().AddReferencedSchema(const_cast<ECSchemaR> (structSchema)))
+    if (ECObjectsStatus::Success != GetSchema().AddReferencedSchema(const_cast<ECSchemaR> (propertyTypeSchema)))
         return ECSqlStatus::Error;
 
     return ECSqlStatus::Success;
