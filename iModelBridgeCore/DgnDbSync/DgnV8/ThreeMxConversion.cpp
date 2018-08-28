@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
+#include <VersionedDgnV8Api/MrMeshLib/MrMeshLibApi.h>
 
 static bool isHttp(WCharCP str){return (0 == wcsncmp(L"http:", str, 5) || 0 == wcsncmp(L"https:", str, 6));}
 
@@ -74,7 +75,78 @@ struct DgnV8ClassificationFlags
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentleyh    10/2017
+* @bsimethod                                                    Ray.Bentley    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool unloadedClassifierModelExists(DgnV8Api::ElementHandle const& attachment, uint16_t majorXAttributeId)
+    {
+    DgnV8Api::ElementHandle::XAttributeIter classifierXai(attachment, DgnV8Api::XAttributeHandlerId (majorXAttributeId, (int)MRMeshMinorXAttributeId_Link_Classifier), DgnV8Api::XAttributeHandle::MATCH_ANY_ID);
+
+    for (; classifierXai.IsValid(); classifierXai.ToNext())
+        {
+        Bentley::DataInternalizer       source ((byte*) classifierXai.PeekData(), classifierXai.GetSize());
+        DgnV8ClassificationFlags        v8Flags;
+        double                          unused, expandDistance;
+        UInt32                          optionalStorageFlags = 0;
+        DgnV8Api::PersistentElementPath pep;
+        DgnV8Api::DgnModelRef*          prefix;
+        DgnV8Api::ElementHandle         refAttachEh;
+        DgnModelRefP                    classifierModelRef;
+
+        source.get ((byte*) &v8Flags, sizeof(v8Flags));
+        source.get (&unused);
+        source.get (&expandDistance);
+        source.get (&optionalStorageFlags);
+
+        if (0 != (optionalStorageFlags & (LinkStorage_ModelPEP | LinkStorage_ElementPEP)) &&
+            SUCCESS == pep.Load (source) &&
+            SUCCESS == pep.EvaluateReferenceAttachmentPrefix (prefix, attachment.GetModelRef()) &&
+            (refAttachEh = pep.EvaluateReferenceAttachment(prefix)).IsValid() &&
+            nullptr != (classifierModelRef = prefix->FindDgnAttachmentByElementId (refAttachEh.GetElementId())) &&
+            nullptr == classifierModelRef->GetDgnModelP())
+            return true;
+        }
+    return false;
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    08/2018
+*
+*   Classifiers may point to undisplayed reference files.  We need to force them to load
+*   so that are converted and not ignored.
+*
++---------------+---------------+---------------+---------------+---------------+------*/
+void RealityMeshAttachmentConversion::ForceClassifierAttachmentLoad (DgnModelRefR modelRef)
+    {
+    DgnV8Api::PersistentElementRefList*   graphicElements;
+
+    if (NULL == modelRef.GetDgnModelP() ||
+        NULL == (graphicElements = modelRef.GetDgnModelP()->GetGraphicElementsP()))
+        return;
+
+    static  DgnV8Api::ElementHandlerId s_threeMxHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, 0),
+                                       s_scalableMeshHandlerId(ScalableMeshElementHandler::XATTRIBUTEID_ScalableMeshAttachment, 0);
+
+    for (auto& elemRef : *graphicElements)
+        {
+        DgnV8Api::ElementHandle       eh (elemRef, &modelRef);
+        auto                          handlerId = DgnV8Api::ElementHandlerManager::GetHandlerId (eh);
+
+        if ((handlerId == s_threeMxHandlerId && unloadedClassifierModelExists(eh, ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment)) ||
+            (handlerId == s_scalableMeshHandlerId && unloadedClassifierModelExists(eh, ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment)))
+            {
+            DgnV8Api::DgnAttachmentLoadOptions loadOptions;
+            loadOptions.SetTopLevelModel(true);
+            loadOptions.SetShowProgressMeter(false); // turn this off for now. It seems to increment the task count for every ref, but it doesn't decrement the count afterward.
+            loadOptions.SetLoadUndisplayed(true);
+            modelRef.ReadAndLoadDgnAttachments(loadOptions);
+
+            return;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt   RealityMeshAttachmentConversion::ExtractAttachment (BentleyApi::Utf8StringR rootUrl, BentleyApi::Transform& location, BentleyApi::Dgn::ClipVectorPtr& clipVector, ModelSpatialClassifiers& classifiers, uint32_t& activeClassifierId, DgnV8EhCR v8el, Converter& converter, ResolvedModelMapping const& v8mm, uint16_t majorXAttributeId)
     {
@@ -222,8 +294,6 @@ StatusInt   RealityMeshAttachmentConversion::ExtractAttachment (BentleyApi::Utf8
             DgnV8Api::DgnModelRef*        prefix;
             DgnV8Api::ElementHandle       refAttachEh;
 
-            converter.GetAttachments(*v8el.GetModelRef());          // Force attachments to load.
-
             if (SUCCESS != pep.EvaluateReferenceAttachmentPrefix (prefix, v8el.GetModelRef()) ||
                 !(refAttachEh = pep.EvaluateReferenceAttachment(prefix)).IsValid() ||
                 NULL == (classifierModelRef = prefix->FindDgnAttachmentByElementId (refAttachEh.GetElementId())) ||
@@ -296,38 +366,57 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
     if (SUCCESS != RealityMeshAttachmentConversion::ExtractAttachment (rootUrl, location, clipVector, classifiers, activeClassifierId, v8el, converter, v8mm, ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment))
         return Result::SkipElement;
 
-    Utf8String linkName(BeFileName(rootUrl).GetFileNameWithoutExtension());
-
-    if (true)
+    DgnElementId existingId;
+    IChangeDetector::SearchResults changeInfo;
+    if (converter.GetChangeDetector()._IsElementChanged(changeInfo, converter, v8el, v8mm) && IChangeDetector::ChangeType::Update == changeInfo.m_changeType)
         {
-        ThreeMx::Scene scene(converter.GetDgnDb(), DgnModelId(), location, rootUrl.c_str(), nullptr);
-        if (SUCCESS == scene.ReadSceneFile())
-            linkName = scene.GetSceneInfo().m_sceneName;
+        existingId = changeInfo.GetExistingElementId();
         }
-
-    DgnDbR db = converter.GetDgnDb();
-    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), rootUrl.c_str(), linkName.c_str());
-    if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
-        return Result::SkipElement;
 
     // In DgnV8, ThreeMx attachments are elements, and their visibility is determined by their level. In DgnDb they are DgnModels. 
     // For every spatial view in the DgnDb, determine whether the category of the element's original level is on, and if so
     // add the new ThreeMxModel to the list of viewed models.
-    DgnModelId modelId = ThreeMx::ModelHandler::CreateModel(*repositoryLink, rootUrl.c_str(), &location, clipVector.get(), &classifiers);
-    DgnCategoryId category = converter.GetSyncInfo().GetCategory(v8el, v8mm);
-
-    for (auto const& entry : ViewDefinition::MakeIterator(db))
+    DgnModelId modelId;
+    
+    if (!existingId.IsValid())
         {
-        auto viewController = ViewDefinition::LoadViewController(entry.GetId(), db);
-        if (!viewController.IsValid() || !viewController->IsSpatialView() || !viewController->GetViewDefinitionR().GetCategorySelector().IsCategoryViewed(category))
-            continue;
+        Utf8String linkName(BeFileName(rootUrl).GetFileNameWithoutExtension());
 
-        auto& modelSelector = viewController->ToSpatialViewP()->GetSpatialViewDefinition().GetModelSelector();
-        modelSelector.AddModel(modelId);
-        modelSelector.Update();
+        if (true)
+            {
+            ThreeMx::Scene scene(converter.GetDgnDb(), DgnModelId(), location, rootUrl.c_str(), nullptr);
+            if (SUCCESS == scene.ReadSceneFile())
+                linkName = scene.GetSceneInfo().m_sceneName;
+            }
+
+        DgnDbR db = converter.GetDgnDb();
+        RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), rootUrl.c_str(), linkName.c_str());
+        if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
+            return Result::SkipElement;
+
+        modelId = ThreeMx::ModelHandler::CreateModel(*repositoryLink, rootUrl.c_str(), &location, clipVector.get(), &classifiers);
+        DgnCategoryId category = converter.GetSyncInfo().GetCategory(v8el, v8mm);
+
+        for (auto const& entry : ViewDefinition::MakeIterator(db))
+            {
+            auto viewController = ViewDefinition::LoadViewController(entry.GetId(), db);
+            if (!viewController.IsValid() || !viewController->IsSpatialView() || !viewController->GetViewDefinitionR().GetCategorySelector().IsCategoryViewed(category))
+                continue;
+
+            auto& modelSelector = viewController->ToSpatialViewP()->GetSpatialViewDefinition().GetModelSelector();
+            modelSelector.AddModel(modelId);
+            modelSelector.Update();
+            }
+        SyncInfo::ElementProvenance prov = SyncInfo::ElementProvenance(v8el, converter.GetSyncInfo(), converter.GetCurrentIdPolicy());
+        SyncInfo::V8ElementMapping mapping = SyncInfo::V8ElementMapping(DgnElementId(modelId.GetValue()), v8el, v8mm.GetV8ModelSyncInfoId(), prov);
+        converter.GetSyncInfo().InsertElement(mapping);
+        converter._GetChangeDetector()._OnElementSeen(converter, mapping.GetElementId());
         }
+    else
+        modelId = DgnModelId(existingId.GetValue());
+
     // Schedule reality model tileset creation.
-    converter.AddModelRequiringRealityTiles(modelId);
+    converter.AddModelRequiringRealityTiles(modelId, rootUrl, Converter::GetV8FileSyncInfoIdFromAppData(*v8el.GetDgnFileP()));
 
     return Result::SkipElement;
     }

@@ -202,6 +202,52 @@ void CheckDefaultView (Utf8StringCR expectedName)
     auto name = view->GetName ();
     EXPECT_EQ (name, expectedName) << "Wrong default view name!";
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void CheckGenericGroup (Utf8StringCR expectedName, DwgDbObjectIdArrayCR expectedEntities, DwgDbObjectIdCR blockId)
+    {
+    auto db = OpenExistingDgnDb (m_dgnDbFileName, Db::OpenMode::Readonly);
+    ASSERT_TRUE (db.IsValid());
+    EXPECT_TRUE (db->IsDbOpen()) << "DgnDb is not open!";
+
+    auto& elements = db->Elements ();
+    DgnElementId    groupId;
+    DgnElementIdSet expectedElements;
+
+    // expect spatial elements exist in db
+    SyncInfoReader  reader (m_dgnDbFileName);
+    for (auto entityId : expectedEntities)
+        {
+        auto elementId = FindElement (entityId.GetHandle(), blockId.ToUInt64(), reader, true);
+        EXPECT_TRUE (elementId.IsValid()) << "DgnElement is not found for a DWG group's memeber entity!";
+        expectedElements.insert (elementId);
+        }
+    EXPECT_EQ(expectedElements.size(), expectedEntities.size());
+
+    // expect a GenericGroup element in db:
+    for (auto entry : elements.MakeIterator(BIS_SCHEMA(BIS_CLASS_GroupInformationElement)))
+        {
+        auto genericGroup = elements.Get<GenericGroup>(entry.GetElementId());
+        if (genericGroup.IsValid())
+            {
+            // the defaul implementation should have added a user label
+            auto name = genericGroup->GetUserLabel ();
+            ASSERT_NOT_NULL (name);
+            if (expectedName.Equals(name))
+                {
+                // found expected GenericGroup by name
+                auto members = genericGroup->QueryMembers ();
+                for (auto id : expectedElements)
+                    EXPECT_TRUE(members.Contains(id)) << "An expected member is not found in a GenericGroup!";
+                groupId = genericGroup->GetElementId ();
+                break;
+                }
+            }
+        }
+    EXPECT_TRUE(groupId.IsValid()) << "A GenericGroup for the given name is not found in DgnDb!";
+    }
 };  // BasicTests
 
 /*--------------------------------------------------------------------------------**//**
@@ -430,3 +476,47 @@ TEST_F(BasicTests, ChangeAndActivateLayout)
     // output sheet model/view should be renamed:
     CheckDefaultView ("test layout[basictype]");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (BasicTests, AddAndUpdateGroup)
+    {
+    LineUpFiles(L"groupTests.ibim", L"basictype.dwg", true); 
+
+    DwgDbObjectId       modelspaceId;
+    DwgDbObjectIdArray  members;
+
+    // create a group dictionary named "TestGroup" in file basictype.dwg, adding all modelspace entities as members:
+    DwgFileEditor   editor (m_dwgFileName);
+    editor.GetModelspaceEntities (members);
+    editor.CreateGroup ("TestGroup", members);
+    modelspaceId = editor.GetModelspaceId ();
+    editor.SaveFile ();
+    
+    EXPECT_GT(members.size(), 0) << "Empty modelspace in seed DWG file!";
+
+    // update DgnDb:
+    DoUpdate (m_dgnDbFileName, m_dwgFileName);
+
+    // check the GenericGroup imported against entities expected:
+    CheckGenericGroup ("TestGroup", members, modelspaceId);
+
+    editor.OpenFile (m_dwgFileName);
+    editor.GetModelspaceEntities (members);
+
+    // remove two members from the DWG group:
+    members.erase (members.begin(), members.begin() + 3);
+    editor.UpdateGroup ("TestGroup", members);
+    modelspaceId = editor.GetModelspaceId ();
+    editor.SaveFile ();
+
+    EXPECT_GT(members.size(), 0) << "Empty modelspace in seed DWG file!";
+
+    // update DgnDb again:
+    DoUpdate (m_dgnDbFileName, m_dwgFileName);
+
+    // check the GenericGroup again in updated DgnDb:
+    CheckGenericGroup ("TestGroup", members, modelspaceId);
+    }
+

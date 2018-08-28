@@ -164,6 +164,16 @@ BentleyStatus SyncInfo::CreateTables()
                          "V8ElementId BIGINT, "
                          "LastModified REAL");
 
+    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Imagery),
+                         "ElementId BIGINT PRIMARY KEY, "
+                         "V8FileSyncInfoId INTEGER REFERENCES " SYNC_TABLE_File "(Id) ON DELETE CASCADE,"
+                         "Filename TEXT NOT NULL,"
+                         "LastModified BIGINT,"
+                         "FileSize BIGINT,"
+                         "ETag TEXT,"
+                         "RDSId TEXT");
+    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "ElementIdx ON "  SYNC_TABLE_Imagery "(ElementId)");
+
     ImportJob::CreateTable(*m_dgndb);
 
     //need a unique index to ensure uniqueness for schemas based on checksum
@@ -899,7 +909,7 @@ BentleyStatus SyncInfo::FindModel(V8ModelMapping* mapping, DgnV8ModelCR v8Model,
 
     for (auto entry=it.begin(); entry!=it.end(); ++entry)
         {
-        if (nullptr == modelTrans || entry.GetTransform().IsEqual(*modelTrans))
+        if (nullptr == modelTrans || Converter::IsTransformEqualWithTolerance(entry.GetTransform(),*modelTrans))
             {
             if (nullptr != mapping)
                 {
@@ -1039,12 +1049,27 @@ bool SyncInfo::IsMappedToSameV8Element(DgnElementId elementId, DgnElementIdSet c
     if (iThisElement == findByBimId.end())
         return false;
 
-    ByV8ElementIdIter othersMappedToV8Id(*m_dgndb);
-    othersMappedToV8Id.Bind(iThisElement.GetV8ModelSyncInfoId(), iThisElement.GetV8ElementId());
-    for (auto const& otherMappedToV8Id : othersMappedToV8Id)
+    if (iThisElement.GetV8ElementId() == 0)
         {
-        if (known.find(otherMappedToV8Id.GetElementId()) != known.end())
-            return true;
+        // when StableIdPolicy==ByHash
+        ByHashIter  othersMappedToV8Hash(*m_dgndb);
+        othersMappedToV8Hash.Bind(iThisElement.GetV8ModelSyncInfoId(), iThisElement.GetProvenance().m_hash);
+        for (auto const& otherMappedToV8Hash : othersMappedToV8Hash)
+            {
+            if (known.find(otherMappedToV8Hash.GetElementId()) != known.end())
+                return true;
+            }
+        }
+    else
+        {
+        // when StableIdPolicy==ById
+        ByV8ElementIdIter othersMappedToV8Id(*m_dgndb);
+        othersMappedToV8Id.Bind(iThisElement.GetV8ModelSyncInfoId(), iThisElement.GetV8ElementId());
+        for (auto const& otherMappedToV8Id : othersMappedToV8Id)
+            {
+            if (known.find(otherMappedToV8Id.GetElementId()) != known.end())
+                return true;
+            }
         }
     return false;
     }
@@ -1877,4 +1902,167 @@ SyncInfo::ViewIterator::Entry SyncInfo::ViewIterator::begin() const
     return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SyncInfo::EnsureImageryTableExists()
+    {
+    Statement stmt;
+    Utf8PrintfString query("SELECT name, tbl_name FROM %s WHERE type='table' AND name='%s'", SYNC_TABLE_master, SYNC_TABLE_Imagery);
+
+    if (BE_SQLITE_OK != stmt.Prepare(*m_dgndb, query.c_str()))
+        return false;
+
+    if (BE_SQLITE_ROW == stmt.Step())
+        return true;
+
+    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Imagery),
+                         "ElementId BIGINT PRIMARY KEY, "
+                         "Filename TEXT NOT NULL,"
+                         "LastModified BIGINT,"
+                         "FileSize BIGINT,"
+                         "ETag TEXT,"
+                         "RDSId TEXT");
+    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "ElementIdx ON "  SYNC_TABLE_Level "(ElementId)");
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BeSQLite::DbResult SyncInfo::InsertImageryFile(DgnElementId modeledElementId, V8FileSyncInfoId filesiid, Utf8CP filename, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId)
+    {
+    EnsureImageryTableExists();
+
+    Statement stmt;
+    stmt.Prepare(*m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "(ElementId, V8FileSyncInfoId, Filename, LastModified, FileSize, ETag, RDSId) VALUES (?,?,?,?,?,?,?)");
+    int col = 1;
+    stmt.BindId(col++, modeledElementId);
+    stmt.BindInt(col++, filesiid.GetValue());
+    stmt.BindText(col++, filename, Statement::MakeCopy::No);
+    stmt.BindUInt64(col++, lastModifiedTime);
+    stmt.BindUInt64(col++, fileSize);
+    stmt.BindText(col++, etag, Statement::MakeCopy::No);
+    stmt.BindText(col++, rdsId, Statement::MakeCopy::No);
+    auto res = stmt.Step();
+    return res;
+    }
+
+static bool isHttp(Utf8CP str) { return (0 == strncmp("http:", str, 5) || 0 == strncmp("https:", str, 6)); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void SyncInfo::GetCurrentImageryInfo(Utf8StringCR fileName, uint64_t& currentLastModifiedTime, uint64_t& currentFileSize, Utf8StringR currentEtag)
+    {
+    BeFileName beFile(fileName.c_str());
+    if (beFile.DoesPathExist())
+        {
+        time_t mtime = 0;
+        uint64_t tempFileSize;
+
+        if (BeFileName::GetFileSize(tempFileSize, beFile) != BeFileNameStatus::Success
+            || BeFileName::GetFileTime(nullptr, nullptr, &mtime, beFile) != BeFileNameStatus::Success)
+            {
+            Utf8PrintfString msg("Unable to get file info for '%s'", fileName);
+            //ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), msg.c_str());
+            }
+        currentLastModifiedTime = mtime;
+        currentFileSize = tempFileSize;
+        }
+    else if (isHttp(fileName.c_str()))
+        {
+        BentleyApi::Http::Request request(fileName, "HEAD");
+        folly::Future<BentleyApi::Http::Response> response = request.Perform().wait();
+        if (BentleyApi::Http::HttpStatus::OK == response.value().GetHttpStatus())
+            {
+            auto headers = response.value().GetHeaders();
+            Utf8String etag = headers.GetETag();
+            currentEtag = etag;
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SyncInfo::ModelHasChangedImagery(V8FileSyncInfoId filesiid)
+    {
+    EnsureImageryTableExists();
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT Filename, LastModified, FileSize, ETag FROM "
+                                                    SYNCINFO_ATTACH(SYNC_TABLE_Imagery)
+                                                    " WHERE V8FileSyncInfoId=?"))
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    stmt->BindInt(1, filesiid.GetValue());
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        Utf8String fileName = stmt->GetValueText(0);
+        uint64_t lastModifiedTime = stmt->GetValueUInt64(1);
+        uint64_t fileSize = stmt->GetValueUInt64(2);
+        Utf8String etag = stmt->GetValueText(3);
+
+        uint64_t currentModifiedTime = 0;
+        uint64_t currentFileSize = 0;
+        Utf8String currentEtag;
+        GetCurrentImageryInfo(fileName, currentModifiedTime, currentFileSize, currentEtag);
+
+        if (currentModifiedTime != lastModifiedTime || currentFileSize != fileSize || !currentEtag.Equals(etag))
+            return true;
+        }
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SyncInfo::TryFindImageryFile(DgnElementId modeledElementId, Utf8StringR fileName, uint64_t& lastModifiedTime, uint64_t &fileSize, Utf8StringR etag, Utf8StringR rdsId)
+    {
+    EnsureImageryTableExists();
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT Filename, LastModified, FileSize, ETag, RDSId FROM "
+                                                    SYNCINFO_ATTACH(SYNC_TABLE_Imagery)
+                                                    " WHERE ElementId=?"))
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    stmt->BindId(1, modeledElementId);
+    DbResult rc = stmt->Step();
+    if (BE_SQLITE_ROW != rc)
+        return false;
+
+    int col = 0;
+    fileName = stmt->GetValueText(col++);
+    lastModifiedTime = stmt->GetValueUInt64(col++);
+    fileSize = stmt->GetValueUInt64(col++);
+    etag = stmt->GetValueText(col++);
+    rdsId = stmt->GetValueText(col++);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BeSQLite::DbResult SyncInfo::UpdateImageryFile(DgnElementId modeledElementId, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId)
+    {
+    EnsureImageryTableExists();
+
+    Statement stmt;
+    stmt.Prepare(*m_dgndb, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) " SET LastModified=?, FileSize=?, ETag=?, RDSId=? WHERE(ElementId=?)");
+    int col = 1;
+    stmt.BindUInt64(col++, lastModifiedTime);
+    stmt.BindUInt64(col++, fileSize);
+    stmt.BindText(col++, etag, Statement::MakeCopy::No);
+    stmt.BindText(col++, rdsId, Statement::MakeCopy::No);
+    stmt.BindId(col++, modeledElementId);
+    return stmt.Step();
+
+    }
 END_DGNDBSYNC_DGNV8_NAMESPACE

@@ -40,11 +40,7 @@ BEGIN_DGNDBSYNC_DWG_NAMESPACE
 // default, parses the XDATA found on each and every entity, and converts the data as
 // Adhoc properties of the DgnDb element.
 //
-// The overridden method _ImportGroup in this sample demonstrates how a GenericGroup may be
-// created from a DWG group.  This is also the default behavior of the super method.  But
-// through the sample, you may see the workflow of the group creation.  After the base 
-// DwgImporter finishes creating all models & elements, it iterates through the root DWG
-// file and xRef files, and calls _ImportGroup for each group found in the files.
+// Group is implemented via _ImportGroup and _UpdateGroup. See method comments for details.
 //
 // It also optionally dumps dictionary xRecords into the importer's issues file. The option
 // is part of this sample bridge and it is passed on to the sample importer. When the option
@@ -90,12 +86,48 @@ private:
 public:
     // Constructor
     ImportXData (DwgImporter::Options& options, SampleOptions const& sample) : T_Super(options), m_sampleOptions(sample), m_dumpCount(0) { }
-    // override _BeginImport when we may optionally dump Xrecord's in dictionaries
+    //
+    // Override _BeginImport when we may optionally dump Xrecord's in dictionaries
     virtual void    _BeginImport () override;
+    //
     // Override _ImportEntity to convert both entity and its xdata
+    //
+    // This method is called on all entities seen in both the modelspace and paperpsaces. It is not called
+    // on entities in a block definition as there no such a concept of cell exists in DgnDb.  It is called
+    // in both initial import as well as incremental job run.  The caller handles the change detection,
+    // element insertion and element updates.  It is important that you do not insert DgnDb element in this
+    // call.  Fill ElementImportResults with new elements you have created to represent the input DWG entity,
+    // but do not insert them - leave the insertion to the caller.
+    //
     virtual BentleyStatus   _ImportEntity (ElementImportResults& results, ElementImportInputs& inputs) override;
-    // Override _ImportGroup to convert a DWG group to a DgnDb group element, returning optional element ID.
-    virtual BentleyStatus   _ImportGroup (DwgDbGroupCR group) override;
+    //
+    // Override _ImportGroup to create & insert a DgnDb group element from a DWG group.
+    //
+    // This method is overridden to serve as a sample code that demonstrates how a GenericGroup 
+    // can be created from a DWG group.  The super method has the same implementation.  The base class
+    // of DwgImporter works this way: after _BeginImport() is called, the models are discovered from
+    // the root DWG file's block section.  Each xRef attachment is converted as a DgnModel.  The importer 
+    // moves on to _ImportEntitySection, followed by _ImportLayouts for modelspapce and
+    // paperspaces respectively, to import their entities and add converted elements in their respective models.
+    // After the importer has finished creating models and elements, it then calls _ImportGroups(void) to start 
+    // processing DWG groups, by iterating through the root DWG file and xRef files.  For each DWG file, it 
+    // calls _ImportGroups and passes in DwgDbDatabase of that file.  That method in turn calls _ImportGroup
+    // for each group object found in the group dictionary section of that DWG file.
+    //
+    virtual DgnElementPtr   _ImportGroup (DwgDbGroupCR dwgGroup) override;
+    //
+    // Override _UpdateGroup to update existing DgnDb group element from a DWG group
+    //
+    // This method goes parallel with _ImportGroup. A difference that it only gets called during
+    // an updating job run.  During such an incremental process, _ImportGroups consults DwgSyncInfo
+    // about the incoming DWG groups.  When a previously imported group is found, _OnUpdateGroup 
+    // is called.  If a change of the DWG group has been detected, _UpdateGroup gets called and both
+    // the DgnDb and DWG groups are passed in.  This method is expected to update the contents of 
+    // the existing DgnDb group element from the DWG group object.  If no change has been detected 
+    // by _OnUpdateGroup, _ImportGroup gets called, and is expected to create a new element.
+    //
+    virtual BentleyStatus   _UpdateGroup (DgnElementR dgnGroup, DwgDbGroupCR dwgGroup) override;
+    //
     };  // ImportXData
 
 //=======================================================================================

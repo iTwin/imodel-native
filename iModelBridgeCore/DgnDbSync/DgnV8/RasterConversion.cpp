@@ -773,7 +773,7 @@ bool ComputeDepthBias(double& depthBias, DgnV8Api::Raster::DgnRaster& raster)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool copyRaster)
+BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool copyRaster, bool isNewElement)
     {
     DgnModel& targetModel = v8mm.GetDgnModel();
     TransformCR dgnToBim = v8mm.GetTransform();
@@ -984,7 +984,6 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
         }
     else
         {
-        m_syncInfo.UpdateElement(mapping);
         DgnDbStatus updateStatus;
         if (DgnDbStatus::Success != (updateStatus = pModel->Update()))
             {
@@ -992,6 +991,9 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
             ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), v8LocalFilename.GetNameUtf8().c_str());
             return ERROR;
             }
+        m_syncInfo.UpdateElement(mapping);
+        _OnElementConverted(mapping.GetElementId(), &v8eh, Converter::ChangeOperation::Update);
+
         }
     // -- Enable display (or not) in views.    
     DgnCategoryId category = GetSyncInfo().GetCategory(v8eh, v8mm);
@@ -1011,7 +1013,7 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
         models.Update();
         }
     // Schedule reality model tileset creation.
-    AddModelRequiringRealityTiles(pModel->GetModelId());
+    AddModelRequiringRealityTiles(pModel->GetModelId(), v8LocalFilename.GetNameUtf8(), Converter::GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP()));
 
     return SUCCESS;
     }

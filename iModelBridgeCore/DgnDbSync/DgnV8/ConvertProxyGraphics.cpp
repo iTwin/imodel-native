@@ -38,6 +38,8 @@ DgnAttachmentArrayP Converter::GetAttachments(DgnV8ModelRefR v8Model)
         LOG.tracev("Loading attachments for %s", v8Model.AsDgnAttachmentCP()? IssueReporter::FmtAttachment(*v8Model.AsDgnAttachmentCP()).c_str(): IssueReporter::FmtModel(*v8Model.GetDgnModelP()).c_str());
 
     v8Model.ReadAndLoadDgnAttachments(loadOptions);
+    RealityMeshAttachmentConversion::ForceClassifierAttachmentLoad (v8Model);
+
 
     return v8Model.GetDgnAttachmentsP();
     }

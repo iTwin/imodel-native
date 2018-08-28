@@ -74,7 +74,11 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
     WString      dbFileName = GetDgnDb().GetFileName().GetFileNameWithoutExtension();
 
     outputDirectory.AppendToPath(dbFileName.c_str());
-    if (!outputDirectory.IsDirectory() && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(outputDirectory))
+    if (outputDirectory.IsDirectory())
+        {
+        BeFileName::EmptyDirectory(outputDirectory);
+        }
+    else if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(outputDirectory))
         {
         ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TemporaryDirectoryNotFound(), Utf8String(outputDirectory.c_str()).c_str());
         BeAssert(false && "unable to create output directory");
@@ -87,9 +91,12 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
     auto    ecefLocation = m_dgndb->GeoLocation().GetEcefLocation();
     auto    dbToEcefTransform = ecefLocation.m_isValid ? Transform::From(ecefLocation.m_angles.ToRotMatrix(), ecefLocation.m_origin) : Transform::FromIdentity();
 
-    for (auto const& modelId : m_modelsRequiringRealityTiles)
+    for (auto const& curr : m_modelsRequiringRealityTiles)
         {
-        auto model = m_dgndb->Models().GetModel(modelId);
+        auto model = m_dgndb->Models().GetModel(curr.first);
+        bpair<Utf8String, SyncInfo::V8FileSyncInfoId> tpair = curr.second;
+        Utf8String fileName = tpair.first;
+        SyncInfo::V8FileSyncInfoId fileId = tpair.second;
         auto geometricModel = model->ToGeometricModel();
 
         if (nullptr == geometricModel)
@@ -98,6 +105,30 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             return ERROR;
             }
 
+        BeFileName file(fileName.c_str());
+        uint64_t currentLastModifiedTime;
+        uint64_t currentFileSize;
+        Utf8String currentEtag;
+        GetSyncInfo().GetCurrentImageryInfo(fileName, currentLastModifiedTime, currentFileSize, currentEtag);
+
+        uint64_t existingLastModifiedTime;
+        uint64_t existingFileSize;
+        Utf8String existingEtag;
+        Utf8String rdsId;
+        bool isUpdate = false;
+        if (GetSyncInfo().TryFindImageryFile(model->GetModeledElementId(), fileName, existingLastModifiedTime, existingFileSize, existingEtag, rdsId))
+            {
+            if (!existingEtag.empty())
+                {
+                if (existingEtag.Equals(currentEtag))
+                    continue;
+                }
+            else if (currentLastModifiedTime == existingLastModifiedTime && currentFileSize == existingFileSize)
+                continue;
+            isUpdate = true;
+            }
+
+        // Only get to this point if it is a new image or if it is an existing image that has been modified
         BeFileName modelDir = outputDirectory;
         modelDir.AppendToPath(WString(model->GetModelId().ToString().c_str()).c_str());
         if (modelDir.DoesPathExist())
@@ -131,8 +162,19 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             }
 
         Utf8String url;
+        Utf8String identifier = "";
         if (doUpload)
             {
+            // if it is an update, then first we need to delete the current data
+            if (isUpdate)
+                {
+                bvector<ConnectedRealityDataRelationshipPtr> relationshipVector;
+                ConnectedRealityDataRelationship::RetrieveAllForRDId(relationshipVector, rdsId);
+                for (ConnectedRealityDataRelationshipPtr relationship : relationshipVector)
+                    relationship->Delete();
+                ConnectedRealityData deleter = ConnectedRealityData(rdsId);
+                deleter.Delete();
+                }
             ConnectedRealityData crd = ConnectedRealityData();
             crd.SetName(Utf8String(dbFileName).c_str());
             Utf8PrintfString description(ConverterDataStrings::RDS_Description(), Utf8String(dbFileName).c_str());
@@ -154,7 +196,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
                 return ERROR;
                 }
 
-            Utf8String identifier = crd.GetIdentifier();
+            identifier = crd.GetIdentifier();
             RealityDataByIdRequest rd = RealityDataByIdRequest(identifier);
             url = rd.GetHttpRequestString();
             BeFileName::EmptyAndRemoveDirectory(modelDir);
@@ -166,6 +208,12 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
 
         model->SetJsonProperties(json_tilesetUrl(), url);
         model->Update();
+
+        if (isUpdate)
+            m_syncInfo.UpdateImageryFile(model->GetModeledElementId(), currentLastModifiedTime, currentFileSize, currentEtag.c_str(), identifier.c_str());
+        else
+            m_syncInfo.InsertImageryFile(model->GetModeledElementId(), fileId, fileName.c_str(), currentLastModifiedTime, currentFileSize, currentEtag.c_str(), identifier.c_str());
+
         }
 
     return BSISUCCESS;

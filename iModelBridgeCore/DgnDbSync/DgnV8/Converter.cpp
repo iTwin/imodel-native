@@ -1271,8 +1271,20 @@ StableIdPolicy Converter::_GetIdPolicy(DgnV8FileR dgnFile) const
     if (StableIdPolicy::ByHash == _GetParams().GetStableIdPolicy())
         return StableIdPolicy::ByHash;
 
-    // only V8 files have stable ids
-    return IsV8Format(dgnFile) ? StableIdPolicy::ById : StableIdPolicy::ByHash; 
+    // some files have stable ids
+    DgnV8Api::DgnFileFormatType format = DgnV8Api::DgnFileFormatType::V8;
+    dgnFile.GetVersion(&format, nullptr, nullptr);
+    switch (format)
+        {
+        case DgnV8Api::DgnFileFormatType::V8:
+        case DgnV8Api::DgnFileFormatType::DWG:
+        case DgnV8Api::DgnFileFormatType::DXF:
+        case DgnV8Api::DgnFileFormatType::IFC:
+            return StableIdPolicy::ById;
+        }
+    
+    // others do not
+    return StableIdPolicy::ByHash; 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1632,6 +1644,8 @@ void Converter::OnUpdateComplete()
     // *** WIP_UPDATER - update thumbnails for views with modified models
     if (m_elementsConverted != 0)
         GenerateThumbnails();
+    if (m_modelsRequiringRealityTiles.size() != 0)
+        GenerateRealityModelTilesets();
 
     // Update the project extents ... but only if it gets bigger.
     auto rtreeBox = m_dgndb->GeoLocation().QueryRTreeExtents();
@@ -2678,7 +2692,9 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
         {
         _GetChangeDetector()._OnElementSeen(*this, csearch.GetExistingElementId());
         conversionResults.m_mapping = csearch.m_v8ElementMapping;
-        if (v8eh.GetElementType() != DgnV8Api::RASTER_FRAME_ELM)
+        if (v8eh.GetElementType() != DgnV8Api::RASTER_FRAME_ELM &&
+            !(v8eh.GetElementType() == DgnV8Api::EXTENDED_ELM &&  // Quickly reject non-106
+             DgnV8Api::ElementHandlerManager::GetHandlerId(v8eh) == DgnV8Api::PointCloudHandler::GetElemHandlerId()))
             UpdateResults(conversionResults, csearch.GetExistingElementId());
         }
     else
@@ -2699,29 +2715,27 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Keith.Bentley                   02 / 15
 //---------------------------------------------------------------------------------------
-void SpatialConverterBase::DoConvertSpatialElement(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement)
+BentleyStatus SpatialConverterBase::DoConvertSpatialElement(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement)
     {
     if (WasAborted())
-        return;
+        return BSISUCCESS;
 
     ReportProgress();
 
     // Convert raster elements
     if (v8eh.GetElementType() == DgnV8Api::RASTER_FRAME_ELM)
         {
-        _ConvertRasterElement(v8eh, v8mm, true);
-        return;
+        return _ConvertRasterElement(v8eh, v8mm, true, isNewElement);
         }
 
     // Convert point cloud elements
     if (v8eh.GetElementType() == DgnV8Api::EXTENDED_ELM &&  // Quickly reject non-106
         DgnV8Api::ElementHandlerManager::GetHandlerId(v8eh) == DgnV8Api::PointCloudHandler::GetElemHandlerId())
         {
-        _ConvertPointCloudElement(v8eh, v8mm, true);
-        return;
+        return _ConvertPointCloudElement(v8eh, v8mm, true, isNewElement);
         }
 
-    ConvertElement(results, v8eh, v8mm, GetSyncInfo().GetCategory(v8eh, v8mm), false, isNewElement);
+    return ConvertElement(results, v8eh, v8mm, GetSyncInfo().GetCategory(v8eh, v8mm), false, isNewElement);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2779,12 +2793,14 @@ void SpatialConverterBase::_ConvertSpatialElement(ElementConversionResults& resu
 //TODO        return;
 
     IChangeDetector::SearchResults changeInfo;
+    BentleyStatus stat = SUCCESS;
     if (GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, v8mm))
         {
-        DoConvertSpatialElement(results, v8eh, v8mm, (IChangeDetector::ChangeType::Insert == changeInfo.m_changeType));
+        stat = DoConvertSpatialElement(results, v8eh, v8mm, (IChangeDetector::ChangeType::Insert == changeInfo.m_changeType));
         }
 
-    ProcessConversionResults(results, changeInfo, v8eh, v8mm);
+    if (SUCCESS == stat)
+        ProcessConversionResults(results, changeInfo, v8eh, v8mm);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2920,7 +2936,7 @@ ResolvedModelMapping Converter::GetModelFromSyncInfo(DgnV8ModelRefCR v8Model, Tr
 
     for (auto entry=it.begin(); entry!=it.end(); ++entry)
         {
-        if (entry.GetTransform().IsEqual(trans))
+        if (Converter::IsTransformEqualWithTolerance(entry.GetTransform(),trans))
             {
             auto model = m_dgndb->Models().GetModel(entry.GetModelId());
             if (!model.IsValid())
@@ -3080,7 +3096,7 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         foundOne = true; // We have mapped this DgnV8 model to a DgnDb model.
 
         //  See if this particular mapping is based on the same transform.
-        if (thisModel.GetTransform().IsEqual(trans))
+        if (Converter::IsTransformEqualWithTolerance(thisModel.GetTransform(),trans))
             return thisModel;
         }
 
@@ -3202,7 +3218,7 @@ ResolvedModelMapping RootModelConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
         foundOne = true; // We have mapped this DgnV8 model to a DgnDb model.
 
         //  See if this particular mapping is based on the same transform.
-        if (thisModel.GetTransform().IsEqual(trans))
+        if (Converter::IsTransformEqualWithTolerance(thisModel.GetTransform(),trans))
             return thisModel;
         }
 
@@ -3235,7 +3251,7 @@ ResolvedModelMapping RootModelConverter::_FindModelForDgnV8Model(DgnV8ModelR v8M
     for (auto thisModel : FindMappingsToV8Model(v8Model)) // finds all unique transforms of attachments of this model
         {
         //  See if this mapping is based on the same transform.
-        if (thisModel.GetTransform().IsEqual(trans)) 
+        if (Converter::IsTransformEqualWithTolerance(thisModel.GetTransform(),trans))
             return thisModel;
         }
 
@@ -3675,6 +3691,16 @@ bool Converter::ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Mo
     return true;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Abeesh.Basheer           08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool            Converter::IsTransformEqualWithTolerance(TransformCR lhs, TransformCR rhs)
+    {
+    auto matrixTolerance = Angle::TinyAngle();
+    auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(rhs.ColumnXMagnitude());
+    return lhs.IsEqual(rhs, matrixTolerance, pointTolerance);
+    }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
 

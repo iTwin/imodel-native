@@ -330,6 +330,7 @@
         <Bindings>
             <Files ProductDirectoryName="SampleXData" Required="false">Delivery/Samples/XData/ImportXData.h</Files>
             <Files ProductDirectoryName="SampleXData" Required="false">Delivery/Samples/XData/ImportXData.cpp</Files>
+            <Files ProductDirectoryName="SampleXData" Required="false">Delivery/Samples/XData/SampleAffinity.cpp</Files>
             <Files ProductDirectoryName="SampleXData" Required="false">Delivery/Samples/XData/ImportXData.mke</Files>
         </Bindings>
     </Part>

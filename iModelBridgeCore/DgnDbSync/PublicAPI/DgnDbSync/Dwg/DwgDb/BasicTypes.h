@@ -41,12 +41,14 @@ typedef bvector <BentleyApi::DPoint3d>  DPoint3dArray;
 typedef bvector <int32_t>               DwgDbIntArray;
 typedef bvector <double>                DwgDbDoubleArray;
 typedef bvector <DwgDbObjectId>         DwgDbObjectIdArray;
+typedef bvector <DwgDbObjectP>          DwgDbObjectPArray;
 typedef bvector <DwgCmColor>            DwgColorArray;
 DEFINE_NO_NAMESPACE_TYPEDEFS (DPoint2dArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DPoint3dArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbIntArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbDoubleArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbObjectIdArray)
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbObjectPArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgColorArray)
 
 /*=================================================================================**//**
@@ -131,6 +133,7 @@ public:
 
     DWGDB_EXPORT DwgString (WCharCP chars);
     DWGDB_EXPORT DwgString (DwgString const& in) : DwgString(in.c_str()) {}
+    DWGDB_EXPORT DwgString (Utf8StringCR in);
     DWGDB_EXPORT ~DwgString ();
 
     DWGDB_EXPORT void       Assign (WCharCP chars);

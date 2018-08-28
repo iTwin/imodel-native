@@ -67,6 +67,7 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     if (!m_rootFile.IsValid())
         return openStatus;
 
+
     //  Identify the root model
     auto rootModelId = _GetRootModelId();
 
@@ -74,6 +75,8 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId, /*fillCache*/true, /*loadRefs*/true, GetParams().GetProcessAffected());
     if (NULL == m_rootModelRef)
         return openStatus;
+
+    RealityMeshAttachmentConversion::ForceClassifierAttachmentLoad (*m_rootModelRef);
 
     if (DgnV8Api::DGNFILE_STATUS_Success != (openStatus = _ComputeCoordinateSystemTransform()))
         return openStatus;
@@ -197,10 +200,7 @@ void SpatialConverterBase::ApplyJobTransformToRootTrans()
 
     m_rootTrans = BentleyApi::Transform::FromProduct(jobTrans, m_rootTrans); // NB: pre-multiply!
 
-    auto matrixTolerance = Angle::TinyAngle();
-    auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(jobTrans.ColumnXMagnitude());
-
-    if (!jobTrans.IsEqual(m_importJob.GetImportJob().GetTransform(), matrixTolerance, pointTolerance))
+    if (!Converter::IsTransformEqualWithTolerance(jobTrans,m_importJob.GetImportJob().GetTransform()))
         {
         m_importJob.GetImportJob().SetTransform(jobTrans);
         GetSyncInfo().UpdateImportJob(m_importJob.GetImportJob()); // update syncinfo to record the new baseline
@@ -212,11 +212,9 @@ void SpatialConverterBase::ApplyJobTransformToRootTrans()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialConverterBase::DetectRootTransformChange()
     {
-    auto matrixTolerance = Angle::TinyAngle();
-    auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(m_rootTrans.ColumnXMagnitude());
-
+    
     //  Detect if anything about the root GCS/units transform has changed (including the computed root trans and the job trans).
-    m_rootTransHasChanged = !m_rootModelMapping.GetTransform().IsEqual(m_rootTrans, matrixTolerance, pointTolerance);
+    m_rootTransHasChanged = !Converter::IsTransformEqualWithTolerance(m_rootModelMapping.GetTransform(),m_rootTrans);
 
     if (!m_rootTransHasChanged)
         return;
@@ -360,7 +358,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     Json::Value v8JobProps(Json::objectValue);      // V8Bridge-specific job properties - information that is not recorded anywhere else.
     v8JobProps["RootModel"] = Utf8String(m_rootModelRef->GetDgnModelP()->GetModelName());
     v8JobProps["BridgeVersion"] = 1;//TODO: Move it to #define
-    v8JobProps["BridgeType"] = "DgnV8Bridge";
+    v8JobProps["BridgeType"] = "IModelBridgeForMstn";
     JobSubjectUtils::InitializeProperties(*ed, _GetParams().GetBridgeRegSubKeyUtf8(), comments, &v8JobProps);
 
     SubjectCPtr jobSubject = ed->InsertT<Subject>();
@@ -461,11 +459,11 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
     if (!isMyFile)
         {
         // Before we get the bridge affinity work for references of foreign file formats, treat them as owned, so they get processed - TFS's 916434,921023.
-        auto rootConverter = dynamic_cast<RootModelConverter const*> (this);
-        if (rootConverter != nullptr && !DgnV8Api::DgnFile::IsSameFile(fn.c_str(), rootConverter->GetRootFileName().c_str(), DgnV8Api::FileCompareMask::BaseNameAndExtension))
+        auto rootFilename = _GetParams().GetInputFileName ();
+        if (!DgnV8Api::DgnFile::IsSameFile(fn.c_str(), rootFilename.c_str(), DgnV8Api::FileCompareMask::BaseNameAndExtension))
             {
             DgnV8Api::DgnFileFormatType   format;
-            if (const_cast<DgnV8FileR>(v8File).GetVersion(&format, nullptr, nullptr) == BSISUCCESS &&
+            if (Bentley::dgnFileObj_validateFile(&format, nullptr, nullptr, nullptr, nullptr, nullptr, fn.c_str()) &&
                 format != DgnV8Api::DgnFileFormatType::V8 && format != DgnV8Api::DgnFileFormatType::V7)
                 isMyFile = true;
             }

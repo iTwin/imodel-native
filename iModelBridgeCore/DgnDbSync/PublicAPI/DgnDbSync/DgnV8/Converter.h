@@ -991,7 +991,7 @@ protected:
     DgnModelId          m_jobDefinitionModelId;
     DgnElementId         m_textStyleNoneId;
     bset<DgnModelId>    m_unchangedModels;
-    bset<DgnModelId>    m_modelsRequiringRealityTiles;;
+    bmap<DgnModelId, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>>    m_modelsRequiringRealityTiles;;
 
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
@@ -1084,7 +1084,9 @@ public:
 
     //! @private
     //! This is called in a separate process to check bridge file affinity only.
-    DGNDBSYNC_EXPORT static BentleyStatus CheckCanOpenFile(BentleyApi::BeFileName const& sourceFileName, BentleyApi::BeFileName const& affinityLibraryPath);
+    DGNDBSYNC_EXPORT static BentleyStatus GetAuthoringFileInfo(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, BentleyApi::BeFileName const& sourceFileName);
+    DGNDBSYNC_EXPORT static void InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath);
+    DGNDBSYNC_EXPORT static void GetAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,WCharCP affinityLibraryPathStr, WCharCP sourceFileNameStr);
     
     //! Make sure that the specified V8 file is registered in SyncInfo and then return the ID assigned to it by SyncInfo.
     //! This function \em caches the result in appdata on the file.
@@ -1342,7 +1344,7 @@ public:
     DgnV8Api::ECQuery const& GetSelectAllV8ECQuery() const;
     static DgnV8Api::FindInstancesScopePtr CreateFindInstancesScope(DgnV8EhCR);
     DgnCode TryGetBusinessKey(ECObjectsV8::IECInstanceCR);
-    BentleyStatus GetECContentOfElement(V8ElementECContent& content, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement);
+    DGNDBSYNC_EXPORT BentleyStatus GetECContentOfElement(V8ElementECContent& content, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement);
     //! @}
 
 
@@ -1924,6 +1926,9 @@ public:
     //! It is non-identity in the case where we are pulling in a new dgnv8 file and we need to do a GCS or other coordinate transform to map it in.
     TransformCR GetRootTrans() const {return m_rootTrans;}
 
+    //! Utility method to compare transforms with a tolerance.
+    DGNDBSYNC_EXPORT static bool IsTransformEqualWithTolerance(TransformCR lhs, TransformCR rhs);
+
     //! @}
 
     //! @name Error and Progress Reporting
@@ -1986,7 +1991,7 @@ public:
     void ClearV8ProgressMeter();
     
     //! Add model requiring reality tiles.
-    void AddModelRequiringRealityTiles(DgnModelId id) { m_modelsRequiringRealityTiles.insert(id); }
+    void AddModelRequiringRealityTiles(DgnModelId id, Utf8StringCR sourceFile, SyncInfo::V8FileSyncInfoId fileId) { m_modelsRequiringRealityTiles.Insert(id, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>(sourceFile, fileId)); }
     //! @}
 
     //! @name Change Monitoring
@@ -2332,19 +2337,19 @@ public:
     //! @name  Converting Elements
     //! @{
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialElement(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const&);
-    DGNDBSYNC_EXPORT void DoConvertSpatialElement(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const& m, bool isNewElement);
+    DGNDBSYNC_EXPORT BentleyStatus DoConvertSpatialElement(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const& m, bool isNewElement);
     void ConvertElementList(DgnV8Api::PersistentElementRefList* list, ResolvedModelMapping const&);
     //! @}
 
     //! @name  Converting Rasters
     //! @{
-    DGNDBSYNC_EXPORT virtual BentleyStatus _ConvertRasterElement(DgnV8EhCR v8eh, ResolvedModelMapping const&, bool copyRaster);
+    DGNDBSYNC_EXPORT virtual BentleyStatus _ConvertRasterElement(DgnV8EhCR v8eh, ResolvedModelMapping const&, bool copyRaster, bool isNewElement);
     DGNDBSYNC_EXPORT virtual bool _RasterMustBeExported(Dgn::ImageFileFormat fileFormat);
     //! @}
 
     //! @name  Converting Point Clouds
     //! @{
-    DGNDBSYNC_EXPORT virtual BentleyStatus _ConvertPointCloudElement(DgnV8EhCR v8eh, ResolvedModelMapping const&, bool copyPointCloud);
+    DGNDBSYNC_EXPORT virtual BentleyStatus _ConvertPointCloudElement(DgnV8EhCR v8eh, ResolvedModelMapping const&, bool copyPointCloud, bool isNewElement);
     void ConvertV8PointCloudViewSettings(SpatialViewControllerR, DgnV8ViewInfoCR viewInfo);
     //! @}
 
@@ -2576,7 +2581,7 @@ protected:
 
 
 public:
-    static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}
+    static WCharCP GetRegistrySubKey() {return L"IModelBridgeForMstn";}
 
     DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
     DGNDBSYNC_EXPORT  ~RootModelConverter();
@@ -2833,14 +2838,6 @@ struct ConvertV8TextToDgnDbExtension : ConvertToDgnDbElementExtension
     bool _GetBasisTransform(Bentley::Transform&, DgnV8EhCR, Converter&) override;
 };
 
-//=======================================================================================
-// @bsiclass                                                    Jeff.Marker     05/2016
-//=======================================================================================
-struct RealityMeshAttachmentConversion
-{
-    static StatusInt ExtractAttachment (BentleyApi::Utf8StringR rootUrl, Transform& location, BentleyApi::Dgn::ClipVectorPtr& clipVector, ModelSpatialClassifiers& classifiers, uint32_t& activeClassifierId, DgnV8EhCR v8el, Converter& converter, ResolvedModelMapping const& v8mm, uint16_t majorXAttributeId);
-                         
-};
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2016                                                                    
@@ -2881,6 +2878,16 @@ struct ScalableMeshElementHandler : DgnV8Api::ExtendedElementHandler
     DEFINE_T_SUPER(DgnV8Api::ExtendedElementHandler)
     DGNV8_ELEMENTHANDLER_DECLARE_MEMBERS(ScalableMeshElementHandler, );
 };
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2016
+//=======================================================================================
+struct RealityMeshAttachmentConversion
+{
+    static StatusInt ExtractAttachment (BentleyApi::Utf8StringR rootUrl, Transform& location, BentleyApi::Dgn::ClipVectorPtr& clipVector, ModelSpatialClassifiers& classifiers, uint32_t& activeClassifierId, DgnV8EhCR v8el, Converter& converter, ResolvedModelMapping const& v8mm, uint16_t majorXAttributeId);
+    static void ForceClassifierAttachmentLoad (DgnModelRefR modelRef);
+                         
+};
+
 
 //=======================================================================================
 // @bsiclass                                                    Mathieu.St-Pierre 07/17

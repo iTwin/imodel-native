@@ -127,6 +127,13 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
     if (SUCCESS != RealityMeshAttachmentConversion::ExtractAttachment (rootUrl, location, clipVector, classifiers, activeClassifierId, v8el, converter, v8mm, ScalableMeshElementHandler::XATTRIBUTEID_ScalableMeshAttachment))
         return Result::SkipElement;
 
+    DgnElementId existingId;
+    IChangeDetector::SearchResults changeInfo;
+    if (converter.GetChangeDetector()._IsElementChanged(changeInfo, converter, v8el, v8mm) && IChangeDetector::ChangeType::Update == changeInfo.m_changeType)
+        {
+        existingId = changeInfo.GetExistingElementId();
+        }
+
     Utf8String linkName(BeFileName(rootUrl).GetFileNameWithoutExtension());
     DgnDbR db = converter.GetDgnDb();
     RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), rootUrl.c_str(), linkName.c_str());
@@ -144,7 +151,18 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
   	//Avoid slash in URL being converted to backslash  
     smFileName.AppendString(rootUrlW.c_str());
 
-    IMeshSpatialModelP spatialModel(ScalableMeshModelHandler::AttachTerrainModel(db, modelName, smFileName, *repositoryLink, true, clipVector.get(), &classifiers));
+    IMeshSpatialModelP spatialModel = nullptr;
+    if (!existingId.IsValid())
+        spatialModel = (ScalableMeshModelHandler::AttachTerrainModel(db, modelName, smFileName, *repositoryLink, true, clipVector.get(), &classifiers));
+    else
+        {
+        spatialModel = (db.Models().Get<ScalableMeshModel>(DgnModelId(existingId.GetValue()))).get();
+        ClipVectorCP clip = clipVector.get();
+        ((ScalableMeshModel*) spatialModel)->SetClip(clipVector.get());
+        ((ScalableMeshModel*) spatialModel)->SetClassifiers(classifiers);
+
+        spatialModel->Update();
+        }
            
     Bentley::bmap<uint64_t, Bentley::bpair<DGNV8_BENTLEY_NAMESPACE_NAME::ScalableMesh::SMNonDestructiveClipType, Bentley::bvector<Bentley::DPoint3d>>> clipDefs;
 
@@ -181,26 +199,31 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
        
     ResolveLinkedModelId((ScalableMeshModel*)spatialModel, v8el.GetElementId(), linksToModelsV8);
    
-
     DgnModelId modelId = spatialModel->GetModelId();
-
-    DgnCategoryId category = converter.GetSyncInfo().GetCategory(v8el, v8mm);
-
-    for (auto const& entry : ViewDefinition::MakeIterator(db))
+    if (!existingId.IsValid())
         {
-        auto viewController = ViewDefinition::LoadViewController(entry.GetId(), db);
-        if (!viewController.IsValid() || !viewController->IsSpatialView() || !viewController->GetViewDefinitionR().GetCategorySelector().IsCategoryViewed(category))
-            continue;
+        DgnCategoryId category = converter.GetSyncInfo().GetCategory(v8el, v8mm);
 
-        auto& modelSelector = viewController->ToSpatialViewP()->GetSpatialViewDefinition().GetModelSelector();
-        modelSelector.AddModel(modelId);
-        modelSelector.Update();
+        for (auto const& entry : ViewDefinition::MakeIterator(db))
+            {
+            auto viewController = ViewDefinition::LoadViewController(entry.GetId(), db);
+            if (!viewController.IsValid() || !viewController->IsSpatialView() || !viewController->GetViewDefinitionR().GetCategorySelector().IsCategoryViewed(category))
+                continue;
+
+            auto& modelSelector = viewController->ToSpatialViewP()->GetSpatialViewDefinition().GetModelSelector();
+            modelSelector.AddModel(modelId);
+            modelSelector.Update();
+            }
+        SyncInfo::ElementProvenance prov = SyncInfo::ElementProvenance(v8el, converter.GetSyncInfo(), converter.GetCurrentIdPolicy());
+        SyncInfo::V8ElementMapping mapping = SyncInfo::V8ElementMapping(DgnElementId(modelId.GetValue()), v8el, v8mm.GetV8ModelSyncInfoId(), prov);
+        converter.GetSyncInfo().InsertElement(mapping);
+        converter._GetChangeDetector()._OnElementSeen(converter, mapping.GetElementId());
+
         }
-
     if (((ScalableMeshModel*)spatialModel)->_AllowPublishing())
         {
         // Schedule reality model tileset creation.
-        converter.AddModelRequiringRealityTiles(modelId);
+        converter.AddModelRequiringRealityTiles(modelId, smFileName.GetNameUtf8(), Converter::GetV8FileSyncInfoIdFromAppData(*v8el.GetDgnFileP()));
         }
 
     return Result::SkipElement;

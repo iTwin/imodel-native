@@ -351,9 +351,9 @@ DwgString       DwgDbDatabase::GetVersionGuid () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbStatus DwgDbDatabase::SaveAs (WCharCP newFileName, DwgFileVersion version, bool createBakFile)
     {
-    DwgDbVersion    toVersion = Util::GetDwgVersionFrom (version);
+    TkDbVersion    toVersion = Util::GetDwgVersionFrom (version);
 
-    if (toVersion != DwgDbVersion::kDHL_Unknown && nullptr != newFileName && newFileName[0] != 0)
+    if (toVersion != TkDbVersion::kDHL_Unknown && nullptr != newFileName && newFileName[0] != 0)
         {
 #if DWGTOOLKIT_OpenDwg
         T_Super::writeFile(OdString(newFileName), OdDb::SaveType::kDwg, static_cast<OdDb::DwgVersion>(version), true);
@@ -386,9 +386,9 @@ DwgDbStatus DwgDbDatabase::SaveAs (WCharCP newFileName, DwgFileVersion version, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbStatus DwgDbDatabase::SaveAsDxf (WCharCP dxfFileName, DwgFileVersion version, int precision)
     {
-    DwgDbVersion    toVersion = Util::GetDwgVersionFrom (version);
+    TkDbVersion    toVersion = Util::GetDwgVersionFrom (version);
 
-    if (toVersion != DwgDbVersion::kDHL_Unknown && nullptr != dxfFileName && dxfFileName[0] != 0)
+    if (toVersion != TkDbVersion::kDHL_Unknown && nullptr != dxfFileName && dxfFileName[0] != 0)
         {
 #if DWGTOOLKIT_OpenDwg
         T_Super::writeFile(OdString(dxfFileName), OdDb::SaveType::kDxf, static_cast<OdDb::DwgVersion>(version), true, precision);

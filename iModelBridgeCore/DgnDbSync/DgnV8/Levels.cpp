@@ -345,6 +345,13 @@ void Converter::HandleLevelAppearanceInconsistency(ViewDefinitionR theView, DgnA
     bool maybeMakeSubCategories = !GetParams().NeverCopyLevel(); 
     IssueSeverity issueSeverity = maybeMakeSubCategories? IssueSeverity::Info: IssueSeverity::Error;
 
+    if (DgnV8Api::LevelCacheErrorCode::CannotFindLevel == v8Level->GetStatus())
+        {
+        if (IssueSeverity::Error == issueSeverity)
+            ReportIssueV(issueSeverity, IssueCategory::VisualFidelity(), Issue::LevelDisplayInconsistent(), nullptr, Utf8String(v8Level.GetName()).c_str(), IssueReporter::FmtAttachment(v8Attachment).c_str());
+        return;
+        }
+
     bool forceInvisible = false;
     if (!isV8LevelOn && theView.GetCategorySelector().IsCategoryViewed(categoryId))
         {

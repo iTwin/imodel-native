@@ -14,6 +14,14 @@ USING_NAMESPACE_DGNDBSYNC_DWG
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+GroupFactory::GroupFactory (DwgImporter& importer, DwgDbGroupCR group) : m_importer(importer), m_dwgGroup(group)
+    {
+    m_dwgGroup.GetAllEntityIds (m_dwgMemberIds);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementIdSet GroupFactory::FindAllElements (DwgDbObjectIdCR objectId) const
     {
     DgnElementIdSet found;
@@ -38,10 +46,10 @@ DgnElementIdSet GroupFactory::FindAllElements (DwgDbObjectIdCR objectId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericGroupPtr GroupFactory::CreateAndInsert ()
+GenericGroupPtr GroupFactory::CreateAndInsert () const
     {
     GenericGroupPtr genericGroup;
-    if (m_dwgGroup.GetAllEntityIds(m_memberIds) == 0)
+    if (m_dwgMemberIds.empty())
         return  genericGroup;
 
     // get the model for generic groups:
@@ -70,17 +78,59 @@ GenericGroupPtr GroupFactory::CreateAndInsert ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   GroupFactory::CreateGroup ()
+BentleyStatus   GroupFactory::Update (GenericGroupR genericGroup) const
     {
+    // build a memeber removal list from existing memeber ID's of the group:
+    auto existingMembers = ElementGroupsMembers::QueryMembers (genericGroup);
+
+    // walk through DWG members
+    for (auto objectId : m_dwgMemberIds)
+        {
+        // query all BIM elements mapped from this entity, potentially in multiple DgnModel's:
+        DgnElementIdSet elementIds = this->FindAllElements (objectId);
+
+        // add new members to GenericGroup, and remove existing members from the removal list:
+        for (auto elementId : elementIds)
+            {
+            // if the element already exists in the group, no need to insert - remove it from the existing list:
+            if (existingMembers.find(elementId) != existingMembers.end())
+                {
+                existingMembers.erase (elementId);
+                continue;
+                }
+            // otherwise insert a new member into the group:
+            auto member = m_importer.GetDgnDb().Elements().GetElement (elementId);
+            if (member.IsValid())
+                genericGroup.AddMember (*member);
+            }
+        }
+
+    // the remaining entries in existing list are not seen in the new group - remove them:
+    for (auto elementId : existingMembers)
+        {
+        auto member = m_importer.GetDgnDb().Elements().GetElement (elementId);
+        if (member.IsValid())
+            genericGroup.RemoveMember (*member);
+        }
+
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr   GroupFactory::Create () const
+    {
+    // currently GenericGroup requires pre-insertion for the source element ID to be valid for memebers:
     auto genericGroup = this->CreateAndInsert ();
     if (!genericGroup.IsValid())
-        return  BSIERROR;
+        return  genericGroup;
 
-    size_t  numExpected = m_memberIds.size ();
+    size_t  numExpected = m_dwgMemberIds.size ();
     size_t  numImported = 0;
 
     // walk through member entities:
-    for (auto objectId : m_memberIds)
+    for (auto objectId : m_dwgMemberIds)
         {
         // query all BIM elements mapped from this entity, potentially in multiple DgnModel's:
         DgnElementIdSet elementIds = this->FindAllElements (objectId);
@@ -97,31 +147,86 @@ BentleyStatus   GroupFactory::CreateGroup ()
 
     if (numImported < numExpected)
         {
-        Utf8PrintfString warn("Memebers expected: %d, created: %d", numExpected, numImported);
+        Utf8PrintfString warn("%d memebers were created out of %d members", numExpected, numImported);
         m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::UnexpectedData(), Issue::Message(), Utf8PrintfString("Group %ls", m_dwgGroup.GetName().c_str()).c_str(), warn.c_str());
         }
 
-    return  BSISUCCESS;
+    return  genericGroup;
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::_ImportGroup (DwgDbGroupCR group)
+BentleyStatus   DwgImporter::_OnUpdateGroup (DwgSyncInfo::Group const& oldProvenance, DwgDbGroupCR dwgGroup)
     {
-    BentleyStatus   status = BSIERROR;
-    GroupFactory    factory (*this, group);
+    if (!oldProvenance.IsValid())
+        return  BSIERROR;
 
-    if (this->IsUpdating())
+    auto dwg = dwgGroup.GetDatabase ();
+    if (!dwg.IsValid())
+        return  BSIERROR;
+
+    auto groupId = oldProvenance.GetDgnElementId ();
+    auto& detector = this->_GetChangeDetector ();
+
+    DwgSyncInfo::Group  newProvenance(groupId, DwgSyncInfo::DwgFileId::GetFrom(*dwg), this->GetCurrentIdPolicy(), dwgGroup);
+    if (!newProvenance.IsValid())
+        return  BSIERROR;
+
+    // detect if the file and the group object has any change:
+    if (detector._ShouldSkipFile(*this, *dwg.get()) || newProvenance.IsSame(oldProvenance))
         {
-        // WIP
-        return  status;
+        // record this group as seen
+        detector._OnGroupSeen (*this, groupId);
+        return  BSISUCCESS;
         }
 
-    status = factory.CreateGroup ();
+    // changes detected, make a copy from existing element for editing:
+    DgnElementPtr newElement;
+    DgnElementCPtr oldElement = this->GetDgnDb().Elements().GetElement (groupId);
+    if (!oldElement.IsValid() || !(newElement = oldElement->CopyForEdit()).IsValid())
+        return  BSIERROR;
+
+    // update the group element in BIM
+    auto status = this->_UpdateGroup (*newElement, dwgGroup);
+
+    // update the sync info
+    if (status == BSISUCCESS)
+        {
+        DgnDbStatus dbStat = DgnDbStatus::Success;
+        if (!newElement->Update(&dbStat).IsValid() || dbStat != DgnDbStatus::Success)
+            return  BSIERROR;
+        
+        status = this->GetSyncInfo().UpdateGroup (newProvenance);
+        detector._OnGroupSeen (*this, groupId);
+        }
 
     return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::_UpdateGroup (DgnElementR dgnGroup, DwgDbGroupCR dwgGroup)
+    {
+    // the default implementation only supports GenericGroup
+    auto genericGroup = dynamic_cast<GenericGroupP> (&dgnGroup);
+    if (nullptr != genericGroup)
+        {
+        GroupFactory    factory (*this, dwgGroup);
+        return factory.Update (*genericGroup);
+        }
+    return  BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr   DwgImporter::_ImportGroup (DwgDbGroupCR group)
+    {
+    GroupFactory    factory (*this, group);
+    return factory.Create ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -136,21 +241,51 @@ BentleyStatus   DwgImporter::_ImportGroups (DwgDbDatabaseCR dwg)
         return  BSIERROR;
         }
 
-    DwgDbDictionaryIterator iter = groups->GetIterator ();
-    if (!iter.IsValid())
+    DwgDbDictionaryIteratorPtr  iter = groups->GetIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BentleyStatus::BSIERROR;
 
+    auto& detector = this->_GetChangeDetector ();
+    auto& syncInfo = this->GetSyncInfo ();
+
     // Check all entries of the dictionary:
-    for (; !iter.Done(); iter.Next())
+    for (; !iter->Done(); iter->Next())
         {
-        DwgDbGroupPtr   group(iter.GetObjectId(), DwgDbOpenMode::ForRead);
+        DwgDbGroupPtr   group(iter->GetObjectId(), DwgDbOpenMode::ForRead);
         if (group.OpenStatus() != DwgDbStatus::Success)
             {
             this->ReportError (IssueCategory::CorruptData(), Issue::CantOpenObject(), Utf8PrintfString("the group dictionary in %lls!", this->GetRootDwgFileName().c_str()).c_str());
             continue;
             }
 
-        this->_ImportGroup (*group);
+        this->Progress ();
+
+        if (this->IsUpdating())
+            {
+            DwgSyncInfo::Group  oldProvenance;
+            if (this->GetSyncInfo().FindGroup(oldProvenance, group->GetObjectId()))
+                {
+                this->_OnUpdateGroup (oldProvenance, *group);
+                continue;
+                }
+            // fall through to create a new group
+            }
+
+        auto dgnGroup = this->_ImportGroup (*group);
+
+        if (dgnGroup.IsValid())
+            {
+            auto groupId = dgnGroup->GetElementId ();
+            if (!groupId.IsValid())
+                {
+                BeAssert (false && "_ImportGroup should have inserted the group element!");
+                auto inserted = dgnGroup->Insert ();
+                groupId = inserted->GetElementId ();
+                }
+            // insert group into the sync info and record it as a seen group:
+            syncInfo.InsertGroup (groupId, *group);
+            detector._OnGroupSeen (*this, groupId);
+            }
         }
 
     return  BentleyStatus::SUCCESS;

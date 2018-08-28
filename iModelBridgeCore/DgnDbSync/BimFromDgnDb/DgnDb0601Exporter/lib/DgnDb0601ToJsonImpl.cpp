@@ -410,6 +410,9 @@ bool DgnDb0601ToJsonImpl::ExportDgnDb()
     StopWatch timer(true);
     StopWatch totalTimer(true);
     BentleyStatus stat = SUCCESS;
+    if (SUCCESS != (stat = ExportUnits()))
+        return false;
+
     if (SUCCESS != (stat = ExportSchemas()))
         return false;
 
@@ -1242,6 +1245,37 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportCategories(Utf8CP tableName, Utf8CP bis
             }
 
         }
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus DgnDb0601ToJsonImpl::ExportUnits() const
+    {
+    auto firstModel = m_dgndb->Models().GetModel(m_dgndb->Models().QueryFirstModelId());
+    if (firstModel != nullptr)
+        {
+        GeometricModelP geometricModel = firstModel->ToGeometricModelP();
+        if (nullptr != geometricModel)
+            {
+            GeometricModel::DisplayInfo& displayInfo = geometricModel->GetDisplayInfoR();
+            UnitDefinitionCR mu = displayInfo.GetMasterUnits();
+
+            auto units = Json::Value(Json::ValueType::objectValue);
+            auto system = mu.GetSystem();
+            if (UnitSystem::English == system)
+                units["masterUnit"] = "English";
+            else if (UnitSystem::Metric == system)
+                units["masterUnit"] = "Metric";
+            else if (UnitSystem::USSurvey == system)
+                units["masterUnit"] = "USSurvey";
+            else
+                units["masterUnit"] = "Undefined";
+            (QueueJson) (units.toStyledString().c_str());
+            }
+        }
+
     return SUCCESS;
     }
 

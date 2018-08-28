@@ -79,15 +79,15 @@ BentleyStatus   DwgImporter::MakeSchemaChanges ()
     if (DwgDbStatus::Success != blockTable.OpenStatus())
         return  BSIERROR;
 
-    DwgDbSymbolTableIterator    iter = blockTable->NewIterator ();
-    if (!iter.IsValid())
+    DwgDbSymbolTableIteratorPtr iter = blockTable->NewIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
     // collect attribute definitions from regular blocks
     ECSchemaPtr     attrdefSchema;
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbObjectId   blockId = iter.GetRecordId ();
+        DwgDbObjectId   blockId = iter->GetRecordId ();
         if (!blockId.IsValid() || m_dwgdb->GetModelspaceId() == blockId || m_dwgdb->GetPaperspaceId() == blockId)
             continue;
 
@@ -705,11 +705,11 @@ BentleyStatus   DwgImporter::SetModelPropertiesFromModelspaceViewport (DgnModelP
         if (viewportTable.IsNull())
             return  BSIERROR;
 
-        DwgDbSymbolTableIterator    iter = viewportTable->NewIterator ();
-        if (!iter.IsValid())
+        DwgDbSymbolTableIteratorPtr iter = viewportTable->NewIterator ();
+        if (!iter.IsValid() || !iter->IsValid())
             return  BSIERROR;
 
-        viewport.OpenObject (iter.GetRecordId(), DwgDbOpenMode::ForRead);
+        viewport.OpenObject (iter->GetRecordId(), DwgDbOpenMode::ForRead);
         if (viewport.IsNull())
             return  BSIERROR;
         }
@@ -1099,14 +1099,14 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
     SubjectCPtr parentSubject = this->GetSpatialParentSubject ();
     BeAssert (parentSubject.IsValid() && "parent subject for spatial models not set yet!!");
 
-    DwgDbSymbolTableIterator    iter = blockTable->NewIterator ();
-    if (!iter.IsValid())
+    DwgDbSymbolTableIteratorPtr iter = blockTable->NewIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
     // walk through all blocks and create models for paperspace and xref blocks:
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbObjectId   blockId = iter.GetRecordId ();
+        DwgDbObjectId   blockId = iter->GetRecordId ();
         if (!blockId.IsValid() || blockId == m_modelspaceId)
             continue;
 
@@ -1847,6 +1847,7 @@ void            DwgImporter::_FinishImport ()
         changeDetector._DetectDeletedModelsEnd (*this);
         changeDetector._DetectDeletedMaterials (*this);
         changeDetector._DetectDeletedViews (*this);
+        changeDetector._DetectDeletedGroups (*this);
 
         // update syncinfo for master DWG file
         DwgSyncInfo&    syncInfo = GetSyncInfo ();

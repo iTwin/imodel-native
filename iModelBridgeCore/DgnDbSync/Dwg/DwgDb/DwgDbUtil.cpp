@@ -304,7 +304,7 @@ DwgDbStatus     Util::GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(Spl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbStatus     Util::GetCurveVector (CurveVectorR curveVector, const DwgDbArray<DWGGE_TypeP(Curve2d)>& curves)
+DwgDbStatus     Util::GetCurveVector (CurveVectorR curveVector, const TkArray<DWGGE_TypeP(Curve2d)>& curves)
     {
     if (curves.isEmpty())
         return  DwgDbStatus::InvalidData;
@@ -407,80 +407,80 @@ DwgDbStatus     Util::GetCurvePrimitive (ICurvePrimitivePtr& primitive, DWGGE_Ty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bmap<DwgDbVersion, DwgFileVersion>   MapDwgVersionFromToolkit ()
+static bmap<TkDbVersion, DwgFileVersion>   MapDwgVersionFromToolkit ()
     {
-    bmap<DwgDbVersion, DwgFileVersion>  versionMap;
+    bmap<TkDbVersion, DwgFileVersion>  versionMap;
 
-    versionMap[DwgDbVersion::kDHL_AC1_2]    = DwgFileVersion::Unknown;
-    versionMap[DwgDbVersion::kDHL_AC1_40]   = DwgFileVersion::Unknown;
-    versionMap[DwgDbVersion::kDHL_AC1_50]   = DwgFileVersion::Unknown;
-    versionMap[DwgDbVersion::kDHL_AC2_20]   = DwgFileVersion::Unknown;
-    versionMap[DwgDbVersion::kDHL_AC2_10]   = DwgFileVersion::Unknown;
-    versionMap[DwgDbVersion::kDHL_AC2_21]   = DwgFileVersion::Unknown;
-    versionMap[DwgDbVersion::kDHL_AC2_22]   = DwgFileVersion::Unknown;
-    versionMap[DwgDbVersion::kDHL_1001]     = DwgFileVersion::Unknown;
-    versionMap[DwgDbVersion::kDHL_1002]     = DwgFileVersion::R2_5;
-    versionMap[DwgDbVersion::kDHL_1003]     = DwgFileVersion::R2_6;
-    versionMap[DwgDbVersion::kDHL_1004]     = DwgFileVersion::R9;
-    versionMap[DwgDbVersion::kDHL_1005]     = DwgFileVersion::R9;
-    versionMap[DwgDbVersion::kDHL_1006]     = DwgFileVersion::R10;
-    versionMap[DwgDbVersion::kDHL_1007]     = DwgFileVersion::R10;
-    versionMap[DwgDbVersion::kDHL_1008]     = DwgFileVersion::R10;
-    versionMap[DwgDbVersion::kDHL_1009]     = DwgFileVersion::R11;
-    versionMap[DwgDbVersion::kDHL_1010]     = DwgFileVersion::R11;
-    versionMap[DwgDbVersion::kDHL_1011]     = DwgFileVersion::R11;
-    versionMap[DwgDbVersion::kDHL_1012]     = DwgFileVersion::R13;
-    versionMap[DwgDbVersion::kDHL_1014]     = DwgFileVersion::R14;     // default for R14
-    versionMap[DwgDbVersion::kDHL_1013]     = DwgFileVersion::R14;
-    versionMap[DwgDbVersion::kDHL_1015]     = DwgFileVersion::R2000;   // default for R2000
-    versionMap[DwgDbVersion::kDHL_1500]     = DwgFileVersion::R2000;
-    versionMap[DwgDbVersion::kDHL_1800]     = DwgFileVersion::R2004;   // default R2004
-    versionMap[DwgDbVersion::kDHL_1800a]    = DwgFileVersion::R2004;
-    versionMap[DwgDbVersion::kDHL_1021]     = DwgFileVersion::R2007;   // default for R2007
-    versionMap[DwgDbVersion::kDHL_2100a]    = DwgFileVersion::R2007;
-    versionMap[DwgDbVersion::kDHL_1024]     = DwgFileVersion::R2010;
-    versionMap[DwgDbVersion::kDHL_1027]     = DwgFileVersion::R2013;
+    versionMap[TkDbVersion::kDHL_AC1_2]    = DwgFileVersion::Unknown;
+    versionMap[TkDbVersion::kDHL_AC1_40]   = DwgFileVersion::Unknown;
+    versionMap[TkDbVersion::kDHL_AC1_50]   = DwgFileVersion::Unknown;
+    versionMap[TkDbVersion::kDHL_AC2_20]   = DwgFileVersion::Unknown;
+    versionMap[TkDbVersion::kDHL_AC2_10]   = DwgFileVersion::Unknown;
+    versionMap[TkDbVersion::kDHL_AC2_21]   = DwgFileVersion::Unknown;
+    versionMap[TkDbVersion::kDHL_AC2_22]   = DwgFileVersion::Unknown;
+    versionMap[TkDbVersion::kDHL_1001]     = DwgFileVersion::Unknown;
+    versionMap[TkDbVersion::kDHL_1002]     = DwgFileVersion::R2_5;
+    versionMap[TkDbVersion::kDHL_1003]     = DwgFileVersion::R2_6;
+    versionMap[TkDbVersion::kDHL_1004]     = DwgFileVersion::R9;
+    versionMap[TkDbVersion::kDHL_1005]     = DwgFileVersion::R9;
+    versionMap[TkDbVersion::kDHL_1006]     = DwgFileVersion::R10;
+    versionMap[TkDbVersion::kDHL_1007]     = DwgFileVersion::R10;
+    versionMap[TkDbVersion::kDHL_1008]     = DwgFileVersion::R10;
+    versionMap[TkDbVersion::kDHL_1009]     = DwgFileVersion::R11;
+    versionMap[TkDbVersion::kDHL_1010]     = DwgFileVersion::R11;
+    versionMap[TkDbVersion::kDHL_1011]     = DwgFileVersion::R11;
+    versionMap[TkDbVersion::kDHL_1012]     = DwgFileVersion::R13;
+    versionMap[TkDbVersion::kDHL_1014]     = DwgFileVersion::R14;     // default for R14
+    versionMap[TkDbVersion::kDHL_1013]     = DwgFileVersion::R14;
+    versionMap[TkDbVersion::kDHL_1015]     = DwgFileVersion::R2000;   // default for R2000
+    versionMap[TkDbVersion::kDHL_1500]     = DwgFileVersion::R2000;
+    versionMap[TkDbVersion::kDHL_1800]     = DwgFileVersion::R2004;   // default R2004
+    versionMap[TkDbVersion::kDHL_1800a]    = DwgFileVersion::R2004;
+    versionMap[TkDbVersion::kDHL_1021]     = DwgFileVersion::R2007;   // default for R2007
+    versionMap[TkDbVersion::kDHL_2100a]    = DwgFileVersion::R2007;
+    versionMap[TkDbVersion::kDHL_1024]     = DwgFileVersion::R2010;
+    versionMap[TkDbVersion::kDHL_1027]     = DwgFileVersion::R2013;
 #ifndef BUILDING_REALDWG2017
-    versionMap[DwgDbVersion::kDHL_1032]     = DwgFileVersion::R2018;
+    versionMap[TkDbVersion::kDHL_1032]     = DwgFileVersion::R2018;
 #endif
-    versionMap[DwgDbVersion::kDHL_CURRENT]  = DwgFileVersion::Current;
+    versionMap[TkDbVersion::kDHL_CURRENT]  = DwgFileVersion::Current;
 
     return  versionMap;
     }
-static bmap<DwgDbVersion, DwgFileVersion> const s_dwgVersionFromToolkit = MapDwgVersionFromToolkit();
+static bmap<TkDbVersion, DwgFileVersion> const s_dwgVersionFromToolkit = MapDwgVersionFromToolkit();
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bmap<DwgFileVersion, DwgDbVersion>   MapDwgVersionToToolkit ()
+static bmap<DwgFileVersion, TkDbVersion>   MapDwgVersionToToolkit ()
     {
-    bmap<DwgFileVersion, DwgDbVersion>  versionMap;
+    bmap<DwgFileVersion, TkDbVersion>  versionMap;
 
-    versionMap[DwgFileVersion::R2_5]     = DwgDbVersion::kDHL_1002;
-    versionMap[DwgFileVersion::R2_6]     = DwgDbVersion::kDHL_1003;
-    versionMap[DwgFileVersion::R9]       = DwgDbVersion::kDHL_1005;
-    versionMap[DwgFileVersion::R10]      = DwgDbVersion::kDHL_1008;
-    versionMap[DwgFileVersion::R11]      = DwgDbVersion::kDHL_1011;
-    versionMap[DwgFileVersion::R13]      = DwgDbVersion::kDHL_1012;
-    versionMap[DwgFileVersion::R14]      = DwgDbVersion::kDHL_1013;
-    versionMap[DwgFileVersion::R2000]    = DwgDbVersion::kDHL_1500;
-    versionMap[DwgFileVersion::R2004]    = DwgDbVersion::kDHL_1800a;
-    versionMap[DwgFileVersion::R2007]    = DwgDbVersion::kDHL_2100a;
-    versionMap[DwgFileVersion::R2010]    = DwgDbVersion::kDHL_1024;
-    versionMap[DwgFileVersion::R2013]    = DwgDbVersion::kDHL_1027;
+    versionMap[DwgFileVersion::R2_5]     = TkDbVersion::kDHL_1002;
+    versionMap[DwgFileVersion::R2_6]     = TkDbVersion::kDHL_1003;
+    versionMap[DwgFileVersion::R9]       = TkDbVersion::kDHL_1005;
+    versionMap[DwgFileVersion::R10]      = TkDbVersion::kDHL_1008;
+    versionMap[DwgFileVersion::R11]      = TkDbVersion::kDHL_1011;
+    versionMap[DwgFileVersion::R13]      = TkDbVersion::kDHL_1012;
+    versionMap[DwgFileVersion::R14]      = TkDbVersion::kDHL_1013;
+    versionMap[DwgFileVersion::R2000]    = TkDbVersion::kDHL_1500;
+    versionMap[DwgFileVersion::R2004]    = TkDbVersion::kDHL_1800a;
+    versionMap[DwgFileVersion::R2007]    = TkDbVersion::kDHL_2100a;
+    versionMap[DwgFileVersion::R2010]    = TkDbVersion::kDHL_1024;
+    versionMap[DwgFileVersion::R2013]    = TkDbVersion::kDHL_1027;
 #ifndef BUILDING_REALDWG2017
-    versionMap[DwgFileVersion::R2018]    = DwgDbVersion::kDHL_1032;
+    versionMap[DwgFileVersion::R2018]    = TkDbVersion::kDHL_1032;
 #endif
-    versionMap[DwgFileVersion::Current]  = DwgDbVersion::kDHL_CURRENT;
+    versionMap[DwgFileVersion::Current]  = TkDbVersion::kDHL_CURRENT;
 
     return  versionMap;
     }
-static bmap<DwgFileVersion, DwgDbVersion> const s_dwgVersionToToolkit = MapDwgVersionToToolkit();
+static bmap<DwgFileVersion, TkDbVersion> const s_dwgVersionToToolkit = MapDwgVersionToToolkit();
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgFileVersion  Util::GetDwgVersionFrom (DwgDbVersion dwgVersion)
+DwgFileVersion  Util::GetDwgVersionFrom (TkDbVersion dwgVersion)
     {
     auto found = s_dwgVersionFromToolkit.find (dwgVersion);
     if (found != s_dwgVersionFromToolkit.end())
@@ -492,11 +492,45 @@ DwgFileVersion  Util::GetDwgVersionFrom (DwgDbVersion dwgVersion)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbVersion    Util::GetDwgVersionFrom (DwgFileVersion dwgVersion)
+TkDbVersion    Util::GetDwgVersionFrom (DwgFileVersion dwgVersion)
     {
     auto found = s_dwgVersionToToolkit.find (dwgVersion);
     if (found != s_dwgVersionToToolkit.end())
         return  found->second;
 
-    return  DwgDbVersion::kDHL_Unknown;
+    return  TkDbVersion::kDHL_Unknown;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus Util::GetObjectArray (DwgDbObjectPArrayR out, TkObjectArray& in)
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    for (OdUInt32 i = 0; i < in.length(); i++)
+        {
+        if (nullptr != DwgDbObject::Cast(in[i].get()))
+            {
+            DwgDbObjectP object = DwgDbObject::Cast (in[i].detach());
+            if (nullptr != object)
+                out.push_back (object);
+            }
+        }
+    
+#elif DWGTOOLKIT_RealDwg
+    for (int i = 0; i < in.length(); i++)
+        {
+        AcDbObject* acObject = static_cast<AcDbObject*>(in[i]);
+        if (nullptr != acObject)
+            {
+            DwgDbObjectP object = DwgDbObject::Cast (acObject);
+            if (nullptr != object)
+                out.push_back (object);
+            else
+                delete acObject;
+            }
+        }
+#endif
+    return out.empty() ? DwgDbStatus::UnknownError : DwgDbStatus::Success;
+    }
+

@@ -1263,8 +1263,6 @@ struct CompareIUtf8Ascii
     bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0; }
     };
 
-static bool s_doFileSaveTimeCheck = true;
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
@@ -2260,6 +2258,14 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
 void DynamicSchemaGenerator::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP baseInterface, ECN::ECClassCP baseObject)
     {
     bool wasFlattened = false;
+    // CopyFlattenedProperty looks in m_flattenedRefs, so we need to prepopulate that
+    ECN::ECSchemaReferenceListCR referencedSchemas = schema->GetReferencedSchemas();
+    for (ECN::ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+        {
+        ECN::ECSchemaP refSchema = it->second.get();
+        m_flattenedRefs[refSchema->GetName()] = refSchema;
+        }
+
     for (BECN::ECClassP ecClass : schema->GetClasses())
         {
         BECN::ECEntityClassP entityClass = ecClass->GetEntityClassP();
