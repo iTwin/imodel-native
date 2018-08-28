@@ -1434,7 +1434,7 @@ static void dumpElement(DgnElementCR el)
     {
     printf("%s", Converter::IssueReporter::FmtElement(el).c_str());
     if (!el.GetCode().GetValue().empty())
-        printf(" Code:[%s]", el.GetCode().GetValueCP());
+        printf(" Code:[%s]", el.GetCode().GetValueUtf8CP());
     if (0 != *el.GetUserLabel())
         printf(" UserLabel:[%s]", el.GetUserLabel());
     auto descr = getDescr(el);
@@ -1872,6 +1872,46 @@ DefinitionModelPtr Converter::GetJobDefinitionModel()
 
     m_jobDefinitionModelId = defModel->GetModelId();
     return defModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isChildOfJob(DgnDbR db, DgnElementId elId, DgnElementId jobSubjectId)
+    {
+    if (elId == db.Elements().GetRootSubjectId())
+        return false;
+    auto el = db.Elements().GetElement(elId);
+    if (!el.IsValid())
+        return false;
+    auto thisParent = el->GetParentId();
+    if (!thisParent.IsValid())
+        return isChildOfJob(db, el->GetModel()->GetModeledElementId(), jobSubjectId);
+    if (thisParent == jobSubjectId)
+        return true;
+    return isChildOfJob(db, thisParent, jobSubjectId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::IsBimModelAssignedToJobSubject(DgnModelId mid) const
+    {
+    auto  model = m_dgndb->Models().GetModel(mid);
+    if (!model.IsValid())
+        return false;
+    return isChildOfJob(*m_dgndb, model->GetModeledElementId(), GetJobSubject().GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::IsV8ModelAssignedToJobSubject(DgnV8ModelCR v8Model) const
+    {
+    auto existingModelId = FindFirstModelInSyncInfo(v8Model);
+    if (!existingModelId.IsValid())
+        return true;
+    return IsBimModelAssignedToJobSubject(existingModelId);
     }
 
 static const Utf8CP s_codeSpecName = "DgnV8"; // TBD: One CodeSpec per V8 file?

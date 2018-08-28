@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DwgDgnV8Host.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -1499,8 +1499,11 @@ BentleyStatus Converter::InitializeDwgHost (BentleyApi::BeFileNameCR v8dir, Bent
     if (nullptr != s_dwgHost)
         return  BSISUCCESS;
 
-    auto loading = ProgressMessage::GetString (Converter::ProgressMessage::TASK_LOADING_REALDWG());
-    LOG.tracev (loading.c_str(), "...");
+    if (DgnPlatformLib::QueryHost() != nullptr)
+        {
+        auto loading = ProgressMessage::GetString (Converter::ProgressMessage::TASK_LOADING_REALDWG());
+        LOG.tracev (loading.c_str(), "...");
+        }
 
     s_dwgHost = new V8DwgHost (v8dir, realdwgDir);
     if (nullptr == s_dwgHost)

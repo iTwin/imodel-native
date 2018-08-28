@@ -639,9 +639,13 @@ void   Converter::InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibr
     {
         BentleyApi::BeFileName dllDirectory(thisLibraryPath.GetDirectoryName());
         dllDirectory.AppendToPath(L"DgnV8");
-        Converter::SetDllSearchPath(dllDirectory);
+        BentleyApi::BeFileName realdwgDirectory(dllDirectory);
+        realdwgDirectory.AppendToPath(L"RealDwg");
+        Converter::SetDllSearchPath(dllDirectory, &realdwgDirectory);
 
+        initializeV8HostConfigVars(Bentley::BeFileName(dllDirectory.c_str()), 0, nullptr);
         DgnV8Api::DgnPlatformLib::Initialize(*new MinimalV8Host, true);
+        Converter::RegisterForeignFileTypes (dllDirectory, realdwgDirectory);
     });
     }
 
@@ -732,13 +736,16 @@ void            Converter::GetAffinity(WCharP buffer, const size_t bufferSize, i
     if (!Bentley::dgnFileObj_validateFile(&format, nullptr, nullptr, nullptr, nullptr, nullptr, sourceFileNameStr))
         return;
 
-    // leave Revit & DWG/DXF files to their own bridges:
-    switch (format)
+    // Foreign file formats do not have authoring file info - don't load them:
+    if (format != DgnFileFormatType::V8 && format != DgnFileFormatType::V7)
         {
-        case DgnFileFormatType::DWG:
-        case DgnFileFormatType::DXF:
-        case DgnFileFormatType::RFA:
-            return;
+        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;
+#ifdef USEABDFILECHECKER
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"AECOsimBuildingDesigner");
+#else
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"IModelBridgeForMstn");
+#endif
+        return;
         }
 
     BentleyB0200::BeFileName sourceFileName(sourceFileNameStr);
