@@ -57,7 +57,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         json.AddMember("params", paramsJson, json.GetAllocator());
         return json;
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -150,39 +150,39 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     void _AsJson(ContentDescriptor::NestedContentField const& nestedContentField, RapidJsonDocumentR fieldBaseJson) const override
         {
         fieldBaseJson.AddMember("contentClassInfo", _AsJson(nestedContentField.GetContentClass(), &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
-        fieldBaseJson.AddMember("pathToPrimary", _AsJson(nestedContentField.GetRelationshipPath(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+        fieldBaseJson.AddMember("pathToPrimaryClass", _AsJson(nestedContentField.GetRelationshipPath(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
 
         rapidjson::Value nestedFieldsJson(rapidjson::kArrayType);
         for (ContentDescriptor::Field const* nestedField : nestedContentField.GetFields())
             nestedFieldsJson.PushBack(nestedField->AsJson(&fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
         fieldBaseJson.AddMember("nestedFields", nestedFieldsJson, fieldBaseJson.GetAllocator());
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AsJson(ContentDescriptor::DisplayLabelField const&, RapidJsonDocumentR) const override {}
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AsJson(ContentDescriptor::CalculatedPropertyField const&, RapidJsonDocumentR) const override {}
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AsJson(ContentDescriptor::SystemField const&, RapidJsonDocumentR) const override {}
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AsJson(ContentDescriptor::ECInstanceKeyField const&, RapidJsonDocumentR) const override {}
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AsJson(ContentDescriptor::ECNavigationInstanceIdField const&, RapidJsonDocumentR) const override {}
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1018,7 +1018,7 @@ private:
             {
             BeAssert(false);
             return json;
-            }    
+            }
         bvector<Byte> data;
         if (BeFileStatus::Success != file.ReadEntireFile(data))
             {
@@ -1061,7 +1061,7 @@ private:
         {
         if (m_localeDirectories.empty() || locale.empty())
             return nullptr;
-        
+
         rapidjson::Document* json = new rapidjson::Document();
         json->SetObject();
         bvector<BeFileName> filePaths = GetLocalizationFilePaths(locale, ns);
@@ -1085,7 +1085,7 @@ protected:
         size_t pos;
         if (Utf8String::npos == (pos = key.GetNextToken(ns, ":", 0)))
             return false;
-        
+
         auto localeIter = m_cache.find(locale);
         if (m_cache.end() == localeIter)
             localeIter = m_cache.Insert(locale, bmap<Utf8String, rapidjson::Document*>()).first;
@@ -1097,7 +1097,7 @@ protected:
         rapidjson::Value const* curr = namespaceIter->second;
         if (nullptr == curr)
             return false;
-        
+
         Utf8String id(key.begin() + pos, key.end());
         bvector<Utf8String> idPath;
         BeStringUtilities::Split(id.c_str(), ".", idPath);
@@ -1157,7 +1157,7 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
     RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
     RulesDrivenECPresentationManager::Params params(connections, paths);
     RulesDrivenECPresentationManager* manager = new RulesDrivenECPresentationManager(params);
-    
+
     BeFileName supplementalsDirectory = BeFileName(assetsDir).AppendToPath(L"PresentationRules");
     manager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalsDirectory.GetNameUtf8().c_str())));
 
@@ -1314,7 +1314,7 @@ ECPresentationResult ECPresentationUtils::GetRulesetVariableValue(RulesDrivenECP
     else if (variableType.Equals("id64[]"))
         {
         response.SetArray();
-        bvector<int64_t> intValues = settings.GetSettingIntValues(variableId.c_str());        
+        bvector<int64_t> intValues = settings.GetSettingIntValues(variableId.c_str());
         for (int64_t value : intValues)
             response.PushBack(rapidjson::Value(BeInt64Id(value).ToHexStr().c_str(), response.GetAllocator()), response.GetAllocator());
         }
@@ -1410,7 +1410,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(IECPre
                 BeAssert(false);
                 return folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");});
                 }
-            
+
             return manager.GetChildrenCount(db, *parentNode, options)
                 .then([](size_t count)
                     {
@@ -1461,7 +1461,7 @@ folly::Future<ECPresentationResult>  ECPresentationUtils::GetNodesPaths(IECPrese
     JsonValueCR keyArraysJson = params["paths"];
     if (!keyArraysJson.isArray())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "paths");
-    
+
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     Json::Value options = GetNavigationOptions(params).GetJson();
     for (Json::ArrayIndex x = 0; x < keyArraysJson.size(); x++)
@@ -1649,7 +1649,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "fieldName");
     if (!params.isMember("maximumValueCount"))
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "maximumValueCount");
-    
+
     IConnectionCP connection = manager.Connections().GetConnection(db);
     JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
     Json::Value options = GetContentOptions(params).GetJson();
@@ -1669,7 +1669,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
                     overridenDescriptor->RemoveField(field->GetName().c_str());
                 }
             overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
-        
+
             return manager.GetContent(*overridenDescriptor, PageOptions())
                 .then([fieldName, maximumValueCount](ContentCPtr content)
                 {
