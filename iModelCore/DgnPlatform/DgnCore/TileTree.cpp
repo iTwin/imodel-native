@@ -2508,7 +2508,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
         polyface->ClipToRange(m_tile.GetRange(), clipOutput, false);
 
         for (auto& clipped : clipOutput.m_output)
-            AddClippedPolyface(*clipped, elemId, *displayParams, edges, isPlanar);
+            AddClippedPolyface(*clipped, elemId, *displayParams, edges, isPlanar);                                                                                        
         }
     }
 
@@ -2522,8 +2522,8 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     uint32_t            fillColor = displayParams.GetFillColor();
     DgnDbR              db = m_tile.GetRoot().GetDgnDb();
     MeshAuxData         auxData;
-
-    MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar);
+    uint64_t            keyElementId = (nullptr != m_tile.GetRoot().GetPreprocessor() && m_tile.GetRoot().GetPreprocessor()->SeperatePrimitivesById()) ? elemId.GetValue() : 0;    // Create seperate primitives per element if Classifying only.
+    MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar, keyElementId);
     MeshBuilderR        builder = GetMeshBuilder(key);
 
     builder.BeginPolyface(polyface, edgeOptions);

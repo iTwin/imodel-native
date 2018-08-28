@@ -482,12 +482,13 @@ struct MeshBuilderMap
         Mesh::PrimitiveType m_type;
         bool                m_hasNormals;
         bool                m_isPlanar;
+        uint64_t            m_elementId = 0;
 
-        Key(DisplayParamsCP params, Mesh::PrimitiveType type, bool hasNormals, bool isPlanar) : m_params(params), m_type(type), m_hasNormals(hasNormals), m_isPlanar(isPlanar) { }
+        Key(DisplayParamsCP params, Mesh::PrimitiveType type, bool hasNormals, bool isPlanar, uint64_t elementId = 0) : m_params(params), m_type(type), m_hasNormals(hasNormals), m_isPlanar(isPlanar), m_elementId(elementId) { }
     public:
         Key() : Key(nullptr, Mesh::PrimitiveType::Mesh,false, false) { }
         explicit Key(MeshCR mesh) : Key(mesh.GetDisplayParams(), !mesh.Normals().empty(), mesh.GetType(), mesh.IsPlanar()) { }
-        Key(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar) : Key(&params, type, hasNormals, isPlanar) { }
+        Key(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar, uint64_t elementId = 0) : Key(&params, type, hasNormals, isPlanar, elementId) { }
 
         void SetOrder(uint16_t order) { m_order = order; }
 
@@ -505,6 +506,9 @@ struct MeshBuilderMap
 
             if (m_hasNormals != rhs.m_hasNormals)
                 return !m_hasNormals;
+
+            if (m_elementId != rhs.m_elementId)
+                return m_elementId < rhs.m_elementId;
 
             BeAssert(m_params.IsValid() && rhs.m_params.IsValid());
             return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);
