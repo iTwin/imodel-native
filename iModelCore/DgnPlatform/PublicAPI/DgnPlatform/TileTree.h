@@ -28,11 +28,13 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(LoadContext)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileCache)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StreamBuffer)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileMetadata)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ClassificationPreprocessor)
 
 DEFINE_REF_COUNTED_PTR(Tile)
 DEFINE_REF_COUNTED_PTR(Root)
 DEFINE_REF_COUNTED_PTR(TileLoader)
 DEFINE_REF_COUNTED_PTR(TileCache)
+DEFINE_REF_COUNTED_PTR(ClassificationPreprocessor)
 
 //=======================================================================================
 // Manage the creation and cleanup of the local TileCache used by TileData
@@ -192,6 +194,7 @@ public:
     void SetContentRange(ElementAlignedBox3dCR range) { m_contentRange = range; }
 };
 
+
 //=======================================================================================
 //! A Tile in a TileTree. Every Tile has 0 or 1 parent Tile and 0 or more child Tiles. 
 //! The range member is an ElementAlignedBox in the local coordinate system of the TileTree.
@@ -307,6 +310,20 @@ public:
     static TilePtr CreateWithZoomFactor(Tile const& parent) { return new Tile(parent); }
 };
 
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     08/2018
+//=======================================================================================
+struct ClassificationPreprocessor : RefCountedBase
+{
+    double      m_offset;
+    DRange3d    m_range;
+
+    ClassificationPreprocessor(Root const& tile);
+    void Preprocess(CurveVectorPtr& curveVector);
+    void Preprocess(PolyfaceHeaderPtr& polyface);
+
+};
+
 /*=================================================================================**//**
 //! The root of a tree of tiles. This object stores the location of the tree relative to world coordinates. 
 // @bsiclass                                                    Keith.Bentley   03/16
@@ -326,13 +343,14 @@ private:
     Dgn::Render::SystemR m_renderSystem;
     RealityData::CachePtr m_cache;
     bool m_is3d;
+    ClassificationPreprocessorPtr m_classificationPreprocessor;
 
     //! Clear the current tiles and wait for all pending download requests to complete/abort.
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
     //! still valid and that cannot be accomplished in the destructor of Root.
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
 
-    Root(GeometricModelCR model, TransformCR location, Dgn::Render::SystemR system);
+    Root(GeometricModelCR model, TransformCR location, Dgn::Render::SystemR system, bool asClassifier);
 
     bool LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate);
 public:
@@ -372,10 +390,13 @@ public:
 
     template<typename T> auto UnderMutex(T func) const -> decltype(func()) { BeMutexHolder lock(m_cv.GetMutex()); return func(); }
 
+    bool IsClassifier() const { return m_classificationPreprocessor.IsValid(); } //!< @private
+    ClassificationPreprocessor* GetPreprocessor() const { return m_classificationPreprocessor.get(); } //!< @private
+
     DGNPLATFORM_EXPORT bool ToJson(Json::Value&) const;
     DGNPLATFORM_EXPORT TilePtr FindTileById(Utf8CP id);
 
-    DGNPLATFORM_EXPORT static RootPtr Create(GeometricModelR model, Render::SystemR system);
+    DGNPLATFORM_EXPORT static RootPtr Create(GeometricModelR model, Render::SystemR system, bool asClassifier);
 };
 
 //=======================================================================================
