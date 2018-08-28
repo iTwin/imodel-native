@@ -141,7 +141,7 @@ TEST_F(ChangeSetsTests, PullAndMerge)
     ASSERT_SUCCESS(upToDateResult);
     EXPECT_FALSE(upToDateResult.GetValue());
 
-    ChangeSetsResult result = iModelHubHelpers::PullMergeAndPush(m_briefcase, false);
+    ChangeSetsResult result = iModelHubHelpers::PullMergeAndPush(m_briefcase, false, true);
     ASSERT_SUCCESS(result);
     EXPECT_EQ(3, result.GetValue().size());
 
@@ -207,7 +207,7 @@ TEST_F(ChangeSetsTests, TwoPulls)
 
     Utf8String originalChangeSetId = m_briefcase->GetDgnDb().Revisions().GetParentRevisionId();
 
-    ChangeSetsResult result = iModelHubHelpers::PullMergeAndPush(m_briefcase, false);
+    ChangeSetsResult result = iModelHubHelpers::PullMergeAndPush(m_briefcase, false, true);
     ASSERT_SUCCESS(result);
 
     Utf8String lastChangeSetId = m_briefcase->GetDgnDb().Revisions().GetParentRevisionId();
@@ -216,7 +216,7 @@ TEST_F(ChangeSetsTests, TwoPulls)
 
     iModelHubHelpers::AcquireAndAddChangeSets(s_client, s_info, 1);
 
-    result = iModelHubHelpers::PullMergeAndPush(m_briefcase, false);
+    result = iModelHubHelpers::PullMergeAndPush(m_briefcase, false, true);
     ASSERT_SUCCESS(result);
 
     Utf8String lastChangeSetId2 = m_briefcase->GetDgnDb().Revisions().GetParentRevisionId();

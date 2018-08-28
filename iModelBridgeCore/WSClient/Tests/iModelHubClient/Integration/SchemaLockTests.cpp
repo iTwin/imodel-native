@@ -108,7 +108,7 @@ TEST_F(SchemaLockTests, ModifySchema)
     ASSERT_FALSE(db1.Txns().HasDbSchemaChanges());
 
     // Push changeSet with schema changes
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
     Utf8String changeSet1 = briefcase1->GetLastChangeSetPulled();
     auto changeSetResult = briefcase1->GetiModelConnection().GetChangeSetById(changeSet1)->GetResult();
     ASSERT_SUCCESS(changeSetResult);
@@ -143,7 +143,7 @@ TEST_F(SchemaLockTests, ModifySchema)
     briefcase2 = briefcase2Result.GetValue();
     
     // Try to push again
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, false));
     Utf8String changeSet2 = briefcase2->GetLastChangeSetPulled();
 
     // Check ContainsSchemaChanges set to false
@@ -175,7 +175,7 @@ TEST_F(SchemaLockTests, ImportSchemaAcquiresLock)
     EXPECT_EQ(SchemaStatus::SchemaLockFailed, DgnPlatformTestDomain::GetDomain().ImportSchema(db2));
 
     // Push changes
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
 
     // Second briefcase should fail to get lock since it does not have changeset
     EXPECT_EQ(SchemaStatus::SchemaLockFailed, DgnPlatformTestDomain::GetDomain().ImportSchema(db2));

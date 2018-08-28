@@ -104,7 +104,7 @@ TEST_F(SchemaVersionTests, AcquireBriefcaseWithSchemaChanges)
     briefcase1->GetDgnDb().CreateTable("TestTable1", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
     ASSERT_TRUE(briefcase1->GetDgnDb().Txns().HasDbSchemaChanges());
     briefcase1->GetDgnDb().SaveChanges("ChangeSet 1");
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
 
     AcquireBriefcase(true);
     }
@@ -129,7 +129,7 @@ TEST_F(SchemaVersionTests, ImportSchemasAndMakeChanges)
 
     // Push changes
     db1.SaveChanges("ChangeSet 1");
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
 
     // Try to acquire other briefcase
     BriefcasePtr briefcase2;
@@ -139,7 +139,7 @@ TEST_F(SchemaVersionTests, ImportSchemasAndMakeChanges)
     EXPECT_TRUE(db1.Schemas().ContainsSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
 
     db2.SaveChanges("ChangeSet 2");
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, false));
     }
 
 //---------------------------------------------------------------------------------------

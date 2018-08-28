@@ -9,7 +9,6 @@
 #include "../Utils.h"
 #include "../Logging.h"
 #include <WebServices/iModelHub/Client/UserInfoManager.h>
-#include "../MultiProgressCallbackHandler.h"
 #include <WebServices/iModelHub/GlobalEvents/GlobalEventManager.h>
 
 USING_NAMESPACE_BENTLEY_IMODELHUB

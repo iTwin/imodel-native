@@ -406,7 +406,7 @@ TEST_F(SeedFileTests, CanceledFileReplaceCodesLocksChangeSets)
     auto model1 = CreateModel(TestCodeName(2).c_str(), db);
     InsertStyle(TestCodeName(1).c_str(), db);
     db.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(m_briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(m_briefcase, true, false, false));
 
      iModelHubHelpers::ExpectLocksCount(m_briefcase, 6);
     iModelHubHelpers::ExpectCodesCount(m_briefcase, 0);
@@ -447,7 +447,7 @@ TEST_F(SeedFileTests, FileReplaceInProgressCodesLocksChangeSetsDenied)
     EXPECT_EQ(RepositoryStatus::RepositoryIsLocked, db.BriefcaseManager().PrepareForModelInsert(req, *model, IBriefcaseManager::PrepareAction::Acquire));
 
     db.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(m_briefcase, false, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(m_briefcase, false, false, false));
 
     // Check nothing changed
     iModelHubHelpers::ExpectLocksCount(m_briefcase, 0);
@@ -481,7 +481,7 @@ TEST_F(SeedFileTests, ReplaceCodesLocksChangeSets)
     auto model1 = CreateModel(TestCodeName(3).c_str(), db);
     InsertStyle(TestCodeName(1).c_str(), db);
     db.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(m_briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(m_briefcase, true, false, false));
 
     iModelHubHelpers::ExpectLocksCount(m_briefcase, 6);
     iModelHubHelpers::ExpectCodesCount(m_briefcase, 1);
@@ -496,7 +496,7 @@ TEST_F(SeedFileTests, ReplaceCodesLocksChangeSets)
 
     // Push changes
     db.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(m_briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(m_briefcase, true, false, false));
 
     ExpectCodeState(CreateCodeUsed(code2, db.Revisions().GetParentRevisionId()), manager);
     ExpectNoCodeWithState(CreateCodeDiscarded(code, db.Revisions().GetParentRevisionId()), manager);
@@ -579,7 +579,7 @@ TEST_F(SeedFileTests, EmptyFileReplaceOtherUser)
     // Create and push model
     auto model1 = CreateModel(TestCodeName(4).c_str(), *newDb);
     newDb->SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(newBriefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(newBriefcase, true, false, false));
 
     iModelHubHelpers::ExpectLocksCount(newBriefcase, 4);
     iModelHubHelpers::ExpectCodesCount(newBriefcase, 2);
