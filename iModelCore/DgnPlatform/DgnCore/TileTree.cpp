@@ -1540,11 +1540,8 @@ void Root::ClearAllTiles()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Root::RequestTile(TileR tile)
     {
-    if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
-        {
-        BeAssert(false);
-        return ERROR;
-        }
+    if (!tile.IsNotLoaded())
+        return SUCCESS;
 
     auto loads = std::make_shared<TileLoadState>(tile);
 
