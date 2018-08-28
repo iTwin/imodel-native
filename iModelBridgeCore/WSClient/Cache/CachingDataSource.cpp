@@ -1381,12 +1381,13 @@ CachedResponseKey CachingDataSource::CreateSchemaListResponseKey(CacheTransactio
     return CachedResponseKey(root, CachedResultsName_Schemas);
     }
 
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::DownloadAndCacheFiles
 (
-bset<ObjectId> filesToDownload,
+bmap<ObjectId, ICancellationTokenPtr> filesToDownload,
 FileCache fileCacheLocation,
 CachingDataSource::ProgressCallback onProgress,
 ICancellationTokenPtr ct
@@ -1411,6 +1412,23 @@ ICancellationTokenPtr ct
         {
         return task->GetResult();
         });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::DownloadAndCacheFiles
+(
+bset<ObjectId> filesToDownload,
+FileCache fileCacheLocation,
+CachingDataSource::ProgressCallback onProgress,
+ICancellationTokenPtr ct
+)
+    {
+    bmap<ObjectId, ICancellationTokenPtr> filesAndCTs;
+    for (auto fileId : filesToDownload)
+        filesAndCTs.Insert(fileId, ct);
+    return DownloadAndCacheFiles(filesAndCTs, fileCacheLocation, onProgress, ct);
     }
 
 /*--------------------------------------------------------------------------------------+

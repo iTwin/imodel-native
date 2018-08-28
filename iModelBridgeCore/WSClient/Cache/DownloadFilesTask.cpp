@@ -26,7 +26,7 @@ DownloadFilesTask::DownloadFilesTask
 (
 CachingDataSourcePtr cachingDataSource,
 std::shared_ptr<FileDownloadManager> fileDownloadManager,
-bset<ObjectId> filesToDownload,
+bmap<ObjectId, ICancellationTokenPtr> filesToDownload,
 FileCache fileCacheLocation,
 size_t maxParalelDownloads,
 uint64_t minTimeBetweenProgressCallsMs,
@@ -71,8 +71,9 @@ void DownloadFilesTask::_OnExecute()
     {
     auto txn = m_ds->StartCacheTransaction();
 
-    for (ObjectIdCR fileId : m_filesToDownloadIds)
+    for (auto fileEntry : m_filesToDownloadIds)
         {
+        ObjectId fileId = fileEntry.first;
         ECInstanceKey fileKey = txn.GetCache().FindInstance(fileId);
         if (!fileKey.IsValid())
             {
@@ -89,6 +90,7 @@ void DownloadFilesTask::_OnExecute()
 
         fileProperties.objectId = fileId;
         fileProperties.bytesDownloaded = 0;
+        fileProperties.cancellationToken = fileEntry.second;
 
         m_filesToDownload.push_back(fileProperties);
         m_totalBytesToDownload += fileProperties.size;
@@ -117,7 +119,8 @@ void DownloadFilesTask::ContinueDownloadingFiles()
 
         // TODO: move max download limitation to m_fileDownloadManager->DownloadAndCacheFile()
         auto onProgress = std::bind(&DownloadFilesTask::ProgressCalback, this, std::placeholders::_1, std::placeholders::_2, std::ref(*file));
-        m_fileDownloadManager->DownloadAndCacheFile(file->objectId, *file->name, m_fileCacheLocation, onProgress, GetCancellationToken())
+        auto ct = MergeCancellationToken::Create(GetCancellationToken(), file->cancellationToken);
+        m_fileDownloadManager->DownloadAndCacheFile(file->objectId, *file->name, m_fileCacheLocation, onProgress, ct)
             ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::Result& result)
             {
             if (IsTaskCanceled()) return;
