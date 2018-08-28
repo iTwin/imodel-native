@@ -112,6 +112,9 @@ BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(Schem
                 {
                 if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, childRule))
                     return BSIERROR;
+                if (BisConversionRule::ToPhysicalElement != childRule)
+                    if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, childRule, isBaseClassCheck ? ecClass->GetDerivedClasses() : ecClass->GetBaseClasses(), !isBaseClassCheck))
+                        return BSIERROR;
                 }
             // If a class is using the ToAspectOnly rule, all of its children must also become aspects
             else if (!isBaseClassCheck && BisConversionRule::ToAspectOnly == childRule)
@@ -125,7 +128,7 @@ BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(Schem
                 if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, BisConversionRule::TransformedUnbisifiedAndIgnoreInstances))
                     return BSIERROR;
                 }
-            else if (isBaseClassCheck && BisConversionRule::ToGroup == childRule && (BisConversionRule::ToPhysicalElement == existingRule || BisConversionRule::ToDrawingGraphic == existingRule))
+            else if (BisConversionRule::ToGroup == childRule && (BisConversionRule::ToPhysicalElement == existingRule || BisConversionRule::ToDrawingGraphic == existingRule))
                 {
                 BisConversionRule tempRule;
                 BECN::ECClassId incomingV8ClassId;
@@ -135,13 +138,16 @@ BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(Schem
                     if (BSISUCCESS != V8ECClassInfo::Update(converter, incomingV8ClassId, existingRule))
                         return BSIERROR;
                     childRule = existingRule;
+                    if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, childRule, ecClass->GetDerivedClasses(), false))
+                        return BSIERROR;
                     }
                 }
-            else if (isBaseClassCheck && BisConversionRule::ToGroup == existingRule && (BisConversionRule::ToPhysicalElement == childRule || BisConversionRule::ToDrawingGraphic == childRule))
+            else if (BisConversionRule::ToGroup == existingRule && (BisConversionRule::ToPhysicalElement == childRule || BisConversionRule::ToDrawingGraphic == childRule))
                 {
                 if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, childRule))
                     return BSIERROR;
-
+                if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, childRule, ecClass->GetDerivedClasses(), false))
+                    return BSIERROR;
                 }
             }
         else if (BSISUCCESS != V8ECClassInfo::Insert(converter, v8ClassName, childRule))
