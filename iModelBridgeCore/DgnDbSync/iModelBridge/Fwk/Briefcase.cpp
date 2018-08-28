@@ -550,7 +550,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
                 continue;
             if (LockableType::Db == lock.GetType())
                 continue;                                   // Don't demote/relinquish the shared lock on the Db. That would have the side effect of relinquishing *all* my locks.
-            GetLogger().infov("Releasing lock: type=%d level=%d", lock.GetType(), lock.GetLevel());
+            GetLogger().infov("Releasing lock: type=%d level=%d objid=%llx", lock.GetType(), lock.GetLevel(), lock.GetId());
             DgnLock lockReq(lock);
             lockReq.SetLevel(LockLevel::None);
             toRelease.insert(lockReq);
