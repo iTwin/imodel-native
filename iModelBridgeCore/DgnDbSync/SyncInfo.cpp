@@ -1640,15 +1640,16 @@ bool SyncInfo::ContainsECSchema(Utf8CP v8SchemaName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            01/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DbResult SyncInfo::RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums) const
+DbResult SyncInfo::RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, V8FileSyncInfoId fileId) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT V8Name, Digest FROM " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)))
+    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT V8Name, Digest FROM " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) " WHERE V8FileSyncInfoId=?"))
         {
         BeAssert(false && "Could not retrieve cached SyncInfo statement.");
         return BE_SQLITE_ERROR;
         }
 
+    stmt->BindInt(1, fileId.GetValue());
     while (BE_SQLITE_ROW == stmt->Step())
         {
         syncInfoChecksums[stmt->GetValueText(0)] = (uint32_t) stmt->GetValueInt(1);
@@ -1998,6 +1999,9 @@ bool SyncInfo::ModelHasChangedImagery(V8FileSyncInfoId filesiid)
         BeAssert(false);
         return false;
         }
+
+    if (!filesiid.IsValid())
+        return false;
 
     stmt->BindInt(1, filesiid.GetValue());
     while (BE_SQLITE_ROW == stmt->Step())
