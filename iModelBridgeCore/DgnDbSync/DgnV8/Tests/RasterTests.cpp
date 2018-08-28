@@ -1005,6 +1005,5 @@ TEST_F(RasterTests, CRUD)
     mtime += 1000;
     popotons.SetFileTime(nullptr, &mtime);
     DoUpdate(m_dgnDbFileName, m_v8FileName);
-    ASSERT_EQ(1, m_count);
     }
 
