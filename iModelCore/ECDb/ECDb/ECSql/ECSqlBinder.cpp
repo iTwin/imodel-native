@@ -321,7 +321,14 @@ ECSqlStatus ArrayConstraintValidator::Validate(ECDbCR ecdb, ECSqlTypeInfo const&
     const uint32_t expectedMinOccurs = expected.GetArrayMinOccurs();
     if (actualArrayLength < expectedMinOccurs)
         {
-        LOG.errorv("Array to be bound to the array parameter must at least have %" PRIu32 " element(s) as defined in the respective ECProperty.", expectedMinOccurs);
+        ECN::ECPropertyCP ecProperty = expected.GetPropertyMap() ? &expected.GetPropertyMap()->GetProperty() : nullptr;
+
+        LOG.errorv("Array to be bound to the array parameter must at least have %" PRIu32 " element(s) as defined in ECProperty '%s.%s'.",
+            expectedMinOccurs,
+            ecProperty ? ecProperty->GetClass().GetFullName() : "",
+            ecProperty ? ecProperty->GetName().c_str() : ""
+            );
+
         return ECSqlStatus::Error;
         }
 
@@ -337,7 +344,14 @@ ECSqlStatus ArrayConstraintValidator::ValidateMaximum(ECDbCR ecdb, ECSqlTypeInfo
     const uint32_t expectedMaxOccurs = expected.GetArrayMaxOccurs();
     if (actualArrayLength > expectedMaxOccurs)
         {
-        LOG.errorv("Array to be bound to the array parameter must at most have %" PRIu32 " element(s) as defined in the respective ECProperty.", expectedMaxOccurs);
+        ECN::ECPropertyCP ecProperty = expected.GetPropertyMap() ? &expected.GetPropertyMap()->GetProperty() : nullptr;
+
+        LOG.errorv("Array to be bound to the array parameter must at most have %" PRIu32 " element(s) as defined in ECProperty '%s.%s'.",
+            expectedMaxOccurs,
+            ecProperty ? ecProperty->GetClass().GetFullName() : "",
+            ecProperty ? ecProperty->GetName().c_str() : ""
+            );
+
         return ECSqlStatus::Error;
         }
 
