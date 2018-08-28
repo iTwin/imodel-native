@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/IQueryProvider.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -24,6 +24,19 @@ bool isPersistent
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Petras.Sukys    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ICancellationTokenPtr IQueryProvider::IsFileRetrievalNeeded
+(
+CacheTransactionCR txn,
+ECInstanceKeyCR instanceKey,
+bool isPersistent
+) const
+    {
+    return nullptr;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IQueryProvider::DoUpdateFile
@@ -33,7 +46,8 @@ ECInstanceKeyCR instanceKey,
 bool isPersistent
 ) const
     {
-    return false;
+    auto ct = IsFileRetrievalNeeded(txn, instanceKey, isPersistent);
+    return nullptr != ct && !ct->IsCanceled();
     }
 
 /*--------------------------------------------------------------------------------------+
