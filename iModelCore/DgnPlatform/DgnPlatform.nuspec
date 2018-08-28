@@ -22,22 +22,10 @@
         <file src="libs\DgnPlatform.lib"                    target="lib\native\DgnPlatform.lib" />
         <file src="BaseGeoCoordB02.dll"                     target="lib\native\BaseGeoCoordB02.dll" />
         <file src="libs\BaseGeoCoord.lib"                   target="lib\native\BaseGeoCoord.lib" />
-        <file src="BeCurlB02.dll"                           target="lib\native\BeCurlB02.dll" />
-        <file src="libs\BeCurl.lib"                         target="lib\native\BeCurl.lib" />
         <file src="BeFollyB02.dll"                          target="lib\native\BeFollyB02.dll" />
         <file src="libs\BeFolly.lib"                        target="lib\native\BeFolly.lib" />
-        <file src="BeHttpB02.dll"                           target="lib\native\BeHttpB02.dll" />
-        <file src="libs\BeHttp.lib"                         target="lib\native\BeHttp.lib" />
-        <file src="BeOpenSSLB02.dll"                        target="lib\native\BeOpenSSLB02.dll" />
-        <file src="libs\BeOpenSSL.lib"                      target="lib\native\BeOpenSSL.lib" />
         <file src="freetype2B02.dll"                        target="lib\native\freetype2B02.dll" />
         <file src="libs\freetype2.lib"                      target="lib\native\freetype2.lib" />
-        <file src="v8B02.dll"                               target="lib\native\v8B02.dll" />
-        <file src="libs\v8.lib"                             target="lib\native\v8.lib" />
-        <file src="v8_libbaseB02.dll"                       target="lib\native\v8_libbaseB02.dll" />
-        <file src="libs\v8_libbase.lib"                     target="lib\native\v8_libbase.lib" />
-        <file src="v8_libplatformB02.dll"                   target="lib\native\v8_libplatformB02.dll" />
-        <file src="libs\v8_libplatform.lib"                 target="lib\native\v8_libplatform.lib" />
         <file src="pskernel.dll"                            target="lib\native\pskernel.dll" />
         <file src="libs\pskernel.lib"                       target="lib\native\pskernel.lib" />
 
