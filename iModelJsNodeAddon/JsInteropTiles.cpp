@@ -311,16 +311,16 @@ struct TileTreeAppData : DgnModel::AppData
         m_root = nullptr;
         }
 
-    explicit TileTreeAppData(GeometricModelR model)
+    explicit TileTreeAppData(GeometricModelR model, bool isClassifier)
         {
-        m_root = TileTree::Root::Create(model, s_system);
+        m_root = TileTree::Root::Create(model, s_system, isClassifier);
         BeAssert(m_root.IsValid());
         }
 
-    static TileTree::RootPtr FindTileTree(GeometricModelR model)
+    static TileTree::RootPtr FindTileTree(GeometricModelR model, bool isClassifier)
         {
-        static Key s_key;
-        auto appData = model.FindOrAddAppData(s_key, [&]() { return new TileTreeAppData(model); });
+        static Key s_key, s_classifierKey;;
+        auto appData = model.FindOrAddAppData(isClassifier ? s_classifierKey : s_key, [&]() { return new TileTreeAppData(model, isClassifier); });
         return static_cast<TileTreeAppData&>(*appData).m_root;
         }
 };
@@ -330,9 +330,11 @@ struct TileTreeAppData : DgnModel::AppData
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnDbStatus findTileTree(TileTree::RootP& root, Utf8StringCR idStr, DgnDbR db)
     {
-    root = nullptr;
+    static Utf8CP s_classifierPrefix = "Classifier_";
+    bool isClassifier = idStr.StartsWith(s_classifierPrefix);
+    Utf8CP id = idStr.c_str() + (isClassifier ? strlen(s_classifierPrefix) : 0);
 
-    DgnModelId modelId(BeInt64Id::FromString(idStr.c_str()).GetValue());
+    DgnModelId modelId(BeInt64Id::FromString(id).GetValue());
     if (!modelId.IsValid())
         return DgnDbStatus::InvalidId;
 
@@ -340,7 +342,7 @@ static DgnDbStatus findTileTree(TileTree::RootP& root, Utf8StringCR idStr, DgnDb
     if (model.IsNull())
         return DgnDbStatus::MissingId;
 
-    root = TileTreeAppData::FindTileTree(*model).get();
+    root = TileTreeAppData::FindTileTree(*model, isClassifier).get();
     return nullptr != root ? DgnDbStatus::Success : DgnDbStatus::NotFound;
     }
 
