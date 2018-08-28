@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/ChangeManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -71,7 +71,8 @@ struct ChangeManager : public IChangeManager
         BentleyStatus ReadObjectProperties(ECInstanceKeyCR instanceKey, JsonValueR propertiesOut);
         BentleyStatus ReadObjectPropertiesForCreation(ECInstanceKeyCR instanceKey, JsonValueR propertiesOut);
         BentleyStatus ReadObjectPropertiesForModification(ECInstanceKeyCR instanceKey, JsonValueR propertiesOut);
-        static void RemoveCacheSpecificProperties(JsonValueR propertiesJson);
+        static void RemoveCacheSpecificProperties(RapidJsonValueR propertiesJson);
+        static void RemoveECDbSpecificProperties(JsonValueR propertiesJson);
         static void RemoveReadOnlyProperties(JsonValueR propertiesJson, ECClassCR ecClass);
         static void RemoveCalculatedProperties(JsonValueR propertiesJson, ECClassCR ecClass);
         static void RemoveEmptyMembersRecursively(JsonValueR jsonObject);
