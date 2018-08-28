@@ -1555,10 +1555,11 @@ BentleyStatus Root::RequestTile(TileR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(GeometricModelCR model, TransformCR location, Render::SystemR system)
+Root::Root(GeometricModelCR model, TransformCR location, Render::SystemR system, bool asClassifier)
     : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_modelId(model.GetModelId()), m_is3d(model.Is3d()), m_cache(model.GetDgnDb().ElementTileCache())
     {
-    //
+    if (asClassifier)
+        m_classificationPreprocessor = new ClassificationPreprocessor(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1589,7 +1590,7 @@ void Root::DoneTileLoad(TileLoadStateSPtr state) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Root::ToJson(Json::Value& json) const
     {
-    json["id"] = GetModelId().ToHexStr();
+    json["id"] = (Utf8String(IsClassifier() ? "Classifier_" : "") + GetModelId().ToHexStr()).c_str();
     json["maxTilesToSkip"] = 1;
     JsonUtils::TransformToJson(json["location"], GetLocation());
     return true;
@@ -1779,7 +1780,7 @@ Tile::ChildTiles const* Tile::GetChildren(bool load) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Tile::GetTileCacheKey() const
     {
-    return GetRoot().GetModelId().ToString() + GetIdString();
+    return Utf8String(GetRoot().IsClassifier() ? "Classifier_" : "") + GetRoot().GetModelId().ToString() + GetIdString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2062,7 +2063,7 @@ void Root::CancelTileLoad(TileCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
+RootPtr Root::Create(GeometricModelR model, Render::SystemR system, bool asClassifier)
     {
     // DgnDb::VerifyClientThread(); ###TODO: Relax this constraint when publishing view attachments to Cesium...
 
@@ -2092,7 +2093,7 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
 
 #if defined(POPULATE_ROOT_TILE)
     // For debugging...
-    populateRootTile = true;
+    populateRootTile = true;                         
 #endif
 
     // Translate world coordinates to center of range in order to reduce precision errors
@@ -2106,7 +2107,7 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
         s_psolidMainThreadMark = new PSolidThreadUtil::MainThreadMark();
 #endif
 
-    RootPtr root = new Root(model, transform, system);
+    RootPtr root = new Root(model, transform, system, asClassifier);
     Transform rangeTransform;
 
     rangeTransform.InverseOf(transform);
@@ -2462,6 +2463,10 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     PolyfaceHeaderPtr polyface = tilePolyface.m_polyface.get();
     if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
         return;
+
+
+    if (nullptr != m_tile.GetRoot().GetPreprocessor())
+        m_tile.GetRoot().GetPreprocessor()->Preprocess(polyface);
 
     bool doDecimate = !m_tile.IsLeaf() && !m_tile.HasZoomFactor() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount() && 0 == polyface->GetFaceCount();
 
@@ -2941,4 +2946,48 @@ Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double 
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassificationPreprocessor::ClassificationPreprocessor(RootCR root)
+    {
+    Transform transformFromDgn;
+    transformFromDgn.InverseOf(root.GetLocation());
+
+    transformFromDgn.Multiply(m_range, root.GetDgnDb().GeoLocation().GetProjectExtents());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassificationPreprocessor::Preprocess(CurveVectorPtr& curveVector)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassificationPreprocessor::Preprocess(PolyfaceHeaderPtr& polyface)
+    {
+    DPlane3d        plane;
+
+    if (polyface->IsClosedPlanarRegion(plane))
+        {
+        DRay3d              ray = DRay3d::FromOriginAndVector(plane.origin, plane.normal);
+        DRange1d            classifiedProjection = m_range.GetCornerRange(ray);
+        PolyfaceHeaderPtr   extrudedPolyface = polyface->ComputeOffset(PolyfaceHeader::OffsetOptions(), classifiedProjection.high, classifiedProjection.low);
+
+        if (extrudedPolyface.IsValid())
+            {
+            extrudedPolyface->Triangulate();
+            extrudedPolyface->BuildPerFaceNormals();
+            polyface = extrudedPolyface;
+            }
+        }
+    }
+
+
+
+
 
