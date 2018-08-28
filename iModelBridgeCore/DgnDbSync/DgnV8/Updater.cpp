@@ -230,6 +230,9 @@ void ChangeDetector::_DetectDeletedModels(Converter& converter, SyncInfo::ModelI
     // them were missing this time around. Those models and their constituent Models must to be deleted.
     for (auto wasModel=iter.begin(); wasModel!=iter.end(); ++wasModel)
         {
+        if (!converter.IsBimModelAssignedToJobSubject(wasModel.GetModelId()))
+            continue;
+
         if (m_v8ModelsSeen.find(wasModel.GetV8ModelSyncInfoId()) == m_v8ModelsSeen.end())
             {
             if (m_v8ModelsSkipped.find(wasModel.GetV8ModelSyncInfoId()) != m_v8ModelsSkipped.end())
@@ -298,6 +301,8 @@ void ChangeDetector::_DetectDeletedElementsInFile(Converter& converter, DgnV8Fil
     modelsInFile.GetStatement()->BindInt(1, Converter::GetV8FileSyncInfoIdFromAppData(v8File).GetValue());
     for (auto modelInFile = modelsInFile.begin(); modelInFile != modelsInFile.end(); ++modelInFile)
         {
+        if (!converter.IsBimModelAssignedToJobSubject(modelInFile.GetModelId()))
+            continue;
         SyncInfo::ElementIterator elementsInModel(converter.GetDgnDb(), "V8ModelSyncInfoId=?");
         elementsInModel.GetStatement()->BindInt(1, modelInFile.GetV8ModelSyncInfoId().GetValue());
         _DetectDeletedElements(converter, elementsInModel);

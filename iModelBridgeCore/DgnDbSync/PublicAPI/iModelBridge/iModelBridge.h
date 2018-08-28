@@ -561,6 +561,8 @@ struct iModelBridge
         void SetAssetsDir(BeFileNameCR dir) {m_assetsDir=dir;}
         BeFileNameCR GetLibraryDir() const {return m_libraryDir;} //!< The directory from which the bridge library itself was loaded
         BeFileNameCR GetDrawingsDirs() const {return m_drawingsDirs;} //!< The top-level directory to scan for other files that may contain drawings and sheets
+        void SetDrawingsDir(BeFileNameCR dir) {m_drawingsDirs = dir;}
+        void AddDrawingAndSheetFile(BeFileNameCR fn) {m_drawingAndSheetFiles.push_back(fn);}
         bvector<BeFileName> const& GetDrawingAndSheetFiles() const {return m_drawingAndSheetFiles;} //!< The list of files to search for drawings and sheets
         BeFileNameCR GetReportFileName() const {return m_reportFileName;} //!< Where to write a report of results and issues that occurred during the conversion. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues and logging".
         //! Once the BIM name has been set, the framework calls this to compute the report file name. This is also called automatically by Validate.

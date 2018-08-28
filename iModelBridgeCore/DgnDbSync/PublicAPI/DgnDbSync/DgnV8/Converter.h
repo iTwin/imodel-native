@@ -1018,6 +1018,12 @@ public:
     //! This returns false if the V8 file should not be converted by the bridge.
     DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
 
+    //! This returns true if the specified BIM model may be converted or otherwise processed by the current job subject.
+    DGNDBSYNC_EXPORT bool IsBimModelAssignedToJobSubject(DgnModelId) const;
+
+    //! This returns true if the v8Model may be converted by the current job subject.
+    DGNDBSYNC_EXPORT bool IsV8ModelAssignedToJobSubject(DgnV8ModelCR) const;
+
     bool HasRootTransChanged() const {return m_rootTransHasChanged;}
 
     void SetIsUpdating(bool b) {_GetParamsR().SetIsUpdating(b);}
@@ -1641,7 +1647,7 @@ public:
     
     DGNDBSYNC_EXPORT DgnModelId CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newName, DgnClassId classId, DgnV8Api::DgnAttachment const*);
 
-    DgnModelId FindFirstModelInSyncInfo(DgnV8ModelCR);
+    DgnModelId FindFirstModelInSyncInfo(DgnV8ModelCR) const;
 
     void AddV8ModelToRange(Bentley::DRange3dR, DgnV8ModelR v8Model);
 
