@@ -234,42 +234,8 @@ TEST_F(BriefcasePullTests, UpdateBriefcaseToVersion)
     ASSERT_SUCCESS(iModelHubHelpers::UpdateToVersion(briefcase, s_version1));
 
     //pull with reverted and new changeSets
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, false, true));
     ExpectDbIsUpToDate(briefcase->GetDgnDb());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                    Andrius.Zonys                   12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BriefcasePullTests, SuccessfulAcquireBriefcase_UseFallbackForSync)
-    {
-    ChangeSetsInfoResult queryChangeSetsResult = s_connection->GetAllChangeSets()->GetResult();
-    ASSERT_SUCCESS (queryChangeSetsResult);
-    ASSERT_LT(0, queryChangeSetsResult.GetValue().size());
-    ChangeSetInfoPtr firstChangeSet = *queryChangeSetsResult.GetValue().begin();
-
-    IHttpHandlerPtr validHandler = s_client->GetHttpHandler();
-
-    std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
-    mockHandler->ForAnyRequest([=] (Http::RequestCR request)
-        {
-        Http::Response response = validHandler->_PerformRequest(request)->GetResult();
-        if (request.GetUrl().EndsWith("Briefcase"))
-            {
-            // Replace MergedChangeSetId so that fallback download scenario will be used
-            Utf8String body = response.GetBody().AsString();
-            body.ReplaceAll ("\"MergedChangeSetId\":\"\"", Utf8PrintfString ("\"MergedChangeSetId\":\"%s\"", firstChangeSet->GetId()).c_str());
-            return Http::Response(Http::HttpResponseContent::Create(Http::HttpStringBody::Create(body.c_str())), response.GetEffectiveUrl().c_str(), response.GetConnectionStatus(), response.GetHttpStatus());
-            }
-        return response;
-        });
-
-    s_client->SetHttpHandler(mockHandler);
-    auto acquireBriefcaseResult = iModelHubHelpers::AcquireBriefcase(s_client, s_info);
-    s_client->SetHttpHandler(validHandler);
-    ASSERT_SUCCESS(acquireBriefcaseResult);
-    auto dbPath = acquireBriefcaseResult.GetValue ()->GetLocalPath ();
-    EXPECT_TRUE(dbPath.DoesPathExist ());
     }
 
 /*--------------------------------------------------------------------------------------+

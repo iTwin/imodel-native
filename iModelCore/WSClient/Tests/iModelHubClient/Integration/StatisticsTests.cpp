@@ -91,7 +91,7 @@ struct StatisticsTests : public iModelTestsBase
         PhysicalModelPtr model1 = CreateModel("Model", db);
         db.SaveChanges();
 
-        ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, false));
+        ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, false, false));
 
         // Create new user
         ClientPtr nonAdminClient;

@@ -492,14 +492,14 @@ namespace iModelHubHelpers
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ChangeSetsResult PullMergeAndPush(BriefcaseR briefcase, bool shouldPush, bool relinquish, bool expectSuccess)
+    ChangeSetsResult PullMergeAndPush(BriefcaseR briefcase, bool shouldPush, bool shouldPull, bool relinquish, bool expectSuccess)
         {
         TestsProgressCallback pushCallback;
         TestsProgressCallback pullCallback;
 
         auto pushResult = briefcase.PullMergeAndPush(nullptr, relinquish, pullCallback.Get(), pushCallback.Get())->GetResult();
         EXPECT_RESULT(pushResult, expectSuccess);
-        pullCallback.Verify();
+        pullCallback.Verify(shouldPull);
         pushCallback.Verify(shouldPush);
         return pushResult;
         }
@@ -507,9 +507,9 @@ namespace iModelHubHelpers
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              01/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ChangeSetsResult PullMergeAndPush(BriefcasePtr briefcase, bool shouldPush, bool relinquish, bool expectSuccess)
+    ChangeSetsResult PullMergeAndPush(BriefcasePtr briefcase, bool shouldPush, bool shouldPull, bool relinquish, bool expectSuccess)
         {
-        return PullMergeAndPush(*briefcase, shouldPush, relinquish, expectSuccess);
+        return PullMergeAndPush(*briefcase, shouldPush, shouldPull, relinquish, expectSuccess);
         }
 
     /*--------------------------------------------------------------------------------------+
@@ -529,7 +529,7 @@ namespace iModelHubHelpers
         for (uint32_t i = statingNumber; i < statingNumber + count; ++i)
             {
             CreateElement(*model);
-            ChangeSetsResult result = PullMergeAndPush(briefcase, expectSuccess, true, expectSuccess);
+            ChangeSetsResult result = PullMergeAndPush(briefcase, expectSuccess, false, true, expectSuccess);
             if (!result.IsSuccess())
                 {
                 return StatusResult::Error(result.GetError());

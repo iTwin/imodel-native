@@ -127,7 +127,7 @@ TEST_F(BriefcaseSchemaChangesTests, UpdateToVersionPullWithoutReinstating)
     EXPECT_EQ(s_version4->GetChangeSetId(), briefcase->GetDgnDb().Revisions().GetParentRevisionId());
 
     //pull should fail
-    ChangeSetsResult pullResult = iModelHubHelpers::PullMergeAndPush(briefcase, false, true, false);
+    ChangeSetsResult pullResult = iModelHubHelpers::PullMergeAndPush(briefcase, false, true, true, false);
     ASSERT_FAILURE(pullResult);
     EXPECT_EQ(Error::Id::ReverseOrReinstateSchemaChangesOnOpen, pullResult.GetError().GetId());
 
@@ -252,7 +252,7 @@ TEST_F(BriefcaseSchemaChangesTests, UpdateToChangeSetPullWithoutReinstating)
     EXPECT_EQ(changeSet7->GetId(), briefcase->GetDgnDb().Revisions().GetParentRevisionId());
 
     //pull should fail
-    ChangeSetsResult pullResult = iModelHubHelpers::PullMergeAndPush(briefcase, false, true, false);
+    ChangeSetsResult pullResult = iModelHubHelpers::PullMergeAndPush(briefcase, false, true, true, false);
     ASSERT_FAILURE(pullResult);
     EXPECT_EQ(Error::Id::ReverseOrReinstateSchemaChangesOnOpen, pullResult.GetError().GetId());
 

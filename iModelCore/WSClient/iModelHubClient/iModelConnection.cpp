@@ -1380,17 +1380,27 @@ ICancellationTokenPtr                  cancellationToken
     {
     const Utf8String methodName = "iModelConnection::DownloadChangeSetsInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    if (changeSets.empty())
+        {
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Success(ChangeSets {}));
+        }
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    MultiProgressCallbackHandlerPtr callbacksHandlerPtr = new MultiProgressCallbackHandler(callback);
-    double singleCallbackPercentage = changeSets.empty() ? 100.0f : 100.0f / changeSets.size();
+    double totalSize = 0.0;
+    for (ChangeSetInfoPtr const& changeSet : changeSets)
+        {
+        totalSize += changeSet->GetFileSize();
+        }
+    MultiProgressCallbackHandlerPtr callbacksHandlerPtr = new MultiProgressCallbackHandler(callback, totalSize);
+
 
     bset<std::shared_ptr<AsyncTask>> tasks;
     bmap<Utf8String, int64_t> changeSetIdIndexMap;
     for (auto& changeSet : changeSets)
         {
         Http::Request::ProgressCallback changeSetCallback;
-        callbacksHandlerPtr->AddCallback(changeSetCallback, singleCallbackPercentage);
+        callbacksHandlerPtr->AddCallback(changeSetCallback);
         tasks.insert(DownloadChangeSetFile(changeSet, changeSetCallback, cancellationToken));
         changeSetIdIndexMap.Insert(changeSet->GetId(), changeSet->GetIndex());
         }

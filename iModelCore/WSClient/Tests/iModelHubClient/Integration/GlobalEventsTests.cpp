@@ -233,7 +233,7 @@ TEST_F(GlobalEventsTests, GetMultipleEventTypes)
     auto model = CreateModel(GetTestInfo().name(), briefcase->GetDgnDb());
     CreateElement(*model, DgnCode(), false);
 
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
     expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::ChangeSetCreatedEvent, s_projectId, createResult.GetValue()->GetId()));
 
     VersionInfoPtr version;

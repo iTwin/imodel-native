@@ -50,7 +50,8 @@ private:
     iModelAdmin                 m_iModelAdmin;
     GlobalConnectionPtr         m_globalConnectionPtr;
 
-    static StatusResult MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath, 
+    static StatusResult MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath,
+                                                 Http::Request::ProgressCallbackCR callback = nullptr,
                                                  ICancellationTokenPtr cancellationToken = nullptr);
 
     Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, Utf8StringCR url) : 
@@ -78,14 +79,6 @@ private:
                                                           bvector<ChangeSetInfoPtr> changeSetsToMerge, 
                                                           LocalBriefcaseFileNameCallback const & fileNameCallBack, 
                                                           Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const;
-
-    //! Opens iModel with schema upgrade and custom DomainUpgradeOptions
-    static DgnDbPtr OpenWithSchemaUpgradeInternal
-    (
-    BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, 
-    SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades,
-    RevisionProcessOption processOption = RevisionProcessOption::Merge
-    );
 
     void SetCredentialsForImodelBank();
 
