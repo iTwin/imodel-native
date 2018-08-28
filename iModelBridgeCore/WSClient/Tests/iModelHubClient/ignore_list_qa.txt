@@ -25,3 +25,8 @@ SeedFileTests.FileReplaceInProgressCodesLocksChangeSetsDenied
 SeedFileTests.ReplaceCodesLocksChangeSets
 SeedFileTests.EmptyFileReplaceOtherUser
 SeedFileTests.ReplaceWithLockediModel
+
+#----------------------------------------------------------------------------------------
+#   URL Validator - Should run after other tests have finished
+#----------------------------------------------------------------------------------------
+UrlValidator.WhitelistCheck
