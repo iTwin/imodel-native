@@ -9,3 +9,8 @@ WebsiteSeedFileTests.CreateSeedFile
 #----------------------------------------------------------------------------------------
 SeedFileTests.ReplaceWithoutLockediModel
 CodesTests.ExternalCodesPushTest
+
+#----------------------------------------------------------------------------------------
+#   URL Validator - Should run after other tests have finished
+#----------------------------------------------------------------------------------------
+UrlValidator.WhitelistCheck
