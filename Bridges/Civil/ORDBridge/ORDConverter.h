@@ -64,7 +64,12 @@ private:
 public:
     ORDConverter(Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams& params) : 
         Dgn::DgnDbSync::DgnV8::RootModelConverter(params), m_isProcessing(false)
-        {}
+        {
+        // When EC Content is skipped, item types don't get converted.  By default, the framework has this 
+        // m_skipECContent set to true.  Let's change that for us to default to false so we default to getting
+        // item types converted.
+        m_skipECContent = false;
+        }
 
     void SetORDParams(Params* ordParams) { m_ordParams = ordParams; }
     void SetIsProcessing(bool newVal) { m_isProcessing = newVal; }
