@@ -593,7 +593,52 @@ void Tree::CancelAllTileLoads()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentCPtr Tree::RequestContent(ContentIdCR contentId)
     {
-    return nullptr; // ###TODO...
+    LoaderPtr loader;
+    BeMutexHolder lock(m_cv.GetMutex());
+    auto iter = m_activeLoads.find(contentId);
+    if (iter == m_activeLoads.end())
+        {
+        // Load the tile content synchronously on this thread
+        loader = new Loader(*this, contentId);
+        LoaderScope scope(*loader, lock);
+        }
+    else
+        {
+        // Content is already being loaded on another thread. Await the result on this thread.
+        loader = *iter;
+        auto condition = [&](BeConditionVariable&) { return !loader->IsLoading(); };
+        ConditionVariablePredicate<decltype(condition)> predicate(condition);
+        m_cv.ProtectedWaitOnCondition(lock, &predicate, BeConditionVariable::Infinite);
+        }
+
+    return loader->IsReady() ? loader->GetContent() : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tree::LoaderScope::LoaderScope(LoaderR loader, BeMutexHolder& lock) : m_loader(&loader), m_lock(lock)
+    {
+    // NB: Mutex is held by this thread on entry...
+    loader.GetTree().m_activeLoads.insert(m_loader);
+
+    // Release mutex while loading...
+    lock.unlock();
+    loader.Perform();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tree::LoaderScope::~LoaderScope()
+    {
+    // Ensure loader removed and waiting threads notified even if exception occurs during Loader::Perform().
+    m_lock.lock();
+    auto& loads = m_loader->GetTree().m_activeLoads;
+    BeAssert(loads.end() != loads.find(m_loader));
+    loads.erase(m_loader);
+    BeAssert(loads.end() == loads.find(m_loader));
+    m_loader->GetTree().m_cv.notify_all();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -601,6 +646,7 @@ ContentCPtr Tree::RequestContent(ContentIdCR contentId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::Loader(TreeR tree, ContentIdCR contentId) : m_contentId(contentId), m_tree(tree), m_cacheKey(tree.ConstructCacheKey(contentId))
     {
+    BeAssert(Status::NotLoaded == GetStatus()); // zero-initialized...
     // ###TODO: create time etc.
     }
 
@@ -610,5 +656,15 @@ Loader::Loader(TreeR tree, ContentIdCR contentId) : m_contentId(contentId), m_tr
 Loader::~Loader()
     {
     //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Loader::Perform()
+    {
+    m_status.store(Status::Loading);
+    // ###TODO: load stuff, set status appropriately...
+    m_status.store(Status::NotFound);
     }
 

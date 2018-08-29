@@ -173,18 +173,35 @@ public:
 //=======================================================================================
 struct Loader : RefCountedBase, NonCopyableClass
 {
-protected:
+    enum class Status : uint8_t
+    {
+        NotLoaded,
+        Loading,
+        Ready,
+        Canceled,
+        NotFound,
+    };
+
+    friend struct Tree;
+private:
     ContentId m_contentId;
     ContentPtr m_content;
-    BeAtomic<bool> m_canceled;
+    BeAtomic<Status> m_status;
     TreeR m_tree;
     Utf8String m_cacheKey;
-public:
+
     DGNPLATFORM_EXPORT Loader(TreeR tree, ContentIdCR contentId);
+
+    void SetCanceled() { m_status.store(Status::Canceled); }
+    void SetReady() { m_status.store(Status::Ready); }
+    void Perform();
+public:
     DGNPLATFORM_EXPORT ~Loader();
 
-    bool IsCanceled() const { return m_canceled.load(); }
-    void SetCanceled() { m_canceled.store(true); }
+    Status GetStatus() const { return m_status.load(); }
+    bool IsCanceled() const { return Status::Canceled == GetStatus(); }
+    bool IsLoading() const { return Status::Loading == GetStatus(); }
+    bool IsReady() const { return Status::Ready == GetStatus(); }
 
     ContentIdCR GetContentId() const { return m_contentId; }
     ContentCP GetContent() const { return m_content.get(); }
@@ -207,6 +224,16 @@ public:
 struct Tree : RefCountedBase, NonCopyableClass
 {
 private:
+    friend struct LoaderScope;
+    struct LoaderScope
+    {
+        LoaderPtr m_loader;
+        BeMutexHolder& m_lock;
+
+        LoaderScope(LoaderR loader, BeMutexHolder& lock);
+        ~LoaderScope();
+    };
+
     mutable std::mutex m_dbMutex;
     mutable BeConditionVariable m_cv;
     DgnDbR m_db;
@@ -236,7 +263,6 @@ public:
     GeometricModelPtr FetchModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
     Utf8String ConstructCacheKey(ContentIdCR contentId) const { auto key = _GetId(); key.append(contentId.ToString()); return key; }
 
-    void StartTileLoad(LoaderR loader);
     void DoneTileLoad(LoaderR loader);
 
     DGNPLATFORM_EXPORT void CancelAllTileLoads();
