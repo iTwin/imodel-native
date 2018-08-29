@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/JsonInserterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -570,6 +570,86 @@ TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
     EXPECT_EQ(1, statement.GetValueId <ECInstanceId>(0).GetValue());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 08/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonInserterTests, ConstrainedArrayProps)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("JsonInserter_ConstrainedArrayProps.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                       <ECEntityClass typeName="Foo">
+                                                            <ECArrayProperty propertyName="PrimArray" typeName="int" minOccurs="5" maxOccurs="10" />
+                                                            <ECStructArrayProperty propertyName="StructArray" typeName="MyStruct" minOccurs="5" maxOccurs="10"/>
+                                                        </ECEntityClass>
+                                                       <ECStructClass typeName="MyStruct">
+                                                            <ECProperty propertyName="Code" typeName="int"/>
+                                                        </ECStructClass>
+                                                    </ECSchema>)xml")));
+
+
+    const std::vector<std::tuple<JsonValue, Nullable<int>, Nullable<int>, bool>> testJsons = {
+            {JsonValue(), nullptr, nullptr, true},
+            {JsonValue("{}"), nullptr, nullptr, true},
+            {JsonValue(R"json({"PrimArray": [], "StructArray": []})json"), nullptr, nullptr, true},
+            {JsonValue(R"json({"PrimArray": [1,2]})json"), 2, nullptr, false},
+            {JsonValue(R"json({"PrimArray": [1,2,3,4,5]})json"), 5, nullptr, true},
+            {JsonValue(R"json({"PrimArray": [1,2,3,4,5,6,7]})json"), 7, nullptr, true},
+            {JsonValue(R"json({"PrimArray": [1,2,3,4,5,6,7,8,9,10]})json"), 10, nullptr, true},
+            {JsonValue(R"json({"PrimArray": [1,2,3,4,5,6,7,8,9,10,11]})json"), 11, nullptr, true}, //ECObjects bug with maxOccurs (always unbounded)
+            {JsonValue(R"json({"StructArray": [{}]})json"), nullptr, 1, false},
+            {JsonValue(R"json({"StructArray": [{"Code":1}]})json"), nullptr, 1, false},
+            {JsonValue(R"json({"StructArray": [{"Code":1},{"Code": 2},{"Code": 3},{"Code": 4},{"Code": 5}]})json"), nullptr, 5, true},
+            {JsonValue(R"json({"StructArray": [{},{},{},{},{}]})json"), nullptr, 5, true},
+            {JsonValue(R"json({"StructArray": [{"Code":1},{"Code": 2},{"Code": 3},{"Code": 4},{"Code": 5},{"Code": 6},{"Code": 7},{"Code": 8},{"Code": 9},{"Code": 10}]})json"), nullptr, 10, true},
+            {JsonValue(R"json({"StructArray": [{},{},{},{},{},{},{},{},{},{}]})json"), nullptr, 10, true},
+            {JsonValue(R"json({"StructArray": [{"Code":1},{"Code": 2},{"Code": 3},{"Code": 4},{"Code": 5},{"Code": 6},{"Code": 7},{"Code": 8},{"Code": 9},{"Code": 10},{"Code":11}]})json"), nullptr, 11, true}, //ECObjects bug with maxOccurs (always unbounded)
+            {JsonValue(R"json({"StructArray": [{},{},{},{},{},{},{},{},{},{},{}]})json"), nullptr, 11, true}}; //ECObjects bug with maxOccurs (always unbounded)
+
+    ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_TRUE(fooClass != nullptr);
+    JsonInserter inserter(m_ecdb, *fooClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid());
+
+    for (std::tuple<JsonValue, Nullable<int>, Nullable<int>, bool> const& testJson : testJsons)
+        {
+        JsonValue const& expectedJson = std::get<0>(testJson);
+        Nullable<int> expectedPrimArrayLength = std::get<1>(testJson);
+        Nullable<int> expectedStructArrayLength = std::get<2>(testJson);
+        const bool expectedToSucceed = std::get<3>(testJson);
+
+        ECInstanceKey key;
+        const DbResult stepStat = inserter.Insert(key, expectedJson.m_value);
+
+        if (expectedToSucceed)
+            {
+            ASSERT_EQ(BE_SQLITE_OK, stepStat) << expectedJson.ToString();
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT PrimArray,StructArray FROM ts.FOO WHERE ECInstanceId=?"));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+            if (expectedPrimArrayLength == nullptr)
+                {
+                ASSERT_TRUE(stmt.IsValueNull(0)) << expectedJson.ToString();
+                ASSERT_EQ(0, stmt.GetValue(0).GetArrayLength()) << expectedJson.ToString();
+                }
+            else
+                ASSERT_EQ(expectedPrimArrayLength.Value(), stmt.GetValue(0).GetArrayLength()) << expectedJson.ToString();
+
+            if (expectedStructArrayLength == nullptr)
+                {
+                ASSERT_TRUE(stmt.IsValueNull(1)) << expectedJson.ToString();
+                ASSERT_EQ(0, stmt.GetValue(1).GetArrayLength()) << expectedJson.ToString();
+                }
+            else
+                ASSERT_EQ(expectedStructArrayLength.Value(), stmt.GetValue(1).GetArrayLength()) << expectedJson.ToString();
+
+            }
+        else
+            ASSERT_EQ(BE_SQLITE_ERROR, stepStat) << expectedJson.ToString();
+        }
+    }
 
 
 #define JSONTABLE_NAME "testjson"
