@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+ 
 |
-|     $Source: PublicAPI/DgnPlatform/NewTileTree.h $
+|     $Source: PublicAPI/DgnPlatform/Tile.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
