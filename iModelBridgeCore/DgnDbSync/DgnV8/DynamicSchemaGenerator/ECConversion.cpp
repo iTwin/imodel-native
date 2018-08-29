@@ -1263,8 +1263,6 @@ struct CompareIUtf8Ascii
     bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0; }
     };
 
-static bool s_doFileSaveTimeCheck = true;
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
@@ -3174,11 +3172,13 @@ void DynamicSchemaGenerator::FinalizeECSchemaConversion()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DynamicSchemaGenerator::CheckNoECSchemaChanges(bvector<DgnV8ModelP> const& uniqueModels)
     {
-    bmap<Utf8String, uint32_t> syncInfoChecksums;
-    GetSyncInfo().RetrieveECSchemaChecksums(syncInfoChecksums);
-
     for (auto& v8Model : uniqueModels)
+        {
+        bmap<Utf8String, uint32_t> syncInfoChecksums;
+        SyncInfo::V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*v8Model->GetDgnFileP());
+        GetSyncInfo().RetrieveECSchemaChecksums(syncInfoChecksums, v8FileId);
         CheckECSchemasForModel(*v8Model, syncInfoChecksums);
+        }
     }
 
 //---------------------------------------------------------------------------------------

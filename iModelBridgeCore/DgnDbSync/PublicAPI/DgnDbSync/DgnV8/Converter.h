@@ -991,7 +991,7 @@ protected:
     DgnModelId          m_jobDefinitionModelId;
     DgnElementId         m_textStyleNoneId;
     bset<DgnModelId>    m_unchangedModels;
-    bmap<DgnModelId, BeFileName>    m_modelsRequiringRealityTiles;;
+    bmap<DgnModelId, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>>    m_modelsRequiringRealityTiles;;
 
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
@@ -1017,6 +1017,12 @@ public:
 
     //! This returns false if the V8 file should not be converted by the bridge.
     DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
+
+    //! This returns true if the specified BIM model may be converted or otherwise processed by the current job subject.
+    DGNDBSYNC_EXPORT bool IsBimModelAssignedToJobSubject(DgnModelId) const;
+
+    //! This returns true if the v8Model may be converted by the current job subject.
+    DGNDBSYNC_EXPORT bool IsV8ModelAssignedToJobSubject(DgnV8ModelCR) const;
 
     bool HasRootTransChanged() const {return m_rootTransHasChanged;}
 
@@ -1338,7 +1344,7 @@ public:
     DgnV8Api::ECQuery const& GetSelectAllV8ECQuery() const;
     static DgnV8Api::FindInstancesScopePtr CreateFindInstancesScope(DgnV8EhCR);
     DgnCode TryGetBusinessKey(ECObjectsV8::IECInstanceCR);
-    BentleyStatus GetECContentOfElement(V8ElementECContent& content, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement);
+    DGNDBSYNC_EXPORT BentleyStatus GetECContentOfElement(V8ElementECContent& content, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement);
     //! @}
 
 
@@ -1643,7 +1649,7 @@ public:
     
     DGNDBSYNC_EXPORT DgnModelId CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newName, DgnClassId classId, DgnV8Api::DgnAttachment const*);
 
-    DgnModelId FindFirstModelInSyncInfo(DgnV8ModelCR);
+    DgnModelId FindFirstModelInSyncInfo(DgnV8ModelCR) const;
 
     void AddV8ModelToRange(Bentley::DRange3dR, DgnV8ModelR v8Model);
 
@@ -1985,7 +1991,7 @@ public:
     void ClearV8ProgressMeter();
     
     //! Add model requiring reality tiles.
-    void AddModelRequiringRealityTiles(DgnModelId id, BeFileNameCR sourceFile) { m_modelsRequiringRealityTiles.Insert(id, sourceFile); }
+    void AddModelRequiringRealityTiles(DgnModelId id, Utf8StringCR sourceFile, SyncInfo::V8FileSyncInfoId fileId) { m_modelsRequiringRealityTiles.Insert(id, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>(sourceFile, fileId)); }
     //! @}
 
     //! @name Change Monitoring
@@ -2331,19 +2337,19 @@ public:
     //! @name  Converting Elements
     //! @{
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialElement(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const&);
-    DGNDBSYNC_EXPORT void DoConvertSpatialElement(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const& m, bool isNewElement);
+    DGNDBSYNC_EXPORT BentleyStatus DoConvertSpatialElement(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const& m, bool isNewElement);
     void ConvertElementList(DgnV8Api::PersistentElementRefList* list, ResolvedModelMapping const&);
     //! @}
 
     //! @name  Converting Rasters
     //! @{
-    DGNDBSYNC_EXPORT virtual BentleyStatus _ConvertRasterElement(DgnV8EhCR v8eh, ResolvedModelMapping const&, bool copyRaster);
+    DGNDBSYNC_EXPORT virtual BentleyStatus _ConvertRasterElement(DgnV8EhCR v8eh, ResolvedModelMapping const&, bool copyRaster, bool isNewElement);
     DGNDBSYNC_EXPORT virtual bool _RasterMustBeExported(Dgn::ImageFileFormat fileFormat);
     //! @}
 
     //! @name  Converting Point Clouds
     //! @{
-    DGNDBSYNC_EXPORT virtual BentleyStatus _ConvertPointCloudElement(DgnV8EhCR v8eh, ResolvedModelMapping const&, bool copyPointCloud);
+    DGNDBSYNC_EXPORT virtual BentleyStatus _ConvertPointCloudElement(DgnV8EhCR v8eh, ResolvedModelMapping const&, bool copyPointCloud, bool isNewElement);
     void ConvertV8PointCloudViewSettings(SpatialViewControllerR, DgnV8ViewInfoCR viewInfo);
     //! @}
 

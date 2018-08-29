@@ -236,7 +236,7 @@ public:
     DWGDB_EXPORT bool       HasPlinegen () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT Type       GetType () const;
-    DWGDB_EXPORT DwgDbObjectIterator    GetVertexIterator () const;
+    DWGDB_EXPORT DwgDbObjectIteratorPtr GetVertexIterator () const;
     DWGDB_EXPORT DwgDbStatus AppendVertex (DwgDbObjectIdR outId, DPoint2dCR point, DPoint2dCR widths=DPoint2d::FromZero());
     DWGDB_EXPORT DwgDbStatus InsertVertexAt (DwgDbObjectIdR outId, DwgDbObjectIdCR atVertex, DPoint2dCR point, DPoint2dCR widths=DPoint2d::FromZero());
     DWGDB_EXPORT DwgDbStatus SetClosed (bool isClosed);
@@ -278,7 +278,7 @@ public:
         };  // Type
 
     DWGDB_EXPORT Type                   GetType () const;
-    DWGDB_EXPORT DwgDbObjectIterator    GetVertexIterator () const;
+    DWGDB_EXPORT DwgDbObjectIteratorPtr GetVertexIterator () const;
     DWGDB_EXPORT DwgDbStatus            Straighten ();
     DWGDB_EXPORT DwgDbStatus SetClosed (bool isClosed);
     DWGDB_EXPORT DwgDbStatus SetType (Type plineType);
@@ -308,7 +308,7 @@ public:
     DWGDB_EXPORT int16_t        GetNumVertices () const;
     DWGDB_EXPORT DwgDbStatus    AppendFaceRecord (DwgDbFaceRecordP face);
     DWGDB_EXPORT DwgDbStatus    AppendVertex (DwgDbObjectIdR outId, DwgDbPolyFaceMeshVertexP vertex);
-    DWGDB_EXPORT DwgDbObjectIterator    GetVertexIterator () const;
+    DWGDB_EXPORT DwgDbObjectIteratorPtr GetVertexIterator () const;
     };  // DwgDbPolyFaceMesh
 DWGDB_DEFINE_OBJECTPTR (PolyFaceMesh)
 
@@ -348,7 +348,7 @@ public:
     DWGDB_EXPORT DwgDbStatus    Straighten ();
     DWGDB_EXPORT DwgDbStatus    SurfaceFit ();
     DWGDB_EXPORT DwgDbStatus    SurfaceFit (Type type, int16_t u, int16_t v);
-    DWGDB_EXPORT DwgDbObjectIterator    GetVertexIterator () const;
+    DWGDB_EXPORT DwgDbObjectIteratorPtr GetVertexIterator () const;
     DWGDB_EXPORT DwgDbStatus    AppendVertex (DwgDbObjectIdR outId, DwgDbPolygonMeshVertexP vertex);
     };  // DwgDbPolygonMesh
 DWGDB_DEFINE_OBJECTPTR (PolygonMesh)
@@ -781,7 +781,7 @@ public:
     DWGDB_EXPORT DwgDbStatus    GetExtentsBestFit (DRange3dR extents, TransformCR parentXform = Transform::FromIdentity()) const;
     DWGDB_EXPORT bool           IsXAttachment (WStringP blockName = nullptr, WStringP path = nullptr) const;
     DWGDB_EXPORT DwgDbStatus    OpenSpatialFilter (DwgDbSpatialFilterPtr& filterOut, DwgDbOpenMode mode) const;
-    DWGDB_EXPORT DwgDbObjectIterator    GetAttributeIterator () const;
+    DWGDB_EXPORT DwgDbObjectIteratorPtr GetAttributeIterator () const;
     DWGDB_EXPORT DwgDbStatus    SetPosition (DPoint3dCR origin);
     DWGDB_EXPORT DwgDbStatus    SetRotation (double angle);
     DWGDB_EXPORT DwgDbStatus    SetScales (DVec3dCR scales);
@@ -809,7 +809,7 @@ public:
     DWGDB_EXPORT DwgDbStatus    GetExtentsBestFit (DRange3dR extents, TransformCR parentXform = Transform::FromIdentity()) const;
     DWGDB_EXPORT bool           IsXAttachment (WStringP blockName = nullptr, WStringP path = nullptr) const;
     DWGDB_EXPORT DwgDbStatus    OpenSpatialFilter (DwgDbSpatialFilterPtr& filterOut, DwgDbOpenMode mode) const;
-    DWGDB_EXPORT DwgDbObjectIterator    GetAttributeIterator () const;
+    DWGDB_EXPORT DwgDbObjectIteratorPtr GetAttributeIterator () const;
     DWGDB_EXPORT DwgDbObjectId  GetOwnerViewportId () const;
     DWGDB_EXPORT void           SetOwnerViewportId (DwgDbObjectId viewportId);
     };  // DwgDbViewRepBlockReference

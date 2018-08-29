@@ -1434,7 +1434,7 @@ static void dumpElement(DgnElementCR el)
     {
     printf("%s", Converter::IssueReporter::FmtElement(el).c_str());
     if (!el.GetCode().GetValue().empty())
-        printf(" Code:[%s]", el.GetCode().GetValueCP());
+        printf(" Code:[%s]", el.GetCode().GetValueUtf8CP());
     if (0 != *el.GetUserLabel())
         printf(" UserLabel:[%s]", el.GetUserLabel());
     auto descr = getDescr(el);
@@ -1644,6 +1644,8 @@ void Converter::OnUpdateComplete()
     // *** WIP_UPDATER - update thumbnails for views with modified models
     if (m_elementsConverted != 0)
         GenerateThumbnails();
+    if (m_modelsRequiringRealityTiles.size() != 0)
+        GenerateRealityModelTilesets();
 
     // Update the project extents ... but only if it gets bigger.
     auto rtreeBox = m_dgndb->GeoLocation().QueryRTreeExtents();
@@ -1870,6 +1872,46 @@ DefinitionModelPtr Converter::GetJobDefinitionModel()
 
     m_jobDefinitionModelId = defModel->GetModelId();
     return defModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isChildOfJob(DgnDbR db, DgnElementId elId, DgnElementId jobSubjectId)
+    {
+    if (elId == db.Elements().GetRootSubjectId())
+        return false;
+    auto el = db.Elements().GetElement(elId);
+    if (!el.IsValid())
+        return false;
+    auto thisParent = el->GetParentId();
+    if (!thisParent.IsValid())
+        return isChildOfJob(db, el->GetModel()->GetModeledElementId(), jobSubjectId);
+    if (thisParent == jobSubjectId)
+        return true;
+    return isChildOfJob(db, thisParent, jobSubjectId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::IsBimModelAssignedToJobSubject(DgnModelId mid) const
+    {
+    auto  model = m_dgndb->Models().GetModel(mid);
+    if (!model.IsValid())
+        return false;
+    return isChildOfJob(*m_dgndb, model->GetModeledElementId(), GetJobSubject().GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::IsV8ModelAssignedToJobSubject(DgnV8ModelCR v8Model) const
+    {
+    auto existingModelId = FindFirstModelInSyncInfo(v8Model);
+    if (!existingModelId.IsValid())
+        return true;
+    return IsBimModelAssignedToJobSubject(existingModelId);
     }
 
 static const Utf8CP s_codeSpecName = "DgnV8"; // TBD: One CodeSpec per V8 file?
@@ -2650,7 +2692,9 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
         {
         _GetChangeDetector()._OnElementSeen(*this, csearch.GetExistingElementId());
         conversionResults.m_mapping = csearch.m_v8ElementMapping;
-        if (v8eh.GetElementType() != DgnV8Api::RASTER_FRAME_ELM)
+        if (v8eh.GetElementType() != DgnV8Api::RASTER_FRAME_ELM &&
+            !(v8eh.GetElementType() == DgnV8Api::EXTENDED_ELM &&  // Quickly reject non-106
+             DgnV8Api::ElementHandlerManager::GetHandlerId(v8eh) == DgnV8Api::PointCloudHandler::GetElemHandlerId()))
             UpdateResults(conversionResults, csearch.GetExistingElementId());
         }
     else
@@ -2671,29 +2715,27 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Keith.Bentley                   02 / 15
 //---------------------------------------------------------------------------------------
-void SpatialConverterBase::DoConvertSpatialElement(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement)
+BentleyStatus SpatialConverterBase::DoConvertSpatialElement(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement)
     {
     if (WasAborted())
-        return;
+        return BSISUCCESS;
 
     ReportProgress();
 
     // Convert raster elements
     if (v8eh.GetElementType() == DgnV8Api::RASTER_FRAME_ELM)
         {
-        _ConvertRasterElement(v8eh, v8mm, true);
-        return;
+        return _ConvertRasterElement(v8eh, v8mm, true, isNewElement);
         }
 
     // Convert point cloud elements
     if (v8eh.GetElementType() == DgnV8Api::EXTENDED_ELM &&  // Quickly reject non-106
         DgnV8Api::ElementHandlerManager::GetHandlerId(v8eh) == DgnV8Api::PointCloudHandler::GetElemHandlerId())
         {
-        _ConvertPointCloudElement(v8eh, v8mm, true);
-        return;
+        return _ConvertPointCloudElement(v8eh, v8mm, true, isNewElement);
         }
 
-    ConvertElement(results, v8eh, v8mm, GetSyncInfo().GetCategory(v8eh, v8mm), false, isNewElement);
+    return ConvertElement(results, v8eh, v8mm, GetSyncInfo().GetCategory(v8eh, v8mm), false, isNewElement);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2751,12 +2793,14 @@ void SpatialConverterBase::_ConvertSpatialElement(ElementConversionResults& resu
 //TODO        return;
 
     IChangeDetector::SearchResults changeInfo;
+    BentleyStatus stat = SUCCESS;
     if (GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, v8mm))
         {
-        DoConvertSpatialElement(results, v8eh, v8mm, (IChangeDetector::ChangeType::Insert == changeInfo.m_changeType));
+        stat = DoConvertSpatialElement(results, v8eh, v8mm, (IChangeDetector::ChangeType::Insert == changeInfo.m_changeType));
         }
 
-    ProcessConversionResults(results, changeInfo, v8eh, v8mm);
+    if (SUCCESS == stat)
+        ProcessConversionResults(results, changeInfo, v8eh, v8mm);
     }
 
 /*---------------------------------------------------------------------------------**//**

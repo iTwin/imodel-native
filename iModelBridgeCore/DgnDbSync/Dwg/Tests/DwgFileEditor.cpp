@@ -150,12 +150,14 @@ void    DwgFileEditor::TransformEntitiesBy (T_EntityHandles const& handles, Tran
     ASSERT_DWGDBSUCCESS (modelspace.OpenStatus()) << "Modelspace block cannot be opened for write";
     
     auto iter = modelspace->GetBlockChildIterator ();
-    for (iter.Start(); !iter.Done(); iter.Step())
+    ASSERT_TRUE (iter.IsValid() && iter->IsValid());
+
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        auto found = std::find_if (handles.begin(), handles.end(), [&](DwgDbHandleCR h) { return iter.GetEntityId().GetHandle()==h; });
+        auto found = std::find_if (handles.begin(), handles.end(), [&](DwgDbHandleCR h) { return iter->GetEntityId().GetHandle()==h; });
         if (found != handles.end())
             {
-            DwgDbEntityPtr  entity(iter.GetEntityId(), DwgDbOpenMode::ForWrite);
+            DwgDbEntityPtr  entity(iter->GetEntityId(), DwgDbOpenMode::ForWrite);
             ASSERT_DWGDBSUCCESS (entity.OpenStatus()) << "An entity cannot be opened for write!";
             ASSERT_DWGDBSUCCESS (entity->TransformBy(transform)) << "Entity is not transformed!";
             }
@@ -173,11 +175,14 @@ size_t  DwgFileEditor::CountAndCheckModelspaceEntity (bool& found, DwgDbHandleCR
     if (modelspace.OpenStatus() == DwgDbStatus::Success)
         {
         auto iter = modelspace->GetBlockChildIterator ();
-        for (iter.Start(); !iter.Done(); iter.Step())
+        if (iter.IsValid() && iter->IsValid());
             {
-            if (iter.GetEntityId().GetHandle() == entityHandle)
-                found = true;
-            count++;
+            for (iter->Start(); !iter->Done(); iter->Step())
+                {
+                if (iter->GetEntityId().GetHandle() == entityHandle)
+                    found = true;
+                count++;
+                }
             }
         }
     return  count;
@@ -287,13 +292,13 @@ void    DwgFileEditor::FindXrefInsert (DwgStringCR blockName)
     DwgDbBlockTableRecordPtr    modelspace(m_dwgdb->GetModelspaceId(), DwgDbOpenMode::ForRead);
     ASSERT_DWGDBSUCCESS (modelspace.OpenStatus()) << "Unable to open DWG file's modelspace block!";
     auto iter = modelspace->GetBlockChildIterator ();
-    ASSERT_TRUE (iter.IsValid());
+    ASSERT_TRUE (iter.IsValid() && iter->IsValid());
 
     m_currentObjectId.SetNull ();
 
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbBlockReferencePtr   insert(iter.GetEntityId(), DwgDbOpenMode::ForRead);
+        DwgDbBlockReferencePtr   insert(iter->GetEntityId(), DwgDbOpenMode::ForRead);
         if (insert.OpenStatus() != DwgDbStatus::Success)
             continue;
         DwgDbBlockTableRecordPtr    block(insert->GetBlockTableRecordId(), DwgDbOpenMode::ForRead);
@@ -419,8 +424,11 @@ DwgDbStatus     DwgFileEditor::GetModelspaceEntities (DwgDbObjectIdArrayR ids) c
         return  modelspace.OpenStatus();
 
     auto iter = modelspace->GetBlockChildIterator ();
-    for (iter.Start(); !iter.Done(); iter.Step())
-        ids.push_back (iter.GetEntityId());
+    if (!iter.IsValid() || !iter->IsValid())
+        return  DwgDbStatus::MemoryError;
+
+    for (iter->Start(); !iter->Done(); iter->Step())
+        ids.push_back (iter->GetEntityId());
 
     return  ids.size() > 0 ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
     }

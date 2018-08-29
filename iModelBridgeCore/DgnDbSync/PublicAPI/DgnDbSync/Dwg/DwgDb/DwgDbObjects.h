@@ -155,7 +155,7 @@ DWGDB_DEFINE_OBJECTPTR (Object)
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          07/16
 +===============+===============+===============+===============+===============+======*/
-class DwgDbObjectIterator
+class DwgDbObjectIterator : public RefCountedBase
     {
 //__PUBLISH_SECTION_END__
 private:
@@ -188,11 +188,13 @@ public:
     DWGDB_EXPORT DwgDbEntityP       GetEntity ();
     DWGDB_EXPORT DwgDbObjectId      GetObjectId ();
     };  // DwgDbObjectIterator
+typedef RefCountedPtr<DwgDbObjectIterator>  DwgDbObjectIteratorPtr;
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbObjectIterator)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          07/16
 +===============+===============+===============+===============+===============+======*/
-class DwgDbDictionaryIterator
+class DwgDbDictionaryIterator : public RefCountedBase
     {
 //__PUBLISH_SECTION_END__
 private:
@@ -225,6 +227,8 @@ public:
     DWGDB_EXPORT DwgDbObjectId      GetObjectId () const;
     DWGDB_EXPORT DwgString          GetName () const;
     };  // DwgDbDictionaryIterator
+typedef RefCountedPtr<DwgDbDictionaryIterator>  DwgDbDictionaryIteratorPtr;
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbDictionaryIterator)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          07/16
@@ -234,7 +238,7 @@ class DwgDbDictionary : public DWGDB_EXTENDCLASS (Dictionary)
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(Dictionary)
 
-    DWGDB_EXPORT DwgDbDictionaryIterator    GetIterator () const;
+    DWGDB_EXPORT DwgDbDictionaryIteratorPtr GetIterator () const;
     DWGDB_EXPORT DwgDbStatus                GetIdAt (DwgDbObjectIdR outId, DwgStringCR inName) const;
     DWGDB_EXPORT DwgDbStatus                GetNameAt (DwgStringR outName, DwgDbObjectIdCR inId) const;
     DWGDB_EXPORT bool                       Has (DwgStringCR name) const;
@@ -596,7 +600,7 @@ DWGDB_DEFINE_OBJECTPTR (SpatialFilter)
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          05/16
 +===============+===============+===============+===============+===============+======*/
-class DwgDbFilteredBlockIterator
+class DwgDbFilteredBlockIterator : public RefCountedBase
     {
 //__PUBLISH_SECTION_END__
 private:
@@ -628,6 +632,8 @@ public:
     DWGDB_EXPORT DwgDbStatus        Seek (DwgDbObjectId id);
     DWGDB_EXPORT DwgDbObjectId      GetEntityId () const;
     };  // DwgDbFilteredBlockIterator
+typedef RefCountedPtr<DwgDbFilteredBlockIterator>  DwgDbFilteredBlockIteratorPtr;
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbFilteredBlockIterator)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          05/16
@@ -637,7 +643,7 @@ class DwgDbSpatialIndex : public DWGDB_EXTENDCLASS(SpatialIndex)
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(SpatialIndex)
 
-    DWGDB_EXPORT DwgDbFilteredBlockIterator  NewIterator (DwgDbSpatialFilterCP filter) const;
+    DWGDB_EXPORT DwgDbFilteredBlockIteratorPtr  NewIterator (DwgDbSpatialFilterCP filter) const;
     };  // DwgDbSpatialIndex
 DWGDB_DEFINE_OBJECTPTR (SpatialIndex)
 
@@ -725,7 +731,7 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbXrefGraph)
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          07/16
 +===============+===============+===============+===============+===============+======*/
-class DwgDbGroupIterator
+class DwgDbGroupIterator : public RefCountedBase
     {
 //__PUBLISH_SECTION_END__
 private:
@@ -756,6 +762,8 @@ public:
     DWGDB_EXPORT bool               Done () const;
     DWGDB_EXPORT DwgDbObjectId      GetObjectId () const;
     };  // DwgDbGroupIterator
+typedef RefCountedPtr<DwgDbGroupIterator>  DwgDbGroupIteratorPtr;
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbGroupIterator)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          04/18
@@ -765,7 +773,7 @@ class DwgDbGroup : public DWGDB_EXTENDCLASS(Group)
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(Group)
 
-    DWGDB_EXPORT  DwgDbGroupIterator GetIterator ();
+    DWGDB_EXPORT  DwgDbGroupIteratorPtr GetIterator ();
     DWGDB_EXPORT  DwgDbStatus   Clear ();
     DWGDB_EXPORT  DwgString     GetName () const;
     DWGDB_EXPORT  DwgString     GetDescription () const;

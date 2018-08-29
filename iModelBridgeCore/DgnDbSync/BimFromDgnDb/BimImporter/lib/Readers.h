@@ -78,7 +78,7 @@ struct Reader
         CodeSpecId GetMappedCodeSpecId(Json::Value& element);
         BentleyStatus RemapPropertyElementId(ECN::IECInstanceR properties, Utf8CP propertyName);
         DgnElementId GetMappedElementId(Json::Value& element, Utf8CP propertyName);
-        static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("BimTeleporter"); }
+        static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("BimUpgrader"); }
         DgnDbP GetDgnDb();
         SyncInfo* GetSyncInfo();
 
