@@ -463,9 +463,22 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
         if (!DgnV8Api::DgnFile::IsSameFile(fn.c_str(), rootFilename.c_str(), DgnV8Api::FileCompareMask::BaseNameAndExtension))
             {
             DgnV8Api::DgnFileFormatType   format;
-            if (Bentley::dgnFileObj_validateFile(&format, nullptr, nullptr, nullptr, nullptr, nullptr, fn.c_str()) &&
-                format != DgnV8Api::DgnFileFormatType::V8 && format != DgnV8Api::DgnFileFormatType::V7)
-                isMyFile = true;
+            if (Bentley::dgnFileObj_validateFile(&format, nullptr, nullptr, nullptr, nullptr, nullptr, fn.c_str()))
+                {
+                switch (format)
+                    {
+                    // These formats have bridges supporting their affinity:
+                    case DgnV8Api::DgnFileFormatType::V8:
+                    case DgnV8Api::DgnFileFormatType::V7:
+                    case DgnV8Api::DgnFileFormatType::DWG:
+                    case DgnV8Api::DgnFileFormatType::DXF:
+                    case DgnV8Api::DgnFileFormatType::RFA:
+                        break;
+                    // Other formats currently do not have bridges and need to be owned by "this" bridge:
+                    default:
+                        isMyFile = true;
+                    }
+                }
             }
         }
     return  isMyFile;
