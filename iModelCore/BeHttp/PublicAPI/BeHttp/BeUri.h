@@ -41,8 +41,9 @@ struct BeUri
         BeUri() = default;
 
         //! Creates URI and percent-escapes any unsafe symbols in path, query, and fragment components.
-        //! Uri must begin with a scheme. Complete URI specification is available in
-        //! <a href="https://tools.ietf.org/html/rfc3986#section-3">[RFC 3986] section 3</a>.
+        //! IMPORTANT: Make sure that the input string begins with a scheme. According to URI specification,
+        //! "localhost:1234" is parsed as a URI containing scheme component "localhost" and path component "1234".
+        //! Complete URI specification is available in <a href="https://tools.ietf.org/html/rfc3986#section-3">[RFC 3986] section 3</a>.
         BEHTTP_EXPORT BeUri(Utf8StringCR uri);
 
         //! Returns whether the uri is valid

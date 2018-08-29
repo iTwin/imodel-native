@@ -324,11 +324,10 @@ BentleyStatus HttpProxy::GetProxyUrlsFromPacScript(Utf8StringCR requestUrl, bvec
                 SplitHosts(proxyServerSetting, hosts);
                 for (Utf8StringCR host : hosts)
                     {
-                    Utf8String scheme = BeUri(host).GetScheme();
-                    if (scheme.empty())
-                        proxyUrlsOut.push_back("http://" + host);
-                    else if ("http" == scheme || "https" == scheme)
+                    if (host.StartsWith("http://") || host.StartsWith("https://"))
                         proxyUrlsOut.push_back(host);
+                    else if (Utf8String::npos == host.find("://"))
+                        proxyUrlsOut.push_back("http://" + host);
                     }
                 }
             FreeProxyString(proxyInfo.lpszProxy);
