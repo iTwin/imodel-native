@@ -315,7 +315,7 @@ $(CoreObjs)SpatialViewController$(oext) :           $(DgnCoreDir)SpatialViewCont
 
 $(CoreObjs)SkyBox$(oext) :                          $(DgnCoreDir)SkyBox.cpp $(ViewControllerDepends) ${MultiCompileDepends}
 
-$(CoreObjs)NewTileTree$(oext) :                     $(DgnCoreDir)NewTileTree.cpp $(DgnPlatformAPISrc)NewTileTree.h ${MultiCompileDepends}
+$(CoreObjs)Tile$(oext) :                            $(DgnCoreDir)Tile.cpp $(DgnPlatformAPISrc)Tile.h ${MultiCompileDepends}
 
 $(CoreObjs)TileTree$(oext) :                        $(DgnCoreDir)TileTree.cpp $(DgnPlatformAPISrc)TileTree.h ${MultiCompileDepends}
 
