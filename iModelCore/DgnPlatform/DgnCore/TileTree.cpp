@@ -2505,7 +2505,7 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     uint32_t            fillColor = displayParams.GetFillColor();
     DgnDbR              db = m_tile.GetRoot().GetDgnDb();
     MeshAuxData         auxData;
-    uint64_t            keyElementId = (nullptr != m_tile.GetRoot().GetPreprocessor() && m_tile.GetRoot().GetPreprocessor()->SeperatePrimitivesById()) ? elemId.GetValue() : 0;    // Create seperate primitives per element if Classifying only.
+    uint64_t            keyElementId = (nullptr != m_tile.GetRoot().GetPreprocessor() && m_tile.GetRoot().GetPreprocessor()->SeparatePrimitivesById()) ? elemId.GetValue() : 0;    // Create seperate primitives per element if Classifying only.
     MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar, keyElementId);
     MeshBuilderR        builder = GetMeshBuilder(key);
 

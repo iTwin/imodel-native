@@ -291,7 +291,7 @@ struct ClassificationPreprocessor : RefCountedBase
     ClassificationPreprocessor(Root const& tile);
     void Preprocess(CurveVectorPtr& curveVector);
     void Preprocess(PolyfaceHeaderPtr& polyface);
-    bool SeperatePrimitivesById() const { return true; }
+    bool SeparatePrimitivesById() const { return true; }
 
 };
 

@@ -36,6 +36,65 @@ USING_NAMESPACE_TILE
 
 BEGIN_UNNAMED_NAMESPACE
 
+using FBox3d = RangeIndex::FBox;
+
+constexpr double s_minRangeBoxSize = 2.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh ###TODO: Revisit...
+constexpr double s_tileScreenSize = 512.0;
+constexpr double s_minToleranceRatioMultiplier = 2.0;
+constexpr double s_minToleranceRatio = s_tileScreenSize * s_minToleranceRatioMultiplier;
+constexpr uint32_t s_minElementsPerTile = 100; // ###TODO: The complexity of a single element's geometry can vary wildly...
+constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
+constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
+
+#if defined (BENTLEYCONFIG_PARASOLID) 
+static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
+#endif
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     08/18
+//=======================================================================================
+struct ClassificationTree : Tree
+{
+    DEFINE_T_SUPER(Tree);
+private:
+    double m_classifierOffset; // NB: will be initialized+used in future?
+    DRange3d m_classifierRange;
+public:
+    ClassificationTree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system)
+        : T_Super(model, location, range, system)
+        {
+        Transform transformFromDgn;
+        transformFromDgn.InverseOf(location);
+        transformFromDgn.Multiply(m_classifierRange, model.GetDgnDb().GeoLocation().GetProjectExtents());
+        }
+
+    Utf8String _GetId() const override { Utf8String id("Classifier_"); id.append(T_Super::_GetId()); return id; }
+
+    bool _SeparatePrimitivesById() const override { return true; }
+
+    CurveVectorPtr _Preprocess(CurveVectorR cv) const override { return &cv; }
+
+    PolyfaceHeaderPtr _Preprocess(PolyfaceHeaderR pf) const override
+        {
+        DPlane3d plane;
+        if (pf.IsClosedPlanarRegion(plane))
+            {
+            DRay3d              ray = DRay3d::FromOriginAndVector(plane.origin, plane.normal);
+            DRange1d            classifiedProjection = m_classifierRange.GetCornerRange(ray);
+            PolyfaceHeaderPtr   extrudedPolyface = pf.ComputeOffset(PolyfaceHeader::OffsetOptions(), classifiedProjection.high, classifiedProjection.low);
+
+            if (extrudedPolyface.IsValid())
+                {
+                extrudedPolyface->Triangulate();
+                extrudedPolyface->BuildPerFaceNormals();
+                return extrudedPolyface;
+                }
+            }
+
+        return &pf;
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -91,8 +150,91 @@ static DRange3d bisectRange(DRange3dCR range, bool takeLow)
     return subRange;
     }
 
-END_UNNAMED_NAMESPACE
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
+struct RangeAccumulator : RangeIndex::Traverser
+{
+    DRange3dR       m_range;
+    uint32_t        m_numElements = 0;
+    bool            m_is2d;
 
+    RangeAccumulator(DRange3dR range, bool is2d) : m_range(range), m_is2d(is2d) { m_range = DRange3d::NullRange(); }
+
+    bool _AbortOnWriteRequest() const override { return true; }
+    Accept _CheckRangeTreeNode(FBox3d const&, bool) const override { return Accept::Yes; }
+    Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+        {
+        ++m_numElements;
+        m_range.Extend(entry.m_range.ToRange3d());
+        return Stop::No;
+        }
+
+    bool Accumulate(RangeIndex::Tree& tree)
+        {
+        if (Stop::Yes == tree.Traverse(*this))
+            return false;
+        else
+            return !m_range.IsNull();
+        }
+
+    uint32_t GetElementCount() const { return m_numElements; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static DRange3d scaleSpatialRange(DRange3dCR range)
+    {
+    // Geometry often lies in a plane precisely coincident with the planes of the project extents.
+    // We must expand the extents slightly to prevent floating point fuzz in range intersection tests
+    // against such geometry - otherwise portions may be inappropriately culled.
+    // Similarly (TFS#863543) some 3d data sets consist of essentially 2d data sitting smack in the center of the
+    // project extents. If we subdivide tiles in half, we face similar issues where the geometry ends up precisely
+    // aligned to tile boundaries. Bias the scale to prevent this.
+    // NOTE: There's no simple way to detect and deal with arbitrarily located geometry just-so-happening to
+    // align with some tile's boundary...
+    constexpr double loScale = 1.0001,
+                     hiScale = 1.0002,
+                     fLo = 0.5 * (1.0 + loScale),
+                     fHi = 0.5 * (1.0 + hiScale);
+
+    DRange3d result = range;
+    if (!result.IsNull())
+        {
+        result.high.Interpolate(range.low, fHi, range.high);
+        result.low.Interpolate(range.high, fLo, range.low);
+        }
+
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool isElementCountLessThan(uint32_t threshold, RangeIndex::Tree& tree)
+    {
+    struct Counter : RangeIndex::Traverser
+    {
+        uint32_t    m_count = 0;
+        uint32_t    m_threshold;
+
+        explicit Counter(uint32_t threshold) : m_threshold(threshold) { }
+
+        Accept _CheckRangeTreeNode(FBox3d const&, bool) const override { return m_count < m_threshold ? Accept::Yes : Accept::No; }
+        Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+            {
+            ++m_count;
+            return m_count < m_threshold ? Stop::No : Stop::Yes;
+            }
+    };
+
+    Counter counter(threshold);
+    tree.Traverse(counter);
+    return counter.m_count < threshold;
+    }
+
+END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
@@ -347,5 +489,126 @@ bool Cache::ValidateData() const
     // Binary format has changed. Discard existing tile data.
     WriteCurrentVersion();
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, TreeType type)
+    {
+    if (DgnDbStatus::Success != model.FillRangeIndex())
+        return nullptr;
+
+    // ###TODO: determine RefinementMode for root tile, store in Tree.
+    // bool populateRootTile;
+    DRange3d range;
+    if (model.Is3dModel())
+        {
+        range = model.GetDgnDb().GeoLocation().GetProjectExtents();
+        range = scaleSpatialRange(range);
+        // populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex());
+        }
+    else
+        {
+        RangeAccumulator accum(range, model.Is2dModel());
+        if (!accum.Accumulate(*model.GetRangeIndex()))
+            range = DRange3d::From(DPoint3d::FromZero());
+
+        auto sheet = model.ToSheetModel();
+        if (nullptr != sheet)
+            range.Extend(sheet->GetSheetExtents());
+
+        // populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
+        }
+    
+    // Translate world coordinates to center of range in order to reduce precision errors
+    DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
+    Transform transform = Transform::From(centroid);
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PSolidKernelManager::StartSession();
+
+    if (s_psolidMainThreadMark.IsNull())
+        s_psolidMainThreadMark = new PSolidThreadUtil::MainThreadMark();
+#endif
+
+    Transform rangeTransform;
+    rangeTransform.InverseOf(transform);
+    DRange3d tileRange;
+    rangeTransform.Multiply(tileRange, range);
+
+    return TreeType::Classifier == type ? new ClassificationTree(model, transform, tileRange, system) : new Tree(model, transform, tileRange, system);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system)
+    : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_modelId(model.GetModelId()), m_is3d(model.Is3d()), m_cache(model.GetDgnDb().ElementTileCache())
+    {
+    // ###TODO: Cache changes to Tile::Cache...
+    m_range.Extend(range);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tree::~Tree()
+    {
+    CancelAllTileLoads();
+    WaitForAllLoads();
+    BeAssert(m_activeLoads.empty());
+    m_cache = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Tree::ToJson() const
+    {
+    Json::Value json(Json::objectValue);
+
+    json["id"] = _GetId();
+    json["maxTilesToSkip"] = 1;
+    json["tileScreenSize"] = s_tileScreenSize;
+    JsonUtils::TransformToJson(json["location"], GetLocation());
+
+    // ###TODO: root tile refinement mode...
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tree::CancelAllTileLoads()
+    {
+    BeMutexHolder lock(m_cv.GetMutex());
+    for (auto& load : m_activeLoads)
+        load->SetCanceled();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentCPtr Tree::RequestContent(ContentIdCR contentId)
+    {
+    return nullptr; // ###TODO...
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Loader::Loader(TreeR tree, ContentIdCR contentId) : m_contentId(contentId), m_tree(tree), m_cacheKey(tree.ConstructCacheKey(contentId))
+    {
+    // ###TODO: create time etc.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Loader::~Loader()
+    {
+    //
     }
 

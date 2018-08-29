@@ -10,6 +10,7 @@
 
 #include "DgnPlatform.h"
 #include <DgnPlatform/RealityDataCache.h>
+#include <set>
 
 #define BEGIN_TILE_NAMESPACE    BEGIN_BENTLEY_DGN_NAMESPACE namespace Tile {
 #define END_TILE_NAMESPACE      } END_BENTLEY_DGN_NAMESPACE
@@ -20,8 +21,14 @@ BEGIN_TILE_NAMESPACE
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NodeId);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ContentId);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Tree);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Content);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Loader);
 
 DEFINE_REF_COUNTED_PTR(Cache);
+DEFINE_REF_COUNTED_PTR(Tree);
+DEFINE_REF_COUNTED_PTR(Content);
+DEFINE_REF_COUNTED_PTR(Loader);
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/18
@@ -131,6 +138,124 @@ public:
     DGNPLATFORM_EXPORT bool FromString(Utf8CP str);
 
     double GetSizeMultiplier() const { BeAssert(0 != m_mult); return static_cast<double>(m_mult); }
+};
+
+//=======================================================================================
+//! Describes how a tile should be refined to produce child tile(s).
+// @bsistruct                                                   Paul.Connelly   08/18
+//=======================================================================================
+enum class RefinementMode : uint8_t
+{
+    None, //!< Leaf node - no children needed
+    Multiply, //!< 1 child facetted at higher resolution
+    Subdivide, //!< sub-divide parent range to produce multiple children
+};
+    
+//=======================================================================================
+//! Representation of geometry contained within a tile.
+// @bsistruct                                                   Paul.Connelly   08/18
+//=======================================================================================
+struct Content : RefCountedBase
+{
+private:
+    ByteStream m_bytes;
+    RefinementMode m_refine;
+public:
+    Content(RefinementMode refine, ByteStream&& bytes) : m_bytes(std::move(bytes)), m_refine(refine) { }
+
+    ByteStreamCR GetBytes() const { return m_bytes; }
+    RefinementMode GetRefinement() const { return m_refine; }
+};
+
+//=======================================================================================
+//! Loads tile content from cache, or generates it from geometry and adds to cache.
+// @bsistruct                                                   Paul.Connelly   08/18
+//=======================================================================================
+struct Loader : RefCountedBase, NonCopyableClass
+{
+protected:
+    ContentId m_contentId;
+    ContentPtr m_content;
+    BeAtomic<bool> m_canceled;
+    TreeR m_tree;
+    Utf8String m_cacheKey;
+public:
+    DGNPLATFORM_EXPORT Loader(TreeR tree, ContentIdCR contentId);
+    DGNPLATFORM_EXPORT ~Loader();
+
+    bool IsCanceled() const { return m_canceled.load(); }
+    void SetCanceled() { m_canceled.store(true); }
+
+    ContentIdCR GetContentId() const { return m_contentId; }
+    ContentCP GetContent() const { return m_content.get(); }
+    TreeR GetTree() const { return m_tree; }
+
+    struct PtrComparator
+    {
+        using is_transparent = std::true_type;
+
+        bool operator()(LoaderPtr const& lhs, LoaderPtr const& rhs) const { return operator()(lhs->GetContentId(), rhs->GetContentId()); }
+        bool operator()(LoaderPtr const& lhs, ContentIdCR rhs) const { return operator()(lhs->GetContentId(), rhs); }
+        bool operator()(ContentIdCR lhs, LoaderPtr const& rhs) const { return operator()(lhs, rhs->GetContentId()); }
+        bool operator()(ContentIdCR lhs, ContentIdCR rhs) const { return lhs < rhs; }
+    };
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/18
+//=======================================================================================
+struct Tree : RefCountedBase, NonCopyableClass
+{
+private:
+    mutable std::mutex m_dbMutex;
+    mutable BeConditionVariable m_cv;
+    DgnDbR m_db;
+    DgnModelId m_modelId;
+    Transform m_location;         // transform from tile coordinates to world coordinates
+    ElementAlignedBox3d m_range;
+    Render::SystemR m_renderSystem;
+    RealityData::CachePtr m_cache;
+    std::set<LoaderPtr, Loader::PtrComparator> m_activeLoads;
+    bool m_is3d;
+protected:
+    Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system);
+public:
+    DGNPLATFORM_EXPORT ~Tree();
+
+    DgnDbR GetDgnDb() const { return m_db; }
+    std::mutex& GetDbMutex() { return m_dbMutex; }
+    DgnModelId GetModelId() const { return m_modelId; }
+    ElementAlignedBox3dCR GetRange() const { return m_range; }
+    Render::SystemR GetRenderSystem() const { return m_renderSystem; }
+    TransformCR GetLocation() const { return m_location; }
+
+    bool Is3d() const { return m_is3d; }
+    bool Is2d() const { return !Is3d(); }
+
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    GeometricModelPtr FetchModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
+    Utf8String ConstructCacheKey(ContentIdCR contentId) const { auto key = _GetId(); key.append(contentId.ToString()); return key; }
+
+    void StartTileLoad(LoaderR loader);
+    void DoneTileLoad(LoaderR loader);
+
+    DGNPLATFORM_EXPORT void CancelAllTileLoads();
+    void WaitForAllLoads() { BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads.size() > 0) m_cv.InfiniteWait(holder); }
+
+    // Obtain the content associated with the specified content ID.
+    // If another thread is already in the process of obtaining the same content, this thread will wait until the other thread completes, then return the same content.
+    // Otherwise, this thread will synchronously obtain the content.
+    // If the content is available in the RealityData::Cache, it will be retrieved from there.
+    // Otherwise, it will be generated from the geometry within the content range, added to the cache, and returned.
+    // If the content cannot be retrieved, or the loading process is canceled, returns nullptr.
+    DGNPLATFORM_EXPORT ContentCPtr RequestContent(ContentIdCR contentId);
+
+    virtual Utf8String _GetId() const { return GetModelId().ToHexStr(); }
+    virtual CurveVectorPtr _Preprocess(CurveVectorR cv) const { return &cv; }
+    virtual PolyfaceHeaderPtr _Preprocess(PolyfaceHeaderR pf) const { return &pf; }
+    virtual bool _SeparatePrimitivesById() const { return false; }
+
+    DGNPLATFORM_EXPORT static TreePtr Create(GeometricModelR model, Render::SystemR system, TreeType type);
 };
 
 END_TILE_NAMESPACE
