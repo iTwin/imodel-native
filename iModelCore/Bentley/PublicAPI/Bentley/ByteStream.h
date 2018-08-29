@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/ByteStream.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,6 +16,9 @@
 #include <stdlib.h> // on *nix, the declarations for free and realloc are in stdlib.h
 
 BEGIN_BENTLEY_NAMESPACE
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(StreamBuffer)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ByteStream)
 
 //=======================================================================================
 //! A stream of bytes in a resizeable buffer. Released on destruction, never gets smaller.
@@ -112,5 +115,44 @@ public:
     void FromBase64(Utf8CP src, size_t len) {Base64Utilities::Decode(*this, src, len);}
     void FromBase64(Utf8String src) {Base64Utilities::Decode(*this, src.c_str(), src.size());}
 };
+
+//=======================================================================================
+//! A ByteStream with a "current position".
+// @bsiclass                                                    Keith.Bentley   03/16
+//=======================================================================================
+struct StreamBuffer : ByteStream
+    {
+    uint32_t m_currPos = 0;
+    uint8_t const* GetCurrent() const {return (m_currPos > GetSize()) ? nullptr : GetData() + m_currPos;}
+    uint8_t const* Advance(uint32_t size) {m_currPos += size; return GetCurrent();} // returns nullptr if advanced past end.
+    void SetPos(uint32_t pos) {m_currPos=pos;}
+    void ResetPos() {SetPos(0);}
+    uint32_t GetPos() const {return m_currPos;}
+
+    bool ReadBytes(void* buf, uint32_t size)
+        {
+        uint8_t const* start = GetCurrent();
+        uint8_t const* advance = Advance(size);
+        if (nullptr != advance)
+            memcpy(buf, start, size);
+
+        return nullptr != advance;
+        }
+
+    template<typename T> bool Read (T& buf) { return ReadBytes(&buf, sizeof(buf)); }
+
+    bool Skip(uint32_t numBytes)
+        {
+        auto newPos = m_currPos + numBytes;
+        if (newPos > GetSize())
+            return false;
+
+        SetPos(newPos);
+        return true;
+        }
+
+    StreamBuffer() {}
+    explicit StreamBuffer(ByteStream const& other) : ByteStream(other) {}
+    };
 
 END_BENTLEY_NAMESPACE
