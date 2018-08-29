@@ -41,12 +41,14 @@ void ArrayECSqlBinder::Initialize()
 ECSqlStatus ArrayECSqlBinder::_OnBeforeStep()
     {
     const uint32_t arrayLength = m_json.IsNull() ? 0 : (uint32_t) m_json.Size();
+    // from the API we cannot tell between binding NULL and binding an empty array. so we treat them
+    // the same and treat it as NULL which means to *not* validate the bounds.
+    if (arrayLength == 0)
+        return ECSqlStatus::Success;
+
     const ECSqlStatus stat = ArrayConstraintValidator::Validate(GetECDb(), GetTypeInfo(), arrayLength);
     if (!stat.IsSuccess())
         return stat;
-
-    if (arrayLength == 0)
-        return ECSqlStatus::Success;
 
     BeAssert(m_json.IsArray());
     rapidjson::StringBuffer jsonStr;
