@@ -1814,3 +1814,67 @@ TEST(Spiral, InflectedSpirals)
         }
     Check::ClearGeometry("Spiral.InflectedSpiral");
     }
+
+void bspsurf_getPolygonStringer (MSBsplineSurfaceCR surface, int uDircetion0VDirection1, int index, bvector<DPoint3d> &points)
+    {
+    points.clear ();
+    int numUPoles = surface.GetIntNumUPoles ();
+    int numVPoles = surface.GetIntNumVPoles ();
+    if (uDircetion0VDirection1 == 0)
+        {
+        for (int i = 0; i < numUPoles; i++)
+            points.push_back (surface.GetPole (i, index));
+        }
+    else
+        {
+        for (int j = 0; j < numVPoles; j++)
+            points.push_back (surface.GetPole (index, j));
+        }
+    }
+// test if all gridding in uDirection0vDirection1 are along lines.
+// Return 0 if the surface is not ruled in the indicated direction
+// Return 1 if the surface has a single rule direction (i.e. it is a sweep of end curve)
+// Return 2 if all polygon stringers are straight, but not all in the same direction.
+// @param surface surface to inspect
+// @param longestVector the longest v-direction vector from first to last pole
+// @param relTol relative tolerance for points on line.  Absolute tolerance is relTol times the length of the longest vector.
+int bspsurf_isHasLinearGrid (MSBsplineSurfaceCR surface, int uDircetion0VDirection1, DVec3dR longestVector, double relTol = 1.0e-10)
+    {
+    longestVector.Zero ();
+    int numStringer = uDircetion0VDirection1 == 0 ? surface.GetIntNumVPoles () : surface.GetIntNumUPoles ();
+    bvector<DPoint3d> poles;
+    double a = 0.0;
+    for (int i = 0; i < numStringer; i++)
+        {
+        bspsurf_getPolygonStringer (surface, 1, i, poles);
+        if (poles.size () < 2)
+            return 0;
+        DVec3d vector = poles.back () - poles.front ();
+        if (vector.Magnitude () > a)
+            {
+            a = vector.Magnitude ();
+            longestVector = vector;
+            }
+        }
+    relTol = std::max (relTol, 1.0e-12);
+    double absTol = a * relTol;
+    DPoint3d closestPoint;
+    double closestParam;
+    int retvalue = 1;       // treat it as sweep until deviants appear
+    for (int i = 0; i < numStringer; i++)
+        {
+        bspsurf_getPolygonStringer (surface, 1, i, poles);
+        DRay3d ray = DRay3d::FromOriginAndTarget (poles.front (), poles.back () - poles.front ());
+        for (size_t j = 1; j + 2 < poles.size (); j++)
+            {
+            DPoint3d pole = poles[j];
+            if (!ray.ProjectPointUnbounded (closestPoint, closestParam, pole))
+                return 0;
+            if (closestPoint.Distance (pole) > absTol)
+                return 0;
+            }
+        if (!ray.direction.IsParallelTo (longestVector))
+            retvalue = 2;
+        }
+    return retvalue;
+    }
