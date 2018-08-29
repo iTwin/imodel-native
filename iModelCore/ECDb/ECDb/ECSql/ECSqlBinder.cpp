@@ -320,7 +320,15 @@ ECSqlStatus ArrayConstraintValidator::Validate(ECDbCR ecdb, ECSqlTypeInfo const&
     {
     if (expected.GetArrayMinOccurs() != nullptr && actualArrayLength < expected.GetArrayMinOccurs().Value())
         {
-        LOG.errorv("Array to be bound to the array parameter must at least have %" PRIu32 " element(s) as defined in the respective ECProperty.", expected.GetArrayMinOccurs().Value());
+        if (expected.GetPropertyMap() == nullptr)
+            LOG.errorv("Array to be bound to the array parameter must at least have %" PRIu32 " element(s) as defined in the respective ECProperty.", expected.GetArrayMinOccurs().Value());
+        else
+            {
+            ECN::ECPropertyCR prop = expected.GetPropertyMap()->GetProperty();
+            LOG.errorv("Array to be bound to the array parameter must at least have %" PRIu32 " element(s) as defined in ECProperty '%s.%s'.",
+                       expected.GetArrayMinOccurs().Value(), prop.GetClass().GetFullName(), prop.GetName().c_str());
+            }
+
         return ECSqlStatus::Error;
         }
 
@@ -335,7 +343,15 @@ ECSqlStatus ArrayConstraintValidator::ValidateMaximum(ECDbCR ecdb, ECSqlTypeInfo
     {
     if (expected.GetArrayMaxOccurs() != nullptr && actualArrayLength > expected.GetArrayMaxOccurs().Value())
         {
-        LOG.errorv("Array to be bound to the array parameter must at most have %" PRIu32 " element(s) as defined in the respective ECProperty.", expected.GetArrayMaxOccurs().Value());
+        if (expected.GetPropertyMap() == nullptr)
+            LOG.errorv("Array to be bound to the array parameter must at most have %" PRIu32 " element(s) as defined in the respective ECProperty.", expected.GetArrayMaxOccurs().Value());
+        else
+            {
+            ECN::ECPropertyCR prop = expected.GetPropertyMap()->GetProperty();
+            LOG.errorv("Array to be bound to the array parameter must at most have %" PRIu32 " element(s) as defined in ECProperty '%s.%s'.",
+                       expected.GetArrayMaxOccurs().Value(), prop.GetClass().GetFullName(), prop.GetName().c_str());
+            }
+
         return ECSqlStatus::Error;
         }
 
