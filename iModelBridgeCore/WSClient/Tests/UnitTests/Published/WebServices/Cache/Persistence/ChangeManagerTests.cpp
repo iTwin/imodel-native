@@ -468,6 +468,30 @@ TEST_F(ChangeManagerTests, CreateObject_PropertiesPassed_InstanceSavedToCache)
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChangeManagerTests, CreateObject_ContainsCacheSpecificRemoteIdProperty_IgnoresProperty)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
+
+    // Act
+    Json::Value properties;
+    properties["TestProperty"] = "TestValue";
+    properties[DataSourceCache_PROPERTY_RemoteId] = "FooBar";
+    auto instance = cache->GetChangeManager().CreateObject(*testClass, properties);
+
+    // Assert
+    ASSERT_TRUE(instance.IsValid());
+    EXPECT_EQ(IChangeManager::ChangeStatus::Created, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
+
+    properties = ReadInstance(*cache, instance);
+    EXPECT_FALSE(properties.isMember(DataSourceCache_PROPERTY_RemoteId));
+    EXPECT_STREQ("TestValue", properties["TestProperty"].asCString());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ModifyObject_NotExistingObject_Error)
     {
     // Arrange
@@ -550,6 +574,29 @@ TEST_F(ChangeManagerTests, ModifyObject_DeletedObject_Error)
     // Assert
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     EXPECT_EQ(1, cache->GetChangeManager().GetObjectChange(instance).GetChangeNumber());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChangeManagerTests, ModifyObject_ContainsCacheSpecificRemoteIdProperty_IgnoresProperty)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
+
+    // Act
+    Json::Value properties;
+    properties["TestProperty"] = "Foo";
+    properties[DataSourceCache_PROPERTY_RemoteId] = "Test";
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
+
+    // Assert
+    EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
+
+    properties = ReadInstance(*cache, instance);
+    EXPECT_FALSE(properties.isMember(DataSourceCache_PROPERTY_RemoteId));
+    EXPECT_STREQ("Foo", properties["TestProperty"].asCString());
     }
 
 /*--------------------------------------------------------------------------------------+
