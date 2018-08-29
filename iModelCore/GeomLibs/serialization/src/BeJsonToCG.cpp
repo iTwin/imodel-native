@@ -196,7 +196,7 @@ bool FindProperty (Json::Value const &source, CharCP targetName, Json::Value &va
 
 struct BeJsonToCGReaderImplementation : BeDirectReader<Json::Value>
 {
-
+Transform m_placement;
 
 typedef bool (BeDirectReader<Json::Value>::*ParseMethod)(Json::Value const &, IGeometryPtr &);
 typedef bmap <Utf8String, ParseMethod> ParseDictionary;
@@ -284,6 +284,7 @@ static int s_defaultDebug;
 BeJsonToCGReaderImplementation (ICGFactory &factory)
     : BeDirectReader (factory), m_debug (s_defaultDebug)
     {
+    m_placement = Transform::FromIdentity ();
     InitParseTable ();
     }
 #ifdef abc
@@ -1007,7 +1008,7 @@ CGDgnExtrusionFlags ()
 
 bool extrusionVector_defined;
 bool capped_defined;
-bool baseGeometry_defined;    
+bool baseGeometry_defined;  
 
 int NumUndefined ()
     {
@@ -1116,6 +1117,28 @@ bool ReadTag_AnyIGeometry (Json::Value const &value, IGeometryPtr &result)
         }
     return false;
     }
+public: bool ReadTag_Action (JsonValueCR source)
+    {
+    DVec3d vector;
+    if (ReadTagDVector3d(source, "moveOrigin", vector))
+        {
+        Transform shift = Transform::From (vector);
+        m_placement= shift * m_placement;
+        return true;
+        }
+    else if (ReadTagDVector3d(source, "setOrigin", vector))
+        {
+        m_placement = Transform::From (vector);
+        return true;
+        }
+    return false;
+    }
+public: IGeometryPtr ApplyState (IGeometryPtr g)
+    {
+    if (!m_placement.IsIdentity ())
+        g->TryTransformInPlace (m_placement);
+    return g;
+    }
 public: bool TryParse (JsonValueCR source, bvector<IGeometryPtr> &geometry, bmap<OrderedIGeometryPtr, BeExtendedData> &extendedData)
     {
     IGeometryPtr result;
@@ -1126,11 +1149,14 @@ public: bool TryParse (JsonValueCR source, bvector<IGeometryPtr> &geometry, bmap
             if (m_factory.m_groupMembers.size () > 0)
                 {
                 for (auto &member : m_factory.m_groupMembers)
-                    geometry.push_back (member);
+                    geometry.push_back (ApplyState (member));
                 m_factory.m_groupMembers.clear ();
                 }
             else
                 geometry.push_back (result);
+            }
+        else if (ReadTag_Action (source))
+            {
             }
         }
     else if (source.isArray ())
@@ -1158,6 +1184,8 @@ JsonValueCR source,
 bvector<IGeometryPtr> &geometry
 )
     {
+    if (IModelJson::TryIModelJsonValueToGeometry (source, geometry))
+        return true;
     IGeometryCGFactory factory;
     BeJsonToCGReaderImplementation parser (factory);
     BeExtendedDataGeometryMap extendedData;
