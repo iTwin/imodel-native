@@ -19,6 +19,34 @@ BEGIN_TILE_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NodeId);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ContentId);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache);
+
+DEFINE_REF_COUNTED_PTR(Cache);
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/18
+//=======================================================================================
+struct Cache : RealityData::Cache
+{
+private:
+    uint64_t m_allowedSize;
+
+    Cache(uint64_t maxSize) : m_allowedSize(maxSize) {}
+
+    bool ValidateData() const;
+    bool WriteCurrentVersion() const;
+public:
+    BentleyStatus _Prepare() const final;
+    BentleyStatus _Initialize() const final;
+    BentleyStatus _Cleanup() const final;
+
+    static BeFileName GetCacheFileName(BeFileNameCR baseName);
+
+    static BeSQLite::PropertySpec GetVersionSpec() { return BeSQLite::PropertySpec("binaryFormatVersion", "elementTileCache"); }
+    static Utf8CP GetCurrentVersion();
+
+    static RealityData::CachePtr Create(DgnDbCR db);
+};
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/18
