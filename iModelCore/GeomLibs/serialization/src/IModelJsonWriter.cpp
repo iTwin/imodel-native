@@ -631,6 +631,11 @@ Json::Value CurvePrimitiveToJson (ICurvePrimitiveCR cp)
     if (points != nullptr)
         return singleton ("lineString", toJson (*points));
 
+    points = cp.GetPointStringCP ();
+    // RawIMJS {"pointString":[[0,0,0], [1,0,0],  [1,1,0]]},
+    if (points != nullptr)
+        return singleton ("pointString", toJson (*points));
+
     auto child = cp.GetChildCurveVectorCP ();
     if (child != nullptr)
         return CurveVectorToJson (*child);

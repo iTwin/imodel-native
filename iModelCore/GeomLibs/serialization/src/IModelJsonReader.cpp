@@ -357,6 +357,26 @@ bool tryValueToLineString (JsonValueCR value, ICurvePrimitivePtr &result)
     return false;
     }
 
+bool tryValueToPointString (JsonValueCR value, ICurvePrimitivePtr &result)
+    {
+    if (value.isNull ())
+        return false;
+    if (value.isArray () && value.size () > 1)
+        {
+        bvector<DPoint3d> points;
+        for (uint32_t i = 0; i < value.size (); i++)
+            {
+            DPoint3d xyz;
+            if (!tryValueToXYZ (value[i], xyz))
+                return false;
+            points.push_back (xyz);
+            }
+        result = ICurvePrimitive::CreatePointString (points);
+        return true;
+        }
+    return false;
+    }
+
 bool tryValueToBsplineCurve (JsonValueCR value, ICurvePrimitivePtr &result)
     {
     if (!value.isNull ())
@@ -873,6 +893,8 @@ ICurvePrimitivePtr tryValueToCurvePrimitive (JsonValueCR value)
     if (tryValueToBsplineCurve (value["bcurve"], cp))
         return cp;
     if (tryValueToArc (value["arc"], cp))
+        return cp;
+    if (tryValueToPointString (value["pointString"], cp))
         return cp;
     return nullptr;
     }
