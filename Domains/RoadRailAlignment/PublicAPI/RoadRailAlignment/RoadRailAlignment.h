@@ -53,7 +53,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 #define BRRA_KOQ_AREA           "AREA"
 #define BRRA_KOQ_ANGLE          "ANGLE"
 #define BRRA_KOQ_BEARING        "BEARING"
-
+#define BRRA_KOQ_SLOPE          "SLOPE"
 
 //-----------------------------------------------------------------------------------------
 // ECClass names
