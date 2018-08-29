@@ -11,6 +11,7 @@
 #include "Logging.h"
 #include "PolicyToken.h"
 #include "UsageDb.h"
+#include "StringHelper.h"
 
 #include <BeHttp/HttpError.h>
 #include <WebServices/Configuration/UrlProvider.h>
@@ -497,6 +498,8 @@ std::list<std::shared_ptr<Policy>> ClientImpl::GetUserPolicies()
 	// filter out policies that don't match userId
 	for (auto policy : allPolicies)
 		{
+		if (!PolicyHelper::IsValid(policy))
+			continue;
 		if (policy->GetAppliesToUserId().Equals(m_userInfo.userId))
 			{
 			policyList.push_back(policy);
@@ -522,9 +525,7 @@ std::shared_ptr<Policy> ClientImpl::SearchForPolicy(Utf8String requestedProductI
 
 	for (auto policy : policies)
 		{
-		// check if policy is valid
-		if (!PolicyHelper::IsValid(policy))
-			continue;
+		// policy assumed to be valid due to IsValid check in GetUserPolicies()
 		// look for a securable that matches productId and featureString
 		for (auto securable : policy->GetSecurableData())
 			{

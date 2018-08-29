@@ -201,6 +201,9 @@ TEST_F(ClientTests, GetProductStatus_Test)
 	auto jsonPolicyIdBad = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userIdBad, 9908, "", 1, false);
 	auto jsonPolicyOfflineNotAllowed = DummyJsonHelper::CreatePolicyOfflineNotAllowed(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9909, "", 1, false);
 
+	// Add empty policy to make sure does not cause issues for policy searching
+	client->GetUsageDb().AddOrUpdatePolicyFile("11111111-1111-1111-1111-111111111111", "", "", "");
+
 	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValid));
 	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValidTrial));
 	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValidTrialExpired));

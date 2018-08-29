@@ -11,6 +11,7 @@
 #include <Licensing/Utils/JWToken.h>
 #include "../../../Licensing/Policy.h"
 #include "../../../Licensing/PolicyHelper.h"
+#include "../../../Licensing/DummyJsonHelper.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 
@@ -80,4 +81,14 @@ TEST_F(PolicyTests, Validate_ProperRead)
 	ASSERT_TRUE(userData->GetUltimateCountryId().Equals("00000000-0000-0000-0000-000000000000"));
 	auto defaultQualifiers = policy->GetDefaultQualifiers();
 	ASSERT_EQ(defaultQualifiers.size(), 13);
+	}
+
+TEST_F(PolicyTests, InvalidJson_Robustness)
+	{
+	auto policy = Policy::Create(DummyJsonHelper::CreatePolicyMissingFields());
+	// verify Utf8Strings are empty and don't cause SEH exception
+	ASSERT_NE(policy, nullptr);
+	ASSERT_NE(policy->GetPolicyId(), "");
+	ASSERT_EQ(policy->GetMachineSignature(), "");
+	ASSERT_EQ(policy->GetAppliesToUserId(), "");
 	}

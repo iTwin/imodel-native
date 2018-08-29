@@ -211,6 +211,16 @@ public:
 	{
 		return CreatePolicySpecific(PolicyType::OfflineNotAllowed, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
 	};
+
+	static Json::Value CreatePolicyMissingFields()
+	{
+		std::ostringstream stream;
+		stream << PolicyStart();
+		stream << PolicyId(GetRandomPolicyId());
+		stream << PolicyEnd();
+		auto json = Json::Reader::DoParse(Utf8String(stream.str().c_str()));
+		return json;
+	};
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

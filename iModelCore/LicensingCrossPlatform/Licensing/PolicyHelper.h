@@ -85,6 +85,9 @@ private:
 
 public:
 	static bool IsValid(std::shared_ptr<Policy> policy) {
+		// check if policy is a nullptr
+		if (policy == nullptr)
+			return false;
 		// check if policy is expired
 		if (IsExpired(policy))
 			return false;
