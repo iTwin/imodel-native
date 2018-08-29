@@ -33,7 +33,11 @@
 #include "AsyncTestCheckpoint.h"
 
 #define WAITTIMEOUT 30000
-#define COMPRESSION_OPTIONS_URL "https://mobilevm2.bentley.com/ws250/v2.5/Repositories"
+#define COMPRESSION_OPTIONS_URL "https://mobilevm2.bentley.com/ws/v2.5/Repositories"
+
+#define HTTPBIN_HOST "httpbin.bentley.com"
+#define HTTPBIN_HTTP_URL "http://" HTTPBIN_HOST
+#define HTTPBIN_HTTPS_URL "https://" HTTPBIN_HOST
 
 using namespace ::testing;
 using namespace folly;
@@ -89,7 +93,7 @@ TEST_F(HttpRequestTests, PerformAsync_RandomlyGeneratedDataApi_PrintsUrlsAndData
     {
     for (int i = 0; i < 1; i++)
         {
-        Utf8PrintfString url("http://httpbin.org/bytes/2?seed=%d", i);
+        Utf8PrintfString url(HTTPBIN_HTTP_URL "/bytes/2?seed=%d", i);
         Request request(url.c_str());
         Response response = request.PerformAsync()->GetResult();;
         TESTLOG.infov("URL: %s out:'%s'", url.c_str(), response.GetBody().AsString().c_str());
@@ -113,7 +117,7 @@ TEST_F(HttpRequestTests, PerformAsync_EmptyUrl_ErrorCouldNotConnect)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, PerformAsync_BentleyTasksApiAndOneRequest_ExecutesSuccessfully)
     {
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTPS_URL "/ip");
 
     Response response = request.PerformAsync()->GetResult();
 
@@ -128,7 +132,7 @@ TEST_F(HttpRequestTests, PerformAsync_BentleyTasksApiAndOneRequest_ExecutesSucce
 TEST_F(HttpRequestTests, PerformAsync_OneRequestWithThen_ExecutesChainedTaskSuccessfully)
     {
     Response response;
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTPS_URL "/ip");
 
     auto task = request.PerformAsync()->Then([&] (Response& finishedResponse)
         {
@@ -148,7 +152,7 @@ TEST_F(HttpRequestTests, PerformAsync_OneRequestWithThen_ExecutesChainedTaskSucc
 TEST_F(HttpRequestTests, Perform_OneRequestWithThen_ExecutesChainedTaskSuccessfully)
     {
     Response response;
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
 
     auto future = request.Perform().then([&] (Response finishedResponse)
         {
@@ -179,7 +183,7 @@ TEST_F(HttpRequestTests, Perform_EmptyUrl_ErrorCouldNotConnect)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasValidCert_Success)
     {
-    Request request("https://httpbin.org/ip");
+    Request request(HTTPBIN_HTTPS_URL "/ip");
     request.SetValidateCertificate(true);
 
     Response response = request.Perform().get();
@@ -193,7 +197,7 @@ TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasValidCert_Success)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasValidCert_Success)
     {
-    Request request("https://httpbin.org/ip");
+    Request request(HTTPBIN_HTTPS_URL "/ip");
     request.SetValidateCertificate(false);
 
     Response response = request.Perform().get();
@@ -278,7 +282,7 @@ TEST_F(HttpRequestTests, Perform_OneRequest_ExecutesSuccessfully)
     {
     // Simple test for deprecated method
 
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
 
     Response response = request.Perform().get();
 
@@ -292,7 +296,7 @@ TEST_F(HttpRequestTests, Perform_OneRequest_ExecutesSuccessfully)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfully)
     {
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
 
     Response response = request.PerformAsync()->GetResult();
 
@@ -306,7 +310,7 @@ TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfully)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_MovedRequest_ExecutesSuccessfully)
     {
-    Request request(std::move(Request("http://httpbin.org/ip")));
+    Request request(std::move(Request(HTTPBIN_HTTP_URL "/ip")));
 
     Response response = request.Perform().get();
 
@@ -320,11 +324,11 @@ TEST_F(HttpRequestTests, Perform_MovedRequest_ExecutesSuccessfully)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_RequestSuccessfull_SetsEffectiveUrl)
     {
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     Response response = request.Perform().get();
 
     EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
-    EXPECT_EQ("http://httpbin.org/ip", response.GetEffectiveUrl());
+    EXPECT_EQ(HTTPBIN_HTTP_URL "/ip", response.GetEffectiveUrl());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -332,7 +336,7 @@ TEST_F(HttpRequestTests, Perform_RequestSuccessfull_SetsEffectiveUrl)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_RequestWithRedirect_SetsEffectiveUrlFromRedirect)
     {
-    Request request("http://httpbin.org/redirect-to?url=http%3A%2F%2Fexample.com%2F");
+    Request request(HTTPBIN_HTTP_URL "/redirect-to?url=http%3A%2F%2Fexample.com%2F");
     Response response = request.Perform().get();
 
     EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
@@ -425,7 +429,7 @@ TEST_F(HttpRequestTests, Perform_NonexistingUrl_ExecutesWithError)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_BasicAuthorizationCorrectCredentials_Success)
     {
-    Request request("https://httpbin.org/basic-auth/user/pass");
+    Request request(HTTPBIN_HTTPS_URL "/basic-auth/user/pass");
     request.SetCredentials({"user", "pass"});
 
     Response response = request.Perform().get();
@@ -440,7 +444,7 @@ TEST_F(HttpRequestTests, Perform_BasicAuthorizationCorrectCredentials_Success)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_BasicAuthorizationNoCredentials_Fails)
     {
-    Request request("https://httpbin.org/basic-auth/user/pass");
+    Request request(HTTPBIN_HTTPS_URL "/basic-auth/user/pass");
 
     Response response = request.Perform().get();
 
@@ -453,7 +457,7 @@ TEST_F(HttpRequestTests, Perform_BasicAuthorizationNoCredentials_Fails)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_BasicAuthorizationIncorrectCredentials_Fails)
     {
-    Request request("https://httpbin.org/basic-auth/user/pass");
+    Request request(HTTPBIN_HTTPS_URL "/basic-auth/user/pass");
     request.SetCredentials({"not", "correct"});
 
     Response response = request.Perform().get();
@@ -467,7 +471,7 @@ TEST_F(HttpRequestTests, Perform_BasicAuthorizationIncorrectCredentials_Fails)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_FollowRedirectsTrue_RedirectsSuccessfully)
     {
-    Request request("http://httpbin.org/redirect/1");
+    Request request(HTTPBIN_HTTP_URL "/redirect/1");
     request.SetFollowRedirects(true);
 
     Response response = request.Perform().get();
@@ -480,7 +484,7 @@ TEST_F(HttpRequestTests, Perform_FollowRedirectsTrue_RedirectsSuccessfully)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_FolowRedirectsFalse_ReturnsWithFound)
     {
-    Request request("http://httpbin.org/redirect/1");
+    Request request(HTTPBIN_HTTP_URL "/redirect/1");
     request.SetFollowRedirects(false);
 
     Response response = request.Perform().get();
@@ -494,7 +498,7 @@ TEST_F(HttpRequestTests, Perform_FolowRedirectsFalse_ReturnsWithFound)
 TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfullyWithChainedTask)
     {
     Response response;
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
 
     auto task = request.PerformAsync()->Then(
         [&] (Response& finishedResponse)
@@ -514,13 +518,13 @@ TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfullyWithChained
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_DefaultHttpRequestAndReceivedBody_SucceedsWithBody)
     {
-    Request request("http://httpbin.org/bytes/2?seed=3");
+    Request request(HTTPBIN_HTTP_URL "/bytes/2?seed=7");
 
     Response response = request.Perform().get();
     ASSERT_EQ(HttpStatus::OK, response.GetHttpStatus());
 
     EXPECT_TRUE(response.GetContent()->GetBody().IsValid());
-    EXPECT_EQ("yB", response.GetContent()->GetBody()->AsString());
+    EXPECT_EQ("R&", response.GetContent()->GetBody()->AsString());
     EXPECT_EQ(2, response.GetContent()->GetBody()->GetLength());
     }
 
@@ -529,7 +533,7 @@ TEST_F(HttpRequestTests, Perform_DefaultHttpRequestAndReceivedBody_SucceedsWithB
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_HttpRequestWithNullResponseBodyAndReceivedBody_SucceedsWithEmptyBody)
     {
-    Request request("http://httpbin.org/bytes/2?seed=7");
+    Request request(HTTPBIN_HTTP_URL "/bytes/2?seed=7");
     request.SetResponseBody(nullptr);
 
     Response response = request.Perform().get();
@@ -548,21 +552,21 @@ TEST_F(HttpRequestTests, Perform_ReusingSameResponseBodyWithData_ResetsResponseB
     auto responseBody = HttpStringBody::Create("SomeData");
     responseBody->SetPosition(3);
 
-    Request request("http://httpbin.org/bytes/2?seed=3");
+    Request request(HTTPBIN_HTTP_URL "/bytes/2?seed=7");
     request.SetResponseBody(responseBody);
 
     Response response = request.Perform().get();
     EXPECT_EQ(responseBody.get(), &response.GetBody());
     EXPECT_EQ(2, responseBody->GetLength());
-    EXPECT_EQ("yB", responseBody->AsString());
+    EXPECT_EQ("R&", responseBody->AsString());
 
-    request = Request("http://httpbin.org/bytes/1?seed=1");
+    request = Request(HTTPBIN_HTTP_URL "/bytes/1?seed=1");
     request.SetResponseBody(responseBody);
 
     response = request.Perform().get();
     EXPECT_EQ(responseBody.get(), &response.GetBody());
     EXPECT_EQ(1, responseBody->GetLength());
-    EXPECT_EQ("D", responseBody->AsString());
+    EXPECT_EQ("\"", responseBody->AsString());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -570,7 +574,7 @@ TEST_F(HttpRequestTests, Perform_ReusingSameResponseBodyWithData_ResetsResponseB
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_ReusingSameRequestBody_KeepsSameBody)
     {
-    Request request("http://httpbin.org/post", "POST");
+    Request request(HTTPBIN_HTTP_URL "/post", "POST");
 
     request.SetRequestBody(HttpStringBody::Create("TestBody"));
     Response response = request.Perform().get();
@@ -588,7 +592,7 @@ TEST_F(HttpRequestTests, Perform_ZeroByteBodyAndHttpFileBody_SavesZeroSizedFile)
     auto path = FSTest::StubFilePath();
     auto responseBody = HttpFileBody::Create(path);
 
-    Request request("http://httpbin.org/bytes/0");
+    Request request(HTTPBIN_HTTP_URL "/bytes/0");
     request.SetResponseBody(responseBody);
 
     EXPECT_FALSE(path.DoesPathExist());
@@ -614,7 +618,7 @@ TEST_F(HttpRequestTests, DISABLED_Perform_SlowConnectionWithResumableDownload_Do
     auto path = FSTest::StubFilePath();
     auto responseBody = HttpFileBody::Create(path);
 
-    Request request("http://httpbin.org/range/10?duration=20&chunk_size=5");
+    Request request(HTTPBIN_HTTP_URL "/range/10?duration=20&chunk_size=5");
     request.SetResponseBody(responseBody);
     request.SetTransferTimeoutSeconds(2);
     request.SetRetryOptions(Request::RetryOption::ResumeTransfer, 100);
@@ -640,7 +644,7 @@ TEST_F(HttpRequestTests, Perform_ManyRequests_ExecutesSuccessfully)
     // Setup & Test
     for (int i = 0; i < testRequestCount; i++)
         {
-        Request request("http://httpbin.org/ip");
+        Request request(HTTPBIN_HTTP_URL "/ip");
         Future<Response> future = request.Perform().then([i] (Response response)
             {
             BeDebugLog(Utf8PrintfString("Finished running: %d", i).c_str());
@@ -685,7 +689,7 @@ TEST_F(HttpRequestTests, PerformAsync_ManyRequests_ExecutesSuccessfully)
     // Setup & Test
     for (int i = 0; i < testRequestCount; i++)
         {
-        Request request("http://httpbin.org/ip");
+        Request request(HTTPBIN_HTTP_URL "/ip");
         auto task = request.PerformAsync()->Then([&, i] (Response& finishedResponse)
             {
             BeMutexHolder holder(resultCS);
@@ -889,7 +893,7 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithMinimalSizeLargerTh
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(HttpRequestTests, NoBody)
     {
-    Request request("http://httpbin.org/ip", "HEAD");
+    Request request(HTTPBIN_HTTP_URL "/ip", "HEAD");
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
@@ -923,10 +927,10 @@ std::ostream& operator<<(std::ostream& os, const MethodParam& value)
 #define BODY_SIZE_DifferentMethods 1000
 struct HttpRequestTestsMethods : HttpRequestTests, WithParamInterface<MethodParam> {};
 INSTANTIATE_TEST_CASE_P(DifferentMethods, HttpRequestTestsMethods, Values(
-    MethodParam {"http://httpbin.org/ip",       "GET",      ""},
-    MethodParam {"http://httpbin.org/put",      "PUT",      Utf8String(BODY_SIZE_DifferentMethods, 'x')},
-    MethodParam {"http://httpbin.org/delete",   "DELETE",   Utf8String(BODY_SIZE_DifferentMethods, 'x')},
-    MethodParam {"http://httpbin.org/post",     "POST",     Utf8String(BODY_SIZE_DifferentMethods, 'x')}
+    MethodParam {HTTPBIN_HTTP_URL "/ip",       "GET",      ""},
+    MethodParam {HTTPBIN_HTTP_URL "/put",      "PUT",      Utf8String(BODY_SIZE_DifferentMethods, 'x')},
+    MethodParam {HTTPBIN_HTTP_URL "/delete",   "DELETE",   Utf8String(BODY_SIZE_DifferentMethods, 'x')},
+    MethodParam {HTTPBIN_HTTP_URL "/post",     "POST",     Utf8String(BODY_SIZE_DifferentMethods, 'x')}
 ));
 
 /*--------------------------------------------------------------------------------------+
@@ -1183,8 +1187,8 @@ TEST_F(HttpRequestTestsProxy, Perform_SwitchingBetweenTwoServers_SamePerformance
     {
     const bvector<Utf8String> urlList =
         {
-        "http://httpbin.bentley.com/uuid",
-        "http://httpbin.org/uuid"
+        "http://httpbin.org/uuid",
+        HTTPBIN_HTTP_URL "/uuid"
         };
     const size_t numUrls = urlList.size();
     const size_t requestsPerUrl = 5;
@@ -1244,13 +1248,13 @@ TEST_F(HttpRequestTestsProxy, Perform_ProxyUrlSetToNotExisting_CouldNotResolvePr
     {
     VerifyProxyLogEmpty();
 
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     request.SetProxy(NONEXISTING_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(ConnectionStatus::CouldNotResolveProxy, response.GetConnectionStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET " HTTPBIN_HTTP_URL "/ip")));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1260,13 +1264,13 @@ TEST_F(HttpRequestTestsProxy, Perform_ProxyUrlSet_ExecutesViaProxy)
     {
     VerifyProxyLogEmpty();
 
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     request.SetProxy(LOCAL_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET " HTTPBIN_HTTP_URL "/ip"));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1276,13 +1280,13 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyUrlSet_ExecutesViaProxy)
     {
     VerifyProxyLogEmpty();
 
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     HttpProxy::SetDefaultProxy(HttpProxy(LOCAL_PROXY_URL));
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET " HTTPBIN_HTTP_URL "/ip"));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1292,7 +1296,7 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetToInvalidUrl_CouldNot
     {
     VerifyProxyLogEmpty();
 
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     HttpProxy proxy;
     proxy.SetPacUrl("boofoo.js");
     HttpProxy::SetDefaultProxy(proxy);
@@ -1300,7 +1304,7 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetToInvalidUrl_CouldNot
     Response response = request.Perform().get();
     EXPECT_EQ(ConnectionStatus::CouldNotResolveProxy, response.GetConnectionStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET " HTTPBIN_HTTP_URL "/ip")));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1310,7 +1314,7 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetToInvalidUrlAndPOSTRe
     {
     VerifyProxyLogEmpty();
 
-    Request request("http://httpbin.org/ip", "POST");
+    Request request(HTTPBIN_HTTP_URL "/ip", "POST");
     HttpProxy proxy;
     proxy.SetPacUrl("boofoo.js");
     HttpProxy::SetDefaultProxy(proxy);
@@ -1318,7 +1322,7 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetToInvalidUrlAndPOSTRe
     Response response = request.Perform().get();
     EXPECT_EQ(ConnectionStatus::CouldNotResolveProxy, response.GetConnectionStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET " HTTPBIN_HTTP_URL "/ip")));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1328,7 +1332,7 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetToNotExisting_CouldNo
     {
     VerifyProxyLogEmpty();
 
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     HttpProxy proxy;
     proxy.SetPacUrl(NONEXISTING_PROXY_URL "/foo.js");
     HttpProxy::SetDefaultProxy(proxy);
@@ -1336,7 +1340,7 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetToNotExisting_CouldNo
     Response response = request.Perform().get();
     EXPECT_EQ(ConnectionStatus::CouldNotResolveProxy, response.GetConnectionStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET " HTTPBIN_HTTP_URL "/ip")));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1344,14 +1348,14 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetToNotExisting_CouldNo
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetToInvalidUrl_SetsEffectiveUrl)
     {
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     HttpProxy proxy;
     proxy.SetPacUrl("boofoo.js");
     HttpProxy::SetDefaultProxy(proxy);
 
     Response response = request.Perform().get();
     EXPECT_EQ(ConnectionStatus::CouldNotResolveProxy, response.GetConnectionStatus());
-    EXPECT_EQ("http://httpbin.org/ip", response.GetEffectiveUrl());
+    EXPECT_EQ(HTTPBIN_HTTP_URL "/ip", response.GetEffectiveUrl());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1361,15 +1365,15 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetWithDirect_ExecutesDi
     {
     VerifyProxyLogEmpty();
 
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     HttpProxy proxy;
-    proxy.SetPacUrl(LOCAL_SERVER_URL "/Data/pac2.js");
+    proxy.SetPacUrl(LOCAL_SERVER_URL "/Data/pac2.js"); // pac2.js PROXY DIRECT
     HttpProxy::SetDefaultProxy(proxy);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET " HTTPBIN_HTTP_URL "/ip")));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1379,15 +1383,15 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetWithSecondProxyReacha
     {
     VerifyProxyLogEmpty();
 
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     HttpProxy proxy;
-    proxy.SetPacUrl(LOCAL_SERVER_URL "/Data/pac3.js");
+    proxy.SetPacUrl(LOCAL_SERVER_URL "/Data/pac3.js"); // pac3.js PROXY fake.bentley.com; PROXY localhost:9991
     HttpProxy::SetDefaultProxy(proxy);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET " HTTPBIN_HTTP_URL "/ip"));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1397,13 +1401,13 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyNotExisting_CouldNotResolveProx
     {
     VerifyProxyLogEmpty();
 
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     putenv("http_proxy=" NONEXISTING_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(ConnectionStatus::CouldNotResolveProxy, response.GetConnectionStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET " HTTPBIN_HTTP_URL "/ip")));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1413,13 +1417,13 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyNotExistingForHttps_CouldNotRes
     {
     VerifyProxyLogEmpty();
 
-    Request request("https://httpbin.org/ip");
+    Request request(HTTPBIN_HTTPS_URL "/ip");
     putenv("https_proxy=" NONEXISTING_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(ConnectionStatus::CouldNotResolveProxy, response.GetConnectionStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET https://httpbin.org/ip")));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET " HTTPBIN_HTTPS_URL "/ip")));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1429,13 +1433,13 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxy_ExecutesViaProxy)
     {
     VerifyProxyLogEmpty();
 
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     putenv("http_proxy=" LOCAL_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET " HTTPBIN_HTTP_URL "/ip"));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1445,13 +1449,13 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyForHttps_ExecutesViaProxy)
     {
     VerifyProxyLogEmpty();
 
-    Request request("https://httpbin.org/ip");
+    Request request(HTTPBIN_HTTPS_URL "/ip");
     putenv("https_proxy=" LOCAL_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("CONNECT httpbin.org:443"));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("CONNECT " HTTPBIN_HOST ":443"));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1461,13 +1465,13 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyForHttpsButRequestHttp_Executes
     {
     VerifyProxyLogEmpty();
 
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     putenv("https_proxy=" LOCAL_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET " HTTPBIN_HTTP_URL "/ip")));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1477,13 +1481,13 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyForHttpButRequestHttps_Executes
     {
     VerifyProxyLogEmpty();
 
-    Request request("https://httpbin.org/ip");
+    Request request(HTTPBIN_HTTPS_URL "/ip");
     putenv("http_proxy=" LOCAL_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET https://httpbin.org/ip")));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET " HTTPBIN_HTTPS_URL "/ip")));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1493,14 +1497,14 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyButRequestOverrides_ExecutesVia
     {
     VerifyProxyLogEmpty();
 
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     request.SetProxy(LOCAL_PROXY_URL);
     putenv("http_proxy=" NONEXISTING_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET " HTTPBIN_HTTP_URL "/ip"));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1510,14 +1514,14 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyButDefaultOverrides_ExecutesVia
     {
     VerifyProxyLogEmpty();
 
-    Request request("http://httpbin.org/ip");
+    Request request(HTTPBIN_HTTP_URL "/ip");
     HttpProxy::SetDefaultProxy(HttpProxy(LOCAL_PROXY_URL));
     putenv("http_proxy=" NONEXISTING_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET " HTTPBIN_HTTP_URL "/ip"));
     }
 
 struct StubTaskScheduler : ITaskScheduler
