@@ -479,14 +479,35 @@ StatusInt GetProjected (BaseGCSR baseGCS, WStringR wkt) const
             }
         }
 
-#ifdef NOT_YET
     if (authorityID.length() > 0)
         {
 //TBD Search for an existing equivalent
 //compare if required
 //        baseGCS.SetKey (authorityID->GetKey());
+
+// Specific patch for EPSG:900913
+        if (authorityID == L"EPSG:900913")
+            {
+            WString datumName = baseGCS.GetDatumName();
+            if (datumName == L"WGS84")
+                {
+                // In some cases the definition specifies datum WGS84 but a WebMercator. We switch to EPSG:900913
+                // as our implementation is a patch (using artefact datum SpereWGS84)
+                // Note that double exact compare is intentional
+                if (baseGCS.GetProjectionCode() == GeoCoordinates::BaseGCS::pcvMercator && 
+                     baseGCS.GetStandardParallel1() == 0.0 && baseGCS.GetCentralMeridian() == 0.0 && 
+                     baseGCS.GetFalseEasting() == 0.0 && baseGCS.GetFalseNorthing() == 0.0 && 
+                     baseGCS.GetScaleReduction() == 1.0)
+
+                    {
+                    baseGCS.SetFromCSName(L"EPSG:900913");
+                    return baseGCS.DefinitionComplete();
+                    }
+                }
+            }
         }
-#endif
+
+
 
     // Some WKT do not have GEOGCS Clauses which we do not have any default
     if (!geocsPresent)
@@ -6152,7 +6173,8 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
                              (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorOracle9 == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_LMTAN && wktFlavorOracle == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_KROVAK) ||
-                             (m_csParameters->prj_code == cs_PRJCOD_KROVAKMOD))
+                             (m_csParameters->prj_code == cs_PRJCOD_KROVAKMOD) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorOGC == wktFlavor && AString(m_csParameters->csdef.key_nm) == "EPSG:900913" ))
                             
         {
         try {
