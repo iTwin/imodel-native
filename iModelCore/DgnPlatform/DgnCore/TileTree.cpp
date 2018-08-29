@@ -10,8 +10,6 @@
 #include <BeHttp/HttpClient.h>
 #include <numeric>
 
-//#define WIP_SCALABLE_MESH
-
 USING_NAMESPACE_TILETREE
 
 // Obsolete versions of table storing tile data
@@ -140,6 +138,7 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
                 return ERROR;
 
             me->m_tileBytes = std::move(query->m_responseBody->GetByteStream()); // NEEDSWORK this is a copy not a move...
+
             me->m_contentType = response.GetHeaders().GetContentType();
             me->m_saveToCache = query->GetCacheControlExpirationDate(me->m_expirationDate, me->m_maxValidDuration, response);
 
@@ -2128,11 +2127,7 @@ TriMeshTree::TriMesh::TriMesh(CreateParams const& args, RootR root, Dgn::Render:
             m_normals = args.QuantizeNormals();
         }
 
-#if defined(WIP_SCALABLE_MESH) // texture may not be valid...
     if (nullptr == renderSys)
-#else
-    if (nullptr == renderSys || !args.m_texture.IsValid())
-#endif
         return;
 
     auto trimesh = CreateTriMeshArgs(args.m_texture.get(), args.m_textureUV);
@@ -2270,11 +2265,8 @@ Tile::SelectParent TriMeshTree::Tile::_SelectTiles(bvector<TileTree::TileCPtr>& 
 
     bool tooCoarse = Visibility::TooCoarse == vis;
     auto children = _GetChildren(true);
-#if defined(WIP_SCALABLE_MESH)
-    if (tooCoarse && nullptr != children && !children->empty())
-#else
+
     if (tooCoarse && nullptr != children)
-#endif
         {
         m_childrenLastUsed = args.m_now;
         for (auto const& child : *children)

@@ -214,7 +214,7 @@ void DgnDomains::SyncWithSchemas()
         auto thisDomain = registeredDomains.find(domainName);
         if (thisDomain == registeredDomains.end())
             {
-            LOG.warningv("Missing Domain [%s]", stmt.GetValueText(0));
+            LOG.infov("Missing Domain [%s]", stmt.GetValueText(0));
             continue;
             }
 
