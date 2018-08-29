@@ -1508,13 +1508,33 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryCP& cat, Contex
     return SUCCESS;
     }
 
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId, bool loadSchemaEntities) const
+    {
+    if (SUCCESS != ReadSchemaStubAndReferences(schemaEntry, ctx, schemaId))
+        return ERROR;
+
+    BeAssert(schemaEntry != nullptr);
+    if (loadSchemaEntities && !schemaEntry->IsFullyLoaded())
+        {
+        std::set<SchemaDbEntry*> fullyLoadedSchemas;
+        if (SUCCESS != ReadSchemaElements(*schemaEntry, ctx, fullyLoadedSchemas))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::LoadSchemaDefinition(SchemaDbEntry*& schemaEntry, bvector<SchemaDbEntry*>& newlyLoadedSchemas, ECSchemaId ecSchemaId) const
+BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId) const
     {
     BeMutexHolder ecdbLock(GetECDbMutex());
-    if (schemaEntry = m_cache.Find(ecSchemaId))
+    if (schemaEntry = m_cache.Find(schemaId))
         {
         BeAssert(schemaEntry->m_cachedSchema != nullptr);
         return SUCCESS;
@@ -1522,17 +1542,15 @@ BentleyStatus SchemaReader::LoadSchemaDefinition(SchemaDbEntry*& schemaEntry, bv
 
     //Following method is not by itself thread safe as it write to cache but 
     //this is the only call to it which is thread safe.
-    if (SUCCESS != LoadSchemaFromDb(schemaEntry, ecSchemaId))
+    if (SUCCESS != ReadSchemaStub(schemaEntry, ctx, schemaId))
         return ERROR;
 
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT ReferencedSchemaId FROM [%s]." TABLE_SchemaReference " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaId))
+    if (BE_SQLITE_OK != stmt->BindId(1, schemaId))
         return ERROR;
-
-    newlyLoadedSchemas.push_back(schemaEntry);
 
     //cache schema ids before loading reference schemas, so that statement can be reused.
     std::vector<ECSchemaId> referencedSchemaIds;
@@ -1550,7 +1568,7 @@ BentleyStatus SchemaReader::LoadSchemaDefinition(SchemaDbEntry*& schemaEntry, bv
     for (ECSchemaId referencedSchemaId : referencedSchemaIds)
         {
         SchemaDbEntry* referenceSchemaKey = nullptr;
-        if (SUCCESS != LoadSchemaDefinition(referenceSchemaKey, newlyLoadedSchemas, referencedSchemaId))
+        if (SUCCESS != ReadSchemaStubAndReferences(referenceSchemaKey, ctx, referencedSchemaId))
             return ERROR;
 
         ECObjectsStatus s = schemaEntry->m_cachedSchema->AddReferencedSchema(*referenceSchemaKey->m_cachedSchema);
@@ -1558,183 +1576,13 @@ BentleyStatus SchemaReader::LoadSchemaDefinition(SchemaDbEntry*& schemaEntry, bv
             return ERROR;
         }
 
-    BeAssert(schemaEntry->m_cachedSchema != nullptr);
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& outECSchemaKey, Context& ctx, ECSchemaId schemaId, bool loadSchemaEntities) const
-    {
-    bvector<SchemaDbEntry*> newlyLoadedSchemas;
-    if (SUCCESS != LoadSchemaDefinition(outECSchemaKey, newlyLoadedSchemas, schemaId))
-        return ERROR;
-
-
-    for (SchemaDbEntry* newlyLoadedSchema : newlyLoadedSchemas)
-        {
-        ECSchemaR schema = *newlyLoadedSchema->m_cachedSchema;
-        ctx.AddSchemaToLoadCAInstanceFor(schema);
-        }
-
-    if (loadSchemaEntities && !outECSchemaKey->IsFullyLoaded())
-        {
-        std::set<SchemaDbEntry*> fullyLoadedSchemas;
-        if (SUCCESS != LoadSchemaEntitiesFromDb(outECSchemaKey, ctx, fullyLoadedSchemas))
-            return ERROR;
-
-        }
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey, Context& ctx, std::set<SchemaDbEntry*>& fullyLoadedSchemas) const
-    {
-    BeAssert(ecSchemaKey != nullptr);
-    if (!ecSchemaKey)
-        return ERROR;
-
-    BeMutexHolder ecdbLock(GetECDbMutex());
-    if (fullyLoadedSchemas.find(ecSchemaKey) != fullyLoadedSchemas.end())
-        return SUCCESS;
-
-    //Accessing cache object not safe. Parent function make sure its a thread safe call
-    //Ensure all reference schemas also loaded
-    for (auto& refSchemaKey : ecSchemaKey->m_cachedSchema->GetReferencedSchemas())
-        {
-        ECSchemaId referenceECSchemaId = refSchemaKey.second->GetId();
-        SchemaDbEntry* key = m_cache.Find(referenceECSchemaId);
-        if (SUCCESS != LoadSchemaEntitiesFromDb(key, ctx, fullyLoadedSchemas))
-            return ERROR;
-        }
-
-    //Ensure load all the classes in the schema
-    fullyLoadedSchemas.insert(ecSchemaKey);
-    if (ecSchemaKey->IsFullyLoaded())
-        return SUCCESS;
-
-    // Load classes
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Class " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
-    if (stmt == nullptr)
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaKey->GetId()))
-        return ERROR;
-
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
-        const ECClassId classId = stmt->GetValueId<ECClassId>(0);
-        if (nullptr == GetClass(ctx, classId))
-            {
-            LOG.errorv("Could not load ECClass with id %" PRIu64 " from schema %s", classId.GetValue(), ecSchemaKey->m_cachedSchema->GetName().c_str());
-            return ERROR;
-            }
-
-        if (ecSchemaKey->IsFullyLoaded())
-            return SUCCESS;
-        }
-
-    stmt = nullptr;
-
-    // Load enumerations
-    stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Enumeration " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
-    if (stmt == nullptr)
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaKey->GetId()))
-        return ERROR;
-
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
-        ECEnumerationCP ecEnum = nullptr;
-        if (SUCCESS != ReadEnumeration(ecEnum, ctx, stmt->GetValueId<ECEnumerationId>(0)))
-            return ERROR;
-
-        if (ecSchemaKey->IsFullyLoaded())
-            return SUCCESS;
-        }
-
-    stmt = nullptr;
-
-    // Load KOQs
-    stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_KindOfQuantity " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
-    if (stmt == nullptr)
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaKey->GetId()))
-        return ERROR;
-
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
-        KindOfQuantityCP koq = nullptr;
-        if (SUCCESS != ReadKindOfQuantity(koq, ctx, stmt->GetValueId<KindOfQuantityId>(0)))
-            return ERROR;
-
-        if (ecSchemaKey->IsFullyLoaded())
-            return SUCCESS;
-        }
-
-    stmt = nullptr;
-
-    // Load PropertyCategories
-    stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_PropertyCategory " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
-    if (stmt == nullptr)
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaKey->GetId()))
-        return ERROR;
-
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
-        PropertyCategoryCP cat = nullptr;
-        if (SUCCESS != ReadPropertyCategory(cat, ctx, stmt->GetValueId<PropertyCategoryId>(0)))
-            return ERROR;
-
-        if (ecSchemaKey->IsFullyLoaded())
-            return SUCCESS;
-        }
-
-    stmt = nullptr;
-
-    if (FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
-        {
-        // Load Units (are loaded at once for unit conversion API)
-        if (!m_cache.m_areUnitsAndFormatsLoaded)
-            {
-            stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Unit " WHERE SchemaId=:schemaid UNION ALL "
-                                                       "SELECT Id FROM [%s]." TABLE_UnitSystem " WHERE SchemaId=:schemaid UNION ALL "
-                                                       "SELECT Id FROM [%s]." TABLE_Phenomenon " WHERE SchemaId=:schemaid UNION ALL "
-                                                       "SELECT Id FROM [%s]." TABLE_Format " WHERE SchemaId=:schemaid", GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str()).c_str());
-            if (stmt == nullptr)
-                return ERROR;
-
-            if (BE_SQLITE_OK != stmt->BindId(stmt->GetParameterIndex(":schemaid"), ecSchemaKey->GetId()))
-                return ERROR;
-
-            const bool schemaHasUnits = BE_SQLITE_ROW == stmt->Step();
-            stmt = nullptr;
-
-            if (schemaHasUnits)
-                {
-                if (SUCCESS != LoadUnitsAndFormats(ctx))
-                    return ERROR;
-
-                if (ecSchemaKey->IsFullyLoaded())
-                    return SUCCESS;
-                }
-            }
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSchemaId ecSchemaId) const
+BentleyStatus SchemaReader::ReadSchemaStub(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId ecSchemaId) const
     {
     Utf8CP tableSpace = GetTableSpace().GetName().c_str();
     CachedStatementPtr stmt = nullptr;
@@ -1826,9 +1674,157 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
         schema->SetDescription(description);
 
     schemaEntry = new SchemaDbEntry(schema, typesInSchema);
-    m_cache.Insert(std::unique_ptr<SchemaDbEntry>(schemaEntry));   
+    m_cache.Insert(std::unique_ptr<SchemaDbEntry>(schemaEntry));
+    ctx.AddSchemaToLoadCAInstanceFor(*schemaEntry->m_cachedSchema);
     return SUCCESS;
     }
+
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Context& ctx, std::set<SchemaDbEntry*>& fullyLoadedSchemas) const
+    {
+    BeMutexHolder ecdbLock(GetECDbMutex());
+    if (fullyLoadedSchemas.find(&schemaEntry) != fullyLoadedSchemas.end())
+        return SUCCESS;
+
+    //Accessing cache object not safe. Parent function make sure its a thread safe call
+    //Ensure all reference schemas also loaded
+    for (auto& refSchemaKey : schemaEntry.m_cachedSchema->GetReferencedSchemas())
+        {
+        BeAssert(refSchemaKey.second->HasId() && "4.0.0.1 units and formats schema should not end up here.");
+        ECSchemaId referenceSchemaId = refSchemaKey.second->GetId();
+        SchemaDbEntry* key = m_cache.Find(referenceSchemaId);
+        if (key == nullptr)
+            {
+            BeAssert(false && "Referenced schema is expected to be in cache already at this point");
+            return ERROR;
+            }
+        if (SUCCESS != ReadSchemaElements(*key, ctx, fullyLoadedSchemas))
+            return ERROR;
+        }
+
+    //Ensure load all the classes in the schema
+    fullyLoadedSchemas.insert(&schemaEntry);
+    if (schemaEntry.IsFullyLoaded())
+        return SUCCESS;
+
+    // Load classes
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Class " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry.GetId()))
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        const ECClassId classId = stmt->GetValueId<ECClassId>(0);
+        if (nullptr == GetClass(ctx, classId))
+            {
+            LOG.errorv("Could not load ECClass with id %" PRIu64 " from schema %s", classId.GetValue(), schemaEntry.m_cachedSchema->GetName().c_str());
+            return ERROR;
+            }
+
+        if (schemaEntry.IsFullyLoaded())
+            return SUCCESS;
+        }
+
+    stmt = nullptr;
+
+    // Load enumerations
+    stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Enumeration " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry.GetId()))
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        ECEnumerationCP ecEnum = nullptr;
+        if (SUCCESS != ReadEnumeration(ecEnum, ctx, stmt->GetValueId<ECEnumerationId>(0)))
+            return ERROR;
+
+        if (schemaEntry.IsFullyLoaded())
+            return SUCCESS;
+        }
+
+    stmt = nullptr;
+
+    // Load KOQs
+    stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_KindOfQuantity " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry.GetId()))
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        KindOfQuantityCP koq = nullptr;
+        if (SUCCESS != ReadKindOfQuantity(koq, ctx, stmt->GetValueId<KindOfQuantityId>(0)))
+            return ERROR;
+
+        if (schemaEntry.IsFullyLoaded())
+            return SUCCESS;
+        }
+
+    stmt = nullptr;
+
+    // Load PropertyCategories
+    stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_PropertyCategory " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry.GetId()))
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        PropertyCategoryCP cat = nullptr;
+        if (SUCCESS != ReadPropertyCategory(cat, ctx, stmt->GetValueId<PropertyCategoryId>(0)))
+            return ERROR;
+
+        if (schemaEntry.IsFullyLoaded())
+            return SUCCESS;
+        }
+
+    stmt = nullptr;
+
+    if (FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats))
+        {
+        // Load Units (are loaded at once for unit conversion API)
+        if (!m_cache.m_areUnitsAndFormatsLoaded)
+            {
+            stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Unit " WHERE SchemaId=:schemaid UNION ALL "
+                                                       "SELECT Id FROM [%s]." TABLE_UnitSystem " WHERE SchemaId=:schemaid UNION ALL "
+                                                       "SELECT Id FROM [%s]." TABLE_Phenomenon " WHERE SchemaId=:schemaid UNION ALL "
+                                                       "SELECT Id FROM [%s]." TABLE_Format " WHERE SchemaId=:schemaid", GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str()).c_str());
+            if (stmt == nullptr)
+                return ERROR;
+
+            if (BE_SQLITE_OK != stmt->BindId(stmt->GetParameterIndex(":schemaid"), schemaEntry.GetId()))
+                return ERROR;
+
+            const bool schemaHasUnits = BE_SQLITE_ROW == stmt->Step();
+            stmt = nullptr;
+
+            if (schemaHasUnits)
+                {
+                if (SUCCESS != LoadUnitsAndFormats(ctx))
+                    return ERROR;
+
+                if (schemaEntry.IsFullyLoaded())
+                    return SUCCESS;
+                }
+            }
+        }
+
+    return SUCCESS;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle     03/2017

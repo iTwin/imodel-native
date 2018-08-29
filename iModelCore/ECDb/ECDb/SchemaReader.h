@@ -187,19 +187,12 @@ struct SchemaReader final
 
         ECN::ECSchemaCP GetSchema(Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         ECN::ECClassP GetClass(Context&, ECN::ECClassId) const;
-        BentleyStatus LoadSchemaEntitiesFromDb(SchemaDbEntry*, Context&, std::set<SchemaDbEntry*>& fullyLoadedSchemas) const;
-        BentleyStatus LoadSchemaFromDb(SchemaDbEntry*&, ECN::ECSchemaId) const;
-        BentleyStatus LoadClassComponentsFromDb(Context&, ECN::ECClassR) const;
-        BentleyStatus LoadPropertiesFromDb(Context&, ECN::ECClassR) const;
-        BentleyStatus LoadBaseClassesFromDb(Context&, ECN::ECClassR) const;
-        BentleyStatus LoadCAFromDb(ECN::IECCustomAttributeContainerR, Context&, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType) const;
-        BentleyStatus LoadMixinAppliesToClass(Context&, ECN::ECClassCR mixinClass) const;
-        BentleyStatus LoadRelationshipConstraintFromDb(ECN::ECRelationshipClassP&, Context&, ECN::ECClassId constraintClassId, ECN::ECRelationshipEnd) const;
-        BentleyStatus LoadRelationshipConstraintClassesFromDb(ECN::ECRelationshipConstraintR, Context&, ECRelationshipConstraintId constraintId) const;
-        BentleyStatus LoadSchemaDefinition(SchemaDbEntry*&, bvector<SchemaDbEntry*>& newlyLoadedSchemas, ECN::ECSchemaId) const;
-        BentleyStatus LoadUnitsAndFormats(Context&) const;
 
         BentleyStatus ReadSchema(SchemaDbEntry*&, Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
+        BentleyStatus ReadSchemaStubAndReferences(SchemaDbEntry*&, Context& ctx, ECN::ECSchemaId) const;
+        BentleyStatus ReadSchemaStub(SchemaDbEntry*&, Context&, ECN::ECSchemaId) const;
+        BentleyStatus ReadSchemaElements(SchemaDbEntry&, Context&, std::set<SchemaDbEntry*>& fullyLoadedSchemas) const;
+
         BentleyStatus ReadEnumeration(ECN::ECEnumerationCP&, Context&, ECN::ECEnumerationId) const;
 
         BentleyStatus ReadKindOfQuantity(ECN::KindOfQuantityCP&, Context&, ECN::KindOfQuantityId) const;
@@ -210,6 +203,15 @@ struct SchemaReader final
         BentleyStatus ReadFormats(Context&) const;
         BentleyStatus ReadFormatComposite(Context&, ECN::ECFormat&, ECN::FormatId, Utf8CP compositeSpacer) const;
         BentleyStatus ReadPropertyCategory(ECN::PropertyCategoryCP&, Context&, ECN::PropertyCategoryId) const;
+
+        BentleyStatus LoadClassComponentsFromDb(Context&, ECN::ECClassR) const;
+        BentleyStatus LoadPropertiesFromDb(Context&, ECN::ECClassR) const;
+        BentleyStatus LoadBaseClassesFromDb(Context&, ECN::ECClassR) const;
+        BentleyStatus LoadCAFromDb(ECN::IECCustomAttributeContainerR, Context&, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType) const;
+        BentleyStatus LoadMixinAppliesToClass(Context&, ECN::ECClassCR mixinClass) const;
+        BentleyStatus LoadRelationshipConstraintFromDb(ECN::ECRelationshipClassP&, Context&, ECN::ECClassId constraintClassId, ECN::ECRelationshipEnd) const;
+        BentleyStatus LoadRelationshipConstraintClassesFromDb(ECN::ECRelationshipConstraintR, Context&, ECRelationshipConstraintId constraintId) const;
+        BentleyStatus LoadUnitsAndFormats(Context&) const;
 
         BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId) const;
 
