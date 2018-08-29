@@ -58,6 +58,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)ECPresentation$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Raster$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)PointCloud$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)ThreeMx$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Units$(libext)
 LINKER_LIBRARIES  + user32$(libext)
 
 %include $(sharedMki)LinkLibrary.mki

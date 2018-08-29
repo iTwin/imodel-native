@@ -1267,15 +1267,16 @@ void DwgSyncInfo::DwgObjectProvenance::AppendComplexObjectHash (DwgObjectHash::H
         return;
 
     // handle complex objects which require additional primary hash:
-    DwgDb3dPolylineP    pline3d = nullptr;
     if (obj.GetDwgClassName().StartsWithI(L"AecDb"))
         {
         // Aec objects do not dxfOut actual data - add range for now - TFS 853852:
         DRange3d    range;
         if (entity->GetRange(range) == DwgDbStatus::Success)
             m_hasher.Add (&range, sizeof(range));
+        return;
         }
-    else if (obj.IsAProxy())
+
+    if (obj.IsAProxy())
         {
         // a proxy entity does not file out DXF group code 310 - need more data, TFS 933725.
         DwgDbObjectPArray   proxy;
@@ -1288,14 +1289,29 @@ void DwgSyncInfo::DwgObjectProvenance::AppendComplexObjectHash (DwgObjectHash::H
                 ::free (ent);
                 }
             }
+        return;
         }
+
+    // 2D/3D polyline and polyface/polygon mesh entities have vertex entities to follow.
+    DwgDb2dPolylineCP   pline2d = nullptr;
+    DwgDb3dPolylineCP   pline3d = nullptr;
+    DwgDbPolyFaceMeshCP pfmesh = nullptr;
+    DwgDbPolygonMeshCP  mesh = nullptr;
+    DwgDbObjectIteratorPtr  vertexIter;
+    if ((pline2d = DwgDb2dPolyline::Cast(entity)) != nullptr)
+        vertexIter = pline2d->GetVertexIterator ();
     else if ((pline3d = DwgDb3dPolyline::Cast(entity)) != nullptr)
+        vertexIter = pline3d->GetVertexIterator ();
+    else if ((pfmesh = DwgDbPolyFaceMesh::Cast(entity)) != nullptr)
+        vertexIter = pfmesh->GetVertexIterator ();
+    else if ((mesh = DwgDbPolygonMesh::Cast(entity)) != nullptr)
+        vertexIter = mesh->GetVertexIterator ();
+
+    if (vertexIter.IsValid() && vertexIter->IsValid())
         {
-        // a 3D polyline has vertex entities to follow.
-        DwgDbObjectIterator iter = pline3d->GetVertexIterator ();
-        for (iter.Start(); !iter.Done(); iter.Next())
+        for (vertexIter->Start(); !vertexIter->Done(); vertexIter->Next())
             {
-            DwgDbEntityPtr vertex(iter.GetObjectId(), DwgDbOpenMode::ForRead);
+            DwgDbEntityPtr vertex(vertexIter->GetObjectId(), DwgDbOpenMode::ForRead);
             if (vertex.OpenStatus() == DwgDbStatus::Success)
                 vertex->DxfOut (filer);
             }
@@ -1312,10 +1328,13 @@ BentleyStatus   DwgSyncInfo::DwgObjectProvenance::CreateBlockHash (DwgDbObjectId
         return  BSIERROR;
 
     // this is a performance dragger but unfortunately we cannot use existing hashed blocks as they won't match!
-    DwgDbBlockChildIterator     iter = block->GetBlockChildIterator ();
-    for (iter.Start(); !iter.Done(); iter.Step())
+    DwgDbBlockChildIteratorPtr  iter = block->GetBlockChildIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
+        return  BSIERROR;
+
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbEntityPtr  entity(iter.GetEntityId(), DwgDbOpenMode::ForRead);
+        DwgDbEntityPtr  entity(iter->GetEntityId(), DwgDbOpenMode::ForRead);
         if (entity.IsNull())
             continue;
 

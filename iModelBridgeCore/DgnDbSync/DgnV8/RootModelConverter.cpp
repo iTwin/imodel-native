@@ -459,11 +459,11 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
     if (!isMyFile)
         {
         // Before we get the bridge affinity work for references of foreign file formats, treat them as owned, so they get processed - TFS's 916434,921023.
-        auto rootConverter = dynamic_cast<RootModelConverter const*> (this);
-        if (rootConverter != nullptr && !DgnV8Api::DgnFile::IsSameFile(fn.c_str(), rootConverter->GetRootFileName().c_str(), DgnV8Api::FileCompareMask::BaseNameAndExtension))
+        auto rootFilename = _GetParams().GetInputFileName ();
+        if (!DgnV8Api::DgnFile::IsSameFile(fn.c_str(), rootFilename.c_str(), DgnV8Api::FileCompareMask::BaseNameAndExtension))
             {
             DgnV8Api::DgnFileFormatType   format;
-            if (const_cast<DgnV8FileR>(v8File).GetVersion(&format, nullptr, nullptr) == BSISUCCESS &&
+            if (Bentley::dgnFileObj_validateFile(&format, nullptr, nullptr, nullptr, nullptr, nullptr, fn.c_str()) &&
                 format != DgnV8Api::DgnFileFormatType::V8 && format != DgnV8Api::DgnFileFormatType::V7)
                 isMyFile = true;
             }

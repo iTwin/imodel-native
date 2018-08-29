@@ -163,13 +163,13 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
     else
         {
         // import entities in database order:
-        DwgDbBlockChildIterator     entityIter = xModelspace->GetBlockChildIterator ();
-        if (entityIter.IsValid())
+        DwgDbBlockChildIteratorPtr  entityIter = xModelspace->GetBlockChildIterator ();
+        if (entityIter.IsValid() && entityIter->IsValid())
             {
             // fill the xref model with entities
-            for (entityIter.Start(); !entityIter.Done(); entityIter.Step())
+            for (entityIter->Start(); !entityIter->Done(); entityIter->Step())
                 {
-                childInputs.SetEntityId (entityIter.GetEntityId());
+                childInputs.SetEntityId (entityIter->GetEntityId());
                 this->OpenAndImportEntity (childInputs);
                 }
             }

@@ -114,6 +114,28 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
 
         if (v8mm.GetDgnModel().IsSpatialModel() && converter.HasRootTransChanged())
             res.m_changeType = ChangeType::Update;
+
+        // If the element is reality data, then need to check if the image file has changed
+        Utf8String fileName;
+        uint64_t existingLastModifiedTime;
+        uint64_t existingFileSize;
+        Utf8String existingEtag;
+        Utf8String rdsId; // unnecessary but the method requires it
+        if (converter.GetSyncInfo().TryFindImageryFile(res.m_v8ElementMapping.GetElementId(), fileName, existingLastModifiedTime, existingFileSize, existingEtag, rdsId))
+            {
+            uint64_t currentLastModifiedTime;
+            uint64_t currentFileSize;
+            Utf8String currentEtag;
+            converter.GetSyncInfo().GetCurrentImageryInfo(fileName, currentLastModifiedTime, currentFileSize, currentEtag);
+
+            if (!existingEtag.empty())
+                {
+                if (!existingEtag.Equals(currentEtag))
+                    res.m_changeType = ChangeType::Update;
+                }
+            else if (currentLastModifiedTime != existingLastModifiedTime || currentFileSize != existingFileSize)
+                res.m_changeType = ChangeType::Update;
+            }
         }
 
     iter->GetStatement()->Reset();  // NB: don't leave the iterator in an active state!
@@ -161,7 +183,7 @@ bool ChangeDetector::_ShouldSkipFile(Converter& converter, DgnV8FileCR v8file)
         return false;
 
     // if it hasn't changed per the "last saved time", don't bother with it.
-    if (!s_doFileSaveTimeCheck || converter.GetSyncInfo().HasLastSaveTimeChanged(v8file))
+    if (!s_doFileSaveTimeCheck || converter.GetSyncInfo().HasLastSaveTimeChanged(v8file) || converter.GetSyncInfo().ModelHasChangedImagery(Converter::GetV8FileSyncInfoIdFromAppData(v8file)))
         return false;
 
     if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
@@ -230,6 +252,9 @@ void ChangeDetector::_DetectDeletedModels(Converter& converter, SyncInfo::ModelI
     // them were missing this time around. Those models and their constituent Models must to be deleted.
     for (auto wasModel=iter.begin(); wasModel!=iter.end(); ++wasModel)
         {
+        if (!converter.IsBimModelAssignedToJobSubject(wasModel.GetModelId()))
+            continue;
+
         if (m_v8ModelsSeen.find(wasModel.GetV8ModelSyncInfoId()) == m_v8ModelsSeen.end())
             {
             if (m_v8ModelsSkipped.find(wasModel.GetV8ModelSyncInfoId()) != m_v8ModelsSkipped.end())
@@ -298,6 +323,8 @@ void ChangeDetector::_DetectDeletedElementsInFile(Converter& converter, DgnV8Fil
     modelsInFile.GetStatement()->BindInt(1, Converter::GetV8FileSyncInfoIdFromAppData(v8File).GetValue());
     for (auto modelInFile = modelsInFile.begin(); modelInFile != modelsInFile.end(); ++modelInFile)
         {
+        if (!converter.IsBimModelAssignedToJobSubject(modelInFile.GetModelId()))
+            continue;
         SyncInfo::ElementIterator elementsInModel(converter.GetDgnDb(), "V8ModelSyncInfoId=?");
         elementsInModel.GetStatement()->BindInt(1, modelInFile.GetV8ModelSyncInfoId().GetValue());
         _DetectDeletedElements(converter, elementsInModel);

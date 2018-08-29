@@ -116,15 +116,15 @@ EXPORT_ATTRIBUTE void iModelBridge_getAffinity (WCharP buffer, const size_t buff
 
     // Create an iterator to loop through RegApp table entries:
     auto iter = regappTable->NewIterator ();
-    if (!iter.IsValid())
+    if (!iter->IsValid())
         return;
 
     // Check each RegApp table entry:
     bool    hasNonAcadRegApp = false;
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
         //
-        DwgDbRegAppTableRecordPtr   regapp(iter.GetRecordId(), DwgDbOpenMode::ForRead);
+        DwgDbRegAppTableRecordPtr   regapp(iter->GetRecordId(), DwgDbOpenMode::ForRead);
         if (regapp.OpenStatus() == DwgDbStatus::Success)
             {
             // A RegApp name starts with prefix ACAD, AEC, or AVE is an ACAD entry.

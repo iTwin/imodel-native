@@ -128,7 +128,7 @@ void Converter::ComputeSubCategoryAppearanceFromLevel(DgnSubCategory::Appearance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId Converter::FindFirstModelInSyncInfo(DgnV8ModelCR v8Model)
+DgnModelId Converter::FindFirstModelInSyncInfo(DgnV8ModelCR v8Model) const
     {
     SyncInfo::ModelIterator it(*m_dgndb, "V8FileSyncInfoId=? AND V8Id=?");
     it.GetStatement()->BindInt(1, GetV8FileSyncInfoIdFromAppData(*v8Model.GetDgnFileP()).GetValue());

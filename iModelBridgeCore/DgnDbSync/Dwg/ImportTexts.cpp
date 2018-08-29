@@ -84,16 +84,16 @@ BentleyStatus   DwgImporter::_ImportTextStyleSection ()
     if (textstyleTable.IsNull())
         return  BSIERROR;
 
-    DwgDbSymbolTableIterator    iter = textstyleTable->NewIterator ();
-    if (!iter.IsValid())
+    DwgDbSymbolTableIteratorPtr iter = textstyleTable->NewIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
     this->SetStepName (ProgressMessage::STEP_IMPORTING_TEXTSTYLES());
 
     uint32_t    count = 0;
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbTextStyleTableRecordPtr    textstyle(iter.GetRecordId(), DwgDbOpenMode::ForRead);
+        DwgDbTextStyleTableRecordPtr    textstyle(iter->GetRecordId(), DwgDbOpenMode::ForRead);
         if (textstyle.IsNull())
             {
             this->ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CantOpenObject(), "Text style record");

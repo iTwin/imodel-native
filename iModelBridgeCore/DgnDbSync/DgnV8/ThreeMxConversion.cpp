@@ -366,38 +366,57 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
     if (SUCCESS != RealityMeshAttachmentConversion::ExtractAttachment (rootUrl, location, clipVector, classifiers, activeClassifierId, v8el, converter, v8mm, ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment))
         return Result::SkipElement;
 
-    Utf8String linkName(BeFileName(rootUrl).GetFileNameWithoutExtension());
-
-    if (true)
+    DgnElementId existingId;
+    IChangeDetector::SearchResults changeInfo;
+    if (converter.GetChangeDetector()._IsElementChanged(changeInfo, converter, v8el, v8mm) && IChangeDetector::ChangeType::Update == changeInfo.m_changeType)
         {
-        ThreeMx::Scene scene(converter.GetDgnDb(), DgnModelId(), location, rootUrl.c_str(), nullptr);
-        if (SUCCESS == scene.ReadSceneFile())
-            linkName = scene.GetSceneInfo().m_sceneName;
+        existingId = changeInfo.GetExistingElementId();
         }
-
-    DgnDbR db = converter.GetDgnDb();
-    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), rootUrl.c_str(), linkName.c_str());
-    if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
-        return Result::SkipElement;
 
     // In DgnV8, ThreeMx attachments are elements, and their visibility is determined by their level. In DgnDb they are DgnModels. 
     // For every spatial view in the DgnDb, determine whether the category of the element's original level is on, and if so
     // add the new ThreeMxModel to the list of viewed models.
-    DgnModelId modelId = ThreeMx::ModelHandler::CreateModel(*repositoryLink, rootUrl.c_str(), &location, clipVector.get(), &classifiers);
-    DgnCategoryId category = converter.GetSyncInfo().GetCategory(v8el, v8mm);
-
-    for (auto const& entry : ViewDefinition::MakeIterator(db))
+    DgnModelId modelId;
+    
+    if (!existingId.IsValid())
         {
-        auto viewController = ViewDefinition::LoadViewController(entry.GetId(), db);
-        if (!viewController.IsValid() || !viewController->IsSpatialView() || !viewController->GetViewDefinitionR().GetCategorySelector().IsCategoryViewed(category))
-            continue;
+        Utf8String linkName(BeFileName(rootUrl).GetFileNameWithoutExtension());
 
-        auto& modelSelector = viewController->ToSpatialViewP()->GetSpatialViewDefinition().GetModelSelector();
-        modelSelector.AddModel(modelId);
-        modelSelector.Update();
+        if (true)
+            {
+            ThreeMx::Scene scene(converter.GetDgnDb(), DgnModelId(), location, rootUrl.c_str(), nullptr);
+            if (SUCCESS == scene.ReadSceneFile())
+                linkName = scene.GetSceneInfo().m_sceneName;
+            }
+
+        DgnDbR db = converter.GetDgnDb();
+        RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), rootUrl.c_str(), linkName.c_str());
+        if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
+            return Result::SkipElement;
+
+        modelId = ThreeMx::ModelHandler::CreateModel(*repositoryLink, rootUrl.c_str(), &location, clipVector.get(), &classifiers);
+        DgnCategoryId category = converter.GetSyncInfo().GetCategory(v8el, v8mm);
+
+        for (auto const& entry : ViewDefinition::MakeIterator(db))
+            {
+            auto viewController = ViewDefinition::LoadViewController(entry.GetId(), db);
+            if (!viewController.IsValid() || !viewController->IsSpatialView() || !viewController->GetViewDefinitionR().GetCategorySelector().IsCategoryViewed(category))
+                continue;
+
+            auto& modelSelector = viewController->ToSpatialViewP()->GetSpatialViewDefinition().GetModelSelector();
+            modelSelector.AddModel(modelId);
+            modelSelector.Update();
+            }
+        SyncInfo::ElementProvenance prov = SyncInfo::ElementProvenance(v8el, converter.GetSyncInfo(), converter.GetCurrentIdPolicy());
+        SyncInfo::V8ElementMapping mapping = SyncInfo::V8ElementMapping(DgnElementId(modelId.GetValue()), v8el, v8mm.GetV8ModelSyncInfoId(), prov);
+        converter.GetSyncInfo().InsertElement(mapping);
+        converter._GetChangeDetector()._OnElementSeen(converter, mapping.GetElementId());
         }
+    else
+        modelId = DgnModelId(existingId.GetValue());
+
     // Schedule reality model tileset creation.
-    converter.AddModelRequiringRealityTiles(modelId, BeFileName(rootUrl));
+    converter.AddModelRequiringRealityTiles(modelId, rootUrl, Converter::GetV8FileSyncInfoIdFromAppData(*v8el.GetDgnFileP()));
 
     return Result::SkipElement;
     }

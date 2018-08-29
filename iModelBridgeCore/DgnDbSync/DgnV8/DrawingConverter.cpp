@@ -90,6 +90,16 @@ void RootModelConverter::_ImportDrawingAndSheetModels(ResolvedModelMapping& root
     bset<DgnV8ModelP> seen;
 #endif
 
+    for (;;)
+        {
+        auto new_end = std::remove_if(m_nonSpatialModelsInModelIndexOrder.begin(), m_nonSpatialModelsInModelIndexOrder.end(),
+                                     [&](DgnV8ModelP model) { return !IsV8ModelAssignedToJobSubject(*model); });
+        if (new_end != m_nonSpatialModelsInModelIndexOrder.end())
+            m_nonSpatialModelsInModelIndexOrder.erase(new_end);
+        else
+            break;
+        }
+
     // Pass 1: sheets and attached drawings. IMPORTANT! See "DgnModel objects and Sheet attachments" for why this MUST BE DONE FIRST.
     for (auto v8Model : m_nonSpatialModelsInModelIndexOrder)
         {
@@ -218,6 +228,9 @@ void RootModelConverter::RegisterNonSpatialModel(DgnV8ModelR thisV8Model)
     // And that is necessary so that we can verify the new converter by matching its results with the results of the old converter.
     m_nonSpatialModelsInModelIndexOrder.push_back(&thisV8Model);
     
+    // NB: Do not attempt to check if this model is known to be a child of some other job subject.
+    //      This method is called very early in the conversion process. The current job subject is not yet known.
+
     _OnDrawingModelFound(thisV8Model);  // keep this model alive
 
     if (!GetV8FileSyncInfoIdFromAppData(thisV8File).IsValid())  // Register this FILE in syncinfo.

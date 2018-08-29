@@ -38,6 +38,7 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 #define SYNC_TABLE_Discards     SYNCINFO_TABLE("Discards")
 #define SYNC_TABLE_ImportJob    SYNCINFO_TABLE("ImportJob")
 #define SYNC_TABLE_NamedGroups  SYNCINFO_TABLE("NamedGroups")
+#define SYNC_TABLE_Imagery      SYNCINFO_TABLE("Imagery")
 
 struct Converter;
 struct SyncInfo;
@@ -755,7 +756,7 @@ public:
     DGNDBSYNC_EXPORT BeSQLite::DbResult InsertECSchema(ECN::ECSchemaId&, DgnV8FileR, Utf8CP v8SchemaName, uint32_t v8SchemaVersionMajor, uint32_t v8SchemaVersionMinor, bool isDynamic, uint32_t checksum) const;
     DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, ECSchemaMappingType&, Utf8CP v8SchemaName) const;
     DGNDBSYNC_EXPORT bool ContainsECSchema(Utf8CP v8SchemaName) const;
-    DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums) const;
+    DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, V8FileSyncInfoId fileId) const;
     //! @}
 
     //! @name NamedGroups - The index is dropped on the ElementRefersToElements table while inserting named group members.  This was to allow for fast inserts, but as a result, lookups are slow and so
@@ -781,6 +782,46 @@ public:
     //! Insertions are stored in a temporary table.  Upon completion of processing the named groups, the temp table must be merged into the SyncInfo table.
     DGNDBSYNC_EXPORT BentleyStatus FinalizeNamedGroups();
     //! @}
+
+    //! Checks to see if the View syncinfo table exists.  This is only necessary when updating imodels created early during the EAP process.  Will create the table if it doesn't exist
+    bool EnsureImageryTableExists();
+
+    //! Record the provenance for reality data (raster, PointCloud, ThreeMx, ScalableMesh, etc.  
+    //! @param[in] modeledElementId - ElementId that models this element.  Only one entry per elementId is allowed
+    //! @param[in] filename - Filename (or URL) to the imagery
+    //! @param[in] lastModifiedTime - Time the file was last modified
+    //! @param[in] fileSize - Size of the image file
+    //! @param[in] etag - Unique marker for a file that is changed by the webserver whenever the file is changed
+    //! @param[in] rdsId - Guid from the reality data server
+    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertImageryFile(DgnElementId modeledElementId, V8FileSyncInfoId filesiid, Utf8CP filename, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId);
+
+    //! Checks to see if the given V8File has any associated image files and if so, checks each one to see if it has changed
+    //! @param[in] fileId - SyncInfo id of the V8File
+    DGNDBSYNC_EXPORT bool ModelHasChangedImagery(V8FileSyncInfoId fileId);
+
+    //! Looks for an entry for the given modeledElementId
+    //! @param[in] modeledElementId - ElementId of the model to look for
+    //! @param[out] lastModifiedTime - last modified time of the imagery
+    //! @param[out] fileSize - size of the imagery file
+    //! @param[out] etag - Unique marker for a file that is changed by the webserver whenever the file is changed
+    //! @param[out] rdsId - Guid from the reality data server
+    DGNDBSYNC_EXPORT bool TryFindImageryFile(DgnElementId modeledElementId, Utf8StringR filename, uint64_t& lastModifiedTime, uint64_t &fileSize, Utf8StringR etag, Utf8StringR rdsId);
+
+    //! Updates the entry for an imagery file
+    //! @param[in] modeledElementId - ElementId of the model to look for
+    //! @param[in] lastModifiedTime - last modified time of the imagery
+    //! @param[in] fileSize - size of the imagery file
+    //! @param[in] etag - Unique marker for a file that is changed by the webserver whenever the file is changed
+    //! @param[in] rdsId - Guid from the reality data server
+    DGNDBSYNC_EXPORT BeSQLite::DbResult UpdateImageryFile(DgnElementId modeledElementId, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId);
+
+    //! Given a filename, will get the current info about the file
+    //! @param[in] filename - Path to either local file or the URL of the imagery
+    //! @param[in] currentModifiedTime - last modified time if a local file
+    //! @param[in] currentFileSize - file size of a local file
+    //! @param[in] currentEtag - Web server's unique marker for the given URL
+    DGNDBSYNC_EXPORT void GetCurrentImageryInfo(Utf8StringCR filename, uint64_t& currentLastModifiedTime, uint64_t& currentFileSize, Utf8StringR currentEtag);
+
     Converter& GetConverter() const {return m_converter;}
 
     //! Create sync info for a DgnV8 model

@@ -117,11 +117,11 @@ DwgDbObjectId   LayoutFactory::FindOverallViewport (DwgDbBlockTableRecordCR bloc
     // an inactive layout does not have viewport, so we have to iterate through layout block and find the first viewport:
     DwgDbObjectId   firstViewportId;
     auto iter = block.GetBlockChildIterator ();
-    if (iter.IsValid())
+    if (iter.IsValid() || !iter->IsValid())
         {
-        for (iter.Start(); !iter.Done(); iter.Step())
+        for (iter->Start(); !iter->Done(); iter->Step())
             {
-            auto id = iter.GetEntityId ();
+            auto id = iter->GetEntityId ();
             if (id.IsValid() && id.GetDwgClass() == DwgDbViewport::SuperDesc())
                 {
                 firstViewportId = id;
@@ -223,13 +223,13 @@ BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgD
     else
         {
         // import entities in database order:
-        DwgDbBlockChildIterator     entityIter = block.GetBlockChildIterator ();
-        if (!entityIter.IsValid())
+        DwgDbBlockChildIteratorPtr  entityIter = block.GetBlockChildIterator ();
+        if (!entityIter.IsValid() || !entityIter->IsValid())
             return  BSIERROR;
 
-        for (entityIter.Start(); !entityIter.Done(); entityIter.Step())
+        for (entityIter->Start(); !entityIter->Done(); entityIter->Step())
             {
-            DwgDbObjectId   id = entityIter.GetEntityId ();
+            DwgDbObjectId   id = entityIter->GetEntityId ();
             // import all entities except for the paperspace viewport itself
             if (id != overallViewportId)
                 {
@@ -372,13 +372,15 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
 
             // don't import an empty layout:
             auto iter = block->GetBlockChildIterator ();
-            iter.Start ();
-            if (iter.Done())
+            if (!iter.IsValid() || !iter->IsValid())
+                continue;
+            iter->Start ();
+            if (iter->Done())
                 continue;
 
             // even if the overall viewport exists, and it's the only entity in the block, the layout is treated as empty:
-            iter.Step ();
-            if (iter.Done() && !iter.GetEntityId().IsValid())
+            iter->Step ();
+            if (iter->Done() && !iter->GetEntityId().IsValid())
                 continue;
 
             DwgDbLayoutPtr  layout (block->GetLayoutId(), DwgDbOpenMode::ForRead);

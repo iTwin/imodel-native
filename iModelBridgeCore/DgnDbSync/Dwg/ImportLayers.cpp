@@ -281,23 +281,23 @@ size_t  DwgImporter::_ImportLayersByFile (DwgDbDatabaseP dwg)
         return  BSIERROR;
 
     DwgSyncInfo::DwgFileId      dwgfileId = DwgSyncInfo::GetDwgFileId (*dwg);
-    DwgDbSymbolTableIterator    iter = layerTable->NewIterator ();
+    DwgDbSymbolTableIteratorPtr iter = layerTable->NewIterator ();
 
-    if (!iter.IsValid())
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
     // include hidden and reconciled layers
-    iter.SetSkipHiddenLayers (false);
-    iter.SetSkipReconciledLayers (false);
+    iter->SetSkipHiddenLayers (false);
+    iter->SetSkipReconciledLayers (false);
 
     size_t      count = 0;
     DwgString   xrefName;
     if (dwg != m_dwgdb.get())
         xrefName.Assign (BeFileName::GetFileNameWithoutExtension(dwg->GetFileName().c_str()).c_str());
 
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbLayerTableRecordPtr    layer(iter.GetRecordId(), DwgDbOpenMode::ForRead);
+        DwgDbLayerTableRecordPtr    layer(iter->GetRecordId(), DwgDbOpenMode::ForRead);
         if (layer.IsNull())
             {
             this->ReportIssue (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CantOpenObject(), "LayerRecord");

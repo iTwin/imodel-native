@@ -190,7 +190,10 @@ DwgDbDictionaryIterator::~DwgDbDictionaryIterator ()
     {
 #ifdef DWGTOOLKIT_RealDwg
     if (nullptr != m_dictionaryIterator)
+        {
         delete m_dictionaryIterator;
+        m_dictionaryIterator = nullptr;
+        }
 #endif
     }
 bool            DwgDbDictionaryIterator::IsValid () const { return nullptr != m_dictionaryIterator; }
@@ -257,7 +260,7 @@ DwgDbStatus     DwgDbDictionary::Remove (DwgStringCR name) { ReturnVoidOrStatus(
 DwgDbStatus     DwgDbDictionary::Remove (DwgDbObjectIdCR id) { ReturnVoidOrStatus(T_Super::remove(id)); }
 bool            DwgDbDictionary::Has (DwgStringCR name) const { return T_Super::has(name); }
 bool            DwgDbDictionary::Has (DwgDbObjectIdCR id) const { return T_Super::has(id); }
-DwgDbDictionaryIterator DwgDbDictionary::GetIterator () const { return DwgDbDictionaryIterator(T_Super::newIterator()); }
+DwgDbDictionaryIteratorPtr DwgDbDictionary::GetIterator () const { return new DwgDbDictionaryIterator(T_Super::newIterator()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/16
@@ -800,7 +803,10 @@ DwgDbFilteredBlockIterator::~DwgDbFilteredBlockIterator ()
     {
 #ifdef DWGTOOLKIT_RealDwg
     if (nullptr != m_filteredBlockIterator)
+        {
         delete m_filteredBlockIterator;
+        m_filteredBlockIterator = nullptr;
+        }
 #endif
     }
 
@@ -832,12 +838,12 @@ bool            DwgDbFilteredBlockIterator::IsValid () const { return nullptr !=
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbFilteredBlockIterator  DwgDbSpatialIndex::NewIterator (DwgDbSpatialFilterCP filter) const
+DwgDbFilteredBlockIteratorPtr DwgDbSpatialIndex::NewIterator (DwgDbSpatialFilterCP filter) const
     {
 #ifdef DWGTOOLKIT_OpenDwg
-    return T_Super::newIterator(filter).get();
+    return new DwgDbFilteredBlockIterator(T_Super::newIterator(filter).get());
 #elif DWGTOOLKIT_RealDwg
-    return T_Super::newIterator(filter);
+    return new DwgDbFilteredBlockIterator(T_Super::newIterator(filter));
 #endif
     }
 
@@ -1055,7 +1061,10 @@ DwgDbGroupIterator::~DwgDbGroupIterator ()
     {
 #ifdef DWGTOOLKIT_RealDwg
     if (nullptr != m_groupIterator)
+        {
         delete m_groupIterator;
+        m_groupIterator = nullptr;
+        }
 #endif
     }
 bool            DwgDbGroupIterator::IsValid () const { return nullptr != m_groupIterator; }
@@ -1199,7 +1208,7 @@ DwgDbStatus   DwgDbGroup::SetVisibility (DwgDbVisibility visibility)
     return  status;
     }
 
-DwgDbGroupIterator DwgDbGroup::GetIterator () { return DwgDbGroupIterator(T_Super::newIterator()); }
+DwgDbGroupIteratorPtr DwgDbGroup::GetIterator () { return new DwgDbGroupIterator(T_Super::newIterator()); }
 DwgString     DwgDbGroup::GetName () const { return T_Super::name(); }
 DwgString     DwgDbGroup::GetDescription () const { return T_Super::description(); }
 bool          DwgDbGroup::IsAnonymous () const { return T_Super::isAnonymous(); }

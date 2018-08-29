@@ -316,10 +316,10 @@ END_DWGDB_NAMESPACE
 
 // implement common DwgDbXxxTable methods
 #define DWGDB_DEFINE_SYMBOLTABLE_MEMBERS(_tableName_)                                                                   \
-    DwgDbSymbolTableIterator DwgDb##_tableName_##::NewIterator(bool atBeginning,bool skipErased) const                  \
+    DwgDbSymbolTableIteratorPtr DwgDb##_tableName_##::NewIterator(bool atBeginning,bool skipErased) const               \
         {                                                                                                               \
-        OdDbSymbolTableIteratorPtr odIter = this->newIterator(atBeginning, skipErased);                                 \
-        return  odIter.get();                                                                                           \
+        OdDbSymbolTableIteratorPtr odIter = T_Super::newIterator(atBeginning, skipErased);                              \
+        return new DwgDbSymbolTableIterator(odIter.get());                                                              \
         };                                                                                                              \
     DwgDbObjectId DwgDb##_tableName_##::GetByName(WStringCR name, bool erased) const                                    \
         {                                                                                                               \
@@ -396,13 +396,13 @@ END_DWGDB_NAMESPACE
 
 // implement common DwgDbXxxTable methods
 #define DWGDB_DEFINE_SYMBOLTABLE_MEMBERS(_tableName_)                                                                       \
-    DwgDbSymbolTableIterator DwgDb##_tableName_##::NewIterator(bool atBeginning,bool skipErased) const                      \
+    DwgDbSymbolTableIteratorPtr DwgDb##_tableName_##::NewIterator(bool atBeginning,bool skipErased) const                   \
         {                                                                                                                   \
         AcDb##_tableName_##Iterator* acIter = nullptr;                                                                      \
         if (Acad::eOk == this->newIterator(acIter, atBeginning, skipErased))                                                \
-            return DwgDbSymbolTableIterator(acIter);                                                                        \
+            return new DwgDbSymbolTableIterator(acIter);                                                                    \
         else                                                                                                                \
-            return DwgDbSymbolTableIterator();                                                                              \
+            return new DwgDbSymbolTableIterator();                                                                          \
         };                                                                                                                  \
     DwgDbObjectId DwgDb##_tableName_##::GetByName(WStringCR name, bool includeErased) const                                 \
         {                                                                                                                   \
