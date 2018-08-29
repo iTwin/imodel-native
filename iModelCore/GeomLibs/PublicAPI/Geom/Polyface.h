@@ -1068,6 +1068,9 @@ GEOMDLLIMPEXP bool HasFacets () const;
 //! Test if all facets are 3 sided
 GEOMDLLIMPEXP bool IsTriangulated () const;
 
+//! Test if all facets are all planar with consistent normals (as in a facetted closed region).
+GEOMDLLIMPEXP bool IsClosedPlanarRegion(DPlane3dR plane, double planeTolerance = 1.0E-6, double distanceTolerance = 1.0E-10) const;
+
 //! Count facets
 GEOMDLLIMPEXP size_t GetNumFacet () const;
 

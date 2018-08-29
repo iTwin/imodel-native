@@ -1050,6 +1050,45 @@ bool PolyfaceQuery::IsTriangulated () const
     return maxPerFace == 3;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      08/2018
++--------------------------------------------------------------------------------------*/
+bool PolyfaceQuery::IsClosedPlanarRegion(DPlane3dR plane, double planeTolerance, double distanceTolerance) const
+    {
+    if (!GetTwoSided())
+        return false;
+
+    bool            first = true;
+    Transform       localToWorld, worldToLocal;
+    double          planeDistance = 0.0;
+
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this, false); visitor->AdvanceToNextFace ();)
+        {
+        if (visitor->TryGetLocalFrame(localToWorld, worldToLocal))
+            {
+            DPlane3d  thisPlane;
+            thisPlane.normal = localToWorld.GetMatrixColumn(2);
+            thisPlane.normal.Normalize();
+            thisPlane.origin = localToWorld.Translation();
+
+            double  thisPlaneDistance = thisPlane.origin.DotProduct(thisPlane.normal);
+
+            if (first)
+                {
+                first = false;
+                plane = thisPlane;
+                planeDistance = thisPlaneDistance;
+                }
+            else
+                {
+                if (fabs(planeDistance - thisPlaneDistance) > distanceTolerance || !plane.normal.IsEqual(thisPlane.normal, planeTolerance))
+                    return false;
+                }
+            }
+        }
+
+    return true;
+    }
 
 
 /*--------------------------------------------------------------------------------**//**
