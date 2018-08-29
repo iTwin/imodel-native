@@ -94,8 +94,9 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
 //---------------------------------------------------------------------------------------
 Utf8String OpenCommand::_GetUsage() const
     {
-    return " .open [readonly|readwrite] [attachchanges] <iModel/ECDb/BeSQLite file>\r\n"
+    return " .open [readonly|readwrite|upgrade] [attachchanges] <iModel/ECDb/BeSQLite file>\r\n"
         COMMAND_USAGE_IDENT "Opens iModel, ECDb, or BeSQLite file. Default open mode: read-only.\r\n"
+        COMMAND_USAGE_IDENT "if upgrade is specified, the file is upgraded if necessary.\r\n"
         COMMAND_USAGE_IDENT "if attachchanges is specified, the Change Cache file is attached (and created if necessary).\r\n";
     }
 
@@ -121,6 +122,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     //default mode: read-only
     Db::OpenMode openMode = Db::OpenMode::Readonly;
+    Db::ProfileUpgradeOptions profileUpgradeOptions = Db::ProfileUpgradeOptions::None;
     bool attachChangeCache = false;
     bool openAsECDb = false;
 
@@ -132,9 +134,21 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             Utf8String const& arg = args[i];
 
             if (arg.EqualsI("readwrite"))
+                {
                 openMode = Db::OpenMode::ReadWrite;
+                profileUpgradeOptions = Db::ProfileUpgradeOptions::None;
+                }
+            else if (arg.EqualsI("upgrade"))
+                {
+                openMode = Db::OpenMode::ReadWrite;
+                profileUpgradeOptions = Db::ProfileUpgradeOptions::Upgrade;
+                }
             else if (arg.EqualsI("asecdb"))
+                {
                 openAsECDb = true;
+                openMode = Db::OpenMode::Readonly;
+                profileUpgradeOptions = Db::ProfileUpgradeOptions::None;
+                }
             else if (arg.EqualsI("attachchanges"))
                 attachChangeCache = true;
             }
@@ -149,12 +163,18 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    Utf8CP openModeStr = openMode == Db::OpenMode::Readonly ? "read-only" : "read-write";
+    Utf8CP openModeStr = nullptr;
+    if (openMode == Db::OpenMode::Readonly)
+        openModeStr = "read-only";
+    else if (profileUpgradeOptions == Db::ProfileUpgradeOptions::None)
+        openModeStr = "read-write";
+    else
+        openModeStr = "read-write with profile upgrade";
+
     Utf8CP attachChangeMessage = attachChangeCache ? " and attached Change Cache file" : "";
-    //open as plain BeSQlite file first to retrieve profile infos. If file is ECDb or iModel file, we close it
-    //again and use respective API to open it higher-level
+    //open as plain BeSQlite file first to retrieve profile infos. 
     std::unique_ptr<BeSQLiteFile> sqliteFile = std::make_unique<BeSQLiteFile>();
-    if (BE_SQLITE_OK != sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
+    if (BE_SQLITE_OK != sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly)))
         {
         sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
         IModelConsole::WriteErrorLine("Could not open file '%s'. File might not be a iModel file, ECDb file, or BeSQLite file.", filePath.GetNameUtf8().c_str());
@@ -169,13 +189,14 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
+    sqliteFile->GetHandleR().CloseDb();
+
     const bool isIModelFile = profileInfos.find(SessionFile::ProfileInfo::Type::IModel) != profileInfos.end();
     if (isIModelFile && !openAsECDb)
         {
-        sqliteFile->GetHandleR().CloseDb();
-
         DbResult stat;
         Dgn::DgnDb::OpenParams params(openMode);
+        params.SetProfileUpgradeOptions(profileUpgradeOptions);
         Dgn::DgnDbPtr iModel = Dgn::DgnDb::OpenDgnDb(&stat, filePath, params);
         if (BE_SQLITE_OK != stat)
             {
@@ -199,10 +220,8 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     if (profileInfos.find(SessionFile::ProfileInfo::Type::ECDb) != profileInfos.end())
         {
-        sqliteFile->GetHandleR().CloseDb();
-
         std::unique_ptr<ECDbFile> ecdbFile = std::make_unique<ECDbFile>();
-        if (BE_SQLITE_OK != ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, ECDb::OpenParams(openMode)))
+        if (BE_SQLITE_OK != ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, ECDb::OpenParams(openMode, profileUpgradeOptions)))
             {
             ecdbFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
             IModelConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
@@ -223,6 +242,13 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             IModelConsole::WriteLine("Opened iModel file as ECDb file '%s' in %s mode. This can damage the file as iModel validation logic is bypassed.", filePath.GetNameUtf8().c_str(), openModeStr);
         else
             IModelConsole::WriteLine("Opened ECDb file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeMessage);
+        return;
+        }
+
+    if (BE_SQLITE_OK != sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(openMode, profileUpgradeOptions)))
+        {
+        IModelConsole::WriteErrorLine("Could not open file '%s': %s", filePath.GetNameUtf8().c_str(), sqliteFile->GetHandle().GetLastError().c_str());
+        sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
         return;
         }
 
