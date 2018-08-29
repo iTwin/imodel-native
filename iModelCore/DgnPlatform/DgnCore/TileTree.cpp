@@ -2008,23 +2008,6 @@ TilePtr Tile::CreateChild(TileId childId) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley    02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool StreamBuffer::ReadBytes(void* buf, uint32_t size)
-    {
-    ByteCP start = GetCurrent();
-
-    if (nullptr == Advance(size)) 
-        {
-        BeAssert(false); 
-        return false;
-        }
-
-    memcpy(buf, start, size);
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::WaitForAllLoadsFor(uint32_t milliseconds)

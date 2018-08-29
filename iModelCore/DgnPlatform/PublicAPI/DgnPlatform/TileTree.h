@@ -26,7 +26,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Root)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoader)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LoadContext)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileCache)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(StreamBuffer)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileMetadata)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ClassificationPreprocessor)
 
@@ -63,35 +62,6 @@ public:
 };
 
 typedef std::shared_ptr<struct TileLoadState> TileLoadStateSPtr;
-
-//=======================================================================================
-//! A ByteStream with a "current position". Used for reading tiles
-// @bsiclass                                                    Keith.Bentley   03/16
-//=======================================================================================
-struct StreamBuffer : ByteStream
-    {
-    uint32_t m_currPos = 0;
-    ByteCP GetCurrent() const {return (m_currPos > GetSize()) ? nullptr : GetData() + m_currPos;}
-    ByteCP Advance(uint32_t size) {m_currPos += size; return GetCurrent();} // returns nullptr if advanced past end.
-    void SetPos(uint32_t pos) {m_currPos=pos;}
-    void ResetPos() {SetPos(0);}
-    uint32_t GetPos() const {return m_currPos;}
-    DGNPLATFORM_EXPORT bool ReadBytes(void* buf, uint32_t size);
-    template<typename T> bool Read (T& buf) { return ReadBytes(&buf, sizeof(buf)); }
-
-    bool Skip(uint32_t numBytes)
-        {
-        auto newPos = m_currPos + numBytes;
-        if (newPos > GetSize())
-            return false;
-
-        SetPos(newPos);
-        return true;
-        }
-
-    StreamBuffer() {}
-    StreamBuffer(ByteStream const& other) : ByteStream(other) {}
-    };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/16
