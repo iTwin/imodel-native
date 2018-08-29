@@ -27,6 +27,15 @@ TEST_F(HttpRequestTests, Ctor_InvalidUrl_UrlSetToEmpty)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                Robert.Lukasonok                      08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, Ctor_ValidUrl_SameUrlRetained)
+    {
+    Request request("foo://bar");
+    EXPECT_STREQ("foo://bar", request.GetUrl().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Ctor_UrlWithUnsafeCharacters_CharactersAreEscaped)

@@ -101,7 +101,9 @@ TEST_F(HttpRequestTests, PerformAsync_RandomlyGeneratedDataApi_PrintsUrlsAndData
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, PerformAsync_EmptyUrl_ErrorCouldNotConnect)
     {
+    BeTest::SetFailOnAssert(false);
     Request request("");
+    BeTest::SetFailOnAssert(true);
     Response response = request.PerformAsync()->GetResult();
     EXPECT_EQ(ConnectionStatus::CouldNotConnect, response.GetConnectionStatus());
     }
@@ -165,7 +167,9 @@ TEST_F(HttpRequestTests, Perform_OneRequestWithThen_ExecutesChainedTaskSuccessfu
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EmptyUrl_ErrorCouldNotConnect)
     {
+    BeTest::SetFailOnAssert(false);
     Request request("");
+    BeTest::SetFailOnAssert(true);
     Response response = request.Perform().get();
     EXPECT_EQ(ConnectionStatus::CouldNotConnect, response.GetConnectionStatus());
     }
@@ -385,15 +389,6 @@ TEST_F(HttpRequestTests, GetUrl_UnsafeCharactersInUrl_ReturnsEscapedCharactersIn
     {
     Request request(TEST_URL_UNSAFE_CHARS);
     EXPECT_STREQ(TEST_URL_UNSAFE_CHARS_ESCAPED, request.GetUrl().c_str());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                Vincas.Razma                           12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpRequestTests, GetUrl_TextAsUrlPassed_ReturnsSameText)
-    {
-    Request request("test url");
-    EXPECT_STREQ("test url", request.GetUrl().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
