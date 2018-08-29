@@ -451,9 +451,9 @@ Json::Value DgnSubCategory::Appearance::ToJson() const
     if (m_dontLocate)           val[json_dontLocate()] = true;
     if (ColorDef::Black() != m_color)  val[json_color()]  = m_color.GetValue();
     if (0 != m_weight)          val[json_weight()] = m_weight;
-    if (m_style.IsValid())      val[json_style()]  = m_style.GetValue();
+    if (m_style.IsValid())      val[json_style()]  = m_style.ToHexStr(); // ###INT64TOHEXSTR Was m_style.GetValue() which fails on imodel-js, asUInt64 still works with ToHexStr.
     if (0 != m_displayPriority) val[json_priority()] = m_displayPriority;
-    if (m_material.IsValid())   val[json_material()] = m_material.GetValue();
+    if (m_material.IsValid())   val[json_material()] = m_material.ToHexStr(); // ###INT64TOHEXSTR Was m_material.GetValue() which fails on imodel-js, asUInt64 still works with ToHexStr.
     if (0.0 != m_transparency)  val[json_transp()] = m_transparency;
 
     return val;
@@ -498,8 +498,8 @@ void DgnSubCategory::Override::ToJson(JsonValueR outValue) const
     if (m_flags.m_invisible)    outValue[Appearance::json_invisible()] = m_value.IsInvisible();
     if (m_flags.m_color)        outValue[Appearance::json_color()] = m_value.GetColor().GetValue();
     if (m_flags.m_weight)       outValue[Appearance::json_weight()] = m_value.GetWeight();
-    if (m_flags.m_style)        outValue[Appearance::json_style()] = m_value.GetStyle().GetValue();
-    if (m_flags.m_material)     outValue[Appearance::json_material()] = m_value.GetRenderMaterial().GetValue();
+    if (m_flags.m_style)        outValue[Appearance::json_style()] = m_value.GetStyle().ToHexStr(); // ###INT64TOHEXSTR Was m_value.GetStyle().GetValue() which fails on imodel-js, asUInt64 still works with ToHexStr.
+    if (m_flags.m_material)     outValue[Appearance::json_material()] = m_value.GetRenderMaterial().ToHexStr(); // ###INT64TOHEXSTR Was m_value.GetRenderMaterial().GetValue() which fails on imodel-js, asUInt64 still works with ToHexStr.
     if (m_flags.m_priority)     outValue[Appearance::json_priority()] = m_value.GetDisplayPriority();
     if (m_flags.m_transparency) outValue[Appearance::json_transp()] = m_value.GetTransparency();
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsDb.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -387,7 +387,7 @@ void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR bas
     if (size.z != 0)
         result["sizeZ"] = size.z;
 
-    result["geomPartId"] = geomPartId.GetValue();
+    result["geomPartId"] = geomPartId.ToHexStr(); // ###INT64TOHEXSTR Was geomPartId.GetValue() which fails on imodel-js, asUInt64 still works with ToHexStr.
     result["symFlags"] = flags;
 
     if (storedScale != 0)
