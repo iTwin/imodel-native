@@ -924,6 +924,15 @@
   <data name="GDA 94" xml:space="preserve">
     <value>GDA 94</value>
   </data>
+  <data name="GDA2020" xml:space="preserve">
+    <value>GDA2020</value>
+  </data>
+  <data name="GDA94/GSB" xml:space="preserve">
+    <value>GDA94/GSB</value>
+  </data>
+  <data name="GDA94-7P" xml:space="preserve">
+    <value>GDA94-7P</value>
+  </data>
   <data name="Geographic" xml:space="preserve">
     <value>Geographic (latitude, longitude)</value>
   </data>
