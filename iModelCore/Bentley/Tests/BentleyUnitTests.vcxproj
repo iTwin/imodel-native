@@ -60,6 +60,7 @@
     <ClCompile Include="Published\shared_mutex.cpp" />
     <ClCompile Include="Published\Tasks\AsyncErrorTests.cpp" />
     <ClCompile Include="Published\Tasks\AsyncResultTests.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncTasksFollyAdapterTests.cpp" />
     <ClCompile Include="Published\Tasks\AsyncTasksManagerTests.cpp" />
     <ClCompile Include="Published\Tasks\AsyncTaskTests.cpp" />
     <ClCompile Include="Published\CancellationTokenTests.cpp" />
@@ -147,9 +148,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -N0 -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re PublishedApi Base BentleyDll Bentley-Gtest Gtest UnitTests-Published</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb         -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re Bentley-Gtest -s</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -N0 -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re PublishedApi Base BentleyDll Bentley-Gtest Gtest UnitTests-Published -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re PublishedApi Base BentleyDll Bentley-Gtest Gtest UnitTests-Published</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re PublishedApi Base BentleyDll Bentley-Gtest Gtest UnitTests-Published -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>

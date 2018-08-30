@@ -118,6 +118,7 @@
     <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncError.h" />
     <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncResult.h" />
     <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTask.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTaskFollyAdapter.h" />
     <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTaskRunner.h" />
     <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTaskRunnerFactory.h" />
     <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTaskRunnerPool.h" />
@@ -142,6 +143,7 @@
   <ItemGroup>
     <ClCompile Include="BeJpeg\BeJpeg.cpp" />
     <ClCompile Include="Bentley\BeId.cpp" />
+    <ClCompile Include="Bentley\CancellationToken.cpp" />
     <ClCompile Include="Bentley\DateTime.cpp" />
     <ClCompile Include="Bentley\DateTimeConverter.cpp" />
     <ClCompile Include="Bentley\DirectoryObserver.cpp" />
@@ -193,6 +195,7 @@
     <None Include="BeJpeg\BeJpeg.mke" />
     <None Include="Bentley.mke" />
     <None Include="BentleyLibTestDll.mke" />
+    <None Include="Bentley\nonport\BeSystemInfoMacOS.mm" />
     <None Include="BeXml\bexml.mke" />
     <None Include="Docs\Overview\BeFileName.doxpage" />
     <None Include="Docs\Overview\Collections.doxpage" />

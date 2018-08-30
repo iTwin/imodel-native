@@ -134,6 +134,7 @@
     <ClCompile Include="Published\Tasks\AsyncTasksManagerTests.cpp" />
     <ClCompile Include="Published\Tasks\ThreadlessTaskSchedulerTests.cpp" />
     <ClCompile Include="Published\CancellationTokenTests.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncTasksFollyAdapterTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ignore_list.txt" />
