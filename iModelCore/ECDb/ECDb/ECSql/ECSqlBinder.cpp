@@ -321,7 +321,15 @@ ECSqlStatus ArrayConstraintValidator::Validate(ECDbCR ecdb, ECSqlTypeInfo const&
     const uint32_t expectedMinOccurs = expected.GetArrayMinOccurs();
     if (actualArrayLength < expectedMinOccurs)
         {
-        LOG.errorv("Array to be bound to the array parameter must at least have %" PRIu32 " element(s) as defined in the respective ECProperty.", expectedMinOccurs);
+        if (expected.GetPropertyMap() == nullptr)
+            LOG.errorv("Array to be bound to the array parameter must at least have %" PRIu32 " element(s) as defined in the respective ECProperty.", expectedMinOccurs);
+        else
+            {
+            ECN::ECPropertyCR prop = expected.GetPropertyMap()->GetProperty();
+            LOG.errorv("Array to be bound to the array parameter must at least have %" PRIu32 " element(s) as defined in ECProperty '%s.%s'.",
+                       expectedMinOccurs, prop.GetClass().GetFullName(), prop.GetName().c_str());
+            }
+
         return ECSqlStatus::Error;
         }
 
@@ -337,7 +345,15 @@ ECSqlStatus ArrayConstraintValidator::ValidateMaximum(ECDbCR ecdb, ECSqlTypeInfo
     const uint32_t expectedMaxOccurs = expected.GetArrayMaxOccurs();
     if (actualArrayLength > expectedMaxOccurs)
         {
-        LOG.errorv("Array to be bound to the array parameter must at most have %" PRIu32 " element(s) as defined in the respective ECProperty.", expectedMaxOccurs);
+        if (expected.GetPropertyMap() == nullptr)
+            LOG.errorv("Array to be bound to the array parameter must at most have %" PRIu32 " element(s) as defined in the respective ECProperty.", expectedMaxOccurs);
+        else
+            {
+            ECN::ECPropertyCR prop = expected.GetPropertyMap()->GetProperty();
+            LOG.errorv("Array to be bound to the array parameter must at most have %" PRIu32 " element(s) as defined in ECProperty '%s.%s'.",
+                       expectedMaxOccurs, prop.GetClass().GetFullName(), prop.GetName().c_str());
+            }
+
         return ECSqlStatus::Error;
         }
 
