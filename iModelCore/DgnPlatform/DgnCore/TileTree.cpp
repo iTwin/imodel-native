@@ -62,7 +62,6 @@ constexpr double s_tileScreenSize = 512.0;
 constexpr double s_minToleranceRatioMultiplier = 2.0;
 constexpr double s_minToleranceRatio = s_tileScreenSize * s_minToleranceRatioMultiplier;
 constexpr uint32_t s_minElementsPerTile = 100; // ###TODO: The complexity of a single element's geometry can vary wildly...
-// unused - constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 

@@ -17,6 +17,7 @@
 #endif
 
 USING_NAMESPACE_TILE
+USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
 // Obsolete versions of table storing tile data
 #define TABLE_NAME_TileTree3 "TileTree3"
@@ -63,7 +64,10 @@ struct CacheBlobHeader
     CacheBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
 };
 
-struct ClassificationTree;
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ClassificationTree);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryLoader);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileContext);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshGenerator);
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     08/18
@@ -104,35 +108,134 @@ struct ClassificationTree : Tree
     LoaderPtr CreateLoader(ContentIdCR contentId) final { return new ClassificationLoader(*this, contentId); }
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClassificationLoader::ClassificationLoader(ClassificationTree& tree, ContentIdCR contentId) : T_Super(tree, contentId), m_offset(tree.m_classifierOffset), m_range(tree.m_classifierRange)
-    {
-    //
-    }
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/18
+//=======================================================================================
+struct GeometryLoader
+{
+private:
+    LoaderCR m_loader;
+    DRange3d m_range;
+    double m_tolerance;
+    Render::Primitives::GeometryCollection m_geometry;
+    DRange3d m_contentRange = DRange3d::NullRange();
+public:
+    explicit GeometryLoader(LoaderCR loader);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr ClassificationLoader::Preprocess(PolyfaceHeaderR pf) const
-    {
-    DPlane3d plane;
-    if (pf.IsClosedPlanarRegion(plane))
+    TreeR GetTree() const { return m_loader.GetTree(); }
+    DgnDbR GetDgnDb() const { return GetTree().GetDgnDb(); }
+    bool Is3d() const { return GetTree().Is3d(); }
+    bool Is2d() const { return GetTree().Is2d(); }
+    LoaderCR GetLoader() const { return m_loader; }
+    double GetTolerance() const { return m_tolerance; }
+    Render::Primitives::GeometryCollectionCR GetGeometry() const { return m_geometry; }
+    ContentIdCR GetContentId() const { return m_loader.GetContentId(); }
+    double GetSizeMultiplier() const { return GetContentId().GetSizeMultiplier(); }
+    Render::SystemR GetRenderSystem() const { return GetTree().GetRenderSystem(); }
+    DRange3dCR GetContentRange() const { return m_contentRange; }
+    bool IsCanceled() const { return m_loader.IsCanceled(); }
+
+    DRange3dCR GetTileRange() const { return m_range; }
+    DRange3d GetDgnRange() const
         {
-        DRay3d              ray = DRay3d::FromOriginAndVector(plane.origin, plane.normal);
-        DRange1d            classifiedProjection = m_range.GetCornerRange(ray);
-        PolyfaceHeaderPtr   extrudedPolyface = pf.ComputeOffset(PolyfaceHeader::OffsetOptions(), classifiedProjection.high, classifiedProjection.low);
+        DRange3d range;
+        GetTree().GetLocation().Multiply(range, GetTileRange());
+        return range;
+        }
 
-        if (extrudedPolyface.IsValid())
+    bool GenerateGeometry();
+};
+
+//=======================================================================================
+//! Populates a set of the largest N elements within a range, excluding any elements below
+//! a specified size. Keeps track of whether any elements were skipped.
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct ElementCollector : RangeIndex::Traverser
+{
+    typedef bmultimap<double, DgnElementId, std::greater<double>> Entries;
+private:
+    Entries         m_entries;
+    FBox3d          m_range;
+    double          m_minRangeDiagonalSquared;
+    uint32_t        m_maxElements;
+    LoaderCR        m_loader;
+    size_t          m_numSkipped = 0;
+    bool            m_aborted = false;
+    bool            m_is2d;
+
+    bool CheckStop() { return m_aborted || (m_aborted = m_loader.IsCanceled()); }
+
+    void Insert(double diagonalSq, DgnElementId elemId)
+        {
+        m_entries.Insert(diagonalSq, elemId);
+        if (m_entries.size() > m_maxElements)
             {
-            extrudedPolyface->Triangulate();
-            extrudedPolyface->BuildPerFaceNormals();
-            return extrudedPolyface;
+            m_entries.erase(--m_entries.end()); // remove the smallest element.
+            ++m_numSkipped;
             }
         }
 
-    return &pf;
+    Accept _CheckRangeTreeNode(FBox3d const& box, bool is3d) const override
+        {
+        if (!m_aborted && box.IntersectsWith(m_range))
+            return Accept::Yes;
+        else
+            return Accept::No;
+        }
+
+    Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+        {
+        if (CheckStop())
+            return Stop::Yes;
+        else if (!entry.m_range.IntersectsWith(m_range))
+            return Stop::No; // why do we need to check the range again here? _CheckRangeTreeNode() should have handled it, but doesn't...
+
+        double sizeSq;
+        if (Placement3d::IsMinimumRange(entry.m_range.m_low, entry.m_range.m_high, m_is2d))
+            sizeSq = 0.0;
+        else if (m_is2d)
+            sizeSq = entry.m_range.m_low.DistanceSquaredXY(entry.m_range.m_high);
+        else
+            sizeSq = entry.m_range.m_low.DistanceSquared(entry.m_range.m_high);
+
+        if (0.0 == sizeSq || sizeSq >= m_minRangeDiagonalSquared)
+            Insert(sizeSq, entry.m_id);
+        else
+            ++m_numSkipped;
+        
+        return Stop::No;
+        }
+public:
+    ElementCollector(DRange3dCR range, RangeIndex::Tree& rangeIndex, double minRangeDiagonalSquared, LoaderCR loader, uint32_t maxElements)
+        : m_range(range), m_minRangeDiagonalSquared(minRangeDiagonalSquared), m_maxElements(maxElements), m_loader(loader), m_is2d(!rangeIndex.Is3d())
+        {
+        // ###TODO: Do not traverse if tile is not expired (only deletions may have occurred)...
+        rangeIndex.Traverse(*this);
+        }
+
+    bool AnySkipped() const { return 0 < m_numSkipped; }
+    size_t GetNumSkipped() const { return m_numSkipped; }
+    Entries const& GetEntries() const { return m_entries; }
+    uint32_t GetMaxElements() const { return m_maxElements; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* This exists because DRange3d::IntersectionOf() treats a zero-thickness intersection as
+* null - so if the intersection in any dimension is zero, it nulls out the entire range.
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void clipContentRangeToTileRange(DRange3dR content, DRange3dCR tile)
+    {
+    content.low.x = std::max(content.low.x, tile.low.x);
+    content.low.y = std::max(content.low.y, tile.low.y);
+    content.low.z = std::max(content.low.z, tile.low.z);
+    content.high.x = std::min(content.high.x, tile.high.x);
+    content.high.y = std::min(content.high.y, tile.high.y);
+    content.high.z = std::min(content.high.z, tile.high.z);
+
+    if (content.low.x > content.high.x || content.low.y > content.high.y || content.low.z > content.high.z)
+        content.Init();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,6 +375,178 @@ bool isElementCountLessThan(uint32_t threshold, RangeIndex::Tree& tree)
     Counter counter(threshold);
     tree.Traverse(counter);
     return counter.m_count < threshold;
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct TileBuilder : GeometryListBuilder
+{
+protected:
+    TileContext&                m_context;
+    double                      m_rangeDiagonalSquared;
+
+    static void AddNormals(PolyfaceHeaderR, IFacetOptionsR);
+    static void AddParams(PolyfaceHeaderR, IFacetOptionsR);
+
+    void _AddPolyface(PolyfaceQueryCR, bool) override;
+    void _AddPolyfaceR(PolyfaceHeaderR, bool) override;
+    void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP) override;
+    bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) override;
+    bool _WantPreBakedBody(IBRepEntityCR) override;
+
+    GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override;
+    GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
+    void _ActivateGraphicParams(GraphicParamsCR gfParams, GeometryParamsCP geomParams) override
+        {
+        BeAssert(nullptr == geomParams || geomParams->GetSubCategoryId().IsValid());
+        GeometryListBuilder::_ActivateGraphicParams(gfParams, geomParams);
+        }
+
+    TileBuilder(TileContext& context, DRange3dCR range);
+
+    void ReInitialize(DRange3dCR range);
+public:
+    TileBuilder(TileContext& context, DgnElementId elemId, double rangeDiagonalSquared, CreateParams const& params);
+
+    void ReInitialize(DgnElementId elemId, double rangeDiagonalSquared, TransformCR localToWorld);
+    double GetRangeDiagonalSquared() const { return m_rangeDiagonalSquared; }
+};
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileBuilder);
+DEFINE_REF_COUNTED_PTR(TileBuilder);
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct TileSubGraphic : TileBuilder
+{
+private:
+    DgnGeometryPartCPtr m_input;
+    GeomPartPtr         m_output;
+
+    GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
+    void _Reset() override { m_input = nullptr; m_output = nullptr; }
+public:
+    TileSubGraphic(TileContext& context, DgnGeometryPartCP part = nullptr);
+    TileSubGraphic(TileContext& context, DgnGeometryPartCR part) : TileSubGraphic(context, &part) { }
+
+    void ReInitialize(DgnGeometryPartCR part);
+
+    DgnGeometryPartCR GetInput() const { BeAssert(m_input.IsValid()); return *m_input; }
+    GeomPartPtr GetOutput() const { return m_output; }
+    void SetOutput(GeomPartR output) { BeAssert(m_output.IsNull()); m_output = &output; }
+};
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileSubGraphic);
+DEFINE_REF_COUNTED_PTR(TileSubGraphic);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool wantGlyphBoxes(double sizeInPixels)
+    {
+    constexpr double s_glyphBoxSizeThreshold = 3.0;
+    return sizeInPixels <= s_glyphBoxSizeThreshold;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool setupForStyledCurveVector(GraphicBuilderR builder, CurveVectorCR curve)
+    {
+    BeAssert(nullptr != dynamic_cast<TileBuilderP>(&builder));
+    auto& tileBuilder = static_cast<TileBuilderR>(builder);
+    bool wasCurved = tileBuilder.IsAddingCurved();
+    tileBuilder.SetAddingCurved(curve.ContainsNonLinearPrimitive());
+    return wasCurved;
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     12/2017
++===============+===============+===============+===============+===============+======*/
+struct TileRangeClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
+{
+    bvector<PolyfaceHeaderPtr>  m_clipped;
+    bvector<PolyfaceQueryCP>    m_output;
+
+    StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR mesh) override { m_output.push_back(&mesh); ; return SUCCESS; }
+    StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); m_clipped.push_back(&mesh); return SUCCESS; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+struct MeshGenerator : ViewContext
+{
+private:
+    GeometryLoaderCR        m_loader;
+    GeometryOptions         m_options;
+    size_t                  m_geometryCount = 0;
+    FeatureTable            m_featureTable;
+    MeshBuilderMap          m_builderMap;
+    DRange3d                m_contentRange = DRange3d::NullRange();
+    ThematicMeshBuilderPtr  m_thematicMeshBuilder;
+    bool                    m_maxGeometryCountExceeded = false;
+    bool                    m_didDecimate = false;
+
+    static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
+
+    MeshBuilderR GetMeshBuilder(MeshBuilderMap::Key const& key);
+    DgnElementId GetElementId(GeometryR geom) const { return m_maxGeometryCountExceeded ? DgnElementId() : geom.GetEntityId(); }
+
+    void AddPolyfaces(GeometryR geom, double rangePixels, bool isContained);
+    void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
+    void AddPolyface(Polyface& polyface, GeometryR, double rangePixels, bool isContained);
+    void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar);
+
+    void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
+    void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
+    void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained);
+    Strokes ClipSegments(StrokesCR strokes) const;
+    void ClipStrokes(StrokesR strokes) const;
+    void ClipPoints(StrokesR strokes) const;
+
+    SystemP _GetRenderSystem() const final { return &m_loader.GetRenderSystem(); }
+    GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const&) final { BeAssert(false); return nullptr; }
+    GraphicPtr _CreateBranch(GraphicBranch&, DgnDbR, TransformCR, ClipVectorCP) final { BeAssert(false); return nullptr; }
+    double _GetPixelSizeAtPoint(DPoint3dCP) const final { return GetTolerance(); }
+    bool _WantGlyphBoxes(double sizeInPixels) const final { return wantGlyphBoxes(sizeInPixels); }
+    void _DrawStyledCurveVector(GraphicBuilderR builder, CurveVectorCR curve, GeometryParamsR params, bool doCook) final
+        {
+        bool wasCurved = setupForStyledCurveVector(builder, curve);
+        ViewContext::_DrawStyledCurveVector(builder, curve, params, doCook);
+        static_cast<TileBuilderR>(builder).SetAddingCurved(wasCurved);
+        }
+    bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance) final
+        {
+        DRange3d        pointRange = DRange3d::From(worldPoints, nPts);
+        return pointRange.IntersectsWith(m_loader.GetTileRange());
+        }
+public:
+    MeshGenerator(GeometryLoaderCR loader, GeometryOptionsCR options);
+
+    bool DidDecimation() const { return m_didDecimate; }
+
+    // Add meshes to the MeshBuilder map
+    void AddMeshes(GeometryList const& geometries, bool doRangeTest);
+    void AddMeshes(GeometryR geom, bool doRangeTest);
+    void AddMeshes(GeomPartR part, bvector<GeometryCP> const& instances);
+
+    // Return a list of all meshes currently in the builder map
+    MeshList GetMeshes();
+    // Return a tight bounding volume
+    DRange3dCR GetContentRange() const { return m_contentRange; }
+    DRange3dCR GetTileRange() const { return m_builderMap.GetRange(); }
+    double GetTolerance() const { return m_loader.GetTolerance(); }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
+    {
+    return Feature(elemId, params.GetSubCategoryId(), params.GetClass());
     }
 
 END_UNNAMED_NAMESPACE
@@ -851,6 +1126,496 @@ Loader::State Loader::ReadFromCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::State Loader::ReadFromModel()
     {
-    return State::NotFound; // ###TODO...
+    GeometryLoader geomLoader(*this);
+    if (!geomLoader.GenerateGeometry())
+        return State::Invalid;
+    else if (IsCanceled())
+        return State::NotFound; // doesn't matter...
+
+    // ###TODO: Save to cache etc
+    return State::Ready;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassificationLoader::ClassificationLoader(ClassificationTree& tree, ContentIdCR contentId) : T_Super(tree, contentId), m_offset(tree.m_classifierOffset), m_range(tree.m_classifierRange)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr ClassificationLoader::Preprocess(PolyfaceHeaderR pf) const
+    {
+    DPlane3d plane;
+    if (pf.IsClosedPlanarRegion(plane))
+        {
+        DRay3d              ray = DRay3d::FromOriginAndVector(plane.origin, plane.normal);
+        DRange1d            classifiedProjection = m_range.GetCornerRange(ray);
+        PolyfaceHeaderPtr   extrudedPolyface = pf.ComputeOffset(PolyfaceHeader::OffsetOptions(), classifiedProjection.high, classifiedProjection.low);
+
+        if (extrudedPolyface.IsValid())
+            {
+            extrudedPolyface->Triangulate();
+            extrudedPolyface->BuildPerFaceNormals();
+            return extrudedPolyface;
+            }
+        }
+
+    return &pf;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometryLoader::GeometryLoader(LoaderCR loader) : m_loader(loader)
+    {
+    m_range = loader.GetContentId().ComputeRange(GetTree().GetRange(), Is2d());
+    double diagDist = Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
+    m_tolerance = diagDist / (s_minToleranceRatio * GetSizeMultiplier());
+    BeAssert(0.0 != m_tolerance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryLoader::GenerateGeometry()
+    {
+    auto model = GetTree().FetchModel();
+    if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
+        return false;
+
+    uint32_t maxFeatures = s_hardMaxFeaturesPerTile; // Note: Element != Feature - could have multiple features per element due to differing subcategories/classes within GeometryStream
+    maxFeatures = std::min(maxFeatures, GetRenderSystem()._GetMaxFeaturesPerBatch());
+
+    auto tolerance = GetTolerance();
+    double minRangeDiagonalSq = s_minRangeBoxSize * tolerance;
+    minRangeDiagonalSq *= minRangeDiagonalSq;
+
+    IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(tolerance);
+    facetOptions->SetHideSmoothEdgesWhenGeneratingNormals(false); // We'll do this ourselves when generating meshes - This will turn on sheet edges that should be hidden (Pug.dgn).
+
+    Transform transformFromDgn;
+    transformFromDgn.InverseOf(GetTree().GetLocation());
+
+    // ###TODO: Do not populate the element collection up front - just traverse range index one element at a time
+    // (We chiefly did the up-front collection previously in order to support partial tiles - process biggest elements first)
+    DRange3d dgnRange = GetDgnRange();
+    ElementCollector elementCollector(dgnRange, *model->GetRangeIndex(), minRangeDiagonalSq, m_loader, maxFeatures);
+
+    if (IsCanceled())
+        return false;
+
+    GeometryList geometryList;
+    if (elementCollector.AnySkipped())
+        geometryList.MarkIncomplete();
+
+    // ###TODO TileContext tileContext(geometryList, GetTree(), dgnRange, *facetOptions, transformFromDgn, tolerance, *this);
+    MeshGenerator meshGenerator(*this, GeometryOptions());
+
+    if (IsCanceled())
+        return false;
+
+    for (ElementCollector::Entries::const_iterator elementIter = elementCollector.GetEntries().begin(); elementCollector.GetEntries().end() != elementIter; ++elementIter)
+        {
+        // Collect geometry from this element
+        geometryList.clear();
+        // ###TODO auto const& entry = *elementIter;
+        // ###TODO tileContext.ProcessElement(entry.second, entry.first);
+        // ###TODO if (tileContext.GetGeometryCount() >= elementCollector.GetMaxElements())
+            // ###TODO {
+            // ###TODO tileContext.TruncateGeometryLIst(elementCollector.GetMaxElements());
+            // ###TODO break;
+        // ###TODO }
+
+        // Convert this element's geometry to meshes
+        for (auto const& geom : geometryList)
+            meshGenerator.AddMeshes(*geom, true);
+
+        if (IsCanceled())
+            return false;
+        }
+
+    if (meshGenerator.DidDecimation())
+        geometryList.MarkIncomplete();
+
+    // ###TODO we previously would determine subdivision strategy here.
+    // Instead, record relevant info (e.g., # of elements, presence of curves, any geometry skipped, etc) so frontend can make that determination.
+
+    // Facet all geoemtry
+    m_geometry.Meshes() = meshGenerator.GetMeshes();
+    m_contentRange.Extend(meshGenerator.GetContentRange());
+    if (!geometryList.IsComplete())
+        m_geometry.MarkIncomplete();
+
+    if (geometryList.ContainsCurves())
+        m_geometry.MarkCurved();
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshGenerator::MeshGenerator(GeometryLoaderCR loader, GeometryOptionsCR options)
+  : m_loader(loader), m_options(options),
+    m_featureTable(loader.GetTree().GetModelId(), loader.GetRenderSystem()._GetMaxFeaturesPerBatch()),
+    m_builderMap(loader.GetTolerance(), &m_featureTable, loader.GetTileRange(), loader.Is2d())
+    {
+    SetDgnDb(loader.GetDgnDb());
+    m_is3dView = loader.Is3d();
+    // ###TODO SetViewFlags(TileContext::GetDefaultViewFlags());
+
+    // For now always create -- (use first aux channel) - ###TODO: control from UX.
+    m_thematicMeshBuilder  = new ThematicMeshBuilder("", "");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshBuilderR MeshGenerator::GetMeshBuilder(MeshBuilderMap::Key const& key)
+    {
+    return m_builderMap[key];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddMeshes(GeometryList const& geometries, bool doRangeTest)
+    {
+    for (auto& geom : geometries)
+        {
+        if (m_loader.IsCanceled())
+            break;
+
+        AddMeshes(*geom, doRangeTest);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
+    {
+    DRange3dCR geomRange = geom.GetTileRange();
+    double rangePixels = (m_loader.Is3d() ? geomRange.DiagonalDistance() : geomRange.DiagonalDistanceXY()) / GetTolerance();
+    if (rangePixels < s_minRangeBoxSize && 0.0 < geomRange.DiagonalDistance()) // ###TODO_ELEMENT_TILE: single point primitives have an empty range...
+        return;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
+
+    bool isContained = !doRangeTest || geomRange.IsContained(GetTileRange());
+    if (!m_maxGeometryCountExceeded)
+        m_maxGeometryCountExceeded = (++m_geometryCount > m_featureTable.GetMaxFeatures());
+
+    AddPolyfaces(geom, rangePixels, isContained);
+    AddStrokes(geom, rangePixels, isContained);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instances)
+    {
+    auto iter = instances.begin();
+    if (instances.end() == iter)
+        return;
+
+    // All instances will have the same facet options and range size...
+    GeometryCP first = *iter;
+    DRange3dCR geomRange = first->GetTileRange();
+    double tolerance = GetTolerance();
+    double rangePixels = (m_loader.Is3d() ? geomRange.DiagonalDistance() : geomRange.DiagonalDistanceXY()) / tolerance;
+    if (rangePixels < s_minRangeBoxSize)
+        return;
+
+    // Get the polyfaces and strokes with no transform applied
+    PolyfaceList polyfaces = part.GetPolyfaces(tolerance, m_options.m_normalMode, nullptr, *this);
+    StrokesList strokes = part.GetStrokes(tolerance, nullptr, *this);
+
+    // For each instance, transform the polyfaces and add them to the mesh
+    Transform invTransform = Transform::FromIdentity();
+    for (GeometryCP instance : instances)
+        {
+        bool isContained = instance->GetTileRange().IsContained(GetTileRange());
+        Transform instanceTransform = Transform::FromProduct(instance->GetTransform(), invTransform);
+        invTransform.InverseOf(instance->GetTransform());
+        for (auto& polyface : polyfaces)
+            {
+            polyface.Transform(instanceTransform);
+            AddPolyface(polyface, const_cast<GeometryR>(*instance), rangePixels, isContained);
+            }
+
+        for (auto& strokeList : strokes)
+            {
+            strokeList.Transform(instanceTransform);
+            AddStrokes(strokeList, *const_cast<GeometryP>(instance), rangePixels, isContained);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddPolyfaces(GeometryR geom, double rangePixels, bool isContained)
+    {
+    auto polyfaces = geom.GetPolyfaces(GetTolerance(), m_options.m_normalMode, *this);
+    AddPolyfaces(polyfaces, geom, rangePixels, isContained);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained)
+    {
+    for (auto& polyface : polyfaces)
+        AddPolyface(polyface, geom, rangePixels, isContained);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
+    {
+    // TFS#817210
+    PolyfaceHeaderPtr polyface = tilePolyface.m_polyface.get();
+    if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
+        return;
+
+    polyface = m_loader.GetLoader().Preprocess(*polyface);
+
+    // ###TODO: we don't know if tile is to be treated as a leaf or not...
+    bool doDecimate = false; // !m_tile.IsLeaf() && !m_tile.HasZoomFactor() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount() && 0 == polyface->GetFaceCount();
+
+    if (doDecimate)
+        {
+        BeAssert(0 == polyface->GetEdgeChainCount());       // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
+        PolyfaceHeaderPtr   decimated;
+        if (doDecimate && (decimated = polyface->ClusteredVertexDecimate(GetTolerance(), .25 /* No decimation unless point count reduced by at least 25% */)).IsValid())
+            {
+            polyface = decimated.get();
+            m_didDecimate = true;
+            }
+        }
+
+    auto edgeOptions = tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
+
+    DgnElementId            elemId = GetElementId(geom);
+    MeshEdgeCreationOptions edges(edgeOptions);
+    bool                    isPlanar = tilePolyface.m_isPlanar;
+    DisplayParamsCPtr       displayParams = &tilePolyface.GetDisplayParams(); 
+
+    if (m_thematicMeshBuilder.IsValid())
+        m_thematicMeshBuilder->InitThematicDisplay(*polyface, *displayParams);
+
+    if (isContained)
+        {                                                                                                                                          
+        AddClippedPolyface(*polyface, elemId, *displayParams, edges, isPlanar);
+        }
+    else
+        {
+        TileRangeClipOutput clipOutput;
+        polyface->ClipToRange(GetTileRange(), clipOutput, false);
+        for (auto& clipped : clipOutput.m_output)
+            AddClippedPolyface(*clipped, elemId, *displayParams, edges, isPlanar);                                                                                        
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar)
+    {
+    bool                hasTexture = displayParams.IsTextured();
+    bool                anyContributed = false;
+    uint32_t            fillColor = displayParams.GetFillColor();
+    DgnDbR              db = m_loader.GetDgnDb();
+    MeshAuxData         auxData;
+    uint64_t            keyElementId = m_loader.GetLoader().SeparatePrimitivesById() ? elemId.GetValue() : 0; // Create separate primitives per element if classifying.
+    MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar, keyElementId);
+    MeshBuilderR        builder = GetMeshBuilder(key);
+
+    builder.BeginPolyface(polyface, edgeOptions);
+
+    if (m_thematicMeshBuilder.IsValid())
+        m_thematicMeshBuilder->BuildMeshAuxData(auxData, polyface, displayParams);
+
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
+        {
+        anyContributed = true;
+        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP(), &auxData);
+        m_contentRange.Extend(visitor->Point());
+        }
+
+    builder.EndPolyface();
+
+    if (anyContributed)
+        {
+        // NB: The mesh's display params contain a fill color, which is used by the tri mesh primitive if the color table is empty (uniform)
+        // But each polyface's display params may have a different fill color.
+        // If a polyface contributes no vertices, we may end up incorrectly using its fill color for the primitive
+        // Make sure the mesh's display params match one (any) mesh which actually contributed vertices, so that if the result is a uniform color,
+        // we will use the fill color of the (only) mesh which contributed.
+        builder.SetDisplayParams(displayParams);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::ClipStrokes(StrokesR strokes) const
+    {
+    if (strokes.m_disjoint)
+        ClipPoints(strokes);
+    else
+        strokes = ClipSegments(strokes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Strokes MeshGenerator::ClipSegments(StrokesCR input) const
+    {
+    BeAssert(!input.m_disjoint);
+
+    Strokes output(*input.m_displayParams, false, input.m_isPlanar);
+    output.m_strokes.reserve(input.m_strokes.size());
+
+    for (auto const& inputStroke : input.m_strokes)
+        {
+        auto const& points = inputStroke.m_points;
+        if (points.size() <= 1)
+            continue;
+
+        DPoint3d prevPt = points.front();
+        bool prevOutside = !GetTileRange().IsContained(prevPt);
+        if (!prevOutside)
+            {
+            output.m_strokes.push_back(Strokes::PointList(inputStroke.m_startDistance));
+            output.m_strokes.back().m_points.push_back(prevPt);
+            }
+
+        double length = inputStroke.m_startDistance;        // Cumulative length along polyline
+        for (size_t i = 1; i < points.size(); i++)
+            {
+            auto nextPt = points[i];
+            bool nextOutside = !GetTileRange().IsContained(nextPt);
+            DSegment3d clippedSegment;
+            if (prevOutside || nextOutside)
+                {
+                double param0, param1;
+                DSegment3d unclippedSegment = DSegment3d::From(prevPt, nextPt);
+                if (!GetTileRange().IntersectBounded(param0, param1, clippedSegment, unclippedSegment))
+                    {
+                    // entire segment clipped
+                    prevPt = nextPt;
+                    continue;
+                    }
+                }
+
+            DPoint3d startPt = prevOutside ? clippedSegment.point[0] : prevPt;
+            DPoint3d endPt = nextOutside ? clippedSegment.point[1] : nextPt;
+
+            if (prevOutside)
+                {
+                output.m_strokes.push_back(Strokes::PointList(length));
+                output.m_strokes.back().m_points.push_back(startPt);
+                }
+
+            output.m_strokes.back().m_points.push_back(endPt);
+
+            prevPt = nextPt;
+            prevOutside = nextOutside;
+            }
+
+        BeAssert(output.m_strokes.empty() || 1 < output.m_strokes.back().m_points.size());
+        }
+
+    return output;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::ClipPoints(StrokesR strokes) const
+    {
+    BeAssert(strokes.m_disjoint);
+
+    for (auto& stroke : strokes.m_strokes)
+        {
+        auto eraseAt = std::remove_if(stroke.m_points.begin(), stroke.m_points.end(), [&](DPoint3dCR pt) { return !GetTileRange().IsContained(pt); });
+        if (stroke.m_points.end() != eraseAt)
+            stroke.m_points.erase(eraseAt);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels, bool isContained)
+    {
+    auto strokes = geom.GetStrokes(GetTolerance(), *this);
+    AddStrokes(strokes, geom, rangePixels, isContained);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained)
+    {
+    for (auto& stroke : strokes)
+        AddStrokes(stroke, geom, rangePixels, isContained);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained)
+    {
+    if (m_loader.IsCanceled())
+        return;
+
+    if (!isContained)
+        ClipStrokes(strokes);
+
+    if (strokes.m_strokes.empty())
+        return; // avoid potentially creating the builder below...
+
+    DisplayParamsCR     displayParams = strokes.GetDisplayParams();
+    MeshBuilderMap::Key key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, strokes.m_isPlanar);
+    MeshBuilderR builder = GetMeshBuilder(key);
+
+    uint32_t fillColor = displayParams.GetLineColor();
+    DgnElementId elemId = GetElementId(geom);
+    for (auto& stroke : strokes.m_strokes)
+        {
+        if (stroke.m_points.size() > (strokes.m_disjoint ?  0 : 1))
+            {
+            m_contentRange.Extend(stroke.m_points);
+            builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), fillColor, stroke.m_startDistance);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshList MeshGenerator::GetMeshes()
+    {
+    MeshList meshes;
+    for (auto& builder : m_builderMap)
+        {
+        MeshP mesh = builder.second->GetMesh();
+        if (!mesh->IsEmpty())
+            meshes.push_back(mesh);
+        }
+
+    // Do not allow vertices outside of this tile's range to expand its content range
+    clipContentRangeToTileRange(m_contentRange, GetTileRange());
+
+    meshes.m_features = std::move(m_featureTable);
+
+    return meshes;
+    }
+
 
