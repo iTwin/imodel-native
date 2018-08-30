@@ -4919,6 +4919,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
             polyPts.insert(polyPts.end(), skirt.begin(), skirt.end());
     }
 
+    DRange3d transformedExt = ext;
 	if (!tr.IsIdentity())
 	{
 		extRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext), ExtentOp<EXTENT>::GetZMin(ext),
@@ -4927,6 +4928,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
         extRange.Get8Corners(box.data());
         tr.Multiply(&box[0], &box[0], (int)box.size());
         extRange = DRange3d::From(box);
+        transformedExt = extRange;
 		extRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(extRange), ExtentOp<EXTENT>::GetYMin(extRange), 0,
 			ExtentOp<EXTENT>::GetXMax(extRange), ExtentOp<EXTENT>::GetYMax(extRange), 0);
 		for (auto& pt : polyPts)
@@ -4939,8 +4941,8 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
 
         GetClipRegistry()->GetClipWithParameters(clipId, cp, geom, type, isActive);
         
-        DPoint3d center = DPoint3d::From(extRange.low.x + extRange.XLength() / 2, extRange.low.y + extRange.YLength() / 2, extRange.low.z + extRange.ZLength() / 2);
-        double radius = std::max(std::max(extRange.XLength(), extRange.YLength()), extRange.ZLength());
+        DPoint3d center = DPoint3d::From(transformedExt.low.x + transformedExt.XLength() / 2, transformedExt.low.y + transformedExt.YLength() / 2, transformedExt.low.z + transformedExt.ZLength() / 2);
+        double radius = std::max(std::max(transformedExt.XLength(), transformedExt.YLength()), transformedExt.ZLength());
 
 #ifdef VANCOUVER_API
         return cp->SphereInside(center, radius);
