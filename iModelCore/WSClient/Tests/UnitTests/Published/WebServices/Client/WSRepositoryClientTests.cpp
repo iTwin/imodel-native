@@ -58,7 +58,7 @@ void Expect4_jSrS(MockHttpHandler& handler, HttpStatus status)
     {
     handler.ExpectRequests(4);
     handler.ForRequest(1, StubWSInfoHttpResponseWebApi27());
-    std::map<Utf8String, Utf8String> headers {{"Operation-Location", "FooBooBar"}};
+    std::map<Utf8String, Utf8String> headers {{"Operation-Location", "https://test/foo"}};
     handler.ForRequest(2, StubHttpResponse(HttpStatus::Accepted, "", headers));
 
     DateTime dateTime;
