@@ -119,7 +119,7 @@ private:
     DRange3d m_range;
     double m_tolerance;
     Render::Primitives::GeometryCollection m_geometry;
-    DRange3d m_contentRange = DRange3d::NullRange();
+    Content::Metadata m_metadata;
 public:
     explicit GeometryLoader(LoaderCR loader);
 
@@ -133,7 +133,7 @@ public:
     ContentIdCR GetContentId() const { return m_loader.GetContentId(); }
     double GetSizeMultiplier() const { return GetContentId().GetSizeMultiplier(); }
     Render::SystemR GetRenderSystem() const { return GetTree().GetRenderSystem(); }
-    DRange3dCR GetContentRange() const { return m_contentRange; }
+    Content::MetadataCR GetMetadata() const { return m_metadata; }
     bool IsCanceled() const { return m_loader.IsCanceled(); }
 
     DRange3dCR GetTileRange() const { return m_range; }
@@ -1479,7 +1479,7 @@ Loader::State Loader::ReadFromModel()
     bool isLeaf = false;
 
     StreamBuffer tileBytes;
-    if (SUCCESS != Dgn::Tile::IO::WriteDgnTile(tileBytes, ElementAlignedBox3d(geomLoader.GetContentRange()), geomLoader.GetGeometry(), *GetTree().FetchModel(), isLeaf, pMult))
+    if (SUCCESS != Dgn::Tile::IO::WriteDgnTile(tileBytes, ElementAlignedBox3d(geomLoader.GetMetadata().m_contentRange), geomLoader.GetGeometry(), *GetTree().FetchModel(), isLeaf, pMult))
         return State::Invalid;
 
     if (IsCanceled())
@@ -1562,9 +1562,13 @@ bool GeometryLoader::GenerateGeometry()
     if (IsCanceled())
         return false;
 
+    m_metadata.m_numElementsIncluded = static_cast<uint32_t>(elementCollector.GetEntries().size());
     GeometryList geometryList;
     if (elementCollector.AnySkipped())
+        {
         geometryList.MarkIncomplete();
+        m_metadata.m_numElementsExcluded = static_cast<uint32_t>(elementCollector.GetNumSkipped());
+        }
 
     TileContext tileContext(geometryList, *this, dgnRange, *facetOptions, transformFromDgn, tolerance);
     MeshGenerator meshGenerator(*this, GeometryOptions());
@@ -1600,12 +1604,19 @@ bool GeometryLoader::GenerateGeometry()
 
     // Facet all geoemtry
     m_geometry.Meshes() = meshGenerator.GetMeshes();
-    m_contentRange.Extend(meshGenerator.GetContentRange());
+    m_metadata.m_contentRange.Extend(meshGenerator.GetContentRange());
     if (!geometryList.IsComplete())
+        {
+        // ###TODO: Some redundancy here...
         m_geometry.MarkIncomplete();
+        m_metadata.m_flags |= Content::Flags::Incomplete;
+        }
 
     if (geometryList.ContainsCurves())
+        {
         m_geometry.MarkCurved();
+        m_metadata.m_flags |= Content::Flags::ContainsCurves;
+        }
 
     return true;
     }

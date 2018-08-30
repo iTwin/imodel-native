@@ -146,6 +146,32 @@ public:
 //=======================================================================================
 struct Content : RefCountedBase
 {
+    //=======================================================================================
+    // @bsistruct                                                   Paul.Connelly   08/18
+    //=======================================================================================
+    enum class Flags : uint32_t
+    {
+        None = 0,
+        ContainsCurves = 1 << 0, // This tile's content includes curved geometry.
+        Incomplete = 1 << 2, // Some geometry was excluded from this tile's content.
+    };
+
+    //=======================================================================================
+    //! Describes aspects of tile Content. Used by front-end to make decisions about tile
+    //! subdivision, among other things. The metadata is encoded into the header within the
+    //! binary stream.
+    // @bsistruct                                                   Paul.Connelly   08/18
+    //=======================================================================================
+    struct Metadata
+    {
+        ElementAlignedBox3d m_contentRange = ElementAlignedBox3d(DRange3d::NullRange()); // A sub-range of the tile's range tightly enclosing its geometry.
+        double m_tolerance = 0.0; // Chord tolerance at which geometry was facetted.
+        uint32_t m_numElementsIncluded = 0; // Number of elements whose geometry (or a subset thereof) is included in this content.
+        uint32_t m_numElementsExcluded = 0; // Number of elements within the tile's range which contributed no geometry to this content.
+        Flags m_flags = Flags::None;
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Metadata);
 private:
     ByteStream m_bytes;
 public:
@@ -153,6 +179,8 @@ public:
 
     ByteStreamCR GetBytes() const { return m_bytes; }
 };
+
+ENUM_IS_FLAGS(Content::Flags);
 
 //=======================================================================================
 //! Loads tile content from cache, or generates it from geometry and adds to cache.
