@@ -28,7 +28,7 @@ o = $(PartBuildDir)
     BEGTEST_API = $(BuildContext)SubParts/PublishedApi/Bentley
 %endif
 
-dirToSearch = $(OutRoot)Winx64/BuildContexts/Bentley/VendorAPI
+dirToSearch = $(OutputRootDir)BuildContexts/Bentley/VendorAPI
 %include cincapnd.mki
 
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
