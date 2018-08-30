@@ -87,6 +87,7 @@ protected:
         const bset<uint64_t>&                              clipVisibilities,
         IScalableMeshPtr&                              scalableMeshPtr,
         IScalableMeshDisplayCacheManagerPtr&               displayCacheManagerPtr)
+:m_clipVisibilities(clipVisibilities)
     {
         m_queryId = queryId;
         m_searchingNodes.resize(nbWorkingThreads);
@@ -283,7 +284,7 @@ public:
     ISMPointIndexQuery<POINT, EXTENT>*  m_queryObjectP;
     atomic<bool>                        m_isCancel;
     bool                                m_loadTexture;
-    const bset<uint64_t>                                       m_clipVisibilities;
+    const bset<uint64_t>&                                       m_clipVisibilities;
     IScalableMeshPtr                    m_scalableMeshPtr;
     IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
     CollectLoadedNodesCallback* m_collectCallback;
