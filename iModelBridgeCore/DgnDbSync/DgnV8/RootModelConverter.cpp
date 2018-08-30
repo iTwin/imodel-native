@@ -1315,6 +1315,9 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
             mref->Delete();
             GetSyncInfo().DeleteModel(modelMapping.GetV8ModelSyncInfoId());
             mappingsToRemove.push_back(modelMapping);
+
+            Utf8PrintfString msg("Unmapped %ls in %ls not owned by %ls", modelMapping.GetV8Model().GetModelName(), modelMapping.GetV8Model().GetDgnFileP()->GetFileName().c_str(), _GetParams().GetBridgeRegSubKey().c_str());
+            ReportIssue(IssueSeverity::Info, IssueCategory::Filtering(), Issue::Message(), msg.c_str());
             }
         }
     for (auto const& mappingToRemove : mappingsToRemove)
