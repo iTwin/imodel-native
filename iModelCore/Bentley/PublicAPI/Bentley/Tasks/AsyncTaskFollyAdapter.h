@@ -65,7 +65,7 @@ struct AsyncTaskFollyAdapter
 
         future.onError([=] (folly::exception_wrapper ew)
             {
-            BeAssert(false && "Received folly::Future exception, cannot convert to AsyncTask, returning default value.");
+            BeAssert(false && "Received folly::Future exception, cannot convert to AsyncTask, returning default value. Please handle exceptions before folly::Future to AsyncTaskFollyAdapter");
             return T();
             }).then([=] (T value)
             {
@@ -87,7 +87,7 @@ struct AsyncTaskFollyAdapter
 
         future.onError([=] (folly::exception_wrapper ew)
             {
-            BeAssert(false && "Received folly::Future exception, cannot convert to AsyncTask, returning.");
+            BeAssert(false && "Received folly::Future exception, cannot convert to AsyncTask, returning. Please handle exceptions before folly::Future to AsyncTaskFollyAdapter");
             }).then([=]
             {
             std::make_shared<ThreadlessTaskScheduler>()->Push(task);
