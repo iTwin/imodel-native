@@ -149,7 +149,7 @@ struct Content : RefCountedBase
 private:
     ByteStream m_bytes;
 public:
-    Content(ByteStream&& bytes) : m_bytes(std::move(bytes)) { }
+    explicit Content(ByteStream&& bytes) : m_bytes(std::move(bytes)) { }
 
     ByteStreamCR GetBytes() const { return m_bytes; }
 };
@@ -160,35 +160,49 @@ public:
 //=======================================================================================
 struct Loader : RefCountedBase, NonCopyableClass
 {
-    enum class Status : uint8_t
+    enum class State : uint8_t
     {
-        NotLoaded,
         Loading,
         Ready,
-        Canceled,
         NotFound,
+        Invalid,
     };
 
     friend struct Tree;
 private:
     ContentId m_contentId;
     ContentPtr m_content;
-    BeAtomic<Status> m_status;
     TreeR m_tree;
     Utf8String m_cacheKey;
+    BeAtomic<bool> m_canceled;
+    uint64_t m_createTime; // time of most recent change to any element in model when this Loader was created.
+    State m_state;
+
+    void SetState(State state) { m_state = state; }
+    void SetCanceled() { m_canceled.store(true); }
+    void SetReady() { SetState(State::Ready); }
+    void SetNotFound() { SetState(State::NotFound); }
+    void SetInvalid() { SetState(State::Invalid); }
+
+    uint64_t GetCreateTime() const { return m_createTime; }
+    bool IsExpired(uint64_t createTime) const;
+    bool IsValidData(ByteStreamCR bytes) const;
+    BentleyStatus DropFromDb(RealityData::CacheR db);
+
+    State ReadFromCache();
+    State ReadFromModel();
+    void Perform();
 protected:
     DGNPLATFORM_EXPORT Loader(TreeR tree, ContentIdCR contentId);
-
-    void SetCanceled() { m_status.store(Status::Canceled); }
-    void SetReady() { m_status.store(Status::Ready); }
-    void Perform();
 public:
     DGNPLATFORM_EXPORT ~Loader();
 
-    Status GetStatus() const { return m_status.load(); }
-    bool IsCanceled() const { return Status::Canceled == GetStatus(); }
-    bool IsLoading() const { return Status::Loading == GetStatus(); }
-    bool IsReady() const { return Status::Ready == GetStatus(); }
+    bool IsCanceled() const { return m_canceled.load(); }
+    State GetState() const { return m_state; }
+    bool IsLoading() const { return State::Loading == GetState(); }
+    bool IsReady() const { return State::Ready == GetState(); }
+    bool IsNotFound() const { return State::NotFound == GetState(); }
+    bool IsInvalid() const { return State::Invalid == GetState(); }
 
     ContentIdCR GetContentId() const { return m_contentId; }
     ContentCP GetContent() const { return m_content.get(); }
@@ -248,6 +262,7 @@ public:
     ElementAlignedBox3dCR GetRange() const { return m_range; }
     Render::SystemR GetRenderSystem() const { return m_renderSystem; }
     TransformCR GetLocation() const { return m_location; }
+    RealityData::CacheP GetCache() const { return m_cache.get(); }
 
     bool Is3d() const { return m_is3d; }
     bool Is2d() const { return !Is3d(); }

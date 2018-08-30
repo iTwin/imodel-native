@@ -50,6 +50,19 @@ constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we 
 static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
 #endif
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   06/15
+//=======================================================================================
+struct CacheBlobHeader
+{
+    enum {DB_Signature06 = 0x0600};
+    uint32_t m_signature;    // write this so we can detect errors on read
+    uint32_t m_size;
+
+    CacheBlobHeader(uint32_t size) {m_signature = DB_Signature06; m_size=size;}
+    CacheBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
+};
+
 struct ClassificationTree;
 
 //=======================================================================================
@@ -671,10 +684,10 @@ Tree::LoaderScope::~LoaderScope()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Loader::Loader(TreeR tree, ContentIdCR contentId) : m_contentId(contentId), m_tree(tree), m_cacheKey(tree.ConstructCacheKey(contentId))
+Loader::Loader(TreeR tree, ContentIdCR contentId) : m_contentId(contentId), m_tree(tree), m_cacheKey(tree.ConstructCacheKey(contentId)),
+    m_createTime(tree.FetchModel()->GetLastElementModifiedTime())
     {
-    BeAssert(Status::NotLoaded == GetStatus()); // zero-initialized...
-    // ###TODO: create time etc.
+    BeAssert(State::Loading == GetState()); // zero-initialized...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -688,10 +701,156 @@ Loader::~Loader()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool Loader::IsExpired(uint64_t createTimeMillis) const
+    {
+    // ###TODO: For now assuming model has not been modified since loader was created...
+    return createTimeMillis < m_createTime;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Loader::IsValidData(ByteStreamCR cacheData) const
+    {
+    // ###TODO: We used to verify the feature table in order to detect element updates which had been *undone* - the only sort of change
+    // not detectable by checking GeometricModel::GetLastElementModifiedTime().
+    // For now not concerned about that case - any other modification is handled by IsExpired().
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Loader::DropFromDb(RealityData::CacheR cache)
+    {
+    CachedStatementPtr stmt;
+    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree " WHERE TileId=?");
+    stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
+    if (BE_SQLITE_DONE != stmt->Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime " WHERE TileId=?");
+    stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
+    if (BE_SQLITE_DONE != stmt->Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
 void Loader::Perform()
     {
-    m_status.store(Status::Loading);
-    // ###TODO: load stuff, set status appropriately...
-    m_status.store(Status::NotFound);
+    BeAssert(IsLoading());
+    if (IsCanceled())
+        return;
+
+    auto state = ReadFromCache();
+    if (IsCanceled())
+        return;
+
+    if (State::NotFound == state)
+        {
+        state = ReadFromModel();
+        if (IsCanceled())
+            return;
+        }
+
+    SetState(state);
+    BeAssert(!IsLoading());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Loader::State Loader::ReadFromCache()
+    {
+    BeAssert(IsLoading());
+    auto cache = GetTree().GetCache();
+    if (nullptr == cache)
+        return State::Invalid;
+
+    if (true)
+        {
+        RealityData::Cache::AccessLock lock(*cache); // block writes to cache while we're reading
+
+        enum Column : int { Data, DataSize, Created, Rowid };
+        CachedStatementPtr stmt;
+        constexpr Utf8CP selectSql = "SELECT Data,DataSize,Created," TABLE_NAME_TileTree ".ROWID as TileRowId"
+            " FROM " JOIN_TileTreeTables " WHERE " COLUMN_TileTree_TileId "=?";
+
+        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, selectSql))
+            return State::Invalid;
+        
+        stmt->ClearBindings();
+        stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
+        if (BE_SQLITE_ROW != stmt->Step())
+            return State::NotFound;
+
+        uint64_t rowId = stmt->GetValueInt64(Column::Rowid);
+        uint64_t createTime = stmt->GetValueInt64(Column::Created);
+        if (IsExpired(createTime))
+            {
+            DropFromDb(*cache);
+            return State::NotFound;
+            }
+
+        if (0 == stmt->GetValueInt64(Column::DataSize))
+            {
+            m_content = new Content(ByteStream());
+            }
+        else
+            {
+            // Potentially too large to allocate on stack...
+            auto snappy = std::make_unique<BeSQLite::SnappyFromBlob>();
+            if (ZIP_SUCCESS != snappy->Init(cache->GetDb(), TABLE_NAME_TileTree, "Data", rowId))
+                return State::Invalid;
+
+            CacheBlobHeader header(*snappy);
+            uint32_t sizeRead;
+            if (CacheBlobHeader::DB_Signature06 != header.m_signature || 0 == header.m_size)
+                return State::Invalid;
+
+            ByteStream bytes;
+            bytes.Resize(header.m_size);
+            snappy->ReadAndFinish(bytes.GetDataP(), header.m_size, sizeRead);
+            if (sizeRead != header.m_size)
+                return State::Invalid;
+
+            if (!IsValidData(bytes))
+                {
+                DropFromDb(*cache);
+                return State::NotFound;
+                }
+
+            m_content = new Content(std::move(bytes));
+            }
+
+        // We've loaded data from cache. Update timestamp.
+        if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE TileId=?"))
+            {
+            stmt->BindInt64(1, GetCreateTime());
+            stmt->BindText(2, m_cacheKey, Statement::MakeCopy::No);
+            if (BE_SQLITE_DONE != stmt->Step())
+                BeAssert(false);
+            }
+        }
+
+    return State::Ready;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Loader::State Loader::ReadFromModel()
+    {
+    return State::NotFound; // ###TODO...
     }
 
