@@ -3607,9 +3607,9 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
                 }
             else
                 {
-                computedTransform = Transform::FromRowValues(scale.x, 0, 0, -globalOrigin.x,
-                                                             0, scale.y, 0, -globalOrigin.y,
-                                                             0, 0, scale.y, -globalOrigin.z);
+                computedTransform = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
+                                                             0, scale.y, 0, globalOrigin.y,
+                                                             0, 0, scale.y, globalOrigin.z);
                 }
             }
         else if (targetCS == nullptr && this->IsCesium3DTiles() && m_streamingSettings != nullptr && m_streamingSettings->IsGCSStringSet())
@@ -3627,9 +3627,9 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
             }
         else
             {
-            computedTransform = Transform::FromRowValues(scale.x, 0, 0, -globalOrigin.x,
-                                                         0, scale.y, 0, -globalOrigin.y,
-                                                         0, 0, scale.y, -globalOrigin.z);
+            computedTransform = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
+                                                         0, scale.y, 0, globalOrigin.y,
+                                                         0, 0, scale.y, globalOrigin.z);
             }
         }
     else
