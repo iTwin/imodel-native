@@ -625,16 +625,16 @@ bool ReadListOfIPoint (Json::Value const &source, CharCP listName, CharCP shortL
 
 bool ReadListOfIGeometry (Json::Value const &source, CharCP listName, CharCP shortListName, bvector<IGeometryPtr> &values) override
     {
-    Json::Value const target = TryFindArray(source, listName, shortListName);
-    if (IsNonNullArray(target))
+    Json::Value const target = TryFindArray (source, listName, shortListName);
+    if (IsNonNullArray (target))
         {
-        int n = target.size();
+        int n = target.size ();
         for (int i = 0; i < n; i++)
             {
             IGeometryPtr childGeometry;
             if (!ReadTag_AnyGeometry (target[i], nullptr, childGeometry))
                 return false;
-            values.push_back(childGeometry);
+            values.push_back (childGeometry);
             }
         return true;
         }

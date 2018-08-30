@@ -3272,11 +3272,34 @@ bvector <ICurvePrimitiveP> *curve
     bvector<DPoint2d>workParam;
     bvector<DVec3d>baseNormal;
     bvector<bool>baseCurveBreak;
-
+    // true sweep vector per point is axis cross radial vector.
+    // but that is zero if point is on or near axis.
+    // and it flips direction if point is just "behind" the axis.
+    // ASSUME (demand) the contour is supposed to be planar.
+    // use the max xy radial vector when actual is small
+    DVec3d maximalRadialVector = DVec3d::FromZero ();
+    double aMax = 0.0;
+    for (size_t i = 0; i < n; i++)
+        {
+        DVec3d radialVector = DVec3d::FromStartEnd (origin, pointA[i]);
+        DVec3d localRadialVector;
+        worldToLocal.MultiplyMatrixOnly (localRadialVector, radialVector);
+        double a = localRadialVector.MagnitudeXY ();
+        if (a > aMax)
+            {
+            aMax = a;
+            maximalRadialVector = radialVector;
+            }
+        }
+    double smallRadialTol = 0.01 * aMax;
     for (size_t i = 0; i < n; i++)
         {
         workPoint.push_back (pointA[i]);
         DVec3d radialVector = DVec3d::FromStartEnd (origin, pointA[i]);
+        DVec3d localRadialVector;
+        worldToLocal.MultiplyMatrixOnly (localRadialVector, radialVector);
+        if (localRadialVector.MagnitudeXY () < smallRadialTol)
+            radialVector = maximalRadialVector;
         DVec3d sweepVector, normalVector;
         sweepVector.CrossProduct (axis, radialVector);
         normalVector.NormalizedCrossProduct (sweepVector, tangentA[i]);
@@ -3298,7 +3321,7 @@ bvector <ICurvePrimitiveP> *curve
 
     baseCurveBreak.push_back (baseCurveBreak[0]);
     DPoint3dOps::Multiply (&workPoint, worldToLocal);
-    double aMax = 0.0;
+    // hm .. this aMax computation is probably redundant.  The usage above is "newer" so leave the old thing in place ..
     for (size_t i = 0; i < n; i++)
         {
         double a = workPoint[i].MagnitudeXY ();
@@ -3382,18 +3405,57 @@ bvector <ICurvePrimitiveP> *curve
             for (size_t j1 = 1; j1 < n; j1++)
                 {
                 size_t j0 = j1 - 1;
-                if (pointIndexA[j0] != pointIndexA[j1])
+                auto jA0 = pointIndexA[j0];
+                auto jB0 = pointIndexB[j0];
+                auto jA1 = pointIndexA[j1];
+                auto jB1 = pointIndexB[j1];
+                //
+                //   jA1---<---jB1
+                //    |        |
+                //    |        |
+                //   jA0--->---jB0
+                if (jA0 != jA1)     // filter out duplicate points along contour
                     {
-                    AddPointIndexQuad (
+                    // degenerate to triangles if needed --- this messes up paramter space, but nobody but me cares.
+                    if (jA0 != jB0 && jA1 != jB1)
+                        {
+                        AddPointIndexQuad (
+                                pointIndexA[j0], baseCurveBreak[j0],
+                                pointIndexB[j0], step == numStep && !closedSweep,
+                                pointIndexB[j1], baseCurveBreak[j1],
+                                pointIndexA[j1], step == 1 && !closedSweep
+                                );
+                        if (needNormals)
+                            AddNormalIndexQuad (normalIndexA[j0], normalIndexB[j0], normalIndexB[j1], normalIndexA[j1]);
+                        if (needParams)
+                            AddParamIndexQuad (paramIndexA[j0], paramIndexB[j0], paramIndexB[j1], paramIndexA[j1]);
+                        }
+                    else if (jA0 != jB0)
+                        {
+                        // skip jA1
+                        AddPointIndexTriangle (
                             pointIndexA[j0], baseCurveBreak[j0],
                             pointIndexB[j0], step == numStep && !closedSweep,
+                            pointIndexB[j1], step == 1 && !closedSweep
+                        );
+                        if (needNormals)
+                            AddNormalIndexTriangle (normalIndexA[j0], normalIndexB[j0], normalIndexA[j1]);
+                        if (needParams)
+                            AddParamIndexTriangle (paramIndexA[j0], paramIndexB[j0], paramIndexA[j1]);
+                        }
+                    else if (jA1 != jB1)
+                        {
+                        // skip IndexB[j0]
+                        AddPointIndexTriangle (
+                            pointIndexA[j0], step == numStep && !closedSweep,
                             pointIndexB[j1], baseCurveBreak[j1],
                             pointIndexA[j1], step == 1 && !closedSweep
-                            );
-                    if (needNormals)
-                        AddNormalIndexQuad (normalIndexA[j0], normalIndexB[j0], normalIndexB[j1], normalIndexA[j1]);
-                    if (needParams)
-                        AddParamIndexQuad (paramIndexA[j0], paramIndexB[j0], paramIndexB[j1], paramIndexA[j1]);
+                        );
+                        if (needNormals)
+                            AddNormalIndexTriangle (normalIndexA[j0], normalIndexB[j1], normalIndexA[j1]);
+                        if (needParams)
+                            AddParamIndexTriangle (paramIndexA[j0], paramIndexB[j1], paramIndexA[j1]);
+                        }
                     }
                 }
             if (needEdgeChains)
