@@ -110,7 +110,7 @@ uint32_t StrokeCountBetweenLocalFractions (double chordTol, double angleTol, dou
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-size_t _GetStrokeCount (IFacetOptionsCR options, double startFraction, double endFraction) const
+size_t _GetStrokeCount (IFacetOptionsCR options, double startFraction, double endFraction) const override
     {
     return StrokeCountBetweenLocalFractions (
         options.GetChordTolerance (), options.GetAngleTolerance (), options.GetMaxEdgeLength (),
