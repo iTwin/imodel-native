@@ -210,7 +210,7 @@ private:
 struct RealityDataFileDownload : public RealityDataFileTransfer
 {
 public:
-    RealityDataFileDownload(BeFileName filename, Utf8String fileUrl, Utf8String azureServer, size_t index, uint64_t fileSize) :
+    RealityDataFileDownload(BeFileName filename, Utf8String fileUrl, Utf8String azureServer, size_t index, uint64_t fileSize, RealityDataServiceDownload* download = nullptr) :
         iAppend(0)
         {
         m_azureServer = azureServer;
@@ -223,14 +223,22 @@ public:
         m_fileUrl = fileUrl;
 
         m_requestType = HttpRequestType::GET_Request;
+
+        m_downloader = download;
         }
 
     REALITYDATAPLATFORM_EXPORT void Retry() override;
 
     size_t                  iAppend;
 
+    int ProcessProgress(uint64_t currentProgress);
+    void SetRDSDownload(RealityDataServiceDownload* downloader) { m_downloader = downloader; }
+
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    RealityDataServiceDownload* m_downloader;
     };
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -1244,6 +1252,23 @@ void RealityDataFileDownload::Retry()
     }
 
 //=====================================================================================
+//! @bsimethod                                   Spencer.Mason              08/2018
+//=====================================================================================
+int RealityDataFileDownload::ProcessProgress(uint64_t currentProgress)
+    { 
+    if ((m_downloader != nullptr) && (currentProgress > m_transferProgress))
+        {
+        if (NULL != m_downloader->m_pHeartbeatFunc && m_downloader->m_pHeartbeatFunc() != 0)
+            return 1;
+
+        m_downloader->UpdateTransferAmount(currentProgress - m_transferProgress);
+        m_downloader->m_pProgressFunc(m_filename, ((double)currentProgress) / 100.0 , m_downloader->m_progress);
+        m_transferProgress = currentProgress;
+        }
+    return 0;
+    }
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 void RealityDataFileDownload::_PrepareHttpRequestStringAndPayload() const
@@ -1819,7 +1844,7 @@ RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvec
 
     m_filesToTransfer = downloadList;
 
-    m_fullTransferSize = m_filesToTransfer.size();
+    m_fullTransferSize = (uint64_t) (m_filesToTransfer.size() * (1.0 / m_progressStep));
 
     InitTool();
     }
@@ -1887,7 +1912,7 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
         downloadLocation = targetLocation;
         downloadLocation.AppendToPath(folders[folders.size() - 1].c_str());
 
-        m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, 0, filesInRepo[0].second));
+        m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, 0, filesInRepo[0].second, this));
         }
     else
         {
@@ -1915,11 +1940,11 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
             downloadLocation = targetLocation;
             downloadLocation.AppendToPath(path.c_str());
 
-            m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, i, filesInRepo[i].second));
+            m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, i, filesInRepo[i].second, this));
             }
         }
 
-    m_fullTransferSize = m_filesToTransfer.size();
+    m_fullTransferSize = (uint64_t)(m_filesToTransfer.size() * (1.0 / m_progressStep));
 
     InitTool();
     }
