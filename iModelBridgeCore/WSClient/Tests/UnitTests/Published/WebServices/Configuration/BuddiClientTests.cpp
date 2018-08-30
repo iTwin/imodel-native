@@ -188,7 +188,7 @@ TEST_F(BuddiClientTests, GetUrl_NameAndRegionPassed_SendsPostSoapRequest)
                            xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
     <soap:Body>
         <GetUrl xmlns="http://tempuri.org/">
-            <urlName>TestUrl</urlName>
+            <urlName>https://test/foo</urlName>
             <region>999</region>
         </GetUrl>
     </soap:Body>
@@ -198,7 +198,7 @@ TEST_F(BuddiClientTests, GetUrl_NameAndRegionPassed_SendsPostSoapRequest)
         return StubHttpResponse();
         });
 
-    client.GetUrl("TestUrl", 999)->Wait();
+    client.GetUrl("https://test/foo", 999)->Wait();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -214,7 +214,7 @@ TEST_F(BuddiClientTests, GetUrl_ResponseContainsUrl_ReturnsUrl)
                            xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
               <soap:Body>
                 <GetUrlResponse xmlns="http://tempuri.org/">
-                  <GetUrlResult>TestUrl</GetUrlResult>
+                  <GetUrlResult>https://test/foo</GetUrlResult>
                 </GetUrlResponse>
               </soap:Body>
             </soap:Envelope>)xml";
@@ -223,7 +223,7 @@ TEST_F(BuddiClientTests, GetUrl_ResponseContainsUrl_ReturnsUrl)
 
     auto result = client.GetUrl("Foo")->GetResult();
     EXPECT_TRUE(result.IsSuccess());
-    EXPECT_STREQ("TestUrl", result.GetValue().c_str());
+    EXPECT_STREQ("https://test/foo", result.GetValue().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Configuration/StubBuddiClient.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,7 +19,7 @@ struct StubBuddiClient : public IBuddiClient
     {
     public:
         bvector<BuddiRegion> regions;
-        Utf8String url = "TestUrl";
+        Utf8String url = "https://test/foo";
 
     public:
         AsyncTaskPtr<BuddiRegionsResult> GetRegions() override
