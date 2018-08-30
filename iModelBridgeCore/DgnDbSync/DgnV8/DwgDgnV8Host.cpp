@@ -1526,7 +1526,7 @@ BentleyStatus Converter::InitializeDwgSettings (Converter* v8converter)
         }
 
     if (BSISUCCESS != s_dwgHost->InitializeDwgSettings(v8converter))
-        v8converter->ReportIssueV (Converter::IssueSeverity::Warning, Converter::IssueCategory::VisualFidelity(), Converter::Issue::Error(), nullptr, "file dwgsettings.rsc not found, using defaults");
+        v8converter->ReportIssueV (Converter::IssueSeverity::Warning, Converter::IssueCategory::VisualFidelity(), Converter::Issue::Message(), nullptr, "file dwgsettings.rsc not found for DWG reference files, using defaults");
 
     return  BSISUCCESS;
     }

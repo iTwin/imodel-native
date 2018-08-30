@@ -463,9 +463,22 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
         if (!DgnV8Api::DgnFile::IsSameFile(fn.c_str(), rootFilename.c_str(), DgnV8Api::FileCompareMask::BaseNameAndExtension))
             {
             DgnV8Api::DgnFileFormatType   format;
-            if (Bentley::dgnFileObj_validateFile(&format, nullptr, nullptr, nullptr, nullptr, nullptr, fn.c_str()) &&
-                format != DgnV8Api::DgnFileFormatType::V8 && format != DgnV8Api::DgnFileFormatType::V7)
-                isMyFile = true;
+            if (Bentley::dgnFileObj_validateFile(&format, nullptr, nullptr, nullptr, nullptr, nullptr, fn.c_str()))
+                {
+                switch (format)
+                    {
+                    // These formats have bridges supporting their affinity:
+                    case DgnV8Api::DgnFileFormatType::V8:
+                    case DgnV8Api::DgnFileFormatType::V7:
+                    case DgnV8Api::DgnFileFormatType::DWG:
+                    case DgnV8Api::DgnFileFormatType::DXF:
+                    case DgnV8Api::DgnFileFormatType::RFA:
+                        break;
+                    // Other formats currently do not have bridges and need to be owned by "this" bridge:
+                    default:
+                        isMyFile = true;
+                    }
+                }
             }
         }
     return  isMyFile;
@@ -1302,6 +1315,9 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
             mref->Delete();
             GetSyncInfo().DeleteModel(modelMapping.GetV8ModelSyncInfoId());
             mappingsToRemove.push_back(modelMapping);
+
+            Utf8PrintfString msg("Unmapped %ls in %ls not owned by %ls", modelMapping.GetV8Model().GetModelName(), modelMapping.GetV8Model().GetDgnFileP()->GetFileName().c_str(), _GetParams().GetBridgeRegSubKey().c_str());
+            ReportIssue(IssueSeverity::Info, IssueCategory::Filtering(), Issue::Message(), msg.c_str());
             }
         }
     for (auto const& mappingToRemove : mappingsToRemove)
