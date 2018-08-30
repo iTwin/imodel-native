@@ -141,17 +141,6 @@ public:
 };
 
 //=======================================================================================
-//! Describes how a tile should be refined to produce child tile(s).
-// @bsistruct                                                   Paul.Connelly   08/18
-//=======================================================================================
-enum class RefinementMode : uint8_t
-{
-    None, //!< Leaf node - no children needed
-    Multiply, //!< 1 child facetted at higher resolution
-    Subdivide, //!< sub-divide parent range to produce multiple children
-};
-    
-//=======================================================================================
 //! Representation of geometry contained within a tile.
 // @bsistruct                                                   Paul.Connelly   08/18
 //=======================================================================================
@@ -159,12 +148,10 @@ struct Content : RefCountedBase
 {
 private:
     ByteStream m_bytes;
-    RefinementMode m_refine;
 public:
-    Content(RefinementMode refine, ByteStream&& bytes) : m_bytes(std::move(bytes)), m_refine(refine) { }
+    Content(ByteStream&& bytes) : m_bytes(std::move(bytes)) { }
 
     ByteStreamCR GetBytes() const { return m_bytes; }
-    RefinementMode GetRefinement() const { return m_refine; }
 };
 
 //=======================================================================================
@@ -189,7 +176,7 @@ private:
     BeAtomic<Status> m_status;
     TreeR m_tree;
     Utf8String m_cacheKey;
-
+protected:
     DGNPLATFORM_EXPORT Loader(TreeR tree, ContentIdCR contentId);
 
     void SetCanceled() { m_status.store(Status::Canceled); }
@@ -206,6 +193,10 @@ public:
     ContentIdCR GetContentId() const { return m_contentId; }
     ContentCP GetContent() const { return m_content.get(); }
     TreeR GetTree() const { return m_tree; }
+
+    virtual CurveVectorPtr Preprocess(CurveVectorR cv) const { return &cv; }
+    virtual PolyfaceHeaderPtr Preprocess(PolyfaceHeaderR pf) const { return &pf; }
+    virtual bool SeparatePrimitivesById() const { return false; }
 
     struct PtrComparator
     {
@@ -246,6 +237,8 @@ private:
     bool m_is3d;
 protected:
     Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system);
+
+    virtual LoaderPtr CreateLoader(ContentIdCR contentId) { return new Loader(*this, contentId); }
 public:
     DGNPLATFORM_EXPORT ~Tree();
 
@@ -277,9 +270,6 @@ public:
     DGNPLATFORM_EXPORT ContentCPtr RequestContent(ContentIdCR contentId);
 
     virtual Utf8String _GetId() const { return GetModelId().ToHexStr(); }
-    virtual CurveVectorPtr _Preprocess(CurveVectorR cv) const { return &cv; }
-    virtual PolyfaceHeaderPtr _Preprocess(PolyfaceHeaderR pf) const { return &pf; }
-    virtual bool _SeparatePrimitivesById() const { return false; }
 
     DGNPLATFORM_EXPORT static TreePtr Create(GeometricModelR model, Render::SystemR system, TreeType type);
 };

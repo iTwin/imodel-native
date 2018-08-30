@@ -50,16 +50,35 @@ constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we 
 static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
 #endif
 
+struct ClassificationTree;
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     08/18
+//=======================================================================================
+struct ClassificationLoader : Loader
+{
+    DEFINE_T_SUPER(Loader);
+private:
+    double m_offset; // NB: will be used in future?
+    DRange3d m_range;
+
+    bool SeparatePrimitivesById() const final { return true; }
+    CurveVectorPtr Preprocess(CurveVectorR cv) const final { return &cv; }
+    PolyfaceHeaderPtr Preprocess(PolyfaceHeaderR pf) const final;
+public:
+    ClassificationLoader(ClassificationTree& tree, ContentIdCR contentId);
+};
+
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     08/18
 //=======================================================================================
 struct ClassificationTree : Tree
 {
     DEFINE_T_SUPER(Tree);
-private:
+
     double m_classifierOffset; // NB: will be initialized+used in future?
     DRange3d m_classifierRange;
-public:
+
     ClassificationTree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system)
         : T_Super(model, location, range, system)
         {
@@ -68,32 +87,40 @@ public:
         transformFromDgn.Multiply(m_classifierRange, model.GetDgnDb().GeoLocation().GetProjectExtents());
         }
 
-    Utf8String _GetId() const override { Utf8String id("Classifier_"); id.append(T_Super::_GetId()); return id; }
-
-    bool _SeparatePrimitivesById() const override { return true; }
-
-    CurveVectorPtr _Preprocess(CurveVectorR cv) const override { return &cv; }
-
-    PolyfaceHeaderPtr _Preprocess(PolyfaceHeaderR pf) const override
-        {
-        DPlane3d plane;
-        if (pf.IsClosedPlanarRegion(plane))
-            {
-            DRay3d              ray = DRay3d::FromOriginAndVector(plane.origin, plane.normal);
-            DRange1d            classifiedProjection = m_classifierRange.GetCornerRange(ray);
-            PolyfaceHeaderPtr   extrudedPolyface = pf.ComputeOffset(PolyfaceHeader::OffsetOptions(), classifiedProjection.high, classifiedProjection.low);
-
-            if (extrudedPolyface.IsValid())
-                {
-                extrudedPolyface->Triangulate();
-                extrudedPolyface->BuildPerFaceNormals();
-                return extrudedPolyface;
-                }
-            }
-
-        return &pf;
-        }
+    Utf8String _GetId() const final { Utf8String id("Classifier_"); id.append(T_Super::_GetId()); return id; }
+    LoaderPtr CreateLoader(ContentIdCR contentId) final { return new ClassificationLoader(*this, contentId); }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassificationLoader::ClassificationLoader(ClassificationTree& tree, ContentIdCR contentId) : T_Super(tree, contentId), m_offset(tree.m_classifierOffset), m_range(tree.m_classifierRange)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr ClassificationLoader::Preprocess(PolyfaceHeaderR pf) const
+    {
+    DPlane3d plane;
+    if (pf.IsClosedPlanarRegion(plane))
+        {
+        DRay3d              ray = DRay3d::FromOriginAndVector(plane.origin, plane.normal);
+        DRange1d            classifiedProjection = m_range.GetCornerRange(ray);
+        PolyfaceHeaderPtr   extrudedPolyface = pf.ComputeOffset(PolyfaceHeader::OffsetOptions(), classifiedProjection.high, classifiedProjection.low);
+
+        if (extrudedPolyface.IsValid())
+            {
+            extrudedPolyface->Triangulate();
+            extrudedPolyface->BuildPerFaceNormals();
+            return extrudedPolyface;
+            }
+        }
+
+    return &pf;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
@@ -161,9 +188,9 @@ struct RangeAccumulator : RangeIndex::Traverser
 
     RangeAccumulator(DRange3dR range, bool is2d) : m_range(range), m_is2d(is2d) { m_range = DRange3d::NullRange(); }
 
-    bool _AbortOnWriteRequest() const override { return true; }
-    Accept _CheckRangeTreeNode(FBox3d const&, bool) const override { return Accept::Yes; }
-    Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+    bool _AbortOnWriteRequest() const final { return true; }
+    Accept _CheckRangeTreeNode(FBox3d const&, bool) const final { return Accept::Yes; }
+    Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) final
         {
         ++m_numElements;
         m_range.Extend(entry.m_range.ToRange3d());
@@ -221,8 +248,8 @@ bool isElementCountLessThan(uint32_t threshold, RangeIndex::Tree& tree)
 
         explicit Counter(uint32_t threshold) : m_threshold(threshold) { }
 
-        Accept _CheckRangeTreeNode(FBox3d const&, bool) const override { return m_count < m_threshold ? Accept::Yes : Accept::No; }
-        Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+        Accept _CheckRangeTreeNode(FBox3d const&, bool) const final { return m_count < m_threshold ? Accept::Yes : Accept::No; }
+        Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) final
             {
             ++m_count;
             return m_count < m_threshold ? Stop::No : Stop::Yes;
@@ -599,7 +626,7 @@ ContentCPtr Tree::RequestContent(ContentIdCR contentId)
     if (iter == m_activeLoads.end())
         {
         // Load the tile content synchronously on this thread
-        loader = new Loader(*this, contentId);
+        loader = CreateLoader(contentId);
         LoaderScope scope(*loader, lock);
         }
     else
