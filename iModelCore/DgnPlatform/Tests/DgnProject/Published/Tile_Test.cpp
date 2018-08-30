@@ -69,7 +69,7 @@ TEST(ContentId, ToFromString)
     EXPECT_EQ(0, id.GetDepth());
 
     Utf8String str = id.ToString();
-    EXPECT_EQ(str.c_str(), "0/0/0/0/1");
+    EXPECT_EQ(str, "0/0/0/0/1");
 
     ContentId rtId;
     EXPECT_TRUE(rtId.FromString(str.c_str()));
@@ -80,7 +80,7 @@ TEST(ContentId, ToFromString)
     EXPECT_EQ(1, id.GetDepth());
 
     str = id.ToString();
-    EXPECT_EQ(str.c_str(), "1/0/0/0/5");
+    EXPECT_EQ(str, "1/0/0/0/5");
     EXPECT_TRUE(rtId.FromString(str.c_str()));
     EXPECT_EQ(rtId, id);
     }

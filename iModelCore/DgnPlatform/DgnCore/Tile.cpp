@@ -243,7 +243,7 @@ Utf8String ContentId::ToString() const
     {
     Utf8String str;
     Utf8Char buf[BeInt64Id::ID_STRINGBUFFER_LENGTH];
-    uint64_t parts[] = { static_cast<uint64_t>(m_depth), m_i, m_j, m_k, 0 == static_cast<uint64_t>(m_mult ? 1 : m_mult) };
+    uint64_t parts[] = { static_cast<uint64_t>(m_depth), m_i, m_j, m_k, static_cast<uint64_t>(m_mult) };
     uint32_t nSeparators = 0;
     for (auto part : parts)
         {
