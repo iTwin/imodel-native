@@ -12,7 +12,7 @@
 #include <DgnPlatform/RenderPrimitives.h>
 #include <DgnPlatform/TileIO.h>
 
-BEGIN_TILETREE_IO_NAMESPACE
+BEGIN_TILE_IO_NAMESPACE
 
 //=======================================================================================
 //! A read-only view of a GLTF buffer, pointing directly into the buffer data.
@@ -239,5 +239,5 @@ public:
     bool GetElements(DgnElementIdSet& deletedOrModified, DgnElementIdSet& unmodified, uint64_t lastModTime);
 };
 
-END_TILETREE_IO_NAMESPACE
+END_TILE_IO_NAMESPACE
 

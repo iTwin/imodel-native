@@ -381,8 +381,8 @@ void MeshBuilderTest::ExpectEqualGeometry(StreamBufferR base, StreamBufferR comp
     base.SetPos(0);
     comp.SetPos(0);
     DRange3d unusedRange;
-    EXPECT_TRUE(TileTree::IO::ReadStatus::Success == TileTree::IO::ReadDgnTile(baseRange, baseGeom, base, model, m_system, baseIsLeaf, unusedRange));
-    EXPECT_TRUE(TileTree::IO::ReadStatus::Success == TileTree::IO::ReadDgnTile(compRange, compGeom, comp, model, m_system, compIsLeaf, unusedRange));
+    EXPECT_TRUE(Dgn::Tile::IO::ReadStatus::Success == Dgn::Tile::IO::ReadDgnTile(baseRange, baseGeom, base, model, m_system, baseIsLeaf, unusedRange));
+    EXPECT_TRUE(Dgn::Tile::IO::ReadStatus::Success == Dgn::Tile::IO::ReadDgnTile(compRange, compGeom, comp, model, m_system, compIsLeaf, unusedRange));
 
     ExpectEqualRange(baseRange, compRange);
     EXPECT_EQ(baseIsLeaf, compIsLeaf);
@@ -721,7 +721,7 @@ template<typename T> void MeshBuilderTest::RoundTripGeometryCollection(T populat
     GeometricModelR model = *GetDefaultPhysicalModel();
     bool isLeaf = true;
     StreamBuffer writeBytes;
-    EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(writeBytes, contentRange, geom, model, isLeaf, nullptr));
+    EXPECT_EQ(SUCCESS, Dgn::Tile::IO::WriteDgnTile(writeBytes, contentRange, geom, model, isLeaf, nullptr));
 
     // Read the geometry back from the buffer
     ElementAlignedBox3d readContentRange;
@@ -729,7 +729,7 @@ template<typename T> void MeshBuilderTest::RoundTripGeometryCollection(T populat
     bool readIsLeaf = false;
     writeBytes.SetPos(0);
     DRange3d unusedRange;
-    EXPECT_TRUE(TileTree::IO::ReadStatus::Success == TileTree::IO::ReadDgnTile(readContentRange, readGeom, writeBytes, model, m_system, readIsLeaf, unusedRange));
+    EXPECT_TRUE(Dgn::Tile::IO::ReadStatus::Success == Dgn::Tile::IO::ReadDgnTile(readContentRange, readGeom, writeBytes, model, m_system, readIsLeaf, unusedRange));
 
     EXPECT_EQ(isLeaf, readIsLeaf);
     EXPECT_EQ(geom.Meshes().size(), readGeom.Meshes().size());
@@ -737,7 +737,7 @@ template<typename T> void MeshBuilderTest::RoundTripGeometryCollection(T populat
 
     // Write it back to a stream buffer, confirm same bytes
     StreamBuffer roundTripBytes;
-    EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(roundTripBytes, readContentRange, readGeom, model, readIsLeaf, nullptr));
+    EXPECT_EQ(SUCCESS, Dgn::Tile::IO::WriteDgnTile(roundTripBytes, readContentRange, readGeom, model, readIsLeaf, nullptr));
     ExpectEqualBytes(writeBytes, roundTripBytes);
     }
 
@@ -767,7 +767,7 @@ template<typename T> void MeshBuilderTest::RoundTripMeshBuilders(T populateGraph
     auto geom = GetGeometryCollection(contentRange, centroid);
     StreamBuffer writeBytes;
     GeometricModelR model = *GetDefaultPhysicalModel();
-    EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(writeBytes, contentRange, geom, model, true, nullptr));
+    EXPECT_EQ(SUCCESS, Dgn::Tile::IO::WriteDgnTile(writeBytes, contentRange, geom, model, true, nullptr));
 
     // Round-trip, omitting no elements
     RoundTripMeshBuilders(writeBytes, DgnElementIdSet(), allElemIds);
@@ -796,10 +796,10 @@ void MeshBuilderTest::RoundTripMeshBuilders(StreamBufferR writeBytes, DgnElement
     m_builders.SetRange(m_range);
     BeAssert(!m_range.IsNull());
     m_features.clear();
-    TileTree::IO::DgnTile::Flags flags;
+    Dgn::Tile::IO::DgnTile::Flags flags;
     writeBytes.SetPos(0);
     GeometricModelR model = *GetDefaultPhysicalModel();
-    EXPECT_EQ(TileTree::IO::ReadStatus::Success, TileTree::IO::ReadDgnTile(m_builders, writeBytes, model, m_system, flags, skipElems));
+    EXPECT_EQ(Dgn::Tile::IO::ReadStatus::Success, Dgn::Tile::IO::ReadDgnTile(m_builders, writeBytes, model, m_system, flags, skipElems));
 
     // Confirm we really skipped the elems specified
     size_t nTotalElems = allElems.size();
@@ -817,7 +817,7 @@ void MeshBuilderTest::RoundTripMeshBuilders(StreamBufferR writeBytes, DgnElement
 
     // Serialize the new geometry collection, compare to input
     StreamBuffer roundTripBytes;
-    EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(roundTripBytes, readContentRange, geom, model, true, nullptr));
+    EXPECT_EQ(SUCCESS, Dgn::Tile::IO::WriteDgnTile(roundTripBytes, readContentRange, geom, model, true, nullptr));
     if (skipElems.empty())
         {
         ExpectEqualGeometry(writeBytes, roundTripBytes);
@@ -833,10 +833,10 @@ void MeshBuilderTest::RoundTripMeshBuilders(StreamBufferR writeBytes, DgnElement
                 invSkipElems.insert(elemId);
 
         writeBytes.SetPos(0);
-        EXPECT_EQ(TileTree::IO::ReadStatus::Success, TileTree::IO::ReadDgnTile(m_builders, writeBytes, model, m_system, flags, invSkipElems));
+        EXPECT_EQ(Dgn::Tile::IO::ReadStatus::Success, Dgn::Tile::IO::ReadDgnTile(m_builders, writeBytes, model, m_system, flags, invSkipElems));
         auto geom = GetGeometryCollection(readContentRange, readCentroid);
         StreamBuffer mergeBytes;
-        EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(mergeBytes, readContentRange, geom, model, true, nullptr));
+        EXPECT_EQ(SUCCESS, Dgn::Tile::IO::WriteDgnTile(mergeBytes, readContentRange, geom, model, true, nullptr));
         ExpectEqualGeometry(writeBytes, mergeBytes);
         }
     }

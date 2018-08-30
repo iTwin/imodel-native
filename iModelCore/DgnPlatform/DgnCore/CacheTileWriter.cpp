@@ -11,23 +11,22 @@
 #include <DgnPlatform/TileIO.h>
 #include <DgnPlatform/TileWriter.h>
 
-USING_NAMESPACE_TILETREE_IO
-USING_NAMESPACE_TILETREE
+USING_NAMESPACE_TILE_IO
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
-BEGIN_TILETREE_IO_NAMESPACE
+BEGIN_TILE_IO_NAMESPACE
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     06/2017
 //=======================================================================================
-struct DgnCacheTileWriter : TileTree::IO::Writer
+struct DgnCacheTileWriter : Tile::IO::Writer
 {
 
-    DEFINE_T_SUPER(TileTree::IO::Writer);
+    DEFINE_T_SUPER(Tile::IO::Writer);
 
 public:
-    DgnCacheTileWriter(StreamBufferR streamBuffer, GeometricModelR model) : TileTree::IO::Writer(streamBuffer, model) { }
+    DgnCacheTileWriter(StreamBufferR streamBuffer, GeometricModelR model) : Tile::IO::Writer(streamBuffer, model) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -440,13 +439,13 @@ BentleyStatus WriteTile(ElementAlignedBox3dCR contentRange, Render::Primitives::
     }
 };  // DgnCacheTileWriter
 
-END_TILETREE_IO_NAMESPACE
+END_TILE_IO_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileTree::IO::WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, bool isLeaf, double const* zoomFactor)
+BentleyStatus Tile::IO::WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, bool isLeaf, double const* zoomFactor)
     {
-    return TileTree::IO::DgnCacheTileWriter(streamBuffer, model).WriteTile(contentRange, geometry, isLeaf, zoomFactor);
+    return Tile::IO::DgnCacheTileWriter(streamBuffer, model).WriteTile(contentRange, geometry, isLeaf, zoomFactor);
     }
 

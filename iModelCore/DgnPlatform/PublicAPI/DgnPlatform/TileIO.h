@@ -12,11 +12,11 @@
 #include <DgnPlatform/RenderPrimitives.h>
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/DgnMaterial.h>
-#include <DgnPlatform/TileTree.h>
+#include <DgnPlatform/Tile.h>
 
-#define BEGIN_TILETREE_IO_NAMESPACE BEGIN_TILETREE_NAMESPACE namespace IO {
-#define END_TILETREE_IO_NAMESPACE } END_TILETREE_NAMESPACE
-#define USING_NAMESPACE_TILETREE_IO using namespace BentleyApi::Dgn::TileTree::IO;
+#define BEGIN_TILE_IO_NAMESPACE BEGIN_TILE_NAMESPACE namespace IO {
+#define END_TILE_IO_NAMESPACE } END_TILE_NAMESPACE
+#define USING_NAMESPACE_TILE_IO using namespace BentleyApi::Dgn::Tile::IO;
 
 //=======================================================================================
 //! Classes and constants for reading and writing 3D tiles in various formats.
@@ -24,7 +24,7 @@
 //! which identifies the tile format and a 32-bit tile format version.
 // @bsistruct                                                   Ray.Bentley     06/2017
 //=======================================================================================
-BEGIN_TILETREE_IO_NAMESPACE
+BEGIN_TILE_IO_NAMESPACE
 
 //=======================================================================================
 //! Return codes when deserializing tiles.
@@ -349,4 +349,4 @@ DGNPLATFORM_EXPORT ReadStatus ReadWebTile(Render::Primitives::GeometryCollection
 // Return false if feature table contains data not valid for DgnDb.
 bool VerifyFeatureTable(StreamBufferR, DgnDbR);
 
-END_TILETREE_IO_NAMESPACE
+END_TILE_IO_NAMESPACE

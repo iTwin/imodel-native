@@ -14,7 +14,7 @@
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/TileIO.h>
 
-BEGIN_TILETREE_IO_NAMESPACE
+BEGIN_TILE_IO_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ICesiumPublisher)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PublishedTile)
@@ -137,91 +137,5 @@ protected:
         }
 };  // Writer
 
-
-//=======================================================================================
-// @bsistruct                                                       Ray.Bentley     08/2017
-//! A node in the published tileset tree.  
-//! This tree is used to construct the tileset metadata.
-//=======================================================================================
-struct PublishedTile : RefCountedBase
-    {
-private:
-    BeFileName                  m_outputDirectory;
-    Utf8String                  m_name;
-    Utf8String                  m_extension;
-    bvector<PublishedTilePtr>   m_children;
-    DRange3d                    m_publishedRange;
-    DRange3d                    m_tileRange;
-    double                      m_tolerance;
-
-public:
-    PublishedTile(TileTree::TileCR inputTile, BeFileNameCR outputDirectory);
-    bvector<PublishedTilePtr>& GetChildren() { return m_children; }
-    bvector<PublishedTilePtr>const& GetChildren() const { return m_children; }
-    void SetPublishedRange(DRange3dCR range) { m_publishedRange = range; }
-    bool GetIsEmpty() const { return m_publishedRange.IsNull(); }
-    DRange3dCR GetPublishedRange() const { return m_publishedRange; }
-    DRange3dCR GetTileRange() const { return m_tileRange; }
-    double GetTolerance() const { return m_tolerance; }
-    void SetExtension(CharCP extension) { m_extension = extension; }
-    Utf8String GetURL() const;
-    BeFileName GetFileName() const;
-    };
-
-//=======================================================================================
-// @bsistruct                                                       Ray.Bentley     08/2017
-//! Interface adopted by an object that publishes a cesium tileset to represent the
-//! a GeometricModel.
-//=======================================================================================
-struct ICesiumPublisher
-{
-    //! Returns directory for tileset.
-    virtual BeFileName  _GetOutputDirectory(GeometricModelCR model) const = 0;
-    //! Invoked before a model is processed.
-    virtual TileTree::IO::WriteStatus _BeginProcessModel(GeometricModelCR model) { return TileTree::IO::WriteStatus::Success; }
-    //! Invoked after a model is processed, with the result of processing.
-    virtual TileTree::IO::WriteStatus _EndProcessModel(GeometricModelCR model, TransformCR location, PublishedTileCR rootTile, TileTree::IO::WriteStatus status) = 0;
-    //! Write cesium tileset for a GeometricModel
-    DGNPLATFORM_EXPORT static TileTree::IO::WriteStatus PublishCesiumTileset(ICesiumPublisher& publisher, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance);
-    DGNPLATFORM_EXPORT static TileTree::IO::WriteStatus WriteCesiumTileset(BeFileName outputFileName, BeFileNameCR tileOutputDirectory, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance);
-
-
-};  // ICesiumPublisher
-
-
-
-
-END_TILETREE_IO_NAMESPACE
-
-
-
-
-
-
-
-                                                                                                           
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+END_TILE_IO_NAMESPACE
 

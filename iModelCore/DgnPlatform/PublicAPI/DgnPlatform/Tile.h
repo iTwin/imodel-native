@@ -188,6 +188,7 @@ private:
     bool IsExpired(uint64_t createTime) const;
     bool IsValidData(ByteStreamCR bytes) const;
     BentleyStatus DropFromDb(RealityData::CacheR db);
+    BentleyStatus SaveToDb();
 
     State ReadFromCache();
     State ReadFromModel();

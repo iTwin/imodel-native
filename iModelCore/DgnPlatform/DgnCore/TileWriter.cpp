@@ -10,12 +10,11 @@
 #include <DgnPlatform/TileIO.h>
 #include <DgnPlatform/TileWriter.h>
 
-USING_NAMESPACE_TILETREE
-USING_NAMESPACE_TILETREE_IO
+USING_NAMESPACE_TILE_IO
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
-BEGIN_TILETREE_IO_NAMESPACE
+BEGIN_TILE_IO_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -487,8 +486,5 @@ Json::Value Writer::AddPolylines(PolylineList const& polylines, size_t maxIndex,
     }
 
 
-END_TILETREE_IO_NAMESPACE
+END_TILE_IO_NAMESPACE
    
-
-
-

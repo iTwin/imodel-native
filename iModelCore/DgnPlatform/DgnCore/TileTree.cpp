@@ -996,7 +996,7 @@ bool TileLoader::IsExpired(uint64_t createTimeMillis)
 bool TileLoader::IsValidData()
     {
     BeAssert(!m_tileBytes.empty());
-    IO::DgnTileReader reader(m_tileBytes, *m_tile->GetRoot().GetModel(), GetRenderSystem());
+    Dgn::Tile::IO::DgnTileReader reader(m_tileBytes, *m_tile->GetRoot().GetModel(), GetRenderSystem());
     return reader.VerifyFeatureTable();
     }
 
@@ -1598,7 +1598,7 @@ bool Root::ToJson(Json::Value& json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(RootR root, TileId id, TileCP parent, bool isLeaf)
+TileTree::Tile::Tile(RootR root, TileId id, TileCP parent, bool isLeaf)
     : m_root(root), m_parent(parent), m_depth(nullptr == parent ? 0 : parent->GetDepth() + 1), m_loadStatus(LoadStatus::NotLoaded), m_id(id)
     {
     SetIsLeaf(isLeaf);
@@ -1607,8 +1607,8 @@ Tile::Tile(RootR root, TileId id, TileCP parent, bool isLeaf)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(Root& octRoot, TileId id, Tile const* parent, DRange3dCP range, bool displayable)
-    : Tile(octRoot, id, parent, false)
+TileTree::Tile::Tile(Root& octRoot, TileId id, Tile const* parent, DRange3dCP range, bool displayable)
+    : TileTree::Tile(octRoot, id, parent, false)
     {
     if (nullptr != parent)
         m_range = ElementAlignedBox3d(parent->ComputeChildRange(*this, octRoot.Is2d()));
@@ -1622,7 +1622,7 @@ Tile::Tile(Root& octRoot, TileId id, Tile const* parent, DRange3dCP range, bool 
 * NB: Constructor used by ThumbnailTile...
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(Root& root, TileId id, DRange3dCR range, double minToleranceRatio)
+TileTree::Tile::Tile(Root& root, TileId id, DRange3dCR range, double minToleranceRatio)
     : Tile(root, id, nullptr, true)
     {
     m_range.Extend(range);
@@ -1632,7 +1632,7 @@ Tile::Tile(Root& root, TileId id, DRange3dCR range, double minToleranceRatio)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(Tile const& parent) : Tile(const_cast<Root&>(parent.GetRoot()), parent.GetTileId(), &parent, false)
+TileTree::Tile::Tile(Tile const& parent) : Tile(const_cast<Root&>(parent.GetRoot()), parent.GetTileId(), &parent, false)
     {
     m_range.Extend(parent.GetRange());
 
@@ -1647,7 +1647,7 @@ Tile::Tile(Tile const& parent) : Tile(const_cast<Root&>(parent.GetRoot()), paren
 * threads that these nodes are no longer referenced and we shouldn't waste time loading them.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::SetAbandoned() const
+void TileTree::Tile::SetAbandoned() const
     {
     for (auto const& child : m_children)
         child->SetAbandoned();
@@ -1662,7 +1662,7 @@ void Tile::SetAbandoned() const
 * it arrives. Set its "abandoned" flag to tell the download thread it can skip it (it will get deleted when the download thread releases its reference to it.)
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::UnloadChildren(BeTimePoint olderThan) const
+void TileTree::Tile::UnloadChildren(BeTimePoint olderThan) const
     {
     if (m_children.empty())
         return;
@@ -1687,7 +1687,7 @@ void Tile::UnloadChildren(BeTimePoint olderThan) const
 * ensure that this Tile's range includes its child's range.
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::ExtendRange(DRange3dCR childRange) const
+void TileTree::Tile::ExtendRange(DRange3dCR childRange) const
     {
     if (childRange.IsContained(m_range))
         return;
@@ -1701,7 +1701,7 @@ void Tile::ExtendRange(DRange3dCR childRange) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Tile::IsEmpty() const
+bool TileTree::Tile::IsEmpty() const
     {
     // NB: A parent tile may be empty because the elements contained within it are all too small to contribute geometry -
     // children may not be empty.
@@ -1711,7 +1711,7 @@ bool Tile::IsEmpty() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementAlignedBox3d Tile::ComputeRange() const
+ElementAlignedBox3d TileTree::Tile::ComputeRange() const
     {
     if (m_range.IsValid())
         return m_range;
@@ -1742,7 +1742,7 @@ TileLoadState::~TileLoadState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::ChildTiles const* Tile::GetChildren(bool load) const
+TileTree::Tile::ChildTiles const* TileTree::Tile::GetChildren(bool load) const
     {
     if (IsLeaf())
         return nullptr;
@@ -1777,7 +1777,7 @@ Tile::ChildTiles const* Tile::GetChildren(bool load) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Tile::GetTileCacheKey() const
+Utf8String TileTree::Tile::GetTileCacheKey() const
     {
     return Utf8String(GetRoot().IsClassifier() ? "Classifier_" : "") + GetRoot().GetModelId().ToString() + GetIdString();
     }
@@ -1785,7 +1785,7 @@ Utf8String Tile::GetTileCacheKey() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-double Tile::GetMaximumSize() const
+double TileTree::Tile::GetMaximumSize() const
     {
     // returning 0.0 signifies undisplayable tile...
     return IsDisplayable() ? s_tileScreenSize * GetZoomFactor() : 0.0;
@@ -1849,7 +1849,7 @@ static DRange3d bisectRange(DRange3dCR range, bool takeLow)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Tile::ComputeChildRange(Tile& child, bool is2d) const
+DRange3d TileTree::Tile::ComputeChildRange(Tile& child, bool is2d) const
     {
     // Each dimension of the relative ID is 0 or 1, indicating which bisection of the range to take
     TileId relativeId = child.GetRelativeTileId();
@@ -1876,7 +1876,7 @@ DRange3d Tile::ComputeChildRange(Tile& child, bool is2d) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Tile::GetDgnRange() const
+DRange3d TileTree::Tile::GetDgnRange() const
     {
     DRange3d range;
     GetRoot().GetLocation().Multiply(range, GetTileRange());
@@ -1886,7 +1886,7 @@ DRange3d Tile::GetDgnRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::InitTolerance(double minToleranceRatio, bool isLeaf)
+void TileTree::Tile::InitTolerance(double minToleranceRatio, bool isLeaf)
     {
     double diagDist = GetRoot().Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
     m_tolerance = diagDist / (minToleranceRatio * GetZoomFactor());
@@ -1906,7 +1906,7 @@ TileId TileId::GetRelativeId(TileId parentId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileId Tile::GetRelativeTileId() const
+TileId TileTree::Tile::GetRelativeTileId() const
     {
     auto tileId = GetTileId();
     auto parent = GetParent();
@@ -1919,7 +1919,7 @@ TileId Tile::GetRelativeTileId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilePtr Tile::FindTile(TileId id, double zoomFactor)
+TilePtr TileTree::Tile::FindTile(TileId id, double zoomFactor)
     {
     if (id == GetTileId())
         return FindTile(zoomFactor);
@@ -1952,7 +1952,7 @@ TilePtr Tile::FindTile(TileId id, double zoomFactor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilePtr Tile::FindTile(double zoomFactor)
+TilePtr TileTree::Tile::FindTile(double zoomFactor)
     {
     if (zoomFactor == GetZoomFactor())
         return this;
@@ -1971,7 +1971,7 @@ TilePtr Tile::FindTile(double zoomFactor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Tile::GetIdString() const
+Utf8String TileTree::Tile::GetIdString() const
     {                                                                                                                                                                       
     // NB: Zoom factor is stored as a double for arithmetic purposes, but it's always an unsigned integral power of two.
     return Utf8PrintfString("%u/%u/%u/%u:%u", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, static_cast<uint32_t>(GetZoomFactor()));
@@ -1980,7 +1980,7 @@ Utf8String Tile::GetIdString() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Tile::ToJson(Json::Value& json) const
+bool TileTree::Tile::ToJson(Json::Value& json) const
     {
     json["id"]["treeId"] = GetRoot().GetModelId().ToHexStr();
     json["id"]["tileId"] = GetIdString();
@@ -2001,9 +2001,9 @@ bool Tile::ToJson(Json::Value& json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilePtr Tile::CreateChild(TileId childId) const
+TilePtr TileTree::Tile::CreateChild(TileId childId) const
     {
-    return Tile::Create(const_cast<RootR>(GetRoot()), childId, *this);
+    return TileTree::Tile::Create(const_cast<RootR>(GetRoot()), childId, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2108,7 +2108,7 @@ bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate)
     // Instead, make the root tile empty & undisplayable; its direct children can be generated in parallel instead as the lowest-resolution tiles.
     // Optimization: Don't do this if the number of elements in the model is less than the min number of elements per tile, so that we reduce the number
     // of tiles required.
-    m_rootTile = Tile::CreateRoot(*this, range, populate);
+    m_rootTile = TileTree::Tile::CreateRoot(*this, range, populate);
 
     if (!populate)
         m_rootTile->SetIsReady();
@@ -2139,7 +2139,7 @@ TilePtr Root::FindTileById(Utf8CP strId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::SystemR Tile::GetRenderSystem() const { return m_root.GetRenderSystem(); }
+Render::SystemR TileTree::Tile::GetRenderSystem() const { return m_root.GetRenderSystem(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
@@ -2186,7 +2186,7 @@ BentleyStatus Loader::_GetFromSource()
         // (it can be refined to higher zoom level - those tiles are not cached unless admin specifically requests so).
         bool isLeaf = tile.IsLeaf();
         double zoomFactor = tile.GetZoomFactor();
-        if (SUCCESS != IO::WriteDgnTile (m_tileBytes, tile.GetContentRange(), geometry, *root.GetModel(), isLeaf, tile.HasZoomFactor() ? &zoomFactor : nullptr))
+        if (SUCCESS != Dgn::Tile::IO::WriteDgnTile (m_tileBytes, tile.GetContentRange(), geometry, *root.GetModel(), isLeaf, tile.HasZoomFactor() ? &zoomFactor : nullptr))
             return ERROR;
 
         m_tileMetadata.SetContentRange(tile.GetContentRange());
@@ -2220,7 +2220,7 @@ BentleyStatus Loader::_LoadTile()
     if (!m_tileBytes.empty() && !m_saveToCache)
         {
         BeAssert(geometry.IsEmpty());
-        if (IO::ReadStatus::Success != IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), GetRenderSystem(), isLeafInCache, tile.GetRange()))
+        if (Dgn::Tile::IO::ReadStatus::Success != Dgn::Tile::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), GetRenderSystem(), isLeafInCache, tile.GetRange()))
             {
             BeAssert(false);
             return ERROR;
@@ -2274,7 +2274,7 @@ BentleyStatus Loader::LoadGeometryFromModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileLoaderPtr Tile::CreateTileLoader(TileLoadStateSPtr loads)
+TileLoaderPtr TileTree::Tile::CreateTileLoader(TileLoadStateSPtr loads)
     {
     return Loader::Create(*this, loads);
     }
@@ -2700,17 +2700,17 @@ bool MeshGenerator::ReadFrom(StreamBufferR stream, bool& containsCurves, bool& i
     BeAssert(model.IsValid());
     BeAssert(nullptr != _GetRenderSystem());
 
-    IO::DgnTile::Flags tileFlags;
+    Dgn::Tile::IO::DgnTile::Flags tileFlags;
 
-    auto status = IO::ReadDgnTile(m_builderMap, stream, *model, *_GetRenderSystem(), tileFlags, omitElems);
-    if (IO::ReadStatus::Success != status)
+    auto status = Dgn::Tile::IO::ReadDgnTile(m_builderMap, stream, *model, *_GetRenderSystem(), tileFlags, omitElems);
+    if (Dgn::Tile::IO::ReadStatus::Success != status)
         {
         BeAssert(false);
         return false;
         }
 
-    containsCurves = IO::DgnTile::Flags::None != (tileFlags & IO::DgnTile::Flags::ContainsCurves);
-    isIncomplete = IO::DgnTile::Flags::None != (tileFlags & IO::DgnTile::Flags::Incomplete);
+    containsCurves = Dgn::Tile::IO::DgnTile::Flags::None != (tileFlags & Dgn::Tile::IO::DgnTile::Flags::ContainsCurves);
+    isIncomplete = Dgn::Tile::IO::DgnTile::Flags::None != (tileFlags & Dgn::Tile::IO::DgnTile::Flags::Incomplete);
 
     return true;
     }
