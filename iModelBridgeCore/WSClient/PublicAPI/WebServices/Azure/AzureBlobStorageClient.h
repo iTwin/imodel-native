@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Azure/AzureBlobStorageClient.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -82,6 +82,14 @@ struct AzureBlobStorageClient : public IAzureBlobStorageClient
             uint64_t fileSize,
             uint64_t chunkSize,
             int chunkNumber,
+            HttpRequest::ProgressCallbackCR progressCallback,
+            ICancellationTokenPtr ct
+            ) const;
+        AsyncTaskPtr<AzureResult> SendAsOneChunk
+            (
+            Utf8StringCR url,
+            HttpBodyPtr httpBody,
+            uint64_t fileSize,
             HttpRequest::ProgressCallbackCR progressCallback,
             ICancellationTokenPtr ct
             ) const;

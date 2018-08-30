@@ -2746,7 +2746,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    EXPECT_REQUEST_COUNT(GetHandler(), 5);
+    EXPECT_REQUEST_COUNT(GetHandler(), 4);
     GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
     GetHandler().ExpectRequest([=] (HttpRequestCR request)
         {
@@ -2758,15 +2758,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     GetHandler().ExpectRequest([=] (HttpRequestCR request)
         {
         EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://foozure.com/boo&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
+        EXPECT_STREQ("https://foozure.com/boo", request.GetUrl().c_str());
         EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
-        return StubHttpResponse(HttpStatus::OK);
-        });
-    GetHandler().ExpectRequest([=] (HttpRequestCR request)
-        {
-        EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://foozure.com/boo&comp=blocklist", request.GetUrl().c_str());
-        return StubHttpResponse(HttpStatus::OK);
+        return StubHttpResponse(HttpStatus::Created);
         });
     GetHandler().ExpectRequest([=] (HttpRequestCR request)
         {
@@ -2785,7 +2779,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectW
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    EXPECT_REQUEST_COUNT(GetHandler(), 4);
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
     GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
     GetHandler().ExpectRequest([=] (HttpRequestCR request)
         {
@@ -2796,15 +2790,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectW
     GetHandler().ExpectRequest([=] (HttpRequestCR request)
         {
         EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://foozure.com/boo&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
+        EXPECT_STREQ("https://foozure.com/boo", request.GetUrl().c_str());
         EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
-        return StubHttpResponse(HttpStatus::OK);
-        });
-    GetHandler().ExpectRequest([=] (HttpRequestCR request)
-        {
-        EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://foozure.com/boo&comp=blocklist", request.GetUrl().c_str());
-        return StubHttpResponse(HttpStatus::OK);
+        return StubHttpResponse(HttpStatus::Created);
         });
 
     auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
@@ -2815,14 +2803,13 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    EXPECT_REQUEST_COUNT(GetHandler(), 5);
+    EXPECT_REQUEST_COUNT(GetHandler(), 4);
     GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
             {HEADER_Location, "https://foozure.com/boo"},
             {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
             {"Mas-Upload-Confirmation-Id", "TestUploadId"}}));
-    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "OtherTag"}}));
-    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "NewTag"}}));
+    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::Created, "", {{"ETag", "NewTag"}}));
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "WSGTag"}, {HEADER_MasFileETag, "WSGTag"}}));
 
     auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
@@ -2834,13 +2821,12 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectW
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    EXPECT_REQUEST_COUNT(GetHandler(), 4);
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
     GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
             {HEADER_Location, "https://foozure.com/boo"},
             {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"}}));
-    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "OtherTag"}}));
-    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "NewTag"}}));
+    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::Created, "", {{"ETag", "NewTag"}}));
 
     auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
     ASSERT_TRUE(response.IsSuccess());
