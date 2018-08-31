@@ -1849,7 +1849,7 @@ void ScalableMeshModel::CloseFile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
     {    
-    if (!BeFileName::DoesPathExist(newFilename))
+    if (!BeFileName::DoesPathExist(newFilename) && !IsUrl(newFilename.c_str()))
         return ERROR;
             
     m_properties.m_fileId = Utf8String(newFilename);
