@@ -6240,7 +6240,7 @@
                     <KeyName>Czech/JTSK-A.Krovak</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Czech/JTSK-B.Krovak</KeyName>
+                    <KeyName>Czech/JTSK.Krovak</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Slov/JTSK03.Krovak</KeyName>
@@ -34519,7 +34519,7 @@
                     <KeyName>Czech/JTSK-A.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Czech/JTSK-B.LL</KeyName>
+                    <KeyName>Czech/JTSK.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Slov/JTSK.LL</KeyName>
