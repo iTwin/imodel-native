@@ -326,6 +326,18 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         hasSecondaryInstances = !ecContent.m_secondaryV8Instances.empty();
         elementClassId = _ComputeElementClass(v8eh, ecContent, drawingModelMapping);
         }
+    else
+        {
+        SyncInfo::FileById theFile(GetDgnDb(), drawingModelMapping.GetV8FileSyncInfoId());
+        auto i = theFile.begin();
+        Utf8String fileName;
+        if (i == theFile.end())
+            {
+            auto entry = *i;
+            fileName = entry.GetUniqueName();
+            }
+        ReportIssueV(IssueSeverity::Warning, IssueCategory::Unknown(), Issue::ExtractedGraphicMissingElement(), "", originalElementMapping.m_v8ElementId, model.GetName().c_str(), fileName.c_str());
+        }
 
     if (!elementClassId.IsValid())
         elementClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic);
@@ -336,11 +348,13 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
 
     if (!drawingGraphic.IsValid())
         {
+        ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicCreationFailure(), "", model.GetName().c_str(), elementClassId.GetValue(), categoryId.GetValue(), code.GetValueUtf8());
         BeAssert(false);
         return DgnDbStatus::BadRequest;
         }
     if (BSISUCCESS != builder.Finish(*drawingGraphic->ToGeometrySourceP()))
         {
+        ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicBuildFailure(), "", originalElementMapping.m_v8ElementId, model.GetName().c_str());
         BeAssert(false);
         return DgnDbStatus::BadRequest;
         }
