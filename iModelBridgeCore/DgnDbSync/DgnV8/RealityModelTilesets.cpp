@@ -205,7 +205,14 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             {
             url = Utf8String("http://localhost:8080/") + Utf8String(dbFileName).c_str() + "/" + model->GetModelId().ToString() + Utf8String("/TileRoot.json");
             }
-
+        if (smModel != nullptr)
+            {
+            // Reload 3sm using new url
+            auto unConstSMModel = const_cast<ScalableMeshModelP>(smModel);
+            unConstSMModel->CloseFile();
+            unConstSMModel->UpdateFilename(BeFileName(WString(url.c_str(), true)));
+            auto transform = unConstSMModel->GetUorsToStorage();
+            }
         model->SetJsonProperties(json_tilesetUrl(), url);
         model->Update();
 
