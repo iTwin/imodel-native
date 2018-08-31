@@ -2,7 +2,7 @@
  |
  |     $Source: SecureStoreIos.mm $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <BeSecurity/SecureStore.h>
@@ -85,24 +85,6 @@ Utf8String SecureStore::LoadValue (Utf8CP nameSpace, Utf8CP key)
 
     BEKeychainItem* item = CreateKeychainItem (nameSpace, key);
     return [item.password UTF8String];
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SecureStore::LegacyLoadValue (Utf8CP nameSpace, Utf8CP key)
-    {
-    // Graphite0503 logic
-    return LoadValue ("WSB", Utf8PrintfString ("%s:%s", nameSpace, key).c_str());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SecureStore::LegacyClearValue (Utf8CP nameSpace, Utf8CP key)
-    {
-    // Graphite0503 logic
-    SaveValue ("WSB", Utf8PrintfString ("%s:%s", nameSpace, key).c_str(), nullptr);
     }
 
 /*--------------------------------------------------------------------------------------+

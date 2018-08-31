@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/SecureStoreTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -177,109 +177,6 @@ TEST_F (SecureStoreTests, LoadValue_EmptyKey_DoesNothingAndReturnsEmpty)
     EXPECT_EQ ("", store.LoadValue ("Foo", ""));
     EXPECT_TRUE (localState.GetStubMap ().empty ());
     }
-
-#if defined(ANDROID) || defined(BENTLEY_WIN32) || defined(BENTLEY_WINRT)
-//---------------------------------------------------------------------------------------
-// @betest                                      Vincas.Razma
-//---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, LegacyLoadValue_NoValue_Empty)
-    {
-    StubLocalState localState;
-    SecureStore store (localState);
-
-    EXPECT_EQ ("", store.LegacyLoadValue ("Test", "Key"));
-    EXPECT_TRUE (localState.GetStubMap ().empty ());
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Vincas.Razma
-//---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, LegacyLoadValue_NonLegacyValueExists_ReturnsSameValue)
-    {
-    StubLocalState localState;
-    SecureStore store (localState);
-    store.SaveValue ("Test", "Key", "TestValue");
-
-    EXPECT_STREQ ("TestValue", store.LegacyLoadValue ("Test", "Key").c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Vincas.Razma
-//---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, LegacyClearValue_NonLegacyValueExists_RemovesNonLegacyValue)
-    {
-    StubLocalState localState;
-    SecureStore store (localState);
-    store.SaveValue ("Test", "Key", "TestValue");
-
-    store.LegacyClearValue ("Test", "Key");
-    EXPECT_TRUE (localState.GetStubMap ().empty ());
-
-    EXPECT_EQ ("", store.LegacyLoadValue ("Test", "Key"));
-    EXPECT_EQ ("", store.LoadValue ("Test", "Key"));
-    }
-
-#elif defined(BENTLEYCONFIG_OS_APPLE_IOS)
-//---------------------------------------------------------------------------------------
-// @betest                                      Vincas.Razma
-//---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, LegacyLoadValue_NoValue_Empty)
-    {
-    SecureStore store;
-
-    EXPECT_EQ ("", store.LegacyLoadValue ("Test", "Key"));
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Vincas.Razma
-//---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, LegacyLoadValue_NonLegacyValueExists_DoesNotReturnSameValue)
-    {
-    SecureStore store;
-    store.SaveValue ("Test", "Key", "TestValue");
-
-    EXPECT_EQ ("", store.LegacyLoadValue ("Test", "Key"));
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Vincas.Razma
-//---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, LegacyLoadValue_LegacyValueExists_ReturnsLegacyValue)
-    {
-    SecureStore store;
-    store.SaveValue ("WSB", "Test:Key", "LegacyValue");
-    store.SaveValue ("Test", "Key", "NonLegacyValue");
-
-    EXPECT_EQ ("LegacyValue", store.LegacyLoadValue ("Test", "Key"));
-    EXPECT_EQ ("NonLegacyValue", store.LoadValue ("Test", "Key"));
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Vincas.Razma
-//---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, LegacyClearValue_NonLegacyValueExists_DoesNotRemoveNonLegacyValue)
-    {
-    SecureStore store;
-    store.SaveValue ("Test", "Key", "TestValue");
-
-    store.LegacyClearValue ("Test", "Key");
-    EXPECT_EQ ("", store.LoadValue ("Test", "Key"));
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Vincas.Razma
-//---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, LegacyClearValue_LegacyValueExists_RemovesNonLegacyValue)
-    {
-    SecureStore store;
-    store.SaveValue ("WSB", "Test:Key", "LegacyValue");
-    store.SaveValue ("Test", "Key", "NonLegacyValue");
-
-    store.LegacyClearValue ("Test", "Key");
-    EXPECT_EQ ("", store.LegacyLoadValue ("Test", "Key"));
-    EXPECT_EQ ("NonLegacyValue", store.LoadValue ("Test", "Key"));
-    }
-#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                   Vincas.Razma                   03/16

@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/BeSecurity/SecureStore.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,8 +36,10 @@ struct ISecureStore : public ICipher
         virtual void SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8CP value) = 0;
         virtual Utf8String LoadValue (Utf8CP nameSpace, Utf8CP key) = 0;
 
-        virtual Utf8String LegacyLoadValue (Utf8CP nameSpace, Utf8CP key) = 0;
-        virtual void LegacyClearValue(Utf8CP nameSpace, Utf8CP key) = 0;
+        //! DEPRECATED!
+        virtual Utf8String LegacyLoadValue (Utf8CP nameSpace, Utf8CP key) { return nullptr; };
+        //! DEPRECATED!
+        virtual void LegacyClearValue(Utf8CP nameSpace, Utf8CP key) {};
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -85,16 +87,6 @@ struct SecureStore : public ISecureStore
 
         //! Loads value for given key in namespace. Empty string is returned when value not found or other error occurs.
         BESECURITY_EXPORT Utf8String LoadValue (Utf8CP nameSpace, Utf8CP key) override;
-
-        //! Will attempt to load value using known old implementation.
-        //! LegacyLoadValue() will act as LoadValue() if implementation for given platform did not change.
-        //! Useful when upgrading and preserving existing user information. Loaded value should be saved using different namespace or key.
-        BESECURITY_EXPORT Utf8String LegacyLoadValue (Utf8CP nameSpace, Utf8CP key) override;
-
-        //! Clear value saved with known old implementation.
-        //! LegacyLoadValue() will act as SaveValue(nameSpace, key, nullptr) if implementation for given platform did not change.
-        //! Value should be preserved using SaveValue() with new namespace or key in order to avoid accidental deletion.
-        BESECURITY_EXPORT void LegacyClearValue (Utf8CP nameSpace, Utf8CP key) override;
 
         //! Protect data using platform specific encryption. For more information see SaveValue().
         //! iOS: Key is stored in Keychain. Application needs to be signed with <XXXXXX.com.organization>.Keys access group.

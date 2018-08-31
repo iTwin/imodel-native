@@ -200,53 +200,6 @@ static Utf8String CallJavaKeyStoreCipherMethod(Utf8CP methodName, Utf8CP input, 
 
 #endif
 
-#if defined (BENTLEY_WIN32) || defined(ANDROID) || defined (BENTLEY_WINRT)
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ClearValueUsingLocalStateAndOpenSSL(ILocalState& localState, Utf8StringCR identifier)
-    {
-    if (identifier.empty ())
-        {
-        return;
-        }
-    localState.SaveValue (LOCAL_STATE_NAMESPACE, identifier.c_str (), "null");
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String LoadValueUsingLocalStateAndOpenSSL(ILocalState& localState, Utf8StringCR identifier)
-    {
-    if (identifier.empty ())
-        {
-        return nullptr;
-        }
-
-    Utf8String encodedValue = Base64Utilities::Decode (localState.GetValue (LOCAL_STATE_NAMESPACE, identifier.c_str ()));
-
-    EVP_CIPHER_CTX * pCtx = EVP_CIPHER_CTX_new();
-    EVP_CIPHER_CTX_set_padding(pCtx, 0);
-
-    EVP_DecryptInit_ex(pCtx, EVP_aes_256_gcm(), nullptr, s_key, s_iv);
-
-    bvector<unsigned char> outbuf;
-    // See documentation for EVP_DecryptUpdate at the page below for explanation of
-    // the required size for outbuf:
-    // https://www.openssl.org/docs/crypto/EVP_EncryptInit.html
-    outbuf.resize(encodedValue.size() + EVP_CIPHER_CTX_block_size(pCtx));
-    int outlen;
-    if (!EVP_DecryptUpdate(pCtx, &outbuf[0], &outlen, (const unsigned char *) encodedValue.c_str(), (int) encodedValue.size()))
-        {
-        return nullptr;
-        }
-
-    EVP_CIPHER_CTX_free(pCtx);
-
-    return Utf8String ((CharCP)&outbuf[0], (size_t)outlen);
-    }
-#endif
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -305,32 +258,6 @@ Utf8String SecureStore::CreateIdentifier (Utf8CP nameSpace, Utf8CP key)
         return "";
         }
     return Utf8PrintfString ("%s:%s", nameSpace, key);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SecureStore::LegacyLoadValue (Utf8CP nameSpace, Utf8CP key)
-    {
-#if defined (BENTLEY_WIN32) || defined(ANDROID) || defined (BENTLEY_WINRT)
-    return LoadValueUsingLocalStateAndOpenSSL (m_localState, CreateIdentifier (nameSpace, key));
-#else
-    // No changes
-    return LoadValue (nameSpace, key);
-#endif
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SecureStore::LegacyClearValue (Utf8CP nameSpace, Utf8CP key)
-    {
-#if defined (BENTLEY_WIN32) || defined(ANDROID) || defined (BENTLEY_WINRT)
-    return ClearValueUsingLocalStateAndOpenSSL (m_localState, CreateIdentifier (nameSpace, key));
-#else
-    // No changes
-    SaveValue (nameSpace, key, nullptr);
-#endif
     }
 
 /*--------------------------------------------------------------------------------------+
