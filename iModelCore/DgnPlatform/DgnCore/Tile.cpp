@@ -1262,7 +1262,7 @@ Tree::LoaderScope::~LoaderScope()
 Loader::Loader(TreeR tree, ContentIdCR contentId) : m_contentId(contentId), m_tree(tree), m_cacheKey(tree.ConstructCacheKey(contentId)),
     m_createTime(tree.FetchModel()->GetLastElementModifiedTime())
     {
-    BeAssert(State::Loading == GetState()); // zero-initialized...
+    SetState(State::Loading);
     }
 
 /*---------------------------------------------------------------------------------**//**
