@@ -6237,10 +6237,10 @@
                     <KeyName>CzechJTSK/05.Krovak</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Czech/JTSK.Krovak</KeyName>
+                    <KeyName>Czech/JTSK-A.Krovak</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Czech/JTSK-A.Krovak</KeyName>
+                    <KeyName>Czech/JTSK.Krovak</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Slov/JTSK03.Krovak</KeyName>
@@ -11596,12 +11596,7 @@
                               <Member>
                                 <KeyName>AL83/2011-W</KeyName>
                               </Member>
-                              <Member>
-                                <KeyName>NSRS07.AL-EF</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>NSRS07.AL-WF</KeyName>
-                              </Member>
+
                               <Member>
                                 <KeyName>NSRS07.AL-E</KeyName>
                               </Member>
@@ -14414,16 +14409,10 @@
                                 <KeyName>NSRS07.LA-NF</KeyName>
                               </Member>
                               <Member>
-                                <KeyName>NSRS07.LA-OF</KeyName>
-                              </Member>
-                              <Member>
                                 <KeyName>NSRS07.LA-SF</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>NSRS07.LA-N</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>NSRS07.LA-O</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>NSRS07.LA-S</KeyName>
@@ -14879,15 +14868,6 @@
                               </Member>
                               <Member>
                                 <KeyName>MI83/2011-SIF</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>NSRS07.MI-CF</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>NSRS07.MI-NF</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>NSRS07.MI-SF</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>NSRS07.MI-CIF</KeyName>
@@ -16274,15 +16254,6 @@
                                 <KeyName>NSRS07.MO-W</KeyName>
                               </Member>
                               <Member>
-                                <KeyName>NSRS07.MO-CF</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>NSRS07.MO-EF</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>NSRS07.MO-WF</KeyName>
-                              </Member>
-                              <Member>
                                 <KeyName>HARN/MO.MO-CF</KeyName>
                               </Member>
                               <Member>
@@ -16370,9 +16341,6 @@
                               </Member>
                               <Member>
                                 <KeyName>MT83/2011IF</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>NSRS07.MTF</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>NSRS07.MTIF</KeyName>
@@ -17183,12 +17151,6 @@
                                 <KeyName>ND83/2011-SIF</KeyName>
                               </Member>
                               <Member>
-                                <KeyName>NSRS07.ND-NF</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>NSRS07.ND-SF</KeyName>
-                              </Member>
-                              <Member>
                                 <KeyName>NSRS07.ND-NIF</KeyName>
                               </Member>
                               <Member>
@@ -17517,12 +17479,6 @@
                                 <KeyName>OR83/2011-SIF</KeyName>
                               </Member>
                               <Member>
-                                <KeyName>NSRS07.OR-NF</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>NSRS07.OR-SF</KeyName>
-                              </Member>
-                              <Member>
                                 <KeyName>NSRS07.OR-NIF</KeyName>
                               </Member>
                               <Member>
@@ -17764,9 +17720,6 @@
                                 <KeyName>PR83/2011</KeyName>
                               </Member>
                               <Member>
-                                <KeyName>NSRS07.PRF</KeyName>
-                              </Member>
-                              <Member>
                                 <KeyName>NSRS07.PR</KeyName>
                               </Member>
                               <Member>
@@ -17871,9 +17824,6 @@
                               </Member>
                               <Member>
                                 <KeyName>SC83/2011F</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>NSRS07.SCF</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>EPSG:2273</KeyName>
@@ -22014,9 +21964,6 @@
                                 <KeyName>UTM83-HA-59</KeyName>
                               </Member>
                               <Member>
-                                <KeyName>UTM83-HA-60</KeyName>
-                              </Member>
-                              <Member>
                                 <KeyName>UTM83/2011-1</KeyName>
                               </Member>
                               <Member>
@@ -22729,6 +22676,591 @@
                   </Members>
                 <Groups>
                   <Group>
+                    <Name>GDA2020</Name>
+                    <Members>
+                      <Member>
+                        <KeyName>MGA2020-46</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA2020-47</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA2020-48</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA2020-49</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA2020-50</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA2020-51</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA2020-52</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA2020-53</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA2020-54</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA2020-55</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA2020-56</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA2020-57</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA2020-58</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA2020-59</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA2020.GA-LCC</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA2020.NSW-Lambert</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA2020.SA-Lambert</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA2020.VictoriaGrid</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>AlbanyGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>BarrowIslGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>BroomeGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>BusseltonGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>CarnarvonGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ChristmasIsGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>CocosIslGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>CollieGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EsperanceGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ExmouthGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GeraldtonGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GoldfieldsGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JurienCstGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>KalbarriGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>KarrathaGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>KununurraGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>LancelinCstGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MargaretCstGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>PerthCstGrid.GDA2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>PortHedlandGrid.GDA2020</KeyName>
+                      </Member>
+                    </Members>
+                  </Group>
+
+                  <Group>
+                    <Name>GDA94/GSB</Name>
+                    <Members>
+                      <Member>
+                        <KeyName>MGA94/GSB-41</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-42</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-43</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-44</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-46</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-47</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-48</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-49</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-50</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-51</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-52</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-53</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-54</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-55</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-56</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-57</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-58</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94/GSB-59</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94/GSB-54.2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94/GSB-54.3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94/GSB-55.1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94/GSB-55.2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94/GSB-55.3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94/GSB-56.1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94/GSB-56.2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94/GSB-56.3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94/GSB.SA-Lambert</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94/GSB.VictoriaGrid</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94/GSB.Geos/Lmbrt</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94/GSB.Brisbane</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94/GSB-AusAlbers</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94/GSB.NSW-Lambert</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>AlbanyGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>BarrowIslGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>BroomeGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>BusseltonGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>CarnarvonGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ChristmasGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>CocosIslGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>CollieGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EsperanceGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ExmouthGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GeraldtonGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GoldfieldsGrd.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JurienCstGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>KalbarriGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>KarrathaGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>KununurraGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>LancelinGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MargaretGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>PerthCstGrid.GDA94/GSB</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>PortHedlandGr.GDA94/GSB</KeyName>
+                      </Member>
+                    </Members>
+                  </Group>
+                  <Group>
+                    <Name>GDA94-7P</Name>
+                    <Members>
+                      <Member>
+                        <KeyName>MGA94-7P-41</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-42</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-43</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-44</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-46</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-47</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-48</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-49</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-50</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-51</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-52</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-53</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-54</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-55</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-56</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-57</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-58</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-7P-59</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-7P-54.2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-7P-54.3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-7P-55.1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-7P-55.2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-7P-55.3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-7P-56.1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-7P-56.2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-7P-56.3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94-7P.SA-Lambert</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94-7P.VictoriaGrid</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94-7P.Geos/Lmbrt</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94-7P.Brisbane</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94-7P-AusAlbers</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94-7P.NSW-Lambert</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>AlbanyGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>BarrowIslGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>BroomeGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>BusseltonGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>CarnarvonGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ChristmasGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>CocosIslGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>CollieGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EsperanceGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ExmouthGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GeraldtonGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GoldfieldsGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JurienCstGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>KalbarriGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>KarrathaGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>KununurraGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>LancelinGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MargaretGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>PerthCstGrid.GDA94-7P</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>PortHedlandGrd.GDA94-7P</KeyName>
+                      </Member>
+                    </Members>
+                  </Group>
+                  <Group>
+                    <Name>GDA 94</Name>
+                    <Members>
+                      <Member>
+                        <KeyName>MGA94-47</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-48</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-49</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-50</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-51</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-52</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-53</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-54</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-55</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-56</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-57</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MGA94-58</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-54.2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-54.3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-55.1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-55.2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-55.3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-56.1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-56.2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ISG94-56.3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94.SA/Lambert</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94.VictoriaGrid</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94.Geoscience/Lmbrt</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94.Brisbane</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94-AusAlbers</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GDA94.NSW-Lambert</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>AlbanyGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>BarrowIslandGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>BroomeGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>BusseltonCstGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>CarnarvonGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ChristmasIsGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>CocosIslandsGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>CollieGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EsperanceGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>ExmouthGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GeraldtonCstGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>GoldfieldsGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JurienCoastalGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>KalbarriGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>KarrathaGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>KununurraGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>LancelinCoastGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>MargaretCoastGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>PerthCoastalGrid.GDA94</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>PortHedlandGrid.GDA94</KeyName>
+                      </Member>
+                    </Members>
+                  </Group>
+                  <Group>
                     <Name>AGD66</Name>
                     <Members>
                       <Member>
@@ -22954,206 +23486,11 @@
                       </Member>
                     </Members>
                   </Group>
-
                   <Group>
                     <Name>ASTRLA66</Name>
                     <Members>
                       <Member>
                         <KeyName>VictoriaGrid</KeyName>
-                      </Member>
-                    </Members>
-                  </Group>
-                  <Group>
-                    <Name>GDA 94</Name>
-                    <Members>
-                      <Member>
-                        <KeyName>MGA94-47</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>MGA94-48</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>MGA94-49</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>MGA94-50</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>MGA94-51</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>MGA94-52</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>MGA94-53</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>MGA94-54</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>MGA94-55</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>MGA94-56</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>MGA94-57</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>MGA94-58</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>ISG94-54.2</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>ISG94-54.3</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>ISG94-55.1</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>ISG94-55.2</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>ISG94-55.3</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>ISG94-56.1</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>ISG94-56.2</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>ISG94-56.3</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>GDA94.SA/Lambert</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:3107</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>GDA94.VictoriaGrid</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:3111</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>GDA94.Geoscience/Lmbrt</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:3112</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>GDA94.Brisbane</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:3113</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:102171</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:102172</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:28348</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:28349</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:28350</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:28351</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:28352</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:28353</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:28354</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:28355</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:28356</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:28357</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:28358</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:3577</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:3308</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>AlbanyGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>BarrowIslandGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>BroomeGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>BusseltonCstGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>CarnarvonGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>ChristmasIsGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>CocosIslandsGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>CollieGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EsperanceGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>ExmouthGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>GeraldtonCstGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>GoldfieldsGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>JurienCoastalGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>KalbarriGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>KarrathaGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>KununurraGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>LancelinCoastGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>MargaretCoastGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>PerthCoastalGrid.GDA94</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>PortHedlandGrid.GDA94</KeyName>
                       </Member>
                     </Members>
                   </Group>
@@ -29856,6 +30193,68 @@
             </Members>
             <Groups>
               <Group>
+                <Name>Australia</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:3107</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:3111</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:3112</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:3113</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102171</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102172</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:28348</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:28349</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:28350</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:28351</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:28352</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:28353</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:28354</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:28355</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:28356</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:28357</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:28358</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:3577</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:3308</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
                 <Name>South Africa</Name>
                 <Members>
                   <Member>
@@ -34117,10 +34516,10 @@
                     <KeyName>CzechJTSK/05.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Czech/JTSK.LL</KeyName>
+                    <KeyName>Czech/JTSK-A.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Czech/JTSK-A.LL</KeyName>
+                    <KeyName>Czech/JTSK.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Slov/JTSK.LL</KeyName>
@@ -35259,6 +35658,15 @@
               <Group>
                 <Name>Australia</Name>
                 <Members>
+                  <Member>
+                    <KeyName>GDA2020.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>GDA94/GSB.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>GDA94-7P.LL</KeyName>
+                  </Member>
                   <Member>
                     <KeyName>LL-AGD66</KeyName>
                   </Member>
