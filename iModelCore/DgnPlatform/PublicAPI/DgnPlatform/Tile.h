@@ -278,8 +278,9 @@ private:
     RealityData::CachePtr m_cache;
     std::set<LoaderPtr, Loader::PtrComparator> m_activeLoads;
     bool m_is3d;
+    bool m_populateRootTile;
 protected:
-    Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system);
+    Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, bool populateRootTile);
 
     virtual LoaderPtr CreateLoader(ContentIdCR contentId) { return new Loader(*this, contentId); }
 public:

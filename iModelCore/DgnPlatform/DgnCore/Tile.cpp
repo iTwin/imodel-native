@@ -97,8 +97,8 @@ struct ClassificationTree : Tree
     double m_classifierOffset; // NB: will be initialized+used in future?
     DRange3d m_classifierRange;
 
-    ClassificationTree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system)
-        : T_Super(model, location, range, system)
+    ClassificationTree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, bool populateRootTile)
+        : T_Super(model, location, range, system, populateRootTile)
         {
         Transform transformFromDgn;
         transformFromDgn.InverseOf(location);
@@ -750,7 +750,8 @@ private:
     bool                    m_maxGeometryCountExceeded = false;
     bool                    m_didDecimate = false;
 
-    static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
+    static constexpr size_t GetDecimatePolyfacePointCount() { return 100; } // Only decimate meshes with at least this many points.
+    static constexpr double GetDecimatePolyfaceMinRatio() { return 0.25; } // Decimation must reduce point count by at least this percentage.
 
     MeshBuilderR GetMeshBuilder(MeshBuilderMap::Key const& key);
     DgnElementId GetElementId(GeometryR geom) const { return m_maxGeometryCountExceeded ? DgnElementId() : geom.GetEntityId(); }
@@ -1074,14 +1075,13 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, TreeType typ
     if (DgnDbStatus::Success != model.FillRangeIndex())
         return nullptr;
 
-    // ###TODO: determine RefinementMode for root tile, store in Tree.
-    // bool populateRootTile;
     DRange3d range;
+    bool populateRootTile;
     if (model.Is3dModel())
         {
         range = model.GetDgnDb().GeoLocation().GetProjectExtents();
         range = scaleSpatialRange(range);
-        // populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex());
+        populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex());
         }
     else
         {
@@ -1093,9 +1093,12 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, TreeType typ
         if (nullptr != sheet)
             range.Extend(sheet->GetSheetExtents());
 
-        // populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
+        populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
         }
     
+    // ###TODO: Use m_populateRootTile in RequestContent()...
+    populateRootTile = true;
+
     // Translate world coordinates to center of range in order to reduce precision errors
     DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
     Transform transform = Transform::From(centroid);
@@ -1112,14 +1115,15 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, TreeType typ
     DRange3d tileRange;
     rangeTransform.Multiply(tileRange, range);
 
-    return TreeType::Classifier == type ? new ClassificationTree(model, transform, tileRange, system) : new Tree(model, transform, tileRange, system);
+    return TreeType::Classifier == type ? new ClassificationTree(model, transform, tileRange, system, populateRootTile) : new Tree(model, transform, tileRange, system, populateRootTile);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system)
-    : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_modelId(model.GetModelId()), m_is3d(model.Is3d()), m_cache(model.GetDgnDb().ElementTileCache())
+Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, bool populateRootTile)
+    : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_modelId(model.GetModelId()), m_is3d(model.Is3d()), m_cache(model.GetDgnDb().ElementTileCache()),
+    m_populateRootTile(populateRootTile)
     {
     // ###TODO: Cache changes to Tile::Cache...
     m_range.Extend(range);
@@ -1148,7 +1152,7 @@ Json::Value Tree::ToJson() const
     json["tileScreenSize"] = s_tileScreenSize;
     JsonUtils::TransformToJson(json["location"], GetLocation());
 
-    // ###TODO: root tile refinement mode...
+    // ###TODO: root tile empty because m_populateRootTile == false?
 
     return json;
     }
@@ -1599,9 +1603,6 @@ bool GeometryLoader::GenerateGeometry()
     if (meshGenerator.DidDecimation())
         geometryList.MarkIncomplete();
 
-    // ###TODO we previously would determine subdivision strategy here.
-    // Instead, record relevant info (e.g., # of elements, presence of curves, any geometry skipped, etc) so frontend can make that determination.
-
     // Facet all geoemtry
     m_geometry.Meshes() = meshGenerator.GetMeshes();
     m_metadata.m_contentRange.Extend(meshGenerator.GetContentRange());
@@ -1749,14 +1750,13 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
 
     polyface = m_loader.GetLoader().Preprocess(*polyface);
 
-    // ###TODO: we don't know if tile is to be treated as a leaf or not...
-    bool doDecimate = false; // !m_tile.IsLeaf() && !m_tile.HasZoomFactor() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount() && 0 == polyface->GetFaceCount();
+    bool doDecimate = geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount() && 0 == polyface->GetFaceCount();
 
     if (doDecimate)
         {
         BeAssert(0 == polyface->GetEdgeChainCount());       // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
         PolyfaceHeaderPtr   decimated;
-        if (doDecimate && (decimated = polyface->ClusteredVertexDecimate(GetTolerance(), .25 /* No decimation unless point count reduced by at least 25% */)).IsValid())
+        if (doDecimate && (decimated = polyface->ClusteredVertexDecimate(GetTolerance(), GetDecimatePolyfaceMinRatio())).IsValid())
             {
             polyface = decimated.get();
             m_didDecimate = true;
