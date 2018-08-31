@@ -38,7 +38,7 @@ Utf8String GenerateSID::PrepareUserData(Utf8StringCR userName, Utf8StringCR mach
     
     if (newUserName.Contains("administrator") || newUserName.Contains("system"))
         {
-        newUserName.Sprintf("%s\\%s", machine, newUserName);
+        newUserName.Sprintf("%s\\%s", machine.c_str(), newUserName.c_str());
         }
 
     return newUserName;

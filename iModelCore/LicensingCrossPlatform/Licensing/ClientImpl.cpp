@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientImpl.h"
 #include "GenerateSID.h"
-#include "..\PublicAPI\Licensing\Utils\LogFileHelper.h"
+#include "../PublicAPI/Licensing/Utils/LogFileHelper.h"
 #include "Logging.h"
 #include "PolicyToken.h"
 #include "UsageDb.h"
