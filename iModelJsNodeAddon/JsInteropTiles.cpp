@@ -362,8 +362,8 @@ DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR id
         {
         result["rootTile"]["isLeaf"] = true;
         result["rootTile"]["maximumSize"] = 512;
-        result["rootTile"]["treeId"] = tree->GetModelId().ToHexStr();
-        result["rootTile"]["tileId"] = "0/0/0/1";
+        result["rootTile"]["id"]["treeId"] = tree->GetModelId().ToHexStr();
+        result["rootTile"]["id"]["tileId"] = "0/0/0/0/1";
         JsonUtils::DRange3dToJson(result["rootTile"]["range"], tree->GetRange());
         }
 
