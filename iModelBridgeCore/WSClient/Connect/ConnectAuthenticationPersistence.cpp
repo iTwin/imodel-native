@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ConnectAuthenticationPersistence.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -66,8 +66,6 @@ void ConnectAuthenticationPersistence::SetCredentials(CredentialsCR credentials)
     {
     BeMutexHolder lock (m_cs);
 
-    UpgradeIfNeeded();
-
     if (!m_onUserChangedListeners.empty())
         {
         auto oldCreds = GetCredentials();
@@ -91,8 +89,6 @@ void ConnectAuthenticationPersistence::SetCredentials(CredentialsCR credentials)
 Credentials ConnectAuthenticationPersistence::GetCredentials() const
     {
     BeMutexHolder lock (m_cs);
-
-    UpgradeIfNeeded();
 
     Utf8String username = m_secureStore->LoadValue(SecureStoreNameSpace_Connect, SecureStoreKey_Username);
     Utf8String password = m_secureStore->LoadValue(SecureStoreNameSpace_Connect, SecureStoreKey_Password);
@@ -173,42 +169,4 @@ void ConnectAuthenticationPersistence::UnregisterUserChangedListener(size_t key)
         {
         m_onUserChangedListeners.erase(it);
         }
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectAuthenticationPersistence::UpgradeIfNeeded() const
-    {
-    // Upgrade from old data that was initialized with Graphite0503 code
-    // TODO: remove when Graphite0503 apps are no longer running
-
-    // Old username storage
-    Json::Value username = m_localState.GetJsonValue("Connect", "Username");
-    if (username.isNull())
-        {
-        return;
-        }
-
-    Utf8String password = m_secureStore->LegacyLoadValue("ConnectLogin", username.asCString());
-    Utf8String token = m_secureStore->LegacyLoadValue("ConnectToken", "Token");
-
-    // Save to new storage, skip empty values to not reset existing values if any
-    if (!username.empty())
-        {
-        m_secureStore->SaveValue(SecureStoreNameSpace_Connect, SecureStoreKey_Username, username.asCString());
-        }
-    if (!password.empty())
-        {
-        m_secureStore->SaveValue(SecureStoreNameSpace_Connect, SecureStoreKey_Password, password.c_str());
-        }
-    if (!token.empty())
-        {
-        m_secureStore->SaveValue(SecureStoreNameSpace_Connect, SecureStoreKey_Token, token.c_str());
-        }
-
-    // Remove old data
-    m_secureStore->LegacyClearValue("ConnectLogin", username.asCString());
-    m_secureStore->LegacyClearValue("ConnectToken", "Token");
-    m_localState.SaveJsonValue("Connect", "Username", Json::nullValue);
     }
