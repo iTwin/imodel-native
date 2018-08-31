@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include "ConnectionClientInterface.h"
+#include "Connect.xliff.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 const int GUID_BUFFER_SIZE = 1024;
@@ -46,7 +47,62 @@ bool ConnectionClientInterface::IsInstalled()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenPtr ConnectionClientInterface::GetSerializedDelegateSecurityToken(Utf8StringCR rpUri)
+void ConnectionClientInterface::CCApiStatusToString(int status, Utf8StringP errorStringOut)
+    {
+    Utf8String statusString;
+    switch (status)
+        {
+        case APIERR_SUCCESS:
+            break; // Do nothing
+        case APIERR_CLIENT_NOT_INSTALLED:
+            statusString = ConnectLocalizedString(ALERT_CCNotInstalledError);
+            break;
+        case APIERR_CLIENT_NOT_RUNNING:
+            statusString = ConnectLocalizedString(ALERT_CCNotRunningError);
+            break;
+        case APIERR_INVALID_USER_OR_PASSWORD:
+            statusString = ConnectLocalizedString(ALERT_CCInvalidCredentialsError);
+            break;
+        case APIERR_UNHANDLED_EXCEPTION:
+            statusString = ConnectLocalizedString(ALERT_CCUnhandledExceptionError);
+            break;
+        case APIERR_NOT_LOGGED_IN:
+            statusString = ConnectLocalizedString(ALERT_ConnectionClientNotLoggedIn_Message);
+            break;
+        case APIERR_NOT_ACCEPTED_EULA:
+            statusString = ConnectLocalizedString(ALERT_CCNotAcceptedEulaError);
+            break;
+        case APIERR_UNABLE_TO_START_APP:
+            statusString = ConnectLocalizedString(ALERT_CCUnableToStartAppError);
+            break;
+        case APIERR_API_OBSOLETE:
+            statusString = ConnectLocalizedString(ALERT_CCApiObsoleteError);
+            break;
+        case APIERR_SERVICE_UNAVAILABLE:
+            statusString = ConnectLocalizedString(ALERT_CCServiceUnavailableError);
+            break;
+        case APIERR_USER_NOT_AFFILIATED:
+            statusString = ConnectLocalizedString(ALERT_CCUserNotAffiliatedError);
+            break;
+        case APIERR_NOT_FOUND:
+        case APIERR_INVALID_ARGUMENT:
+        case APIERR_NOT_SUPPORTED:
+        case APIERR_FOLDER_NOT_FOUND:
+        case APIERR_UNKNOWN:
+        default:
+            statusString = ConnectLocalizedString(ALERT_CCUnknownError);
+            break;
+        }
+    if (errorStringOut != nullptr)
+        *errorStringOut = statusString;
+    if (!statusString.empty())
+        LOG.errorv("CC error status: %d (%s)", status, statusString.c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SamlTokenPtr ConnectionClientInterface::GetSerializedDelegateSecurityToken(Utf8StringCR rpUri, Utf8StringP errorStringOut)
     {
     WString rpUriW(rpUri.c_str(), true);
     LPCWSTR uri = rpUriW.c_str();
@@ -56,6 +112,7 @@ SamlTokenPtr ConnectionClientInterface::GetSerializedDelegateSecurityToken(Utf8S
     if (status != APIERR_SUCCESS)
         {
         CCApi_DataBufferFree(buffer);
+        CCApiStatusToString(status, errorStringOut);
         return nullptr;
         }
 
@@ -64,6 +121,7 @@ SamlTokenPtr ConnectionClientInterface::GetSerializedDelegateSecurityToken(Utf8S
     if (status != APIERR_SUCCESS)
         {
         CCApi_DataBufferFree(buffer);
+        CCApiStatusToString(status, errorStringOut);
         return nullptr;
         }
 
@@ -73,7 +131,10 @@ SamlTokenPtr ConnectionClientInterface::GetSerializedDelegateSecurityToken(Utf8S
     status = CCApi_DataBufferGetStringProperty(buffer, TOKEN_BUFF_TOKEN, 0, tokenBuffer.get(), (UINT32)tokenLength);
     CCApi_DataBufferFree(buffer);
     if (status != APIERR_SUCCESS)
+        {
+        CCApiStatusToString(status, errorStringOut);
         return nullptr;
+        }
 
     Utf8String tokenStrBase64(tokenBuffer.get());
     Utf8String tokenStr = Base64Utilities::Decode(tokenStrBase64);
