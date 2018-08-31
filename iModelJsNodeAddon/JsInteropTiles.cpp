@@ -6,7 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "IModelJsNative.h"
-#include <DgnPlatform/TileTree.h>
+#include <DgnPlatform/Tile.h>
+#include <GeomJsonWireFormat/JsonUtils.h> // ###TODO remove...
 
 using namespace IModelJsNative;
 namespace Render = Dgn::Render;
@@ -297,53 +298,50 @@ JsSystem s_system;
 //=======================================================================================
 struct TileTreeAppData : DgnModel::AppData
 {
-    TileTree::RootPtr    m_root;
+    Tile::TreePtr m_tree;
 
     void _OnUnload(DgnModelR model) override
         {
-        if (m_root.IsValid())
-            m_root->CancelAllTileLoads();
+        if (m_tree.IsValid())
+            m_tree->CancelAllTileLoads();
         }
 
     void _OnUnloaded(DgnModelR model) override
         {
-        BeAssert(m_root.IsNull() || 1 == m_root->GetRefCount());
-        m_root = nullptr;
+        BeAssert(m_tree.IsNull() || 1 == m_tree->GetRefCount());
+        m_tree = nullptr;
         }
 
-    explicit TileTreeAppData(GeometricModelR model, bool isClassifier)
+    explicit TileTreeAppData(GeometricModelR model, Tile::Tree::Type type)
         {
-        m_root = TileTree::Root::Create(model, s_system, isClassifier);
-        BeAssert(m_root.IsValid());
+        m_tree = Tile::Tree::Create(model, s_system, type);
+        BeAssert(m_tree.IsValid());
         }
 
-    static TileTree::RootPtr FindTileTree(GeometricModelR model, bool isClassifier)
+    static Tile::TreePtr FindTileTree(GeometricModelR model, Tile::Tree::Type type)
         {
-        static Key s_key, s_classifierKey;;
-        auto appData = model.FindOrAddAppData(isClassifier ? s_classifierKey : s_key, [&]() { return new TileTreeAppData(model, isClassifier); });
-        return static_cast<TileTreeAppData&>(*appData).m_root;
+        static Key s_key, s_classifierKey;
+        auto const& key = Tile::Tree::Type::Classifier == type ? s_classifierKey : s_key;
+        auto appData = model.FindOrAddAppData(key, [&]() { return new TileTreeAppData(model, type); });
+        return static_cast<TileTreeAppData&>(*appData).m_tree;
         }
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus findTileTree(TileTree::RootP& root, Utf8StringCR idStr, DgnDbR db)
+static DgnDbStatus findTileTree(Tile::TreeP& tree, Utf8StringCR idStr, DgnDbR db)
     {
-    static Utf8CP s_classifierPrefix = "Classifier_";
-    bool isClassifier = idStr.StartsWith(s_classifierPrefix);
-    Utf8CP id = idStr.c_str() + (isClassifier ? strlen(s_classifierPrefix) : 0);
-
-    DgnModelId modelId(BeInt64Id::FromString(id).GetValue());
-    if (!modelId.IsValid())
+    auto treeId = Tile::Tree::Id::FromString(idStr);
+    if (!treeId.IsValid())
         return DgnDbStatus::InvalidId;
 
-    GeometricModelPtr model = db.Models().Get<GeometricModel>(modelId);
+    GeometricModelPtr model = db.Models().Get<GeometricModel>(treeId.m_modelId);
     if (model.IsNull())
         return DgnDbStatus::MissingId;
 
-    root = TileTreeAppData::FindTileTree(*model, isClassifier).get();
-    return nullptr != root ? DgnDbStatus::Success : DgnDbStatus::NotFound;
+    tree = TileTreeAppData::FindTileTree(*model, treeId.m_type).get();
+    return nullptr != tree ? DgnDbStatus::Success : DgnDbStatus::NotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -351,26 +349,25 @@ static DgnDbStatus findTileTree(TileTree::RootP& root, Utf8StringCR idStr, DgnDb
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR idStr)
     {
-    TileTree::RootP root = nullptr;
-    auto status = findTileTree(root, idStr, db);
-    if (DgnDbStatus::Success == status && !root->ToJson(result))
-        status = DgnDbStatus::NotFound;
-
+    Tile::TreeP tree = nullptr;
+    auto status = findTileTree(tree, idStr, db);
     if (DgnDbStatus::Success != status)
         return status;
 
-    BeAssert(nullptr != root);
-    auto rootTile = root->GetRootTile();
-    if (rootTile.IsNull())
-        return DgnDbStatus::NotFound;
+    BeAssert(nullptr != tree);
+    result = tree->ToJson();
 
-    root->RequestTile(*rootTile);
-    root->WaitForAllLoads();
+    // ###TODO: For now...remove later...
+    if (DgnDbStatus::Success == status)
+        {
+        result["rootTile"]["isLeaf"] = true;
+        result["rootTile"]["maximumSize"] = 512;
+        result["rootTile"]["treeId"] = tree->GetModelId().ToHexStr();
+        result["rootTile"]["tileId"] = "0/0/0/1";
+        JsonUtils::DRange3dToJson(result["rootTile"]["range"], tree->GetRange());
+        }
 
-    if (!rootTile->ToJson(result["rootTile"]))
-        return DgnDbStatus::NotFound;
-
-    return DgnDbStatus::Success;
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -378,33 +375,7 @@ DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR id
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus JsInterop::GetTileChildren(JsonValueR result, DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR parentIdStr)
     {
-    TileTree::RootP root = nullptr;
-    auto status = findTileTree(root, treeIdStr, db);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    auto parent = root->FindTileById(parentIdStr.c_str());
-    if (parent.IsNull())
-        return DgnDbStatus::NotFound;
-
-    result = Json::arrayValue;
-    auto children = parent->GetChildren(true);
-    if (nullptr == children)
-        return DgnDbStatus::Success;
-
-    for (auto const& child : *children)
-        root->RequestTile(*child);
-
-    root->WaitForAllLoads();
-
-    for (auto const& child : *children)
-        {
-        Json::Value childJson;
-        if (child->ToJson(childJson))
-            result.append(childJson);
-        }
-
-    return DgnDbStatus::Success;
+    return DgnDbStatus::NotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -412,22 +383,24 @@ DgnDbStatus JsInterop::GetTileChildren(JsonValueR result, DgnDbR db, Utf8StringC
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus JsInterop::GetTileContent(JsonValueR result, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId)
     {
-    TileTree::RootP root = nullptr;
-    auto status = findTileTree(root, treeId, db);
+    Tile::TreeP tree = nullptr;
+    auto status = findTileTree(tree, treeId, db);
     if (DgnDbStatus::Success != status)
         return status;
 
-    auto tile = root->FindTileById(tileId.c_str());
-    if (tile.IsNull())
+    Tile::ContentId contentId;
+    if (!contentId.FromString(tileId.c_str()))
+        return DgnDbStatus::InvalidId;
+
+    Tile::ContentCPtr content = tree->RequestContent(contentId);
+    if (content.IsNull())
         return DgnDbStatus::NotFound;
 
-    ByteStream geometry = root->GetTileDataFromCache(tile->GetTileCacheKey());
-    if (geometry.empty())
-        return DgnDbStatus::NotFound;
-
+    ByteStreamCR geometry = content->GetBytes();
     Utf8String base64;
     Base64Utilities::Encode(base64, geometry.GetData(), geometry.size());
     result = base64;
+
     return DgnDbStatus::Success;
     }
 
