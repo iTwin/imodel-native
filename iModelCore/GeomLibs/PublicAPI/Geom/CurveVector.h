@@ -1682,7 +1682,8 @@ GEOMDLLIMPEXP void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurveP
 GEOMDLLIMPEXP void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, CurveVectorCR curves, bvector<CurveLocationDetailPair> &intersections, double tol);
 GEOMDLLIMPEXP void AppendTolerancedPlaneIntersections (DPlane3dCR plane, ICurvePrimitiveCP curve, DCatenary3dPlacementCR catenary, bvector<CurveLocationDetailPair> &intersections, double tol);
 
-
+//return a 2d curve offset in the XY plane
+GEOMDLLIMPEXP CurveVectorPtr FullOffset (CurveVectorPtr curve, double const& distanceOffset);
 
 /*__PUBLISH_SECTION_START__*/
 
