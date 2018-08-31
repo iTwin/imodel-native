@@ -307,8 +307,22 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         // *** WIP_CONVERT_CVE code = CreateCode(defaultCodeValue, defaultCodeScope);
         }
 
-    // *** WIP_CONVERT_CVE - what bis element class to use? Will it always be the same for all kinds of drawing extractions?
-    DgnClassId elementClassId(GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic));
+    V8ElementECContent ecContent;
+    DgnV8Api::ElementHandle v8eh(drawingModelMapping.GetV8Model().FindElementByID(originalElementMapping.m_v8ElementId));
+    bool isNewElement = true;
+    if (IsUpdating())
+        {
+        IChangeDetector::SearchResults changeInfo;
+        if (GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, drawingModelMapping) && IChangeDetector::ChangeType::Update == changeInfo.m_changeType)
+            isNewElement = false;
+        }
+    GetECContentOfElement(ecContent, v8eh, drawingModelMapping, true);
+    bool hasPrimaryInstance = ecContent.m_primaryV8Instance != nullptr;
+    const bool hasSecondaryInstances = !ecContent.m_secondaryV8Instances.empty();
+    DgnClassId elementClassId = _ComputeElementClass(v8eh, ecContent, drawingModelMapping);
+    if (!elementClassId.IsValid())
+        elementClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic);
+
     DgnElementPtr drawingGraphic = CreateNewElement(model, elementClassId, categoryId, code);
     if (!drawingGraphic.IsValid())
         return DgnDbStatus::BadRequest;
@@ -328,6 +342,29 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
     ++m_elementsConverted;
 
     DgnDbStatus status = DgnDbStatus::Success;
+    ElementConversionResults results;
+    results.m_element = drawingGraphic;
+    if (hasPrimaryInstance)
+        {
+        if (nullptr == m_elementConverter)
+            m_elementConverter = new ElementConverter(*this);
+        m_elementConverter->ConvertToElementItem(results, ecContent.m_primaryV8Instance.get(), &ecContent.m_elementConversionRule);
+
+        Bentley::WString displayLabel;
+        ecContent.m_primaryV8Instance->GetDisplayLabel(displayLabel);
+        results.m_element->SetUserLabel(Utf8String(displayLabel.c_str()).c_str());
+
+        if (ecContent.m_v8ElementType == V8ElementType::NamedGroup)
+            OnNamedGroupConverted(v8eh, results.m_element->GetElementClassId());
+        }
+    //item or aspects only if there was an ECInstance on the element at all
+    if (hasSecondaryInstances)
+        {
+        if (nullptr == m_elementAspectConverter)
+            m_elementAspectConverter = new ElementAspectConverter(*this);
+        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(results, ecContent.m_secondaryV8Instances))
+            return DgnDbStatus::BadElement;
+        }
 
     if (IsUpdating())
         {
@@ -817,7 +854,11 @@ void ConvertDetailingSymbolExtension::Initialize(Converter& converter)
     {
     static bool s_initialized;
     if (s_initialized)
-        return;
+        {
+        // If the application creates multiple converters in succession, then s_initialized will be true, but the tables won't exist
+        if (converter.GetDgnDb().TableExists(DETAILINGSYMBOLS_TEMP_TABLE))
+            return;
+        }
     s_initialized = true;
 
     DbResult result = converter.GetDgnDb().CreateTable(DETAILINGSYMBOLS_TEMP_TABLE, "SourceV8ModelSyncInfoId INT NOT NULL, SourceV8ElementId BIGINT NOT NULL, TargetV8ModelSyncInfoId INT, TargetV8ElementId BIGINT, DetType INT");

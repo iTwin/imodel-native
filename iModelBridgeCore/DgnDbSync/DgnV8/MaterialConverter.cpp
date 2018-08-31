@@ -512,7 +512,7 @@ BentleyStatus Converter::ConvertMaterialTextureMapImage(Json::Value& textureMap,
         return ERROR;
 
     textureMap.removeMember(RENDER_MATERIAL_FileName);
-    textureMap[RENDER_MATERIAL_TextureId] = textureId.GetValue();
+    textureMap[RENDER_MATERIAL_TextureId] = textureId.ToHexStr(); // ###INT64TOHEXSTR Was textureId.GetValue() which fails on imodel-js, asUInt64 still works with ToHexStr.
 
     return SUCCESS;
     }
