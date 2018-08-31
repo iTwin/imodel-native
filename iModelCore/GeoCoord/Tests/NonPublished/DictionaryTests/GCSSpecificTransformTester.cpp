@@ -314,8 +314,8 @@ TEST_P(GCSSpecificTransformTester, SpecificCoordConversionTest)
     GeoCoordinates::BaseGCSPtr sourceGCS = GeoCoordinates::BaseGCS::CreateGCS(theConversionTestParam.m_sourceGCS.c_str());
     GeoCoordinates::BaseGCSPtr targetGCS = GeoCoordinates::BaseGCS::CreateGCS(theConversionTestParam.m_targetGCS.c_str());
 
-    ASSERT_TRUE(sourceGCS.IsValid());
-    ASSERT_TRUE(targetGCS.IsValid());
+    ASSERT_TRUE(sourceGCS.IsValid() && sourceGCS->IsValid());
+    ASSERT_TRUE(targetGCS.IsValid() && targetGCS->IsValid());
 
     DPoint3d resultPoint;
     DPoint3d inputPoint;
