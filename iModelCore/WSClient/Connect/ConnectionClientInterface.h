@@ -27,13 +27,14 @@ struct ConnectionClientInterface : public IConnectionClientInterface
 
         CCDATABUFHANDLE GetUserInformation();
         static void EventListener(int eventId, WCharCP data);
+        static void CCApiStatusToString(int status, Utf8StringP errorStringOut);
 
     public:
         ConnectionClientInterface();
         ~ConnectionClientInterface() override;
 
         virtual bool IsInstalled() override;
-        virtual SamlTokenPtr GetSerializedDelegateSecurityToken(Utf8StringCR rpUri = nullptr) override;
+        virtual SamlTokenPtr GetSerializedDelegateSecurityToken(Utf8StringCR rpUri = nullptr, Utf8StringP errorStringOut = nullptr) override;
 
         virtual bool IsRunning() override;
         virtual BentleyStatus StartClientApp() override;
