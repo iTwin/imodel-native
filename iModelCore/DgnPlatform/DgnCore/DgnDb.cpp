@@ -8,7 +8,6 @@
 #include "DgnPlatformInternal.h"
 #include <Bentley/BeTest.h> // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 #include <DgnPlatform/DgnGeoCoord.h>
-#include <DgnPlatform/TileTree.h>
 
 #ifndef NDEBUG
 #define CHECK_NON_NAVIGATION_PROPERTY_API
@@ -49,30 +48,6 @@ DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_do
                  m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_elementIdSequence(*this, "bis_elementidsequence")
     {
     ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */);
-    }
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   08/18
-//=======================================================================================
-struct ElementTileCacheAppData : BeSQLite::Db::AppData
-{
-    RealityData::CachePtr m_cache;
-
-    explicit ElementTileCacheAppData(DgnDbCR db)
-        {
-        m_cache = TileTree::TileCache::Create(db);
-        BeAssert(m_cache.IsValid());
-        }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityData::CachePtr DgnDb::ElementTileCache() const
-    {
-    static AppData::Key s_key;
-    AppDataPtr appData = FindOrAddAppData(s_key, [&]() { return new ElementTileCacheAppData(*this); });
-    return static_cast<ElementTileCacheAppData&>(*appData).m_cache;
     }
 
 //--------------------------------------------------------------------------------------

@@ -77,8 +77,6 @@ HandlerDepends                  = $(DgnPlatformAPISrc)ElementHandler.h $(context
 
 RealityDataHandlerDepends       = $(DgnPlatformAPISrc)DgnViewport.h $(DgnPlatformAPISrc)RealityDataCache.h
 
-WebMercatorDepends              = $(DgnPlatformAPISrc)WebMercator.h $(DgnPlatformAPISrc)DgnDbTables.h $(DgnPlatformAPISrc)TileTree.h
-
 toolsHeaders                    = $(DgnPlatformToolsPublicAPISrc)KeyTree.h
 
 LsLocalDepends                  = $(DgnPlatformAPISrc)LsLocal.h $(DgnPlatformAPISrc)LineStyle.h $(contextDepends)
@@ -291,7 +289,7 @@ $(CoreObjs)Lighting$(oext) :                        $(DgnCoreDir)Lighting.cpp $(
 
 $(CoreObjs)ViewDefinition$(oext) :                  $(DgnCoreDir)ViewDefinition.cpp $(DgnPlatformAPISrc)DgnDb.h $(DgnPlatformAPISrc)ViewDefinition.h ${MultiCompileDepends}
 
-$(CoreObjs)Sheet$(oext) :                           $(DgnCoreDir)Sheet.cpp $(DgnPlatformAPISrc)Sheet.h $(DgnPlatformAPISrc)TileTree.h ${MultiCompileDepends}
+$(CoreObjs)Sheet$(oext) :                           $(DgnCoreDir)Sheet.cpp $(DgnPlatformAPISrc)Sheet.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnTexture$(oext) :                      $(DgnCoreDir)DgnTexture.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
@@ -317,13 +315,11 @@ $(CoreObjs)SkyBox$(oext) :                          $(DgnCoreDir)SkyBox.cpp $(Vi
 
 $(CoreObjs)Tile$(oext) :                            $(DgnCoreDir)Tile.cpp $(DgnPlatformAPISrc)Tile.h ${MultiCompileDepends}
 
-$(CoreObjs)TileTree$(oext) :                        $(DgnCoreDir)TileTree.cpp $(DgnPlatformAPISrc)TileTree.h ${MultiCompileDepends}
+$(CoreObjs)TileWriter$(oext) :                      $(DgnCoreDir)TileWriter.cpp $(DgnPlatformAPISrc)Tile.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}
 
-$(CoreObjs)TileWriter$(oext) :                      $(DgnCoreDir)TileWriter.cpp $(DgnPlatformAPISrc)TileTree.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}
+$(CoreObjs)CacheTileWriter$(oext) :                 $(DgnCoreDir)CacheTileWriter.cpp $(DgnPlatformAPISrc)Tile.h $(DgnPlatformAPISrc)TileIO.h $(DgnPlatformAPISrc)TileWriter.h ${MultiCompileDepends}
 
-$(CoreObjs)CacheTileWriter$(oext) :                 $(DgnCoreDir)CacheTileWriter.cpp $(DgnPlatformAPISrc)TileTree.h $(DgnPlatformAPISrc)TileIO.h $(DgnPlatformAPISrc)TileWriter.h ${MultiCompileDepends}
-
-$(CoreObjs)TileReader$(oext) :                      $(DgnCoreDir)TileReader.cpp $(DgnPlatformAPISrc)TileTree.h $(DgnPlatformAPISrc)TileReader.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}
+$(CoreObjs)TileReader$(oext) :                      $(DgnCoreDir)TileReader.cpp $(DgnPlatformAPISrc)Tile.h $(DgnPlatformAPISrc)TileReader.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}
 
 $(CoreObjs)LinkElement$(oext) :                     $(DgnCoreDir)LinkElement.cpp $(DgnPlatformAPISrc)LinkElement.h ${MultiCompileDepends}
 

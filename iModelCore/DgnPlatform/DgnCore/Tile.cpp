@@ -810,6 +810,27 @@ static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
     return Feature(elemId, params.GetSubCategoryId(), params.GetClass());
     }
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/18
+//=======================================================================================
+struct TileCacheAppData : BeSQLite::Db::AppData
+{
+    RealityData::CachePtr m_cache;
+
+    explicit TileCacheAppData(DgnDbCR db)
+        {
+        m_cache = Cache::Create(db);
+        BeAssert(m_cache.IsValid());
+        }
+
+    static RealityData::CachePtr Get(DgnDbR db)
+        {
+        static BeSQLite::Db::AppData::Key s_key;
+        BeSQLite::Db::AppDataPtr appData = db.FindOrAddAppData(s_key, [&]() { return new TileCacheAppData(db); });
+        return static_cast<TileCacheAppData&>(*appData).m_cache;
+        }
+};
+
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -1122,10 +1143,9 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, TreeType typ
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, bool populateRootTile)
-    : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_modelId(model.GetModelId()), m_is3d(model.Is3d()), m_cache(model.GetDgnDb().ElementTileCache()),
+    : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_modelId(model.GetModelId()), m_is3d(model.Is3d()), m_cache(TileCacheAppData::Get(model.GetDgnDb())),
     m_populateRootTile(populateRootTile)
     {
-    // ###TODO: Cache changes to Tile::Cache...
     m_range.Extend(range);
     }
 

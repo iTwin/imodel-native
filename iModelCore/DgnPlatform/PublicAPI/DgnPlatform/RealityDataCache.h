@@ -50,7 +50,7 @@ protected:
     BentleyApi::BeConditionVariable m_cv;
     BeSQLite::Db m_db;
 
-    uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; } // seen data set containing > 5000 models, each has a TileTree::Root that wants a ptr to cache
+    uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; } // seen data set containing > 5000 models, each has a Tile::Tree that wants a ptr to cache
 
     //! Perform any additional initialization in a newly-created cache Db.
     virtual BentleyStatus _Initialize() const { return SUCCESS; }
