@@ -2,6 +2,7 @@
 //
 #include "testHarness.h"
 #include <GeomSerialization/GeomSerializationApi.h>
+#include <Bentley/BeNumerical.h>
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 
 // TFS#885940
@@ -83,7 +84,7 @@ TEST(PseudoSpiral,Serialize)
                                     {
                                     for (auto &xyz : strokes)
                                         {
-                                        if (_isnan (xyz.x) || _isnan (xyz.y) || _isnan (xyz.z))
+                                        if (BeNumerical::BeIsnan (xyz.x) || BeNumerical::BeIsnan (xyz.y) || BeNumerical::BeIsnan (xyz.z))
                                             errors++;
                                         }
                                     }

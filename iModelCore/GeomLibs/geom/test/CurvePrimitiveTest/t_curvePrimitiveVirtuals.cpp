@@ -67,19 +67,33 @@ void ExerciseVirtualsA (ICurvePrimitivePtr &curve, double splitFractionA, double
     Check::True (curve->GetRange (range01));
     Check::True (cloneAB->GetRange (rangeAB));
     Check::True (rangeAB.IsContained (range01));
+    double period;
+    if (curve->IsPeriodicFractionSpace (period))
+        {
+        for (double step : {1.0, 2.0, -1.0})
+            {
+            double f = 0.23;
+            DPoint3d xyz0, xyz1;
+            DVec3d tangent0, tangent1;
+            curve->FractionToPoint (f, xyz0, tangent0);
+            curve->FractionToPoint (f + step * period, xyz1, tangent1);
+            Check::Near (xyz0, xyz1);
+            Check::Near (tangent0, tangent1);
+            }
+        }
     }
 void ExerciseContentQueries (ICurvePrimitivePtr &curve)
     {
     auto type = curve->GetCurvePrimitiveType ();
     if (type == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
         {
-        auto segmentP = curve->GetLineCP ();
-        Check::True (segmentP != nullptr);
+        auto dataP = curve->GetLineCP ();
+        Check::True (dataP != nullptr);
         }
     else if (type == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc)
         {
-        auto arcP = curve->GetArcCP ();
-        Check::True (arcP != nullptr);
+        auto dataP = curve->GetArcCP ();
+        Check::True (dataP != nullptr);
         }
     else if (type == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector)
         {
@@ -87,6 +101,13 @@ void ExerciseContentQueries (ICurvePrimitivePtr &curve)
         auto childPtr = curve->GetChildCurveVectorP (); // bad name -- should be Ptr
         Check::True (childP != nullptr);
         Check::True (childPtr.IsValid ());
+        }
+    else if (type == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString)
+        {
+        auto dataCP = curve->GetLineStringCP ();
+        Check::True (dataCP != nullptr);
+        auto dataP = curve->GetLineStringCP ();
+        Check::True (dataP != nullptr);
         }
     }
 
@@ -96,23 +117,41 @@ void ExerciseVirtualsOffset (ICurvePrimitivePtr &curve)
     curve->Length (length);
     double offsetDistance = 0.02 * length;
     CurveOffsetOptions options(offsetDistance);
-    auto offset = curve->CloneAsSingleOffsetPrimitiveXY (options);
-    if (Check::True (offset.IsValid (), "SingleOffsetPrimitive"))
+    auto flattenZ = Transform::From (RotMatrix::FromRowValues (1,0,0,   0,1,0,   0,0,0));
+    auto xyCurve = curve->Clone ();
+    double angleTol = 0.00001;        // fluffy tol for offsets
+    if (Check::True (xyCurve->TransformInPlace (flattenZ)))
         {
-        DPoint3d pointA0, pointB0, pointA1, pointB1;
-        DVec3d   unitA0, unitB0, unitA1, unitB1;
-        curve->GetStartEnd (pointA0, pointA1, unitA0, unitA1);
-        offset->GetStartEnd (pointB0, pointB1, unitB0, unitB1);
-        Check::Near (pointA0.Distance (pointB0), offsetDistance);
-        Check::Near (pointA1.Distance (pointB1), offsetDistance);
-        Check::Parallel (unitA0, unitB0);
-        Check::Parallel (unitA1, unitB1);
+        ICurvePrimitivePtr offset = xyCurve->CloneAsSingleOffsetPrimitiveXY (options);
+
+        if (offset.IsValid ())     // ignore failure quietly !!
+            {
+            DPoint3d pointA0, pointB0, pointA1, pointB1;
+            DVec3d   unitA0, unitB0, unitA1, unitB1;
+            xyCurve->GetStartEnd (pointA0, pointA1, unitA0, unitA1);
+            offset->GetStartEnd (pointB0, pointB1, unitB0, unitB1);
+            Check::Near (pointA0.Distance (pointB0), offsetDistance);
+            Check::Near (pointA1.Distance (pointB1), offsetDistance);
+            auto type = curve->GetCurvePrimitiveType ();
+            if (type == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line
+                || (type == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc
+                    && xyCurve->GetArcCP ()->IsCircular ())
+                )
+                {
+                // offset are hard .. be really fluffy on angle between . . .
+                double angle0 = unitA0.AngleTo(unitB0);
+                double angle1 = unitA0.AngleTo(unitB0);
+                Check::LessThanOrEqual (angle0, angleTol);
+                Check::LessThanOrEqual (angle1, angleTol);
+                }
+            }
         }
     }
 void ExerciseAllVirtuals (ICurvePrimitivePtr &curve, double splitFractionA, double splitFractionB)
     {
     ExerciseVirtualsA (curve, splitFractionA, splitFractionB);
     ExerciseVirtualsOffset (curve);
+    ExerciseContentQueries (curve);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -120,8 +159,18 @@ void ExerciseAllVirtuals (ICurvePrimitivePtr &curve, double splitFractionA, doub
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurvePrimitive, ExerciseVirtuals)
     {
-    auto c = ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3, 5,-1,3));
-    ExerciseAllVirtuals (c, 0.25, 0.8);
+    auto c0 = ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3, 5,-1,3));
+    ExerciseAllVirtuals (c0, 0.25, 0.8);
+    auto c1 = ICurvePrimitive::CreateArc (DEllipse3d::From (1,1,2, 0,-1,0, 3,0,0, 0.0, 0.3));
+    ExerciseAllVirtuals (c1, 0.25, 0.8);
+    bvector<DPoint3d> points {
+                DPoint3d::From (0,0,0),
+                DPoint3d::From (2,0,0),
+                DPoint3d::From (4,1,0),
+                DPoint3d::From (6,3,0)
+                };
+    auto c2 = ICurvePrimitive::CreateLineString (points);
+    ExerciseAllVirtuals (c2, 0.25, 0.8);
 
     }
     
