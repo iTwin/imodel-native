@@ -47,6 +47,7 @@ constexpr double s_minToleranceRatio = s_tileScreenSize * s_minToleranceRatioMul
 constexpr uint32_t s_minElementsPerTile = 100; // ###TODO: The complexity of a single element's geometry can vary wildly...
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
+static const Utf8String s_classifierIdPrefix("C_");
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
 static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
@@ -65,7 +66,6 @@ struct CacheBlobHeader
     CacheBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
 };
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(ClassificationTree);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryLoader);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileContext);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshGenerator);
@@ -84,29 +84,7 @@ private:
     CurveVectorPtr Preprocess(CurveVectorR cv) const final { return &cv; }
     PolyfaceHeaderPtr Preprocess(PolyfaceHeaderR pf) const final;
 public:
-    ClassificationLoader(ClassificationTree& tree, ContentIdCR contentId);
-};
-
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     08/18
-//=======================================================================================
-struct ClassificationTree : Tree
-{
-    DEFINE_T_SUPER(Tree);
-
-    double m_classifierOffset; // NB: will be initialized+used in future?
-    DRange3d m_classifierRange;
-
-    ClassificationTree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, bool populateRootTile)
-        : T_Super(model, location, range, system, populateRootTile)
-        {
-        Transform transformFromDgn;
-        transformFromDgn.InverseOf(location);
-        transformFromDgn.Multiply(m_classifierRange, model.GetDgnDb().GeoLocation().GetProjectExtents());
-        }
-
-    Utf8String _GetId() const final { Utf8String id("Classifier_"); id.append(T_Super::_GetId()); return id; }
-    LoaderPtr CreateLoader(ContentIdCR contentId) final { return new ClassificationLoader(*this, contentId); }
+    ClassificationLoader(Tree& tree, ContentIdCR contentId);
 };
 
 //=======================================================================================
@@ -1091,7 +1069,7 @@ bool Cache::ValidateData() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, TreeType type)
+TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Type type)
     {
     if (DgnDbStatus::Success != model.FillRangeIndex())
         return nullptr;
@@ -1136,14 +1114,14 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, TreeType typ
     DRange3d tileRange;
     rangeTransform.Multiply(tileRange, range);
 
-    return TreeType::Classifier == type ? new ClassificationTree(model, transform, tileRange, system, populateRootTile) : new Tree(model, transform, tileRange, system, populateRootTile);
+    return new Tree(model, transform, tileRange, system, type, populateRootTile);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, bool populateRootTile)
-    : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_modelId(model.GetModelId()), m_is3d(model.Is3d()), m_cache(TileCacheAppData::Get(model.GetDgnDb())),
+Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Type type, bool populateRootTile)
+    : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_id(model.GetModelId(), type), m_is3d(model.Is3d()), m_cache(TileCacheAppData::Get(model.GetDgnDb())),
     m_populateRootTile(populateRootTile)
     {
     m_range.Extend(range);
@@ -1167,7 +1145,7 @@ Json::Value Tree::ToJson() const
     {
     Json::Value json(Json::objectValue);
 
-    json["id"] = _GetId();
+    json["id"] = GetId().ToString();
     json["maxTilesToSkip"] = 1;
     json["tileScreenSize"] = s_tileScreenSize;
     JsonUtils::TransformToJson(json["location"], GetLocation());
@@ -1185,6 +1163,17 @@ void Tree::CancelAllTileLoads()
     BeMutexHolder lock(m_cv.GetMutex());
     for (auto& load : m_activeLoads)
         load->SetCanceled();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+LoaderPtr Tree::CreateLoader(ContentIdCR contentId)
+    {
+    if (IsClassifier())
+        return new ClassificationLoader(*this, contentId);
+    else
+        return new Loader(*this, contentId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1211,6 +1200,33 @@ ContentCPtr Tree::RequestContent(ContentIdCR contentId)
         }
 
     return loader->IsReady() ? loader->GetContent() : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Tree::Id::ToString() const
+    {
+    Utf8String str;
+    if (IsClassifier())
+        str = s_classifierIdPrefix;
+
+    str.append(m_modelId.ToHexStr());
+    return str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tree::Id Tree::Id::FromString(Utf8StringCR str)
+    {
+    auto type = str.StartsWith(s_classifierIdPrefix.c_str()) ? Tree::Type::Classifier : Tree::Type::Model;
+    Utf8String idStr = str;
+    if (Tree::Type::Classifier == type)
+        idStr.erase(0, s_classifierIdPrefix.size());
+
+    DgnModelId modelId(BeInt64Id::FromString(idStr.c_str()).GetValue());
+    return Id(modelId, type);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1517,9 +1533,12 @@ Loader::State Loader::ReadFromModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassificationLoader::ClassificationLoader(ClassificationTree& tree, ContentIdCR contentId) : T_Super(tree, contentId), m_offset(tree.m_classifierOffset), m_range(tree.m_classifierRange)
+ClassificationLoader::ClassificationLoader(Tree& tree, ContentIdCR contentId) : T_Super(tree, contentId)
     {
-    //
+    BeAssert(tree.IsClassifier());
+    Transform fromDgn;
+    fromDgn.InverseOf(tree.GetLocation());
+    fromDgn.Multiply(m_range, tree.GetDgnDb().GeoLocation().GetProjectExtents());
     }
 
 /*---------------------------------------------------------------------------------**//**

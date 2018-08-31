@@ -56,15 +56,6 @@ public:
 };
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   08/18
-//=======================================================================================
-enum class TreeType : uint8_t
-{
-    Model,
-    Classifier,
-};
-
-//=======================================================================================
 //! Uniquely identifies a volume within the oct-tree by its depth and range.
 // @bsistruct                                                   Paul.Connelly   08/18
 //=======================================================================================
@@ -257,6 +248,25 @@ public:
 //=======================================================================================
 struct Tree : RefCountedBase, NonCopyableClass
 {
+    enum class Type : uint8_t
+    {
+        Model,
+        Classifier,
+    };
+
+    struct Id
+    {
+        DgnModelId m_modelId;
+        Tree::Type m_type;
+
+        Id(DgnModelId modelId, Tree::Type type) : m_modelId(modelId), m_type(type) { }
+
+        bool IsValid() const { return m_modelId.IsValid(); }
+        bool IsClassifier() const { return Tree::Type::Classifier == m_type; }
+
+        DGNPLATFORM_EXPORT Utf8String ToString() const;
+        DGNPLATFORM_EXPORT static Id FromString(Utf8StringCR idString);
+    };
 private:
     friend struct LoaderScope;
     struct LoaderScope
@@ -271,24 +281,26 @@ private:
     mutable std::mutex m_dbMutex;
     mutable BeConditionVariable m_cv;
     DgnDbR m_db;
-    DgnModelId m_modelId;
     Transform m_location;         // transform from tile coordinates to world coordinates
     ElementAlignedBox3d m_range;
     Render::SystemR m_renderSystem;
     RealityData::CachePtr m_cache;
     std::set<LoaderPtr, Loader::PtrComparator> m_activeLoads;
+    Id m_id;
     bool m_is3d;
     bool m_populateRootTile;
 protected:
-    Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, bool populateRootTile);
+    Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Type type, bool populateRootTile);
 
-    virtual LoaderPtr CreateLoader(ContentIdCR contentId) { return new Loader(*this, contentId); }
+    DGNPLATFORM_EXPORT LoaderPtr CreateLoader(ContentIdCR contentId);
 public:
     DGNPLATFORM_EXPORT ~Tree();
 
     DgnDbR GetDgnDb() const { return m_db; }
     std::mutex& GetDbMutex() { return m_dbMutex; }
-    DgnModelId GetModelId() const { return m_modelId; }
+    DgnModelId GetModelId() const { return GetId().m_modelId; }
+    Type GetType() const { return GetId().m_type; }
+    bool IsClassifier() const { return GetId().IsClassifier(); }
     ElementAlignedBox3dCR GetRange() const { return m_range; }
     Render::SystemR GetRenderSystem() const { return m_renderSystem; }
     TransformCR GetLocation() const { return m_location; }
@@ -299,7 +311,7 @@ public:
 
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     GeometricModelPtr FetchModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
-    Utf8String ConstructCacheKey(ContentIdCR contentId) const { auto key = _GetId(); key.append(contentId.ToString()); return key; }
+    Utf8String ConstructCacheKey(ContentIdCR contentId) const { auto key = GetId().ToString(); key.append(contentId.ToString()); return key; }
 
     void DoneTileLoad(LoaderR loader);
 
@@ -314,9 +326,11 @@ public:
     // If the content cannot be retrieved, or the loading process is canceled, returns nullptr.
     DGNPLATFORM_EXPORT ContentCPtr RequestContent(ContentIdCR contentId);
 
-    virtual Utf8String _GetId() const { return GetModelId().ToHexStr(); }
+    Id GetId() const { return m_id; }
 
-    DGNPLATFORM_EXPORT static TreePtr Create(GeometricModelR model, Render::SystemR system, TreeType type);
+    DGNPLATFORM_EXPORT static TreePtr Create(GeometricModelR model, Render::SystemR system, Type type);
+    DGNPLATFORM_EXPORT static Type TypeFromId(Utf8StringCR treeId);
+    DGNPLATFORM_EXPORT static Type ExtractTypeFromid(Utf8StringR treeId);
 };
 
 END_TILE_NAMESPACE
