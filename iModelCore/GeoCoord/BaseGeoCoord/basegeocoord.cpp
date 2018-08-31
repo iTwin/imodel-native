@@ -220,6 +220,11 @@ void             stripWhite(char *str)
     }
 
 
+
+
+static bool     DatumEquivalent(CSDatum&    datum1,  CSDatum&    datum2,  bool tolerateEquivalentDifferencesWhenDeprecated, bool shallowCompare);
+
+
 /*=================================================================================**//**
 *
 * SRS WKT Parser class: Can be used as an alternate WKT parser to CSMAP.
@@ -456,14 +461,35 @@ StatusInt GetProjected (BaseGCSR baseGCS, WStringR wkt) const
             }
         }
 
-#ifdef NOT_YET
     if (authorityID.length() > 0)
         {
 //TBD Search for an existing equivalent
 //compare if required
 //        baseGCS.SetKey (authorityID->GetKey());
+
+// Specific patch for EPSG:900913
+        if ((authorityID == L"EPSG:900913") || (authorityID == L"EPSG:3857"))
+            {
+            WString datumName = baseGCS.GetDatumName();
+            if (datumName == L"WGS84")
+                {
+                // In some cases the definition specifies datum WGS84 but a WebMercator. We switch to EPSG:900913
+                // as our implementation is a patch (using artefact datum SpereWGS84)
+                // Note that double exact compare is intentional
+                if (baseGCS.GetProjectionCode() == GeoCoordinates::BaseGCS::pcvMercator && 
+                     baseGCS.GetStandardParallel1() == 0.0 && baseGCS.GetCentralMeridian() == 0.0 && 
+                     baseGCS.GetFalseEasting() == 0.0 && baseGCS.GetFalseNorthing() == 0.0 && 
+                     baseGCS.GetScaleReduction() == 1.0)
+
+                    {
+                    baseGCS.SetFromCSName(L"EPSG:900913");
+                    return baseGCS.DefinitionComplete();
+                    }
+                }
+            }
         }
-#endif
+
+
 
     // Some WKT do not have GEOGCS Clauses which we do not have any default
     if (!geocsPresent)
@@ -1126,6 +1152,63 @@ int     FindDatumIndex (WCharCP datumName) const
 
     return foundIndex;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alain Robert                   2018/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FindDatumFromTransformationParams(WString& paramDatumName, const WString& ellipsoidName, double deltaX, double deltaY, double deltaZ, double rotX, double rotY, double rotZ, double scalePPM) const
+    {
+    if (distanceSame(deltaX, 0.0) && distanceSame(deltaY, 0.0) && distanceSame(deltaZ, 0.0) &&
+        doubleSame(rotX, 0.0) && doubleSame(rotY, 0.0) && doubleSame(rotZ,0.0) && doubleSame(scalePPM, 0.0))
+        {
+        paramDatumName = L"WGS84";
+        return true;
+        }
+
+    // Create datum based on transformation values given
+    CSDatumDef datumDef;
+    memset(&datumDef, 0, sizeof(CSDatumDef));
+    AString ellKnm(ellipsoidName.c_str());
+    strncpy(datumDef.ell_knm, ellKnm.c_str(), sizeof(datumDef.ell_knm));
+    datumDef.delta_X = deltaX;
+    datumDef.delta_Y = deltaY;
+    datumDef.delta_Z = deltaZ;
+    datumDef.rot_X = rotX;
+    datumDef.rot_Y = rotY;
+    datumDef.rot_Z = rotZ;
+    datumDef.bwscale = scalePPM;
+    datumDef.to84_via = cs_DTCTYP_7PARM;
+
+    DatumCP paramDatum = Datum::CreateDatum(datumDef, LibraryManager::Instance()->GetSystemLibrary());
+
+    if (!paramDatum->IsValid())
+        {
+        paramDatum->Destroy();
+        return false;
+        }
+
+    int     index;
+    int     foundIndex = -1;
+    char    dtKeyName[128];
+    for (index = 0; ((foundIndex < 0) && (0 < CSMap::CS_dtEnum(index, dtKeyName, sizeof(dtKeyName)))); index++)
+        {
+        DatumCP indexDatum = Datum::CreateDatum(WString(dtKeyName, false).c_str());
+
+        if (indexDatum->IsValid() && DatumEquivalent(*(paramDatum->GetCSDatum()), *(indexDatum->GetCSDatum()), false, true))
+            {
+            paramDatumName = WString(dtKeyName, false);
+            paramDatum->Destroy();
+            indexDatum->Destroy();
+            return true;
+            }
+        indexDatum->Destroy();
+
+        }
+
+    paramDatum->Destroy();
+    return false;
+    }
+
+
 
 /*---------------------------------------------------------------------------------**//**
 *   @description PRIVATE This private method extracts from the provided stream the datum
@@ -1174,6 +1257,15 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
     WString authorityID = GetAuthorityIdFromNameOracleStyle(name);
     bool sectionCompleted = false;
     bool ellipsoidPresentAndKnown = false;
+    bool transfoParamPresent = false;
+    double deltaX = 0.0;
+    double deltaY = 0.0;
+    double deltaZ = 0.0;
+    double rotX = 0.0;
+    double rotY = 0.0;
+    double rotZ = 0.0;
+    double scalePPM = 0.0;
+
 
     size_t previousLength;
     while (wkt.length() > 0 && !sectionCompleted)
@@ -1198,8 +1290,10 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
             }
 
         if ((wkt.length() >= 7) && (wkt.substr (0, 7) == (L"TOWGS84")))
-            if (SUCCESS != (status = GetTOWGS84ToCoordSys (wkt, coordinateSystem)))
+            if (SUCCESS != (status = GetTOWGS84 (wkt, deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM)))
                 return status;
+            else
+                transfoParamPresent = true;
 
         // Check end of section
         if ((wkt.length() >= 1) && (wkt.substr(0, 1) ==(L"]")))
@@ -1212,7 +1306,8 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
             {
             // We have the special Oracle dialect where the 7 parameters transformation is provided
             // without TOWGS84 section.
-            Get7ParamsDatumTransformationToCoordSys (wkt, coordinateSystem);
+            if (SUCCESS == Get7ParamsDatumTransformation (wkt, deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM))
+                transfoParamPresent = true;
 
             wkt.Trim();
 
@@ -1229,21 +1324,33 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
         }
 
 
+    WString finalDatumName;
+
     // Check that there is a datum name even specified
     // If there are none then likely this represents and ellipsoid-based unspecified datum coordinate system
     // In such case this ellipsoid may already been set in the GCS and nothing needs be done except nullify the datum code
     if (0 == name.length())
         {
-        // If no spheroid nor datum are specified then the WKT is invalid.
+        // If no spheroid nor datum are specified then the WKT is invalid even if transformation parameters were specified.
+        // For the sanity of our system we require that a datum be known.
         if (!ellipsoidPresentAndKnown)
             return ERROR;
+
         coordinateSystem.SetDatumCode (-1);        
+
+        // If the ellipsoid is present and we have transformation parameters we will try to find a match
+        // Note that if no match is found no error is issued and the coordinate system will remain 
+        // ellipsoid based.
+        if (transfoParamPresent)
+            {
+            FindDatumFromTransformationParams(finalDatumName, coordinateSystem.GetEllipsoidName(), deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM);
+            }
+
         }
     else
         {
 
         // Check if datum name is known ...
-        WString finalDatumName;
         DatumCP namedDatum = Datum::CreateDatum (name.c_str());
         WString deprecated = L"LEGACY";
         WString groupName;
@@ -1259,6 +1366,8 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
                     {
                     finalNameDeprecated = (0 == deprecated.CompareTo(namedDatum->GetGroup(groupName)));
                     finalDatumName = authorityID;
+
+                    namedDatum->Destroy();
                     }
                 }
             }
@@ -1266,6 +1375,7 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
             {
             finalDatumName = name; 
             finalNameDeprecated = (0 == deprecated.CompareTo(namedDatum->GetGroup(groupName)));
+            namedDatum->Destroy();
             }
     
     #if defined (GEOCOORD_ENHANCEMENT)
@@ -1282,6 +1392,8 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
                     {
                     if ((finalDatumName.length() == 0) || (finalNameDeprecated && (0 != deprecated.CompareTo(namedDatum->GetGroup(groupName)))))
                         finalDatumName = alternateName;
+
+                    namedDatum->Destroy();
                     }
                 }
     
@@ -1296,26 +1408,70 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
                         {
                         if ((finalDatumName.length() == 0) || (finalNameDeprecated && (0 != deprecated.CompareTo(namedDatum->GetGroup(groupName)))))
                             finalDatumName = authorityID;
+
+                        namedDatum->Destroy();
                         }
                     }
                 }
             }
     #endif
+        }
+
+    if (finalDatumName.length() != 0)
+        {
+        // We have a datum name ... we simply need to set it now ... in order to do this we need the code
+        int foundIndex = FindDatumIndex (finalDatumName.c_str());
     
-        if (finalDatumName.length() != 0)
+        if (foundIndex >= 0)
+            coordinateSystem.SetDatumCode (foundIndex);
+        else if (!transfoParamPresent)
+            return ERROR;
+        
+        if (transfoParamPresent)
             {
-            // We have a datum name ... we simply need to set it now ... in order to do this we need the code
-            int foundIndex = FindDatumIndex (finalDatumName.c_str());
-    
-            if (foundIndex >= 0)
-                coordinateSystem.SetDatumCode (foundIndex);
-            else
-                return ERROR;
-    
-            }
+            WString paramDatum;
+            if (FindDatumFromTransformationParams(paramDatum, coordinateSystem.GetEllipsoidName(), deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM))
+                {
+                // We found a datum ... check if same or same definition
+                if (paramDatum != finalDatumName)
+                    {
+                    // Create both datums and compare 
+                    DatumCP namedDatum1 = Datum::CreateDatum(finalDatumName.c_str());
+                    DatumCP namedDatum2 = Datum::CreateDatum(paramDatum.c_str());
+
+                    if (!DatumEquivalent(*(namedDatum1->GetCSDatum()), *(namedDatum2->GetCSDatum()), false, true))
+                        {
+                        namedDatum1->Destroy();
+                        namedDatum2->Destroy();
+                        return ERROR;
+                        }
+
+                    namedDatum1->Destroy();
+                    namedDatum2->Destroy();
+                    }
+                }
+            
+
+            }   
+        }
+    else if (transfoParamPresent)
+        {
+        // No datum match yet transformation parameters were located
+        WString paramDatum;
+        if (!FindDatumFromTransformationParams(paramDatum, coordinateSystem.GetEllipsoidName(), deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM))
+            return ERROR;
+
+        int foundIndex = FindDatumIndex(paramDatum.c_str());
+
+        if (foundIndex >= 0)
+            coordinateSystem.SetDatumCode(foundIndex);
         else
             return ERROR;
-    }
+
+        }
+    else
+        return ERROR;
+
 
     return status;
     }
@@ -2258,12 +2414,20 @@ StatusInt GetLocalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) cons
 *   removed.
 *
 *   @param wkt IN/OUT The WKT portion that contains the horizontal datum transformation to extract.
+*   @param deltaX - The delta X in meters 
+*   @param deltaY - The delta Y in meters
+*   @param deltaZ - The delta Z in meters
+*   @param rotationX - [OUT] X Rotation in arcseconds
+*   @param rotationY - [OUT] Y rotation in arcseconds
+*   @param rotationZ - [OUT] Z rotation in arcseconds
+*   @param scalePPM - [OUT] Scale in parts per million
 *
-*   @return The horizontal datum transformation
+*
+*   @return SUCCESS if 7 params were extracted and false otherwise
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetTOWGS84ToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
+StatusInt GetTOWGS84 (WStringR wkt, double& deltaX, double& deltaY, double& deltaZ, double& rotationX, double& rotationY, double& rotationZ, double& scalePPM) const
     {
     StatusInt status = SUCCESS;
 
@@ -2289,7 +2453,7 @@ StatusInt GetTOWGS84ToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
     wkt = wkt.substr (1);
 
 
-    status = Get7ParamsDatumTransformationToCoordSys (wkt, coordinateSystem);
+    status = Get7ParamsDatumTransformation (wkt, deltaX, deltaY, deltaZ, rotationX, rotationY, rotationZ, scalePPM);
 
     // Check end of section
     if ((wkt.length() < 1) || (!(wkt.substr(0, 1) == L"]")))
@@ -2313,21 +2477,21 @@ StatusInt GetTOWGS84ToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
 *   removed.
 *
 *   @param wkt IN/OUT The WKT portion that contains the horizontal datum transformation to extract.
+*   @param deltaX - The delta X in meters
+*   @param deltaY - The delta Y in meters
+*   @param deltaZ - The delta Z in meters
+*   @param rotationX - [OUT] X Rotation in arcseconds
+*   @param rotationY - [OUT] Y rotation in arcseconds
+*   @param rotationZ - [OUT] Z rotation in arcseconds
+*   @param scalePPM - [OUT] Scale in parts per million
 *
 *   @return The horizontal datum transformation
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Get7ParamsDatumTransformationToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
+StatusInt Get7ParamsDatumTransformation (WStringR wkt, double& deltaX, double& deltaY, double& deltaZ, double& rotationX, double& rotationY, double& rotationZ, double& scalePPM) const
     {
     StatusInt status = SUCCESS;
-    double shiftX;
-    double shiftY;
-    double shiftZ;
-    double rotationX;
-    double rotationY;
-    double rotationZ;
-    double scale;
 
 
     wkt.Trim();
@@ -2335,17 +2499,17 @@ StatusInt Get7ParamsDatumTransformationToCoordSys (WStringR wkt, BaseGCSR coordi
 
     // This may mean that the datum contains the datum shift definitions
     // 7 numbers to follow
-    shiftX = GetDouble (wkt);
+    deltaX = GetDouble (wkt);
     wkt.Trim();
     if ((wkt.length() >= 1) && (wkt.substr(0, 1) ==(L",")))
         wkt = wkt.substr(1);
 
-    shiftY = GetDouble (wkt);
+    deltaY = GetDouble (wkt);
     wkt.Trim();
     if ((wkt.length() >= 1) && (wkt.substr(0, 1) ==(L",")))
         wkt = wkt.substr(1);
 
-    shiftZ = GetDouble (wkt);
+    deltaZ = GetDouble (wkt);
     wkt.Trim();
     if ((wkt.length() >= 1) && (wkt.substr(0, 1) ==(L",")))
         wkt = wkt.substr(1);
@@ -2365,7 +2529,7 @@ StatusInt Get7ParamsDatumTransformationToCoordSys (WStringR wkt, BaseGCSR coordi
     if ((wkt.length() >= 1) && (wkt.substr(0, 1) ==(L",")))
         wkt = wkt.substr(1);
 
-    scale = GetDouble (wkt);
+    scalePPM = GetDouble (wkt);
     wkt.Trim();
 
     // In this case the section end is mandatory
@@ -2374,10 +2538,6 @@ StatusInt Get7ParamsDatumTransformationToCoordSys (WStringR wkt, BaseGCSR coordi
         return ERROR;
         }
 
-    // Since we do not currently support custom datum definitions we will
-    // simply ignore the extracted parameters ... given we want to allow
-    // custom datum definitions we may simpky set the extracted
-    // parameters using the 7-parameter method.
     return status;
     }
 
@@ -6301,7 +6461,8 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
                              (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorOracle9 == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_LMTAN && wktFlavorOracle == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_KROVAK) ||
-                             (m_csParameters->prj_code == cs_PRJCOD_KROVAKMOD))
+                             (m_csParameters->prj_code == cs_PRJCOD_KROVAKMOD) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorOGC == wktFlavor && AString(m_csParameters->csdef.key_nm) == "EPSG:900913" ))
                             
         {
         try {
@@ -9960,12 +10121,22 @@ inline double BaseGCSUtilGetUTMZoneCenterMeridian(int zoneNumber)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   07/07
+*
+* @param datum1, datum2 - The datums to compare
+* @param tolerateEquivalentDifferencesWhenDeprecated - true indicates that the method 
+*        can consider deprecated datums (LEGACY group) as equivalent if datum are equivalent 
+*        in everything else
+* @param shallowCompare - true indicates that the datum definition only is compared and
+*                         the actual geodetic transform if external is not obtained nor
+*                         compared. This must be used if a datum is not extracted from
+*                         system dictionary.
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool     DatumEquivalent
 (
 CSDatum&    datum1,
 CSDatum&    datum2,
-bool tolerateEquivalentDifferencesWhenDeprecated
+bool tolerateEquivalentDifferencesWhenDeprecated,
+bool shallowCompare
 )
     {
     if (!BaseGCS::IsLibraryInitialized())
@@ -9977,19 +10148,19 @@ bool tolerateEquivalentDifferencesWhenDeprecated
     if ( (0 != datum1.key_nm[0]) && (0 != datum2.key_nm[0]) && (0 == strcmp (datum1.key_nm, datum2.key_nm)) )
         return true;
 
-    if (!doubleSame (datum1.e_rad, datum2.e_rad))
+    if (!distanceSame(datum1.e_rad, datum2.e_rad))
         return false;
 
-    if (!doubleSame (datum1.p_rad, datum2.p_rad))
+    if (!distanceSame(datum1.p_rad, datum2.p_rad))
         return false;
 
-    if (!doubleSame (datum1.delta_X, datum2.delta_X))
+    if (!distanceSame(datum1.delta_X, datum2.delta_X))
         return false;
 
-    if (!doubleSame (datum1.delta_Y, datum2.delta_Y))
+    if (!distanceSame(datum1.delta_Y, datum2.delta_Y))
         return false;
 
-    if (!doubleSame (datum1.delta_Z, datum2.delta_Z))
+    if (!distanceSame(datum1.delta_Z, datum2.delta_Z))
         return false;
 
     if (!doubleSame (datum1.rot_X, datum2.rot_X))
@@ -10008,11 +10179,17 @@ bool tolerateEquivalentDifferencesWhenDeprecated
         bool isNullTransfo1 = ((datum1.to84_via == cs_DTCTYP_NONE) || (datum1.to84_via == cs_DTCTYP_NAD83) || 
                                (datum1.to84_via == cs_DTCTYP_WGS84) || (datum1.to84_via == cs_DTCTYP_ETRF89) || 
                                (((datum1.to84_via == cs_DTCTYP_MOLO) || (datum1.to84_via == cs_DTCTYP_GEOCTR) || (datum1.to84_via == cs_DTCTYP_3PARM)) &&
-                                 (doubleSame(datum1.delta_X, 0.0) && doubleSame(datum1.delta_Y, 0.0) && doubleSame(datum1.delta_Z, 0.0))));
+                                 (distanceSame(datum1.delta_X, 0.0) && distanceSame(datum1.delta_Y, 0.0) && distanceSame(datum1.delta_Z, 0.0))) ||
+                                   ((datum1.to84_via == cs_DTCTYP_7PARM) &&
+                                    (distanceSame(datum1.delta_X, 0.0) && distanceSame(datum1.delta_Y, 0.0) && distanceSame(datum1.delta_Z, 0.0) &&
+                                     doubleSame(datum1.rot_X, 0.0) && doubleSame(datum1.rot_Y, 0.0) && doubleSame(datum1.rot_Z, 0.0) && doubleSame(datum1.bwscale, 0.0))));
         bool isNullTransfo2 = ((datum2.to84_via == cs_DTCTYP_NONE) || (datum2.to84_via == cs_DTCTYP_NAD83) || 
                                (datum2.to84_via == cs_DTCTYP_WGS84) || (datum2.to84_via == cs_DTCTYP_ETRF89) ||
                                (((datum2.to84_via == cs_DTCTYP_MOLO) || (datum2.to84_via == cs_DTCTYP_GEOCTR) || (datum2.to84_via == cs_DTCTYP_3PARM)) &&
-                                 (doubleSame(datum2.delta_X, 0.0) && doubleSame(datum2.delta_Y, 0.0) && doubleSame(datum2.delta_Z, 0.0))));
+                                 (distanceSame(datum2.delta_X, 0.0) && distanceSame(datum2.delta_Y, 0.0) && distanceSame(datum2.delta_Z, 0.0))) ||
+                                   ((datum2.to84_via == cs_DTCTYP_7PARM) &&
+                                    (distanceSame(datum2.delta_X, 0.0) && distanceSame(datum2.delta_Y, 0.0) && distanceSame(datum2.delta_Z, 0.0) &&
+                                     doubleSame(datum2.rot_X, 0.0) && doubleSame(datum2.rot_Y, 0.0) && doubleSame(datum2.rot_Z, 0.0) && doubleSame(datum2.bwscale, 0.0))));
 
         if (!(isNullTransfo1 && isNullTransfo2))
             if (!tolerateEquivalentDifferencesWhenDeprecated)
@@ -10046,6 +10223,11 @@ bool tolerateEquivalentDifferencesWhenDeprecated
                     return false;
                 }
         }
+
+    // If shallow compare we stop here and consider the datum equal without extracting the
+    // geodetic transformations.
+    if (shallowCompare)
+        return true;
 
     // Starting with latest version of csmap the geodetic transformation is not part of the 
     // datum proper (except for fallback backward compatibility) so it may happen that
@@ -10189,9 +10371,9 @@ bool tolerateEquivalentDifferencesWhenDeprecated
                     if (((theDatumConverter1->xforms[idxXForms]->methodCode == cs_DTCMTH_MOLOD) || (theDatumConverter1->xforms[idxXForms]->methodCode == cs_DTCMTH_GEOCT) || (theDatumConverter1->xforms[idxXForms]->methodCode == cs_DTCMTH_3PARM)) &&
                         ((theDatumConverter2->xforms[idxXForms]->methodCode == cs_DTCMTH_MOLOD) || (theDatumConverter2->xforms[idxXForms]->methodCode == cs_DTCMTH_GEOCT) || (theDatumConverter2->xforms[idxXForms]->methodCode == cs_DTCMTH_3PARM)))
                         {
-                        if (doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX) && 
-                            doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY) && 
-                            doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ))
+                        if (distanceSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX) &&
+                            distanceSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY) &&
+                            distanceSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ))
                             datumsEquivalent = true; // They are basically similar so we revert the equivalence flag.
                         }
                     }
@@ -10204,13 +10386,13 @@ bool tolerateEquivalentDifferencesWhenDeprecated
                           (theDatumConverter2->xforms[idxXForms]->methodCode == cs_DTCMTH_3PARM) || (theDatumConverter2->xforms[idxXForms]->methodCode == cs_DTCMTH_NULLX)))
                         {
                         // If the transform parameters are equal to zero then even if not deprecated they may be identical
-                        if (doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX) && 
-                            doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY) && 
-                            doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ))
+                        if (distanceSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX) &&
+                            distanceSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY) &&
+                            distanceSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ, ((((theDatumConverter2->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ))
                             {
-                            if (doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX, 0.0) && 
-                                doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY, 0.0) && 
-                                doubleSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ, 0.0))
+                            if (distanceSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaX, 0.0) &&
+                                distanceSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaY, 0.0) &&
+                                distanceSame(((((theDatumConverter1->xforms[idxXForms])->gxDef).parameters).geocentricParameters).deltaZ, 0.0))
                                 datumsEquivalent = true;
                             }
                         }
@@ -10273,17 +10455,17 @@ bool            BaseGCS::Compare (BaseGCSCR compareTo, bool& datumDifferent, boo
             falseNorthing = GetFalseNorthing();
             centralMeridian = GetCentralMeridian();
             }
-        if (!doubleSame (falseEasting, 500000))
+        if (!distanceSame(falseEasting, 500000))
             SET_RETURN (csDifferent)
 
         if (hemisphere == 1)
             {
-            if (!doubleSame(0.0, falseNorthing))
+            if (!distanceSame(0.0, falseNorthing))
                 SET_RETURN (csDifferent)
             }
         else
             {
-            if (!doubleSame(10000000.0, falseNorthing))
+            if (!distanceSame(10000000.0, falseNorthing))
                 SET_RETURN (csDifferent)
             }
 
@@ -10442,7 +10624,7 @@ bool            BaseGCS::Compare (BaseGCSCR compareTo, bool& datumDifferent, boo
             }
         }
 
-    if (!DatumEquivalent (m_csParameters->datum, compareTo.m_csParameters->datum, true))
+    if (!DatumEquivalent (m_csParameters->datum, compareTo.m_csParameters->datum, true, false))
         SET_RETURN_OPT (datumDifferent)
 
     if (m_verticalDatum != compareTo.m_verticalDatum)
@@ -12366,7 +12548,7 @@ bool            BaseGCS::HasEquivalentDatum
 BaseGCSCR        compareTo
 ) const
     {
-    return DatumEquivalent (m_csParameters->datum, compareTo.m_csParameters->datum, false);
+    return DatumEquivalent (m_csParameters->datum, compareTo.m_csParameters->datum, false, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -12515,7 +12697,7 @@ bool    noSearch
                 CSDatum*       datum;
                 if (NULL != (datum = CSMap::CS_dtloc (dtKeyName)))
                     {
-                    if (DatumEquivalent (m_csParameters->datum, *datum, false))
+                    if (DatumEquivalent (m_csParameters->datum, *datum, false, false))
                         {
                         CSMap::CS_free (datum);
                         return epsgNum;
@@ -12584,7 +12766,7 @@ bool    noSearch
             // if it might be an EPSG ellipsoid , compare it to the info in our datum.
             if (0 != epsgNum)
                 {
-                if (doubleSame (m_csParameters->datum.e_rad, elDef->e_rad) && doubleSame (m_csParameters->datum.p_rad, elDef->p_rad))
+                if (distanceSame(m_csParameters->datum.e_rad, elDef->e_rad) && distanceSame(m_csParameters->datum.p_rad, elDef->p_rad))
                     {
                     CSMap::CS_free (elDef);
                     return epsgNum;
@@ -15509,11 +15691,11 @@ WStringR       DatumAsASC
         case cs_DTCTYP_MREG:
             DatumAsAscStream << "            USE: MULREG" << std::endl;
             //Values are carried but not used.  Meant to provide a quick way of using alternate almost equivalent definition.
-            if (!doubleSame (0.0, m_datumDef->delta_X))
+            if (!distanceSame(0.0, m_datumDef->delta_X))
                 DatumAsAscStream << "        DELTA_X: " << m_datumDef->delta_X << std::endl;
-            if (!doubleSame (0.0, m_datumDef->delta_Y))
+            if (!distanceSame(0.0, m_datumDef->delta_Y))
                 DatumAsAscStream << "        DELTA_Y: " << m_datumDef->delta_Y << std::endl;
-            if (!doubleSame (0.0, m_datumDef->delta_Z))
+            if (!distanceSame(0.0, m_datumDef->delta_Z))
                 DatumAsAscStream << "        DELTA_Z: " << m_datumDef->delta_Z << std::endl;
             break;
 
