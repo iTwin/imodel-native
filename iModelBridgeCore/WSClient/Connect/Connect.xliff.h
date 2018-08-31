@@ -22,7 +22,7 @@ MOBILEDGN_TRANSLATABLE_STRINGS_START(ConnectL10N, Connect)
     ALERT_CCNotInstalledError,               // =="CONNECTION Client is not installed. Please install it and try again."==
     ALERT_CCNotRunningError,                 // =="CONNECTION Client is not running. Please run it and try again."==
     ALERT_CCInvalidCredentialsError,         // =="Invalid username or password in CONNECTION Client. Please try signing in again."==
-    ALERT_CCUnhandledExceptionError,         // =="Unknwon error in CONNECTION Client. Please contact your administrator."==
+    ALERT_CCUnhandledExceptionError,         // =="Unknown error in CONNECTION Client. Please contact your administrator."==
     ALERT_CCNotAcceptedEulaError,            // =="EULA not accepted. Please try signing in again."==
     ALERT_CCUnableToStartAppError,           // =="Unable to start CONNECTION Client. Please contact your administrator."==
     ALERT_CCApiObsoleteError,                // =="Incompatible CONNECTION Client version. Install compatible CONNECTION Client version or contact your administrator."==
