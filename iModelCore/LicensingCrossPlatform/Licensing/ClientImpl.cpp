@@ -50,6 +50,12 @@ m_httpHandler(httpHandler)
 
     if (projectId.empty())
         m_projectId = "00000000-0000-0000-0000-000000000000";
+
+    if (m_offlineMode)
+        {
+        // Fake use m_offlineMode in order to avoid unused variable warning 
+        // that is treated as error on clang compilers for iOS.
+        }
     }
    
 /*--------------------------------------------------------------------------------------+
@@ -185,24 +191,24 @@ BentleyStatus ClientImpl::RecordUsage()
 
     LOG.debugv("RecordUsage - UsageLogEntry data: {ultimateId:%ld,principalId:%s,userId:%s,machineName:%s,machineSID:%s,userName:%s,userSID:%s,policyId:%s,securableId:%s,productId:%s,featureString:%s,version:%s,projectId:%s,correlationId:%s,eventTimeZ:%s,schemaVer:%f,source:%s,country:%s,usageType:%s}",
                m_policyToken->GetUltimateSAPId(),
-               m_policyToken->GetPrincipalId(),
-               m_policyToken->GetUserId(),
-               m_clientInfo->GetDeviceId(),
-               gsid.GetMachineSID(m_clientInfo->GetDeviceId()),
-               m_userInfo.username,
-               gsid.GetUserSID(m_userInfo.username, m_clientInfo->GetDeviceId()),
-               m_policyToken->GetPolicyId(),
-               m_policyToken->GetSecurableId(),
+               m_policyToken->GetPrincipalId().c_str(),
+               m_policyToken->GetUserId().c_str(),
+               m_clientInfo->GetDeviceId().c_str(),
+               gsid.GetMachineSID(m_clientInfo->GetDeviceId()).c_str(),
+               m_userInfo.username.c_str(),
+               gsid.GetUserSID(m_userInfo.username, m_clientInfo->GetDeviceId()).c_str(),
+               m_policyToken->GetPolicyId().c_str(),
+               m_policyToken->GetSecurableId().c_str(),
                atoi(m_clientInfo->GetApplicationProductId().c_str()),
-               m_featureString,
+               m_featureString.c_str(),
                atoll(versionString.c_str()),
-               m_projectId,
-               m_correlationId,
-               eventTimeZ,
+               m_projectId.c_str(),
+               m_correlationId.c_str(),
+               eventTimeZ.c_str(),
                LICENSE_CLIENT_SCHEMA_VERSION,
-               GetLoggingPostSource(LogPostingSource::RealTime),
-               m_policyToken->GetCountry(),
-               m_policyToken->GetUsageType());
+               GetLoggingPostSource(LogPostingSource::RealTime).c_str(),
+               m_policyToken->GetCountry().c_str(),
+               m_policyToken->GetUsageType().c_str());
 
     if (SUCCESS != m_usageDb->RecordUsage(m_policyToken->GetUltimateSAPId(),
                                           m_policyToken->GetPrincipalId(),
@@ -257,7 +263,7 @@ BentleyStatus ClientImpl::PostUsageLogs()
     bvector<WString> logFiles;
     BeFileName usageLogPath(m_dbPath.GetDirectoryName());
 
-    fileName.Sprintf("LicUsageLog.%s.csv", BeGuid(true).ToString());
+    fileName.Sprintf("LicUsageLog.%s.csv", BeGuid(true).ToString().c_str());
     
     usageLogPath.AppendToPath(BeFileName(fileName));
 
@@ -297,7 +303,7 @@ folly::Future<folly::Unit> ClientImpl::SendUsage(BeFileNameCR usageCSV, Utf8Stri
     url += Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), m_clientInfo->GetApplicationProductId().c_str(),
                             m_clientInfo->GetLanguage().c_str());
 
-    LOG.debugv("SendUsage - UsageLoggingServiceLocation: %s", url);
+    LOG.debugv("SendUsage - UsageLoggingServiceLocation: %s", url.c_str());
 
     HttpClient client(nullptr, m_httpHandler);
 
