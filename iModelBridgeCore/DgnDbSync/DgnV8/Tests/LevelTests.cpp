@@ -277,5 +277,5 @@ TEST_F(LevelTests, LevelMaskfromSheetAttachment_toViewAttachment)
 
     m_params.SetCopyLevel(Converter::Params::CopyLevel::IfDifferent);
 
-    TestLevelConversion(5, 4, 4, true);
+    TestLevelConversion(4, 4, 4, true);
     }

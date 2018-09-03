@@ -563,7 +563,7 @@ BentleyStatus LsComponentReader::_Read(Json::Value& object)
             GetLogger().errorv("Failed to remap geometry part Id '%" PRIu64 " LsComponent", oldId);
             return ERROR;
             }
-        jsonValue["geomPartId"] = mappedId.GetValue();
+        jsonValue["geomPartId"] = mappedId.ToHexStr(); // ###INT64TOHEXSTR Was mappedId.GetValue() which fails on imodel-js, asUInt64 still works with ToHexStr.
         }
     LineStyleStatus lstat = LsComponent::AddComponentAsJsonProperty(v10Id, *GetDgnDb(), componentType, jsonValue);
 

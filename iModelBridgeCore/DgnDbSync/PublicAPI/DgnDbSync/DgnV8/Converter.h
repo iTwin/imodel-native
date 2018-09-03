@@ -765,6 +765,9 @@ struct Converter
         L10N_STRING(EmbeddedFileAlreadyExists)   // =="An embedded file with the name '%s' already exists; it will not be re-embedded."==
         L10N_STRING(EmbeddedFileTooBig)          // =="Not enough memory to embed file with the name '%s'."==
         L10N_STRING(EmbeddedRasterError)         // =="Can't read embedded raster: %s"==
+        L10N_STRING(ExtractedGraphicCreationFailure) // =="Failed to create new DrawingElement in Model %s for ECClassId %llu, Category %llu, Code value: %s"==
+        L10N_STRING(ExtractedGraphicBuildFailure) // =="Failed to build geometry for DrawingElement for V8 element %llu in model %s"==
+        L10N_STRING(ExtractedGraphicMissingElement) // =="Failed to find V8 element %llu in model '%s' (%s) when creating extraction graphic"==
         L10N_STRING(Error)                       // =="Error: %s"==
         L10N_STRING(FatalError)                  // =="A fatal error has stopped the conversion"==
         L10N_STRING(FileFilteredOut)             // =="File [%s] was not converted."==
