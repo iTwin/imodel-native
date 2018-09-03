@@ -964,8 +964,8 @@ struct FullOffsetChildren final : ICurvePrimitiveProcessor
     {
 private:
     double const m_distanceOffset;
-    DVec3d const m_eyeVec;
-    DPlane3d const m_projPlane;
+    // DVec3d const m_eyeVec;
+    // DPlane3d const m_projPlane;
 
     CurveVectorPtr& m_result;
 
@@ -1082,7 +1082,7 @@ private:
 
 public:
     FullOffsetChildren (double const& distanceOffset, DVec3dCR eyeVec, DPlane3dCR projPlane, CurveVectorPtr& result)
-        :m_distanceOffset (distanceOffset), m_eyeVec (eyeVec), m_projPlane (projPlane), m_result (result)
+        :m_distanceOffset (distanceOffset), /* m_eyeVec (eyeVec), m_projPlane (projPlane), */ m_result (result)
         {}
     };
 
