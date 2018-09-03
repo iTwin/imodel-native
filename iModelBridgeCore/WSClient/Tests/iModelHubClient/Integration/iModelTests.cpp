@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "IntegrationTestsBase.h"
+#include <WebServices\iModelHub\Client\ClientHelper.h>
+#include "../Helpers/Oidc/OidcSignInManager.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -216,4 +218,25 @@ TEST_F(iModelTests, UnsuccessfulCreateiModelFromBriefcase)
     iModelResult createResult = s_client->CreateNewiModel(s_projectId, *m_db, m_imodelName, description, true, callback.Get())->GetResult();
     ASSERT_FAILURE(createResult);
     EXPECT_EQ(Error::Id::FileIsBriefcase, createResult.GetError().GetId());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Algirdas.Mikoliunas             07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelTests, CreateiModelUsingOidcLogin)
+    {
+    ClientPtr oidcClient;
+    iModelHubHelpers::CreateOidcClient(oidcClient, IntegrationTestsSettings::Instance().GetValidAdminCredentials());
+    
+    iModelResult createResult = iModelHubHelpers::CreateNewiModel(oidcClient, m_db, s_projectId, true);
+    ASSERT_SUCCESS(createResult) << "iModel create using Oidc login failed";
+    auto creatediModelInfo = createResult.GetValue();
+    auto creatediModelId = creatediModelInfo->GetId();
+
+    iModelResult getResult = oidcClient->GetiModelById(s_projectId, creatediModelId)->GetResult();
+    ASSERT_SUCCESS(getResult) << "iModel creation using Oidc login failed";
+    EXPECT_TRUE(getResult.GetValue()->IsInitialized());
+    EXPECT_EQ(getResult.GetValue()->GetUserCreated(), getResult.GetValue()->GetOwnerInfo()->GetId());
+
+    EXPECT_SUCCESS (oidcClient->DeleteiModel(s_projectId, *creatediModelInfo)->GetResult());
     }

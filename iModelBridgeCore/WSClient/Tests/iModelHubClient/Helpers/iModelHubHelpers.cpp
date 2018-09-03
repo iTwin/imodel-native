@@ -15,6 +15,7 @@
 #include <Bentley/BeStringUtilities.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include "../../../iModelHubClient/Utils.h"
+#include "Oidc/OidcSignInManager.h"
 
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -47,6 +48,19 @@ namespace iModelHubHelpers
         {
         AsyncError error;
         client = ClientHelper::GetInstance()->SignInWithCredentials(&error, credentials);
+        ASSERT_TRUE(client.IsValid()) << error.GetMessage().c_str();
+        ASSERT_TRUE(!Utf8String::IsNullOrEmpty(client->GetServerUrl().c_str()));
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             08/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void CreateOidcClient(ClientPtr& client, CredentialsCR credentials)
+        {
+        AsyncError error;
+        auto signInManager = std::make_shared<OidcSignInManager>();
+        signInManager->SignInWithCredentials(credentials);
+        client = ClientHelper::GetInstance()->SignInWithManager(signInManager);
         ASSERT_TRUE(client.IsValid()) << error.GetMessage().c_str();
         ASSERT_TRUE(!Utf8String::IsNullOrEmpty(client->GetServerUrl().c_str()));
         }
