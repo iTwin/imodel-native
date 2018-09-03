@@ -441,6 +441,17 @@ TEST_F(ECDbCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
     Utf8CP koq1Name = "TestKoq_M_Mfi8";
     Utf8CP koq2Name = "TestKoq_SQFTfi8_SQFTreal4u";
 
+    auto assertReferencedUnitsAndFormatsSchema = [] (TestECDb const& testDb, ECSchemaCR koqSchema)
+        {
+        auto it = koqSchema.GetReferencedSchemas().Find(SchemaKey("Units", 1, 0), ECN::SchemaMatchType::Identical);
+        ASSERT_FALSE(it == koqSchema.GetReferencedSchemas().end()) << testDb.GetDescription();
+        ASSERT_EQ(testDb.SupportsFeature(ECDbFeature::UnitsAndFormats), it->second->HasId()) << testDb.GetDescription();
+
+        it = koqSchema.GetReferencedSchemas().Find(SchemaKey("Formats", 1, 0), ECN::SchemaMatchType::Identical);
+        ASSERT_FALSE(it == koqSchema.GetReferencedSchemas().end()) << testDb.GetDescription();
+        ASSERT_EQ(testDb.SupportsFeature(ECDbFeature::UnitsAndFormats), it->second->HasId()) << testDb.GetDescription();
+        };
+
     for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EC31KOQS))
         {
         for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
@@ -505,6 +516,33 @@ TEST_F(ECDbCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
             koq2 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq2Name);
             ASSERT_TRUE(koq2 != nullptr) << testDb.GetDescription();
             testDb.AssertKindOfQuantity(*koq2, "TestSchema", koq2Name, nullptr, nullptr, "u:SQ_FT", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_FT]"])json"), 1.0);
+            testDb.GetDb().ClearECDbCache();
+
+            //Load schema elements after a KOQ was loaded (and the temporary schemas were deserialized)
+            //This must ignore the temporary schema references as they don't have a schema id
+            koq1 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq1Name);
+            ASSERT_TRUE(koq1 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq1, "TestSchema", koq1Name, nullptr, nullptr, "u:M", JsonValue(R"json(["f:AmerFI"])json"), 0.7);
+            assertReferencedUnitsAndFormatsSchema(testDb, koq1->GetSchema());
+
+            koq2 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq2Name);
+            ASSERT_TRUE(koq2 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq2, "TestSchema", koq2Name, nullptr, nullptr, "u:SQ_FT", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_FT]"])json"), 1.0);
+            assertReferencedUnitsAndFormatsSchema(testDb, koq2->GetSchema());
+
+            bvector<ECSchemaCP> schemas = testDb.GetDb().Schemas().GetSchemas(true);
+            ASSERT_EQ(8, schemas.size()) << testDb.GetDescription();
+            bool containsUnitsSchema = false, containsFormatsSchema = false;
+            for (ECSchemaCP schema : schemas)
+                {
+                if (schema->GetName().Equals("Units"))
+                    containsUnitsSchema = true;
+                if (schema->GetName().Equals("Formats"))
+                    containsFormatsSchema = true;
+                }
+            ASSERT_TRUE(containsUnitsSchema) << testDb.GetDescription();
+            ASSERT_TRUE(containsFormatsSchema) << testDb.GetDescription();
+
             testDb.GetDb().ClearECDbCache();
             }
         }
