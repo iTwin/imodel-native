@@ -320,6 +320,15 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ProjectSharedFederatedUIURL(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::IMSOpenID(
+    "IMSOpenID",
+    "https://qa-imsoidc.bentley.com/",
+    "https://qa-imsoidc.bentley.com/",
+    "https://qa-imsoidc.bentley.com/",
+    "https://imsoidc.bentley.com",
+    &s_urlRegistry
+    );
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas   11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

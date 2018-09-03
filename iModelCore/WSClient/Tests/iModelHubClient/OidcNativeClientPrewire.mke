@@ -1,0 +1,20 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/iModelHubClient/OidcNativeClientPrewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+oidcClientNugetDir = $(SrcRoot)nuget/Testing.OidcNativeClient.1.0.2/
+
+$(BuildContext)PublicAPI/OidcNativeClient/OidcNative.h : $(oidcClientNugetDir)include/OidcNative.h
+    $(LinkFirstDepToFirstTarget)
+
+$(OutputRootDir)Product/iModelHubNativeTests/iModelHubNativeTests.exe.config : $(oidcClientNugetDir)lib/native/OidcClient.dll.config
+    $(LinkFirstDepToFirstTarget)
+    
+$(OutputRootDir)Product/iModelHubNativeTests/chromedriver.exe : $(oidcClientNugetDir)Assets/chromedriver.exe
+    $(LinkFirstDepToFirstTarget)

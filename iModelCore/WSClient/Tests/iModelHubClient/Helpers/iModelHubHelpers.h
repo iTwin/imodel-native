@@ -22,7 +22,8 @@ Utf8String GenerateErrorMessage(iModel::Hub::Error const& e);
 BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
 namespace iModelHubHelpers
     {
-    void CreateClient(ClientPtr& client, CredentialsCR credentials);
+    void CreateClient(ClientPtr& client, CredentialsCR credentials); 
+    void CreateOidcClient(ClientPtr& client, CredentialsCR credentials);
     WebServices::IWSRepositoryClientPtr CreateWSClient(iModelInfoPtr imodel, std::shared_ptr<MockHttpHandler> mockHandler);
     void CreateProjectWSClient(IWSRepositoryClientPtr& result, ClientR client, Utf8StringCR projectId);
 
