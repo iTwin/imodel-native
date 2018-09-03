@@ -104,10 +104,10 @@ struct SchemaReader final
 
                 static bool IsValidUnitsSchemaName(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode)
                     {
-                    if (schemaNameOrAlias.EqualsIAscii("u") && (mode == SchemaLookupMode::AutoDetect || mode == SchemaLookupMode::ByAlias))
+                    if ((mode == SchemaLookupMode::AutoDetect || mode == SchemaLookupMode::ByAlias) && schemaNameOrAlias.EqualsIAscii("u"))
                         return true;
 
-                    if (schemaNameOrAlias.EqualsIAscii("Units") && (mode == SchemaLookupMode::AutoDetect || mode == SchemaLookupMode::ByName))
+                    if ((mode == SchemaLookupMode::AutoDetect || mode == SchemaLookupMode::ByName) && schemaNameOrAlias.EqualsIAscii("Units"))
                         return true;
 
                     return false;
@@ -115,10 +115,10 @@ struct SchemaReader final
 
                 static bool IsValidFormatsSchemaName(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode)
                     {
-                    if (schemaNameOrAlias.EqualsIAscii("f") && (mode == SchemaLookupMode::AutoDetect || mode == SchemaLookupMode::ByAlias))
+                    if ((mode == SchemaLookupMode::AutoDetect || mode == SchemaLookupMode::ByAlias) && schemaNameOrAlias.EqualsIAscii("f"))
                         return true;
 
-                    if (schemaNameOrAlias.EqualsIAscii("Formats") && (mode == SchemaLookupMode::AutoDetect || mode == SchemaLookupMode::ByName))
+                    if ((mode == SchemaLookupMode::AutoDetect || mode == SchemaLookupMode::ByName) && schemaNameOrAlias.EqualsIAscii("Formats"))
                         return true;
 
                     return false;

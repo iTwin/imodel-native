@@ -1693,7 +1693,21 @@ BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Conte
     //Ensure all reference schemas also loaded
     for (auto& refSchemaKey : schemaEntry.m_cachedSchema->GetReferencedSchemas())
         {
-        BeAssert(refSchemaKey.second->HasId() && "4.0.0.1 units and formats schema should not end up here.");
+        if (!refSchemaKey.second->HasId())
+            {
+            // schemas without id are only valid in a particular case: If this is a 4.0.0.1 file (pre EC3.2) and if the schema
+            // is the units or formats schema - which in this case is deserialized by ECDb from disk (without assigning an id)
+            if (!FeatureManager::IsAvailable(GetECDb(), Feature::UnitsAndFormats) &&
+                (m_cache.GetLegacyUnitsHelper().IsValidUnitsSchemaName(refSchemaKey.first.GetName(), SchemaLookupMode::ByName) ||
+                 m_cache.GetLegacyUnitsHelper().IsValidFormatsSchemaName(refSchemaKey.first.GetName(), SchemaLookupMode::ByName)))
+                {
+                continue;
+                }
+
+            BeAssert(false && "Referenced schema is expected to be in cache already at this point");
+            return ERROR;
+            }
+
         ECSchemaId referenceSchemaId = refSchemaKey.second->GetId();
         SchemaDbEntry* key = m_cache.Find(referenceSchemaId);
         if (key == nullptr)
@@ -1701,6 +1715,7 @@ BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Conte
             BeAssert(false && "Referenced schema is expected to be in cache already at this point");
             return ERROR;
             }
+
         if (SUCCESS != ReadSchemaElements(*key, ctx, fullyLoadedSchemas))
             return ERROR;
         }
