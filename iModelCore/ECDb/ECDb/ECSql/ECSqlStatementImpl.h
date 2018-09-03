@@ -62,7 +62,8 @@ struct ECSqlStatement::Impl final
         ECSqlStatus FailIfWrongType(ECSqlType expectedType, Utf8CP errorMessage) const;
 
         static NativeLogging::ILogger& GetPrepareDiagnosticsLogger();
-        uint64_t m_hash64;
+        mutable Nullable<uint64_t> m_hash64;
+        
     public:
         Impl() {}
         ~Impl() {}
@@ -86,7 +87,7 @@ struct ECSqlStatement::Impl final
         Utf8CP GetNativeSql() const;
         ECDb const* GetECDb() const;
 
-        void Finalize() { m_preparedStatement = nullptr; m_hash64 = 0u; BeAssert(!IsPrepared()); }
+        void Finalize() { m_preparedStatement = nullptr; m_hash64 = nullptr; BeAssert(!IsPrepared()); }
 
         // Helpers
         IECSqlPreparedStatement* GetPreparedStatementP() const { return m_preparedStatement.get(); }
@@ -98,7 +99,7 @@ struct ECSqlStatement::Impl final
             return static_cast<TECSqlPreparedStatement*> (GetPreparedStatementP());
             }
 
-        uint64_t GetHashCode() const { return m_hash64; }
+        uint64_t GetHashCode() const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
