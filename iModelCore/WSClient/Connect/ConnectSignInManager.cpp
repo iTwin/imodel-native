@@ -634,9 +634,10 @@ AsyncTaskPtr<ConnectionClientTokenResult> ConnectSignInManager::GetConnectionCli
     if (!m_connectionClient->IsLoggedIn())
         return CreateCompletedAsyncTask(ConnectionClientTokenResult::Error(ConnectLocalizedString(ALERT_ConnectionClientNotLoggedIn_Message)));
 
-    SamlTokenPtr samlToken = m_connectionClient->GetSerializedDelegateSecurityToken(rpUri);
+    Utf8String errorString;
+    SamlTokenPtr samlToken = m_connectionClient->GetSerializedDelegateSecurityToken(rpUri, &errorString);
     if (samlToken == nullptr)
-        return CreateCompletedAsyncTask(ConnectionClientTokenResult::Error(ConnectLocalizedString(ALERT_UnsupportedToken)));
+        return CreateCompletedAsyncTask(ConnectionClientTokenResult::Error(errorString.empty() ? ConnectLocalizedString(ALERT_UnsupportedToken) : errorString));
 
     return  CreateCompletedAsyncTask(ConnectionClientTokenResult::Success(samlToken));
     }

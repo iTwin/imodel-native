@@ -34,7 +34,7 @@ struct IConnectionClientInterface
         virtual ~IConnectionClientInterface() {}
 
         virtual bool IsInstalled() { return false; }
-        virtual SamlTokenPtr GetSerializedDelegateSecurityToken(Utf8StringCR rpUri = nullptr) { return nullptr; }
+        virtual SamlTokenPtr GetSerializedDelegateSecurityToken(Utf8StringCR rpUri = nullptr, Utf8StringP errorString = nullptr) { return nullptr; }
         virtual bool IsRunning() { return false; }
         virtual BentleyStatus StartClientApp() { return BentleyStatus::ERROR; }
         virtual bool IsLoggedIn() { return false; }
