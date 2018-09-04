@@ -70,6 +70,7 @@ enum class Format : uint32_t
     PointCloud = 'stnp',
     Composite = 'tpmc',
     Dgn = 'Tngd',
+    IModel = 'iMdl',
 };
 
 //=======================================================================================
@@ -104,6 +105,7 @@ struct TileHeader
             case Format::PointCloud:
             case Format::Composite:
             case Format::Dgn:
+            case Format::IModel:
                 return true;
             default:
                 return false;
@@ -335,6 +337,45 @@ struct DgnTile
 
 ENUM_IS_FLAGS(DgnTile::Flags);
 
+//=======================================================================================
+// IModel tiles are tiles with glTF-like structure (JSON with binary data) - but optimized
+// for deserialization and display in imodeljs front-end.
+// Specifically, geometry is stored in a format more or less ready for submission to WebGL.
+// @bsistruct                                                   Paul.Connelly   09/18
+//=======================================================================================
+struct IModelTile
+{
+    enum Version : uint32_t { Version = 0 };
+
+    struct Header : TileHeader
+    {
+        Tile::Content::Metadata metadata;
+        uint32_t                length;
+
+        bool Read(StreamBufferR buffer)
+            {
+            if (TileHeader::Read(buffer) && IsValid() && buffer.Read(metadata.m_flags) && buffer.Read(metadata.m_contentRange) && buffer.Read(metadata.m_tolerance)
+                && buffer.Read(metadata.m_numElementsIncluded) && buffer.Read(metadata.m_numElementsExcluded) && buffer.Read(length))
+                return true;
+
+            Invalidate();
+            return false;
+            }
+    };
+
+    struct FeatureTableHeader
+    {
+        uint32_t    length;
+        uint32_t    maxFeatures;
+        uint32_t    count;
+
+        bool Read(StreamBufferR buffer)
+            {
+            return buffer.Read(length) && buffer.Read(maxFeatures) && buffer.Read(count);
+            }
+    };
+};
+
 DGNPLATFORM_EXPORT BentleyStatus WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, bool isLeaf, double const* zoomFactor);
 DGNPLATFORM_EXPORT ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf, DRange3dCR tileRange);
 
@@ -348,5 +389,7 @@ DGNPLATFORM_EXPORT ReadStatus ReadWebTile(Render::Primitives::GeometryCollection
 
 // Return false if feature table contains data not valid for DgnDb.
 bool VerifyFeatureTable(StreamBufferR, DgnDbR);
+
+BentleyStatus WriteIModelTile(StreamBufferR streamBuffer, Tile::Content::MetadataCR metadata, Render::Primitives::GeometryCollectionCR geometry, Tile::LoaderCR loader);
 
 END_TILE_IO_NAMESPACE

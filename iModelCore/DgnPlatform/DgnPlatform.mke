@@ -317,6 +317,8 @@ $(CoreObjs)Tile$(oext) :                            $(DgnCoreDir)Tile.cpp $(DgnP
 
 $(CoreObjs)TileWriter$(oext) :                      $(DgnCoreDir)TileWriter.cpp $(DgnPlatformAPISrc)Tile.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}
 
+$(CoreObjs)IModelTileWriter$(oext) :                $(DgnCoreDir)IModelTileWriter.cpp $(DgnPlatformAPISrc)Tile.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}
+
 $(CoreObjs)CacheTileWriter$(oext) :                 $(DgnCoreDir)CacheTileWriter.cpp $(DgnPlatformAPISrc)Tile.h $(DgnPlatformAPISrc)TileIO.h $(DgnPlatformAPISrc)TileWriter.h ${MultiCompileDepends}
 
 $(CoreObjs)TileReader$(oext) :                      $(DgnCoreDir)TileReader.cpp $(DgnPlatformAPISrc)Tile.h $(DgnPlatformAPISrc)TileReader.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}

@@ -1513,13 +1513,8 @@ Loader::State Loader::ReadFromModel()
         return State::NotFound; // doesn't matter...
 
     // Encode geometry to binary stream
-    // ###TODO: We used to record isLeaf and hasZoomFactor into cache - the latter is encoded into content ID; the former probably needs to be...
-    double sizeMultiplier = GetContentId().GetSizeMultiplier();
-    double const* pMult = 1.0 != sizeMultiplier ? &sizeMultiplier : nullptr;
-    bool isLeaf = false;
-
     StreamBuffer tileBytes;
-    if (SUCCESS != Dgn::Tile::IO::WriteDgnTile(tileBytes, ElementAlignedBox3d(geomLoader.GetMetadata().m_contentRange), geomLoader.GetGeometry(), *GetTree().FetchModel(), isLeaf, pMult))
+    if (SUCCESS != Dgn::Tile::IO::WriteIModelTile(tileBytes, geomLoader.GetMetadata(), geomLoader.GetGeometry(), *this))
         return State::Invalid;
 
     if (IsCanceled())
