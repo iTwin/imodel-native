@@ -11,6 +11,7 @@
 #include <VersionedDgnV8Api/DgnPlatform/ScalableMeshBaseElementHandler.h>
 //#include <VersionedDgnV8Api/ScalableMeshElement/ScalableMeshAttachment.h>
 
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 
 
@@ -111,6 +112,10 @@ void ResolveLinkedModelId(ScalableMeshModel* model, DGNV8_BENTLEY_NAMESPACE_NAME
 
 Bentley::BentleyStatus ExtractClipDefinitionsInfo(Bentley::bmap<uint64_t, Bentley::bpair<DGNV8_BENTLEY_NAMESPACE_NAME::ScalableMesh::SMNonDestructiveClipType, Bentley::bvector<Bentley::DPoint3d>>> * clipDefs, DgnV8EhCR eh);
 Bentley::BentleyStatus ExtractTerrainLinkInfo(Bentley::bvector<Bentley::bpair<uint64_t, uint64_t>>* linksToModels, DgnV8EhCR eh);
+
+
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.St-Pierre                 07/17
@@ -224,6 +229,15 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
         {
         // Schedule reality model tileset creation.
         converter.AddModelRequiringRealityTiles(modelId, smFileName.GetNameUtf8(), Converter::GetV8FileSyncInfoIdFromAppData(*v8el.GetDgnFileP()));
+        }
+    else if (!converter.GetDgnDb().GeoLocation().GetEcefLocation().m_isValid)
+        {
+        // For scalable meshes with in projects with no ECEF we need to record the transform or we have no way to get from tileset (ECEF) to DB.
+        Transform   tilesetToDb, dbToTileset = ((ScalableMeshModel*)spatialModel)->GetUorsToStorage();
+
+        tilesetToDb.InverseOf (dbToTileset);
+        converter.StoreRealityTilesetTransform(*spatialModel, tilesetToDb);
+        spatialModel->Update();
         }
 
     return Result::SkipElement;
