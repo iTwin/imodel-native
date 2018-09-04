@@ -62,6 +62,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <CloudDataSource/DataSourceManager.h>
 #endif
 
+#include "Stores/SMStreamingDataStore.h"
+
 //extern DataSourceManager s_dataSourceManager;
 
 
@@ -232,6 +234,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         Transform                     m_reprojectionTransform; //approximation of reprojection used for live transforms.
 
         IScalableMeshRDSProviderPtr   m_smRDSProvider = nullptr;
+
+        SMStreamingStore<Extent3dType>::SMStreamingSettingsPtr m_streamingSettings = nullptr;
 
 		IScalableMeshClippingOptionsPtr m_clippingOptions;
 
