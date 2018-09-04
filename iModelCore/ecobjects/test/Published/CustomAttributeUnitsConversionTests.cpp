@@ -895,6 +895,177 @@ TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationIsRemovedWhenNoU
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Joseph.Urbano                   08/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationUsesSameKOQNameAsUnitSpecification)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+        <ECClass typeName="PIPE" displayLabel="A generic pipe" isDomainClass="True">
+            <ECProperty propertyName="PROPERTY1" typeName="double" >
+                <ECCustomAttributes>
+                    <UnitSpecification xmlns="Unit_Attributes.01.00">
+                        <DimensionName>L</DimensionName>
+                        <KindOfQuantityName>DIAMETER</KindOfQuantityName>
+                        <UnitName>FOOT</UnitName>
+                    </UnitSpecification>
+                    <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+                        <DisplayFormatString>G6</DisplayFormatString>
+                        <DisplayUnitName>FOOT</DisplayUnitName>
+                    </DisplayUnitSpecification>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECClass>
+        <ECClass typeName="SUPER_PIPE" displayLabel="A super pipe" isDomainClass="True">
+            <BaseClass>PIPE</BaseClass>
+            <ECProperty propertyName="PROPERTY1" typeName="double">
+                <ECCustomAttributes>
+                    <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+                        <DisplayFormatString>G6</DisplayFormatString>
+                        <DisplayUnitName>INCH</DisplayUnitName>
+                    </DisplayUnitSpecification>
+                </ECCustomAttributes>
+            </ECProperty>
+            <ECProperty propertyName="PROPERTY2" typeName="double">
+                <ECCustomAttributes>
+                    <UnitSpecification xmlns="Unit_Attributes.01.00">
+                        <DimensionName>L</DimensionName>
+                        <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                        <UnitName>FOOT</UnitName>
+                    </UnitSpecification>
+                    <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+                        <DisplayFormatString>G6</DisplayFormatString>
+                        <DisplayUnitName>INCH</DisplayUnitName>
+                    </DisplayUnitSpecification>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECClass>
+    </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Failed to convert schema";
+
+    auto koq = schema->GetClassCP("PIPE")->GetPropertyP("PROPERTY1")->GetKindOfQuantity();
+    EXPECT_STREQ("DIAMETER", koq->GetName().c_str());
+    EXPECT_STREQ("M", koq->GetPersistenceUnit()->GetName().c_str());
+    EXPECT_STREQ("FT", koq->GetDefaultPresentationFormat()->GetCompositeMajorUnit()->GetName().c_str());
+
+    koq = schema->GetClassCP("SUPER_PIPE")->GetPropertyP("PROPERTY1")->GetKindOfQuantity();
+    EXPECT_STREQ("DIAMETER_SUPER_PIPE", koq->GetName().c_str());
+    EXPECT_STREQ("M", koq->GetPersistenceUnit()->GetName().c_str());
+    EXPECT_STREQ("IN", koq->GetDefaultPresentationFormat()->GetCompositeMajorUnit()->GetName().c_str());
+
+    koq = schema->GetClassCP("SUPER_PIPE")->GetPropertyP("PROPERTY2")->GetKindOfQuantity();
+    EXPECT_STREQ("LENGTH", koq->GetName().c_str());
+    EXPECT_STREQ("M", koq->GetPersistenceUnit()->GetName().c_str());
+    EXPECT_STREQ("IN", koq->GetDefaultPresentationFormat()->GetCompositeMajorUnit()->GetName().c_str());
+
+    bvector<Utf8String> expectedRefSchemas;
+    expectedRefSchemas.push_back("Units.01.00.00");
+    expectedRefSchemas.push_back("Formats.01.00.00");
+    expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
+    verifyReferencedSchemas(*schema, expectedRefSchemas);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Joseph.Urbano                   08/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationGetsKOQNameFromUnitSpecificationIfProcessedFirst)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+        <ECClass typeName="PIPE" displayLabel="A generic pipe" isDomainClass="True">
+            <ECProperty propertyName="PROPERTY1" typeName="double" >
+                <ECCustomAttributes>
+                    <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+                        <DisplayFormatString>G6</DisplayFormatString>
+                        <DisplayUnitName>FOOT</DisplayUnitName>
+                    </DisplayUnitSpecification>
+                    <UnitSpecification xmlns="Unit_Attributes.01.00">
+                        <DimensionName>L</DimensionName>
+                        <KindOfQuantityName>DIAMETER</KindOfQuantityName>
+                        <UnitName>FOOT</UnitName>
+                    </UnitSpecification>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECClass>
+    </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Failed to convert schema";
+
+    auto koq = schema->GetClassCP("PIPE")->GetPropertyP("PROPERTY1")->GetKindOfQuantity();
+    EXPECT_STREQ("DIAMETER", koq->GetName().c_str());
+
+    ASSERT_EQ(1, schema->GetKindOfQuantityCount()) << "The schema should only have one KindOfQuantity";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Joseph.Urbano                   08/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitSpecificationConversionTest, KOQIsAcceptableEvenIfItHasNoPresentationFormats)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+        <ECClass typeName="BLOWER" displayLabel="A generic pipe" isDomainClass="True">
+            <ECProperty propertyName="RATED_CURRENT" typeName="double" >
+                <ECCustomAttributes>
+                    <UnitSpecification xmlns="Unit_Attributes.01.00">
+                        <DimensionName>L</DimensionName>
+                        <KindOfQuantityName>ELECTRIC_CURRENT</KindOfQuantityName>
+                        <UnitName>AMPERE</UnitName>
+                    </UnitSpecification>
+                    <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+                        <DisplayFormatString>G6</DisplayFormatString>
+                        <DisplayUnitName>AMPERE</DisplayUnitName>
+                    </DisplayUnitSpecification>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECClass>
+        <ECClass typeName="MOTOR" displayLabel="A generic pipe" isDomainClass="True">
+            <ECProperty propertyName="RATED_CURRENT" typeName="double" >
+                <ECCustomAttributes>
+                    <UnitSpecification xmlns="Unit_Attributes.01.00">
+                        <DimensionName>L</DimensionName>
+                        <KindOfQuantityName>ELECTRIC_CURRENT</KindOfQuantityName>
+                        <UnitName>AMPERE</UnitName>
+                    </UnitSpecification>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECClass>
+    </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Failed to convert schema";
+
+    auto koq = schema->GetClassCP("BLOWER")->GetPropertyP("RATED_CURRENT")->GetKindOfQuantity();
+    EXPECT_STREQ("ELECTRIC_CURRENT", koq->GetName().c_str());
+
+    koq = schema->GetClassCP("MOTOR")->GetPropertyP("RATED_CURRENT")->GetKindOfQuantity();
+    EXPECT_STREQ("ELECTRIC_CURRENT", koq->GetName().c_str());
+
+    ASSERT_EQ(1, schema->GetKindOfQuantityCount()) << "The schema should only have one KindOfQuantity";
+    }
+
 //---------------------------------------------------------------------------------------//
 //* @bsimethod                                Colin.Kerr                       05/2017
 //+---------------+---------------+---------------+---------------+---------------+------//

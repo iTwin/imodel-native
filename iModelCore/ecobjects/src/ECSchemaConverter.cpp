@@ -982,9 +982,12 @@ ECObjectsStatus StandardValuesConverter::CreateEnumeration(ECEnumerationP& enume
 struct UnitSpecification
     {
     UnitSpecification() = delete;
-    static bool TryGetNewKOQName(IECInstanceCR instance, Utf8StringR newKindOfQuantityName)
+    static bool TryGetNewKOQName(ECPropertyCR ecprop, Utf8StringR newKindOfQuantityName)
         {
-        return TryGetStringValue(instance, KOQ_NAME, newKindOfQuantityName) || TryGetStringValue(instance, DIMENSION_NAME, newKindOfQuantityName);
+        IECInstancePtr instance = ecprop.GetCustomAttributeLocal(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
+        if (instance.IsValid())
+            return TryGetStringValue(*instance, KOQ_NAME, newKindOfQuantityName) || TryGetStringValue(*instance, DIMENSION_NAME, newKindOfQuantityName);
+        return false;
         }
 
     static bool TryGetStringValue(IECInstanceCR instance, Utf8CP propName, Utf8StringR stringValue)
@@ -1034,7 +1037,7 @@ bool kindOfQuantityHasMatchingPersitenceUnit(KindOfQuantityCP koq, Units::UnitCP
 
 bool kindOfQuantityHasMatchingPresentationUnit(KindOfQuantityCP koq, Units::UnitCP displayUnit, Units::UnitCP persistenceUnit)
     {
-    if (koq->HasPresentationFormats() && koq->GetDefaultPresentationFormat()->HasCompositeMajorUnit())
+    if (koq->GetDefaultPresentationFormat()->HasCompositeMajorUnit())
         return Units::Unit::AreEqual(koq->GetDefaultPresentationFormat()->GetCompositeMajorUnit(), (nullptr == displayUnit) ? persistenceUnit : displayUnit);
     return false; 
     }
@@ -1173,11 +1176,19 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         return ECObjectsStatus::Success;
         }
 
+    auto koq = prop->GetKindOfQuantity();
+    if (nullptr != koq && prop->IsKindOfQuantityDefinedLocally())
+        {
+        LOG.warningv("Found DisplayUnitSpecification on property %s:%s.%s with UnitSpecification defined locally. Skipping conversion since the DisplayUnitSpecificaiton was already processed.", schema.GetFullSchemaName(), prop->GetClass().GetName().c_str(), prop->GetName().c_str());
+        removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
+        return ECObjectsStatus::Success;
+        }
+
     Unit oldUnit;
     ECUnitCP newUnit = nullptr;
+    Utf8String koqName;
     if(!Unit::GetUnitForECProperty(oldUnit, *prop))
         {
-        auto koq = prop->GetKindOfQuantity();
         if (nullptr == koq)
             {
             Utf8String fullName = schema.GetFullSchemaName();
@@ -1194,6 +1205,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
                 fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), koq->GetSchema().GetName().c_str(), koq->GetName().c_str());
             return ECObjectsStatus::Error;
             }
+        koqName = koq->GetName();
         }
 
     if (nullptr == context)
@@ -1252,8 +1264,8 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
 
     KindOfQuantityP newKOQ;
     Utf8String newKOQName;
-    if (!UnitSpecification::TryGetNewKOQName(instance, newKOQName))
-        newKOQName = newUnit->GetPhenomenon()->GetName();
+    if (!UnitSpecification::TryGetNewKOQName(*prop, newKOQName))
+        newKOQName = Utf8String::IsNullOrEmpty(koqName.c_str()) ? newUnit->GetPhenomenon()->GetName() : koqName;
 
     ECUnitCP newDisplayUnit = nullptr;
     Unit oldDisplayUnit;
