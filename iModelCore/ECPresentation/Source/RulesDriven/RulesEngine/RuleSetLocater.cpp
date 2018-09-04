@@ -11,8 +11,8 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include "ECSchemaHelper.h"
 
-#define PRESENTATION_RULESET_EXTENSION  L".PresentationRuleSet.xml"
-#define PRESENTATION_RULESET_WILDCARD   L"*" PRESENTATION_RULESET_EXTENSION
+#define PRESENTATION_RULESET_EXTENSION_Xml   L".PresentationRuleSet.xml"
+#define PRESENTATION_RULESET_EXTENSION_Json  L".PresentationRuleSet.json"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
@@ -366,7 +366,11 @@ bvector<BeFileName> DirectoryRuleSetLocater::_GetRuleSetFileNames() const
             continue;
 
         bvector<BeFileName> matches;
-        BeDirectoryIterator::WalkDirsAndMatch(matches, directory, PRESENTATION_RULESET_WILDCARD, true);
+        BeDirectoryIterator::WalkDirsAndMatch(matches, directory, L"*" PRESENTATION_RULESET_EXTENSION_Xml, true);
+        files.insert(files.end(), matches.begin(), matches.end());
+
+        matches.clear();
+        BeDirectoryIterator::WalkDirsAndMatch(matches, directory, L"*" PRESENTATION_RULESET_EXTENSION_Json, true);
         files.insert(files.end(), matches.begin(), matches.end());
         }
     return files;
@@ -392,7 +396,11 @@ bvector<PresentationRuleSetPtr> DirectoryRuleSetLocater::_LocateRuleSets(Utf8CP 
             }
         else
             {
-            ruleset = PresentationRuleSet::ReadFromXmlFile(file);
+            if (file.EndsWithI(PRESENTATION_RULESET_EXTENSION_Xml)) 
+                ruleset = PresentationRuleSet::ReadFromXmlFile(file);
+            else if (file.EndsWithI(PRESENTATION_RULESET_EXTENSION_Json))
+                ruleset = PresentationRuleSet::ReadFromJsonFile(file);
+
             if (ruleset.IsValid())
                 {
                 m_cache[file] = ruleset;

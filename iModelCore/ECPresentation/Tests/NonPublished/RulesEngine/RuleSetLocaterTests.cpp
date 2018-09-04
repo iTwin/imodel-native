@@ -472,11 +472,11 @@ TEST (DirectoryRuleSetLocater, LocateRuleSets_EmptyDirectory)
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DirectoryRuleSetLocater, LocateRuleSets_FindsRuleSets)
+TEST (DirectoryRuleSetLocater, LocateRuleSets_FindsXmlRuleSets)
     {
     BeFileName directory;
     BeTest::GetHost().GetTempDir(directory);
-    directory.AppendToPath(L"LocateRuleSets_FindsRuleSets");
+    directory.AppendToPath(WString(BeTest::GetNameOfCurrentTest(), true).c_str());
     if (directory.DoesPathExist())
         directory.BeDeleteFile();
 
@@ -493,6 +493,32 @@ TEST (DirectoryRuleSetLocater, LocateRuleSets_FindsRuleSets)
 
     CreateFileWithContent(ruleSetXmlString1, "1.PresentationRuleSet.xml", &directory);
     CreateFileWithContent(ruleSetXmlString2, "2.PresentationRuleSet.xml", &directory);
+    
+    Utf8String list(directory.c_str());
+    RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(list.c_str());
+    bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
+    ASSERT_EQ(2, rulesets.size());
+    ASSERT_EQ(2, locater->GetRuleSetIds().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (DirectoryRuleSetLocater, LocateRuleSets_FindsJsonRuleSets)
+    {
+    BeFileName directory;
+    BeTest::GetHost().GetTempDir(directory);
+    directory.AppendToPath(WString(BeTest::GetNameOfCurrentTest(), true).c_str());
+    if (directory.DoesPathExist())
+        directory.BeDeleteFile();
+
+    BeFileName::CreateNewDirectory(directory.c_str());
+
+    PresentationRuleSetPtr ruleset1 = PresentationRuleSet::CreateInstance("id_1");
+    CreateFileWithContent(ruleset1->WriteToJsonValue().ToString().c_str(), "1.PresentationRuleSet.json", &directory);
+
+    PresentationRuleSetPtr ruleset2 = PresentationRuleSet::CreateInstance("id_2");
+    CreateFileWithContent(ruleset2->WriteToJsonValue().ToString().c_str(), "2.PresentationRuleSet.json", &directory);
     
     Utf8String list(directory.c_str());
     RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(list.c_str());
