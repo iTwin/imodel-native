@@ -307,19 +307,38 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         // *** WIP_CONVERT_CVE code = CreateCode(defaultCodeValue, defaultCodeScope);
         }
 
+    DgnClassId elementClassId;
     V8ElementECContent ecContent;
+    bool hasPrimaryInstance = false;
+    bool hasSecondaryInstances = false;
     DgnV8Api::ElementHandle v8eh(drawingModelMapping.GetV8Model().FindElementByID(originalElementMapping.m_v8ElementId));
-    bool isNewElement = true;
-    if (IsUpdating())
+    if (v8eh.IsValid())
         {
-        IChangeDetector::SearchResults changeInfo;
-        if (GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, drawingModelMapping) && IChangeDetector::ChangeType::Update == changeInfo.m_changeType)
-            isNewElement = false;
+        bool isNewElement = true;
+        if (IsUpdating())
+            {
+            IChangeDetector::SearchResults changeInfo;
+            if (GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, drawingModelMapping) && IChangeDetector::ChangeType::Update == changeInfo.m_changeType)
+                isNewElement = false;
+            }
+        GetECContentOfElement(ecContent, v8eh, drawingModelMapping, true);
+        hasPrimaryInstance = ecContent.m_primaryV8Instance != nullptr;
+        hasSecondaryInstances = !ecContent.m_secondaryV8Instances.empty();
+        elementClassId = _ComputeElementClass(v8eh, ecContent, drawingModelMapping);
         }
-    GetECContentOfElement(ecContent, v8eh, drawingModelMapping, true);
-    bool hasPrimaryInstance = ecContent.m_primaryV8Instance != nullptr;
-    const bool hasSecondaryInstances = !ecContent.m_secondaryV8Instances.empty();
-    DgnClassId elementClassId = _ComputeElementClass(v8eh, ecContent, drawingModelMapping);
+    else
+        {
+        SyncInfo::FileById theFile(GetDgnDb(), drawingModelMapping.GetV8FileSyncInfoId());
+        auto i = theFile.begin();
+        Utf8String fileName;
+        if (i == theFile.end())
+            {
+            auto entry = *i;
+            fileName = entry.GetUniqueName();
+            }
+        ReportIssueV(IssueSeverity::Warning, IssueCategory::Unknown(), Issue::ExtractedGraphicMissingElement(), "", originalElementMapping.m_v8ElementId, model.GetName().c_str(), fileName.c_str());
+        }
+
     if (!elementClassId.IsValid())
         elementClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic);
 
@@ -329,11 +348,13 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
 
     if (!drawingGraphic.IsValid())
         {
+        ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicCreationFailure(), "", model.GetName().c_str(), elementClassId.GetValue(), categoryId.GetValue(), code.GetValueUtf8());
         BeAssert(false);
         return DgnDbStatus::BadRequest;
         }
     if (BSISUCCESS != builder.Finish(*drawingGraphic->ToGeometrySourceP()))
         {
+        ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicBuildFailure(), "", originalElementMapping.m_v8ElementId, model.GetName().c_str());
         BeAssert(false);
         return DgnDbStatus::BadRequest;
         }
@@ -391,6 +412,31 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         return status;
 
     GetSyncInfo().InsertExtractedGraphic(attachmentSource, originalElementMapping, categoryId, drawingGraphic->GetElementId());
+
+    if (v8eh.IsValid())
+        {
+        BeSQLite::EC::ECInstanceKey bisElementKey = drawingGraphic->GetECInstanceKey();
+        SyncInfo::V8FileSyncInfoId fileId = GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP());
+        if (results.m_v8PrimaryInstance.IsValid())
+            ECInstanceInfo::Insert(GetDgnDb(), fileId, results.m_v8PrimaryInstance, bisElementKey, true);
+
+        for (bpair<V8ECInstanceKey, BECN::IECInstancePtr> const& v8SecondaryInstanceMapping : results.m_v8SecondaryInstanceMappings)
+            {
+            BECN::IECInstanceCR aspect = *v8SecondaryInstanceMapping.second;
+            BeSQLite::EC::ECInstanceId aspectId;
+            if (SUCCESS != BeSQLite::EC::ECInstanceId::FromString(aspectId, aspect.GetInstanceId().c_str()))
+                {
+                BeAssert(false && "Could not convert IECInstance's instance id to a BeSQLite::EC::ECInstanceId.");
+                continue;
+                }
+
+            ECInstanceInfo::Insert(GetDgnDb(), fileId, v8SecondaryInstanceMapping.first, BeSQLite::EC::ECInstanceKey(aspect.GetClass().GetId(), aspectId), false);
+
+            // need to record which element class each aspect is associated with.
+            ElementClassToAspectClassMapping::Insert(GetDgnDb(), drawingGraphic->GetElementClassId(), drawingGraphic->GetElementClass()->GetSchema().GetName().c_str(), drawingGraphic->GetElementClass()->GetName().c_str(),
+                                                     aspect.GetClass().GetId(), aspect.GetClass().GetSchema().GetName().c_str(), aspect.GetClass().GetName().c_str());
+            }
+        }
 
     //  Create a relationship to the 3d element that it was derived from. (If the relationship already exists, this will be a nop.)
     auto originalInBim = GetDgnDb().Elements().Get<GeometricElement>(originalElementMapping.m_elementId);

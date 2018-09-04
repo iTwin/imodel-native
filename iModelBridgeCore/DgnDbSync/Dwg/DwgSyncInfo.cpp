@@ -426,11 +426,22 @@ Utf8String DwgSyncInfo::GetUniqueName(WStringCR fullFileName)
     //  Therefore, we must distinguish between like-named files in different directories.
     //  The unique name must also be stable. If the whole project is moved to a new directory or machine, 
     //  the unique names of the files must be unaffected.
-    //  To achieve this balance, we use only as much of the full path as we need to distinguish between 
-    //  like-named files in different directories.
+
+    // If we have a DMS GUID for the document corresponding to this file, that is the unique name.
+    BeGuid docGuid = GetDwgImporter().GetOptions().QueryDocumentGuid(BeFileName(fullFileName));
+    if (docGuid.IsValid())
+        {
+        Utf8String lguid = docGuid.ToString();
+        lguid.ToLower();
+        return lguid;
+        }
+
+    // If we do not have a GUID, we try to compute a stable unique name from the filename.
+    // The full path should be unique already. To get something that is stable, we use only as much of 
+    // the full path as we need to distinguish between like-named files in different directories.
     WString uniqueName(fullFileName);
-    auto pdir = m_dwgImporter.GetOptions().GetInputRootDir();
-    if (!pdir.empty() &&(pdir.size() < fullFileName.size()) && pdir.EqualsI(fullFileName.substr(0, pdir.size())))
+    auto pdir = GetDwgImporter().GetOptions().GetInputRootDir();
+    if (!pdir.empty() && (pdir.size() < fullFileName.size()) && pdir.EqualsI(fullFileName.substr(0, pdir.size())))
         uniqueName = fullFileName.substr(pdir.size());
 
     uniqueName.ToLower();  // make sure we don't get fooled by case-changes in file system on Windows
@@ -621,6 +632,17 @@ DwgSyncInfo::FileIterator::Entry DwgSyncInfo::FileIterator::begin() const
     {
     m_stmt->Reset();
     return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgSyncInfo::DeleteFile (DwgFileId fileId)
+    {
+    Statement stmt;
+    stmt.Prepare(*m_dgndb, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_File) " WHERE ROWID=?");
+    stmt.BindInt64(1, fileId.GetValue());
+    return stmt.Step() == BE_SQLITE_DONE ? BSISUCCESS : BSIERROR;
     }
 
 DwgSyncInfo::DwgModelSyncInfoId DwgSyncInfo::ModelIterator::Entry::GetDwgModelSyncInfoId() {return DwgModelSyncInfoId(m_sql->GetValueInt64(0));}
