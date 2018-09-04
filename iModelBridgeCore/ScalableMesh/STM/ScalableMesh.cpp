@@ -940,6 +940,43 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
 				DRange3d extent = DRange3d::NullRange();
 				if (!clipData.empty())
 					extent.Extend(DRange3d::From(&clipData[0], (int)clipData.size()));
+                else
+                {
+                    SMClipGeometryType geom;
+                    SMNonDestructiveClipType type;
+                    bool isActive;
+                    m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(id, clipData, geom, type, isActive);
+                    if (geom == SMClipGeometryType::BoundedVolume)
+                    {
+                        ClipVectorPtr cp;
+                        m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(id, cp, geom, type, isActive);
+                        if (cp.IsValid())
+                        {
+                            for (ClipPrimitivePtr& primitive : *cp)
+                                primitive->SetIsMask(false);
+                            cp->GetRange(extent, nullptr);
+                        }
+                        if (extent.Volume() == 0)
+                        {
+                            if (extent.XLength() == 0)
+                            {
+                                extent.low.x -= 1.e-5;
+                                extent.high.x += 1.e-5;
+                            }
+                            if (extent.YLength() == 0)
+                            {
+                                extent.low.y -= 1.e-5;
+                                extent.high.y += 1.e-5;
+                            }
+                            if (extent.ZLength() == 0)
+                            {
+                                extent.low.z -= 1.e-5;
+                                extent.high.z += 1.e-5;
+                            }
+                        }
+                    }
+                    
+                }
 
 				Transform t = Transform::FromIdentity();
 				if (IsCesium3DTiles()) t = GetReprojectionTransform();
