@@ -1849,6 +1849,10 @@ void            DwgImporter::_FinishImport ()
         changeDetector._DetectDeletedViews (*this);
         changeDetector._DetectDeletedGroups (*this);
 
+#ifdef DEBUG_DELETE_DOCUMENTS
+        this->_DetectDeletedDocuments ();
+#endif
+
         // update syncinfo for master DWG file
         DwgSyncInfo&    syncInfo = GetSyncInfo ();
         StableIdPolicy  policy = GetCurrentIdPolicy ();

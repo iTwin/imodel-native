@@ -732,8 +732,9 @@ public:
 
     //! Get information about a disk file
     DGNDBSYNC_EXPORT static DwgFileId   GetDwgFileId (DwgDbDatabaseR);
-    static StableIdPolicy               GetFileIdPolicy (DwgDbDatabaseR);
-    Utf8String                          GetUniqueName (WStringCR fullname);
+    static StableIdPolicy   GetFileIdPolicy (DwgDbDatabaseR);
+    Utf8String  GetUniqueName (WStringCR fullname);
+    DGNDBSYNC_EXPORT BentleyStatus  DeleteFile (DwgFileId fileId);
 
     //! Query if the specified file appears to have changed, compared to save data in syncinfo
     //! @return true if the file is not found in syncinfo or if it is found and its last-save time is different

@@ -317,7 +317,8 @@ void    DwgBridge::_CloseSource (BentleyStatus status)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DwgBridge::_DetectDeletedDocuments()
     {
-    return m_importer->_DetectDeletedDocuments();
+    m_importer->_DetectDeletedDocuments();
+    return m_importer->WasAborted() ? BSIERROR : BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

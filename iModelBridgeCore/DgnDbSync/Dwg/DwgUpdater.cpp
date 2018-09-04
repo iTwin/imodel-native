@@ -760,13 +760,47 @@ void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DwgImporter::_DetectDeletedDocuments ()
     {
-#ifdef WIP__OnRootFilesConverted
-    For each file in your syncinfo, call IsDocumentAssignedToJob to detect if the file is still assigned to the job.
-    For each file that is no longer assigned to your job, delete the models and elements that came from that file, and
-    then remove the record of that file from your syncinfo.
+    if (!this->IsUpdating())
+        return  BSISUCCESS;
 
-    // this->_GetChangeDetector()._DetectDeletedModelsInFile (*this, this->GetDwgDb());
-#endif
+    auto& detector = this->_GetChangeDetector ();
+    auto& db = this->GetDgnDb ();
+    auto& syncInfo = this->GetSyncInfo ();  
+    DwgSyncInfo::FileIterator files(db, nullptr);
+
+    for (auto file : files)
+        {
+        // check the file GUID per PW:
+        BeGuid  docGuid;
+        auto name = file.GetUniqueName ();
+        if (docGuid.FromString(name.c_str()) == BSISUCCESS && this->GetOptions().IsDocumentAssignedToJob(name))
+            continue;
+
+        // check existence of the physical file:
+        if (BeFileName(file.GetDwgName().c_str(), true).DoesPathExist())
+            continue;
+
+        // need to delete this file - walk through all model mappings in the sync info:
+        DwgSyncInfo::ModelIterator  modelMaps(db, "DwgFileId=?");
+        modelMaps.GetStatement()->BindInt (1, file.GetSyncId().GetValue());
+        for (auto modelMap : modelMaps)
+            {
+            // delete elements in DgnModel:
+            DwgSyncInfo::ElementIterator elements(db, "DwgModelSyncInfoId=?");
+            elements.GetStatement()->BindInt(1, modelMap.GetDwgModelSyncInfoId().GetValue());
+            detector._DetectDeletedElements (*this, elements);
+
+            // delete DgnModel from db:
+            auto model = db.Models().GetModel (modelMap.GetModelId());
+            model->Delete();
+
+            // delele the model mapping from the sync info:
+            syncInfo.DeleteModel (modelMap.GetDwgModelSyncInfoId());
+            }
+        // delete the file mapping from the sync info:
+        syncInfo.DeleteFile (file.GetSyncId());
+        }
+
     return BSISUCCESS;
     }
 
