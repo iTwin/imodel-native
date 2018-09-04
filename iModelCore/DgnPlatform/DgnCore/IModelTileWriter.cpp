@@ -10,11 +10,930 @@
 #include <DgnPlatform/TileIO.h>
 #include <DgnPlatform/TileWriter.h>
 
+USING_NAMESPACE_TILE_IO
+USING_NAMESPACE_BENTLEY_RENDER
+USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
+
+BEGIN_UNNAMED_NAMESPACE
+
+struct PolylineEdgeParams;
+struct PolylineParams;
+
+using PolylineEdgeParamsUPtr = std::unique_ptr<PolylineEdgeParams>;
+using PolylineParamsUPtr = std::unique_ptr<PolylineParams>;
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/17
+//=======================================================================================
+enum class SurfaceType : uint8_t
+{
+    Unlit,
+    Lit,
+    Textured,
+    TexturedLit,
+    Classifier, // treated as Unlit; handled specially on front-end
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool wantJointTriangles(uint32_t lineWeight, bool is2d)
+    {
+    // Joints are incredibly expensive. In 3d, only generate them if the line is sufficiently wide for them to be noticeable.
+    constexpr uint32_t jointWidthThreshold = 5;
+    return is2d || lineWeight > jointWidthThreshold;
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct LUTDimensions
+{
+private:
+    uint32_t    m_width;
+    uint32_t    m_height;
+
+    LUTDimensions(uint32_t w, uint32_t h) : m_width(w), m_height(h) { }
+public:
+    LUTDimensions() { }
+    void Init(uint32_t nEntries, uint32_t nRgbaPerEntry, uint32_t nExtraRgba=0, uint32_t nTables = 1);
+    static LUTDimensions Compute(uint32_t nEntries, uint32_t nRgbaPerEntry, uint32_t nExtraRgba=0, uint32_t nTables = 1)
+        {
+        LUTDimensions dims;
+        dims.Init(nEntries, nRgbaPerEntry, nExtraRgba, nTables);
+        return dims;
+        }
+
+    uint32_t GetWidth() const { return m_width; }
+    uint32_t GetHeight() const { return m_height; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct LUTVertex
+{
+    QPoint3d    m_position;             // 0x00
+    uint16_t    m_colorIndexOrNormal;   // 0x06
+    uint32_t    m_featureIndex;         // 0x08
+protected:
+    template<typename T> static QPoint3dCR GetPosition(T const& args, uint32_t idx) { return args.m_points[idx]; }
+    template<typename T> static uint16_t GetColorIndex(T const& args, uint32_t idx)
+        {
+        return args.m_colors.IsUniform() ? 0 : args.m_colors.m_nonUniform.m_indices[idx];
+        }
+    template<typename T> static uint32_t GetFeatureIndex(T const& args, uint32_t idx)
+        {
+        return args.m_features.IsNonUniform() ? args.m_features.m_featureIDs[idx] : 0;
+        }
+
+    LUTVertex(QPoint3dCR pos, uint16_t colorIndexOrNormal, uint32_t feature) : m_position(pos), m_colorIndexOrNormal(colorIndexOrNormal), m_featureIndex(feature) { }
+    template<typename Args, typename ExtraVertexData> LUTVertex(Args const& args, uint32_t idx, ExtraVertexData const& extraVertexData)
+        : LUTVertex(GetPosition(args, idx), GetColorIndex(args, idx), GetFeatureIndex(args, idx)) { }
+};
+static_assert(0x0C == sizeof(LUTVertex), "unexpected size");
+static_assert(0 == (sizeof(LUTVertex) % 4), "unexpected size");
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct SimpleVertex : LUTVertex
+{
+    template<typename Args, typename ExtraVertexData> SimpleVertex(Args const& args, uint32_t idx, ExtraVertexData const& extra) : LUTVertex(args, idx, extra) { }
+
+    static constexpr uint8_t NumRgba() { return sizeof(SimpleVertex) / 4; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct TexturedMeshVertex : LUTVertex
+{
+    QPoint2d    m_textureUV;    // 0x0C
+
+    TexturedMeshVertex(QPoint3dCR pos, uint32_t feature, QPoint2dCR uv, uint16_t normal=0) : LUTVertex(pos, normal, feature), m_textureUV(uv) { }
+    TexturedMeshVertex(TriMeshArgsCR args, uint32_t idx, QPoint2d::ParamsCR uvParams) : TexturedMeshVertex(args, idx, uvParams, 0) { }
+    TexturedMeshVertex(TriMeshArgsCR args, uint32_t idx, QPoint2d::ParamsCR uvParams, uint16_t normal)
+        : TexturedMeshVertex(GetPosition(args, idx), GetFeatureIndex(args, idx), QPoint2d(args.m_textureUV[idx], uvParams), normal) { }
+};
+static_assert(0x10 == sizeof(TexturedMeshVertex), "unexpected size");
+static_assert(0 == (sizeof(TexturedMeshVertex) % 4), "unexpected size");
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct TexturedLitMeshVertex : TexturedMeshVertex
+{
+    TexturedLitMeshVertex(QPoint3dCR pos, uint32_t feature, QPoint2dCR uv, OctEncodedNormal normal) : TexturedMeshVertex(pos, feature, uv, normal.Value()) { }
+    TexturedLitMeshVertex(TriMeshArgsCR args, uint32_t idx, QPoint2d::ParamsCR uvParams) : TexturedMeshVertex(args, idx, uvParams, args.m_normals[idx].Value()) { }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct LitMeshVertex : LUTVertex
+{
+    uint16_t    m_normal;   // 0x0C
+    uint16_t    m_unused;   // 0x0E
+
+    LitMeshVertex(QPoint3dCR pos, uint16_t colorIndex, uint32_t feature, OctEncodedNormal normal) : LUTVertex(pos, colorIndex, feature), m_normal(normal.Value()) { }
+    LitMeshVertex(TriMeshArgsCR args, uint32_t idx, QPoint2d::ParamsCR uvParams)
+        : LitMeshVertex(GetPosition(args, idx), GetColorIndex(args, idx), GetFeatureIndex(args, idx), args.m_normals[idx]) { }
+};
+static_assert(0x10 == sizeof(LitMeshVertex), "unexpected size");
+static_assert(0 == (sizeof(LitMeshVertex) % 4), "unexpected size");
+
+//=======================================================================================
+//! Holds vertex data (position, color index, normal, UV params, etc) in a texture.
+//! Color table is appended to the end of this data.
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct VertexLUTParams
+{
+private:
+    static void AppendColor(uint8_t*& pData, uint32_t colorValue)
+        {
+        ColorDef color(colorValue);
+        uint8_t a = 255 - color.GetAlpha();
+        color.SetAlpha(a); // for case transparency=0, alpha=255...
+        switch (a)
+            {
+            case 0:
+                *reinterpret_cast<uint32_t*>(pData) = 0;
+                break;
+            case 255:
+                *reinterpret_cast<uint32_t*>(pData) = color.GetValue();
+                break;
+            default:
+                {
+                double alpha = a / 255.0;
+                pData[0] = static_cast<uint8_t>(color.GetRed() * alpha + 0.5);
+                pData[1] = static_cast<uint8_t>(color.GetGreen() * alpha + 0.5);
+                pData[2] = static_cast<uint8_t>(color.GetBlue() * alpha + 0.5);
+                pData[3] = a;
+                break;
+                }
+            }
+
+        pData += 4;
+        }
+public:
+    ByteStream      m_data;
+    LUTDimensions   m_dimensions;
+    uint32_t        m_numVertices = 0;
+
+    template<typename T_Vertex, typename T_Args, typename T_ExtraData> void Init(T_Args const& args, T_ExtraData const& extraData)
+        {
+        uint32_t nVerts = args.m_numPoints;
+        m_numVertices = nVerts;
+        uint32_t nBytesPerVert = sizeof(T_Vertex);
+        uint32_t nRgbaPerVert = nBytesPerVert / 4;
+
+        ColorIndex const& colorIndex = args.m_colors;
+        uint32_t nColors = colorIndex.IsUniform() ? 0 : colorIndex.m_numColors;
+
+        m_dimensions.Init(nVerts, nRgbaPerVert, nColors);
+        BeAssert(0 == m_dimensions.GetWidth() % nRgbaPerVert || (0 < nColors && 1 == m_dimensions.GetHeight()));
+
+        m_data = ByteStream(m_dimensions.GetWidth() * m_dimensions.GetHeight() * 4);
+        uint8_t* pData = m_data.GetDataP();
+        uint32_t vertIndex = 0;
+        while (vertIndex < nVerts)
+            {
+            T_Vertex vertex(args, vertIndex++, extraData);
+            memcpy(pData, &vertex, sizeof(vertex));
+            pData += sizeof(vertex);
+            }
+
+        BeAssert(m_data.size() >= sizeof(T_Vertex) * nVerts + 4 * nColors);
+        if (!colorIndex.IsUniform())
+            {
+            for (uint32_t i = 0; i < nColors; i++)
+                AppendColor(pData, colorIndex.m_nonUniform.m_colors[i]);
+            }
+        }
+
+    explicit VertexLUTParams() { }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     040/2018
+//=======================================================================================
+struct AnimationLUTParams : RefCountedBase
+{
+private:
+    template<typename T_ChannelData, typename T_Range, typename T_QPoint, typename T_QParam, typename T_DPoint> static void AddChannelData(uint8_t*& pData, bvector<float>& inputs, T_QParam& qParams, T_ChannelData const& channelData)
+        {
+        T_Range     range = T_Range::NullRange();
+
+        for (auto const& data : channelData.GetData())
+            for (auto const& value : data->GetValues())
+                range.Extend(T_DPoint::From(value));
+        
+        qParams = T_QParam(range);
+
+        size_t      qSize = 4 * ((sizeof(T_QPoint) + 3) / 4), unusedSize = qSize - sizeof(T_QPoint);
+
+        for (auto const& data : channelData.GetData())
+            {
+            inputs.push_back(data->GetInput());
+
+            // Quantize and push...
+            for (auto value : data->GetValues())
+                {
+                T_QPoint quantized(value, qParams);
+                memcpy (pData, &quantized, sizeof(quantized));
+                pData += sizeof(quantized);
+                for (size_t i=0; i<unusedSize; i++)
+                    *pData++ = 0;
+                }
+            }
+        }
+public:
+    ByteStream          m_data;
+    LUTDimensions       m_dimensions;
+    uint32_t            m_numVertices = 0;
+    uint32_t            m_numParamEntries = 0;
+    bvector<float>      m_paramInputs;
+    QPoint2d::Params    m_paramQParams;
+    uint32_t            m_numDisplacementEntries = 0;
+    bvector<float>      m_displacementInputs;
+    QPoint3d::Params    m_displacementQParams;
+
+    explicit AnimationLUTParams(TriMeshArgsCR args);
+};
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(AnimationLUTParams);
+DEFINE_REF_COUNTED_PTR(AnimationLUTParams);
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/17
+//=======================================================================================
+struct MeshParams
+{
+private:
+    QPoint2d::Params InitUVParams(TriMeshArgsCR args);
+
+    template<typename VertexType> void Init(TriMeshArgsCR args)
+        {
+        QPoint2d::Params uvParams = InitUVParams(args);
+        m_lutParams.Init<VertexType>(args, uvParams);
+        }
+public:
+    VertexLUTParams                 m_lutParams;
+    Render::MaterialCPtr            m_material;
+    AnimationLUTParamsPtr           m_animationLUTParams;
+    QPoint3d::Params                m_vertexParams;
+    QPoint2d::Params                m_uvParams;
+    uint32_t                        m_edgeWidth;
+    RefCountedPtr<Render::Texture>  m_texture;
+    SurfaceType                     m_type;
+    FillFlags                       m_fillFlags;
+    LinePixels                      m_edgeLinePixels;
+    bool                            m_isPlanar;
+
+    MeshParams(TriMeshArgsCR, bool isClassifier);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/17
+//=======================================================================================
+struct SurfaceParams
+{
+    Render::TexturePtr  m_texture;
+    Render::MaterialPtr m_material;
+    ByteStream          m_vertexIndices;
+    uint32_t            m_vertexIndicesCount;
+
+    explicit SurfaceParams(TriMeshArgsCR args) : m_texture(args.m_texture), m_material(args.m_material), m_vertexIndices(args.m_numIndices * 3), m_vertexIndicesCount(args.m_numIndices)
+        {
+        // In shader we have less than 32 bits precision...
+        BeAssert((uint32_t)((float)args.m_numPoints) == args.m_numPoints && "Max index range exceeded");
+        uint8_t* pData = m_vertexIndices.GetDataP();
+        for (size_t i = 0; i < args.m_numIndices; i++)
+            {
+            memcpy(pData, args.m_vertIndex+i, 3);
+            pData += 3;
+            }
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct EdgeParams
+{
+    ByteStream  m_vertexIndices;            // vec3 (unsigned byte) holding index of this vertex in LUT
+    ByteStream  m_endPointAndQuadIndices;   // vec4 (unsigned byte): xyz=index of other vertex in LUT; w=index of this vertex within quad in [0,3]
+    uint32_t    m_vertexIndicesCount;
+
+    explicit EdgeParams(EdgeArgsCR args);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct SilhouetteParams : EdgeParams
+{
+    ByteStream  m_normalPairs;  // vec4 oct-encoded normal pairs
+
+    explicit SilhouetteParams(SilhouetteEdgeArgsCR args) : EdgeParams(args)
+        {
+        m_normalPairs.resize(m_endPointAndQuadIndices.size());
+        uint8_t* pNormals = m_normalPairs.GetDataP();
+        for (uint32_t i = 0; i < args.m_numEdges; i++)
+            {
+            OctEncodedNormalPair pair = args.m_normals[i];
+            OctEncodedNormalPair pairs[6] = { pair, pair, pair, pair, pair, pair };
+            memcpy(pNormals, pairs, sizeof(pairs));
+            pNormals += sizeof(pairs);
+            }
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct TesselatedPolyline
+{
+    friend struct PolylineTesselator;
+private:
+    explicit TesselatedPolyline() { }
+public:
+    enum Param : uint8_t
+    {
+        kNone = 0,
+        kSquare = 1*3,
+        kMiter = 2*3,
+        kMiterInsideOnly = 3*3,
+        kJointBase = 4*3,
+        kNegatePerp = 8*3,
+        kNegateAlong = 16*3,
+        kNoneAdjWt = 32*3,
+    };
+
+    struct PosIndex
+    {
+        uint8_t m_bytes[3];
+
+        PosIndex() { }
+        PosIndex(uint32_t index)
+            {
+            BeAssert(0 == (index & 0xff000000));
+            memcpy(m_bytes, &index, 3);
+            }
+
+        uint32_t ToIndex() const { return m_bytes[0] | (m_bytes[1] << 8) || (m_bytes[2] << 16); }
+    };
+
+    struct PosIndexAndParam : PosIndex
+    {
+        Param   m_param;
+
+        PosIndexAndParam() { }
+        PosIndexAndParam(uint32_t index, Param param) : PosIndex(index), m_param(param) { }
+    };
+
+    bvector<PosIndex>           m_vertIndex;        // index into LUT for this vertex's data
+    bvector<PosIndex>           m_prevIndex;        // index into LUT for prev vertex's position
+    bvector<PosIndexAndParam>   m_nextIndexAndParam;// index into LUT for next vertex, interleaved with this vertex's param
+    bvector<float>              m_distance;         // distance of this vertex along polyline
+
+    bool IsValid() const { return !m_vertIndex.empty(); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct PolylineTesselator
+{
+    using Param = TesselatedPolyline::Param;
+    using Polyline = IndexedPolylineArgs::Polyline;
+
+    struct Vertex
+    {
+        uint32_t            m_vertIndex;
+        uint32_t            m_prevIndex;
+        uint32_t            m_nextIndex;
+        double              m_length;
+        bool                m_isSegmentStart;
+        bool                m_isPolylineStartOrEnd;
+
+        Vertex(bool isSegmentStart, bool isPolylineStartOrEnd, uint32_t vertIndex, uint32_t prevIndex, uint32_t nextIndex, double length)
+            : m_vertIndex(vertIndex), m_prevIndex(prevIndex), m_nextIndex(nextIndex), m_length(length),
+              m_isSegmentStart(isSegmentStart), m_isPolylineStartOrEnd(isPolylineStartOrEnd) { }
+
+        Param ComputeParam(bool negatePerp, bool adjacentToJoint=false, bool joint=false, bool noDisplacement=false) const;
+    };
+private:
+    TesselatedPolyline  m_polyline;
+    Polyline const*     m_lines;
+    QPoint3dCP          m_points;
+    QPoint3d::Params    m_pointParams;
+    uint32_t            m_numLines;
+    bool                m_doJointTriangles;
+
+    explicit PolylineTesselator(IndexedPolylineArgsCR args);
+    explicit PolylineTesselator(TriMeshArgsCR args);
+    PolylineTesselator(Polyline const* lines, uint32_t numLines, QPoint3dCP points, uint32_t numPoints, bool doJointTriangles, QPoint3d::ParamsCR pointParams)
+        : m_lines(lines), m_points(points), m_numLines(numLines), m_doJointTriangles(doJointTriangles), m_pointParams(pointParams) { }
+
+    void Tesselate();
+
+    DPoint3d GetPosition(uint32_t index) const { return m_points[index].Unquantize(m_pointParams); }
+    double DotProduct(Vertex const& vertex) const;
+    void AddSimpleSegment(Vertex const& v0, Vertex const& v1);
+    void AddJoints(Vertex const& v0, Vertex const& v1, bool jointAt0, bool jointAt1);
+    void AddJointTriangles(Vertex const& v0, Param p0, Vertex const& v1);
+    void AddVertex(Vertex const& vertex, Param param);
+public:
+    template<typename T> static TesselatedPolyline Tesselate(T const& args)
+        {
+        PolylineTesselator tesselator(args);
+        tesselator.Tesselate();
+        return tesselator.m_polyline;
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct PolylineEdgeParams
+{
+    TesselatedPolyline  m_polyline;
+
+private:
+    explicit PolylineEdgeParams(TesselatedPolyline&& polyline) : m_polyline(std::move(polyline)) { }
+public:
+    static PolylineEdgeParamsUPtr Create(TriMeshArgsCR args);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct PolylineParams
+{
+    VertexLUTParams     m_lutParams;
+    TesselatedPolyline  m_polyline;
+    QPoint3d::Params    m_vertexParams;
+    uint32_t            m_lineWeight;
+    LinePixels          m_linePixels;
+    PolylineFlags       m_flags;
+private:
+    PolylineParams(IndexedPolylineArgsCR args, TesselatedPolyline&& polyline);
+public:
+    static PolylineParamsUPtr Create(IndexedPolylineArgsCR args);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   09/18
+//=======================================================================================
+struct IModelTileWriter : Tile::IO::Writer
+{
+    DEFINE_T_SUPER(Tile::IO::Writer);
+private:
+    Tile::LoaderCR  m_loader;
+
+    bool IsCanceled() const { return m_loader.IsCanceled(); }
+public:
+    IModelTileWriter(StreamBufferR streamBuffer, Tile::LoaderCR loader) : T_Super(streamBuffer, *loader.GetTree().FetchModel()), m_loader(loader) { }
+};
+
+END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* Constraints:
+*   - Dimensions < max texture size
+*       - only 64x64 guaranteed;
+*       - in practice expect at least 2048 and most tablets/phones at least 4096 (96.3% of all browsers according to webglstats.com)
+*   - Roughly square to reduce unused bytes at end of last row
+*   - No extra unused bytes at end of each row
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void LUTDimensions::Init(uint32_t nEntries, uint32_t nRgbaPerEntry, uint32_t nExtraRgba, uint32_t nTables)
+    {
+    // This makes assumptions, backed up by statistics available online, about the minimum texture size supported by any hardware on which imodeljs frontend will run.
+    static constexpr uint32_t maxWidth = 4096;
+    uint32_t nRgba = nEntries * nRgbaPerEntry*nTables + nExtraRgba;
+
+    if (nRgba < maxWidth)
+        {
+        m_width = nRgba;
+        m_height = 1;
+        return;
+        }
+
+    // Make roughly square to reduce unused space in last row
+    uint32_t width = static_cast<uint32_t>(ceil(sqrt(nRgba)));
+
+    // Ensure a given entry's RGBA values all fit on the same row.
+    uint32_t remainder = width % nRgbaPerEntry;
+    if(0 != remainder)
+        width += nRgbaPerEntry - remainder;
+
+    // Compute height
+    uint32_t height = nRgba / width;
+    if (width*height < nRgba)
+        ++height;
+
+    BeAssert(height <= maxWidth);
+    BeAssert(width <= maxWidth);
+    BeAssert(width * height >= nRgba);
+
+    // Row padding should never be necessary...
+    BeAssert(0 == width % nRgbaPerEntry);
+
+    m_width = width;
+    m_height = height;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshParams::MeshParams(TriMeshArgsCR args, bool isClassifier) : m_vertexParams(args.m_pointParams), m_edgeWidth(args.m_edges.m_width), m_texture(args.m_texture), m_fillFlags(args.m_fillFlags),
+    m_edgeLinePixels(args.m_edges.m_linePixels), m_isPlanar(args.m_isPlanar)
+    {
+    if (isClassifier)
+        {
+        m_type = SurfaceType::Classifier;
+        }
+    else
+        {
+        bool textured = args.m_texture.IsValid();
+        bool normals = nullptr != args.m_normals;
+
+        if (textured)
+            m_type = normals ? SurfaceType::TexturedLit : SurfaceType::Textured;
+        else
+            m_type = normals ? SurfaceType::Lit : SurfaceType::Unlit;
+        }
+
+    switch (m_type)
+        {
+        case SurfaceType::Lit:          Init<LitMeshVertex>(args); break;
+        case SurfaceType::Textured:     Init<TexturedMeshVertex>(args); break;
+        case SurfaceType::TexturedLit:  Init<TexturedLitMeshVertex>(args); break;
+        default:                        Init<SimpleVertex>(args); break;
+        }
+
+    if (args.m_auxData.IsAnimatable())
+        m_animationLUTParams = new AnimationLUTParams(args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+QPoint2d::Params MeshParams::InitUVParams(TriMeshArgsCR args)
+    {
+    // ###TODO: TriMeshArgs should quantize texture UV for us...
+    DRange2d range = DRange2d::NullRange();
+    auto fpts = args.m_textureUV;
+    if (nullptr != fpts)
+        for (uint32_t i = 0; i < args.m_numPoints; i++)
+            range.Extend(DPoint2d::From(fpts[i].x, fpts[i].y));
+
+    QPoint2d::Params qparams(range);
+    return qparams;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+EdgeParams::EdgeParams(EdgeArgsCR args)
+    {
+    uint32_t numEdges = args.m_numEdges;
+    BeAssert(0 < numEdges);
+
+    // Each MeshEdge becomes a quad
+    uint32_t nVerts = numEdges * 6;
+    m_vertexIndicesCount = nVerts;
+
+    // Each primary vertex identified by vec3-encoded index into LUT
+    m_vertexIndices.resize(nVerts * 3);
+
+    // Each 'other endpoint' vertex identified by vec3-encoded index into LUT plus a quad index in [0,3]
+    m_endPointAndQuadIndices.resize(nVerts * 4);
+
+    uint8_t* pVertexIndices = m_vertexIndices.GetDataP();
+    uint8_t* pEndPointAndQuadIndices = m_endPointAndQuadIndices.GetDataP();
+    auto addPoint = [&](uint32_t p0, uint32_t p1, uint8_t quadIndex)
+        {
+        memcpy(pVertexIndices, &p0, 3);
+        memcpy(pEndPointAndQuadIndices, &p1, 3);
+        pEndPointAndQuadIndices[3] = quadIndex;
+        pVertexIndices += 3;
+        pEndPointAndQuadIndices += 4;
+        };
+
+    for (uint32_t i = 0; i < numEdges; i++)
+        {
+        uint32_t p0 = args.m_edges[i].m_indices[0];
+        uint32_t p1 = args.m_edges[i].m_indices[1];
+
+        addPoint(p0, p1, 0);
+        addPoint(p1, p0, 2);
+        addPoint(p0, p1, 1);
+
+        addPoint(p0, p1, 1);
+        addPoint(p1, p0, 2);
+        addPoint(p1, p0, 3);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+PolylineTesselator::PolylineTesselator(IndexedPolylineArgsCR args) : PolylineTesselator(args.m_lines, args.m_numLines,
+    args.m_points, args.m_numPoints, wantJointTriangles(args.m_width, args.m_flags.Is2d()), args.m_pointParams)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+PolylineTesselator::PolylineTesselator(TriMeshArgsCR args) : PolylineTesselator(args.m_edges.m_polylines.m_lines, args.m_edges.m_polylines.m_numLines,
+    args.m_points, args.m_numPoints, wantJointTriangles(args.m_edges.m_width, args.m_is2d), args.m_pointParams)
+    {
+    BeAssert(args.m_edges.m_polylines.IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+double PolylineTesselator::DotProduct(Vertex const& v) const
+    {
+    DPoint3d pos = GetPosition(v.m_vertIndex);
+    DVec3d prevDir = DVec3d::FromStartEndNormalize(GetPosition(v.m_prevIndex), pos);
+    DVec3d nextDir = DVec3d::FromStartEndNormalize(GetPosition(v.m_nextIndex), pos);
+
+    return prevDir.DotProduct(nextDir);
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   02/18
+//=======================================================================================
+struct PolylineVert
+{
+    PolylineTesselator::Vertex const& v;
+    PolylineTesselator::Param p;
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void PolylineTesselator::AddSimpleSegment(Vertex const& v0, Vertex const& v1)
+    {
+    PolylineVert verts[4] =
+        {
+            { v0, v0.ComputeParam(true) },
+            { v0, v0.ComputeParam(false) },
+            { v1, v1.ComputeParam(false) },
+            { v1, v1.ComputeParam(true) }
+        };
+
+    constexpr uint32_t indices[6] = { 0, 2, 1, 1, 2, 3 };
+    for (uint32_t i : indices)
+        {
+        auto const& vert = verts[i];
+        AddVertex(vert.v, vert.p);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void PolylineTesselator::AddJoints(Vertex const& v0, Vertex const& v1, bool jointAt0, bool jointAt1)
+    {
+    bool isV0Joint = v0.m_isSegmentStart ? jointAt0 : jointAt1;
+    bool isV1Joint = v1.m_isSegmentStart ? jointAt0 : jointAt1;
+
+    PolylineVert verts[6] =
+        {
+            { v0, v0.ComputeParam(true, isV0Joint, false, false) }, // 0
+            { v0, v0.ComputeParam(false, isV0Joint, false, true) }, // 1
+            { v0, v0.ComputeParam(false, isV0Joint, false, false) },// 2
+            { v1, v1.ComputeParam(false, isV1Joint, false, false) },// 3
+            { v1, v1.ComputeParam(false, isV1Joint, false, true) }, // 4
+            { v1, v1.ComputeParam(true, isV1Joint, false, false) }, // 5
+        };
+
+    constexpr uint32_t indices[12] =
+        {
+            0, 3, 1,
+            1, 3, 4,
+            1, 4, 2,
+            2, 4, 5,
+        };
+
+    for (uint32_t i : indices)
+        {
+        auto const& vert = verts[i];
+        AddVertex(vert.v, vert.p);
+        }
+
+    if (jointAt0)
+        AddJointTriangles(verts[1].v, verts[1].p, v0);
+
+    if (jointAt1)
+        AddJointTriangles(verts[4].v, verts[4].p, v1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void PolylineTesselator::AddJointTriangles(Vertex const& v0, Param p0, Vertex const& v1)
+    {
+    auto param = v1.ComputeParam(false, false, true);
+
+    PolylineVert verts[5] =
+        {
+            { v0, p0 },
+            { v1, static_cast<Param>(param + 0) },
+            { v1, static_cast<Param>(param + 1) },
+            { v1, static_cast<Param>(param + 2) },
+            { v1, static_cast<Param>(param + 3) },
+        };
+
+    constexpr uint32_t indices[9] =
+        {
+            0, 2, 1,
+            0, 3, 2,
+            0, 4, 3,
+        };
+
+    for (uint32_t i : indices)
+        {
+        auto const& vert = verts[i];
+        AddVertex(vert.v, vert.p);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void PolylineTesselator::AddVertex(Vertex const& vertex, Param param)
+    {
+    m_polyline.m_vertIndex.push_back(vertex.m_vertIndex);
+    m_polyline.m_prevIndex.push_back(vertex.m_prevIndex);
+    m_polyline.m_nextIndexAndParam.push_back(TesselatedPolyline::PosIndexAndParam(vertex.m_nextIndex, param));
+    m_polyline.m_distance.push_back(static_cast<float>(vertex.m_length));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void PolylineTesselator::Tesselate()
+    {
+    bool doJoints = m_doJointTriangles;
+
+    for (uint32_t lineIndex = 0; lineIndex < m_numLines; lineIndex++)
+        {
+        auto const& line = m_lines[lineIndex];
+        if (line.m_numIndices < 2)
+            continue;
+
+        uint32_t const* lineIndices = line.m_vertIndex;
+        double cumulativeLength = line.m_startDistance;
+        bool isClosed = lineIndices[0] == lineIndices[line.m_numIndices-1];
+
+        for (uint32_t i = 0, last = line.m_numIndices - 1; i < last; i++)
+            {
+            uint32_t idx0 = lineIndices[i];
+            uint32_t idx1 = lineIndices[i+1];
+            DPoint3d pos0 = GetPosition(idx0);
+            DPoint3d pos1 = GetPosition(idx1);
+
+            double thisLength = pos0.Distance(pos1);
+            bool isStart = (0 == i);
+            bool isEnd = (last-1 == i);
+
+            uint32_t prevIdx0;
+            if (isStart)
+                prevIdx0 = isClosed ? lineIndices[last-1] : idx0;
+            else
+                prevIdx0 = lineIndices[i-1];
+
+            uint32_t nextIdx1;
+            if (isEnd)
+                nextIdx1 = isClosed ? lineIndices[1] : idx1;
+            else
+                nextIdx1 = lineIndices[i+2];
+
+            Vertex v0(true, isStart && !isClosed, idx0, prevIdx0, idx1, cumulativeLength);
+            Vertex v1(false, isEnd && !isClosed, idx1, nextIdx1, idx0, cumulativeLength += thisLength);
+
+            constexpr float s_maxJointDot = -0.7;
+            bool jointAt0 = doJoints && (isClosed || !isStart) && DotProduct(v0) > s_maxJointDot;
+            bool jointAt1 = doJoints && (isClosed || !isEnd) && DotProduct(v1) > s_maxJointDot;
+
+            if (jointAt0 || jointAt1)
+                AddJoints(v0, v1, jointAt0, jointAt1);
+            else
+                AddSimpleSegment(v0, v1);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TesselatedPolyline::Param PolylineTesselator::Vertex::ComputeParam(bool negatePerp, bool adjacentToJoint, bool joint, bool noDisplacement) const
+    {
+    if (joint)
+        return TesselatedPolyline::kJointBase;
+
+    TesselatedPolyline::Param param;
+    if (noDisplacement)
+        param = TesselatedPolyline::kNoneAdjWt; // prevent getting tossed before width adjustment
+    else if (adjacentToJoint)
+        param = TesselatedPolyline::kMiterInsideOnly;
+    else
+        param = m_isPolylineStartOrEnd ? TesselatedPolyline::kSquare : TesselatedPolyline::kMiter;
+
+    uint8_t adjust = 0;
+    if (negatePerp)
+        adjust = TesselatedPolyline::kNegatePerp;
+
+    if (!m_isSegmentStart)
+        adjust += TesselatedPolyline::kNegateAlong;
+
+    param = static_cast<TesselatedPolyline::Param>(adjust + param);
+    return param;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+PolylineEdgeParamsUPtr PolylineEdgeParams::Create(TriMeshArgsCR args)
+    {
+    TesselatedPolyline polyline = PolylineTesselator::Tesselate(args);
+    return PolylineEdgeParamsUPtr(polyline.IsValid() ? new PolylineEdgeParams(std::move(polyline)) : nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+PolylineParams::PolylineParams(IndexedPolylineArgsCR args, TesselatedPolyline&& polyline) : m_polyline(std::move(polyline)),
+    m_vertexParams(args.m_pointParams), m_lineWeight(args.m_width), m_linePixels(args.m_linePixels), m_flags(args.m_flags)
+    {
+    m_lutParams.Init<SimpleVertex>(args, 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+PolylineParamsUPtr PolylineParams::Create(IndexedPolylineArgsCR args)
+    {
+    TesselatedPolyline polyline = PolylineTesselator::Tesselate(args);
+    if (!polyline.IsValid())
+        return nullptr;
+
+    return PolylineParamsUPtr(new PolylineParams(args, std::move(polyline)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AnimationLUTParams::AnimationLUTParams(TriMeshArgsCR args)
+    {
+    m_numVertices = args.m_numPoints;
+    auto&           displacementChannel = args.m_auxData.m_displacementChannel;
+    auto&           paramChannel = args.m_auxData.m_paramChannel;
+    
+    // If displacement and params channels both exist place parameter data after displacement.
+    if (displacementChannel.IsValid() && displacementChannel->IsAnimatable())
+        {
+        uint32_t        paramDataSize = paramChannel.IsValid() ? static_cast<uint32_t>(paramChannel->GetData().size() * m_numVertices) : 0;
+        m_dimensions.Init(m_numVertices, 2, paramDataSize, static_cast<uint32_t>(displacementChannel->GetData().size()));
+        }
+    else
+        {
+        m_dimensions.Init(m_numVertices, 1, 0, static_cast<uint32_t>(paramChannel->GetData().size()));
+        }
+
+    m_data = ByteStream(m_dimensions.GetWidth() * m_dimensions.GetHeight() * 4);
+    uint8_t* pData =m_data.GetDataP();
+
+    if (displacementChannel.IsValid())
+        {
+        m_numDisplacementEntries = static_cast<uint32_t>(displacementChannel->GetData().size());
+        AddChannelData<AuxDisplacementChannel, DRange3d, QPoint3d, QPoint3d::Params, DPoint3d> (pData, m_displacementInputs, m_displacementQParams, *displacementChannel);
+        }
+
+    if (paramChannel.IsValid())
+        {
+        m_numParamEntries = static_cast<uint32_t>(paramChannel->GetData().size());
+        AddChannelData<AuxParamChannel, DRange2d, QPoint2d, QPoint2d::Params, DPoint2d> (pData, m_paramInputs, m_paramQParams, *paramChannel);
+        }
+   
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Tile::IO::WriteIModelTile(StreamBufferR streamBuffer, Tile::Content::MetadataCR metadata, Render::Primitives::GeometryCollectionCR geometry, Tile::LoaderCR loader)
+IModelTile::WriteStatus Tile::IO::WriteIModelTile(StreamBufferR streamBuffer, Tile::Content::MetadataCR metadata, Render::Primitives::GeometryCollectionCR geometry, Tile::LoaderCR loader)
     {
-    return ERROR; // ###TODO...
+    return IModelTile::WriteStatus::Error; // ###TODO...
     }
 

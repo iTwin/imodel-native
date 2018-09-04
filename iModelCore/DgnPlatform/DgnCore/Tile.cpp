@@ -1514,7 +1514,7 @@ Loader::State Loader::ReadFromModel()
 
     // Encode geometry to binary stream
     StreamBuffer tileBytes;
-    if (SUCCESS != Dgn::Tile::IO::WriteIModelTile(tileBytes, geomLoader.GetMetadata(), geomLoader.GetGeometry(), *this))
+    if (Dgn::Tile::IO::IModelTile::WriteStatus::Success != Dgn::Tile::IO::WriteIModelTile(tileBytes, geomLoader.GetMetadata(), geomLoader.GetGeometry(), *this))
         return State::Invalid;
 
     if (IsCanceled())

@@ -347,6 +347,8 @@ struct IModelTile
 {
     enum Version : uint32_t { Version = 0 };
 
+    enum class WriteStatus { Success, Error, Aborted };
+
     struct Header : TileHeader
     {
         Tile::Content::Metadata metadata;
@@ -390,6 +392,6 @@ DGNPLATFORM_EXPORT ReadStatus ReadWebTile(Render::Primitives::GeometryCollection
 // Return false if feature table contains data not valid for DgnDb.
 bool VerifyFeatureTable(StreamBufferR, DgnDbR);
 
-BentleyStatus WriteIModelTile(StreamBufferR streamBuffer, Tile::Content::MetadataCR metadata, Render::Primitives::GeometryCollectionCR geometry, Tile::LoaderCR loader);
+IModelTile::WriteStatus WriteIModelTile(StreamBufferR streamBuffer, Tile::Content::MetadataCR metadata, Render::Primitives::GeometryCollectionCR geometry, Tile::LoaderCR loader);
 
 END_TILE_IO_NAMESPACE
