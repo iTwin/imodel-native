@@ -356,8 +356,8 @@ virtual BentleyStatus AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& 
     Utf8String          idStr(std::to_string(index++).c_str());
     Json::Value         materialJson = Json::objectValue, primitiveJson = Json::objectValue;
 
-	if (SUCCESS != CreateDisplayParamJson(materialJson, mesh, mesh.GetDisplayParams(), idStr))
-		return ERROR;
+    if (SUCCESS != CreateDisplayParamJson(materialJson, mesh, mesh.GetDisplayParams(), idStr))
+        return ERROR;
 
     Utf8String      accPositionId =  AddQuantizedPointsAttribute(mesh.Points().data(), mesh.Points().size(), mesh.Verts().GetParams(), "Position", idStr.c_str());
     primitiveJson["attributes"]["POSITION"] = accPositionId;
